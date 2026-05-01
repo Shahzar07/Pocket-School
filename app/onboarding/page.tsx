@@ -36,7 +36,6 @@ export default function OnboardingPage() {
       setLoading(true);
       const userRef = doc(db, 'users', user.uid);
       await setDoc(userRef, {
-        ...profile,
         level: level || null,
         learningStyle: learningStyle || null,
         updatedAt: serverTimestamp(),
