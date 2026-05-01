@@ -1,0 +1,112 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user in the system (Student, Teacher, Parent, Admin)",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["student", "teacher", "parent", "admin"] },
+        "name": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "level": { "type": "string" },
+        "learningStyle": { "type": "string" },
+        "interests": { "type": "array" },
+        "xp": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "role", "name", "createdAt"]
+    },
+    "Course": {
+      "title": "Course",
+      "description": "A course created by a teacher",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "institutionId": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "published"] },
+        "thumbnailUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "ownerId", "status", "createdAt"]
+    },
+    "CourseEnrollment": {
+      "title": "Course Enrollment",
+      "description": "Student enrollment in a course",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "courseId": { "type": "string" },
+        "progress": { "type": "number" },
+        "enrolledAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentId", "courseId", "progress", "enrolledAt"]
+    },
+    "Module": {
+      "title": "Module",
+      "description": "A module within a course",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "courseId": { "type": "string" },
+        "order": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "courseId", "order", "createdAt"]
+    },
+    "Lesson": {
+      "title": "Lesson",
+      "description": "A lesson within a module",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "moduleId": { "type": "string" },
+        "courseId": { "type": "string" },
+        "order": { "type": "number" },
+        "contentSources": { "type": "array" },
+        "aiOutputs": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "moduleId", "courseId", "order", "createdAt"]
+    },
+    "SubcollectionMember": {
+      "title": "Subcollection Member",
+      "description": "A simple record representing membership or access",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "role": { "type": "string" },
+        "joinedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "joinedAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles"
+    },
+    "courses/{courseId}": {
+      "schema": { "$ref": "#/entities/Course" },
+      "description": "Courses"
+    },
+    "courses/{courseId}/enrollments/{enrollmentId}": {
+      "schema": { "$ref": "#/entities/CourseEnrollment" },
+      "description": "Enrolled students"
+    },
+    "courses/{courseId}/modules/{moduleId}": {
+      "schema": { "$ref": "#/entities/Module" },
+      "description": "Modules"
+    },
+    "courses/{courseId}/lessons/{lessonId}": {
+      "schema": { "$ref": "#/entities/Lesson" },
+      "description": "Lessons"
+    }
+  }
+}

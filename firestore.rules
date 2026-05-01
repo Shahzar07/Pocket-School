@@ -1,0 +1,78 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() { return request.auth != null; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'role', 'name', 'createdAt']) &&
+             data.email is string && data.email.size() <= 200 &&
+             data.role in ['student', 'teacher', 'parent', 'admin'] &&
+             data.name is string && data.name.size() <= 100 &&
+             data.createdAt == request.time;
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || existing().role in ['teacher', 'admin']);
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming());
+      allow update: if isSignedIn() && request.auth.uid == userId &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'avatarUrl', 'level', 'learningStyle', 'interests', 'xp', 'updatedAt']) &&
+                     incoming().updatedAt == request.time;
+    }
+
+    function isValidCourse(data) {
+      return data.keys().hasAll(['title', 'ownerId', 'status', 'createdAt']) &&
+             data.title is string && data.title.size() <= 200 &&
+             data.ownerId == request.auth.uid &&
+             data.status in ['draft', 'published'] &&
+             data.createdAt == request.time;
+    }
+
+    match /courses/{courseId} {
+      allow read: if isSignedIn() && (existing().status == 'published' || existing().ownerId == request.auth.uid);
+      allow create: if isSignedIn() && isValidCourse(incoming());
+      allow update: if isSignedIn() && existing().ownerId == request.auth.uid &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'status', 'thumbnailUrl', 'updatedAt']) &&
+                    incoming().updatedAt == request.time;
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+      
+      match /enrollments/{enrollmentId} {
+        allow read: if isSignedIn() && (existing().studentId == request.auth.uid || get(/databases/$(database)/documents/courses/$(courseId)).data.ownerId == request.auth.uid);
+        allow create: if isSignedIn() && incoming().keys().hasAll(['studentId', 'courseId', 'progress', 'enrolledAt']) &&
+                      incoming().studentId == request.auth.uid &&
+                      incoming().courseId == courseId &&
+                      incoming().progress == 0 &&
+                      incoming().enrolledAt == request.time;
+        allow update: if isSignedIn() && existing().studentId == request.auth.uid &&
+                      incoming().diff(existing()).affectedKeys().hasOnly(['progress']);
+      }
+      
+      match /modules/{moduleId} {
+        allow read: if isSignedIn() && (
+          get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published' ||
+          get(/databases/$(database)/documents/courses/$(courseId)).data.ownerId == request.auth.uid
+        );
+        allow create: if isSignedIn() && get(/databases/$(database)/documents/courses/$(courseId)).data.ownerId == request.auth.uid &&
+                      incoming().keys().hasAll(['title', 'courseId', 'order', 'createdAt']) &&
+                      incoming().courseId == courseId && incoming().createdAt == request.time;
+      }
+      
+      match /lessons/{lessonId} {
+        allow read: if isSignedIn() && (
+          get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published' ||
+          get(/databases/$(database)/documents/courses/$(courseId)).data.ownerId == request.auth.uid
+        );
+        allow create: if isSignedIn() && get(/databases/$(database)/documents/courses/$(courseId)).data.ownerId == request.auth.uid &&
+                      incoming().keys().hasAll(['title', 'moduleId', 'courseId', 'order', 'createdAt']) &&
+                      incoming().courseId == courseId && incoming().createdAt == request.time;
+      }
+    }
+  }
+}
