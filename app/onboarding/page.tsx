@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ArrowRight } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 
@@ -35,11 +35,11 @@ export default function OnboardingPage() {
     try {
       setLoading(true);
       const userRef = doc(db, 'users', user.uid);
-      await setDoc(userRef, {
+      await updateDoc(userRef, {
         level: level || null,
         learningStyle: learningStyle || null,
         updatedAt: serverTimestamp(),
-      }, { merge: true });
+      });
       toast.success("Welcome aboard!");
       router.push(`/dashboard/student`);
     } catch (e: any) {
