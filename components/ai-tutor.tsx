@@ -130,7 +130,7 @@ export function AITutor() {
             {/* Mode Selector */}
             <div className="p-3 border-b border-[#DADCE0] bg-[#F8F9FA] flex items-center gap-2 shrink-0">
               <span className="text-xs font-medium text-[#5F6368] whitespace-nowrap">Tutor Mode:</span>
-              <Select value={mode} onValueChange={setMode}>
+              <Select value={mode} onValueChange={(val: string | null) => setMode(val || 'college')}>
                 <SelectTrigger className="h-8 text-xs rounded-full border-[#DADCE0] bg-white">
                   <SelectValue placeholder="Select mode" />
                 </SelectTrigger>

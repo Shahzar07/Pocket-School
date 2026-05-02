@@ -81,7 +81,7 @@ export default function TeacherDashboard() {
           <section>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-[#202124]">Needs Grading</h2>
-              <Button variant="ghost" className="text-google-blue font-medium">Open Gradebook</Button>
+              <Button onClick={() => router.push('/dashboard/teacher/gradebook')} variant="ghost" className="text-google-blue font-medium">Open Gradebook</Button>
             </div>
             <Card className="rounded-[20px] shadow-sm border border-[#DADCE0] overflow-hidden">
               <table className="w-full text-left border-collapse">
@@ -218,7 +218,7 @@ export default function TeacherDashboard() {
                       </div>
                     </div>
                   ))}
-                  <Button variant="outline" className="w-full mt-2 text-google-blue">View All Reports</Button>
+                  <Button onClick={() => router.push('/dashboard/teacher/analytics')} variant="outline" className="w-full mt-2 text-google-blue">View All Reports</Button>
                 </div>
               </div>
             </Card>

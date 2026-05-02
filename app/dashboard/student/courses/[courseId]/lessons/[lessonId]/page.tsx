@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Headphones, PlayCircle, BookOpen, Map, Presentation, PieChart, HelpCircle, FileEdit, CheckShield, ArrowLeft } from 'lucide-react';
+import { FileText, Headphones, PlayCircle, BookOpen, Map, Presentation, PieChart, HelpCircle, FileEdit, ShieldCheck, ArrowLeft } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { Progress } from '@/components/ui/progress';
 
@@ -44,7 +44,7 @@ export default function LessonViewer() {
               <Progress value={30} className="w-24 h-2" />
             </div>
             <Button className="rounded-full bg-google-teal hover:bg-[#00796B]">
-              <CheckShield className="w-4 h-4 mr-2" /> Mark Complete
+              <ShieldCheck className="w-4 h-4 mr-2" /> Mark Complete
             </Button>
           </div>
         </div>

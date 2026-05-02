@@ -1,18 +1,47 @@
 'use client';
 
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Loader2, Search, Bell, Menu, Home, BookOpen, Clock, Activity, MessageSquare, ClipboardList, Presentation, Shield, BarChart, Settings, FileText, CheckCircle, Video } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AITutor } from '@/components/ai-tutor';
+import Link from 'next/link';
+
+const NavItem = ({ href, icon: Icon, label, activeBgClass, activeTextClass, pathname, onClick, router }: any) => {
+  const isActive = pathname === href;
+  const activeClass = isActive 
+    ? `${activeBgClass} ${activeTextClass} font-bold` 
+    : 'text-[#5F6368] hover:bg-[#F1F3F4] hover:text-[#202124] font-medium';
+  
+  return (
+    <button 
+      type="button"
+      onClick={(e) => {
+        if (onClick) onClick(e);
+        router.push(href);
+      }}
+      className={`w-full p-3 rounded-xl flex items-center cursor-pointer transition-colors text-left ${activeClass}`}
+    >
+       <Icon className="w-5 h-5 mr-3 shrink-0" /> {label}
+    </button>
+  );
+};
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuthSTORE();
   const router = useRouter();
+  const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Close sidebar on mobile when navigating
+  const handleNavClick = () => {
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
+  };
 
   useEffect(() => {
     if (!loading && !user) {
@@ -40,68 +69,53 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           
           {profile.role === 'student' && (
             <>
-              <div className="p-3 rounded-xl bg-google-blue/10 text-[#1967D2] font-bold flex items-center cursor-pointer hover:bg-google-blue/20 transition-colors" onClick={() => router.push('/dashboard/student')}>
-                 <Home className="w-5 h-5 mr-3" /> Dashboard
-              </div>
-              <div className="p-3 rounded-xl text-[#5F6368] hover:bg-[#F1F3F4] hover:text-[#202124] font-medium flex items-center cursor-pointer transition-colors">
-                 <BookOpen className="w-5 h-5 mr-3" /> My Courses
-              </div>
-              <div className="p-3 rounded-xl text-[#5F6368] hover:bg-[#F1F3F4] hover:text-[#202124] font-medium flex items-center cursor-pointer transition-colors">
-                 <Video className="w-5 h-5 mr-3" /> Live Classes
-              </div>
-              <div className="p-3 rounded-xl text-[#5F6368] hover:bg-[#F1F3F4] hover:text-[#202124] font-medium flex items-center cursor-pointer transition-colors">
-                 <CheckCircle className="w-5 h-5 mr-3" /> Achievements
-              </div>
+              <NavItem href="/dashboard/student" icon={Home} label="Dashboard" activeBgClass="bg-[#E8F0FE]" activeTextClass="text-[#1967D2]" pathname={pathname} onClick={handleNavClick} router={router} />
+              <NavItem href="/dashboard/student/courses" icon={BookOpen} label="My Courses" activeBgClass="bg-[#E8F0FE]" activeTextClass="text-[#1967D2]" pathname={pathname} onClick={handleNavClick} router={router} />
+              <NavItem href="/dashboard/student/live" icon={Video} label="Live Classes" activeBgClass="bg-[#E8F0FE]" activeTextClass="text-[#1967D2]" pathname={pathname} onClick={handleNavClick} router={router} />
+              <NavItem href="/dashboard/student/achievements" icon={CheckCircle} label="Achievements" activeBgClass="bg-[#E8F0FE]" activeTextClass="text-[#1967D2]" pathname={pathname} onClick={handleNavClick} router={router} />
             </>
           )}
 
           {profile.role === 'teacher' && (
             <>
-              <div className="p-3 rounded-xl bg-google-teal/10 text-[#00796B] font-bold flex items-center cursor-pointer hover:bg-google-teal/20 transition-colors" onClick={() => router.push('/dashboard/teacher')}>
-                 <Home className="w-5 h-5 mr-3" /> Overview
-              </div>
-              <div className="p-3 rounded-xl text-[#5F6368] hover:bg-[#F1F3F4] hover:text-[#202124] font-medium flex items-center cursor-pointer transition-colors">
-                 <Presentation className="w-5 h-5 mr-3" /> Course Mgmt
-              </div>
-              <div className="p-3 rounded-xl text-[#5F6368] hover:bg-[#F1F3F4] hover:text-[#202124] font-medium flex items-center cursor-pointer transition-colors">
-                 <ClipboardList className="w-5 h-5 mr-3" /> Gradebook
-              </div>
-              <div className="p-3 rounded-xl text-[#5F6368] hover:bg-[#F1F3F4] hover:text-[#202124] font-medium flex items-center cursor-pointer transition-colors">
-                 <Activity className="w-5 h-5 mr-3" /> Student Analytics
-              </div>
+              <NavItem href="/dashboard/teacher" icon={Home} label="Overview" activeBgClass="bg-[#E0F2F1]" activeTextClass="text-[#00796B]" pathname={pathname} onClick={handleNavClick} router={router} />
+              <NavItem href="/dashboard/teacher/courses" icon={Presentation} label="Course Mgmt" activeBgClass="bg-[#E0F2F1]" activeTextClass="text-[#00796B]" pathname={pathname} onClick={handleNavClick} router={router} />
+              <NavItem href="/dashboard/teacher/gradebook" icon={ClipboardList} label="Gradebook" activeBgClass="bg-[#E0F2F1]" activeTextClass="text-[#00796B]" pathname={pathname} onClick={handleNavClick} router={router} />
+              <NavItem href="/dashboard/teacher/analytics" icon={Activity} label="Student Analytics" activeBgClass="bg-[#E0F2F1]" activeTextClass="text-[#00796B]" pathname={pathname} onClick={handleNavClick} router={router} />
             </>
           )}
 
           {profile.role === 'parent' && (
             <>
-              <div className="p-3 rounded-xl bg-google-amber/10 text-[#E65100] font-bold flex items-center cursor-pointer hover:bg-google-amber/20 transition-colors" onClick={() => router.push('/dashboard/parent')}>
-                 <Home className="w-5 h-5 mr-3" /> Child Progress
-              </div>
-              <div className="p-3 rounded-xl text-[#5F6368] hover:bg-[#F1F3F4] hover:text-[#202124] font-medium flex items-center cursor-pointer transition-colors">
-                 <MessageSquare className="w-5 h-5 mr-3" /> Communications
-              </div>
-              <div className="p-3 rounded-xl text-[#5F6368] hover:bg-[#F1F3F4] hover:text-[#202124] font-medium flex items-center cursor-pointer transition-colors">
-                 <Clock className="w-5 h-5 mr-3" /> Due Dates
-              </div>
+              <NavItem href="/dashboard/parent" icon={Home} label="Child Progress" activeBgClass="bg-[#FFF8E1]" activeTextClass="text-[#E65100]" pathname={pathname} onClick={handleNavClick} router={router} />
+              <NavItem href="/dashboard/parent/communications" icon={MessageSquare} label="Communications" activeBgClass="bg-[#FFF8E1]" activeTextClass="text-[#E65100]" pathname={pathname} onClick={handleNavClick} router={router} />
+              <NavItem href="/dashboard/parent/duedates" icon={Clock} label="Due Dates" activeBgClass="bg-[#FFF8E1]" activeTextClass="text-[#E65100]" pathname={pathname} onClick={handleNavClick} router={router} />
             </>
           )}
 
           {profile.role === 'admin' && (
             <>
-              <div className="p-3 rounded-xl bg-gray-900 text-white font-bold flex items-center cursor-pointer hover:bg-gray-800 transition-colors" onClick={() => router.push('/dashboard/admin')}>
-                 <BarChart className="w-5 h-5 mr-3" /> Analytics
-              </div>
-              <div className="p-3 rounded-xl text-[#5F6368] hover:bg-[#F1F3F4] hover:text-[#202124] font-medium flex items-center cursor-pointer transition-colors">
-                 <FileText className="w-5 h-5 mr-3" /> Institutions
-              </div>
-              <div className="p-3 rounded-xl text-[#5F6368] hover:bg-[#F1F3F4] hover:text-[#202124] font-medium flex items-center cursor-pointer transition-colors">
-                 <Shield className="w-5 h-5 mr-3" /> Access Config
-              </div>
-              <div className="p-3 rounded-xl text-[#5F6368] hover:bg-[#F1F3F4] hover:text-[#202124] font-medium flex items-center cursor-pointer transition-colors">
-                 <Settings className="w-5 h-5 mr-3" /> System Settings
-              </div>
+              <NavItem href="/dashboard/admin" icon={BarChart} label="Analytics" activeBgClass="bg-gray-900" activeTextClass="text-white" pathname={pathname} onClick={handleNavClick} router={router} />
+              <NavItem href="/dashboard/admin/institutions" icon={FileText} label="Institutions" activeBgClass="bg-gray-900" activeTextClass="text-white" pathname={pathname} onClick={handleNavClick} router={router} />
+              <NavItem href="/dashboard/admin/access" icon={Shield} label="Access Config" activeBgClass="bg-gray-900" activeTextClass="text-white" pathname={pathname} onClick={handleNavClick} router={router} />
+              <NavItem href="/dashboard/admin/settings" icon={Settings} label="System Settings" activeBgClass="bg-gray-900" activeTextClass="text-white" pathname={pathname} onClick={handleNavClick} router={router} />
             </>
           )}
+
+          <div className="mt-8 pt-4 border-t border-[#DADCE0]">
+             <button
+               onClick={() => {
+                 useAuthSTORE.getState().logout();
+                 router.push('/login');
+               }}
+               className="w-full p-3 rounded-xl flex items-center cursor-pointer transition-colors text-red-600 hover:bg-red-50 font-medium"
+             >
+                <div className="w-5 h-5 mr-3 flex items-center justify-center border-2 border-red-600 rounded-full" style={{ paddingLeft: '2px' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                </div>
+                Logout
+             </button>
+          </div>
         </nav>
       </aside>
 

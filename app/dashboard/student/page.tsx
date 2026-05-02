@@ -8,9 +8,11 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Flame, Trophy, Calendar, ArrowRight, PlayCircle, BookOpen, Headphones, Presentation, Brain, Video } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 export default function StudentDashboard() {
   const { profile } = useAuthSTORE();
+  const router = useRouter();
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
@@ -65,11 +67,11 @@ export default function StudentDashboard() {
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-[#202124]">Continue Learning</h2>
-          <Button variant="ghost" className="text-google-blue font-medium" onClick={() => toast.info('Loading full course list...')}>View All</Button>
+          <Button onClick={() => router.push('/dashboard/student/courses')} variant="ghost" className="text-google-blue font-medium">View All</Button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="p-5 rounded-[20px] shadow-google-soft hover:shadow-google-hover transition-shadow border cursor-pointer border-[#DADCE0]">
+            <Card onClick={() => router.push('/dashboard/student/courses/intro-bio/lessons/1')} key={i} className="p-5 rounded-[20px] shadow-google-soft hover:shadow-google-hover transition-shadow border cursor-pointer border-[#DADCE0]">
               <div className="w-full h-32 bg-[#E8F0FE] rounded-xl mb-4 flex items-center justify-center">
                 <PlayCircle className="w-10 h-10 text-google-blue opacity-50" />
               </div>
@@ -79,7 +81,7 @@ export default function StudentDashboard() {
                 <Progress value={65} className="h-2 flex-1" />
                 <span className="text-xs font-medium text-[#5F6368]">65%</span>
               </div>
-              <Button onClick={() => toast.success(`Resuming Module ${i}...`)} className="w-full bg-white text-google-blue border border-[#DADCE0] hover:bg-[#E8F0FE] rounded-full">
+              <Button onClick={(e) => { e.stopPropagation(); router.push('/dashboard/student/courses/intro-bio/lessons/1'); }} className="w-full bg-white text-google-blue border border-[#DADCE0] hover:bg-[#E8F0FE] rounded-full">
                 Resume <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </Card>
@@ -112,7 +114,7 @@ export default function StudentDashboard() {
                 </div>
               </div>
             </div>
-            <Button onClick={() => toast.success('Joining class in a new window...')} className="shrink-0 bg-google-blue hover:bg-[#1967D2] rounded-full px-6">
+            <Button onClick={() => router.push('/dashboard/student/live')} className="shrink-0 bg-google-blue hover:bg-[#1967D2] rounded-full px-6">
               <Video className="w-4 h-4 mr-2" /> Join
             </Button>
           </Card>
