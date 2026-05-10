@@ -1,55 +1,128 @@
 'use client';
 
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { BookOpen, Search, ArrowRight, PlayCircle } from 'lucide-react';
+import { motion } from 'motion/react';
+import { useAuthSTORE } from '@/hooks/use-auth';
+import { getEnrolledCourses, getAllPublishedCourses, enrollStudent, Course, Enrollment } from '@/lib/db';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { BookOpen, Plus, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+interface CE { course: Course; enrollment: Enrollment }
 
 export default function CoursesPage() {
   const router = useRouter();
+  const { user } = useAuthSTORE();
+  const [enrolled, setEnrolled] = useState<CE[]>([]);
+  const [available, setAvailable] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [enrolling, setEnrolling] = useState<string | null>(null);
 
-  const courses = [
-    { id: 'c1', title: 'Biology 101: Cell Systems', teacher: 'Dr. Sarah Webb', progress: 65, color: '#1A73E8', bg: '#E8F0FE', modules: 12 },
-    { id: 'c2', title: 'World History: The Ancients', teacher: 'Prof. Marcus Roe', progress: 30, color: '#F9AB00', bg: '#FFF8E1', modules: 8 },
-    { id: 'c3', title: 'Physics: Kinematics', teacher: 'Dr. Sarah Webb', progress: 10, color: '#00897B', bg: '#E0F2F1', modules: 14 },
-    { id: 'c4', title: 'Creative Writing Workshop', teacher: 'Emma Wilson', progress: 0, color: '#8E24AA', bg: '#F3E5F5', modules: 6 },
-  ];
+  const load = async () => {
+    if (!user) return;
+    const [ec, all] = await Promise.all([getEnrolledCourses(user.uid), getAllPublishedCourses()]);
+    setEnrolled(ec);
+    const enrolledIds = new Set(ec.map(e => e.course.id));
+    setAvailable(all.filter(c => !enrolledIds.has(c.id)));
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, [user]);
+
+  const handleEnroll = async (courseId: string) => {
+    if (!user) return;
+    setEnrolling(courseId);
+    await enrollStudent(user.uid, courseId);
+    toast.success('Enrolled! Start learning now.');
+    await load();
+    setEnrolling(null);
+  };
+
+  const statusColor = (p: number) =>
+    p === 100 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+    p > 0 ? 'bg-blue-50 text-blue-700 border-blue-200' :
+    'bg-muted text-muted-foreground border-border';
+  const statusLabel = (p: number) => p === 100 ? 'Completed' : p > 0 ? 'In progress' : 'Not started';
+
+  if (loading) return (
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-3">
+      {[1,2,3].map(i => <div key={i} className="h-28 bg-muted animate-pulse rounded-2xl" />)}
+    </div>
+  );
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-[#202124]">My Courses</h1>
-          <p className="text-[#5F6368]">Continue learning across your enrolled subjects.</p>
-        </div>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+      <div>
+        <h1 className="text-2xl font-extrabold text-foreground tracking-tight">My Courses</h1>
+        <p className="text-muted-foreground text-sm mt-1">{enrolled.length} enrolled · {available.length} available to join</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {courses.map(c => (
-          <Card key={c.id} className="p-0 overflow-hidden rounded-[20px] shadow-sm border border-[#DADCE0] hover:shadow-google-hover transition-shadow cursor-pointer flex flex-col" onClick={() => router.push(`/dashboard/student/courses/${c.id}`)}>
-             <div className="h-32 flex flex-col justify-end p-6 relative" style={{ backgroundColor: c.bg }}>
-               <BookOpen className="w-16 h-16 absolute -right-2 -bottom-2 opacity-20" style={{ color: c.color }} />
-               <span className="text-sm font-bold tracking-wider uppercase mb-1" style={{ color: c.color }}>{c.modules} Modules</span>
-             </div>
-             <div className="p-6 flex-1 flex flex-col justify-between">
-               <div>
-                  <h3 className="font-bold text-xl text-[#202124] mb-2">{c.title}</h3>
-                  <p className="text-sm text-[#5F6368] mb-6">{c.teacher}</p>
-               </div>
-               <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs font-semibold text-[#202124]">{c.progress > 0 ? `${c.progress}% Completed` : 'Not Started'}</span>
+      {enrolled.length > 0 && (
+        <section>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Enrolled</h2>
+          <div className="space-y-3">
+            {enrolled.map(({ course, enrollment }, i) => (
+              <motion.div key={course.id}
+                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                className="bg-card border border-border rounded-2xl p-5 flex items-center gap-5 hover:shadow-md transition-shadow cursor-pointer group"
+                onClick={() => router.push(`/dashboard/student/courses/${course.id}`)}
+              >
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0">
+                  <BookOpen className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <h3 className="font-bold text-foreground truncate group-hover:text-primary transition-colors">{course.title}</h3>
+                    <Badge className={`text-[10px] rounded-full border shrink-0 ${statusColor(enrollment.progress)}`}>{statusLabel(enrollment.progress)}</Badge>
                   </div>
-                  <Progress value={c.progress} className="h-2" style={{ ['--progress-background' as any]: c.bg }} />
-                  <Button variant="outline" className="w-full mt-4 rounded-full font-medium" style={{ color: c.color, borderColor: c.color }}>
-                    {c.progress > 0 ? 'Continue' : 'Start Course'} <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-               </div>
-             </div>
-          </Card>
-        ))}
-      </div>
+                  <p className="text-xs text-muted-foreground line-clamp-1 mb-2">{course.description}</p>
+                  <div className="flex items-center gap-3">
+                    <Progress value={enrollment.progress} className="flex-1 h-1.5" />
+                    <span className="text-xs font-semibold text-muted-foreground shrink-0">{enrollment.progress}%</span>
+                  </div>
+                </div>
+                {enrollment.progress === 100 && <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />}
+              </motion.div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {available.length > 0 && (
+        <section>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Available to Join</h2>
+          <div className="space-y-3">
+            {available.map((course, i) => (
+              <motion.div key={course.id}
+                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                className="bg-card border border-dashed border-border rounded-2xl p-5 flex items-center gap-5"
+              >
+                <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                  <BookOpen className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-foreground mb-0.5">{course.title}</h3>
+                  <p className="text-xs text-muted-foreground line-clamp-1">{course.description}</p>
+                </div>
+                <Button size="sm" className="rounded-xl shrink-0" onClick={() => handleEnroll(course.id)} disabled={enrolling === course.id}>
+                  <Plus className="w-4 h-4 mr-1" />{enrolling === course.id ? 'Enrolling…' : 'Enrol'}
+                </Button>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {enrolled.length === 0 && available.length === 0 && (
+        <div className="text-center py-16 text-muted-foreground">
+          <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p className="font-semibold">No courses found.</p>
+          <p className="text-sm mt-1">Ask an admin to seed demo courses from the admin dashboard.</p>
+        </div>
+      )}
     </div>
   );
 }

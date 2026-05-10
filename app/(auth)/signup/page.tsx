@@ -9,15 +9,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import Link from 'next/link';
-import { GraduationCap, Presentation, ShieldCheck, Users } from 'lucide-react';
+import { GraduationCap, Presentation, Users } from 'lucide-react';
+import { enrollStudent, getAllPublishedCourses } from '@/lib/db';
 
 const ROLES = [
   { id: 'student', title: 'Student', icon: <GraduationCap className="w-5 h-5" /> },
   { id: 'teacher', title: 'Teacher', icon: <Presentation className="w-5 h-5" /> },
   { id: 'parent', title: 'Parent', icon: <Users className="w-5 h-5" /> },
 ];
+
+async function autoEnrollInDemoCourses(uid: string) {
+  try {
+    const courses = await getAllPublishedCourses();
+    await Promise.all(courses.map(c => enrollStudent(uid, c.id)));
+  } catch {
+    // Non-fatal — enrollment can happen later
+  }
+}
 
 export default function SignupPage() {
   const router = useRouter();
@@ -27,21 +37,11 @@ export default function SignupPage() {
   const [role, setRole] = useState('student');
   const [loading, setLoading] = useState(false);
 
-  const routeUser = async (uid: string) => {
-    const docRef = doc(db, 'users', uid);
-    const snap = await getDoc(docRef);
-    if (!snap.exists()) {
-      router.push('/onboarding');
-      return;
-    }
-    const data = snap.data();
-    switch (data.role) {
-      case 'student': router.push('/dashboard/student'); break;
-      case 'teacher': router.push('/dashboard/teacher'); break;
-      case 'parent': router.push('/dashboard/parent'); break;
-      case 'admin': router.push('/dashboard/admin'); break;
-      default: router.push('/onboarding');
-    }
+  const routeAfterSignup = (r: string) => {
+    if (r === 'student') router.push('/onboarding');
+    else if (r === 'parent') router.push('/onboarding');
+    else if (r === 'teacher') router.push('/dashboard/teacher');
+    else router.push('/dashboard/admin');
   };
 
   const handleGoogleSignIn = async () => {
@@ -49,7 +49,6 @@ export default function SignupPage() {
       setLoading(true);
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      
       const docRef = doc(db, 'users', result.user.uid);
       const snap = await getDoc(docRef);
       if (!snap.exists()) {
@@ -57,20 +56,18 @@ export default function SignupPage() {
           email: result.user.email,
           name: result.user.displayName || 'New User',
           avatarUrl: result.user.photoURL || '',
-          role: role,
+          role,
           xp: 0,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
+        if (role === 'student') await autoEnrollInDemoCourses(result.user.uid);
       }
-      await routeUser(result.user.uid);
+      const existing = snap.exists() ? snap.data() : { role };
+      routeAfterSignup(existing.role || role);
     } catch (e: any) {
-      console.error(e);
-      const errorMessage = e?.message || e?.toString() || '';
-      if (e?.code === 'auth/popup-closed-by-user' || errorMessage.includes('The user aborted a request') || e?.code === 'auth/cancelled-popup-request') {
-        return;
-      }
-      toast.error(errorMessage || "Failed to sign up via Google");
+      if (e?.code === 'auth/popup-closed-by-user' || e?.code === 'auth/cancelled-popup-request') return;
+      toast.error(e?.message || 'Failed to sign up via Google');
     } finally {
       setLoading(false);
     }
@@ -78,68 +75,54 @@ export default function SignupPage() {
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !name) {
-      toast.error("Please fill in all fields");
-      return;
-    }
+    if (!email || !password || !name) { toast.error('Please fill in all fields'); return; }
     try {
       setLoading(true);
       const result = await createUserWithEmailAndPassword(auth, email, password);
-      
-      const docRef = doc(db, 'users', result.user.uid);
-      await setDoc(docRef, {
+      await setDoc(doc(db, 'users', result.user.uid), {
         email: result.user.email,
-        name: name,
+        name,
         avatarUrl: '',
-        role: role,
+        role,
         xp: 0,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      
-      // If student, go to onboarding to pick level/learning style, else dashboard
-      if (role === 'student') {
-         router.push('/onboarding');
-      } else {
-         await routeUser(result.user.uid);
-      }
+      if (role === 'student') await autoEnrollInDemoCourses(result.user.uid);
+      routeAfterSignup(role);
     } catch (e: any) {
-      console.error(e);
-      if (e?.code === 'auth/operation-not-allowed') {
-        toast.error("Please enable Email/Password authentication in your Firebase Console (Authentication > Sign-in method).");
-      } else if (e?.code === 'auth/invalid-email') {
-        toast.error("Invalid email address format.");
-      } else {
-        toast.error(e.message || "Failed to create account");
-      }
+      if (e?.code === 'auth/operation-not-allowed') toast.error('Enable Email/Password authentication in Firebase Console.');
+      else if (e?.code === 'auth/invalid-email') toast.error('Invalid email address format.');
+      else if (e?.code === 'auth/weak-password') toast.error('Password must be at least 6 characters.');
+      else toast.error(e.message || 'Failed to create account');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
     >
       <div className="mb-8 text-center lg:text-left">
-        <h2 className="text-3xl font-bold text-[#202124] mb-3">Create an account</h2>
-        <p className="text-[#5F6368]">Join Pocket School to start your journey.</p>
+        <h2 className="text-3xl font-bold text-foreground mb-2">Create an account</h2>
+        <p className="text-muted-foreground">Join Pocket School to start your journey.</p>
       </div>
 
       <div className="mb-6">
-        <Label className="text-[#202124] font-medium mb-3 block">I am a...</Label>
-        <div className="grid grid-cols-2 gap-3">
+        <Label className="text-foreground font-medium mb-3 block">I am a...</Label>
+        <div className="grid grid-cols-3 gap-3">
           {ROLES.map(r => (
             <button
               key={r.id}
               onClick={() => setRole(r.id)}
               disabled={loading}
-              className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer ${
-                role === r.id 
-                  ? 'border-google-blue bg-[#E8F0FE] text-google-blue font-bold shadow-sm' 
-                  : 'border-[#DADCE0] bg-white text-[#5F6368] font-medium focus:outline-none hover:bg-[#F8F9FA]'
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all cursor-pointer text-sm font-semibold ${
+                role === r.id
+                  ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                  : 'border-border bg-card text-muted-foreground hover:bg-muted'
               }`}
             >
               {r.icon}
@@ -149,73 +132,43 @@ export default function SignupPage() {
         </div>
       </div>
 
-      <Button 
-        variant="outline" 
-        className="w-full h-12 rounded-full border-[#DADCE0] text-[#5F6368] font-medium hover:bg-[#F8F9FA] transition-colors mb-6" 
+      <Button
+        variant="outline"
+        className="w-full h-11 rounded-full border-border text-foreground font-medium hover:bg-muted transition-colors mb-5"
         onClick={handleGoogleSignIn}
         disabled={loading}
       >
-        <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 mr-3" />
-        Sign up with Google
+        <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continue with Google
       </Button>
 
-      <div className="flex items-center my-6">
-        <div className="flex-1 border-t border-[#DADCE0]"></div>
-        <span className="px-4 text-sm text-[#5F6368] font-medium uppercase tracking-wider">or register with email</span>
-        <div className="flex-1 border-t border-[#DADCE0]"></div>
+      <div className="flex items-center my-5">
+        <div className="flex-1 border-t border-border" />
+        <span className="px-4 text-xs text-muted-foreground uppercase tracking-wider">or email</span>
+        <div className="flex-1 border-t border-border" />
       </div>
 
       <form onSubmit={handleEmailSignUp} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name" className="text-[#202124] font-medium">Full Name</Label>
-          <Input 
-            id="name" 
-            type="text" 
-            placeholder="John Doe" 
-            className="h-12 rounded-xl border-[#DADCE0] focus:ring-google-blue focus:border-google-blue transition-all" 
-            value={name}
-            onChange={e => setName(e.target.value)}
-            disabled={loading}
-          />
+        <div className="space-y-1.5">
+          <Label htmlFor="name">Full Name</Label>
+          <Input id="name" type="text" placeholder="Jane Doe" className="h-11 rounded-xl" value={name} onChange={e => setName(e.target.value)} disabled={loading} />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="email" className="text-[#202124] font-medium">Email address</Label>
-          <Input 
-            id="email" 
-            type="email" 
-            placeholder="name@example.com" 
-            className="h-12 rounded-xl border-[#DADCE0] focus:ring-google-blue focus:border-google-blue transition-all" 
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            disabled={loading}
-          />
+        <div className="space-y-1.5">
+          <Label htmlFor="email">Email address</Label>
+          <Input id="email" type="email" placeholder="name@example.com" className="h-11 rounded-xl" value={email} onChange={e => setEmail(e.target.value)} disabled={loading} />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="password" className="text-[#202124] font-medium">Password</Label>
-          <Input 
-            id="password" 
-            type="password" 
-            placeholder="••••••••" 
-            className="h-12 rounded-xl border-[#DADCE0] focus:ring-google-blue focus:border-google-blue transition-all" 
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            disabled={loading}
-          />
+        <div className="space-y-1.5">
+          <Label htmlFor="password">Password</Label>
+          <Input id="password" type="password" placeholder="••••••••" className="h-11 rounded-xl" value={password} onChange={e => setPassword(e.target.value)} disabled={loading} />
         </div>
-        <Button 
-          type="submit" 
-          className="w-full h-12 mt-2 rounded-full bg-google-blue hover:bg-[#1967D2] text-white font-medium text-base shadow-google-soft hover:shadow-google-hover transition-all" 
-          disabled={loading}
-        >
-          Create Account
+        <Button type="submit" className="w-full h-11 rounded-full bg-primary hover:bg-primary/90 text-white font-semibold" disabled={loading}>
+          {loading ? 'Creating account…' : 'Create Account'}
         </Button>
       </form>
 
-      <p className="text-center mt-8 text-[#5F6368]">
+      <p className="text-center mt-6 text-sm text-muted-foreground">
         Already have an account?{' '}
-        <Link href="/login" className="text-google-blue font-bold hover:underline">
-          Sign In
-        </Link>
+        <Link href="/login" className="text-primary font-semibold hover:underline">Sign In</Link>
       </p>
     </motion.div>
   );

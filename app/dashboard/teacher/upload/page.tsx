@@ -1,145 +1,255 @@
 'use client';
 
 import { useState } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { UploadCloud, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI } from '@google/genai';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-// NOTE: Uses NEXT_PUBLIC_GEMINI_API_KEY as per standard AI Studio requirements
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || '' });
+import { useAuthSTORE } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { saveAiOutputsToLesson, createCourse, createModule, createLesson, getTeacherCourses, Course, AiOutputs } from '@/lib/db';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { Sparkles, CheckCircle2, Upload, BookOpen, Plus } from 'lucide-react';
+import { useEffect } from 'react';
 
 const FORMATS = [
-  'Audio Script', 'Video Script', 'Mind Map JSON', 'Infographic Data', 
-  'Slide Deck', 'Data Tables', 'Flashcards', 'Quizzes', 
-  'Summary Report', 'Revision Notes', 'Cheat Sheet'
+  { id: 'text', label: 'Lesson Text' },
+  { id: 'flashcards', label: 'Flashcards' },
+  { id: 'quiz', label: 'Quiz' },
+  { id: 'slides', label: 'Slides' },
+  { id: 'notes', label: 'Study Notes' },
+  { id: 'summary', label: 'Summary' },
+  { id: 'problems', label: 'Practice Problems' },
+  { id: 'glossary', label: 'Glossary' },
+  { id: 'mindmap', label: 'Mind Map' },
+  { id: 'infographic', label: 'Infographic' },
 ];
 
-export default function ContentUploadFlow() {
-  const [file, setFile] = useState<File | null>(null);
-  const [textContext, setTextContext] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [currentStep, setCurrentStep] = useState('Idle');
-  const [results, setResults] = useState<Record<string, string>>({});
+export default function UploadPage() {
+  const { user, profile } = useAuthSTORE();
+  const [content, setContent] = useState('');
+  const [lessonTitle, setLessonTitle] = useState('');
+  const [courseTitle, setCourseTitle] = useState('');
+  const [courseSubject, setCourseSubject] = useState('');
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('new');
+  const [generatedOutputs, setGeneratedOutputs] = useState<AiOutputs>({});
+  const [progress, setProgress] = useState<Record<string, 'pending' | 'done' | 'error'>>({});
+  const [generating, setGenerating] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [published, setPublished] = useState(false);
 
-  const handleUpload = async () => {
-    if (!textContext) return;
-    setIsProcessing(true);
-    setProgress(10);
-    setCurrentStep('Extracting knowledge...');
-    
-    // Simulate extraction delay
-    await new Promise(r => setTimeout(r, 1500));
-    setProgress(30);
+  useEffect(() => {
+    if (!user) return;
+    getTeacherCourses(user.uid).then(setCourses);
+  }, [user]);
 
+  const generateFormat = async (format: string): Promise<unknown> => {
+    setProgress(p => ({ ...p, [format]: 'pending' }));
+    const res = await fetch('/api/ai/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content, format }),
+    });
+    if (!res.ok) throw new Error(`Failed: ${format}`);
+    const data = await res.json();
+    setProgress(p => ({ ...p, [format]: 'done' }));
+    return data.result;
+  };
+
+  const handleGenerate = async () => {
+    if (!content.trim() || content.trim().length < 50) {
+      toast.error('Please enter at least 50 characters of content.');
+      return;
+    }
+    if (!lessonTitle.trim()) { toast.error('Enter a lesson title.'); return; }
+
+    setGenerating(true);
+    setGeneratedOutputs({});
+    setProgress({});
+    setPublished(false);
+
+    const outputs: AiOutputs = {};
+    const formatIds = FORMATS.map(f => f.id);
+
+    for (const format of formatIds) {
+      try {
+        const result = await generateFormat(format);
+        (outputs as Record<string, unknown>)[format] = result;
+        setGeneratedOutputs({ ...outputs });
+      } catch {
+        setProgress(p => ({ ...p, [format]: 'error' }));
+      }
+    }
+
+    setGenerating(false);
+    toast.success('All formats generated! Review and publish.');
+  };
+
+  const handlePublish = async () => {
+    if (!user) return;
+    if (!lessonTitle.trim()) { toast.error('Enter a lesson title.'); return; }
+
+    setPublishing(true);
     try {
-      // In a real app, we'd run these in parallel or use structured outputs.
-      // For this demo, we'll ask Gemini to generate everything at once using a big prompt,
-      // or sequentially to show progress. Let's do a fast multi-turn approach.
-      
-      const newResults: Record<string, string> = {};
-      
-      for (let i = 0; i < FORMATS.length; i++) {
-        const format = FORMATS[i];
-        setCurrentStep(`Generating ${format}...`);
-        setProgress(30 + Math.floor(((i + 1) / FORMATS.length) * 60));
-        
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-pro',
-            contents: `You are an expert curriculum designer. Based on the following source text, generate a ${format}. Output ONLY the generated content, no markdown wrappers unless it is exactly requested. For facts, append [Source: Document, P1]. Text: ${textContext.substring(0, 3000)}`
+      let courseId = selectedCourseId;
+
+      if (selectedCourseId === 'new') {
+        if (!courseTitle.trim()) { toast.error('Enter a course title.'); setPublishing(false); return; }
+        courseId = await createCourse({
+          title: courseTitle.trim(),
+          description: `${courseSubject} course`,
+          subject: courseSubject || 'General',
+          ownerId: user.uid,
+          ownerName: profile?.name,
+          status: 'published',
+          thumbnailUrl: '',
         });
-        
-        newResults[format] = response.text || 'Failed to generate';
       }
 
-      setResults(newResults);
-      setProgress(100);
-      setCurrentStep('Complete');
-    } catch (e) {
-      console.error(e);
-      setCurrentStep('Failed to generate content: ' + String(e));
+      const moduleId = await createModule(courseId, {
+        title: 'Module 1',
+        description: '',
+        courseId,
+        order: 1,
+      });
+
+      const lessonId = await createLesson(courseId, moduleId, {
+        title: lessonTitle.trim(),
+        moduleId,
+        courseId,
+        order: 1,
+        contentSources: [{ type: 'text', value: content }],
+        status: 'published',
+      });
+
+      await saveAiOutputsToLesson(courseId, moduleId, lessonId, generatedOutputs);
+
+      setPublished(true);
+      toast.success('Lesson published! Students can now access it.');
+    } catch (e: any) {
+      toast.error('Failed to publish: ' + e.message);
     } finally {
-      setIsProcessing(false);
+      setPublishing(false);
     }
   };
 
+  const totalDone = Object.values(progress).filter(v => v === 'done').length;
+  const totalFormats = FORMATS.length;
+
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-[#202124]">AI Content Transformation Engine</h1>
-        <p className="text-[#5F6368]">Upload your raw material, and let Gemini 2.5 Pro generate 11 different learning formats instantly.</p>
+        <h1 className="text-2xl font-extrabold text-foreground tracking-tight">AI Lesson Generator</h1>
+        <p className="text-muted-foreground text-sm mt-1">Paste your lesson content and AI will transform it into {totalFormats} learning formats.</p>
       </div>
 
-      {!Object.keys(results).length ? (
-        <Card className="p-8 border-dashed border-2 border-[#DADCE0] bg-[#F8F9FA] flex flex-col items-center justify-center min-h-[400px]">
-          <UploadCloud className="w-16 h-16 text-google-blue mb-4" />
-          <h2 className="text-xl font-bold mb-2">Drag & drop your material</h2>
-          <p className="text-[#5F6368] mb-6">Supports PDF, DOCX, TXT, or paste your text below.</p>
-          
-          <textarea 
-            className="w-full max-w-2xl h-48 p-4 rounded-xl border border-[#DADCE0] focus:ring-2 ring-google-blue outline-none mb-6"
-            placeholder="Or paste your transcript / lesson text here..."
-            value={textContext}
-            onChange={(e) => setTextContext(e.target.value)}
+      {/* Input */}
+      <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label>Lesson Title *</Label>
+            <Input value={lessonTitle} onChange={e => setLessonTitle(e.target.value)} placeholder="e.g. Cellular Respiration" className="rounded-xl h-11" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Publish to Course</Label>
+            <select
+              value={selectedCourseId}
+              onChange={e => setSelectedCourseId(e.target.value)}
+              className="w-full h-11 rounded-xl border border-input bg-background px-3 text-sm text-foreground"
+            >
+              <option value="new">+ Create new course</option>
+              {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {selectedCourseId === 'new' && (
+          <div className="grid sm:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-xl border border-dashed border-border">
+            <div className="space-y-1.5">
+              <Label>New Course Title *</Label>
+              <Input value={courseTitle} onChange={e => setCourseTitle(e.target.value)} placeholder="e.g. Biology 101" className="rounded-xl h-11" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Subject</Label>
+              <Input value={courseSubject} onChange={e => setCourseSubject(e.target.value)} placeholder="e.g. Biology" className="rounded-xl h-11" />
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-1.5">
+          <Label>Lesson Content *</Label>
+          <Textarea
+            value={content}
+            onChange={e => setContent(e.target.value)}
+            placeholder="Paste your lesson text, notes, or lecture content here (minimum 50 characters)…"
+            className="min-h-40 rounded-xl text-sm resize-none"
           />
+          <p className="text-xs text-muted-foreground text-right">{content.length} characters</p>
+        </div>
 
-          {!isProcessing ? (
-            <Button size="lg" className="rounded-full h-12 px-8 bg-google-blue" onClick={handleUpload} disabled={!textContext}>
-              <Sparkles className="w-5 h-5 mr-2" />
-              Generate 11 Formats
-            </Button>
-          ) : (
-            <div className="w-full max-w-md space-y-4">
-              <div className="flex justify-between text-sm font-medium">
-                <span className="text-[#202124]">{currentStep}</span>
-                <span className="text-google-blue">{progress}%</span>
-              </div>
-              <Progress value={progress} className="h-2" />
-            </div>
-          )}
-        </Card>
-      ) : (
-        <AnimatePresence>
-          <motion.div initial={{opacity:0, scale:0.95}} animate={{opacity:1, scale:1}}>
-            <h2 className="text-2xl font-bold text-[#202124] mb-4">Review AI Outputs</h2>
-            <Tabs defaultValue={FORMATS[0]} className="w-full">
-              <TabsList className="bg-[#E8F0FE] text-google-blue flex-wrap h-auto p-2 justify-start mb-6">
-                {FORMATS.map(f => (
-                  <TabsTrigger key={f} value={f} className="data-[state=active]:bg-white data-[state=active]:text-[#1967D2] data-[state=active]:shadow-sm rounded-lg px-4 py-2">
-                    {f}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              {FORMATS.map(f => (
-                <TabsContent key={f} value={f}>
-                  <Card className="p-6 bg-white shadow-google-soft border-[#DADCE0] min-h-[400px]">
-                    <div className="flex justify-between items-center mb-6">
-                      <h3 className="text-lg font-bold text-[#202124]">{f}</h3>
-                      <div className="space-x-2">
-                        <Button variant="outline" className="rounded-full">Edit</Button>
-                        <Button className="rounded-full bg-google-teal hover:bg-[#00796B]">Approve</Button>
-                      </div>
-                    </div>
-                    <div className="whitespace-pre-wrap text-[#5F6368] font-sans h-[500px] overflow-y-auto">
-                      {results[f] || 'No content generated.'}
-                    </div>
-                  </Card>
-                </TabsContent>
-              ))}
-            </Tabs>
+        <Button
+          onClick={handleGenerate}
+          disabled={generating || content.trim().length < 50}
+          className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white gap-2"
+        >
+          <Sparkles className="w-4 h-4" />
+          {generating ? `Generating… (${totalDone}/${totalFormats})` : `Generate All ${totalFormats} Formats with AI`}
+        </Button>
+      </div>
 
-            <div className="mt-8 flex justify-end">
-              <Button size="lg" className="rounded-full h-14 px-8 bg-google-blue text-lg shadow-google-hover">
-                <CheckCircle2 className="w-5 h-5 mr-2" />
-                Publish to Students
-              </Button>
-            </div>
-          </motion.div>
-        </AnimatePresence>
+      {/* Progress */}
+      {Object.keys(progress).length > 0 && (
+        <div className="bg-card border border-border rounded-2xl p-6">
+          <h3 className="font-bold text-foreground mb-4">Generation Progress</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {FORMATS.map(f => {
+              const status = progress[f.id];
+              return (
+                <div key={f.id} className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-medium ${
+                  status === 'done' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+                  status === 'error' ? 'bg-red-50 border-red-200 text-red-700' :
+                  status === 'pending' ? 'bg-blue-50 border-blue-200 text-blue-700 animate-pulse' :
+                  'bg-muted border-border text-muted-foreground'
+                }`}>
+                  {status === 'done' ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> :
+                   status === 'pending' ? <div className="w-3.5 h-3.5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin shrink-0" /> :
+                   <div className="w-3.5 h-3.5 rounded-full border-2 border-muted-foreground/30 shrink-0" />}
+                  {f.label}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Publish */}
+      {totalDone > 0 && !published && (
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-6 flex items-center justify-between gap-4"
+        >
+          <div>
+            <h3 className="font-bold text-foreground">{totalDone}/{totalFormats} formats ready</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">Publish to make this lesson available to enrolled students.</p>
+          </div>
+          <Button onClick={handlePublish} disabled={publishing} className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shrink-0">
+            {publishing ? 'Publishing…' : 'Publish Lesson'}
+          </Button>
+        </motion.div>
+      )}
+
+      {published && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center">
+          <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
+          <h3 className="font-bold text-foreground text-lg">Lesson Published!</h3>
+          <p className="text-sm text-muted-foreground mt-1">Students enrolled in this course can now access all {totalDone} generated formats.</p>
+          <Button variant="outline" className="mt-4 rounded-xl" onClick={() => { setPublished(false); setContent(''); setLessonTitle(''); setGeneratedOutputs({}); setProgress({}); }}>
+            <Plus className="w-4 h-4 mr-2" /> Create Another Lesson
+          </Button>
+        </div>
       )}
     </div>
   );
