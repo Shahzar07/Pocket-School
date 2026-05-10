@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenAI } from '@google/genai';
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+import { callOpenRouter, FAST_MODEL } from '@/lib/openrouter';
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,34 +15,32 @@ Correct Answer: "${correctAnswer}"
 Student's Answer: "${studentAnswer}"
 ${explanation ? `Explanation: "${explanation}"` : ''}
 
-Grade the student's answer. If it's a multiple-choice question, check if the answers match exactly (case-insensitive). For short-answer questions, check if the student's answer demonstrates understanding of the key concept, even if worded differently.
+Grade the student's answer. For multiple-choice, check if the answers match exactly (case-insensitive). For short-answer, check if the student demonstrates understanding of the key concept, even if worded differently.
 
-Respond with ONLY a JSON object with these fields:
-- "correct": boolean
-- "score": number (0 or 1)
-- "feedback": string (1-2 encouraging sentences explaining why the answer is right or wrong and what to remember)`;
+Respond with ONLY a JSON object — no other text:
+{"correct":true,"score":1,"feedback":"...1-2 encouraging sentences..."}`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
-      contents: prompt,
-    });
+    const text = await callOpenRouter(
+      [{ role: 'user', content: prompt }],
+      { model: FAST_MODEL, temperature: 0.3 }
+    );
 
-    const text = response.text ?? '';
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      return NextResponse.json(parsed);
+      try {
+        return NextResponse.json(JSON.parse(jsonMatch[0]));
+      } catch { /* fall through */ }
     }
 
     // Fallback: simple string match
-    const correct = studentAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
+    const correct = String(studentAnswer).toLowerCase().trim() === String(correctAnswer).toLowerCase().trim();
     return NextResponse.json({
       correct,
       score: correct ? 1 : 0,
-      feedback: correct ? 'Correct! Well done.' : `The correct answer is: ${correctAnswer}. ${explanation || ''}`,
+      feedback: correct ? 'Correct! Well done.' : `The correct answer is: ${correctAnswer}. ${explanation ?? ''}`,
     });
   } catch (err: any) {
-    console.error('Quiz grade error:', err);
+    console.error('[quiz-grade]', err);
     return NextResponse.json({ error: err.message || 'Grading failed' }, { status: 500 });
   }
 }

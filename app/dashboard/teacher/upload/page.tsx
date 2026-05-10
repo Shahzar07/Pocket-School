@@ -1,19 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, getDocs, query, where, orderBy } from 'firebase/firestore';
-import { saveAiOutputsToLesson, createCourse, createModule, createLesson, getTeacherCourses, Course, AiOutputs } from '@/lib/db';
+import {
+  saveAiOutputsToLesson, createCourse, createModule, createLesson,
+  getTeacherCourses, getModules, Course, Module, AiOutputs,
+} from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Sparkles, CheckCircle2, Upload, BookOpen, Plus } from 'lucide-react';
-import { useEffect } from 'react';
+import { Sparkles, CheckCircle2, BookOpen, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
 
 const FORMATS = [
   { id: 'text', label: 'Lesson Text' },
@@ -28,24 +28,54 @@ const FORMATS = [
   { id: 'infographic', label: 'Infographic' },
 ];
 
+interface SessionLesson {
+  title: string;
+  courseTitle: string;
+  moduleTitle: string;
+  courseId: string;
+  lessonId: string;
+}
+
 export default function UploadPage() {
   const { user, profile } = useAuthSTORE();
-  const [content, setContent] = useState('');
-  const [lessonTitle, setLessonTitle] = useState('');
+
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState('new');
   const [courseTitle, setCourseTitle] = useState('');
   const [courseSubject, setCourseSubject] = useState('');
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [selectedCourseId, setSelectedCourseId] = useState<string>('new');
+  const [modules, setModules] = useState<Module[]>([]);
+  const [selectedModuleId, setSelectedModuleId] = useState('new');
+  const [moduleTitle, setModuleTitle] = useState('');
+  const [modulesLoading, setModulesLoading] = useState(false);
+
+  const [lessonTitle, setLessonTitle] = useState('');
+  const [content, setContent] = useState('');
   const [generatedOutputs, setGeneratedOutputs] = useState<AiOutputs>({});
   const [progress, setProgress] = useState<Record<string, 'pending' | 'done' | 'error'>>({});
   const [generating, setGenerating] = useState(false);
   const [publishing, setPublishing] = useState(false);
-  const [published, setPublished] = useState(false);
+
+  const [sessionLessons, setSessionLessons] = useState<SessionLesson[]>([]);
+  const [sessionOpen, setSessionOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     getTeacherCourses(user.uid).then(setCourses);
   }, [user]);
+
+  useEffect(() => {
+    if (selectedCourseId === 'new') {
+      setModules([]);
+      setSelectedModuleId('new');
+      return;
+    }
+    setModulesLoading(true);
+    getModules(selectedCourseId).then(mods => {
+      setModules(mods);
+      setSelectedModuleId(mods.length > 0 ? mods[0].id! : 'new');
+      setModulesLoading(false);
+    });
+  }, [selectedCourseId]);
 
   const generateFormat = async (format: string): Promise<unknown> => {
     setProgress(p => ({ ...p, [format]: 'pending' }));
@@ -70,21 +100,17 @@ export default function UploadPage() {
     setGenerating(true);
     setGeneratedOutputs({});
     setProgress({});
-    setPublished(false);
 
     const outputs: AiOutputs = {};
-    const formatIds = FORMATS.map(f => f.id);
-
-    for (const format of formatIds) {
+    for (const { id } of FORMATS) {
       try {
-        const result = await generateFormat(format);
-        (outputs as Record<string, unknown>)[format] = result;
+        const result = await generateFormat(id);
+        (outputs as Record<string, unknown>)[id] = result;
         setGeneratedOutputs({ ...outputs });
       } catch {
-        setProgress(p => ({ ...p, [format]: 'error' }));
+        setProgress(p => ({ ...p, [id]: 'error' }));
       }
     }
-
     setGenerating(false);
     toast.success('All formats generated! Review and publish.');
   };
@@ -92,30 +118,48 @@ export default function UploadPage() {
   const handlePublish = async () => {
     if (!user) return;
     if (!lessonTitle.trim()) { toast.error('Enter a lesson title.'); return; }
+    if (Object.keys(generatedOutputs).length === 0) { toast.error('Generate content first.'); return; }
 
     setPublishing(true);
     try {
       let courseId = selectedCourseId;
+      let resolvedCourseTitle = courses.find(c => c.id === courseId)?.title ?? courseTitle;
 
       if (selectedCourseId === 'new') {
         if (!courseTitle.trim()) { toast.error('Enter a course title.'); setPublishing(false); return; }
         courseId = await createCourse({
           title: courseTitle.trim(),
-          description: `${courseSubject} course`,
+          description: `${courseSubject || 'General'} course`,
           subject: courseSubject || 'General',
           ownerId: user.uid,
           ownerName: profile?.name,
           status: 'published',
           thumbnailUrl: '',
         });
+        resolvedCourseTitle = courseTitle.trim();
+        const updated = await getTeacherCourses(user.uid);
+        setCourses(updated);
+        setSelectedCourseId(courseId);
+        setCourseTitle('');
       }
 
-      const moduleId = await createModule(courseId, {
-        title: 'Module 1',
-        description: '',
-        courseId,
-        order: 1,
-      });
+      let moduleId = selectedModuleId;
+      let resolvedModuleTitle = modules.find(m => m.id === moduleId)?.title ?? moduleTitle;
+
+      if (selectedModuleId === 'new') {
+        const mTitle = moduleTitle.trim() || `Module ${modules.length + 1}`;
+        moduleId = await createModule(courseId, {
+          title: mTitle,
+          description: '',
+          courseId,
+          order: modules.length + 1,
+        });
+        resolvedModuleTitle = mTitle;
+        const updatedMods = await getModules(courseId);
+        setModules(updatedMods);
+        setSelectedModuleId(moduleId);
+        setModuleTitle('');
+      }
 
       const lessonId = await createLesson(courseId, moduleId, {
         title: lessonTitle.trim(),
@@ -128,8 +172,22 @@ export default function UploadPage() {
 
       await saveAiOutputsToLesson(courseId, moduleId, lessonId, generatedOutputs);
 
-      setPublished(true);
-      toast.success('Lesson published! Students can now access it.');
+      setSessionLessons(prev => [{
+        title: lessonTitle.trim(),
+        courseTitle: resolvedCourseTitle,
+        moduleTitle: resolvedModuleTitle,
+        courseId,
+        lessonId,
+      }, ...prev]);
+      setSessionOpen(true);
+
+      // Reset lesson form only — keep course/module selection
+      setLessonTitle('');
+      setContent('');
+      setGeneratedOutputs({});
+      setProgress({});
+
+      toast.success("Lesson published! Add another or you're done.");
     } catch (e: any) {
       toast.error('Failed to publish: ' + e.message);
     } finally {
@@ -139,15 +197,17 @@ export default function UploadPage() {
 
   const totalDone = Object.values(progress).filter(v => v === 'done').length;
   const totalFormats = FORMATS.length;
+  const canPublish = totalDone > 0 && !generating;
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8">
       <div>
         <h1 className="text-2xl font-extrabold text-foreground tracking-tight">AI Lesson Generator</h1>
-        <p className="text-muted-foreground text-sm mt-1">Paste your lesson content and AI will transform it into {totalFormats} learning formats.</p>
+        <p className="text-muted-foreground text-sm mt-1">
+          Paste content → generate {totalFormats} AI formats → publish. Add as many lessons as you want in one session.
+        </p>
       </div>
 
-      {/* Input */}
       <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
@@ -155,7 +215,7 @@ export default function UploadPage() {
             <Input value={lessonTitle} onChange={e => setLessonTitle(e.target.value)} placeholder="e.g. Cellular Respiration" className="rounded-xl h-11" />
           </div>
           <div className="space-y-1.5">
-            <Label>Publish to Course</Label>
+            <Label>Course</Label>
             <select
               value={selectedCourseId}
               onChange={e => setSelectedCourseId(e.target.value)}
@@ -180,6 +240,37 @@ export default function UploadPage() {
           </div>
         )}
 
+        {selectedCourseId !== 'new' && (
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>
+                Module
+                {modulesLoading && <span className="text-xs text-muted-foreground ml-1">(loading…)</span>}
+              </Label>
+              <select
+                value={selectedModuleId}
+                onChange={e => setSelectedModuleId(e.target.value)}
+                className="w-full h-11 rounded-xl border border-input bg-background px-3 text-sm text-foreground"
+                disabled={modulesLoading}
+              >
+                {modules.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
+                <option value="new">+ Create new module</option>
+              </select>
+            </div>
+            {selectedModuleId === 'new' && (
+              <div className="space-y-1.5">
+                <Label>New Module Title</Label>
+                <Input
+                  value={moduleTitle}
+                  onChange={e => setModuleTitle(e.target.value)}
+                  placeholder={`e.g. Module ${modules.length + 1}`}
+                  className="rounded-xl h-11"
+                />
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="space-y-1.5">
           <Label>Lesson Content *</Label>
           <Textarea
@@ -201,7 +292,6 @@ export default function UploadPage() {
         </Button>
       </div>
 
-      {/* Progress */}
       {Object.keys(progress).length > 0 && (
         <div className="bg-card border border-border rounded-2xl p-6">
           <h3 className="font-bold text-foreground mb-4">Generation Progress</h3>
@@ -226,8 +316,7 @@ export default function UploadPage() {
         </div>
       )}
 
-      {/* Publish */}
-      {totalDone > 0 && !published && (
+      {canPublish && (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
           className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-6 flex items-center justify-between gap-4"
         >
@@ -235,20 +324,52 @@ export default function UploadPage() {
             <h3 className="font-bold text-foreground">{totalDone}/{totalFormats} formats ready</h3>
             <p className="text-sm text-muted-foreground mt-0.5">Publish to make this lesson available to enrolled students.</p>
           </div>
-          <Button onClick={handlePublish} disabled={publishing} className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shrink-0">
+          <Button onClick={handlePublish} disabled={publishing} className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 gap-2">
+            <BookOpen className="w-4 h-4" />
             {publishing ? 'Publishing…' : 'Publish Lesson'}
           </Button>
         </motion.div>
       )}
 
-      {published && (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center">
-          <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-          <h3 className="font-bold text-foreground text-lg">Lesson Published!</h3>
-          <p className="text-sm text-muted-foreground mt-1">Students enrolled in this course can now access all {totalDone} generated formats.</p>
-          <Button variant="outline" className="mt-4 rounded-xl" onClick={() => { setPublished(false); setContent(''); setLessonTitle(''); setGeneratedOutputs({}); setProgress({}); }}>
-            <Plus className="w-4 h-4 mr-2" /> Create Another Lesson
-          </Button>
+      {sessionLessons.length > 0 && (
+        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+          <button
+            onClick={() => setSessionOpen(o => !o)}
+            className="w-full flex items-center justify-between p-5 text-left hover:bg-muted/30 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div>
+                <p className="font-bold text-foreground text-sm">Published this session ({sessionLessons.length})</p>
+                <p className="text-xs text-muted-foreground">Click to {sessionOpen ? 'collapse' : 'expand'}</p>
+              </div>
+            </div>
+            {sessionOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          </button>
+
+          <AnimatePresence>
+            {sessionOpen && (
+              <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
+                <div className="border-t border-border divide-y divide-border">
+                  {sessionLessons.map((sl, i) => (
+                    <div key={i} className="flex items-center gap-4 px-5 py-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-foreground text-sm truncate">{sl.title}</p>
+                        <p className="text-xs text-muted-foreground truncate">{sl.courseTitle} · {sl.moduleTitle}</p>
+                      </div>
+                      <Button size="sm" variant="ghost" className="rounded-xl text-xs gap-1.5 shrink-0" asChild>
+                        <Link href={`/dashboard/student/courses/${sl.courseId}`}>
+                          <ExternalLink className="w-3.5 h-3.5" /> View Course
+                        </Link>
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </div>

@@ -1,52 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenAI } from '@google/genai';
+import { callOpenRouter, SMART_MODEL } from '@/lib/openrouter';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+const PROMPTS: Record<string, (c: string) => string> = {
+  text: (c) => `You are an expert educator. Transform the following raw lesson content into a well-structured, engaging lesson in Markdown format. Use headers (##, ###), bullet points, **bold** key terms, and clear explanations. Make it comprehensive yet readable.\n\nLesson content:\n${c}`,
+
+  flashcards: (c) => `You are a study expert. Create 6-8 high-quality flashcard pairs from this lesson content. Return ONLY a valid JSON array, no prose before or after it:\n[{"question":"...","answer":"..."}]\n\nLesson content:\n${c}`,
+
+  quiz: (c) => `You are an assessment expert. Create 5 multiple-choice quiz questions from this lesson content. Return ONLY a valid JSON array, no prose before or after it:\n[{"question":"...","options":["A","B","C","D"],"answer":"A","explanation":"why A is correct"}]\n\nLesson content:\n${c}`,
+
+  slides: (c) => `You are a presentation designer. Create 5-6 presentation slides from this lesson content. Return ONLY a valid JSON array, no prose before or after it:\n[{"title":"...","bullets":["...","...","..."]}]\n\nLesson content:\n${c}`,
+
+  notes: (c) => `You are a study notes expert. Create concise, well-structured study notes from this lesson content in Markdown. Include **bold** key terms, bullet points, and memory aids or mnemonics where helpful.\n\nLesson content:\n${c}`,
+
+  summary: (c) => `You are an expert summariser. Write a clear, concise 3-5 sentence summary of this lesson content that captures all the essential takeaways. Use accessible language.\n\nLesson content:\n${c}`,
+
+  problems: (c) => `You are a practice problems creator. Create 4-5 practice problems from this lesson content. Mix difficulty levels. For each, provide the problem statement and a detailed worked solution. Format in Markdown.\n\nLesson content:\n${c}`,
+
+  glossary: (c) => `You are a vocabulary expert. Extract 6-8 key terms from this lesson content and provide clear, concise definitions. Return ONLY a valid JSON array, no prose before or after it:\n[{"term":"...","definition":"..."}]\n\nLesson content:\n${c}`,
+
+  mindmap: (c) => `You are a mind mapping expert. Create a text-based mind map of this lesson content in Markdown. Use headings for main branches and nested bullet points for sub-branches. Put the main topic at the top.\n\nLesson content:\n${c}`,
+
+  infographic: (c) => `You are a visual learning expert. Create structured text-based infographic content for this lesson in Markdown. Use clear sections, key facts in blockquotes, bold statistics, and visual separators (---). Make it scannable.\n\nLesson content:\n${c}`,
+};
+
+const JSON_FORMATS = new Set(['flashcards', 'quiz', 'slides', 'glossary']);
 
 export async function POST(req: NextRequest) {
   try {
     const { content, format } = await req.json();
     if (!content) return NextResponse.json({ error: 'content is required' }, { status: 400 });
 
-    const prompts: Record<string, string> = {
-      text: `You are an expert educator. Transform the following content into a comprehensive, well-structured lesson in Markdown format. Use headings, bullet points, bold key terms, tables where helpful, and practical examples. Make it engaging and thorough.\n\nContent:\n${content}`,
-      flashcards: `You are a study expert. Create 6-10 high-quality flashcards from the following content. Return ONLY a valid JSON array of objects with "question" and "answer" fields. Each answer should be 1-3 sentences.\n\nContent:\n${content}\n\nReturn only the JSON array, no other text.`,
-      quiz: `You are an assessment expert. Create 4-6 multiple-choice quiz questions from the following content. Return ONLY a valid JSON array of objects with fields: "question" (string), "options" (array of 4 strings), "answer" (string matching one option exactly), "explanation" (string explaining why the answer is correct).\n\nContent:\n${content}\n\nReturn only the JSON array, no other text.`,
-      slides: `You are a presentation designer. Create 5-7 presentation slides from the following content. Return ONLY a valid JSON array of objects with "title" (string) and "bullets" (array of 3-5 concise strings) fields.\n\nContent:\n${content}\n\nReturn only the JSON array, no other text.`,
-      notes: `You are a study notes expert. Create concise, well-structured study notes from the following content in Markdown format. Include key terms in bold, use bullet points, and add memory aids or mnemonics where helpful.\n\nContent:\n${content}`,
-      summary: `You are an expert summariser. Write a concise 3-5 sentence summary of the following content that captures all the essential information. Use clear, accessible language.\n\nContent:\n${content}`,
-      problems: `You are a practice problems creator. Create 5 practice problems from the following content. Mix difficulty levels. For each problem, provide the problem statement and a detailed worked solution. Format in Markdown.\n\nContent:\n${content}`,
-      glossary: `You are a vocabulary expert. Extract 6-10 key terms from the following content and provide clear, concise definitions. Return ONLY a valid JSON array of objects with "term" and "definition" fields.\n\nContent:\n${content}\n\nReturn only the JSON array, no other text.`,
-      mindmap: `You are a mind mapping expert. Create a text-based mind map of the following content using Markdown. Use nested bullet points to show relationships, with the main topic at the top and subtopics branching below.\n\nContent:\n${content}`,
-      infographic: `You are a visual learning expert. Create a structured text-based infographic outline for the following content in Markdown. Use clear sections, statistics or key facts in callout boxes (using blockquotes), and visual separators.\n\nContent:\n${content}`,
-    };
+    const promptFn = PROMPTS[format];
+    if (!promptFn) return NextResponse.json({ error: `Unknown format: ${format}` }, { status: 400 });
 
-    const prompt = prompts[format];
-    if (!prompt) return NextResponse.json({ error: `Unknown format: ${format}` }, { status: 400 });
+    const text = await callOpenRouter(
+      [{ role: 'user', content: promptFn(content) }],
+      { model: SMART_MODEL }
+    );
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
-      contents: prompt,
-    });
-
-    const text = response.text ?? '';
-
-    // Parse JSON formats
-    if (['flashcards', 'quiz', 'slides', 'glossary'].includes(format)) {
+    if (JSON_FORMATS.has(format)) {
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         try {
-          const parsed = JSON.parse(jsonMatch[0]);
-          return NextResponse.json({ result: parsed });
-        } catch {
-          return NextResponse.json({ result: text });
-        }
+          return NextResponse.json({ result: JSON.parse(jsonMatch[0]) });
+        } catch { /* fall through to text */ }
       }
     }
 
     return NextResponse.json({ result: text });
   } catch (err: any) {
-    console.error('AI generate error:', err);
+    console.error('[generate]', err);
     return NextResponse.json({ error: err.message || 'AI generation failed' }, { status: 500 });
   }
 }

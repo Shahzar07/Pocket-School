@@ -534,3 +534,16 @@ export async function seedDemoData(adminId: string): Promise<{ coursesCreated: n
 
   return { coursesCreated, lessonsCreated };
 }
+
+export async function getModules(courseId: string): Promise<Module[]> {
+  const snap = await getDocs(query(collection(db, 'courses', courseId, 'modules'), orderBy('order', 'asc')));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Module));
+}
+
+export async function getEnrollmentsForCourse(courseId: string): Promise<{ studentId: string; progress: number; completedLessons: string[] }[]> {
+  const snap = await getDocs(collection(db, 'courses', courseId, 'enrollments'));
+  return snap.docs.map(d => {
+    const data = d.data();
+    return { studentId: d.id, progress: data.progress ?? 0, completedLessons: data.completedLessons ?? [] };
+  });
+}

@@ -5,7 +5,6 @@ import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { getChildrenProfiles, getEnrolledCourses, UserProfile, Course, Enrollment } from '@/lib/db';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Zap, BookOpen, MessageSquare, Trophy, UserRound } from 'lucide-react';
@@ -18,7 +17,7 @@ interface ChildData {
 }
 
 export default function ParentDashboard() {
-  const { user, profile } = useAuthSTORE();
+  const { user } = useAuthSTORE();
   const [children, setChildren] = useState<ChildData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,7 +37,7 @@ export default function ParentDashboard() {
 
   if (loading) return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-4">
-      {[1,2].map(i => <div key={i} className="h-48 bg-muted animate-pulse rounded-2xl" />)}
+      {[1, 2].map(i => <div key={i} className="h-48 bg-muted animate-pulse rounded-2xl" />)}
     </div>
   );
 
@@ -48,9 +47,7 @@ export default function ParentDashboard() {
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
-            Parent Portal
-          </h1>
+          <h1 className="text-2xl font-extrabold text-foreground tracking-tight">Parent Portal</h1>
           <p className="text-muted-foreground text-sm mt-1">Monitor your child's progress and achievements.</p>
         </div>
         <Button variant="outline" className="rounded-xl gap-2" asChild>
@@ -65,21 +62,21 @@ export default function ParentDashboard() {
           <UserRound className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p className="font-semibold text-muted-foreground">No linked children yet.</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Link your child's account during onboarding or via profile settings.
+            Link your child's account via profile settings or during onboarding.
           </p>
         </div>
       ) : (
         <div className="space-y-8">
           {children.map(({ id, profile: childProfile, enrollments }, ci) => {
             const xp = childProfile.xp ?? 0;
-            const inProgress = enrollments.filter(e => (e.enrollment.completedLessons?.length ?? 0) > 0 && e.enrollment.completedAt === undefined);
-            const completed = enrollments.filter(e => e.enrollment.completedAt !== undefined);
+            // Use `progress` field (0–100) — completedAt does not exist in Enrollment
+            const completed = enrollments.filter(e => e.enrollment.progress === 100);
+            const inProgress = enrollments.filter(e => e.enrollment.progress > 0 && e.enrollment.progress < 100);
 
             return (
               <motion.div key={id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: ci * 0.1 }}
                 className="bg-card border border-border rounded-3xl overflow-hidden"
               >
-                {/* Child header */}
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
                   <div className="flex items-center gap-4">
                     <Avatar className="w-14 h-14 border-2 border-white/40">
@@ -89,7 +86,9 @@ export default function ParentDashboard() {
                     </Avatar>
                     <div className="flex-1">
                       <h2 className="text-xl font-extrabold">{childProfile.name}</h2>
-                      <p className="text-blue-200 text-sm capitalize">{childProfile.level || 'Student'} · {childProfile.learningStyle || 'Visual'} learner</p>
+                      <p className="text-blue-200 text-sm capitalize">
+                        {childProfile.level || 'Student'} · {childProfile.learningStyle || 'Visual'} learner
+                      </p>
                     </div>
                     <div className="text-right">
                       <div className="flex items-center gap-1.5 text-yellow-300 font-bold text-lg">
@@ -100,7 +99,6 @@ export default function ParentDashboard() {
                   </div>
                 </div>
 
-                {/* Stats row */}
                 <div className="grid grid-cols-3 divide-x divide-border border-b border-border">
                   {[
                     { label: 'Enrolled', value: enrollments.length, icon: <BookOpen className="w-4 h-4 text-blue-500" /> },
@@ -115,7 +113,6 @@ export default function ParentDashboard() {
                   ))}
                 </div>
 
-                {/* Course progress */}
                 <div className="p-6 space-y-4">
                   <h3 className="font-bold text-foreground text-sm">Course Progress</h3>
                   {enrollments.length === 0 ? (
@@ -123,14 +120,13 @@ export default function ParentDashboard() {
                   ) : (
                     <div className="space-y-4">
                       {enrollments.map(({ course, enrollment }) => {
+                        const pct = enrollment.progress ?? 0;
                         const done = enrollment.completedLessons?.length ?? 0;
-                        const total = enrollment.totalLessons ?? 1;
-                        const pct = Math.round((done / total) * 100);
                         return (
                           <div key={course.id}>
                             <div className="flex items-center justify-between mb-1.5">
-                              <p className="text-sm font-semibold text-foreground truncate max-w-[60%]">{course.title}</p>
-                              <span className="text-xs text-muted-foreground">{done}/{total} lessons</span>
+                              <p className="text-sm font-semibold text-foreground truncate max-w-[65%]">{course.title}</p>
+                              <span className="text-xs text-muted-foreground">{done} lessons done</span>
                             </div>
                             <Progress value={pct} className="h-2" />
                             <p className="text-xs text-muted-foreground mt-1">{pct}% complete</p>
