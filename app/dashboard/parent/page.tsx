@@ -1,83 +1,146 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { Card } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { getChildrenProfiles, getEnrolledCourses, UserProfile, Course, Enrollment } from '@/lib/db';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Calendar } from 'lucide-react';
-import { toast } from 'sonner';
+import { Progress } from '@/components/ui/progress';
+import { Zap, BookOpen, MessageSquare, Trophy, UserRound } from 'lucide-react';
+import Link from 'next/link';
+
+interface ChildData {
+  id: string;
+  profile: UserProfile;
+  enrollments: { course: Course; enrollment: Enrollment }[];
+}
 
 export default function ParentDashboard() {
-  const { profile } = useAuthSTORE();
+  const { user } = useAuthSTORE();
+  const [children, setChildren] = useState<ChildData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    getChildrenProfiles(user.uid).then(async (childProfiles) => {
+      const data: ChildData[] = await Promise.all(
+        childProfiles.map(async ({ id, data }) => {
+          const enrollments = await getEnrolledCourses(id);
+          return { id, profile: data, enrollments };
+        })
+      );
+      setChildren(data);
+      setLoading(false);
+    });
+  }, [user]);
+
+  if (loading) return (
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-4">
+      {[1, 2].map(i => <div key={i} className="h-48 bg-muted animate-pulse rounded-2xl" />)}
+    </div>
+  );
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-[#202124]">Parent Portal</h1>
-        <p className="text-[#5F6368]">Monitor your child's progress and achievements.</p>
-      </div>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+      >
+        <div>
+          <h1 className="text-2xl font-extrabold text-foreground tracking-tight">Parent Portal</h1>
+          <p className="text-muted-foreground text-sm mt-1">Monitor your child's progress and achievements.</p>
+        </div>
+        <Button variant="outline" className="rounded-xl gap-2" asChild>
+          <Link href="/dashboard/parent/communications">
+            <MessageSquare className="w-4 h-4" /> Messages
+          </Link>
+        </Button>
+      </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <Card className="col-span-1 lg:col-span-2 p-6 rounded-[24px] shadow-sm border border-[#DADCE0]">
-          <div className="flex items-center justify-between mb-8">
-             <div className="flex items-center gap-4">
-               <Avatar className="w-16 h-16">
-                 <AvatarFallback className="bg-google-blue text-white text-xl">S</AvatarFallback>
-               </Avatar>
-               <div>
-                 <h2 className="text-2xl font-bold text-[#202124]">Sarah's Progress</h2>
-                 <p className="text-[#5F6368]">Grade 8 • 4,250 XP total</p>
-               </div>
-             </div>
-             <Button onClick={() => toast.info('Opening messaging interface...')} variant="outline" className="rounded-full">
-               <MessageSquare className="w-4 h-4 mr-2" /> Message Teacher
-             </Button>
-          </div>
+      {children.length === 0 ? (
+        <div className="text-center py-20 bg-muted/30 rounded-2xl border border-dashed border-border">
+          <UserRound className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p className="font-semibold text-muted-foreground">No linked children yet.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Link your child's account via profile settings or during onboarding.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {children.map(({ id, profile: childProfile, enrollments }, ci) => {
+            const xp = childProfile.xp ?? 0;
+            // Use `progress` field (0–100) — completedAt does not exist in Enrollment
+            const completed = enrollments.filter(e => e.enrollment.progress === 100);
+            const inProgress = enrollments.filter(e => e.enrollment.progress > 0 && e.enrollment.progress < 100);
 
-          <div className="space-y-6">
-            <div onClick={() => toast.info('Viewing Mathematics detals...')} className="cursor-pointer hover:bg-[#F8F9FA] p-2 -mx-2 rounded-lg transition-colors">
-              <div className="flex justify-between font-medium mb-2">
-                <span className="text-[#202124]">Mathematics</span>
-                <span className="text-google-teal">A- (92%)</span>
-              </div>
-              <Progress value={92} className="h-3 bg-[#E0F2F1] [&>div]:bg-[#00897B]" />
-            </div>
-            <div onClick={() => toast.info('Viewing Science details...')} className="cursor-pointer hover:bg-[#F8F9FA] p-2 -mx-2 rounded-lg transition-colors">
-              <div className="flex justify-between font-medium mb-2">
-                <span className="text-[#202124]">Science</span>
-                <span className="text-google-blue">B+ (88%)</span>
-              </div>
-              <Progress value={88} className="h-3" />
-            </div>
-            <div onClick={() => toast.info('Viewing History details...')} className="cursor-pointer hover:bg-[#F8F9FA] p-2 -mx-2 rounded-lg transition-colors">
-              <div className="flex justify-between font-medium mb-2">
-                <span className="text-[#202124]">World History</span>
-                <span className="text-google-amber">B (85%)</span>
-              </div>
-              <Progress value={85} className="h-3 bg-[#FFF8E1] [&>div]:bg-[#F9AB00]" />
-            </div>
-          </div>
-        </Card>
+            return (
+              <motion.div key={id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: ci * 0.1 }}
+                className="bg-card border border-border rounded-3xl overflow-hidden"
+              >
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="w-14 h-14 border-2 border-white/40">
+                      <AvatarFallback className="bg-white/20 text-white font-bold text-xl">
+                        {childProfile.name?.charAt(0)?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <h2 className="text-xl font-extrabold">{childProfile.name}</h2>
+                      <p className="text-blue-200 text-sm capitalize">
+                        {childProfile.level || 'Student'} · {childProfile.learningStyle || 'Visual'} learner
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex items-center gap-1.5 text-yellow-300 font-bold text-lg">
+                        <Zap className="w-5 h-5" />{xp.toLocaleString()} XP
+                      </div>
+                      <p className="text-blue-200 text-xs mt-0.5">{enrollments.length} courses enrolled</p>
+                    </div>
+                  </div>
+                </div>
 
-        <Card className="p-6 rounded-[24px] shadow-sm border border-[#DADCE0]">
-          <h3 className="font-bold text-[#202124] mb-4 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-google-blue" /> Upcoming Due Dates
-          </h3>
-          <div className="space-y-4">
-            {[
-               { title: 'Algebra Worksheet', course: 'Math', date: 'Tomorrow' },
-               { title: 'Cell Structure Quiz', course: 'Science', date: 'Friday, Oct 27' },
-               { title: 'History Essay', course: 'History', date: 'Monday, Oct 30' },
-            ].map((d, i) => (
-              <div key={i} onClick={() => toast.info(`Viewing details for ${d.title}`)} className="cursor-pointer hover:shadow-google-soft flex flex-col p-3 rounded-xl bg-[#F8F9FA] border border-[#DADCE0]">
-                <span className="font-bold text-[#202124] text-sm">{d.title}</span>
-                <span className="text-xs text-[#5F6368]">{d.course} • Due {d.date}</span>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
+                <div className="grid grid-cols-3 divide-x divide-border border-b border-border">
+                  {[
+                    { label: 'Enrolled', value: enrollments.length, icon: <BookOpen className="w-4 h-4 text-blue-500" /> },
+                    { label: 'In Progress', value: inProgress.length, icon: <Zap className="w-4 h-4 text-amber-500" /> },
+                    { label: 'Completed', value: completed.length, icon: <Trophy className="w-4 h-4 text-emerald-500" /> },
+                  ].map((s, i) => (
+                    <div key={i} className="p-4 text-center">
+                      <div className="flex justify-center mb-1">{s.icon}</div>
+                      <p className="text-xl font-extrabold text-foreground">{s.value}</p>
+                      <p className="text-xs text-muted-foreground">{s.label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="p-6 space-y-4">
+                  <h3 className="font-bold text-foreground text-sm">Course Progress</h3>
+                  {enrollments.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Not enrolled in any courses yet.</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {enrollments.map(({ course, enrollment }) => {
+                        const pct = enrollment.progress ?? 0;
+                        const done = enrollment.completedLessons?.length ?? 0;
+                        return (
+                          <div key={course.id}>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <p className="text-sm font-semibold text-foreground truncate max-w-[65%]">{course.title}</p>
+                              <span className="text-xs text-muted-foreground">{done} lessons done</span>
+                            </div>
+                            <Progress value={pct} className="h-2" />
+                            <p className="text-xs text-muted-foreground mt-1">{pct}% complete</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
