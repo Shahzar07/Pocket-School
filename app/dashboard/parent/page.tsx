@@ -5,7 +5,7 @@ import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { getChildrenProfiles, getEnrolledCourses, UserProfile, Course, Enrollment } from '@/lib/db';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Zap, BookOpen, MessageSquare, Trophy, UserRound } from 'lucide-react';
 import Link from 'next/link';
@@ -50,11 +50,9 @@ export default function ParentDashboard() {
           <h1 className="text-2xl font-extrabold text-foreground tracking-tight">Parent Portal</h1>
           <p className="text-muted-foreground text-sm mt-1">Monitor your child's progress and achievements.</p>
         </div>
-        <Button variant="outline" className="rounded-xl gap-2" asChild>
-          <Link href="/dashboard/parent/communications">
-            <MessageSquare className="w-4 h-4" /> Messages
-          </Link>
-        </Button>
+        <Link href="/dashboard/parent/communications" className={buttonVariants({ variant: 'outline' }) + ' rounded-xl gap-2'}>
+          <MessageSquare className="w-4 h-4" /> Messages
+        </Link>
       </motion.div>
 
       {children.length === 0 ? (

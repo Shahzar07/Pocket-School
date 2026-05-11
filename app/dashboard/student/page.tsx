@@ -13,9 +13,9 @@ import Link from 'next/link';
 
 interface CourseWithEnrollment { course: Course; enrollment: Enrollment }
 
-const fadeUp = {
+const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 16 },
-  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: i * 0.07 } }),
+  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut', delay: i * 0.07 } }),
 };
 
 export default function StudentDashboard() {

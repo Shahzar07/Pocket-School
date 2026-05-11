@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { getPlatformStats, getInstitutions, seedDemoData, Institution } from '@/lib/db';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Building2, Users, BookOpen, Sparkles, CheckCircle2, BarChart3 } from 'lucide-react';
@@ -76,11 +76,9 @@ export default function AdminDashboard() {
               <CheckCircle2 className="w-4 h-4" /> Demo data seeded!
             </div>
           )}
-          <Button variant="outline" className="rounded-xl gap-2" asChild>
-            <Link href="/dashboard/admin/institutions">
-              <Building2 className="w-4 h-4" /> Institutions
-            </Link>
-          </Button>
+          <Link href="/dashboard/admin/institutions" className={buttonVariants({ variant: 'outline' }) + ' rounded-xl gap-2'}>
+            <Building2 className="w-4 h-4" /> Institutions
+          </Link>
         </div>
       </motion.div>
 
