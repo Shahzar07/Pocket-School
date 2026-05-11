@@ -1,187 +1,163 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { Card } from '@/components/ui/card';
+import { getEnrolledCourses, getUserBadges, Course, Enrollment, Badge } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Flame, Trophy, Calendar, ArrowRight, PlayCircle, BookOpen, Headphones, Presentation, Brain, Video } from 'lucide-react';
-import { motion } from 'motion/react';
-import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
+import { Badge as BadgeUI } from '@/components/ui/badge';
+import { ArrowRight, BookOpen, Zap, Trophy, Star, Target, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
+
+interface CourseWithEnrollment { course: Course; enrollment: Enrollment }
+
+const fadeUp: Record<string, any> = {
+  hidden: { opacity: 0, y: 16 },
+  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut', delay: i * 0.07 } }),
+};
 
 export default function StudentDashboard() {
-  const { profile } = useAuthSTORE();
   const router = useRouter();
+  const { user, profile } = useAuthSTORE();
+  const [enrolled, setEnrolled] = useState<CourseWithEnrollment[]>([]);
+  const [badges, setBadges] = useState<Badge[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    Promise.all([
+      getEnrolledCourses(user.uid),
+      getUserBadges(user.uid),
+    ]).then(([courses, bs]) => {
+      setEnrolled(courses);
+      setBadges(bs);
+      setLoading(false);
+    });
+  }, [user]);
+
+  const xp = profile?.xp ?? 0;
+  const xpToNextLevel = 1000;
+  const xpProgress = Math.min((xp % xpToNextLevel) / xpToNextLevel * 100, 100);
+  const inProgress = enrolled.filter(e => e.enrollment.progress > 0 && e.enrollment.progress < 100);
+  const notStarted = enrolled.filter(e => e.enrollment.progress === 0);
+  const completed = enrolled.filter(e => e.enrollment.progress === 100);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
-      {/* Welcome Banner */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-[24px] p-8 border border-[#DADCE0] shadow-google-soft flex flex-col md:flex-row items-center gap-8"
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
+        className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl p-7 text-white relative overflow-hidden"
       >
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-[#202124] mb-2">Welcome back, {profile?.name?.split(' ')[0] || 'Student'}!</h1>
-          <p className="text-[#5F6368] mb-6">You're making great progress. Let's keep the momentum going.</p>
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-[#FFF8E1] flex items-center justify-center">
-                <Flame className="w-5 h-5 text-google-amber" />
-              </div>
-              <div>
-                <div className="text-sm text-[#5F6368]">Streak</div>
-                <div className="font-bold text-[#202124]">5 Days</div>
-              </div>
+        <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-white/10" />
+        <div className="absolute -right-4 -bottom-8 w-32 h-32 rounded-full bg-white/5" />
+        <div className="relative z-10">
+          <p className="text-blue-100 text-sm font-medium mb-1">Welcome back</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-4">
+            {profile?.name?.split(' ')[0] ?? 'Student'} 👋
+          </h1>
+          <div className="flex flex-wrap gap-4 items-center">
+            <div className="flex items-center gap-2"><Zap className="w-4 h-4 text-amber-300" /><span className="font-bold text-lg">{xp.toLocaleString()} XP</span></div>
+            <div className="flex items-center gap-2"><Trophy className="w-4 h-4 text-amber-300" /><span className="font-bold">{badges.length} Badge{badges.length !== 1 ? 's' : ''}</span></div>
+            <div className="flex items-center gap-2"><BookOpen className="w-4 h-4 text-blue-200" /><span className="font-semibold">{enrolled.length} Course{enrolled.length !== 1 ? 's' : ''}</span></div>
+          </div>
+          <div className="mt-4 max-w-xs">
+            <div className="flex justify-between text-xs text-blue-100 mb-1.5">
+              <span>Level Progress</span><span>{xp % xpToNextLevel}/{xpToNextLevel} XP</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-[#E8F0FE] flex items-center justify-center">
-                <Trophy className="w-5 h-5 text-google-blue" />
-              </div>
-              <div>
-                <div className="text-sm text-[#5F6368]">Total XP</div>
-                <div className="font-bold text-[#202124]">{profile?.xp || 1500} XP</div>
-              </div>
+            <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+              <div className="h-full bg-white rounded-full transition-all duration-700" style={{ width: `${xpProgress}%` }} />
             </div>
           </div>
-        </div>
-        
-        {/* Daily Goal Ring relative simulation */}
-        <div className="w-48 bg-[#F8F9FA] rounded-[20px] p-4 flex flex-col items-center justify-center shrink-0 border border-[#DADCE0]">
-          <div className="text-sm font-medium text-[#5F6368] mb-2">Daily Goal</div>
-          <div className="relative w-24 h-24 mb-2">
-            <svg className="w-full h-full transform -rotate-90">
-              <circle cx="48" cy="48" r="40" stroke="#E8EAED" strokeWidth="8" fill="none" />
-              <circle cx="48" cy="48" r="40" stroke="#00897B" strokeWidth="8" fill="none" strokeDasharray="250" strokeDashoffset="50" className="transition-all duration-1000 ease-out" />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center flex-col">
-              <span className="text-xl font-bold text-[#202124]">80%</span>
-            </div>
-          </div>
-          <div className="text-xs text-[#5F6368]">4/5 Lessons</div>
         </div>
       </motion.div>
 
-      {/* Continue Learning */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-[#202124]">Continue Learning</h2>
-          <Button onClick={() => router.push('/dashboard/student/courses')} variant="ghost" className="text-google-blue font-medium">View All</Button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <Card onClick={() => router.push('/dashboard/student/courses/intro-bio/lessons/1')} key={i} className="p-5 rounded-[20px] shadow-google-soft hover:shadow-google-hover transition-shadow border cursor-pointer border-[#DADCE0]">
-              <div className="w-full h-32 bg-[#E8F0FE] rounded-xl mb-4 flex items-center justify-center">
-                <PlayCircle className="w-10 h-10 text-google-blue opacity-50" />
-              </div>
-              <div className="text-xs font-bold text-google-teal uppercase tracking-wider mb-2">Module {i}</div>
-              <h3 className="font-bold text-[#202124] mb-2">Advanced Biological Structures</h3>
-              <div className="flex items-center gap-2 mb-4">
-                <Progress value={65} className="h-2 flex-1" />
-                <span className="text-xs font-medium text-[#5F6368]">65%</span>
-              </div>
-              <Button onClick={(e) => { e.stopPropagation(); router.push('/dashboard/student/courses/intro-bio/lessons/1'); }} className="w-full bg-white text-google-blue border border-[#DADCE0] hover:bg-[#E8F0FE] rounded-full">
-                Resume <ArrowRight className="ml-2 w-4 h-4" />
-              </Button>
-            </Card>
-          ))}
-        </div>
-      </section>
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: 'In Progress', value: inProgress.length, icon: <TrendingUp className="w-5 h-5 text-blue-500" />, color: 'bg-blue-50 border-blue-200' },
+          { label: 'Completed', value: completed.length, icon: <Star className="w-5 h-5 text-amber-500" />, color: 'bg-amber-50 border-amber-200' },
+          { label: 'Badges Earned', value: badges.length, icon: <Trophy className="w-5 h-5 text-violet-500" />, color: 'bg-violet-50 border-violet-200' },
+        ].map((s, i) => (
+          <motion.div key={i} variants={fadeUp} initial="hidden" animate="visible" custom={i + 1}
+            className={`${s.color} border rounded-2xl p-4 text-center`}
+          >
+            <div className="flex justify-center mb-2">{s.icon}</div>
+            <p className="text-2xl font-extrabold text-foreground">{s.value}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 font-medium">{s.label}</p>
+          </motion.div>
+        ))}
+      </div>
 
-      {/* Upcoming Live Classes */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-[#202124]">Upcoming Live Classes</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="p-6 rounded-[20px] shadow-sm border border-[#DADCE0] flex items-center gap-6">
-            <div className="bg-[#F8F9FA] p-4 rounded-2xl flex flex-col items-center justify-center min-w-[80px]">
-              <span className="text-sm font-bold text-[#E53935] uppercase">Today</span>
-              <span className="text-2xl font-bold text-[#202124]">2:00</span>
-              <span className="text-sm text-[#5F6368]">PM</span>
-            </div>
-            <div className="flex-1">
-              <h3 className="font-bold text-[#202124] text-lg">Cell Biology Lab Review</h3>
-              <p className="text-[#5F6368] mb-3">Live Q&A with Dr. Sarah Jenkins</p>
-              <div className="flex items-center gap-3">
-                <Avatar className="w-8 h-8">
-                  <AvatarFallback className="bg-google-blue text-white text-xs">SJ</AvatarFallback>
-                </Avatar>
-                <div className="flex gap-2">
-                  <span className="bg-[#E8F0FE] text-[#1967D2] text-xs font-bold px-2 py-1 rounded-md">Biology</span>
-                  <span className="bg-[#F1F3F4] text-[#5F6368] text-xs font-bold px-2 py-1 rounded-md">45 mins</span>
-                </div>
-              </div>
-            </div>
-            <Button onClick={() => router.push('/dashboard/student/live')} className="shrink-0 bg-google-blue hover:bg-[#1967D2] rounded-full px-6">
-              <Video className="w-4 h-4 mr-2" /> Join
-            </Button>
-          </Card>
-          
-          <Card className="p-6 rounded-[20px] shadow-sm border border-[#DADCE0] flex items-center gap-6 opacity-70">
-            <div className="bg-[#F8F9FA] p-4 rounded-2xl flex flex-col items-center justify-center min-w-[80px]">
-              <span className="text-sm font-bold text-[#5F6368] uppercase">Tmrw</span>
-              <span className="text-2xl font-bold text-[#202124]">10:00</span>
-              <span className="text-sm text-[#5F6368]">AM</span>
-            </div>
-            <div className="flex-1">
-              <h3 className="font-bold text-[#202124] text-lg">Quantum Mechanics Intro</h3>
-              <p className="text-[#5F6368] mb-3">Prof. Robert Chen</p>
-              <div className="flex items-center gap-3">
-                <Avatar className="w-8 h-8">
-                  <AvatarFallback className="bg-google-teal text-white text-xs">RC</AvatarFallback>
-                </Avatar>
-                <div className="flex gap-2">
-                  <span className="bg-[#E0F2F1] text-[#00796B] text-xs font-bold px-2 py-1 rounded-md">Physics</span>
-                  <span className="bg-[#F1F3F4] text-[#5F6368] text-xs font-bold px-2 py-1 rounded-md">60 mins</span>
-                </div>
-              </div>
-            </div>
-            <Button onClick={() => toast.success('RSVP confirmed!')} variant="outline" className="shrink-0 rounded-full px-6">
-              <Calendar className="w-4 h-4 mr-2" /> RSVP
-            </Button>
-          </Card>
-        </div>
-      </section>
-
-      {/* AI Recommendations & Shortcuts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="col-span-2 space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-[#202124]">AI Recommendations</h2>
-            <div className="bg-[#E8F0FE] text-[#1967D2] text-xs px-2 py-1 rounded-full font-bold">Based on your weakness</div>
+      {inProgress.length > 0 && (
+        <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={4}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-foreground">Continue Learning</h2>
+            <Link href="/dashboard/student/courses" className="text-sm text-primary font-medium hover:underline flex items-center gap-1">
+              All courses <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
-          <div className="space-y-4">
-            {[1, 2].map(i => (
-              <div onClick={() => toast.info('Loading interactive recommendation...')} key={i} className="p-4 bg-white rounded-[16px] border border-[#DADCE0] shadow-sm flex gap-4 hover:shadow-google-soft transition-shadow cursor-pointer">
-                <div className="w-16 h-16 rounded-xl bg-[#FFF8E1] flex items-center justify-center shrink-0">
-                  <Brain className="w-8 h-8 text-google-amber" />
+          <div className="grid sm:grid-cols-2 gap-4">
+            {inProgress.slice(0, 2).map(({ course, enrollment }, i) => (
+              <motion.div key={course.id} variants={fadeUp} initial="hidden" animate="visible" custom={5 + i}
+                className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-shadow cursor-pointer group"
+                onClick={() => router.push(`/dashboard/student/courses/${course.id}`)}
+              >
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0">
+                    <BookOpen className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-foreground truncate group-hover:text-primary transition-colors">{course.title}</h3>
+                    <p className="text-xs text-muted-foreground">{course.subject}</p>
+                  </div>
                 </div>
-                <div className="flex-1 flex flex-col justify-center">
-                  <h4 className="font-bold text-[#202124]">Cellular Respiration Review</h4>
-                  <p className="text-sm text-[#5F6368]">You struggled with this on the last quiz. Try this interactive mind map.</p>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Progress</span><span className="font-semibold text-foreground">{enrollment.progress}%</span>
+                  </div>
+                  <Progress value={enrollment.progress} className="h-1.5" />
                 </div>
-              </div>
+                <Button size="sm" className="mt-4 w-full rounded-xl h-9 bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all text-xs font-semibold">
+                  Continue <ArrowRight className="ml-1 w-3 h-3" />
+                </Button>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.section>
+      )}
 
-        <div>
-          <h2 className="text-xl font-bold text-[#202124] mb-4">Quick Formats</h2>
-          <div className="bg-white rounded-[20px] p-4 border border-[#DADCE0] shadow-sm space-y-2">
-            <Button onClick={() => toast.success('Generating Audio Podcast context...')} variant="ghost" className="w-full justify-start h-12 rounded-xl text-left font-medium text-[#5F6368] hover:text-[#202124] hover:bg-[#F1F3F4]">
-              <Headphones className="w-5 h-5 mr-3 text-google-teal" /> Audio Podcasts
-            </Button>
-            <Button onClick={() => toast.success('Generating Presentation Slides context...')} variant="ghost" className="w-full justify-start h-12 rounded-xl text-left font-medium text-[#5F6368] hover:text-[#202124] hover:bg-[#F1F3F4]">
-              <Presentation className="w-5 h-5 mr-3 text-google-amber" /> Presentation Slides
-            </Button>
-            <Button onClick={() => toast.success('Generating Flashcards context...')} variant="ghost" className="w-full justify-start h-12 rounded-xl text-left font-medium text-[#5F6368] hover:text-[#202124] hover:bg-[#F1F3F4]">
-              <BookOpen className="w-5 h-5 mr-3 text-google-blue" /> Flashcards
-            </Button>
+      {notStarted.length > 0 && (
+        <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={7}>
+          <h2 className="text-lg font-bold text-foreground mb-4">Start Something New</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {notStarted.map(({ course }, i) => (
+              <motion.div key={course.id} variants={fadeUp} initial="hidden" animate="visible" custom={8 + i}
+                className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-shadow cursor-pointer group"
+                onClick={() => router.push(`/dashboard/student/courses/${course.id}`)}
+              >
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center mb-3">
+                  <BookOpen className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="font-bold text-foreground mb-1 group-hover:text-primary transition-colors">{course.title}</h3>
+                <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{course.description}</p>
+                <BadgeUI className="rounded-full text-xs bg-muted text-muted-foreground">Not started</BadgeUI>
+              </motion.div>
+            ))}
           </div>
-        </div>
-      </div>
+        </motion.section>
+      )}
+
+      {enrolled.length === 0 && !loading && (
+        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={4}
+          className="text-center py-16 bg-muted/30 rounded-3xl border border-dashed border-border"
+        >
+          <Target className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-bold text-foreground mb-2">No courses yet</h3>
+          <p className="text-muted-foreground text-sm">Ask your admin to seed the demo courses from the admin dashboard.</p>
+        </motion.div>
+      )}
+
+      {loading && <div className="space-y-4">{[1,2].map(i => <div key={i} className="h-32 bg-muted animate-pulse rounded-2xl" />)}</div>}
     </div>
   );
 }

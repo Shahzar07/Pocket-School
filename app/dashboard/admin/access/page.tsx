@@ -29,9 +29,7 @@ export default function AdminAccessConfig() {
            <p className="text-[#5F6368] mb-6">Define what actions each role (Admin, Teacher, Student, Parent) can perform within the system.</p>
            
            <Dialog open={isRolesOpen} onOpenChange={setIsRolesOpen}>
-             <DialogTrigger asChild>
-               <Button variant="outline" className="w-full">Edit Roles</Button>
-             </DialogTrigger>
+             <DialogTrigger className="w-full inline-flex items-center justify-center rounded-lg border border-border bg-background px-2.5 py-2 text-sm font-medium hover:bg-muted transition-colors">Edit Roles</DialogTrigger>
              <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Edit Role Permissions</DialogTitle>
@@ -58,9 +56,7 @@ export default function AdminAccessConfig() {
            <p className="text-[#5F6368] mb-6">Configure SSO, standard login scopes, multifactor authentication, and session limits.</p>
            
            <Dialog open={isAuthOpen} onOpenChange={setIsAuthOpen}>
-             <DialogTrigger asChild>
-               <Button variant="outline" className="w-full">Configure Auth</Button>
-             </DialogTrigger>
+             <DialogTrigger className="w-full inline-flex items-center justify-center rounded-lg border border-border bg-background px-2.5 py-2 text-sm font-medium hover:bg-muted transition-colors">Configure Auth</DialogTrigger>
              <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Authentication Configuration</DialogTitle>

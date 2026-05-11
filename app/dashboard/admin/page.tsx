@@ -1,100 +1,155 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Building2, Plus, Users, Settings } from 'lucide-react';
+import { getPlatformStats, getInstitutions, seedDemoData, Institution } from '@/lib/db';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { Building2, Users, BookOpen, Sparkles, CheckCircle2, BarChart3 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function AdminDashboard() {
-  const { profile } = useAuthSTORE();
+  const { user, profile } = useAuthSTORE();
+  const [stats, setStats] = useState({ students: 0, teachers: 0, courses: 0 });
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [seeding, setSeeding] = useState(false);
+  const [seeded, setSeeded] = useState(false);
 
-  const data = [
-    { name: 'Mon', active: 4000, new: 240 },
-    { name: 'Tue', active: 3000, new: 139 },
-    { name: 'Wed', active: 2000, new: 980 },
-    { name: 'Thu', active: 2780, new: 390 },
-    { name: 'Fri', active: 1890, new: 480 },
-    { name: 'Sat', active: 2390, new: 380 },
-    { name: 'Sun', active: 3490, new: 430 },
-  ];
+  useEffect(() => {
+    if (!user) return;
+    Promise.all([getPlatformStats(), getInstitutions()]).then(([s, inst]) => {
+      setStats(s);
+      setInstitutions(inst);
+      setLoading(false);
+    });
+  }, [user]);
+
+  const handleSeedData = async () => {
+    if (!user) return;
+    setSeeding(true);
+    try {
+      const result = await seedDemoData(user.uid);
+      toast.success(`Seeded ${result.coursesCreated} courses and ${result.lessonsCreated} lessons!`);
+      setSeeded(true);
+      const s = await getPlatformStats();
+      setStats(s);
+    } catch (e: any) {
+      toast.error('Seeding failed: ' + e.message);
+    } finally {
+      setSeeding(false);
+    }
+  };
+
+  if (loading) return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-4">
+      {[1,2,3].map(i => <div key={i} className="h-24 bg-muted animate-pulse rounded-2xl" />)}
+    </div>
+  );
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-[#202124]">Admin Portal</h1>
-        <p className="text-[#5F6368]">Platform analytics and institution management.</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6 rounded-[20px] shadow-sm border border-[#DADCE0]">
-          <div className="text-sm font-medium text-[#5F6368]">Total Active Students</div>
-          <div className="text-4xl font-bold text-google-blue mt-2">18,590</div>
-        </Card>
-        <Card className="p-6 rounded-[20px] shadow-sm border border-[#DADCE0]">
-          <div className="text-sm font-medium text-[#5F6368]">Active Teachers</div>
-          <div className="text-4xl font-bold text-google-teal mt-2">492</div>
-        </Card>
-        <Card className="p-6 rounded-[20px] shadow-sm border border-[#DADCE0]">
-          <div className="text-sm font-medium text-[#5F6368]">AI Tokens Used (MTD)</div>
-          <div className="text-4xl font-bold text-google-amber mt-2">4.2M</div>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          <Card className="p-6 rounded-[24px] shadow-sm border border-[#DADCE0] h-full">
-            <h2 className="text-lg font-bold mb-6 text-[#202124]">Platform Usage (Past 7 Days)</h2>
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                  <XAxis dataKey="name" stroke="#5F6368" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#5F6368" fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip cursor={{fill: '#F8F9FA'}} />
-                  <Line type="monotone" dataKey="active" stroke="#1A73E8" strokeWidth={3} dot={{r:4, fill:'#1A73E8', strokeWidth:0}} activeDot={{r:6}} />
-                  <Line type="monotone" dataKey="new" stroke="#00897B" strokeWidth={3} dot={{r:4, fill:'#00897B', strokeWidth:0}} activeDot={{r:6}} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        </div>
-
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+      >
         <div>
-          <Card className="p-6 rounded-[24px] shadow-sm border border-[#DADCE0] h-full flex flex-col">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-[#202124]">Institutions</h2>
-              <Button onClick={() => toast.info('Loading institution creation form...')} size="icon" variant="ghost" className="text-google-blue">
-                <Plus className="w-5 h-5" />
-              </Button>
-            </div>
-            
-            <div className="space-y-4 flex-1">
-              {[
-                { name: 'Lincoln High School', students: 1200, status: 'Active' },
-                { name: 'Oakridge Middle', students: 850, status: 'Active' },
-                { name: 'Westside Academy', students: 2100, status: 'Pending Approval' },
-              ].map((inst, i) => (
-                <div key={i} onClick={() => toast.info(`Viewing details for ${inst.name}`)} className="flex items-center gap-4 p-3 rounded-xl border border-[#DADCE0] hover:bg-[#F8F9FA] transition-colors cursor-pointer">
-                  <div className={`p-3 rounded-lg ${inst.status === 'Active' ? 'bg-[#E8F0FE] text-google-blue' : 'bg-[#FFF8E1] text-google-amber'}`}>
-                    <Building2 className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-bold text-[#202124] text-sm">{inst.name}</div>
-                    <div className="text-xs text-[#5F6368] flex items-center gap-1 mt-1">
-                      <Users className="w-3 h-3" /> {inst.students} Students
-                    </div>
-                  </div>
-                  <Button onClick={(e) => { e.stopPropagation(); toast.info(`Opening settings for ${inst.name}`); }} variant="ghost" size="icon" className="shrink-0 text-[#5F6368]">
-                    <Settings className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-            <Button onClick={() => toast.info('Loading full institution list...')} variant="outline" className="w-full mt-4 text-google-blue border-[#DADCE0]">View All Institutions</Button>
-          </Card>
+          <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
+            Admin Portal
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">Platform analytics and management.</p>
         </div>
+        <div className="flex gap-2 flex-wrap">
+          {!seeded && (
+            <Button
+              onClick={handleSeedData}
+              disabled={seeding}
+              className="rounded-xl gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white"
+            >
+              <Sparkles className="w-4 h-4" />
+              {seeding ? 'Seeding Demo Data…' : 'Seed Demo Data'}
+            </Button>
+          )}
+          {seeded && (
+            <div className="flex items-center gap-2 text-emerald-600 font-semibold text-sm bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2">
+              <CheckCircle2 className="w-4 h-4" /> Demo data seeded!
+            </div>
+          )}
+          <Link href="/dashboard/admin/institutions" className={buttonVariants({ variant: 'outline' }) + ' rounded-xl gap-2'}>
+            <Building2 className="w-4 h-4" /> Institutions
+          </Link>
+        </div>
+      </motion.div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: 'Total Students', value: stats.students, icon: <Users className="w-5 h-5 text-blue-500" />, color: 'bg-blue-50 border-blue-200' },
+          { label: 'Teachers', value: stats.teachers, icon: <BarChart3 className="w-5 h-5 text-violet-500" />, color: 'bg-violet-50 border-violet-200' },
+          { label: 'Published Courses', value: stats.courses, icon: <BookOpen className="w-5 h-5 text-emerald-500" />, color: 'bg-emerald-50 border-emerald-200' },
+        ].map((s, i) => (
+          <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
+            className={`${s.color} border rounded-2xl p-5 text-center`}
+          >
+            <div className="flex justify-center mb-2">{s.icon}</div>
+            <p className="text-2xl font-extrabold text-foreground">{s.value}</p>
+            <p className="text-xs text-muted-foreground font-medium mt-0.5">{s.label}</p>
+          </motion.div>
+        ))}
       </div>
+
+      {/* Seed Data Info */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+        className="bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200 rounded-2xl p-6"
+      >
+        <div className="flex items-start gap-4">
+          <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
+            <Sparkles className="w-5 h-5 text-violet-600" />
+          </div>
+          <div>
+            <h3 className="font-bold text-foreground">Demo Data Seeder</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Click <strong>Seed Demo Data</strong> to populate the platform with 2 complete demo courses (Biology 101 + World History) with pre-generated AI lesson content. New students are automatically enrolled. Run this once to give the platform real content.
+            </p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Institutions Quick View */}
+      <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-foreground">Institutions</h2>
+          <Link href="/dashboard/admin/institutions" className="text-sm text-primary hover:underline">
+            Manage all →
+          </Link>
+        </div>
+        {institutions.length === 0 ? (
+          <div className="text-center py-10 bg-muted/30 rounded-2xl border border-dashed border-border">
+            <Building2 className="w-10 h-10 mx-auto mb-2 text-muted-foreground opacity-40" />
+            <p className="text-sm text-muted-foreground font-medium">No institutions yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {institutions.slice(0, 5).map((inst, i) => (
+              <motion.div key={inst.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
+                className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4"
+              >
+                <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center shrink-0">
+                  <Building2 className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-foreground text-sm truncate">{inst.name}</p>
+                  <p className="text-xs text-muted-foreground">{inst.domain || 'No domain set'}</p>
+                </div>
+                <Badge className={`rounded-full text-[10px] shrink-0 ${inst.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                  {inst.status}
+                </Badge>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </motion.section>
     </div>
   );
 }

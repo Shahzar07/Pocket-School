@@ -1,96 +1,174 @@
 'use client';
 
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, PlayCircle, BookOpen, CheckCircle2, Lock } from 'lucide-react';
+import { motion } from 'motion/react';
+import { useAuthSTORE } from '@/hooks/use-auth';
+import { getCourse, getModulesWithLessons, getEnrolledCourses, Course, Module, Lesson, Enrollment } from '@/lib/db';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { ArrowLeft, BookOpen, CheckCircle2, Lock, PlayCircle, ChevronDown, ChevronRight } from 'lucide-react';
 
-export default function CourseDetail() {
+interface ModuleWithLessons { module: Module; lessons: Lesson[] }
+
+export default function CourseDetailPage() {
   const router = useRouter();
-  const params = useParams();
+  const { courseId } = useParams<{ courseId: string }>();
+  const { user } = useAuthSTORE();
+  const [course, setCourse] = useState<Course | null>(null);
+  const [modules, setModules] = useState<ModuleWithLessons[]>([]);
+  const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
+  const [expanded, setExpanded] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const syllabus = [
-    { module: 'Module 1: Introduction to Cells', lessons: [
-      { id: 'l1', title: 'What is a cell?', completed: true },
-      { id: 'l2', title: 'Prokaryotic vs Eukaryotic', completed: true },
-      { id: 'l3', title: 'Cell Organelles Basics', completed: true },
-    ]},
-    { module: 'Module 2: Cellular Energy', lessons: [
-      { id: 'l4', title: 'Photosynthesis', completed: true },
-      { id: 'l5', title: 'Cellular Respiration in Details', completed: false, current: true },
-      { id: 'l6', title: 'ATP and Energy Transfer', completed: false, locked: true },
-    ]},
-    { module: 'Module 3: Cell Division', locked: true, lessons: [] }
-  ];
+  useEffect(() => {
+    if (!user || !courseId) return;
+    Promise.all([
+      getCourse(courseId),
+      getModulesWithLessons(courseId),
+      getEnrolledCourses(user.uid),
+    ]).then(([c, mods, enrolled]) => {
+      setCourse(c);
+      setModules(mods);
+      setExpanded(mods.map(m => m.module.id));
+      const e = enrolled.find(x => x.course.id === courseId);
+      setEnrollment(e?.enrollment ?? null);
+      setLoading(false);
+    });
+  }, [user, courseId]);
+
+  const completedIds = new Set(enrollment?.completedLessons ?? []);
+  const totalLessons = modules.reduce((acc, m) => acc + m.lessons.length, 0);
+
+  const getLessonStatus = (lesson: Lesson, modIndex: number, lesIndex: number): 'completed' | 'available' | 'locked' => {
+    if (completedIds.has(lesson.id)) return 'completed';
+    if (modIndex === 0 && lesIndex === 0) return 'available';
+    // Previous lesson must be completed to unlock next
+    const allLessons = modules.flatMap(m => m.lessons);
+    const currentIndex = allLessons.findIndex(l => l.id === lesson.id);
+    if (currentIndex === 0) return 'available';
+    const prev = allLessons[currentIndex - 1];
+    return completedIds.has(prev?.id) ? 'available' : 'locked';
+  };
+
+  if (loading) return (
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-4">
+      <div className="h-40 bg-muted animate-pulse rounded-3xl" />
+      <div className="h-24 bg-muted animate-pulse rounded-2xl" />
+    </div>
+  );
+
+  if (!course) return (
+    <div className="max-w-4xl mx-auto px-4 py-16 text-center text-muted-foreground">
+      <p>Course not found.</p>
+    </div>
+  );
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
-          <ArrowLeft className="w-5 h-5 text-[#5F6368]" />
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold text-[#202124]">Biology 101: Cell Systems</h1>
-          <p className="text-[#5F6368]">Dr. Sarah Webb • 12 Modules</p>
-        </div>
-      </div>
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => router.back()}>
+        <ArrowLeft className="w-4 h-4 mr-1" /> Back
+      </Button>
 
-      <Card className="p-8 rounded-[24px] shadow-sm border border-[#DADCE0] bg-white flex flex-col md:flex-row gap-8 items-center">
-        <div className="w-full md:w-1/3 aspect-video bg-[#E8F0FE] rounded-2xl flex items-center justify-center">
-           <BookOpen className="w-16 h-16 text-google-blue opacity-50" />
-        </div>
-        <div className="flex-1">
-          <h2 className="text-2xl font-bold text-[#202124] mb-4">Course Progress</h2>
-          <div className="flex items-center gap-4 mb-2">
-            <Progress value={65} className="h-3 flex-1" />
-            <span className="font-bold text-google-blue">65%</span>
+      {/* Course header */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+        className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-7 text-white"
+      >
+        <Badge className="mb-3 bg-white/20 text-white border-white/30 text-xs rounded-full">
+          {course.subject ?? 'Course'}
+        </Badge>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">{course.title}</h1>
+        <p className="text-blue-100 text-sm leading-relaxed mb-5">{course.description}</p>
+        {enrollment && (
+          <div>
+            <div className="flex justify-between text-xs text-blue-100 mb-2">
+              <span>{completedIds.size} / {totalLessons} lessons complete</span>
+              <span className="font-bold">{enrollment.progress}%</span>
+            </div>
+            <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+              <div className="h-full bg-white rounded-full transition-all" style={{ width: `${enrollment.progress}%` }} />
+            </div>
           </div>
-          <p className="text-[#5F6368] mb-6">You're doing great! You've completed 5 lessons so far.</p>
-          <Button size="lg" className="rounded-full bg-google-blue h-12 px-8" onClick={() => router.push(`/dashboard/student/courses/${params.courseId}/lessons/l5`)}>
-             Continue Learning <PlayCircle className="w-5 h-5 ml-2" />
-          </Button>
-        </div>
-      </Card>
+        )}
+      </motion.div>
 
-      <div className="space-y-6">
-        <h2 className="text-xl font-bold text-[#202124]">Course Syllabus</h2>
-        <div className="space-y-4">
-          {syllabus.map((mod, i) => (
-            <Card key={i} className={`p-0 rounded-[20px] shadow-sm border ${mod.locked ? 'border-[#DADCE0] bg-[#F8F9FA] opacity-75' : 'border-[#DADCE0] bg-white'}`}>
-              <div className="p-4 border-b border-[#DADCE0] flex items-center justify-between">
-                <h3 className="font-bold text-[#202124] flex items-center gap-2">
-                  {mod.locked && <Lock className="w-4 h-4 text-[#5F6368]" />}
-                  {mod.module}
-                </h3>
-              </div>
-              {!mod.locked && (
-                <div className="p-2 space-y-1">
-                  {mod.lessons.map(lesson => (
-                    <div 
-                      key={lesson.id} 
-                      className={`flex items-center justify-between p-3 rounded-xl transition-colors ${lesson.current ? 'bg-[#E8F0FE] hover:bg-[#D2E3FC] cursor-pointer' : lesson.completed ? 'hover:bg-[#F8F9FA] cursor-pointer' : lesson.locked ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#F8F9FA] cursor-pointer'}`}
-                      onClick={() => !lesson.locked && router.push(`/dashboard/student/courses/${params.courseId}/lessons/${lesson.id}`)}
-                    >
-                      <div className="flex items-center gap-3">
-                        {lesson.completed ? (
-                          <CheckCircle2 className="w-5 h-5 text-google-teal" />
-                        ) : lesson.locked ? (
-                          <Lock className="w-5 h-5 text-[#5F6368]" />
-                        ) : (
-                          <div className="w-5 h-5 rounded-full border-2 border-[#DADCE0]" />
-                        )}
-                        <span className={`font-medium ${lesson.current ? 'text-google-blue font-bold' : 'text-[#202124]'}`}>{lesson.title}</span>
-                      </div>
-                      {lesson.current && <span className="text-xs font-bold bg-white text-google-blue px-2 py-1 rounded-full shadow-sm">Current</span>}
-                    </div>
-                  ))}
-                </div>
+      {/* Modules */}
+      <div className="space-y-4">
+        {modules.map((mod, modIndex) => (
+          <motion.div key={mod.module.id}
+            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: modIndex * 0.08 }}
+            className="bg-card border border-border rounded-2xl overflow-hidden"
+          >
+            <button
+              className="w-full flex items-center justify-between p-5 text-left hover:bg-muted/50 transition-colors"
+              onClick={() => setExpanded(prev =>
+                prev.includes(mod.module.id) ? prev.filter(id => id !== mod.module.id) : [...prev, mod.module.id]
               )}
-            </Card>
-          ))}
-        </div>
+            >
+              <div>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Module {modIndex + 1}</span>
+                </div>
+                <h3 className="font-bold text-foreground">{mod.module.title}</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {mod.lessons.filter(l => completedIds.has(l.id)).length}/{mod.lessons.length} lessons
+                </p>
+              </div>
+              {expanded.includes(mod.module.id)
+                ? <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                : <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              }
+            </button>
+
+            {expanded.includes(mod.module.id) && (
+              <div className="border-t border-border divide-y divide-border">
+                {mod.lessons.map((lesson, lesIndex) => {
+                  const status = getLessonStatus(lesson, modIndex, lesIndex);
+                  return (
+                    <button
+                      key={lesson.id}
+                      disabled={status === 'locked'}
+                      onClick={() => router.push(`/dashboard/student/courses/${courseId}/lessons/${lesson.id}`)}
+                      className={`w-full flex items-center gap-4 px-5 py-4 text-left transition-colors ${
+                        status === 'locked'
+                          ? 'opacity-40 cursor-not-allowed'
+                          : 'hover:bg-muted/50 cursor-pointer'
+                      }`}
+                    >
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                        status === 'completed' ? 'bg-emerald-100' :
+                        status === 'available' ? 'bg-blue-100' :
+                        'bg-muted'
+                      }`}>
+                        {status === 'completed' && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
+                        {status === 'available' && <PlayCircle className="w-5 h-5 text-blue-600" />}
+                        {status === 'locked' && <Lock className="w-4 h-4 text-muted-foreground" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-foreground text-sm">{lesson.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {status === 'completed' ? '✓ Completed · +50 XP' :
+                           status === 'available' ? 'Start lesson · +50 XP' :
+                           'Complete previous lesson to unlock'}
+                        </p>
+                      </div>
+                      {status !== 'locked' && <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </motion.div>
+        ))}
       </div>
+
+      {modules.length === 0 && (
+        <div className="text-center py-12 text-muted-foreground">
+          <BookOpen className="w-10 h-10 mx-auto mb-2 opacity-30" />
+          <p>No lessons available yet. Check back soon.</p>
+        </div>
+      )}
     </div>
   );
 }

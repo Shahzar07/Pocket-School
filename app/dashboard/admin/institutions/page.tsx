@@ -1,124 +1,149 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { Card } from '@/components/ui/card';
+import { getInstitutions, createInstitution, deleteInstitution, Institution } from '@/lib/db';
 import { Button } from '@/components/ui/button';
-import { Building2, Plus, Users, Settings } from 'lucide-react';
-import { toast } from 'sonner';
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { Building2, Plus, Trash2, X } from 'lucide-react';
 
 export default function AdminInstitutions() {
-  const { profile } = useAuthSTORE();
-  
-  const [institutions, setInstitutions] = useState([
-    { id: 1, name: 'Lincoln High School', students: 1200, status: 'Active' },
-    { id: 2, name: 'Oakridge Middle', students: 850, status: 'Active' },
-    { id: 3, name: 'Westside Academy', students: 2100, status: 'Pending' },
-    { id: 4, name: 'Northgate High', students: 1800, status: 'Active' },
-    { id: 5, name: 'Southside Elementary', students: 950, status: 'Active' },
-  ]);
+  const { user } = useAuthSTORE();
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [form, setForm] = useState({ name: '', domain: '', adminId: '' });
 
-  const [newInstName, setNewInstName] = useState('');
-  const [newInstStudents, setNewInstStudents] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const handleAddInstitution = () => {
-    if (!newInstName) {
-      toast.error('Institution name is required');
-      return;
-    }
-    
-    const newInst = {
-      id: Date.now(),
-      name: newInstName,
-      students: parseInt(newInstStudents) || 0,
-      status: 'Active'
-    };
-    
-    setInstitutions([...institutions, newInst]);
-    setNewInstName('');
-    setNewInstStudents('');
-    setIsDialogOpen(false);
-    toast.success(`${newInstName} has been added successfully!`);
+  const load = async () => {
+    const inst = await getInstitutions();
+    setInstitutions(inst);
+    setLoading(false);
   };
 
+  useEffect(() => { load(); }, []);
+
+  const handleCreate = async () => {
+    if (!form.name.trim()) { toast.error('Institution name is required.'); return; }
+    if (!user) return;
+    setSaving(true);
+    try {
+      await createInstitution({
+        name: form.name.trim(),
+        domain: form.domain.trim() || undefined,
+        adminId: form.adminId.trim() || user.uid,
+        studentCount: 0,
+        teacherCount: 0,
+        status: 'active',
+      });
+      toast.success(`${form.name} created!`);
+      setForm({ name: '', domain: '', adminId: '' });
+      setShowForm(false);
+      await load();
+    } catch (e: any) {
+      toast.error('Failed: ' + e.message);
+    }
+    setSaving(false);
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+    setDeleting(id);
+    try {
+      await deleteInstitution(id);
+      toast.success(`${name} deleted.`);
+      await load();
+    } catch (e: any) {
+      toast.error('Failed: ' + e.message);
+    }
+    setDeleting(null);
+  };
+
+  if (loading) return (
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-3">
+      {[1,2,3].map(i => <div key={i} className="h-20 bg-muted animate-pulse rounded-2xl" />)}
+    </div>
+  );
+
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-[#202124]">Institutions Management</h1>
-        <p className="text-[#5F6368]">Manage schools, academies, and organizations on the platform.</p>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-extrabold text-foreground tracking-tight">Institutions</h1>
+          <p className="text-muted-foreground text-sm mt-1">Manage schools and organisations on the platform.</p>
+        </div>
+        <Button onClick={() => setShowForm(true)} className="rounded-xl gap-2 bg-primary text-white">
+          <Plus className="w-4 h-4" /> Add Institution
+        </Button>
       </div>
 
-      <Card className="p-6 rounded-[24px] shadow-sm border border-[#DADCE0] h-full flex flex-col">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-bold text-[#202124]">All Institutions</h2>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-google-blue hover:bg-[#1967D2] text-white">
-                <Plus className="w-5 h-5 mr-2" /> Add Institution
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Add New Institution</DialogTitle>
-                <DialogDescription>
-                  Create a new organization to grant access to teachers and students.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Institution Name</label>
-                  <Input 
-                    value={newInstName} 
-                    onChange={(e) => setNewInstName(e.target.value)} 
-                    placeholder="e.g. Springfield Elementary" 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Estimated Students</label>
-                  <Input 
-                    type="number"
-                    value={newInstStudents} 
-                    onChange={(e) => setNewInstStudents(e.target.value)} 
-                    placeholder="e.g. 500" 
-                  />
-                </div>
+      {/* Create form modal */}
+      {showForm && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-3xl p-6 max-w-md w-full space-y-5">
+            <div className="flex items-center justify-between">
+              <h2 className="font-extrabold text-foreground">Add Institution</h2>
+              <Button variant="ghost" size="sm" onClick={() => setShowForm(false)}><X className="w-4 h-4" /></Button>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label>Institution Name *</Label>
+                <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Lincoln High School" className="rounded-xl h-11" />
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleAddInstitution} className="bg-google-blue hover:bg-[#1967D2] text-white">Save</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-        
-        <div className="space-y-4 flex-1">
-          {institutions.map((inst, i) => (
-            <div key={i} onClick={() => toast.info(`Viewing details for ${inst.name}`)} className="flex items-center gap-4 p-4 rounded-xl border border-[#DADCE0] hover:bg-[#F8F9FA] transition-colors cursor-pointer">
-              <div className={`p-3 rounded-lg ${inst.status === 'Active' ? 'bg-[#E8F0FE] text-google-blue' : 'bg-[#FFF8E1] text-google-amber'}`}>
-                <Building2 className="w-5 h-5" />
+              <div className="space-y-1.5">
+                <Label>Domain (optional)</Label>
+                <Input value={form.domain} onChange={e => setForm(f => ({ ...f, domain: e.target.value }))} placeholder="e.g. lincoln.edu" className="rounded-xl h-11" />
               </div>
-              <div className="flex-1">
-                <div className="font-bold text-[#202124] text-base">{inst.name}</div>
-                <div className="text-sm text-[#5F6368] flex items-center gap-1 mt-1">
-                  <Users className="w-4 h-4" /> {inst.students} Students
-                </div>
-              </div>
-              <div className="text-sm font-medium pr-4">
-                 {inst.status === 'Active' ? <span className="text-google-teal">Active</span> : <span className="text-google-amber">Pending</span>}
-              </div>
-              <Button onClick={(e) => { e.stopPropagation(); toast.info(`Opening settings for ${inst.name}`); }} variant="ghost" size="icon" className="shrink-0 text-[#5F6368]">
-                <Settings className="w-5 h-5" />
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button className="flex-1 rounded-xl bg-primary text-white" onClick={handleCreate} disabled={saving}>
+                {saving ? 'Creating…' : 'Create'}
               </Button>
             </div>
-          ))}
-          {institutions.length === 0 && (
-            <div className="text-center py-8 text-[#5F6368]">No institutions found. Create one.</div>
-          )}
+          </div>
         </div>
-      </Card>
+      )}
+
+      {institutions.length === 0 ? (
+        <div className="text-center py-16 bg-muted/30 rounded-2xl border border-dashed border-border">
+          <Building2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p className="font-semibold text-muted-foreground">No institutions yet.</p>
+          <p className="text-sm text-muted-foreground mt-1">Add one using the button above.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {institutions.map((inst, i) => (
+            <motion.div key={inst.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+              className="bg-card border border-border rounded-2xl p-5 flex items-center gap-4"
+            >
+              <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center shrink-0">
+                <Building2 className="w-5 h-5 text-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-foreground">{inst.name}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{inst.domain || 'No domain'}</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Badge className={`rounded-full text-[10px] ${inst.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                  {inst.status}
+                </Badge>
+                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive rounded-xl"
+                  disabled={deleting === inst.id}
+                  onClick={() => handleDelete(inst.id!, inst.name)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

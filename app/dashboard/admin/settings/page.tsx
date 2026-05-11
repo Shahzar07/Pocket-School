@@ -46,9 +46,7 @@ export default function AdminSystemSettings() {
           <div className="space-y-4">
             <p className="text-sm text-[#5F6368]">Configure SMTP settings for system notifications and reports.</p>
             <Dialog open={smtpOpen} onOpenChange={setSmtpOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline">Configure SMTP</Button>
-              </DialogTrigger>
+              <DialogTrigger className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-2.5 py-2 text-sm font-medium hover:bg-muted transition-colors">Configure SMTP</DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>SMTP Server Settings</DialogTitle>
@@ -92,9 +90,7 @@ export default function AdminSystemSettings() {
                 <Button onClick={() => toast.success('Backup initiated! Check logs later.')} variant="outline">Run Manual Backup</Button>
                 
                 <Dialog open={retentionOpen} onOpenChange={setRetentionOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline">Retention Policies</Button>
-                  </DialogTrigger>
+                  <DialogTrigger className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-2.5 py-2 text-sm font-medium hover:bg-muted transition-colors">Retention Policies</DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Data Retention Configuration</DialogTitle>
