@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', { apiVersion: '2026-04-22.dahlia' as any });
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
-  const { invoiceId, amount, currency } = await req.json();
-
   if (!process.env.STRIPE_SECRET_KEY) {
-    return NextResponse.json({ error: 'Stripe not configured. Add STRIPE_SECRET_KEY to .env.local.' }, { status: 503 });
+    return NextResponse.json({ error: 'Stripe not configured. Add STRIPE_SECRET_KEY to environment variables.' }, { status: 503 });
   }
 
+  const { invoiceId, amount, currency } = await req.json();
+
   try {
+    const Stripe = (await import('stripe')).default;
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-04-22.dahlia' as any });
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100),
       currency: currency ?? 'usd',
