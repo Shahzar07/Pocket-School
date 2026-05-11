@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useScroll, useTransform } from 'motion/react';
+import { motion, useScroll, useTransform, AnimatePresence, type Variants } from 'motion/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -187,12 +187,14 @@ const stats = [
 
 /* ─── Animation helpers ─────────────────────────────────────── */
 
-const fadeUp = {
+const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
+
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 28 },
   visible: (i = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: i * 0.08 },
+    transition: { duration: 0.6, ease: EASE_OUT_EXPO, delay: i * 0.08 },
   }),
 };
 
@@ -276,11 +278,13 @@ export default function LandingPage() {
         </div>
 
         {/* Mobile menu */}
+        <AnimatePresence>
         {mobileOpen && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
             className="md:hidden bg-white/95 dark:bg-[#0A0A0F]/95 backdrop-blur-xl border-b border-border px-4 py-4 flex flex-col gap-3"
           >
             {[
@@ -309,6 +313,7 @@ export default function LandingPage() {
             </div>
           </motion.div>
         )}
+        </AnimatePresence>
       </header>
 
       {/* ── Hero ─────────────────────────────────────────────── */}
@@ -410,7 +415,7 @@ export default function LandingPage() {
               <motion.div
                 initial={{ opacity: 0, y: 30, rotate: -4 }}
                 animate={{ opacity: 1, y: 0, rotate: -4 }}
-                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+                transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.3 }}
                 className="absolute left-0 top-16 w-52 bg-white/90 dark:bg-[#111118]/90 backdrop-blur-sm rounded-2xl border border-border shadow-card p-5"
               >
                 <div className="w-9 h-9 rounded-xl bg-purple-100 flex items-center justify-center mb-3">
@@ -430,7 +435,7 @@ export default function LandingPage() {
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.45 }}
+                transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.45 }}
                 className="absolute top-0 right-4 w-56 bg-white/90 dark:bg-[#111118]/90 backdrop-blur-sm rounded-2xl border border-border shadow-card p-5"
               >
                 <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center mb-3">
@@ -448,7 +453,7 @@ export default function LandingPage() {
               <motion.div
                 initial={{ opacity: 0, y: 30, rotate: 3 }}
                 animate={{ opacity: 1, y: 0, rotate: 3 }}
-                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.6 }}
+                transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.6 }}
                 className="absolute bottom-8 right-0 w-52 bg-white/90 dark:bg-[#111118]/90 backdrop-blur-sm rounded-2xl border border-border shadow-card p-5"
               >
                 <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center mb-3">
@@ -467,7 +472,7 @@ export default function LandingPage() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.75 }}
+                transition={{ duration: 0.5, ease: EASE_OUT_EXPO, delay: 0.75 }}
                 className="absolute bottom-16 left-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[11px] font-semibold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5"
               >
                 <Brain className="w-3 h-3" />
@@ -629,7 +634,7 @@ export default function LandingPage() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.05, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ delay: i * 0.05, duration: 0.4, ease: EASE_OUT_EXPO }}
                 whileHover={{ y: -3, scale: 1.04 }}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-full border text-sm font-semibold transition-shadow hover:shadow-md cursor-default ${f.color}`}
               >
@@ -775,7 +780,7 @@ export default function LandingPage() {
           <Button
             size="lg"
             onClick={() => router.push('/signup')}
-            className="rounded-full h-13 px-10 text-base bg-white text-blue-700 hover:bg-blue-50 font-bold shadow-xl hover:shadow-2xl transition-all"
+            className="rounded-full h-12 px-10 text-base bg-white text-blue-700 hover:bg-blue-50 font-bold shadow-xl hover:shadow-2xl transition-all"
           >
             Create Your Free Account
             <ArrowRight className="ml-2 w-4 h-4" />
