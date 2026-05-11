@@ -7,7 +7,8 @@ import {
   GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  fetchSignInMethodsForEmail,
+  linkWithCredential,
+  EmailAuthProvider,
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -28,10 +29,7 @@ export default function LoginPage() {
 
   const routeUser = async (uid: string) => {
     const snap = await getDoc(doc(db, 'users', uid));
-    if (!snap.exists()) {
-      router.push('/onboarding');
-      return;
-    }
+    if (!snap.exists()) { router.push('/onboarding'); return; }
     const role = snap.data().role;
     if (role === 'student') router.push('/dashboard/student');
     else if (role === 'teacher') router.push('/dashboard/teacher');
@@ -57,6 +55,24 @@ export default function LoginPage() {
     }
   };
 
+  const googleSignInAndLink = async (passwordToLink?: string) => {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ login_hint: SUPER_ADMIN_EMAIL });
+    const result = await signInWithPopup(auth, provider);
+    if (passwordToLink) {
+      const credential = EmailAuthProvider.credential(SUPER_ADMIN_EMAIL, passwordToLink);
+      try {
+        await linkWithCredential(result.user, credential);
+      } catch (linkErr: any) {
+        if (linkErr?.code !== 'auth/provider-already-linked') {
+          console.warn('Link credential warning:', linkErr?.code);
+        }
+      }
+    }
+    await provisionSuperAdmin(result.user.uid);
+    await routeUser(result.user.uid);
+  };
+
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
@@ -70,76 +86,58 @@ export default function LoginPage() {
       const code = e?.code ?? '';
       if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
       if (code === 'auth/unauthorized-domain') {
-        toast.error(
-          'Google sign-in is blocked: your domain is not authorized in Firebase. See instructions below.',
-          { duration: 8000 }
-        );
+        toast.error('Google sign-in blocked: add your domain to Firebase Console → Authentication → Settings → Authorized Domains.', { duration: 10000 });
         return;
       }
-      toast.error(e?.message || 'Google sign-in failed. Please try again.');
+      toast.error(e?.message || 'Google sign-in failed.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSuperAdminSignIn = async (password: string) => {
+  const handleSuperAdminSignIn = async (pwd: string) => {
     try {
-      const result = await signInWithEmailAndPassword(auth, SUPER_ADMIN_EMAIL, password);
+      const result = await signInWithEmailAndPassword(auth, SUPER_ADMIN_EMAIL, pwd);
       await provisionSuperAdmin(result.user.uid);
       await routeUser(result.user.uid);
       return;
     } catch (err: any) {
       const code = err?.code ?? '';
-
-      if (code === 'auth/wrong-password') {
-        toast.error('Incorrect password for admin account.');
-        return;
-      }
-
       if (code === 'auth/user-not-found' || code === 'auth/invalid-credential') {
         try {
-          const methods = await fetchSignInMethodsForEmail(auth, SUPER_ADMIN_EMAIL);
-          if (methods.length > 0 && !methods.includes('password')) {
-            toast.error(
-              'Admin account uses Google sign-in. Click "Continue with Google" and sign in with harry.seggu@gmail.com.',
-              { duration: 6000 }
-            );
-            return;
-          }
-        } catch {
-          // continue to create
-        }
-
-        try {
-          const result = await createUserWithEmailAndPassword(auth, SUPER_ADMIN_EMAIL, password);
+          const result = await createUserWithEmailAndPassword(auth, SUPER_ADMIN_EMAIL, pwd);
           await provisionSuperAdmin(result.user.uid);
           await routeUser(result.user.uid);
+          return;
         } catch (createErr: any) {
-          const createCode = createErr?.code ?? '';
-          if (createCode === 'auth/email-already-in-use') {
-            toast.error(
-              'Admin account already exists via Google sign-in. Click "Continue with Google" to log in.',
-              { duration: 6000 }
-            );
-          } else if (createCode === 'auth/weak-password') {
-            toast.error('Password too weak. Use at least 6 characters.');
-          } else {
-            toast.error('Admin sign-in failed. Please try again.');
+          if (createErr?.code === 'auth/email-already-in-use') {
+            toast.info('One-time setup: confirm your Google account to activate password login…', { duration: 3000 });
+            try {
+              await googleSignInAndLink(pwd);
+            } catch (googleErr: any) {
+              const gCode = googleErr?.code ?? '';
+              if (gCode === 'auth/popup-closed-by-user' || gCode === 'auth/cancelled-popup-request') {
+                toast.error('Sign-in cancelled. Please try again.');
+              } else if (gCode === 'auth/unauthorized-domain') {
+                toast.error('Add your Vercel domain to Firebase Console → Authentication → Settings → Authorized Domains first.', { duration: 10000 });
+              } else {
+                toast.error('Could not complete admin setup. Try “Continue with Google” instead.');
+              }
+            }
+            return;
           }
+          toast.error('Admin sign-in failed. Please try again.');
+          return;
         }
-        return;
       }
-
+      if (code === 'auth/wrong-password') { toast.error('Incorrect password.'); return; }
       toast.error(err?.message || 'Admin sign-in failed. Please try again.');
     }
   };
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password) {
-      toast.error('Please enter email and password.');
-      return;
-    }
+    if (!email.trim() || !password) { toast.error('Please enter email and password.'); return; }
     setLoading(true);
     try {
       if (email.trim().toLowerCase() === SUPER_ADMIN_EMAIL) {
