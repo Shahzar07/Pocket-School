@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+
+const SUPER_ADMIN_EMAIL = 'harry.seggu@gmail.com';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,6 +56,21 @@ export default function LoginPage() {
     }
   };
 
+  const provisionSuperAdmin = async (uid: string) => {
+    const snap = await getDoc(doc(db, 'users', uid));
+    if (!snap.exists()) {
+      await setDoc(doc(db, 'users', uid), {
+        name: 'Harry Seggu',
+        email: SUPER_ADMIN_EMAIL,
+        avatarUrl: '',
+        role: 'admin',
+        xp: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+  };
+
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -62,6 +79,28 @@ export default function LoginPage() {
     }
     try {
       setLoading(true);
+      const isSuperAdmin = email.trim().toLowerCase() === SUPER_ADMIN_EMAIL;
+
+      if (isSuperAdmin) {
+        try {
+          const result = await signInWithEmailAndPassword(auth, SUPER_ADMIN_EMAIL, password);
+          await provisionSuperAdmin(result.user.uid);
+          await routeUser(result.user.uid);
+        } catch (err: any) {
+          if (err?.code === 'auth/user-not-found' || err?.code === 'auth/invalid-credential') {
+            // First-ever login — create the super admin account
+            const result = await createUserWithEmailAndPassword(auth, SUPER_ADMIN_EMAIL, password);
+            await provisionSuperAdmin(result.user.uid);
+            await routeUser(result.user.uid);
+          } else if (err?.code === 'auth/wrong-password') {
+            toast.error("Incorrect password.");
+          } else {
+            throw err;
+          }
+        }
+        return;
+      }
+
       const result = await signInWithEmailAndPassword(auth, email.trim(), password);
       await routeUser(result.user.uid);
     } catch (e: any) {
