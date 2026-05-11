@@ -11,7 +11,8 @@ import { db } from '@/lib/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { toast } from 'sonner';
-import { linkChildToParent } from '@/lib/db';
+import { linkChildToParent, createParentVerification } from '@/lib/db';
+import { Timestamp } from 'firebase/firestore';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function OnboardingPage() {
   const [level, setLevel] = useState('');
   const [learningStyle, setLearningStyle] = useState('');
   const [childEmail, setChildEmail] = useState('');
+  const [studentIdField, setStudentIdField] = useState('');
   const [linkLoading, setLinkLoading] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -54,12 +56,25 @@ export default function OnboardingPage() {
   };
 
   const handleLinkChild = async () => {
-    if (!childEmail.trim()) { toast.error('Enter your child\'s email address'); return; }
+    if (!childEmail.trim()) { toast.error("Enter your child's email address"); return; }
     setLinkLoading(true);
     const result = await linkChildToParent(user.uid, childEmail.trim().toLowerCase());
     if (result.success) {
-      toast.success(`Linked to ${result.childName}'s account!`);
+      // Also create a verification request for admin approval
+      try {
+        await createParentVerification({
+          parentId: user.uid,
+          parentName: profile.name ?? 'Parent',
+          parentEmail: user.email ?? '',
+          studentEmail: childEmail.trim().toLowerCase(),
+          studentId: studentIdField.trim(),
+          status: 'pending',
+          createdAt: Timestamp.now(),
+        });
+      } catch { /* non-blocking */ }
+      toast.success(`Linked to ${result.childName}'s account! Verification request sent.`);
       setChildEmail('');
+      setStudentIdField('');
     } else {
       toast.error(result.error || 'Could not link account');
     }
@@ -90,12 +105,21 @@ export default function OnboardingPage() {
 
           <div className="bg-card border border-border rounded-2xl p-6 space-y-4 mb-4">
             <Label className="font-semibold text-foreground">Child's email address</Label>
+            <Input
+              type="email"
+              placeholder="child@example.com"
+              value={childEmail}
+              onChange={e => setChildEmail(e.target.value)}
+              className="h-11 rounded-xl"
+              disabled={linkLoading}
+            />
+            <Label className="font-semibold text-foreground">Child's Student ID <span className="text-muted-foreground font-normal">(optional)</span></Label>
             <div className="flex gap-2">
               <Input
-                type="email"
-                placeholder="child@example.com"
-                value={childEmail}
-                onChange={e => setChildEmail(e.target.value)}
+                type="text"
+                placeholder="e.g. STU-2024-001"
+                value={studentIdField}
+                onChange={e => setStudentIdField(e.target.value)}
                 className="h-11 rounded-xl flex-1"
                 disabled={linkLoading}
                 onKeyDown={e => e.key === 'Enter' && handleLinkChild()}
@@ -104,7 +128,7 @@ export default function OnboardingPage() {
                 {linkLoading ? '…' : 'Link'}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">Your child must already have a student account on Pocket School. You can link multiple children.</p>
+            <p className="text-xs text-muted-foreground">Your child must already have a student account. You can link multiple children. A verification request will be sent to the admin.</p>
           </div>
 
           <div className="flex gap-3">

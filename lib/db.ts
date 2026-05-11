@@ -1158,3 +1158,130 @@ export async function deleteTask(id: string) {
   await deleteDoc(doc(db, 'tasks', id));
 }
 
+
+// ─── Attendance ───────────────────────────────────────────────────────────────
+
+export interface AttendanceEntry {
+  studentId: string;
+  studentName: string;
+  status: 'present' | 'absent' | 'late' | 'excused';
+}
+
+export interface AttendanceRecord {
+  id?: string;
+  courseId: string;
+  courseTitle: string;
+  lessonId: string;
+  lessonTitle: string;
+  teacherId: string;
+  date: Timestamp;
+  records: AttendanceEntry[];
+}
+
+export async function createAttendanceRecord(data: Omit<AttendanceRecord, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, 'attendance_records'), { ...data, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function getAttendanceForCourse(courseId: string): Promise<AttendanceRecord[]> {
+  const q = query(collection(db, 'attendance_records'), where('courseId', '==', courseId), orderBy('date', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as AttendanceRecord));
+}
+
+export async function getAttendanceForStudent(studentId: string): Promise<AttendanceRecord[]> {
+  const snap = await getDocs(collection(db, 'attendance_records'));
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() } as AttendanceRecord))
+    .filter(r => r.records.some(e => e.studentId === studentId));
+}
+
+export async function updateAttendanceRecord(id: string, data: Partial<AttendanceRecord>) {
+  await updateDoc(doc(db, 'attendance_records', id), data);
+}
+
+// ─── Certificates ─────────────────────────────────────────────────────────────
+
+export interface Certificate {
+  id?: string;
+  studentId: string;
+  studentName: string;
+  courseId: string;
+  courseTitle: string;
+  issuedAt: Timestamp;
+  issuedBy: string;
+  issuedByName: string;
+}
+
+export async function issueCertificate(data: Omit<Certificate, 'id'>): Promise<string> {
+  const uuid = crypto.randomUUID();
+  await setDoc(doc(db, 'certificates', uuid), { ...data, createdAt: serverTimestamp() });
+  return uuid;
+}
+
+export async function getCertificatesForStudent(studentId: string): Promise<Certificate[]> {
+  const q = query(collection(db, 'certificates'), where('studentId', '==', studentId), orderBy('issuedAt', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Certificate));
+}
+
+export async function getCertificateByUUID(uuid: string): Promise<Certificate | null> {
+  const snap = await getDoc(doc(db, 'certificates', uuid));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() } as Certificate;
+}
+
+// ─── User Sessions (anti-password-sharing) ───────────────────────────────────
+
+export interface UserSession {
+  id?: string;
+  userId: string;
+  deviceInfo: string;
+  lastSeen: Timestamp;
+  createdAt: Timestamp;
+}
+
+export async function upsertUserSession(userId: string, deviceInfo: string): Promise<boolean> {
+  const q = query(collection(db, 'user_sessions'), where('userId', '==', userId), where('deviceInfo', '==', deviceInfo));
+  const snap = await getDocs(q);
+  if (!snap.empty) {
+    await updateDoc(snap.docs[0].ref, { lastSeen: serverTimestamp() });
+    return false;
+  }
+  await addDoc(collection(db, 'user_sessions'), { userId, deviceInfo, lastSeen: serverTimestamp(), createdAt: serverTimestamp() });
+  return true;
+}
+
+export async function getUserSessions(userId: string): Promise<UserSession[]> {
+  const q = query(collection(db, 'user_sessions'), where('userId', '==', userId), orderBy('lastSeen', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as UserSession));
+}
+
+// ─── Parent Verification ──────────────────────────────────────────────────────
+
+export interface ParentVerification {
+  id?: string;
+  parentId: string;
+  parentName: string;
+  parentEmail: string;
+  studentEmail: string;
+  studentId: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: Timestamp;
+}
+
+export async function createParentVerification(data: Omit<ParentVerification, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, 'parent_verifications'), { ...data, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function getPendingVerifications(): Promise<ParentVerification[]> {
+  const q = query(collection(db, 'parent_verifications'), where('status', '==', 'pending'), orderBy('createdAt', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as ParentVerification));
+}
+
+export async function updateVerificationStatus(id: string, status: 'approved' | 'rejected') {
+  await updateDoc(doc(db, 'parent_verifications', id), { status });
+}

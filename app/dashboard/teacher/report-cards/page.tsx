@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { getTeacherCourses, Course, getGradesForCourse, Grade } from '@/lib/db';
+import { getTeacherCourses, Course, getGradesForCourse, Grade, issueCertificate } from '@/lib/db';
+import { Timestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, FileBarChart, Printer, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
+import { Loader2, FileBarChart, Printer, Sparkles, Award } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface StudentReport {
@@ -30,12 +32,13 @@ function letterGrade(pct: number) {
 const GRADE_COLORS = { A: 'bg-green-100 text-green-800', B: 'bg-blue-100 text-blue-800', C: 'bg-yellow-100 text-yellow-800', D: 'bg-orange-100 text-orange-800', F: 'bg-red-100 text-red-800' };
 
 export default function ReportCardsPage() {
-  const { user } = useAuthSTORE();
+  const { user, profile } = useAuthSTORE();
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState('');
   const [reports, setReports] = useState<StudentReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [issuingCert, setIssuingCert] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -87,6 +90,26 @@ export default function ReportCardsPage() {
     }
     setGenerating(false);
   }
+
+  const handleIssueCert = async (r: StudentReport) => {
+    if (!user) return;
+    const course = courses.find(c => c.id === selectedCourse);
+    if (!course) return;
+    setIssuingCert(r.studentId);
+    try {
+      const uuid = await issueCertificate({
+        studentId: r.studentId,
+        studentName: r.studentName,
+        courseId: selectedCourse,
+        courseTitle: course.title,
+        issuedAt: Timestamp.now(),
+        issuedBy: user.uid,
+        issuedByName: profile?.name ?? 'Teacher',
+      });
+      toast.success(`Certificate issued! ID: ${uuid.slice(0, 8)}…`);
+    } catch { toast.error('Failed to issue certificate.'); }
+    finally { setIssuingCert(null); }
+  };
 
   if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-teal-600" /></div>;
 
@@ -165,7 +188,15 @@ export default function ReportCardsPage() {
               )}
             </div>
 
-            <p className="text-[10px] text-gray-400 mt-3">Generated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+            <div className="flex items-center justify-between mt-3">
+              <p className="text-[10px] text-gray-400">Generated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+              <Button size="sm" onClick={() => handleIssueCert(r)} disabled={issuingCert === r.studentId}
+                className="print:hidden bg-amber-500 hover:bg-amber-600 text-white rounded-xl gap-1.5 text-xs"
+              >
+                {issuingCert === r.studentId ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Award className="w-3.5 h-3.5" />}
+                Issue Certificate
+              </Button>
+            </div>
           </div>
         ))}
       </div>

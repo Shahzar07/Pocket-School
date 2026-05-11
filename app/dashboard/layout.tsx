@@ -10,13 +10,15 @@ import {
   ClipboardList, Presentation, Shield, BarChart, Settings, FileText,
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
-  GraduationCap, Users, Star,
+  GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { AITutor } from '@/components/ai-tutor';
 import { NotificationsBell } from '@/components/notifications-bell';
 import { DashboardSearch } from '@/components/dashboard-search';
+import { LanguageSwitcher } from '@/components/language-switcher';
+import { upsertUserSession } from '@/lib/db';
 import Link from 'next/link';
 
 const NavItem = ({ href, icon: Icon, label, activeBgClass, activeTextClass, pathname, onClick, router }: {
@@ -53,6 +55,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [newDevice, setNewDevice] = useState(false);
 
   const handleNavClick = () => {
     if (window.innerWidth < 1024) setSidebarOpen(false);
@@ -61,6 +64,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     if (!loading && !user) router.push('/login');
   }, [user, loading, router]);
+
+  useEffect(() => {
+    if (!user) return;
+    const deviceInfo = `${navigator.userAgent.slice(0, 80)}|${screen.width}x${screen.height}`;
+    upsertUserSession(user.uid, deviceInfo).then(isNew => { if (isNew) setNewDevice(true); }).catch(() => {});
+  }, [user]);
 
   if (loading || !user || !profile) {
     return (
@@ -97,6 +106,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <NavItem href="/dashboard/student/assignments" icon={ClipboardList} label="Assignments" activeBgClass={sB} activeTextClass={sT} {...navProps} />
               <NavItem href="/dashboard/student/exams" icon={PenSquare} label="Exams" activeBgClass={sB} activeTextClass={sT} {...navProps} />
               <NavItem href="/dashboard/student/transcript" icon={GraduationCap} label="Transcript" activeBgClass={sB} activeTextClass={sT} {...navProps} />
+              <NavItem href="/dashboard/student/attendance" icon={ClipboardCheck} label="Attendance" activeBgClass={sB} activeTextClass={sT} {...navProps} />
+              <NavItem href="/dashboard/student/certificates" icon={Award} label="Certificates" activeBgClass={sB} activeTextClass={sT} {...navProps} />
               <NavItem href="/dashboard/student/tasks" icon={ListTodo} label="My Tasks" activeBgClass={sB} activeTextClass={sT} {...navProps} />
               <NavSection label="Finance" />
               <NavItem href="/dashboard/student/billing" icon={CreditCard} label="Billing" activeBgClass={sB} activeTextClass={sT} {...navProps} />
@@ -105,6 +116,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <NavItem href="/dashboard/calendar" icon={Calendar} label="Calendar" activeBgClass={sB} activeTextClass={sT} {...navProps} />
               <NavItem href="/dashboard/resources" icon={Library} label="Resources" activeBgClass={sB} activeTextClass={sT} {...navProps} />
               <NavItem href="/dashboard/helpdesk" icon={HelpCircle} label="Helpdesk" activeBgClass={sB} activeTextClass={sT} {...navProps} />
+              <NavSection label="Account" />
+              <NavItem href="/dashboard/profile" icon={UserCircle} label="My Profile" activeBgClass={sB} activeTextClass={sT} {...navProps} />
             </>
           )}
 
@@ -119,6 +132,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <NavItem href="/dashboard/teacher/assignments" icon={FileText} label="Assignments" activeBgClass={tB} activeTextClass={tT} {...navProps} />
               <NavItem href="/dashboard/teacher/exams" icon={PenSquare} label="Exam Builder" activeBgClass={tB} activeTextClass={tT} {...navProps} />
               <NavItem href="/dashboard/teacher/report-cards" icon={FileBarChart} label="Report Cards" activeBgClass={tB} activeTextClass={tT} {...navProps} />
+              <NavItem href="/dashboard/teacher/attendance" icon={ClipboardCheck} label="Attendance" activeBgClass={tB} activeTextClass={tT} {...navProps} />
               <NavItem href="/dashboard/teacher/integrity" icon={AlertTriangle} label="Integrity" activeBgClass={tB} activeTextClass={tT} {...navProps} />
               <NavItem href="/dashboard/teacher/behaviour" icon={Star} label="Behaviour" activeBgClass={tB} activeTextClass={tT} {...navProps} />
               <NavSection label="Finance" />
@@ -128,6 +142,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <NavItem href="/dashboard/calendar" icon={Calendar} label="Calendar" activeBgClass={tB} activeTextClass={tT} {...navProps} />
               <NavItem href="/dashboard/resources" icon={Library} label="Resources" activeBgClass={tB} activeTextClass={tT} {...navProps} />
               <NavItem href="/dashboard/helpdesk" icon={HelpCircle} label="Helpdesk" activeBgClass={tB} activeTextClass={tT} {...navProps} />
+              <NavSection label="Account" />
+              <NavItem href="/dashboard/profile" icon={UserCircle} label="My Profile" activeBgClass={tB} activeTextClass={tT} {...navProps} />
             </>
           )}
 
@@ -137,10 +153,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <NavItem href="/dashboard/parent" icon={Home} label="Child Progress" activeBgClass={pB} activeTextClass={pT} {...navProps} />
               <NavItem href="/dashboard/parent/communications" icon={MessageSquare} label="Communications" activeBgClass={pB} activeTextClass={pT} {...navProps} />
               <NavItem href="/dashboard/parent/duedates" icon={Clock} label="Due Dates" activeBgClass={pB} activeTextClass={pT} {...navProps} />
+              <NavItem href="/dashboard/student/attendance" icon={ClipboardCheck} label="Child Attendance" activeBgClass={pB} activeTextClass={pT} {...navProps} />
               <NavSection label="School" />
               <NavItem href="/dashboard/announcements" icon={Megaphone} label="Announcements" activeBgClass={pB} activeTextClass={pT} {...navProps} />
               <NavItem href="/dashboard/calendar" icon={Calendar} label="Calendar" activeBgClass={pB} activeTextClass={pT} {...navProps} />
               <NavItem href="/dashboard/helpdesk" icon={HelpCircle} label="Helpdesk" activeBgClass={pB} activeTextClass={pT} {...navProps} />
+              <NavSection label="Account" />
+              <NavItem href="/dashboard/profile" icon={UserCircle} label="My Profile" activeBgClass={pB} activeTextClass={pT} {...navProps} />
             </>
           )}
 
@@ -151,12 +170,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <NavItem href="/dashboard/admin/institutions" icon={Users} label="Institutions" activeBgClass={aB} activeTextClass={aT} {...navProps} />
               <NavItem href="/dashboard/admin/access" icon={Shield} label="Access Config" activeBgClass={aB} activeTextClass={aT} {...navProps} />
               <NavItem href="/dashboard/admin/settings" icon={Settings} label="System Settings" activeBgClass={aB} activeTextClass={aT} {...navProps} />
+              <NavItem href="/dashboard/admin/verifications" icon={ShieldCheck} label="Verifications" activeBgClass={aB} activeTextClass={aT} {...navProps} />
               <NavSection label="Platform" />
               <NavItem href="/dashboard/announcements" icon={Megaphone} label="Announcements" activeBgClass={aB} activeTextClass={aT} {...navProps} />
               <NavItem href="/dashboard/calendar" icon={Calendar} label="Calendar" activeBgClass={aB} activeTextClass={aT} {...navProps} />
               <NavItem href="/dashboard/resources" icon={Library} label="Resources" activeBgClass={aB} activeTextClass={aT} {...navProps} />
               <NavItem href="/dashboard/teacher/billing" icon={CreditCard} label="Billing" activeBgClass={aB} activeTextClass={aT} {...navProps} />
               <NavItem href="/dashboard/helpdesk" icon={HelpCircle} label="Helpdesk" activeBgClass={aB} activeTextClass={aT} {...navProps} />
+              <NavSection label="Account" />
+              <NavItem href="/dashboard/profile" icon={UserCircle} label="My Profile" activeBgClass={aB} activeTextClass={aT} {...navProps} />
             </>
           )}
         </nav>
@@ -186,14 +208,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Button>
             <DashboardSearch />
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
             <NotificationsBell />
-            <Avatar className="w-9 h-9 border border-gray-200 cursor-pointer">
-              <AvatarImage src={profile.avatarUrl ?? user.photoURL ?? undefined} />
-              <AvatarFallback>{profile.name?.charAt(0) ?? 'U'}</AvatarFallback>
-            </Avatar>
+            <button onClick={() => router.push('/dashboard/profile')}>
+              <Avatar className="w-9 h-9 border border-gray-200 cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all">
+                <AvatarImage src={profile.avatarUrl ?? user.photoURL ?? undefined} />
+                <AvatarFallback>{profile.name?.charAt(0) ?? 'U'}</AvatarFallback>
+              </Avatar>
+            </button>
           </div>
         </header>
+
+        {/* New device warning banner */}
+        {newDevice && (
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center justify-between gap-3 text-sm text-amber-800 shrink-0">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+              <span><strong>New device detected.</strong> If this wasn't you, change your password immediately in My Profile.</span>
+            </div>
+            <button onClick={() => setNewDevice(false)} className="text-amber-600 hover:text-amber-800 shrink-0">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* Scrollable Main */}
         <main className="flex-1 overflow-y-auto p-4 lg:p-6 relative">
