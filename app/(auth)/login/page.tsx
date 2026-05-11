@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+
+const SUPER_ADMIN_EMAIL = 'harry.seggu@gmail.com';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,6 +56,21 @@ export default function LoginPage() {
     }
   };
 
+  const provisionSuperAdmin = async (uid: string) => {
+    const snap = await getDoc(doc(db, 'users', uid));
+    if (!snap.exists()) {
+      await setDoc(doc(db, 'users', uid), {
+        name: 'Harry Seggu',
+        email: SUPER_ADMIN_EMAIL,
+        avatarUrl: '',
+        role: 'admin',
+        xp: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+  };
+
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -62,53 +79,40 @@ export default function LoginPage() {
     }
     try {
       setLoading(true);
-      const isAdminLogin = email.trim() === 'Harryseggu' && password === '123@Website@456';
-      const targetEmail = isAdminLogin ? 'harryseggu@learnyourway.com' : email;
+      const isSuperAdmin = email.trim().toLowerCase() === SUPER_ADMIN_EMAIL;
 
-      if (isAdminLogin) {
+      if (isSuperAdmin) {
         try {
-          const result = await signInWithEmailAndPassword(auth, targetEmail, password);
+          const result = await signInWithEmailAndPassword(auth, SUPER_ADMIN_EMAIL, password);
+          await provisionSuperAdmin(result.user.uid);
           await routeUser(result.user.uid);
-          return;
-        } catch (adminErr: any) {
-          if (adminErr?.code === 'auth/operation-not-allowed') {
-            toast.error("Firebase Error: Please enable Email/Password authentication in your Firebase Console (Authentication > Sign-in method).");
-            return;
-          }
-          try {
-            // Provision admin account on first login
-            const result = await createUserWithEmailAndPassword(auth, targetEmail, password);
-            await setDoc(doc(db, 'users', result.user.uid), {
-              email: targetEmail,
-              name: 'Harryseggu',
-              avatarUrl: '',
-              role: 'admin',
-              xp: 0,
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
-            });
+        } catch (err: any) {
+          if (err?.code === 'auth/user-not-found' || err?.code === 'auth/invalid-credential') {
+            // First-ever login — create the super admin account
+            const result = await createUserWithEmailAndPassword(auth, SUPER_ADMIN_EMAIL, password);
+            await provisionSuperAdmin(result.user.uid);
             await routeUser(result.user.uid);
-            return;
-          } catch (createErr: any) {
-            if (createErr?.code === 'auth/operation-not-allowed') {
-              toast.error("Firebase Error: Please enable Email/Password authentication in your Firebase Console.");
-              return;
-            }
-            throw createErr;
+          } else if (err?.code === 'auth/wrong-password') {
+            toast.error("Incorrect password.");
+          } else {
+            throw err;
           }
         }
+        return;
       }
 
-      const result = await signInWithEmailAndPassword(auth, targetEmail, password);
+      const result = await signInWithEmailAndPassword(auth, email.trim(), password);
       await routeUser(result.user.uid);
     } catch (e: any) {
       console.error(e);
       if (e?.code === 'auth/operation-not-allowed') {
-        toast.error("Please enable Email/Password authentication in your Firebase Console (Authentication > Sign-in method).");
+        toast.error("Email/password sign-in is not enabled. Please contact your administrator.");
       } else if (e?.code === 'auth/invalid-email') {
         toast.error("Invalid email address format.");
+      } else if (e?.code === 'auth/user-not-found' || e?.code === 'auth/wrong-password' || e?.code === 'auth/invalid-credential') {
+        toast.error("Incorrect email or password.");
       } else {
-        toast.error("Invalid credentials.");
+        toast.error("Sign in failed. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -119,7 +123,7 @@ export default function LoginPage() {
     <motion.div 
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
     >
       <div className="mb-10 text-center lg:text-left">
         <h2 className="text-3xl font-bold text-[#202124] mb-3">Welcome back</h2>

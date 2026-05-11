@@ -547,3 +547,741 @@ export async function getEnrollmentsForCourse(courseId: string): Promise<{ stude
     return { studentId: d.id, progress: data.progress ?? 0, completedLessons: data.completedLessons ?? [] };
   });
 }
+
+// ─── Grades ───────────────────────────────────────────────────
+
+export interface Grade {
+  id: string;
+  studentId: string;
+  studentName: string;
+  courseId: string;
+  lessonId?: string;
+  assignmentId?: string;
+  examId?: string;
+  type: 'quiz' | 'assignment' | 'exam' | 'participation' | 'custom';
+  label: string;
+  score: number;
+  maxScore: number;
+  weight?: number;
+  teacherNote?: string;
+  gradedAt?: Timestamp;
+  gradedBy?: string;
+}
+
+export interface GradeWeights {
+  quiz: number;
+  assignment: number;
+  exam: number;
+  participation: number;
+}
+
+const DEFAULT_WEIGHTS: GradeWeights = { quiz: 30, assignment: 40, exam: 20, participation: 10 };
+
+export async function createGrade(grade: Omit<Grade, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, 'grades'), { ...grade, gradedAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function updateGrade(gradeId: string, updates: Partial<Grade>) {
+  await updateDoc(doc(db, 'grades', gradeId), updates);
+}
+
+export async function getGradesForCourse(courseId: string): Promise<Grade[]> {
+  const q = query(collection(db, 'grades'), where('courseId', '==', courseId), orderBy('gradedAt', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Grade));
+}
+
+export async function getGradesForStudent(studentId: string): Promise<Grade[]> {
+  const q = query(collection(db, 'grades'), where('studentId', '==', studentId), orderBy('gradedAt', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Grade));
+}
+
+export async function getGradeWeights(courseId: string): Promise<GradeWeights> {
+  const snap = await getDoc(doc(db, 'grade_weights', courseId));
+  return snap.exists() ? (snap.data() as GradeWeights) : DEFAULT_WEIGHTS;
+}
+
+export async function setGradeWeights(courseId: string, weights: GradeWeights) {
+  await setDoc(doc(db, 'grade_weights', courseId), weights);
+}
+
+export async function deleteGrade(gradeId: string) {
+  await deleteDoc(doc(db, 'grades', gradeId));
+}
+
+// ─── Assignments ──────────────────────────────────────────────
+
+export interface Assignment {
+  id: string;
+  courseId: string;
+  moduleId?: string;
+  title: string;
+  description: string;
+  dueDate: Timestamp;
+  maxScore: number;
+  submissionType: 'text' | 'link' | 'any';
+  status: 'draft' | 'published';
+  allowLate: boolean;
+  createdBy: string;
+  createdAt?: Timestamp;
+}
+
+export interface AssignmentSubmission {
+  id: string;
+  assignmentId: string;
+  studentId: string;
+  studentName: string;
+  courseId: string;
+  content?: string;
+  linkUrl?: string;
+  submittedAt?: Timestamp;
+  isLate: boolean;
+  score?: number;
+  feedback?: string;
+  gradedAt?: Timestamp;
+  integrityScore?: number;
+  integrityFlag?: boolean;
+}
+
+export async function createAssignment(data: Omit<Assignment, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, 'assignments'), { ...data, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function updateAssignment(id: string, data: Partial<Assignment>) {
+  await updateDoc(doc(db, 'assignments', id), data);
+}
+
+export async function deleteAssignment(id: string) {
+  await deleteDoc(doc(db, 'assignments', id));
+}
+
+export async function getAssignmentsForCourse(courseId: string): Promise<Assignment[]> {
+  const q = query(collection(db, 'assignments'), where('courseId', '==', courseId), orderBy('dueDate', 'asc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Assignment));
+}
+
+export async function getAssignmentsForStudent(courseIds: string[]): Promise<Assignment[]> {
+  if (!courseIds.length) return [];
+  const results: Assignment[] = [];
+  for (const cid of courseIds) {
+    const q = query(collection(db, 'assignments'), where('courseId', '==', cid), where('status', '==', 'published'), orderBy('dueDate', 'asc'));
+    const snap = await getDocs(q);
+    snap.docs.forEach(d => results.push({ id: d.id, ...d.data() } as Assignment));
+  }
+  return results;
+}
+
+export async function submitAssignment(data: Omit<AssignmentSubmission, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, 'assignment_submissions'), { ...data, submittedAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function getAssignmentSubmissions(assignmentId: string): Promise<AssignmentSubmission[]> {
+  const q = query(collection(db, 'assignment_submissions'), where('assignmentId', '==', assignmentId), orderBy('submittedAt', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as AssignmentSubmission));
+}
+
+export async function getStudentSubmissionsForCourse(studentId: string, courseId: string): Promise<AssignmentSubmission[]> {
+  const q = query(collection(db, 'assignment_submissions'), where('studentId', '==', studentId), where('courseId', '==', courseId));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as AssignmentSubmission));
+}
+
+export async function gradeAssignmentSubmission(submissionId: string, score: number, feedback: string) {
+  await updateDoc(doc(db, 'assignment_submissions', submissionId), { score, feedback, gradedAt: serverTimestamp() });
+}
+
+// ─── Exams ────────────────────────────────────────────────────
+
+export interface ExamQuestion {
+  id: string;
+  type: 'multiple_choice' | 'short_answer' | 'true_false';
+  question: string;
+  options?: string[];
+  answer: string;
+  points: number;
+  explanation?: string;
+}
+
+export interface Exam {
+  id: string;
+  courseId: string;
+  title: string;
+  description?: string;
+  questions: ExamQuestion[];
+  timeLimit?: number;
+  passingScore: number;
+  status: 'draft' | 'published';
+  availableFrom?: Timestamp;
+  availableTo?: Timestamp;
+  createdBy: string;
+  createdAt?: Timestamp;
+}
+
+export interface ExamSubmission {
+  id: string;
+  examId: string;
+  studentId: string;
+  studentName: string;
+  courseId: string;
+  answers: Record<string, string>;
+  score: number;
+  maxScore: number;
+  passed: boolean;
+  timeTakenSeconds?: number;
+  submittedAt?: Timestamp;
+}
+
+export async function createExam(data: Omit<Exam, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, 'exams'), { ...data, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function updateExam(id: string, data: Partial<Exam>) {
+  await updateDoc(doc(db, 'exams', id), data);
+}
+
+export async function deleteExam(id: string) {
+  await deleteDoc(doc(db, 'exams', id));
+}
+
+export async function getExamsForCourse(courseId: string): Promise<Exam[]> {
+  const q = query(collection(db, 'exams'), where('courseId', '==', courseId), orderBy('createdAt', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Exam));
+}
+
+export async function getPublishedExamsForStudent(courseIds: string[]): Promise<Exam[]> {
+  if (!courseIds.length) return [];
+  const results: Exam[] = [];
+  for (const cid of courseIds) {
+    const q = query(collection(db, 'exams'), where('courseId', '==', cid), where('status', '==', 'published'));
+    const snap = await getDocs(q);
+    snap.docs.forEach(d => results.push({ id: d.id, ...d.data() } as Exam));
+  }
+  return results;
+}
+
+export async function submitExam(data: Omit<ExamSubmission, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, 'exam_submissions'), { ...data, submittedAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function getExamSubmissions(examId: string): Promise<ExamSubmission[]> {
+  const q = query(collection(db, 'exam_submissions'), where('examId', '==', examId), orderBy('submittedAt', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as ExamSubmission));
+}
+
+export async function getStudentExamSubmission(examId: string, studentId: string): Promise<ExamSubmission | null> {
+  const q = query(collection(db, 'exam_submissions'), where('examId', '==', examId), where('studentId', '==', studentId), limit(1));
+  const snap = await getDocs(q);
+  return snap.empty ? null : ({ id: snap.docs[0].id, ...snap.docs[0].data() } as ExamSubmission);
+}
+
+// ─── Calendar Events ──────────────────────────────────────────
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description?: string;
+  startDate: Timestamp;
+  endDate?: Timestamp;
+  type: 'assignment' | 'exam' | 'event' | 'holiday' | 'class' | 'payment';
+  courseId?: string;
+  audience: 'all' | 'students' | 'teachers' | 'parents';
+  createdBy: string;
+  createdAt?: Timestamp;
+}
+
+export async function getCalendarEvents(options: { courseId?: string; audience?: string } = {}): Promise<CalendarEvent[]> {
+  let q;
+  if (options.courseId) {
+    q = query(collection(db, 'calendar_events'), where('courseId', '==', options.courseId), orderBy('startDate', 'asc'));
+  } else {
+    q = query(collection(db, 'calendar_events'), orderBy('startDate', 'asc'), limit(100));
+  }
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as CalendarEvent));
+}
+
+export async function createCalendarEvent(data: Omit<CalendarEvent, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, 'calendar_events'), { ...data, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function deleteCalendarEvent(id: string) {
+  await deleteDoc(doc(db, 'calendar_events', id));
+}
+
+// ─── Announcements ────────────────────────────────────────────
+
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  audience: 'all' | 'students' | 'teachers' | 'parents';
+  courseId?: string;
+  pinned: boolean;
+  createdBy: string;
+  createdByName: string;
+  createdAt?: Timestamp;
+  expiresAt?: Timestamp;
+}
+
+export async function getAnnouncements(audience: string, courseId?: string): Promise<Announcement[]> {
+  const q = query(collection(db, 'announcements'), orderBy('createdAt', 'desc'), limit(50));
+  const snap = await getDocs(q);
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() } as Announcement))
+    .filter(a => a.audience === 'all' || a.audience === audience || (courseId && a.courseId === courseId));
+}
+
+export async function createAnnouncement(data: Omit<Announcement, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, 'announcements'), { ...data, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function updateAnnouncement(id: string, data: Partial<Announcement>) {
+  await updateDoc(doc(db, 'announcements', id), data);
+}
+
+export async function deleteAnnouncement(id: string) {
+  await deleteDoc(doc(db, 'announcements', id));
+}
+
+// ─── Notifications ────────────────────────────────────────────
+
+export interface Notification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: 'grade' | 'assignment' | 'announcement' | 'message' | 'exam' | 'integrity' | 'payment' | 'general';
+  link?: string;
+  read: boolean;
+  createdAt?: Timestamp;
+}
+
+export async function createNotification(data: Omit<Notification, 'id'>): Promise<void> {
+  await addDoc(collection(db, 'notifications'), { ...data, read: false, createdAt: serverTimestamp() });
+}
+
+export async function getNotifications(userId: string): Promise<Notification[]> {
+  const q = query(collection(db, 'notifications'), where('userId', '==', userId), orderBy('createdAt', 'desc'), limit(20));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Notification));
+}
+
+export async function getUnreadNotificationCount(userId: string): Promise<number> {
+  const q = query(collection(db, 'notifications'), where('userId', '==', userId), where('read', '==', false));
+  const snap = await getDocs(q);
+  return snap.size;
+}
+
+export async function markNotificationRead(notifId: string) {
+  await updateDoc(doc(db, 'notifications', notifId), { read: true });
+}
+
+export async function markAllNotificationsRead(userId: string) {
+  const q = query(collection(db, 'notifications'), where('userId', '==', userId), where('read', '==', false));
+  const snap = await getDocs(q);
+  const batch = writeBatch(db);
+  snap.docs.forEach(d => batch.update(d.ref, { read: true }));
+  await batch.commit();
+}
+
+// ─── Chat Messages ────────────────────────────────────────────
+
+export interface ChatMessage {
+  id: string;
+  roomId: string;
+  senderId: string;
+  senderName: string;
+  senderRole: string;
+  content: string;
+  type: 'text' | 'announcement';
+  createdAt?: Timestamp;
+}
+
+export async function sendChatMessage(data: Omit<ChatMessage, 'id'>): Promise<void> {
+  await addDoc(collection(db, 'chat_messages'), { ...data, createdAt: serverTimestamp() });
+}
+
+export async function getChatMessages(roomId: string): Promise<ChatMessage[]> {
+  const q = query(collection(db, 'chat_messages'), where('roomId', '==', roomId), orderBy('createdAt', 'asc'), limit(100));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as ChatMessage));
+}
+
+export async function deleteChatMessage(msgId: string) {
+  await deleteDoc(doc(db, 'chat_messages', msgId));
+}
+
+// ─── Academic Integrity ───────────────────────────────────────
+
+export interface IntegrityReport {
+  id: string;
+  submissionId?: string;
+  submissionType: 'assignment' | 'exam' | 'upload';
+  studentId: string;
+  studentName: string;
+  courseId: string;
+  assignmentTitle?: string;
+  contentSnippet: string;
+  aiScore: number;
+  plagiarismScore: number;
+  flags: string[];
+  recommendation: string;
+  status: 'pending' | 'clean' | 'suspicious' | 'violation';
+  reviewedBy?: string;
+  resolution?: string;
+  createdAt?: Timestamp;
+}
+
+export async function createIntegrityReport(data: Omit<IntegrityReport, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, 'integrity_reports'), { ...data, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function getIntegrityReportsForTeacher(teacherId: string): Promise<IntegrityReport[]> {
+  const courses = await getTeacherCourses(teacherId);
+  const results: IntegrityReport[] = [];
+  for (const c of courses) {
+    const q = query(collection(db, 'integrity_reports'), where('courseId', '==', c.id), orderBy('createdAt', 'desc'), limit(20));
+    const snap = await getDocs(q);
+    snap.docs.forEach(d => results.push({ id: d.id, ...d.data() } as IntegrityReport));
+  }
+  return results;
+}
+
+export async function updateIntegrityReport(id: string, data: Partial<IntegrityReport>) {
+  await updateDoc(doc(db, 'integrity_reports', id), data);
+}
+
+// ─── Invoices / Billing ───────────────────────────────────────
+
+export interface Invoice {
+  id: string;
+  studentId: string;
+  studentName: string;
+  parentId?: string;
+  courseId?: string;
+  description: string;
+  amount: number;
+  currency: string;
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  dueDate: Timestamp;
+  paidAt?: Timestamp;
+  discount?: number;
+  stripePaymentIntentId?: string;
+  createdBy: string;
+  createdAt?: Timestamp;
+}
+
+export async function createInvoice(data: Omit<Invoice, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, 'invoices'), { ...data, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function updateInvoiceStatus(invoiceId: string, status: Invoice['status'], paidAt?: Date) {
+  const updates: Record<string, unknown> = { status };
+  if (paidAt) updates.paidAt = Timestamp.fromDate(paidAt);
+  await updateDoc(doc(db, 'invoices', invoiceId), updates);
+}
+
+export async function getInvoicesForStudent(studentId: string): Promise<Invoice[]> {
+  const q = query(collection(db, 'invoices'), where('studentId', '==', studentId), orderBy('createdAt', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Invoice));
+}
+
+export async function getInvoicesForTeacher(teacherId: string): Promise<Invoice[]> {
+  const q = query(collection(db, 'invoices'), where('createdBy', '==', teacherId), orderBy('createdAt', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Invoice));
+}
+
+export async function getAllInvoices(): Promise<Invoice[]> {
+  const q = query(collection(db, 'invoices'), orderBy('createdAt', 'desc'), limit(100));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Invoice));
+}
+
+export async function deleteInvoice(id: string) {
+  await deleteDoc(doc(db, 'invoices', id));
+}
+
+// ─── Resources ────────────────────────────────────────────────
+
+export interface Resource {
+  id: string;
+  title: string;
+  description?: string;
+  type: 'pdf' | 'video' | 'link' | 'doc' | 'other';
+  url: string;
+  courseId?: string;
+  subject?: string;
+  tags: string[];
+  uploadedBy: string;
+  uploadedByName: string;
+  uploadedAt?: Timestamp;
+  isPublic: boolean;
+}
+
+export async function createResource(data: Omit<Resource, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, 'resources'), { ...data, uploadedAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function getResources(courseId?: string): Promise<Resource[]> {
+  let q;
+  if (courseId) {
+    q = query(collection(db, 'resources'), where('courseId', '==', courseId), orderBy('uploadedAt', 'desc'));
+  } else {
+    q = query(collection(db, 'resources'), where('isPublic', '==', true), orderBy('uploadedAt', 'desc'), limit(50));
+  }
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Resource));
+}
+
+export async function deleteResource(id: string) {
+  await deleteDoc(doc(db, 'resources', id));
+}
+
+// ─── Behaviour / Merit Records ────────────────────────────────
+
+export interface BehaviourRecord {
+  id: string;
+  studentId: string;
+  studentName: string;
+  courseId?: string;
+  type: 'merit' | 'demerit' | 'commendation' | 'warning' | 'note';
+  points: number;
+  description: string;
+  recordedBy: string;
+  recordedByName: string;
+  createdAt?: Timestamp;
+}
+
+export async function createBehaviourRecord(data: Omit<BehaviourRecord, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, 'behaviour_records'), { ...data, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function getBehaviourRecordsForStudent(studentId: string): Promise<BehaviourRecord[]> {
+  const q = query(collection(db, 'behaviour_records'), where('studentId', '==', studentId), orderBy('createdAt', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as BehaviourRecord));
+}
+
+export async function getBehaviourRecordsForTeacher(teacherId: string): Promise<BehaviourRecord[]> {
+  const q = query(collection(db, 'behaviour_records'), where('recordedBy', '==', teacherId), orderBy('createdAt', 'desc'), limit(50));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as BehaviourRecord));
+}
+
+// ─── Helpdesk Tickets ─────────────────────────────────────────
+
+export interface SupportTicket {
+  id: string;
+  userId: string;
+  userName: string;
+  userRole: string;
+  subject: string;
+  description: string;
+  category: 'technical' | 'academic' | 'billing' | 'general';
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  assignedTo?: string;
+  response?: string;
+  respondedAt?: Timestamp;
+  createdAt?: Timestamp;
+}
+
+export async function createSupportTicket(data: Omit<SupportTicket, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, 'support_tickets'), { ...data, status: 'open', createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function getSupportTickets(userId: string, role: string): Promise<SupportTicket[]> {
+  let q;
+  if (role === 'admin') {
+    q = query(collection(db, 'support_tickets'), orderBy('createdAt', 'desc'), limit(50));
+  } else {
+    q = query(collection(db, 'support_tickets'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+  }
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as SupportTicket));
+}
+
+export async function updateSupportTicket(id: string, data: Partial<SupportTicket>) {
+  await updateDoc(doc(db, 'support_tickets', id), data);
+}
+
+// ─── Tasks (Student To-Do) ────────────────────────────────────
+
+export interface Task {
+  id: string;
+  userId: string;
+  title: string;
+  description?: string;
+  dueDate?: Timestamp;
+  completed: boolean;
+  priority: 'low' | 'normal' | 'high';
+  courseId?: string;
+  createdAt?: Timestamp;
+}
+
+export async function createTask(data: Omit<Task, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, 'tasks'), { ...data, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function getTasks(userId: string): Promise<Task[]> {
+  const q = query(collection(db, 'tasks'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Task));
+}
+
+export async function updateTask(id: string, data: Partial<Task>) {
+  await updateDoc(doc(db, 'tasks', id), data);
+}
+
+export async function deleteTask(id: string) {
+  await deleteDoc(doc(db, 'tasks', id));
+}
+
+
+// ─── Attendance ───────────────────────────────────────────────────────────────
+
+export interface AttendanceEntry {
+  studentId: string;
+  studentName: string;
+  status: 'present' | 'absent' | 'late' | 'excused';
+}
+
+export interface AttendanceRecord {
+  id?: string;
+  courseId: string;
+  courseTitle: string;
+  lessonId: string;
+  lessonTitle: string;
+  teacherId: string;
+  date: Timestamp;
+  records: AttendanceEntry[];
+}
+
+export async function createAttendanceRecord(data: Omit<AttendanceRecord, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, 'attendance_records'), { ...data, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function getAttendanceForCourse(courseId: string): Promise<AttendanceRecord[]> {
+  const q = query(collection(db, 'attendance_records'), where('courseId', '==', courseId), orderBy('date', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as AttendanceRecord));
+}
+
+export async function getAttendanceForStudent(studentId: string): Promise<AttendanceRecord[]> {
+  const snap = await getDocs(collection(db, 'attendance_records'));
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() } as AttendanceRecord))
+    .filter(r => r.records.some(e => e.studentId === studentId));
+}
+
+export async function updateAttendanceRecord(id: string, data: Partial<AttendanceRecord>) {
+  await updateDoc(doc(db, 'attendance_records', id), data);
+}
+
+// ─── Certificates ─────────────────────────────────────────────────────────────
+
+export interface Certificate {
+  id?: string;
+  studentId: string;
+  studentName: string;
+  courseId: string;
+  courseTitle: string;
+  issuedAt: Timestamp;
+  issuedBy: string;
+  issuedByName: string;
+}
+
+export async function issueCertificate(data: Omit<Certificate, 'id'>): Promise<string> {
+  const uuid = crypto.randomUUID();
+  await setDoc(doc(db, 'certificates', uuid), { ...data, createdAt: serverTimestamp() });
+  return uuid;
+}
+
+export async function getCertificatesForStudent(studentId: string): Promise<Certificate[]> {
+  const q = query(collection(db, 'certificates'), where('studentId', '==', studentId), orderBy('issuedAt', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Certificate));
+}
+
+export async function getCertificateByUUID(uuid: string): Promise<Certificate | null> {
+  const snap = await getDoc(doc(db, 'certificates', uuid));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() } as Certificate;
+}
+
+// ─── User Sessions (anti-password-sharing) ───────────────────────────────────
+
+export interface UserSession {
+  id?: string;
+  userId: string;
+  deviceInfo: string;
+  lastSeen: Timestamp;
+  createdAt: Timestamp;
+}
+
+export async function upsertUserSession(userId: string, deviceInfo: string): Promise<boolean> {
+  const q = query(collection(db, 'user_sessions'), where('userId', '==', userId), where('deviceInfo', '==', deviceInfo));
+  const snap = await getDocs(q);
+  if (!snap.empty) {
+    await updateDoc(snap.docs[0].ref, { lastSeen: serverTimestamp() });
+    return false;
+  }
+  await addDoc(collection(db, 'user_sessions'), { userId, deviceInfo, lastSeen: serverTimestamp(), createdAt: serverTimestamp() });
+  return true;
+}
+
+export async function getUserSessions(userId: string): Promise<UserSession[]> {
+  const q = query(collection(db, 'user_sessions'), where('userId', '==', userId), orderBy('lastSeen', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as UserSession));
+}
+
+// ─── Parent Verification ──────────────────────────────────────────────────────
+
+export interface ParentVerification {
+  id?: string;
+  parentId: string;
+  parentName: string;
+  parentEmail: string;
+  studentEmail: string;
+  studentId: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: Timestamp;
+}
+
+export async function createParentVerification(data: Omit<ParentVerification, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, 'parent_verifications'), { ...data, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function getPendingVerifications(): Promise<ParentVerification[]> {
+  const q = query(collection(db, 'parent_verifications'), where('status', '==', 'pending'), orderBy('createdAt', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as ParentVerification));
+}
+
+export async function updateVerificationStatus(id: string, status: 'approved' | 'rejected') {
+  await updateDoc(doc(db, 'parent_verifications', id), { status });
+}

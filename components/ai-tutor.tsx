@@ -115,7 +115,7 @@ export function AITutor() {
             {/* Mode Selector */}
             <div className="p-3 border-b border-border bg-muted/50 flex items-center gap-2 shrink-0">
               <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Tutor Mode:</span>
-              <Select value={mode} onValueChange={val => setMode(val)}>
+              <Select value={mode} onValueChange={val => setMode(val ?? 'k12')}>
                 <SelectTrigger className="h-8 text-xs rounded-full border-border bg-card">
                   <SelectValue placeholder="Select mode" />
                 </SelectTrigger>

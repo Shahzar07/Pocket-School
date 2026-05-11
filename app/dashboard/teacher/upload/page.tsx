@@ -359,11 +359,9 @@ export default function UploadPage() {
                         <p className="font-semibold text-foreground text-sm truncate">{sl.title}</p>
                         <p className="text-xs text-muted-foreground truncate">{sl.courseTitle} · {sl.moduleTitle}</p>
                       </div>
-                      <Button size="sm" variant="ghost" className="rounded-xl text-xs gap-1.5 shrink-0" asChild>
-                        <Link href={`/dashboard/student/courses/${sl.courseId}`}>
+                      <Link href={`/dashboard/student/courses/${sl.courseId}`} className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors shrink-0">
                           <ExternalLink className="w-3.5 h-3.5" /> View Course
-                        </Link>
-                      </Button>
+                      </Link>
                     </div>
                   ))}
                 </div>

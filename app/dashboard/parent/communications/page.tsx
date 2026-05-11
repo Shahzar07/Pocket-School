@@ -50,9 +50,9 @@ export default function ParentCommunications() {
     try {
       await sendMessage({
         fromId: user.uid,
-        toId: compose.toId,
+        fromName: profile?.name ?? 'Parent',
         fromRole: 'parent',
-        toRole: 'teacher',
+        toId: compose.toId,
         subject: compose.subject.trim(),
         body: compose.body.trim(),
       });
@@ -169,7 +169,7 @@ export default function ParentCommunications() {
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5 mb-2">
-                    {tab === 'inbox' ? `From: ${msg.fromRole}` : `To: ${msg.toRole}`}
+                    {tab === 'inbox' ? `From: ${msg.fromRole}` : `To: ${msg.toId}`}
                   </p>
                   <p className="text-sm text-foreground leading-relaxed">{msg.body}</p>
                 </div>
