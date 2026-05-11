@@ -2,17 +2,23 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import {
+  signInWithPopup,
+  GoogleAuthProvider,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  fetchSignInMethodsForEmail,
+} from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-
-const SUPER_ADMIN_EMAIL = 'harry.seggu@gmail.com';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { motion } from 'motion/react';
 import Link from 'next/link';
+
+const SUPER_ADMIN_EMAIL = 'harry.seggu@gmail.com';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,39 +27,17 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const routeUser = async (uid: string) => {
-    const docRef = doc(db, 'users', uid);
-    const snap = await getDoc(docRef);
+    const snap = await getDoc(doc(db, 'users', uid));
     if (!snap.exists()) {
       router.push('/onboarding');
       return;
     }
-    const data = snap.data();
-    switch (data.role) {
-      case 'student': router.push('/dashboard/student'); break;
-      case 'teacher': router.push('/dashboard/teacher'); break;
-      case 'parent': router.push('/dashboard/parent'); break;
-      case 'admin': router.push('/dashboard/admin'); break;
-      default: router.push('/onboarding');
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    try {
-      setLoading(true);
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      await routeUser(result.user.uid);
-    } catch (e: any) {
-      console.error(e);
-      const errorMessage = e?.message || e?.toString() || '';
-      if (e?.code === 'auth/popup-closed-by-user' || errorMessage.includes('The user aborted a request') || e?.code === 'auth/cancelled-popup-request') {
-        // User closed the popup, ignore or show a gentle message
-        return;
-      }
-      toast.error(errorMessage || "Failed to sign in via Google");
-    } finally {
-      setLoading(false);
-    }
+    const role = snap.data().role;
+    if (role === 'student') router.push('/dashboard/student');
+    else if (role === 'teacher') router.push('/dashboard/teacher');
+    else if (role === 'parent') router.push('/dashboard/parent');
+    else if (role === 'admin') router.push('/dashboard/admin');
+    else router.push('/onboarding');
   };
 
   const provisionSuperAdmin = async (uid: string) => {
@@ -68,59 +52,115 @@ export default function LoginPage() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
+    } else if (snap.data().role !== 'admin') {
+      await setDoc(doc(db, 'users', uid), { ...snap.data(), role: 'admin', updatedAt: serverTimestamp() });
     }
   };
 
-  const handleEmailSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-      toast.error("Please enter email and password");
-      return;
-    }
+  const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
-      const isSuperAdmin = email.trim().toLowerCase() === SUPER_ADMIN_EMAIL;
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      if (result.user.email?.toLowerCase() === SUPER_ADMIN_EMAIL) {
+        await provisionSuperAdmin(result.user.uid);
+      }
+      await routeUser(result.user.uid);
+    } catch (e: any) {
+      const code = e?.code ?? '';
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
+      if (code === 'auth/unauthorized-domain') {
+        toast.error(
+          'Google sign-in is blocked: your domain is not authorized in Firebase. See instructions below.',
+          { duration: 8000 }
+        );
+        return;
+      }
+      toast.error(e?.message || 'Google sign-in failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      if (isSuperAdmin) {
+  const handleSuperAdminSignIn = async (password: string) => {
+    try {
+      const result = await signInWithEmailAndPassword(auth, SUPER_ADMIN_EMAIL, password);
+      await provisionSuperAdmin(result.user.uid);
+      await routeUser(result.user.uid);
+      return;
+    } catch (err: any) {
+      const code = err?.code ?? '';
+
+      if (code === 'auth/wrong-password') {
+        toast.error('Incorrect password for admin account.');
+        return;
+      }
+
+      if (code === 'auth/user-not-found' || code === 'auth/invalid-credential') {
         try {
-          const result = await signInWithEmailAndPassword(auth, SUPER_ADMIN_EMAIL, password);
+          const methods = await fetchSignInMethodsForEmail(auth, SUPER_ADMIN_EMAIL);
+          if (methods.length > 0 && !methods.includes('password')) {
+            toast.error(
+              'Admin account uses Google sign-in. Click "Continue with Google" and sign in with harry.seggu@gmail.com.',
+              { duration: 6000 }
+            );
+            return;
+          }
+        } catch {
+          // continue to create
+        }
+
+        try {
+          const result = await createUserWithEmailAndPassword(auth, SUPER_ADMIN_EMAIL, password);
           await provisionSuperAdmin(result.user.uid);
           await routeUser(result.user.uid);
-        } catch (err: any) {
-          if (err?.code === 'auth/user-not-found' || err?.code === 'auth/invalid-credential') {
-            // First-ever login — create the super admin account
-            const result = await createUserWithEmailAndPassword(auth, SUPER_ADMIN_EMAIL, password);
-            await provisionSuperAdmin(result.user.uid);
-            await routeUser(result.user.uid);
-          } else if (err?.code === 'auth/wrong-password') {
-            toast.error("Incorrect password.");
+        } catch (createErr: any) {
+          const createCode = createErr?.code ?? '';
+          if (createCode === 'auth/email-already-in-use') {
+            toast.error(
+              'Admin account already exists via Google sign-in. Click "Continue with Google" to log in.',
+              { duration: 6000 }
+            );
+          } else if (createCode === 'auth/weak-password') {
+            toast.error('Password too weak. Use at least 6 characters.');
           } else {
-            throw err;
+            toast.error('Admin sign-in failed. Please try again.');
           }
         }
         return;
       }
 
+      toast.error(err?.message || 'Admin sign-in failed. Please try again.');
+    }
+  };
+
+  const handleEmailSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !password) {
+      toast.error('Please enter email and password.');
+      return;
+    }
+    setLoading(true);
+    try {
+      if (email.trim().toLowerCase() === SUPER_ADMIN_EMAIL) {
+        await handleSuperAdminSignIn(password);
+        return;
+      }
       const result = await signInWithEmailAndPassword(auth, email.trim(), password);
       await routeUser(result.user.uid);
     } catch (e: any) {
-      console.error(e);
-      if (e?.code === 'auth/operation-not-allowed') {
-        toast.error("Email/password sign-in is not enabled. Please contact your administrator.");
-      } else if (e?.code === 'auth/invalid-email') {
-        toast.error("Invalid email address format.");
-      } else if (e?.code === 'auth/user-not-found' || e?.code === 'auth/wrong-password' || e?.code === 'auth/invalid-credential') {
-        toast.error("Incorrect email or password.");
-      } else {
-        toast.error("Sign in failed. Please try again.");
-      }
+      const code = e?.code ?? '';
+      if (code === 'auth/invalid-email') toast.error('Invalid email address.');
+      else if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') toast.error('Incorrect email or password.');
+      else if (code === 'auth/operation-not-allowed') toast.error('Email/password sign-in is not enabled.');
+      else toast.error('Sign in failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -130,9 +170,9 @@ export default function LoginPage() {
         <p className="text-[#5F6368]">Enter your details below to access your account.</p>
       </div>
 
-      <Button 
-        variant="outline" 
-        className="w-full h-12 rounded-full border-[#DADCE0] text-[#5F6368] font-medium hover:bg-[#F8F9FA] transition-colors mb-6" 
+      <Button
+        variant="outline"
+        className="w-full h-12 rounded-full border-[#DADCE0] text-[#5F6368] font-medium hover:bg-[#F8F9FA] transition-colors mb-6"
         onClick={handleGoogleSignIn}
         disabled={loading}
       >
@@ -141,19 +181,19 @@ export default function LoginPage() {
       </Button>
 
       <div className="flex items-center my-6">
-        <div className="flex-1 border-t border-[#DADCE0]"></div>
+        <div className="flex-1 border-t border-[#DADCE0]" />
         <span className="px-4 text-sm text-[#5F6368] font-medium uppercase tracking-wider">or sign in with email</span>
-        <div className="flex-1 border-t border-[#DADCE0]"></div>
+        <div className="flex-1 border-t border-[#DADCE0]" />
       </div>
 
       <form onSubmit={handleEmailSignIn} className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-[#202124] font-medium">Email or Username</Label>
-          <Input 
-            id="email" 
-            type="text" 
-            placeholder="name@example.com or Username" 
-            className="h-12 rounded-xl border-[#DADCE0] focus:ring-google-blue focus:border-google-blue transition-all" 
+          <Label htmlFor="email" className="text-[#202124] font-medium">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="name@example.com"
+            className="h-12 rounded-xl border-[#DADCE0] focus:ring-google-blue focus:border-google-blue transition-all"
             value={email}
             onChange={e => setEmail(e.target.value)}
             disabled={loading}
@@ -166,22 +206,22 @@ export default function LoginPage() {
               Forgot password?
             </Link>
           </div>
-          <Input 
-            id="password" 
-            type="password" 
-            placeholder="••••••••" 
-            className="h-12 rounded-xl border-[#DADCE0] focus:ring-google-blue focus:border-google-blue transition-all" 
+          <Input
+            id="password"
+            type="password"
+            placeholder="••••••••"
+            className="h-12 rounded-xl border-[#DADCE0] focus:ring-google-blue focus:border-google-blue transition-all"
             value={password}
             onChange={e => setPassword(e.target.value)}
             disabled={loading}
           />
         </div>
-        <Button 
-          type="submit" 
-          className="w-full h-12 rounded-full bg-google-blue hover:bg-[#1967D2] text-white font-medium text-base shadow-google-soft hover:shadow-google-hover transition-all" 
+        <Button
+          type="submit"
+          className="w-full h-12 rounded-full bg-google-blue hover:bg-[#1967D2] text-white font-medium text-base shadow-google-soft hover:shadow-google-hover transition-all"
           disabled={loading}
         >
-          Sign In
+          {loading ? 'Signing in…' : 'Sign In'}
         </Button>
       </form>
 
