@@ -841,8 +841,8 @@ export default function LandingPage() {
   const navLinks = [
     { label: 'Features', href: '#features' },
     { label: 'See It Live', href: '#portal-showcase' },
-    { label: 'Formats', href: '#formats' },
-    { label: 'Testimonials', href: '#testimonials' },
+    { label: 'Marketplace', href: '/courses' },
+    { label: 'AI Studio', href: '/ai-studio' },
     { label: 'FAQ', href: '#faq' },
   ];
 

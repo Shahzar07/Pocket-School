@@ -11,6 +11,7 @@ import {
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
+  Sparkles, Store,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -99,6 +100,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {profile.role === 'student' && (
             <>
               <NavItem href="/dashboard/student" icon={Home} label="Dashboard" activeBgClass={sB} activeTextClass={sT} {...navProps} />
+              <NavItem href="/ai-studio" icon={Sparkles} label="AI Studio ↗" activeBgClass={sB} activeTextClass={sT} {...navProps} />
+              <NavItem href="/courses" icon={Store} label="Marketplace" activeBgClass={sB} activeTextClass={sT} {...navProps} />
               <NavItem href="/dashboard/student/courses" icon={BookOpen} label="My Courses" activeBgClass={sB} activeTextClass={sT} {...navProps} />
               <NavItem href="/dashboard/student/live" icon={Video} label="Live Classes" activeBgClass={sB} activeTextClass={sT} {...navProps} />
               <NavItem href="/dashboard/student/achievements" icon={CheckCircle} label="Achievements" activeBgClass={sB} activeTextClass={sT} {...navProps} />
@@ -125,7 +128,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {profile.role === 'teacher' && (
             <>
               <NavItem href="/dashboard/teacher" icon={Home} label="Overview" activeBgClass={tB} activeTextClass={tT} {...navProps} />
-              <NavItem href="/dashboard/teacher/courses" icon={Presentation} label="Courses" activeBgClass={tB} activeTextClass={tT} {...navProps} />
+              <NavItem href="/ai-studio" icon={Sparkles} label="AI Studio ↗" activeBgClass={tB} activeTextClass={tT} {...navProps} />
+              <NavItem href="/dashboard/teacher/courses" icon={Presentation} label="Courses & Products" activeBgClass={tB} activeTextClass={tT} {...navProps} />
+              <NavItem href="/courses" icon={Store} label="Marketplace" activeBgClass={tB} activeTextClass={tT} {...navProps} />
               <NavItem href="/dashboard/teacher/analytics" icon={Activity} label="Analytics" activeBgClass={tB} activeTextClass={tT} {...navProps} />
               <NavSection label="Academics" />
               <NavItem href="/dashboard/teacher/gradebook" icon={ClipboardList} label="Gradebook" activeBgClass={tB} activeTextClass={tT} {...navProps} />
@@ -151,6 +156,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {profile.role === 'parent' && (
             <>
               <NavItem href="/dashboard/parent" icon={Home} label="Child Progress" activeBgClass={pB} activeTextClass={pT} {...navProps} />
+              <NavItem href="/ai-studio" icon={Sparkles} label="AI Studio ↗" activeBgClass={pB} activeTextClass={pT} {...navProps} />
+              <NavItem href="/courses" icon={Store} label="Marketplace" activeBgClass={pB} activeTextClass={pT} {...navProps} />
               <NavItem href="/dashboard/parent/communications" icon={MessageSquare} label="Communications" activeBgClass={pB} activeTextClass={pT} {...navProps} />
               <NavItem href="/dashboard/parent/duedates" icon={Clock} label="Due Dates" activeBgClass={pB} activeTextClass={pT} {...navProps} />
               <NavItem href="/dashboard/student/attendance" icon={ClipboardCheck} label="Child Attendance" activeBgClass={pB} activeTextClass={pT} {...navProps} />
@@ -167,6 +174,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {profile.role === 'admin' && (
             <>
               <NavItem href="/dashboard/admin" icon={BarChart} label="Analytics" activeBgClass={aB} activeTextClass={aT} {...navProps} />
+              <NavItem href="/ai-studio" icon={Sparkles} label="AI Studio ↗" activeBgClass={aB} activeTextClass={aT} {...navProps} />
+              <NavItem href="/dashboard/admin/courses" icon={Presentation} label="All Courses" activeBgClass={aB} activeTextClass={aT} {...navProps} />
+              <NavItem href="/courses" icon={Store} label="Marketplace" activeBgClass={aB} activeTextClass={aT} {...navProps} />
               <NavItem href="/dashboard/admin/institutions" icon={Users} label="Institutions" activeBgClass={aB} activeTextClass={aT} {...navProps} />
               <NavItem href="/dashboard/admin/access" icon={Shield} label="Access Config" activeBgClass={aB} activeTextClass={aT} {...navProps} />
               <NavItem href="/dashboard/admin/settings" icon={Settings} label="System Settings" activeBgClass={aB} activeTextClass={aT} {...navProps} />
