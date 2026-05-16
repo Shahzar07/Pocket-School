@@ -8,12 +8,12 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
-  getTeacherCourses, deleteCourse, updateCourse,
+  getAllCourses, deleteCourse, updateCourse,
   type Course,
 } from '@/lib/db';
 import CourseEditorModal from '@/components/course-editor-modal';
 
-export default function TeacherCourseMgmt() {
+export default function AdminCourseMgmt() {
   const { user, profile } = useAuthSTORE();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,29 +21,21 @@ export default function TeacherCourseMgmt() {
   const [editing, setEditing] = useState<Course | null>(null);
 
   const load = useCallback(async () => {
-    if (!user?.uid) return;
     setLoading(true);
     try {
-      const list = await getTeacherCourses(user.uid);
+      const list = await getAllCourses();
       setCourses(list);
     } catch (e: any) {
       toast.error(e?.message || 'Failed to load courses.');
     } finally {
       setLoading(false);
     }
-  }, [user?.uid]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  const onCreate = () => {
-    setEditing(null);
-    setEditorOpen(true);
-  };
-
-  const onEdit = (c: Course) => {
-    setEditing(c);
-    setEditorOpen(true);
-  };
+  const onCreate = () => { setEditing(null); setEditorOpen(true); };
+  const onEdit = (c: Course) => { setEditing(c); setEditorOpen(true); };
 
   const onDelete = async (c: Course) => {
     if (!confirm(`Delete "${c.title}"? This cannot be undone.`)) return;
@@ -60,10 +52,10 @@ export default function TeacherCourseMgmt() {
     const next = c.status === 'published' ? 'draft' : 'published';
     try {
       await updateCourse(c.id, { status: next });
-      toast.success(next === 'published' ? 'Course published.' : 'Course unpublished.');
+      toast.success(next === 'published' ? 'Published.' : 'Unpublished.');
       load();
     } catch (e: any) {
-      toast.error(e?.message || 'Failed to update status.');
+      toast.error(e?.message || 'Failed.');
     }
   };
 
@@ -77,8 +69,8 @@ export default function TeacherCourseMgmt() {
     <div className="max-w-6xl mx-auto space-y-8">
       <div className="flex justify-between items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Course Management</h1>
-          <p className="text-muted-foreground">Create courses, eBooks, exams, papers — sell on the public marketplace.</p>
+          <h1 className="text-3xl font-bold text-foreground">All Courses & Products</h1>
+          <p className="text-muted-foreground">Admin view of every product across all teachers.</p>
         </div>
         <Button onClick={onCreate} className="bg-google-blue hover:bg-[#1967D2] text-white">
           <Plus className="w-5 h-5 mr-2" /> New Product
@@ -94,10 +86,7 @@ export default function TeacherCourseMgmt() {
       {!loading && courses.length === 0 && (
         <Card className="p-12 text-center border-dashed">
           <BookOpen className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-          <p className="text-sm text-muted-foreground mb-4">You haven&apos;t created any products yet.</p>
-          <Button onClick={onCreate} className="bg-google-blue hover:bg-[#1967D2] text-white">
-            <Plus className="w-4 h-4 mr-2" /> Create your first product
-          </Button>
+          <p className="text-sm text-muted-foreground">No courses in the system yet.</p>
         </Card>
       )}
 
@@ -115,41 +104,28 @@ export default function TeacherCourseMgmt() {
                   </span>
                 </div>
                 <h3 className="font-bold text-lg text-foreground mb-1 line-clamp-2">{c.title}</h3>
+                <p className="text-xs text-muted-foreground line-clamp-1 mb-1">by {c.ownerName ?? 'Unknown'}</p>
                 <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{c.description}</p>
                 <div className="flex items-center gap-2 flex-wrap mb-3">
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${c.status === 'published' ? 'bg-emerald-50 text-emerald-700' : 'bg-muted text-muted-foreground'}`}>
-                    {c.status === 'published' ? 'Published' : 'Draft'}
+                    {c.status}
                   </span>
-                  <span className="text-xs px-2 py-1 rounded-full font-medium bg-amber-50 text-amber-700">
-                    {fmtPrice(c)}
-                  </span>
-                  {c.isPublic && (
-                    <span className="text-xs px-2 py-1 rounded-full font-medium bg-blue-50 text-blue-700">
-                      Marketplace
-                    </span>
-                  )}
+                  <span className="text-xs px-2 py-1 rounded-full font-medium bg-amber-50 text-amber-700">{fmtPrice(c)}</span>
+                  {c.isPublic && <span className="text-xs px-2 py-1 rounded-full font-medium bg-blue-50 text-blue-700">Public</span>}
                 </div>
-                {c.enrollmentCount !== undefined && (
-                  <p className="text-xs text-muted-foreground">{c.enrollmentCount} enrolled</p>
-                )}
               </div>
 
               <div className="mt-4 pt-4 border-t border-border flex flex-wrap justify-between gap-2">
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => onEdit(c)}>
-                    <Edit className="w-4 h-4 mr-1" /> Edit
-                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => onEdit(c)}><Edit className="w-4 h-4 mr-1" /> Edit</Button>
                   <Button variant="ghost" size="sm" onClick={() => togglePublish(c)}>
-                    {c.status === 'published' ? <EyeOff className="w-4 h-4 mr-1" /> : <Eye className="w-4 h-4 mr-1" />}
-                    {c.status === 'published' ? 'Unpublish' : 'Publish'}
+                    {c.status === 'published' ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </Button>
                 </div>
                 <div className="flex gap-1">
                   {c.status === 'published' && c.isPublic && (
                     <Link href={`/courses/${c.id}`} target="_blank">
-                      <Button variant="ghost" size="sm">
-                        <ExternalLink className="w-4 h-4" />
-                      </Button>
+                      <Button variant="ghost" size="sm"><ExternalLink className="w-4 h-4" /></Button>
                     </Link>
                   )}
                   <Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => onDelete(c)}>
@@ -167,8 +143,8 @@ export default function TeacherCourseMgmt() {
           open={editorOpen}
           onOpenChange={setEditorOpen}
           initial={editing}
-          ownerId={user.uid}
-          ownerName={profile?.name || user.email || 'Teacher'}
+          ownerId={editing?.ownerId || user.uid}
+          ownerName={editing?.ownerName || profile?.name || 'Admin'}
           onSaved={load}
         />
       )}

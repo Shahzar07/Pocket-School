@@ -107,9 +107,20 @@ export function AITutor() {
                 <Bot className="w-6 h-6" />
                 <span className="font-bold text-lg">AI Tutor</span>
               </div>
-              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/20 rounded-full" onClick={() => setIsOpen(false)}>
-                <X className="w-5 h-5" />
-              </Button>
+              <div className="flex items-center gap-1">
+                <a
+                  href="/ai-studio"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                  title="Open in AI Studio"
+                >
+                  AI Studio ↗
+                </a>
+                <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/20 rounded-full" onClick={() => setIsOpen(false)}>
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
 
             {/* Mode Selector */}
