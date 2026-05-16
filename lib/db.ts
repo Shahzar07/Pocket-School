@@ -17,9 +17,13 @@ export interface UserProfile {
   interests?: string[];
   xp: number;
   childIds?: string[];
+  phone?: string;
+  phoneVerified?: boolean;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
+
+export type CourseType = 'course' | 'ebook' | 'exam' | 'solutions' | 'paper' | 'bundle';
 
 export interface Course {
   id: string;
@@ -30,7 +34,21 @@ export interface Course {
   thumbnailUrl?: string;
   status: 'draft' | 'published';
   subject?: string;
+  type?: CourseType;
+  price?: number;
+  currency?: string;
+  level?: string;
+  category?: string;
+  isPublic?: boolean;
+  whatYouLearn?: string[];
+  requirements?: string[];
+  tags?: string[];
+  workbookUrl?: string;
+  enrollmentCount?: number;
+  durationHours?: number;
+  previewUrl?: string;
   createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 export interface Module {
@@ -171,7 +189,12 @@ export async function getCourse(courseId: string): Promise<Course | null> {
 }
 
 export async function createCourse(data: Omit<Course, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'courses'), { ...data, createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'courses'), {
+    ...data,
+    enrollmentCount: data.enrollmentCount ?? 0,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
   return ref.id;
 }
 
@@ -1284,4 +1307,113 @@ export async function getPendingVerifications(): Promise<ParentVerification[]> {
 
 export async function updateVerificationStatus(id: string, status: 'approved' | 'rejected') {
   await updateDoc(doc(db, 'parent_verifications', id), { status });
+}
+
+/* ─── Phase 1: 2FA helpers ────────────────────────────────── */
+
+export async function getUserPhone(uid: string): Promise<string | null> {
+  const snap = await getDoc(doc(db, 'users', uid));
+  if (!snap.exists()) return null;
+  const data = snap.data() as UserProfile;
+  return data.phone ?? null;
+}
+
+/* ─── Phase 2: Marketplace CRUD ───────────────────────────── */
+// (createCourse already defined at line 191 — reused for marketplace product creation)
+
+export async function updateCourse(id: string, data: Partial<Course>): Promise<void> {
+  await updateDoc(doc(db, 'courses', id), {
+    ...data,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function deleteCourse(id: string): Promise<void> {
+  await deleteDoc(doc(db, 'courses', id));
+}
+
+export async function getPublicCourses(filters?: {
+  type?: CourseType;
+  category?: string;
+  level?: string;
+}): Promise<Course[]> {
+  const constraints: any[] = [
+    where('status', '==', 'published'),
+    where('isPublic', '==', true),
+  ];
+  if (filters?.type) constraints.push(where('type', '==', filters.type));
+  if (filters?.category) constraints.push(where('category', '==', filters.category));
+  if (filters?.level) constraints.push(where('level', '==', filters.level));
+  try {
+    const q = query(collection(db, 'courses'), ...constraints);
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Course));
+  } catch {
+    return [];
+  }
+}
+
+export async function getPublicCourseById(courseId: string): Promise<Course | null> {
+  const snap = await getDoc(doc(db, 'courses', courseId));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() } as Course;
+}
+
+export async function incrementEnrollment(courseId: string): Promise<void> {
+  const ref = doc(db, 'courses', courseId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+  const current = (snap.data().enrollmentCount as number) ?? 0;
+  await updateDoc(ref, { enrollmentCount: current + 1 });
+}
+
+export async function getTeachers(): Promise<{ id: string; data: UserProfile }[]> {
+  try {
+    const q = query(collection(db, 'users'), where('role', '==', 'teacher'));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, data: d.data() as UserProfile }));
+  } catch {
+    return [];
+  }
+}
+
+/* ─── Phase 3: AI Studio — saved generations ──────────────── */
+
+export interface AiGeneration {
+  id: string;
+  userId: string;
+  type: string;
+  prompt: string;
+  result: string;
+  subject?: string;
+  level?: string;
+  createdAt?: Timestamp;
+}
+
+export async function saveAiGeneration(
+  userId: string,
+  data: Omit<AiGeneration, 'id' | 'userId' | 'createdAt'>
+): Promise<string> {
+  const ref = await addDoc(collection(db, 'users', userId, 'ai_generations'), {
+    ...data,
+    createdAt: serverTimestamp(),
+  });
+  return ref.id;
+}
+
+export async function getAiGenerations(userId: string): Promise<AiGeneration[]> {
+  try {
+    const q = query(
+      collection(db, 'users', userId, 'ai_generations'),
+      orderBy('createdAt', 'desc')
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, userId, ...d.data() } as AiGeneration));
+  } catch {
+    return [];
+  }
+}
+
+export async function deleteAiGeneration(userId: string, id: string): Promise<void> {
+  await deleteDoc(doc(db, 'users', userId, 'ai_generations', id));
 }
