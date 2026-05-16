@@ -720,6 +720,105 @@ function FloatingDecoration({
   );
 }
 
+/* ─── Popular Courses (marketplace teaser) ────────────────── */
+
+function PopularCoursesSection() {
+  const [items, setItems] = useState<any[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    import('@/lib/db').then(async ({ getPublicCourses }) => {
+      try {
+        const list = await getPublicCourses();
+        if (!cancelled) {
+          setItems(list.slice(0, 4));
+          setLoaded(true);
+        }
+      } catch {
+        if (!cancelled) setLoaded(true);
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (!loaded || items.length === 0) return null;
+
+  const fmtPrice = (c: any) => {
+    if (!c.price || c.price === 0) return 'Free';
+    const symbol = c.currency === 'USD' ? '$' : c.currency === 'EUR' ? '€' : '£';
+    return `${symbol}${c.price.toFixed(2)}`;
+  };
+
+  return (
+    <section className="py-20 sm:py-28 bg-muted/20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-60px' }}
+          className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10"
+        >
+          <div>
+            <Badge className="mb-3 rounded-full bg-amber-50 text-amber-700 border-amber-200 text-xs font-semibold">
+              Marketplace
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+              Popular right now
+            </h2>
+          </div>
+          <Link
+            href="/courses"
+            className="text-sm font-semibold text-primary hover:underline flex items-center gap-1"
+          >
+            Browse all <ArrowRight className="w-4 h-4" />
+          </Link>
+        </motion.div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {items.map((c, i) => (
+            <motion.div
+              key={c.id}
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-40px' }}
+              custom={i}
+            >
+              <Link href={`/courses/${c.id}`} className="block bg-card border border-border rounded-2xl overflow-hidden card-glow h-full flex flex-col">
+                <div className="aspect-video bg-gradient-to-br from-blue-100 via-indigo-100 to-violet-100 relative flex items-center justify-center">
+                  {c.thumbnailUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={c.thumbnailUrl} alt={c.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <BookOpen className="w-10 h-10 text-blue-400/60" />
+                  )}
+                  <span className="absolute top-2 left-2 text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-white/95 text-foreground">
+                    {c.type ?? 'course'}
+                  </span>
+                </div>
+                <div className="p-4 flex flex-col flex-1">
+                  <h3 className="font-bold text-sm text-foreground mb-1 line-clamp-2">{c.title}</h3>
+                  <p className="text-[11px] text-muted-foreground mb-3">{c.ownerName ?? 'Pocket School'}</p>
+                  <div className="mt-auto flex items-center justify-between">
+                    <span className={`text-sm font-extrabold ${c.price ? 'text-foreground' : 'text-emerald-600'}`}>
+                      {fmtPrice(c)}
+                    </span>
+                    {c.level && (
+                      <span className="text-[10px] text-muted-foreground font-semibold">{c.level}</span>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ─── Component ─────────────────────────────────────────────── */
 
 export default function LandingPage() {
@@ -1202,6 +1301,9 @@ export default function LandingPage() {
           </motion.div>
         </div>
       </section>
+
+      {/* ── Popular Courses (marketplace teaser) ──────────────── */}
+      <PopularCoursesSection />
 
       {/* ── How It Works ─────────────────────────────────────── */}
       <section id="how-it-works" className="py-20 sm:py-28">

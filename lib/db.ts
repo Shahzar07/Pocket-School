@@ -1311,6 +1311,15 @@ export async function updateVerificationStatus(id: string, status: 'approved' | 
 
 /* ─── Phase 1: 2FA helpers ────────────────────────────────── */
 
+export async function getAllCourses(): Promise<Course[]> {
+  try {
+    const snap = await getDocs(collection(db, 'courses'));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Course));
+  } catch {
+    return [];
+  }
+}
+
 export async function getUserPhone(uid: string): Promise<string | null> {
   const snap = await getDoc(doc(db, 'users', uid));
   if (!snap.exists()) return null;
