@@ -41,6 +41,8 @@ import {
   Library,
   User,
   AlertCircle,
+  Search,
+  Pencil,
 } from 'lucide-react';
 
 /* ─── Data ──────────────────────────────────────────────────── */
@@ -622,6 +624,102 @@ function BrowserChrome({ url }: { url: string }) {
   );
 }
 
+/* ─── Decorative SVGs ───────────────────────────────────────── */
+
+function PinkStarBurst({ className = '' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 100 100" className={className} aria-hidden>
+      <path
+        d="M50 0 L60 35 L98 25 L70 55 L100 75 L62 70 L65 100 L50 75 L35 100 L38 70 L0 75 L30 55 L2 25 L40 35 Z"
+        fill="#EC4899"
+      />
+    </svg>
+  );
+}
+
+function PencilSVG({ className = '' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 80 80" className={className} aria-hidden>
+      <g transform="rotate(-30 40 40)">
+        <rect x="20" y="35" width="40" height="10" fill="#F59E0B" />
+        <rect x="20" y="35" width="40" height="3" fill="#FBBF24" />
+        <rect x="14" y="35" width="6" height="10" fill="#FEF3C7" />
+        <path d="M14 35 L8 40 L14 45 Z" fill="#1E293B" />
+        <rect x="60" y="33" width="8" height="14" fill="#EF4444" rx="1" />
+        <rect x="60" y="33" width="8" height="3" fill="#FCA5A5" rx="1" />
+      </g>
+    </svg>
+  );
+}
+
+function BookStackSVG({ className = '' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 80 80" className={className} aria-hidden>
+      <rect x="12" y="50" width="56" height="14" rx="2" fill="#3B82F6" />
+      <rect x="12" y="50" width="56" height="3" fill="#60A5FA" />
+      <rect x="16" y="34" width="48" height="14" rx="2" fill="#EF4444" />
+      <rect x="16" y="34" width="48" height="3" fill="#FCA5A5" />
+      <rect x="20" y="18" width="40" height="14" rx="2" fill="#10B981" />
+      <rect x="20" y="18" width="40" height="3" fill="#6EE7B7" />
+    </svg>
+  );
+}
+
+function PaperSVG({ className = '' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 60 70" className={className} aria-hidden>
+      <path d="M5 5 H45 L55 15 V65 H5 Z" fill="white" stroke="#1E293B" strokeWidth="2" />
+      <path d="M45 5 V15 H55" fill="none" stroke="#1E293B" strokeWidth="2" />
+      <line x1="14" y1="28" x2="46" y2="28" stroke="#94A3B8" strokeWidth="1.5" />
+      <line x1="14" y1="36" x2="46" y2="36" stroke="#94A3B8" strokeWidth="1.5" />
+      <line x1="14" y1="44" x2="38" y2="44" stroke="#94A3B8" strokeWidth="1.5" />
+      <line x1="14" y1="52" x2="46" y2="52" stroke="#94A3B8" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function ScribbleSVG({ className = '' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 80 30" className={className} aria-hidden>
+      <path
+        d="M3 15 Q12 3, 22 15 T42 15 T62 15 T78 15"
+        fill="none"
+        stroke="#FB7185"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function FloatingDecoration({
+  children,
+  className = '',
+  scrollRange = [0, 1],
+  yRange = [0, -80],
+  rotateRange = [0, 12],
+}: {
+  children: React.ReactNode;
+  className?: string;
+  scrollRange?: [number, number];
+  yRange?: [number, number];
+  rotateRange?: [number, number];
+}) {
+  const { scrollYProgress } = useScroll();
+  const y = useTransform(scrollYProgress, scrollRange, yRange);
+  const rotate = useTransform(scrollYProgress, scrollRange, rotateRange);
+  const prefersReducedMotion = useReducedMotion();
+  return (
+    <motion.div
+      style={prefersReducedMotion ? undefined : { y, rotate }}
+      className={`pointer-events-none select-none ${className}`}
+      aria-hidden
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 /* ─── Component ─────────────────────────────────────────────── */
 
 export default function LandingPage() {
@@ -741,159 +839,203 @@ export default function LandingPage() {
         </AnimatePresence>
       </header>
 
-      {/* ── Hero ─────────────────────────────────────────────── */}
-      <section ref={heroRef} className="relative min-h-screen flex items-center overflow-hidden pt-16">
-        <div className="absolute inset-0 -z-10 overflow-hidden">
-          <div className="blob-1 absolute -top-32 -left-40 w-[600px] h-[600px] rounded-full bg-blue-400/20 blur-[100px]" />
-          <div className="blob-2 absolute top-1/4 right-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-400/15 blur-[100px]" />
-          <div className="blob-3 absolute bottom-0 left-1/3 w-[400px] h-[400px] rounded-full bg-teal-400/15 blur-[100px]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(26,115,232,0.08),transparent)]" />
-        </div>
+      {/* ── Hero (editorial, amber bg + inset white card) ─────── */}
+      <section ref={heroRef} className="relative min-h-screen flex items-center overflow-hidden pt-20 lg:pt-24 pb-12 bg-[#F5B400]">
+        {/* Decorative scattered shapes — animated on scroll */}
+        <FloatingDecoration
+          className="absolute top-16 right-4 lg:right-12 w-20 h-20 lg:w-32 lg:h-32 z-20"
+          scrollRange={[0, 0.4]}
+          yRange={[0, -40]}
+          rotateRange={[0, 25]}
+        >
+          <PinkStarBurst className="w-full h-full drop-shadow-md" />
+        </FloatingDecoration>
 
-        <motion.div style={{ y: heroY, opacity: heroOpacity }} className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-20 lg:py-28">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <FloatingDecoration
+          className="absolute bottom-20 left-4 lg:left-12 w-12 h-12 lg:w-16 lg:h-16 z-20"
+          scrollRange={[0, 0.4]}
+          yRange={[0, -30]}
+          rotateRange={[0, -20]}
+        >
+          <PaperSVG className="w-full h-full drop-shadow-md" />
+        </FloatingDecoration>
 
-            {/* Left — text */}
-            <div>
-              <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}>
-                <Badge className="mb-6 gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-200 shadow-sm">
-                  <Sparkles className="w-3 h-3" />
-                  Powered by Gemini 2.5 Pro
-                </Badge>
-              </motion.div>
+        <FloatingDecoration
+          className="hidden lg:block absolute top-32 left-8 w-16 h-16 z-20"
+          scrollRange={[0, 0.5]}
+          yRange={[0, -50]}
+          rotateRange={[0, 15]}
+        >
+          <PencilSVG className="w-full h-full drop-shadow-md" />
+        </FloatingDecoration>
 
-              <motion.h1
-                variants={fadeUp}
-                initial="hidden"
-                animate="visible"
-                custom={1}
-                className="text-4xl sm:text-5xl lg:text-6xl xl:text-[68px] font-extrabold leading-[1.08] tracking-tight text-foreground mb-6"
+        <motion.div
+          style={{ y: heroY, opacity: heroOpacity }}
+          className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 z-10"
+        >
+          {/* Top label */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
+            className="text-center mb-6"
+          >
+            <p className="text-[11px] sm:text-xs font-extrabold tracking-[0.3em] text-blue-950 uppercase">
+              Pocket School
+            </p>
+            <p className="text-xs sm:text-sm text-blue-950/70 font-semibold tracking-wide">
+              Adaptive AI Learning
+            </p>
+          </motion.div>
+
+          {/* Inset white card */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: EASE_OUT_EXPO }}
+            className="rounded-3xl bg-white shadow-[0_40px_100px_-20px_rgba(0,0,0,0.25)] overflow-hidden border border-black/5"
+          >
+            {/* Inner mini-nav (lg+ only) */}
+            <div className="hidden lg:flex items-center justify-between px-8 py-5 border-b border-slate-100 bg-white">
+              <Link href="/" className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center">
+                  <BookOpen className="w-3.5 h-3.5 text-white" />
+                </div>
+                <span className="text-sm font-bold text-slate-900 tracking-tight">Pocket School</span>
+              </Link>
+              <nav className="flex items-center gap-7">
+                <a href="#features" className="text-[11px] font-bold tracking-widest text-slate-700 hover:text-blue-600 uppercase transition-colors">Home</a>
+                <a href="#features" className="text-[11px] font-bold tracking-widest text-slate-700 hover:text-blue-600 uppercase transition-colors">Features</a>
+                <a href="#portal-showcase" className="text-[11px] font-bold tracking-widest text-slate-700 hover:text-blue-600 uppercase transition-colors">Portal</a>
+                <a href="#testimonials" className="text-[11px] font-bold tracking-widest text-slate-700 hover:text-blue-600 uppercase transition-colors">Reviews</a>
+              </nav>
+              <Button
+                onClick={() => router.push('/signup')}
+                className="rounded-full bg-[#F5B400] hover:bg-amber-500 text-blue-950 font-extrabold text-[11px] tracking-widest uppercase px-5 h-9 shadow-md"
               >
-                The Smarter Way<br />
-                to Learn{' '}
-                <span className="gradient-text">Anything</span>
-              </motion.h1>
-
-              <motion.p
-                variants={fadeUp}
-                initial="hidden"
-                animate="visible"
-                custom={2}
-                className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-8 max-w-md"
-              >
-                Upload any material — a PDF, video or URL. Our AI transforms it into 11 personalised
-                learning formats in seconds, tailored to exactly how you learn best.
-              </motion.p>
-
-              <motion.div
-                variants={fadeUp}
-                initial="hidden"
-                animate="visible"
-                custom={3}
-                className="flex flex-col sm:flex-row gap-3"
-              >
-                <Button
-                  size="lg"
-                  onClick={() => router.push('/signup')}
-                  className="rounded-full h-12 px-8 text-base bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all"
-                >
-                  Start Learning for Free
-                  <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={() => { document.getElementById('portal-showcase')?.scrollIntoView({ behavior: 'smooth' }); }}
-                  className="rounded-full h-12 px-8 text-base border-border text-foreground hover:bg-muted transition-all"
-                >
-                  See It in Action
-                </Button>
-              </motion.div>
-
-              {/* Credential strip */}
-              <motion.div
-                variants={fadeUp}
-                initial="hidden"
-                animate="visible"
-                custom={4}
-                className="mt-8 flex items-center gap-4 flex-wrap"
-              >
-                <span className="text-xs text-muted-foreground/60 font-medium">Built with</span>
-                {credentialLogos.map((name) => (
-                  <span key={name} className="text-xs font-semibold text-muted-foreground/50 tracking-wide">
-                    {name}
-                  </span>
-                ))}
-              </motion.div>
+                Register Now
+              </Button>
             </div>
 
-            {/* Right — portal preview */}
-            <div className="hidden lg:block relative">
-              {/* Small peripheral: Teacher alert */}
-              <motion.div
-                initial={{ opacity: 0, y: 24, rotate: -3 }}
-                animate={{ opacity: 1, y: 0, rotate: -3 }}
-                transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.5 }}
-                className="absolute -left-8 top-12 w-52 bg-white/95 dark:bg-[#111118]/95 backdrop-blur-sm rounded-2xl border border-border shadow-card p-4 z-10"
-              >
-                <div className="flex items-start gap-2 mb-2">
-                  <Bell className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
+            {/* 3-column hero content */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.3fr_1fr] min-h-[480px]">
+              {/* LEFT — blue panel with oversized headline */}
+              <div className="bg-[#1E3A8A] p-8 lg:p-10 xl:p-12 flex items-center order-2 lg:order-1">
+                <motion.h1
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.2 }}
+                  className="text-5xl sm:text-6xl lg:text-[58px] xl:text-7xl font-black text-white leading-[0.92] tracking-tight"
+                >
+                  Learn<br />
+                  smarter,<br />
+                  not<br />
+                  harder.
+                </motion.h1>
+              </div>
+
+              {/* CENTER — white panel with portal preview + yellow circle badge */}
+              <div className="bg-white p-5 lg:p-6 relative flex items-center justify-center order-1 lg:order-2 min-h-[280px] lg:min-h-0">
+                <div className="w-full max-w-md rounded-2xl overflow-hidden border border-slate-200 shadow-[0_20px_50px_-10px_rgba(15,23,42,0.18)]">
+                  <BrowserChrome url="pocketschool.app/student" />
+                  <div style={{ height: 360 }} className="bg-background">
+                    <StudentMockup />
+                  </div>
+                </div>
+
+                {/* Yellow circle badge */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.5, rotate: -15 }}
+                  animate={{ opacity: 1, scale: 1, rotate: -8 }}
+                  transition={{ duration: 0.6, ease: EASE_OUT_EXPO, delay: 0.5 }}
+                  className="absolute top-2 right-2 lg:-top-4 lg:-right-4 w-24 h-24 lg:w-28 lg:h-28 rounded-full bg-[#F5B400] flex items-center justify-center text-center shadow-xl border-4 border-white z-10"
+                >
                   <div>
-                    <p className="text-[10px] font-semibold text-foreground">3 submissions ready</p>
-                    <p className="text-[9px] text-muted-foreground">Biology 101 · Mrs. Hartley</p>
+                    <p className="text-3xl lg:text-4xl font-black text-blue-950 leading-none">11</p>
+                    <p className="text-[9px] lg:text-[10px] font-extrabold text-blue-950 leading-tight uppercase tracking-wide mt-0.5">
+                      Learning<br />Formats
+                    </p>
                   </div>
-                </div>
-                <div className="h-1 rounded-full bg-amber-100 overflow-hidden">
-                  <div className="h-full w-[60%] bg-amber-400 rounded-full" />
-                </div>
-              </motion.div>
+                </motion.div>
 
-              {/* Main browser-framed mockup */}
-              <motion.div
-                initial={{ opacity: 0, y: 32 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.3 }}
-                className="relative rounded-2xl overflow-hidden border border-border shadow-[0_30px_80px_-20px_rgba(15,23,42,0.18)] ring-1 ring-black/[0.06]"
-                style={{ height: 400 }}
-              >
-                <BrowserChrome url="pocketschool.app/student" />
-                <div className="h-[calc(100%-28px)] bg-background">
-                  <StudentMockup />
-                </div>
-              </motion.div>
+                {/* Scribble accent under mockup */}
+                <ScribbleSVG className="absolute bottom-2 left-6 w-20 h-6 opacity-80" />
+              </div>
 
-              {/* Small peripheral: AI Tutor chat */}
-              <motion.div
-                initial={{ opacity: 0, y: 24, rotate: 4 }}
-                animate={{ opacity: 1, y: 0, rotate: 4 }}
-                transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.65 }}
-                className="absolute -right-6 bottom-10 w-52 bg-white/95 dark:bg-[#111118]/95 backdrop-blur-sm rounded-2xl border border-border shadow-card overflow-hidden z-10"
-              >
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-3 py-2 flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
-                    <Brain className="w-3 h-3 text-white" />
-                  </div>
-                  <span className="text-[10px] font-semibold text-white">AI Tutor</span>
-                  <span className="ml-auto text-[8px] px-1.5 py-0.5 rounded-full bg-white/20 text-white font-medium">K-12</span>
-                </div>
-                <div className="p-3 space-y-2">
-                  <div className="flex justify-end">
-                    <div className="bg-primary text-white text-[9px] rounded-xl rounded-tr-sm px-2.5 py-1.5 max-w-[80%]">
-                      What is ATP and why does it matter?
-                    </div>
-                  </div>
-                  <div className="flex gap-1.5">
-                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shrink-0">
-                      <Brain className="w-2.5 h-2.5 text-white" />
-                    </div>
-                    <div className="bg-muted text-foreground text-[9px] rounded-xl rounded-tl-sm px-2.5 py-1.5 max-w-[80%]">
-                      Good question — before I explain, what do you think cells might need energy for?
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
+              {/* RIGHT — blue panel with subhead + search */}
+              <div className="bg-[#1E3A8A] p-8 lg:p-10 xl:p-12 flex flex-col justify-center order-3">
+                <motion.h2
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.3 }}
+                  className="text-xl lg:text-2xl font-extrabold text-white leading-tight mb-4"
+                >
+                  Unlock your potential with{' '}
+                  <span className="text-[#F5B400]">adaptive AI</span> learning.
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.6, ease: EASE_OUT_EXPO, delay: 0.45 }}
+                  className="text-sm text-blue-100/80 leading-relaxed mb-6"
+                >
+                  Upload any PDF, video or URL. Our AI turns it into 11 personalised study formats — podcasts, flashcards, quizzes — tailored to how <em className="not-italic font-bold text-white">you</em> learn best.
+                </motion.p>
+
+                {/* Search-style topic input */}
+                <motion.form
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, ease: EASE_OUT_EXPO, delay: 0.55 }}
+                  onSubmit={(e) => { e.preventDefault(); router.push('/signup'); }}
+                  className="bg-white rounded-full p-1 flex items-center shadow-lg gap-1"
+                >
+                  <Search className="w-4 h-4 text-slate-400 ml-3 shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="What do you want to learn?"
+                    className="flex-1 min-w-0 bg-transparent outline-none text-sm text-slate-700 placeholder:text-slate-400 px-2"
+                  />
+                  <Button
+                    type="submit"
+                    className="rounded-full bg-[#F5B400] hover:bg-amber-500 text-blue-950 font-extrabold text-[11px] tracking-widest uppercase px-4 h-9 shrink-0"
+                  >
+                    Start
+                  </Button>
+                </motion.form>
+
+                {/* Bottom checkmarks */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.6, ease: EASE_OUT_EXPO, delay: 0.7 }}
+                  className="mt-6 flex gap-4 flex-wrap"
+                >
+                  {['Free forever', 'No credit card', '11 formats'].map((t) => (
+                    <span key={t} className="flex items-center gap-1.5 text-[11px] font-semibold text-blue-100">
+                      <CheckCircle2 className="w-3 h-3 text-[#F5B400]" />
+                      {t}
+                    </span>
+                  ))}
+                </motion.div>
+              </div>
             </div>
-          </div>
+          </motion.div>
+
+          {/* Credential strip below card */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, ease: EASE_OUT_EXPO, delay: 0.9 }}
+            className="mt-8 flex items-center justify-center gap-x-6 gap-y-2 flex-wrap"
+          >
+            <span className="text-[11px] text-blue-950/70 font-bold tracking-widest uppercase">Powered by</span>
+            {credentialLogos.map((name) => (
+              <span key={name} className="text-xs font-extrabold text-blue-950/80 tracking-wide">
+                {name}
+              </span>
+            ))}
+          </motion.div>
         </motion.div>
       </section>
 
@@ -920,8 +1062,24 @@ export default function LandingPage() {
       </section>
 
       {/* ── Features ─────────────────────────────────────────── */}
-      <section id="features" className="py-20 sm:py-28">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <section id="features" className="relative py-20 sm:py-28 overflow-hidden">
+        <FloatingDecoration
+          className="absolute top-12 right-6 w-12 h-12 lg:w-16 lg:h-16 opacity-80"
+          scrollRange={[0.05, 0.35]}
+          yRange={[40, -60]}
+          rotateRange={[-15, 20]}
+        >
+          <PencilSVG className="w-full h-full" />
+        </FloatingDecoration>
+        <FloatingDecoration
+          className="absolute bottom-10 left-4 lg:left-12 w-14 h-14 lg:w-20 lg:h-20 opacity-90"
+          scrollRange={[0.05, 0.35]}
+          yRange={[60, -40]}
+          rotateRange={[10, -15]}
+        >
+          <BookStackSVG className="w-full h-full" />
+        </FloatingDecoration>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative">
           <motion.div
             variants={fadeUp}
             initial="hidden"
@@ -965,8 +1123,24 @@ export default function LandingPage() {
       </section>
 
       {/* ── Portal Showcase ───────────────────────────────────── */}
-      <section id="portal-showcase" className="py-20 sm:py-28 bg-muted/20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+      <section id="portal-showcase" className="relative py-20 sm:py-28 bg-muted/20 overflow-hidden">
+        <FloatingDecoration
+          className="absolute top-20 left-6 w-10 h-10 lg:w-14 lg:h-14 opacity-90"
+          scrollRange={[0.25, 0.55]}
+          yRange={[30, -50]}
+          rotateRange={[-10, 18]}
+        >
+          <PaperSVG className="w-full h-full" />
+        </FloatingDecoration>
+        <FloatingDecoration
+          className="absolute bottom-12 right-6 w-12 h-12 lg:w-16 lg:h-16 opacity-90"
+          scrollRange={[0.25, 0.55]}
+          yRange={[50, -50]}
+          rotateRange={[20, -10]}
+        >
+          <PinkStarBurst className="w-full h-full" />
+        </FloatingDecoration>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 relative">
           <motion.div
             variants={fadeUp}
             initial="hidden"
@@ -1122,8 +1296,24 @@ export default function LandingPage() {
       </section>
 
       {/* ── Testimonials ─────────────────────────────────────── */}
-      <section id="testimonials" className="py-20 sm:py-28">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <section id="testimonials" className="relative py-20 sm:py-28 overflow-hidden">
+        <FloatingDecoration
+          className="absolute top-16 left-4 lg:left-12 w-14 h-14 lg:w-20 lg:h-20 opacity-80"
+          scrollRange={[0.55, 0.85]}
+          yRange={[40, -50]}
+          rotateRange={[-12, 20]}
+        >
+          <BookStackSVG className="w-full h-full" />
+        </FloatingDecoration>
+        <FloatingDecoration
+          className="absolute bottom-16 right-4 lg:right-12 w-12 h-12 lg:w-16 lg:h-16 opacity-80"
+          scrollRange={[0.55, 0.85]}
+          yRange={[60, -40]}
+          rotateRange={[15, -10]}
+        >
+          <PencilSVG className="w-full h-full" />
+        </FloatingDecoration>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative">
           <motion.div
             variants={fadeUp}
             initial="hidden"
