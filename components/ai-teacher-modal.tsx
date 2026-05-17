@@ -48,14 +48,11 @@ interface Props {
   teacher: AiTeacher | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** If true, auto-mount the iframe on open (used by featured Sarah "Start Conversation" CTA). */
-  autoStart?: boolean;
 }
 
-export function AiTeacherModal({ teacher, open, onOpenChange, autoStart }: Props) {
+export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
   const router = useRouter();
   const user = useAuthSTORE((s) => s.user);
-  const [started, setStarted] = useState(false);
   const [notifyEmail, setNotifyEmail] = useState('');
   const [notifySubmitted, setNotifySubmitted] = useState(false);
   const [notifyLoading, setNotifyLoading] = useState(false);
@@ -63,30 +60,24 @@ export function AiTeacherModal({ teacher, open, onOpenChange, autoStart }: Props
   // Reset state whenever a new teacher is loaded or the modal closes.
   useEffect(() => {
     if (!open) {
-      setStarted(false);
       setNotifyEmail('');
       setNotifySubmitted(false);
     }
   }, [open, teacher?.id]);
 
-  // Auto-start (for featured "Start Conversation" CTA) — only if live & logged in.
-  useEffect(() => {
-    if (open && autoStart && teacher?.status === 'live' && user) {
-      setStarted(true);
-    }
-  }, [open, autoStart, teacher, user]);
-
   if (!teacher) return null;
   const Icon = ICONS[teacher.iconKey];
   const isLive = teacher.status === 'live';
 
+  const sessionPath = `/ai-teachers/${teacher.id}/session`;
+
   const handleStart = () => {
     if (!isLive) return; // coming-soon uses inline email form
     if (!user) {
-      router.push('/login?next=/ai-teachers');
+      router.push(`/login?next=${encodeURIComponent(sessionPath)}`);
       return;
     }
-    setStarted(true);
+    window.open(sessionPath, '_blank', 'noopener,noreferrer');
   };
 
   const handleNotify = async (e: React.FormEvent) => {
@@ -107,10 +98,8 @@ export function AiTeacherModal({ teacher, open, onOpenChange, autoStart }: Props
   const primaryCtaLabel = !isLive
     ? 'Get notified when live'
     : !user
-    ? 'Sign in to talk'
-    : started
-    ? 'Conversation live'
-    : 'Start conversation';
+    ? 'Sign in to start session'
+    : 'Open full-screen session';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -130,19 +119,6 @@ export function AiTeacherModal({ teacher, open, onOpenChange, autoStart }: Props
 
             <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-900 ring-1 ring-white/10">
               <AnimatePresence mode="wait">
-                {started && isLive && teacher.iframeUrl ? (
-                  <motion.iframe
-                    key="iframe"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    src={teacher.iframeUrl}
-                    allow="microphone; autoplay; camera"
-                    allowFullScreen
-                    title={`Live conversation with ${teacher.name}`}
-                    className="absolute inset-0 w-full h-full border-0"
-                  />
-                ) : (
                   <motion.div
                     key="preview"
                     initial={{ opacity: 0 }}
@@ -206,7 +182,6 @@ export function AiTeacherModal({ teacher, open, onOpenChange, autoStart }: Props
                       )}
                     </div>
                   </motion.div>
-                )}
               </AnimatePresence>
 
               {/* Live pulse badge */}
@@ -269,15 +244,14 @@ export function AiTeacherModal({ teacher, open, onOpenChange, autoStart }: Props
             {isLive ? (
               <Button
                 onClick={handleStart}
-                disabled={started}
                 className="w-full rounded-full h-12 text-sm font-bold shadow-md transition-all"
                 style={{
-                  backgroundColor: started ? '#10B981' : teacher.accentColor,
+                  backgroundColor: teacher.accentColor,
                   color: 'white',
                 }}
               >
                 {primaryCtaLabel}
-                {!started && <ArrowRight className="ml-2 w-4 h-4" />}
+                <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             ) : (
               <div className="w-full rounded-full h-12 text-sm font-bold flex items-center justify-center gap-2 border-2 border-dashed"
