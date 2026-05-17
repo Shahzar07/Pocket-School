@@ -14,26 +14,18 @@ import {
   Zap,
   Headphones,
   Video,
-  FlipHorizontal,
-  Network,
   ClipboardList,
-  PresentationIcon,
   ImageIcon,
-  FileText,
   Music,
   Calculator,
-  BookMarked,
   Upload,
   Sparkles,
-  GraduationCap,
   Users,
   ShieldCheck,
   Star,
-  CheckCircle2,
   Menu,
   X,
   ChevronDown,
-  Bell,
   TrendingUp,
   Trophy,
   BookOpenCheck,
@@ -41,69 +33,78 @@ import {
   Library,
   User,
   AlertCircle,
-  Search,
-  Pencil,
+  Layers,
 } from 'lucide-react';
 
 /* ─── Data ──────────────────────────────────────────────────── */
 
-const features = [
+const platformIntelligence = [
   {
-    icon: <Upload className="w-5 h-5" />,
-    gradient: 'from-blue-500 to-indigo-600',
-    bg: 'bg-blue-50',
-    title: 'AI Content Generation',
-    desc: 'Upload any PDF, video, URL or paste text. Our AI instantly transforms it into rich learning material.',
+    icon: <Layers className="w-5 h-5" />,
+    title: 'Adaptive Learning Engine',
+    desc: 'Every answer, every skipped lesson, every revisited concept causes the platform to recalibrate. It surfaces the right content at the right difficulty at the right moment — automatically, without you having to think about it.',
+    tag: 'Real-time adaptive personalisation',
   },
   {
-    icon: <BookOpen className="w-5 h-5" />,
-    gradient: 'from-violet-500 to-purple-600',
-    bg: 'bg-violet-50',
-    title: '11 Learning Formats',
-    desc: 'Podcast, flashcards, mind map, quiz, video, slides, infographic, notes — one source, eleven ways to learn.',
+    icon: <User className="w-5 h-5" />,
+    title: 'Mojo Tutor AI',
+    desc: 'Your 24/7 AI tutor — explains concepts, answers questions, encourages progress, and adapts its teaching style to your intelligence profile. Always available, never impatient.',
+    tag: null,
   },
   {
-    icon: <Brain className="w-5 h-5" />,
-    gradient: 'from-teal-500 to-emerald-600',
-    bg: 'bg-teal-50',
-    title: 'Socratic AI Tutor',
-    desc: "Don't just get answers. Our AI guides you to the solution with questions that build deep understanding.",
+    icon: <ImageIcon className="w-5 h-5" />,
+    title: 'Visual Learning Engine',
+    desc: 'Every concept rendered through infographics, mind maps, animated sequences, and interactive diagrams — activating multiple cognitive channels simultaneously.',
+    tag: null,
   },
   {
-    icon: <Zap className="w-5 h-5" />,
-    gradient: 'from-amber-400 to-orange-500',
-    bg: 'bg-amber-50',
-    title: 'Gamified Progress',
-    desc: 'Earn XP, unlock achievements and climb the leaderboard as you master new skills every day.',
+    icon: <TrendingUp className="w-5 h-5" />,
+    title: 'Progress Intelligence',
+    desc: 'Real-time dashboards tracking mastery by topic, exam readiness by subject, and learning momentum — visible to students, parents, and institutions.',
+    tag: null,
   },
   {
-    icon: <Video className="w-5 h-5" />,
-    gradient: 'from-rose-500 to-pink-600',
-    bg: 'bg-rose-50',
-    title: 'Live Classes',
-    desc: 'Join real-time video sessions with teachers. Record, replay and share class recordings instantly.',
+    icon: <ShieldCheck className="w-5 h-5" />,
+    title: 'Smart Exam Prep',
+    desc: 'Past papers, auto-marked mock exams, gap analysis reports, and AI-generated revision plans — all orchestrated to maximise grade outcomes.',
+    tag: null,
   },
   {
-    icon: <Users className="w-5 h-5" />,
-    gradient: 'from-sky-500 to-cyan-600',
-    bg: 'bg-sky-50',
-    title: 'Multi-Role Platform',
-    desc: 'One platform for students, teachers, parents and admins — each with a tailored, role-aware experience.',
+    icon: <Trophy className="w-5 h-5" />,
+    title: 'Gamified Mastery System',
+    desc: 'Streaks, milestones, leaderboards, and achievement badges transform the hard work of academic mastery into an engaging daily habit — because motivation is half the battle, and Pocket School is built to win it.',
+    tag: 'Engagement through gamification',
   },
 ];
 
-const formats = [
-  { icon: <Headphones className="w-4 h-4" />, label: 'Podcast', color: 'text-purple-600 bg-purple-50 border-purple-200' },
-  { icon: <Video className="w-4 h-4" />, label: 'Video', color: 'text-rose-600 bg-rose-50 border-rose-200' },
-  { icon: <FlipHorizontal className="w-4 h-4" />, label: 'Flashcards', color: 'text-blue-600 bg-blue-50 border-blue-200' },
-  { icon: <Network className="w-4 h-4" />, label: 'Mind Map', color: 'text-teal-600 bg-teal-50 border-teal-200' },
-  { icon: <ClipboardList className="w-4 h-4" />, label: 'Quiz', color: 'text-amber-600 bg-amber-50 border-amber-200' },
-  { icon: <PresentationIcon className="w-4 h-4" />, label: 'Slides', color: 'text-indigo-600 bg-indigo-50 border-indigo-200' },
-  { icon: <ImageIcon className="w-4 h-4" />, label: 'Infographic', color: 'text-pink-600 bg-pink-50 border-pink-200' },
-  { icon: <FileText className="w-4 h-4" />, label: 'Notes', color: 'text-slate-600 bg-slate-50 border-slate-200' },
-  { icon: <Music className="w-4 h-4" />, label: 'Audio Summary', color: 'text-violet-600 bg-violet-50 border-violet-200' },
-  { icon: <Calculator className="w-4 h-4" />, label: 'Practice Problems', color: 'text-orange-600 bg-orange-50 border-orange-200' },
-  { icon: <BookMarked className="w-4 h-4" />, label: 'Glossary', color: 'text-cyan-600 bg-cyan-50 border-cyan-200' },
+const eightIntelligences = [
+  { icon: <BookOpen className="w-5 h-5" />, title: 'Linguistic', desc: 'Word-based learners who thrive through reading, writing and storytelling', accent: '#1A73E8' },
+  { icon: <Calculator className="w-5 h-5" />, title: 'Logical-Mathematical', desc: 'Analytical minds drawn to patterns, reasoning and systems', accent: '#1E3A8A' },
+  { icon: <ImageIcon className="w-5 h-5" />, title: 'Spatial', desc: 'Visual thinkers who understand through imagery, maps and design', accent: '#F5B400' },
+  { icon: <Music className="w-5 h-5" />, title: 'Musical', desc: 'Learners who connect ideas through rhythm, tone and sound', accent: '#EC4899' },
+  { icon: <Zap className="w-5 h-5" />, title: 'Bodily-Kinaesthetic', desc: 'Hands-on processors who learn best by doing and moving', accent: '#10B981' },
+  { icon: <Users className="w-5 h-5" />, title: 'Interpersonal', desc: 'Social learners who thrive through dialogue and collaboration', accent: '#8B5CF6' },
+  { icon: <Brain className="w-5 h-5" />, title: 'Intrapersonal', desc: 'Reflective, self-directed learners who work best independently', accent: '#1A73E8' },
+  { icon: <Sparkles className="w-5 h-5" />, title: 'Naturalist', desc: 'Pattern-seekers who learn by classifying and connecting to the world', accent: '#10B981' },
+];
+
+const ninePathways = [
+  { num: '01', tag: 'QUALIFICATION', title: 'IGCSE Program', desc: 'International General Certificate of Secondary Education — delivered through a fully modular, self-paced format with AI-guided revision and visual concept tools for all subjects.', badge: 'Ideal for Cambridge, Pearson & AQA examination bodies' },
+  { num: '02', tag: 'QUALIFICATION', title: 'A Levels', desc: 'Advanced Level programmes opening pathways to universities worldwide. AI exam prep, structured study schedules, and visual subject mastery built around your timeline.', badge: 'Ideal for Cambridge, Pearson & AQA examination bodies' },
+  { num: '03', tag: 'TRANSITION', title: 'Pre-University Programs', desc: 'Bridging programmes that close the gap between secondary school and degree-level study — developing critical thinking, academic writing, and research fluency.', badge: 'University prep' },
+  { num: '04', tag: 'FOUNDATION', title: 'Foundation Programs', desc: 'Structured academic foundations across business, sciences, arts, and technology — preparing learners for direct entry into bachelor degree programmes.', badge: 'Degree entry' },
+  { num: '05', tag: 'DEGREE', title: 'London External Law Degree', desc: 'Study a globally respected external LLB with full platform support, visual case study tools, and law-specialist AI guidance — entirely at your own pace.', badge: 'University of London' },
+  { num: '06', tag: 'CREDENTIAL', title: 'Micro Degrees', desc: 'Focused, credit-bearing micro-qualifications in high-demand fields — completed in weeks. Portable, employer-recognised, and stackable toward full degrees.', badge: 'Flexible credential' },
+  { num: '07', tag: 'QUALIFICATION', title: 'Diplomas', desc: 'Accredited diploma programmes in business, technology, education, and creative disciplines — a respected pathway for career changers and school leavers alike.', badge: 'Accredited' },
+  { num: '08', tag: 'PROFESSIONAL', title: 'Professional Certifications', desc: 'Industry-aligned certifications that validate real skills — from project management to digital marketing, data analytics to educational coaching.', badge: 'Career ready' },
+  { num: '09', tag: 'OPEN LEARNING', title: 'Independent Learning Courses', desc: 'Self-directed exploration for curious minds. Pick a topic, learn at your pace, guided by Mojo AI and a rich visual resource library. No deadlines. Just growth.', badge: 'Self-paced' },
+];
+
+const fourSteps = [
+  { num: '01', title: 'Create Your Profile', desc: 'Share your goals, level, and time. Our AI builds your personalised learning map from day one.' },
+  { num: '02', title: 'Choose Your Pathway', desc: 'Pick from 9 academic pathways — or let Mojo AI recommend the best route for your goals.' },
+  { num: '03', title: 'Learn Your Way', desc: 'Visual lessons, adaptive exercises, AI explanations — delivered in your intelligence style, at your pace.' },
+  { num: '04', title: 'Track & Achieve', desc: 'Watch mastery grow in real time. Earn recognised credentials. Unlock your next level.' },
 ];
 
 const testimonials = [
@@ -253,67 +254,11 @@ const testimonials = [
   },
 ];
 
-const roles = [
-  {
-    icon: <GraduationCap className="w-6 h-6" />,
-    role: 'Students',
-    color: 'border-blue-500',
-    iconColor: 'text-blue-600',
-    perks: ['AI-generated study materials in 11 formats', 'XP, badges & leaderboard gamification'],
-    href: '/signup?role=student',
-  },
-  {
-    icon: <BookOpen className="w-6 h-6" />,
-    role: 'Teachers',
-    color: 'border-teal-500',
-    iconColor: 'text-teal-600',
-    perks: ['AI-assisted grading with rubric generation', 'Student analytics & struggling-learner alerts'],
-    href: '/signup?role=teacher',
-  },
-  {
-    icon: <Users className="w-6 h-6" />,
-    role: 'Parents',
-    color: 'border-amber-500',
-    iconColor: 'text-amber-600',
-    perks: ['Weekly progress summaries per subject', 'Direct messaging with teachers'],
-    href: '/signup?role=parent',
-  },
-  {
-    icon: <ShieldCheck className="w-6 h-6" />,
-    role: 'Admins',
-    color: 'border-violet-500',
-    iconColor: 'text-violet-600',
-    perks: ['Institution management & access control', 'Platform analytics & AI usage reporting'],
-    href: '/signup?role=admin',
-  },
-];
-
-const steps = [
-  {
-    number: '01',
-    title: 'Upload Your Material',
-    desc: 'Drop in a PDF, paste a URL, upload a video or type your notes. Any format works.',
-    icon: <Upload className="w-6 h-6 text-blue-600" />,
-  },
-  {
-    number: '02',
-    title: 'AI Transforms It',
-    desc: 'Our Gemini-powered AI generates up to 11 personalised learning formats in seconds.',
-    icon: <Sparkles className="w-6 h-6 text-violet-600" />,
-  },
-  {
-    number: '03',
-    title: 'Learn Your Way',
-    desc: 'Study via podcast on your commute, practice with flashcards, or test yourself with quizzes.',
-    icon: <Brain className="w-6 h-6 text-teal-600" />,
-  },
-];
-
 const stats = [
-  { value: '11', label: 'Learning Formats' },
-  { value: '4', label: 'User Roles' },
-  { value: '24/7', label: 'AI Tutor Access' },
-  { value: 'Gemini 2.5 Pro', label: 'AI Engine' },
+  { value: '9', label: 'Academic Pathways' },
+  { value: '8', label: 'Ways of Knowing' },
+  { value: '24/7', label: 'Mojo AI Tutor' },
+  { value: 'Cambridge · AQA', label: 'Examination Bodies' },
 ];
 
 const faqs = [
@@ -982,7 +927,6 @@ const HERO_SLIDES = [
 function HeroCarousel() {
   const router = useRouter();
   const [index, setIndex] = useState(0);
-  const [search, setSearch] = useState('');
   const prefersReducedMotion = useReducedMotion();
   const total = HERO_SLIDES.length;
   const slide = HERO_SLIDES[index];
@@ -997,14 +941,8 @@ function HeroCarousel() {
   const next = () => setIndex(i => (i + 1) % total);
   const prev = () => setIndex(i => (i - 1 + total) % total);
 
-  const onSubmitSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!search.trim()) { router.push('/signup'); return; }
-    router.push(`/signup?topic=${encodeURIComponent(search.trim())}`);
-  };
-
   return (
-    <section className="relative pt-20 lg:pt-24 pb-16 bg-gradient-to-b from-[#EEF3FF] via-[#F5F1FF] to-[#F8F4EE]">
+    <section className="relative min-h-screen flex items-center pt-24 lg:pt-28 pb-12 bg-gradient-to-b from-[#EEF3FF] via-[#F5F1FF] to-[#F8F4EE]">
       <FloatingDecoration
         className="absolute top-24 left-4 lg:left-12 w-10 h-10 lg:w-14 lg:h-14 z-20"
         scrollRange={[0, 0.3]}
@@ -1022,33 +960,9 @@ function HeroCarousel() {
         <PinkStarBurst className="w-full h-full drop-shadow-md" />
       </FloatingDecoration>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6">
         <div className="relative rounded-[32px] bg-gradient-to-br from-[#EEF3FF] via-white to-[#FFF7E6] overflow-hidden border border-black/[0.04] shadow-[0_40px_100px_-30px_rgba(15,23,42,0.25)]">
-          <div className="absolute top-5 right-5 lg:top-7 lg:right-8 z-30 flex items-center gap-2 lg:gap-3">
-            <div className="hidden sm:flex items-center gap-2 bg-white rounded-full pl-4 pr-3 py-2 shadow-md border border-black/[0.04]">
-              <span className="text-xs font-semibold text-slate-700">All Courses</span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
-            </div>
-            <form onSubmit={onSubmitSearch} className="flex items-center bg-white rounded-full pl-4 pr-1 py-1 shadow-md border border-black/[0.04]">
-              <Search className="w-3.5 h-3.5 text-slate-400 mr-2 shrink-0" />
-              <input
-                type="text"
-                placeholder="Search a topic…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="bg-transparent outline-none text-xs sm:text-sm text-slate-700 placeholder:text-slate-400 w-32 sm:w-44 py-1.5"
-              />
-              <button
-                type="submit"
-                className="hidden sm:inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#1A73E8] hover:bg-[#1967D2] transition-colors"
-                aria-label="Search"
-              >
-                <Search className="w-3.5 h-3.5 text-white" />
-              </button>
-            </form>
-          </div>
-
-          <div className="grid lg:grid-cols-[1.05fr_1fr] gap-0 lg:gap-4 pt-24 lg:pt-12 pb-10 lg:pb-8">
+          <div className="grid lg:grid-cols-[1.05fr_1fr] gap-0 lg:gap-4 pt-10 lg:pt-12 pb-10 lg:pb-8">
             {/* LEFT — illustration */}
             <div className="relative px-6 lg:px-12 flex items-center justify-center min-h-[340px] lg:min-h-[520px] order-2 lg:order-1">
               <AnimatePresence mode="wait">
@@ -1363,11 +1277,10 @@ export default function LandingPage() {
   }, []);
 
   const navLinks = [
-    { label: 'Features', href: '#features' },
-    { label: 'See It Live', href: '#portal-showcase' },
-    { label: 'Marketplace', href: '/courses' },
-    { label: 'AI Studio', href: '/ai-studio' },
-    { label: 'FAQ', href: '#faq' },
+    { label: "Who It's For", href: '#methodology' },
+    { label: 'Programs', href: '#programs' },
+    { label: 'Platform', href: '#platform' },
+    { label: 'Methodology', href: '#methodology' },
   ];
 
   const portalTabUrl: Record<string, string> = {
@@ -1488,8 +1401,105 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Features ─────────────────────────────────────────── */}
-      <section id="features" className="relative py-20 sm:py-28 overflow-hidden">
+      {/* ── Manifesto / Quote ─────────────────────────────────── */}
+      <section className="relative py-20 sm:py-28 bg-white overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+            className="border-l-4 border-[#1A73E8] pl-6 lg:pl-8"
+          >
+            <p className="text-3xl sm:text-4xl lg:text-5xl font-black leading-[1.1] tracking-tight text-[#0B1B3F]">
+              &ldquo;Our platform embodies visual learning methodologies designed to invoke and strengthen a learner&rsquo;s{' '}
+              <span className="bg-gradient-to-r from-[#1A73E8] to-[#1E3A8A] bg-clip-text text-transparent">
+                multiple intelligences
+              </span>
+              .&rdquo;
+            </p>
+            <div className="mt-8 flex items-center gap-3 flex-wrap">
+              <span className="text-xs font-semibold text-slate-500">Ideal for:</span>
+              {['Cambridge', 'Pearson', 'AQA'].map((b) => (
+                <span key={b} className="px-3 py-1.5 rounded-md border border-[#1A73E8]/20 bg-[#EEF3FF] text-xs font-bold text-[#1E3A8A]">
+                  {b}
+                </span>
+              ))}
+              <span className="text-xs text-slate-500">examination bodies</span>
+            </div>
+          </motion.div>
+
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+            className="space-y-5 text-base sm:text-lg leading-relaxed text-slate-700"
+          >
+            <p>
+              Pocket School is not a tutoring platform or a content library. It is a full learning operating system — one that adapts to how you think, how you see, and how you make meaning of the world.
+            </p>
+            <p>
+              Built on the science of multiple intelligences, every lesson, interaction, and assessment is designed to activate more than one way of knowing. Your unique intelligence profile shapes every step of your learning journey.
+            </p>
+            <p>
+              The result: faster mastery, deeper retention, and learners who genuinely love the process — whatever their age, background, or starting point.
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── Eight Ways of Knowing ─────────────────────────────── */}
+      <section id="methodology" className="py-20 sm:py-28 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+            className="grid lg:grid-cols-2 gap-10 lg:gap-16 mb-14 items-start"
+          >
+            <div>
+              <p className="text-xs font-bold tracking-[0.2em] text-[#1A73E8] mb-4">LEARNING METHODOLOGY</p>
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#0B1B3F] leading-[1.05]">
+                Eight Ways
+                <br />
+                of{' '}
+                <span className="bg-gradient-to-r from-[#1A73E8] to-[#1E3A8A] bg-clip-text text-transparent">Knowing</span>
+              </h2>
+            </div>
+            <p className="text-base sm:text-lg text-slate-600 leading-relaxed lg:pt-12">
+              Every person processes the world differently. Pocket School&rsquo;s visual learning methodology is built on the science of multiple intelligences — activating several intelligence types in every lesson so content reaches learners the way they actually think, not the way a textbook assumes they should.
+            </p>
+          </motion.div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {eightIntelligences.map((it, i) => (
+              <motion.div
+                key={it.title}
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: '-40px' }}
+                custom={i % 4}
+                className="bg-[#F8FAFF] border border-slate-100 rounded-2xl p-6 text-center hover:shadow-lg hover:border-slate-200 transition-all"
+              >
+                <div
+                  className="w-12 h-12 rounded-xl mx-auto mb-4 flex items-center justify-center"
+                  style={{ backgroundColor: `${it.accent}15`, color: it.accent }}
+                >
+                  {it.icon}
+                </div>
+                <h3 className="text-base font-extrabold text-[#0B1B3F] mb-2">{it.title}</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">{it.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Platform Intelligence — AI That Actually Knows You ── */}
+      <section id="platform" className="relative py-20 sm:py-28 bg-gradient-to-b from-[#F8FAFF] to-white overflow-hidden">
         <FloatingDecoration
           className="absolute top-12 right-6 w-12 h-12 lg:w-16 lg:h-16 opacity-80"
           scrollRange={[0.05, 0.35]}
@@ -1498,51 +1508,48 @@ export default function LandingPage() {
         >
           <PencilSVG className="w-full h-full" />
         </FloatingDecoration>
-        <FloatingDecoration
-          className="absolute bottom-10 left-4 lg:left-12 w-14 h-14 lg:w-20 lg:h-20 opacity-90"
-          scrollRange={[0.05, 0.35]}
-          yRange={[60, -40]}
-          rotateRange={[10, -15]}
-        >
-          <BookStackSVG className="w-full h-full" />
-        </FloatingDecoration>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 relative">
           <motion.div
             variants={fadeUp}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: '-60px' }}
-            className="text-center max-w-2xl mx-auto mb-14"
+            className="mb-14 max-w-3xl"
           >
-            <Badge className="mb-4 rounded-full bg-violet-50 text-violet-700 border-violet-200 text-xs font-semibold">
-              Everything You Need
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground mb-4">
-              Learning, reimagined
+            <p className="text-xs font-bold tracking-[0.2em] text-[#1A73E8] mb-4">PLATFORM INTELLIGENCE</p>
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#0B1B3F] leading-[1.05] mb-5">
+              AI That Actually{' '}
+              <span className="bg-gradient-to-r from-[#1A73E8] to-[#1E3A8A] bg-clip-text text-transparent">Knows You</span>
             </h2>
-            <p className="text-muted-foreground text-base sm:text-lg leading-relaxed">
-              Every tool you need to study smarter, teach better, and stay in the loop — all in one place.
+            <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl">
+              Pocket School&rsquo;s intelligence layer adapts to how you learn and evolves with every session — not just what you study, but how you understand.
             </p>
           </motion.div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {features.map((f, i) => (
+            {platformIntelligence.map((f, i) => (
               <motion.div
-                key={i}
+                key={f.title}
                 variants={fadeUp}
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: '-40px' }}
                 custom={i}
-                className="group relative bg-card border border-border rounded-2xl p-6 card-glow cursor-default"
+                className="group relative bg-white border border-slate-200 rounded-2xl p-7 hover:border-[#1A73E8]/40 hover:shadow-[0_20px_50px_-20px_rgba(26,115,232,0.25)] transition-all"
               >
-                <div className={`w-10 h-10 rounded-xl ${f.bg} flex items-center justify-center mb-5`}>
-                  <span className={`bg-gradient-to-br ${f.gradient} text-transparent [&>svg]:stroke-current`}>
-                    {f.icon}
-                  </span>
+                <div className="w-11 h-11 rounded-xl bg-[#EEF3FF] flex items-center justify-center mb-5 text-[#1A73E8]">
+                  {f.icon}
                 </div>
-                <h3 className="text-base font-bold text-foreground mb-2">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                <h3 className="text-lg font-extrabold text-[#0B1B3F] mb-2">{f.title}</h3>
+                <p className="text-sm text-slate-600 leading-relaxed mb-4">{f.desc}</p>
+                {f.tag && (
+                  <div className="pt-4 border-t border-slate-100">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1A73E8]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#F5B400]" />
+                      {f.tag}
+                    </span>
+                  </div>
+                )}
               </motion.div>
             ))}
           </div>
@@ -1633,32 +1640,31 @@ export default function LandingPage() {
       {/* ── Popular Courses (marketplace teaser) ──────────────── */}
       <PopularCoursesSection />
 
-      {/* ── How It Works ─────────────────────────────────────── */}
-      <section id="how-it-works" className="py-20 sm:py-28">
+      {/* ── Getting Started — Up and Learning in Four Steps ──── */}
+      <section id="getting-started" className="py-20 sm:py-28 bg-[#F8FAFF]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <motion.div
             variants={fadeUp}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: '-60px' }}
-            className="text-center max-w-2xl mx-auto mb-16"
+            className="mb-16 max-w-2xl"
           >
-            <Badge className="mb-4 rounded-full bg-teal-50 text-teal-700 border-teal-200 text-xs font-semibold">
-              Simple as 1-2-3
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground mb-4">
-              How it works
+            <p className="text-xs font-bold tracking-[0.2em] text-[#1A73E8] mb-4">GETTING STARTED</p>
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#0B1B3F] leading-[1.05] mb-5">
+              Up and Learning{' '}
+              <span className="bg-gradient-to-r from-[#1A73E8] to-[#1E3A8A] bg-clip-text text-transparent">in Four Steps</span>
             </h2>
-            <p className="text-muted-foreground text-base sm:text-lg">
-              From raw material to a complete study toolkit in under a minute.
+            <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
+              From sign-up to your first breakthrough — Pocket School gets you there faster than any platform you&rsquo;ve tried.
             </p>
           </motion.div>
 
-          <div className="relative grid md:grid-cols-3 gap-8 md:gap-6">
-            <div className="hidden md:block absolute top-10 left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] h-px border-t-2 border-dashed border-border z-0" />
-            {steps.map((s, i) => (
+          <div className="relative grid md:grid-cols-4 gap-8 md:gap-4 mt-12">
+            <div className="hidden md:block absolute top-7 left-[calc(12.5%+1rem)] right-[calc(12.5%+1rem)] h-px border-t-2 border-dashed border-[#1A73E8]/30 z-0" />
+            {fourSteps.map((s, i) => (
               <motion.div
-                key={i}
+                key={s.num}
                 variants={fadeUp}
                 initial="hidden"
                 whileInView="visible"
@@ -1666,62 +1672,60 @@ export default function LandingPage() {
                 custom={i}
                 className="relative z-10 text-center"
               >
-                <div className="w-20 h-20 rounded-2xl bg-card border border-border shadow-card flex items-center justify-center mx-auto mb-6">
-                  {s.icon}
+                <div className="w-14 h-14 rounded-full bg-white border-2 border-[#1A73E8] flex items-center justify-center mx-auto mb-6 shadow-md">
+                  <span className="text-sm font-black text-[#1A73E8]">{s.num}</span>
                 </div>
-                <div className="text-xs font-bold text-muted-foreground tracking-widest mb-2 uppercase">{s.number}</div>
-                <h3 className="text-lg font-bold text-foreground mb-3">{s.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">{s.desc}</p>
+                <h3 className="text-lg font-extrabold text-[#0B1B3F] mb-3">{s.title}</h3>
+                <p className="text-sm text-slate-600 leading-relaxed max-w-xs mx-auto">{s.desc}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Formats Showcase ──────────────────────────────────── */}
-      <section id="formats" className="py-20 sm:py-28 bg-muted/20">
+      {/* ── Nine Pathways. One Platform. ─────────────────────── */}
+      <section id="programs" className="py-20 sm:py-28 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <motion.div
             variants={fadeUp}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: '-60px' }}
-            className="text-center max-w-2xl mx-auto mb-12"
+            className="mb-14 max-w-2xl"
           >
-            <Badge className="mb-4 rounded-full bg-blue-50 text-blue-700 border-blue-200 text-xs font-semibold">
-              11 Formats
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground mb-4">
-              One source,{' '}
-              <span className="gradient-text">eleven ways</span> to learn
+            <p className="text-xs font-bold tracking-[0.2em] text-[#1A73E8] mb-4">ACADEMIC PATHWAYS</p>
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#0B1B3F] leading-[1.05] mb-5">
+              Nine Pathways.
+              <br />
+              <span className="bg-gradient-to-r from-[#1A73E8] to-[#1E3A8A] bg-clip-text text-transparent">One Platform.</span>
             </h2>
-            <p className="text-muted-foreground text-base sm:text-lg">
-              Upload once. Get an entire study ecosystem — pick the format that fits your mood or learning style.
+            <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
+              From globally recognised academic qualifications to professional certifications and self-directed learning — there is a pathway here for every ambition.
             </p>
           </motion.div>
 
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-40px' }}
-            className="flex flex-wrap justify-center gap-3"
-          >
-            {formats.map((f, i) => (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {ninePathways.map((p, i) => (
               <motion.div
-                key={i}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05, duration: 0.4, ease: EASE_OUT_EXPO }}
-                whileHover={{ y: -3, scale: 1.04 }}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-full border text-sm font-semibold transition-shadow hover:shadow-md cursor-default ${f.color}`}
+                key={p.num}
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: '-40px' }}
+                custom={i % 4}
+                className="group bg-white border border-slate-200 rounded-2xl p-6 hover:border-[#1A73E8]/40 hover:shadow-[0_20px_50px_-20px_rgba(26,115,232,0.2)] transition-all flex flex-col"
               >
-                {f.icon}
-                {f.label}
+                <p className="text-[10px] font-bold tracking-[0.15em] text-slate-400 mb-3">
+                  {p.num} — {p.tag}
+                </p>
+                <h3 className="text-lg font-extrabold text-[#0B1B3F] mb-3 leading-tight">{p.title}</h3>
+                <p className="text-sm text-slate-600 leading-relaxed mb-5 flex-1">{p.desc}</p>
+                <span className="inline-block self-start text-[10px] font-bold tracking-wide uppercase px-2.5 py-1.5 rounded-md border border-[#1A73E8]/25 bg-[#EEF3FF] text-[#1E3A8A] leading-tight">
+                  {p.badge}
+                </span>
               </motion.div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -1812,61 +1816,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── For Every Role ────────────────────────────────────── */}
-      <section className="py-20 sm:py-28 bg-muted/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-            className="text-center max-w-2xl mx-auto mb-14"
-          >
-            <Badge className="mb-4 rounded-full bg-indigo-50 text-indigo-700 border-indigo-200 text-xs font-semibold">
-              For Everyone
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground mb-4">
-              Built for every role
-            </h2>
-            <p className="text-muted-foreground text-base sm:text-lg">
-              Whether you&apos;re studying, teaching, parenting or administrating — there&apos;s a tailored experience waiting for you.
-            </p>
-          </motion.div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {roles.map((r, i) => (
-              <motion.div
-                key={i}
-                variants={fadeUp}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: '-40px' }}
-                custom={i}
-              >
-                <Link
-                  href={r.href}
-                  className={`group block bg-card border-l-4 ${r.color} border border-border rounded-2xl p-6 card-glow h-full`}
-                >
-                  <div className={`mb-4 ${r.iconColor}`}>{r.icon}</div>
-                  <h3 className="text-base font-bold text-foreground mb-4">{r.role}</h3>
-                  <ul className="space-y-2">
-                    {r.perks.map((p, j) => (
-                      <li key={j} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-teal-500" />
-                        {p}
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="mt-5 text-sm font-semibold text-foreground group-hover:underline flex items-center gap-1">
-                    Get started <ArrowRight className="w-3.5 h-3.5" />
-                  </p>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── FAQ ───────────────────────────────────────────────── */}
       <section id="faq" className="py-20 sm:py-28">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
@@ -1905,10 +1854,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Final CTA ─────────────────────────────────────────── */}
-      <section className="py-20 sm:py-28 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 -z-0" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_100%,rgba(124,58,237,0.4),transparent)] -z-0" />
+      {/* ── Your Smartest Learning Decision ──────────────────── */}
+      <section className="py-24 sm:py-32 relative overflow-hidden bg-[#0B1B3F]">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(26,115,232,0.25),transparent)] -z-0" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_100%,rgba(245,180,0,0.12),transparent)] -z-0" />
 
         <motion.div
           variants={fadeUp}
@@ -1917,20 +1866,34 @@ export default function LandingPage() {
           viewport={{ once: true, margin: '-60px' }}
           className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 text-center"
         >
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-5">
-            Start learning for free today
+          <p className="text-xs font-bold tracking-[0.25em] text-[#1A73E8] mb-5">START TODAY</p>
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white mb-6 leading-[1.05]">
+            Your Smartest
+            <br />
+            <span className="bg-gradient-to-r from-[#1A73E8] via-[#60A5FA] to-[#F5B400] bg-clip-text text-transparent">
+              Learning Decision
+            </span>
           </h2>
-          <p className="text-base sm:text-lg text-white/80 mb-9 leading-relaxed">
-            Free forever for individuals. No credit card required.
+          <p className="text-base sm:text-lg text-white/70 mb-10 leading-relaxed max-w-2xl mx-auto">
+            Whether you&rsquo;re a school, a homeschooling family, a learning centre, or a professional ready to level up — Pocket School has a pathway personalised for you.
           </p>
-          <Button
-            size="lg"
-            onClick={() => router.push('/signup')}
-            className="rounded-full h-12 px-10 text-base bg-white text-blue-700 hover:bg-blue-50 font-bold shadow-xl hover:shadow-2xl transition-all"
-          >
-            Create Your Free Account
-            <ArrowRight className="ml-2 w-4 h-4" />
-          </Button>
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <Button
+              size="lg"
+              onClick={() => router.push('/courses')}
+              className="rounded-full h-12 px-7 text-sm font-bold bg-[#1A73E8] hover:bg-[#1967D2] text-white shadow-xl shadow-[#1A73E8]/40 transition-all"
+            >
+              Browse All Programs <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => document.getElementById('platform')?.scrollIntoView({ behavior: 'smooth' })}
+              className="rounded-full h-12 px-7 text-sm font-bold bg-transparent border-white/25 hover:bg-white/10 text-white hover:text-white transition-all"
+            >
+              Explore the Platform
+            </Button>
+          </div>
         </motion.div>
       </section>
 
