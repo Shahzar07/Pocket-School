@@ -29,6 +29,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { useAuthSTORE } from '@/hooks/use-auth';
+import { subscribeTeacherNotification } from '@/lib/db';
 import type { AiTeacher, TeacherIconKey } from '@/lib/ai-teachers';
 
 const ICONS: Record<TeacherIconKey, typeof Atom> = {
@@ -55,10 +56,17 @@ export function AiTeacherModal({ teacher, open, onOpenChange, autoStart }: Props
   const router = useRouter();
   const user = useAuthSTORE((s) => s.user);
   const [started, setStarted] = useState(false);
+  const [notifyEmail, setNotifyEmail] = useState('');
+  const [notifySubmitted, setNotifySubmitted] = useState(false);
+  const [notifyLoading, setNotifyLoading] = useState(false);
 
-  // Reset "started" whenever a new teacher is loaded or the modal closes.
+  // Reset state whenever a new teacher is loaded or the modal closes.
   useEffect(() => {
-    if (!open) setStarted(false);
+    if (!open) {
+      setStarted(false);
+      setNotifyEmail('');
+      setNotifySubmitted(false);
+    }
   }, [open, teacher?.id]);
 
   // Auto-start (for featured "Start Conversation" CTA) — only if live & logged in.
@@ -73,15 +81,27 @@ export function AiTeacherModal({ teacher, open, onOpenChange, autoStart }: Props
   const isLive = teacher.status === 'live';
 
   const handleStart = () => {
-    if (!isLive) {
-      router.push(`/signup?notify=${teacher.id}`);
-      return;
-    }
+    if (!isLive) return; // coming-soon uses inline email form
     if (!user) {
       router.push('/login?next=/ai-teachers');
       return;
     }
     setStarted(true);
+  };
+
+  const handleNotify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!notifyEmail.trim() || !teacher) return;
+    setNotifyLoading(true);
+    try {
+      await subscribeTeacherNotification(teacher.id, notifyEmail.trim());
+      setNotifySubmitted(true);
+    } catch {
+      // fail silently — don't block the user
+      setNotifySubmitted(true);
+    } finally {
+      setNotifyLoading(false);
+    }
   };
 
   const primaryCtaLabel = !isLive
@@ -155,9 +175,34 @@ export function AiTeacherModal({ teacher, open, onOpenChange, autoStart }: Props
                         </button>
                       )}
                       {!isLive && (
-                        <p className="text-white/80 text-sm font-medium max-w-xs mx-auto">
-                          Launching soon — this AI educator is in final calibration.
-                        </p>
+                        <div className="max-w-xs mx-auto text-center">
+                          <p className="text-white/80 text-sm font-medium mb-4">
+                            Launching soon — be first to know when this AI educator goes live.
+                          </p>
+                          {!notifySubmitted ? (
+                            <form onSubmit={handleNotify} className="flex gap-2">
+                              <input
+                                type="email"
+                                required
+                                placeholder="your@email.com"
+                                value={notifyEmail}
+                                onChange={e => setNotifyEmail(e.target.value)}
+                                className="flex-1 px-3 py-2 rounded-lg border border-white/20 bg-white/10 text-white placeholder-white/50 text-sm focus:outline-none focus:ring-2 focus:ring-white/40 backdrop-blur-sm"
+                              />
+                              <button
+                                type="submit"
+                                disabled={notifyLoading}
+                                className="px-4 py-2 rounded-lg bg-white text-slate-900 text-sm font-bold hover:bg-slate-100 transition-colors disabled:opacity-60 whitespace-nowrap"
+                              >
+                                {notifyLoading ? '...' : 'Notify me'}
+                              </button>
+                            </form>
+                          ) : (
+                            <p className="text-white font-semibold text-sm bg-white/20 rounded-lg px-4 py-3 backdrop-blur-sm">
+                              ✓ You&apos;re on the list!
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
                   </motion.div>
@@ -221,18 +266,27 @@ export function AiTeacherModal({ teacher, open, onOpenChange, autoStart }: Props
               ))}
             </div>
 
-            <Button
-              onClick={handleStart}
-              disabled={started}
-              className="w-full rounded-full h-12 text-sm font-bold shadow-md transition-all"
-              style={{
-                backgroundColor: started ? '#10B981' : teacher.accentColor,
-                color: 'white',
-              }}
-            >
-              {primaryCtaLabel}
-              {!started && <ArrowRight className="ml-2 w-4 h-4" />}
-            </Button>
+            {isLive ? (
+              <Button
+                onClick={handleStart}
+                disabled={started}
+                className="w-full rounded-full h-12 text-sm font-bold shadow-md transition-all"
+                style={{
+                  backgroundColor: started ? '#10B981' : teacher.accentColor,
+                  color: 'white',
+                }}
+              >
+                {primaryCtaLabel}
+                {!started && <ArrowRight className="ml-2 w-4 h-4" />}
+              </Button>
+            ) : (
+              <div className="w-full rounded-full h-12 text-sm font-bold flex items-center justify-center gap-2 border-2 border-dashed"
+                style={{ borderColor: teacher.accentColor, color: teacher.accentColor }}
+              >
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                Coming Soon
+              </div>
+            )}
 
             {teacher.trainedOn && teacher.trainedOn.length > 0 && (
               <div className="mt-5 flex items-center gap-2 flex-wrap">

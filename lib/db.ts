@@ -32,7 +32,7 @@ export interface Course {
   ownerId: string;
   ownerName?: string;
   thumbnailUrl?: string;
-  status: 'draft' | 'published';
+  status: 'draft' | 'pending_approval' | 'published';
   subject?: string;
   type?: CourseType;
   price?: number;
@@ -1425,4 +1425,38 @@ export async function getAiGenerations(userId: string): Promise<AiGeneration[]> 
 
 export async function deleteAiGeneration(userId: string, id: string): Promise<void> {
   await deleteDoc(doc(db, 'users', userId, 'ai_generations', id));
+}
+
+/* ─── AI Teacher notifications ───────────────────────────── */
+
+export async function subscribeTeacherNotification(teacherId: string, email: string): Promise<void> {
+  const ref = collection(db, 'teacher_notifications', teacherId, 'emails');
+  await addDoc(ref, { email, teacherId, createdAt: serverTimestamp() });
+}
+
+/* ─── Course approval flow ───────────────────────────────── */
+
+export async function getPendingCourses(): Promise<Course[]> {
+  try {
+    const q = query(collection(db, 'courses'), where('status', '==', 'pending_approval'));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Course));
+  } catch {
+    return [];
+  }
+}
+
+export async function approveCourse(id: string): Promise<void> {
+  await updateDoc(doc(db, 'courses', id), {
+    status: 'published',
+    isPublic: true,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function rejectCourse(id: string): Promise<void> {
+  await updateDoc(doc(db, 'courses', id), {
+    status: 'draft',
+    updatedAt: serverTimestamp(),
+  });
 }

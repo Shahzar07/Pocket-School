@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform, AnimatePresence, type Variants, useRed
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useAuthSTORE } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -272,7 +273,7 @@ const faqs = [
   },
   {
     q: 'Which AI model powers Pocket School?',
-    a: "Google Gemini 2.5 Pro for content generation and the Socratic tutor. We don't train on your uploads — your material stays yours.",
+    a: "Advanced AI models for content generation and the Socratic tutor. We don't train on your uploads — your material stays yours.",
   },
   {
     q: 'How accurate is the AI-generated content?',
@@ -292,7 +293,7 @@ const faqs = [
   },
 ];
 
-const credentialLogos = ['Gemini 2.5 Pro', 'Firebase', 'Next.js', 'Vercel'];
+const credentialLogos = ['Google AI', 'Firebase', 'Next.js', 'Vercel'];
 
 /* ─── Animation helpers ─────────────────────────────────────── */
 
@@ -942,7 +943,7 @@ function HeroCarousel() {
   const prev = () => setIndex(i => (i - 1 + total) % total);
 
   return (
-    <section className="relative min-h-screen flex items-center pt-24 lg:pt-28 pb-12 bg-gradient-to-b from-[#EEF3FF] via-[#F5F1FF] to-[#F8F4EE]">
+    <section className="relative h-[100dvh] min-h-[600px] flex items-center pt-16 pb-8 bg-gradient-to-b from-[#EEF3FF] via-[#F5F1FF] to-[#F8F4EE]">
       <FloatingDecoration
         className="absolute top-24 left-4 lg:left-12 w-10 h-10 lg:w-14 lg:h-14 z-20"
         scrollRange={[0, 0.3]}
@@ -1266,10 +1267,16 @@ function PopularCoursesSection() {
 
 export default function LandingPage() {
   const router = useRouter();
+  const { user, profile } = useAuthSTORE();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activePortalTab, setActivePortalTab] = useState('student');
   const prefersReducedMotion = useReducedMotion();
+
+  const dashPath = profile?.role === 'teacher' ? '/dashboard/teacher'
+    : profile?.role === 'admin' ? '/dashboard/admin'
+    : profile?.role === 'parent' ? '/dashboard/parent'
+    : '/dashboard/student';
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -1281,6 +1288,8 @@ export default function LandingPage() {
     { label: 'Programs', href: '#programs' },
     { label: 'Platform', href: '#platform' },
     { label: 'AI Teachers', href: '/ai-teachers' },
+    { label: 'Marketplace', href: '/courses' },
+    { label: 'AI Studio', href: '/ai-studio' },
     { label: 'Methodology', href: '#methodology' },
   ];
 
@@ -1322,16 +1331,27 @@ export default function LandingPage() {
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
-            <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Sign In
-            </Link>
-            <Button
-              onClick={() => router.push('/signup')}
-              className="rounded-full h-9 px-5 text-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all"
-            >
-              Get Started
-              <ArrowRight className="ml-1.5 w-3.5 h-3.5" />
-            </Button>
+            {user ? (
+              <Link href={dashPath} className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-blue-600 transition-colors">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold select-none">
+                  {profile?.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? 'U'}
+                </div>
+                <span>{profile?.name?.split(' ')[0] ?? 'Dashboard'}</span>
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                  Sign In
+                </Link>
+                <Button
+                  onClick={() => router.push('/signup')}
+                  className="rounded-full h-9 px-5 text-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all"
+                >
+                  Get Started
+                  <ArrowRight className="ml-1.5 w-3.5 h-3.5" />
+                </Button>
+              </>
+            )}
           </div>
 
           <button
@@ -1363,13 +1383,24 @@ export default function LandingPage() {
                 </a>
               ))}
               <div className="pt-2 flex flex-col gap-2 border-t border-border">
-                <Link href="/login" className="text-sm font-medium text-muted-foreground">Sign In</Link>
-                <Button
-                  onClick={() => router.push('/signup')}
-                  className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white w-full"
-                >
-                  Get Started <ArrowRight className="ml-1.5 w-3.5 h-3.5" />
-                </Button>
+                {user ? (
+                  <Link href={dashPath} className="flex items-center gap-2 text-sm font-medium text-foreground py-1">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold select-none">
+                      {profile?.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? 'U'}
+                    </div>
+                    <span>{profile?.name ?? 'Go to Dashboard'}</span>
+                  </Link>
+                ) : (
+                  <>
+                    <Link href="/login" className="text-sm font-medium text-muted-foreground">Sign In</Link>
+                    <Button
+                      onClick={() => router.push('/signup')}
+                      className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white w-full"
+                    >
+                      Get Started <ArrowRight className="ml-1.5 w-3.5 h-3.5" />
+                    </Button>
+                  </>
+                )}
               </div>
             </motion.div>
           )}
