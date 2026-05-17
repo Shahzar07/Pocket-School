@@ -1,0 +1,476 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  Atom,
+  Calculator,
+  PenTool,
+  Globe,
+  Languages,
+  Code2,
+  Briefcase,
+  Palette,
+  ScrollText,
+  Brain,
+  ArrowRight,
+  Mic,
+  MessageSquare,
+  Sparkles,
+  Menu,
+  X,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AiTeacherModal } from '@/components/ai-teacher-modal';
+import {
+  AI_TEACHERS,
+  TEACHER_CATEGORIES,
+  type AiTeacher,
+  type TeacherCategory,
+  type TeacherIconKey,
+} from '@/lib/ai-teachers';
+
+const ICONS: Record<TeacherIconKey, typeof Atom> = {
+  atom: Atom,
+  calculator: Calculator,
+  pen: PenTool,
+  globe: Globe,
+  languages: Languages,
+  code: Code2,
+  briefcase: Briefcase,
+  palette: Palette,
+  history: ScrollText,
+};
+
+const NAV_LINKS = [
+  { label: "Who It's For", href: '/#methodology' },
+  { label: 'Programs', href: '/#programs' },
+  { label: 'Platform', href: '/#platform' },
+  { label: 'AI Teachers', href: '/ai-teachers' },
+  { label: 'Methodology', href: '/#methodology' },
+];
+
+export default function AiTeachersPage() {
+  const router = useRouter();
+  const [filter, setFilter] = useState<'All' | TeacherCategory>('All');
+  const [selected, setSelected] = useState<AiTeacher | null>(null);
+  const [autoStart, setAutoStart] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const featured = AI_TEACHERS.find((t) => t.status === 'live') ?? AI_TEACHERS[0];
+  const others = AI_TEACHERS.filter((t) => t.id !== featured.id);
+
+  const visible = useMemo(() => {
+    if (filter === 'All') return others;
+    return others.filter((t) => t.category === filter);
+  }, [filter, others]);
+
+  const liveCount = AI_TEACHERS.filter((t) => t.status === 'live').length;
+
+  const open = (t: AiTeacher, withAutoStart = false) => {
+    setSelected(t);
+    setAutoStart(withAutoStart);
+  };
+
+  return (
+    <div className="min-h-screen bg-white">
+      {/* ── Nav ────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-black/[0.05]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+              <Brain className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-[15px] font-bold tracking-tight text-foreground">Pocket School</span>
+          </Link>
+
+          <nav className="hidden md:flex items-center gap-6">
+            {NAV_LINKS.map((l) => (
+              <Link
+                key={l.label}
+                href={l.href}
+                className={`text-sm font-medium transition-colors ${
+                  l.href === '/ai-teachers'
+                    ? 'text-[#1A73E8]'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="hidden md:flex items-center gap-3">
+            <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Sign In
+            </Link>
+            <Button
+              onClick={() => router.push('/signup')}
+              className="rounded-full h-9 px-5 text-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md"
+            >
+              Get Started
+            </Button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setMobileOpen((o) => !o)}
+            className="md:hidden p-2 -mr-2 text-foreground"
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
+        {mobileOpen && (
+          <div className="md:hidden border-t border-black/[0.05] px-4 py-3 flex flex-col gap-3 bg-white">
+            {NAV_LINKS.map((l) => (
+              <Link key={l.label} href={l.href} className="text-sm font-medium text-foreground">
+                {l.label}
+              </Link>
+            ))}
+            <Link href="/login" className="text-sm font-medium text-muted-foreground">
+              Sign In
+            </Link>
+            <Button
+              onClick={() => router.push('/signup')}
+              className="rounded-full h-10 text-sm bg-[#1A73E8] hover:bg-[#1967D2] text-white"
+            >
+              Get Started
+            </Button>
+          </div>
+        )}
+      </header>
+
+      {/* ── Hero ───────────────────────────────────────────────── */}
+      <section className="relative pt-14 lg:pt-20 pb-12 bg-gradient-to-b from-[#EEF3FF] via-[#F5F1FF] to-[#F8F4EE] overflow-hidden">
+        <div className="absolute -top-20 -left-20 w-96 h-96 rounded-full bg-[#1A73E8]/10 blur-3xl" />
+        <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[#F5B400]/10 blur-3xl" />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 text-center">
+          <p className="text-xs font-bold tracking-[0.25em] text-[#1A73E8] mb-5">AI TEACHERS LIBRARY</p>
+          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black tracking-tight text-[#0B1B3F] leading-[0.95] mb-6 max-w-4xl mx-auto">
+            Your 24/7 Faculty.
+            <br />
+            <span className="bg-gradient-to-r from-[#1A73E8] via-[#1E3A8A] to-[#1A73E8] bg-clip-text text-transparent">
+              Always Available.
+            </span>
+          </h1>
+          <p className="text-base sm:text-lg text-slate-700 leading-relaxed max-w-2xl mx-auto mb-8">
+            Talk face-to-face with AI educators trained on the curricula that matter. No appointments. No waiting. Just learning.
+          </p>
+          <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap text-xs sm:text-sm font-bold text-[#0B1B3F]">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-md border border-black/[0.04]">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+              </span>
+              {liveCount} LIVE NOW
+            </span>
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-md border border-black/[0.04]">
+              <Sparkles className="w-3.5 h-3.5 text-[#F5B400]" />
+              {AI_TEACHERS.length} SUBJECTS
+            </span>
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-md border border-black/[0.04]">
+              <Mic className="w-3.5 h-3.5 text-[#1A73E8]" />
+              VOICE + TEXT
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Featured (Sarah) ──────────────────────────────────── */}
+      <section className="relative -mt-6 pb-16 lg:pb-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <FeaturedCard
+            teacher={featured}
+            onOpen={() => open(featured, false)}
+            onStart={() => open(featured, true)}
+          />
+        </div>
+      </section>
+
+      {/* ── Filter + grid ─────────────────────────────────────── */}
+      <section className="bg-[#F8FAFF] py-16 lg:py-20 border-t border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="mb-10 flex items-end justify-between flex-wrap gap-4">
+            <div>
+              <p className="text-xs font-bold tracking-[0.2em] text-[#1A73E8] mb-3">EXPLORE THE FACULTY</p>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[#0B1B3F] leading-[1.05]">
+                Meet every teacher on the bench.
+              </h2>
+            </div>
+            <p className="text-sm font-semibold text-slate-500">
+              Showing {visible.length} of {others.length}
+            </p>
+          </div>
+
+          {/* Filter chips */}
+          <div className="flex items-center gap-2 flex-wrap mb-8">
+            {(['All', ...TEACHER_CATEGORIES] as const).map((c) => {
+              const active = filter === c;
+              return (
+                <button
+                  key={c}
+                  onClick={() => setFilter(c)}
+                  className={`text-xs font-bold px-4 py-2 rounded-full transition-all ${
+                    active
+                      ? 'bg-[#0B1B3F] text-white shadow-md'
+                      : 'bg-white text-slate-700 border border-slate-200 hover:border-[#1A73E8] hover:text-[#1A73E8]'
+                  }`}
+                >
+                  {c}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Grid */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            <AnimatePresence mode="popLayout">
+              {visible.map((t, i) => (
+                <TeacherCard key={t.id} teacher={t} index={i} onOpen={() => open(t)} />
+              ))}
+            </AnimatePresence>
+          </div>
+
+          {visible.length === 0 && (
+            <div className="text-center py-20">
+              <p className="text-sm text-slate-500">No teachers in this category yet.</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── Closing CTA ───────────────────────────────────────── */}
+      <section className="py-20 lg:py-28 bg-[#0B1B3F] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(26,115,232,0.25),transparent)]" />
+        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
+          <p className="text-xs font-bold tracking-[0.25em] text-[#1A73E8] mb-5">JOIN THE FACULTY</p>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-[1.05] mb-5">
+            Know a great educator?
+            <br />
+            <span className="bg-gradient-to-r from-[#1A73E8] via-[#60A5FA] to-[#F5B400] bg-clip-text text-transparent">
+              Help us train the next AI teacher.
+            </span>
+          </h2>
+          <p className="text-base text-white/70 mb-9 max-w-xl mx-auto">
+            Every Pocket School AI educator is modelled on a real teacher’s pedagogy. If you’d like to lend yours, we’d love to talk.
+          </p>
+          <Button
+            size="lg"
+            onClick={() => router.push('/signup?role=teacher')}
+            className="rounded-full h-12 px-7 text-sm font-bold bg-[#1A73E8] hover:bg-[#1967D2] text-white shadow-xl shadow-[#1A73E8]/40"
+          >
+            Become a partner educator <ArrowRight className="ml-2 w-4 h-4" />
+          </Button>
+        </div>
+      </section>
+
+      <AiTeacherModal
+        teacher={selected}
+        open={selected !== null}
+        onOpenChange={(o) => !o && setSelected(null)}
+        autoStart={autoStart}
+      />
+    </div>
+  );
+}
+
+function FeaturedCard({
+  teacher,
+  onOpen,
+  onStart,
+}: {
+  teacher: AiTeacher;
+  onOpen: () => void;
+  onStart: () => void;
+}) {
+  const Icon = ICONS[teacher.iconKey];
+  const isLive = teacher.status === 'live';
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      className="relative rounded-[32px] bg-white shadow-[0_40px_100px_-30px_rgba(15,23,42,0.25)] border border-black/[0.04] overflow-hidden"
+    >
+      <div className="grid lg:grid-cols-[1.1fr_1fr]">
+        {/* Left visual */}
+        <div className="relative min-h-[340px] lg:min-h-[480px] flex items-center justify-center overflow-hidden">
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(135deg, ${teacher.accentColor}, ${teacher.accentColor}cc 60%, ${teacher.accentColor}88)`,
+            }}
+          />
+          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_30%_30%,white,transparent_60%)]" />
+
+          {/* Avatar tile */}
+          <div className="relative">
+            <div
+              className="absolute -inset-3 rounded-3xl"
+              style={{ boxShadow: `0 0 80px 10px ${teacher.accentColor}88` }}
+            />
+            <div className="relative w-56 h-56 sm:w-64 sm:h-64 rounded-3xl bg-white/95 backdrop-blur shadow-2xl flex items-center justify-center">
+              <Icon className="w-24 h-24 sm:w-28 sm:h-28 text-[#0B1B3F]" strokeWidth={1.4} />
+            </div>
+          </div>
+
+          {/* Live badge */}
+          {isLive && (
+            <div className="absolute top-5 right-5 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-sm">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+              </span>
+              <span className="text-[10px] font-bold tracking-widest text-white">LIVE NOW</span>
+            </div>
+          )}
+
+          {/* Interaction modes */}
+          <div className="absolute bottom-5 left-5 flex items-center gap-2">
+            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-sm text-[10px] font-bold text-white">
+              <Mic className="w-3 h-3" /> VOICE
+            </span>
+            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-sm text-[10px] font-bold text-white">
+              <MessageSquare className="w-3 h-3" /> TEXT
+            </span>
+          </div>
+        </div>
+
+        {/* Right copy */}
+        <div className="p-7 lg:p-12 flex flex-col justify-center">
+          <p className="text-xs font-bold tracking-[0.2em] text-[#1A73E8] mb-3">FEATURED — TALK NOW</p>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[#0B1B3F] leading-[1.05] mb-3">
+            {teacher.name}
+          </h2>
+          <p className="text-sm sm:text-base text-slate-600 mb-5">{teacher.title}</p>
+
+          <div className="flex flex-wrap gap-1.5 mb-6">
+            {teacher.subjects.map((s) => (
+              <span
+                key={s}
+                className="text-xs font-bold px-2.5 py-1 rounded-md"
+                style={{ backgroundColor: `${teacher.accentColor}18`, color: teacher.accentColor }}
+              >
+                {s}
+              </span>
+            ))}
+          </div>
+
+          <p className="text-sm sm:text-base text-slate-700 leading-relaxed mb-7">{teacher.tagline}</p>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            <Button
+              onClick={onStart}
+              className="rounded-full h-12 px-7 text-sm font-bold text-white shadow-lg transition-all"
+              style={{ backgroundColor: teacher.accentColor, boxShadow: `0 12px 30px -10px ${teacher.accentColor}` }}
+            >
+              Start conversation <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+            <Button
+              onClick={onOpen}
+              variant="outline"
+              className="rounded-full h-12 px-6 text-sm font-bold border-slate-200 hover:border-[#1A73E8] hover:text-[#1A73E8]"
+            >
+              Read full bio
+            </Button>
+          </div>
+
+          {teacher.trainedOn && (
+            <div className="mt-6 pt-5 border-t border-slate-100 flex items-center gap-3 flex-wrap">
+              <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">Trained on</span>
+              {teacher.trainedOn.map((t) => (
+                <span
+                  key={t}
+                  className="text-[10px] font-bold px-2 py-0.5 rounded border border-slate-200 text-slate-700"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function TeacherCard({
+  teacher,
+  index,
+  onOpen,
+}: {
+  teacher: AiTeacher;
+  index: number;
+  onOpen: () => void;
+}) {
+  const Icon = ICONS[teacher.iconKey];
+  const isLive = teacher.status === 'live';
+  return (
+    <motion.button
+      layout
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: index * 0.04 }}
+      whileHover={{ y: -4 }}
+      onClick={onOpen}
+      className="group text-left bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-[#1A73E8]/40 hover:shadow-[0_20px_50px_-20px_rgba(26,115,232,0.25)] transition-all flex flex-col"
+    >
+      {/* Avatar pane */}
+      <div
+        className="relative h-44 flex items-center justify-center"
+        style={{
+          background: `linear-gradient(135deg, ${teacher.accentColor}, ${teacher.accentColor}cc)`,
+        }}
+      >
+        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_30%_30%,white,transparent_60%)]" />
+        <div className="relative w-20 h-20 rounded-2xl bg-white/95 backdrop-blur shadow-lg flex items-center justify-center">
+          <Icon className="w-9 h-9 text-[#0B1B3F]" strokeWidth={1.5} />
+        </div>
+        {isLive && (
+          <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-sm">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
+            </span>
+            <span className="text-[9px] font-bold tracking-widest text-white">LIVE 24/7</span>
+          </div>
+        )}
+        {!isLive && (
+          <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-amber-400 shadow-sm">
+            <span className="text-[9px] font-bold tracking-widest text-amber-950">COMING SOON</span>
+          </div>
+        )}
+      </div>
+
+      {/* Body */}
+      <div className="p-5 flex flex-col flex-1">
+        <h3 className="text-base font-extrabold text-[#0B1B3F] leading-tight mb-1">{teacher.name}</h3>
+        <p className="text-xs text-slate-500 leading-snug mb-3 line-clamp-2">{teacher.title}</p>
+
+        <div className="flex flex-wrap gap-1 mb-4">
+          {teacher.subjects.slice(0, 3).map((s) => (
+            <span
+              key={s}
+              className="text-[10px] font-bold px-2 py-0.5 rounded"
+              style={{ backgroundColor: `${teacher.accentColor}15`, color: teacher.accentColor }}
+            >
+              {s}
+            </span>
+          ))}
+        </div>
+
+        <p className="text-xs text-slate-600 leading-relaxed mb-4 flex-1 line-clamp-2">{teacher.tagline}</p>
+
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0B1B3F] group-hover:text-[#1A73E8] transition-colors">
+          {isLive ? 'Start conversation' : 'See details'}
+          <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+        </span>
+      </div>
+    </motion.button>
+  );
+}

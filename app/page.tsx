@@ -1280,6 +1280,7 @@ export default function LandingPage() {
     { label: "Who It's For", href: '#methodology' },
     { label: 'Programs', href: '#programs' },
     { label: 'Platform', href: '#platform' },
+    { label: 'AI Teachers', href: '/ai-teachers' },
     { label: 'Methodology', href: '#methodology' },
   ];
 
@@ -1920,9 +1921,15 @@ export default function LandingPage() {
             <div>
               <p className="text-xs font-bold text-foreground uppercase tracking-widest mb-4">Product</p>
               <ul className="space-y-2.5">
-                {['Features', 'How It Works', 'FAQ', 'Changelog'].map(l => (
-                  <li key={l}>
-                    <Link href={l === 'FAQ' ? '#faq' : '#'} className="text-sm text-muted-foreground hover:text-foreground transition-colors">{l}</Link>
+                {[
+                  { label: 'AI Teachers', href: '/ai-teachers' },
+                  { label: 'AI Studio', href: '/ai-studio' },
+                  { label: 'Programs', href: '#programs' },
+                  { label: 'Marketplace', href: '/courses' },
+                  { label: 'FAQ', href: '#faq' },
+                ].map(l => (
+                  <li key={l.label}>
+                    <Link href={l.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">{l.label}</Link>
                   </li>
                 ))}
               </ul>
