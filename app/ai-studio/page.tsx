@@ -275,7 +275,7 @@ export default function AiStudio() {
                 <>
                   <div className="text-center mb-10">
                     <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-slate-300 mb-5">
-                      <Sparkles className="w-3 h-3 text-fuchsia-400" /> Powered by Gemini 2.5 Pro
+                      <Sparkles className="w-3 h-3 text-fuchsia-400" /> Powered by Google AI
                     </div>
                     <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-3">
                       What do you want to learn?

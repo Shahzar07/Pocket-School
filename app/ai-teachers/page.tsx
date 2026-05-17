@@ -17,7 +17,6 @@ import {
   Brain,
   ArrowRight,
   Mic,
-  MessageSquare,
   Sparkles,
   Menu,
   X,
@@ -56,23 +55,21 @@ export default function AiTeachersPage() {
   const router = useRouter();
   const [filter, setFilter] = useState<'All' | TeacherCategory>('All');
   const [selected, setSelected] = useState<AiTeacher | null>(null);
-  const [autoStart, setAutoStart] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const featured = AI_TEACHERS.find((t) => t.status === 'live') ?? AI_TEACHERS[0];
-  const others = AI_TEACHERS.filter((t) => t.id !== featured.id);
-
   const visible = useMemo(() => {
-    if (filter === 'All') return others;
-    return others.filter((t) => t.category === filter);
-  }, [filter, others]);
+    const filtered = filter === 'All' ? AI_TEACHERS : AI_TEACHERS.filter((t) => t.category === filter);
+    // live teachers first
+    return [...filtered].sort((a, b) => {
+      const aLive = a.status === 'live' ? 0 : 1;
+      const bLive = b.status === 'live' ? 0 : 1;
+      return aLive - bLive;
+    });
+  }, [filter]);
 
   const liveCount = AI_TEACHERS.filter((t) => t.status === 'live').length;
 
-  const open = (t: AiTeacher, withAutoStart = false) => {
-    setSelected(t);
-    setAutoStart(withAutoStart);
-  };
+  const open = (t: AiTeacher) => setSelected(t);
 
   return (
     <div className="min-h-screen bg-white">
@@ -180,17 +177,6 @@ export default function AiTeachersPage() {
         </div>
       </section>
 
-      {/* ── Featured (Sarah) ──────────────────────────────────── */}
-      <section className="relative -mt-6 pb-16 lg:pb-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <FeaturedCard
-            teacher={featured}
-            onOpen={() => open(featured, false)}
-            onStart={() => open(featured, true)}
-          />
-        </div>
-      </section>
-
       {/* ── Filter + grid ─────────────────────────────────────── */}
       <section className="bg-[#F8FAFF] py-16 lg:py-20 border-t border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -202,7 +188,7 @@ export default function AiTeachersPage() {
               </h2>
             </div>
             <p className="text-sm font-semibold text-slate-500">
-              Showing {visible.length} of {others.length}
+              Showing {visible.length} of {AI_TEACHERS.length}
             </p>
           </div>
 
@@ -272,129 +258,8 @@ export default function AiTeachersPage() {
         teacher={selected}
         open={selected !== null}
         onOpenChange={(o) => !o && setSelected(null)}
-        autoStart={autoStart}
       />
     </div>
-  );
-}
-
-function FeaturedCard({
-  teacher,
-  onOpen,
-  onStart,
-}: {
-  teacher: AiTeacher;
-  onOpen: () => void;
-  onStart: () => void;
-}) {
-  const Icon = ICONS[teacher.iconKey];
-  const isLive = teacher.status === 'live';
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="relative rounded-[32px] bg-white shadow-[0_40px_100px_-30px_rgba(15,23,42,0.25)] border border-black/[0.04] overflow-hidden"
-    >
-      <div className="grid lg:grid-cols-[1.1fr_1fr]">
-        {/* Left visual */}
-        <div className="relative min-h-[340px] lg:min-h-[480px] flex items-center justify-center overflow-hidden">
-          <div
-            className="absolute inset-0"
-            style={{
-              background: `linear-gradient(135deg, ${teacher.accentColor}, ${teacher.accentColor}cc 60%, ${teacher.accentColor}88)`,
-            }}
-          />
-          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_30%_30%,white,transparent_60%)]" />
-
-          {/* Avatar tile */}
-          <div className="relative">
-            <div
-              className="absolute -inset-3 rounded-3xl"
-              style={{ boxShadow: `0 0 80px 10px ${teacher.accentColor}88` }}
-            />
-            <div className="relative w-56 h-56 sm:w-64 sm:h-64 rounded-3xl bg-white/95 backdrop-blur shadow-2xl flex items-center justify-center">
-              <Icon className="w-24 h-24 sm:w-28 sm:h-28 text-[#0B1B3F]" strokeWidth={1.4} />
-            </div>
-          </div>
-
-          {/* Live badge */}
-          {isLive && (
-            <div className="absolute top-5 right-5 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-sm">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
-              </span>
-              <span className="text-[10px] font-bold tracking-widest text-white">LIVE NOW</span>
-            </div>
-          )}
-
-          {/* Interaction modes */}
-          <div className="absolute bottom-5 left-5 flex items-center gap-2">
-            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-sm text-[10px] font-bold text-white">
-              <Mic className="w-3 h-3" /> VOICE
-            </span>
-            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-sm text-[10px] font-bold text-white">
-              <MessageSquare className="w-3 h-3" /> TEXT
-            </span>
-          </div>
-        </div>
-
-        {/* Right copy */}
-        <div className="p-7 lg:p-12 flex flex-col justify-center">
-          <p className="text-xs font-bold tracking-[0.2em] text-[#1A73E8] mb-3">FEATURED — TALK NOW</p>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[#0B1B3F] leading-[1.05] mb-3">
-            {teacher.name}
-          </h2>
-          <p className="text-sm sm:text-base text-slate-600 mb-5">{teacher.title}</p>
-
-          <div className="flex flex-wrap gap-1.5 mb-6">
-            {teacher.subjects.map((s) => (
-              <span
-                key={s}
-                className="text-xs font-bold px-2.5 py-1 rounded-md"
-                style={{ backgroundColor: `${teacher.accentColor}18`, color: teacher.accentColor }}
-              >
-                {s}
-              </span>
-            ))}
-          </div>
-
-          <p className="text-sm sm:text-base text-slate-700 leading-relaxed mb-7">{teacher.tagline}</p>
-
-          <div className="flex items-center gap-3 flex-wrap">
-            <Button
-              onClick={onStart}
-              className="rounded-full h-12 px-7 text-sm font-bold text-white shadow-lg transition-all"
-              style={{ backgroundColor: teacher.accentColor, boxShadow: `0 12px 30px -10px ${teacher.accentColor}` }}
-            >
-              Start conversation <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
-            <Button
-              onClick={onOpen}
-              variant="outline"
-              className="rounded-full h-12 px-6 text-sm font-bold border-slate-200 hover:border-[#1A73E8] hover:text-[#1A73E8]"
-            >
-              Read full bio
-            </Button>
-          </div>
-
-          {teacher.trainedOn && (
-            <div className="mt-6 pt-5 border-t border-slate-100 flex items-center gap-3 flex-wrap">
-              <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">Trained on</span>
-              {teacher.trainedOn.map((t) => (
-                <span
-                  key={t}
-                  className="text-[10px] font-bold px-2 py-0.5 rounded border border-slate-200 text-slate-700"
-                >
-                  {t}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </motion.div>
   );
 }
 
