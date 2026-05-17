@@ -101,6 +101,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <>
               <NavItem href="/dashboard/student" icon={Home} label="Dashboard" activeBgClass={sB} activeTextClass={sT} {...navProps} />
               <NavItem href="/ai-studio" icon={Sparkles} label="AI Studio ↗" activeBgClass={sB} activeTextClass={sT} {...navProps} />
+              <NavItem href="/ai-teachers" icon={Users} label="AI Teachers ↗" activeBgClass={sB} activeTextClass={sT} {...navProps} />
               <NavItem href="/courses" icon={Store} label="Marketplace" activeBgClass={sB} activeTextClass={sT} {...navProps} />
               <NavItem href="/dashboard/student/courses" icon={BookOpen} label="My Courses" activeBgClass={sB} activeTextClass={sT} {...navProps} />
               <NavItem href="/dashboard/student/live" icon={Video} label="Live Classes" activeBgClass={sB} activeTextClass={sT} {...navProps} />

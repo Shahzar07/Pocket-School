@@ -227,6 +227,15 @@ export default function AiStudio() {
         >
           <Library className="w-4 h-4" /> My Library
         </button>
+        <Link
+          href="/ai-teachers"
+          className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-colors group"
+        >
+          <span className="flex items-center gap-3">
+            <UserIcon className="w-4 h-4" /> AI Teachers
+          </span>
+          <ChevronRight className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100" />
+        </Link>
 
         <div className="mt-auto pt-4 border-t border-white/10">
           {user ? (
