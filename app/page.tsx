@@ -943,7 +943,7 @@ function HeroCarousel() {
   const prev = () => setIndex(i => (i - 1 + total) % total);
 
   return (
-    <section className="relative h-[100dvh] min-h-[600px] flex items-center pt-16 pb-8 bg-gradient-to-b from-[#EEF3FF] via-[#F5F1FF] to-[#F8F4EE]">
+    <section className="relative h-[100dvh] min-h-[600px] flex items-center pt-16 pb-6 overflow-hidden bg-gradient-to-br from-[#EEF4FF] via-[#FAFCFF] to-[#FFF8ED]">
       <FloatingDecoration
         className="absolute top-24 left-4 lg:left-12 w-10 h-10 lg:w-14 lg:h-14 z-20"
         scrollRange={[0, 0.3]}
@@ -962,8 +962,8 @@ function HeroCarousel() {
       </FloatingDecoration>
 
       <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="relative rounded-[32px] bg-gradient-to-br from-[#EEF3FF] via-white to-[#FFF7E6] overflow-hidden border border-black/[0.04] shadow-[0_40px_100px_-30px_rgba(15,23,42,0.25)]">
-          <div className="grid lg:grid-cols-[1.05fr_1fr] gap-0 lg:gap-4 pt-10 lg:pt-12 pb-10 lg:pb-8">
+        <div className="relative">
+          <div className="grid lg:grid-cols-[1.05fr_1fr] gap-0 lg:gap-4 pt-4 lg:pt-6 pb-8 lg:pb-10">
             {/* LEFT — illustration */}
             <div className="relative px-6 lg:px-12 flex items-center justify-center min-h-[340px] lg:min-h-[520px] order-2 lg:order-1">
               <AnimatePresence mode="wait">
@@ -1139,19 +1139,9 @@ function HeroCarousel() {
             </div>
           </div>
 
-          {/* Progress bar */}
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/[0.04]">
-            <motion.div
-              key={index}
-              className="h-full bg-gradient-to-r from-[#1A73E8] to-[#F5B400]"
-              initial={{ width: '0%' }}
-              animate={{ width: '100%' }}
-              transition={{ duration: prefersReducedMotion ? 0 : 7, ease: 'linear' }}
-            />
-          </div>
         </div>
 
-        <div className="mt-8 flex items-center justify-center gap-x-6 gap-y-2 flex-wrap">
+        <div className="mt-6 flex items-center justify-center gap-x-6 gap-y-2 flex-wrap">
           <span className="text-[11px] text-[#0B1B3F]/60 font-bold tracking-widest uppercase">Powered by</span>
           {credentialLogos.map((name) => (
             <span key={name} className="text-xs font-extrabold text-[#0B1B3F]/70 tracking-wide">
@@ -1159,6 +1149,17 @@ function HeroCarousel() {
             </span>
           ))}
         </div>
+      </div>
+
+      {/* Slide progress bar — anchored to section bottom */}
+      <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-black/[0.06]">
+        <motion.div
+          key={index}
+          className="h-full bg-gradient-to-r from-[#1A73E8] to-[#F5B400]"
+          initial={{ width: '0%' }}
+          animate={{ width: '100%' }}
+          transition={{ duration: prefersReducedMotion ? 0 : 7, ease: 'linear' }}
+        />
       </div>
     </section>
   );

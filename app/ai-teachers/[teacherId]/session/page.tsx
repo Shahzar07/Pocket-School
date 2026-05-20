@@ -57,38 +57,51 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
   }
 
   return (
-    <div className="fixed inset-0 bg-[#0A0A0F] text-white flex flex-col">
+    <div className="fixed inset-0 bg-[#07070E] text-white flex flex-col">
       {/* Top bar */}
-      <header className="flex items-center justify-between px-4 sm:px-6 h-14 border-b border-white/10 bg-black/40 backdrop-blur-md shrink-0 z-10">
-        <Link href="/ai-teachers" className="flex items-center gap-2 text-sm font-medium text-white/80 hover:text-white transition-colors">
+      <header className="flex items-center justify-between px-5 sm:px-8 h-14 border-b border-white/[0.07] shrink-0 z-10 bg-[#0D0D18]">
+        <Link
+          href="/ai-teachers"
+          className="flex items-center gap-2 text-sm font-semibold text-white/60 hover:text-white transition-colors"
+        >
           <ArrowLeft className="w-4 h-4" />
-          <span className="hidden sm:inline">Back to AI Teachers</span>
+          <span className="hidden sm:inline">AI Teachers</span>
         </Link>
+
         <div className="flex items-center gap-2.5">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
           </span>
-          <span className="text-[11px] font-bold tracking-widest text-white/90 uppercase">Live · {teacher.name}</span>
+          <span className="text-xs font-bold tracking-widest text-white/80 uppercase">
+            Live Session &nbsp;·&nbsp; {teacher.name}
+          </span>
         </div>
+
         <button
           onClick={() => window.close()}
-          className="w-9 h-9 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+          className="flex items-center gap-1.5 text-xs font-semibold text-white/50 hover:text-white/90 transition-colors px-3 py-1.5 rounded-full hover:bg-white/[0.07]"
           title="End session"
         >
-          <X className="w-4 h-4" />
+          <X className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">End</span>
         </button>
       </header>
 
-      {/* Full-bleed iframe — LiveAvatar provides native chat, voice, mic, speaker, end controls */}
-      <main className="flex-1 relative bg-black">
-        <iframe
-          src={teacher.iframeUrl}
-          allow="microphone; autoplay; camera; clipboard-read; clipboard-write"
-          allowFullScreen
-          title={`Live conversation with ${teacher.name}`}
-          className="absolute inset-0 w-full h-full border-0"
-        />
+      {/* Session canvas — padded so the iframe feels framed, not full-bleed */}
+      <main className="flex-1 flex items-stretch p-3 sm:p-4 lg:p-6 bg-[#07070E]">
+        <div
+          className="flex-1 rounded-2xl lg:rounded-3xl overflow-hidden border border-white/[0.08]"
+          style={{ boxShadow: '0 0 80px -16px rgba(99, 77, 255, 0.35), 0 0 0 1px rgba(255,255,255,0.04) inset' }}
+        >
+          <iframe
+            src={teacher.iframeUrl}
+            allow="microphone; autoplay; camera; clipboard-read; clipboard-write"
+            allowFullScreen
+            title={`Live conversation with ${teacher.name}`}
+            className="w-full h-full border-0 block"
+          />
+        </div>
       </main>
     </div>
   );
