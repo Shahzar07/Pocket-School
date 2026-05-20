@@ -102,9 +102,9 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
       {/* Session canvas — centered panel with breathing room on all sides */}
       <main className="flex-1 min-h-0 flex items-center justify-center bg-[#07070E] p-6 sm:p-8 lg:p-10">
         <div
-          className="relative w-full max-w-4xl rounded-2xl overflow-hidden border border-white/[0.08] bg-black"
+          className="relative w-full max-w-5xl aspect-video rounded-2xl overflow-hidden border border-white/[0.08] bg-black"
           style={{
-            height: 'min(calc(100dvh - 120px), 620px)',
+            maxHeight: 'calc(100dvh - 110px)',
             boxShadow: '0 0 80px -20px rgba(99, 77, 255, 0.4), 0 0 0 1px rgba(255,255,255,0.03) inset',
           }}
         >
