@@ -99,11 +99,14 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
         </button>
       </header>
 
-      {/* Session canvas — minimal padding so the iframe gets maximum usable area */}
-      <main className="flex-1 min-h-0 relative bg-[#07070E] p-2 sm:p-3">
+      {/* Session canvas — centered panel with breathing room on all sides */}
+      <main className="flex-1 min-h-0 flex items-center justify-center bg-[#07070E] p-6 sm:p-8 lg:p-10">
         <div
-          className="absolute inset-2 sm:inset-3 rounded-xl sm:rounded-2xl overflow-hidden border border-white/[0.08] bg-black"
-          style={{ boxShadow: '0 0 60px -12px rgba(99, 77, 255, 0.3)' }}
+          className="relative w-full max-w-4xl rounded-2xl overflow-hidden border border-white/[0.08] bg-black"
+          style={{
+            height: 'min(calc(100dvh - 120px), 620px)',
+            boxShadow: '0 0 80px -20px rgba(99, 77, 255, 0.4), 0 0 0 1px rgba(255,255,255,0.03) inset',
+          }}
         >
           <iframe
             src={teacher.iframeUrl}
