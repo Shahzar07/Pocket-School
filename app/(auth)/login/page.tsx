@@ -69,13 +69,11 @@ export default function LoginPage() {
     }
   };
 
-  // After successful credential auth, check whether 2FA is needed
   const afterCredentialSuccess = async (uid: string) => {
     const snap = await getDoc(doc(db, 'users', uid));
     const data = snap.exists() ? snap.data() : null;
     const isSuperAdmin = email.trim().toLowerCase() === SUPER_ADMIN_EMAIL;
 
-    // Super admin bypasses 2FA
     if (isSuperAdmin) {
       await routeUser(uid);
       return;
@@ -85,13 +83,11 @@ export default function LoginPage() {
     const phoneVerified = data?.phoneVerified as boolean | undefined;
 
     if (phone && phoneVerified) {
-      // 2FA required — keep user logged in (Firebase session) but pause routing
       setPendingUid(uid);
       setPendingPhone(phone);
       setStep('twofa');
       setCodeSent(false);
     } else {
-      // No phone on file → legacy user, allow through but prompt to add phone later
       await routeUser(uid);
     }
   };
@@ -247,50 +243,55 @@ export default function LoginPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5, ease: 'easeOut' }}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
     >
       {step === 'credentials' && (
         <>
-          <div className="mb-10 text-center lg:text-left">
-            <h2 className="text-3xl font-bold text-[#202124] mb-3">Welcome back</h2>
-            <p className="text-[#5F6368]">Enter your details below to access your account.</p>
+          <div className="mb-9">
+            <h2 className="text-3xl font-bold text-white mb-2">Welcome back</h2>
+            <p className="text-white/45 text-sm">Enter your details to access your account.</p>
           </div>
 
-          <Button
-            variant="outline"
-            className="w-full h-12 rounded-full border-[#DADCE0] text-[#5F6368] font-medium hover:bg-[#F8F9FA] transition-colors mb-6"
+          <button
+            type="button"
             onClick={handleGoogleSignIn}
             disabled={loading}
+            className="w-full h-12 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white font-medium transition-all flex items-center justify-center gap-3 mb-6"
           >
-            <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 mr-3" />
+            <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
             Continue with Google
-          </Button>
+          </button>
 
           <div className="flex items-center my-6">
-            <div className="flex-1 border-t border-[#DADCE0]" />
-            <span className="px-4 text-sm text-[#5F6368] font-medium uppercase tracking-wider">or sign in with email</span>
-            <div className="flex-1 border-t border-[#DADCE0]" />
+            <div className="flex-1 border-t border-white/8" />
+            <span className="px-4 text-xs text-white/30 font-medium uppercase tracking-widest">or email</span>
+            <div className="flex-1 border-t border-white/8" />
           </div>
 
-          <form onSubmit={handleEmailSignIn} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-[#202124] font-medium">Email</Label>
+          <form onSubmit={handleEmailSignIn} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-white/60 text-xs font-semibold uppercase tracking-wider">Email</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="name@example.com"
-                className="h-12 rounded-xl border-[#DADCE0] focus:ring-google-blue focus:border-google-blue transition-all"
+                className="h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-[#1A73E8] focus:ring-[#1A73E8]/20 transition-all"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 disabled={loading}
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className="flex justify-between items-center">
-                <Label htmlFor="password" className="text-[#202124] font-medium">Password</Label>
-                <Link href="/forgot-password" className="text-sm font-medium text-google-blue hover:underline">
+                <Label htmlFor="password" className="text-white/60 text-xs font-semibold uppercase tracking-wider">Password</Label>
+                <Link href="/forgot-password" className="text-xs font-medium text-[#60A5FA] hover:text-[#93C5FD] transition-colors">
                   Forgot password?
                 </Link>
               </div>
@@ -298,7 +299,7 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 placeholder="••••••••"
-                className="h-12 rounded-xl border-[#DADCE0] focus:ring-google-blue focus:border-google-blue transition-all"
+                className="h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-[#1A73E8] focus:ring-[#1A73E8]/20 transition-all"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 disabled={loading}
@@ -306,17 +307,17 @@ export default function LoginPage() {
             </div>
             <Button
               type="submit"
-              className="w-full h-12 rounded-full bg-google-blue hover:bg-[#1967D2] text-white font-medium text-base shadow-google-soft hover:shadow-google-hover transition-all"
+              className="w-full h-12 rounded-2xl bg-[#1A73E8] hover:bg-[#1557B0] text-white font-semibold text-base shadow-lg shadow-blue-900/30 transition-all mt-2"
               disabled={loading}
             >
               {loading ? 'Signing in…' : 'Sign In'}
             </Button>
           </form>
 
-          <p className="text-center mt-8 text-[#5F6368]">
+          <p className="text-center mt-7 text-white/40 text-sm">
             Don&apos;t have an account?{' '}
-            <Link href="/signup" className="text-google-blue font-bold hover:underline">
-              Create one now
+            <Link href="/signup" className="text-[#60A5FA] font-semibold hover:text-[#93C5FD] transition-colors">
+              Create one free
             </Link>
           </p>
         </>
@@ -324,16 +325,16 @@ export default function LoginPage() {
 
       {step === 'twofa' && (
         <>
-          <div className="mb-8 text-center lg:text-left">
-            <h2 className="text-3xl font-bold text-foreground mb-2">Two-factor authentication</h2>
-            <p className="text-muted-foreground">
-              Choose how to receive your 6-digit code and we&apos;ll send it now.
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-white mb-2">Two-factor authentication</h2>
+            <p className="text-white/45 text-sm">
+              Choose how to receive your 6-digit code.
             </p>
           </div>
 
           <div className="space-y-2 mb-5">
-            <Label className="text-foreground font-medium">Send code via</Label>
-            <div className="grid grid-cols-3 gap-2">
+            <Label className="text-white/60 text-xs font-semibold uppercase tracking-wider">Send code via</Label>
+            <div className="grid grid-cols-3 gap-2 mt-1.5">
               {[
                 { id: 'sms' as const, label: 'SMS', icon: <Phone className="w-3.5 h-3.5" /> },
                 { id: 'whatsapp' as const, label: 'WhatsApp', icon: <MessageSquare className="w-3.5 h-3.5" /> },
@@ -344,10 +345,10 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => { setChannel(c.id); setCodeSent(false); }}
                   disabled={loading}
-                  className={`flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-lg border-2 transition-all text-xs font-semibold ${
+                  className={`flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-xl border-2 transition-all text-xs font-semibold ${
                     channel === c.id
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border bg-card text-muted-foreground hover:bg-muted'
+                      ? 'border-[#1A73E8] bg-[#1A73E8]/15 text-[#60A5FA]'
+                      : 'border-white/10 bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60'
                   }`}
                 >
                   {c.icon}
@@ -355,10 +356,8 @@ export default function LoginPage() {
                 </button>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {channel === 'email'
-                ? `Code will go to ${email}.`
-                : `Code will go to ${pendingPhone}.`}
+            <p className="text-xs text-white/30 mt-1">
+              {channel === 'email' ? `Code will go to ${email}.` : `Code will go to ${pendingPhone}.`}
             </p>
           </div>
 
@@ -366,7 +365,7 @@ export default function LoginPage() {
             <Button
               type="button"
               onClick={sendOtp}
-              className="w-full h-12 rounded-full bg-google-blue hover:bg-[#1967D2] text-white font-medium"
+              className="w-full h-12 rounded-2xl bg-[#1A73E8] hover:bg-[#1557B0] text-white font-semibold shadow-lg shadow-blue-900/30"
               disabled={loading}
             >
               {loading ? 'Sending…' : 'Send code'}
@@ -376,14 +375,14 @@ export default function LoginPage() {
           {codeSent && (
             <form onSubmit={verifyTwoFa} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="2fa-code">6-digit code</Label>
+                <Label htmlFor="2fa-code" className="text-white/60 text-xs font-semibold uppercase tracking-wider">6-digit code</Label>
                 <Input
                   id="2fa-code"
                   type="text"
                   inputMode="numeric"
                   maxLength={6}
                   placeholder="123456"
-                  className="h-12 rounded-xl text-center text-2xl tracking-[0.5em] font-bold"
+                  className="h-14 rounded-2xl bg-white/5 border-white/10 text-white text-center text-2xl tracking-[0.5em] font-bold placeholder:text-white/20 focus:border-[#1A73E8]"
                   value={code}
                   onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
                   autoFocus
@@ -392,7 +391,7 @@ export default function LoginPage() {
               </div>
               <Button
                 type="submit"
-                className="w-full h-12 rounded-full bg-google-blue hover:bg-[#1967D2] text-white font-medium"
+                className="w-full h-12 rounded-2xl bg-[#1A73E8] hover:bg-[#1557B0] text-white font-semibold shadow-lg shadow-blue-900/30"
                 disabled={loading}
               >
                 {loading ? 'Verifying…' : 'Verify & Continue'}
@@ -401,7 +400,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={sendOtp}
                 disabled={loading}
-                className="w-full text-xs text-primary font-semibold hover:underline"
+                className="w-full text-xs text-[#60A5FA] font-semibold hover:text-[#93C5FD] transition-colors"
               >
                 Resend code
               </button>
@@ -412,7 +411,7 @@ export default function LoginPage() {
             type="button"
             onClick={cancelTwoFa}
             disabled={loading}
-            className="w-full mt-4 text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+            className="w-full mt-4 text-sm text-white/30 hover:text-white/60 transition-colors"
           >
             ← Cancel and sign out
           </button>
