@@ -12,7 +12,7 @@ const NAV_LINKS = [
   { label: 'AI Teachers', href: '/ai-teachers' },
 ];
 
-const HIDDEN_PREFIXES = ['/login', '/signup', '/dashboard', '/onboarding'];
+const HIDDEN_PREFIXES = ['/login', '/signup', '/dashboard', '/onboarding', '/ai-studio'];
 
 export function SiteHeader() {
   const pathname = usePathname();

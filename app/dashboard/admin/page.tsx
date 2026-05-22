@@ -55,7 +55,7 @@ export default function AdminDashboard() {
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
+          <h1 className="font-heading text-3xl text-foreground tracking-tight">
             Admin Portal
           </h1>
           <p className="text-muted-foreground text-sm mt-1">Platform analytics and management.</p>
@@ -93,7 +93,7 @@ export default function AdminDashboard() {
             className={`${s.color} border rounded-2xl p-5 text-center`}
           >
             <div className="flex justify-center mb-2">{s.icon}</div>
-            <p className="text-2xl font-extrabold text-foreground">{s.value}</p>
+            <p className="font-heading text-2xl text-foreground">{s.value}</p>
             <p className="text-xs text-muted-foreground font-medium mt-0.5">{s.label}</p>
           </motion.div>
         ))}

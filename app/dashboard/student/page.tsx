@@ -53,7 +53,7 @@ export default function StudentDashboard() {
         <div className="absolute -right-4 -bottom-8 w-32 h-32 rounded-full bg-white/5" />
         <div className="relative z-10">
           <p className="text-blue-100 text-sm font-medium mb-1">Welcome back</p>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-4">
+          <h1 className="font-heading text-3xl sm:text-4xl tracking-tight mb-4">
             {profile?.name?.split(' ')[0] ?? 'Student'} 👋
           </h1>
           <div className="flex flex-wrap gap-4 items-center">
@@ -82,7 +82,7 @@ export default function StudentDashboard() {
             className={`${s.color} border rounded-2xl p-4 text-center`}
           >
             <div className="flex justify-center mb-2">{s.icon}</div>
-            <p className="text-2xl font-extrabold text-foreground">{s.value}</p>
+            <p className="font-heading text-2xl text-foreground">{s.value}</p>
             <p className="text-xs text-muted-foreground mt-0.5 font-medium">{s.label}</p>
           </motion.div>
         ))}

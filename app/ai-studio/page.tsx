@@ -196,40 +196,40 @@ export default function AiStudio() {
   };
 
   return (
-    <div className="flex h-screen bg-[#0A0A0F] text-slate-100 overflow-hidden">
+    <div className="flex h-screen bg-white text-slate-900 overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-white/10 flex flex-col p-4 shrink-0">
+      <aside className="w-64 border-r border-slate-200 flex flex-col p-4 shrink-0 bg-[#FAFBFC]">
         <Link href="/" className="flex items-center gap-2.5 mb-8">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-fuchsia-500 via-violet-600 to-blue-600 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#1A73E8] via-[#3B82F6] to-[#1E3A8A] flex items-center justify-center">
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           <div>
             <p className="text-sm font-bold leading-tight">AI Pocket School</p>
-            <p className="text-[10px] text-slate-400 leading-tight">Studio</p>
+            <p className="text-[10px] text-slate-500 leading-tight">Studio</p>
           </div>
         </Link>
 
         <button
           onClick={() => { setPanel('home'); setResult(null); }}
-          className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${panel === 'home' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+          className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${panel === 'home' ? 'bg-[#1A73E8]/10 text-[#1A73E8]' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
         >
           <HomeIcon className="w-4 h-4" /> Home
         </button>
         <button
           onClick={() => setPanel('chat')}
-          className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${panel === 'chat' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+          className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${panel === 'chat' ? 'bg-[#1A73E8]/10 text-[#1A73E8]' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
         >
           <MessageSquare className="w-4 h-4" /> Ask AI
         </button>
         <button
           onClick={() => setPanel('library')}
-          className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${panel === 'library' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+          className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${panel === 'library' ? 'bg-[#1A73E8]/10 text-[#1A73E8]' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
         >
           <Library className="w-4 h-4" /> My Library
         </button>
         <Link
           href="/ai-teachers"
-          className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-colors group"
+          className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors group"
         >
           <span className="flex items-center gap-3">
             <UserIcon className="w-4 h-4" /> AI Teachers
@@ -237,22 +237,22 @@ export default function AiStudio() {
           <ChevronRight className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100" />
         </Link>
 
-        <div className="mt-auto pt-4 border-t border-white/10">
+        <div className="mt-auto pt-4 border-t border-slate-200">
           {user ? (
             <div className="flex items-center gap-2 px-2 py-1.5">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-[10px] font-bold">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#1A73E8] to-[#1E3A8A] flex items-center justify-center text-[10px] font-bold text-white">
                 {(user.email ?? 'U').slice(0, 2).toUpperCase()}
               </div>
-              <span className="text-xs text-slate-300 truncate">{user.email}</span>
+              <span className="text-xs text-slate-600 truncate">{user.email}</span>
             </div>
           ) : (
-            <Link href="/login" className="flex items-center gap-2 text-xs text-slate-400 hover:text-white px-2 py-1.5">
+            <Link href="/login" className="flex items-center gap-2 text-xs text-slate-500 hover:text-slate-900 px-2 py-1.5">
               <UserIcon className="w-3.5 h-3.5" /> Sign in to save
             </Link>
           )}
           <Link
             href="/"
-            className="flex items-center gap-2 text-xs text-slate-500 hover:text-white px-2 py-1.5 mt-1"
+            className="flex items-center gap-2 text-xs text-slate-500 hover:text-slate-900 px-2 py-1.5 mt-1"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to website
           </Link>
@@ -274,18 +274,18 @@ export default function AiStudio() {
               {!result && (
                 <>
                   <div className="text-center mb-10">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-slate-300 mb-5">
-                      <Sparkles className="w-3 h-3 text-fuchsia-400" /> Powered by Google AI
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-600 mb-5">
+                      <Sparkles className="w-3 h-3 text-[#1A73E8]" /> Powered by Google AI
                     </div>
-                    <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-3">
+                    <h1 className="font-heading text-5xl sm:text-6xl tracking-tight text-slate-900 mb-3">
                       What do you want to learn?
                     </h1>
-                    <p className="text-slate-400">
+                    <p className="text-slate-500">
                       Pick a format, enter a topic, get a complete study toolkit in seconds.
                     </p>
                   </div>
 
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-2 flex items-center mb-5 focus-within:border-white/30 transition-colors">
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-2 flex items-center mb-5 focus-within:border-[#1A73E8] transition-colors">
                     <Search className="w-5 h-5 text-slate-500 ml-3 mr-2 shrink-0" />
                     <input
                       type="text"
@@ -294,12 +294,12 @@ export default function AiStudio() {
                       onChange={e => setTopic(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && generate()}
                       disabled={generating}
-                      className="flex-1 min-w-0 bg-transparent outline-none text-base text-white placeholder:text-slate-500 py-2.5"
+                      className="flex-1 min-w-0 bg-transparent outline-none text-base text-slate-900 placeholder:text-slate-500 py-2.5"
                     />
                     <button
                       onClick={generate}
                       disabled={generating || !topic.trim()}
-                      className="rounded-xl bg-gradient-to-r from-fuchsia-500 via-violet-600 to-blue-600 hover:opacity-90 disabled:opacity-40 px-5 py-2.5 text-sm font-semibold text-white flex items-center gap-2 shrink-0"
+                      className="rounded-xl bg-gradient-to-r from-[#1A73E8] via-[#3B82F6] to-[#1E3A8A] hover:opacity-90 disabled:opacity-40 px-5 py-2.5 text-sm font-semibold text-white flex items-center gap-2 shrink-0"
                     >
                       {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                       Generate
@@ -313,19 +313,19 @@ export default function AiStudio() {
                       value={subject}
                       onChange={e => setSubject(e.target.value)}
                       disabled={generating}
-                      className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-white/30 placeholder:text-slate-500"
+                      className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#1A73E8] placeholder:text-slate-500"
                     />
                     <select
                       value={level}
                       onChange={e => setLevel(e.target.value)}
                       disabled={generating}
-                      className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-white/30 cursor-pointer"
+                      className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#1A73E8] cursor-pointer"
                     >
-                      {LEVELS.map(l => <option key={l} value={l} className="bg-[#0A0A0F]">{l}</option>)}
+                      {LEVELS.map(l => <option key={l} value={l} className="bg-white">{l}</option>)}
                     </select>
                   </div>
 
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Choose format</p>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">Choose format</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
                     {FORMATS.map(f => (
                       <button
@@ -334,8 +334,8 @@ export default function AiStudio() {
                         disabled={generating}
                         className={`group relative p-3 rounded-xl border text-left transition-all ${
                           format === f.id
-                            ? 'bg-white/10 border-white/30'
-                            : 'bg-white/[0.02] border-white/10 hover:border-white/20'
+                            ? 'bg-slate-100 border-[#1A73E8]'
+                            : 'bg-white border-slate-200 hover:border-slate-300'
                         }`}
                       >
                         <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${f.gradient} flex items-center justify-center mb-2`}>
@@ -353,30 +353,30 @@ export default function AiStudio() {
                   <div className="flex items-center justify-between mb-5">
                     <button
                       onClick={() => setResult(null)}
-                      className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
+                      className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 transition-colors"
                     >
                       <ArrowLeft className="w-4 h-4" /> New generation
                     </button>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={copyResult}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-white/20 text-xs font-semibold text-slate-200"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 hover:border-slate-300 text-xs font-semibold text-slate-700"
                       >
                         <Copy className="w-3.5 h-3.5" /> Copy
                       </button>
                       <button
                         onClick={saveToLibrary}
                         disabled={saving || !user}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-fuchsia-500 via-violet-600 to-blue-600 disabled:opacity-40 text-xs font-semibold text-white"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#1A73E8] via-[#3B82F6] to-[#1E3A8A] disabled:opacity-40 text-xs font-semibold text-white"
                       >
                         <Save className="w-3.5 h-3.5" /> {saving ? 'Saving…' : 'Save to library'}
                       </button>
                     </div>
                   </div>
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                    <div className="flex items-center gap-2 mb-4 pb-4 border-b border-white/10">
-                      <Sparkles className="w-4 h-4 text-fuchsia-400" />
-                      <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
+                    <div className="flex items-center gap-2 mb-4 pb-4 border-b border-slate-200">
+                      <Sparkles className="w-4 h-4 text-[#1A73E8]" />
+                      <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">
                         {FORMATS.find(f => f.id === result.format)?.label ?? result.format}
                       </span>
                     </div>
@@ -396,20 +396,20 @@ export default function AiStudio() {
               transition={{ duration: 0.2 }}
               className="flex flex-col h-full"
             >
-              <div className="border-b border-white/10 p-4 flex items-center justify-between gap-4 max-w-4xl mx-auto w-full">
+              <div className="border-b border-slate-200 p-4 flex items-center justify-between gap-4 max-w-4xl mx-auto w-full">
                 <div>
-                  <h2 className="text-lg font-bold">Ask AI</h2>
-                  <p className="text-xs text-slate-400">Socratic tutor — guides you to the answer.</p>
+                  <h2 className="font-heading text-2xl text-slate-900">Ask AI</h2>
+                  <p className="text-xs text-slate-500">Socratic tutor — guides you to the answer.</p>
                 </div>
                 <select
                   value={chatMode}
                   onChange={e => setChatMode(e.target.value as any)}
-                  className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs outline-none cursor-pointer"
+                  className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs outline-none cursor-pointer"
                 >
-                  <option value="k12" className="bg-[#0A0A0F]">K-12 (Simple)</option>
-                  <option value="college" className="bg-[#0A0A0F]">College (Academic)</option>
-                  <option value="professional" className="bg-[#0A0A0F]">Professional (Concise)</option>
-                  <option value="legal" className="bg-[#0A0A0F]">Legal (OSCOLA)</option>
+                  <option value="k12" className="bg-white">K-12 (Simple)</option>
+                  <option value="college" className="bg-white">College (Academic)</option>
+                  <option value="professional" className="bg-white">Professional (Concise)</option>
+                  <option value="legal" className="bg-white">Legal (OSCOLA)</option>
                 </select>
               </div>
 
@@ -424,8 +424,8 @@ export default function AiStudio() {
                   <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                       m.role === 'user'
-                        ? 'bg-gradient-to-br from-fuchsia-600 to-violet-700 text-white'
-                        : 'bg-white/5 border border-white/10 text-slate-100'
+                        ? 'bg-gradient-to-br from-[#1A73E8] to-[#1E3A8A] text-white'
+                        : 'bg-slate-50 border border-slate-200 text-slate-900'
                     }`}>
                       <p className="text-sm whitespace-pre-wrap leading-relaxed">{m.text}</p>
                     </div>
@@ -433,17 +433,17 @@ export default function AiStudio() {
                 ))}
                 {chatSending && (
                   <div className="flex justify-start">
-                    <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
-                      <span className="text-xs text-slate-400">Thinking…</span>
+                    <div className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-slate-500" />
+                      <span className="text-xs text-slate-500">Thinking…</span>
                     </div>
                   </div>
                 )}
                 <div ref={chatEndRef} />
               </div>
 
-              <div className="border-t border-white/10 p-4 max-w-4xl mx-auto w-full">
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-2 flex items-center focus-within:border-white/30">
+              <div className="border-t border-slate-200 p-4 max-w-4xl mx-auto w-full">
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-2 flex items-center focus-within:border-[#1A73E8]">
                   <input
                     type="text"
                     placeholder="Ask anything…"
@@ -451,12 +451,12 @@ export default function AiStudio() {
                     onChange={e => setChatInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && !chatSending && sendChat()}
                     disabled={chatSending}
-                    className="flex-1 min-w-0 bg-transparent outline-none text-sm text-white placeholder:text-slate-500 px-3 py-2"
+                    className="flex-1 min-w-0 bg-transparent outline-none text-sm text-slate-900 placeholder:text-slate-500 px-3 py-2"
                   />
                   <button
                     onClick={sendChat}
                     disabled={chatSending || !chatInput.trim()}
-                    className="rounded-xl bg-gradient-to-r from-fuchsia-500 via-violet-600 to-blue-600 hover:opacity-90 disabled:opacity-40 p-2.5 text-white"
+                    className="rounded-xl bg-gradient-to-r from-[#1A73E8] via-[#3B82F6] to-[#1E3A8A] hover:opacity-90 disabled:opacity-40 p-2.5 text-white"
                   >
                     <Send className="w-4 h-4" />
                   </button>
@@ -476,12 +476,12 @@ export default function AiStudio() {
             >
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h2 className="text-3xl font-extrabold tracking-tight">My Library</h2>
-                  <p className="text-slate-400 mt-1">Saved generations you can revisit anytime.</p>
+                  <h2 className="font-heading text-4xl tracking-tight text-slate-900">My Library</h2>
+                  <p className="text-slate-500 mt-1">Saved generations you can revisit anytime.</p>
                 </div>
                 <button
                   onClick={() => setPanel('home')}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-fuchsia-500 via-violet-600 to-blue-600 text-white text-sm font-semibold"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#1A73E8] via-[#3B82F6] to-[#1E3A8A] text-white text-sm font-semibold"
                 >
                   <Plus className="w-4 h-4" /> New generation
                 </button>
@@ -490,21 +490,21 @@ export default function AiStudio() {
               {!user && (
                 <div className="text-center py-20">
                   <Library className="w-10 h-10 mx-auto text-slate-500 mb-3" />
-                  <p className="text-sm text-slate-400 mb-4">Sign in to save generations to your library.</p>
-                  <Link href="/login" className="text-sm font-semibold text-fuchsia-400 hover:underline">Sign in</Link>
+                  <p className="text-sm text-slate-500 mb-4">Sign in to save generations to your library.</p>
+                  <Link href="/login" className="text-sm font-semibold text-[#1A73E8] hover:underline">Sign in</Link>
                 </div>
               )}
 
               {user && libraryLoading && (
                 <div className="text-center py-20">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-400" />
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-500" />
                 </div>
               )}
 
               {user && !libraryLoading && library.length === 0 && (
                 <div className="text-center py-20">
                   <History className="w-10 h-10 mx-auto text-slate-500 mb-3" />
-                  <p className="text-sm text-slate-400">Nothing saved yet. Generate something and hit "Save to library".</p>
+                  <p className="text-sm text-slate-500">Nothing saved yet. Generate something and hit "Save to library".</p>
                 </div>
               )}
 
@@ -513,7 +513,7 @@ export default function AiStudio() {
                   {library.map(item => {
                     const fmt = FORMATS.find(f => f.id === item.type);
                     return (
-                      <div key={item.id} className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                      <div key={item.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
                             {fmt && (
@@ -521,19 +521,19 @@ export default function AiStudio() {
                                 <span className="text-white">{fmt.icon}</span>
                               </div>
                             )}
-                            <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+                            <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">
                               {fmt?.label ?? item.type}
                             </span>
                           </div>
                           <button
                             onClick={() => removeFromLibrary(item)}
-                            className="text-slate-400 hover:text-red-400 transition-colors"
+                            className="text-slate-500 hover:text-red-400 transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
-                        <p className="text-sm font-semibold text-white mb-2">{item.prompt.split('\n')[0].replace(/^Topic:\s*/i, '')}</p>
-                        <p className="text-xs text-slate-400 line-clamp-3 whitespace-pre-wrap">
+                        <p className="text-sm font-semibold text-slate-900 mb-2">{item.prompt.split('\n')[0].replace(/^Topic:\s*/i, '')}</p>
+                        <p className="text-xs text-slate-500 line-clamp-3 whitespace-pre-wrap">
                           {(typeof item.result === 'string' ? item.result : JSON.stringify(item.result)).slice(0, 300)}
                           {item.result.length > 300 ? '…' : ''}
                         </p>
@@ -557,11 +557,11 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
     return (
       <div className="space-y-3">
         {data.map((card: any, i: number) => (
-          <div key={i} className="rounded-xl bg-white/5 border border-white/10 p-4">
-            <p className="text-xs font-semibold uppercase tracking-widest text-fuchsia-400 mb-2">Question</p>
-            <p className="text-sm text-white mb-3">{card.question}</p>
-            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400 mb-2">Answer</p>
-            <p className="text-sm text-slate-300">{card.answer}</p>
+          <div key={i} className="rounded-xl bg-slate-50 border border-slate-200 p-4">
+            <p className="text-xs font-semibold uppercase tracking-widest text-[#1A73E8] mb-2">Question</p>
+            <p className="text-sm text-slate-900 mb-3">{card.question}</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600 mb-2">Answer</p>
+            <p className="text-sm text-slate-600">{card.answer}</p>
           </div>
         ))}
       </div>
@@ -571,17 +571,17 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
     return (
       <div className="space-y-4">
         {data.map((q: any, i: number) => (
-          <div key={i} className="rounded-xl bg-white/5 border border-white/10 p-4">
-            <p className="text-sm font-semibold text-white mb-3">{i + 1}. {q.question}</p>
+          <div key={i} className="rounded-xl bg-slate-50 border border-slate-200 p-4">
+            <p className="text-sm font-semibold text-slate-900 mb-3">{i + 1}. {q.question}</p>
             <ul className="space-y-1.5 mb-3">
               {q.options?.map((opt: string, j: number) => (
-                <li key={j} className={`text-sm rounded-lg px-3 py-2 ${q.answer === String.fromCharCode(65 + j) || q.answer === opt ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30' : 'bg-white/5 text-slate-300'}`}>
+                <li key={j} className={`text-sm rounded-lg px-3 py-2 ${q.answer === String.fromCharCode(65 + j) || q.answer === opt ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/30' : 'bg-slate-50 text-slate-600'}`}>
                   {String.fromCharCode(65 + j)}. {opt}
                 </li>
               ))}
             </ul>
             {q.explanation && (
-              <p className="text-xs text-slate-400 italic">{q.explanation}</p>
+              <p className="text-xs text-slate-500 italic">{q.explanation}</p>
             )}
           </div>
         ))}
@@ -592,12 +592,12 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
     return (
       <div className="space-y-4">
         {data.map((slide: any, i: number) => (
-          <div key={i} className="rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 p-6">
-            <p className="text-xs text-slate-500 mb-2">Slide {i + 1}</p>
-            <h3 className="text-xl font-bold text-white mb-3">{slide.title}</h3>
+          <div key={i} className="rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-800 p-6">
+            <p className="text-xs text-slate-400 mb-2">Slide {i + 1}</p>
+            <h3 className="font-heading text-2xl text-white mb-3">{slide.title}</h3>
             <ul className="space-y-2">
               {slide.bullets?.map((b: string, j: number) => (
-                <li key={j} className="text-sm text-slate-300 flex gap-2"><ChevronRight className="w-4 h-4 text-fuchsia-400 mt-0.5 shrink-0" />{b}</li>
+                <li key={j} className="text-sm text-slate-200 flex gap-2"><ChevronRight className="w-4 h-4 text-[#60A5FA] mt-0.5 shrink-0" />{b}</li>
               ))}
             </ul>
           </div>
@@ -609,9 +609,9 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
     return (
       <div className="space-y-2">
         {data.map((g: any, i: number) => (
-          <div key={i} className="rounded-xl bg-white/5 border border-white/10 p-4">
-            <p className="text-sm font-bold text-fuchsia-300 mb-1">{g.term}</p>
-            <p className="text-xs text-slate-300">{g.definition}</p>
+          <div key={i} className="rounded-xl bg-slate-50 border border-slate-200 p-4">
+            <p className="text-sm font-bold text-[#1E3A8A] mb-1">{g.term}</p>
+            <p className="text-xs text-slate-600">{g.definition}</p>
           </div>
         ))}
       </div>
@@ -620,6 +620,6 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
   // text / notes / summary / problems / mindmap / infographic → markdown-ish text
   const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
   return (
-    <pre className="whitespace-pre-wrap font-sans text-sm text-slate-200 leading-relaxed">{text}</pre>
+    <pre className="whitespace-pre-wrap font-sans text-sm text-slate-700 leading-relaxed">{text}</pre>
   );
 }
