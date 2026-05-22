@@ -3,7 +3,7 @@
 import { motion, useScroll, useTransform, AnimatePresence, type Variants, useReducedMotion } from 'motion/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +35,9 @@ import {
   User,
   AlertCircle,
   Layers,
+  Globe,
+  Instagram,
+  Twitter,
 } from 'lucide-react';
 
 /* ─── Data ──────────────────────────────────────────────────── */
@@ -624,20 +627,6 @@ function PaperSVG({ className = '' }: { className?: string }) {
   );
 }
 
-function ScribbleSVG({ className = '' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 80 30" className={className} aria-hidden>
-      <path
-        d="M3 15 Q12 3, 22 15 T42 15 T62 15 T78 15"
-        fill="none"
-        stroke="#FB7185"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 function FloatingDecoration({
   children,
   className = '',
@@ -666,504 +655,174 @@ function FloatingDecoration({
   );
 }
 
-/* ─── Hero Carousel Illustrations ───────────────────────── */
+/* ─── Video Hero ─────────────────────────────────────────── */
 
-function HeroIllustrationLearn() {
-  // Slide 1: progress + skills (open book + bar chart growing)
-  return (
-    <svg viewBox="0 0 400 400" className="w-full h-full" aria-hidden>
-      <defs>
-        <linearGradient id="g-learn-a" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#1E3A8A" />
-          <stop offset="100%" stopColor="#1A73E8" />
-        </linearGradient>
-        <linearGradient id="g-learn-b" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#F5B400" />
-          <stop offset="100%" stopColor="#E89A00" />
-        </linearGradient>
-      </defs>
-      {/* Soft background blob */}
-      <ellipse cx="200" cy="200" rx="180" ry="170" fill="#FFF" opacity="0.55" />
-      {/* Stack of books */}
-      <g transform="translate(70, 80)">
-        <rect x="0" y="180" width="200" height="28" rx="6" fill="#1A73E8" />
-        <rect x="0" y="180" width="200" height="6" fill="#60A5FA" opacity="0.7" />
-        <rect x="14" y="148" width="172" height="28" rx="6" fill="#EC4899" />
-        <rect x="14" y="148" width="172" height="6" fill="#F9A8D4" opacity="0.7" />
-        <rect x="28" y="116" width="144" height="28" rx="6" fill="#10B981" />
-        <rect x="28" y="116" width="144" height="6" fill="#6EE7B7" opacity="0.7" />
-      </g>
-      {/* Floating "Brain" diamond */}
-      <g transform="translate(260, 90)">
-        <circle cx="0" cy="0" r="38" fill="url(#g-learn-a)" />
-        <path d="M -14 -4 Q 0 -22, 14 -4 Q 18 8, 8 14 L -8 14 Q -18 8, -14 -4 Z" fill="white" />
-        <circle cx="-4" cy="2" r="2" fill="#1A73E8" />
-        <circle cx="6" cy="2" r="2" fill="#1A73E8" />
-      </g>
-      {/* Bar chart growth bottom */}
-      <g transform="translate(85, 290)">
-        <rect x="0" y="50" width="22" height="20" rx="3" fill="#CBD5E1" />
-        <rect x="32" y="38" width="22" height="32" rx="3" fill="#CBD5E1" />
-        <rect x="64" y="20" width="22" height="50" rx="3" fill="url(#g-learn-b)" />
-        <rect x="96" y="10" width="22" height="60" rx="3" fill="#CBD5E1" />
-        <rect x="128" y="0" width="22" height="70" rx="3" fill="url(#g-learn-b)" />
-      </g>
-      {/* Sparkles */}
-      <g fill="#F5B400">
-        <path d="M 60 60 L 64 70 L 74 74 L 64 78 L 60 88 L 56 78 L 46 74 L 56 70 Z" />
-        <path d="M 320 250 L 323 258 L 331 261 L 323 264 L 320 272 L 317 264 L 309 261 L 317 258 Z" />
-      </g>
-    </svg>
-  );
-}
-
-function HeroIllustrationFormats() {
-  // Slide 2: 11 format icons radiating from center brain
-  return (
-    <svg viewBox="0 0 400 400" className="w-full h-full" aria-hidden>
-      <defs>
-        <radialGradient id="g-fmt-center" cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0%" stopColor="#1E3A8A" />
-          <stop offset="100%" stopColor="#0B1B3F" />
-        </radialGradient>
-      </defs>
-      <ellipse cx="200" cy="200" rx="180" ry="170" fill="#FFF" opacity="0.55" />
-      {/* Outer dotted ring */}
-      <circle cx="200" cy="200" r="140" fill="none" stroke="#1A73E8" strokeWidth="1.5" strokeDasharray="3 6" opacity="0.4" />
-      <circle cx="200" cy="200" r="100" fill="none" stroke="#1A73E8" strokeWidth="1.5" strokeDasharray="2 5" opacity="0.3" />
-      {/* Format icon dots around the ring */}
-      {[
-        { x: 200, y: 60, color: '#8B5CF6' },
-        { x: 296, y: 102, color: '#EC4899' },
-        { x: 340, y: 200, color: '#F5B400' },
-        { x: 296, y: 298, color: '#10B981' },
-        { x: 200, y: 340, color: '#1A73E8' },
-        { x: 104, y: 298, color: '#EF4444' },
-        { x: 60, y: 200, color: '#06B6D4' },
-        { x: 104, y: 102, color: '#F97316' },
-      ].map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r="14" fill={p.color} />
-      ))}
-      {/* Center brain */}
-      <circle cx="200" cy="200" r="62" fill="url(#g-fmt-center)" />
-      <g transform="translate(176, 178)" fill="white">
-        <path d="M 12 0 Q -4 -2, -8 12 Q -16 22, -2 30 Q 8 38, 18 30 Q 32 22, 28 12 Q 24 -2, 12 0 Z" />
-        <circle cx="6" cy="16" r="2.5" fill="#1E3A8A" />
-        <circle cx="20" cy="16" r="2.5" fill="#1E3A8A" />
-      </g>
-      {/* "11" badge */}
-      <g transform="translate(248, 130)">
-        <circle cx="0" cy="0" r="24" fill="#F5B400" stroke="white" strokeWidth="4" />
-        <text x="0" y="6" textAnchor="middle" fontWeight="900" fontSize="22" fill="#1E3A8A">11</text>
-      </g>
-    </svg>
-  );
-}
-
-function HeroIllustrationAi() {
-  // Slide 3: AI tutor chat speech bubbles
-  return (
-    <svg viewBox="0 0 400 400" className="w-full h-full" aria-hidden>
-      <defs>
-        <linearGradient id="g-ai-a" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#1A73E8" />
-          <stop offset="100%" stopColor="#1E3A8A" />
-        </linearGradient>
-      </defs>
-      <ellipse cx="200" cy="200" rx="180" ry="170" fill="#FFF" opacity="0.55" />
-      {/* AI bubble */}
-      <g transform="translate(60, 130)">
-        <path d="M 0 20 Q 0 0, 20 0 L 200 0 Q 220 0, 220 20 L 220 80 Q 220 100, 200 100 L 40 100 L 20 122 L 22 100 Q 0 100, 0 80 Z" fill="url(#g-ai-a)" />
-        <rect x="20" y="22" width="120" height="6" rx="3" fill="white" opacity="0.85" />
-        <rect x="20" y="38" width="170" height="6" rx="3" fill="white" opacity="0.6" />
-        <rect x="20" y="54" width="140" height="6" rx="3" fill="white" opacity="0.6" />
-        <rect x="20" y="70" width="80" height="6" rx="3" fill="white" opacity="0.85" />
-      </g>
-      {/* User bubble */}
-      <g transform="translate(140, 260)">
-        <path d="M 220 20 Q 220 0, 200 0 L 20 0 Q 0 0, 0 20 L 0 60 Q 0 80, 20 80 L 180 80 L 200 100 L 198 80 Q 220 80, 220 60 Z" fill="white" stroke="#1A73E8" strokeWidth="2" />
-        <rect x="30" y="22" width="160" height="5" rx="2.5" fill="#1E3A8A" opacity="0.85" />
-        <rect x="30" y="38" width="120" height="5" rx="2.5" fill="#1E3A8A" opacity="0.5" />
-        <rect x="30" y="54" width="90" height="5" rx="2.5" fill="#1E3A8A" opacity="0.5" />
-      </g>
-      {/* Sparkle bursts */}
-      <g fill="#F5B400">
-        <path d="M 320 100 L 324 110 L 334 114 L 324 118 L 320 128 L 316 118 L 306 114 L 316 110 Z" />
-        <path d="M 60 60 L 63 68 L 71 71 L 63 74 L 60 82 L 57 74 L 49 71 L 57 68 Z" />
-      </g>
-    </svg>
-  );
-}
-
-function HeroIllustrationUpload() {
-  // Slide 4: Upload (file → magic → outputs)
-  return (
-    <svg viewBox="0 0 400 400" className="w-full h-full" aria-hidden>
-      <defs>
-        <linearGradient id="g-up" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#1A73E8" />
-          <stop offset="100%" stopColor="#EC4899" />
-        </linearGradient>
-      </defs>
-      <ellipse cx="200" cy="200" rx="180" ry="170" fill="#FFF" opacity="0.55" />
-      {/* Source PDF document */}
-      <g transform="translate(60, 130)">
-        <path d="M 0 0 H 80 L 100 22 V 130 H 0 Z" fill="white" stroke="#1E3A8A" strokeWidth="2" />
-        <path d="M 80 0 V 22 H 100" fill="none" stroke="#1E3A8A" strokeWidth="2" />
-        <rect x="14" y="44" width="72" height="4" rx="2" fill="#94A3B8" />
-        <rect x="14" y="56" width="60" height="4" rx="2" fill="#94A3B8" />
-        <rect x="14" y="68" width="72" height="4" rx="2" fill="#94A3B8" />
-        <rect x="14" y="80" width="50" height="4" rx="2" fill="#94A3B8" />
-        <rect x="14" y="100" width="36" height="14" rx="3" fill="#EF4444" />
-        <text x="32" y="111" textAnchor="middle" fontSize="9" fill="white" fontWeight="700">PDF</text>
-      </g>
-      {/* Arrow with sparkle */}
-      <g transform="translate(180, 195)">
-        <path d="M 0 0 L 50 0 L 45 -6 M 50 0 L 45 6" stroke="url(#g-up)" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M 25 -22 L 28 -14 L 36 -11 L 28 -8 L 25 0 L 22 -8 L 14 -11 L 22 -14 Z" fill="#F5B400" />
-      </g>
-      {/* Output cards */}
-      <g transform="translate(250, 110)">
-        <rect x="0" y="0" width="90" height="60" rx="8" fill="#1A73E8" />
-        <text x="45" y="26" textAnchor="middle" fontSize="11" fontWeight="700" fill="white">Podcast</text>
-        <rect x="14" y="38" width="62" height="6" rx="3" fill="white" opacity="0.4" />
-        <rect x="14" y="38" width="32" height="6" rx="3" fill="white" />
-      </g>
-      <g transform="translate(250, 180)">
-        <rect x="0" y="0" width="90" height="60" rx="8" fill="#EC4899" />
-        <text x="45" y="26" textAnchor="middle" fontSize="11" fontWeight="700" fill="white">Quiz</text>
-        <rect x="14" y="38" width="62" height="6" rx="3" fill="white" opacity="0.4" />
-        <rect x="14" y="38" width="44" height="6" rx="3" fill="white" />
-      </g>
-      <g transform="translate(250, 250)">
-        <rect x="0" y="0" width="90" height="60" rx="8" fill="#10B981" />
-        <text x="45" y="26" textAnchor="middle" fontSize="11" fontWeight="700" fill="white">Flashcards</text>
-        <rect x="14" y="38" width="62" height="6" rx="3" fill="white" opacity="0.4" />
-        <rect x="14" y="38" width="56" height="6" rx="3" fill="white" />
-      </g>
-    </svg>
-  );
-}
-
-function HeroIllustrationRoles() {
-  // Slide 5: 4 role avatars connected
-  return (
-    <svg viewBox="0 0 400 400" className="w-full h-full" aria-hidden>
-      <defs>
-        <linearGradient id="g-role-1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#1A73E8" /><stop offset="100%" stopColor="#1E3A8A" /></linearGradient>
-        <linearGradient id="g-role-2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#10B981" /><stop offset="100%" stopColor="#059669" /></linearGradient>
-        <linearGradient id="g-role-3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#F59E0B" /><stop offset="100%" stopColor="#D97706" /></linearGradient>
-        <linearGradient id="g-role-4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#8B5CF6" /><stop offset="100%" stopColor="#6D28D9" /></linearGradient>
-      </defs>
-      <ellipse cx="200" cy="200" rx="180" ry="170" fill="#FFF" opacity="0.55" />
-      {/* Connecting lines */}
-      <g stroke="#1A73E8" strokeWidth="1.5" strokeDasharray="3 4" opacity="0.4" fill="none">
-        <path d="M 120 130 L 280 130" />
-        <path d="M 120 270 L 280 270" />
-        <path d="M 120 130 L 120 270" />
-        <path d="M 280 130 L 280 270" />
-      </g>
-      {/* 4 role circles */}
-      {[
-        { x: 120, y: 130, label: 'S', grad: 'g-role-1' },
-        { x: 280, y: 130, label: 'T', grad: 'g-role-2' },
-        { x: 120, y: 270, label: 'P', grad: 'g-role-3' },
-        { x: 280, y: 270, label: 'A', grad: 'g-role-4' },
-      ].map((r, i) => (
-        <g key={i} transform={`translate(${r.x},${r.y})`}>
-          <circle cx="0" cy="0" r="44" fill="white" />
-          <circle cx="0" cy="0" r="38" fill={`url(#${r.grad})`} />
-          <text x="0" y="10" textAnchor="middle" fontSize="32" fontWeight="900" fill="white">{r.label}</text>
-        </g>
-      ))}
-      {/* Center sparkle */}
-      <g transform="translate(200, 200)">
-        <circle cx="0" cy="0" r="22" fill="#F5B400" stroke="white" strokeWidth="4" />
-        <path d="M -6 -2 L 0 -8 L 6 -2 L 8 8 L -8 8 Z" fill="#1E3A8A" />
-      </g>
-    </svg>
-  );
-}
-
-const HERO_SLIDES = [
-  {
-    pills: ['Adaptive AI', 'Personalised', 'Free Forever'],
-    title: 'Master New Skills,',
-    titleAccent: 'Learn Your Way.',
-    body: 'Upload any PDF, video or URL. Our AI builds 11 personalised study formats — podcasts, flashcards, quizzes — tailored to how you learn best.',
-    Illustration: HeroIllustrationLearn,
-  },
-  {
-    pills: ['11 Formats', 'One Source', 'Any Subject'],
-    title: 'One upload.',
-    titleAccent: 'Eleven ways to learn.',
-    body: 'Podcasts on your commute. Flashcards before bed. Mind maps for revision week. Same source — every format you need.',
-    Illustration: HeroIllustrationFormats,
-  },
-  {
-    pills: ['Socratic Method', 'Always-on', 'Multi-level'],
-    title: 'Study with AI that',
-    titleAccent: 'actually teaches.',
-    body: "Our tutor doesn't just give answers. It asks the right questions until you understand — at your level, in your subject, on your schedule.",
-    Illustration: HeroIllustrationAi,
-  },
-  {
-    pills: ['PDF · Video · URL', 'Audio · Text', 'Up to 200MB'],
-    title: 'Drop in anything.',
-    titleAccent: 'Get a study toolkit.',
-    body: 'Lesson notes, a YouTube link, a 40-page paper — our AI turns it into a complete revision pack in under a minute.',
-    Illustration: HeroIllustrationUpload,
-  },
-  {
-    pills: ['Students', 'Teachers', 'Parents', 'Admins'],
-    title: 'Built for everyone',
-    titleAccent: 'in the classroom.',
-    body: "Each role gets a tailored experience — gamified study for students, AI grading for teachers, weekly summaries for parents, and full controls for admins.",
-    Illustration: HeroIllustrationRoles,
-  },
-];
-
-/* ─── Hero Carousel Component ─────────────────────────────── */
-
-function HeroCarousel() {
-  const router = useRouter();
-  const [index, setIndex] = useState(0);
-  const prefersReducedMotion = useReducedMotion();
-  const total = HERO_SLIDES.length;
-  const slide = HERO_SLIDES[index];
-  const Illustration = slide.Illustration;
+function VideoHero() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const rafRef = useRef<number>(0);
+  const fadingOutRef = useRef(false);
 
   useEffect(() => {
-    if (prefersReducedMotion) return;
-    const t = setTimeout(() => setIndex(i => (i + 1) % total), 7000);
-    return () => clearTimeout(t);
-  }, [index, total, prefersReducedMotion]);
+    const video = videoRef.current;
+    if (!video) return;
 
-  const next = () => setIndex(i => (i + 1) % total);
-  const prev = () => setIndex(i => (i - 1 + total) % total);
+    function cancelFade() {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    }
+
+    function fadeTo(target: number, duration: number, onDone?: () => void) {
+      cancelFade();
+      const startOpacity = video!.style.opacity !== '' ? parseFloat(video!.style.opacity) : (target === 1 ? 0 : 1);
+      const startTime = performance.now();
+      function tick(now: number) {
+        const t = Math.min((now - startTime) / duration, 1);
+        video!.style.opacity = String(startOpacity + (target - startOpacity) * t);
+        if (t < 1) { rafRef.current = requestAnimationFrame(tick); }
+        else { onDone?.(); }
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    }
+
+    function handleTimeUpdate() {
+      if (!video) return;
+      const remaining = video.duration - video.currentTime;
+      if (remaining <= 0.55 && !fadingOutRef.current) {
+        fadingOutRef.current = true;
+        fadeTo(0, 500);
+      }
+    }
+
+    function handleEnded() {
+      video!.style.opacity = '0';
+      fadingOutRef.current = false;
+      setTimeout(() => {
+        video!.currentTime = 0;
+        video!.play().then(() => fadeTo(1, 500));
+      }, 100);
+    }
+
+    function handlePlay() {
+      fadingOutRef.current = false;
+      fadeTo(1, 500);
+    }
+
+    video.style.opacity = '0';
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    video.addEventListener('ended', handleEnded);
+    video.addEventListener('play', handlePlay);
+
+    return () => {
+      cancelFade();
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+      video.removeEventListener('ended', handleEnded);
+      video.removeEventListener('play', handlePlay);
+    };
+  }, []);
 
   return (
-    <section className="relative h-[100dvh] min-h-[600px] flex items-center pt-16 pb-6 overflow-hidden bg-gradient-to-br from-[#EEF4FF] via-[#FAFCFF] to-[#FFF8ED]">
-      <FloatingDecoration
-        className="absolute top-24 left-4 lg:left-12 w-10 h-10 lg:w-14 lg:h-14 z-20"
-        scrollRange={[0, 0.3]}
-        yRange={[0, -30]}
-        rotateRange={[0, -15]}
-      >
-        <PencilSVG className="w-full h-full drop-shadow-md" />
-      </FloatingDecoration>
-      <FloatingDecoration
-        className="absolute top-28 right-6 lg:right-20 w-12 h-12 lg:w-16 lg:h-16 z-20"
-        scrollRange={[0, 0.3]}
-        yRange={[0, -36]}
-        rotateRange={[0, 25]}
-      >
-        <PinkStarBurst className="w-full h-full drop-shadow-md" />
-      </FloatingDecoration>
+    <section className="relative min-h-screen bg-black overflow-hidden flex flex-col">
+      {/* Background video */}
+      <video
+        ref={videoRef}
+        src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_115001_bcdaa3b4-03de-47e7-ad63-ae3e392c32d4.mp4"
+        autoPlay
+        muted
+        loop={false}
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover translate-y-[17%]"
+        style={{ opacity: 0 }}
+      />
+      {/* Dark overlay for text readability */}
+      <div className="absolute inset-0 bg-black/30 z-[1]" />
 
-      <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="relative">
-          <div className="grid lg:grid-cols-[1.05fr_1fr] gap-0 lg:gap-4 pt-4 lg:pt-6 pb-8 lg:pb-10">
-            {/* LEFT — illustration */}
-            <div className="relative px-6 lg:px-12 flex items-center justify-center min-h-[340px] lg:min-h-[520px] order-2 lg:order-1">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={index}
-                  initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 12 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: -12 }}
-                  transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
-                  className="relative w-full max-w-md aspect-square"
-                >
-                  <Illustration />
-                </motion.div>
-              </AnimatePresence>
-
-              {/* Floating category pills */}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={`pills-${index}`}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.4, ease: EASE_OUT_EXPO, delay: 0.15 }}
-                  className="absolute top-4 left-4 lg:top-8 lg:left-8 flex flex-col gap-2 z-10"
-                >
-                  {slide.pills.slice(0, 2).map((p, i) => (
-                    <span
-                      key={p}
-                      className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full backdrop-blur-sm shadow-sm ${
-                        i === 0
-                          ? 'bg-[#1E3A8A] text-white'
-                          : 'bg-white/80 border border-[#1A73E8]/20 text-[#1E3A8A]'
-                      }`}
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full ${i === 0 ? 'bg-[#F5B400]' : 'bg-[#1A73E8]'}`} />
-                      {p}
-                    </span>
-                  ))}
-                </motion.div>
-              </AnimatePresence>
-
-              {slide.pills.length > 2 && (
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={`pills-r-${index}`}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.4, ease: EASE_OUT_EXPO, delay: 0.25 }}
-                    className="absolute top-12 right-4 lg:top-20 lg:right-8 flex flex-col gap-2 z-10"
-                  >
-                    {slide.pills.slice(2).map((p) => (
-                      <span
-                        key={p}
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-sm border border-[#1A73E8]/20 text-[#1E3A8A] shadow-sm"
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#EC4899]" />
-                        {p}
-                      </span>
-                    ))}
-                  </motion.div>
-                </AnimatePresence>
-              )}
-
-              {/* Mini Progress chart card */}
-              <div className="absolute bottom-4 left-4 lg:bottom-2 lg:left-6 bg-white rounded-2xl shadow-xl border border-black/[0.04] p-3 w-44 lg:w-52 z-10">
-                <p className="text-[10px] font-bold text-slate-700 mb-2">Your Learning Progress</p>
-                <div className="flex items-end gap-1.5 h-12">
-                  {[10, 30, 50, 70, 92].map((p, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                      <span className="text-[8px] font-bold text-slate-500">{p}%</span>
-                      <div
-                        className={`w-full rounded-t-md ${i % 2 === 0 ? 'bg-[#1A73E8]' : 'bg-slate-200'}`}
-                        style={{ height: `${p * 0.4}px` }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
+      {/* Glass nav */}
+      <nav className="relative z-20 px-6 py-6">
+        <div className="liquid-glass rounded-full px-6 py-3 flex items-center justify-between max-w-5xl mx-auto">
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-2">
+              <Globe className="w-6 h-6 text-white" />
+              <span className="text-white font-semibold text-lg">Pocket School</span>
             </div>
-
-            {/* RIGHT — text */}
-            <div className="px-6 lg:px-12 flex flex-col justify-center order-1 lg:order-2 pt-4 lg:pt-0">
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
-                className="flex items-center gap-2 mb-5"
-              >
-                <span className="inline-flex items-center gap-1.5 bg-[#F5B400] text-[#1E3A8A] text-xs font-extrabold px-2.5 py-1 rounded-full shadow-sm">
-                  <Star className="w-3 h-3 fill-[#1E3A8A]" />
-                  5.0
-                </span>
-                <span className="text-xs font-semibold text-slate-700">Students Review</span>
-              </motion.div>
-
-              <AnimatePresence mode="wait">
-                <motion.h1
-                  key={`title-${index}`}
-                  initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -20 }}
-                  transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
-                  className="text-4xl sm:text-5xl lg:text-[58px] xl:text-[68px] font-black leading-[0.95] tracking-tight text-[#0B1B3F] mb-5"
+            <div className="hidden md:flex items-center gap-6">
+              {['Features', 'Pricing', 'About'].map((l) => (
+                <a
+                  key={l}
+                  href={`#${l.toLowerCase()}`}
+                  className="text-white/80 hover:text-white transition-colors text-sm font-medium"
                 >
-                  {slide.title}
-                  <br />
-                  <span className="bg-gradient-to-r from-[#1A73E8] to-[#1E3A8A] bg-clip-text text-transparent">
-                    {slide.titleAccent}
-                  </span>
-                </motion.h1>
-              </AnimatePresence>
-
-              <AnimatePresence mode="wait">
-                <motion.p
-                  key={`body-${index}`}
-                  initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -12 }}
-                  transition={{ duration: 0.4, ease: EASE_OUT_EXPO, delay: 0.05 }}
-                  className="text-sm sm:text-base text-slate-700 leading-relaxed mb-7 max-w-md"
-                >
-                  {slide.body}
-                </motion.p>
-              </AnimatePresence>
-
-              <div className="flex items-center gap-4 flex-wrap">
-                <Button
-                  onClick={() => router.push('/signup')}
-                  className="rounded-full h-12 px-7 text-sm font-bold bg-[#1A73E8] hover:bg-[#1967D2] text-white shadow-lg shadow-[#1A73E8]/30 transition-all"
-                >
-                  Start Free <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
-                <button
-                  onClick={() => document.getElementById('portal-showcase')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="flex items-center gap-3 text-sm font-bold text-[#0B1B3F] hover:text-[#1A73E8] transition-colors group"
-                >
-                  <span className="w-11 h-11 rounded-full bg-white shadow-md flex items-center justify-center group-hover:bg-[#1A73E8] transition-colors">
-                    <span className="w-0 h-0 border-l-[8px] border-l-[#1A73E8] group-hover:border-l-white border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent ml-1" />
-                  </span>
-                  Free Course
-                </button>
-              </div>
-
-              <div className="mt-12 lg:mt-16 flex items-center justify-between border-t border-black/[0.06] pt-5">
-                <div className="text-xs text-slate-600">
-                  <p className="font-semibold text-[#0B1B3F]">{slide.pills[0]}</p>
-                  <p>Project-driven content</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <p className="text-sm font-bold text-[#0B1B3F]">
-                    <span className="text-[#1A73E8]">{String(index + 1).padStart(1, '0')}</span>
-                    <span className="text-slate-400">/{String(total).padStart(1, '0')}</span>
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={prev}
-                      aria-label="Previous slide"
-                      className="w-9 h-9 rounded-full border border-[#0B1B3F]/15 hover:border-[#1A73E8] hover:bg-[#1A73E8] text-[#0B1B3F] hover:text-white transition-colors flex items-center justify-center"
-                    >
-                      <ArrowRight className="w-3.5 h-3.5 rotate-180" />
-                    </button>
-                    <button
-                      onClick={next}
-                      aria-label="Next slide"
-                      className="w-9 h-9 rounded-full bg-[#1A73E8] hover:bg-[#1967D2] text-white transition-colors flex items-center justify-center"
-                    >
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
+                  {l}
+                </a>
+              ))}
             </div>
           </div>
-
+          <div className="flex items-center gap-4">
+            <Link href="/signup" className="text-white text-sm font-medium">
+              Sign Up
+            </Link>
+            <Link
+              href="/login"
+              className="liquid-glass rounded-full px-6 py-2 text-white text-sm font-medium hover:bg-white/5 transition-colors"
+            >
+              Login
+            </Link>
+          </div>
         </div>
+      </nav>
 
-        <div className="mt-6 flex items-center justify-center gap-x-6 gap-y-2 flex-wrap">
-          <span className="text-[11px] text-[#0B1B3F]/60 font-bold tracking-widest uppercase">Powered by</span>
-          {credentialLogos.map((name) => (
-            <span key={name} className="text-xs font-extrabold text-[#0B1B3F]/70 tracking-wide">
-              {name}
-            </span>
-          ))}
+      {/* Hero content */}
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-12 text-center -translate-y-[20%]">
+        <h1
+          className="text-5xl md:text-6xl lg:text-7xl text-white mb-8 tracking-tight whitespace-nowrap"
+          style={{ fontFamily: "'Instrument Serif', serif" }}
+        >
+          Built for the curious
+        </h1>
+
+        <div className="max-w-xl w-full space-y-4">
+          <div className="liquid-glass rounded-full pl-6 pr-2 py-2 flex items-center gap-3">
+            <input
+              type="email"
+              placeholder="Enter your email"
+              className="flex-1 bg-transparent text-white placeholder:text-white/40 text-base outline-none"
+            />
+            <button className="bg-white rounded-full p-3 text-black flex-shrink-0">
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </div>
+
+          <p className="text-white text-sm leading-relaxed px-4">
+            Stay updated with the latest news and insights. Subscribe to our newsletter
+            today and never miss out on exciting updates.
+          </p>
+
+          <div className="flex justify-center">
+            <button className="liquid-glass rounded-full px-8 py-3 text-white text-sm font-medium hover:bg-white/5 transition-colors">
+              Read our manifesto
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Slide progress bar — anchored to section bottom */}
-      <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-black/[0.06]">
-        <motion.div
-          key={index}
-          className="h-full bg-gradient-to-r from-[#1A73E8] to-[#F5B400]"
-          initial={{ width: '0%' }}
-          animate={{ width: '100%' }}
-          transition={{ duration: prefersReducedMotion ? 0 : 7, ease: 'linear' }}
-        />
+      {/* Social icons */}
+      <div className="relative z-10 flex justify-center gap-4 pb-12">
+        {([
+          { Icon: Instagram, label: 'Instagram' },
+          { Icon: Twitter, label: 'Twitter' },
+          { Icon: Globe, label: 'Website' },
+        ] as const).map(({ Icon, label }) => (
+          <button
+            key={label}
+            aria-label={label}
+            className="liquid-glass rounded-full p-4 text-white/80 hover:text-white hover:bg-white/5 transition-all"
+          >
+            <Icon className="w-5 h-5" />
+          </button>
+        ))}
       </div>
     </section>
   );
 }
+
 
 /* ─── Popular Courses (marketplace teaser) ────────────────── */
 
@@ -1408,8 +1067,8 @@ export default function LandingPage() {
         </AnimatePresence>
       </header>
 
-      {/* ── Hero (Learnova-style carousel, brand colors) ─────── */}
-      <HeroCarousel />
+      {/* ── Hero ──────────────────────────────────────────────── */}
+      <VideoHero />
 
 
       {/* ── Trust bar ────────────────────────────────────────── */}
