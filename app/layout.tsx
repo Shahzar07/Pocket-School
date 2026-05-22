@@ -4,6 +4,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { AuthProvider } from '@/components/auth-provider';
 import { Toaster } from "@/components/ui/sonner"
+import { SiteHeader } from '@/components/site-header';
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -22,6 +23,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
     <html lang="en" className={cn("font-sans antialiased", plusJakarta.variable)} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans text-foreground" suppressHydrationWarning>
         <AuthProvider>
+          <SiteHeader />
           {children}
           <Toaster />
         </AuthProvider>

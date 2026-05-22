@@ -18,8 +18,6 @@ import {
   ArrowRight,
   Mic,
   Sparkles,
-  Menu,
-  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AiTeacherModal } from '@/components/ai-teacher-modal';
@@ -43,19 +41,10 @@ const ICONS: Record<TeacherIconKey, typeof Atom> = {
   history: ScrollText,
 };
 
-const NAV_LINKS = [
-  { label: "Who It's For", href: '/#methodology' },
-  { label: 'Programs', href: '/#programs' },
-  { label: 'Platform', href: '/#platform' },
-  { label: 'AI Teachers', href: '/ai-teachers' },
-  { label: 'Methodology', href: '/#methodology' },
-];
-
 export default function AiTeachersPage() {
   const router = useRouter();
   const [filter, setFilter] = useState<'All' | TeacherCategory>('All');
   const [selected, setSelected] = useState<AiTeacher | null>(null);
-  const [mobileOpen, setMobileOpen] = useState(false);
 
   const visible = useMemo(() => {
     const filtered = filter === 'All' ? AI_TEACHERS : AI_TEACHERS.filter((t) => t.category === filter);
@@ -73,73 +62,6 @@ export default function AiTeachersPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* ── Nav ────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-black/[0.05]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
-              <Brain className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-[15px] font-bold tracking-tight text-foreground">Pocket School</span>
-          </Link>
-
-          <nav className="hidden md:flex items-center gap-6">
-            {NAV_LINKS.map((l) => (
-              <Link
-                key={l.label}
-                href={l.href}
-                className={`text-sm font-medium transition-colors ${
-                  l.href === '/ai-teachers'
-                    ? 'text-[#1A73E8]'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {l.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="hidden md:flex items-center gap-3">
-            <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Sign In
-            </Link>
-            <Button
-              onClick={() => router.push('/signup')}
-              className="rounded-full h-9 px-5 text-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md"
-            >
-              Get Started
-            </Button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setMobileOpen((o) => !o)}
-            className="md:hidden p-2 -mr-2 text-foreground"
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </div>
-        {mobileOpen && (
-          <div className="md:hidden border-t border-black/[0.05] px-4 py-3 flex flex-col gap-3 bg-white">
-            {NAV_LINKS.map((l) => (
-              <Link key={l.label} href={l.href} className="text-sm font-medium text-foreground">
-                {l.label}
-              </Link>
-            ))}
-            <Link href="/login" className="text-sm font-medium text-muted-foreground">
-              Sign In
-            </Link>
-            <Button
-              onClick={() => router.push('/signup')}
-              className="rounded-full h-10 text-sm bg-[#1A73E8] hover:bg-[#1967D2] text-white"
-            >
-              Get Started
-            </Button>
-          </div>
-        )}
-      </header>
-
       {/* ── Hero ───────────────────────────────────────────────── */}
       <section className="relative pt-14 lg:pt-20 pb-12 bg-gradient-to-b from-[#EEF3FF] via-[#F5F1FF] to-[#F8F4EE] overflow-hidden">
         <div className="absolute -top-20 -left-20 w-96 h-96 rounded-full bg-[#1A73E8]/10 blur-3xl" />
@@ -147,7 +69,7 @@ export default function AiTeachersPage() {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 text-center">
           <p className="text-xs font-bold tracking-[0.25em] text-[#1A73E8] mb-5">AI TEACHERS LIBRARY</p>
-          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black tracking-tight text-[#0B1B3F] leading-[0.95] mb-6 max-w-4xl mx-auto">
+          <h1 className="font-heading text-4xl sm:text-5xl lg:text-7xl tracking-tight text-[#0B1B3F] leading-[0.95] mb-6 max-w-4xl mx-auto">
             Your 24/7 Faculty.
             <br />
             <span className="bg-gradient-to-r from-[#1A73E8] via-[#1E3A8A] to-[#1A73E8] bg-clip-text text-transparent">
@@ -183,7 +105,7 @@ export default function AiTeachersPage() {
           <div className="mb-10 flex items-end justify-between flex-wrap gap-4">
             <div>
               <p className="text-xs font-bold tracking-[0.2em] text-[#1A73E8] mb-3">EXPLORE THE FACULTY</p>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[#0B1B3F] leading-[1.05]">
+              <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#0B1B3F] leading-[1.05]">
                 Meet every teacher on the bench.
               </h2>
             </div>
@@ -234,7 +156,7 @@ export default function AiTeachersPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(26,115,232,0.25),transparent)]" />
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <p className="text-xs font-bold tracking-[0.25em] text-[#1A73E8] mb-5">JOIN THE FACULTY</p>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-[1.05] mb-5">
+          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-white leading-[1.05] mb-5">
             Know a great educator?
             <br />
             <span className="bg-gradient-to-r from-[#1A73E8] via-[#60A5FA] to-[#F5B400] bg-clip-text text-transparent">
