@@ -2,7 +2,6 @@
 
 import { motion, useScroll, useTransform, AnimatePresence, type Variants, useReducedMotion } from 'motion/react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
@@ -36,6 +35,12 @@ import {
   AlertCircle,
   Layers,
   Globe,
+  ChevronUp,
+  Instagram,
+  Twitter,
+  Facebook,
+  Youtube,
+  Music2,
 } from 'lucide-react';
 
 /* ─── Data ──────────────────────────────────────────────────── */
@@ -795,25 +800,10 @@ function VideoHero() {
           <em>Is In Your Pocket</em>
         </h1>
 
-        <p className="text-white/55 text-base md:text-lg mb-10 max-w-lg leading-relaxed">
+        <p className="text-white/55 text-base md:text-lg max-w-lg leading-relaxed">
           IGCSE · A-Levels · Degrees — AI that adapts to how <em>you</em> think.<br />
           Visual lessons, live AI tutors, and exam prep that actually works.
         </p>
-
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          <Link
-            href="/signup"
-            className="flex items-center gap-2 bg-[#1A73E8] hover:bg-[#1557B0] active:bg-[#1248A0] rounded-full px-8 py-3.5 text-white font-semibold text-sm transition-colors shadow-lg shadow-blue-900/30"
-          >
-            Start Learning Free <ArrowRight className="w-4 h-4" />
-          </Link>
-          <Link
-            href="/login"
-            className="liquid-glass rounded-full px-8 py-3.5 text-white/85 font-medium text-sm hover:bg-white/5 transition-colors"
-          >
-            Sign In
-          </Link>
-        </div>
       </div>
 
     </section>
@@ -923,7 +913,6 @@ function PopularCoursesSection() {
 /* ─── Component ─────────────────────────────────────────────── */
 
 export default function LandingPage() {
-  const router = useRouter();
   const { user, profile } = useAuthSTORE();
   const [activePortalTab, setActivePortalTab] = useState('student');
   const prefersReducedMotion = useReducedMotion();
@@ -1385,157 +1374,198 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── FAQ ───────────────────────────────────────────────── */}
-      <section id="faq" className="py-20 sm:py-28">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-            className="text-center max-w-2xl mx-auto mb-12"
+      {/* ── CTA + FAQ (two-column) ───────────────────────────── */}
+      <CtaFaqSection />
+
+      {/* ── Footer (liquid-glass on video) ───────────────────── */}
+      <GlassFooter />
+    </div>
+  );
+}
+
+/* ─── CTA + FAQ (two-column) ──────────────────────────────── */
+
+function CtaFaqSection() {
+  const [activeIndex, setActiveIndex] = useState<number | null>(0);
+
+  return (
+    <section className="py-20 sm:py-28 bg-white">
+      <div className="max-w-[1180px] w-full mx-auto px-5">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-8 lg:gap-[30px] items-stretch">
+          {/* ── Left: animated gradient CTA card ── */}
+          <div
+            className="c5-animated-gradient rounded-3xl py-16 sm:py-20 px-8 sm:px-10 text-white flex flex-col justify-center items-center text-center"
+            style={{ boxShadow: '0 10px 30px rgba(0, 0, 0, 0.08)' }}
           >
-            <Badge className="mb-4 rounded-full bg-slate-100 text-slate-700 border-slate-200 text-xs font-semibold">
-              FAQ
-            </Badge>
-            <h2 className="font-heading text-3xl sm:text-4xl tracking-tight text-foreground mb-4">
-              Common questions
+            <h2
+              className="font-heading font-normal leading-[1.05] mb-4 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.25)]"
+              style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', letterSpacing: '-0.03em' }}
+            >
+              Ready to Learn<br />
+              <em>Your Way?</em>
             </h2>
-          </motion.div>
-
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-40px' }}
-            className="grid md:grid-cols-2 gap-4"
-          >
-            {faqs.map((item, i) => (
-              <details key={i} className="group bg-card border border-border rounded-2xl overflow-hidden">
-                <summary className="faq-summary flex items-center justify-between gap-3 px-5 py-4 cursor-pointer select-none list-none">
-                  <span className="text-sm font-semibold text-foreground">{item.q}</span>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200 group-open:rotate-180" />
-                </summary>
-                <p className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed">{item.a}</p>
-              </details>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ── Your Smartest Learning Decision ──────────────────── */}
-      <section className="py-24 sm:py-32 relative overflow-hidden bg-[#0B1B3F]">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(26,115,232,0.25),transparent)] -z-0" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_100%,rgba(245,180,0,0.12),transparent)] -z-0" />
-
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-60px' }}
-          className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 text-center"
-        >
-          <p className="text-xs font-bold tracking-[0.25em] text-[#1A73E8] mb-5">START TODAY</p>
-          <h2 className="font-heading text-4xl sm:text-5xl lg:text-6xl tracking-tight text-white mb-6 leading-[1.05]">
-            Your Smartest
-            <br />
-            <span className="bg-gradient-to-r from-[#1A73E8] via-[#60A5FA] to-[#F5B400] bg-clip-text text-transparent">
-              Learning Decision
-            </span>
-          </h2>
-          <p className="text-base sm:text-lg text-white/70 mb-10 leading-relaxed max-w-2xl mx-auto">
-            Whether you&rsquo;re a school, a homeschooling family, a learning centre, or a professional ready to level up — Pocket School has a pathway personalised for you.
-          </p>
-          <div className="flex items-center justify-center gap-3 flex-wrap">
-            <Button
-              size="lg"
-              onClick={() => router.push('/courses')}
-              className="rounded-full h-12 px-7 text-sm font-bold bg-[#1A73E8] hover:bg-[#1967D2] text-white shadow-xl shadow-[#1A73E8]/40 transition-all"
+            <p className="text-[0.95rem] sm:text-base mb-8 font-normal text-white/90 max-w-sm leading-relaxed">
+              IGCSE, A-Levels, Degrees &amp; beyond — adapted to how <em>you</em> think.
+            </p>
+            <Link
+              href="/signup"
+              className="inline-flex items-center gap-2 bg-neutral-900 text-white font-semibold text-[0.95rem] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(0,0,0,0.4)]"
+              style={{ padding: '14px 32px', borderRadius: '12px', boxShadow: '0 10px 20px rgba(0,0,0,0.3)' }}
             >
-              Browse All Programs <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => document.getElementById('platform')?.scrollIntoView({ behavior: 'smooth' })}
-              className="rounded-full h-12 px-7 text-sm font-bold bg-transparent border-white/25 hover:bg-white/10 text-white hover:text-white transition-all"
-            >
-              Explore the Platform
-            </Button>
+              Start Learning Free <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
-        </motion.div>
-      </section>
 
-      {/* ── Footer ────────────────────────────────────────────── */}
-      <footer className="bg-card border-t border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
-            <div>
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
-                  <Brain className="w-4 h-4 text-white" />
+          {/* ── Right: FAQ accordion ── */}
+          <div id="faq" className="flex flex-col justify-center gap-3">
+            {faqs.map((item, i) => {
+              const active = activeIndex === i;
+              return (
+                <div
+                  key={i}
+                  onClick={() => setActiveIndex(active ? null : i)}
+                  className="bg-white border cursor-pointer transition-all duration-200 hover:border-[#eaeaea]"
+                  style={{
+                    borderRadius: 12,
+                    padding: '18px 20px',
+                    borderColor: active ? '#eaeaea' : '#f0f0f0',
+                    boxShadow: active ? '0 4px 12px rgba(0,0,0,0.04)' : '0 2px 8px rgba(0,0,0,0.02)',
+                  }}
+                >
+                  <div className="flex justify-between items-center gap-3 font-medium text-[0.9rem] text-neutral-900">
+                    <span className="flex-1">{item.q}</span>
+                    {active
+                      ? <ChevronUp className="w-5 h-5 shrink-0 text-neutral-500" />
+                      : <ChevronDown className="w-5 h-5 shrink-0 text-neutral-500" />
+                    }
+                  </div>
+                  {active && (
+                    <div className="mt-3 text-[0.9rem] text-[#666] leading-[1.6]">{item.a}</div>
+                  )}
                 </div>
-                <span className="text-[15px] font-bold tracking-tight text-foreground">Pocket School</span>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Glass Footer (liquid-glass on video) ────────────────── */
+
+function GlassFooter() {
+  const FOOTER_VIDEO = 'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260429_114316_1c7889ad-2885-410e-b493-98119fee0ddb.mp4';
+
+  return (
+    <section className="relative w-full overflow-hidden bg-black">
+      <video
+        src={FOOTER_VIDEO}
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover z-0"
+      />
+      <div className="absolute inset-0 bg-black/40 z-[1]" />
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-32 sm:pt-48 pb-8">
+        <motion.footer
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 1, delay: 0.2, ease: 'easeOut' }}
+          className="liquid-glass w-full rounded-3xl p-6 md:p-10 text-white/70"
+        >
+          {/* Top grid */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-12 mb-10">
+            {/* Brand block */}
+            <div className="md:col-span-5">
+              <div className="flex items-center gap-2 text-white mb-4">
+                <div className="bg-white/10 backdrop-blur-sm p-2 rounded-xl border border-white/20">
+                  <Brain className="w-5 h-5" />
+                </div>
+                <span className="text-xl font-semibold">Pocket School</span>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed max-w-[200px]">
-                AI-powered adaptive learning for everyone, everywhere.
+              <p className="text-sm leading-relaxed max-w-sm text-white/60">
+                AI-powered adaptive learning for IGCSE, A-Levels, degrees and beyond — built around how you think.
               </p>
-              <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-[11px] font-semibold text-muted-foreground border border-border">
-                <Sparkles className="w-3 h-3 text-blue-500" />
+              <div className="mt-5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[11px] font-semibold text-white/70">
+                <Sparkles className="w-3 h-3 text-[#F5B400]" />
                 Built with Gemini AI
               </div>
             </div>
 
-            <div>
-              <p className="text-xs font-bold text-foreground uppercase tracking-widest mb-4">Product</p>
-              <ul className="space-y-2.5">
+            {/* Link columns */}
+            <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-8">
+              <div>
+                <h4 className="text-sm uppercase tracking-wider text-white font-medium mb-4">Platform</h4>
+                <ul className="text-xs space-y-2.5">
+                  {[
+                    { label: 'AI Teachers', href: '/ai-teachers' },
+                    { label: 'AI Studio', href: '/ai-studio' },
+                    { label: 'Marketplace', href: '/courses' },
+                    { label: 'Programs', href: '#programs' },
+                    { label: 'FAQ', href: '#faq' },
+                  ].map(l => (
+                    <li key={l.label}>
+                      <Link href={l.href} className="hover:text-white transition-colors">{l.label}</Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-sm uppercase tracking-wider text-white font-medium mb-4">For Learners</h4>
+                <ul className="text-xs space-y-2.5">
+                  {['Students', 'Teachers', 'Parents', 'Admins'].map(role => (
+                    <li key={role}>
+                      <Link href={`/signup?role=${role.toLowerCase()}`} className="hover:text-white transition-colors">{role}</Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-sm uppercase tracking-wider text-white font-medium mb-4">Legal</h4>
+                <ul className="text-xs space-y-2.5">
+                  {['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'Contact'].map(l => (
+                    <li key={l}>
+                      <Link href="#" className="hover:text-white transition-colors">{l}</Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom bar */}
+          <div className="pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-4">
+            <p className="text-[10px] uppercase tracking-widest opacity-50">
+              &copy; {new Date().getFullYear()} Pocket School · Powered by Rochford&apos;s Education
+            </p>
+            <div className="flex items-center gap-4">
+              <span className="text-[10px] uppercase tracking-widest opacity-50">Follow Us:</span>
+              <div className="flex items-center gap-3">
                 {[
-                  { label: 'AI Teachers', href: '/ai-teachers' },
-                  { label: 'AI Studio', href: '/ai-studio' },
-                  { label: 'Programs', href: '#programs' },
-                  { label: 'Marketplace', href: '/courses' },
-                  { label: 'FAQ', href: '#faq' },
-                ].map(l => (
-                  <li key={l.label}>
-                    <Link href={l.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">{l.label}</Link>
-                  </li>
+                  { Icon: Instagram, label: 'Instagram' },
+                  { Icon: Twitter, label: 'Twitter' },
+                  { Icon: Youtube, label: 'YouTube' },
+                  { Icon: Facebook, label: 'Facebook' },
+                  { Icon: Music2, label: 'TikTok' },
+                ].map(({ Icon, label }) => (
+                  <a
+                    key={label}
+                    href="#"
+                    aria-label={label}
+                    className="opacity-70 hover:opacity-100 transition-opacity hover:text-white"
+                  >
+                    <Icon className="w-4 h-4" />
+                  </a>
                 ))}
-              </ul>
-            </div>
-
-            <div>
-              <p className="text-xs font-bold text-foreground uppercase tracking-widest mb-4">For</p>
-              <ul className="space-y-2.5">
-                {['Students', 'Teachers', 'Parents', 'Admins'].map(l => (
-                  <li key={l}>
-                    <Link href={`/signup?role=${l.toLowerCase()}`} className="text-sm text-muted-foreground hover:text-foreground transition-colors">{l}</Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <p className="text-xs font-bold text-foreground uppercase tracking-widest mb-4">Legal</p>
-              <ul className="space-y-2.5">
-                {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map(l => (
-                  <li key={l}>
-                    <Link href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">{l}</Link>
-                  </li>
-                ))}
-              </ul>
+              </div>
             </div>
           </div>
-
-          <div className="mt-12 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-muted-foreground">
-              &copy; {new Date().getFullYear()} Pocket School. All rights reserved.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Powered by Rochford&apos;s Education
-            </p>
-          </div>
-        </div>
-      </footer>
-    </div>
+        </motion.footer>
+      </div>
+    </section>
   );
 }
