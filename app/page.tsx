@@ -34,7 +34,6 @@ import {
   User,
   AlertCircle,
   Layers,
-  Globe,
   ChevronUp,
   Instagram,
   Twitter,
@@ -739,61 +738,8 @@ function VideoHero() {
       {/* Dark overlay for text readability */}
       <div className="absolute inset-0 bg-black/30 z-[1]" />
 
-      {/* Glass nav */}
-      <nav className="relative z-20 px-6 py-6">
-        <div className="liquid-glass rounded-full px-6 py-3 flex items-center justify-between max-w-5xl mx-auto">
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2">
-              <Globe className="w-6 h-6 text-white" />
-              <span className="text-white font-semibold text-lg">Pocket School</span>
-            </div>
-            <div className="hidden md:flex items-center gap-6">
-              {[
-                { label: 'Marketplace', href: '/courses' },
-                { label: 'AI Studio', href: '/ai-studio' },
-                { label: 'AI Teachers', href: '/ai-teachers' },
-              ].map(({ label, href }) => (
-                <Link
-                  key={label}
-                  href={href}
-                  className="text-white/80 hover:text-white transition-colors text-sm font-medium"
-                >
-                  {label}
-                </Link>
-              ))}
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {user ? (
-              <>
-                <Link
-                  href="/dashboard/student"
-                  className="liquid-glass rounded-full px-5 py-2 text-white text-sm font-semibold hover:bg-white/5 transition-colors flex items-center gap-2"
-                >
-                  <span className="inline-flex w-6 h-6 rounded-full bg-[#1A73E8] items-center justify-center text-[10px] font-bold uppercase">
-                    {(user.displayName || user.email || 'U')[0]}
-                  </span>
-                  Dashboard
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link href="/signup" className="text-white/80 hover:text-white text-sm font-medium transition-colors">
-                  Sign Up
-                </Link>
-                <Link
-                  href="/login"
-                  className="liquid-glass rounded-full px-6 py-2 text-white text-sm font-semibold hover:bg-white/5 transition-colors"
-                >
-                  Sign In
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </nav>
-
-      {/* Hero content */}
+      {/* Hero content (spacer for fixed header) */}
+      <div className="h-20" />
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-12 text-center -translate-y-[20%]">
         <h1 className="font-heading text-5xl md:text-6xl lg:text-[5.5rem] text-white mb-5 leading-[1.08]">
           Your Smartest Classroom<br />
@@ -938,26 +884,27 @@ export default function LandingPage() {
 
 
       {/* ── Trust bar ────────────────────────────────────────── */}
-      <section className="py-10 border-y border-border bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-0">
-            {stats.map((s, i) => (
-              <motion.div
-                key={i}
-                variants={fadeUp}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: '-40px' }}
-                custom={i}
-                className="text-center md:border-r md:last:border-r-0 border-border py-2"
-              >
-                <p className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">{s.value}</p>
-                <p className="text-sm text-muted-foreground mt-1 font-medium">{s.label}</p>
-              </motion.div>
-            ))}
-          </div>
+      {/* ── Stats marquee ────────────────────────────────────── */}
+      <div className="border-y border-white/[0.07] bg-[#06060F] py-5 overflow-hidden">
+        <div className="marquee-track flex items-center gap-0 w-max">
+          {[...stats, ...stats, ...stats].map((s, i) => (
+            <div key={i} className="flex items-center shrink-0">
+              <div className="flex items-center gap-3 px-10">
+                <span
+                  className="font-heading text-2xl sm:text-3xl text-white/90 leading-none"
+                  style={{ letterSpacing: '-0.02em' }}
+                >
+                  {s.value}
+                </span>
+                <span className="text-xs sm:text-sm font-medium text-white/40 uppercase tracking-widest whitespace-nowrap">
+                  {s.label}
+                </span>
+              </div>
+              <span className="text-white/15 text-lg select-none">·</span>
+            </div>
+          ))}
         </div>
-      </section>
+      </div>
 
       {/* ── Manifesto / Quote ─────────────────────────────────── */}
       <section className="relative py-20 sm:py-28 bg-white overflow-hidden">

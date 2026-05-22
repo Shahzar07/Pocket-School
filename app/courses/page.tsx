@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { BookOpen, Brain, Search, Filter, ArrowRight, Loader2 } from 'lucide-react';
+import { BookOpen, Search, Filter, ArrowRight, Loader2 } from 'lucide-react';
 import { getPublicCourses, type Course, type CourseType } from '@/lib/db';
 
 const TYPE_FILTERS: { id: CourseType | 'all'; label: string }[] = [
@@ -67,31 +67,13 @@ export default function MarketplacePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/80 border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
-              <Brain className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-[15px] font-bold tracking-tight text-foreground">Pocket School</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground">Sign In</Link>
-            <Button onClick={() => router.push('/signup')} className="rounded-full h-9 px-5 text-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-              Get Started
-            </Button>
-          </div>
-        </div>
-      </header>
-
       {/* Hero */}
       <section className="relative py-16 sm:py-20 bg-gradient-to-b from-amber-50 via-background to-background overflow-hidden">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center">
           <Badge className="mb-4 rounded-full bg-blue-50 text-blue-700 border-blue-200 text-xs font-semibold">
             Marketplace
           </Badge>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-4">
+          <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl tracking-tight text-foreground mb-4">
             Courses, eBooks &<br className="hidden sm:block" /> past papers, made by teachers.
           </h1>
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
