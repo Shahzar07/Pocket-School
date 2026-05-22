@@ -661,6 +661,7 @@ function VideoHero() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const rafRef = useRef<number>(0);
   const fadingOutRef = useRef(false);
+  const { user } = useAuthSTORE();
 
   useEffect(() => {
     const video = videoRef.current;
@@ -755,51 +756,69 @@ function VideoHero() {
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Link href="/signup" className="text-white text-sm font-medium">
-              Sign Up
-            </Link>
-            <Link
-              href="/login"
-              className="liquid-glass rounded-full px-6 py-2 text-white text-sm font-medium hover:bg-white/5 transition-colors"
-            >
-              Login
-            </Link>
+          <div className="flex items-center gap-3">
+            {user ? (
+              <>
+                <Link
+                  href="/dashboard/student"
+                  className="liquid-glass rounded-full px-5 py-2 text-white text-sm font-semibold hover:bg-white/5 transition-colors flex items-center gap-2"
+                >
+                  <span className="inline-flex w-6 h-6 rounded-full bg-[#1A73E8] items-center justify-center text-[10px] font-bold uppercase">
+                    {(user.displayName || user.email || 'U')[0]}
+                  </span>
+                  Dashboard
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/signup" className="text-white/80 hover:text-white text-sm font-medium transition-colors">
+                  Sign Up
+                </Link>
+                <Link
+                  href="/login"
+                  className="liquid-glass rounded-full px-6 py-2 text-white text-sm font-semibold hover:bg-white/5 transition-colors"
+                >
+                  Sign In
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
 
       {/* Hero content */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-12 text-center -translate-y-[20%]">
+        <div className="inline-flex items-center gap-2 liquid-glass rounded-full px-4 py-1.5 mb-7">
+          <Sparkles className="w-3.5 h-3.5 text-[#F5B400]" />
+          <span className="text-white/70 text-xs font-semibold tracking-widest uppercase">AI-Powered Education Platform</span>
+        </div>
+
         <h1
-          className="text-5xl md:text-6xl lg:text-7xl text-white mb-8 tracking-tight whitespace-nowrap"
+          className="text-5xl md:text-6xl lg:text-[5.5rem] text-white mb-5 leading-[1.08]"
           style={{ fontFamily: "'Instrument Serif', serif" }}
         >
-          Built for the curious
+          Your Smartest Classroom<br />
+          <em>Is In Your Pocket</em>
         </h1>
 
-        <div className="max-w-xl w-full space-y-4">
-          <div className="liquid-glass rounded-full pl-6 pr-2 py-2 flex items-center gap-3">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 bg-transparent text-white placeholder:text-white/40 text-base outline-none"
-            />
-            <button className="bg-white rounded-full p-3 text-black flex-shrink-0">
-              <ArrowRight className="w-5 h-5" />
-            </button>
-          </div>
+        <p className="text-white/55 text-base md:text-lg mb-10 max-w-lg leading-relaxed">
+          IGCSE · A-Levels · Degrees — AI that adapts to how <em>you</em> think.<br />
+          Visual lessons, live AI tutors, and exam prep that actually works.
+        </p>
 
-          <p className="text-white text-sm leading-relaxed px-4">
-            Stay updated with the latest news and insights. Subscribe to our newsletter
-            today and never miss out on exciting updates.
-          </p>
-
-          <div className="flex justify-center">
-            <button className="liquid-glass rounded-full px-8 py-3 text-white text-sm font-medium hover:bg-white/5 transition-colors">
-              Read our manifesto
-            </button>
-          </div>
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <Link
+            href="/signup"
+            className="flex items-center gap-2 bg-[#1A73E8] hover:bg-[#1557B0] active:bg-[#1248A0] rounded-full px-8 py-3.5 text-white font-semibold text-sm transition-colors shadow-lg shadow-blue-900/30"
+          >
+            Start Learning Free <ArrowRight className="w-4 h-4" />
+          </Link>
+          <Link
+            href="/login"
+            className="liquid-glass rounded-full px-8 py-3.5 text-white/85 font-medium text-sm hover:bg-white/5 transition-colors"
+          >
+            Sign In
+          </Link>
         </div>
       </div>
 
@@ -928,8 +947,6 @@ function PopularCoursesSection() {
 export default function LandingPage() {
   const router = useRouter();
   const { user, profile } = useAuthSTORE();
-  const [scrolled, setScrolled] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [activePortalTab, setActivePortalTab] = useState('student');
   const prefersReducedMotion = useReducedMotion();
 
@@ -937,21 +954,7 @@ export default function LandingPage() {
     : profile?.role === 'admin' ? '/dashboard/admin'
     : profile?.role === 'parent' ? '/dashboard/parent'
     : '/dashboard/student';
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
-  const navLinks = [
-    { label: "Who It's For", href: '#methodology' },
-    { label: 'Programs', href: '#programs' },
-    { label: 'Platform', href: '#platform' },
-    { label: 'AI Teachers', href: '/ai-teachers' },
-    { label: 'Marketplace', href: '/courses' },
-    { label: 'AI Studio', href: '/ai-studio' },
-    { label: 'Methodology', href: '#methodology' },
-  ];
 
   const portalTabUrl: Record<string, string> = {
     student: 'pocketschool.app/student',
@@ -962,110 +965,6 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
 
-      {/* ── Nav ─────────────────────────────────────────────── */}
-      <header
-        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? 'bg-white/80 dark:bg-[#0A0A0F]/80 backdrop-blur-xl border-b border-border/60 shadow-sm'
-            : 'bg-transparent'
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
-              <Brain className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-[15px] font-bold tracking-tight text-foreground">Pocket School</span>
-          </Link>
-
-          <nav className="hidden md:flex items-center gap-6">
-            {navLinks.map(({ label, href }) => (
-              <a
-                key={label}
-                href={href}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {label}
-              </a>
-            ))}
-          </nav>
-
-          <div className="hidden md:flex items-center gap-3">
-            {user ? (
-              <Link href={dashPath} className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-blue-600 transition-colors">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold select-none">
-                  {profile?.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? 'U'}
-                </div>
-                <span>{profile?.name?.split(' ')[0] ?? 'Dashboard'}</span>
-              </Link>
-            ) : (
-              <>
-                <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                  Sign In
-                </Link>
-                <Button
-                  onClick={() => router.push('/signup')}
-                  className="rounded-full h-9 px-5 text-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all"
-                >
-                  Get Started
-                  <ArrowRight className="ml-1.5 w-3.5 h-3.5" />
-                </Button>
-              </>
-            )}
-          </div>
-
-          <button
-            className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </div>
-
-        <AnimatePresence>
-          {mobileOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
-              className="md:hidden bg-white/95 dark:bg-[#0A0A0F]/95 backdrop-blur-xl border-b border-border px-4 py-4 flex flex-col gap-3"
-            >
-              {navLinks.map(({ label, href }) => (
-                <a
-                  key={label}
-                  href={href}
-                  onClick={() => setMobileOpen(false)}
-                  className="text-sm font-medium text-foreground py-1"
-                >
-                  {label}
-                </a>
-              ))}
-              <div className="pt-2 flex flex-col gap-2 border-t border-border">
-                {user ? (
-                  <Link href={dashPath} className="flex items-center gap-2 text-sm font-medium text-foreground py-1">
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold select-none">
-                      {profile?.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? 'U'}
-                    </div>
-                    <span>{profile?.name ?? 'Go to Dashboard'}</span>
-                  </Link>
-                ) : (
-                  <>
-                    <Link href="/login" className="text-sm font-medium text-muted-foreground">Sign In</Link>
-                    <Button
-                      onClick={() => router.push('/signup')}
-                      className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white w-full"
-                    >
-                      Get Started <ArrowRight className="ml-1.5 w-3.5 h-3.5" />
-                    </Button>
-                  </>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </header>
 
       {/* ── Hero ──────────────────────────────────────────────── */}
       <VideoHero />

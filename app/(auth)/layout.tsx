@@ -1,51 +1,99 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Brain } from 'lucide-react';
+import { Brain, BookOpen, Sparkles, Trophy, Users } from 'lucide-react';
 import Link from 'next/link';
+
+const FEATURES = [
+  { icon: <Brain className="w-4 h-4" />, title: 'Mojo — Your AI Tutor', desc: 'Adapts to how you think, 24 / 7' },
+  { icon: <BookOpen className="w-4 h-4" />, title: 'IGCSE · A-Levels · Degrees', desc: 'Full academic pathways, your pace' },
+  { icon: <Sparkles className="w-4 h-4" />, title: 'Visual Learning Engine', desc: 'Mind maps, diagrams & interactive lessons' },
+  { icon: <Trophy className="w-4 h-4" />, title: 'Smart Exam Prep', desc: 'Past papers, gap analysis, revision plans' },
+];
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex bg-white">
-      {/* Left side - Branding / Decorative */}
-      <div className="hidden lg:flex w-1/2 bg-[#F8F9FA] relative flex-col justify-between p-12 overflow-hidden border-r border-[#DADCE0]">
-        <Link href="/" className="flex items-center gap-2 relative z-10 w-fit">
-          <div className="bg-google-blue/10 p-2 rounded-xl">
-            <Brain className="w-6 h-6 text-google-blue" />
+    <div className="min-h-screen flex bg-[#06060F]">
+      {/* ── Left: video hero panel ── */}
+      <div className="hidden lg:block w-[52%] shrink-0 p-5">
+        <div className="relative w-full h-full rounded-3xl overflow-hidden bg-black min-h-[calc(100vh-2.5rem)]">
+          {/* Video — NO overlay/tint */}
+          <video
+            src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260506_081238_406ed0e3-5d83-436e-a512-0bbff7ec5b95.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+
+          {/* Floating content — no full-screen overlay, text/cards carry their own blur */}
+          <div className="relative z-10 h-full flex flex-col justify-between p-10">
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2 w-fit">
+              <div className="bg-black/30 backdrop-blur-md p-2 rounded-xl border border-white/20">
+                <Brain className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-white font-bold text-xl drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                Pocket School
+              </span>
+            </Link>
+
+            {/* Hero text + feature cards */}
+            <div className="space-y-7">
+              <motion.div
+                initial={{ opacity: 0, y: 28 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <h1
+                  className="text-[2.6rem] leading-[1.1] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] mb-3"
+                  style={{ fontFamily: "'Instrument Serif', serif" }}
+                >
+                  Your Smartest<br />
+                  <em>Classroom in Your Pocket</em>
+                </h1>
+                <p className="text-white/70 text-sm leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                  AI-powered learning for IGCSE, A-Levels, degrees &amp; beyond.
+                </p>
+              </motion.div>
+
+              <div className="space-y-2.5">
+                {FEATURES.map((f, i) => (
+                  <motion.div
+                    key={f.title}
+                    initial={{ opacity: 0, x: -16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.45, delay: 0.35 + i * 0.09, ease: [0.16, 1, 0.3, 1] }}
+                    className="flex items-center gap-3 bg-black/25 backdrop-blur-md rounded-2xl px-4 py-3 border border-white/10"
+                  >
+                    <div className="bg-[#1A73E8]/80 backdrop-blur-sm p-2 rounded-lg text-white shrink-0">
+                      {f.icon}
+                    </div>
+                    <div>
+                      <p className="text-white text-sm font-semibold leading-tight">{f.title}</p>
+                      <p className="text-white/50 text-xs mt-0.5">{f.desc}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
           </div>
-          <span className="text-xl font-bold tracking-tight text-[#202124]">Pocket School</span>
-        </Link>
-
-        {/* Abstract decorative elements simulating learning paths */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="absolute w-[600px] h-[600px] bg-gradient-to-tr from-google-blue/10 to-google-teal/10 rounded-full blur-[80px] -translate-x-1/4 -translate-y-1/4" />
-          <div className="absolute w-[400px] h-[400px] bg-gradient-to-tr from-google-amber/10 to-google-blue/5 rounded-full blur-[60px] translate-x-1/3 translate-y-1/3" />
-        </div>
-
-        <div className="relative z-10 max-w-lg mt-auto">
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="text-5xl font-extrabold tracking-tight text-[#202124] leading-tight mb-6"
-          >
-            Master any subject, <span className="text-google-blue">your way.</span>
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="text-xl text-[#5F6368] leading-relaxed"
-          >
-            AI-powered learning paths, micro-lessons, and an adaptive tutor that understands your unique pace.
-          </motion.p>
         </div>
       </div>
 
-      {/* Right side - Auth Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12">
+      {/* ── Right: form area ── */}
+      <div className="flex-1 flex items-center justify-center px-8 py-12 bg-[#06060F]">
         <div className="w-full max-w-md">
-           {children}
+          {/* Mobile-only logo */}
+          <div className="lg:hidden mb-10 flex items-center gap-2">
+            <div className="bg-[#1A73E8]/20 p-2 rounded-xl border border-[#1A73E8]/30">
+              <Brain className="w-5 h-5 text-[#1A73E8]" />
+            </div>
+            <span className="text-white font-bold text-xl">Pocket School</span>
+          </div>
+
+          {children}
         </div>
       </div>
     </div>
