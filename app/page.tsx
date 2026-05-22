@@ -36,8 +36,6 @@ import {
   AlertCircle,
   Layers,
   Globe,
-  Instagram,
-  Twitter,
 } from 'lucide-react';
 
 /* ─── Data ──────────────────────────────────────────────────── */
@@ -745,14 +743,18 @@ function VideoHero() {
               <span className="text-white font-semibold text-lg">Pocket School</span>
             </div>
             <div className="hidden md:flex items-center gap-6">
-              {['Features', 'Pricing', 'About'].map((l) => (
-                <a
-                  key={l}
-                  href={`#${l.toLowerCase()}`}
+              {[
+                { label: 'Marketplace', href: '/courses' },
+                { label: 'AI Studio', href: '/ai-studio' },
+                { label: 'AI Teachers', href: '/ai-teachers' },
+              ].map(({ label, href }) => (
+                <Link
+                  key={label}
+                  href={href}
                   className="text-white/80 hover:text-white transition-colors text-sm font-medium"
                 >
-                  {l}
-                </a>
+                  {label}
+                </Link>
               ))}
             </div>
           </div>
@@ -788,15 +790,7 @@ function VideoHero() {
 
       {/* Hero content */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-12 text-center -translate-y-[20%]">
-        <div className="inline-flex items-center gap-2 liquid-glass rounded-full px-4 py-1.5 mb-7">
-          <Sparkles className="w-3.5 h-3.5 text-[#F5B400]" />
-          <span className="text-white/70 text-xs font-semibold tracking-widest uppercase">AI-Powered Education Platform</span>
-        </div>
-
-        <h1
-          className="text-5xl md:text-6xl lg:text-[5.5rem] text-white mb-5 leading-[1.08]"
-          style={{ fontFamily: "'Instrument Serif', serif" }}
-        >
+        <h1 className="font-heading text-5xl md:text-6xl lg:text-[5.5rem] text-white mb-5 leading-[1.08]">
           Your Smartest Classroom<br />
           <em>Is In Your Pocket</em>
         </h1>
@@ -822,22 +816,6 @@ function VideoHero() {
         </div>
       </div>
 
-      {/* Social icons */}
-      <div className="relative z-10 flex justify-center gap-4 pb-12">
-        {([
-          { Icon: Instagram, label: 'Instagram' },
-          { Icon: Twitter, label: 'Twitter' },
-          { Icon: Globe, label: 'Website' },
-        ] as const).map(({ Icon, label }) => (
-          <button
-            key={label}
-            aria-label={label}
-            className="liquid-glass rounded-full p-4 text-white/80 hover:text-white hover:bg-white/5 transition-all"
-          >
-            <Icon className="w-5 h-5" />
-          </button>
-        ))}
-      </div>
     </section>
   );
 }
@@ -887,7 +865,7 @@ function PopularCoursesSection() {
             <Badge className="mb-3 rounded-full bg-amber-50 text-amber-700 border-amber-200 text-xs font-semibold">
               Marketplace
             </Badge>
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+            <h2 className="font-heading text-3xl sm:text-4xl tracking-tight text-foreground">
               Popular right now
             </h2>
           </div>
@@ -1002,7 +980,7 @@ export default function LandingPage() {
             viewport={{ once: true, margin: '-60px' }}
             className="border-l-4 border-[#1A73E8] pl-6 lg:pl-8"
           >
-            <p className="text-3xl sm:text-4xl lg:text-5xl font-black leading-[1.1] tracking-tight text-[#0B1B3F]">
+            <p className="font-heading text-3xl sm:text-4xl lg:text-5xl leading-[1.1] tracking-tight text-[#0B1B3F]">
               &ldquo;Our platform embodies visual learning methodologies designed to invoke and strengthen a learner&rsquo;s{' '}
               <span className="bg-gradient-to-r from-[#1A73E8] to-[#1E3A8A] bg-clip-text text-transparent">
                 multiple intelligences
@@ -1052,7 +1030,7 @@ export default function LandingPage() {
           >
             <div>
               <p className="text-xs font-bold tracking-[0.2em] text-[#1A73E8] mb-4">LEARNING METHODOLOGY</p>
-              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#0B1B3F] leading-[1.05]">
+              <h2 className="font-heading text-4xl sm:text-5xl lg:text-6xl tracking-tight text-[#0B1B3F] leading-[1.05]">
                 Eight Ways
                 <br />
                 of{' '}
@@ -1108,7 +1086,7 @@ export default function LandingPage() {
             className="mb-14 max-w-3xl"
           >
             <p className="text-xs font-bold tracking-[0.2em] text-[#1A73E8] mb-4">PLATFORM INTELLIGENCE</p>
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#0B1B3F] leading-[1.05] mb-5">
+            <h2 className="font-heading text-4xl sm:text-5xl lg:text-6xl tracking-tight text-[#0B1B3F] leading-[1.05] mb-5">
               AI That Actually{' '}
               <span className="bg-gradient-to-r from-[#1A73E8] to-[#1E3A8A] bg-clip-text text-transparent">Knows You</span>
             </h2>
@@ -1176,7 +1154,7 @@ export default function LandingPage() {
             <Badge className="mb-4 rounded-full bg-blue-50 text-blue-700 border-blue-200 text-xs font-semibold">
               See It in Action
             </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground mb-4">
+            <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-foreground mb-4">
               A real product,{' '}
               <span className="gradient-text">not a concept</span>
             </h2>
@@ -1242,7 +1220,7 @@ export default function LandingPage() {
             className="mb-16 max-w-2xl"
           >
             <p className="text-xs font-bold tracking-[0.2em] text-[#1A73E8] mb-4">GETTING STARTED</p>
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#0B1B3F] leading-[1.05] mb-5">
+            <h2 className="font-heading text-4xl sm:text-5xl lg:text-6xl tracking-tight text-[#0B1B3F] leading-[1.05] mb-5">
               Up and Learning{' '}
               <span className="bg-gradient-to-r from-[#1A73E8] to-[#1E3A8A] bg-clip-text text-transparent">in Four Steps</span>
             </h2>
@@ -1285,7 +1263,7 @@ export default function LandingPage() {
             className="mb-14 max-w-2xl"
           >
             <p className="text-xs font-bold tracking-[0.2em] text-[#1A73E8] mb-4">ACADEMIC PATHWAYS</p>
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#0B1B3F] leading-[1.05] mb-5">
+            <h2 className="font-heading text-4xl sm:text-5xl lg:text-6xl tracking-tight text-[#0B1B3F] leading-[1.05] mb-5">
               Nine Pathways.
               <br />
               <span className="bg-gradient-to-r from-[#1A73E8] to-[#1E3A8A] bg-clip-text text-transparent">One Platform.</span>
@@ -1349,7 +1327,7 @@ export default function LandingPage() {
             <Badge className="mb-4 rounded-full bg-amber-50 text-amber-700 border-amber-200 text-xs font-semibold">
               Real People, Real Results
             </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground mb-4">
+            <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-foreground mb-4">
               What people are saying
             </h2>
             <p className="text-muted-foreground text-base sm:text-lg">
@@ -1420,7 +1398,7 @@ export default function LandingPage() {
             <Badge className="mb-4 rounded-full bg-slate-100 text-slate-700 border-slate-200 text-xs font-semibold">
               FAQ
             </Badge>
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground mb-4">
+            <h2 className="font-heading text-3xl sm:text-4xl tracking-tight text-foreground mb-4">
               Common questions
             </h2>
           </motion.div>
@@ -1458,7 +1436,7 @@ export default function LandingPage() {
           className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 text-center"
         >
           <p className="text-xs font-bold tracking-[0.25em] text-[#1A73E8] mb-5">START TODAY</p>
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white mb-6 leading-[1.05]">
+          <h2 className="font-heading text-4xl sm:text-5xl lg:text-6xl tracking-tight text-white mb-6 leading-[1.05]">
             Your Smartest
             <br />
             <span className="bg-gradient-to-r from-[#1A73E8] via-[#60A5FA] to-[#F5B400] bg-clip-text text-transparent">
