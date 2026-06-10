@@ -5,7 +5,7 @@ import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
   getTeacherCourses, getEnrollmentsForCourse, getModulesWithLessons,
-  createAttendanceRecord, getAttendanceForCourse,
+  createAttendanceRecord, getAttendanceForCourse, getUser,
   AttendanceRecord, AttendanceEntry, Course,
 } from '@/lib/db';
 import { Timestamp } from 'firebase/firestore';
@@ -56,11 +56,15 @@ export default function TeacherAttendancePage() {
       getModulesWithLessons(selectedCourse),
       getEnrollmentsForCourse(selectedCourse),
       getAttendanceForCourse(selectedCourse),
-    ]).then(([mods, enrs, recs]) => {
+    ]).then(async ([mods, enrs, recs]) => {
       const allLessons = mods.flatMap(m => m.lessons.map(l => ({ id: l.id!, title: l.title })));
       setLessons(allLessons);
       setSelectedLesson('');
-      setStudents(enrs.map(e => ({ studentId: e.studentId, name: `Student ${e.studentId.slice(0, 6)}` })));
+      const roster = await Promise.all(enrs.map(async e => {
+        const profile = await getUser(e.studentId);
+        return { studentId: e.studentId, name: profile?.name ?? 'Student' };
+      }));
+      setStudents(roster.sort((a, b) => a.name.localeCompare(b.name)));
       setStatuses({});
       setRecords(recs);
     });
@@ -143,7 +147,7 @@ export default function TeacherAttendancePage() {
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">
-                        {s.studentId.slice(0, 2).toUpperCase()}
+                        {s.name.charAt(0).toUpperCase()}
                       </div>
                       <span className="text-sm font-medium text-foreground">{s.name}</span>
                     </div>
@@ -202,7 +206,7 @@ export default function TeacherAttendancePage() {
                   <div className="border-t border-border px-4 pb-4 pt-3 space-y-2">
                     {r.records.map(e => (
                       <div key={e.studentId} className="flex items-center justify-between text-sm">
-                        <span className="text-foreground">{e.studentName || e.studentId.slice(0, 8)}</span>
+                        <span className="text-foreground">{e.studentName || 'Student'}</span>
                         <span className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold border ${STATUS_STYLES[e.status]}`}>
                           {STATUS_ICONS[e.status]} {e.status}
                         </span>
