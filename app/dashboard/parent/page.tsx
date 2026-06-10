@@ -47,7 +47,7 @@ export default function ParentDashboard() {
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-2xl font-extrabold text-foreground tracking-tight">Parent Portal</h1>
+          <h1 className="font-heading text-3xl text-foreground tracking-tight">Parent Portal</h1>
           <p className="text-muted-foreground text-sm mt-1">Monitor your child's progress and achievements.</p>
         </div>
         <Link href="/dashboard/parent/communications" className={buttonVariants({ variant: 'outline' }) + ' rounded-xl gap-2'}>
@@ -83,7 +83,7 @@ export default function ParentDashboard() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <h2 className="text-xl font-extrabold">{childProfile.name}</h2>
+                      <h2 className="font-heading text-2xl">{childProfile.name}</h2>
                       <p className="text-blue-200 text-sm capitalize">
                         {childProfile.level || 'Student'} · {childProfile.learningStyle || 'Visual'} learner
                       </p>
@@ -105,7 +105,7 @@ export default function ParentDashboard() {
                   ].map((s, i) => (
                     <div key={i} className="p-4 text-center">
                       <div className="flex justify-center mb-1">{s.icon}</div>
-                      <p className="text-xl font-extrabold text-foreground">{s.value}</p>
+                      <p className="font-heading text-2xl text-foreground">{s.value}</p>
                       <p className="text-xs text-muted-foreground">{s.label}</p>
                     </div>
                   ))}

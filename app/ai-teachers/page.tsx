@@ -236,7 +236,7 @@ function TeacherCard({
 
       {/* Body */}
       <div className="p-5 flex flex-col flex-1">
-        <h3 className="text-base font-extrabold text-[#0B1B3F] leading-tight mb-1">{teacher.name}</h3>
+        <h3 className="font-heading text-lg text-[#0B1B3F] leading-tight mb-1">{teacher.name}</h3>
         <p className="text-xs text-slate-500 leading-snug mb-3 line-clamp-2">{teacher.title}</p>
 
         <div className="flex flex-wrap gap-1 mb-4">
