@@ -10,8 +10,7 @@ import {
 import { UnitReportCard, UnitReportData } from '@/components/unit-report-card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { buttonVariants } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Zap, BookOpen, MessageSquare, Trophy, UserRound, FileBarChart } from 'lucide-react';
+import { Zap, BookOpen, MessageSquare, Trophy, UserRound, FileBarChart, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 
 interface ChildData {
@@ -20,6 +19,11 @@ interface ChildData {
   enrollments: { course: Course; enrollment: Enrollment }[];
   unitReports: UnitReportData[];
 }
+
+const fadeUp: Record<string, any> = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1], delay: i * 0.08 } }),
+};
 
 async function buildUnitReports(
   childId: string,
@@ -79,88 +83,110 @@ export default function ParentDashboard() {
     });
   }, [user]);
 
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
   if (loading) return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-4">
-      {[1, 2].map(i => <div key={i} className="h-48 bg-muted animate-pulse rounded-2xl" />)}
+    <div className="max-w-5xl mx-auto px-0 sm:px-2 py-2 space-y-5">
+      <div className="h-24 bg-muted animate-pulse rounded-3xl" />
+      {[1, 2].map(i => <div key={i} className="h-64 bg-muted animate-pulse rounded-[2rem]" />)}
     </div>
   );
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+    <div className="max-w-5xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
+
+      {/* ── Greeting ── */}
+      <motion.header variants={fadeUp} initial="hidden" animate="visible" custom={0}
+        className="pt-2 flex flex-col sm:flex-row sm:items-end justify-between gap-6"
       >
         <div>
-          <h1 className="font-heading text-3xl text-foreground tracking-tight">Parent Portal</h1>
-          <p className="text-muted-foreground text-sm mt-1">Monitor your child's progress and achievements.</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-amber-600 flex items-center gap-2">
+            <span className="w-5 h-px bg-amber-600 inline-block" /> Family overview · {today}
+          </p>
+          <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-3">
+            Your family's <span className="gradient-text italic">progress</span>
+          </h1>
+          <p className="text-muted-foreground mt-2 text-[15px]">Every lesson, score, and milestone — in one place.</p>
         </div>
-        <Link href="/dashboard/parent/communications" className={buttonVariants({ variant: 'outline' }) + ' rounded-xl gap-2'}>
-          <MessageSquare className="w-4 h-4" /> Messages
+        <Link href="/dashboard/parent/communications"
+          className={buttonVariants({ variant: 'outline' }) + ' rounded-full h-11 px-5 gap-2 font-semibold shrink-0'}
+        >
+          <MessageSquare className="w-4 h-4" /> Message teachers
         </Link>
-      </motion.div>
+      </motion.header>
 
       {children.length === 0 ? (
-        <div className="text-center py-20 bg-muted/30 rounded-2xl border border-dashed border-border">
-          <UserRound className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="font-semibold text-muted-foreground">No linked children yet.</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Link your child's account via profile settings or during onboarding.
+        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
+          className="relative text-center py-20 bg-card rounded-[2rem] border border-border overflow-hidden"
+        >
+          <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-amber-500/8 blur-[80px]" />
+          <UserRound className="w-12 h-12 mx-auto mb-5 text-amber-600/40" />
+          <h3 className="font-heading text-3xl text-foreground mb-2">No linked children yet</h3>
+          <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+            Link your child's account via profile settings or during onboarding to see their progress here.
           </p>
-        </div>
+        </motion.div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-10">
           {children.map(({ id, profile: childProfile, enrollments, unitReports }, ci) => {
             const xp = childProfile.xp ?? 0;
-            // Use `progress` field (0–100) — completedAt does not exist in Enrollment
             const completed = enrollments.filter(e => e.enrollment.progress === 100);
             const inProgress = enrollments.filter(e => e.enrollment.progress > 0 && e.enrollment.progress < 100);
 
             return (
-              <motion.div key={id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: ci * 0.1 }}
-                className="bg-card border border-border rounded-3xl overflow-hidden"
+              <motion.div key={id} variants={fadeUp} initial="hidden" animate="visible" custom={1 + ci}
+                className="bg-card border border-border rounded-[2rem] overflow-hidden shadow-[0_8px_40px_-12px_rgba(15,23,42,0.08)]"
               >
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="w-14 h-14 border-2 border-white/40">
-                      <AvatarFallback className="bg-white/20 text-white font-bold text-xl">
+                {/* Child hero band */}
+                <div className="relative bg-[#070B14] p-7 sm:p-8 text-white overflow-hidden">
+                  <div className="pointer-events-none absolute inset-0">
+                    <div className="absolute -top-20 -left-16 w-72 h-72 rounded-full bg-[#1A73E8]/25 blur-[80px]" />
+                    <div className="absolute -bottom-24 -right-10 w-72 h-72 rounded-full bg-[#7C3AED]/20 blur-[80px]" />
+                  </div>
+                  <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
+                    <Avatar className="w-16 h-16 border-2 border-white/20 shadow-[0_0_30px_rgba(26,115,232,0.35)] shrink-0">
+                      <AvatarFallback className="bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] text-white font-bold text-2xl">
                         {childProfile.name?.charAt(0)?.toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1">
-                      <h2 className="font-heading text-2xl">{childProfile.name}</h2>
-                      <p className="text-blue-200 text-sm capitalize">
+                    <div className="flex-1 min-w-0">
+                      <h2 className="font-heading text-3xl sm:text-4xl leading-tight">{childProfile.name}</h2>
+                      <p className="text-slate-400 text-sm capitalize mt-1">
                         {childProfile.level || 'Student'} · {childProfile.learningStyle || 'Visual'} learner
                       </p>
                     </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-1.5 text-yellow-300 font-bold text-lg">
-                        <Zap className="w-5 h-5" />{xp.toLocaleString()} XP
+                    <div className="sm:text-right shrink-0">
+                      <div className="flex sm:justify-end items-center gap-2 text-amber-300">
+                        <Zap className="w-5 h-5 fill-amber-300" />
+                        <span className="font-heading text-3xl leading-none">{xp.toLocaleString()}</span>
+                        <span className="text-xs font-bold uppercase tracking-wider text-amber-300/70 mt-1">XP</span>
                       </div>
-                      <p className="text-blue-200 text-xs mt-0.5">{enrollments.length} courses enrolled</p>
+                      <p className="text-slate-500 text-xs mt-1.5">{enrollments.length} course{enrollments.length !== 1 ? 's' : ''} enrolled</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 divide-x divide-border border-b border-border">
+                {/* Stats band */}
+                <div className="grid grid-cols-3 divide-x divide-border border-b border-border bg-muted/30">
                   {[
-                    { label: 'Enrolled', value: enrollments.length, icon: <BookOpen className="w-4 h-4 text-blue-500" /> },
-                    { label: 'In Progress', value: inProgress.length, icon: <Zap className="w-4 h-4 text-amber-500" /> },
-                    { label: 'Completed', value: completed.length, icon: <Trophy className="w-4 h-4 text-emerald-500" /> },
-                  ].map((s, i) => (
-                    <div key={i} className="p-4 text-center">
-                      <div className="flex justify-center mb-1">{s.icon}</div>
-                      <p className="font-heading text-2xl text-foreground">{s.value}</p>
-                      <p className="text-xs text-muted-foreground">{s.label}</p>
+                    { label: 'Enrolled', value: enrollments.length, icon: BookOpen, accent: 'text-[#1A73E8]' },
+                    { label: 'In Progress', value: inProgress.length, icon: TrendingUp, accent: 'text-amber-600' },
+                    { label: 'Completed', value: completed.length, icon: Trophy, accent: 'text-emerald-600' },
+                  ].map((s) => (
+                    <div key={s.label} className="p-5 text-center">
+                      <s.icon className={`w-4 h-4 mx-auto ${s.accent}`} />
+                      <p className="font-heading text-3xl sm:text-4xl text-foreground mt-2 leading-none">{s.value}</p>
+                      <p className="text-[11px] text-muted-foreground mt-1.5 font-semibold uppercase tracking-wider">{s.label}</p>
                     </div>
                   ))}
                 </div>
 
                 {/* Unit mastery report cards */}
                 {unitReports.length > 0 && (
-                  <div className="p-6 border-b border-border space-y-4">
+                  <div className="p-6 sm:p-7 border-b border-border space-y-4">
                     <div className="flex items-center gap-2">
-                      <FileBarChart className="w-4 h-4 text-blue-600" />
-                      <h3 className="font-bold text-foreground text-sm">Unit Report Cards</h3>
+                      <FileBarChart className="w-4 h-4 text-primary" />
+                      <h3 className="font-heading text-xl text-foreground">Unit report cards</h3>
                     </div>
                     <div className="grid sm:grid-cols-2 gap-4">
                       {unitReports.map(report => (
@@ -170,23 +196,30 @@ export default function ParentDashboard() {
                   </div>
                 )}
 
-                <div className="p-6 space-y-4">
-                  <h3 className="font-bold text-foreground text-sm">Course Progress</h3>
+                {/* Course progress */}
+                <div className="p-6 sm:p-7 space-y-5">
+                  <h3 className="font-heading text-xl text-foreground">Course progress</h3>
                   {enrollments.length === 0 ? (
                     <p className="text-sm text-muted-foreground">Not enrolled in any courses yet.</p>
                   ) : (
-                    <div className="space-y-4">
-                      {enrollments.map(({ course, enrollment }) => {
+                    <div className="space-y-5">
+                      {enrollments.map(({ course, enrollment }, i) => {
                         const pct = enrollment.progress ?? 0;
                         const done = enrollment.completedLessons?.length ?? 0;
                         return (
                           <div key={course.id}>
-                            <div className="flex items-center justify-between mb-1.5">
-                              <p className="text-sm font-semibold text-foreground truncate max-w-[65%]">{course.title}</p>
-                              <span className="text-xs text-muted-foreground">{done} lessons done</span>
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-sm font-semibold text-foreground truncate max-w-[60%]">{course.title}</p>
+                              <span className="text-xs text-muted-foreground font-medium">{done} lesson{done !== 1 ? 's' : ''} done · <span className="font-heading text-base text-foreground">{pct}%</span></span>
                             </div>
-                            <Progress value={pct} className="h-2" />
-                            <p className="text-xs text-muted-foreground mt-1">{pct}% complete</p>
+                            <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+                              <motion.div
+                                className="h-full rounded-full bg-gradient-to-r from-[#1A73E8] to-[#7C3AED]"
+                                initial={{ width: 0 }}
+                                animate={{ width: `${pct}%` }}
+                                transition={{ duration: 1, delay: 0.3 + i * 0.1, ease: 'easeOut' }}
+                              />
+                            </div>
                           </div>
                         );
                       })}
