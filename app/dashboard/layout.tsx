@@ -11,7 +11,7 @@ import {
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
-  Sparkles, Store,
+  Sparkles, Store, Layers,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -180,6 +180,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <NavItem href="/dashboard/admin" icon={BarChart} label="Analytics" activeBgClass={aB} activeTextClass={aT} {...navProps} />
               <NavItem href="/ai-studio" icon={Sparkles} label="AI Studio ↗" activeBgClass={aB} activeTextClass={aT} {...navProps} />
               <NavItem href="/dashboard/admin/courses" icon={Presentation} label="All Courses" activeBgClass={aB} activeTextClass={aT} {...navProps} />
+              <NavItem href="/dashboard/admin/curriculum" icon={Layers} label="Curriculum CMS" activeBgClass={aB} activeTextClass={aT} {...navProps} />
               <NavItem href="/courses" icon={Store} label="Marketplace" activeBgClass={aB} activeTextClass={aT} {...navProps} />
               <NavItem href="/dashboard/admin/institutions" icon={Users} label="Institutions" activeBgClass={aB} activeTextClass={aT} {...navProps} />
               <NavItem href="/dashboard/admin/access" icon={Shield} label="Access Config" activeBgClass={aB} activeTextClass={aT} {...navProps} />
