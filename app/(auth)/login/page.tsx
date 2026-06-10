@@ -6,7 +6,6 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
   signOut,
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
@@ -17,11 +16,8 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { motion } from 'motion/react';
 import Link from 'next/link';
-import { MessageSquare, Mail, Phone } from 'lucide-react';
 
-const SUPER_ADMIN_EMAIL = 'harry.seggu@gmail.com';
-
-type Channel = 'sms' | 'whatsapp' | 'email';
+const SUPER_ADMIN_EMAIL = 'harryseggu@gmail.com';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,12 +26,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // 2FA state
+  // 2FA state — code is sent to the account's email address.
   const [pendingUid, setPendingUid] = useState<string | null>(null);
-  const [pendingPhone, setPendingPhone] = useState<string | null>(null);
-  const [channel, setChannel] = useState<Channel>('sms');
   const [code, setCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
+  const [otpToken, setOtpToken] = useState('');
+  const [otpExpiresAt, setOtpExpiresAt] = useState(0);
 
   const routeUser = async (uid: string) => {
     const snap = await getDoc(doc(db, 'users', uid));
@@ -48,7 +44,9 @@ export default function LoginPage() {
     else router.push('/onboarding');
   };
 
-  const writeAdminProfile = async (uid: string) => {
+  // The super-admin account is provisioned in Firebase; this just keeps its
+  // Firestore profile pinned to the admin role.
+  const ensureAdminProfile = async (uid: string) => {
     const snap = await getDoc(doc(db, 'users', uid));
     if (!snap.exists()) {
       await setDoc(doc(db, 'users', uid), {
@@ -69,53 +67,48 @@ export default function LoginPage() {
     }
   };
 
+  const sendOtp = async (targetEmail: string): Promise<'sent' | 'skip' | 'error'> => {
+    const res = await fetch('/api/auth/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: targetEmail }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      toast.error(data.error || 'Failed to send verification code.');
+      return 'error';
+    }
+    if (data.configured === false) return 'skip';
+    setOtpToken(data.token);
+    setOtpExpiresAt(data.expiresAt);
+    setCode('');
+    setCodeSent(true);
+    return 'sent';
+  };
+
   const afterCredentialSuccess = async (uid: string) => {
     const snap = await getDoc(doc(db, 'users', uid));
     const data = snap.exists() ? snap.data() : null;
+
+    // Super admin and unverified accounts go straight in; verified accounts
+    // get an email 2FA code — unless the email service isn't configured, in
+    // which case we never lock anyone out.
     const isSuperAdmin = email.trim().toLowerCase() === SUPER_ADMIN_EMAIL;
+    const wants2fa = !isSuperAdmin && !!(data?.emailVerified || data?.phoneVerified);
 
-    if (isSuperAdmin) {
+    if (!wants2fa) {
       await routeUser(uid);
       return;
     }
 
-    const phone = data?.phone as string | undefined;
-    const phoneVerified = data?.phoneVerified as boolean | undefined;
-
-    if (phone && phoneVerified) {
+    const result = await sendOtp(email.trim());
+    if (result === 'sent') {
       setPendingUid(uid);
-      setPendingPhone(phone);
       setStep('twofa');
-      setCodeSent(false);
+      toast.success('We emailed you a 6-digit code.');
     } else {
+      // Service unavailable — don't strand the user at a dead 2FA screen.
       await routeUser(uid);
-    }
-  };
-
-  const sendOtp = async () => {
-    if (!pendingPhone && channel !== 'email') {
-      toast.error('No phone on file. Sign in with email channel.');
-      return;
-    }
-    try {
-      setLoading(true);
-      const target = channel === 'email' ? email.trim() : pendingPhone!;
-      const res = await fetch('/api/auth/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: target, channel }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || 'Failed to send verification code.');
-        return;
-      }
-      toast.success(`Code sent via ${channel === 'whatsapp' ? 'WhatsApp' : channel.toUpperCase()}`);
-      setCodeSent(true);
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to send code.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -132,11 +125,15 @@ export default function LoginPage() {
     }
     try {
       setLoading(true);
-      const target = channel === 'email' ? email.trim() : pendingPhone!;
       const res = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: target, code: code.trim() }),
+        body: JSON.stringify({
+          email: email.trim(),
+          code: code.trim(),
+          token: otpToken,
+          expiresAt: otpExpiresAt,
+        }),
       });
       const data = await res.json();
       if (!res.ok || !data.valid) {
@@ -151,12 +148,22 @@ export default function LoginPage() {
     }
   };
 
+  const resendCode = async () => {
+    try {
+      setLoading(true);
+      const result = await sendOtp(email.trim());
+      if (result === 'sent') toast.success('New code sent.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const cancelTwoFa = async () => {
     setStep('credentials');
     setCode('');
     setCodeSent(false);
     setPendingUid(null);
-    setPendingPhone(null);
+    setOtpToken('');
     try { await signOut(auth); } catch { /* noop */ }
   };
 
@@ -166,10 +173,11 @@ export default function LoginPage() {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       if (result.user.email?.toLowerCase() === SUPER_ADMIN_EMAIL) {
-        await writeAdminProfile(result.user.uid);
+        await ensureAdminProfile(result.user.uid);
       }
+      // Google already verified this email — no extra 2FA hop needed.
       setEmail(result.user.email || '');
-      await afterCredentialSuccess(result.user.uid);
+      await routeUser(result.user.uid);
     } catch (e: any) {
       const code = e?.code ?? '';
       if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
@@ -194,46 +202,16 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
-      const isSuperAdmin = email.trim().toLowerCase() === SUPER_ADMIN_EMAIL;
-
-      if (isSuperAdmin) {
-        try {
-          const result = await signInWithEmailAndPassword(auth, SUPER_ADMIN_EMAIL, password);
-          await writeAdminProfile(result.user.uid);
-          await routeUser(result.user.uid);
-          return;
-        } catch (signInErr: any) {
-          const code = signInErr?.code ?? '';
-          if (code === 'auth/user-not-found' || code === 'auth/invalid-credential') {
-            try {
-              const result = await createUserWithEmailAndPassword(auth, SUPER_ADMIN_EMAIL, password);
-              await writeAdminProfile(result.user.uid);
-              await routeUser(result.user.uid);
-              return;
-            } catch (createErr: any) {
-              if (createErr?.code === 'auth/email-already-in-use') {
-                toast.error(
-                  'This email is registered as a Google account in Firebase. Delete it first: Firebase Console → Authentication → Users → harry.seggu@gmail.com → Delete. Then log in again.',
-                  { duration: 12000 }
-                );
-                return;
-              }
-              toast.error('Failed to create admin account. Please try again.');
-              return;
-            }
-          }
-          if (code === 'auth/wrong-password') { toast.error('Incorrect password.'); return; }
-          toast.error(signInErr?.message || 'Admin sign-in failed. Please try again.');
-          return;
-        }
-      }
-
       const result = await signInWithEmailAndPassword(auth, email.trim(), password);
+      if (email.trim().toLowerCase() === SUPER_ADMIN_EMAIL) {
+        await ensureAdminProfile(result.user.uid);
+      }
       await afterCredentialSuccess(result.user.uid);
     } catch (e: any) {
       const code = e?.code ?? '';
       if (code === 'auth/invalid-email') toast.error('Invalid email address.');
       else if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') toast.error('Incorrect email or password.');
+      else if (code === 'auth/too-many-requests') toast.error('Too many failed attempts. Try again later or reset your password.');
       else if (code === 'auth/operation-not-allowed') toast.error('Email/password sign-in is not enabled in Firebase.');
       else toast.error('Sign in failed. Please try again.');
     } finally {
@@ -326,51 +304,11 @@ export default function LoginPage() {
       {step === 'twofa' && (
         <>
           <div className="mb-8">
-            <h2 className="text-3xl font-bold text-white mb-2">Two-factor authentication</h2>
+            <h2 className="text-3xl font-bold text-white mb-2">Check your email</h2>
             <p className="text-white/45 text-sm">
-              Choose how to receive your 6-digit code.
+              We sent a 6-digit code to <span className="text-white/70 font-semibold">{email}</span>.
             </p>
           </div>
-
-          <div className="space-y-2 mb-5">
-            <Label className="text-white/60 text-xs font-semibold uppercase tracking-wider">Send code via</Label>
-            <div className="grid grid-cols-3 gap-2 mt-1.5">
-              {[
-                { id: 'sms' as const, label: 'SMS', icon: <Phone className="w-3.5 h-3.5" /> },
-                { id: 'whatsapp' as const, label: 'WhatsApp', icon: <MessageSquare className="w-3.5 h-3.5" /> },
-                { id: 'email' as const, label: 'Email', icon: <Mail className="w-3.5 h-3.5" /> },
-              ].map(c => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => { setChannel(c.id); setCodeSent(false); }}
-                  disabled={loading}
-                  className={`flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-xl border-2 transition-all text-xs font-semibold ${
-                    channel === c.id
-                      ? 'border-[#1A73E8] bg-[#1A73E8]/15 text-[#60A5FA]'
-                      : 'border-white/10 bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60'
-                  }`}
-                >
-                  {c.icon}
-                  {c.label}
-                </button>
-              ))}
-            </div>
-            <p className="text-xs text-white/30 mt-1">
-              {channel === 'email' ? `Code will go to ${email}.` : `Code will go to ${pendingPhone}.`}
-            </p>
-          </div>
-
-          {!codeSent && (
-            <Button
-              type="button"
-              onClick={sendOtp}
-              className="w-full h-12 rounded-2xl bg-[#1A73E8] hover:bg-[#1557B0] text-white font-semibold shadow-lg shadow-blue-900/30"
-              disabled={loading}
-            >
-              {loading ? 'Sending…' : 'Send code'}
-            </Button>
-          )}
 
           {codeSent && (
             <form onSubmit={verifyTwoFa} className="space-y-4">
@@ -388,6 +326,7 @@ export default function LoginPage() {
                   autoFocus
                   disabled={loading}
                 />
+                <p className="text-xs text-white/30">It may take a minute to arrive. Check spam too.</p>
               </div>
               <Button
                 type="submit"
@@ -398,7 +337,7 @@ export default function LoginPage() {
               </Button>
               <button
                 type="button"
-                onClick={sendOtp}
+                onClick={resendCode}
                 disabled={loading}
                 className="w-full text-xs text-[#60A5FA] font-semibold hover:text-[#93C5FD] transition-colors"
               >

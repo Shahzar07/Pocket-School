@@ -91,7 +91,7 @@ export default function TeacherClassesPage() {
           </p>
         </div>
         {modules.length > 0 && (
-          <Select value={selectedId} onValueChange={setSelectedId}>
+          <Select value={selectedId} onValueChange={(v) => setSelectedId(v ?? '')}>
             <SelectTrigger className="w-64 rounded-xl">
               <SelectValue placeholder="Select a module" />
             </SelectTrigger>

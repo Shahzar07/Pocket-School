@@ -1,49 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isEmailServiceConfigured, verifyOtpToken } from '@/lib/email-otp';
 
 export const dynamic = 'force-dynamic';
 
-function normalizeTo(value: string): string {
-  return value.trim().startsWith('whatsapp:') ? value.trim() : value.trim();
-}
+const MAX_ATTEMPTS = 8;
+
+// Best-effort per-instance attempt counter against code brute-forcing.
+const attempts = new Map<string, { count: number; resetAt: number }>();
 
 export async function POST(req: NextRequest) {
-  const sid = process.env.TWILIO_ACCOUNT_SID;
-  const token = process.env.TWILIO_AUTH_TOKEN;
-  const serviceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
-
-  if (!sid || !token || !serviceSid) {
-    return NextResponse.json(
-      { error: 'Twilio not configured.' },
-      { status: 503 }
-    );
+  if (!isEmailServiceConfigured()) {
+    return NextResponse.json({ valid: false, error: 'Email verification is not configured.' }, { status: 503 });
   }
 
-  let body: { phone?: string; code?: string };
+  let body: { email?: string; code?: string; token?: string; expiresAt?: number };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
   }
 
-  const { phone, code } = body;
-  if (!phone || !code) {
-    return NextResponse.json({ error: 'phone and code are required.' }, { status: 400 });
+  const email = body.email?.trim().toLowerCase() ?? '';
+  const code = body.code?.trim() ?? '';
+  const token = body.token ?? '';
+  const expiresAt = Number(body.expiresAt);
+
+  if (!email || !/^\d{6}$/.test(code) || !token || !expiresAt) {
+    return NextResponse.json({ valid: false, error: 'email, code and token are required.' }, { status: 400 });
   }
 
-  try {
-    const twilio = (await import('twilio')).default;
-    const client = twilio(sid, token);
-    const check = await client.verify.v2
-      .services(serviceSid)
-      .verificationChecks.create({
-        to: normalizeTo(phone),
-        code: code.trim(),
-      });
-
-    const valid = check.status === 'approved';
-    return NextResponse.json({ valid, status: check.status });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Verification failed.';
-    return NextResponse.json({ valid: false, error: message }, { status: 400 });
+  const now = Date.now();
+  const entry = attempts.get(email);
+  if (entry && entry.resetAt > now && entry.count >= MAX_ATTEMPTS) {
+    return NextResponse.json(
+      { valid: false, error: 'Too many attempts. Request a new code.' },
+      { status: 429 }
+    );
   }
+  attempts.set(email, {
+    count: entry && entry.resetAt > now ? entry.count + 1 : 1,
+    resetAt: entry && entry.resetAt > now ? entry.resetAt : now + 15 * 60 * 1000,
+  });
+
+  const valid = verifyOtpToken(email, code, expiresAt, token);
+  if (valid) attempts.delete(email);
+
+  return NextResponse.json(
+    valid ? { valid: true } : { valid: false, error: 'Invalid or expired code.' },
+    { status: valid ? 200 : 400 }
+  );
 }

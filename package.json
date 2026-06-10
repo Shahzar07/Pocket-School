@@ -39,6 +39,7 @@
     "motion": "^12.23.24",
     "next": "^15.4.9",
     "next-themes": "^0.4.6",
+    "nodemailer": "^8.0.11",
     "postcss": "^8.5.6",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.1",
@@ -50,7 +51,6 @@
     "sonner": "^2.0.7",
     "stripe": "^22.1.1",
     "tailwind-merge": "^3.5.0",
-    "twilio": "^6.0.2",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
@@ -59,6 +59,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "@types/d3": "^7.4.3",
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "9.39.1",

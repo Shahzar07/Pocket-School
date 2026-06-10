@@ -11,15 +11,13 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { motion } from 'motion/react';
 import Link from 'next/link';
-import { GraduationCap, Presentation, Users, MessageSquare, Mail, Phone } from 'lucide-react';
+import { GraduationCap, Presentation, Users } from 'lucide-react';
 
 const ROLES = [
   { id: 'student', title: 'Student', icon: <GraduationCap className="w-5 h-5" /> },
   { id: 'teacher', title: 'Teacher', icon: <Presentation className="w-5 h-5" /> },
   { id: 'parent', title: 'Parent', icon: <Users className="w-5 h-5" /> },
 ];
-
-type Channel = 'sms' | 'whatsapp' | 'email';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -29,9 +27,12 @@ export default function SignupPage() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('student');
-  const [channel, setChannel] = useState<Channel>('sms');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // HMAC token returned by /api/auth/send-otp, required to verify the code.
+  const [otpToken, setOtpToken] = useState('');
+  const [otpExpiresAt, setOtpExpiresAt] = useState(0);
 
   const routeAfterSignup = (r: string) => {
     if (r === 'student') router.push('/onboarding');
@@ -54,6 +55,7 @@ export default function SignupPage() {
           avatarUrl: result.user.photoURL || '',
           role,
           xp: 0,
+          emailVerified: true,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
@@ -68,37 +70,73 @@ export default function SignupPage() {
     }
   };
 
-  const sendOtp = async () => {
-    if (!name.trim() || !email.trim() || !phone.trim() || !password) {
-      toast.error('Please fill in all fields');
-      return;
+  const validateForm = (): boolean => {
+    if (!name.trim() || !email.trim() || !password) {
+      toast.error('Please fill in your name, email and password.');
+      return false;
     }
     if (password.length < 6) {
       toast.error('Password must be at least 6 characters.');
-      return;
+      return false;
     }
-    if (channel !== 'email' && !/^\+[1-9]\d{6,14}$/.test(phone.trim())) {
-      toast.error('Phone must be in E.164 format, e.g. +447123456789');
-      return;
+    if (phone.trim() && !/^\+[1-9]\d{6,14}$/.test(phone.trim())) {
+      toast.error('Phone must be in international format, e.g. +447123456789 (or leave it blank).');
+      return false;
     }
+    return true;
+  };
+
+  const createAccount = async (emailVerified: boolean) => {
+    const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
+    await setDoc(doc(db, 'users', result.user.uid), {
+      email: result.user.email,
+      name: name.trim(),
+      avatarUrl: '',
+      role,
+      xp: 0,
+      emailVerified,
+      ...(phone.trim() ? { phone: phone.trim() } : {}),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    toast.success('Account created — welcome to Pocket School!');
+    routeAfterSignup(role);
+  };
+
+  const handleAuthError = (e: any) => {
+    if (e?.code === 'auth/operation-not-allowed') toast.error('Enable Email/Password authentication in Firebase Console.');
+    else if (e?.code === 'auth/invalid-email') toast.error('Invalid email address format.');
+    else if (e?.code === 'auth/email-already-in-use') toast.error('An account with this email already exists.');
+    else toast.error(e?.message || 'Failed to create account');
+  };
+
+  const sendOtp = async () => {
+    if (!validateForm()) return;
 
     try {
       setLoading(true);
-      const target = channel === 'email' ? email.trim() : phone.trim();
       const res = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: target, channel }),
+        body: JSON.stringify({ email: email.trim() }),
       });
       const data = await res.json();
       if (!res.ok) {
         toast.error(data.error || 'Failed to send verification code.');
         return;
       }
-      toast.success(`Code sent via ${channel === 'whatsapp' ? 'WhatsApp' : channel.toUpperCase()}`);
+      if (data.configured === false) {
+        // No email service on this deployment — don't block signups.
+        await createAccount(false);
+        return;
+      }
+      setOtpToken(data.token);
+      setOtpExpiresAt(data.expiresAt);
+      setCode('');
+      toast.success('Verification code sent — check your inbox.');
       setStep('verify');
     } catch (e: any) {
-      toast.error(e?.message || 'Failed to send code.');
+      handleAuthError(e);
     } finally {
       setLoading(false);
     }
@@ -113,36 +151,24 @@ export default function SignupPage() {
 
     try {
       setLoading(true);
-      const target = channel === 'email' ? email.trim() : phone.trim();
       const verifyRes = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: target, code: code.trim() }),
+        body: JSON.stringify({
+          email: email.trim(),
+          code: code.trim(),
+          token: otpToken,
+          expiresAt: otpExpiresAt,
+        }),
       });
       const verifyData = await verifyRes.json();
       if (!verifyRes.ok || !verifyData.valid) {
         toast.error(verifyData.error || 'Invalid or expired code.');
         return;
       }
-
-      const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
-      await setDoc(doc(db, 'users', result.user.uid), {
-        email: result.user.email,
-        name: name.trim(),
-        avatarUrl: '',
-        role,
-        xp: 0,
-        phone: phone.trim(),
-        phoneVerified: true,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-      routeAfterSignup(role);
+      await createAccount(true);
     } catch (e: any) {
-      if (e?.code === 'auth/operation-not-allowed') toast.error('Enable Email/Password authentication in Firebase Console.');
-      else if (e?.code === 'auth/invalid-email') toast.error('Invalid email address format.');
-      else if (e?.code === 'auth/email-already-in-use') toast.error('An account with this email already exists.');
-      else toast.error(e.message || 'Failed to create account');
+      handleAuthError(e);
     } finally {
       setLoading(false);
     }
@@ -156,12 +182,12 @@ export default function SignupPage() {
     >
       <div className="mb-7">
         <h2 className="text-3xl font-bold text-white mb-2">
-          {step === 'form' ? 'Create your account' : "Verify it's you"}
+          {step === 'form' ? 'Create your account' : 'Check your email'}
         </h2>
         <p className="text-white/45 text-sm">
           {step === 'form'
             ? 'Join Pocket School and start learning smarter.'
-            : `We sent a 6-digit code to your ${channel === 'whatsapp' ? 'WhatsApp' : channel === 'email' ? 'email' : 'phone'}.`}
+            : `We sent a 6-digit code to ${email}.`}
         </p>
       </div>
 
@@ -235,9 +261,10 @@ export default function SignupPage() {
                 onChange={e => setEmail(e.target.value)}
                 disabled={loading}
               />
+              <p className="text-xs text-white/25">We&apos;ll send a verification code to this address.</p>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="phone" className="text-white/60 text-xs font-semibold uppercase tracking-wider">Phone (with country code)</Label>
+              <Label htmlFor="phone" className="text-white/60 text-xs font-semibold uppercase tracking-wider">Phone <span className="text-white/30 normal-case font-normal">(optional)</span></Label>
               <Input
                 id="phone"
                 type="tel"
@@ -247,7 +274,6 @@ export default function SignupPage() {
                 onChange={e => setPhone(e.target.value)}
                 disabled={loading}
               />
-              <p className="text-xs text-white/25">For 2-factor authentication. E.164 format e.g. +447123456789</p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password" className="text-white/60 text-xs font-semibold uppercase tracking-wider">Password</Label>
@@ -260,33 +286,7 @@ export default function SignupPage() {
                 onChange={e => setPassword(e.target.value)}
                 disabled={loading}
               />
-            </div>
-
-            {/* Channel selector */}
-            <div className="space-y-2">
-              <Label className="text-white/60 text-xs font-semibold uppercase tracking-wider">Receive verification via</Label>
-              <div className="grid grid-cols-3 gap-2 mt-1">
-                {[
-                  { id: 'sms' as const, label: 'SMS', icon: <Phone className="w-3.5 h-3.5" /> },
-                  { id: 'whatsapp' as const, label: 'WhatsApp', icon: <MessageSquare className="w-3.5 h-3.5" /> },
-                  { id: 'email' as const, label: 'Email', icon: <Mail className="w-3.5 h-3.5" /> },
-                ].map(c => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => setChannel(c.id)}
-                    disabled={loading}
-                    className={`flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-xl border-2 transition-all text-xs font-semibold ${
-                      channel === c.id
-                        ? 'border-[#1A73E8] bg-[#1A73E8]/15 text-[#60A5FA]'
-                        : 'border-white/10 bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60'
-                    }`}
-                  >
-                    {c.icon}
-                    {c.label}
-                  </button>
-                ))}
-              </div>
+              <p className="text-xs text-white/25">At least 6 characters.</p>
             </div>
 
             <Button
@@ -294,7 +294,7 @@ export default function SignupPage() {
               className="w-full h-12 rounded-2xl bg-[#1A73E8] hover:bg-[#1557B0] text-white font-semibold text-base shadow-lg shadow-blue-900/30 transition-all mt-1"
               disabled={loading}
             >
-              {loading ? 'Sending code…' : 'Send Verification Code'}
+              {loading ? 'Working…' : 'Create Account'}
             </Button>
           </form>
         </>
@@ -317,7 +317,7 @@ export default function SignupPage() {
               disabled={loading}
             />
             <p className="text-xs text-white/30">
-              Sent to <span className="font-semibold text-white/50">{channel === 'email' ? email : phone}</span>
+              Sent to <span className="font-semibold text-white/50">{email}</span> — it may take a minute. Check spam too.
             </p>
           </div>
           <Button

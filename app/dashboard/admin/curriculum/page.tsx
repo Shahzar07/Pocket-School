@@ -250,7 +250,7 @@ export default function AdminCurriculumPage() {
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Year group</Label>
-                <Select value={modYearGroup} onValueChange={setModYearGroup}>
+                <Select value={modYearGroup} onValueChange={(v) => setModYearGroup(v ?? '')}>
                   <SelectTrigger className="rounded-xl h-10"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {YEAR_GROUPS.map(yg => <SelectItem key={yg} value={yg}>{yg}</SelectItem>)}
@@ -259,7 +259,7 @@ export default function AdminCurriculumPage() {
               </div>
               <div className="space-y-1.5">
                 <Label>Programme</Label>
-                <Select value={modProgrammeId} onValueChange={setModProgrammeId} disabled={programmes.length === 0}>
+                <Select value={modProgrammeId} onValueChange={(v) => setModProgrammeId(v ?? '')} disabled={programmes.length === 0}>
                   <SelectTrigger className="rounded-xl h-10"><SelectValue placeholder="None" /></SelectTrigger>
                   <SelectContent>
                     {programmes.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
