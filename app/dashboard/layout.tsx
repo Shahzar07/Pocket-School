@@ -147,6 +147,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <NavItem href="/dashboard/teacher/exams" icon={PenSquare} label="Exam Builder" activeBgClass={tB} activeTextClass={tT} {...navProps} />
               <NavItem href="/dashboard/teacher/report-cards" icon={FileBarChart} label="Report Cards" activeBgClass={tB} activeTextClass={tT} {...navProps} />
               <NavItem href="/dashboard/teacher/attendance" icon={ClipboardCheck} label="Attendance" activeBgClass={tB} activeTextClass={tT} {...navProps} />
+              <NavItem href="/dashboard/teacher/live" icon={Video} label="Live Classes" activeBgClass={tB} activeTextClass={tT} {...navProps} />
               <NavItem href="/dashboard/teacher/integrity" icon={AlertTriangle} label="Integrity" activeBgClass={tB} activeTextClass={tT} {...navProps} />
               <NavItem href="/dashboard/teacher/behaviour" icon={Star} label="Behaviour" activeBgClass={tB} activeTextClass={tT} {...navProps} />
               <NavSection label="Finance" />
