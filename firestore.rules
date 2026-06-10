@@ -23,6 +23,29 @@ service cloud.firestore {
       allow create: if isUser(userId);
       allow update: if isUser(userId) || isAdmin();
       allow delete: if isAdmin();
+
+      // Sparks wallet ledger
+      match /spark_transactions/{txId} {
+        allow read, create: if isUser(userId) || isAdmin();
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    // ── Programmes (curriculum) ───────────────────────────────
+    match /programmes/{programmeId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ── Unit mastery quiz attempts ────────────────────────────
+    match /unit_quiz_attempts/{attemptId} {
+      allow read: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid
+        || isTeacherOrAdmin()
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.childIds.hasAny([resource.data.studentId])
+      );
+      allow create: if isSignedIn() && incoming().studentId == request.auth.uid;
+      allow update, delete: if isAdmin();
     }
 
     // ── Courses ───────────────────────────────────────────────

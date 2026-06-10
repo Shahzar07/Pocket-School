@@ -4,6 +4,8 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { handleFirestoreError, OperationType } from '@/lib/firebase-errors';
 
+import type { Timestamp } from 'firebase/firestore';
+
 interface UserProfile {
   name: string;
   role: 'student' | 'teacher' | 'parent' | 'admin';
@@ -12,6 +14,11 @@ interface UserProfile {
   learningStyle?: string;
   interests?: string[];
   xp?: number;
+  yearGroup?: 'Year 7' | 'Year 8' | 'Year 9';
+  subscriptionTier?: 'free' | 'academic';
+  sparksBalance?: number;
+  sparksMonthlyAllowance?: number;
+  sparksGrantedAt?: Timestamp;
 }
 
 interface AuthState {

@@ -1,9 +1,10 @@
 import {
   collection, doc, getDoc, getDocs, setDoc, updateDoc, addDoc,
   deleteDoc, query, where, orderBy, limit, serverTimestamp,
-  increment, arrayUnion, Timestamp, writeBatch,
+  increment, arrayUnion, Timestamp, writeBatch, runTransaction,
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { ACADEMIC_MONTHLY_ALLOWANCE, UNIT_PASS_REWARD } from './sparks';
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -19,6 +20,11 @@ export interface UserProfile {
   childIds?: string[];
   phone?: string;
   phoneVerified?: boolean;
+  yearGroup?: 'Year 7' | 'Year 8' | 'Year 9';
+  subscriptionTier?: 'free' | 'academic';
+  sparksBalance?: number;
+  sparksMonthlyAllowance?: number;
+  sparksGrantedAt?: Timestamp;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -44,19 +50,34 @@ export interface Course {
   requirements?: string[];
   tags?: string[];
   workbookUrl?: string;
+  sowDocUrl?: string;
   enrollmentCount?: number;
   durationHours?: number;
   previewUrl?: string;
+  /** Discriminator: absent or 'marketplace' = teacher/marketplace course. 'curriculum' = a
+   * Programme Module (one subject for one academic year), organised into Units (the
+   * `modules` subcollection) and Lessons. */
+  kind?: 'marketplace' | 'curriculum';
+  programmeId?: string;
+  yearGroup?: string;
+  academicYear?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
 
+/** When `Course.kind === 'curriculum'`, each Module doc represents a curriculum "Unit"
+ * (one term block, ~10 hours, 7 lessons + 1 mastery quiz). */
 export interface Module {
   id: string;
   title: string;
   description?: string;
   courseId: string;
   order: number;
+  unitNumber?: number;
+  term?: string;
+  masteryThreshold?: number;
+  estimatedHours?: number;
+  sparkBudget?: number;
 }
 
 export interface Lesson {
@@ -67,14 +88,24 @@ export interface Lesson {
   order: number;
   contentSources?: { type: 'text' | 'url'; value: string }[];
   aiOutputs?: AiOutputs;
-  status?: 'draft' | 'published';
+  status?: 'draft' | 'in_review' | 'approved' | 'published';
+  lessonNumber?: number;
+  objectiveCodes?: string[];
+  isUnitQuiz?: boolean;
+  briefPrompt?: string;
+  teacherNotes?: string;
+  reviewedBy?: string;
+  reviewedAt?: Timestamp;
   createdAt?: Timestamp;
 }
 
 export interface AiOutputs {
   text?: string;
   flashcards?: { question: string; answer: string }[];
-  quiz?: { question: string; options: string[]; answer: string; explanation?: string }[];
+  quiz?: {
+    question: string; options: string[]; answer: string; explanation?: string;
+    objectiveCode?: string; sourceLessonId?: string;
+  }[];
   slides?: { title: string; bullets: string[] }[];
   notes?: string;
   summary?: string;
@@ -82,6 +113,8 @@ export interface AiOutputs {
   glossary?: { term: string; definition: string }[];
   mindmap?: string;
   infographic?: string;
+  videoScript?: string;
+  audioScript?: string;
 }
 
 export interface Enrollment {
@@ -89,6 +122,8 @@ export interface Enrollment {
   courseId: string;
   progress: number;
   completedLessons: string[];
+  /** lessonId -> list of unlocked AiOutputs format keys (curriculum Sparks economy) */
+  unlockedFormats?: Record<string, string[]>;
   enrolledAt?: Timestamp;
 }
 
@@ -142,6 +177,58 @@ export interface LessonNote {
   lessonId: string;
   content: string;
   updatedAt?: Timestamp;
+}
+
+// ─── Curriculum / Sparks / Mastery ─────────────────────────────
+
+export interface Programme {
+  id: string;
+  name: string;
+  description?: string;
+  yearGroups: string[];
+  subjects: string[];
+  requiredTier: 'free' | 'academic';
+  status: 'active' | 'draft';
+  createdAt?: Timestamp;
+}
+
+export interface SparkTransaction {
+  id: string;
+  amount: number;
+  type: 'allowance' | 'unlock' | 'earn' | 'admin_grant' | 'ai_studio';
+  format?: string;
+  courseId?: string;
+  lessonId?: string;
+  balanceAfter: number;
+  note?: string;
+  createdAt?: Timestamp;
+}
+
+export interface UnitQuizAttempt {
+  id: string;
+  studentId: string;
+  studentName?: string;
+  courseId: string;
+  unitId: string;
+  lessonId: string;
+  attemptNumber: number;
+  score: number;
+  total: number;
+  percentage: number;
+  passed: boolean;
+  timeTakenSeconds: number;
+  responses: {
+    questionIndex: number;
+    question: string;
+    objectiveCode?: string;
+    sourceLessonId?: string;
+    selected: string;
+    correct: boolean;
+  }[];
+  weakestObjective?: string;
+  recommendedLessonIds?: string[];
+  startedAt?: Timestamp;
+  completedAt?: Timestamp;
 }
 
 // ─── User ─────────────────────────────────────────────────────
@@ -255,6 +342,51 @@ export async function createLesson(courseId: string, moduleId: string, data: Omi
   return ref.id;
 }
 
+export async function updateUnit(courseId: string, unitId: string, data: Partial<Module>): Promise<void> {
+  await updateDoc(doc(db, 'courses', courseId, 'modules', unitId), data as Record<string, unknown>);
+}
+
+export async function updateLesson(courseId: string, moduleId: string, lessonId: string, data: Partial<Lesson>): Promise<void> {
+  await updateDoc(doc(db, 'courses', courseId, 'modules', moduleId, 'lessons', lessonId), {
+    ...data, updatedAt: serverTimestamp(),
+  });
+}
+
+// ─── Programmes & Curriculum Modules ───────────────────────────
+
+export async function getProgrammes(): Promise<Programme[]> {
+  const snap = await getDocs(query(collection(db, 'programmes'), orderBy('name')));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Programme));
+}
+
+export async function createProgramme(data: Omit<Programme, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, 'programmes'), { ...data, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function updateProgramme(id: string, data: Partial<Programme>): Promise<void> {
+  await updateDoc(doc(db, 'programmes', id), data as Record<string, unknown>);
+}
+
+/** Curriculum "Modules" are Course docs with kind === 'curriculum' (one subject for one
+ * year group). Optionally filter to a specific year group for the student dashboard. */
+export async function getCurriculumModules(yearGroup?: string): Promise<Course[]> {
+  const clauses = [where('kind', '==', 'curriculum'), where('status', '==', 'published')];
+  if (yearGroup) clauses.push(where('yearGroup', '==', yearGroup));
+  const snap = await getDocs(query(collection(db, 'courses'), ...clauses));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Course));
+}
+
+/** All curriculum modules regardless of status, for the admin CMS. */
+export async function getAllCurriculumModules(): Promise<Course[]> {
+  const snap = await getDocs(query(collection(db, 'courses'), where('kind', '==', 'curriculum')));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Course));
+}
+
+export async function createCurriculumModule(data: Omit<Course, 'id' | 'kind'>): Promise<string> {
+  return createCourse({ ...data, kind: 'curriculum' });
+}
+
 // ─── Enrollments ──────────────────────────────────────────────
 
 export async function getEnrolledCourses(studentId: string): Promise<{ course: Course; enrollment: Enrollment }[]> {
@@ -283,8 +415,16 @@ export async function enrollStudent(studentId: string, courseId: string) {
   }
 }
 
+/** Enrols a student in every published curriculum module for their year group. */
+export async function enrollInProgrammeModules(studentId: string, yearGroup: string): Promise<void> {
+  const modules = await getCurriculumModules(yearGroup);
+  for (const m of modules) {
+    await enrollStudent(studentId, m.id);
+  }
+}
+
 export async function markLessonComplete(
-  studentId: string, courseId: string, lessonId: string, xpReward = 50
+  studentId: string, courseId: string, lessonId: string, xpReward = 50, sparksReward = 0
 ): Promise<void> {
   const batch = writeBatch(db);
   const enrollRef = doc(db, 'courses', courseId, 'enrollments', studentId);
@@ -307,14 +447,26 @@ export async function markLessonComplete(
     completedLessons: arrayUnion(lessonId),
     progress,
   });
-  batch.update(doc(db, 'users', studentId), {
-    xp: increment(xpReward),
-    updatedAt: serverTimestamp(),
-  });
+  const userUpdate: Record<string, unknown> = { xp: increment(xpReward), updatedAt: serverTimestamp() };
+  if (sparksReward > 0) userUpdate.sparksBalance = increment(sparksReward);
+  batch.update(doc(db, 'users', studentId), userUpdate);
   await batch.commit();
 
   // Award badges based on XP milestones
   await checkAndAwardBadges(studentId, (enrollment as any).xp || 0, xpReward);
+
+  if (sparksReward > 0) {
+    const profile = await getUser(studentId);
+    await addDoc(collection(db, 'users', studentId, 'spark_transactions'), {
+      amount: sparksReward,
+      type: 'earn',
+      courseId,
+      lessonId,
+      balanceAfter: (profile?.sparksBalance ?? 0) + sparksReward,
+      note: 'Lesson completed',
+      createdAt: serverTimestamp(),
+    });
+  }
 }
 
 async function checkAndAwardBadges(studentId: string, currentXp: number, gained: number) {
@@ -336,6 +488,206 @@ async function checkAndAwardBadges(studentId: string, currentXp: number, gained:
         });
       }
     }
+  }
+}
+
+// ─── Sparks Wallet ────────────────────────────────────────────
+
+/**
+ * Atomically spend Sparks to unlock one content format on a curriculum lesson.
+ * Idempotent: if the format is already unlocked, no charge is made.
+ * Throws Error('INSUFFICIENT_SPARKS') when the balance can't cover the cost.
+ * Returns the balance after the transaction.
+ */
+export async function unlockLessonFormat(
+  uid: string, courseId: string, lessonId: string, format: string, cost: number
+): Promise<number> {
+  const userRef = doc(db, 'users', uid);
+  const enrollRef = doc(db, 'courses', courseId, 'enrollments', uid);
+  const txRef = doc(collection(db, 'users', uid, 'spark_transactions'));
+
+  return runTransaction(db, async (tx) => {
+    const [userSnap, enrollSnap] = await Promise.all([tx.get(userRef), tx.get(enrollRef)]);
+    if (!userSnap.exists()) throw new Error('USER_NOT_FOUND');
+    if (!enrollSnap.exists()) throw new Error('NOT_ENROLLED');
+
+    const balance = (userSnap.data().sparksBalance as number) ?? 0;
+    const unlocked = (enrollSnap.data().unlockedFormats as Record<string, string[]>) ?? {};
+    if (unlocked[lessonId]?.includes(format)) return balance;
+
+    if (balance < cost) throw new Error('INSUFFICIENT_SPARKS');
+    const balanceAfter = balance - cost;
+
+    tx.update(userRef, { sparksBalance: balanceAfter, updatedAt: serverTimestamp() });
+    tx.update(enrollRef, { [`unlockedFormats.${lessonId}`]: arrayUnion(format) });
+    tx.set(txRef, {
+      amount: -cost,
+      type: 'unlock',
+      format,
+      courseId,
+      lessonId,
+      balanceAfter,
+      createdAt: serverTimestamp(),
+    });
+    return balanceAfter;
+  });
+}
+
+/** Grant (or deduct, with negative amount) Sparks and record a ledger entry. */
+export async function awardSparks(
+  uid: string,
+  amount: number,
+  type: SparkTransaction['type'],
+  note?: string
+): Promise<number> {
+  const userRef = doc(db, 'users', uid);
+  const txRef = doc(collection(db, 'users', uid, 'spark_transactions'));
+  return runTransaction(db, async (tx) => {
+    const snap = await tx.get(userRef);
+    if (!snap.exists()) throw new Error('USER_NOT_FOUND');
+    const balanceAfter = ((snap.data().sparksBalance as number) ?? 0) + amount;
+    tx.update(userRef, { sparksBalance: balanceAfter, updatedAt: serverTimestamp() });
+    tx.set(txRef, {
+      amount,
+      type,
+      balanceAfter,
+      ...(note ? { note } : {}),
+      createdAt: serverTimestamp(),
+    });
+    return balanceAfter;
+  });
+}
+
+/** Top up the monthly allowance for Academic subscribers, at most once per 30 days. */
+export async function grantMonthlySparksIfDue(uid: string, profile: UserProfile): Promise<boolean> {
+  if (profile.subscriptionTier !== 'academic') return false;
+  const allowance = profile.sparksMonthlyAllowance ?? ACADEMIC_MONTHLY_ALLOWANCE;
+  if (allowance <= 0) return false;
+
+  const last = profile.sparksGrantedAt;
+  if (last) {
+    const elapsedDays = (Date.now() - last.toMillis()) / (1000 * 60 * 60 * 24);
+    if (elapsedDays < 30) return false;
+  }
+
+  await awardSparks(uid, allowance, 'allowance', 'Monthly Academic allowance');
+  await updateDoc(doc(db, 'users', uid), { sparksGrantedAt: serverTimestamp() });
+  return true;
+}
+
+export async function getSparkTransactions(uid: string, count = 50): Promise<SparkTransaction[]> {
+  try {
+    const q = query(
+      collection(db, 'users', uid, 'spark_transactions'),
+      orderBy('createdAt', 'desc'),
+      limit(count)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as SparkTransaction));
+  } catch {
+    return [];
+  }
+}
+
+/** Admin: switch a user's subscription tier. Granting 'academic' tops up immediately. */
+export async function setUserSubscription(uid: string, tier: 'free' | 'academic'): Promise<void> {
+  if (tier === 'academic') {
+    await updateDoc(doc(db, 'users', uid), {
+      subscriptionTier: 'academic',
+      sparksMonthlyAllowance: ACADEMIC_MONTHLY_ALLOWANCE,
+      sparksGrantedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    await awardSparks(uid, ACADEMIC_MONTHLY_ALLOWANCE, 'allowance', 'Academic subscription activated');
+  } else {
+    await updateDoc(doc(db, 'users', uid), {
+      subscriptionTier: 'free',
+      sparksMonthlyAllowance: 0,
+      updatedAt: serverTimestamp(),
+    });
+  }
+}
+
+// ─── Unit Quiz Attempts (Mastery) ─────────────────────────────
+
+/**
+ * Persist a unit mastery quiz attempt. Computes attemptNumber, weakestObjective
+ * and recommendedLessonIds from the responses. On a pass, marks the quiz lesson
+ * complete and awards UNIT_PASS_REWARD Sparks.
+ */
+export async function saveUnitQuizAttempt(
+  data: Omit<UnitQuizAttempt, 'id' | 'attemptNumber' | 'weakestObjective' | 'recommendedLessonIds' | 'completedAt'>
+): Promise<UnitQuizAttempt> {
+  // attemptNumber = previous attempts on this quiz lesson + 1
+  let attemptNumber = 1;
+  try {
+    const prevQ = query(
+      collection(db, 'unit_quiz_attempts'),
+      where('studentId', '==', data.studentId),
+      where('lessonId', '==', data.lessonId)
+    );
+    const prev = await getDocs(prevQ);
+    attemptNumber = prev.size + 1;
+  } catch { /* first attempt */ }
+
+  // Tally wrong answers per objective, and collect source lessons to revisit
+  const wrongByObjective: Record<string, number> = {};
+  const reviewLessonIds = new Set<string>();
+  for (const r of data.responses) {
+    if (r.correct) continue;
+    if (r.objectiveCode) {
+      wrongByObjective[r.objectiveCode] = (wrongByObjective[r.objectiveCode] ?? 0) + 1;
+    }
+    if (r.sourceLessonId) reviewLessonIds.add(r.sourceLessonId);
+  }
+  let weakestObjective: string | undefined;
+  let maxWrong = 0;
+  for (const [code, wrong] of Object.entries(wrongByObjective)) {
+    if (wrong > maxWrong) { maxWrong = wrong; weakestObjective = code; }
+  }
+  const recommendedLessonIds = Array.from(reviewLessonIds);
+
+  const ref = await addDoc(collection(db, 'unit_quiz_attempts'), {
+    ...data,
+    attemptNumber,
+    ...(weakestObjective ? { weakestObjective } : {}),
+    recommendedLessonIds,
+    completedAt: serverTimestamp(),
+  });
+
+  if (data.passed) {
+    await markLessonComplete(data.studentId, data.courseId, data.lessonId, 100);
+    await awardSparks(data.studentId, UNIT_PASS_REWARD, 'earn', 'Unit mastery quiz passed');
+  }
+
+  return {
+    ...data,
+    id: ref.id,
+    attemptNumber,
+    weakestObjective,
+    recommendedLessonIds,
+  } as UnitQuizAttempt;
+}
+
+export async function getUnitQuizAttempts(studentId: string, courseId?: string): Promise<UnitQuizAttempt[]> {
+  try {
+    const constraints = [where('studentId', '==', studentId)];
+    if (courseId) constraints.push(where('courseId', '==', courseId));
+    const snap = await getDocs(query(collection(db, 'unit_quiz_attempts'), ...constraints));
+    const attempts = snap.docs.map(d => ({ id: d.id, ...d.data() } as UnitQuizAttempt));
+    return attempts.sort((a, b) => (b.completedAt?.toMillis() ?? 0) - (a.completedAt?.toMillis() ?? 0));
+  } catch {
+    return [];
+  }
+}
+
+export async function getAttemptsForCourse(courseId: string): Promise<UnitQuizAttempt[]> {
+  try {
+    const snap = await getDocs(query(collection(db, 'unit_quiz_attempts'), where('courseId', '==', courseId)));
+    const attempts = snap.docs.map(d => ({ id: d.id, ...d.data() } as UnitQuizAttempt));
+    return attempts.sort((a, b) => (b.completedAt?.toMillis() ?? 0) - (a.completedAt?.toMillis() ?? 0));
+  } catch {
+    return [];
   }
 }
 
