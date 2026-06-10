@@ -3,17 +3,60 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { getChildrenProfiles, getEnrolledCourses, UserProfile, Course, Enrollment } from '@/lib/db';
+import {
+  getChildrenProfiles, getEnrolledCourses, getUnitQuizAttempts, getModulesWithLessons,
+  UserProfile, Course, Enrollment,
+} from '@/lib/db';
+import { UnitReportCard, UnitReportData } from '@/components/unit-report-card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { buttonVariants } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Zap, BookOpen, MessageSquare, Trophy, UserRound } from 'lucide-react';
+import { Zap, BookOpen, MessageSquare, Trophy, UserRound, FileBarChart } from 'lucide-react';
 import Link from 'next/link';
 
 interface ChildData {
   id: string;
   profile: UserProfile;
   enrollments: { course: Course; enrollment: Enrollment }[];
+  unitReports: UnitReportData[];
+}
+
+async function buildUnitReports(
+  childId: string,
+  enrollments: { course: Course; enrollment: Enrollment }[]
+): Promise<UnitReportData[]> {
+  const attempts = await getUnitQuizAttempts(childId);
+  if (attempts.length === 0) return [];
+
+  const reports: UnitReportData[] = [];
+  const courseIds = [...new Set(attempts.map(a => a.courseId))];
+  for (const courseId of courseIds) {
+    const course = enrollments.find(e => e.course.id === courseId)?.course;
+    const units = await getModulesWithLessons(courseId);
+    const courseAttempts = attempts.filter(a => a.courseId === courseId);
+    const unitIds = [...new Set(courseAttempts.map(a => a.unitId))];
+    for (const unitId of unitIds) {
+      const unit = units.find(u => u.module.id === unitId);
+      const unitAttempts = courseAttempts
+        .filter(a => a.unitId === unitId)
+        .sort((a, b) => (b.completedAt?.toMillis() ?? 0) - (a.completedAt?.toMillis() ?? 0));
+      const latest = unitAttempts[0];
+      const lessonById = new Map((unit?.lessons ?? []).map(l => [l.id, l]));
+      reports.push({
+        courseId,
+        courseTitle: course?.title ?? 'Course',
+        unitId,
+        unitTitle: unit?.module.title ?? 'Unit',
+        masteryThreshold: unit?.module.masteryThreshold ?? 70,
+        attempts: unitAttempts,
+        reviewLessons: (latest.recommendedLessonIds ?? [])
+          .map(id => lessonById.get(id))
+          .filter((l): l is NonNullable<typeof l> => !!l)
+          .map(l => ({ id: l.id, title: l.title, lessonNumber: l.lessonNumber })),
+      });
+    }
+  }
+  return reports;
 }
 
 export default function ParentDashboard() {
@@ -27,7 +70,8 @@ export default function ParentDashboard() {
       const data: ChildData[] = await Promise.all(
         childProfiles.map(async ({ id, data }) => {
           const enrollments = await getEnrolledCourses(id);
-          return { id, profile: data, enrollments };
+          const unitReports = await buildUnitReports(id, enrollments).catch(() => []);
+          return { id, profile: data, enrollments, unitReports };
         })
       );
       setChildren(data);
@@ -65,7 +109,7 @@ export default function ParentDashboard() {
         </div>
       ) : (
         <div className="space-y-8">
-          {children.map(({ id, profile: childProfile, enrollments }, ci) => {
+          {children.map(({ id, profile: childProfile, enrollments, unitReports }, ci) => {
             const xp = childProfile.xp ?? 0;
             // Use `progress` field (0–100) — completedAt does not exist in Enrollment
             const completed = enrollments.filter(e => e.enrollment.progress === 100);
@@ -110,6 +154,21 @@ export default function ParentDashboard() {
                     </div>
                   ))}
                 </div>
+
+                {/* Unit mastery report cards */}
+                {unitReports.length > 0 && (
+                  <div className="p-6 border-b border-border space-y-4">
+                    <div className="flex items-center gap-2">
+                      <FileBarChart className="w-4 h-4 text-blue-600" />
+                      <h3 className="font-bold text-foreground text-sm">Unit Report Cards</h3>
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      {unitReports.map(report => (
+                        <UnitReportCard key={`${report.courseId}-${report.unitId}`} report={report} />
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="p-6 space-y-4">
                   <h3 className="font-bold text-foreground text-sm">Course Progress</h3>

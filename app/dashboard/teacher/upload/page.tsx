@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
-  saveAiOutputsToLesson, createCourse, createModule, createLesson,
+  saveAiOutputsToLesson, createCourse, createModule, createLesson, updateCourse,
   getTeacherCourses, getModules, Course, Module, AiOutputs,
 } from '@/lib/db';
 import { Button } from '@/components/ui/button';
@@ -12,8 +12,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Sparkles, CheckCircle2, BookOpen, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { Sparkles, CheckCircle2, BookOpen, ChevronDown, ChevronUp, ExternalLink, FileUp, Upload } from 'lucide-react';
 import Link from 'next/link';
+import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { storage } from '@/lib/firebase';
+
+const YEAR_GROUPS = ['Year 7', 'Year 8', 'Year 9'];
 
 const FORMATS = [
   { id: 'text', label: 'Lesson Text' },
@@ -57,6 +61,14 @@ export default function UploadPage() {
 
   const [sessionLessons, setSessionLessons] = useState<SessionLesson[]>([]);
   const [sessionOpen, setSessionOpen] = useState(false);
+
+  // Curriculum SOW submission
+  const [sowTitle, setSowTitle] = useState('');
+  const [sowSubject, setSowSubject] = useState('');
+  const [sowYearGroup, setSowYearGroup] = useState(YEAR_GROUPS[0]);
+  const [sowFile, setSowFile] = useState<File | null>(null);
+  const [sowUploadPct, setSowUploadPct] = useState(0);
+  const [sowSubmitting, setSowSubmitting] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -192,6 +204,53 @@ export default function UploadPage() {
       toast.error('Failed to publish: ' + e.message);
     } finally {
       setPublishing(false);
+    }
+  };
+
+  const handleSowSubmit = async () => {
+    if (!user) return;
+    if (!sowTitle.trim()) { toast.error('Enter a module title.'); return; }
+    if (!sowFile) { toast.error('Choose a SOW document to upload.'); return; }
+
+    setSowSubmitting(true);
+    try {
+      const courseId = await createCourse({
+        title: sowTitle.trim(),
+        description: `${sowSubject || 'General'} curriculum module — ${sowYearGroup}`,
+        subject: sowSubject || 'General',
+        ownerId: user.uid,
+        ownerName: profile?.name,
+        status: 'pending_approval',
+        kind: 'curriculum',
+        yearGroup: sowYearGroup,
+        isPublic: false,
+        thumbnailUrl: '',
+      });
+
+      const path = `curriculum_docs/${user.uid}/${Date.now()}_${sowFile.name}`;
+      const sRef = storageRef(storage, path);
+      const task = uploadBytesResumable(sRef, sowFile);
+      const sowDocUrl = await new Promise<string>((resolve, reject) => {
+        task.on(
+          'state_changed',
+          snap => setSowUploadPct(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
+          reject,
+          async () => resolve(await getDownloadURL(task.snapshot.ref))
+        );
+      });
+
+      await updateCourse(courseId, { sowDocUrl });
+
+      toast.success('Curriculum SOW submitted for admin review!');
+      setSowTitle('');
+      setSowSubject('');
+      setSowYearGroup(YEAR_GROUPS[0]);
+      setSowFile(null);
+      setSowUploadPct(0);
+    } catch (e: any) {
+      toast.error('Failed to submit: ' + e.message);
+    } finally {
+      setSowSubmitting(false);
     }
   };
 
@@ -370,6 +429,67 @@ export default function UploadPage() {
           </AnimatePresence>
         </div>
       )}
+
+      <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
+        <div>
+          <h2 className="font-bold text-foreground flex items-center gap-2">
+            <FileUp className="w-4 h-4 text-blue-600" /> Submit Curriculum SOW for Review
+          </h2>
+          <p className="text-muted-foreground text-sm mt-1">
+            Upload a Scheme of Work document for a curriculum module. It will be sent to the
+            admin team for review before it appears in students&apos; My Learning.
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label>Module Title *</Label>
+            <Input value={sowTitle} onChange={e => setSowTitle(e.target.value)} placeholder="e.g. Science — Year 7" className="rounded-xl h-11" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Subject</Label>
+            <Input value={sowSubject} onChange={e => setSowSubject(e.target.value)} placeholder="e.g. Science" className="rounded-xl h-11" />
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label>Year Group</Label>
+            <select
+              value={sowYearGroup}
+              onChange={e => setSowYearGroup(e.target.value)}
+              className="w-full h-11 rounded-xl border border-input bg-background px-3 text-sm text-foreground"
+            >
+              {YEAR_GROUPS.map(yg => <option key={yg} value={yg}>{yg}</option>)}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>SOW Document *</Label>
+            <Input
+              type="file"
+              accept=".pdf,.doc,.docx,.xls,.xlsx"
+              onChange={e => setSowFile(e.target.files?.[0] ?? null)}
+              className="rounded-xl h-11 file:text-sm file:font-medium"
+            />
+          </div>
+        </div>
+
+        {sowSubmitting && sowUploadPct > 0 && (
+          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+            <div className="h-full bg-blue-600 transition-all" style={{ width: `${sowUploadPct}%` }} />
+          </div>
+        )}
+
+        <Button
+          onClick={handleSowSubmit}
+          disabled={sowSubmitting}
+          variant="outline"
+          className="w-full h-11 rounded-xl gap-2"
+        >
+          <Upload className="w-4 h-4" />
+          {sowSubmitting ? `Uploading… (${sowUploadPct}%)` : 'Submit for Review'}
+        </Button>
+      </div>
     </div>
   );
 }
