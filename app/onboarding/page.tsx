@@ -11,13 +11,17 @@ import { db } from '@/lib/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { toast } from 'sonner';
-import { linkChildToParent, createParentVerification } from '@/lib/db';
+import { linkChildToParent, createParentVerification, enrollInProgrammeModules, awardSparks } from '@/lib/db';
+import { SIGNUP_GRANT } from '@/lib/sparks';
 import { Timestamp } from 'firebase/firestore';
+
+const YEAR_GROUPS = ['Year 7', 'Year 8', 'Year 9'] as const;
 
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, profile } = useAuthSTORE();
   const [step, setStep] = useState(1);
+  const [yearGroup, setYearGroup] = useState('');
   const [level, setLevel] = useState('');
   const [learningStyle, setLearningStyle] = useState('');
   const [childEmail, setChildEmail] = useState('');
@@ -38,14 +42,21 @@ export default function OnboardingPage() {
     return null;
   }
 
+  const isYearGroup = (YEAR_GROUPS as readonly string[]).includes(yearGroup);
+
   const completeStudentOnboarding = async () => {
     try {
       setLoading(true);
       await updateDoc(doc(db, 'users', user.uid), {
         level: level || null,
         learningStyle: learningStyle || null,
+        ...(isYearGroup ? { yearGroup } : {}),
         updatedAt: serverTimestamp(),
       });
+      if (isYearGroup) {
+        await enrollInProgrammeModules(user.uid, yearGroup);
+        await awardSparks(user.uid, SIGNUP_GRANT, 'admin_grant', 'Welcome bonus');
+      }
       toast.success('Welcome to Pocket School! 🎉');
       router.push('/dashboard/student');
     } catch {
@@ -157,7 +168,7 @@ export default function OnboardingPage() {
       <div className="w-full max-w-3xl">
         {/* Progress */}
         <div className="flex items-center justify-center gap-2 mb-10">
-          {[1, 2].map(s => (
+          {[1, 2, 3].map(s => (
             <div
               key={s}
               className={`h-1.5 rounded-full transition-all duration-300 ${s <= step ? 'bg-primary w-16' : 'bg-muted w-8'}`}
@@ -168,6 +179,43 @@ export default function OnboardingPage() {
         <AnimatePresence mode="wait">
           {step === 1 && (
             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <div className="text-center mb-10">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <GraduationCap className="w-8 h-8 text-white" />
+                </div>
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">Which year are you in?</h1>
+                <p className="text-muted-foreground mt-2 text-base">We'll set up your curriculum modules and unit quizzes for the right year group.</p>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[...YEAR_GROUPS, 'Something else'].map(yg => (
+                  <button
+                    key={yg}
+                    onClick={() => setYearGroup(yg === 'Something else' ? 'other' : yg)}
+                    className={`p-4 rounded-2xl border-2 cursor-pointer transition-all text-left font-semibold ${
+                      yearGroup === (yg === 'Something else' ? 'other' : yg)
+                        ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                        : 'border-border hover:bg-muted text-foreground'
+                    }`}
+                  >
+                    {yg}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-8 flex justify-end">
+                <Button
+                  size="lg"
+                  className="rounded-full px-8 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+                  disabled={!yearGroup}
+                  onClick={() => setStep(yearGroup === 'other' ? 2 : 3)}
+                >
+                  Continue <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {step === 2 && (
+            <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <div className="text-center mb-10">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <GraduationCap className="w-8 h-8 text-white" />
@@ -190,16 +238,17 @@ export default function OnboardingPage() {
                   </button>
                 ))}
               </div>
-              <div className="mt-8 flex justify-end">
-                <Button size="lg" className="rounded-full px-8 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-white" disabled={!level} onClick={() => setStep(2)}>
+              <div className="mt-8 flex justify-between">
+                <Button variant="ghost" className="h-11 rounded-full px-6" onClick={() => setStep(1)}>Back</Button>
+                <Button size="lg" className="rounded-full px-8 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-white" disabled={!level} onClick={() => setStep(3)}>
                   Continue <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </div>
             </motion.div>
           )}
 
-          {step === 2 && (
-            <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+          {step === 3 && (
+            <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <div className="text-center mb-10">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <Brain className="w-8 h-8 text-white" />
@@ -230,7 +279,7 @@ export default function OnboardingPage() {
                 ))}
               </div>
               <div className="mt-8 flex justify-between">
-                <Button variant="ghost" className="h-11 rounded-full px-6" onClick={() => setStep(1)}>Back</Button>
+                <Button variant="ghost" className="h-11 rounded-full px-6" onClick={() => setStep(yearGroup === 'other' ? 2 : 1)}>Back</Button>
                 <Button
                   size="lg"
                   className="rounded-full px-8 h-12 bg-gradient-to-r from-teal-500 to-emerald-600 text-white"

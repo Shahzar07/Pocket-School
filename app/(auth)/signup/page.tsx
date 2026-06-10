@@ -12,7 +12,6 @@ import { toast } from 'sonner';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 import { GraduationCap, Presentation, Users, MessageSquare, Mail, Phone } from 'lucide-react';
-import { enrollStudent, getAllPublishedCourses } from '@/lib/db';
 
 const ROLES = [
   { id: 'student', title: 'Student', icon: <GraduationCap className="w-5 h-5" /> },
@@ -21,15 +20,6 @@ const ROLES = [
 ];
 
 type Channel = 'sms' | 'whatsapp' | 'email';
-
-async function autoEnrollInDemoCourses(uid: string) {
-  try {
-    const courses = await getAllPublishedCourses();
-    await Promise.all(courses.map(c => enrollStudent(uid, c.id)));
-  } catch {
-    // Non-fatal — enrollment can happen later
-  }
-}
 
 export default function SignupPage() {
   const router = useRouter();
@@ -67,7 +57,6 @@ export default function SignupPage() {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
-        if (role === 'student') await autoEnrollInDemoCourses(result.user.uid);
       }
       const existing = snap.exists() ? snap.data() : { role };
       routeAfterSignup(existing.role || role);
@@ -148,7 +137,6 @@ export default function SignupPage() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      if (role === 'student') await autoEnrollInDemoCourses(result.user.uid);
       routeAfterSignup(role);
     } catch (e: any) {
       if (e?.code === 'auth/operation-not-allowed') toast.error('Enable Email/Password authentication in Firebase Console.');
