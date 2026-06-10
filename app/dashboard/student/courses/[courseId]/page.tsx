@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { getCourse, getModulesWithLessons, getEnrolledCourses, Course, Module, Lesson, Enrollment } from '@/lib/db';
+import { getCourse, getModulesWithLessons, getEnrolledCourses, getUnitQuizAttempts, Course, Module, Lesson, Enrollment, UnitQuizAttempt } from '@/lib/db';
+import { getUnitStatuses, getCurriculumLessonStatus } from '@/lib/curriculum';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, BookOpen, CheckCircle2, Lock, PlayCircle, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowLeft, BookOpen, CheckCircle2, Lock, PlayCircle, ChevronDown, ChevronRight, Trophy } from 'lucide-react';
 
 interface ModuleWithLessons { module: Module; lessons: Lesson[] }
 
@@ -19,6 +20,7 @@ export default function CourseDetailPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [modules, setModules] = useState<ModuleWithLessons[]>([]);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
+  const [attempts, setAttempts] = useState<UnitQuizAttempt[]>([]);
   const [expanded, setExpanded] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,7 +30,15 @@ export default function CourseDetailPage() {
       getCourse(courseId),
       getModulesWithLessons(courseId),
       getEnrolledCourses(user.uid),
-    ]).then(([c, mods, enrolled]) => {
+    ]).then(async ([c, mods, enrolled]) => {
+      // Curriculum modules: students only see published lessons, and unit
+      // progression depends on mastery quiz attempts.
+      if (c?.kind === 'curriculum') {
+        mods = mods
+          .map(m => ({ module: m.module, lessons: m.lessons.filter(l => l.status === 'published') }))
+          .filter(m => m.lessons.length > 0);
+        setAttempts(await getUnitQuizAttempts(user.uid, courseId));
+      }
       setCourse(c);
       setModules(mods);
       setExpanded(mods.map(m => m.module.id));
@@ -38,10 +48,15 @@ export default function CourseDetailPage() {
     });
   }, [user, courseId]);
 
+  const isCurriculum = course?.kind === 'curriculum';
   const completedIds = new Set(enrollment?.completedLessons ?? []);
   const totalLessons = modules.reduce((acc, m) => acc + m.lessons.length, 0);
+  const unitStatuses = isCurriculum ? getUnitStatuses(modules, enrollment, attempts) : [];
 
   const getLessonStatus = (lesson: Lesson, modIndex: number, lesIndex: number): 'completed' | 'available' | 'locked' => {
+    if (isCurriculum) {
+      return getCurriculumLessonStatus(lesson, modules[modIndex].lessons, unitStatuses[modIndex].state, completedIds);
+    }
     if (completedIds.has(lesson.id)) return 'completed';
     if (modIndex === 0 && lesIndex === 0) return 'available';
     // Previous lesson must be completed to unlock next
@@ -95,33 +110,56 @@ export default function CourseDetailPage() {
 
       {/* Modules */}
       <div className="space-y-4">
-        {modules.map((mod, modIndex) => (
+        {modules.map((mod, modIndex) => {
+          const unitStatus = isCurriculum ? unitStatuses[modIndex] : null;
+          const unitLocked = unitStatus?.state === 'locked';
+          return (
           <motion.div key={mod.module.id}
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: modIndex * 0.08 }}
-            className="bg-card border border-border rounded-2xl overflow-hidden"
+            className={`bg-card border border-border rounded-2xl overflow-hidden ${unitLocked ? 'opacity-60' : ''}`}
           >
             <button
               className="w-full flex items-center justify-between p-5 text-left hover:bg-muted/50 transition-colors"
+              disabled={unitLocked}
               onClick={() => setExpanded(prev =>
                 prev.includes(mod.module.id) ? prev.filter(id => id !== mod.module.id) : [...prev, mod.module.id]
               )}
             >
               <div>
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Module {modIndex + 1}</span>
+                <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                    {isCurriculum ? `Unit ${mod.module.unitNumber ?? modIndex + 1}` : `Module ${modIndex + 1}`}
+                  </span>
+                  {isCurriculum && mod.module.term && (
+                    <Badge variant="outline" className="text-[10px] rounded-full">{mod.module.term}</Badge>
+                  )}
+                  {unitStatus?.state === 'passed' && (
+                    <Badge className="text-[10px] rounded-full bg-emerald-100 text-emerald-700 border-emerald-200 gap-1">
+                      <Trophy className="w-3 h-3" /> Passed{unitStatus.bestQuizPercentage !== undefined ? ` · ${unitStatus.bestQuizPercentage}%` : ''}
+                    </Badge>
+                  )}
+                  {unitStatus?.state === 'in_progress' && unitStatus.bestQuizPercentage !== undefined && (
+                    <Badge className="text-[10px] rounded-full bg-amber-100 text-amber-700 border-amber-200">
+                      Quiz best: {unitStatus.bestQuizPercentage}%
+                    </Badge>
+                  )}
                 </div>
                 <h3 className="font-bold text-foreground">{mod.module.title}</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {mod.lessons.filter(l => completedIds.has(l.id)).length}/{mod.lessons.length} lessons
+                  {unitLocked
+                    ? `Pass the previous unit's mastery quiz (≥${mod.module.masteryThreshold ?? 70}%) to unlock`
+                    : `${mod.lessons.filter(l => completedIds.has(l.id)).length}/${mod.lessons.length} lessons`}
                 </p>
               </div>
-              {expanded.includes(mod.module.id)
-                ? <ChevronDown className="w-5 h-5 text-muted-foreground" />
-                : <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              {unitLocked
+                ? <Lock className="w-5 h-5 text-muted-foreground" />
+                : expanded.includes(mod.module.id)
+                  ? <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                  : <ChevronRight className="w-5 h-5 text-muted-foreground" />
               }
             </button>
 
-            {expanded.includes(mod.module.id) && (
+            {expanded.includes(mod.module.id) && !unitLocked && (
               <div className="border-t border-border divide-y divide-border">
                 {mod.lessons.map((lesson, lesIndex) => {
                   const status = getLessonStatus(lesson, modIndex, lesIndex);
@@ -146,11 +184,17 @@ export default function CourseDetailPage() {
                         {status === 'locked' && <Lock className="w-4 h-4 text-muted-foreground" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-foreground text-sm">{lesson.title}</p>
+                        <p className="font-semibold text-foreground text-sm">
+                          {isCurriculum && lesson.lessonNumber ? `L${lesson.lessonNumber} · ` : ''}{lesson.title}
+                        </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {status === 'completed' ? '✓ Completed · +50 XP' :
-                           status === 'available' ? 'Start lesson · +50 XP' :
-                           'Complete previous lesson to unlock'}
+                          {lesson.isUnitQuiz
+                            ? status === 'completed' ? '✓ Mastery quiz passed'
+                              : status === 'available' ? `Mastery quiz · score ≥${mod.module.masteryThreshold ?? 70}% to unlock the next unit`
+                              : 'Complete all lessons in this unit to unlock the quiz'
+                            : status === 'completed' ? `✓ Completed · +50 XP${isCurriculum ? ' · ⚡10' : ''}` :
+                              status === 'available' ? `Start lesson · +50 XP${isCurriculum ? ' · ⚡10' : ''}` :
+                              'Complete previous lesson to unlock'}
                         </p>
                       </div>
                       {status !== 'locked' && <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
@@ -160,7 +204,8 @@ export default function CourseDetailPage() {
               </div>
             )}
           </motion.div>
-        ))}
+          );
+        })}
       </div>
 
       {modules.length === 0 && (

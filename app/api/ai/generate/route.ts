@@ -21,20 +21,30 @@ const PROMPTS: Record<string, (c: string) => string> = {
   mindmap: (c) => `You are a mind mapping expert. Create a text-based mind map of this lesson content in Markdown. Use headings for main branches and nested bullet points for sub-branches. Put the main topic at the top.\n\nLesson content:\n${c}`,
 
   infographic: (c) => `You are a visual learning expert. Create structured text-based infographic content for this lesson in Markdown. Use clear sections, key facts in blockquotes, bold statistics, and visual separators (---). Make it scannable.\n\nLesson content:\n${c}`,
+
+  videoScript: (c) => `You are an educational video scriptwriter. Write a 4-6 minute video script for this lesson in Markdown. Structure it as numbered SCENES: each scene has a "### Scene N — title" heading, a one-line [VISUAL: ...] direction describing the animation or footage, and the narrator's spoken lines as plain text. Open with a hook, close with a recap. Conversational, age-appropriate tone.\n\nLesson content:\n${c}`,
+
+  audioScript: (c) => `You are an educational podcast writer. Write a 60-90 second audio revision summary script for this lesson. Conversational, friendly tone as if speaking directly to one student. Plain prose only — no headings, no stage directions, no markdown — because it will be read aloud by text-to-speech. Cover the key points in a memorable order and end with one quick self-check question.\n\nLesson content:\n${c}`,
 };
 
 const JSON_FORMATS = new Set(['flashcards', 'quiz', 'slides', 'glossary']);
 
 export async function POST(req: NextRequest) {
   try {
-    const { content, format } = await req.json();
+    const { content, format, briefPrompt } = await req.json();
     if (!content) return NextResponse.json({ error: 'content is required' }, { status: 400 });
 
     const promptFn = PROMPTS[format];
     if (!promptFn) return NextResponse.json({ error: `Unknown format: ${format}` }, { status: 400 });
 
+    // Curriculum CMS passes the lesson's authored generation brief; prepend it
+    // so every format follows the curriculum team's instructions.
+    const fullContent = briefPrompt
+      ? `CONTENT BRIEF (follow these instructions):\n${briefPrompt}\n\n${content}`
+      : content;
+
     const text = await callOpenRouter(
-      [{ role: 'user', content: promptFn(content) }],
+      [{ role: 'user', content: promptFn(fullContent) }],
       { model: SMART_MODEL }
     );
 

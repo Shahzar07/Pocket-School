@@ -416,6 +416,11 @@ export async function enrollStudent(studentId: string, courseId: string) {
 }
 
 /** Enrols a student in every published curriculum module for their year group. */
+export async function getEnrollment(studentId: string, courseId: string): Promise<Enrollment | null> {
+  const snap = await getDoc(doc(db, 'courses', courseId, 'enrollments', studentId));
+  return snap.exists() ? (snap.data() as Enrollment) : null;
+}
+
 export async function enrollInProgrammeModules(studentId: string, yearGroup: string): Promise<void> {
   const modules = await getCurriculumModules(yearGroup);
   for (const m of modules) {

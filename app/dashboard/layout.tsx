@@ -19,6 +19,7 @@ import { AITutor } from '@/components/ai-tutor';
 import { NotificationsBell } from '@/components/notifications-bell';
 import { DashboardSearch } from '@/components/dashboard-search';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { SparksChip } from '@/components/sparks-chip';
 import { upsertUserSession } from '@/lib/db';
 import Link from 'next/link';
 
@@ -102,6 +103,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <NavItem href="/dashboard/student" icon={Home} label="Dashboard" activeBgClass={sB} activeTextClass={sT} {...navProps} />
               <NavItem href="/ai-studio" icon={Sparkles} label="AI Studio ↗" activeBgClass={sB} activeTextClass={sT} {...navProps} />
               <NavItem href="/ai-teachers" icon={Users} label="AI Teachers ↗" activeBgClass={sB} activeTextClass={sT} {...navProps} />
+              <NavItem href="/dashboard/student/learning" icon={GraduationCap} label="My Learning" activeBgClass={sB} activeTextClass={sT} {...navProps} />
               <NavItem href="/courses" icon={Store} label="Marketplace" activeBgClass={sB} activeTextClass={sT} {...navProps} />
               <NavItem href="/dashboard/student/courses" icon={BookOpen} label="My Courses" activeBgClass={sB} activeTextClass={sT} {...navProps} />
               <NavItem href="/dashboard/student/live" icon={Video} label="Live Classes" activeBgClass={sB} activeTextClass={sT} {...navProps} />
@@ -220,6 +222,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <DashboardSearch />
           </div>
           <div className="flex items-center gap-2">
+            <SparksChip />
             <LanguageSwitcher />
             <NotificationsBell />
             <button onClick={() => router.push('/dashboard/profile')}>
