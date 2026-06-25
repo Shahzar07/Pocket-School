@@ -82,14 +82,14 @@ export function NotificationsBell() {
       </Button>
 
       {open && (
-        <div className="absolute right-0 top-11 w-80 bg-white border border-[#DADCE0] rounded-xl shadow-xl z-50 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-[#DADCE0]">
-            <span className="font-semibold text-[#202124] text-sm">Notifications</span>
+        <div className="absolute right-0 top-11 w-80 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+            <span className="font-semibold text-foreground text-sm">Notifications</span>
             {unreadCount > 0 && (
               <button onClick={handleMarkAll} className="text-xs text-blue-600 hover:underline">Mark all read</button>
             )}
           </div>
-          <div className="max-h-80 overflow-y-auto divide-y divide-[#F1F3F4]">
+          <div className="max-h-80 overflow-y-auto divide-y divide-muted">
             {notifications.length === 0 && (
               <p className="text-center text-sm text-gray-400 py-8">No notifications yet</p>
             )}
@@ -97,15 +97,15 @@ export function NotificationsBell() {
               <button
                 key={n.id}
                 onClick={() => handleClick(n)}
-                className={`w-full text-left px-4 py-3 hover:bg-[#F8F9FA] transition-colors ${!n.read ? 'bg-blue-50/40' : ''}`}
+                className={`w-full text-left px-4 py-3 hover:bg-muted transition-colors ${!n.read ? 'bg-blue-50/40' : ''}`}
               >
                 <div className="flex items-start gap-2">
                   <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 mt-0.5 ${TYPE_COLORS[n.type] ?? TYPE_COLORS.general}`}>
                     {n.type}
                   </span>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-[#202124] truncate">{n.title}</p>
-                    <p className="text-xs text-[#5F6368] mt-0.5 line-clamp-2">{n.message}</p>
+                    <p className="text-xs font-semibold text-foreground truncate">{n.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>
                     {n.createdAt && (
                       <p className="text-[10px] text-gray-400 mt-1">
                         {formatDistanceToNow((n.createdAt as any).toDate(), { addSuffix: true })}

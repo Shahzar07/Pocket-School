@@ -12,12 +12,21 @@ import { Plus, Trash2, Loader2, CreditCard, CheckCircle2, Printer } from 'lucide
 import { motion } from 'motion/react';
 import { Timestamp } from 'firebase/firestore';
 
+const fadeUp: Record<string, any> = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1], delay: i * 0.08 },
+  }),
+};
+
 const STATUS_STYLES: Record<string, string> = {
-  draft: 'bg-gray-100 text-gray-700',
-  sent: 'bg-blue-100 text-blue-700',
-  paid: 'bg-green-100 text-green-700',
-  overdue: 'bg-red-100 text-red-700',
-  cancelled: 'bg-gray-100 text-gray-500',
+  draft: 'bg-muted text-muted-foreground',
+  sent: 'bg-blue-500/10 text-blue-700',
+  paid: 'bg-emerald-500/10 text-emerald-700',
+  overdue: 'bg-red-500/10 text-red-700',
+  cancelled: 'bg-muted text-muted-foreground/60',
 };
 
 export default function TeacherBillingPage() {
@@ -77,114 +86,207 @@ export default function TeacherBillingPage() {
   const collected = invoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + i.amount, 0);
   const outstanding = invoices.filter(i => i.status !== 'paid' && i.status !== 'cancelled').reduce((sum, i) => sum + i.amount, 0);
 
-  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-teal-600" /></div>;
+  if (loading) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10 pt-10">
+      <div className="space-y-4">
+        <div className="bg-muted animate-pulse rounded-3xl h-24" />
+        <div className="bg-muted animate-pulse rounded-3xl h-24" />
+        <div className="bg-muted animate-pulse rounded-3xl h-24" />
+      </div>
+    </div>
+  );
 
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
+      {/* Header */}
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        animate="visible"
+        custom={0}
+        className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4"
+      >
         <div>
-          <h1 className="text-2xl font-bold text-[#202124]">Billing & Invoices</h1>
-          <p className="text-sm text-[#5F6368] mt-0.5">Create and track student invoices and payments</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600 mb-2">
+            Billing &amp; Invoices
+          </p>
+          <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight">
+            Billing &amp; <span className="gradient-text italic">Invoices</span>
+          </h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            Create and track student invoices and payments
+          </p>
         </div>
-        <Button onClick={() => setShowCreate(s => !s)} className="bg-teal-600 hover:bg-teal-700 text-white gap-2">
+        <Button
+          onClick={() => setShowCreate(s => !s)}
+          className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:opacity-90 gap-2"
+        >
           <Plus className="w-4 h-4" /> New Invoice
         </Button>
-      </div>
+      </motion.div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        animate="visible"
+        custom={1}
+        className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+      >
         {[
-          { label: 'Total Invoiced', value: total, color: 'text-[#202124]' },
-          { label: 'Collected', value: collected, color: 'text-green-700' },
-          { label: 'Outstanding', value: outstanding, color: 'text-orange-600' },
-        ].map(s => (
-          <div key={s.label} className="bg-white rounded-xl border border-[#DADCE0] p-4 text-center">
-            <p className={`text-2xl font-bold ${s.color}`}>${s.value.toLocaleString()}</p>
-            <p className="text-xs text-[#5F6368] mt-1">{s.label}</p>
+          { label: 'Total Invoiced', value: total, accent: 'bg-emerald-500' },
+          { label: 'Collected', value: collected, accent: 'bg-green-500' },
+          { label: 'Outstanding', value: outstanding, accent: 'bg-amber-500' },
+        ].map((s, idx) => (
+          <div
+            key={s.label}
+            className="bg-card border border-border rounded-3xl p-5 sm:p-6 relative overflow-hidden card-glow text-center"
+          >
+            <div className={`absolute top-0 left-0 right-0 h-1 ${s.accent}`} />
+            <p className="text-2xl sm:text-3xl font-bold text-foreground mt-1">
+              ${s.value.toLocaleString()}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
           </div>
         ))}
-      </div>
+      </motion.div>
 
       {/* Create form */}
       {showCreate && (
-        <div className="bg-white rounded-2xl border border-[#DADCE0] p-6 space-y-4">
-          <h2 className="font-semibold text-[#202124]">New Invoice</h2>
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          custom={2}
+          className="bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow space-y-5"
+        >
+          <h2 className="font-heading text-xl font-semibold text-foreground">New Invoice</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="text-xs font-medium text-[#5F6368] mb-1 block">Student Email *</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Student Email *</label>
               <Input value={form.studentEmail} onChange={e => setForm(f => ({ ...f, studentEmail: e.target.value }))} placeholder="student@example.com" type="email" />
             </div>
             <div className="md:col-span-2">
-              <label className="text-xs font-medium text-[#5F6368] mb-1 block">Description *</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Description *</label>
               <Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Tuition fee, exam fee, etc." />
             </div>
             <div>
-              <label className="text-xs font-medium text-[#5F6368] mb-1 block">Amount *</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Amount *</label>
               <Input type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" min={0} step={0.01} />
             </div>
             <div>
-              <label className="text-xs font-medium text-[#5F6368] mb-1 block">Currency</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Currency</label>
               <Select value={form.currency} onValueChange={v => setForm(f => ({ ...f, currency: v ?? 'USD' }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent><SelectItem value="USD">USD</SelectItem><SelectItem value="GBP">GBP</SelectItem><SelectItem value="EUR">EUR</SelectItem><SelectItem value="MYR">MYR</SelectItem></SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-xs font-medium text-[#5F6368] mb-1 block">Due Date *</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Due Date *</label>
               <Input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs font-medium text-[#5F6368] mb-1 block">Status</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Status</label>
               <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v as Invoice['status'] }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="sent">Send to Student</SelectItem></SelectContent>
               </Select>
             </div>
           </div>
-          <div className="flex gap-3">
-            <Button onClick={handleCreate} disabled={saving} className="bg-teal-600 hover:bg-teal-700 text-white">
+          <div className="flex gap-3 pt-2">
+            <Button
+              onClick={handleCreate}
+              disabled={saving}
+              className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:opacity-90"
+            >
               {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />} Create Invoice
             </Button>
-            <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreate(false)}
+              className="rounded-full h-11 px-5 font-semibold"
+            >
+              Cancel
+            </Button>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Invoice list */}
-      <div className="space-y-3">
-        {invoices.length === 0 && (
-          <div className="text-center py-16 text-[#5F6368]">
-            <CreditCard className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <p className="font-medium">No invoices yet</p>
-          </div>
-        )}
-        {invoices.map(inv => (
-          <div key={inv.id} className="bg-white rounded-xl border border-[#DADCE0] p-4 flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <p className="font-semibold text-[#202124]">{inv.studentName}</p>
-                <Badge className={STATUS_STYLES[inv.status]}>{inv.status}</Badge>
+      <div className="space-y-2">
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          custom={3}
+        >
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600 mb-1">
+            Invoices
+          </p>
+          <h2 className="font-heading text-3xl text-foreground tracking-tight mb-4">
+            All Invoices
+          </h2>
+        </motion.div>
+
+        <div className="space-y-3">
+          {invoices.length === 0 && (
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              custom={4}
+              className="relative flex flex-col items-center justify-center py-20 text-center"
+            >
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl" />
               </div>
-              <p className="text-xs text-[#5F6368] mt-0.5 truncate">{inv.description}</p>
-              <p className="text-xs text-gray-400 mt-1">Due: {(inv.dueDate as any)?.toDate?.().toLocaleDateString() ?? inv.dueDate}</p>
-            </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <p className="text-lg font-bold text-[#202124]">{inv.currency} {inv.amount.toFixed(2)}</p>
-              {inv.status !== 'paid' && inv.status !== 'cancelled' && (
-                <Button size="sm" variant="outline" onClick={() => markPaid(inv.id)} className="gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> Mark Paid
+              <CreditCard className="w-12 h-12 mx-auto mb-4 text-muted-foreground/40 relative z-10" />
+              <p className="font-heading text-2xl text-foreground relative z-10">No invoices yet</p>
+              <p className="text-sm text-muted-foreground mt-1 relative z-10">
+                Create your first invoice to get started
+              </p>
+            </motion.div>
+          )}
+          {invoices.map((inv, idx) => (
+            <motion.div
+              key={inv.id}
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              custom={idx + 4}
+              className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4 card-glow"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-semibold text-foreground">{inv.studentName}</p>
+                  <Badge className={STATUS_STYLES[inv.status]}>{inv.status}</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5 truncate">{inv.description}</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">Due: {(inv.dueDate as any)?.toDate?.().toLocaleDateString() ?? inv.dueDate}</p>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <p className="text-lg font-bold text-foreground">{inv.currency} {inv.amount.toFixed(2)}</p>
+                {inv.status !== 'paid' && inv.status !== 'cancelled' && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => markPaid(inv.id)}
+                    className="rounded-full gap-1 font-semibold"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Mark Paid
+                  </Button>
+                )}
+                <Button variant="ghost" size="icon" onClick={() => handleDelete(inv.id)} className="text-red-500 hover:bg-red-500/10">
+                  <Trash2 className="w-4 h-4" />
                 </Button>
-              )}
-              <Button variant="ghost" size="icon" onClick={() => handleDelete(inv.id)} className="text-red-500 hover:bg-red-50">
-                <Trash2 className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => window.print()} className="text-gray-500">
-                <Printer className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        ))}
+                <Button variant="ghost" size="icon" onClick={() => window.print()} className="text-muted-foreground">
+                  <Printer className="w-4 h-4" />
+                </Button>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

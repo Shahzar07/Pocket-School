@@ -14,6 +14,15 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { ClipboardList, Upload, CheckCircle2, Clock, AlertTriangle, Loader2, Send } from 'lucide-react';
 
+const fadeUp: Record<string, any> = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1], delay: i * 0.08 },
+  }),
+};
+
 interface AssignmentWithSubmission { assignment: Assignment; submission?: AssignmentSubmission }
 
 export default function StudentAssignmentsPage() {
@@ -71,15 +80,19 @@ export default function StudentAssignmentsPage() {
   };
 
   const STATUS_STYLES: Record<string, string> = {
-    graded: 'bg-green-100 text-green-700',
-    submitted: 'bg-blue-100 text-blue-700',
-    overdue: 'bg-red-100 text-red-700',
-    pending: 'bg-amber-100 text-amber-700',
+    graded: 'bg-emerald-500/10 text-emerald-600',
+    submitted: 'bg-primary/10 text-primary',
+    overdue: 'bg-destructive/10 text-destructive',
+    pending: 'bg-amber-500/10 text-amber-600',
   };
 
   if (loading) return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-4">
-      {[1,2,3].map(i => <div key={i} className="h-32 bg-muted animate-pulse rounded-2xl" />)}
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10 pt-8">
+      <div className="space-y-3">
+        <div className="h-3 w-28 bg-muted animate-pulse rounded-full" />
+        <div className="h-12 w-72 bg-muted animate-pulse rounded-2xl" />
+      </div>
+      {[1, 2, 3].map(i => <div key={i} className="h-40 bg-muted animate-pulse rounded-3xl" />)}
     </div>
   );
 
@@ -87,35 +100,58 @@ export default function StudentAssignmentsPage() {
   const done = items.filter(i => getStatus(i) === 'submitted' || getStatus(i) === 'graded');
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-      <div>
-        <h1 className="text-2xl font-extrabold text-foreground tracking-tight">Assignments</h1>
-        <p className="text-muted-foreground text-sm mt-1">Submit your work and track grades.</p>
-      </div>
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
+      {/* Header */}
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}>
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">Coursework</p>
+        <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1.5">
+          <span className="gradient-text italic">Assignments</span>
+        </h1>
+      </motion.div>
 
+      {/* Empty state */}
       {items.length === 0 && (
-        <div className="text-center py-20 text-muted-foreground">
-          <ClipboardList className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="font-semibold">No assignments yet.</p>
-        </div>
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          custom={1}
+          className="relative text-center py-24"
+        >
+          <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-primary/8 blur-[80px]" />
+          <ClipboardList className="w-14 h-14 mx-auto mb-4 text-muted-foreground opacity-40" />
+          <p className="font-heading text-2xl text-foreground">No assignments yet</p>
+          <p className="text-sm text-muted-foreground mt-2">Your coursework will appear here once assigned.</p>
+        </motion.div>
       )}
 
+      {/* Pending / To Do */}
       {pending.length > 0 && (
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">To Do ({pending.length})</h2>
+        <section className="space-y-5">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">To Do</p>
+            <h2 className="font-heading text-3xl text-foreground mt-1.5">
+              Pending ({pending.length})
+            </h2>
+          </div>
           {pending.map((item, i) => {
             const status = getStatus(item);
             const due = item.assignment.dueDate?.toDate?.() ?? (item.assignment.dueDate ? new Date(item.assignment.dueDate as any) : null);
             return (
-              <motion.div key={item.assignment.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                className="bg-card border border-border rounded-2xl p-6 space-y-4"
+              <motion.div
+                key={item.assignment.id}
+                variants={fadeUp}
+                initial="hidden"
+                animate="visible"
+                custom={i}
+                className="bg-card border border-border rounded-3xl p-6 space-y-4 card-glow"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-bold text-foreground">{item.assignment.title}</h3>
+                    <h3 className="font-heading text-lg text-foreground">{item.assignment.title}</h3>
                     <p className="text-sm text-muted-foreground mt-1">{item.assignment.description}</p>
                     {due && (
-                      <div className={`flex items-center gap-1 text-xs mt-2 ${status === 'overdue' ? 'text-red-600' : 'text-muted-foreground'}`}>
+                      <div className={`flex items-center gap-1 text-xs mt-2 ${status === 'overdue' ? 'text-destructive' : 'text-muted-foreground'}`}>
                         {status === 'overdue' ? <AlertTriangle className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
                         Due: {due.toLocaleDateString()}
                       </div>
@@ -123,26 +159,26 @@ export default function StudentAssignmentsPage() {
                   </div>
                   <Badge className={`rounded-full text-[10px] shrink-0 ${STATUS_STYLES[status]}`}>{status}</Badge>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {item.assignment.submissionType === 'link' ? (
                     <Input
                       value={answers[item.assignment.id!] ?? ''}
                       onChange={e => setAnswers(a => ({ ...a, [item.assignment.id!]: e.target.value }))}
                       placeholder="Paste your link here…"
-                      className="rounded-xl h-10"
+                      className="bg-background rounded-xl h-10"
                     />
                   ) : (
                     <Textarea
                       value={answers[item.assignment.id!] ?? ''}
                       onChange={e => setAnswers(a => ({ ...a, [item.assignment.id!]: e.target.value }))}
                       placeholder="Write your answer here…"
-                      className="rounded-xl min-h-24 text-sm resize-none"
+                      className="bg-background rounded-xl min-h-24 text-sm resize-none"
                     />
                   )}
                   <Button
                     onClick={() => handleSubmit(item.assignment)}
                     disabled={submitting === item.assignment.id}
-                    className="bg-blue-600 hover:bg-blue-700 text-white gap-2 rounded-xl"
+                    className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white gap-2"
                   >
                     {submitting === item.assignment.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                     Submit Assignment
@@ -154,26 +190,35 @@ export default function StudentAssignmentsPage() {
         </section>
       )}
 
+      {/* Completed / Submitted */}
       {done.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Submitted ({done.length})</h2>
+        <section className="space-y-4">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">Completed</p>
+            <h2 className="font-heading text-3xl text-foreground mt-1.5">
+              Submitted ({done.length})
+            </h2>
+          </div>
           {done.map((item, i) => {
             const status = getStatus(item);
             return (
-              <motion.div key={item.assignment.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }}
-                className="bg-card border border-border rounded-2xl p-5 flex items-start justify-between gap-4"
+              <motion.div
+                key={item.assignment.id}
+                variants={fadeUp}
+                initial="hidden"
+                animate="visible"
+                custom={i}
+                className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4 card-glow"
               >
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className={`w-5 h-5 shrink-0 ${status === 'graded' ? 'text-green-500' : 'text-blue-500'}`} />
-                  <div>
-                    <p className="font-semibold text-foreground">{item.assignment.title}</p>
-                    {item.submission?.feedback && <p className="text-sm text-muted-foreground mt-1">{item.submission.feedback}</p>}
-                  </div>
+                <CheckCircle2 className={`w-5 h-5 shrink-0 ${status === 'graded' ? 'text-emerald-500' : 'text-primary'}`} />
+                <div className="flex-1 min-w-0">
+                  <p className="font-heading text-foreground">{item.assignment.title}</p>
+                  {item.submission?.feedback && <p className="text-sm text-muted-foreground mt-1">{item.submission.feedback}</p>}
                 </div>
                 {item.submission?.score !== undefined && (
                   <div className="text-right shrink-0">
-                    <p className="text-xl font-extrabold text-foreground">{item.submission.score}/{item.assignment.maxScore}</p>
-                    <p className="text-xs text-muted-foreground">{Math.round((item.submission.score / item.assignment.maxScore) * 100)}%</p>
+                    <p className="font-heading text-2xl text-foreground">{item.submission.score}/{item.assignment.maxScore}</p>
+                    <p className="text-xs text-muted-foreground font-semibold">{Math.round((item.submission.score / item.assignment.maxScore) * 100)}%</p>
                   </div>
                 )}
               </motion.div>

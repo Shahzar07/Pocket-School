@@ -40,6 +40,15 @@ interface SessionLesson {
   lessonId: string;
 }
 
+const fadeUp: Record<string, any> = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1], delay: i * 0.08 },
+  }),
+};
+
 export default function UploadPage() {
   const { user, profile } = useAuthSTORE();
 
@@ -259,15 +268,28 @@ export default function UploadPage() {
   const canPublish = totalDone > 0 && !generating;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-      <div>
-        <h1 className="text-2xl font-extrabold text-foreground tracking-tight">AI Lesson Generator</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Paste content → generate {totalFormats} AI formats → publish. Add as many lessons as you want in one session.
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
+      {/* Page header */}
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}>
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">
+          LESSON STUDIO
         </p>
-      </div>
+        <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1">
+          Create <span className="gradient-text italic">Lessons</span>
+        </h1>
+        <p className="text-muted-foreground text-sm mt-2">
+          Paste content, generate {totalFormats} AI formats, and publish. Add as many lessons as you want in one session.
+        </p>
+      </motion.div>
 
-      <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
+      {/* Form card */}
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        animate="visible"
+        custom={1}
+        className="bg-card border border-border rounded-3xl p-5 sm:p-6 space-y-5 card-glow"
+      >
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label>Lesson Title *</Label>
@@ -287,7 +309,7 @@ export default function UploadPage() {
         </div>
 
         {selectedCourseId === 'new' && (
-          <div className="grid sm:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-xl border border-dashed border-border">
+          <div className="grid sm:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-2xl border border-dashed border-border">
             <div className="space-y-1.5">
               <Label>New Course Title *</Label>
               <Input value={courseTitle} onChange={e => setCourseTitle(e.target.value)} placeholder="e.g. Biology 101" className="rounded-xl h-11" />
@@ -304,7 +326,7 @@ export default function UploadPage() {
             <div className="space-y-1.5">
               <Label>
                 Module
-                {modulesLoading && <span className="text-xs text-muted-foreground ml-1">(loading…)</span>}
+                {modulesLoading && <span className="text-xs text-muted-foreground ml-1">(loading...)</span>}
               </Label>
               <select
                 value={selectedModuleId}
@@ -335,7 +357,7 @@ export default function UploadPage() {
           <Textarea
             value={content}
             onChange={e => setContent(e.target.value)}
-            placeholder="Paste your lesson text, notes, or lecture content here (minimum 50 characters)…"
+            placeholder="Paste your lesson text, notes, or lecture content here (minimum 50 characters)..."
             className="min-h-40 rounded-xl text-sm resize-none"
           />
           <p className="text-xs text-muted-foreground text-right">{content.length} characters</p>
@@ -344,60 +366,83 @@ export default function UploadPage() {
         <Button
           onClick={handleGenerate}
           disabled={generating || content.trim().length < 50}
-          className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white gap-2"
+          className="w-full rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all gap-2"
         >
           <Sparkles className="w-4 h-4" />
-          {generating ? `Generating… (${totalDone}/${totalFormats})` : `Generate All ${totalFormats} Formats with AI`}
+          {generating ? `Generating... (${totalDone}/${totalFormats})` : `Generate All ${totalFormats} Formats with AI`}
         </Button>
-      </div>
+      </motion.div>
 
+      {/* Progress card */}
       {Object.keys(progress).length > 0 && (
-        <div className="bg-card border border-border rounded-2xl p-6">
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          custom={2}
+          className="bg-card border border-border rounded-3xl p-5 sm:p-6 card-glow"
+        >
           <h3 className="font-bold text-foreground mb-4">Generation Progress</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {FORMATS.map(f => {
               const status = progress[f.id];
               return (
-                <div key={f.id} className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-medium ${
-                  status === 'done' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
-                  status === 'error' ? 'bg-red-50 border-red-200 text-red-700' :
-                  status === 'pending' ? 'bg-blue-50 border-blue-200 text-blue-700 animate-pulse' :
-                  'bg-muted border-border text-muted-foreground'
+                <div key={f.id} className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium ${
+                  status === 'done' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-600' :
+                  status === 'error' ? 'bg-red-500/10 border border-red-500/20 text-red-600' :
+                  status === 'pending' ? 'bg-sky-500/10 border border-sky-500/20 text-sky-600 animate-pulse' :
+                  'bg-muted border border-border text-muted-foreground'
                 }`}>
                   {status === 'done' ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> :
-                   status === 'pending' ? <div className="w-3.5 h-3.5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin shrink-0" /> :
+                   status === 'pending' ? <div className="w-3.5 h-3.5 border-2 border-sky-500 border-t-transparent rounded-full animate-spin shrink-0" /> :
                    <div className="w-3.5 h-3.5 rounded-full border-2 border-muted-foreground/30 shrink-0" />}
                   {f.label}
                 </div>
               );
             })}
           </div>
-        </div>
+        </motion.div>
       )}
 
+      {/* Publish banner */}
       {canPublish && (
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-6 flex items-center justify-between gap-4"
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          custom={3}
+          className="bg-card border border-emerald-500/20 rounded-3xl p-5 sm:p-6 card-glow flex items-center justify-between gap-4"
         >
           <div>
             <h3 className="font-bold text-foreground">{totalDone}/{totalFormats} formats ready</h3>
             <p className="text-sm text-muted-foreground mt-0.5">Publish to make this lesson available to enrolled students.</p>
           </div>
-          <Button onClick={handlePublish} disabled={publishing} className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 gap-2">
+          <Button
+            onClick={handlePublish}
+            disabled={publishing}
+            className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all shrink-0 gap-2"
+          >
             <BookOpen className="w-4 h-4" />
-            {publishing ? 'Publishing…' : 'Publish Lesson'}
+            {publishing ? 'Publishing...' : 'Publish Lesson'}
           </Button>
         </motion.div>
       )}
 
+      {/* Session published accordion */}
       {sessionLessons.length > 0 && (
-        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          custom={4}
+          className="bg-card border border-border rounded-3xl card-glow overflow-hidden"
+        >
           <button
             onClick={() => setSessionOpen(o => !o)}
             className="w-full flex items-center justify-between p-5 text-left hover:bg-muted/30 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
               </div>
               <div>
@@ -418,7 +463,7 @@ export default function UploadPage() {
                         <p className="font-semibold text-foreground text-sm truncate">{sl.title}</p>
                         <p className="text-xs text-muted-foreground truncate">{sl.courseTitle} · {sl.moduleTitle}</p>
                       </div>
-                      <Link href={`/dashboard/student/courses/${sl.courseId}`} className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors shrink-0">
+                      <Link href={`/dashboard/student/courses/${sl.courseId}`} className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors shrink-0">
                           <ExternalLink className="w-3.5 h-3.5" /> View Course
                       </Link>
                     </div>
@@ -427,13 +472,23 @@ export default function UploadPage() {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </motion.div>
       )}
 
-      <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
+      {/* SOW section */}
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        animate="visible"
+        custom={5}
+        className="bg-card border border-border rounded-3xl p-5 sm:p-6 space-y-5 card-glow"
+      >
         <div>
-          <h2 className="font-bold text-foreground flex items-center gap-2">
-            <FileUp className="w-4 h-4 text-blue-600" /> Submit Curriculum SOW for Review
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">
+            CURRICULUM
+          </p>
+          <h2 className="font-bold text-foreground flex items-center gap-2 mt-1">
+            <FileUp className="w-4 h-4 text-emerald-600" /> Submit Curriculum SOW for Review
           </h2>
           <p className="text-muted-foreground text-sm mt-1">
             Upload a Scheme of Work document for a curriculum module. It will be sent to the
@@ -476,7 +531,7 @@ export default function UploadPage() {
 
         {sowSubmitting && sowUploadPct > 0 && (
           <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-            <div className="h-full bg-blue-600 transition-all" style={{ width: `${sowUploadPct}%` }} />
+            <div className="h-full bg-emerald-600 transition-all" style={{ width: `${sowUploadPct}%` }} />
           </div>
         )}
 
@@ -484,12 +539,12 @@ export default function UploadPage() {
           onClick={handleSowSubmit}
           disabled={sowSubmitting}
           variant="outline"
-          className="w-full h-11 rounded-xl gap-2"
+          className="w-full rounded-full h-11 px-5 font-bold gap-2"
         >
           <Upload className="w-4 h-4" />
-          {sowSubmitting ? `Uploading… (${sowUploadPct}%)` : 'Submit for Review'}
+          {sowSubmitting ? `Uploading... (${sowUploadPct}%)` : 'Submit for Review'}
         </Button>
-      </div>
+      </motion.div>
     </div>
   );
 }

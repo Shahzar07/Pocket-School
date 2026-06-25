@@ -16,6 +16,11 @@ interface CourseStats {
   gradedCount: number;
 }
 
+const fadeUp: Record<string, any> = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1], delay: i * 0.08 } }),
+};
+
 export default function TeacherAnalytics() {
   const { user } = useAuthSTORE();
   const [courseStats, setCourseStats] = useState<CourseStats[]>([]);
@@ -65,56 +70,67 @@ export default function TeacherAnalytics() {
     : null;
 
   if (loading) return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-4">
-      {[1, 2, 3].map(i => <div key={i} className="h-24 bg-muted animate-pulse rounded-2xl" />)}
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10 pt-8">
+      {[1, 2, 3, 4].map(i => <div key={i} className="h-28 bg-muted animate-pulse rounded-3xl" />)}
     </div>
   );
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-      <div>
-        <h1 className="text-2xl font-extrabold text-foreground tracking-tight">Student Analytics</h1>
-        <p className="text-muted-foreground text-sm mt-1">Real-time data from your courses and students.</p>
-      </div>
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
+      {/* Header */}
+      <motion.header variants={fadeUp} initial="hidden" animate="visible" custom={0}>
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600 flex items-center gap-2">
+          <span className="w-5 h-px bg-emerald-600 inline-block" /> Student Analytics
+        </p>
+        <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-3">
+          Your <span className="gradient-text italic">Analytics</span> Dashboard
+        </h1>
+        <p className="text-muted-foreground mt-2 text-[15px]">Real-time data from your courses and students.</p>
+      </motion.header>
 
       {/* Overview stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Total Students', value: totalStudents, icon: <Users className="w-5 h-5 text-blue-500" />, color: 'bg-blue-50 border-blue-200' },
-          { label: 'Submissions', value: totalSubmissions, icon: <ClipboardList className="w-5 h-5 text-violet-500" />, color: 'bg-violet-50 border-violet-200' },
-          { label: 'Graded', value: totalGraded, icon: <CheckCircle2 className="w-5 h-5 text-emerald-500" />, color: 'bg-emerald-50 border-emerald-200' },
-          { label: 'Avg Quiz Score', value: overallAvg !== null ? `${overallAvg}%` : '—', icon: <BarChart3 className="w-5 h-5 text-amber-500" />, color: 'bg-amber-50 border-amber-200' },
+          { label: 'Total Students', value: totalStudents, icon: <Users className="w-5 h-5 text-blue-500" />, gradient: 'from-blue-500 to-indigo-500' },
+          { label: 'Submissions', value: totalSubmissions, icon: <ClipboardList className="w-5 h-5 text-violet-500" />, gradient: 'from-violet-500 to-purple-500' },
+          { label: 'Graded', value: totalGraded, icon: <CheckCircle2 className="w-5 h-5 text-emerald-500" />, gradient: 'from-emerald-500 to-teal-500' },
+          { label: 'Avg Quiz Score', value: overallAvg !== null ? `${overallAvg}%` : '—', icon: <BarChart3 className="w-5 h-5 text-amber-500" />, gradient: 'from-amber-500 to-orange-500' },
         ].map((s, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
-            className={`${s.color} border rounded-2xl p-5 text-center`}
+          <motion.div key={i} variants={fadeUp} initial="hidden" animate="visible" custom={i + 1}
+            className="bg-card border border-border rounded-3xl p-5 sm:p-6 relative overflow-hidden card-glow"
           >
-            <div className="flex justify-center mb-2">{s.icon}</div>
-            <p className="text-2xl font-extrabold text-foreground">{s.value}</p>
-            <p className="text-xs text-muted-foreground font-medium mt-0.5">{s.label}</p>
+            <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${s.gradient}`} />
+            <div className="flex justify-center mb-3">{s.icon}</div>
+            <p className="text-3xl font-extrabold text-foreground text-center">{s.value}</p>
+            <p className="text-[11px] text-muted-foreground font-medium mt-1 text-center uppercase tracking-wide">{s.label}</p>
           </motion.div>
         ))}
       </div>
 
       {/* Per-course breakdown */}
       {courseStats.length > 0 && (
-        <section>
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">Course Breakdown</h2>
-          <div className="space-y-3">
+        <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={5}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600 flex items-center gap-2">
+            <span className="w-5 h-px bg-emerald-600 inline-block" /> Breakdown
+          </p>
+          <h2 className="font-heading text-3xl text-foreground tracking-tight mt-2 mb-6">Course Performance</h2>
+          <div className="space-y-4">
             {courseStats.map((cs, i) => (
-              <motion.div key={cs.course.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                className="bg-card border border-border rounded-2xl p-5"
+              <motion.div key={cs.course.id} variants={fadeUp} initial="hidden" animate="visible" custom={6 + i}
+                className="bg-card border border-border rounded-3xl p-5 sm:p-6 relative overflow-hidden card-glow"
               >
-                <div className="flex items-start justify-between gap-4 mb-4">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />
+                <div className="flex items-start justify-between gap-4 mb-5">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0">
+                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0">
                       <BookOpen className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="font-bold text-foreground">{cs.course.title}</p>
-                      <p className="text-xs text-muted-foreground">{cs.course.subject}</p>
+                      <p className="font-bold text-foreground text-[15px]">{cs.course.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{cs.course.subject}</p>
                     </div>
                   </div>
-                  <Badge className={`rounded-full text-[10px] shrink-0 ${cs.course.status === 'published' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                  <Badge className={`rounded-full text-[10px] shrink-0 font-bold ${cs.course.status === 'published' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 border-amber-500/20'}`}>
                     {cs.course.status}
                   </Badge>
                 </div>
@@ -126,53 +142,62 @@ export default function TeacherAnalytics() {
                     { label: 'Submissions', value: cs.submissionCount },
                     { label: 'Avg Score', value: cs.avgScore !== null ? `${cs.avgScore}%` : '—' },
                   ].map((stat, j) => (
-                    <div key={j} className="bg-muted/40 rounded-xl p-3 text-center">
-                      <p className="text-lg font-extrabold text-foreground">{stat.value}</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">{stat.label}</p>
+                    <div key={j} className="bg-muted/50 rounded-2xl p-3.5 text-center">
+                      <p className="text-xl font-extrabold text-foreground">{stat.value}</p>
+                      <p className="text-[10px] text-muted-foreground mt-1 font-bold uppercase tracking-wide">{stat.label}</p>
                     </div>
                   ))}
                 </div>
               </motion.div>
             ))}
           </div>
-        </section>
+        </motion.section>
       )}
 
       {/* Recent quiz submissions */}
       {recentSubmissions.length > 0 && (
-        <section>
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">Recent Submissions</h2>
-          <div className="bg-card border border-border rounded-2xl overflow-hidden">
-            <div className="divide-y divide-border">
-              {recentSubmissions.map((sub, i) => (
-                <div key={sub.id} className="flex items-center gap-4 px-5 py-3">
-                  <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">{sub.lessonTitle}</p>
-                    <p className="text-xs text-muted-foreground">{sub.studentName || 'Student'}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    {sub.score !== undefined ? (
-                      <span className={`text-sm font-bold ${(sub.score / sub.maxScore) >= 0.7 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                        {sub.score}/{sub.maxScore}
-                      </span>
-                    ) : (
-                      <Badge className="rounded-full bg-amber-50 text-amber-700 border-amber-200 text-[10px]">Needs grading</Badge>
-                    )}
-                  </div>
+        <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={7 + courseStats.length}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600 flex items-center gap-2">
+            <span className="w-5 h-px bg-emerald-600 inline-block" /> Activity
+          </p>
+          <h2 className="font-heading text-3xl text-foreground tracking-tight mt-2 mb-6">Recent Submissions</h2>
+          <div className="space-y-3">
+            {recentSubmissions.map((sub, i) => (
+              <motion.div key={sub.id} variants={fadeUp} initial="hidden" animate="visible" custom={8 + courseStats.length + i}
+                className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4 card-glow"
+              >
+                <div className="w-10 h-10 rounded-xl bg-muted/60 flex items-center justify-center shrink-0">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
                 </div>
-              ))}
-            </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-foreground truncate">{sub.lessonTitle}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{sub.studentName || 'Student'}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  {sub.score !== undefined ? (
+                    <span className={`text-sm font-bold ${(sub.score / sub.maxScore) >= 0.7 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                      {sub.score}/{sub.maxScore}
+                    </span>
+                  ) : (
+                    <Badge className="rounded-full bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px] font-bold">Needs grading</Badge>
+                  )}
+                </div>
+              </motion.div>
+            ))}
           </div>
-        </section>
+        </motion.section>
       )}
 
+      {/* Empty state */}
       {courseStats.length === 0 && (
-        <div className="text-center py-16 text-muted-foreground">
-          <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="font-semibold">No analytics yet.</p>
-          <p className="text-sm mt-1">Create and publish courses to start seeing student data here.</p>
-        </div>
+        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2} className="text-center py-20">
+          <div className="relative inline-flex mb-6">
+            <div className="absolute inset-0 blur-2xl bg-emerald-400/20 rounded-full scale-150" />
+            <BarChart3 className="w-14 h-14 text-muted-foreground/40 relative" />
+          </div>
+          <h3 className="font-heading text-2xl text-foreground">No analytics yet</h3>
+          <p className="text-muted-foreground mt-2 max-w-sm mx-auto">Create and publish courses to start seeing student data here.</p>
+        </motion.div>
       )}
     </div>
   );

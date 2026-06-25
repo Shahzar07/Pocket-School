@@ -32,6 +32,11 @@ const SUBJECT_ICONS: Record<string, React.ElementType> = {
   Computing: Monitor,
 };
 
+const fadeUp: Record<string, any> = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1], delay: i * 0.08 } }),
+};
+
 export default function MyLearningPage() {
   const router = useRouter();
   const { user, profile } = useAuthSTORE();
@@ -88,87 +93,99 @@ export default function MyLearningPage() {
     })();
   }, [user, profile, yearGroup]);
 
+  /* ── Loading skeleton ── */
   if (loading) return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-4">
-      <div className="h-32 bg-muted animate-pulse rounded-3xl" />
-      <div className="h-48 bg-muted animate-pulse rounded-2xl" />
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-6 pt-10">
+      <div className="h-10 w-48 bg-muted animate-pulse rounded-3xl" />
+      <div className="h-48 bg-muted animate-pulse rounded-3xl" />
+      <div className="h-48 bg-muted animate-pulse rounded-3xl" />
     </div>
   );
 
+  /* ── No year group ── */
   if (!yearGroup) return (
-    <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-      <GraduationCap className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-40" />
-      <h2 className="font-heading text-2xl text-foreground mb-2">Set your year group</h2>
-      <p className="text-sm text-muted-foreground mb-6">
-        Tell us which year you&apos;re in to see your curriculum — units, lessons and mastery quizzes for your level.
-      </p>
-      <Button onClick={() => router.push('/dashboard/profile')} className="rounded-xl">
-        Go to My Profile
-      </Button>
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12">
+      <div className="relative flex flex-col items-center justify-center text-center py-24">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-72 h-72 rounded-full bg-primary/10 blur-[100px]" />
+        </div>
+        <GraduationCap className="w-12 h-12 mb-5 text-muted-foreground opacity-40 relative" />
+        <h2 className="font-heading text-2xl text-foreground mb-2 relative">Set your year group</h2>
+        <p className="text-sm text-muted-foreground mb-8 max-w-sm relative">
+          Tell us which year you&apos;re in to see your curriculum — units, lessons and mastery quizzes for your level.
+        </p>
+        <Button onClick={() => router.push('/dashboard/profile')} className="rounded-full h-11 px-5 font-bold relative">
+          Go to My Profile
+        </Button>
+      </div>
     </div>
   );
 
   const requiresUpgrade = programme?.requiredTier === 'academic' && tier !== 'academic';
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-7 text-white"
-      >
-        <Badge className="mb-3 bg-white/20 text-white border-white/30 text-xs rounded-full">
-          {programme?.name ?? 'Curriculum'}
-        </Badge>
-        <h1 className="font-heading text-3xl sm:text-4xl tracking-tight mb-1">My Learning</h1>
-        <p className="text-blue-100 text-sm">
-          {yearGroup} · Work through each unit, then pass the mastery quiz (70%+) to unlock the next one.
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
+      {/* ── Page header ── */}
+      <motion.header variants={fadeUp} initial="hidden" animate="visible" className="space-y-2 pt-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">
+          {programme?.name ?? 'Curriculum'} {yearGroup && `· ${yearGroup}`}
         </p>
-      </motion.div>
+        <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight">
+          My <span className="gradient-text italic">Learning</span>
+        </h1>
+        <p className="text-muted-foreground text-sm max-w-xl">
+          Work through each unit, then pass the mastery quiz (70%+) to unlock the next one.
+        </p>
+      </motion.header>
 
-      {/* Subscription gate */}
+      {/* ── Subscription gate ── */}
       {requiresUpgrade && (
         <div className="relative">
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm rounded-3xl border border-border">
-            <Sparkles className="w-8 h-8 text-blue-600 mb-3" />
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm rounded-3xl border border-border">
+            <Sparkles className="w-8 h-8 text-primary mb-3" />
             <h3 className="font-heading text-xl text-foreground mb-1">Academic subscription required</h3>
             <p className="text-sm text-muted-foreground mb-4 text-center max-w-sm px-4">
               The {programme?.name} curriculum — with all 11 learning formats, mastery quizzes and a monthly ⚡400 Sparks allowance — is part of the Academic plan.
             </p>
-            <Button className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+            <Button className="rounded-full h-11 px-5 font-bold bg-primary text-primary-foreground"
               onClick={() => router.push('/dashboard/helpdesk')}>
               Contact us to upgrade
             </Button>
           </div>
           <div className="space-y-4 opacity-60 pointer-events-none" aria-hidden>
             {trees.slice(0, 1).map(tree => (
-              <div key={tree.course.id} className="bg-card border border-border rounded-2xl p-5 h-40" />
+              <div key={tree.course.id} className="bg-card border border-border rounded-3xl p-5 h-40" />
             ))}
-            <div className="bg-card border border-border rounded-2xl p-5 h-40" />
+            <div className="bg-card border border-border rounded-3xl p-5 h-40" />
           </div>
         </div>
       )}
 
-      {/* Modules */}
+      {/* ── Empty state ── */}
       {!requiresUpgrade && trees.length === 0 && (
-        <div className="text-center py-16 text-muted-foreground bg-muted/30 rounded-3xl border border-dashed border-border">
-          <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="font-semibold">No curriculum published for {yearGroup} yet</p>
-          <p className="text-sm mt-1">Your school is preparing your subjects. Check back soon!</p>
+        <div className="relative flex flex-col items-center justify-center text-center py-24">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-72 h-72 rounded-full bg-primary/10 blur-[100px]" />
+          </div>
+          <BookOpen className="w-10 h-10 mb-4 text-muted-foreground opacity-30 relative" />
+          <h2 className="font-heading text-2xl text-foreground mb-1 relative">No curriculum published for {yearGroup} yet</h2>
+          <p className="text-sm text-muted-foreground relative">Your school is preparing your subjects. Check back soon!</p>
         </div>
       )}
 
+      {/* ── Module trees ── */}
       {!requiresUpgrade && trees.map((tree, ti) => {
         const SubjectIcon = SUBJECT_ICONS[tree.course.subject ?? ''] ?? BookOpen;
         const completedIds = new Set(tree.enrollment?.completedLessons ?? []);
         return (
           <motion.div key={tree.course.id}
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: ti * 0.08 }}
-            className="bg-card border border-border rounded-2xl overflow-hidden"
+            variants={fadeUp} initial="hidden" animate="visible" custom={ti}
+            className="bg-card border border-border rounded-3xl overflow-hidden card-glow"
           >
             {/* Module header */}
             <div className="flex items-center gap-4 p-5 border-b border-border bg-muted/30">
-              <div className="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
-                <SubjectIcon className="w-5 h-5 text-blue-600" />
+              <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <SubjectIcon className="w-5 h-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="font-heading text-xl text-foreground">{tree.course.title}</h2>
@@ -197,11 +214,11 @@ export default function MyLearningPage() {
                       )}
                     >
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                        status.state === 'passed' ? 'bg-emerald-100' :
-                        status.state === 'in_progress' ? 'bg-blue-100' : 'bg-muted'
+                        status.state === 'passed' ? 'bg-emerald-500/10' :
+                        status.state === 'in_progress' ? 'bg-primary/10' : 'bg-muted'
                       }`}>
-                        {status.state === 'passed' && <Trophy className="w-4.5 h-4.5 text-emerald-600" />}
-                        {status.state === 'in_progress' && <PlayCircle className="w-5 h-5 text-blue-600" />}
+                        {status.state === 'passed' && <Trophy className="w-4.5 h-4.5 text-emerald-500" />}
+                        {status.state === 'in_progress' && <PlayCircle className="w-5 h-5 text-primary" />}
                         {locked && <Lock className="w-4 h-4 text-muted-foreground" />}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -213,8 +230,8 @@ export default function MyLearningPage() {
                           {status.bestQuizPercentage !== undefined && (
                             <Badge className={`text-[10px] rounded-full ${
                               status.state === 'passed'
-                                ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-                                : 'bg-amber-100 text-amber-700 border-amber-200'
+                                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                                : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
                             }`}>
                               Quiz best: {status.bestQuizPercentage}%
                             </Badge>
@@ -245,13 +262,13 @@ export default function MyLearningPage() {
                               }`}
                             >
                               <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                                lessonStatus === 'completed' ? 'bg-emerald-100' :
-                                lessonStatus === 'available' ? 'bg-blue-100' : 'bg-muted'
+                                lessonStatus === 'completed' ? 'bg-emerald-500/10' :
+                                lessonStatus === 'available' ? 'bg-primary/10' : 'bg-muted'
                               }`}>
-                                {lessonStatus === 'completed' && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
+                                {lessonStatus === 'completed' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
                                 {lessonStatus === 'available' && (lesson.isUnitQuiz
-                                  ? <Trophy className="w-4 h-4 text-blue-600" />
-                                  : <PlayCircle className="w-4 h-4 text-blue-600" />)}
+                                  ? <Trophy className="w-4 h-4 text-primary" />
+                                  : <PlayCircle className="w-4 h-4 text-primary" />)}
                                 {lessonStatus === 'locked' && <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
                               </div>
                               <div className="flex-1 min-w-0">

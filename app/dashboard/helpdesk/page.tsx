@@ -10,21 +10,26 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { HelpCircle, Plus, MessageSquare, CheckCircle2, Clock, AlertCircle, X, Loader2 } from 'lucide-react';
+import { HelpCircle, Plus, MessageSquare, CheckCircle2, X, Loader2 } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 
+const fadeUp: Record<string, any> = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1], delay: i * 0.08 } }),
+};
+
 const STATUS_STYLES: Record<string, string> = {
-  open: 'bg-amber-100 text-amber-700',
-  in_progress: 'bg-blue-100 text-blue-700',
-  resolved: 'bg-green-100 text-green-700',
-  closed: 'bg-gray-100 text-gray-600',
+  open: 'bg-amber-500/10 text-amber-600 border border-amber-500/20',
+  in_progress: 'bg-primary/10 text-primary border border-primary/20',
+  resolved: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20',
+  closed: 'bg-muted text-muted-foreground',
 };
 
 const PRIORITY_STYLES: Record<string, string> = {
-  low: 'bg-gray-100 text-gray-600',
-  medium: 'bg-blue-100 text-blue-700',
-  high: 'bg-orange-100 text-orange-700',
-  urgent: 'bg-red-100 text-red-700',
+  low: 'bg-muted text-muted-foreground',
+  normal: 'bg-primary/10 text-primary border border-primary/20',
+  high: 'bg-amber-500/10 text-amber-600 border border-amber-500/20',
+  urgent: 'bg-destructive/10 text-destructive border border-destructive/20',
 };
 
 export default function HelpdeskPage() {
@@ -92,39 +97,52 @@ export default function HelpdeskPage() {
   };
 
   if (loading) return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-4">
-      {[1, 2].map(i => <div key={i} className="h-24 bg-muted animate-pulse rounded-2xl" />)}
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 py-2 space-y-5">
+      <div className="h-24 bg-muted animate-pulse rounded-3xl" />
+      {[1, 2].map(i => <div key={i} className="h-24 bg-muted animate-pulse rounded-3xl" />)}
     </div>
   );
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
+
+      {/* Header */}
+      <motion.header variants={fadeUp} initial="hidden" animate="visible" custom={0}
+        className="pt-2 flex flex-col sm:flex-row sm:items-end justify-between gap-6"
+      >
         <div>
-          <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
-            {isAdmin ? 'Support Tickets' : 'Help & Support'}
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary flex items-center gap-2">
+            <span className="w-5 h-px bg-primary inline-block" /> Support center
+          </p>
+          <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-3">
+            {isAdmin ? 'Support' : 'Help &'} <span className="gradient-text italic">{isAdmin ? 'tickets' : 'support'}</span>
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="text-muted-foreground mt-2 text-[15px]">
             {isAdmin ? 'Manage student and parent support requests.' : 'Submit a ticket and our team will help you.'}
           </p>
         </div>
         {!isAdmin && (
-          <Button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl gap-2">
+          <Button onClick={() => setShowCreate(true)}
+            className="rounded-full h-11 px-5 gap-2 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] hover:opacity-90 text-white shrink-0"
+          >
             <Plus className="w-4 h-4" /> New Ticket
           </Button>
         )}
-      </div>
+      </motion.header>
 
+      {/* Create form */}
       {showCreate && !isAdmin && (
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-          className="bg-card border border-border rounded-2xl p-6 space-y-4"
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+          className="bg-card border border-border rounded-3xl p-6 sm:p-7 space-y-4"
         >
           <div className="flex items-center justify-between">
-            <h2 className="font-bold text-foreground">New Support Ticket</h2>
-            <button onClick={() => setShowCreate(false)}><X className="w-5 h-5 text-muted-foreground" /></button>
+            <h2 className="font-heading text-2xl text-foreground">New Support Ticket</h2>
+            <button onClick={() => setShowCreate(false)} className="p-2 rounded-xl hover:bg-muted transition-colors">
+              <X className="w-5 h-5 text-muted-foreground" />
+            </button>
           </div>
-          <Input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} placeholder="Subject *" className="rounded-xl h-11" />
-          <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Describe your issue in detail *" className="rounded-xl text-sm resize-none min-h-28" />
+          <Input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} placeholder="Subject *" className="rounded-xl h-11 bg-muted/50" />
+          <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Describe your issue in detail *" className="rounded-xl text-sm resize-none min-h-28 bg-muted/50" />
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">Priority</label>
             <Select value={form.priority} onValueChange={v => setForm(f => ({ ...f, priority: (v ?? 'normal') as SupportTicket['priority'] }))}>
@@ -137,23 +155,30 @@ export default function HelpdeskPage() {
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={handleCreate} disabled={saving} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl gap-2">
+          <Button onClick={handleCreate} disabled={saving} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white gap-2">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageSquare className="w-4 h-4" />}
             Submit Ticket
           </Button>
         </motion.div>
       )}
 
+      {/* Tickets */}
       {tickets.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <HelpCircle className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="font-semibold">{isAdmin ? 'No tickets to manage.' : 'No tickets yet. Need help? Submit a ticket!'}</p>
-        </div>
+        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
+          className="relative text-center py-16 bg-card rounded-[2rem] border border-border overflow-hidden"
+        >
+          <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-primary/8 blur-[80px]" />
+          <HelpCircle className="w-12 h-12 mx-auto mb-4 text-primary/40" />
+          <h3 className="font-heading text-2xl text-foreground mb-1.5">
+            {isAdmin ? 'No tickets to manage' : 'No tickets yet'}
+          </h3>
+          <p className="text-sm text-muted-foreground">{isAdmin ? 'All clear!' : 'Need help? Submit a ticket!'}</p>
+        </motion.div>
       ) : (
         <div className="space-y-3">
           {tickets.map((ticket, i) => (
-            <motion.div key={ticket.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-              className="bg-card border border-border rounded-2xl p-5 space-y-3"
+            <motion.div key={ticket.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + i * 0.04 }}
+              className="bg-card border border-border rounded-2xl p-5 space-y-3 card-glow"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
@@ -165,9 +190,9 @@ export default function HelpdeskPage() {
                   {isAdmin && <p className="text-xs text-muted-foreground">From: {ticket.userName}</p>}
                   <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{ticket.description}</p>
                   {ticket.response && (
-                    <div className="mt-3 bg-blue-50 border border-blue-200 rounded-xl p-3">
-                      <p className="text-xs font-bold text-blue-700 mb-1">Support Reply:</p>
-                      <p className="text-sm text-blue-800">{ticket.response}</p>
+                    <div className="mt-3 bg-primary/5 border border-primary/20 rounded-2xl p-3">
+                      <p className="text-xs font-bold text-primary mb-1">Support Reply:</p>
+                      <p className="text-sm text-foreground">{ticket.response}</p>
                     </div>
                   )}
                 </div>
@@ -175,12 +200,12 @@ export default function HelpdeskPage() {
                   {ticket.status !== 'resolved' && (
                     <>
                       {isAdmin && (
-                        <Button size="sm" variant="ghost" onClick={() => setSelected(ticket)} className="rounded-lg text-xs gap-1">
+                        <Button size="sm" variant="ghost" onClick={() => setSelected(ticket)} className="rounded-xl text-xs gap-1">
                           <MessageSquare className="w-3.5 h-3.5" /> Reply
                         </Button>
                       )}
                       {(isAdmin || ticket.userId === user?.uid) && (
-                        <Button size="sm" variant="ghost" onClick={() => handleResolve(ticket.id!)} className="rounded-lg text-xs gap-1 text-green-600 hover:text-green-700">
+                        <Button size="sm" variant="ghost" onClick={() => handleResolve(ticket.id!)} className="rounded-xl text-xs gap-1 text-emerald-600 hover:text-emerald-700">
                           <CheckCircle2 className="w-3.5 h-3.5" /> Resolve
                         </Button>
                       )}
@@ -195,16 +220,18 @@ export default function HelpdeskPage() {
 
       {/* Reply modal */}
       {selected && isAdmin && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-            className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4"
+            className="bg-card border border-border rounded-3xl p-7 max-w-md w-full space-y-4"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-foreground">Reply to Ticket</h3>
-              <button onClick={() => setSelected(null)}><X className="w-5 h-5 text-muted-foreground" /></button>
+              <h3 className="font-heading text-2xl text-foreground">Reply to Ticket</h3>
+              <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-muted transition-colors">
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
             </div>
-            <div className="bg-muted/50 rounded-xl p-3">
+            <div className="bg-muted/50 rounded-2xl p-4">
               <p className="text-xs font-semibold text-muted-foreground mb-1">{selected.subject}</p>
               <p className="text-sm text-foreground">{selected.description}</p>
             </div>
@@ -212,9 +239,9 @@ export default function HelpdeskPage() {
               value={reply}
               onChange={e => setReply(e.target.value)}
               placeholder="Write your reply…"
-              className="rounded-xl text-sm resize-none min-h-24"
+              className="rounded-xl text-sm resize-none min-h-24 bg-muted/50"
             />
-            <Button onClick={handleReply} disabled={!reply.trim()} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl gap-2">
+            <Button onClick={handleReply} disabled={!reply.trim()} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white gap-2">
               <MessageSquare className="w-4 h-4" /> Send Reply
             </Button>
           </motion.div>

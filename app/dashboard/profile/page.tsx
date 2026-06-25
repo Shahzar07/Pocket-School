@@ -13,6 +13,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { User, Lock, Palette, Loader2, Save, ShieldCheck } from 'lucide-react';
 
+const fadeUp: Record<string, any> = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1], delay: i * 0.08 } }),
+};
+
 const AVATAR_PRESETS = [
   'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
   'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka',
@@ -82,29 +87,37 @@ export default function ProfilePage() {
   const initials = (name || profile?.name || 'U').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-extrabold text-foreground tracking-tight">My Profile</h1>
-        <p className="text-muted-foreground text-sm mt-1">Manage your personal information and preferences.</p>
-      </div>
+    <div className="max-w-3xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
+
+      {/* Header */}
+      <motion.header variants={fadeUp} initial="hidden" animate="visible" custom={0} className="pt-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary flex items-center gap-2">
+          <span className="w-5 h-px bg-primary inline-block" /> Account settings
+        </p>
+        <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-3">
+          My <span className="gradient-text italic">profile</span>
+        </h1>
+        <p className="text-muted-foreground mt-2 text-[15px]">Manage your personal information and preferences.</p>
+      </motion.header>
 
       {/* Profile Info */}
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-card border border-border rounded-2xl p-6 space-y-5"
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
+        className="bg-card border border-border rounded-3xl p-6 sm:p-7 space-y-5 card-glow relative overflow-hidden"
       >
+        <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-[#1A73E8] opacity-80" />
         <div className="flex items-center gap-2 mb-1">
-          <User className="w-4 h-4 text-blue-500" />
-          <h2 className="font-bold text-foreground">Personal Information</h2>
+          <User className="w-4 h-4 text-primary" />
+          <h2 className="font-heading text-xl text-foreground">Personal Information</h2>
         </div>
 
         {/* Current avatar preview */}
         <div className="flex items-center gap-4">
-          <Avatar className="w-16 h-16 border-2 border-border">
+          <Avatar className="w-16 h-16 border-2 border-border shadow-lg">
             <AvatarImage src={avatarUrl} />
-            <AvatarFallback className="bg-blue-100 text-blue-700 text-xl font-bold">{initials}</AvatarFallback>
+            <AvatarFallback className="bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] text-white text-xl font-bold">{initials}</AvatarFallback>
           </Avatar>
           <div>
-            <p className="text-sm font-semibold text-foreground">{profile?.name}</p>
+            <p className="font-bold text-foreground">{profile?.name}</p>
             <p className="text-xs text-muted-foreground capitalize">{profile?.role}</p>
             <p className="text-xs text-muted-foreground">{user?.email}</p>
           </div>
@@ -112,7 +125,7 @@ export default function ProfilePage() {
 
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground">Display Name</label>
-          <Input value={name} onChange={e => setName(e.target.value)} placeholder="Your full name" className="rounded-xl h-11" />
+          <Input value={name} onChange={e => setName(e.target.value)} placeholder="Your full name" className="rounded-xl h-11 bg-muted/50" />
         </div>
 
         {/* Avatar presets */}
@@ -121,9 +134,9 @@ export default function ProfilePage() {
           <div className="flex flex-wrap gap-2">
             {AVATAR_PRESETS.map((url, i) => (
               <button key={i} onClick={() => setAvatarUrl(url)}
-                className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-all ${avatarUrl === url ? 'border-blue-500 scale-110' : 'border-transparent hover:border-blue-300'}`}
+                className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-all ${avatarUrl === url ? 'border-primary scale-110 shadow-md' : 'border-transparent hover:border-primary/40'}`}
               >
-                <img src={url} alt={`avatar ${i}`} className="w-full h-full object-cover bg-blue-50" />
+                <img src={url} alt={`avatar ${i}`} className="w-full h-full object-cover bg-muted" />
               </button>
             ))}
           </div>
@@ -162,7 +175,7 @@ export default function ProfilePage() {
           </div>
         )}
 
-        <Button onClick={handleSaveProfile} disabled={saving} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl gap-2">
+        <Button onClick={handleSaveProfile} disabled={saving} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white gap-2">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           Save Changes
         </Button>
@@ -170,17 +183,18 @@ export default function ProfilePage() {
 
       {/* Change Password */}
       {user?.providerData?.some(p => p.providerId === 'password') && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="bg-card border border-border rounded-2xl p-6 space-y-4"
+        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}
+          className="bg-card border border-border rounded-3xl p-6 sm:p-7 space-y-4 card-glow relative overflow-hidden"
         >
+          <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-amber-500 opacity-80" />
           <div className="flex items-center gap-2 mb-1">
             <Lock className="w-4 h-4 text-amber-500" />
-            <h2 className="font-bold text-foreground">Change Password</h2>
+            <h2 className="font-heading text-xl text-foreground">Change Password</h2>
           </div>
-          <Input type="password" value={currentPw} onChange={e => setCurrentPw(e.target.value)} placeholder="Current password" className="rounded-xl h-11" />
-          <Input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="New password (min 6 chars)" className="rounded-xl h-11" />
-          <Input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} placeholder="Confirm new password" className="rounded-xl h-11" />
-          <Button onClick={handleChangePassword} disabled={changingPw} className="w-full bg-amber-500 hover:bg-amber-600 text-white rounded-xl gap-2">
+          <Input type="password" value={currentPw} onChange={e => setCurrentPw(e.target.value)} placeholder="Current password" className="rounded-xl h-11 bg-muted/50" />
+          <Input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="New password (min 6 chars)" className="rounded-xl h-11 bg-muted/50" />
+          <Input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} placeholder="Confirm new password" className="rounded-xl h-11 bg-muted/50" />
+          <Button onClick={handleChangePassword} disabled={changingPw} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-amber-500 to-orange-600 text-white gap-2">
             {changingPw ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
             Change Password
           </Button>

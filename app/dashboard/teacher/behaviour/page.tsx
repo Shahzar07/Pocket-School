@@ -16,14 +16,22 @@ import { Plus, Star, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 const TYPE_STYLES: Record<string, string> = {
-  merit: 'bg-green-100 text-green-700',
-  commendation: 'bg-blue-100 text-blue-700',
-  note: 'bg-gray-100 text-gray-700',
-  warning: 'bg-yellow-100 text-yellow-800',
-  demerit: 'bg-red-100 text-red-700',
+  merit: 'bg-emerald-500/10 text-emerald-700',
+  commendation: 'bg-blue-500/10 text-blue-700',
+  note: 'bg-muted text-muted-foreground',
+  warning: 'bg-amber-500/10 text-amber-700',
+  demerit: 'bg-red-500/10 text-red-700',
 };
 
 const TYPE_POINTS: Record<string, number> = { merit: 5, commendation: 10, note: 0, warning: -3, demerit: -5 };
+
+const fadeUp: Record<string, any> = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({
+    opacity: 1, y: 0,
+    transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1], delay: i * 0.08 },
+  }),
+};
 
 export default function BehaviourPage() {
   const { user, profile } = useAuthSTORE();
@@ -68,30 +76,56 @@ export default function BehaviourPage() {
     return acc;
   }, {});
 
-  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-teal-600" /></div>;
+  if (loading) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10 pt-10">
+      <div className="space-y-4">
+        <div className="bg-muted animate-pulse rounded-3xl h-24" />
+        <div className="bg-muted animate-pulse rounded-3xl h-24" />
+        <div className="bg-muted animate-pulse rounded-3xl h-24" />
+      </div>
+    </div>
+  );
 
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={fadeUp}
+      className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10"
+    >
+      {/* Header */}
+      <motion.div variants={fadeUp} custom={0} className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#202124]">Behaviour & Merit</h1>
-          <p className="text-sm text-[#5F6368] mt-0.5">Track merits, demerits, commendations, and pastoral notes</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">
+            Behaviour & Merit
+          </p>
+          <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1">
+            Student <span className="gradient-text italic">Behaviour</span>
+          </h1>
         </div>
-        <Button onClick={() => setShowForm(s => !s)} className="bg-teal-600 hover:bg-teal-700 text-white gap-2">
+        <Button
+          onClick={() => setShowForm(s => !s)}
+          className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:opacity-90 gap-2"
+        >
           <Plus className="w-4 h-4" /> Add Record
         </Button>
-      </div>
+      </motion.div>
 
+      {/* Form */}
       {showForm && (
-        <div className="bg-white rounded-2xl border border-[#DADCE0] p-6 space-y-4">
-          <h2 className="font-semibold text-[#202124]">New Behaviour Record</h2>
+        <motion.div
+          variants={fadeUp}
+          custom={1}
+          className="bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow space-y-5"
+        >
+          <h2 className="font-heading text-xl text-foreground">New Behaviour Record</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-medium text-[#5F6368] mb-1 block">Student Email *</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Student Email *</label>
               <Input value={form.studentEmail} onChange={e => setForm(f => ({ ...f, studentEmail: e.target.value }))} placeholder="student@example.com" type="email" />
             </div>
             <div>
-              <label className="text-xs font-medium text-[#5F6368] mb-1 block">Type</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Type</label>
               <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v as BehaviourRecord['type'] }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -104,55 +138,80 @@ export default function BehaviourPage() {
               </Select>
             </div>
             <div className="md:col-span-2">
-              <label className="text-xs font-medium text-[#5F6368] mb-1 block">Description *</label>
-              <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} placeholder="Describe the reason for this record…" />
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Description *</label>
+              <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} placeholder="Describe the reason for this record..." />
             </div>
           </div>
           <div className="flex gap-3">
-            <Button onClick={handleCreate} disabled={saving} className="bg-teal-600 hover:bg-teal-700 text-white">
+            <Button
+              onClick={handleCreate}
+              disabled={saving}
+              className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:opacity-90"
+            >
               {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />} Save Record
             </Button>
-            <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setShowForm(false)} className="rounded-full h-11 px-5 font-bold">
+              Cancel
+            </Button>
           </div>
-        </div>
+        </motion.div>
       )}
 
+      {/* Empty state */}
       {Object.keys(byStudent).length === 0 && !showForm && (
-        <div className="text-center py-16 text-[#5F6368]">
-          <Star className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-          <p className="font-medium">No behaviour records yet</p>
-          <p className="text-sm mt-1">Add your first record to start tracking student behaviour.</p>
-        </div>
+        <motion.div variants={fadeUp} custom={1} className="relative flex flex-col items-center justify-center py-24 text-center">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl" />
+          </div>
+          <Star className="w-12 h-12 mx-auto mb-4 text-muted-foreground/40" />
+          <p className="font-heading text-2xl text-foreground">No behaviour records yet</p>
+          <p className="text-sm text-muted-foreground mt-2 max-w-xs">Add your first record to start tracking student behaviour.</p>
+        </motion.div>
       )}
 
-      <div className="space-y-4">
-        {Object.entries(byStudent).map(([sid, d]) => (
-          <div key={sid} className="bg-white rounded-xl border border-[#DADCE0] overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3 border-b border-[#DADCE0] bg-[#F8F9FA]">
-              <p className="font-semibold text-[#202124]">{d.name}</p>
-              <Badge className={d.total >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
-                {d.total >= 0 ? '+' : ''}{d.total} pts
-              </Badge>
-            </div>
-            <div className="divide-y divide-[#F1F3F4]">
-              {d.records.map(r => (
-                <div key={r.id} className="px-5 py-3 flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <Badge className={`shrink-0 mt-0.5 ${TYPE_STYLES[r.type]}`}>{r.type}</Badge>
-                    <div>
-                      <p className="text-sm text-[#202124]">{r.description}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{(r.createdAt as any)?.toDate?.().toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                  <span className={`text-sm font-bold shrink-0 ${r.points >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {r.points >= 0 ? '+' : ''}{r.points}
-                  </span>
-                </div>
-              ))}
-            </div>
+      {/* Student records */}
+      {Object.keys(byStudent).length > 0 && (
+        <motion.div variants={fadeUp} custom={2} className="space-y-5">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">Overview</p>
+            <h2 className="font-heading text-3xl text-foreground tracking-tight mt-1">Student Records</h2>
           </div>
-        ))}
-      </div>
+
+          <div className="space-y-4">
+            {Object.entries(byStudent).map(([sid, d], idx) => (
+              <motion.div
+                key={sid}
+                variants={fadeUp}
+                custom={idx + 3}
+                className="bg-card border border-border rounded-3xl overflow-hidden card-glow"
+              >
+                <div className="bg-muted/50 px-5 py-3 border-b border-border flex items-center justify-between">
+                  <p className="font-heading text-lg text-foreground">{d.name}</p>
+                  <Badge className={d.total >= 0 ? 'bg-emerald-500/10 text-emerald-700' : 'bg-red-500/10 text-red-700'}>
+                    {d.total >= 0 ? '+' : ''}{d.total} pts
+                  </Badge>
+                </div>
+                <div className="divide-y divide-border">
+                  {d.records.map(r => (
+                    <div key={r.id} className="px-5 py-3 flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <Badge className={`shrink-0 mt-0.5 ${TYPE_STYLES[r.type]}`}>{r.type}</Badge>
+                        <div>
+                          <p className="text-sm text-foreground">{r.description}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{(r.createdAt as any)?.toDate?.().toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <span className={`text-sm font-bold shrink-0 ${r.points >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {r.points >= 0 ? '+' : ''}{r.points}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      )}
     </motion.div>
   );
 }

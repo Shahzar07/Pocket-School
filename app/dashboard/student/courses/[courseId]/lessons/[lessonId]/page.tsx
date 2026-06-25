@@ -29,6 +29,11 @@ import {
   Video, Trophy, Timer, AlertTriangle, ArrowRight, ImageIcon, Calculator,
 } from 'lucide-react';
 
+const fadeUp: Record<string, any> = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1], delay: i * 0.08 } }),
+};
+
 // ─── Flashcard Component ─────────────────────────────────────
 function FlashcardViewer({ cards }: { cards: { question: string; answer: string }[] }) {
   const [index, setIndex] = useState(0);
@@ -63,15 +68,15 @@ function FlashcardViewer({ cards }: { cards: { question: string; answer: string 
           <div style={{ backfaceVisibility: 'hidden', position: 'absolute', inset: 0 }}
             className="bg-card border border-border rounded-3xl p-8 flex flex-col items-center justify-center text-center shadow-card"
           >
-            <Badge className="mb-4 text-xs rounded-full bg-blue-50 text-blue-700 border-blue-200">Question</Badge>
+            <Badge className="mb-4 text-xs rounded-full bg-primary/10 text-primary border-primary/20">Question</Badge>
             <p className="text-lg font-semibold text-foreground leading-relaxed">{card.question}</p>
             <p className="text-xs text-muted-foreground mt-4">Tap to reveal answer</p>
           </div>
           {/* Back */}
           <div style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', position: 'absolute', inset: 0 }}
-            className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-3xl p-8 flex flex-col items-center justify-center text-center shadow-card"
+            className="bg-gradient-to-br from-primary/5 to-violet-500/5 border border-primary/20 rounded-3xl p-8 flex flex-col items-center justify-center text-center shadow-card"
           >
-            <Badge className="mb-4 text-xs rounded-full bg-emerald-50 text-emerald-700 border-emerald-200">Answer</Badge>
+            <Badge className="mb-4 text-xs rounded-full bg-emerald-500/10 text-emerald-600 border-emerald-500/20">Answer</Badge>
             <p className="text-base text-foreground leading-relaxed">{card.answer}</p>
           </div>
         </motion.div>
@@ -83,10 +88,10 @@ function FlashcardViewer({ cards }: { cards: { question: string; answer: string 
         </Button>
         {flipped && (
           <>
-            <Button onClick={markAgain} variant="outline" className="rounded-xl gap-2 border-red-200 text-red-600 hover:bg-red-50">
+            <Button onClick={markAgain} variant="outline" className="rounded-full gap-2 border-destructive/30 text-destructive hover:bg-destructive/10">
               <X className="w-4 h-4" /> Again
             </Button>
-            <Button onClick={markKnown} className="rounded-xl gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+            <Button onClick={markKnown} className="rounded-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
               <Check className="w-4 h-4" /> Got it
             </Button>
           </>
@@ -156,9 +161,9 @@ function QuizViewer({
   return (
     <div className="max-w-2xl mx-auto py-6 space-y-6">
       {graded && (
-        <div className={`rounded-2xl p-5 text-center ${percentage >= 70 ? 'bg-emerald-50 border border-emerald-200' : 'bg-amber-50 border border-amber-200'}`}>
+        <div className={`rounded-3xl p-5 text-center border ${percentage >= 70 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'}`}>
           <p className="text-3xl font-extrabold">{percentage}%</p>
-          <p className={`text-sm font-semibold mt-1 ${percentage >= 70 ? 'text-emerald-700' : 'text-amber-700'}`}>
+          <p className={`text-sm font-semibold mt-1 ${percentage >= 70 ? 'text-emerald-600' : 'text-amber-600'}`}>
             {Object.values(graded).filter(r => r.correct).length}/{questions.length} correct
             {percentage >= 70 ? ' — Great work! 🎉' : ' — Keep studying! 📚'}
           </p>
@@ -166,7 +171,7 @@ function QuizViewer({
       )}
 
       {questions.map((q, i) => (
-        <div key={i} className="bg-card border border-border rounded-2xl p-5">
+        <div key={i} className="bg-card border border-border rounded-3xl p-5">
           <p className="font-semibold text-foreground mb-4 text-sm leading-relaxed">
             <span className="text-primary font-bold">{i + 1}. </span>{q.question}
           </p>
@@ -182,8 +187,8 @@ function QuizViewer({
                   onClick={() => !graded && setAnswers(a => ({ ...a, [i]: opt }))}
                   className={`w-full text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
                     graded
-                      ? isCorrect ? 'border-emerald-400 bg-emerald-50 text-emerald-800'
-                        : isWrong ? 'border-red-400 bg-red-50 text-red-800'
+                      ? isCorrect ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700'
+                        : isWrong ? 'border-destructive/40 bg-destructive/10 text-destructive'
                         : selected ? 'border-border bg-muted text-muted-foreground'
                         : 'border-border bg-background text-muted-foreground'
                       : selected
@@ -193,13 +198,13 @@ function QuizViewer({
                 >
                   {opt}
                   {graded && isCorrect && <span className="float-right text-emerald-600">✓</span>}
-                  {graded && isWrong && <span className="float-right text-red-500">✗</span>}
+                  {graded && isWrong && <span className="float-right text-destructive">✗</span>}
                 </button>
               );
             })}
           </div>
           {graded?.[i] && (
-            <p className={`mt-3 text-xs px-3 py-2 rounded-lg ${graded[i].correct ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+            <p className={`mt-3 text-xs px-3 py-2 rounded-lg ${graded[i].correct ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'}`}>
               {graded[i].feedback}
             </p>
           )}
@@ -208,7 +213,7 @@ function QuizViewer({
 
       {!graded && (
         <Button onClick={handleSubmit} disabled={loading || Object.keys(answers).length < questions.length}
-          className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+          className="w-full h-11 rounded-full font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white"
         >
           {loading ? 'Grading with AI…' : `Submit Quiz (${Object.keys(answers).length}/${questions.length})`}
         </Button>
@@ -318,39 +323,44 @@ function UnitQuizMode({
   // ── Intro ──
   if (phase === 'intro') {
     return (
-      <div className="max-w-2xl mx-auto py-8">
-        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white text-center mb-6">
-          <Trophy className="w-10 h-10 mx-auto mb-3 text-amber-300" />
-          <h2 className="font-heading text-3xl mb-2">{unit.title} — Mastery Quiz</h2>
-          <p className="text-blue-100 text-sm max-w-md mx-auto">
-            {questions.length} questions covering every lesson in this unit.
-            Score {threshold}% or higher to pass and unlock the next unit.
-          </p>
+      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="max-w-2xl mx-auto py-8">
+        <div className="relative overflow-hidden bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] rounded-3xl p-8 text-white text-center mb-6">
+          <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-white/10 blur-2xl" />
+          <div className="absolute -bottom-20 -left-10 w-56 h-56 rounded-full bg-white/5 blur-3xl" />
+          <div className="relative">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/70 mb-3">Mastery Challenge</p>
+            <Trophy className="w-10 h-10 mx-auto mb-3 text-amber-300" />
+            <h2 className="font-heading text-3xl mb-2">{unit.title} — Mastery Quiz</h2>
+            <p className="text-white/80 text-sm max-w-md mx-auto">
+              {questions.length} questions covering every lesson in this unit.
+              Score {threshold}% or higher to pass and unlock the next unit.
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="bg-card border border-border rounded-2xl p-4 text-center">
+          <div className="bg-card border border-border rounded-3xl p-4 text-center card-glow">
             <p className="text-2xl font-extrabold text-foreground">{questions.length}</p>
             <p className="text-xs text-muted-foreground mt-0.5">Questions</p>
           </div>
-          <div className="bg-card border border-border rounded-2xl p-4 text-center">
+          <div className="bg-card border border-border rounded-3xl p-4 text-center card-glow">
             <p className="text-2xl font-extrabold text-foreground">{threshold}%</p>
             <p className="text-xs text-muted-foreground mt-0.5">Pass mark</p>
           </div>
-          <div className="bg-card border border-border rounded-2xl p-4 text-center">
+          <div className="bg-card border border-border rounded-3xl p-4 text-center card-glow">
             <p className="text-2xl font-extrabold text-foreground">{bestPercentage !== null ? `${bestPercentage}%` : '—'}</p>
             <p className="text-xs text-muted-foreground mt-0.5">{attempts.length ? `Best of ${attempts.length}` : 'No attempts yet'}</p>
           </div>
         </div>
 
-        <Button onClick={startQuiz} className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-base gap-2">
+        <Button onClick={startQuiz} className="w-full h-12 rounded-full font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white text-base gap-2">
           <Timer className="w-4 h-4" />
           {attempts.length ? 'Retake quiz' : 'Start quiz'} — your time will be recorded
         </Button>
         <p className="text-xs text-muted-foreground text-center mt-3">
           Unlimited attempts. If you score below {threshold}%, we&apos;ll show you exactly which lessons to review.
         </p>
-      </div>
+      </motion.div>
     );
   }
 
@@ -368,18 +378,20 @@ function UnitQuizMode({
       .filter((l): l is Lesson => !!l);
 
     return (
-      <div className="max-w-2xl mx-auto py-8 space-y-5">
-        <div className={`rounded-3xl p-8 text-center border ${
-          result.passed ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'
+      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="max-w-2xl mx-auto py-8 space-y-5">
+        <div className={`relative overflow-hidden rounded-3xl p-8 text-center border ${
+          result.passed
+            ? 'bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-emerald-500/20'
+            : 'bg-gradient-to-br from-amber-500/10 to-destructive/5 border-amber-500/20'
         }`}>
           {result.passed
             ? <Trophy className="w-10 h-10 mx-auto mb-3 text-emerald-600" />
             : <AlertTriangle className="w-10 h-10 mx-auto mb-3 text-amber-600" />}
           <p className="text-5xl font-extrabold text-foreground">{result.percentage}%</p>
-          <p className={`text-sm font-semibold mt-2 ${result.passed ? 'text-emerald-700' : 'text-amber-700'}`}>
+          <p className={`text-sm font-semibold mt-2 ${result.passed ? 'text-emerald-600' : 'text-amber-600'}`}>
             {result.score}/{result.total} correct · {formatTime(result.timeTakenSeconds)} · attempt #{result.attemptNumber}
           </p>
-          <p className={`text-base font-bold mt-3 ${result.passed ? 'text-emerald-700' : 'text-amber-700'}`}>
+          <p className={`text-base font-bold mt-3 ${result.passed ? 'text-emerald-600' : 'text-amber-600'}`}>
             {result.passed
               ? `Unit mastered! +${UNIT_PASS_REWARD}⚡ — the next unit is now unlocked. 🎉`
               : `Not quite — you need ${threshold}% to pass. Review the lessons below and try again.`}
@@ -388,7 +400,7 @@ function UnitQuizMode({
 
         {/* Per-objective breakdown */}
         {Object.keys(wrongByObjective).length > 0 && (
-          <div className="bg-card border border-border rounded-2xl p-5">
+          <div className="bg-card border border-border rounded-3xl p-5">
             <h3 className="font-bold text-foreground text-sm mb-3">Breakdown by objective</h3>
             <div className="space-y-2">
               {Object.entries(wrongByObjective).map(([code, stats]) => {
@@ -396,7 +408,7 @@ function UnitQuizMode({
                 return (
                   <div key={code} className="flex items-center gap-3">
                     <span className={`text-xs font-mono font-bold w-20 shrink-0 ${
-                      code === result.weakestObjective ? 'text-red-600' : 'text-muted-foreground'
+                      code === result.weakestObjective ? 'text-destructive' : 'text-muted-foreground'
                     }`}>
                       {code}
                     </span>
@@ -407,7 +419,7 @@ function UnitQuizMode({
               })}
             </div>
             {result.weakestObjective && !result.passed && (
-              <p className="text-xs text-red-600 mt-3">
+              <p className="text-xs text-destructive mt-3">
                 Weakest objective: <strong>{result.weakestObjective}</strong>
               </p>
             )}
@@ -416,21 +428,21 @@ function UnitQuizMode({
 
         {/* Adaptive review */}
         {!result.passed && reviewLessons.length > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5">
-            <h3 className="font-bold text-blue-900 text-sm mb-1">Review these lessons before your next attempt</h3>
-            <p className="text-xs text-blue-700 mb-3">Based on the questions you missed:</p>
+          <div className="bg-primary/5 border border-primary/20 rounded-3xl p-5">
+            <h3 className="font-bold text-foreground text-sm mb-1">Review these lessons before your next attempt</h3>
+            <p className="text-xs text-primary mb-3">Based on the questions you missed:</p>
             <div className="space-y-2">
               {reviewLessons.map(l => (
                 <button
                   key={l.id}
                   onClick={() => router.push(`/dashboard/student/courses/${courseId}/lessons/${l.id}`)}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-white border border-blue-200 hover:border-blue-400 transition-colors text-left"
+                  className="w-full flex items-center gap-3 p-3 rounded-2xl bg-card border border-primary/20 hover:border-primary/40 transition-colors text-left"
                 >
-                  <BookOpen className="w-4 h-4 text-blue-600 shrink-0" />
+                  <BookOpen className="w-4 h-4 text-primary shrink-0" />
                   <span className="text-sm font-semibold text-foreground flex-1">
                     {l.lessonNumber ? `L${l.lessonNumber} · ` : ''}{l.title}
                   </span>
-                  <ArrowRight className="w-4 h-4 text-blue-400 shrink-0" />
+                  <ArrowRight className="w-4 h-4 text-primary/60 shrink-0" />
                 </button>
               ))}
             </div>
@@ -439,28 +451,28 @@ function UnitQuizMode({
 
         <div className="flex gap-3">
           {!result.passed && (
-            <Button onClick={startQuiz} variant="outline" className="flex-1 h-11 rounded-xl gap-2">
+            <Button onClick={startQuiz} variant="outline" className="flex-1 h-11 rounded-full font-bold gap-2">
               <RotateCcw className="w-4 h-4" /> Retake quiz
             </Button>
           )}
           <Button
             onClick={() => router.push(`/dashboard/student/courses/${courseId}`)}
-            className={`flex-1 h-11 rounded-xl ${result.passed ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white' : ''}`}
+            className={`flex-1 h-11 rounded-full font-bold ${result.passed ? 'bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white' : ''}`}
             variant={result.passed ? 'default' : 'outline'}
           >
             Back to course
           </Button>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   // ── Active quiz ──
   return (
     <div className="max-w-2xl mx-auto py-6 space-y-6">
-      <div className="sticky top-0 z-10 bg-card border border-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
+      <div className="sticky top-0 z-10 bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <Timer className="w-4 h-4 text-blue-600" /> {formatTime(elapsed)}
+          <Timer className="w-4 h-4 text-primary" /> {formatTime(elapsed)}
         </div>
         <span className="text-sm text-muted-foreground">
           {Object.keys(answers).length}/{questions.length} answered
@@ -468,7 +480,7 @@ function UnitQuizMode({
       </div>
 
       {questions.map((q, i) => (
-        <div key={i} className="bg-card border border-border rounded-2xl p-5">
+        <div key={i} className="bg-card border border-border rounded-3xl p-5">
           <div className="flex items-start justify-between gap-2 mb-4">
             <p className="font-semibold text-foreground text-sm leading-relaxed">
               <span className="text-primary font-bold">{i + 1}. </span>{q.question}
@@ -498,7 +510,7 @@ function UnitQuizMode({
       <Button
         onClick={handleSubmit}
         disabled={submitting || Object.keys(answers).length < questions.length}
-        className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+        className="w-full h-12 rounded-full font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white"
       >
         {submitting ? 'Saving attempt…' : `Submit Mastery Quiz (${Object.keys(answers).length}/${questions.length})`}
       </Button>
@@ -514,30 +526,44 @@ function FormatLockCard({
 }) {
   const canAfford = balance >= cost;
   return (
-    <div className="liquid-glass rounded-3xl border border-border p-10 text-center max-w-md mx-auto my-8">
-      <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto mb-4">
-        <Lock className="w-6 h-6 text-amber-600" />
+    <motion.div
+      initial="hidden" animate="visible" variants={fadeUp}
+      className="relative overflow-hidden bg-card border border-border rounded-3xl p-10 text-center max-w-md mx-auto my-8 card-glow"
+    >
+      <div className="absolute -top-16 -right-16 w-44 h-44 rounded-full bg-amber-500/10 blur-2xl" />
+      <div className="relative">
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-amber-600 mb-3">Premium Format</p>
+        <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
+          <Lock className="w-6 h-6 text-amber-600" />
+        </div>
+        <h3 className="font-heading text-2xl text-foreground mb-1">
+          Unlock {FORMAT_LABELS[format] ?? format}
+        </h3>
+        <p className="text-sm text-muted-foreground mb-2">
+          Unlock this format for this lesson — yours forever once unlocked.
+        </p>
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 mb-5">
+          <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
+          <span className="text-base font-extrabold text-amber-600">⚡{cost}</span>
+          <span className="text-xs font-semibold text-amber-600/80">Sparks</span>
+        </div>
+        <div>
+          <Button
+            onClick={onUnlock}
+            disabled={!canAfford || unlocking}
+            className="rounded-full h-11 px-6 font-bold gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white"
+          >
+            <Zap className="w-4 h-4 fill-white" />
+            {unlocking ? 'Unlocking…' : `Unlock for ⚡${cost}`}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground mt-3">
+          {canAfford
+            ? `Your balance: ⚡${balance}`
+            : `You have ⚡${balance} — complete lessons to earn ⚡${LESSON_COMPLETE_REWARD} each.`}
+        </p>
       </div>
-      <h3 className="font-heading text-2xl text-foreground mb-1">
-        Unlock {FORMAT_LABELS[format] ?? format}
-      </h3>
-      <p className="text-sm text-muted-foreground mb-5">
-        Spend <strong className="text-amber-600">⚡{cost}</strong> Sparks to unlock this format for this lesson — yours forever once unlocked.
-      </p>
-      <Button
-        onClick={onUnlock}
-        disabled={!canAfford || unlocking}
-        className="rounded-xl gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6"
-      >
-        <Zap className="w-4 h-4 fill-white" />
-        {unlocking ? 'Unlocking…' : `Unlock for ⚡${cost}`}
-      </Button>
-      <p className="text-xs text-muted-foreground mt-3">
-        {canAfford
-          ? `Your balance: ⚡${balance}`
-          : `You have ⚡${balance} — complete lessons to earn ⚡${LESSON_COMPLETE_REWARD} each.`}
-      </p>
-    </div>
+    </motion.div>
   );
 }
 
@@ -721,8 +747,8 @@ export default function LessonPage() {
 
   if (loading) return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-4">
-      <div className="h-16 bg-muted animate-pulse rounded-2xl" />
-      <div className="h-96 bg-muted animate-pulse rounded-2xl" />
+      <div className="h-16 bg-muted animate-pulse rounded-3xl" />
+      <div className="h-96 bg-muted animate-pulse rounded-3xl" />
     </div>
   );
 
@@ -738,9 +764,12 @@ export default function LessonPage() {
           <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/student/courses/${courseId}`)} className="shrink-0">
             <ArrowLeft className="w-4 h-4" />
           </Button>
-          <h1 className="font-extrabold text-foreground text-lg truncate">{lesson.title}</h1>
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">Unit Mastery Quiz</p>
+            <h1 className="font-heading text-foreground text-lg truncate">{lesson.title}</h1>
+          </div>
           {completed && (
-            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 rounded-full gap-1.5 shrink-0">
+            <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 rounded-full gap-1.5 shrink-0">
               <CheckCircle2 className="w-3.5 h-3.5" /> Passed
             </Badge>
           )}
@@ -771,13 +800,14 @@ export default function LessonPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3 min-w-0">
           <Button variant="ghost" size="sm" onClick={() => router.back()} className="shrink-0">
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="min-w-0">
-            <h1 className="font-extrabold text-foreground text-lg truncate">{lesson.title}</h1>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">{isCurriculum ? 'Lesson' : 'Course Lesson'}</p>
+            <h1 className="font-heading text-foreground text-2xl truncate">{lesson.title}</h1>
             {!aiOutputs && <p className="text-xs text-muted-foreground">No content generated yet</p>}
             {isCurriculum && lesson.objectiveCodes && lesson.objectiveCodes.length > 0 && (
               <p className="text-xs text-muted-foreground font-mono truncate">{lesson.objectiveCodes.join(' · ')}</p>
@@ -786,13 +816,13 @@ export default function LessonPage() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {completed ? (
-            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 rounded-full gap-1.5">
+            <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 rounded-full gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5" /> Completed
             </Badge>
           ) : (
             <Button
               size="sm"
-              className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white gap-1.5"
+              className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white gap-1.5"
               onClick={handleComplete}
               disabled={completing}
             >
@@ -801,7 +831,7 @@ export default function LessonPage() {
             </Button>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {!aiOutputs ? (
         <div className="text-center py-20 text-muted-foreground bg-muted/30 rounded-3xl border border-dashed border-border">
@@ -811,9 +841,9 @@ export default function LessonPage() {
         </div>
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="flex-wrap h-auto gap-1 bg-muted/50 p-1 rounded-2xl mb-6">
+          <TabsList className="flex-wrap h-auto gap-1.5 bg-muted/50 p-1.5 rounded-2xl mb-6">
             {TABS.map(t => (
-              <TabsTrigger key={t.id} value={t.id} className="rounded-xl h-8 px-3 text-xs font-medium gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <TabsTrigger key={t.id} value={t.id} className="rounded-full h-8 px-3.5 text-xs font-semibold gap-1.5 text-muted-foreground hover:text-foreground data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#1A73E8] data-[state=active]:to-[#7C3AED] data-[state=active]:text-white data-[state=active]:shadow-sm">
                 {t.icon}{t.label}
                 {isFormatLocked(t.format) && (
                   <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-600">
@@ -827,26 +857,26 @@ export default function LessonPage() {
           {/* Text */}
           <TabsContent value="text">
             {gate('text',
-              <div className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-2xl p-6 sm:p-8">
+              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
                 <ReactMarkdown>{aiOutputs.text ?? ''}</ReactMarkdown>
-              </div>
+              </motion.div>
             )}
           </TabsContent>
 
           {/* Video (script storyboard) */}
           <TabsContent value="video">
             {gate('videoScript',
-              <div className="space-y-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-2xl px-5 py-3.5 flex items-center gap-3">
-                  <Video className="w-5 h-5 text-blue-600 shrink-0" />
-                  <p className="text-xs text-blue-800">
+              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="space-y-4">
+                <div className="bg-primary/10 border border-primary/20 rounded-2xl px-5 py-3.5 flex items-center gap-3">
+                  <Video className="w-5 h-5 text-primary shrink-0" />
+                  <p className="text-xs text-foreground">
                     <strong>Video storyboard.</strong> This is the script for this lesson&apos;s video — full video production is coming soon.
                   </p>
                 </div>
-                <div className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-2xl p-6 sm:p-8">
+                <div className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8">
                   <ReactMarkdown>{aiOutputs.videoScript ?? ''}</ReactMarkdown>
                 </div>
-              </div>
+              </motion.div>
             )}
           </TabsContent>
 
@@ -871,9 +901,9 @@ export default function LessonPage() {
           {/* Practice Problems */}
           <TabsContent value="problems">
             {gate('problems',
-              <div className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-2xl p-6 sm:p-8">
+              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
                 <ReactMarkdown>{aiOutputs.problems ?? ''}</ReactMarkdown>
-              </div>
+              </motion.div>
             )}
           </TabsContent>
 
@@ -883,9 +913,9 @@ export default function LessonPage() {
               aiOutputs.slides?.length ? (
                 <div className="space-y-4">
                   {aiOutputs.slides.map((slide, i) => (
-                    <div key={i} className="bg-card border border-border rounded-2xl p-6">
+                    <motion.div key={i} initial="hidden" animate="visible" variants={fadeUp} custom={i} className="bg-card border border-border rounded-3xl p-6 card-glow">
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">{i + 1}</div>
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] flex items-center justify-center text-white font-bold text-sm shrink-0">{i + 1}</div>
                         <h3 className="font-bold text-foreground">{slide.title}</h3>
                       </div>
                       <ul className="space-y-2">
@@ -895,7 +925,7 @@ export default function LessonPage() {
                           </li>
                         ))}
                       </ul>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               ) : <p className="text-center py-8 text-muted-foreground">No slides available.</p>
@@ -905,39 +935,39 @@ export default function LessonPage() {
           {/* Study Notes */}
           <TabsContent value="notes">
             {gate('notes',
-              <div className="prose prose-sm dark:prose-invert max-w-none bg-amber-50 dark:bg-amber-900/10 border border-amber-200 rounded-2xl p-6 sm:p-8">
+              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-amber-500/10 dark:bg-amber-900/10 border border-amber-500/20 rounded-3xl p-6 sm:p-8">
                 <ReactMarkdown>{aiOutputs.notes ?? ''}</ReactMarkdown>
-              </div>
+              </motion.div>
             )}
           </TabsContent>
 
           {/* Audio Summary (text-to-speech) */}
           <TabsContent value="audio">
             {gate('audioScript',
-              <div className="bg-card border border-border rounded-2xl p-6 sm:p-8">
+              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
                 <AudioPlayer script={aiOutputs.audioScript ?? ''} title={`${lesson.title} — Audio Summary`} />
-              </div>
+              </motion.div>
             )}
           </TabsContent>
 
           {/* Infographic */}
           <TabsContent value="infographic">
             {gate('infographic',
-              <div className="prose prose-sm dark:prose-invert max-w-none bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6 sm:p-8">
+              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-gradient-to-br from-primary/5 to-violet-500/5 border border-primary/20 rounded-3xl p-6 sm:p-8">
                 <ReactMarkdown>{aiOutputs.infographic ?? ''}</ReactMarkdown>
-              </div>
+              </motion.div>
             )}
           </TabsContent>
 
           {/* Summary */}
           <TabsContent value="summary">
-            <div className="bg-card border border-border rounded-2xl p-6 sm:p-8">
+            <motion.div initial="hidden" animate="visible" variants={fadeUp} className="bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
               <div className="flex items-center gap-2 mb-4">
                 <Headphones className="w-5 h-5 text-primary" />
-                <h3 className="font-bold text-foreground">Quick Summary</h3>
+                <h3 className="font-heading text-2xl text-foreground">Quick Summary</h3>
               </div>
               <p className="text-base text-foreground leading-relaxed">{aiOutputs.summary}</p>
-            </div>
+            </motion.div>
           </TabsContent>
 
           {/* Glossary */}
@@ -946,15 +976,15 @@ export default function LessonPage() {
               aiOutputs.glossary?.length ? (
                 <div className="space-y-3">
                   {aiOutputs.glossary.map((g, i) => (
-                    <div key={i} className="bg-card border border-border rounded-2xl p-5 flex gap-4">
-                      <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center shrink-0">
+                    <motion.div key={i} initial="hidden" animate="visible" variants={fadeUp} custom={i} className="bg-card border border-border rounded-3xl p-5 flex gap-4 card-glow">
+                      <div className="w-8 h-8 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
                         <BookMarked className="w-4 h-4 text-violet-600" />
                       </div>
                       <div>
                         <p className="font-bold text-foreground">{g.term}</p>
                         <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">{g.definition}</p>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               ) : <p className="text-center py-8 text-muted-foreground">No glossary available.</p>
@@ -964,18 +994,18 @@ export default function LessonPage() {
           {/* Mind Map */}
           <TabsContent value="mindmap">
             {gate('mindmap',
-              <div className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-2xl p-6 sm:p-8">
+              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
                 <ReactMarkdown>{aiOutputs.mindmap ?? ''}</ReactMarkdown>
-              </div>
+              </motion.div>
             )}
           </TabsContent>
 
           {/* My Notes */}
           <TabsContent value="mynotes">
-            <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
+            <motion.div initial="hidden" animate="visible" variants={fadeUp} className="bg-card border border-border rounded-3xl p-6 space-y-4 card-glow">
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-foreground">My Personal Notes</h3>
-                <Button size="sm" variant="outline" onClick={handleSaveNote} disabled={noteSaving} className="rounded-xl">
+                <h3 className="font-heading text-2xl text-foreground">My Personal Notes</h3>
+                <Button size="sm" variant="outline" onClick={handleSaveNote} disabled={noteSaving} className="rounded-full font-bold">
                   {noteSaving ? 'Saving…' : 'Save Note'}
                 </Button>
               </div>
@@ -985,7 +1015,7 @@ export default function LessonPage() {
                 placeholder="Write your notes here… they're saved to your account."
                 className="min-h-64 rounded-xl resize-none text-sm"
               />
-            </div>
+            </motion.div>
           </TabsContent>
         </Tabs>
       )}

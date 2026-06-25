@@ -11,17 +11,26 @@ import { toast } from 'sonner';
 import { AlertTriangle, CheckCircle2, Shield, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 
+const fadeUp: Record<string, any> = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1], delay: i * 0.08 },
+  }),
+};
+
 const STATUS_STYLES: Record<string, string> = {
-  pending: 'bg-gray-100 text-gray-700',
-  clean: 'bg-green-100 text-green-700',
-  suspicious: 'bg-yellow-100 text-yellow-800',
-  violation: 'bg-red-100 text-red-700',
+  pending: 'bg-muted text-muted-foreground',
+  clean: 'bg-emerald-500/10 text-emerald-700',
+  suspicious: 'bg-amber-500/10 text-amber-700',
+  violation: 'bg-red-500/10 text-red-700',
 };
 
 function ScoreBar({ value, color }: { value: number; color: string }) {
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${value}%` }} />
       </div>
       <span className="text-xs font-bold w-8 text-right">{value}%</span>
@@ -62,77 +71,113 @@ export default function IntegrityPage() {
     violation: reports.filter(r => r.status === 'violation').length,
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-teal-600" /></div>;
+  if (loading) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
+      <div className="space-y-4">
+        <div className="bg-muted animate-pulse rounded-3xl h-24" />
+        <div className="bg-muted animate-pulse rounded-3xl h-24" />
+        <div className="bg-muted animate-pulse rounded-3xl h-24" />
+      </div>
+    </div>
+  );
 
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-[#202124]">Academic Integrity</h1>
-        <p className="text-sm text-[#5F6368] mt-0.5">Review AI-detection and plagiarism reports for submitted work</p>
-      </div>
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
+      {/* Header */}
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}>
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">Academic Integrity</p>
+        <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1">
+          Academic <span className="gradient-text italic">Integrity</span>
+        </h1>
+        <p className="text-muted-foreground mt-2">Review AI-detection and plagiarism reports for submitted work</p>
+      </motion.div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        animate="visible"
+        custom={1}
+        className="grid grid-cols-2 md:grid-cols-4 gap-4"
+      >
         {[
-          { label: 'Total Reports', value: stats.total, color: 'text-[#202124]', bg: 'bg-white' },
-          { label: 'Clean', value: stats.clean, color: 'text-green-700', bg: 'bg-green-50' },
-          { label: 'Suspicious', value: stats.suspicious, color: 'text-yellow-700', bg: 'bg-yellow-50' },
-          { label: 'Violations', value: stats.violation, color: 'text-red-700', bg: 'bg-red-50' },
+          { label: 'Total Reports', value: stats.total, accent: 'bg-emerald-500' },
+          { label: 'Clean', value: stats.clean, accent: 'bg-green-500' },
+          { label: 'Suspicious', value: stats.suspicious, accent: 'bg-amber-500' },
+          { label: 'Violations', value: stats.violation, accent: 'bg-red-500' },
         ].map(s => (
-          <div key={s.label} className={`${s.bg} rounded-xl border border-[#DADCE0] p-4 text-center`}>
-            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-xs text-[#5F6368] mt-1">{s.label}</p>
+          <div key={s.label} className="bg-card border border-border rounded-3xl p-5 sm:p-6 relative overflow-hidden card-glow text-center">
+            <div className={`absolute top-0 left-0 right-0 h-1 ${s.accent}`} />
+            <p className="text-3xl font-bold text-foreground">{s.value}</p>
+            <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
           </div>
         ))}
-      </div>
+      </motion.div>
 
       {reports.length === 0 && (
-        <div className="text-center py-16 text-[#5F6368]">
-          <Shield className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-          <p className="font-medium">No integrity reports yet</p>
-          <p className="text-sm mt-1">Integrity checks run when you click "Check Integrity" on a submission.</p>
+        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2} className="text-center py-20 relative">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl" />
+          </div>
+          <Shield className="w-14 h-14 mx-auto mb-4 text-muted-foreground relative" />
+          <p className="font-heading text-2xl text-foreground relative">No integrity reports yet</p>
+          <p className="text-muted-foreground mt-2 relative">Integrity checks run when you click &quot;Check Integrity&quot; on a submission.</p>
+        </motion.div>
+      )}
+
+      {reports.length > 0 && (
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">Reports</p>
+          <h2 className="font-heading text-3xl text-foreground tracking-tight mt-1">Review Submissions</h2>
         </div>
       )}
 
-      <div className="space-y-4">
-        {reports.map(r => (
-          <div key={r.id} className="bg-white rounded-xl border border-[#DADCE0] p-5 space-y-4">
+      <div className="space-y-5">
+        {reports.map((r, idx) => (
+          <motion.div
+            key={r.id}
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={idx + 2}
+            className="bg-card border border-border rounded-3xl p-5 sm:p-6 card-glow space-y-4"
+          >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-semibold text-[#202124]">{r.studentName}</p>
+                  <p className="font-semibold text-foreground">{r.studentName}</p>
                   <Badge className={STATUS_STYLES[r.status]}>{r.status}</Badge>
-                  {r.aiScore >= 70 && <Badge className="bg-orange-100 text-orange-700">⚠ High AI Score</Badge>}
+                  {r.aiScore >= 70 && <Badge className="bg-amber-500/10 text-amber-700">⚠ High AI Score</Badge>}
                 </div>
-                <p className="text-xs text-[#5F6368] mt-0.5">{r.assignmentTitle ?? 'Unknown assignment'} · {(r.createdAt as any)?.toDate?.().toLocaleDateString()}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{r.assignmentTitle ?? 'Unknown assignment'} · {(r.createdAt as any)?.toDate?.().toLocaleDateString()}</p>
               </div>
-              <AlertTriangle className={`w-5 h-5 shrink-0 ${r.status === 'violation' ? 'text-red-500' : r.status === 'suspicious' ? 'text-yellow-500' : 'text-gray-300'}`} />
+              <AlertTriangle className={`w-5 h-5 shrink-0 ${r.status === 'violation' ? 'text-red-500' : r.status === 'suspicious' ? 'text-amber-500' : 'text-muted-foreground'}`} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs font-semibold text-[#5F6368] mb-1">AI Detection Score</p>
+                <p className="text-xs font-semibold text-muted-foreground mb-1">AI Detection Score</p>
                 <ScoreBar value={r.aiScore} color={r.aiScore >= 70 ? 'bg-red-500' : r.aiScore >= 40 ? 'bg-yellow-400' : 'bg-green-500'} />
               </div>
               <div>
-                <p className="text-xs font-semibold text-[#5F6368] mb-1">Plagiarism Score</p>
+                <p className="text-xs font-semibold text-muted-foreground mb-1">Plagiarism Score</p>
                 <ScoreBar value={r.plagiarismScore} color={r.plagiarismScore >= 70 ? 'bg-red-500' : r.plagiarismScore >= 40 ? 'bg-yellow-400' : 'bg-green-500'} />
               </div>
             </div>
 
             {r.flags.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
-                {r.flags.map((f, i) => <Badge key={i} className="bg-gray-100 text-gray-600 text-xs">{f}</Badge>)}
+                {r.flags.map((f, i) => <Badge key={i} className="bg-muted text-muted-foreground text-xs">{f}</Badge>)}
               </div>
             )}
 
             {r.contentSnippet && (
-              <div className="bg-[#F8F9FA] rounded-lg p-3 text-xs text-[#5F6368] line-clamp-3">{r.contentSnippet}</div>
+              <div className="bg-muted rounded-2xl p-3 text-xs text-muted-foreground line-clamp-3">{r.contentSnippet}</div>
             )}
 
-            <p className="text-xs text-[#5F6368]"><span className="font-semibold">Recommendation:</span> {r.recommendation}</p>
+            <p className="text-xs text-muted-foreground"><span className="font-semibold">Recommendation:</span> {r.recommendation}</p>
 
-            <div className="border-t border-[#DADCE0] pt-4 flex items-end gap-3">
+            <div className="border-t border-border pt-4 flex items-end gap-3">
               <div className="flex-1 space-y-2">
                 <Textarea
                   placeholder="Add resolution note…"
@@ -150,13 +195,17 @@ export default function IntegrityPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={() => handleUpdate(r.id)} disabled={saving === r.id} className="bg-teal-600 hover:bg-teal-700 text-white shrink-0 gap-1">
+              <Button
+                onClick={() => handleUpdate(r.id)}
+                disabled={saving === r.id}
+                className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:opacity-90 shrink-0 gap-1"
+              >
                 {saving === r.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />} Update
               </Button>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
-    </motion.div>
+    </div>
   );
 }

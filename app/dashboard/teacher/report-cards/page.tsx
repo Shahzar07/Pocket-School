@@ -29,7 +29,22 @@ function letterGrade(pct: number) {
   return 'F';
 }
 
-const GRADE_COLORS = { A: 'bg-green-100 text-green-800', B: 'bg-blue-100 text-blue-800', C: 'bg-yellow-100 text-yellow-800', D: 'bg-orange-100 text-orange-800', F: 'bg-red-100 text-red-800' };
+const GRADE_COLORS: Record<string, string> = {
+  A: 'bg-emerald-500/10 text-emerald-600',
+  B: 'bg-sky-500/10 text-sky-600',
+  C: 'bg-amber-500/10 text-amber-600',
+  D: 'bg-orange-500/10 text-orange-600',
+  F: 'bg-red-500/10 text-red-600',
+};
+
+const fadeUp: Record<string, any> = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1] as [number, number, number, number], delay: i * 0.08 },
+  }),
+};
 
 export default function ReportCardsPage() {
   const { user, profile } = useAuthSTORE();
@@ -111,93 +126,137 @@ export default function ReportCardsPage() {
     finally { setIssuingCert(null); }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-teal-600" /></div>;
+  if (loading) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
+      <div className="flex items-center justify-center h-64">
+        <div className="space-y-4 w-full max-w-2xl">
+          <div className="bg-muted animate-pulse rounded-3xl h-40" />
+          <div className="bg-muted animate-pulse rounded-3xl h-40" />
+        </div>
+      </div>
+    </div>
+  );
 
   const selectedCourseName = courses.find(c => c.id === selectedCourse)?.title ?? '';
 
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto space-y-6">
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={fadeUp}
+      className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10"
+    >
+      {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#202124]">Report Cards</h1>
-          <p className="text-sm text-[#5F6368] mt-0.5">AI-generated report cards with grade summaries</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">REPORT CARDS</p>
+          <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight">
+            Student <span className="gradient-text italic">Reports</span>
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">AI-generated report cards with grade summaries</p>
         </div>
-        <Button onClick={() => window.print()} variant="outline" className="gap-2 print:hidden">
+        <Button
+          onClick={() => window.print()}
+          variant="outline"
+          className="rounded-full gap-2 print:hidden"
+        >
           <Printer className="w-4 h-4" /> Print All
         </Button>
       </div>
 
+      {/* Controls */}
       <div className="flex items-center gap-3 print:hidden">
         <Select value={selectedCourse} onValueChange={v => setSelectedCourse(v ?? '')}>
-          <SelectTrigger className="w-56"><SelectValue placeholder="Select course" /></SelectTrigger>
+          <SelectTrigger className="w-56 rounded-full"><SelectValue placeholder="Select course" /></SelectTrigger>
           <SelectContent>{courses.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}</SelectContent>
         </Select>
-        <Button onClick={generateReports} disabled={generating || !selectedCourse} className="bg-teal-600 hover:bg-teal-700 text-white gap-2">
+        <Button
+          onClick={generateReports}
+          disabled={generating || !selectedCourse}
+          className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all gap-2"
+        >
           {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
           Generate Reports
         </Button>
       </div>
 
+      {/* Empty state */}
       {reports.length === 0 && !generating && (
-        <div className="text-center py-16 text-[#5F6368]">
-          <FileBarChart className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-          <p className="font-medium">Select a course and generate reports</p>
-          <p className="text-sm mt-1">AI will write personalised comments for each student.</p>
-        </div>
+        <motion.div
+          variants={fadeUp}
+          custom={1}
+          className="relative text-center py-20"
+        >
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl" />
+          </div>
+          <FileBarChart className="w-14 h-14 mx-auto mb-4 text-muted-foreground/40" />
+          <p className="font-heading text-2xl text-foreground">No reports yet</p>
+          <p className="text-sm text-muted-foreground mt-1">Select a course and generate reports. AI will write personalised comments for each student.</p>
+        </motion.div>
       )}
 
+      {/* Report cards */}
       <div className="space-y-6 report-cards-container">
-        {reports.map(r => (
-          <div key={r.studentId} className="bg-white border border-[#DADCE0] rounded-2xl p-6 print:break-inside-avoid print:border print:shadow-none">
+        {reports.map((r, idx) => (
+          <motion.div
+            key={r.studentId}
+            variants={fadeUp}
+            custom={idx}
+            className="bg-card border border-border rounded-3xl p-6 card-glow print:break-inside-avoid print:border print:shadow-none"
+          >
             {/* Header */}
-            <div className="flex items-start justify-between border-b border-[#DADCE0] pb-4 mb-4">
+            <div className="flex items-start justify-between border-b border-border pb-4 mb-4">
               <div>
-                <p className="text-xs font-bold text-[#5F6368] uppercase tracking-wider">Pocket School · Report Card</p>
-                <h2 className="text-xl font-bold text-[#202124] mt-1">{r.studentName}</h2>
-                <p className="text-sm text-[#5F6368]">{selectedCourseName}</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">Pocket School · Report Card</p>
+                <h2 className="text-xl font-bold text-foreground mt-1">{r.studentName}</h2>
+                <p className="text-sm text-muted-foreground">{selectedCourseName}</p>
               </div>
               <div className="text-right">
                 <Badge className={`text-lg font-bold px-3 py-1 ${GRADE_COLORS[letterGrade(r.overall)] ?? ''}`}>
                   {letterGrade(r.overall)}
                 </Badge>
-                <p className="text-sm text-[#5F6368] mt-1">{r.overall.toFixed(1)}% overall</p>
+                <p className="text-sm text-muted-foreground mt-1">{r.overall.toFixed(1)}% overall</p>
               </div>
             </div>
 
             {/* Grade breakdown */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
               {Object.entries(r.avgByType).map(([type, d]) => (
-                <div key={type} className="bg-[#F8F9FA] rounded-xl p-3 text-center">
-                  <p className="text-xs text-[#5F6368] capitalize">{type}</p>
-                  <p className="text-xl font-bold text-[#202124]">{d.avg.toFixed(0)}%</p>
-                  <p className="text-[10px] text-gray-400">{d.count} assessment{d.count !== 1 ? 's' : ''}</p>
+                <div key={type} className="bg-muted rounded-2xl p-3 text-center">
+                  <p className="text-xs text-muted-foreground capitalize">{type}</p>
+                  <p className="text-xl font-bold text-foreground">{d.avg.toFixed(0)}%</p>
+                  <p className="text-xs text-muted-foreground">{d.count} assessment{d.count !== 1 ? 's' : ''}</p>
                 </div>
               ))}
             </div>
 
             {/* AI Comment */}
-            <div className="bg-[#E8F0FE] rounded-xl p-4">
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="w-4 h-4 text-blue-600" />
-                <p className="text-xs font-bold text-blue-700">Teacher&apos;s Comment</p>
+                <Sparkles className="w-4 h-4 text-emerald-600" />
+                <p className="text-xs font-bold text-emerald-600">Teacher&apos;s Comment</p>
               </div>
               {r.loadingComment ? (
-                <div className="flex items-center gap-2 text-sm text-blue-600"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating comment…</div>
+                <div className="flex items-center gap-2 text-sm text-emerald-600"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating comment...</div>
               ) : (
-                <p className="text-sm text-[#202124] italic">{r.comment || 'No comment generated.'}</p>
+                <p className="text-sm text-foreground italic">{r.comment || 'No comment generated.'}</p>
               )}
             </div>
 
-            <div className="flex items-center justify-between mt-3">
-              <p className="text-[10px] text-gray-400">Generated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-              <Button size="sm" onClick={() => handleIssueCert(r)} disabled={issuingCert === r.studentId}
-                className="print:hidden bg-amber-500 hover:bg-amber-600 text-white rounded-xl gap-1.5 text-xs"
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-xs text-muted-foreground">Generated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+              <Button
+                size="sm"
+                onClick={() => handleIssueCert(r)}
+                disabled={issuingCert === r.studentId}
+                className="print:hidden rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white gap-1.5 text-xs font-bold"
               >
                 {issuingCert === r.studentId ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Award className="w-3.5 h-3.5" />}
                 Issue Certificate
               </Button>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
 

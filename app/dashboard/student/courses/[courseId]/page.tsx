@@ -13,6 +13,11 @@ import { ArrowLeft, BookOpen, CheckCircle2, Lock, PlayCircle, ChevronDown, Chevr
 
 interface ModuleWithLessons { module: Module; lessons: Lesson[] }
 
+const fadeUp: Record<string, any> = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1], delay: i * 0.08 } }),
+};
+
 export default function CourseDetailPage() {
   const router = useRouter();
   const { courseId } = useParams<{ courseId: string }>();
@@ -68,44 +73,64 @@ export default function CourseDetailPage() {
   };
 
   if (loading) return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-4">
-      <div className="h-40 bg-muted animate-pulse rounded-3xl" />
-      <div className="h-24 bg-muted animate-pulse rounded-2xl" />
+    <div className="max-w-5xl mx-auto px-0 sm:px-2 pb-12 space-y-8 pt-6">
+      <div className="h-9 w-24 bg-muted animate-pulse rounded-full" />
+      <div className="h-52 bg-muted animate-pulse rounded-3xl" />
+      <div className="space-y-4">
+        {[1, 2, 3].map(i => <div key={i} className="h-24 bg-muted animate-pulse rounded-3xl" />)}
+      </div>
     </div>
   );
 
   if (!course) return (
-    <div className="max-w-4xl mx-auto px-4 py-16 text-center text-muted-foreground">
-      <p>Course not found.</p>
+    <div className="max-w-5xl mx-auto px-0 sm:px-2 pb-12">
+      <div className="relative flex flex-col items-center justify-center text-center py-24 overflow-hidden">
+        <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-primary/8 blur-[80px]" />
+        <div className="relative z-10 flex flex-col items-center">
+          <div className="w-16 h-16 rounded-3xl bg-muted flex items-center justify-center mb-6">
+            <BookOpen className="w-8 h-8 text-muted-foreground" />
+          </div>
+          <h3 className="font-heading text-2xl text-foreground mb-2">Course not found</h3>
+          <p className="text-sm text-muted-foreground max-w-sm">
+            This course may have been removed or is no longer available.
+          </p>
+        </div>
+      </div>
     </div>
   );
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-      <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => router.back()}>
-        <ArrowLeft className="w-4 h-4 mr-1" /> Back
-      </Button>
+    <div className="max-w-5xl mx-auto px-0 sm:px-2 pb-12 space-y-8">
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="pt-2">
+        <Button variant="ghost" size="sm" className="text-muted-foreground rounded-full -ml-2" onClick={() => router.back()}>
+          <ArrowLeft className="w-4 h-4 mr-1" /> Back
+        </Button>
+      </motion.div>
 
-      {/* Course header */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-7 text-white"
+      {/* Course header hero */}
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
+        className="relative overflow-hidden bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] rounded-[2rem] p-7 sm:p-9 text-white"
       >
-        <Badge className="mb-3 bg-white/20 text-white border-white/30 text-xs rounded-full">
-          {course.subject ?? 'Course'}
-        </Badge>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">{course.title}</h1>
-        <p className="text-blue-100 text-sm leading-relaxed mb-5">{course.description}</p>
-        {enrollment && (
-          <div>
-            <div className="flex justify-between text-xs text-blue-100 mb-2">
-              <span>{completedIds.size} / {totalLessons} lessons complete</span>
-              <span className="font-bold">{enrollment.progress}%</span>
+        <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-[60px]" />
+        <div className="pointer-events-none absolute -bottom-20 -left-12 w-72 h-72 rounded-full bg-white/10 blur-[70px]" />
+        <div className="relative z-10">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/70 mb-3">
+            {course.subject ?? 'Course'}
+          </p>
+          <h1 className="font-heading text-3xl sm:text-4xl font-extrabold tracking-tight mb-3">{course.title}</h1>
+          <p className="text-white/80 text-sm leading-relaxed mb-6 max-w-2xl">{course.description}</p>
+          {enrollment && (
+            <div>
+              <div className="flex justify-between text-xs text-white/80 mb-2">
+                <span>{completedIds.size} / {totalLessons} lessons complete</span>
+                <span className="font-bold">{enrollment.progress}%</span>
+              </div>
+              <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+                <div className="h-full bg-white rounded-full transition-all" style={{ width: `${enrollment.progress}%` }} />
+              </div>
             </div>
-            <div className="h-2 bg-white/20 rounded-full overflow-hidden">
-              <div className="h-full bg-white rounded-full transition-all" style={{ width: `${enrollment.progress}%` }} />
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </motion.div>
 
       {/* Modules */}
@@ -115,8 +140,8 @@ export default function CourseDetailPage() {
           const unitLocked = unitStatus?.state === 'locked';
           return (
           <motion.div key={mod.module.id}
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: modIndex * 0.08 }}
-            className={`bg-card border border-border rounded-2xl overflow-hidden ${unitLocked ? 'opacity-60' : ''}`}
+            variants={fadeUp} initial="hidden" animate="visible" custom={modIndex + 2}
+            className={`bg-card border border-border rounded-3xl overflow-hidden ${unitLocked ? 'opacity-60' : 'card-glow'}`}
           >
             <button
               className="w-full flex items-center justify-between p-5 text-left hover:bg-muted/50 transition-colors"
@@ -134,12 +159,12 @@ export default function CourseDetailPage() {
                     <Badge variant="outline" className="text-[10px] rounded-full">{mod.module.term}</Badge>
                   )}
                   {unitStatus?.state === 'passed' && (
-                    <Badge className="text-[10px] rounded-full bg-emerald-100 text-emerald-700 border-emerald-200 gap-1">
+                    <Badge className="text-[10px] rounded-full bg-emerald-500/10 text-emerald-600 border-emerald-500/20 gap-1">
                       <Trophy className="w-3 h-3" /> Passed{unitStatus.bestQuizPercentage !== undefined ? ` · ${unitStatus.bestQuizPercentage}%` : ''}
                     </Badge>
                   )}
                   {unitStatus?.state === 'in_progress' && unitStatus.bestQuizPercentage !== undefined && (
-                    <Badge className="text-[10px] rounded-full bg-amber-100 text-amber-700 border-amber-200">
+                    <Badge className="text-[10px] rounded-full bg-amber-500/10 text-amber-600 border-amber-500/20">
                       Quiz best: {unitStatus.bestQuizPercentage}%
                     </Badge>
                   )}
@@ -174,13 +199,13 @@ export default function CourseDetailPage() {
                           : 'hover:bg-muted/50 cursor-pointer'
                       }`}
                     >
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                        status === 'completed' ? 'bg-emerald-100' :
-                        status === 'available' ? 'bg-blue-100' :
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+                        status === 'completed' ? 'bg-emerald-500/10' :
+                        status === 'available' ? 'bg-primary/10' :
                         'bg-muted'
                       }`}>
                         {status === 'completed' && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
-                        {status === 'available' && <PlayCircle className="w-5 h-5 text-blue-600" />}
+                        {status === 'available' && <PlayCircle className="w-5 h-5 text-primary" />}
                         {status === 'locked' && <Lock className="w-4 h-4 text-muted-foreground" />}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -209,9 +234,17 @@ export default function CourseDetailPage() {
       </div>
 
       {modules.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
-          <BookOpen className="w-10 h-10 mx-auto mb-2 opacity-30" />
-          <p>No lessons available yet. Check back soon.</p>
+        <div className="relative flex flex-col items-center justify-center text-center py-24 overflow-hidden">
+          <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-primary/8 blur-[80px]" />
+          <div className="relative z-10 flex flex-col items-center">
+            <div className="w-16 h-16 rounded-3xl bg-muted flex items-center justify-center mb-6">
+              <BookOpen className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="font-heading text-2xl text-foreground mb-2">No lessons yet</h3>
+            <p className="text-sm text-muted-foreground max-w-sm">
+              This course doesn&apos;t have any published lessons yet. Check back soon.
+            </p>
+          </div>
         </div>
       )}
     </div>

@@ -17,7 +17,15 @@ import { Plus, ClipboardList, Eye, CheckCircle2, Trash2, AlertTriangle, Loader2 
 import { motion } from 'motion/react';
 import { Timestamp } from 'firebase/firestore';
 
-const STATUS_COLORS = { draft: 'bg-gray-100 text-gray-700', published: 'bg-green-100 text-green-700' };
+const STATUS_COLORS = { draft: 'bg-muted text-muted-foreground', published: 'bg-emerald-500/10 text-emerald-700 border-emerald-200' };
+
+const fadeUp: Record<string, any> = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({
+    opacity: 1, y: 0,
+    transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1], delay: i * 0.08 },
+  }),
+};
 
 export default function TeacherAssignmentsPage() {
   const { user, profile } = useAuthSTORE();
@@ -116,63 +124,105 @@ export default function TeacherAssignmentsPage() {
     toast.success('Deleted');
   }
 
-  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-teal-600" /></div>;
+  if (loading) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
+      <div className="space-y-4">
+        <div className="bg-muted animate-pulse rounded-3xl h-8 w-48" />
+        <div className="bg-muted animate-pulse rounded-3xl h-14 w-96" />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="bg-muted animate-pulse rounded-3xl h-32" />
+        ))}
+      </div>
+    </div>
+  );
 
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
+      {/* Header */}
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        animate="visible"
+        custom={0}
+        className="flex items-center justify-between"
+      >
         <div>
-          <h1 className="text-2xl font-bold text-[#202124]">Assignments</h1>
-          <p className="text-sm text-[#5F6368] mt-0.5">Create and grade assignments for your courses</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">Assignments</p>
+          <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1">
+            Manage <span className="gradient-text italic">Assignments</span>
+          </h1>
+          <p className="text-sm text-muted-foreground mt-2">Create and grade assignments for your courses</p>
         </div>
         {view === 'list' && (
-          <Button onClick={() => setView('create')} className="bg-teal-600 hover:bg-teal-700 text-white gap-2">
+          <Button
+            onClick={() => setView('create')}
+            className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-90 text-white gap-2"
+          >
             <Plus className="w-4 h-4" /> New Assignment
           </Button>
         )}
         {view !== 'list' && (
-          <Button variant="outline" onClick={() => setView('list')}>← Back to List</Button>
+          <Button variant="outline" onClick={() => setView('list')} className="rounded-full h-11 px-5 font-semibold">
+            ← Back to List
+          </Button>
         )}
-      </div>
+      </motion.div>
 
       {/* Course selector */}
       {view === 'list' && (
-        <div className="flex items-center gap-3">
-          <label className="text-sm font-medium text-[#5F6368]">Course:</label>
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          custom={1}
+          className="flex items-center gap-3"
+        >
+          <label className="text-xs font-medium text-muted-foreground">Course:</label>
           <Select value={selectedCourse} onValueChange={v => setSelectedCourse(v ?? '')}>
-            <SelectTrigger className="w-56"><SelectValue placeholder="Select course" /></SelectTrigger>
+            <SelectTrigger className="w-56 rounded-xl"><SelectValue placeholder="Select course" /></SelectTrigger>
             <SelectContent>
               {courses.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
             </SelectContent>
           </Select>
-        </div>
+        </motion.div>
       )}
 
       {/* Create form */}
       {view === 'create' && (
-        <div className="bg-white rounded-2xl border border-[#DADCE0] p-6 space-y-4">
-          <h2 className="font-semibold text-[#202124]">New Assignment</h2>
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          custom={1}
+          className="bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow space-y-5"
+        >
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">Create</p>
+            <h2 className="font-heading text-3xl text-foreground tracking-tight mt-1">New Assignment</h2>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="text-xs font-medium text-[#5F6368] mb-1 block">Title *</label>
-              <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Assignment title" />
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Title *</label>
+              <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Assignment title" className="rounded-xl" />
             </div>
             <div className="md:col-span-2">
-              <label className="text-xs font-medium text-[#5F6368] mb-1 block">Description / Instructions</label>
-              <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={4} placeholder="Describe the assignment…" />
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Description / Instructions</label>
+              <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={4} placeholder="Describe the assignment…" className="rounded-xl" />
             </div>
             <div>
-              <label className="text-xs font-medium text-[#5F6368] mb-1 block">Due Date *</label>
-              <Input type="datetime-local" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} />
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Due Date *</label>
+              <Input type="datetime-local" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className="rounded-xl" />
             </div>
             <div>
-              <label className="text-xs font-medium text-[#5F6368] mb-1 block">Max Score</label>
-              <Input type="number" value={form.maxScore} onChange={e => setForm(f => ({ ...f, maxScore: e.target.value }))} min={1} />
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Max Score</label>
+              <Input type="number" value={form.maxScore} onChange={e => setForm(f => ({ ...f, maxScore: e.target.value }))} min={1} className="rounded-xl" />
             </div>
             <div>
-              <label className="text-xs font-medium text-[#5F6368] mb-1 block">Submission Type</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Submission Type</label>
               <Select value={form.submissionType} onValueChange={v => setForm(f => ({ ...f, submissionType: v as 'text' | 'link' | 'any' }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="text">Text</SelectItem>
                   <SelectItem value="link">Link/URL</SelectItem>
@@ -181,9 +231,9 @@ export default function TeacherAssignmentsPage() {
               </Select>
             </div>
             <div>
-              <label className="text-xs font-medium text-[#5F6368] mb-1 block">Status</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Status</label>
               <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v as 'draft' | 'published' }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="draft">Draft</SelectItem>
                   <SelectItem value="published">Published</SelectItem>
@@ -191,45 +241,67 @@ export default function TeacherAssignmentsPage() {
               </Select>
             </div>
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={form.allowLate} onChange={e => setForm(f => ({ ...f, allowLate: e.target.checked }))} className="accent-teal-600" />
-              <span className="text-sm text-[#5F6368]">Allow late submissions</span>
+              <input type="checkbox" checked={form.allowLate} onChange={e => setForm(f => ({ ...f, allowLate: e.target.checked }))} className="accent-emerald-600" />
+              <span className="text-sm text-muted-foreground">Allow late submissions</span>
             </label>
           </div>
-          <Button onClick={handleCreate} disabled={saving} className="bg-teal-600 hover:bg-teal-700 text-white">
+          <Button
+            onClick={handleCreate}
+            disabled={saving}
+            className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-90 text-white"
+          >
             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null} Create Assignment
           </Button>
-        </div>
+        </motion.div>
       )}
 
       {/* List */}
       {view === 'list' && (
         <div className="space-y-3">
           {assignments.length === 0 && (
-            <div className="text-center py-16 text-[#5F6368]">
-              <ClipboardList className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <p className="font-medium">No assignments yet</p>
-              <p className="text-sm mt-1">Create your first assignment to get started.</p>
-            </div>
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              custom={2}
+              className="relative text-center py-20"
+            >
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-64 h-64 bg-emerald-400/20 rounded-full blur-3xl" />
+              </div>
+              <div className="relative">
+                <ClipboardList className="w-14 h-14 mx-auto mb-4 text-muted-foreground/40" />
+                <p className="font-heading text-2xl text-foreground">No assignments yet</p>
+                <p className="text-sm text-muted-foreground mt-2">Create your first assignment to get started.</p>
+              </div>
+            </motion.div>
           )}
-          {assignments.map(a => (
-            <div key={a.id} className="bg-white rounded-xl border border-[#DADCE0] p-4 flex items-center justify-between gap-4">
+          {assignments.map((a, i) => (
+            <motion.div
+              key={a.id}
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              custom={i + 2}
+              className="bg-card border border-border rounded-2xl p-4 flex items-center justify-between gap-4 card-glow"
+            >
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-semibold text-[#202124]">{a.title}</p>
+                  <p className="font-semibold text-foreground">{a.title}</p>
                   <Badge className={STATUS_COLORS[a.status]}>{a.status}</Badge>
                 </div>
-                <p className="text-xs text-[#5F6368] mt-0.5 truncate">{a.description.slice(0, 80)}{a.description.length > 80 ? '…' : ''}</p>
-                <p className="text-xs text-gray-400 mt-1">Due: {(a.dueDate as any).toDate?.().toLocaleString() ?? a.dueDate} · Max: {a.maxScore} pts</p>
+                <p className="text-xs text-muted-foreground mt-0.5 truncate">{a.description.slice(0, 80)}{a.description.length > 80 ? '…' : ''}</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">Due: {(a.dueDate as any).toDate?.().toLocaleString() ?? a.dueDate} · Max: {a.maxScore} pts</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <Button variant="outline" size="sm" onClick={() => handleViewSubmissions(a)} className="gap-1">
+                <Button variant="outline" size="sm" onClick={() => handleViewSubmissions(a)} className="gap-1 rounded-full">
                   <Eye className="w-3.5 h-3.5" /> Submissions
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(a.id)} className="text-red-500 hover:bg-red-50">
+                <Button variant="ghost" size="icon" onClick={() => handleDelete(a.id)} className="text-red-500 hover:bg-red-500/10 rounded-full">
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       )}
@@ -237,46 +309,85 @@ export default function TeacherAssignmentsPage() {
       {/* Submissions */}
       {view === 'submissions' && selectedAssignment && (
         <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-[#DADCE0] p-4">
-            <h2 className="font-semibold text-[#202124]">Submissions — {selectedAssignment.title}</h2>
-            <p className="text-xs text-[#5F6368] mt-0.5">{submissions.length} submission{submissions.length !== 1 ? 's' : ''} · Max score: {selectedAssignment.maxScore}</p>
-          </div>
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={1}
+            className="bg-card border border-border rounded-3xl p-5 sm:p-6 card-glow relative overflow-hidden"
+          >
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-600 to-teal-600" />
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">Submissions</p>
+              <h2 className="font-heading text-3xl text-foreground tracking-tight mt-1">{selectedAssignment.title}</h2>
+              <p className="text-xs text-muted-foreground mt-1">{submissions.length} submission{submissions.length !== 1 ? 's' : ''} · Max score: {selectedAssignment.maxScore}</p>
+            </div>
+          </motion.div>
+
           {submissions.length === 0 && (
-            <div className="text-center py-12 text-[#5F6368]">No submissions yet.</div>
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              custom={2}
+              className="relative text-center py-16"
+            >
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-48 h-48 bg-emerald-400/20 rounded-full blur-3xl" />
+              </div>
+              <div className="relative">
+                <ClipboardList className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
+                <p className="font-heading text-2xl text-foreground">No submissions yet</p>
+                <p className="text-sm text-muted-foreground mt-1">Students haven&apos;t submitted their work yet.</p>
+              </div>
+            </motion.div>
           )}
-          {submissions.map(sub => (
-            <div key={sub.id} className="bg-white rounded-xl border border-[#DADCE0] p-4 space-y-3">
+
+          {submissions.map((sub, i) => (
+            <motion.div
+              key={sub.id}
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              custom={i + 2}
+              className="bg-card border border-border rounded-3xl p-5 sm:p-6 card-glow space-y-3"
+            >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-[#202124]">{sub.studentName}</p>
-                  <p className="text-xs text-[#5F6368]">Submitted {(sub.submittedAt as any)?.toDate?.().toLocaleString() ?? 'Unknown'}{sub.isLate ? ' · ⚠️ Late' : ''}</p>
+                  <p className="font-semibold text-foreground">{sub.studentName}</p>
+                  <p className="text-xs text-muted-foreground">Submitted {(sub.submittedAt as any)?.toDate?.().toLocaleString() ?? 'Unknown'}{sub.isLate ? ' · ⚠️ Late' : ''}</p>
                 </div>
                 {sub.score !== undefined && (
-                  <Badge className="bg-green-100 text-green-700">{sub.score}/{selectedAssignment.maxScore}</Badge>
+                  <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-200">{sub.score}/{selectedAssignment.maxScore}</Badge>
                 )}
               </div>
-              {sub.content && <div className="bg-[#F8F9FA] rounded-lg p-3 text-sm text-[#202124]">{sub.content}</div>}
-              {sub.linkUrl && <a href={sub.linkUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-sm underline break-all">{sub.linkUrl}</a>}
+              {sub.content && <div className="bg-muted rounded-2xl p-3 text-sm text-foreground">{sub.content}</div>}
+              {sub.linkUrl && <a href={sub.linkUrl} target="_blank" rel="noopener noreferrer" className="text-emerald-600 text-sm underline break-all">{sub.linkUrl}</a>}
               <div className="flex gap-3">
                 <div className="flex-1 space-y-2">
-                  <Input type="number" placeholder="Score" value={scores[sub.id] ?? sub.score ?? ''} onChange={e => setScores(s => ({ ...s, [sub.id]: e.target.value }))} min={0} max={selectedAssignment.maxScore} className="w-28" />
-                  <Textarea placeholder="Feedback…" value={feedbacks[sub.id] ?? sub.feedback ?? ''} onChange={e => setFeedbacks(f => ({ ...f, [sub.id]: e.target.value }))} rows={2} />
+                  <Input type="number" placeholder="Score" value={scores[sub.id] ?? sub.score ?? ''} onChange={e => setScores(s => ({ ...s, [sub.id]: e.target.value }))} min={0} max={selectedAssignment.maxScore} className="w-28 rounded-xl" />
+                  <Textarea placeholder="Feedback…" value={feedbacks[sub.id] ?? sub.feedback ?? ''} onChange={e => setFeedbacks(f => ({ ...f, [sub.id]: e.target.value }))} rows={2} className="rounded-xl" />
                 </div>
                 <div className="flex flex-col gap-2 shrink-0">
-                  <Button size="sm" onClick={() => handleGrade(sub)} disabled={gradingId === sub.id} className="bg-teal-600 hover:bg-teal-700 text-white gap-1">
+                  <Button
+                    size="sm"
+                    onClick={() => handleGrade(sub)}
+                    disabled={gradingId === sub.id}
+                    className="rounded-full font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-90 text-white gap-1"
+                  >
                     {gradingId === sub.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />} Grade
                   </Button>
                   {sub.content && (
-                    <Button size="sm" variant="outline" onClick={() => handleCheckIntegrity(sub)} className="gap-1">
+                    <Button size="sm" variant="outline" onClick={() => handleCheckIntegrity(sub)} className="gap-1 rounded-full">
                       <AlertTriangle className="w-3.5 h-3.5" /> Integrity
                     </Button>
                   )}
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

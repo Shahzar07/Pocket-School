@@ -9,6 +9,15 @@ import { Button } from '@/components/ui/button';
 import { Award, Printer, ExternalLink, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
+const fadeUp: Record<string, any> = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1], delay: i * 0.08 },
+  }),
+};
+
 export default function StudentCertificatesPage() {
   const { user, profile } = useAuthSTORE();
   const [certs, setCerts] = useState<Certificate[]>([]);
@@ -68,58 +77,107 @@ export default function StudentCertificatesPage() {
   };
 
   if (loading) return (
-    <div className="max-w-3xl mx-auto px-4 py-8 space-y-4">
-      {[1, 2].map(i => <div key={i} className="h-32 bg-muted animate-pulse rounded-2xl" />)}
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
+      <div className="space-y-2">
+        <div className="h-3 w-24 bg-muted animate-pulse rounded-full" />
+        <div className="h-10 w-64 bg-muted animate-pulse rounded-2xl" />
+      </div>
+      <div className="grid gap-5">
+        {[1, 2].map(i => (
+          <div key={i} className="h-40 bg-muted animate-pulse rounded-3xl" />
+        ))}
+      </div>
     </div>
   );
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-extrabold text-foreground tracking-tight">My Certificates</h1>
-        <p className="text-muted-foreground text-sm mt-1">Certificates earned by completing courses.</p>
-      </div>
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
+      {/* Header */}
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}>
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">
+          Recognition
+        </p>
+        <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1.5">
+          My <span className="gradient-text italic">Certificates</span>
+        </h1>
+      </motion.div>
 
       {certs.length === 0 ? (
-        <div className="text-center py-20 text-muted-foreground">
-          <Award className="w-14 h-14 mx-auto mb-3 opacity-30" />
-          <p className="font-semibold">No certificates yet.</p>
-          <p className="text-sm mt-1">Complete a course to earn your first certificate.</p>
-        </div>
+        /* Empty State */
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          custom={1}
+          className="relative flex flex-col items-center justify-center text-center py-24"
+        >
+          <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-primary/8 blur-[80px]" />
+          <Award className="w-14 h-14 text-muted-foreground/30 mb-4" />
+          <h2 className="font-heading text-2xl text-foreground">
+            No certificates yet
+          </h2>
+          <p className="text-sm text-muted-foreground mt-2 max-w-sm">
+            Complete a course to earn your first certificate.
+          </p>
+          <Link href="/dashboard/student/courses">
+            <Button className="mt-6 rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white border-0 hover:opacity-90 transition-opacity">
+              Browse Courses
+            </Button>
+          </Link>
+        </motion.div>
       ) : (
-        <div className="space-y-4">
+        <div className="grid gap-5">
           {certs.map((cert, i) => {
             const date = cert.issuedAt instanceof Timestamp
               ? cert.issuedAt.toDate()
               : new Date(cert.issuedAt as any);
             return (
-              <motion.div key={cert.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-                className="bg-card border border-border rounded-2xl p-6"
+              <motion.div
+                key={cert.id}
+                variants={fadeUp}
+                initial="hidden"
+                animate="visible"
+                custom={i + 1}
+                className="bg-card border border-border rounded-3xl p-6 card-glow relative overflow-hidden"
               >
+                <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] opacity-80" />
+
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center shrink-0 shadow-md">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] flex items-center justify-center shrink-0 shadow-md">
                       <Award className="w-7 h-7 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-foreground text-lg">{cert.courseTitle}</h3>
+                      <h3 className="font-heading text-lg text-foreground">{cert.courseTitle}</h3>
                       <p className="text-sm text-muted-foreground mt-0.5">Issued by {cert.issuedByName}</p>
                       <p className="text-xs text-muted-foreground">{date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 shrink-0">
-                    <Button onClick={() => handlePrint(cert)} size="sm" variant="outline" className="rounded-xl gap-2">
+                    <Button
+                      onClick={() => handlePrint(cert)}
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full font-bold gap-2"
+                    >
                       <Printer className="w-3.5 h-3.5" /> Print
                     </Button>
                     <Link href={`/verify/${cert.id}`} target="_blank">
-                      <Button size="sm" variant="outline" className="rounded-xl gap-2 w-full">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full font-bold gap-2 w-full"
+                      >
                         <ExternalLink className="w-3.5 h-3.5" /> Verify
                       </Button>
                     </Link>
                   </div>
                 </div>
+
                 <div className="mt-4 pt-4 border-t border-border">
-                  <p className="text-xs text-muted-foreground">Certificate ID: <span className="font-mono text-foreground">{cert.id}</span></p>
+                  <p className="text-xs text-muted-foreground">
+                    Certificate ID: <span className="font-mono text-foreground">{cert.id}</span>
+                  </p>
                 </div>
               </motion.div>
             );
