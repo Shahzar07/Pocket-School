@@ -102,7 +102,7 @@ export default function MyLearningPage() {
     </div>
   );
 
-  /* ── No year group ── */
+  /* ── No year / level ── */
   if (!yearGroup) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12">
       <div className="relative flex flex-col items-center justify-center text-center py-24">
@@ -110,9 +110,9 @@ export default function MyLearningPage() {
           <div className="w-72 h-72 rounded-full bg-primary/10 blur-[100px]" />
         </div>
         <GraduationCap className="w-12 h-12 mb-5 text-muted-foreground opacity-40 relative" />
-        <h2 className="font-heading text-2xl text-foreground mb-2 relative">Set your year group</h2>
+        <h2 className="font-heading text-2xl text-foreground mb-2 relative">Set your Year / Level</h2>
         <p className="text-sm text-muted-foreground mb-8 max-w-sm relative">
-          Tell us which year you&apos;re in to see your curriculum — units, lessons and mastery quizzes for your level.
+          Tell us which year you&apos;re in to see your curriculum — modules, lessons and mastery quizzes for your level.
         </p>
         <Button onClick={() => router.push('/dashboard/profile')} className="rounded-full h-11 px-5 font-bold relative">
           Go to My Profile
@@ -134,7 +134,7 @@ export default function MyLearningPage() {
           My <span className="gradient-text italic">Learning</span>
         </h1>
         <p className="text-muted-foreground text-sm max-w-xl">
-          Work through each unit, then pass the mastery quiz (70%+) to unlock the next one.
+          Work through each module, then pass the mastery quiz (70%+) to unlock the next one.
         </p>
       </motion.header>
 
@@ -190,7 +190,7 @@ export default function MyLearningPage() {
               <div className="flex-1 min-w-0">
                 <h2 className="font-heading text-xl text-foreground">{tree.course.title}</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {tree.units.length} unit{tree.units.length === 1 ? '' : 's'} · {tree.enrollment?.progress ?? 0}% complete
+                  {tree.units.length} module{tree.units.length === 1 ? '' : 's'} · {tree.enrollment?.progress ?? 0}% complete
                 </p>
               </div>
             </div>
@@ -239,8 +239,8 @@ export default function MyLearningPage() {
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {locked
-                            ? `Pass the previous unit's mastery quiz (≥${unit.module.masteryThreshold ?? 70}%) to unlock`
-                            : `${status.completedLessons}/${status.totalLessons} lessons complete`}
+                            ? `Pass the previous module's mastery quiz (≥${unit.module.masteryThreshold ?? 70}%) to unlock`
+                            : `${status.completedLessons}/${status.totalLessons} lessons (units) complete`}
                         </p>
                       </div>
                       {!locked && (isExpanded
@@ -277,10 +277,10 @@ export default function MyLearningPage() {
                                 </p>
                                 <p className="text-xs text-muted-foreground">
                                   {lesson.isUnitQuiz
-                                    ? `Mastery quiz · pass at ${unit.module.masteryThreshold ?? 70}% to unlock the next unit`
+                                    ? `Mastery quiz · pass at ${unit.module.masteryThreshold ?? 70}% to unlock the next module`
                                     : lessonStatus === 'completed' ? '✓ Completed'
-                                    : lessonStatus === 'available' ? 'Start lesson · +50 XP · ⚡10'
-                                    : lesson.isUnitQuiz ? 'Complete all lessons first' : 'Complete the previous lesson to unlock'}
+                                    : lessonStatus === 'available' ? 'Start lesson (unit) · +50 XP · ⚡10'
+                                    : lesson.isUnitQuiz ? 'Complete all lessons first' : 'Complete the previous lesson (unit) to unlock'}
                                 </p>
                               </div>
                               {lessonStatus !== 'locked' && <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
@@ -293,7 +293,7 @@ export default function MyLearningPage() {
                 );
               })}
               {tree.units.length === 0 && (
-                <p className="px-5 py-6 text-sm text-muted-foreground">Units for this subject are being prepared.</p>
+                <p className="px-5 py-6 text-sm text-muted-foreground">Modules for this subject are being prepared.</p>
               )}
             </div>
           </motion.div>

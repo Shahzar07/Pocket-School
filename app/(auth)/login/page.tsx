@@ -175,6 +175,11 @@ export default function LoginPage() {
       if (result.user.email?.toLowerCase() === SUPER_ADMIN_EMAIL) {
         await ensureAdminProfile(result.user.uid);
       }
+      // Sync Google profile picture to Firestore if missing
+      const snap = await getDoc(doc(db, 'users', result.user.uid));
+      if (snap.exists() && !snap.data().avatarUrl && result.user.photoURL) {
+        await setDoc(doc(db, 'users', result.user.uid), { ...snap.data(), avatarUrl: result.user.photoURL, updatedAt: serverTimestamp() });
+      }
       // Google already verified this email — no extra 2FA hop needed.
       setEmail(result.user.email || '');
       await routeUser(result.user.uid);

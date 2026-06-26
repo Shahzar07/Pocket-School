@@ -106,13 +106,13 @@ export default function TeacherClassesPage() {
             My <span className="gradient-text italic">Classes</span>
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Unit mastery scores and lesson progress for every student in a curriculum module.
+            Module mastery scores and lesson progress for every student in a subject.
           </p>
         </div>
         {modules.length > 0 && (
           <Select value={selectedId} onValueChange={(v) => setSelectedId(v ?? '')}>
             <SelectTrigger className="w-64 rounded-full">
-              <SelectValue placeholder="Select a module" />
+              <SelectValue placeholder="Select a subject" />
             </SelectTrigger>
             <SelectContent>
               {modules.map(m => (
@@ -138,9 +138,9 @@ export default function TeacherClassesPage() {
             <div className="absolute inset-0 bg-emerald-400/10 blur-3xl rounded-full" />
             <BookOpen className="relative w-12 h-12 text-muted-foreground" />
           </div>
-          <p className="font-heading text-2xl text-foreground">No curriculum modules yet.</p>
+          <p className="font-heading text-2xl text-foreground">No subjects yet.</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Curriculum modules are created by your school admin in the Curriculum CMS.
+            Subjects are created by your school admin in the Curriculum CMS.
           </p>
         </motion.div>
       ) : loadingMatrix ? (
@@ -159,7 +159,7 @@ export default function TeacherClassesPage() {
           </div>
           <p className="font-heading text-2xl text-foreground">No students enrolled yet.</p>
           <p className="text-sm text-muted-foreground mt-1">
-            No students have enrolled in this module yet.
+            No students have enrolled in this subject yet.
           </p>
         </motion.div>
       ) : (
@@ -179,7 +179,7 @@ export default function TeacherClassesPage() {
                   </th>
                   {units.map(u => (
                     <th key={u.module.id} className="text-center text-[11px] font-bold uppercase tracking-[0.22em] text-foreground px-4 py-3.5 min-w-36">
-                      <span className="block">{u.module.unitNumber ? `Unit ${u.module.unitNumber}` : u.module.title}</span>
+                      <span className="block">{u.module.unitNumber ? `Module ${u.module.unitNumber}` : u.module.title}</span>
                       <span className="block text-[10px] font-medium text-muted-foreground normal-case tracking-normal">
                         {u.module.term ?? ''} · pass ≥{u.module.masteryThreshold ?? 70}%
                       </span>
@@ -192,7 +192,7 @@ export default function TeacherClassesPage() {
                   <tr key={s.studentId} className="hover:bg-muted/30 transition-colors">
                     <td className="px-5 py-3.5 sticky left-0 bg-card">
                       <p className="font-semibold text-foreground">{s.name}</p>
-                      <p className="text-[11px] text-muted-foreground">{s.progress}% of module</p>
+                      <p className="text-[11px] text-muted-foreground">{s.progress}% of subject</p>
                     </td>
                     {units.map(u => {
                       const attempt = bestAttempt(s.studentId, u.module.id);

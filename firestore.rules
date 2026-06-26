@@ -120,5 +120,124 @@ service cloud.firestore {
       allow create, update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
     }
+
+    // ── Exams ─────────────────────────────────────────────────
+    match /exams/{examId} {
+      allow read: if isSignedIn();
+      allow create, update: if isTeacherOrAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Exam Submissions ──────────────────────────────────────
+    match /exam_submissions/{submissionId} {
+      allow read: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid || isTeacherOrAdmin()
+      );
+      allow create: if isSignedIn();
+      allow update: if isTeacherOrAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Assignments ───────────────────────────────────────────
+    match /assignments/{assignmentId} {
+      allow read: if isSignedIn();
+      allow create, update: if isTeacherOrAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Announcements ─────────────────────────────────────────
+    match /announcements/{announcementId} {
+      allow read: if isSignedIn();
+      allow create, update: if isTeacherOrAdmin() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Calendar Events ───────────────────────────────────────
+    match /calendar_events/{eventId} {
+      allow read: if isSignedIn();
+      allow create, update: if isTeacherOrAdmin();
+      allow delete: if isTeacherOrAdmin();
+    }
+
+    // ── Resources ─────────────────────────────────────────────
+    match /resources/{resourceId} {
+      allow read: if isSignedIn();
+      allow create, update: if isTeacherOrAdmin();
+      allow delete: if isTeacherOrAdmin();
+    }
+
+    // ── Support Tickets ───────────────────────────────────────
+    match /support_tickets/{ticketId} {
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid || isTeacherOrAdmin()
+      );
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        resource.data.userId == request.auth.uid || isTeacherOrAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // ── AI Generations (user library) ─────────────────────────
+    match /users/{userId}/ai_generations/{genId} {
+      allow read, create: if isUser(userId);
+      allow delete: if isUser(userId) || isAdmin();
+    }
+
+    // ── Behaviour Records ─────────────────────────────────────
+    match /behaviour_records/{recordId} {
+      allow read: if isSignedIn();
+      allow create, update: if isTeacherOrAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Attendance Records ────────────────────────────────────
+    match /attendance/{recordId} {
+      allow read: if isSignedIn();
+      allow create, update: if isTeacherOrAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Invoices / Billing ────────────────────────────────────
+    match /invoices/{invoiceId} {
+      allow read: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid || isTeacherOrAdmin()
+      );
+      allow create, update: if isTeacherOrAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Report Cards ──────────────────────────────────────────
+    match /report_cards/{cardId} {
+      allow read: if isSignedIn();
+      allow create, update: if isTeacherOrAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Integrity Reports ─────────────────────────────────────
+    match /integrity_reports/{reportId} {
+      allow read: if isSignedIn();
+      allow create, update: if isTeacherOrAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Certificates ──────────────────────────────────────────
+    match /certificates/{certId} {
+      allow read: if isSignedIn();
+      allow create: if isTeacherOrAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Tasks ─────────────────────────────────────────────────
+    match /tasks/{taskId} {
+      allow read: if isSignedIn() && (
+        resource.data.assignedTo == request.auth.uid ||
+        resource.data.createdBy == request.auth.uid ||
+        isTeacherOrAdmin()
+      );
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isTeacherOrAdmin();
+    }
   }
 }

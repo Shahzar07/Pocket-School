@@ -153,7 +153,7 @@ export default function CourseDetailPage() {
               <div>
                 <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                   <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                    {isCurriculum ? `Unit ${mod.module.unitNumber ?? modIndex + 1}` : `Module ${modIndex + 1}`}
+                    {isCurriculum ? `Module ${mod.module.unitNumber ?? modIndex + 1}` : `Module ${modIndex + 1}`}
                   </span>
                   {isCurriculum && mod.module.term && (
                     <Badge variant="outline" className="text-[10px] rounded-full">{mod.module.term}</Badge>
@@ -172,7 +172,7 @@ export default function CourseDetailPage() {
                 <h3 className="font-bold text-foreground">{mod.module.title}</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {unitLocked
-                    ? `Pass the previous unit's mastery quiz (≥${mod.module.masteryThreshold ?? 70}%) to unlock`
+                    ? `Pass the previous module's mastery quiz (≥${mod.module.masteryThreshold ?? 70}%) to unlock`
                     : `${mod.lessons.filter(l => completedIds.has(l.id)).length}/${mod.lessons.length} lessons`}
                 </p>
               </div>
@@ -215,8 +215,8 @@ export default function CourseDetailPage() {
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {lesson.isUnitQuiz
                             ? status === 'completed' ? '✓ Mastery quiz passed'
-                              : status === 'available' ? `Mastery quiz · score ≥${mod.module.masteryThreshold ?? 70}% to unlock the next unit`
-                              : 'Complete all lessons in this unit to unlock the quiz'
+                              : status === 'available' ? `Mastery quiz · score ≥${mod.module.masteryThreshold ?? 70}% to unlock the next module`
+                              : 'Complete all lessons in this module to unlock the quiz'
                             : status === 'completed' ? `✓ Completed · +50 XP${isCurriculum ? ' · ⚡10' : ''}` :
                               status === 'available' ? `Start lesson · +50 XP${isCurriculum ? ' · ⚡10' : ''}` :
                               'Complete previous lesson to unlock'}

@@ -19,7 +19,7 @@ const fadeUp: Record<string, any> = {
 };
 
 export default function StudentExamsPage() {
-  const { user } = useAuthSTORE();
+  const { user, profile } = useAuthSTORE();
   const [exams, setExams] = useState<{ exam: Exam; submission?: ExamSubmission }[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeExam, setActiveExam] = useState<Exam | null>(null);
@@ -52,12 +52,26 @@ export default function StudentExamsPage() {
       setTimeLeft(exam.timeLimit * 60);
       timerRef.current = setInterval(() => {
         setTimeLeft(t => {
-          if (t === null || t <= 1) { clearInterval(timerRef.current!); return 0; }
+          if (t === null || t <= 1) {
+            clearInterval(timerRef.current!);
+            return 0;
+          }
           return t - 1;
         });
       }, 1000);
     }
   };
+
+  // Auto-submit when timer reaches 0
+  const autoSubmitRef = useRef(false);
+  useEffect(() => {
+    if (timeLeft === 0 && activeExam && !submitting && !autoSubmitRef.current) {
+      autoSubmitRef.current = true;
+      toast.info('Time is up! Submitting your exam...');
+      handleSubmit();
+    }
+    if (timeLeft !== 0) autoSubmitRef.current = false;
+  }, [timeLeft]);
 
   const handleSubmit = async () => {
     if (!user || !activeExam) return;
@@ -83,9 +97,10 @@ export default function StudentExamsPage() {
         }
       }
       const passed = maxScore > 0 ? (score / maxScore) * 100 >= activeExam.passingScore : false;
-      await submitExam({ examId: activeExam.id!, studentId: user.uid, studentName: '', courseId: activeExam.courseId, answers, score, maxScore, passed });
+      const studentName = profile?.name ?? user.displayName ?? 'Student';
+      await submitExam({ examId: activeExam.id!, studentId: user.uid, studentName, courseId: activeExam.courseId, answers, score, maxScore, passed });
       toast.success(`Exam submitted! Score: ${score}/${maxScore}`);
-      const newSub: ExamSubmission = { id: '', examId: activeExam.id!, studentId: user.uid, studentName: '', courseId: activeExam.courseId, answers, score, maxScore, passed };
+      const newSub: ExamSubmission = { id: '', examId: activeExam.id!, studentId: user.uid, studentName, courseId: activeExam.courseId, answers, score, maxScore, passed };
       setExams(prev => prev.map(e => e.exam.id === activeExam.id ? { ...e, submission: newSub } : e));
       setActiveExam(null);
     } catch { toast.error('Failed to submit exam.'); }

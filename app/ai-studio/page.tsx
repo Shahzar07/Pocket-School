@@ -12,6 +12,8 @@ import {
   Loader2, Save, Trash2, Copy, Plus, History, ChevronRight, Home as HomeIcon, User as UserIcon,
   GraduationCap, Building2, Scale, Baby, Wand2,
 } from 'lucide-react';
+import { MindmapRenderer } from '@/components/mindmap-renderer';
+import { InfographicRenderer } from '@/components/infographic-renderer';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import {
@@ -112,7 +114,25 @@ export default function AiStudio() {
         return;
       }
       const data = await res.json();
-      setResult({ format, data: data.result, prompt });
+      const newResult = { format, data: data.result, prompt };
+      setResult(newResult);
+      // Auto-save to library (like Canva — every generation is automatically saved)
+      if (user) {
+        try {
+          await fetch('/api/ai/save-generation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.uid,
+              type: format,
+              prompt,
+              result: typeof data.result === 'string' ? data.result : JSON.stringify(data.result),
+              subject,
+              level,
+            }),
+          });
+        } catch {}
+      }
     } catch (e: any) {
       toast.error(e?.message || 'Generation failed.');
     } finally {
@@ -293,7 +313,7 @@ export default function AiStudio() {
                 <>
                   <div className="text-center mb-10">
                     <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-slate-300 mb-5">
-                      <Sparkles className="w-3 h-3 text-[#60A5FA]" /> Powered by Google AI
+                      <Sparkles className="w-3 h-3 text-[#60A5FA]" /> AI-Powered Learning
                     </div>
                     <h1 className="font-heading text-5xl sm:text-6xl tracking-tight mb-3">
                       <span className="bg-gradient-to-br from-white via-white to-slate-400 bg-clip-text text-transparent">What do you want</span>
@@ -674,7 +694,13 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
       </div>
     );
   }
-  // text / notes / summary / problems / mindmap / infographic → markdown
+  if (format === 'mindmap' && typeof data === 'string') {
+    return <MindmapRenderer content={data} dark />;
+  }
+  if (format === 'infographic' && typeof data === 'string') {
+    return <InfographicRenderer content={data} dark />;
+  }
+  // text / notes / summary / problems → markdown
   const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
   return (
     <div className={PROSE_CLASSES}>

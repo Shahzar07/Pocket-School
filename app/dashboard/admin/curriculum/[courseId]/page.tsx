@@ -80,7 +80,7 @@ export default function AdminCurriculumModulePage() {
       setCourse(c);
       setUnits(mods);
     } catch (e: any) {
-      toast.error(e?.message || 'Failed to load module.');
+      toast.error(e?.message || 'Failed to load subject.');
     } finally {
       setLoading(false);
     }
@@ -93,7 +93,7 @@ export default function AdminCurriculumModulePage() {
     const next = course.status === 'published' ? 'draft' : 'published';
     try {
       await updateCourse(course.id, { status: next });
-      toast.success(next === 'published' ? 'Module published — visible in My Learning.' : 'Module unpublished.');
+      toast.success(next === 'published' ? 'Subject published — visible in My Learning.' : 'Subject unpublished.');
       load();
     } catch (e: any) {
       toast.error(e?.message || 'Failed.');
@@ -101,7 +101,7 @@ export default function AdminCurriculumModulePage() {
   };
 
   const handleCreateUnit = async () => {
-    if (!unitTitle.trim()) { toast.error('Enter a unit title.'); return; }
+    if (!unitTitle.trim()) { toast.error('Enter a module title.'); return; }
     setCreatingUnit(true);
     try {
       await createModule(courseId, {
@@ -112,12 +112,12 @@ export default function AdminCurriculumModulePage() {
         term: unitTerm.trim() || undefined,
         masteryThreshold: unitThreshold ? Number(unitThreshold) : 70,
       });
-      toast.success('Unit created.');
+      toast.success('Module created.');
       setUnitTitle(''); setUnitNumber(''); setUnitTerm(''); setUnitThreshold('70');
       setShowUnitForm(false);
       load();
     } catch (e: any) {
-      toast.error(e?.message || 'Failed to create unit.');
+      toast.error(e?.message || 'Failed to create module.');
     } finally {
       setCreatingUnit(false);
     }
@@ -134,7 +134,7 @@ export default function AdminCurriculumModulePage() {
   if (!course) {
     return (
       <div className="max-w-5xl mx-auto py-16 text-center text-muted-foreground">
-        <p>Curriculum module not found.</p>
+        <p>Subject not found.</p>
       </div>
     );
   }
@@ -151,16 +151,16 @@ export default function AdminCurriculumModulePage() {
           <p className="text-muted-foreground text-sm mt-1">{course.subject} · {course.yearGroup ?? '—'}</p>
         </div>
         <Button onClick={togglePublish} variant="outline" className="gap-2 rounded-xl">
-          {course.status === 'published' ? <><EyeOff className="w-4 h-4" /> Unpublish module</> : <><Eye className="w-4 h-4" /> Publish module</>}
+          {course.status === 'published' ? <><EyeOff className="w-4 h-4" /> Unpublish subject</> : <><Eye className="w-4 h-4" /> Publish subject</>}
         </Button>
       </div>
 
       {/* Add unit */}
       <div className="bg-card border border-border rounded-2xl p-5">
         <div className="flex items-center justify-between">
-          <h2 className="font-bold text-foreground">Units ({units.length})</h2>
+          <h2 className="font-bold text-foreground">Modules (Chapters) ({units.length})</h2>
           <Button size="sm" variant="outline" className="gap-1.5 rounded-xl" onClick={() => setShowUnitForm(o => !o)}>
-            <Plus className="w-3.5 h-3.5" /> Add Unit
+            <Plus className="w-3.5 h-3.5" /> Add Module
           </Button>
         </div>
         {showUnitForm && (
@@ -168,7 +168,7 @@ export default function AdminCurriculumModulePage() {
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Title *</Label>
-                <Input value={unitTitle} onChange={e => setUnitTitle(e.target.value)} placeholder="e.g. Unit 2: Materials" className="rounded-xl h-10" />
+                <Input value={unitTitle} onChange={e => setUnitTitle(e.target.value)} placeholder="e.g. Module 2: Materials" className="rounded-xl h-10" />
               </div>
               <div className="space-y-1.5">
                 <Label>Term</Label>
@@ -177,7 +177,7 @@ export default function AdminCurriculumModulePage() {
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Unit number</Label>
+                <Label>Module number</Label>
                 <Input type="number" value={unitNumber} onChange={e => setUnitNumber(e.target.value)} placeholder={String(units.length + 1)} className="rounded-xl h-10" />
               </div>
               <div className="space-y-1.5">
@@ -186,7 +186,7 @@ export default function AdminCurriculumModulePage() {
               </div>
             </div>
             <Button onClick={handleCreateUnit} disabled={creatingUnit} className="rounded-xl">
-              {creatingUnit ? 'Creating…' : 'Create Unit'}
+              {creatingUnit ? 'Creating…' : 'Create Module'}
             </Button>
           </div>
         )}
@@ -199,7 +199,7 @@ export default function AdminCurriculumModulePage() {
         ))}
         {units.length === 0 && (
           <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-2xl border border-dashed border-border">
-            <p className="text-sm">No units yet. Add one above.</p>
+            <p className="text-sm">No modules yet. Add one above.</p>
           </div>
         )}
       </div>
@@ -234,17 +234,17 @@ function UnitEditor({ courseId, unit, lessons, onReload }: {
         unitNumber: unitNumber ? Number(unitNumber) : undefined,
         masteryThreshold: threshold ? Number(threshold) : 70,
       });
-      toast.success('Unit updated.');
+      toast.success('Module updated.');
       onReload();
     } catch (e: any) {
-      toast.error(e?.message || 'Failed to update unit.');
+      toast.error(e?.message || 'Failed to update module.');
     } finally {
       setSaving(false);
     }
   };
 
   const handleCreateLesson = async () => {
-    if (!lessonTitle.trim()) { toast.error('Enter a lesson title.'); return; }
+    if (!lessonTitle.trim()) { toast.error('Enter a lesson (unit) title.'); return; }
     setCreatingLesson(true);
     try {
       await createLesson(courseId, unit.id, {
@@ -256,7 +256,7 @@ function UnitEditor({ courseId, unit, lessons, onReload }: {
         status: 'draft',
         isUnitQuiz,
       });
-      toast.success('Lesson created.');
+      toast.success('Lesson (Unit) created.');
       setLessonTitle(''); setLessonNumber(String(lessons.length + 2)); setIsUnitQuiz(false);
       setShowLessonForm(false);
       onReload();
@@ -272,10 +272,10 @@ function UnitEditor({ courseId, unit, lessons, onReload }: {
       <button onClick={() => setOpen(o => !o)} className="w-full flex items-center justify-between p-5 text-left hover:bg-muted/30 transition-colors">
         <div>
           <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-            Unit {unit.unitNumber ?? '—'}{unit.term ? ` · ${unit.term}` : ''}
+            Module {unit.unitNumber ?? '—'}{unit.term ? ` · ${unit.term}` : ''}
           </span>
           <h3 className="font-bold text-foreground">{unit.title}</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">{lessons.length} lessons · pass ≥{unit.masteryThreshold ?? 70}%</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{lessons.length} lessons (units) · pass ≥{unit.masteryThreshold ?? 70}%</p>
         </div>
         {open ? <ChevronDown className="w-5 h-5 text-muted-foreground" /> : <ChevronRight className="w-5 h-5 text-muted-foreground" />}
       </button>
@@ -293,7 +293,7 @@ function UnitEditor({ courseId, unit, lessons, onReload }: {
               <Input value={term} onChange={e => setTerm(e.target.value)} className="rounded-xl h-10" />
             </div>
             <div className="space-y-1.5">
-              <Label>Unit #</Label>
+              <Label>Module #</Label>
               <Input type="number" value={unitNumber} onChange={e => setUnitNumber(e.target.value)} className="rounded-xl h-10" />
             </div>
             <div className="space-y-1.5">
@@ -302,7 +302,7 @@ function UnitEditor({ courseId, unit, lessons, onReload }: {
             </div>
             <div className="flex items-end">
               <Button size="sm" variant="outline" onClick={handleSaveUnit} disabled={saving} className="rounded-xl w-full">
-                {saving ? 'Saving…' : 'Save Unit'}
+                {saving ? 'Saving…' : 'Save Module'}
               </Button>
             </div>
           </div>
@@ -310,9 +310,9 @@ function UnitEditor({ courseId, unit, lessons, onReload }: {
           {/* Lessons */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="font-bold text-foreground text-sm">Lessons ({lessons.length})</h4>
+              <h4 className="font-bold text-foreground text-sm">Lessons (Units) ({lessons.length})</h4>
               <Button size="sm" variant="outline" className="gap-1.5 rounded-xl" onClick={() => setShowLessonForm(o => !o)}>
-                <Plus className="w-3.5 h-3.5" /> Add Lesson
+                <Plus className="w-3.5 h-3.5" /> Add Lesson (Unit)
               </Button>
             </div>
 
@@ -324,16 +324,16 @@ function UnitEditor({ courseId, unit, lessons, onReload }: {
                     <Input value={lessonTitle} onChange={e => setLessonTitle(e.target.value)} placeholder="e.g. L1: What is life?" className="rounded-xl h-10" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Lesson #</Label>
+                    <Label>Lesson (Unit) #</Label>
                     <Input type="number" value={lessonNumber} onChange={e => setLessonNumber(e.target.value)} className="rounded-xl h-10" />
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Switch checked={isUnitQuiz} onCheckedChange={setIsUnitQuiz} />
-                  <Label className="cursor-pointer" onClick={() => setIsUnitQuiz(v => !v)}>This is the unit's mastery quiz</Label>
+                  <Label className="cursor-pointer" onClick={() => setIsUnitQuiz(v => !v)}>This is the module's mastery quiz</Label>
                 </div>
                 <Button onClick={handleCreateLesson} disabled={creatingLesson} className="rounded-xl">
-                  {creatingLesson ? 'Creating…' : 'Create Lesson'}
+                  {creatingLesson ? 'Creating…' : 'Create Lesson (Unit)'}
                 </Button>
               </div>
             )}
@@ -342,7 +342,7 @@ function UnitEditor({ courseId, unit, lessons, onReload }: {
               <LessonEditor key={l.id} courseId={courseId} unitId={unit.id} lesson={l} onReload={onReload} />
             ))}
             {lessons.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-6">No lessons in this unit yet.</p>
+              <p className="text-sm text-muted-foreground text-center py-6">No lessons (units) in this module yet.</p>
             )}
           </div>
         </div>

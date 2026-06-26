@@ -168,7 +168,7 @@ export default function UploadPage() {
       let resolvedModuleTitle = modules.find(m => m.id === moduleId)?.title ?? moduleTitle;
 
       if (selectedModuleId === 'new') {
-        const mTitle = moduleTitle.trim() || `Module ${modules.length + 1}`;
+        const mTitle = moduleTitle.trim() || `Subject ${modules.length + 1}`;
         moduleId = await createModule(courseId, {
           title: mTitle,
           description: '',
@@ -218,14 +218,14 @@ export default function UploadPage() {
 
   const handleSowSubmit = async () => {
     if (!user) return;
-    if (!sowTitle.trim()) { toast.error('Enter a module title.'); return; }
+    if (!sowTitle.trim()) { toast.error('Enter a subject title.'); return; }
     if (!sowFile) { toast.error('Choose a SOW document to upload.'); return; }
 
     setSowSubmitting(true);
     try {
       const courseId = await createCourse({
         title: sowTitle.trim(),
-        description: `${sowSubject || 'General'} curriculum module — ${sowYearGroup}`,
+        description: `${sowSubject || 'General'} subject — ${sowYearGroup}`,
         subject: sowSubject || 'General',
         ownerId: user.uid,
         ownerName: profile?.name,
@@ -325,7 +325,7 @@ export default function UploadPage() {
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>
-                Module
+                Subject
                 {modulesLoading && <span className="text-xs text-muted-foreground ml-1">(loading...)</span>}
               </Label>
               <select
@@ -335,16 +335,16 @@ export default function UploadPage() {
                 disabled={modulesLoading}
               >
                 {modules.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
-                <option value="new">+ Create new module</option>
+                <option value="new">+ Create new subject</option>
               </select>
             </div>
             {selectedModuleId === 'new' && (
               <div className="space-y-1.5">
-                <Label>New Module Title</Label>
+                <Label>New Subject Title</Label>
                 <Input
                   value={moduleTitle}
                   onChange={e => setModuleTitle(e.target.value)}
-                  placeholder={`e.g. Module ${modules.length + 1}`}
+                  placeholder={`e.g. Subject ${modules.length + 1}`}
                   className="rounded-xl h-11"
                 />
               </div>
@@ -491,14 +491,14 @@ export default function UploadPage() {
             <FileUp className="w-4 h-4 text-emerald-600" /> Submit Curriculum SOW for Review
           </h2>
           <p className="text-muted-foreground text-sm mt-1">
-            Upload a Scheme of Work document for a curriculum module. It will be sent to the
+            Upload a Scheme of Work document for a subject. It will be sent to the
             admin team for review before it appears in students&apos; My Learning.
           </p>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label>Module Title *</Label>
+            <Label>Subject Title *</Label>
             <Input value={sowTitle} onChange={e => setSowTitle(e.target.value)} placeholder="e.g. Science — Year 7" className="rounded-xl h-11" />
           </div>
           <div className="space-y-1.5">
@@ -509,7 +509,7 @@ export default function UploadPage() {
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label>Year Group</Label>
+            <Label>Year / Level</Label>
             <select
               value={sowYearGroup}
               onChange={e => setSowYearGroup(e.target.value)}

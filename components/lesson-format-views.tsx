@@ -2,9 +2,11 @@
 
 import ReactMarkdown from 'react-markdown';
 import { AiOutputs } from '@/lib/db';
+import { MindmapRenderer } from '@/components/mindmap-renderer';
+import { InfographicRenderer } from '@/components/infographic-renderer';
 
 const MARKDOWN_FORMATS = new Set([
-  'text', 'videoScript', 'audioScript', 'problems', 'notes', 'infographic', 'mindmap', 'summary',
+  'text', 'videoScript', 'audioScript', 'problems', 'notes', 'summary',
 ]);
 
 /** Read-only preview of one AI-generated content format, shared between the
@@ -14,6 +16,14 @@ export function FormatPreview({ format, outputs }: { format: string; outputs: Ai
 
   if (value == null || (Array.isArray(value) && value.length === 0) || (typeof value === 'string' && !value.trim())) {
     return <p className="text-sm text-muted-foreground italic">Not generated yet.</p>;
+  }
+
+  if (format === 'mindmap' && typeof value === 'string') {
+    return <MindmapRenderer content={value} />;
+  }
+
+  if (format === 'infographic' && typeof value === 'string') {
+    return <InfographicRenderer content={value} />;
   }
 
   if (MARKDOWN_FORMATS.has(format) && typeof value === 'string') {

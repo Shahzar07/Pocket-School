@@ -26,7 +26,7 @@ const fadeUp: Record<string, any> = {
 interface AssignmentWithSubmission { assignment: Assignment; submission?: AssignmentSubmission }
 
 export default function StudentAssignmentsPage() {
-  const { user } = useAuthSTORE();
+  const { user, profile } = useAuthSTORE();
   const [items, setItems] = useState<AssignmentWithSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState<string | null>(null);
@@ -62,7 +62,7 @@ export default function StudentAssignmentsPage() {
     setSubmitting(a.id!);
     try {
       const due = a.dueDate?.toDate?.() ?? null;
-      await submitAssignment({ assignmentId: a.id!, studentId: user.uid, studentName: '', courseId: a.courseId, content, isLate: due ? new Date() > due : false });
+      await submitAssignment({ assignmentId: a.id!, studentId: user.uid, studentName: profile?.name ?? 'Student', courseId: a.courseId, content, isLate: due ? new Date() > due : false });
       toast.success('Submitted!');
       setItems(prev => prev.map(i => i.assignment.id === a.id
         ? { ...i, submission: { assignmentId: a.id!, studentId: user.uid, courseId: a.courseId, content, id: '' } as AssignmentSubmission }

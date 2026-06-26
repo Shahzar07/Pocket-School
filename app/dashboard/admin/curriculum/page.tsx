@@ -108,13 +108,13 @@ export default function AdminCurriculumPage() {
 
   const handleCreateModule = async () => {
     if (!user) return;
-    if (!modTitle.trim()) { toast.error('Enter a module title.'); return; }
+    if (!modTitle.trim()) { toast.error('Enter a subject title.'); return; }
     if (!modSubject.trim()) { toast.error('Enter a subject.'); return; }
     setCreatingModule(true);
     try {
       const courseId = await createCurriculumModule({
         title: modTitle.trim(),
-        description: `${modSubject.trim()} curriculum module — ${modYearGroup}`,
+        description: `${modSubject.trim()} subject — ${modYearGroup}`,
         subject: modSubject.trim(),
         ownerId: user.uid,
         status: 'draft',
@@ -122,7 +122,7 @@ export default function AdminCurriculumPage() {
         yearGroup: modYearGroup,
         programmeId: modProgrammeId || undefined,
       });
-      toast.success('Curriculum module created.');
+      toast.success('Subject created.');
       setModTitle('');
       setModSubject('');
       setModYearGroup(YEAR_GROUPS[0]);
@@ -130,7 +130,7 @@ export default function AdminCurriculumPage() {
       await load();
       window.location.href = `/dashboard/admin/curriculum/${courseId}`;
     } catch (e: any) {
-      toast.error(e?.message || 'Failed to create module.');
+      toast.error(e?.message || 'Failed to create subject.');
     } finally {
       setCreatingModule(false);
     }
@@ -152,7 +152,7 @@ export default function AdminCurriculumPage() {
             <Layers className="w-7 h-7 text-blue-600" /> Curriculum CMS
           </h1>
           <p className="text-muted-foreground mt-1">
-            Programmes, curriculum modules and the lesson generation/review pipeline.
+            Programmes, subjects and the lesson generation/review pipeline.
           </p>
         </div>
         <Button onClick={handleSeed} disabled={seeding} variant="outline" className="gap-2 rounded-xl">
@@ -190,7 +190,7 @@ export default function AdminCurriculumPage() {
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Year groups (comma-separated)</Label>
+                <Label>Year / Level groups (comma-separated)</Label>
                 <Input value={progYearGroups} onChange={e => setProgYearGroups(e.target.value)} className="rounded-xl h-10" />
               </div>
               <div className="space-y-1.5">
@@ -229,9 +229,9 @@ export default function AdminCurriculumPage() {
       {/* Curriculum modules */}
       <Card className="p-6 rounded-2xl">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-foreground text-lg">Curriculum Modules ({modules.length})</h2>
+          <h2 className="font-bold text-foreground text-lg">Subjects ({modules.length})</h2>
           <Button size="sm" variant="outline" className="gap-1.5 rounded-xl" onClick={() => setShowModuleForm(o => !o)}>
-            <Plus className="w-3.5 h-3.5" /> New Module
+            <Plus className="w-3.5 h-3.5" /> New Subject
           </Button>
         </div>
 
@@ -249,7 +249,7 @@ export default function AdminCurriculumPage() {
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Year group</Label>
+                <Label>Year / Level</Label>
                 <Select value={modYearGroup} onValueChange={(v) => setModYearGroup(v ?? '')}>
                   <SelectTrigger className="rounded-xl h-10"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -268,7 +268,7 @@ export default function AdminCurriculumPage() {
               </div>
             </div>
             <Button onClick={handleCreateModule} disabled={creatingModule} className="rounded-xl">
-              {creatingModule ? 'Creating…' : 'Create Module'}
+              {creatingModule ? 'Creating…' : 'Create Subject'}
             </Button>
           </div>
         )}
@@ -276,7 +276,7 @@ export default function AdminCurriculumPage() {
         {modules.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <BookOpen className="w-10 h-10 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">No curriculum modules yet — seed Y7 Science or create one.</p>
+            <p className="text-sm">No subjects yet — seed Y7 Science or create one.</p>
           </div>
         ) : (
           <div className="divide-y divide-border">

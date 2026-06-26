@@ -16,6 +16,8 @@ import {
 import { getUnitStatuses, getCurriculumLessonStatus } from '@/lib/curriculum';
 import { FORMAT_COSTS, FORMAT_LABELS, LESSON_COMPLETE_REWARD, UNIT_PASS_REWARD } from '@/lib/sparks';
 import { AudioPlayer } from '@/components/audio-player';
+import { MindmapRenderer } from '@/components/mindmap-renderer';
+import { InfographicRenderer } from '@/components/infographic-renderer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -312,7 +314,7 @@ function UnitQuizMode({
       onAttemptSaved(saved);
       if (passed) {
         await fetchProfile(user.uid);
-        toast.success(`Unit passed! +${UNIT_PASS_REWARD}⚡ earned 🏆`, { duration: 5000 });
+        toast.success(`Module passed! +${UNIT_PASS_REWARD}⚡ earned 🏆`, { duration: 5000 });
       }
     } catch {
       toast.error('Could not save your attempt. Please try again.');
@@ -332,8 +334,8 @@ function UnitQuizMode({
             <Trophy className="w-10 h-10 mx-auto mb-3 text-amber-300" />
             <h2 className="font-heading text-3xl mb-2">{unit.title} — Mastery Quiz</h2>
             <p className="text-white/80 text-sm max-w-md mx-auto">
-              {questions.length} questions covering every lesson in this unit.
-              Score {threshold}% or higher to pass and unlock the next unit.
+              {questions.length} questions covering every lesson in this module.
+              Score {threshold}% or higher to pass and unlock the next module.
             </p>
           </div>
         </div>
@@ -358,7 +360,7 @@ function UnitQuizMode({
           {attempts.length ? 'Retake quiz' : 'Start quiz'} — your time will be recorded
         </Button>
         <p className="text-xs text-muted-foreground text-center mt-3">
-          Unlimited attempts. If you score below {threshold}%, we&apos;ll show you exactly which lessons to review.
+          Unlimited attempts. If you score below {threshold}%, we&apos;ll show you exactly which lessons (units) to review.
         </p>
       </motion.div>
     );
@@ -393,8 +395,8 @@ function UnitQuizMode({
           </p>
           <p className={`text-base font-bold mt-3 ${result.passed ? 'text-emerald-600' : 'text-amber-600'}`}>
             {result.passed
-              ? `Unit mastered! +${UNIT_PASS_REWARD}⚡ — the next unit is now unlocked. 🎉`
-              : `Not quite — you need ${threshold}% to pass. Review the lessons below and try again.`}
+              ? `Module mastered! +${UNIT_PASS_REWARD}⚡ — the next module is now unlocked. 🎉`
+              : `Not quite — you need ${threshold}% to pass. Review the lessons (units) below and try again.`}
           </p>
         </div>
 
@@ -429,7 +431,7 @@ function UnitQuizMode({
         {/* Adaptive review */}
         {!result.passed && reviewLessons.length > 0 && (
           <div className="bg-primary/5 border border-primary/20 rounded-3xl p-5">
-            <h3 className="font-bold text-foreground text-sm mb-1">Review these lessons before your next attempt</h3>
+            <h3 className="font-bold text-foreground text-sm mb-1">Review these lessons (units) before your next attempt</h3>
             <p className="text-xs text-primary mb-3">Based on the questions you missed:</p>
             <div className="space-y-2">
               {reviewLessons.map(l => (
@@ -765,7 +767,7 @@ export default function LessonPage() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">Unit Mastery Quiz</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">Module Mastery Quiz</p>
             <h1 className="font-heading text-foreground text-lg truncate">{lesson.title}</h1>
           </div>
           {completed && (
@@ -790,7 +792,7 @@ export default function LessonPage() {
           <div className="text-center py-20 text-muted-foreground bg-muted/30 rounded-3xl border border-dashed border-border">
             <Trophy className="w-12 h-12 mx-auto mb-4 opacity-30" />
             <p className="font-semibold">Quiz not yet published</p>
-            <p className="text-sm mt-1">Your school is preparing this mastery quiz. Check back soon.</p>
+            <p className="text-sm mt-1">Your school is preparing this module mastery quiz. Check back soon.</p>
           </div>
         )}
       </div>
@@ -806,7 +808,7 @@ export default function LessonPage() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">{isCurriculum ? 'Lesson' : 'Course Lesson'}</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">{isCurriculum ? 'Lesson (Unit)' : 'Course Lesson'}</p>
             <h1 className="font-heading text-foreground text-2xl truncate">{lesson.title}</h1>
             {!aiOutputs && <p className="text-xs text-muted-foreground">No content generated yet</p>}
             {isCurriculum && lesson.objectiveCodes && lesson.objectiveCodes.length > 0 && (
@@ -953,8 +955,8 @@ export default function LessonPage() {
           {/* Infographic */}
           <TabsContent value="infographic">
             {gate('infographic',
-              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-gradient-to-br from-primary/5 to-violet-500/5 border border-primary/20 rounded-3xl p-6 sm:p-8">
-                <ReactMarkdown>{aiOutputs.infographic ?? ''}</ReactMarkdown>
+              <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+                <InfographicRenderer content={aiOutputs.infographic ?? ''} />
               </motion.div>
             )}
           </TabsContent>
@@ -994,8 +996,8 @@ export default function LessonPage() {
           {/* Mind Map */}
           <TabsContent value="mindmap">
             {gate('mindmap',
-              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
-                <ReactMarkdown>{aiOutputs.mindmap ?? ''}</ReactMarkdown>
+              <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+                <MindmapRenderer content={aiOutputs.mindmap ?? ''} />
               </motion.div>
             )}
           </TabsContent>
