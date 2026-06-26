@@ -58,7 +58,7 @@ export function SparksChip() {
           </DialogHeader>
 
           <p className="text-xs text-muted-foreground -mt-2">
-            Spend Sparks to unlock lesson formats. Earn ⚡10 for each lesson you complete and ⚡50 for passing a unit quiz.
+            Spend Sparks to unlock lesson formats. Earn ⚡10 for each lesson you complete and ⚡50 for passing a module quiz.
           </p>
 
           <div className="max-h-80 overflow-y-auto space-y-2 pr-1">

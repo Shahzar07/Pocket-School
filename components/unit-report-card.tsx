@@ -97,7 +97,7 @@ export function UnitReportCard({ report }: { report: UnitReportData }) {
           {passed ? (
             <p className="text-xs text-blue-800 flex items-center gap-1.5">
               <ArrowRight className="w-3.5 h-3.5 shrink-0" />
-              Unit mastered — ready to start the next unit.
+              Module mastered — ready to start the next module.
             </p>
           ) : report.reviewLessons.length > 0 ? (
             <ul className="space-y-1">

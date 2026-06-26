@@ -63,7 +63,7 @@ export default function MyLearningPage() {
       for (const course of courses) {
         let enrollment = await getEnrollment(user.uid, course.id);
         if (!enrollment) {
-          // Auto-enroll into curriculum modules for the student's year group
+          // Auto-enroll into curriculum subjects for the student's year / level
           await enrollStudent(user.uid, course.id);
           enrollment = await getEnrollment(user.uid, course.id);
         }

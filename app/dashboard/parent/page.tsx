@@ -186,7 +186,7 @@ export default function ParentDashboard() {
                   <div className="p-6 sm:p-7 border-b border-border space-y-4">
                     <div className="flex items-center gap-2">
                       <FileBarChart className="w-4 h-4 text-primary" />
-                      <h3 className="font-heading text-xl text-foreground">Unit report cards</h3>
+                      <h3 className="font-heading text-xl text-foreground">Module report cards</h3>
                     </div>
                     <div className="grid sm:grid-cols-2 gap-4">
                       {unitReports.map(report => (
