@@ -215,8 +215,9 @@ function TeacherCard({
         }}
       >
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_30%_30%,white,transparent_60%)]" />
-        <div className="relative w-20 h-20 rounded-2xl bg-white/95 backdrop-blur shadow-lg flex items-center justify-center">
-          <Icon className="w-9 h-9 text-[#0B1B3F]" strokeWidth={1.5} />
+        <div className="relative w-24 h-24 rounded-2xl bg-white/95 backdrop-blur shadow-lg flex items-center justify-center overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={teacher.avatarUrl} alt={teacher.name} className="w-full h-full object-cover" />
         </div>
         {isLive && (
           <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-sm">

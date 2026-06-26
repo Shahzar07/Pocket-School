@@ -3,6 +3,12 @@ import { callOpenRouter, SMART_MODEL } from '@/lib/openrouter';
 
 const MATH_HINT = 'If the content involves mathematics, science formulas, or equations, use LaTeX notation: inline math with $...$ and display math with $$...$$. For example: $E = mc^2$, $\\frac{a}{b}$, $$\\int_0^1 f(x)\\,dx$$.\n\n';
 
+const LANG_NAMES: Record<string, string> = {
+  ar: 'Arabic', es: 'Spanish', fr: 'French', de: 'German', pt: 'Portuguese',
+  zh: 'Chinese (Simplified)', hi: 'Hindi', ur: 'Urdu', tr: 'Turkish',
+  ja: 'Japanese', ko: 'Korean', it: 'Italian', ru: 'Russian', sw: 'Swahili',
+};
+
 const PROMPTS: Record<string, (c: string) => string> = {
   text: (c) => `You are an expert educator. ${MATH_HINT}Transform the following raw lesson content into a well-structured, engaging lesson in Markdown format. Use headers (##, ###), bullet points, **bold** key terms, and clear explanations. Make it comprehensive yet readable.\n\nLesson content:\n${c}`,
 
@@ -33,7 +39,7 @@ const JSON_FORMATS = new Set(['flashcards', 'quiz', 'slides', 'glossary']);
 
 export async function POST(req: NextRequest) {
   try {
-    const { content, format, briefPrompt } = await req.json();
+    const { content, format, briefPrompt, language } = await req.json();
     if (!content) return NextResponse.json({ error: 'content is required' }, { status: 400 });
 
     const promptFn = PROMPTS[format];
@@ -45,8 +51,12 @@ export async function POST(req: NextRequest) {
       ? `CONTENT BRIEF (follow these instructions):\n${briefPrompt}\n\n${content}`
       : content;
 
+    const langInstruction = language && language !== 'en'
+      ? `\n\nIMPORTANT: Generate ALL content in the ${LANG_NAMES[language] || language} language. All text, explanations, questions, answers, terms, and definitions must be in ${LANG_NAMES[language] || language}. Only keep technical/scientific terms in their original form where appropriate.`
+      : '';
+
     const text = await callOpenRouter(
-      [{ role: 'user', content: promptFn(fullContent) }],
+      [{ role: 'user', content: promptFn(fullContent) + langInstruction }],
       { model: SMART_MODEL }
     );
 

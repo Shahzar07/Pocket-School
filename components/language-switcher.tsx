@@ -8,6 +8,17 @@ const LANGUAGES = [
   { code: 'ar', label: 'العربية', flag: '🇸🇦' },
   { code: 'es', label: 'Español', flag: '🇪🇸' },
   { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'pt', label: 'Português', flag: '🇧🇷' },
+  { code: 'zh', label: '中文', flag: '🇨🇳' },
+  { code: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
+  { code: 'ur', label: 'اردو', flag: '🇵🇰' },
+  { code: 'tr', label: 'Türkçe', flag: '🇹🇷' },
+  { code: 'ja', label: '日本語', flag: '🇯🇵' },
+  { code: 'ko', label: '한국어', flag: '🇰🇷' },
+  { code: 'it', label: 'Italiano', flag: '🇮🇹' },
+  { code: 'ru', label: 'Русский', flag: '🇷🇺' },
+  { code: 'sw', label: 'Kiswahili', flag: '🇰🇪' },
 ];
 
 export function LanguageSwitcher() {
@@ -19,7 +30,7 @@ export function LanguageSwitcher() {
     const stored = localStorage.getItem('pocket-school-lang') ?? 'en';
     setSelected(stored);
     document.documentElement.lang = stored;
-    document.documentElement.dir = stored === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.dir = ['ar', 'ur'].includes(stored) ? 'rtl' : 'ltr';
   }, []);
 
   useEffect(() => {

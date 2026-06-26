@@ -106,11 +106,12 @@ export default function AiStudio() {
     setGenerating(true);
     setResult(null);
     try {
+      const lang = (typeof window !== 'undefined' && localStorage.getItem('pocket-school-lang')) || 'en';
       const prompt = `Topic: ${topic.trim()}\nSubject: ${subject || 'general'}\nLevel: ${level}`;
       const res = await fetch('/api/ai/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: prompt, format }),
+        body: JSON.stringify({ content: prompt, format, language: lang !== 'en' ? lang : undefined }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));

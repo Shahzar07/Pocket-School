@@ -44,7 +44,7 @@ export interface AiTeacher {
 }
 
 const dicebear = (seed: string) =>
-  `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(seed)}&backgroundColor=eef3ff,f5f1ff,fff7e6&radius=20`;
+  `https://api.dicebear.com/9.x/lorelei/svg?seed=${encodeURIComponent(seed)}&backgroundColor=eef3ff,f5f1ff,fff7e6&radius=20`;
 
 export const AI_TEACHERS: AiTeacher[] = [
   {
