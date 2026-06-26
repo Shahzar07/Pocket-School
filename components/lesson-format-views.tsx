@@ -4,9 +4,11 @@ import ReactMarkdown from 'react-markdown';
 import { AiOutputs } from '@/lib/db';
 import { MindmapRenderer } from '@/components/mindmap-renderer';
 import { InfographicRenderer } from '@/components/infographic-renderer';
+import { VideoStoryboard } from '@/components/video-storyboard';
+import { AudioPlayer } from '@/components/audio-player';
 
 const MARKDOWN_FORMATS = new Set([
-  'text', 'videoScript', 'audioScript', 'problems', 'notes', 'summary',
+  'text', 'problems', 'notes', 'summary',
 ]);
 
 /** Read-only preview of one AI-generated content format, shared between the
@@ -24,6 +26,14 @@ export function FormatPreview({ format, outputs }: { format: string; outputs: Ai
 
   if (format === 'infographic' && typeof value === 'string') {
     return <InfographicRenderer content={value} />;
+  }
+
+  if (format === 'videoScript' && typeof value === 'string') {
+    return <VideoStoryboard script={value} />;
+  }
+
+  if (format === 'audioScript' && typeof value === 'string') {
+    return <AudioPlayer script={value} title="Audio Summary" />;
   }
 
   if (MARKDOWN_FORMATS.has(format) && typeof value === 'string') {

@@ -11,9 +11,11 @@ import {
   Presentation, Image as ImageIcon, Calculator, FlipHorizontal,
   Loader2, Save, Trash2, Copy, Plus, History, ChevronRight, Home as HomeIcon, User as UserIcon,
   GraduationCap, Building2, Scale, Baby, Wand2,
+  Video, Headphones, Play, Pause,
 } from 'lucide-react';
 import { MindmapRenderer } from '@/components/mindmap-renderer';
 import { InfographicRenderer } from '@/components/infographic-renderer';
+import { VideoStoryboard } from '@/components/video-storyboard';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import {
@@ -21,7 +23,7 @@ import {
 } from '@/lib/db';
 
 type Panel = 'home' | 'chat' | 'library';
-type FormatId = 'text' | 'flashcards' | 'quiz' | 'slides' | 'notes' | 'summary' | 'problems' | 'glossary' | 'mindmap' | 'infographic';
+type FormatId = 'text' | 'flashcards' | 'quiz' | 'slides' | 'notes' | 'summary' | 'problems' | 'glossary' | 'mindmap' | 'infographic' | 'videoScript' | 'audioScript';
 
 const FORMATS: { id: FormatId; label: string; desc: string; icon: React.ReactNode; gradient: string }[] = [
   { id: 'text', label: 'Full Lesson', desc: 'Complete written lesson', icon: <FileText className="w-4 h-4" />, gradient: 'from-blue-500 to-indigo-600' },
@@ -34,6 +36,8 @@ const FORMATS: { id: FormatId; label: string; desc: string; icon: React.ReactNod
   { id: 'glossary', label: 'Glossary', desc: 'Key terms defined', icon: <BookMarked className="w-4 h-4" />, gradient: 'from-teal-500 to-cyan-600' },
   { id: 'mindmap', label: 'Mind Map', desc: 'Visual concept map', icon: <Network className="w-4 h-4" />, gradient: 'from-fuchsia-500 to-pink-600' },
   { id: 'infographic', label: 'Infographic', desc: 'Scannable visual facts', icon: <ImageIcon className="w-4 h-4" />, gradient: 'from-rose-500 to-pink-600' },
+  { id: 'videoScript', label: 'Video Script', desc: 'Scene-by-scene storyboard', icon: <Video className="w-4 h-4" />, gradient: 'from-red-500 to-rose-600' },
+  { id: 'audioScript', label: 'Audio Summary', desc: 'Listen & revise on the go', icon: <Headphones className="w-4 h-4" />, gradient: 'from-violet-500 to-purple-600' },
 ];
 
 const LEVELS = ['Primary', 'GCSE', 'A-Level', 'University', 'Professional'];
@@ -366,7 +370,7 @@ export default function AiStudio() {
                   </div>
 
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Choose format</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
                     {FORMATS.map(f => (
                       <button
                         key={f.id}
@@ -700,11 +704,143 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
   if (format === 'infographic' && typeof data === 'string') {
     return <InfographicRenderer content={data} dark />;
   }
+  if (format === 'videoScript' && typeof data === 'string') {
+    return <VideoStoryboard script={data} dark />;
+  }
+  if (format === 'audioScript' && typeof data === 'string') {
+    return <AiStudioAudioPlayer script={data} />;
+  }
   // text / notes / summary / problems → markdown
   const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
   return (
     <div className={PROSE_CLASSES}>
       <ReactMarkdown>{text}</ReactMarkdown>
+    </div>
+  );
+}
+
+/* ─── Audio player for AI Studio (SpeechSynthesis, dark theme) ── */
+
+function AiStudioAudioPlayer({ script }: { script: string }) {
+  const [playing, setPlaying] = useState(false);
+  const [rate, setRate] = useState(1);
+  const [progress, setProgress] = useState(0);
+  const [currentSentence, setCurrentSentence] = useState(-1);
+  const utterRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sentences = script.split(/(?<=[.!?])\s+/).filter(s => s.trim());
+
+  const stop = () => {
+    speechSynthesis.cancel();
+    setPlaying(false);
+    setCurrentSentence(-1);
+    setProgress(0);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+  };
+
+  const play = () => {
+    if (playing) { stop(); return; }
+    if (!('speechSynthesis' in window)) {
+      toast.error('Your browser doesn\'t support text-to-speech.');
+      return;
+    }
+    speechSynthesis.cancel();
+    let idx = 0;
+    const speakNext = () => {
+      if (idx >= sentences.length) { stop(); return; }
+      setCurrentSentence(idx);
+      setProgress(Math.round((idx / sentences.length) * 100));
+      const utter = new SpeechSynthesisUtterance(sentences[idx]);
+      utter.rate = rate;
+      utter.pitch = 1;
+      const voices = speechSynthesis.getVoices();
+      const preferred = voices.find(v => v.lang.startsWith('en') && v.name.includes('Female'))
+        || voices.find(v => v.lang.startsWith('en'))
+        || voices[0];
+      if (preferred) utter.voice = preferred;
+      utter.onend = () => { idx++; speakNext(); };
+      utter.onerror = () => { idx++; speakNext(); };
+      utterRef.current = utter;
+      speechSynthesis.speak(utter);
+    };
+    setPlaying(true);
+    speakNext();
+  };
+
+  const changeRate = () => {
+    const rates = [0.75, 1, 1.25, 1.5];
+    const nextIdx = (rates.indexOf(rate) + 1) % rates.length;
+    setRate(rates[nextIdx]);
+    if (playing) {
+      stop();
+      setTimeout(() => play(), 100);
+    }
+  };
+
+  useEffect(() => { return () => { speechSynthesis.cancel(); }; }, []);
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-transparent border border-violet-500/20 p-6">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-[0_0_24px_rgba(139,92,246,0.35)]">
+            <Headphones className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-white">Audio Summary</p>
+            <p className="text-xs text-slate-400">Browser text-to-speech playback</p>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="h-1.5 bg-white/10 rounded-full mb-4 overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-violet-500 to-purple-400 rounded-full transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+
+        {/* Controls */}
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={changeRate}
+            className="px-3 py-1.5 rounded-lg bg-white/[0.06] border border-white/10 text-xs font-bold text-slate-300 hover:bg-white/10 transition-colors min-w-[52px]"
+          >
+            {rate}x
+          </button>
+          <button
+            onClick={play}
+            className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-[0_0_32px_rgba(139,92,246,0.4)] hover:scale-105 active:scale-95 transition-transform"
+          >
+            {playing ? <Pause className="w-5 h-5 text-white" /> : <Play className="w-5 h-5 text-white ml-0.5" />}
+          </button>
+          <button
+            onClick={stop}
+            className="px-3 py-1.5 rounded-lg bg-white/[0.06] border border-white/10 text-xs font-bold text-slate-300 hover:bg-white/10 transition-colors"
+          >
+            Stop
+          </button>
+        </div>
+      </div>
+
+      {/* Transcript with sentence highlighting */}
+      <div className="rounded-xl bg-white/[0.03] border border-white/10 p-5">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 mb-3">Transcript</p>
+        <div className="text-sm leading-relaxed">
+          {sentences.map((s, i) => (
+            <span
+              key={i}
+              className={`transition-colors duration-200 ${
+                i === currentSentence
+                  ? 'text-violet-300 bg-violet-500/10 rounded px-0.5'
+                  : 'text-slate-300'
+              }`}
+            >
+              {s}{' '}
+            </span>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

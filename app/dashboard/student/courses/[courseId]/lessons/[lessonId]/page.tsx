@@ -16,6 +16,7 @@ import {
 import { getUnitStatuses, getCurriculumLessonStatus } from '@/lib/curriculum';
 import { FORMAT_COSTS, FORMAT_LABELS, LESSON_COMPLETE_REWARD, UNIT_PASS_REWARD } from '@/lib/sparks';
 import { AudioPlayer } from '@/components/audio-player';
+import { VideoStoryboard } from '@/components/video-storyboard';
 import { MindmapRenderer } from '@/components/mindmap-renderer';
 import { InfographicRenderer } from '@/components/infographic-renderer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -868,16 +869,8 @@ export default function LessonPage() {
           {/* Video (script storyboard) */}
           <TabsContent value="video">
             {gate('videoScript',
-              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="space-y-4">
-                <div className="bg-primary/10 border border-primary/20 rounded-2xl px-5 py-3.5 flex items-center gap-3">
-                  <Video className="w-5 h-5 text-primary shrink-0" />
-                  <p className="text-xs text-foreground">
-                    <strong>Video storyboard.</strong> This is the script for this lesson&apos;s video — full video production is coming soon.
-                  </p>
-                </div>
-                <div className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8">
-                  <ReactMarkdown>{aiOutputs.videoScript ?? ''}</ReactMarkdown>
-                </div>
+              <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+                <VideoStoryboard script={aiOutputs.videoScript ?? ''} />
               </motion.div>
             )}
           </TabsContent>
