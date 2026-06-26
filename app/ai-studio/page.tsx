@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
-import ReactMarkdown from 'react-markdown';
+import { MathMarkdown } from '@/components/math-markdown';
 import {
   Brain, Sparkles, Send, Search, ArrowLeft, Library, MessageSquare,
   FileText, ClipboardList, Network, BookMarked,
@@ -714,7 +714,7 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
   const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
   return (
     <div className={PROSE_CLASSES}>
-      <ReactMarkdown>{text}</ReactMarkdown>
+      <MathMarkdown>{text}</MathMarkdown>
     </div>
   );
 }

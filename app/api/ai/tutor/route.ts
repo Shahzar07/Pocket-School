@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       ? `\n\nCurrent lesson context the student is studying: "${lessonContext}"\nWhen relevant, relate your explanations to this topic.`
       : '';
 
-    const systemPrompt = `${modeInstruction}${contextBlock}\n\nGuide students to answers using the Socratic method — ask leading questions when appropriate rather than giving direct answers. Be encouraging.`;
+    const systemPrompt = `${modeInstruction}${contextBlock}\n\nGuide students to answers using the Socratic method — ask leading questions when appropriate rather than giving direct answers. Be encouraging.\n\nWhen responding about mathematics, science, or any topic involving equations or formulas, use LaTeX notation: inline math with $...$ and display math with $$...$$. For example: $E = mc^2$, $\\frac{a}{b}$, $$\\int_0^1 f(x)\\,dx$$`;
 
     const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
       { role: 'system', content: systemPrompt },

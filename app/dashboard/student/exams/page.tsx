@@ -261,6 +261,13 @@ export default function StudentExamsPage() {
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {item.exam.questions.length} questions · {item.exam.timeLimit ? `${item.exam.timeLimit} min` : 'No time limit'} · Pass: {item.exam.passingScore}%
                     </p>
+                    {(item.exam.availableFrom || item.exam.availableTo) && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {item.exam.availableFrom && <>From: {(item.exam.availableFrom as any).toDate?.().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) ?? new Date(item.exam.availableFrom as any).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</>}
+                        {item.exam.availableFrom && item.exam.availableTo && ' · '}
+                        {item.exam.availableTo && <>Until: {(item.exam.availableTo as any).toDate?.().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) ?? new Date(item.exam.availableTo as any).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</>}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <Button

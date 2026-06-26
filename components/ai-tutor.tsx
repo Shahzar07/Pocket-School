@@ -8,7 +8,7 @@ import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarFallback } from './ui/avatar';
-import ReactMarkdown from 'react-markdown';
+import { MathMarkdown } from '@/components/math-markdown';
 import { useTutorContext } from '@/hooks/use-tutor-context';
 
 interface Message {
@@ -161,7 +161,7 @@ export function AITutor() {
                     </Avatar>
                     <div className={`p-3 rounded-2xl max-w-[80%] text-sm ${m.role === 'user' ? 'bg-muted text-foreground rounded-tr-sm' : 'bg-primary/10 text-foreground rounded-tl-sm'}`}>
                       <div className="prose prose-sm prose-p:my-1 max-w-none text-sm">
-                        <ReactMarkdown>{m.text}</ReactMarkdown>
+                        <MathMarkdown>{m.text}</MathMarkdown>
                       </div>
                     </div>
                   </div>

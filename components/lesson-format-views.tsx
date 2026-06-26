@@ -1,6 +1,6 @@
 'use client';
 
-import ReactMarkdown from 'react-markdown';
+import { MathMarkdown } from '@/components/math-markdown';
 import { AiOutputs } from '@/lib/db';
 import { MindmapRenderer } from '@/components/mindmap-renderer';
 import { InfographicRenderer } from '@/components/infographic-renderer';
@@ -39,7 +39,7 @@ export function FormatPreview({ format, outputs }: { format: string; outputs: Ai
   if (MARKDOWN_FORMATS.has(format) && typeof value === 'string') {
     return (
       <div className="prose prose-sm dark:prose-invert max-w-none">
-        <ReactMarkdown>{value}</ReactMarkdown>
+        <MathMarkdown>{value}</MathMarkdown>
       </div>
     );
   }

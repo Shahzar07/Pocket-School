@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'motion/react';
-import ReactMarkdown from 'react-markdown';
+import { MathMarkdown } from '@/components/math-markdown';
 import { Timestamp } from 'firebase/firestore';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { useTutorContext } from '@/hooks/use-tutor-context';
@@ -861,7 +861,7 @@ export default function LessonPage() {
           <TabsContent value="text">
             {gate('text',
               <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
-                <ReactMarkdown>{aiOutputs.text ?? ''}</ReactMarkdown>
+                <MathMarkdown>{aiOutputs.text ?? ''}</MathMarkdown>
               </motion.div>
             )}
           </TabsContent>
@@ -897,7 +897,7 @@ export default function LessonPage() {
           <TabsContent value="problems">
             {gate('problems',
               <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
-                <ReactMarkdown>{aiOutputs.problems ?? ''}</ReactMarkdown>
+                <MathMarkdown>{aiOutputs.problems ?? ''}</MathMarkdown>
               </motion.div>
             )}
           </TabsContent>
@@ -931,7 +931,7 @@ export default function LessonPage() {
           <TabsContent value="notes">
             {gate('notes',
               <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-amber-500/10 dark:bg-amber-900/10 border border-amber-500/20 rounded-3xl p-6 sm:p-8">
-                <ReactMarkdown>{aiOutputs.notes ?? ''}</ReactMarkdown>
+                <MathMarkdown>{aiOutputs.notes ?? ''}</MathMarkdown>
               </motion.div>
             )}
           </TabsContent>

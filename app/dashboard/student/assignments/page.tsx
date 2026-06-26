@@ -153,7 +153,7 @@ export default function StudentAssignmentsPage() {
                     {due && (
                       <div className={`flex items-center gap-1 text-xs mt-2 ${status === 'overdue' ? 'text-destructive' : 'text-muted-foreground'}`}>
                         {status === 'overdue' ? <AlertTriangle className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
-                        Due: {due.toLocaleDateString()}
+                        Due: {due.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
                       </div>
                     )}
                   </div>
