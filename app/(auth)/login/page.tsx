@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 
-const SUPER_ADMIN_EMAIL = 'harryseggu@gmail.com';
+const SUPER_ADMIN_EMAIL = 'harry.seggu@gmail.com';
 
 export default function LoginPage() {
   const router = useRouter();
