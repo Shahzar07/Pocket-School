@@ -1,7 +1,7 @@
 import {
   collection, doc, getDoc, getDocs, setDoc, updateDoc, addDoc,
   deleteDoc, query, where, orderBy, limit, serverTimestamp,
-  increment, arrayUnion, Timestamp, writeBatch, runTransaction,
+  increment, arrayUnion, arrayRemove, Timestamp, writeBatch, runTransaction,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { ACADEMIC_MONTHLY_ALLOWANCE, UNIT_PASS_REWARD } from './sparks';
@@ -746,6 +746,39 @@ export async function getLiveClassesForTeacher(teacherId: string): Promise<LiveC
 export async function createLiveClass(data: Omit<LiveClass, 'id'>): Promise<string> {
   const ref = await addDoc(collection(db, 'live_classes'), data);
   return ref.id;
+}
+
+export async function updateLiveClassStatus(classId: string, status: 'scheduled' | 'live' | 'ended') {
+  await updateDoc(doc(db, 'live_classes', classId), { status });
+}
+
+// ─── Platform settings (admin console, doc: platform_settings/main) ──
+
+export interface PlatformSettings {
+  platformName?: string;
+  supportEmail?: string;
+  maintenanceMode?: boolean;
+  smtpHost?: string;
+  smtpPort?: string;
+  smtpUser?: string;
+  retentionDays?: number;
+  updatedAt?: Timestamp;
+}
+
+export async function getPlatformSettings(): Promise<PlatformSettings> {
+  const snap = await getDoc(doc(db, 'platform_settings', 'main'));
+  return snap.exists() ? (snap.data() as PlatformSettings) : {};
+}
+
+export async function savePlatformSettings(data: Partial<PlatformSettings>) {
+  await setDoc(doc(db, 'platform_settings', 'main'), { ...data, updatedAt: serverTimestamp() }, { merge: true });
+}
+
+export async function unlinkChildFromParent(parentId: string, childId: string) {
+  await updateDoc(doc(db, 'users', parentId), {
+    childIds: arrayRemove(childId),
+    updatedAt: serverTimestamp(),
+  });
 }
 
 // ─── Messages ─────────────────────────────────────────────────
