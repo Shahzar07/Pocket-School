@@ -231,13 +231,88 @@ service cloud.firestore {
     // ── Tasks ─────────────────────────────────────────────────
     match /tasks/{taskId} {
       allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
         resource.data.assignedTo == request.auth.uid ||
         resource.data.createdBy == request.auth.uid ||
         isTeacherOrAdmin()
       );
       allow create: if isSignedIn();
       allow update: if isSignedIn();
-      allow delete: if isTeacherOrAdmin();
+      allow delete: if isSignedIn() && (
+        resource.data.userId == request.auth.uid || isTeacherOrAdmin()
+      );
+    }
+
+    // ── Grades ────────────────────────────────────────────────
+    match /grades/{gradeId} {
+      allow read: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid || isTeacherOrAdmin()
+      );
+      allow create, update: if isTeacherOrAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Grade weights (doc id = courseId) ─────────────────────
+    match /grade_weights/{courseId} {
+      allow read: if isSignedIn();
+      allow write: if isTeacherOrAdmin();
+    }
+
+    // ── Assignment Submissions ────────────────────────────────
+    match /assignment_submissions/{submissionId} {
+      allow read: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid || isTeacherOrAdmin()
+      );
+      allow create: if isSignedIn() && incoming().studentId == request.auth.uid;
+      allow update: if isTeacherOrAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Attendance Records ────────────────────────────────────
+    match /attendance_records/{recordId} {
+      allow read: if isSignedIn();
+      allow create, update: if isTeacherOrAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Notifications ─────────────────────────────────────────
+    match /notifications/{notificationId} {
+      allow read, update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn();
+    }
+
+    // ── Chat Messages (live class rooms) ──────────────────────
+    match /chat_messages/{messageId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    // ── Teacher notification signups (emails subcollection) ───
+    match /teacher_notifications/{teacherId}/emails/{emailId} {
+      allow create: if isSignedIn();
+      allow read: if isTeacherOrAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // ── Parent verification requests ──────────────────────────
+    match /parent_verifications/{verificationId} {
+      allow create: if isSignedIn();
+      allow read, update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Platform settings (admin console) ─────────────────────
+    match /platform_settings/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ── User sessions (device history) ────────────────────────
+    match /user_sessions/{sessionId} {
+      allow read, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
   }
 }

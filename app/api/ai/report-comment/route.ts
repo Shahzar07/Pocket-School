@@ -2,7 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { callOpenRouter, SMART_MODEL } from '@/lib/openrouter';
 
 export async function POST(req: NextRequest) {
-  const { studentName, courseTitle, avgScore, submissionCount } = await req.json();
+  let studentName = 'The student';
+  let courseTitle = 'this course';
+  let avgScore = 0;
+  let submissionCount = 0;
+  try {
+    const body = await req.json();
+    studentName = body.studentName || studentName;
+    courseTitle = body.courseTitle || courseTitle;
+    avgScore = Number.isFinite(Number(body.avgScore)) ? Number(body.avgScore) : 0;
+    submissionCount = Number(body.submissionCount) || 0;
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
 
   const grade = avgScore >= 90 ? 'A' : avgScore >= 80 ? 'B' : avgScore >= 70 ? 'C' : avgScore >= 60 ? 'D' : 'F';
 

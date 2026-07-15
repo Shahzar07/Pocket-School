@@ -20,13 +20,15 @@ export async function POST(req: NextRequest) {
 
     const systemPrompt = `${modeInstruction}${contextBlock}\n\nGuide students to answers using the Socratic method — ask leading questions when appropriate rather than giving direct answers. Be encouraging.\n\nWhen responding about mathematics, science, or any topic involving equations or formulas, use LaTeX notation: inline math with $...$ and display math with $$...$$. For example: $E = mc^2$, $\\frac{a}{b}$, $$\\int_0^1 f(x)\\,dx$$`;
 
+    // Cap history so long chats can't blow past the model context / budget.
+    const cappedHistory = (Array.isArray(history) ? history : []).slice(-12);
     const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
       { role: 'system', content: systemPrompt },
-      ...(history ?? []).map((h: { role: string; text: string }) => ({
+      ...cappedHistory.map((h: { role: string; text: string }) => ({
         role: (h.role === 'model' ? 'assistant' : 'user') as 'user' | 'assistant',
-        content: h.text,
+        content: String(h.text ?? '').slice(0, 4000),
       })),
-      { role: 'user', content: message },
+      { role: 'user', content: String(message).slice(0, 8000) },
     ];
 
     const reply = await callOpenRouter(messages, { model: SMART_MODEL });

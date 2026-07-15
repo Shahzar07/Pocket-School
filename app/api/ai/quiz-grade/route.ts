@@ -1,11 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callOpenRouter, FAST_MODEL } from '@/lib/openrouter';
 
+/** Legacy quizzes stored letter answers ("A") while students select option
+ * text — resolve either form to the same comparable string. */
+function normalizeAnswer(answer: string, options?: string[]): string {
+  const a = String(answer ?? '').trim();
+  if (options && Array.isArray(options)) {
+    const exact = options.find(o => String(o).trim().toLowerCase() === a.toLowerCase());
+    if (exact) return String(exact).trim().toLowerCase();
+    const idx = 'ABCD'.indexOf(a.toUpperCase());
+    if (a.length === 1 && idx >= 0 && idx < options.length) {
+      return String(options[idx]).trim().toLowerCase();
+    }
+  }
+  return a.toLowerCase();
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { question, correctAnswer, studentAnswer, explanation } = await req.json();
+    const { question, correctAnswer, studentAnswer, explanation, options } = await req.json();
     if (!question || !correctAnswer || studentAnswer === undefined) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Deterministic path first: if the normalized answers match (or clearly
+    // don't, for multiple-choice with known options), no AI call is needed.
+    const normCorrect = normalizeAnswer(correctAnswer, options);
+    const normStudent = normalizeAnswer(studentAnswer, options);
+    if (normStudent === normCorrect) {
+      return NextResponse.json({ correct: true, score: 1, feedback: 'Correct! Well done.' });
+    }
+    if (options && Array.isArray(options) && options.length > 0) {
+      return NextResponse.json({
+        correct: false,
+        score: 0,
+        feedback: `Not quite. The correct answer is: ${correctAnswer}. ${explanation ?? ''}`.trim(),
+      });
     }
 
     const prompt = `You are a fair, encouraging quiz grader.
@@ -32,8 +62,8 @@ Respond with ONLY a JSON object — no other text:
       } catch { /* fall through */ }
     }
 
-    // Fallback: simple string match
-    const correct = String(studentAnswer).toLowerCase().trim() === String(correctAnswer).toLowerCase().trim();
+    // Fallback: normalized string match
+    const correct = normStudent === normCorrect;
     return NextResponse.json({
       correct,
       score: correct ? 1 : 0,
