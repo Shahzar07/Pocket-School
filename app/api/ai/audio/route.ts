@@ -42,7 +42,7 @@ function cleanForSpeech(text: string): string {
     .trim();
 }
 
-export const VOICES = ['Kore', 'Puck', 'Charon', 'Aoede', 'Leda', 'Zephyr'] as const;
+const VOICES = ['Kore', 'Puck', 'Charon', 'Aoede', 'Leda', 'Zephyr'] as const;
 
 /**
  * POST /api/ai/audio — generate real spoken audio for a script with Gemini TTS.
