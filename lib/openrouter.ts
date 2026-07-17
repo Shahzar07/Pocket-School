@@ -2,14 +2,28 @@ const BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 /** Cheapest tier — trivial checks (deterministic-style grading fallbacks). */
 export const FAST_MODEL = 'meta-llama/llama-3.1-8b-instruct';
-/** Main generation model — picked for lowest cost at good accuracy.
- * Gemini 2.0 Flash is ~3-4x cheaper than gpt-4o-mini per output token. */
-export const SMART_MODEL = 'google/gemini-2.0-flash-001';
-/** If the primary model is unavailable, OpenRouter falls back down this list. */
-const FALLBACK_MODELS = ['google/gemini-2.0-flash-001', 'openai/gpt-4o-mini', 'meta-llama/llama-3.3-70b-instruct'];
+
+/** Content generation (lesson text, quizzes, flashcards, notes, tutor…) —
+ * newest ultra-low-cost tier: GPT-5 nano is ~$0.05/M input tokens with
+ * strong accuracy on structured educational content. */
+export const CONTENT_MODEL = 'openai/gpt-5-nano';
+
+/** Video & audio script generation — creative narrative writing benefits
+ * from a slightly stronger model; GPT-5 mini is still budget-tier. */
+export const VIDEO_MODEL = 'openai/gpt-5-mini';
+
+/** Back-compat alias — existing routes import SMART_MODEL. */
+export const SMART_MODEL = CONTENT_MODEL;
+
+/** OpenRouter routing fallbacks per primary model: if the primary is down,
+ * unavailable, or rejected, OpenRouter tries the next id in the list. */
+const FALLBACKS: Record<string, string[]> = {
+  [CONTENT_MODEL]: [CONTENT_MODEL, 'z-ai/glm-4.6', 'google/gemini-2.0-flash-001', 'openai/gpt-4o-mini'],
+  [VIDEO_MODEL]: [VIDEO_MODEL, 'z-ai/glm-4.6', 'openai/gpt-4o-mini', 'google/gemini-2.0-flash-001'],
+};
 
 const MAX_RETRIES = 3;
-const REQUEST_TIMEOUT_MS = 45_000;
+const REQUEST_TIMEOUT_MS = 60_000;
 const DEFAULT_MAX_TOKENS = 4096;
 
 export async function callOpenRouter(
@@ -18,6 +32,11 @@ export async function callOpenRouter(
 ): Promise<string> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set');
+
+  const model = opts?.model ?? CONTENT_MODEL;
+  // GPT-5 family models only accept the default temperature and control
+  // effort via `reasoning`; sending temperature causes a 400.
+  const isGpt5 = model.startsWith('openai/gpt-5');
 
   let lastError: Error | null = null;
 
@@ -40,11 +59,11 @@ export async function callOpenRouter(
           'X-Title': 'Pocket School',
         },
         body: JSON.stringify({
-          model: opts?.model ?? SMART_MODEL,
-          // OpenRouter routing fallback: if the requested model is down or
-          // unavailable, try the next one instead of failing the request.
-          ...((opts?.model ?? SMART_MODEL) === SMART_MODEL ? { models: FALLBACK_MODELS } : {}),
-          temperature: opts?.temperature ?? 0.7,
+          model,
+          ...(FALLBACKS[model] ? { models: FALLBACKS[model] } : {}),
+          ...(isGpt5
+            ? { reasoning: { effort: 'low' } } // keep latency + cost minimal
+            : { temperature: opts?.temperature ?? 0.7 }),
           max_tokens: opts?.maxTokens ?? DEFAULT_MAX_TOKENS,
           ...(opts?.jsonMode ? { response_format: { type: 'json_object' } } : {}),
           messages,

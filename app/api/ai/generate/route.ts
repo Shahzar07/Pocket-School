@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { callOpenRouter, SMART_MODEL } from '@/lib/openrouter';
+import { callOpenRouter, CONTENT_MODEL, VIDEO_MODEL } from '@/lib/openrouter';
+
+/** Video and audio scripts use the dedicated narrative model; everything
+ * else uses the ultra-cheap content model. */
+const MODEL_FOR_FORMAT = (format: string) =>
+  format === 'videoScript' || format === 'audioScript' ? VIDEO_MODEL : CONTENT_MODEL;
 
 const MATH_HINT = 'If the content involves mathematics, science formulas, or equations, use LaTeX notation: inline math with $...$ and display math with $$...$$. For example: $E = mc^2$, $\\frac{a}{b}$, $$\\int_0^1 f(x)\\,dx$$.\n\n';
 
@@ -109,7 +114,7 @@ export async function POST(req: NextRequest) {
       : '';
 
     const prompt = promptFn(fullContent) + langInstruction;
-    const text = await callOpenRouter([{ role: 'user', content: prompt }], { model: SMART_MODEL });
+    const text = await callOpenRouter([{ role: 'user', content: prompt }], { model: MODEL_FOR_FORMAT(format) });
 
     if (JSON_FORMATS.has(format)) {
       let parsed = extractJsonArray(text, format);
@@ -121,7 +126,7 @@ export async function POST(req: NextRequest) {
             { role: 'assistant', content: text },
             { role: 'user', content: 'Your previous reply was not a valid JSON array in the required shape. Reply again with ONLY the corrected JSON array — no prose, no markdown fences.' },
           ],
-          { model: SMART_MODEL, temperature: 0.2 }
+          { model: MODEL_FOR_FORMAT(format), temperature: 0.2 }
         );
         parsed = extractJsonArray(repaired, format);
       }
