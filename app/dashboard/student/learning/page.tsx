@@ -44,15 +44,18 @@ export default function MyLearningPage() {
   const [programme, setProgramme] = useState<Programme | null>(null);
   const [expandedUnits, setExpandedUnits] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const yearGroup = profile?.yearGroup;
   const tier = profile?.subscriptionTier ?? 'free';
 
-  useEffect(() => {
+  const load = async () => {
     if (!user || !profile) return;
     if (!yearGroup) { setLoading(false); return; }
 
-    (async () => {
+    setLoading(true);
+    setError(null);
+    try {
       const [courses, programmes] = await Promise.all([
         getCurriculumModules(yearGroup),
         getProgrammes(),
@@ -89,9 +92,14 @@ export default function MyLearningPage() {
         const active = t.unitStatuses.find(s => s.state === 'in_progress');
         return active ? [active.unitId] : [];
       }));
+    } catch (e: any) {
+      setError(e?.message ?? 'Something went wrong.');
+    } finally {
       setLoading(false);
-    })();
-  }, [user, profile, yearGroup]);
+    }
+  };
+
+  useEffect(() => { load(); }, [user, profile, yearGroup]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Loading skeleton ── */
   if (loading) return (
@@ -99,6 +107,17 @@ export default function MyLearningPage() {
       <div className="h-10 w-48 bg-muted animate-pulse rounded-3xl" />
       <div className="h-48 bg-muted animate-pulse rounded-3xl" />
       <div className="h-48 bg-muted animate-pulse rounded-3xl" />
+    </div>
+  );
+
+  /* ── Load error ── */
+  if (error) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 pt-16 flex justify-center">
+      <div className="bg-card border border-border rounded-3xl p-8 text-center max-w-md w-full card-glow">
+        <p className="font-heading text-xl text-foreground mb-2">Couldn&apos;t load this page.</p>
+        <p className="text-sm text-muted-foreground mb-6 break-words">{error}</p>
+        <Button onClick={load} className="rounded-full h-11 px-6 font-bold">Retry</Button>
+      </div>
     </div>
   );
 

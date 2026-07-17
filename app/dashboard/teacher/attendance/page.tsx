@@ -60,14 +60,22 @@ export default function TeacherAttendancePage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const [loadError, setLoadError] = useState(false);
+
+  const loadCourses = () => {
     if (!user) return;
-    getTeacherCourses(user.uid).then(c => { setCourses(c); setLoading(false); });
-  }, [user]);
+    setLoading(true);
+    setLoadError(false);
+    getTeacherCourses(user.uid)
+      .then(c => setCourses(c))
+      .catch(() => setLoadError(true))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadCourses(); }, [user]);
 
   useEffect(() => {
     if (!selectedCourse) return;
-    const course = courses.find(c => c.id === selectedCourse);
     Promise.all([
       getModulesWithLessons(selectedCourse),
       getEnrollmentsForCourse(selectedCourse),
@@ -83,7 +91,7 @@ export default function TeacherAttendancePage() {
       setStudents(roster.sort((a, b) => a.name.localeCompare(b.name)));
       setStatuses({});
       setRecords(recs);
-    });
+    }).catch(() => toast.error('Failed to load course data.'));
   }, [selectedCourse, courses]);
 
   const handleSave = async () => {
@@ -117,6 +125,17 @@ export default function TeacherAttendancePage() {
   if (loading) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
       {[1, 2, 3].map(i => <div key={i} className="h-16 bg-muted animate-pulse rounded-3xl" />)}
+    </div>
+  );
+
+  if (loadError) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12">
+      <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
+        <ClipboardCheck className="w-10 h-10 mx-auto text-amber-500" />
+        <p className="font-heading text-2xl text-foreground">Couldn&apos;t load attendance</p>
+        <p className="text-sm text-muted-foreground">Something went wrong while fetching your courses. Please try again.</p>
+        <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={loadCourses}>Retry</Button>
+      </div>
     </div>
   );
 

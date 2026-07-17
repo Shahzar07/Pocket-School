@@ -22,6 +22,8 @@ const TYPE_COLORS: Record<string, string> = {
   exam: 'bg-violet-500',
   event: 'bg-emerald-500',
   holiday: 'bg-amber-500',
+  class: 'bg-teal-500',
+  payment: 'bg-rose-500',
 };
 
 const TYPE_BADGE: Record<string, string> = {
@@ -29,6 +31,8 @@ const TYPE_BADGE: Record<string, string> = {
   exam: 'bg-violet-500/10 text-violet-600 border border-violet-500/20',
   event: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20',
   holiday: 'bg-amber-500/10 text-amber-600 border border-amber-500/20',
+  class: 'bg-teal-500/10 text-teal-600 border border-teal-500/20',
+  payment: 'bg-rose-500/10 text-rose-600 border border-rose-500/20',
 };
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];

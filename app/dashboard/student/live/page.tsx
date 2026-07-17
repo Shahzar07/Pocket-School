@@ -14,17 +14,27 @@ export default function StudentLiveClasses() {
   const { user } = useAuthSTORE();
   const [classes, setClasses] = useState<LiveClass[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = async () => {
     if (!user) return;
-    (async () => {
+    setLoading(true);
+    setError(null);
+    try {
       const enrolled = await getEnrolledCourses(user.uid);
       const courseIds = enrolled.map(e => e.course.id!).filter(Boolean);
       const live = await getLiveClassesForStudent(courseIds);
+      // Defensive client-side sort (soonest first)
+      live.sort((a, b) => (a.scheduledAt?.toDate?.()?.getTime() ?? 0) - (b.scheduledAt?.toDate?.()?.getTime() ?? 0));
       setClasses(live);
+    } catch (e: any) {
+      setError(e?.message ?? 'Something went wrong.');
+    } finally {
       setLoading(false);
-    })();
-  }, [user]);
+    }
+  };
+
+  useEffect(() => { load(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleJoin = (cls: LiveClass) => {
     if (cls.joinUrl) {
@@ -37,6 +47,16 @@ export default function StudentLiveClasses() {
   if (loading) return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-4">
       {[1, 2, 3].map(i => <div key={i} className="h-28 bg-muted animate-pulse rounded-2xl" />)}
+    </div>
+  );
+
+  if (error) return (
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 flex justify-center">
+      <div className="bg-card border border-border rounded-2xl p-8 text-center max-w-md w-full">
+        <p className="font-bold text-xl text-foreground mb-2">Couldn&apos;t load this page.</p>
+        <p className="text-sm text-muted-foreground mb-6 break-words">{error}</p>
+        <Button onClick={load} className="rounded-full h-11 px-6 font-bold">Retry</Button>
+      </div>
     </div>
   );
 

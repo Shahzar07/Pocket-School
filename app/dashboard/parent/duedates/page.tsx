@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { getChildrenProfiles, getEnrolledCourses, getAssignmentsForStudent, Assignment } from '@/lib/db';
+import { getChildrenProfiles, getEnrolledCourses, getAssignmentsForStudent, createNotification, Assignment } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, AlertCircle, CalendarCheck } from 'lucide-react';
 import { toast } from 'sonner';
@@ -117,7 +117,23 @@ export default function ParentDueDates() {
                       </div>
                     </div>
                   </div>
-                  <Button variant="outline" onClick={() => toast.info('Setting a reminder for this due date...')}
+                  <Button variant="outline"
+                    onClick={async () => {
+                      if (!user) return;
+                      try {
+                        await createNotification({
+                          userId: user.uid,
+                          title: `Reminder: ${item.assignment.title}`,
+                          message: `${item.childName}'s "${item.assignment.title}" (${item.courseTitle}) is due ${formatDate(item.assignment.dueDate)} at ${formatTime(item.assignment.dueDate)}.`,
+                          type: 'assignment',
+                          link: '/dashboard/parent/duedates',
+                          read: false,
+                        });
+                        toast.success('Reminder saved to your notifications.');
+                      } catch (e: any) {
+                        toast.error(e?.message || 'Could not save the reminder.');
+                      }
+                    }}
                     className="rounded-full h-10 px-4 font-semibold shrink-0"
                   >
                     Remind Me

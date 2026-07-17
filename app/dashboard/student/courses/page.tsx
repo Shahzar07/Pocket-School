@@ -24,26 +24,41 @@ export default function CoursesPage() {
   const [enrolled, setEnrolled] = useState<CE[]>([]);
   const [available, setAvailable] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [enrolling, setEnrolling] = useState<string | null>(null);
 
   const load = async () => {
     if (!user) return;
-    const [ec, all] = await Promise.all([getEnrolledCourses(user.uid), getAllPublishedCourses()]);
-    setEnrolled(ec);
-    const enrolledIds = new Set(ec.map(e => e.course.id));
-    setAvailable(all.filter(c => !enrolledIds.has(c.id)));
-    setLoading(false);
+    setLoading(true);
+    setError(null);
+    try {
+      const [ec, all] = await Promise.all([getEnrolledCourses(user.uid), getAllPublishedCourses()]);
+      // Defensive client-side sort (alphabetical)
+      ec.sort((a, b) => a.course.title.localeCompare(b.course.title));
+      setEnrolled(ec);
+      const enrolledIds = new Set(ec.map(e => e.course.id));
+      setAvailable(all.filter(c => !enrolledIds.has(c.id)).sort((a, b) => a.title.localeCompare(b.title)));
+    } catch (e: any) {
+      setError(e?.message ?? 'Something went wrong.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { load(); }, [user]);
+  useEffect(() => { load(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleEnroll = async (courseId: string) => {
     if (!user) return;
     setEnrolling(courseId);
-    await enrollStudent(user.uid, courseId);
-    toast.success('Enrolled! Start learning now.');
-    await load();
-    setEnrolling(null);
+    try {
+      await enrollStudent(user.uid, courseId);
+      toast.success('Enrolled! Start learning now.');
+      await load();
+    } catch {
+      toast.error('Could not enrol. Please try again.');
+    } finally {
+      setEnrolling(null);
+    }
   };
 
   const statusColor = (p: number) =>
@@ -60,6 +75,16 @@ export default function CoursesPage() {
       </div>
       <div className="space-y-4">
         {[1, 2, 3].map(i => <div key={i} className="h-28 bg-muted animate-pulse rounded-3xl" />)}
+      </div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 pt-16 flex justify-center">
+      <div className="bg-card border border-border rounded-3xl p-8 text-center max-w-md w-full card-glow">
+        <p className="font-heading text-xl text-foreground mb-2">Couldn&apos;t load this page.</p>
+        <p className="text-sm text-muted-foreground mb-6 break-words">{error}</p>
+        <Button onClick={load} className="rounded-full h-11 px-6 font-bold">Retry</Button>
       </div>
     </div>
   );

@@ -107,7 +107,6 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/courses', icon: Store, label: 'Marketplace' },
       { href: '/dashboard/parent/communications', icon: MessageSquare, label: 'Communications' },
       { href: '/dashboard/parent/duedates', icon: Clock, label: 'Due Dates' },
-      { href: '/dashboard/student/attendance', icon: ClipboardCheck, label: 'Child Attendance' },
     ]},
     { section: 'School', items: [
       { href: '/dashboard/announcements', icon: Megaphone, label: 'Announcements' },

@@ -7,10 +7,19 @@ import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { BookOpen, Brain, CheckCircle2, FileText, Download, Loader2, ArrowLeft } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { getPublicCourseById, enrollStudent, incrementEnrollment, type Course } from '@/lib/db';
+import { Timestamp } from 'firebase/firestore';
+import { getPublicCourseById, enrollStudent, incrementEnrollment, createInvoice, getUser, type Course, type UserProfile } from '@/lib/db';
 import { toast } from 'sonner';
 
 function priceLabel(c: Course) {
@@ -25,17 +34,26 @@ export default function CourseDetailPage() {
   const router = useRouter();
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [enrolling, setEnrolling] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  useEffect(() => {
+  const load = async () => {
     if (!courseId) return;
-    (async () => {
+    setLoading(true);
+    setError(null);
+    try {
       const c = await getPublicCourseById(courseId);
       setCourse(c);
+    } catch (e: any) {
+      setError(e?.message ?? 'Something went wrong.');
+    } finally {
       setLoading(false);
-    })();
-  }, [courseId]);
+    }
+  };
+
+  useEffect(() => { load(); }, [courseId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setUser(u));
@@ -43,6 +61,17 @@ export default function CourseDetailPage() {
   }, []);
 
   const isFree = !course?.price || course.price === 0;
+
+  // Only student accounts may enrol; returns the profile on success, null otherwise.
+  const getStudentProfile = async (): Promise<UserProfile | null> => {
+    if (!user) return null;
+    const prof = await getUser(user.uid);
+    if (!prof || prof.role !== 'student') {
+      toast.error('Only student accounts can enrol in courses.');
+      return null;
+    }
+    return prof;
+  };
 
   const enrolFree = async () => {
     if (!course) return;
@@ -52,6 +81,8 @@ export default function CourseDetailPage() {
     }
     try {
       setEnrolling(true);
+      const prof = await getStudentProfile();
+      if (!prof) return;
       await enrollStudent(user.uid, course.id);
       await incrementEnrollment(course.id);
       toast.success(`Enrolled in ${course.title}.`);
@@ -65,7 +96,48 @@ export default function CourseDetailPage() {
 
   const buyPaid = () => {
     if (!course) return;
-    router.push(`/courses/${course.id}/checkout`);
+    if (!user) {
+      router.push(`/login?next=/courses/${course.id}`);
+      return;
+    }
+    setConfirmOpen(true);
+  };
+
+  const confirmPaidEnrol = async () => {
+    if (!course || !user) return;
+    try {
+      setEnrolling(true);
+      const prof = await getStudentProfile();
+      if (!prof) { setConfirmOpen(false); return; }
+      await enrollStudent(user.uid, course.id);
+      await incrementEnrollment(course.id);
+      // Best-effort invoice: security rules may reserve invoice creation for
+      // teachers/admins, in which case the school issues it instead.
+      let invoiced = false;
+      try {
+        await createInvoice({
+          studentId: user.uid,
+          studentName: prof.name ?? user.displayName ?? 'Student',
+          courseId: course.id,
+          description: `Course purchase: ${course.title}`,
+          amount: course.price ?? 0,
+          currency: course.currency ?? 'GBP',
+          status: 'sent',
+          dueDate: Timestamp.fromDate(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)),
+          createdBy: user.uid,
+        });
+        invoiced = true;
+      } catch { /* fall through to school-issued invoice message */ }
+      toast.success(invoiced
+        ? `Enrolled in ${course.title} — an invoice was added to your school account.`
+        : `Enrolled in ${course.title} — an invoice will be issued by the school.`);
+      setConfirmOpen(false);
+      router.push(`/dashboard/student/courses/${course.id}`);
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to enrol.');
+    } finally {
+      setEnrolling(false);
+    }
   };
 
   return (
@@ -90,7 +162,17 @@ export default function CourseDetailPage() {
         </div>
       )}
 
-      {!loading && !course && (
+      {!loading && error && (
+        <div className="py-32 px-4 flex justify-center">
+          <div className="bg-card border border-border rounded-2xl p-8 text-center max-w-md w-full">
+            <p className="font-bold text-xl text-foreground mb-2">Couldn&apos;t load this page.</p>
+            <p className="text-sm text-muted-foreground mb-6 break-words">{error}</p>
+            <Button onClick={load} className="rounded-full h-11 px-6 font-semibold">Retry</Button>
+          </div>
+        </div>
+      )}
+
+      {!loading && !error && !course && (
         <div className="text-center py-32">
           <p className="text-muted-foreground mb-4">Product not found or not publicly listed.</p>
           <Button variant="outline" onClick={() => router.push('/courses')}>Browse marketplace</Button>
@@ -155,9 +237,10 @@ export default function CourseDetailPage() {
                   ) : (
                     <Button
                       onClick={buyPaid}
+                      disabled={enrolling}
                       className="w-full h-12 rounded-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-semibold"
                     >
-                      Buy now — {priceLabel(course)}
+                      {enrolling ? 'Enrolling…' : user ? `Buy now — ${priceLabel(course)}` : 'Sign in to buy'}
                     </Button>
                   )}
                   {course.previewUrl && (
@@ -239,6 +322,35 @@ export default function CourseDetailPage() {
               </div>
             </section>
           )}
+
+          {/* Paid enrolment confirmation */}
+          <Dialog open={confirmOpen} onOpenChange={open => !enrolling && setConfirmOpen(open)}>
+            <DialogContent className="rounded-2xl">
+              <DialogHeader>
+                <DialogTitle>Confirm enrolment</DialogTitle>
+                <DialogDescription>
+                  This is a paid course ({priceLabel(course)}). Your school account
+                  will be invoiced — no card payment is taken now.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="bg-muted/50 border border-border rounded-xl p-4 text-sm space-y-1">
+                <p className="font-semibold text-foreground">{course.title}</p>
+                <p className="text-muted-foreground">Price: {priceLabel(course)}</p>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" className="rounded-full h-11 px-5" disabled={enrolling} onClick={() => setConfirmOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmPaidEnrol}
+                  disabled={enrolling}
+                  className="rounded-full h-11 px-5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-semibold"
+                >
+                  {enrolling ? 'Enrolling…' : 'Confirm & enrol'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </>
       )}
     </div>

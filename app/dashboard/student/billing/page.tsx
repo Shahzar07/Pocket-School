@@ -6,8 +6,15 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { getInvoicesForStudent, Invoice } from '@/lib/db';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { CreditCard, Printer, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
-import { toast } from 'sonner';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -36,33 +43,31 @@ export default function StudentBillingPage() {
   const { user } = useAuthSTORE();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
-  const [paying, setPaying] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [payDialogInvoice, setPayDialogInvoice] = useState<Invoice | null>(null);
 
-  useEffect(() => {
+  const load = async () => {
     if (!user) return;
-    getInvoicesForStudent(user.uid).then(setInvoices).finally(() => setLoading(false));
-  }, [user]);
-
-  const handlePay = async (invoice: Invoice) => {
-    if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
-      toast.error('Stripe is not configured. Contact your institution to set up payments.');
-      return;
-    }
-    setPaying(invoice.id!);
+    setLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/stripe/create-payment-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invoiceId: invoice.id, amount: invoice.amount, currency: invoice.currency }),
-      });
-      if (!res.ok) throw new Error('Failed to create payment');
-      toast.info('Stripe checkout would open here. Configure STRIPE_SECRET_KEY to enable live payments.');
-    } catch {
-      toast.error('Payment initiation failed. Please try again.');
+      const inv = await getInvoicesForStudent(user.uid);
+      // Defensive client-side sort (newest first)
+      inv.sort((a, b) => (b.createdAt?.toDate?.()?.getTime() ?? 0) - (a.createdAt?.toDate?.()?.getTime() ?? 0));
+      setInvoices(inv);
+    } catch (e: any) {
+      setError(e?.message ?? 'Something went wrong.');
     } finally {
-      setPaying(null);
+      setLoading(false);
     }
   };
+
+  useEffect(() => { load(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Online card payment is not live yet — be honest about it instead of faking
+  // a checkout. The Pay button opens an informational dialog with the invoice
+  // reference so the student can pay via their school.
+  const handlePay = (invoice: Invoice) => setPayDialogInvoice(invoice);
 
   const outstanding = invoices.filter(i => i.status === 'sent' || i.status === 'overdue');
   const history = invoices.filter(i => i.status === 'paid' || i.status === 'cancelled');
@@ -76,6 +81,16 @@ export default function StudentBillingPage() {
         <div className="h-12 w-48 bg-muted animate-pulse rounded-3xl" />
       </div>
       {[1, 2].map(i => <div key={i} className="h-28 bg-muted animate-pulse rounded-3xl" />)}
+    </div>
+  );
+
+  if (error) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 pt-16 flex justify-center">
+      <div className="bg-card border border-border rounded-3xl p-8 text-center max-w-md w-full card-glow">
+        <p className="font-heading text-xl text-foreground mb-2">Couldn&apos;t load this page.</p>
+        <p className="text-sm text-muted-foreground mb-6 break-words">{error}</p>
+        <Button onClick={load} className="rounded-full h-11 px-6 font-bold">Retry</Button>
+      </div>
     </div>
   );
 
@@ -178,7 +193,6 @@ export default function StudentBillingPage() {
                   </div>
                   <Button
                     onClick={() => handlePay(inv)}
-                    disabled={paying === inv.id}
                     className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white border-0 gap-2"
                   >
                     <CreditCard className="w-4 h-4" /> Pay
@@ -245,6 +259,43 @@ export default function StudentBillingPage() {
           </div>
         </motion.section>
       )}
+
+      {/* Pay dialog — honest about payment options */}
+      <Dialog open={!!payDialogInvoice} onOpenChange={open => !open && setPayDialogInvoice(null)}>
+        <DialogContent className="rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-2xl">Online payment coming soon</DialogTitle>
+            <DialogDescription>
+              Paying by card in Pocket School isn&apos;t available yet. Please pay this
+              invoice through your school — once payment is received, your teacher
+              or school admin will mark it as paid here.
+            </DialogDescription>
+          </DialogHeader>
+          {payDialogInvoice && (
+            <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-2 text-sm">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-muted-foreground">Invoice reference</span>
+                <span className="font-mono font-semibold text-foreground break-all">{payDialogInvoice.id}</span>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-muted-foreground">Description</span>
+                <span className="font-semibold text-foreground text-right">{payDialogInvoice.description}</span>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-muted-foreground">Amount due</span>
+                <span className="font-heading text-lg text-foreground">
+                  {payDialogInvoice.currency} {payDialogInvoice.amount.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setPayDialogInvoice(null)} className="rounded-full h-11 px-6 font-bold">
+              Got it
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -11,7 +11,7 @@ import { db } from '@/lib/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { toast } from 'sonner';
-import { linkChildToParent, createParentVerification, enrollInProgrammeModules, awardSparks } from '@/lib/db';
+import { linkChildToParent, createParentVerification, enrollInProgrammeModules, awardSparks, getUser, updateUser, UserProfile } from '@/lib/db';
 import { SIGNUP_GRANT } from '@/lib/sparks';
 import { Timestamp } from 'firebase/firestore';
 
@@ -53,9 +53,18 @@ export default function OnboardingPage() {
         ...(isYearGroup ? { yearGroup } : {}),
         updatedAt: serverTimestamp(),
       });
-      if (isYearGroup) {
-        await enrollInProgrammeModules(user.uid, yearGroup);
-        await awardSparks(user.uid, SIGNUP_GRANT, 'admin_grant', 'Welcome bonus');
+      // The welcome Sparks grant and module enrolment are one-time only:
+      // guard on the user doc's onboardedAt so re-running onboarding can't
+      // farm the signup grant.
+      const freshProfile = await getUser(user.uid);
+      const alreadyOnboarded = !!(freshProfile as (UserProfile & { onboardedAt?: unknown }) | null)?.onboardedAt;
+      if (!alreadyOnboarded) {
+        if (isYearGroup) {
+          await enrollInProgrammeModules(user.uid, yearGroup);
+          await awardSparks(user.uid, SIGNUP_GRANT, 'admin_grant', 'Welcome bonus');
+        }
+        const onboardedStamp: Partial<UserProfile> & { onboardedAt: Timestamp } = { onboardedAt: Timestamp.now() };
+        await updateUser(user.uid, onboardedStamp);
       }
       toast.success('Welcome to Pocket School! 🎉');
       router.push('/dashboard/student');
@@ -69,27 +78,34 @@ export default function OnboardingPage() {
   const handleLinkChild = async () => {
     if (!childEmail.trim()) { toast.error("Enter your child's email address"); return; }
     setLinkLoading(true);
-    const result = await linkChildToParent(user.uid, childEmail.trim().toLowerCase());
-    if (result.success) {
-      // Also create a verification request for admin approval
-      try {
-        await createParentVerification({
-          parentId: user.uid,
-          parentName: profile.name ?? 'Parent',
-          parentEmail: user.email ?? '',
-          studentEmail: childEmail.trim().toLowerCase(),
-          studentId: studentIdField.trim(),
-          status: 'pending',
-          createdAt: Timestamp.now(),
-        });
-      } catch { /* non-blocking */ }
-      toast.success(`Linked to ${result.childName}'s account! Verification request sent.`);
-      setChildEmail('');
-      setStudentIdField('');
-    } else {
-      toast.error(result.error || 'Could not link account');
+    try {
+      const result = await linkChildToParent(user.uid, childEmail.trim().toLowerCase());
+      if (result.success) {
+        // Also create a verification request for admin approval
+        try {
+          await createParentVerification({
+            parentId: user.uid,
+            parentName: profile.name ?? 'Parent',
+            parentEmail: user.email ?? '',
+            studentEmail: childEmail.trim().toLowerCase(),
+            studentId: studentIdField.trim(),
+            status: 'pending',
+            createdAt: Timestamp.now(),
+          });
+          toast.success(`Linked to ${result.childName}'s account! Verification request sent.`);
+          setChildEmail('');
+          setStudentIdField('');
+        } catch {
+          toast.error('Verification request could not be submitted — please try again');
+        }
+      } else {
+        toast.error(result.error || 'Could not link account');
+      }
+    } catch {
+      toast.error('Could not link account — please try again');
+    } finally {
+      setLinkLoading(false);
     }
-    setLinkLoading(false);
   };
 
   const completeParentOnboarding = () => {

@@ -2,7 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { callOpenRouter, SMART_MODEL } from '@/lib/openrouter';
 
 export async function POST(req: NextRequest) {
-  const { content, assignmentTitle } = await req.json();
+  let content = '';
+  let assignmentTitle: string | undefined;
+  try {
+    const body = await req.json();
+    content = (body.content ?? '').toString();
+    assignmentTitle = body.assignmentTitle;
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
 
   if (!content || content.trim().length < 50) {
     return NextResponse.json({ aiScore: 0, plagiarismScore: 0, flags: [], recommendation: 'Content too short to analyse.' });

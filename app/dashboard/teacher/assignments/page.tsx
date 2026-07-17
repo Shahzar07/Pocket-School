@@ -6,6 +6,7 @@ import {
   getTeacherCourses, Course, createAssignment, getAssignmentsForCourse,
   Assignment, getAssignmentSubmissions, AssignmentSubmission,
   gradeAssignmentSubmission, deleteAssignment, createNotification,
+  createIntegrityReport,
 } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,14 +48,25 @@ export default function TeacherAssignmentsPage() {
     status: 'draft' as 'draft' | 'published', allowLate: false,
   });
 
-  useEffect(() => {
+  const [loadError, setLoadError] = useState(false);
+
+  const loadCourses = () => {
     if (!user) return;
-    getTeacherCourses(user.uid).then(cs => { setCourses(cs); if (cs.length) setSelectedCourse(cs[0].id); setLoading(false); });
-  }, [user]);
+    setLoading(true);
+    setLoadError(false);
+    getTeacherCourses(user.uid)
+      .then(cs => { setCourses(cs); if (cs.length) setSelectedCourse(cs[0].id); })
+      .catch(() => setLoadError(true))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadCourses(); }, [user]);
 
   useEffect(() => {
     if (!selectedCourse) return;
-    getAssignmentsForCourse(selectedCourse).then(setAssignments);
+    getAssignmentsForCourse(selectedCourse)
+      .then(setAssignments)
+      .catch(() => toast.error('Failed to load assignments.'));
   }, [selectedCourse]);
 
   async function handleCreate() {
@@ -78,14 +90,20 @@ export default function TeacherAssignmentsPage() {
       setView('list');
       const updated = await getAssignmentsForCourse(selectedCourse);
       setAssignments(updated);
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to create assignment.');
     } finally { setSaving(false); }
   }
 
   async function handleViewSubmissions(a: Assignment) {
-    setSelectedAssignment(a);
-    const subs = await getAssignmentSubmissions(a.id);
-    setSubmissions(subs);
-    setView('submissions');
+    try {
+      setSelectedAssignment(a);
+      const subs = await getAssignmentSubmissions(a.id);
+      setSubmissions(subs);
+      setView('submissions');
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to load submissions.');
+    }
   }
 
   async function handleGrade(sub: AssignmentSubmission) {
@@ -103,25 +121,52 @@ export default function TeacherAssignmentsPage() {
       toast.success('Graded!');
       const updated = await getAssignmentSubmissions(selectedAssignment!.id);
       setSubmissions(updated);
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to save grade.');
     } finally { setGradingId(null); }
   }
 
   async function handleCheckIntegrity(sub: AssignmentSubmission) {
     if (!sub.content) { toast.error('No text content to check'); return; }
+    if (!user || !selectedAssignment) return;
     toast.info('Running integrity check…');
-    const res = await fetch('/api/ai/integrity-check', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: sub.content, assignmentTitle: selectedAssignment?.title }),
-    });
-    const data = await res.json();
-    toast.success(`AI: ${data.aiScore}% | Plagiarism: ${data.plagiarismScore}% — ${data.recommendation}`);
+    try {
+      const res = await fetch('/api/ai/integrity-check', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: sub.content, assignmentTitle: selectedAssignment.title }),
+      });
+      if (!res.ok) throw new Error('Integrity check request failed');
+      const data = await res.json();
+      await createIntegrityReport({
+        submissionId: sub.id,
+        submissionType: 'assignment',
+        studentId: sub.studentId,
+        studentName: sub.studentName,
+        courseId: sub.courseId,
+        assignmentTitle: selectedAssignment.title,
+        contentSnippet: sub.content.slice(0, 300),
+        aiScore: data.aiScore ?? 0,
+        plagiarismScore: data.plagiarismScore ?? 0,
+        flags: Array.isArray(data.flags) ? data.flags : [],
+        recommendation: data.recommendation ?? 'Manual review recommended.',
+        status: 'pending',
+        reviewedBy: user.uid,
+      });
+      toast.success(`AI: ${data.aiScore}% | Plagiarism: ${data.plagiarismScore}% — Integrity report saved, view it in the Integrity page.`);
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Integrity check failed.');
+    }
   }
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this assignment?')) return;
-    await deleteAssignment(id);
-    setAssignments(prev => prev.filter(a => a.id !== id));
-    toast.success('Deleted');
+    try {
+      await deleteAssignment(id);
+      setAssignments(prev => prev.filter(a => a.id !== id));
+      toast.success('Deleted');
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to delete assignment.');
+    }
   }
 
   if (loading) return (
@@ -134,6 +179,17 @@ export default function TeacherAssignmentsPage() {
         {[...Array(4)].map((_, i) => (
           <div key={i} className="bg-muted animate-pulse rounded-3xl h-32" />
         ))}
+      </div>
+    </div>
+  );
+
+  if (loadError) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12">
+      <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
+        <AlertTriangle className="w-10 h-10 mx-auto text-amber-500" />
+        <p className="font-heading text-2xl text-foreground">Couldn&apos;t load your courses</p>
+        <p className="text-sm text-muted-foreground">Something went wrong while fetching your data. Please try again.</p>
+        <Button onClick={loadCourses} variant="outline" className="rounded-full h-11 px-5 font-semibold">Retry</Button>
       </div>
     </div>
   );

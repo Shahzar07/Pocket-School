@@ -2,13 +2,13 @@
 
 import { Video } from 'lucide-react';
 
-interface Scene {
+export interface Scene {
   title: string;
   visual: string;
   narration: string;
 }
 
-function parseScenes(script: string): Scene[] {
+export function parseScenes(script: string): Scene[] {
   const lines = script.split('\n');
   const scenes: Scene[] = [];
   let current: { title: string; visual: string; narration: string[] } | null = null;

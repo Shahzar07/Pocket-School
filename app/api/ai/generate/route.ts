@@ -14,7 +14,7 @@ const PROMPTS: Record<string, (c: string) => string> = {
 
   flashcards: (c) => `You are a study expert. ${MATH_HINT}Create 6-8 high-quality flashcard pairs from this lesson content. Return ONLY a valid JSON array, no prose before or after it:\n[{"question":"...","answer":"..."}]\n\nLesson content:\n${c}`,
 
-  quiz: (c) => `You are an assessment expert. ${MATH_HINT}Create 5 multiple-choice quiz questions from this lesson content. Return ONLY a valid JSON array, no prose before or after it:\n[{"question":"...","options":["A","B","C","D"],"answer":"A","explanation":"why A is correct"}]\n\nLesson content:\n${c}`,
+  quiz: (c) => `You are an assessment expert. ${MATH_HINT}Create 5 multiple-choice quiz questions from this lesson content. Return ONLY a valid JSON array, no prose before or after it. CRITICAL: "answer" must be the EXACT full text of the correct option (copied verbatim from "options"), never a letter or index:\n[{"question":"...","options":["first option text","second option text","third option text","fourth option text"],"answer":"second option text","explanation":"why it is correct"}]\n\nLesson content:\n${c}`,
 
   slides: (c) => `You are a presentation designer. Create 5-6 presentation slides from this lesson content. Return ONLY a valid JSON array, no prose before or after it:\n[{"title":"...","bullets":["...","...","..."]}]\n\nLesson content:\n${c}`,
 
@@ -37,6 +37,58 @@ const PROMPTS: Record<string, (c: string) => string> = {
 
 const JSON_FORMATS = new Set(['flashcards', 'quiz', 'slides', 'glossary']);
 
+const MAX_CONTENT_CHARS = 12_000;
+const MAX_BRIEF_CHARS = 4_000;
+
+/** Required keys per JSON format — items missing these are rejected. */
+const JSON_SHAPES: Record<string, string[]> = {
+  flashcards: ['question', 'answer'],
+  quiz: ['question', 'options', 'answer'],
+  slides: ['title', 'bullets'],
+  glossary: ['term', 'definition'],
+};
+
+function extractJsonArray(text: string, format: string): any[] | null {
+  const match = text.match(/\[[\s\S]*\]/);
+  if (!match) return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(match[0]);
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(parsed) || parsed.length === 0) return null;
+  const keys = JSON_SHAPES[format] ?? [];
+  const valid = parsed.filter(
+    (item) => item && typeof item === 'object' && keys.every((k) => k in item)
+  );
+  if (valid.length === 0) return null;
+
+  if (format === 'quiz') {
+    // Normalise the answer to the exact option text: models occasionally
+    // return "A"/"B" letters or prefixed options despite the prompt.
+    for (const q of valid) {
+      if (!Array.isArray(q.options)) continue;
+      q.options = q.options.map((o: unknown) => String(o));
+      const ans = String(q.answer ?? '').trim();
+      const exact = q.options.find((o: string) => o.trim().toLowerCase() === ans.toLowerCase());
+      if (exact) { q.answer = exact; continue; }
+      // Letter form: A → options[0] …
+      const letterIdx = 'ABCD'.indexOf(ans.toUpperCase());
+      if (ans.length === 1 && letterIdx >= 0 && letterIdx < q.options.length) {
+        q.answer = q.options[letterIdx];
+        continue;
+      }
+      // "A) text" / "text" substring form.
+      const fuzzy = q.options.find((o: string) =>
+        o.toLowerCase().includes(ans.toLowerCase()) || ans.toLowerCase().includes(o.toLowerCase())
+      );
+      if (fuzzy) q.answer = fuzzy;
+    }
+  }
+  return valid;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { content, format, briefPrompt, language } = await req.json();
@@ -47,26 +99,38 @@ export async function POST(req: NextRequest) {
 
     // Curriculum CMS passes the lesson's authored generation brief; prepend it
     // so every format follows the curriculum team's instructions.
+    const cappedContent = String(content).slice(0, MAX_CONTENT_CHARS);
     const fullContent = briefPrompt
-      ? `CONTENT BRIEF (follow these instructions):\n${briefPrompt}\n\n${content}`
-      : content;
+      ? `CONTENT BRIEF (follow these instructions):\n${String(briefPrompt).slice(0, MAX_BRIEF_CHARS)}\n\n${cappedContent}`
+      : cappedContent;
 
     const langInstruction = language && language !== 'en'
       ? `\n\nIMPORTANT: Generate ALL content in the ${LANG_NAMES[language] || language} language. All text, explanations, questions, answers, terms, and definitions must be in ${LANG_NAMES[language] || language}. Only keep technical/scientific terms in their original form where appropriate.`
       : '';
 
-    const text = await callOpenRouter(
-      [{ role: 'user', content: promptFn(fullContent) + langInstruction }],
-      { model: SMART_MODEL }
-    );
+    const prompt = promptFn(fullContent) + langInstruction;
+    const text = await callOpenRouter([{ role: 'user', content: prompt }], { model: SMART_MODEL });
 
     if (JSON_FORMATS.has(format)) {
-      const jsonMatch = text.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        try {
-          return NextResponse.json({ result: JSON.parse(jsonMatch[0]) });
-        } catch { /* fall through to text */ }
+      let parsed = extractJsonArray(text, format);
+      if (!parsed) {
+        // One repair attempt: ask the model to convert its own output to valid JSON.
+        const repaired = await callOpenRouter(
+          [
+            { role: 'user', content: prompt },
+            { role: 'assistant', content: text },
+            { role: 'user', content: 'Your previous reply was not a valid JSON array in the required shape. Reply again with ONLY the corrected JSON array — no prose, no markdown fences.' },
+          ],
+          { model: SMART_MODEL, temperature: 0.2 }
+        );
+        parsed = extractJsonArray(repaired, format);
       }
+      if (!parsed) {
+        // Never return a raw string for array formats — it poisons Firestore
+        // and crashes the typed viewers downstream.
+        return NextResponse.json({ error: 'The AI response could not be parsed. Please try again.' }, { status: 422 });
+      }
+      return NextResponse.json({ result: parsed });
     }
 
     return NextResponse.json({ result: text });

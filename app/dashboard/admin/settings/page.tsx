@@ -4,9 +4,10 @@ import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Globe, Database, Mail, Settings } from 'lucide-react';
+import { Globe, Database, Mail, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { getPlatformSettings, savePlatformSettings } from '@/lib/db';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -16,6 +17,93 @@ const fadeUp: Record<string, any> = {
 export default function AdminSystemSettings() {
   const [smtpOpen, setSmtpOpen] = useState(false);
   const [retentionOpen, setRetentionOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [savingGeneral, setSavingGeneral] = useState(false);
+  const [savingSmtp, setSavingSmtp] = useState(false);
+  const [savingRetention, setSavingRetention] = useState(false);
+
+  const [platformName, setPlatformName] = useState('');
+  const [supportEmail, setSupportEmail] = useState('');
+  const [smtpHost, setSmtpHost] = useState('');
+  const [smtpPort, setSmtpPort] = useState('');
+  const [smtpUser, setSmtpUser] = useState('');
+  const [retentionDays, setRetentionDays] = useState('365');
+
+  const load = () => {
+    setLoading(true);
+    setLoadError(false);
+    getPlatformSettings()
+      .then(s => {
+        setPlatformName(s.platformName ?? 'Pocket School');
+        setSupportEmail(s.supportEmail ?? '');
+        setSmtpHost(s.smtpHost ?? '');
+        setSmtpPort(s.smtpPort ?? '');
+        setSmtpUser(s.smtpUser ?? '');
+        setRetentionDays(String(s.retentionDays ?? 365));
+      })
+      .catch(() => setLoadError(true))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const handleSaveGeneral = async () => {
+    setSavingGeneral(true);
+    try {
+      await savePlatformSettings({ platformName: platformName.trim(), supportEmail: supportEmail.trim() });
+      toast.success('General settings saved!');
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to save settings.');
+    } finally {
+      setSavingGeneral(false);
+    }
+  };
+
+  const handleSaveSmtp = async () => {
+    setSavingSmtp(true);
+    try {
+      await savePlatformSettings({ smtpHost: smtpHost.trim(), smtpPort: smtpPort.trim(), smtpUser: smtpUser.trim() });
+      toast.success('SMTP settings saved!');
+      setSmtpOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to save SMTP settings.');
+    } finally {
+      setSavingSmtp(false);
+    }
+  };
+
+  const handleSaveRetention = async () => {
+    const days = Number(retentionDays);
+    if (!Number.isFinite(days) || days <= 0) { toast.error('Enter a valid number of days.'); return; }
+    setSavingRetention(true);
+    try {
+      await savePlatformSettings({ retentionDays: days });
+      toast.success('Retention policy saved!');
+      setRetentionOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to save retention policy.');
+    } finally {
+      setSavingRetention(false);
+    }
+  };
+
+  if (loading) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-5 pt-2">
+      {[1, 2, 3].map(i => <div key={i} className="h-40 bg-muted animate-pulse rounded-3xl" />)}
+    </div>
+  );
+
+  if (loadError) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 pt-2">
+      <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
+        <Globe className="w-10 h-10 mx-auto text-amber-500" />
+        <p className="font-heading text-2xl text-foreground">Couldn&apos;t load platform settings</p>
+        <p className="text-sm text-muted-foreground">Something went wrong while fetching settings. Please try again.</p>
+        <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={load}>Retry</Button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
@@ -46,13 +134,14 @@ export default function AdminSystemSettings() {
           <div className="space-y-4 max-w-md">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Platform Name</label>
-              <Input defaultValue="Pocket School" className="rounded-xl h-11 bg-muted/50" />
+              <Input value={platformName} onChange={e => setPlatformName(e.target.value)} className="rounded-xl h-11 bg-muted/50" />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Support Email</label>
-              <Input defaultValue="support@pocketschool.edu" className="rounded-xl h-11 bg-muted/50" />
+              <Input type="email" value={supportEmail} onChange={e => setSupportEmail(e.target.value)} placeholder="support@example.com" className="rounded-xl h-11 bg-muted/50" />
             </div>
-            <Button onClick={() => toast.success('General settings saved!')} className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white">
+            <Button onClick={handleSaveGeneral} disabled={savingGeneral} className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white gap-2">
+              {savingGeneral && <Loader2 className="w-4 h-4 animate-spin" />}
               Save Changes
             </Button>
           </div>
@@ -77,29 +166,31 @@ export default function AdminSystemSettings() {
             <DialogContent className="rounded-3xl">
               <DialogHeader>
                 <DialogTitle className="font-heading text-2xl">SMTP Server Settings</DialogTitle>
-                <DialogDescription>Enter your mail server credentials.</DialogDescription>
+                <DialogDescription>Enter your mail server details.</DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">SMTP Host</label>
-                  <Input placeholder="smtp.example.com" className="rounded-xl h-11" />
+                  <Input value={smtpHost} onChange={e => setSmtpHost(e.target.value)} placeholder="smtp.example.com" className="rounded-xl h-11" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">Port</label>
-                  <Input placeholder="587" className="rounded-xl h-11" />
+                  <Input value={smtpPort} onChange={e => setSmtpPort(e.target.value)} placeholder="587" className="rounded-xl h-11" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">Username</label>
-                  <Input placeholder="user@example.com" className="rounded-xl h-11" />
+                  <Input value={smtpUser} onChange={e => setSmtpUser(e.target.value)} placeholder="user@example.com" className="rounded-xl h-11" />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Password</label>
-                  <Input type="password" placeholder="********" className="rounded-xl h-11" />
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  The SMTP password is configured via the <code className="font-mono">SMTP_PASS</code> environment variable and is never stored in the database.
+                </p>
               </div>
               <DialogFooter className="gap-2">
                 <Button variant="outline" onClick={() => setSmtpOpen(false)} className="rounded-full">Cancel</Button>
-                <Button onClick={() => { setSmtpOpen(false); toast.success('SMTP Settings Saved!'); }} className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-bold">Save Settings</Button>
+                <Button onClick={handleSaveSmtp} disabled={savingSmtp} className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-bold gap-2">
+                  {savingSmtp && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Save Settings
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -116,10 +207,13 @@ export default function AdminSystemSettings() {
             </div>
             <h2 className="font-heading text-2xl text-foreground">Data Management</h2>
           </div>
-          <p className="text-sm text-muted-foreground mb-4">Manage data backups, retention policies, and storage limits.</p>
+          <p className="text-sm text-muted-foreground mb-4">Manage data backups and retention policies.</p>
           <div className="flex gap-3 flex-wrap">
-            <Button onClick={() => toast.success('Backup initiated! Check logs later.')} variant="outline" className="rounded-full h-11 px-5 font-semibold">
-              Run Manual Backup
+            <Button
+              onClick={() => toast.info('Automatic daily backups are managed by Firebase. Manual export is available in the Firebase console.')}
+              variant="outline" className="rounded-full h-11 px-5 font-semibold"
+            >
+              About Backups
             </Button>
             <Dialog open={retentionOpen} onOpenChange={setRetentionOpen}>
               <DialogTrigger>
@@ -132,17 +226,16 @@ export default function AdminSystemSettings() {
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-muted-foreground">Student Analytics History (Days)</label>
-                    <Input type="number" defaultValue="365" className="rounded-xl h-11" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-muted-foreground">System Audit Logs (Days)</label>
-                    <Input type="number" defaultValue="90" className="rounded-xl h-11" />
+                    <label className="text-xs font-medium text-muted-foreground">Retention Period (Days)</label>
+                    <Input type="number" min={1} value={retentionDays} onChange={e => setRetentionDays(e.target.value)} className="rounded-xl h-11" />
                   </div>
                 </div>
                 <DialogFooter className="gap-2">
                   <Button variant="outline" onClick={() => setRetentionOpen(false)} className="rounded-full">Cancel</Button>
-                  <Button onClick={() => { setRetentionOpen(false); toast.success('Retention rules updated.'); }} className="rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold">Apply</Button>
+                  <Button onClick={handleSaveRetention} disabled={savingRetention} className="rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold gap-2">
+                    {savingRetention && <Loader2 className="w-4 h-4 animate-spin" />}
+                    Apply
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>

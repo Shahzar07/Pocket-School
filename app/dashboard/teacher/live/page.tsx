@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Timestamp } from 'firebase/firestore';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { getTeacherCourses, getLiveClassesForTeacher, createLiveClass, Course, LiveClass } from '@/lib/db';
+import { getTeacherCourses, getLiveClassesForTeacher, createLiveClass, updateLiveClassStatus, Course, LiveClass } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -25,18 +25,41 @@ export default function TeacherLiveClassesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ courseId: '', title: '', scheduledAt: '', joinUrl: '' });
+  const [loadError, setLoadError] = useState(false);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = async () => {
     if (!user) return;
-    (async () => {
+    setLoading(true);
+    setLoadError(false);
+    try {
       const cs = await getTeacherCourses(user.uid);
       setCourses(cs);
-      if (cs.length) setForm(f => ({ ...f, courseId: cs[0].id }));
+      if (cs.length) setForm(f => ({ ...f, courseId: f.courseId || cs[0].id }));
       const live = await getLiveClassesForTeacher(user.uid);
       setClasses(live);
+    } catch {
+      setLoadError(true);
+    } finally {
       setLoading(false);
-    })();
-  }, [user]);
+    }
+  };
+
+  useEffect(() => { load(); }, [user]);
+
+  async function handleStatusChange(cls: LiveClass, status: 'live' | 'ended') {
+    setUpdatingId(cls.id);
+    try {
+      await updateLiveClassStatus(cls.id, status);
+      toast.success(status === 'live' ? 'Class is now live!' : 'Class ended.');
+      const updated = await getLiveClassesForTeacher(user!.uid);
+      setClasses(updated);
+    } catch {
+      toast.error('Failed to update class status.');
+    } finally {
+      setUpdatingId(null);
+    }
+  }
 
   const courseTitle = (id: string) => courses.find(c => c.id === id)?.title ?? 'Course';
 
@@ -71,6 +94,17 @@ export default function TeacherLiveClassesPage() {
   if (loading) return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-4">
       {[1, 2, 3].map(i => <div key={i} className="h-24 bg-muted animate-pulse rounded-2xl" />)}
+    </div>
+  );
+
+  if (loadError) return (
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+      <div className="bg-card border border-border rounded-2xl p-10 text-center space-y-4">
+        <Video className="w-10 h-10 mx-auto text-amber-500" />
+        <p className="font-bold text-xl text-foreground">Couldn&apos;t load live classes</p>
+        <p className="text-sm text-muted-foreground">Something went wrong while fetching your data. Please try again.</p>
+        <Button variant="outline" className="rounded-xl" onClick={load}>Retry</Button>
+      </div>
     </div>
   );
 
@@ -156,7 +190,25 @@ export default function TeacherLiveClassesPage() {
                     </div>
                   </div>
                 </div>
-                <Badge className={`rounded-full text-[10px] capitalize ${STATUS_STYLES[cls.status]}`}>{cls.status}</Badge>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Badge className={`rounded-full text-[10px] capitalize ${STATUS_STYLES[cls.status]}`}>{cls.status}</Badge>
+                  {cls.status === 'scheduled' && (
+                    <Button size="sm" onClick={() => handleStatusChange(cls, 'live')} disabled={updatingId === cls.id}
+                      className="rounded-full gap-1.5 text-xs font-bold bg-red-600 hover:bg-red-700 text-white"
+                    >
+                      {updatingId === cls.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Radio className="w-3.5 h-3.5" />}
+                      Go Live
+                    </Button>
+                  )}
+                  {cls.status === 'live' && (
+                    <Button size="sm" variant="outline" onClick={() => handleStatusChange(cls, 'ended')} disabled={updatingId === cls.id}
+                      className="rounded-full gap-1.5 text-xs font-bold"
+                    >
+                      {updatingId === cls.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Video className="w-3.5 h-3.5" />}
+                      End
+                    </Button>
+                  )}
+                </div>
               </motion.div>
             );
           })

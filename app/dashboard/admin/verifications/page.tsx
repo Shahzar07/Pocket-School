@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { getPendingVerifications, updateVerificationStatus, ParentVerification } from '@/lib/db';
+import { getPendingVerifications, updateVerificationStatus, getUserByEmail, unlinkChildFromParent, ParentVerification } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -18,21 +18,37 @@ export default function AdminVerificationsPage() {
   const [verifications, setVerifications] = useState<ParentVerification[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = async () => {
-    const data = await getPendingVerifications();
-    setVerifications(data);
-    setLoading(false);
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const data = await getPendingVerifications();
+      setVerifications(data);
+    } catch (e: any) {
+      setLoadError(e?.message || 'Failed to load verifications.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, []);
 
-  const handle = async (id: string, status: 'approved' | 'rejected') => {
-    setProcessing(id);
+  const handle = async (v: ParentVerification, status: 'approved' | 'rejected') => {
+    setProcessing(v.id!);
     try {
-      await updateVerificationStatus(id, status);
-      toast.success(status === 'approved' ? 'Verification approved!' : 'Verification rejected.');
-      setVerifications(prev => prev.filter(v => v.id !== id));
+      await updateVerificationStatus(v.id!, status);
+      if (status === 'rejected') {
+        // The parent-child link is created at onboarding, before approval —
+        // rejecting must actually sever it.
+        try {
+          const child = await getUserByEmail(v.studentEmail);
+          if (child) await unlinkChildFromParent(v.parentId, child.id);
+        } catch { /* link may not exist — status update already succeeded */ }
+      }
+      toast.success(status === 'approved' ? 'Verification approved!' : 'Verification rejected and link removed.');
+      setVerifications(prev => prev.filter(x => x.id !== v.id));
     } catch { toast.error('Failed to update verification.'); }
     finally { setProcessing(null); }
   };
@@ -41,6 +57,13 @@ export default function AdminVerificationsPage() {
     <div className="max-w-6xl mx-auto px-0 sm:px-2 py-2 space-y-5">
       <div className="h-24 bg-muted animate-pulse rounded-3xl" />
       {[1, 2, 3].map(i => <div key={i} className="h-20 bg-muted animate-pulse rounded-3xl" />)}
+    </div>
+  );
+
+  if (loadError) return (
+    <div className="max-w-6xl mx-auto py-16 text-center space-y-3">
+      <p className="text-muted-foreground text-sm">Couldn't load verifications. {loadError}</p>
+      <Button variant="outline" className="rounded-xl" onClick={load}>Retry</Button>
     </div>
   );
 
@@ -102,13 +125,13 @@ export default function AdminVerificationsPage() {
                       </div>
                     </div>
                     <div className="flex gap-2 shrink-0">
-                      <Button size="sm" onClick={() => handle(v.id!, 'approved')} disabled={processing === v.id}
+                      <Button size="sm" onClick={() => handle(v, 'approved')} disabled={processing === v.id}
                         className="rounded-full px-4 gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
                       >
                         {processing === v.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                         Approve
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => handle(v.id!, 'rejected')} disabled={processing === v.id}
+                      <Button size="sm" variant="outline" onClick={() => handle(v, 'rejected')} disabled={processing === v.id}
                         className="rounded-full px-4 gap-1.5 text-xs text-destructive border-destructive/30 hover:bg-destructive/10 font-bold"
                       >
                         <XCircle className="w-3.5 h-3.5" /> Reject

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { getSubmissionsForTeacher, gradeSubmission, Submission } from '@/lib/db';
+import { getSubmissionsForTeacher, gradeSubmission, createGrade, Submission } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -28,11 +28,19 @@ export default function GradebookPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const [loadError, setLoadError] = useState(false);
+
   const load = async () => {
     if (!user) return;
-    const ss = await getSubmissionsForTeacher(user.uid);
-    setSubmissions(ss);
-    setLoading(false);
+    setLoadError(false);
+    try {
+      const ss = await getSubmissionsForTeacher(user.uid);
+      setSubmissions(ss);
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, [user]);
@@ -69,12 +77,29 @@ Write encouraging, constructive feedback in 2-3 sentences that acknowledges what
   const handleSave = async () => {
     if (!selected) return;
     setSaving(true);
-    const score = selected.answers.filter(a => a.correct).length;
-    await gradeSubmission(selected.id, score, feedback);
-    toast.success('Grade saved!');
-    setSelected(null);
-    await load();
-    setSaving(false);
+    try {
+      const score = selected.answers.filter(a => a.correct).length;
+      await gradeSubmission(selected.id, score, feedback);
+      // Record the grade in the grades collection so report cards can pick it up
+      await createGrade({
+        studentId: selected.studentId,
+        studentName: selected.studentName,
+        courseId: selected.courseId,
+        lessonId: selected.lessonId,
+        type: 'quiz',
+        label: selected.lessonTitle,
+        score,
+        maxScore: selected.maxScore,
+        gradedBy: user?.uid,
+      });
+      toast.success('Grade saved!');
+      setSelected(null);
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to save grade.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const ungraded = submissions.filter(s => s.score === undefined);
@@ -85,6 +110,17 @@ Write encouraging, constructive feedback in 2-3 sentences that acknowledges what
       {[1, 2, 3].map(i => (
         <div key={i} className="h-20 bg-muted animate-pulse rounded-3xl" />
       ))}
+    </div>
+  );
+
+  if (loadError) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 pt-8">
+      <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
+        <ClipboardList className="w-10 h-10 mx-auto text-amber-500" />
+        <p className="font-heading text-2xl text-foreground">Couldn&apos;t load submissions</p>
+        <p className="text-sm text-muted-foreground">Something went wrong while fetching your gradebook. Please try again.</p>
+        <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={() => { setLoading(true); load(); }}>Retry</Button>
+      </div>
     </div>
   );
 

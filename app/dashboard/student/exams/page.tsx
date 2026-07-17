@@ -22,15 +22,18 @@ export default function StudentExamsPage() {
   const { user, profile } = useAuthSTORE();
   const [exams, setExams] = useState<{ exam: Exam; submission?: ExamSubmission }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeExam, setActiveExam] = useState<Exam | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
+  const load = async () => {
     if (!user) return;
-    (async () => {
+    setLoading(true);
+    setError(null);
+    try {
       const enrollments = await getEnrolledCourses(user.uid);
       const all: { exam: Exam; submission?: ExamSubmission }[] = [];
       for (const { course } of enrollments) {
@@ -40,12 +43,45 @@ export default function StudentExamsPage() {
           all.push({ exam, submission: sub ?? undefined });
         }
       }
+      // Defensive client-side sort (newest first)
+      all.sort((a, b) => (b.exam.createdAt?.toDate?.()?.getTime() ?? 0) - (a.exam.createdAt?.toDate?.()?.getTime() ?? 0));
       setExams(all);
+    } catch (e: any) {
+      setError(e?.message ?? 'Something went wrong.');
+    } finally {
       setLoading(false);
-    })();
-  }, [user]);
+    }
+  };
+
+  useEffect(() => { load(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Availability window: an exam can only be started between availableFrom and availableTo.
+  const toDate = (v: any): Date | null => {
+    if (!v) return null;
+    if (typeof v.toDate === 'function') return v.toDate();
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  const getAvailability = (exam: Exam): { available: boolean; reason?: string } => {
+    const now = new Date();
+    const from = toDate(exam.availableFrom);
+    const to = toDate(exam.availableTo);
+    if (from && now < from) {
+      return { available: false, reason: `Opens ${from.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}` };
+    }
+    if (to && now > to) {
+      return { available: false, reason: `Closed ${to.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}` };
+    }
+    return { available: true };
+  };
 
   const startExam = (exam: Exam) => {
+    const availability = getAvailability(exam);
+    if (!availability.available) {
+      toast.error(availability.reason ?? 'This exam is not available right now.');
+      return;
+    }
     setActiveExam(exam);
     setAnswers({});
     if (exam.timeLimit) {
@@ -118,6 +154,16 @@ export default function StudentExamsPage() {
       {[1, 2, 3].map(i => (
         <div key={i} className="h-24 bg-muted animate-pulse rounded-3xl" />
       ))}
+    </div>
+  );
+
+  if (error) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 pt-16 flex justify-center">
+      <div className="bg-card border border-border rounded-3xl p-8 text-center max-w-md w-full card-glow">
+        <p className="font-heading text-xl text-foreground mb-2">Couldn&apos;t load this page.</p>
+        <p className="text-sm text-muted-foreground mb-6 break-words">{error}</p>
+        <Button onClick={load} className="rounded-full h-11 px-6 font-bold">Retry</Button>
+      </div>
     </div>
   );
 
@@ -243,7 +289,9 @@ export default function StudentExamsPage() {
             <h2 className="font-heading text-3xl text-foreground mt-1.5">Ready to Take</h2>
           </motion.div>
           <div className="space-y-3">
-            {pending.map((item, i) => (
+            {pending.map((item, i) => {
+              const availability = getAvailability(item.exam);
+              return (
               <motion.div
                 key={item.exam.id}
                 variants={fadeUp}
@@ -270,14 +318,25 @@ export default function StudentExamsPage() {
                     )}
                   </div>
                 </div>
-                <Button
-                  onClick={() => startExam(item.exam)}
-                  className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white hover:opacity-90 transition-opacity gap-2 shrink-0"
-                >
-                  Start <ChevronRight className="w-4 h-4" />
-                </Button>
+                {availability.available ? (
+                  <Button
+                    onClick={() => startExam(item.exam)}
+                    className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white hover:opacity-90 transition-opacity gap-2 shrink-0"
+                  >
+                    Start <ChevronRight className="w-4 h-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    disabled
+                    className="rounded-full h-11 px-5 font-bold gap-2 shrink-0"
+                    variant="outline"
+                  >
+                    <Clock className="w-4 h-4" /> {availability.reason}
+                  </Button>
+                )}
               </motion.div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}

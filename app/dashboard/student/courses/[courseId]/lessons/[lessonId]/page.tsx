@@ -15,7 +15,8 @@ import {
 } from '@/lib/db';
 import { getUnitStatuses, getCurriculumLessonStatus } from '@/lib/curriculum';
 import { FORMAT_COSTS, FORMAT_LABELS, LESSON_COMPLETE_REWARD, UNIT_PASS_REWARD } from '@/lib/sparks';
-import { AudioPlayer } from '@/components/audio-player';
+import { SmartAudioPlayer } from '@/components/smart-audio-player';
+import { VideoPlayer } from '@/components/video-player';
 import { VideoStoryboard } from '@/components/video-storyboard';
 import { MindmapRenderer } from '@/components/mindmap-renderer';
 import { InfographicRenderer } from '@/components/infographic-renderer';
@@ -36,6 +37,18 @@ const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
   visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1], delay: i * 0.08 } }),
 };
+
+/** Compares a selected quiz option to the stored answer, tolerating legacy
+ * letter answers ("B") by mapping them to the option at that index. */
+function answersMatch(selected: string | undefined, answer: string | undefined, options: string[] = []): boolean {
+  const sel = (selected ?? '').trim().toLowerCase();
+  let ans = (answer ?? '').trim();
+  if (/^[A-D]$/i.test(ans)) {
+    const mapped = options[ans.toUpperCase().charCodeAt(0) - 65];
+    if (mapped != null) ans = mapped;
+  }
+  return sel !== '' && sel === ans.trim().toLowerCase();
+}
 
 // ─── Flashcard Component ─────────────────────────────────────
 function FlashcardViewer({ cards }: { cards: { question: string; answer: string }[] }) {
@@ -136,13 +149,14 @@ function QuizViewer({
         const res = await fetch('/api/ai/quiz-grade', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: q.question, correctAnswer: q.answer, studentAnswer: answers[i], explanation: q.explanation }),
+          body: JSON.stringify({ question: q.question, correctAnswer: q.answer, studentAnswer: answers[i], explanation: q.explanation, options: q.options }),
         });
+        if (!res.ok) throw new Error('grade failed');
         const data = await res.json();
         results[i] = { correct: data.correct, feedback: data.feedback };
         if (data.correct) score++;
       } catch {
-        const correct = answers[i]?.toLowerCase() === q.answer.toLowerCase();
+        const correct = answersMatch(answers[i], q.answer, q.options);
         results[i] = { correct, feedback: correct ? 'Correct!' : `The answer is: ${q.answer}` };
         if (correct) score++;
       }
@@ -181,7 +195,7 @@ function QuizViewer({
           <div className="space-y-2">
             {q.options.map(opt => {
               const selected = answers[i] === opt;
-              const isCorrect = graded ? opt === q.answer : null;
+              const isCorrect = graded ? answersMatch(opt, q.answer, q.options) : null;
               const isWrong = graded && selected && !graded[i]?.correct;
               return (
                 <button
@@ -244,7 +258,7 @@ function UnitQuizMode({
 }) {
   const router = useRouter();
   const { user, profile, fetchProfile } = useAuthSTORE();
-  const questions = lesson.aiOutputs?.quiz ?? [];
+  const questions = Array.isArray(lesson.aiOutputs?.quiz) ? lesson.aiOutputs.quiz : [];
   const threshold = unit.masteryThreshold ?? 70;
 
   const [phase, setPhase] = useState<'intro' | 'active' | 'result'>('intro');
@@ -288,7 +302,7 @@ function UnitQuizMode({
       ...(q.objectiveCode ? { objectiveCode: q.objectiveCode } : {}),
       ...(q.sourceLessonId ? { sourceLessonId: q.sourceLessonId } : {}),
       selected: answers[i] ?? '',
-      correct: answers[i] === q.answer,
+      correct: answersMatch(answers[i], q.answer, q.options),
     }));
     const score = responses.filter(r => r.correct).length;
     const total = questions.length;
@@ -590,10 +604,15 @@ export default function LessonPage() {
   const [activeTab, setActiveTab] = useState('text');
   const [unlockingFormat, setUnlockingFormat] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!user || !courseId || !lessonId) return;
     (async () => {
+      setLoading(true);
+      setLoadError(null);
+      try {
       const [result, savedNote, courseDoc] = await Promise.all([
         getLessonByIds(courseId, lessonId),
         getLessonNote(user.uid, lessonId),
@@ -632,6 +651,11 @@ export default function LessonPage() {
         setEnrollment(enroll);
         setAttempts(quizAttempts.filter(a => a.lessonId === lessonId));
         setCompleted(completedIds.has(lessonId));
+      } else {
+        // Marketplace courses also track enrollment/completion.
+        const enroll = await getEnrollment(user.uid, courseId);
+        setEnrollment(enroll);
+        setCompleted((enroll?.completedLessons ?? []).includes(lessonId));
       }
 
       setLesson(result.lesson);
@@ -640,9 +664,14 @@ export default function LessonPage() {
         result.lesson.aiOutputs?.summary ?? result.lesson.aiOutputs?.text ?? ''
       );
       setLoading(false);
+      } catch (err: any) {
+        console.error('Failed to load lesson:', err);
+        setLoadError(err?.message || 'Something went wrong loading this lesson.');
+        setLoading(false);
+      }
     })();
     return () => clearLessonContext();
-  }, [user, courseId, lessonId]);
+  }, [user, courseId, lessonId, reloadKey]);
 
   const isCurriculum = course?.kind === 'curriculum';
   const isUnitQuiz = isCurriculum && !!lesson?.isUnitQuiz;
@@ -682,15 +711,20 @@ export default function LessonPage() {
   const handleComplete = async () => {
     if (!user || completed) return;
     setCompleting(true);
-    await markLessonComplete(user.uid, courseId, lessonId, 50, isCurriculum ? LESSON_COMPLETE_REWARD : 0);
-    await fetchProfile(user.uid);
-    setCompleted(true);
-    toast.success(
-      isCurriculum
-        ? `Lesson complete! +50 XP · +${LESSON_COMPLETE_REWARD}⚡ earned 🎉`
-        : 'Lesson complete! +50 XP earned 🎉',
-      { duration: 4000 }
-    );
+    try {
+      await markLessonComplete(user.uid, courseId, lessonId, 50, isCurriculum ? LESSON_COMPLETE_REWARD : 0);
+      await fetchProfile(user.uid);
+      setCompleted(true);
+      toast.success(
+        isCurriculum
+          ? `Lesson complete! +50 XP · +${LESSON_COMPLETE_REWARD}⚡ earned 🎉`
+          : 'Lesson complete! +50 XP earned 🎉',
+        { duration: 4000 }
+      );
+    } catch (err: any) {
+      console.error('Failed to mark lesson complete:', err);
+      toast.error(err?.message || 'Could not mark the lesson complete. Please try again.');
+    }
     setCompleting(false);
   };
 
@@ -705,33 +739,45 @@ export default function LessonPage() {
   const handleQuizComplete = async (score: number, total: number, answers: { question: string; answer: string; correct: boolean }[]) => {
     if (!user || !lesson) return;
     toast.success(`Quiz submitted! ${score}/${total} correct`);
-    await saveSubmission({
-      studentId: user.uid,
-      studentName: '',
-      courseId,
-      lessonId,
-      lessonTitle: lesson.title,
-      type: 'quiz',
-      maxScore: total,
-      score,
-      answers,
-    });
+    try {
+      await saveSubmission({
+        studentId: user.uid,
+        studentName: profile?.name ?? user?.displayName ?? 'Student',
+        courseId,
+        lessonId,
+        lessonTitle: lesson.title,
+        type: 'quiz',
+        maxScore: total,
+        score,
+        answers,
+      });
+    } catch (err: any) {
+      console.error('Failed to save quiz submission:', err);
+      toast.error(err?.message || 'Could not save your quiz results.');
+    }
   };
 
   const aiOutputs = lesson?.aiOutputs;
 
+  // Legacy Firestore docs can contain poisoned strings where arrays are
+  // expected — treat any non-array value as absent.
+  const flashcards = Array.isArray(aiOutputs?.flashcards) ? aiOutputs.flashcards : [];
+  const quiz = Array.isArray(aiOutputs?.quiz) ? aiOutputs.quiz : [];
+  const slides = Array.isArray(aiOutputs?.slides) ? aiOutputs.slides : [];
+  const glossary = Array.isArray(aiOutputs?.glossary) ? aiOutputs.glossary : [];
+
   const TABS: { id: string; label: string; icon: React.ReactNode; available: boolean; format?: string }[] = [
     { id: 'text', label: 'Lesson', icon: <FileText className="w-3.5 h-3.5" />, available: !!aiOutputs?.text, format: 'text' },
     { id: 'video', label: 'Video', icon: <Video className="w-3.5 h-3.5" />, available: !!aiOutputs?.videoScript, format: 'videoScript' },
-    { id: 'flashcards', label: 'Flashcards', icon: <FlipHorizontal className="w-3.5 h-3.5" />, available: !!(aiOutputs?.flashcards?.length), format: 'flashcards' },
-    { id: 'quiz', label: 'Quiz', icon: <ClipboardList className="w-3.5 h-3.5" />, available: !!(aiOutputs?.quiz?.length), format: 'quiz' },
+    { id: 'flashcards', label: 'Flashcards', icon: <FlipHorizontal className="w-3.5 h-3.5" />, available: flashcards.length > 0, format: 'flashcards' },
+    { id: 'quiz', label: 'Quiz', icon: <ClipboardList className="w-3.5 h-3.5" />, available: quiz.length > 0, format: 'quiz' },
     { id: 'problems', label: 'Practice', icon: <Calculator className="w-3.5 h-3.5" />, available: !!aiOutputs?.problems, format: 'problems' },
-    { id: 'slides', label: 'Slides', icon: <Presentation className="w-3.5 h-3.5" />, available: !!(aiOutputs?.slides?.length), format: 'slides' },
+    { id: 'slides', label: 'Slides', icon: <Presentation className="w-3.5 h-3.5" />, available: slides.length > 0, format: 'slides' },
     { id: 'notes', label: 'Study Notes', icon: <BookOpen className="w-3.5 h-3.5" />, available: !!aiOutputs?.notes, format: 'notes' },
     { id: 'audio', label: 'Audio', icon: <Headphones className="w-3.5 h-3.5" />, available: !!aiOutputs?.audioScript, format: 'audioScript' },
     { id: 'infographic', label: 'Infographic', icon: <ImageIcon className="w-3.5 h-3.5" />, available: !!aiOutputs?.infographic, format: 'infographic' },
     { id: 'summary', label: 'Summary', icon: <Headphones className="w-3.5 h-3.5" />, available: !!aiOutputs?.summary },
-    { id: 'glossary', label: 'Glossary', icon: <BookMarked className="w-3.5 h-3.5" />, available: !!(aiOutputs?.glossary?.length), format: 'glossary' },
+    { id: 'glossary', label: 'Glossary', icon: <BookMarked className="w-3.5 h-3.5" />, available: glossary.length > 0, format: 'glossary' },
     { id: 'mindmap', label: 'Mind Map', icon: <Network className="w-3.5 h-3.5" />, available: !!aiOutputs?.mindmap, format: 'mindmap' },
     { id: 'mynotes', label: 'My Notes', icon: <FileText className="w-3.5 h-3.5" />, available: true },
   ].filter(t => t.available);
@@ -752,6 +798,17 @@ export default function LessonPage() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-4">
       <div className="h-16 bg-muted animate-pulse rounded-3xl" />
       <div className="h-96 bg-muted animate-pulse rounded-3xl" />
+    </div>
+  );
+
+  if (loadError) return (
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-24 text-center">
+      <AlertTriangle className="w-10 h-10 mx-auto mb-4 text-amber-500" />
+      <p className="font-semibold text-foreground mb-1">Couldn&apos;t load this lesson</p>
+      <p className="text-sm text-muted-foreground mb-6">{loadError}</p>
+      <Button onClick={() => setReloadKey(k => k + 1)} className="rounded-full px-6 font-bold gap-2">
+        <RotateCcw className="w-4 h-4" /> Retry
+      </Button>
     </div>
   );
 
@@ -777,7 +834,7 @@ export default function LessonPage() {
             </Badge>
           )}
         </div>
-        {(lesson.aiOutputs?.quiz?.length ?? 0) > 0 ? (
+        {quiz.length > 0 ? (
           <UnitQuizMode
             courseId={courseId}
             lesson={lesson}
@@ -866,11 +923,19 @@ export default function LessonPage() {
             )}
           </TabsContent>
 
-          {/* Video (script storyboard) */}
+          {/* Video */}
           <TabsContent value="video">
             {gate('videoScript',
-              <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-                <VideoStoryboard script={aiOutputs.videoScript ?? ''} />
+              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="space-y-4">
+                <VideoPlayer script={aiOutputs.videoScript ?? ''} title={lesson.title} />
+                <details className="bg-card border border-border rounded-3xl overflow-hidden">
+                  <summary className="cursor-pointer select-none px-6 py-4 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
+                    View storyboard &amp; script
+                  </summary>
+                  <div className="px-6 pb-6">
+                    <VideoStoryboard script={aiOutputs.videoScript ?? ''} />
+                  </div>
+                </details>
               </motion.div>
             )}
           </TabsContent>
@@ -878,8 +943,8 @@ export default function LessonPage() {
           {/* Flashcards */}
           <TabsContent value="flashcards">
             {gate('flashcards',
-              aiOutputs.flashcards?.length
-                ? <FlashcardViewer cards={aiOutputs.flashcards} />
+              flashcards.length
+                ? <FlashcardViewer cards={flashcards} />
                 : <p className="text-center py-8 text-muted-foreground">No flashcards available.</p>
             )}
           </TabsContent>
@@ -887,8 +952,8 @@ export default function LessonPage() {
           {/* Quiz */}
           <TabsContent value="quiz">
             {gate('quiz',
-              aiOutputs.quiz?.length
-                ? <QuizViewer questions={aiOutputs.quiz} onComplete={handleQuizComplete} />
+              quiz.length
+                ? <QuizViewer questions={quiz} onComplete={handleQuizComplete} />
                 : <p className="text-center py-8 text-muted-foreground">No quiz available.</p>
             )}
           </TabsContent>
@@ -905,9 +970,9 @@ export default function LessonPage() {
           {/* Slides */}
           <TabsContent value="slides">
             {gate('slides',
-              aiOutputs.slides?.length ? (
+              slides.length ? (
                 <div className="space-y-4">
-                  {aiOutputs.slides.map((slide, i) => (
+                  {slides.map((slide, i) => (
                     <motion.div key={i} initial="hidden" animate="visible" variants={fadeUp} custom={i} className="bg-card border border-border rounded-3xl p-6 card-glow">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] flex items-center justify-center text-white font-bold text-sm shrink-0">{i + 1}</div>
@@ -939,8 +1004,8 @@ export default function LessonPage() {
           {/* Audio Summary (text-to-speech) */}
           <TabsContent value="audio">
             {gate('audioScript',
-              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
-                <AudioPlayer script={aiOutputs.audioScript ?? ''} title={`${lesson.title} — Audio Summary`} />
+              <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+                <SmartAudioPlayer script={aiOutputs.audioScript ?? ''} title="Audio Summary" />
               </motion.div>
             )}
           </TabsContent>
@@ -968,9 +1033,9 @@ export default function LessonPage() {
           {/* Glossary */}
           <TabsContent value="glossary">
             {gate('glossary',
-              aiOutputs.glossary?.length ? (
+              glossary.length ? (
                 <div className="space-y-3">
-                  {aiOutputs.glossary.map((g, i) => (
+                  {glossary.map((g, i) => (
                     <motion.div key={i} initial="hidden" animate="visible" variants={fadeUp} custom={i} className="bg-card border border-border rounded-3xl p-5 flex gap-4 card-glow">
                       <div className="w-8 h-8 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
                         <BookMarked className="w-4 h-4 text-violet-600" />

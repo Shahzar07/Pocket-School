@@ -6,6 +6,7 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { getAttendanceForStudent, AttendanceRecord } from '@/lib/db';
 import { Timestamp } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ClipboardCheck, CheckCircle2, XCircle, Clock, BookOpen } from 'lucide-react';
 
 type AttStatus = 'present' | 'absent' | 'late' | 'excused';
@@ -43,10 +44,14 @@ export default function StudentAttendancePage() {
   const { user } = useAuthSTORE();
   const [courseMap, setCourseMap] = useState<CourseAttendance[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = async () => {
     if (!user) return;
-    getAttendanceForStudent(user.uid).then(records => {
+    setLoading(true);
+    setError(null);
+    try {
+      const records = await getAttendanceForStudent(user.uid);
       const map = new Map<string, CourseAttendance>();
       for (const r of records) {
         const entry = r.records.find(e => e.studentId === user.uid);
@@ -57,10 +62,18 @@ export default function StudentAttendancePage() {
         const date = r.date instanceof Timestamp ? r.date.toDate() : new Date(r.date as any);
         map.get(r.courseId)!.records.push({ date, lessonTitle: r.lessonTitle, status: entry.status });
       }
-      setCourseMap(Array.from(map.values()));
+      // Defensive client-side sort (most recent session first)
+      const list = Array.from(map.values());
+      for (const ca of list) ca.records.sort((a, b) => b.date.getTime() - a.date.getTime());
+      setCourseMap(list);
+    } catch (e: any) {
+      setError(e?.message ?? 'Something went wrong.');
+    } finally {
       setLoading(false);
-    });
-  }, [user]);
+    }
+  };
+
+  useEffect(() => { load(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getRate = (ca: CourseAttendance) => {
     if (!ca.records.length) return 0;
@@ -78,6 +91,16 @@ export default function StudentAttendancePage() {
         {[1, 2, 3].map(i => (
           <div key={i} className="h-48 bg-muted animate-pulse rounded-3xl" />
         ))}
+      </div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 pt-16 flex justify-center">
+      <div className="bg-card border border-border rounded-3xl p-8 text-center max-w-md w-full card-glow">
+        <p className="font-heading text-xl text-foreground mb-2">Couldn&apos;t load this page.</p>
+        <p className="text-sm text-muted-foreground mb-6 break-words">{error}</p>
+        <Button onClick={load} className="rounded-full h-11 px-6 font-bold">Retry</Button>
       </div>
     </div>
   );
