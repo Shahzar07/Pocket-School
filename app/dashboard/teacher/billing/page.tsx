@@ -29,6 +29,17 @@ const STATUS_STYLES: Record<string, string> = {
   cancelled: 'bg-muted text-muted-foreground/60',
 };
 
+const CURRENCY_SYMBOLS: Record<string, string> = { USD: '$', GBP: '£', EUR: '€', MYR: 'RM ' };
+
+function totalsByCurrency(list: Invoice[]): string {
+  const totals: Record<string, number> = {};
+  for (const inv of list) totals[inv.currency] = (totals[inv.currency] ?? 0) + inv.amount;
+  const parts = Object.entries(totals)
+    .filter(([, amount]) => amount > 0)
+    .map(([currency, amount]) => `${CURRENCY_SYMBOLS[currency] ?? `${currency} `}${amount.toLocaleString()}`);
+  return parts.length ? parts.join(' · ') : '$0';
+}
+
 export default function TeacherBillingPage() {
   const { user, profile } = useAuthSTORE();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -37,11 +48,19 @@ export default function TeacherBillingPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ studentEmail: '', description: '', amount: '', currency: 'USD', dueDate: '', status: 'sent' as Invoice['status'] });
 
+  const [loadError, setLoadError] = useState(false);
+
   const load = async () => {
     if (!user || !profile) return;
-    const data = profile.role === 'admin' ? await getAllInvoices() : await getInvoicesForTeacher(user.uid);
-    setInvoices(data);
-    setLoading(false);
+    setLoadError(false);
+    try {
+      const data = profile.role === 'admin' ? await getAllInvoices() : await getInvoicesForTeacher(user.uid);
+      setInvoices(data);
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, [user, profile]);
@@ -66,25 +85,58 @@ export default function TeacherBillingPage() {
       setForm({ studentEmail: '', description: '', amount: '', currency: 'USD', dueDate: '', status: 'sent' });
       setShowCreate(false);
       await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to create invoice.');
     } finally { setSaving(false); }
   }
 
   async function markPaid(id: string) {
-    await updateInvoiceStatus(id, 'paid', new Date());
-    toast.success('Marked as paid');
-    await load();
+    try {
+      await updateInvoiceStatus(id, 'paid', new Date());
+      toast.success('Marked as paid');
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to update invoice.');
+    }
   }
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this invoice?')) return;
-    await deleteInvoice(id);
-    setInvoices(prev => prev.filter(i => i.id !== id));
-    toast.success('Deleted');
+    try {
+      await deleteInvoice(id);
+      setInvoices(prev => prev.filter(i => i.id !== id));
+      toast.success('Deleted');
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to delete invoice.');
+    }
   }
 
-  const total = invoices.reduce((sum, i) => sum + i.amount, 0);
-  const collected = invoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + i.amount, 0);
-  const outstanding = invoices.filter(i => i.status !== 'paid' && i.status !== 'cancelled').reduce((sum, i) => sum + i.amount, 0);
+  function handlePrint(inv: Invoice) {
+    const dueDate = (inv.dueDate as any)?.toDate?.()?.toLocaleDateString() ?? '';
+    const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const html = `<!doctype html><html><head><title>Invoice — ${esc(inv.studentName)}</title>
+      <style>body{font-family:system-ui,sans-serif;max-width:640px;margin:40px auto;padding:0 24px;color:#111}
+      h1{font-size:22px}table{width:100%;border-collapse:collapse;margin-top:16px}
+      td{padding:8px 0;border-bottom:1px solid #e5e5e5}td:last-child{text-align:right;font-weight:600}</style></head>
+      <body><h1>Pocket School — Invoice</h1>
+      <table>
+        <tr><td>Student</td><td>${esc(inv.studentName)}</td></tr>
+        <tr><td>Description</td><td>${esc(inv.description)}</td></tr>
+        <tr><td>Amount</td><td>${esc(inv.currency)} ${inv.amount.toFixed(2)}</td></tr>
+        <tr><td>Status</td><td>${esc(inv.status)}</td></tr>
+        <tr><td>Due date</td><td>${esc(dueDate)}</td></tr>
+      </table></body></html>`;
+    const win = window.open('', '_blank', 'width=720,height=800');
+    if (!win) { toast.error('Pop-up blocked — allow pop-ups to print invoices.'); return; }
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    win.print();
+  }
+
+  const totalStr = totalsByCurrency(invoices);
+  const collectedStr = totalsByCurrency(invoices.filter(i => i.status === 'paid'));
+  const outstandingStr = totalsByCurrency(invoices.filter(i => i.status !== 'paid' && i.status !== 'cancelled'));
 
   if (loading) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10 pt-10">
@@ -92,6 +144,17 @@ export default function TeacherBillingPage() {
         <div className="bg-muted animate-pulse rounded-3xl h-24" />
         <div className="bg-muted animate-pulse rounded-3xl h-24" />
         <div className="bg-muted animate-pulse rounded-3xl h-24" />
+      </div>
+    </div>
+  );
+
+  if (loadError) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 pt-10">
+      <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
+        <CreditCard className="w-10 h-10 mx-auto text-amber-500" />
+        <p className="font-heading text-2xl text-foreground">Couldn&apos;t load invoices</p>
+        <p className="text-sm text-muted-foreground">Something went wrong while fetching your billing data. Please try again.</p>
+        <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={() => { setLoading(true); load(); }}>Retry</Button>
       </div>
     </div>
   );
@@ -134,9 +197,9 @@ export default function TeacherBillingPage() {
         className="grid grid-cols-1 sm:grid-cols-3 gap-4"
       >
         {[
-          { label: 'Total Invoiced', value: total, accent: 'bg-emerald-500' },
-          { label: 'Collected', value: collected, accent: 'bg-green-500' },
-          { label: 'Outstanding', value: outstanding, accent: 'bg-amber-500' },
+          { label: 'Total Invoiced', value: totalStr, accent: 'bg-emerald-500' },
+          { label: 'Collected', value: collectedStr, accent: 'bg-green-500' },
+          { label: 'Outstanding', value: outstandingStr, accent: 'bg-amber-500' },
         ].map((s, idx) => (
           <div
             key={s.label}
@@ -144,7 +207,7 @@ export default function TeacherBillingPage() {
           >
             <div className={`absolute top-0 left-0 right-0 h-1 ${s.accent}`} />
             <p className="text-2xl sm:text-3xl font-bold text-foreground mt-1">
-              ${s.value.toLocaleString()}
+              {s.value}
             </p>
             <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
           </div>
@@ -279,7 +342,7 @@ export default function TeacherBillingPage() {
                 <Button variant="ghost" size="icon" onClick={() => handleDelete(inv.id)} className="text-red-500 hover:bg-red-500/10">
                   <Trash2 className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => window.print()} className="text-muted-foreground">
+                <Button variant="ghost" size="icon" onClick={() => handlePrint(inv)} className="text-muted-foreground">
                   <Printer className="w-4 h-4" />
                 </Button>
               </div>

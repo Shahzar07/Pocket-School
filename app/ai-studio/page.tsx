@@ -11,15 +11,17 @@ import {
   Presentation, Image as ImageIcon, Calculator, FlipHorizontal,
   Loader2, Save, Trash2, Copy, Plus, History, ChevronRight, Home as HomeIcon, User as UserIcon,
   GraduationCap, Building2, Scale, Baby, Wand2,
-  Video, Headphones, Play, Pause,
+  Video, Headphones,
 } from 'lucide-react';
 import { MindmapRenderer } from '@/components/mindmap-renderer';
 import { InfographicRenderer } from '@/components/infographic-renderer';
 import { VideoStoryboard } from '@/components/video-storyboard';
+import { VideoPlayer } from '@/components/video-player';
+import { SmartAudioPlayer } from '@/components/smart-audio-player';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import {
-  getAiGenerations, deleteAiGeneration, type AiGeneration,
+  getAiGenerations, deleteAiGeneration, saveAiGeneration, type AiGeneration,
 } from '@/lib/db';
 
 type Panel = 'home' | 'chat' | 'library';
@@ -63,6 +65,7 @@ export default function AiStudio() {
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<{ format: FormatId; data: any; prompt: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   // chat
   const [chatMode, setChatMode] = useState<'k12' | 'college' | 'professional' | 'legal'>('college');
@@ -105,6 +108,7 @@ export default function AiStudio() {
     if (!topic.trim()) { toast.error('What do you want to learn?'); return; }
     setGenerating(true);
     setResult(null);
+    setSaved(false);
     try {
       const lang = (typeof window !== 'undefined' && localStorage.getItem('pocket-school-lang')) || 'en';
       const prompt = `Topic: ${topic.trim()}\nSubject: ${subject || 'general'}\nLevel: ${level}`;
@@ -119,25 +123,7 @@ export default function AiStudio() {
         return;
       }
       const data = await res.json();
-      const newResult = { format, data: data.result, prompt };
-      setResult(newResult);
-      // Auto-save to library (like Canva — every generation is automatically saved)
-      if (user) {
-        try {
-          await fetch('/api/ai/save-generation', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: user.uid,
-              type: format,
-              prompt,
-              result: typeof data.result === 'string' ? data.result : JSON.stringify(data.result),
-              subject,
-              level,
-            }),
-          });
-        } catch {}
-      }
+      setResult({ format, data: data.result, prompt });
     } catch (e: any) {
       toast.error(e?.message || 'Generation failed.');
     } finally {
@@ -147,25 +133,18 @@ export default function AiStudio() {
 
   const saveToLibrary = async () => {
     if (!result || !user) { toast.error(user ? 'Nothing to save.' : 'Sign in to save.'); return; }
+    if (saved || saving) return;
     setSaving(true);
     try {
-      const res = await fetch('/api/ai/save-generation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.uid,
-          type: result.format,
-          prompt: result.prompt,
-          result: typeof result.data === 'string' ? result.data : JSON.stringify(result.data),
-          subject,
-          level,
-        }),
+      // Direct client-side write — the Firestore rules authorize the signed-in user.
+      await saveAiGeneration(user.uid, {
+        type: result.format,
+        prompt: result.prompt,
+        result: typeof result.data === 'string' ? result.data : JSON.stringify(result.data),
+        ...(subject ? { subject } : {}),
+        ...(level ? { level } : {}),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        toast.error(err.error || 'Failed to save.');
-        return;
-      }
+      setSaved(true);
       toast.success('Saved to your library.');
     } catch (e: any) {
       toast.error(e?.message || 'Failed to save.');
@@ -412,10 +391,10 @@ export default function AiStudio() {
                       </button>
                       <button
                         onClick={saveToLibrary}
-                        disabled={saving || !user}
+                        disabled={saving || saved || !user}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#1A73E8] via-[#3B82F6] to-[#7C3AED] disabled:opacity-40 text-xs font-semibold text-white shadow-[0_0_18px_rgba(26,115,232,0.3)] transition-all"
                       >
-                        <Save className="w-3.5 h-3.5" /> {saving ? 'Saving…' : 'Save to library'}
+                        <Save className="w-3.5 h-3.5" /> {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save to library'}
                       </button>
                     </div>
                   </div>
@@ -706,142 +685,28 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
     return <InfographicRenderer content={data} dark />;
   }
   if (format === 'videoScript' && typeof data === 'string') {
-    return <VideoStoryboard script={data} dark />;
+    return (
+      <div className="space-y-4">
+        <VideoPlayer script={data} />
+        <details className="rounded-xl bg-white/[0.03] border border-white/10 overflow-hidden">
+          <summary className="cursor-pointer select-none px-4 py-3 text-xs font-semibold uppercase tracking-widest text-slate-400 hover:text-white transition-colors">
+            View storyboard &amp; script
+          </summary>
+          <div className="px-4 pb-4">
+            <VideoStoryboard script={data} dark />
+          </div>
+        </details>
+      </div>
+    );
   }
   if (format === 'audioScript' && typeof data === 'string') {
-    return <AiStudioAudioPlayer script={data} />;
+    return <SmartAudioPlayer script={data} dark />;
   }
   // text / notes / summary / problems → markdown
   const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
   return (
     <div className={PROSE_CLASSES}>
       <MathMarkdown>{text}</MathMarkdown>
-    </div>
-  );
-}
-
-/* ─── Audio player for AI Studio (SpeechSynthesis, dark theme) ── */
-
-function AiStudioAudioPlayer({ script }: { script: string }) {
-  const [playing, setPlaying] = useState(false);
-  const [rate, setRate] = useState(1);
-  const [progress, setProgress] = useState(0);
-  const [currentSentence, setCurrentSentence] = useState(-1);
-  const utterRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const sentences = script.split(/(?<=[.!?])\s+/).filter(s => s.trim());
-
-  const stop = () => {
-    speechSynthesis.cancel();
-    setPlaying(false);
-    setCurrentSentence(-1);
-    setProgress(0);
-    if (intervalRef.current) clearInterval(intervalRef.current);
-  };
-
-  const play = () => {
-    if (playing) { stop(); return; }
-    if (!('speechSynthesis' in window)) {
-      toast.error('Your browser doesn\'t support text-to-speech.');
-      return;
-    }
-    speechSynthesis.cancel();
-    let idx = 0;
-    const speakNext = () => {
-      if (idx >= sentences.length) { stop(); return; }
-      setCurrentSentence(idx);
-      setProgress(Math.round((idx / sentences.length) * 100));
-      const utter = new SpeechSynthesisUtterance(sentences[idx]);
-      utter.rate = rate;
-      utter.pitch = 1;
-      const voices = speechSynthesis.getVoices();
-      const preferred = voices.find(v => v.lang.startsWith('en') && v.name.includes('Female'))
-        || voices.find(v => v.lang.startsWith('en'))
-        || voices[0];
-      if (preferred) utter.voice = preferred;
-      utter.onend = () => { idx++; speakNext(); };
-      utter.onerror = () => { idx++; speakNext(); };
-      utterRef.current = utter;
-      speechSynthesis.speak(utter);
-    };
-    setPlaying(true);
-    speakNext();
-  };
-
-  const changeRate = () => {
-    const rates = [0.75, 1, 1.25, 1.5];
-    const nextIdx = (rates.indexOf(rate) + 1) % rates.length;
-    setRate(rates[nextIdx]);
-    if (playing) {
-      stop();
-      setTimeout(() => play(), 100);
-    }
-  };
-
-  useEffect(() => { return () => { speechSynthesis.cancel(); }; }, []);
-
-  return (
-    <div className="space-y-5">
-      <div className="rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-transparent border border-violet-500/20 p-6">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-[0_0_24px_rgba(139,92,246,0.35)]">
-            <Headphones className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-white">Audio Summary</p>
-            <p className="text-xs text-slate-400">Browser text-to-speech playback</p>
-          </div>
-        </div>
-
-        {/* Progress bar */}
-        <div className="h-1.5 bg-white/10 rounded-full mb-4 overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-violet-500 to-purple-400 rounded-full transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-
-        {/* Controls */}
-        <div className="flex items-center justify-center gap-4">
-          <button
-            onClick={changeRate}
-            className="px-3 py-1.5 rounded-lg bg-white/[0.06] border border-white/10 text-xs font-bold text-slate-300 hover:bg-white/10 transition-colors min-w-[52px]"
-          >
-            {rate}x
-          </button>
-          <button
-            onClick={play}
-            className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-[0_0_32px_rgba(139,92,246,0.4)] hover:scale-105 active:scale-95 transition-transform"
-          >
-            {playing ? <Pause className="w-5 h-5 text-white" /> : <Play className="w-5 h-5 text-white ml-0.5" />}
-          </button>
-          <button
-            onClick={stop}
-            className="px-3 py-1.5 rounded-lg bg-white/[0.06] border border-white/10 text-xs font-bold text-slate-300 hover:bg-white/10 transition-colors"
-          >
-            Stop
-          </button>
-        </div>
-      </div>
-
-      {/* Transcript with sentence highlighting */}
-      <div className="rounded-xl bg-white/[0.03] border border-white/10 p-5">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 mb-3">Transcript</p>
-        <div className="text-sm leading-relaxed">
-          {sentences.map((s, i) => (
-            <span
-              key={i}
-              className={`transition-colors duration-200 ${
-                i === currentSentence
-                  ? 'text-violet-300 bg-violet-500/10 rounded px-0.5'
-                  : 'text-slate-300'
-              }`}
-            >
-              {s}{' '}
-            </span>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

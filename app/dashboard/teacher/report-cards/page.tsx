@@ -55,55 +55,72 @@ export default function ReportCardsPage() {
   const [generating, setGenerating] = useState(false);
   const [issuingCert, setIssuingCert] = useState<string | null>(null);
 
-  useEffect(() => {
+  const [loadError, setLoadError] = useState(false);
+
+  const loadCourses = () => {
     if (!user) return;
-    getTeacherCourses(user.uid).then(cs => { setCourses(cs); if (cs.length) setSelectedCourse(cs[0].id); setLoading(false); });
-  }, [user]);
+    setLoading(true);
+    setLoadError(false);
+    getTeacherCourses(user.uid)
+      .then(cs => { setCourses(cs); if (cs.length) setSelectedCourse(cs[0].id); })
+      .catch(() => setLoadError(true))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadCourses(); }, [user]);
 
   async function generateReports() {
     if (!selectedCourse) return;
     setGenerating(true);
-    const grades = await getGradesForCourse(selectedCourse);
-    const course = courses.find(c => c.id === selectedCourse);
+    try {
+      const grades = await getGradesForCourse(selectedCourse);
+      const course = courses.find(c => c.id === selectedCourse);
 
-    const byStudent: Record<string, { name: string; grades: Grade[] }> = {};
-    for (const g of grades) {
-      if (!byStudent[g.studentId]) byStudent[g.studentId] = { name: g.studentName, grades: [] };
-      byStudent[g.studentId].grades.push(g);
+      const byStudent: Record<string, { name: string; grades: Grade[] }> = {};
+      for (const g of grades) {
+        if (!byStudent[g.studentId]) byStudent[g.studentId] = { name: g.studentName, grades: [] };
+        byStudent[g.studentId].grades.push(g);
+      }
+
+      const reps: StudentReport[] = Object.entries(byStudent).map(([id, d]) => {
+        const byType: Record<string, number[]> = {};
+        for (const g of d.grades) {
+          if (!byType[g.type]) byType[g.type] = [];
+          byType[g.type].push((g.score / g.maxScore) * 100);
+        }
+        const avgByType: Record<string, { avg: number; count: number }> = {};
+        for (const [t, scores] of Object.entries(byType)) {
+          avgByType[t] = { avg: scores.reduce((a, b) => a + b, 0) / scores.length, count: scores.length };
+        }
+        const allScores = d.grades.map(g => (g.score / g.maxScore) * 100);
+        const overall = allScores.length ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0;
+        return { studentId: id, studentName: d.name, grades: d.grades, avgByType, overall, comment: '', loadingComment: false };
+      });
+
+      setReports(reps);
+      if (reps.length === 0) {
+        toast.info('No grades recorded for this course yet.');
+      }
+
+      // Generate AI comments
+      for (let i = 0; i < reps.length; i++) {
+        setReports(prev => prev.map((r, j) => j === i ? { ...r, loadingComment: true } : r));
+        try {
+          const res = await fetch('/api/ai/report-comment', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentName: reps[i].studentName, courseTitle: course?.title, avgScore: reps[i].overall, submissionCount: reps[i].grades.length }),
+          });
+          const { comment } = await res.json();
+          setReports(prev => prev.map((r, j) => j === i ? { ...r, comment, loadingComment: false } : r));
+        } catch {
+          setReports(prev => prev.map((r, j) => j === i ? { ...r, loadingComment: false } : r));
+        }
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to generate reports.');
+    } finally {
+      setGenerating(false);
     }
-
-    const reps: StudentReport[] = Object.entries(byStudent).map(([id, d]) => {
-      const byType: Record<string, number[]> = {};
-      for (const g of d.grades) {
-        if (!byType[g.type]) byType[g.type] = [];
-        byType[g.type].push((g.score / g.maxScore) * 100);
-      }
-      const avgByType: Record<string, { avg: number; count: number }> = {};
-      for (const [t, scores] of Object.entries(byType)) {
-        avgByType[t] = { avg: scores.reduce((a, b) => a + b, 0) / scores.length, count: scores.length };
-      }
-      const allScores = d.grades.map(g => (g.score / g.maxScore) * 100);
-      const overall = allScores.length ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0;
-      return { studentId: id, studentName: d.name, grades: d.grades, avgByType, overall, comment: '', loadingComment: false };
-    });
-
-    setReports(reps);
-
-    // Generate AI comments
-    for (let i = 0; i < reps.length; i++) {
-      setReports(prev => prev.map((r, j) => j === i ? { ...r, loadingComment: true } : r));
-      try {
-        const res = await fetch('/api/ai/report-comment', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ studentName: reps[i].studentName, courseTitle: course?.title, avgScore: reps[i].overall, submissionCount: reps[i].grades.length }),
-        });
-        const { comment } = await res.json();
-        setReports(prev => prev.map((r, j) => j === i ? { ...r, comment, loadingComment: false } : r));
-      } catch {
-        setReports(prev => prev.map((r, j) => j === i ? { ...r, loadingComment: false } : r));
-      }
-    }
-    setGenerating(false);
   }
 
   const handleIssueCert = async (r: StudentReport) => {
@@ -133,6 +150,17 @@ export default function ReportCardsPage() {
           <div className="bg-muted animate-pulse rounded-3xl h-40" />
           <div className="bg-muted animate-pulse rounded-3xl h-40" />
         </div>
+      </div>
+    </div>
+  );
+
+  if (loadError) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12">
+      <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
+        <FileBarChart className="w-10 h-10 mx-auto text-amber-500" />
+        <p className="font-heading text-2xl text-foreground">Couldn&apos;t load your courses</p>
+        <p className="text-sm text-muted-foreground">Something went wrong while fetching your data. Please try again.</p>
+        <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={loadCourses}>Retry</Button>
       </div>
     </div>
   );
@@ -193,6 +221,7 @@ export default function ReportCardsPage() {
           <FileBarChart className="w-14 h-14 mx-auto mb-4 text-muted-foreground/40" />
           <p className="font-heading text-2xl text-foreground">No reports yet</p>
           <p className="text-sm text-muted-foreground mt-1">Select a course and generate reports. AI will write personalised comments for each student.</p>
+          <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">Grades appear here after you grade student submissions in the <span className="font-semibold text-foreground">Gradebook</span> — once a quiz is graded, its result is recorded and included in report cards.</p>
         </motion.div>
       )}
 

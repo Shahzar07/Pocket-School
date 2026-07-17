@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { subscribeTeacherNotification } from '@/lib/db';
+import { toast } from 'sonner';
 import type { AiTeacher, TeacherIconKey } from '@/lib/ai-teachers';
 
 const ICONS: Record<TeacherIconKey, typeof Atom> = {
@@ -88,8 +89,8 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
       await subscribeTeacherNotification(teacher.id, notifyEmail.trim());
       setNotifySubmitted(true);
     } catch {
-      // fail silently — don't block the user
-      setNotifySubmitted(true);
+      // Keep the form so the user can retry — don't fake success.
+      toast.error("Couldn't sign you up for notifications — please try again.");
     } finally {
       setNotifyLoading(false);
     }

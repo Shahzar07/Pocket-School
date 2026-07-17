@@ -107,7 +107,7 @@ export default function AdminDashboard() {
             {[
               { label: 'Students', value: stats.students, icon: Users, glow: 'text-[#60A5FA]' },
               { label: 'Teachers', value: stats.teachers, icon: BarChart3, glow: 'text-violet-400' },
-              { label: 'Published Courses', value: stats.courses, icon: BookOpen, glow: 'text-emerald-400' },
+              { label: 'Total Courses', value: stats.courses, icon: BookOpen, glow: 'text-emerald-400' },
             ].map((s, i) => (
               <motion.div key={s.label}
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.12 }}
@@ -157,7 +157,7 @@ export default function AdminDashboard() {
             <div>
               <h3 className="font-heading text-xl text-foreground">Demo data seeder</h3>
               <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                Click <strong className="text-foreground">Seed Demo Data</strong> to populate the platform with 2 complete demo courses (Biology 101 + World History) with pre-generated AI lesson content. New students are automatically enrolled. Run this once to give the platform real content.
+                Click <strong className="text-foreground">Seed Demo Data</strong> to populate the platform with 2 complete demo courses (Biology 101 + World History) with pre-generated AI lesson content. Students can then enrol from the marketplace. Run this once to give the platform real content.
               </p>
             </div>
           </div>

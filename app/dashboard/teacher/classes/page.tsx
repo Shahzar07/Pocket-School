@@ -10,6 +10,8 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Users, BookOpen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -37,14 +39,20 @@ export default function TeacherClassesPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMatrix, setLoadingMatrix] = useState(false);
 
-  useEffect(() => {
+  const [loadError, setLoadError] = useState(false);
+
+  const loadModules = () => {
     if (!user) return;
+    setLoading(true);
+    setLoadError(false);
     getAllCurriculumModules().then(mods => {
-      setModules(mods);
-      if (mods.length > 0) setSelectedId(mods[0].id);
-      setLoading(false);
-    });
-  }, [user]);
+      const published = mods.filter(m => m.status === 'published');
+      setModules(published);
+      if (published.length > 0) setSelectedId(published[0].id);
+    }).catch(() => setLoadError(true)).finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadModules(); }, [user]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -71,8 +79,9 @@ export default function TeacherClassesPage() {
         };
       }));
       setStudents(rows.sort((a, b) => a.name.localeCompare(b.name)));
-      setLoadingMatrix(false);
-    })();
+    })()
+      .catch(() => toast.error('Failed to load class data.'))
+      .finally(() => setLoadingMatrix(false));
   }, [selectedId]);
 
   const bestAttempt = (studentId: string, unitId: string): UnitQuizAttempt | null => {
@@ -85,6 +94,17 @@ export default function TeacherClassesPage() {
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
       <div className="h-24 bg-muted animate-pulse rounded-3xl" />
       <div className="h-64 bg-muted animate-pulse rounded-3xl" />
+    </div>
+  );
+
+  if (loadError) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12">
+      <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
+        <BookOpen className="w-10 h-10 mx-auto text-amber-500" />
+        <p className="font-heading text-2xl text-foreground">Couldn&apos;t load subjects</p>
+        <p className="text-sm text-muted-foreground">Something went wrong while fetching curriculum subjects. Please try again.</p>
+        <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={loadModules}>Retry</Button>
+      </div>
     </div>
   );
 

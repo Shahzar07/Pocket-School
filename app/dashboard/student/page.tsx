@@ -55,18 +55,27 @@ export default function StudentDashboard() {
   const [enrolled, setEnrolled] = useState<CourseWithEnrollment[]>([]);
   const [badges, setBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = async () => {
     if (!user) return;
-    Promise.all([
-      getEnrolledCourses(user.uid),
-      getUserBadges(user.uid),
-    ]).then(([courses, bs]) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [courses, bs] = await Promise.all([
+        getEnrolledCourses(user.uid),
+        getUserBadges(user.uid),
+      ]);
       setEnrolled(courses);
       setBadges(bs);
+    } catch (e: any) {
+      setError(e?.message ?? 'Something went wrong.');
+    } finally {
       setLoading(false);
-    });
-  }, [user]);
+    }
+  };
+
+  useEffect(() => { load(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const xp = profile?.xp ?? 0;
   const xpToNextLevel = 1000;
@@ -78,6 +87,16 @@ export default function StudentDashboard() {
   const resumeCourse = inProgress[0] ?? notStarted[0];
   const firstName = profile?.name?.split(' ')[0] ?? 'Student';
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+  if (error) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 pt-16 flex justify-center">
+      <div className="bg-card border border-border rounded-3xl p-8 text-center max-w-md w-full card-glow">
+        <p className="font-heading text-xl text-foreground mb-2">Couldn&apos;t load this page.</p>
+        <p className="text-sm text-muted-foreground mb-6 break-words">{error}</p>
+        <Button onClick={load} className="rounded-full h-11 px-6 font-bold">Retry</Button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">

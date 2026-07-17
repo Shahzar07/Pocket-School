@@ -35,10 +35,13 @@ export default function TranscriptPage() {
   const { user, profile } = useAuthSTORE();
   const [records, setRecords] = useState<CourseRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = async () => {
     if (!user) return;
-    (async () => {
+    setLoading(true);
+    setError(null);
+    try {
       const [enrollments, grades] = await Promise.all([
         getEnrolledCourses(user.uid),
         getGradesForStudent(user.uid),
@@ -52,10 +55,17 @@ export default function TranscriptPage() {
         const status = enrollment.progress === 100 ? 'Completed' : enrollment.progress > 0 ? 'In Progress' : 'Enrolled';
         return { course, enrollment, grades: cGrades, avg, gpa, status };
       });
+      // Defensive client-side sort (alphabetical by course title)
+      mapped.sort((a, b) => a.course.title.localeCompare(b.course.title));
       setRecords(mapped);
+    } catch (e: any) {
+      setError(e?.message ?? 'Something went wrong.');
+    } finally {
       setLoading(false);
-    })();
-  }, [user]);
+    }
+  };
+
+  useEffect(() => { load(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const overallGPA = records.filter(r => r.avg !== null).length > 0
     ? (records.filter(r => r.avg !== null).reduce((s, r) => s + r.gpa, 0) / records.filter(r => r.avg !== null).length).toFixed(2)
@@ -64,6 +74,16 @@ export default function TranscriptPage() {
   if (loading) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-6 pt-8">
       {[1, 2, 3].map(i => <div key={i} className="h-20 bg-muted animate-pulse rounded-3xl" />)}
+    </div>
+  );
+
+  if (error) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 pt-16 flex justify-center">
+      <div className="bg-card border border-border rounded-3xl p-8 text-center max-w-md w-full card-glow">
+        <p className="font-heading text-xl text-foreground mb-2">Couldn&apos;t load this page.</p>
+        <p className="text-sm text-muted-foreground mb-6 break-words">{error}</p>
+        <Button onClick={load} className="rounded-full h-11 px-6 font-bold">Retry</Button>
+      </div>
     </div>
   );
 

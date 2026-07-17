@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { getMessages, getSentMessages, sendMessage, getEnrolledCourses, getChildrenProfiles, Message, UserProfile } from '@/lib/db';
+import { getMessages, getSentMessages, sendMessage, getEnrolledCourses, getChildrenProfiles, markMessageRead, Message, UserProfile } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -190,7 +190,12 @@ export default function ParentCommunications() {
         <div className="space-y-3">
           {currentMessages.map((msg, i) => (
             <motion.div key={msg.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + i * 0.05 }}
-              className={`bg-card border rounded-2xl p-5 card-glow ${!msg.read && tab === 'inbox' ? 'border-amber-500/40 bg-amber-500/5' : 'border-border'}`}
+              className={`bg-card border rounded-2xl p-5 card-glow ${!msg.read && tab === 'inbox' ? 'border-amber-500/40 bg-amber-500/5 cursor-pointer' : 'border-border'}`}
+              onClick={() => {
+                if (msg.read || tab !== 'inbox') return;
+                markMessageRead(msg.id).catch(() => {});
+                setInbox(prev => prev.map(m => m.id === msg.id ? { ...m, read: true } : m));
+              }}
             >
               <div className="flex items-start gap-4">
                 <Avatar className="w-10 h-10 shrink-0">

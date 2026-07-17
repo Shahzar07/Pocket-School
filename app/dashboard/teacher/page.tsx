@@ -35,19 +35,35 @@ export default function TeacherDashboard() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const [loadError, setLoadError] = useState(false);
+
+  const load = () => {
     if (!user) return;
+    setLoading(true);
+    setLoadError(false);
     Promise.all([getTeacherCourses(user.uid), getSubmissionsForTeacher(user.uid)]).then(([cs, ss]) => {
       setCourses(cs);
       setSubmissions(ss);
-      setLoading(false);
-    });
-  }, [user]);
+    }).catch(() => setLoadError(true)).finally(() => setLoading(false));
+  };
+
+  useEffect(() => { load(); }, [user]);
 
   const ungraded = submissions.filter(s => s.score === undefined);
   const published = courses.filter(c => c.status === 'published');
   const firstName = profile?.name?.split(' ')[0] ?? 'Teacher';
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+  if (loadError) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12">
+      <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
+        <BookOpen className="w-10 h-10 mx-auto text-amber-500" />
+        <p className="font-heading text-2xl text-foreground">Couldn&apos;t load your dashboard</p>
+        <p className="text-sm text-muted-foreground">Something went wrong while fetching your data. Please try again.</p>
+        <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={load}>Retry</Button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">

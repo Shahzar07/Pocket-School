@@ -46,10 +46,19 @@ export default function IntegrityPage() {
   const [statuses, setStatuses] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<string | null>(null);
 
-  useEffect(() => {
+  const [loadError, setLoadError] = useState(false);
+
+  const load = () => {
     if (!user) return;
-    getIntegrityReportsForTeacher(user.uid).then(r => { setReports(r); setLoading(false); });
-  }, [user]);
+    setLoading(true);
+    setLoadError(false);
+    getIntegrityReportsForTeacher(user.uid)
+      .then(setReports)
+      .catch(() => setLoadError(true))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { load(); }, [user]);
 
   async function handleUpdate(id: string) {
     setSaving(id);
@@ -61,6 +70,8 @@ export default function IntegrityPage() {
       });
       toast.success('Report updated');
       setReports(await getIntegrityReportsForTeacher(user!.uid));
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to update report.');
     } finally { setSaving(null); }
   }
 
@@ -77,6 +88,17 @@ export default function IntegrityPage() {
         <div className="bg-muted animate-pulse rounded-3xl h-24" />
         <div className="bg-muted animate-pulse rounded-3xl h-24" />
         <div className="bg-muted animate-pulse rounded-3xl h-24" />
+      </div>
+    </div>
+  );
+
+  if (loadError) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12">
+      <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
+        <Shield className="w-10 h-10 mx-auto text-amber-500" />
+        <p className="font-heading text-2xl text-foreground">Couldn&apos;t load integrity reports</p>
+        <p className="text-sm text-muted-foreground">Something went wrong while fetching reports. Please try again.</p>
+        <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={load}>Retry</Button>
       </div>
     </div>
   );

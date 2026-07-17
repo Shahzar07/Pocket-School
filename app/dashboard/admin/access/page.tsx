@@ -4,10 +4,9 @@ import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Key, Lock, Users, Search, Sparkles, Loader2, GraduationCap } from 'lucide-react';
+import { Shield, Search, Sparkles, Loader2, GraduationCap } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { getUserByEmail, setUserSubscription, UserProfile } from '@/lib/db';
 
 const fadeUp: Record<string, any> = {
@@ -16,9 +15,6 @@ const fadeUp: Record<string, any> = {
 };
 
 export default function AdminAccessConfig() {
-  const [isRolesOpen, setIsRolesOpen] = useState(false);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
-
   const [searchEmail, setSearchEmail] = useState('');
   const [searching, setSearching] = useState(false);
   const [foundUser, setFoundUser] = useState<{ id: string; data: UserProfile } | null>(null);
@@ -75,77 +71,43 @@ export default function AdminAccessConfig() {
         <p className="text-muted-foreground mt-2 text-[15px]">Manage role-based access control and security policies.</p>
       </motion.header>
 
-      {/* Config cards grid */}
-      <div className="grid sm:grid-cols-2 gap-5">
-        {[
-          {
-            icon: Shield, title: 'Role Permissions', desc: 'Define what actions each role (Admin, Teacher, Student, Parent) can perform.',
-            accent: 'text-violet-600', bar: 'bg-violet-500', iconBg: 'from-violet-600 to-fuchsia-600',
-            action: () => setIsRolesOpen(true), actionLabel: 'Edit Roles',
-          },
-          {
-            icon: Key, title: 'Authentication Settings', desc: 'Configure SSO, standard login scopes, multifactor authentication, and session limits.',
-            accent: 'text-[#1A73E8]', bar: 'bg-[#1A73E8]', iconBg: 'from-[#1A73E8] to-[#7C3AED]',
-            action: () => setIsAuthOpen(true), actionLabel: 'Configure Auth',
-          },
-          {
-            icon: Lock, title: 'Security Policies', desc: 'Manage password complexity, expiration requirements, and IP whitelisting.',
-            accent: 'text-amber-600', bar: 'bg-amber-500', iconBg: 'from-amber-500 to-orange-600',
-            action: () => toast.info('Opening Security Policies...'), actionLabel: 'Manage Policies',
-          },
-          {
-            icon: Users, title: 'User Audit Logs', desc: 'Review login history, permission changes, and access records for all users.',
-            accent: 'text-emerald-600', bar: 'bg-emerald-500', iconBg: 'from-emerald-500 to-teal-600',
-            action: () => toast.info('Loading Audit Logs...'), actionLabel: 'View Logs',
-          },
-        ].map((item, i) => (
-          <motion.div key={item.title} variants={fadeUp} initial="hidden" animate="visible" custom={1 + i}
-            className="bg-card border border-border rounded-3xl p-6 relative overflow-hidden card-glow"
-          >
-            <span className={`absolute top-0 left-6 right-6 h-[3px] rounded-b-full ${item.bar} opacity-80`} />
-            <div className="flex items-center gap-3 mb-4">
-              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${item.iconBg} flex items-center justify-center shadow-md`}>
-                <item.icon className="w-5 h-5 text-white" />
-              </div>
-              <h2 className="font-heading text-xl text-foreground">{item.title}</h2>
+      {/* Role capabilities overview */}
+      <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={1}>
+        <div className="bg-card border border-border rounded-3xl p-6 sm:p-7 relative overflow-hidden card-glow">
+          <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-violet-500 opacity-80" />
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-md">
+              <Shield className="w-5 h-5 text-white" />
             </div>
-            <p className="text-sm text-muted-foreground mb-5">{item.desc}</p>
-            <Button variant="outline" className="w-full rounded-full h-10 font-semibold" onClick={item.action}>
-              {item.actionLabel}
-            </Button>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Roles dialog */}
-      <Dialog open={isRolesOpen} onOpenChange={setIsRolesOpen}>
-        <DialogContent className="rounded-3xl">
-          <DialogHeader>
-            <DialogTitle className="font-heading text-2xl">Edit Role Permissions</DialogTitle>
-            <DialogDescription>Modify granular access controls for each platform role.</DialogDescription>
-          </DialogHeader>
-          <div className="py-6 text-muted-foreground">Role matrix editor will be initialized here.</div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setIsRolesOpen(false)} className="rounded-full">Close</Button>
-            <Button className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-bold">Save Permissions</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Auth dialog */}
-      <Dialog open={isAuthOpen} onOpenChange={setIsAuthOpen}>
-        <DialogContent className="rounded-3xl">
-          <DialogHeader>
-            <DialogTitle className="font-heading text-2xl">Authentication Configuration</DialogTitle>
-            <DialogDescription>Setup Google Workspace SSO and authentication limits.</DialogDescription>
-          </DialogHeader>
-          <div className="py-6 text-muted-foreground">SSO providers and identity access forms will appear here.</div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setIsAuthOpen(false)} className="rounded-full">Close</Button>
-            <Button className="rounded-full bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white font-bold">Save Auth Config</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <div>
+              <h2 className="font-heading text-xl text-foreground">Role Permissions</h2>
+              <p className="text-sm text-muted-foreground">Enforced by Firestore security rules on every read and write.</p>
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { role: 'Super Admin', color: 'text-violet-600', items: ['Full curriculum CMS & Content Builder', 'Approve / publish all content', 'Manage users, tiers & Sparks', 'Institutions & allocations'] },
+              { role: 'Teacher', color: 'text-blue-600', items: ['Create & upload courses', 'Grade submissions & exams', 'Attendance, behaviour, billing', 'Live classes & report cards'] },
+              { role: 'Student', color: 'text-emerald-600', items: ['Enrol & learn', 'Take quizzes, exams, assignments', 'Earn & spend Sparks', 'AI Studio & AI tutor'] },
+              { role: 'Parent', color: 'text-amber-600', items: ['View linked children', 'Progress & report cards', 'Due dates & reminders', 'Message teachers'] },
+            ].map(r => (
+              <div key={r.role} className="rounded-2xl border border-border bg-muted/20 p-4">
+                <p className={`text-sm font-bold mb-2 ${r.color}`}>{r.role}</p>
+                <ul className="space-y-1.5">
+                  {r.items.map(item => (
+                    <li key={item} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                      <span className="w-1 h-1 rounded-full bg-current mt-1.5 shrink-0" />{item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground mt-4">
+            Authentication uses Firebase Auth (email + password with optional email 2FA, and Google sign-in). Security rules live in <code className="font-mono text-[11px] bg-muted px-1 py-0.5 rounded">firestore.rules</code> and are deployed via the Firebase console.
+          </p>
+        </div>
+      </motion.section>
 
       {/* Subscription & Sparks */}
       <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={5}>

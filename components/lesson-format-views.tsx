@@ -5,11 +5,24 @@ import { AiOutputs } from '@/lib/db';
 import { MindmapRenderer } from '@/components/mindmap-renderer';
 import { InfographicRenderer } from '@/components/infographic-renderer';
 import { VideoStoryboard } from '@/components/video-storyboard';
-import { AudioPlayer } from '@/components/audio-player';
+import { VideoPlayer } from '@/components/video-player';
+import { SmartAudioPlayer } from '@/components/smart-audio-player';
 
 const MARKDOWN_FORMATS = new Set([
   'text', 'problems', 'notes', 'summary',
 ]);
+
+/** True when an option is the stored answer, tolerating legacy letter
+ * answers ("B") that refer to the option at that index. */
+function isCorrectOption(opt: string, answer: string | undefined, options: string[] = [], index = -1): boolean {
+  const ans = (answer ?? '').trim();
+  if (opt === ans) return true;
+  if (/^[A-D]$/i.test(ans)) {
+    const answerIndex = ans.toUpperCase().charCodeAt(0) - 65;
+    return index >= 0 ? index === answerIndex : options[answerIndex] === opt;
+  }
+  return false;
+}
 
 /** Read-only preview of one AI-generated content format, shared between the
  * lesson player and the admin curriculum CMS review screen. */
@@ -29,11 +42,23 @@ export function FormatPreview({ format, outputs }: { format: string; outputs: Ai
   }
 
   if (format === 'videoScript' && typeof value === 'string') {
-    return <VideoStoryboard script={value} />;
+    return (
+      <div className="space-y-4">
+        <VideoPlayer script={value} />
+        <details className="rounded-xl border border-border overflow-hidden">
+          <summary className="cursor-pointer select-none px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
+            View storyboard &amp; script
+          </summary>
+          <div className="px-4 pb-4">
+            <VideoStoryboard script={value} />
+          </div>
+        </details>
+      </div>
+    );
   }
 
   if (format === 'audioScript' && typeof value === 'string') {
-    return <AudioPlayer script={value} title="Audio Summary" />;
+    return <SmartAudioPlayer script={value} title="Audio Summary" />;
   }
 
   if (MARKDOWN_FORMATS.has(format) && typeof value === 'string') {
@@ -69,11 +94,14 @@ export function FormatPreview({ format, outputs }: { format: string; outputs: Ai
               )}
             </div>
             <ul className="space-y-0.5">
-              {q.options?.map((opt: string, j: number) => (
-                <li key={j} className={opt === q.answer ? 'text-emerald-700 font-semibold' : 'text-muted-foreground'}>
-                  {opt === q.answer ? '✓ ' : '· '}{opt}
-                </li>
-              ))}
+              {q.options?.map((opt: string, j: number) => {
+                const correct = isCorrectOption(opt, q.answer, q.options, j);
+                return (
+                  <li key={j} className={correct ? 'text-emerald-700 font-semibold' : 'text-muted-foreground'}>
+                    {correct ? '✓ ' : '· '}{opt}
+                  </li>
+                );
+              })}
             </ul>
             {q.explanation && <p className="text-xs text-muted-foreground mt-1.5 italic">{q.explanation}</p>}
           </div>

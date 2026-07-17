@@ -65,6 +65,15 @@ export function AITutor() {
         }),
       });
 
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({} as { error?: string }));
+        setMessages(prev => [...prev, {
+          role: 'model',
+          text: `Sorry — ${err.error || `I hit an error (${res.status}). Please try again.`}`,
+        }]);
+        return;
+      }
+
       const data = await res.json();
       setMessages(prev => [...prev, { role: 'model', text: data.reply ?? 'I did not understand that.' }]);
     } catch {

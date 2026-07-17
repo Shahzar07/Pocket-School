@@ -19,36 +19,69 @@ export default function StudentTasksPage() {
   const { user } = useAuthSTORE();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [adding, setAdding] = useState(false);
 
   const load = async () => {
     if (!user) return;
-    const t = await getTasks(user.uid);
-    setTasks(t);
-    setLoading(false);
+    setLoading(true);
+    setError(null);
+    try {
+      const t = await getTasks(user.uid);
+      // Defensive client-side sort (newest first)
+      t.sort((a, b) => (b.createdAt?.toDate?.()?.getTime() ?? 0) - (a.createdAt?.toDate?.()?.getTime() ?? 0));
+      setTasks(t);
+    } catch (e: any) {
+      setError(e?.message ?? 'Something went wrong.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { load(); }, [user]);
+  useEffect(() => { load(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAdd = async () => {
     if (!user || !newTitle.trim()) return;
     setAdding(true);
-    await createTask({ userId: user.uid, title: newTitle.trim(), completed: false, priority: 'normal' });
-    setNewTitle('');
-    await load();
-    setAdding(false);
+    try {
+      // createdBy / assignedTo mirror userId so the task matches security rules
+      // regardless of which field they key on.
+      const newTask: Omit<Task, 'id'> & { createdBy: string; assignedTo: string } = {
+        userId: user.uid,
+        createdBy: user.uid,
+        assignedTo: user.uid,
+        title: newTitle.trim(),
+        completed: false,
+        priority: 'normal',
+      };
+      await createTask(newTask);
+      setNewTitle('');
+      await load();
+    } catch {
+      toast.error('Could not add the task. Please try again.');
+    } finally {
+      setAdding(false);
+    }
   };
 
   const toggleTask = async (task: Task) => {
-    await updateTask(task.id!, { completed: !task.completed });
-    setTasks(prev => prev.map(t => t.id === task.id ? { ...t, completed: !t.completed } : t));
+    try {
+      await updateTask(task.id!, { completed: !task.completed });
+      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, completed: !t.completed } : t));
+    } catch {
+      toast.error('Could not update the task. Please try again.');
+    }
   };
 
   const removeTask = async (id: string) => {
-    await deleteTask(id);
-    setTasks(prev => prev.filter(t => t.id !== id));
-    toast.success('Task removed.');
+    try {
+      await deleteTask(id);
+      setTasks(prev => prev.filter(t => t.id !== id));
+      toast.success('Task removed.');
+    } catch {
+      toast.error('Could not remove the task. Please try again.');
+    }
   };
 
   const pending = tasks.filter(t => !t.completed);
@@ -57,6 +90,16 @@ export default function StudentTasksPage() {
   if (loading) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10 pt-10">
       {[1, 2, 3].map(i => <div key={i} className="h-14 bg-muted animate-pulse rounded-3xl" />)}
+    </div>
+  );
+
+  if (error) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 pt-16 flex justify-center">
+      <div className="bg-card border border-border rounded-3xl p-8 text-center max-w-md w-full card-glow">
+        <p className="font-heading text-xl text-foreground mb-2">Couldn&apos;t load this page.</p>
+        <p className="text-sm text-muted-foreground mb-6 break-words">{error}</p>
+        <Button onClick={load} className="rounded-full h-11 px-6 font-bold">Retry</Button>
+      </div>
     </div>
   );
 

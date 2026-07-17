@@ -29,12 +29,15 @@ export default function StudentAssignmentsPage() {
   const { user, profile } = useAuthSTORE();
   const [items, setItems] = useState<AssignmentWithSubmission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
 
-  useEffect(() => {
+  const load = async () => {
     if (!user) return;
-    (async () => {
+    setLoading(true);
+    setError(null);
+    try {
       const enrollments = await getEnrolledCourses(user.uid);
       const allAssignments: Assignment[] = [];
       const allSubmissions: AssignmentSubmission[] = [];
@@ -46,14 +49,25 @@ export default function StudentAssignmentsPage() {
         allAssignments.push(...asgns);
         allSubmissions.push(...subs);
       }
+      // Defensive client-side sort (earliest due date first, undated last)
+      allAssignments.sort((a, b) => {
+        const ad = a.dueDate?.toDate?.()?.getTime() ?? Number.MAX_SAFE_INTEGER;
+        const bd = b.dueDate?.toDate?.()?.getTime() ?? Number.MAX_SAFE_INTEGER;
+        return ad - bd;
+      });
       const mapped = allAssignments.map(a => ({
         assignment: a,
         submission: allSubmissions.find(s => s.assignmentId === a.id),
       }));
       setItems(mapped);
+    } catch (e: any) {
+      setError(e?.message ?? 'Something went wrong.');
+    } finally {
       setLoading(false);
-    })();
-  }, [user]);
+    }
+  };
+
+  useEffect(() => { load(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async (a: Assignment) => {
     if (!user) return;
@@ -93,6 +107,17 @@ export default function StudentAssignmentsPage() {
         <div className="h-12 w-72 bg-muted animate-pulse rounded-2xl" />
       </div>
       {[1, 2, 3].map(i => <div key={i} className="h-40 bg-muted animate-pulse rounded-3xl" />)}
+    </div>
+  );
+
+  if (error) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 pt-16 flex justify-center">
+      <div className="bg-card border border-border rounded-3xl p-8 text-center max-w-md w-full card-glow">
+        <AlertTriangle className="w-8 h-8 mx-auto mb-3 text-destructive" />
+        <p className="font-heading text-xl text-foreground mb-2">Couldn&apos;t load this page.</p>
+        <p className="text-sm text-muted-foreground mb-6 break-words">{error}</p>
+        <Button onClick={load} className="rounded-full h-11 px-6 font-bold">Retry</Button>
+      </div>
     </div>
   );
 

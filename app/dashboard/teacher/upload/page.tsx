@@ -81,7 +81,7 @@ export default function UploadPage() {
 
   useEffect(() => {
     if (!user) return;
-    getTeacherCourses(user.uid).then(setCourses);
+    getTeacherCourses(user.uid).then(setCourses).catch(() => toast.error('Failed to load your courses.'));
   }, [user]);
 
   useEffect(() => {
@@ -94,8 +94,8 @@ export default function UploadPage() {
     getModules(selectedCourseId).then(mods => {
       setModules(mods);
       setSelectedModuleId(mods.length > 0 ? mods[0].id! : 'new');
-      setModulesLoading(false);
-    });
+    }).catch(() => toast.error('Failed to load subjects for this course.'))
+      .finally(() => setModulesLoading(false));
   }, [selectedCourseId]);
 
   const generateFormat = async (format: string): Promise<unknown> => {
@@ -123,17 +123,25 @@ export default function UploadPage() {
     setProgress({});
 
     const outputs: AiOutputs = {};
+    let failed = 0;
     for (const { id } of FORMATS) {
       try {
         const result = await generateFormat(id);
         (outputs as Record<string, unknown>)[id] = result;
         setGeneratedOutputs({ ...outputs });
       } catch {
+        failed++;
         setProgress(p => ({ ...p, [id]: 'error' }));
       }
     }
     setGenerating(false);
-    toast.success('All formats generated! Review and publish.');
+    if (failed === 0) {
+      toast.success('All formats generated! Review and publish.');
+    } else if (failed === FORMATS.length) {
+      toast.error('All formats failed to generate. Please try again.');
+    } else {
+      toast.warning(`${failed} format${failed !== 1 ? 's' : ''} failed — you can regenerate them later.`);
+    }
   };
 
   const handlePublish = async () => {
@@ -463,7 +471,7 @@ export default function UploadPage() {
                         <p className="font-semibold text-foreground text-sm truncate">{sl.title}</p>
                         <p className="text-xs text-muted-foreground truncate">{sl.courseTitle} · {sl.moduleTitle}</p>
                       </div>
-                      <Link href={`/dashboard/student/courses/${sl.courseId}`} className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors shrink-0">
+                      <Link href="/dashboard/teacher/courses" className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors shrink-0">
                           <ExternalLink className="w-3.5 h-3.5" /> View Course
                       </Link>
                     </div>

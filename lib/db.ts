@@ -61,6 +61,15 @@ export interface Course {
   programmeId?: string;
   yearGroup?: string;
   academicYear?: string;
+  // ── Content Builder publish & allocation controls ──
+  publishScope?: 'institution' | 'public' | 'marketplace';
+  allocatedInstitutionIds?: string[];
+  allocatedGroups?: string[];
+  allowComments?: boolean;
+  enableLyra?: boolean;
+  notifyOnPublish?: boolean;
+  timedAssessmentMode?: boolean;
+  accessOverride?: { pricePerInstitution?: number; expiryDate?: string; sparksOverride?: number };
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -88,7 +97,7 @@ export interface Lesson {
   order: number;
   contentSources?: { type: 'text' | 'url'; value: string }[];
   aiOutputs?: AiOutputs;
-  status?: 'draft' | 'in_review' | 'approved' | 'published';
+  status?: 'draft' | 'in_review' | 'approved' | 'published' | 'archived';
   lessonNumber?: number;
   objectiveCodes?: string[];
   isUnitQuiz?: boolean;
@@ -97,6 +106,39 @@ export interface Lesson {
   reviewedBy?: string;
   reviewedAt?: Timestamp;
   createdAt?: Timestamp;
+  // ── Content Builder fields (all optional; older docs unaffected) ──
+  lessonType?: 'lesson' | 'video' | 'assignment' | 'assessment' | 'live' | 'resource';
+  bloomsLevel?: string;
+  durationMinutes?: number;
+  marks?: number;
+  objectives?: { text: string; bloom: string }[];
+  activity?: {
+    title?: string; type?: string; instructions?: string;
+    marks?: number; bloom?: string; modelAnswer?: string;
+  };
+  assignmentConfig?: {
+    title?: string; submissionType?: string; dueInDays?: number;
+    totalMarks?: number; passMark?: number; latePolicy?: string; brief?: string;
+    rubric?: { criterion: string; descriptor: string; marks: number; bloom?: string }[];
+  };
+  assessmentConfig?: {
+    kind?: 'chapter_test' | 'unit_assessment' | 'mock_exam';
+    title?: string; totalMarks?: number; timeAllowedMinutes?: number;
+    passThreshold?: number; attempts?: number; certificateOnPass?: boolean;
+    sections?: { bloom: string; description: string; marks: number }[];
+  };
+  videoConfig?: { type?: 'ai' | 'voiceover' | 'embed'; embedUrl?: string; prompt?: string };
+  visibility?: 'all' | 'teacher_only' | 'scheduled';
+  releaseDate?: Timestamp;
+  prerequisite?: 'none' | 'previous_lesson' | 'pass_chapter_quiz' | 'teacher_approval';
+  accessibility?: {
+    captions?: boolean; audioDescription?: boolean; mobileOptimised?: boolean;
+    offlineAvailable?: boolean; dyslexicFont?: boolean;
+  };
+  /** Which builder blocks this lesson shows, in order. */
+  blocksOrder?: string[];
+  /** Audit trail of builder actions, newest first (capped client-side). */
+  history?: { label: string; actor: string; at: Timestamp; action?: string }[];
 }
 
 export interface AiOutputs {
@@ -350,6 +392,22 @@ export async function updateLesson(courseId: string, moduleId: string, lessonId:
   await updateDoc(doc(db, 'courses', courseId, 'modules', moduleId, 'lessons', lessonId), {
     ...data, updatedAt: serverTimestamp(),
   });
+}
+
+export async function deleteLesson(courseId: string, moduleId: string, lessonId: string): Promise<void> {
+  await deleteDoc(doc(db, 'courses', courseId, 'modules', moduleId, 'lessons', lessonId));
+}
+
+export async function duplicateLesson(courseId: string, moduleId: string, lesson: Lesson): Promise<string> {
+  const { id: _id, ...rest } = lesson;
+  const ref = await addDoc(collection(db, 'courses', courseId, 'modules', moduleId, 'lessons'), {
+    ...rest,
+    title: `${lesson.title} (copy)`,
+    status: 'draft',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  return ref.id;
 }
 
 // ─── Programmes & Curriculum Modules ───────────────────────────
