@@ -1,7 +1,12 @@
 const BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
+/** Cheapest tier — trivial checks (deterministic-style grading fallbacks). */
 export const FAST_MODEL = 'meta-llama/llama-3.1-8b-instruct';
-export const SMART_MODEL = 'openai/gpt-4o-mini';
+/** Main generation model — picked for lowest cost at good accuracy.
+ * Gemini 2.0 Flash is ~3-4x cheaper than gpt-4o-mini per output token. */
+export const SMART_MODEL = 'google/gemini-2.0-flash-001';
+/** If the primary model is unavailable, OpenRouter falls back down this list. */
+const FALLBACK_MODELS = ['google/gemini-2.0-flash-001', 'openai/gpt-4o-mini', 'meta-llama/llama-3.3-70b-instruct'];
 
 const MAX_RETRIES = 3;
 const REQUEST_TIMEOUT_MS = 45_000;
@@ -36,6 +41,9 @@ export async function callOpenRouter(
         },
         body: JSON.stringify({
           model: opts?.model ?? SMART_MODEL,
+          // OpenRouter routing fallback: if the requested model is down or
+          // unavailable, try the next one instead of failing the request.
+          ...((opts?.model ?? SMART_MODEL) === SMART_MODEL ? { models: FALLBACK_MODELS } : {}),
           temperature: opts?.temperature ?? 0.7,
           max_tokens: opts?.maxTokens ?? DEFAULT_MAX_TOKENS,
           ...(opts?.jsonMode ? { response_format: { type: 'json_object' } } : {}),
