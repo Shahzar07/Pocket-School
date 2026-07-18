@@ -1,17 +1,24 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+/**
+ * AI Studio — POCO.
+ * A Claude-style conversational studio: one thread where POCO both tutors
+ * (Socratic chat) and generates any of the 12 study formats as rich turns.
+ * Warm charcoal palette, skills composer, session recents, persistent library.
+ */
+
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { MathMarkdown } from '@/components/math-markdown';
 import {
-  Brain, Sparkles, Send, Search, ArrowLeft, Library, MessageSquare,
+  Sparkles, ArrowUp, ArrowLeft, Library, MessageSquare,
   FileText, ClipboardList, Network, BookMarked,
   Presentation, Image as ImageIcon, Calculator, FlipHorizontal,
-  Loader2, Save, Trash2, Copy, Plus, History, ChevronRight, Home as HomeIcon, User as UserIcon,
-  GraduationCap, Building2, Scale, Baby, Wand2,
-  Video, Headphones,
+  Loader2, Save, Trash2, Copy, Plus, ChevronRight, User as UserIcon,
+  GraduationCap, Building2, Scale, Baby, RefreshCw, X, Menu,
+  Video, Headphones, Asterisk,
 } from 'lucide-react';
 import { MindmapRenderer } from '@/components/mindmap-renderer';
 import { InfographicRenderer } from '@/components/infographic-renderer';
@@ -24,22 +31,21 @@ import {
   getAiGenerations, deleteAiGeneration, saveAiGeneration, type AiGeneration,
 } from '@/lib/db';
 
-type Panel = 'home' | 'chat' | 'library';
 type FormatId = 'text' | 'flashcards' | 'quiz' | 'slides' | 'notes' | 'summary' | 'problems' | 'glossary' | 'mindmap' | 'infographic' | 'videoScript' | 'audioScript';
 
-const FORMATS: { id: FormatId; label: string; desc: string; icon: React.ReactNode; gradient: string }[] = [
-  { id: 'text', label: 'Full Lesson', desc: 'Complete written lesson', icon: <FileText className="w-4 h-4" />, gradient: 'from-blue-500 to-indigo-600' },
-  { id: 'flashcards', label: 'Flashcards', desc: 'Quick recall cards', icon: <FlipHorizontal className="w-4 h-4" />, gradient: 'from-cyan-500 to-blue-600' },
-  { id: 'quiz', label: 'Quiz', desc: 'Test your knowledge', icon: <ClipboardList className="w-4 h-4" />, gradient: 'from-amber-500 to-orange-600' },
-  { id: 'slides', label: 'Slides', desc: 'Presentation deck', icon: <Presentation className="w-4 h-4" />, gradient: 'from-indigo-500 to-violet-600' },
-  { id: 'notes', label: 'Study Notes', desc: 'Concise key points', icon: <BookMarked className="w-4 h-4" />, gradient: 'from-slate-500 to-slate-700' },
-  { id: 'summary', label: 'Summary', desc: 'TL;DR overview', icon: <FileText className="w-4 h-4" />, gradient: 'from-emerald-500 to-teal-600' },
-  { id: 'problems', label: 'Practice Problems', desc: 'Worked exercises', icon: <Calculator className="w-4 h-4" />, gradient: 'from-orange-500 to-red-600' },
-  { id: 'glossary', label: 'Glossary', desc: 'Key terms defined', icon: <BookMarked className="w-4 h-4" />, gradient: 'from-teal-500 to-cyan-600' },
-  { id: 'mindmap', label: 'Mind Map', desc: 'Visual concept map', icon: <Network className="w-4 h-4" />, gradient: 'from-fuchsia-500 to-pink-600' },
-  { id: 'infographic', label: 'Infographic', desc: 'Scannable visual facts', icon: <ImageIcon className="w-4 h-4" />, gradient: 'from-rose-500 to-pink-600' },
-  { id: 'videoScript', label: 'Video Script', desc: 'Scene-by-scene storyboard', icon: <Video className="w-4 h-4" />, gradient: 'from-red-500 to-rose-600' },
-  { id: 'audioScript', label: 'Audio Summary', desc: 'Listen & revise on the go', icon: <Headphones className="w-4 h-4" />, gradient: 'from-violet-500 to-purple-600' },
+const FORMATS: { id: FormatId; label: string; desc: string; icon: React.ReactNode }[] = [
+  { id: 'text', label: 'Full Lesson', desc: 'Complete written lesson', icon: <FileText className="w-4 h-4" /> },
+  { id: 'flashcards', label: 'Flashcards', desc: 'Quick recall cards', icon: <FlipHorizontal className="w-4 h-4" /> },
+  { id: 'quiz', label: 'Quiz', desc: 'Test your knowledge', icon: <ClipboardList className="w-4 h-4" /> },
+  { id: 'slides', label: 'Slides', desc: 'Presentation deck', icon: <Presentation className="w-4 h-4" /> },
+  { id: 'notes', label: 'Study Notes', desc: 'Concise key points', icon: <BookMarked className="w-4 h-4" /> },
+  { id: 'summary', label: 'Summary', desc: 'TL;DR overview', icon: <FileText className="w-4 h-4" /> },
+  { id: 'problems', label: 'Practice Problems', desc: 'Worked exercises', icon: <Calculator className="w-4 h-4" /> },
+  { id: 'glossary', label: 'Glossary', desc: 'Key terms defined', icon: <BookMarked className="w-4 h-4" /> },
+  { id: 'mindmap', label: 'Mind Map', desc: 'Visual concept map', icon: <Network className="w-4 h-4" /> },
+  { id: 'infographic', label: 'Infographic', desc: 'Scannable visual facts', icon: <ImageIcon className="w-4 h-4" /> },
+  { id: 'videoScript', label: 'Video', desc: 'Playable video lesson', icon: <Video className="w-4 h-4" /> },
+  { id: 'audioScript', label: 'Audio', desc: 'AI-voiced summary', icon: <Headphones className="w-4 h-4" /> },
 ];
 
 const LEVELS = ['Primary', 'GCSE', 'A-Level', 'University', 'Professional'];
@@ -51,578 +57,640 @@ const CHAT_MODES: { id: 'k12' | 'college' | 'professional' | 'legal'; label: str
   { id: 'legal', label: 'Legal', icon: <Scale className="w-3.5 h-3.5" /> },
 ];
 
-type ChatMessage = { role: 'user' | 'assistant'; text: string };
+const SUGGESTIONS = [
+  { label: 'Make a video on photosynthesis', format: 'videoScript' as FormatId, text: 'Photosynthesis' },
+  { label: 'Quiz me on the French Revolution', format: 'quiz' as FormatId, text: 'The French Revolution' },
+  { label: 'Explain quadratic equations', format: null, text: 'Can you explain how to solve quadratic equations?' },
+  { label: 'Flashcards for the periodic table', format: 'flashcards' as FormatId, text: 'The periodic table — first 20 elements' },
+];
+
+type Turn =
+  | { kind: 'user'; text: string; skill?: FormatId }
+  | { kind: 'chat'; text: string }
+  | { kind: 'gen'; format: FormatId; data: any; prompt: string; saved?: boolean };
+
+interface Chat { id: number; title: string; turns: Turn[] }
+
+/* Warm charcoal palette (Claude-like) */
+const C = {
+  bg: 'bg-[#1A1918]',
+  surface: 'bg-[#242220]',
+  surfaceHover: 'hover:bg-[#2B2927]',
+  raised: 'bg-[#2B2927]',
+  border: 'border-[#3A3733]',
+  borderSoft: 'border-[#2E2B28]',
+  text: 'text-[#EDEAE4]',
+  dim: 'text-[#A8A296]',
+  faint: 'text-[#6E695F]',
+  accent: '#D97757',
+};
 
 export default function AiStudio() {
   const [user, setUser] = useState<User | null>(null);
-  const [panel, setPanel] = useState<Panel>('home');
+  const [view, setView] = useState<'chat' | 'library'>('chat');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // home/generate
-  const [topic, setTopic] = useState('');
+  // Conversations (session-scoped, like Claude's recents)
+  const [chats, setChats] = useState<Chat[]>([{ id: 1, title: 'New chat', turns: [] }]);
+  const [activeChatId, setActiveChatId] = useState(1);
+  const chat = chats.find(c => c.id === activeChatId) ?? chats[0];
+
+  // Composer
+  const [input, setInput] = useState('');
+  const [skill, setSkill] = useState<FormatId | null>(null);
+  const [skillsOpen, setSkillsOpen] = useState(false);
   const [subject, setSubject] = useState('');
   const [level, setLevel] = useState('GCSE');
-  const [format, setFormat] = useState<FormatId>('text');
-  const [generating, setGenerating] = useState(false);
-  const [result, setResult] = useState<{ format: FormatId; data: any; prompt: string } | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-
-  // chat
   const [chatMode, setChatMode] = useState<'k12' | 'college' | 'professional' | 'legal'>('college');
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-  const [chatInput, setChatInput] = useState('');
-  const [chatSending, setChatSending] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState<number | null>(null);
 
-  // library
+  // Library
   const [library, setLibrary] = useState<AiGeneration[]>([]);
   const [libraryLoading, setLibraryLoading] = useState(false);
 
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
-    return () => unsub();
-  }, []);
+  const endRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    if (panel === 'library' && user) loadLibrary();
-  }, [panel, user]);
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatHistory]);
+  useEffect(() => onAuthStateChanged(auth, u => setUser(u)), []);
+  useEffect(() => { if (view === 'library' && user) loadLibrary(); }, [view, user]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chat.turns.length, busy]);
 
   const loadLibrary = async () => {
     if (!user) return;
     setLibraryLoading(true);
-    try {
-      const items = await getAiGenerations(user.uid);
-      setLibrary(items);
-    } catch {
-      setLibrary([]);
-    } finally {
-      setLibraryLoading(false);
-    }
+    try { setLibrary(await getAiGenerations(user.uid)); }
+    catch { setLibrary([]); }
+    finally { setLibraryLoading(false); }
   };
 
-  const generate = async () => {
-    if (!topic.trim()) { toast.error('What do you want to learn?'); return; }
-    setGenerating(true);
-    setResult(null);
-    setSaved(false);
+  const pushTurns = useCallback((chatId: number, ...turns: Turn[]) => {
+    setChats(prev => prev.map(c => {
+      if (c.id !== chatId) return c;
+      const firstUser = c.turns.length === 0 && turns[0]?.kind === 'user';
+      return {
+        ...c,
+        title: firstUser ? (turns[0] as { text: string }).text.slice(0, 42) : c.title,
+        turns: [...c.turns, ...turns],
+      };
+    }));
+  }, []);
+
+  const newChat = () => {
+    const id = Math.max(...chats.map(c => c.id)) + 1;
+    setChats(prev => [...prev, { id, title: 'New chat', turns: [] }]);
+    setActiveChatId(id);
+    setView('chat');
+    setSkill(null);
+    setSidebarOpen(false);
+  };
+
+  /* ── Generation turn ── */
+  const runGeneration = async (chatId: number, format: FormatId, topic: string) => {
+    const lang = (typeof window !== 'undefined' && localStorage.getItem('pocket-school-lang')) || 'en';
+    const prompt = `Topic: ${topic}\nSubject: ${subject || 'general'}\nLevel: ${level}`;
+    const res = await fetch('/api/ai/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: prompt, format, language: lang !== 'en' ? lang : undefined }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Generation failed (${res.status})`);
+    }
+    const data = await res.json();
+    pushTurns(chatId, { kind: 'gen', format, data: data.result, prompt });
+  };
+
+  /* ── Tutor turn ── */
+  const runTutor = async (chatId: number, message: string, history: Turn[]) => {
+    const chatTurns = history
+      .filter((t): t is Extract<Turn, { kind: 'user' | 'chat' }> => t.kind === 'user' || t.kind === 'chat')
+      .map(t => ({ role: t.kind === 'user' ? 'user' : 'model', text: t.text }));
+    const res = await fetch('/api/ai/tutor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, mode: chatMode, history: chatTurns }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `POCO hit an error (${res.status})`);
+    }
+    const data = await res.json();
+    pushTurns(chatId, { kind: 'chat', text: data.reply || '…' });
+  };
+
+  const submit = async (overrideText?: string, overrideSkill?: FormatId | null) => {
+    const text = (overrideText ?? input).trim();
+    const useSkill = overrideSkill !== undefined ? overrideSkill : skill;
+    if (!text || busy) return;
+    const chatId = activeChatId;
+    const historySnapshot = chat.turns;
+    setInput('');
+    setBusy(true);
+    setView('chat');
+    pushTurns(chatId, { kind: 'user', text, skill: useSkill ?? undefined });
     try {
-      const lang = (typeof window !== 'undefined' && localStorage.getItem('pocket-school-lang')) || 'en';
-      const prompt = `Topic: ${topic.trim()}\nSubject: ${subject || 'general'}\nLevel: ${level}`;
-      const res = await fetch('/api/ai/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: prompt, format, language: lang !== 'en' ? lang : undefined }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        toast.error(err.error || `Generation failed (${res.status})`);
-        return;
-      }
-      const data = await res.json();
-      setResult({ format, data: data.result, prompt });
+      if (useSkill) await runGeneration(chatId, useSkill, text);
+      else await runTutor(chatId, text, historySnapshot);
     } catch (e: any) {
-      toast.error(e?.message || 'Generation failed.');
+      pushTurns(chatId, { kind: 'chat', text: `Sorry — ${e?.message || 'something went wrong'}. Try again.` });
     } finally {
-      setGenerating(false);
+      setBusy(false);
     }
   };
 
-  const saveToLibrary = async () => {
-    if (!result || !user) { toast.error(user ? 'Nothing to save.' : 'Sign in to save.'); return; }
-    if (saved || saving) return;
-    setSaving(true);
+  const regenerate = async (turnIndex: number) => {
+    const genTurn = chat.turns[turnIndex];
+    if (genTurn?.kind !== 'gen' || busy) return;
+    // Find the user turn that produced it
+    const userTurn = [...chat.turns.slice(0, turnIndex)].reverse().find(t => t.kind === 'user') as Extract<Turn, { kind: 'user' }> | undefined;
+    if (!userTurn) return;
+    setBusy(true);
+    try { await runGeneration(activeChatId, genTurn.format, userTurn.text); }
+    catch (e: any) { toast.error(e?.message || 'Regeneration failed.'); }
+    finally { setBusy(false); }
+  };
+
+  const saveGen = async (turnIndex: number) => {
+    const t = chat.turns[turnIndex];
+    if (t?.kind !== 'gen') return;
+    if (!user) { toast.error('Sign in to save.'); return; }
+    setSaving(turnIndex);
     try {
-      // Direct client-side write — the Firestore rules authorize the signed-in user.
       await saveAiGeneration(user.uid, {
-        type: result.format,
-        prompt: result.prompt,
-        result: typeof result.data === 'string' ? result.data : JSON.stringify(result.data),
+        type: t.format,
+        prompt: t.prompt,
+        result: typeof t.data === 'string' ? t.data : JSON.stringify(t.data),
         ...(subject ? { subject } : {}),
         ...(level ? { level } : {}),
       });
-      setSaved(true);
+      setChats(prev => prev.map(c => c.id !== activeChatId ? c : {
+        ...c, turns: c.turns.map((x, i) => i === turnIndex && x.kind === 'gen' ? { ...x, saved: true } : x),
+      }));
       toast.success('Saved to your library.');
     } catch (e: any) {
       toast.error(e?.message || 'Failed to save.');
     } finally {
-      setSaving(false);
+      setSaving(null);
     }
   };
 
-  const copyResult = async () => {
-    if (!result) return;
-    const text = typeof result.data === 'string' ? result.data : JSON.stringify(result.data, null, 2);
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success('Copied to clipboard.');
-    } catch {
-      toast.error('Failed to copy.');
-    }
-  };
-
-  const sendChat = async () => {
-    const message = chatInput.trim();
-    if (!message) return;
-    const nextHistory: ChatMessage[] = [...chatHistory, { role: 'user', text: message }];
-    setChatHistory(nextHistory);
-    setChatInput('');
-    setChatSending(true);
-    try {
-      const res = await fetch('/api/ai/tutor', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message,
-          mode: chatMode,
-          history: chatHistory.map(m => ({ role: m.role === 'user' ? 'user' : 'model', text: m.text })),
-        }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        toast.error(err.error || `AI failed (${res.status})`);
-        setChatHistory(prev => [...prev, { role: 'assistant', text: 'Sorry — I hit an error. Please try again.' }]);
-        return;
-      }
-      const data = await res.json();
-      setChatHistory(prev => [...prev, { role: 'assistant', text: data.reply || '…' }]);
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to reach AI.');
-    } finally {
-      setChatSending(false);
-    }
+  const copyGen = async (t: Extract<Turn, { kind: 'gen' }>) => {
+    const text = typeof t.data === 'string' ? t.data : JSON.stringify(t.data, null, 2);
+    try { await navigator.clipboard.writeText(text); toast.success('Copied.'); }
+    catch { toast.error('Failed to copy.'); }
   };
 
   const removeFromLibrary = async (item: AiGeneration) => {
-    if (!user) return;
-    if (!confirm('Delete this saved generation?')) return;
+    if (!user || !confirm('Delete this saved generation?')) return;
     try {
       await deleteAiGeneration(user.uid, item.id);
       setLibrary(l => l.filter(x => x.id !== item.id));
       toast.success('Deleted.');
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed.');
-    }
+    } catch (e: any) { toast.error(e?.message || 'Failed.'); }
   };
 
+  const activeFormat = skill ? FORMATS.find(f => f.id === skill) : null;
+  const empty = chat.turns.length === 0;
+
   return (
-    <div className="flex h-screen bg-[#05070F] text-slate-100 overflow-hidden relative">
-      {/* Ambient background glow */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="blob-1 absolute -top-40 -left-32 w-[32rem] h-[32rem] rounded-full bg-[#1A73E8]/20 blur-[120px]" />
-        <div className="blob-2 absolute top-1/3 -right-40 w-[36rem] h-[36rem] rounded-full bg-[#7C3AED]/15 blur-[130px]" />
-        <div className="blob-3 absolute bottom-0 left-1/4 w-[28rem] h-[28rem] rounded-full bg-cyan-500/10 blur-[110px]" />
-      </div>
+    <div className={`flex h-screen ${C.bg} ${C.text} overflow-hidden`} style={{ colorScheme: 'dark' }}>
 
-      {/* Sidebar */}
-      <aside className="w-64 border-r border-white/5 flex flex-col p-4 shrink-0 bg-white/[0.015] backdrop-blur-2xl z-10">
-        <Link href="/" className="flex items-center gap-2.5 mb-8 px-1">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1A73E8] via-[#3B82F6] to-[#7C3AED] flex items-center justify-center shadow-[0_0_20px_rgba(26,115,232,0.4)]">
-            <Sparkles className="w-4.5 h-4.5 text-white" />
-          </div>
-          <div>
-            <p className="text-sm font-bold leading-tight text-white">AI Pocket School</p>
-            <p className="text-[10px] text-slate-400 leading-tight tracking-wide">STUDIO</p>
-          </div>
-        </Link>
-
-        <nav className="space-y-1">
-          <button
-            onClick={() => { setPanel('home'); setResult(null); }}
-            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${panel === 'home' ? 'bg-gradient-to-r from-[#1A73E8]/20 to-[#7C3AED]/10 border border-[#1A73E8]/30 text-white shadow-[0_0_24px_rgba(26,115,232,0.12)]' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}
-          >
-            <HomeIcon className="w-4 h-4" /> Home
-          </button>
-          <button
-            onClick={() => setPanel('chat')}
-            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${panel === 'chat' ? 'bg-gradient-to-r from-[#1A73E8]/20 to-[#7C3AED]/10 border border-[#1A73E8]/30 text-white shadow-[0_0_24px_rgba(26,115,232,0.12)]' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}
-          >
-            <MessageSquare className="w-4 h-4" /> Ask AI
-          </button>
-          <button
-            onClick={() => setPanel('library')}
-            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${panel === 'library' ? 'bg-gradient-to-r from-[#1A73E8]/20 to-[#7C3AED]/10 border border-[#1A73E8]/30 text-white shadow-[0_0_24px_rgba(26,115,232,0.12)]' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}
-          >
-            <Library className="w-4 h-4" /> My Library
-          </button>
-          <Link
-            href="/ai-teachers"
-            className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent transition-all group"
-          >
-            <span className="flex items-center gap-3">
-              <UserIcon className="w-4 h-4" /> AI Teachers
-            </span>
-            <ChevronRight className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-transform" />
+      {/* ── Sidebar ── */}
+      <aside className={`${sidebarOpen ? 'flex' : 'hidden'} lg:flex w-[264px] shrink-0 flex-col border-r ${C.borderSoft} bg-[#1F1E1C] absolute lg:static inset-y-0 left-0 z-40`}>
+        <div className="p-3">
+          <Link href="/" className="flex items-center gap-2.5 px-2 py-2 mb-1">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: C.accent }}>
+              <Asterisk className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-[15px] font-bold leading-tight">POCO</p>
+              <p className={`text-[10px] ${C.faint} tracking-[0.2em] uppercase leading-tight`}>AI Studio</p>
+            </div>
           </Link>
-        </nav>
 
-        <div className="mt-auto pt-4 border-t border-white/5">
+          <button
+            onClick={newChat}
+            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold border ${C.border} ${C.surfaceHover} transition-colors`}
+          >
+            <Plus className="w-4 h-4" style={{ color: C.accent }} /> New chat
+          </button>
+
+          <nav className="mt-4 space-y-0.5">
+            <button
+              onClick={() => { setView('chat'); setSidebarOpen(false); }}
+              className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${view === 'chat' ? `${C.raised} ${C.text}` : `${C.dim} ${C.surfaceHover}`}`}
+            >
+              <MessageSquare className="w-4 h-4" /> Chats
+            </button>
+            <button
+              onClick={() => { setView('library'); setSidebarOpen(false); }}
+              className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${view === 'library' ? `${C.raised} ${C.text}` : `${C.dim} ${C.surfaceHover}`}`}
+            >
+              <Library className="w-4 h-4" /> Library
+            </button>
+            <Link href="/ai-teachers" className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm ${C.dim} ${C.surfaceHover} transition-colors group`}>
+              <span className="flex items-center gap-2.5"><UserIcon className="w-4 h-4" /> AI Teachers</span>
+              <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 transition-opacity" />
+            </Link>
+          </nav>
+        </div>
+
+        {/* Recents */}
+        <div className="flex-1 overflow-y-auto px-3 pb-2">
+          <p className={`px-3 pt-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.18em] ${C.faint}`}>Recents</p>
+          <div className="space-y-0.5">
+            {[...chats].reverse().map(c => (
+              <button
+                key={c.id}
+                onClick={() => { setActiveChatId(c.id); setView('chat'); setSidebarOpen(false); }}
+                className={`w-full text-left px-3 py-2 rounded-lg text-[13px] truncate transition-colors ${c.id === activeChatId && view === 'chat' ? `${C.raised} ${C.text}` : `${C.dim} ${C.surfaceHover}`}`}
+              >
+                {c.title}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className={`p-3 border-t ${C.borderSoft} space-y-1`}>
           {user ? (
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded-xl bg-white/[0.03] border border-white/5">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+            <div className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl ${C.surface}`}>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ background: C.accent }}>
                 {(user.email ?? 'U').slice(0, 2).toUpperCase()}
               </div>
-              <span className="text-xs text-slate-300 truncate">{user.email}</span>
+              <span className={`text-xs ${C.dim} truncate`}>{user.email}</span>
             </div>
           ) : (
-            <Link href="/login" className="flex items-center gap-2 text-xs text-slate-400 hover:text-white px-2 py-1.5">
+            <Link href="/login" className={`flex items-center gap-2 text-xs ${C.dim} hover:text-white px-2.5 py-2`}>
               <UserIcon className="w-3.5 h-3.5" /> Sign in to save
             </Link>
           )}
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-xs text-slate-500 hover:text-slate-200 px-2 py-1.5 mt-1 transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to website
+          <Link href="/" className={`flex items-center gap-2 text-xs ${C.faint} hover:text-white px-2.5 py-1.5 transition-colors`}>
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Pocket School
           </Link>
         </div>
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 overflow-y-auto z-10">
-        <AnimatePresence mode="wait">
-          {panel === 'home' && (
-            <motion.div
-              key="home"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-              className="max-w-4xl mx-auto p-8 sm:p-12"
-            >
-              {!result && (
-                <>
-                  <div className="text-center mb-10">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-slate-300 mb-5">
-                      <Sparkles className="w-3 h-3 text-[#60A5FA]" /> AI-Powered Learning
-                    </div>
-                    <h1 className="font-heading text-5xl sm:text-6xl tracking-tight mb-3">
-                      <span className="bg-gradient-to-br from-white via-white to-slate-400 bg-clip-text text-transparent">What do you want</span>
-                      <br />
-                      <span className="bg-gradient-to-r from-[#60A5FA] via-[#93C5FD] to-[#C4B5FD] bg-clip-text text-transparent">to learn today?</span>
-                    </h1>
-                    <p className="text-slate-400">
-                      Pick a format, enter a topic, get a complete study toolkit in seconds.
-                    </p>
-                  </div>
+      {/* Mobile overlay */}
+      {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
-                  <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-2 flex items-center mb-5 focus-within:border-[#1A73E8]/60 focus-within:ring-2 focus-within:ring-[#1A73E8]/20 transition-all">
-                    <Search className="w-5 h-5 text-slate-500 ml-3 mr-2 shrink-0" />
-                    <input
-                      type="text"
-                      placeholder="e.g. ATP synthesis in mitochondria"
-                      value={topic}
-                      onChange={e => setTopic(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && generate()}
-                      disabled={generating}
-                      className="flex-1 min-w-0 bg-transparent outline-none text-base text-white placeholder:text-slate-500 py-2.5"
-                    />
-                    <button
-                      onClick={generate}
-                      disabled={generating || !topic.trim()}
-                      className="rounded-xl bg-gradient-to-r from-[#1A73E8] via-[#3B82F6] to-[#7C3AED] hover:opacity-90 disabled:opacity-40 px-5 py-2.5 text-sm font-semibold text-white flex items-center gap-2 shrink-0 shadow-[0_0_24px_rgba(26,115,232,0.35)] transition-all"
+      {/* ── Main ── */}
+      <main className="flex-1 flex flex-col min-w-0">
+        {/* Mobile top bar */}
+        <div className={`lg:hidden flex items-center gap-3 px-4 py-3 border-b ${C.borderSoft}`}>
+          <button onClick={() => setSidebarOpen(true)} className={C.dim}><Menu className="w-5 h-5" /></button>
+          <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: C.accent }}>
+            <Asterisk className="w-4 h-4 text-white" />
+          </div>
+          <span className="text-sm font-bold">POCO</span>
+        </div>
+
+        {view === 'library' ? (
+          <LibraryView
+            user={user} library={library} loading={libraryLoading}
+            onDelete={removeFromLibrary} onNew={newChat}
+          />
+        ) : (
+          <>
+            {/* Thread */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-8 pb-4">
+                {empty ? (
+                  <div className="flex flex-col items-center justify-center text-center pt-[14vh]">
+                    <motion.div
+                      initial={{ scale: 0.6, opacity: 0, rotate: -30 }}
+                      animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                      transition={{ type: 'spring', damping: 14 }}
+                      className="w-14 h-14 rounded-full flex items-center justify-center mb-6"
+                      style={{ background: C.accent, boxShadow: '0 0 48px rgba(217,119,87,0.35)' }}
                     >
-                      {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                      {generating ? 'Generating…' : 'Generate'}
-                    </button>
+                      <Asterisk className="w-8 h-8 text-white" />
+                    </motion.div>
+                    <h1 className="font-heading text-3xl sm:text-[2.6rem] leading-tight tracking-tight mb-3">
+                      Hi, I&apos;m <span style={{ color: C.accent }}>POCO</span>.
+                    </h1>
+                    <p className={`${C.dim} text-base sm:text-lg max-w-md`}>
+                      Ask me anything, or pick a skill and I&apos;ll turn any topic into a lesson, quiz, video, audio and more.
+                    </p>
+                    <div className="grid sm:grid-cols-2 gap-2.5 mt-10 w-full max-w-xl">
+                      {SUGGESTIONS.map(s => (
+                        <button
+                          key={s.label}
+                          onClick={() => { setSkill(s.format); submit(s.text, s.format); }}
+                          className={`text-left px-4 py-3 rounded-2xl border ${C.border} ${C.surfaceHover} text-sm ${C.dim} hover:text-white transition-all flex items-center gap-2.5`}
+                        >
+                          {s.format
+                            ? <span style={{ color: C.accent }}>{FORMATS.find(f => f.id === s.format)?.icon}</span>
+                            : <MessageSquare className="w-4 h-4" style={{ color: C.accent }} />}
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
+                ) : (
+                  <div className="space-y-7">
+                    {chat.turns.map((t, i) => {
+                      if (t.kind === 'user') {
+                        return (
+                          <div key={i} className="flex justify-end">
+                            <div className={`max-w-[85%] rounded-2xl rounded-br-md px-4 py-3 ${C.raised}`}>
+                              {t.skill && (
+                                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-1.5 px-2 py-0.5 rounded-full" style={{ background: 'rgba(217,119,87,0.15)', color: C.accent }}>
+                                  {FORMATS.find(f => f.id === t.skill)?.icon}
+                                  {FORMATS.find(f => f.id === t.skill)?.label}
+                                </span>
+                              )}
+                              <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{t.text}</p>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div key={i} className="flex gap-3">
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1" style={{ background: C.accent }}>
+                            <Asterisk className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            {t.kind === 'chat' ? (
+                              <div className="prose prose-sm prose-invert max-w-none prose-headings:font-heading prose-p:text-[#D8D4CC] prose-p:text-[15px] prose-p:leading-relaxed prose-strong:text-white prose-li:text-[#D8D4CC] prose-a:text-[#E39A7F] prose-code:text-[#E8B39C]">
+                                <MathMarkdown>{t.text}</MathMarkdown>
+                              </div>
+                            ) : (
+                              <div>
+                                <div className={`rounded-2xl border ${C.borderSoft} ${C.surface} overflow-hidden`}>
+                                  <div className={`flex items-center gap-2 px-4 py-2.5 border-b ${C.borderSoft}`}>
+                                    <span style={{ color: C.accent }}>{FORMATS.find(f => f.id === t.format)?.icon}</span>
+                                    <span className={`text-[11px] font-bold uppercase tracking-[0.15em] ${C.dim}`}>
+                                      {FORMATS.find(f => f.id === t.format)?.label}
+                                    </span>
+                                  </div>
+                                  <div className="p-4 sm:p-5">
+                                    <GenerationOutput format={t.format} data={t.data} />
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1 mt-2">
+                                  <button onClick={() => copyGen(t)} className={`p-1.5 rounded-lg ${C.faint} hover:text-white ${C.surfaceHover} transition-colors`} title="Copy">
+                                    <Copy className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button onClick={() => regenerate(i)} disabled={busy} className={`p-1.5 rounded-lg ${C.faint} hover:text-white ${C.surfaceHover} transition-colors`} title="Regenerate">
+                                    <RefreshCw className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => saveGen(i)}
+                                    disabled={saving === i || t.saved}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${t.saved ? 'text-emerald-400' : `${C.faint} hover:text-white ${C.surfaceHover}`}`}
+                                  >
+                                    <Save className="w-3.5 h-3.5" />
+                                    {saving === i ? 'Saving…' : t.saved ? 'Saved' : 'Save to library'}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {busy && (
+                      <div className="flex gap-3">
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 animate-pulse" style={{ background: C.accent }}>
+                          <Asterisk className="w-4 h-4 text-white" />
+                        </div>
+                        <div className={`flex items-center gap-2 text-sm ${C.dim} py-2`}>
+                          <span className="flex gap-1">
+                            {[0, 1, 2].map(d => (
+                              <motion.span key={d} className="w-1.5 h-1.5 rounded-full" style={{ background: C.accent }}
+                                animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2, delay: d * 0.2 }} />
+                            ))}
+                          </span>
+                          POCO is {skill ? 'creating' : 'thinking'}…
+                        </div>
+                      </div>
+                    )}
+                    <div ref={endRef} />
+                  </div>
+                )}
+              </div>
+            </div>
 
-                  <div className="grid sm:grid-cols-2 gap-3 mb-6">
+            {/* ── Composer ── */}
+            <div className="shrink-0 px-4 sm:px-6 pb-5 pt-2">
+              <div className="max-w-3xl mx-auto">
+                <div className={`rounded-3xl border ${C.border} ${C.surface} shadow-[0_8px_40px_rgba(0,0,0,0.35)] focus-within:border-[#D97757]/50 transition-colors`}>
+                  {/* Selected skill chip */}
+                  {activeFormat && (
+                    <div className="px-4 pt-3 -mb-1">
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(217,119,87,0.15)', color: C.accent }}>
+                        {activeFormat.icon} {activeFormat.label}
+                        <button onClick={() => setSkill(null)} className="hover:text-white ml-0.5" title="Back to chat mode"><X className="w-3 h-3" /></button>
+                      </span>
+                    </div>
+                  )}
+                  <textarea
+                    ref={inputRef}
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
+                    }}
+                    placeholder={activeFormat ? `What topic should the ${activeFormat.label.toLowerCase()} cover?` : 'Ask POCO anything…'}
+                    rows={2}
+                    disabled={busy}
+                    className={`w-full bg-transparent outline-none resize-none px-4 pt-3 pb-1 text-[15px] ${C.text} placeholder:text-[#6E695F]`}
+                  />
+                  <div className="flex items-center gap-1.5 px-3 pb-3 flex-wrap">
+                    {/* Skills picker */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setSkillsOpen(o => !o)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${C.border} ${C.dim} hover:text-white ${C.surfaceHover} transition-colors`}
+                      >
+                        <Sparkles className="w-3.5 h-3.5" style={{ color: C.accent }} /> Skills
+                      </button>
+                      <AnimatePresence>
+                        {skillsOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                            transition={{ duration: 0.12 }}
+                            className={`absolute bottom-full mb-2 left-0 w-[290px] sm:w-[330px] rounded-2xl border ${C.border} bg-[#242220] shadow-2xl p-2 z-30`}
+                          >
+                            <p className={`px-2 pt-1 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] ${C.faint}`}>POCO&apos;s skills</p>
+                            <div className="grid grid-cols-2 gap-1 max-h-72 overflow-y-auto">
+                              <button
+                                onClick={() => { setSkill(null); setSkillsOpen(false); inputRef.current?.focus(); }}
+                                className={`flex items-start gap-2 p-2 rounded-xl text-left transition-colors ${!skill ? C.raised : C.surfaceHover}`}
+                              >
+                                <MessageSquare className="w-4 h-4 mt-0.5 shrink-0" style={{ color: C.accent }} />
+                                <span>
+                                  <span className="block text-xs font-semibold">Tutor chat</span>
+                                  <span className={`block text-[10px] ${C.faint}`}>Socratic guidance</span>
+                                </span>
+                              </button>
+                              {FORMATS.map(f => (
+                                <button
+                                  key={f.id}
+                                  onClick={() => { setSkill(f.id); setSkillsOpen(false); inputRef.current?.focus(); }}
+                                  className={`flex items-start gap-2 p-2 rounded-xl text-left transition-colors ${skill === f.id ? C.raised : C.surfaceHover}`}
+                                >
+                                  <span className="mt-0.5 shrink-0" style={{ color: C.accent }}>{f.icon}</span>
+                                  <span>
+                                    <span className="block text-xs font-semibold">{f.label}</span>
+                                    <span className={`block text-[10px] ${C.faint}`}>{f.desc}</span>
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Filters */}
                     <input
-                      type="text"
-                      placeholder="Subject (e.g. Biology)"
                       value={subject}
                       onChange={e => setSubject(e.target.value)}
-                      disabled={generating}
-                      className="bg-white/[0.04] border border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#1A73E8]/60 placeholder:text-slate-500 text-white transition-colors"
+                      placeholder="Subject"
+                      className={`w-24 sm:w-28 px-3 py-1.5 rounded-full text-xs border ${C.border} bg-transparent outline-none ${C.dim} placeholder:text-[#6E695F] focus:text-white transition-colors`}
                     />
                     <select
                       value={level}
                       onChange={e => setLevel(e.target.value)}
-                      disabled={generating}
-                      className="bg-white/[0.04] border border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#1A73E8]/60 cursor-pointer text-white transition-colors"
+                      className={`px-2.5 py-1.5 rounded-full text-xs border ${C.border} bg-[#242220] outline-none ${C.dim} cursor-pointer`}
                     >
-                      {LEVELS.map(l => <option key={l} value={l} className="bg-[#0B0F1A]">{l}</option>)}
+                      {LEVELS.map(l => <option key={l}>{l}</option>)}
                     </select>
-                  </div>
-
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Choose format</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
-                    {FORMATS.map(f => (
-                      <button
-                        key={f.id}
-                        onClick={() => setFormat(f.id)}
-                        disabled={generating}
-                        className={`group relative p-3 rounded-xl border text-left transition-all ${
-                          format === f.id
-                            ? 'bg-[#1A73E8]/10 border-[#1A73E8]/60 ring-1 ring-[#1A73E8]/40 shadow-[0_0_20px_rgba(26,115,232,0.15)]'
-                            : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]'
-                        }`}
+                    {!skill && (
+                      <select
+                        value={chatMode}
+                        onChange={e => setChatMode(e.target.value as typeof chatMode)}
+                        className={`px-2.5 py-1.5 rounded-full text-xs border ${C.border} bg-[#242220] outline-none ${C.dim} cursor-pointer`}
+                        title="Tutor mode"
                       >
-                        <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${f.gradient} flex items-center justify-center mb-2 shadow-sm`}>
-                          <span className="text-white">{f.icon}</span>
-                        </div>
-                        <p className="text-xs font-semibold text-white">{f.label}</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5 leading-snug">{f.desc}</p>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {result && (
-                <div>
-                  <div className="flex items-center justify-between mb-5">
-                    <button
-                      onClick={() => setResult(null)}
-                      className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
-                    >
-                      <ArrowLeft className="w-4 h-4" /> New generation
-                    </button>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={copyResult}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/10 hover:border-white/20 hover:bg-white/[0.07] text-xs font-semibold text-slate-200 transition-all"
-                      >
-                        <Copy className="w-3.5 h-3.5" /> Copy
-                      </button>
-                      <button
-                        onClick={saveToLibrary}
-                        disabled={saving || saved || !user}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#1A73E8] via-[#3B82F6] to-[#7C3AED] disabled:opacity-40 text-xs font-semibold text-white shadow-[0_0_18px_rgba(26,115,232,0.3)] transition-all"
-                      >
-                        <Save className="w-3.5 h-3.5" /> {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save to library'}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 sm:p-8">
-                    <div className="flex items-center gap-2 mb-5 pb-4 border-b border-white/10">
-                      {(() => {
-                        const fmt = FORMATS.find(f => f.id === result.format);
-                        return fmt ? (
-                          <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${fmt.gradient} flex items-center justify-center shrink-0`}>
-                            <span className="text-white">{fmt.icon}</span>
-                          </div>
-                        ) : <Sparkles className="w-4 h-4 text-[#60A5FA]" />;
-                      })()}
-                      <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-                        {FORMATS.find(f => f.id === result.format)?.label ?? result.format}
-                      </span>
-                    </div>
-                    <GenerationOutput format={result.format} data={result.data} />
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          )}
-
-          {panel === 'chat' && (
-            <motion.div
-              key="chat"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-              className="flex flex-col h-full"
-            >
-              <div className="border-b border-white/5 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-4xl mx-auto w-full">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1A73E8] via-[#3B82F6] to-[#7C3AED] flex items-center justify-center shadow-[0_0_20px_rgba(26,115,232,0.35)] shrink-0">
-                    <Brain className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="font-heading text-2xl text-white leading-tight">Ask AI</h2>
-                    <p className="text-xs text-slate-400">Socratic tutor — guides you to the answer.</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 bg-white/[0.03] border border-white/10 rounded-xl p-1">
-                  {CHAT_MODES.map(m => (
-                    <button
-                      key={m.id}
-                      onClick={() => setChatMode(m.id)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${chatMode === m.id ? 'bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white shadow-[0_0_16px_rgba(26,115,232,0.3)]' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                    >
-                      {m.icon}
-                      <span className="hidden sm:inline">{m.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6 max-w-4xl mx-auto w-full space-y-4">
-                {chatHistory.length === 0 && (
-                  <div className="text-center py-20 text-slate-500">
-                    <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center mx-auto mb-4">
-                      <MessageSquare className="w-6 h-6 opacity-60" />
-                    </div>
-                    <p className="text-sm">Ask anything. The AI will guide you to the answer.</p>
-                  </div>
-                )}
-                {chatHistory.map((m, i) => (
-                  <div key={i} className={`flex gap-2.5 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    {m.role === 'assistant' && (
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] flex items-center justify-center shrink-0 mt-0.5">
-                        <Sparkles className="w-3.5 h-3.5 text-white" />
-                      </div>
+                        {CHAT_MODES.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+                      </select>
                     )}
-                    <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                      m.role === 'user'
-                        ? 'bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] text-white'
-                        : 'bg-white/[0.04] border border-white/10 text-slate-100'
-                    }`}>
-                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{m.text}</p>
-                    </div>
+
+                    <span className="flex-1" />
+                    <button
+                      onClick={() => submit()}
+                      disabled={busy || !input.trim()}
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-white disabled:opacity-30 transition-all hover:scale-105 active:scale-95"
+                      style={{ background: C.accent }}
+                      title="Send"
+                    >
+                      {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUp className="w-4.5 h-4.5" />}
+                    </button>
                   </div>
-                ))}
-                {chatSending && (
-                  <div className="flex gap-2.5 justify-start">
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] flex items-center justify-center shrink-0 mt-0.5">
-                      <Sparkles className="w-3.5 h-3.5 text-white" />
-                    </div>
-                    <div className="bg-white/[0.04] border border-white/10 rounded-2xl px-4 py-3 flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
-                      <span className="text-xs text-slate-400">Thinking…</span>
-                    </div>
-                  </div>
-                )}
-                <div ref={chatEndRef} />
+                </div>
+                <p className={`text-center text-[10px] ${C.faint} mt-2`}>
+                  POCO can make mistakes — double-check important answers. {activeFormat ? `Skill: ${activeFormat.label} · ` : ''}{level}
+                </p>
               </div>
-
-              <div className="border-t border-white/5 p-4 max-w-4xl mx-auto w-full">
-                <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-2 flex items-center focus-within:border-[#1A73E8]/60 focus-within:ring-2 focus-within:ring-[#1A73E8]/20 transition-all">
-                  <input
-                    type="text"
-                    placeholder="Ask anything…"
-                    value={chatInput}
-                    onChange={e => setChatInput(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && !chatSending && sendChat()}
-                    disabled={chatSending}
-                    className="flex-1 min-w-0 bg-transparent outline-none text-sm text-white placeholder:text-slate-500 px-3 py-2"
-                  />
-                  <button
-                    onClick={sendChat}
-                    disabled={chatSending || !chatInput.trim()}
-                    className="rounded-xl bg-gradient-to-r from-[#1A73E8] via-[#3B82F6] to-[#7C3AED] hover:opacity-90 disabled:opacity-40 p-2.5 text-white shadow-[0_0_18px_rgba(26,115,232,0.3)] transition-all"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {panel === 'library' && (
-            <motion.div
-              key="library"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-              className="max-w-5xl mx-auto p-8 sm:p-12"
-            >
-              <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
-                <div>
-                  <h2 className="font-heading text-4xl tracking-tight text-white">My Library</h2>
-                  <p className="text-slate-400 mt-1">Saved generations you can revisit anytime.</p>
-                </div>
-                <button
-                  onClick={() => setPanel('home')}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#1A73E8] via-[#3B82F6] to-[#7C3AED] text-white text-sm font-semibold shadow-[0_0_20px_rgba(26,115,232,0.3)]"
-                >
-                  <Plus className="w-4 h-4" /> New generation
-                </button>
-              </div>
-
-              {!user && (
-                <div className="text-center py-20">
-                  <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center mx-auto mb-4">
-                    <Library className="w-6 h-6 text-slate-400" />
-                  </div>
-                  <p className="text-sm text-slate-400 mb-4">Sign in to save generations to your library.</p>
-                  <Link href="/login" className="text-sm font-semibold text-[#60A5FA] hover:underline">Sign in</Link>
-                </div>
-              )}
-
-              {user && libraryLoading && (
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-white/[0.03] border border-white/10 animate-pulse rounded-2xl" />)}
-                </div>
-              )}
-
-              {user && !libraryLoading && library.length === 0 && (
-                <div className="text-center py-20">
-                  <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center mx-auto mb-4">
-                    <History className="w-6 h-6 text-slate-400" />
-                  </div>
-                  <p className="text-sm text-slate-400">Nothing saved yet. Generate something and hit "Save to library".</p>
-                </div>
-              )}
-
-              {user && !libraryLoading && library.length > 0 && (
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {library.map((item, i) => {
-                    const fmt = FORMATS.find(f => f.id === item.type);
-                    return (
-                      <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.04 }}
-                        className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 hover:border-white/20 hover:bg-white/[0.05] transition-all"
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            {fmt && (
-                              <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${fmt.gradient} flex items-center justify-center shrink-0`}>
-                                <span className="text-white">{fmt.icon}</span>
-                              </div>
-                            )}
-                            <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-                              {fmt?.label ?? item.type}
-                            </span>
-                          </div>
-                          <button
-                            onClick={() => removeFromLibrary(item)}
-                            className="text-slate-500 hover:text-red-400 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                        <p className="text-sm font-semibold text-white mb-2">{item.prompt.split('\n')[0].replace(/^Topic:\s*/i, '')}</p>
-                        <p className="text-xs text-slate-400 line-clamp-3 whitespace-pre-wrap">
-                          {(typeof item.result === 'string' ? item.result : JSON.stringify(item.result)).slice(0, 300)}
-                          {item.result.length > 300 ? '…' : ''}
-                        </p>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </>
+        )}
       </main>
+    </div>
+  );
+}
+
+/* ─── Library view ─────────────────────────────────────────── */
+
+function LibraryView({ user, library, loading, onDelete, onNew }: {
+  user: User | null; library: AiGeneration[]; loading: boolean;
+  onDelete: (item: AiGeneration) => void; onNew: () => void;
+}) {
+  return (
+    <div className="flex-1 overflow-y-auto">
+      <div className="max-w-4xl mx-auto px-4 sm:px-8 py-10">
+        <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
+          <div>
+            <h2 className="font-heading text-3xl sm:text-4xl tracking-tight">Library</h2>
+            <p className={`${C.dim} mt-1 text-sm`}>Everything you&apos;ve saved — revisit anytime.</p>
+          </div>
+          <button
+            onClick={onNew}
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-white text-sm font-semibold transition-transform hover:scale-105"
+            style={{ background: C.accent }}
+          >
+            <Plus className="w-4 h-4" /> New chat
+          </button>
+        </div>
+
+        {!user && (
+          <div className="text-center py-24">
+            <Library className={`w-8 h-8 mx-auto mb-4 ${C.faint}`} />
+            <p className={`text-sm ${C.dim} mb-3`}>Sign in to save generations to your library.</p>
+            <Link href="/login" className="text-sm font-semibold hover:underline" style={{ color: C.accent }}>Sign in</Link>
+          </div>
+        )}
+
+        {user && loading && (
+          <div className="grid sm:grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map(i => <div key={i} className={`h-32 ${C.surface} animate-pulse rounded-2xl`} />)}
+          </div>
+        )}
+
+        {user && !loading && library.length === 0 && (
+          <div className="text-center py-24">
+            <Sparkles className={`w-8 h-8 mx-auto mb-4 ${C.faint}`} />
+            <p className={`text-sm ${C.dim}`}>Nothing saved yet — generate something with POCO and hit &ldquo;Save to library&rdquo;.</p>
+          </div>
+        )}
+
+        {user && !loading && library.length > 0 && (
+          <div className="grid sm:grid-cols-2 gap-4">
+            {library.map((item, i) => {
+              const fmt = FORMATS.find(f => f.id === item.type);
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                  className={`${C.surface} border ${C.borderSoft} rounded-2xl p-5 hover:border-[#4A463F] transition-colors`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      {fmt && <span style={{ color: C.accent }}>{fmt.icon}</span>}
+                      <span className={`text-[11px] font-bold uppercase tracking-[0.15em] ${C.dim}`}>{fmt?.label ?? item.type}</span>
+                    </div>
+                    <button onClick={() => onDelete(item)} className={`${C.faint} hover:text-red-400 transition-colors`} title="Delete">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <p className="text-sm font-semibold mb-2">{item.prompt.split('\n')[0].replace(/^Topic:\s*/i, '')}</p>
+                  <p className={`text-xs ${C.dim} line-clamp-3 whitespace-pre-wrap`}>
+                    {(typeof item.result === 'string' ? item.result : JSON.stringify(item.result)).slice(0, 300)}
+                    {item.result.length > 300 ? '…' : ''}
+                  </p>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 /* ─── Generation output renderer ───────────────────────────── */
 
-const PROSE_CLASSES = 'prose prose-sm prose-invert max-w-none prose-headings:font-heading prose-headings:text-white prose-p:text-slate-300 prose-strong:text-white prose-li:text-slate-300 prose-a:text-[#60A5FA] prose-blockquote:border-l-[#1A73E8] prose-blockquote:text-slate-400 prose-hr:border-white/10 prose-code:text-[#93C5FD]';
+const PROSE_CLASSES = 'prose prose-sm prose-invert max-w-none prose-headings:font-heading prose-headings:text-white prose-p:text-[#D8D4CC] prose-strong:text-white prose-li:text-[#D8D4CC] prose-a:text-[#E39A7F] prose-blockquote:border-l-[#D97757] prose-blockquote:text-[#A8A296] prose-hr:border-[#3A3733] prose-code:text-[#E8B39C]';
 
 function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
   if (format === 'flashcards' && Array.isArray(data)) {
     return (
       <div className="grid sm:grid-cols-2 gap-3">
         {data.map((card: any, i: number) => (
-          <div key={i} className="rounded-xl bg-white/[0.03] border border-white/10 p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-[#60A5FA] mb-2">Question</p>
+          <div key={i} className="rounded-xl bg-[#1F1E1C] border border-[#2E2B28] p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#E39A7F' }}>Question</p>
             <p className="text-sm text-white mb-3">{card.question}</p>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-400 mb-2">Answer</p>
-            <p className="text-sm text-slate-300">{card.answer}</p>
+            <p className="text-sm text-[#D8D4CC]">{card.answer}</p>
           </div>
         ))}
       </div>
@@ -632,18 +700,16 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
     return (
       <div className="space-y-4">
         {data.map((q: any, i: number) => (
-          <div key={i} className="rounded-xl bg-white/[0.03] border border-white/10 p-4">
+          <div key={i} className="rounded-xl bg-[#1F1E1C] border border-[#2E2B28] p-4">
             <p className="text-sm font-semibold text-white mb-3">{i + 1}. {q.question}</p>
             <ul className="space-y-1.5 mb-3">
               {q.options?.map((opt: string, j: number) => (
-                <li key={j} className={`text-sm rounded-lg px-3 py-2 ${q.answer === String.fromCharCode(65 + j) || q.answer === opt ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30' : 'bg-white/[0.02] text-slate-300 border border-transparent'}`}>
+                <li key={j} className={`text-sm rounded-lg px-3 py-2 ${q.answer === String.fromCharCode(65 + j) || q.answer === opt ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30' : 'bg-white/[0.02] text-[#D8D4CC] border border-transparent'}`}>
                   {String.fromCharCode(65 + j)}. {opt}
                 </li>
               ))}
             </ul>
-            {q.explanation && (
-              <p className="text-xs text-slate-400 italic">{q.explanation}</p>
-            )}
+            {q.explanation && <p className="text-xs text-[#A8A296] italic">{q.explanation}</p>}
           </div>
         ))}
       </div>
@@ -653,12 +719,12 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
     return (
       <div className="space-y-4">
         {data.map((slide: any, i: number) => (
-          <div key={i} className="rounded-xl bg-gradient-to-br from-[#0F1530] to-[#070A14] border border-white/10 p-6">
-            <p className="text-xs text-slate-500 mb-2">Slide {i + 1}</p>
+          <div key={i} className="rounded-xl bg-gradient-to-br from-[#2B2320] to-[#1B1917] border border-[#2E2B28] p-6">
+            <p className="text-xs text-[#6E695F] mb-2">Slide {i + 1}</p>
             <h3 className="font-heading text-2xl text-white mb-3">{slide.title}</h3>
             <ul className="space-y-2">
               {slide.bullets?.map((b: string, j: number) => (
-                <li key={j} className="text-sm text-slate-300 flex gap-2"><ChevronRight className="w-4 h-4 text-[#60A5FA] mt-0.5 shrink-0" />{b}</li>
+                <li key={j} className="text-sm text-[#D8D4CC] flex gap-2"><ChevronRight className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#D97757' }} />{b}</li>
               ))}
             </ul>
           </div>
@@ -670,9 +736,9 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
     return (
       <div className="space-y-2">
         {data.map((g: any, i: number) => (
-          <div key={i} className="rounded-xl bg-white/[0.03] border border-white/10 p-4">
-            <p className="text-sm font-bold text-[#93C5FD] mb-1">{g.term}</p>
-            <p className="text-xs text-slate-300">{g.definition}</p>
+          <div key={i} className="rounded-xl bg-[#1F1E1C] border border-[#2E2B28] p-4">
+            <p className="text-sm font-bold mb-1" style={{ color: '#E8B39C' }}>{g.term}</p>
+            <p className="text-xs text-[#D8D4CC]">{g.definition}</p>
           </div>
         ))}
       </div>
@@ -688,8 +754,8 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
     return (
       <div className="space-y-4">
         <VideoPlayer script={data} />
-        <details className="rounded-xl bg-white/[0.03] border border-white/10 overflow-hidden">
-          <summary className="cursor-pointer select-none px-4 py-3 text-xs font-semibold uppercase tracking-widest text-slate-400 hover:text-white transition-colors">
+        <details className="rounded-xl bg-[#1F1E1C] border border-[#2E2B28] overflow-hidden">
+          <summary className="cursor-pointer select-none px-4 py-3 text-xs font-semibold uppercase tracking-widest text-[#A8A296] hover:text-white transition-colors">
             View storyboard &amp; script
           </summary>
           <div className="px-4 pb-4">
@@ -702,7 +768,6 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
   if (format === 'audioScript' && typeof data === 'string') {
     return <SmartAudioPlayer script={data} dark />;
   }
-  // text / notes / summary / problems → markdown
   const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
   return (
     <div className={PROSE_CLASSES}>
