@@ -42,6 +42,14 @@ export function SmartAudioPlayer({ script, title, dark }: { script: string; titl
 
   useEffect(() => () => { if (urlRef.current) URL.revokeObjectURL(urlRef.current); }, []);
 
+  // Auto-generate the human AI voice on mount so it plays without a click.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (autoStarted.current || !script.trim()) return;
+    autoStarted.current = true;
+    generate();
+  }, [script]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const generate = async (v = voice) => {
     setState('generating');
     setPlaying(false);

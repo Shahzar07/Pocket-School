@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Captions, CaptionsOff, Image as ImageIcon, Loader2, Maximize, Minimize, Pause, Play,
-  SkipBack, SkipForward, Sparkles, Video,
+  Captions, CaptionsOff, Globe, Image as ImageIcon, Loader2, Maximize, Minimize, Pause, Play,
+  SkipBack, SkipForward, Sparkles, Video, Volume2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { parseScenes, type Scene } from '@/components/video-storyboard';
 
 const SCENE_THEMES = [
@@ -16,6 +17,51 @@ const SCENE_THEMES = [
   'from-amber-950 via-orange-900 to-slate-950',
   'from-emerald-950 via-green-900 to-slate-950',
 ];
+
+/** Languages the video can be translated + narrated into. */
+const LANGUAGES: { code: string; label: string; flag: string }[] = [
+  { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'ar', label: 'العربية', flag: '🇸🇦' },
+  { code: 'es', label: 'Español', flag: '🇪🇸' },
+  { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'pt', label: 'Português', flag: '🇧🇷' },
+  { code: 'zh', label: '中文', flag: '🇨🇳' },
+  { code: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
+  { code: 'ur', label: 'اردو', flag: '🇵🇰' },
+  { code: 'tr', label: 'Türkçe', flag: '🇹🇷' },
+  { code: 'ja', label: '日本語', flag: '🇯🇵' },
+  { code: 'ko', label: '한국어', flag: '🇰🇷' },
+  { code: 'it', label: 'Italiano', flag: '🇮🇹' },
+  { code: 'ru', label: 'Русский', flag: '🇷🇺' },
+  { code: 'sw', label: 'Kiswahili', flag: '🇰🇪' },
+];
+
+/** BCP-47 hints for picking a matching browser voice per app language. */
+const LANG_BCP47: Record<string, string> = {
+  en: 'en', ar: 'ar', es: 'es', fr: 'fr', de: 'de', pt: 'pt', zh: 'zh',
+  hi: 'hi', ur: 'ur', tr: 'tr', ja: 'ja', ko: 'ko', it: 'it', ru: 'ru', sw: 'sw',
+};
+
+/**
+ * Pick the most natural-sounding available browser voice for a language.
+ * Prefers cloud / neural / named premium voices over the flat default.
+ */
+function pickBrowserVoice(lang: string): SpeechSynthesisVoice | null {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
+  const all = window.speechSynthesis.getVoices();
+  if (!all.length) return null;
+  const prefix = (LANG_BCP47[lang] ?? 'en').toLowerCase();
+  const inLang = all.filter(v => v.lang.toLowerCase().startsWith(prefix));
+  const pool = inLang.length ? inLang : all.filter(v => v.lang.toLowerCase().startsWith('en'));
+  const preferred = ['Google', 'Natural', 'Neural', 'Premium', 'Enhanced', 'Samantha', 'Serena', 'Karen', 'Daniel', 'Moira', 'Aria'];
+  for (const name of preferred) {
+    const hit = pool.find(v => v.name.includes(name));
+    if (hit) return hit;
+  }
+  // Prefer non-"compact"/default local voices next.
+  return pool.find(v => !/compact/i.test(v.name)) ?? pool[0] ?? all[0] ?? null;
+}
 
 /** Rough speech duration estimate for browser-voice progress (words ÷ 2.6/s). */
 function estimateSeconds(text: string) {
@@ -38,14 +84,28 @@ function fmtTime(s: number) {
  * work like a normal video player.
  */
 export function VideoPlayer({ script, title }: { script: string; title?: string }) {
-  const scenes = useMemo(() => parseScenes(script), [script]);
+  // The script actually played — starts as the prop, swapped when translated.
+  const [activeScript, setActiveScript] = useState(script);
+  const scenes = useMemo(() => parseScenes(activeScript), [activeScript]);
+
   const [current, setCurrent] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [captionsOn, setCaptionsOn] = useState(true);
   const [fullscreen, setFullscreen] = useState(false);
   const [sceneProgress, setSceneProgress] = useState(0); // 0..1 within scene
-  const [hdState, setHdState] = useState<'off' | 'generating' | 'on' | 'unavailable'>('off');
-  const [hdProgress, setHdProgress] = useState(0);
+
+  // AI narration voice (Gemini TTS) — generated automatically so playback is
+  // human-sounding by default, not the robotic browser voice.
+  const [voiceState, setVoiceState] = useState<'idle' | 'generating' | 'on' | 'unavailable'>('idle');
+  const [voiceProgress, setVoiceProgress] = useState(0);
+  const [voiceName, setVoiceName] = useState('Kore');
+
+  // Language / translation
+  const initialLang = typeof window !== 'undefined' ? (localStorage.getItem('pocket-school-lang') || 'en') : 'en';
+  const [lang, setLang] = useState(initialLang);
+  const [langOpen, setLangOpen] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const translationCache = useRef<Record<string, string>>({ en: script });
 
   // AI-generated scene visuals
   const [images, setImages] = useState<(string | null)[]>(() => scenes.map(() => null));
@@ -58,6 +118,7 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const playingRef = useRef(false);
   const currentRef = useRef(0);
+  const voiceGenId = useRef(0); // cancels stale voice generation on lang change
 
   const durations = useMemo(() => scenes.map(s => estimateSeconds(s.narration || s.title)), [scenes]);
   const totalDuration = useMemo(() => durations.reduce((a, b) => a + b, 0), [durations]);
@@ -108,6 +169,22 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
     return () => { cancelled = true; clearTimeout(t); };
   }, [scenes, generateVisuals]);
 
+  // When the incoming script prop changes, reset language + translation cache.
+  useEffect(() => {
+    translationCache.current = { en: script };
+    setActiveScript(script);
+    setLang(initialLang);
+  }, [script]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Preload browser voices (getVoices is async on first call in some browsers).
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    const warm = () => window.speechSynthesis.getVoices();
+    warm();
+    window.speechSynthesis.onvoiceschanged = warm;
+    return () => { window.speechSynthesis.onvoiceschanged = null; };
+  }, []);
+
   useEffect(() => {
     const onFsChange = () => setFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', onFsChange);
@@ -135,8 +212,9 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
     const narration = scene.narration || scene.title;
     const advance = () => { if (playingRef.current) playScene(index + 1); };
 
+    // Prefer the real AI voice clip for this scene whenever it's ready.
     const clip = hdClips.current[index];
-    if (hdState === 'on' && clip) {
+    if (clip) {
       const audio = new Audio(clip);
       audioRef.current = audio;
       audio.onended = advance;
@@ -148,7 +226,8 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
       return;
     }
 
-    // Browser-voice narration with time-based progress estimation.
+    // Browser-voice fallback — pick the most natural available voice and warm
+    // it up slightly so it sounds less robotic while the AI clip is still baking.
     const est = estimateSeconds(narration);
     const startAt = Date.now();
     timerRef.current = setInterval(() => {
@@ -157,15 +236,17 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
 
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       const utter = new SpeechSynthesisUtterance(narration.replace(/\s+/g, ' '));
-      utter.rate = 1;
+      const v = pickBrowserVoice(lang);
+      if (v) { utter.voice = v; utter.lang = v.lang; }
+      utter.rate = 0.97;
+      utter.pitch = 1.05;
       utter.onend = advance;
       utter.onerror = advance;
       window.speechSynthesis.speak(utter);
     } else {
-      // No speech support — advance on the estimated timer instead.
       setTimeout(advance, est * 1000);
     }
-  }, [scenes, hdState, stopNarration]);
+  }, [scenes, lang, stopNarration]);
 
   const togglePlay = () => {
     if (playing) {
@@ -194,33 +275,87 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
     else stageRef.current.requestFullscreen().catch(() => {});
   };
 
-  const generateHd = async () => {
-    setHdState('generating');
-    setHdProgress(0);
-    const clips: (string | null)[] = [];
-    for (let i = 0; i < scenes.length; i++) {
+  // Generate a real human-sounding AI voice clip per scene (Gemini TTS).
+  // Runs automatically so the video is voiced without any button press.
+  const generateVoices = useCallback(async (scenesToVoice: Scene[], voice: string) => {
+    const genId = ++voiceGenId.current;
+    // Free old clips
+    hdClips.current.forEach(c => { if (c) URL.revokeObjectURL(c); });
+    hdClips.current = scenesToVoice.map(() => null);
+    setVoiceState('generating');
+    setVoiceProgress(0);
+    let anyOk = false;
+    for (let i = 0; i < scenesToVoice.length; i++) {
+      if (voiceGenId.current !== genId) return; // superseded (language changed)
       try {
         const res = await fetch('/api/ai/audio', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ script: scenes[i].narration || scenes[i].title, voice: 'Charon' }),
+          body: JSON.stringify({ script: scenesToVoice[i].narration || scenesToVoice[i].title, voice }),
         });
         const type = res.headers.get('content-type') ?? '';
         if (res.ok && type.includes('audio')) {
-          clips.push(URL.createObjectURL(await res.blob()));
-        } else {
-          // Provider unavailable — abandon HD generation entirely.
-          setHdState('unavailable');
-          return;
+          if (voiceGenId.current !== genId) return;
+          hdClips.current[i] = URL.createObjectURL(await res.blob());
+          anyOk = true;
         }
-      } catch {
-        setHdState('unavailable');
-        return;
-      }
-      setHdProgress((i + 1) / scenes.length);
+      } catch { /* keep browser-voice fallback for this scene */ }
+      if (voiceGenId.current !== genId) return;
+      setVoiceProgress((i + 1) / scenesToVoice.length);
     }
-    hdClips.current = clips;
-    setHdState('on');
+    setVoiceState(anyOk ? 'on' : 'unavailable');
+  }, []);
+
+  const changeVoice = (voice: string) => {
+    setVoiceName(voice);
+    generateVoices(scenes, voice);
+  };
+
+  // Auto-generate the human AI voice whenever the (possibly translated) scenes
+  // change — so every video is voiced without the user doing anything.
+  const voiceNameRef = useRef(voiceName);
+  voiceNameRef.current = voiceName;
+  useEffect(() => {
+    if (!scenes.length) return;
+    generateVoices(scenes, voiceNameRef.current);
+  }, [scenes, generateVoices]);
+
+  // Switch language: translate the storyboard, then re-voice + re-render.
+  const switchLanguage = async (code: string) => {
+    setLangOpen(false);
+    if (code === lang) return;
+    setLang(code);
+    // Cancel any narration in flight and reset to the top.
+    playingRef.current = false; setPlaying(false); stopNarration();
+    setCurrent(0); currentRef.current = 0; setSceneProgress(0);
+
+    if (translationCache.current[code]) {
+      setActiveScript(translationCache.current[code]);
+      return;
+    }
+    setTranslating(true);
+    try {
+      const res = await fetch('/api/ai/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: script, language: code }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.result) {
+        translationCache.current[code] = data.result;
+        setActiveScript(data.result);
+      } else {
+        toast.error(data.error || 'Translation failed — showing English.');
+        setLang('en');
+        setActiveScript(script);
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'Translation failed.');
+      setLang('en');
+      setActiveScript(script);
+    } finally {
+      setTranslating(false);
+    }
   };
 
   const theme = SCENE_THEMES[current % SCENE_THEMES.length];
@@ -370,25 +505,64 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
                 <ImageIcon className="w-3.5 h-3.5" /> Retry visuals
               </button>
             )}
-            {hdState === 'off' && (
-              <button
-                onClick={generateHd}
-                className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-amber-300 hover:text-amber-200"
-                title="Generate studio-quality AI narration"
-              >
-                <Sparkles className="w-3.5 h-3.5" /> HD Voice
+
+            {/* Voice status */}
+            {voiceState === 'generating' && (
+              <span className="hidden sm:flex items-center gap-1.5 text-[11px] text-white/70" title="Generating human AI voice">
+                <Volume2 className="w-3.5 h-3.5" /> {Math.round(voiceProgress * 100)}%
+              </span>
+            )}
+            {voiceState === 'on' && (
+              <span className="hidden sm:flex items-center gap-1 text-[11px] font-semibold text-emerald-300" title="Human AI narration">
+                <Sparkles className="w-3.5 h-3.5" /> AI Voice
+              </span>
+            )}
+            {voiceState === 'unavailable' && (
+              <button onClick={() => generateVoices(scenes, voiceName)} className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-amber-300 hover:text-amber-200" title="Retry AI voice">
+                <Volume2 className="w-3.5 h-3.5" /> Retry voice
               </button>
             )}
-            {hdState === 'generating' && (
-              <span className="hidden sm:flex items-center gap-1.5 text-[11px] text-white/70">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> {Math.round(hdProgress * 100)}%
-              </span>
-            )}
-            {hdState === 'on' && (
-              <span className="hidden sm:flex items-center gap-1 text-[11px] font-semibold text-emerald-300">
-                <Sparkles className="w-3.5 h-3.5" /> HD
-              </span>
-            )}
+
+            {/* Voice picker */}
+            <select
+              value={voiceName}
+              onChange={e => changeVoice(e.target.value)}
+              className="hidden sm:block bg-black/40 text-white/80 text-[11px] rounded-md px-1.5 py-1 border border-white/15 outline-none cursor-pointer"
+              title="Narrator voice"
+            >
+              <option value="Kore">Kore · warm</option>
+              <option value="Puck">Puck · upbeat</option>
+              <option value="Aoede">Aoede · breezy</option>
+              <option value="Charon">Charon · deep</option>
+              <option value="Leda">Leda · youthful</option>
+              <option value="Zephyr">Zephyr · bright</option>
+            </select>
+
+            {/* Language selector */}
+            <div className="relative">
+              <button
+                onClick={() => setLangOpen(o => !o)}
+                className="flex items-center gap-1 text-white/80 hover:text-white text-[11px] font-semibold"
+                title="Translate video"
+              >
+                {translating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe className="w-4 h-4" />}
+                <span className="hidden sm:inline">{LANGUAGES.find(l => l.code === lang)?.flag}</span>
+              </button>
+              {langOpen && (
+                <div className="absolute bottom-full right-0 mb-2 w-40 max-h-60 overflow-y-auto rounded-xl bg-[#15161c] border border-white/10 shadow-2xl py-1 z-30">
+                  {LANGUAGES.map(l => (
+                    <button
+                      key={l.code}
+                      onClick={() => switchLanguage(l.code)}
+                      className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left transition-colors ${l.code === lang ? 'bg-white/10 text-white font-semibold' : 'text-white/70 hover:bg-white/5'}`}
+                    >
+                      <span>{l.flag}</span> {l.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <button onClick={() => setCaptionsOn(c => !c)} className="text-white/80 hover:text-white" aria-label="Toggle captions">
               {captionsOn ? <Captions className="w-4 h-4" /> : <CaptionsOff className="w-4 h-4" />}
             </button>
@@ -408,7 +582,8 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
         <span>·</span>
         <span>~{fmtTime(totalDuration)}</span>
         <span>·</span>
-        <span>{hdState === 'on' ? 'AI HD narration' : 'Narrated'}</span>
+        <span>{voiceState === 'on' ? 'Human AI voice' : voiceState === 'generating' ? 'Voicing…' : 'Narrated'}</span>
+        {lang !== 'en' && <><span>·</span><span>{LANGUAGES.find(l => l.code === lang)?.label}</span></>}
       </div>
     </div>
   );
