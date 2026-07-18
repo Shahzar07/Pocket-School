@@ -71,7 +71,7 @@ type Turn =
 
 interface Chat { id: number; title: string; turns: Turn[] }
 
-/* Warm charcoal palette (Claude-like) */
+/* Warm charcoal palette with a soothing golden-yellow accent */
 const C = {
   bg: 'bg-[#1A1918]',
   surface: 'bg-[#242220]',
@@ -82,8 +82,67 @@ const C = {
   text: 'text-[#EDEAE4]',
   dim: 'text-[#A8A296]',
   faint: 'text-[#6E695F]',
-  accent: '#D97757',
+  accent: '#E8C15E',
+  accentInk: '#1A1918',
 };
+
+/* Rotating status lines POCO shows while working. */
+const THINKING_PHRASES = [
+  'Searching and thinking the best solutions for you…',
+  'Good question — connecting the dots…',
+  'Reasoning it through, step by step…',
+  'Almost there — sharpening the answer…',
+];
+const CREATING_PHRASES = [
+  'Welcome, future champ — POCO is on it ✨',
+  'Searching and thinking the best solutions for you…',
+  'Good idea — there you got! Drafting it now…',
+  'Sketching the big picture…',
+  'Cooking something brilliant for you…',
+  'Polishing every detail…',
+];
+
+function PocoWorking({ creating }: { creating: boolean }) {
+  const phrases = creating ? CREATING_PHRASES : THINKING_PHRASES;
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setIdx(i => (i + 1) % phrases.length), 2400);
+    return () => clearInterval(t);
+  }, [phrases.length]);
+  return (
+    <div className="flex gap-3">
+      <motion.div
+        className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1"
+        style={{ background: C.accent }}
+        animate={{ rotate: 360, scale: [1, 1.08, 1] }}
+        transition={{ rotate: { repeat: Infinity, duration: 3.5, ease: 'linear' }, scale: { repeat: Infinity, duration: 1.6 } }}
+      >
+        <Asterisk className="w-4 h-4" style={{ color: C.accentInk }} />
+      </motion.div>
+      <div className="flex items-center gap-2.5 py-2 min-h-[36px]">
+        <span className="flex gap-1">
+          {[0, 1, 2].map(d => (
+            <motion.span key={d} className="w-1.5 h-1.5 rounded-full" style={{ background: C.accent }}
+              animate={{ opacity: [0.25, 1, 0.25], y: [0, -3, 0] }}
+              transition={{ repeat: Infinity, duration: 1.1, delay: d * 0.18 }} />
+          ))}
+        </span>
+        <AnimatePresence mode="wait">
+          <motion.span
+            key={idx}
+            initial={{ opacity: 0, y: 8, filter: 'blur(4px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -8, filter: 'blur(4px)' }}
+            transition={{ duration: 0.35 }}
+            className="text-sm text-[#A8A296]"
+          >
+            {phrases[idx]}
+          </motion.span>
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
 
 export default function AiStudio() {
   const [user, setUser] = useState<User | null>(null);
@@ -262,7 +321,7 @@ export default function AiStudio() {
         <div className="p-3">
           <Link href="/" className="flex items-center gap-2.5 px-2 py-2 mb-1">
             <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: C.accent }}>
-              <Asterisk className="w-5 h-5 text-white" />
+              <Asterisk className="w-5 h-5 text-[#1A1918]" />
             </div>
             <div>
               <p className="text-[15px] font-bold leading-tight">POCO</p>
@@ -317,7 +376,7 @@ export default function AiStudio() {
         <div className={`p-3 border-t ${C.borderSoft} space-y-1`}>
           {user ? (
             <div className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl ${C.surface}`}>
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ background: C.accent }}>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-[#1A1918] shrink-0" style={{ background: C.accent }}>
                 {(user.email ?? 'U').slice(0, 2).toUpperCase()}
               </div>
               <span className={`text-xs ${C.dim} truncate`}>{user.email}</span>
@@ -342,7 +401,7 @@ export default function AiStudio() {
         <div className={`lg:hidden flex items-center gap-3 px-4 py-3 border-b ${C.borderSoft}`}>
           <button onClick={() => setSidebarOpen(true)} className={C.dim}><Menu className="w-5 h-5" /></button>
           <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: C.accent }}>
-            <Asterisk className="w-4 h-4 text-white" />
+            <Asterisk className="w-4 h-4 text-[#1A1918]" />
           </div>
           <span className="text-sm font-bold">POCO</span>
         </div>
@@ -364,9 +423,9 @@ export default function AiStudio() {
                       animate={{ scale: 1, opacity: 1, rotate: 0 }}
                       transition={{ type: 'spring', damping: 14 }}
                       className="w-14 h-14 rounded-full flex items-center justify-center mb-6"
-                      style={{ background: C.accent, boxShadow: '0 0 48px rgba(217,119,87,0.35)' }}
+                      style={{ background: C.accent, boxShadow: '0 0 48px rgba(232,193,94,0.35)' }}
                     >
-                      <Asterisk className="w-8 h-8 text-white" />
+                      <Asterisk className="w-8 h-8 text-[#1A1918]" />
                     </motion.div>
                     <h1 className="font-heading text-3xl sm:text-[2.6rem] leading-tight tracking-tight mb-3">
                       Hi, I&apos;m <span style={{ color: C.accent }}>POCO</span>.
@@ -397,7 +456,7 @@ export default function AiStudio() {
                           <div key={i} className="flex justify-end">
                             <div className={`max-w-[85%] rounded-2xl rounded-br-md px-4 py-3 ${C.raised}`}>
                               {t.skill && (
-                                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-1.5 px-2 py-0.5 rounded-full" style={{ background: 'rgba(217,119,87,0.15)', color: C.accent }}>
+                                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-1.5 px-2 py-0.5 rounded-full" style={{ background: 'rgba(232,193,94,0.18)', color: C.accent }}>
                                   {FORMATS.find(f => f.id === t.skill)?.icon}
                                   {FORMATS.find(f => f.id === t.skill)?.label}
                                 </span>
@@ -410,11 +469,11 @@ export default function AiStudio() {
                       return (
                         <div key={i} className="flex gap-3">
                           <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1" style={{ background: C.accent }}>
-                            <Asterisk className="w-4 h-4 text-white" />
+                            <Asterisk className="w-4 h-4 text-[#1A1918]" />
                           </div>
                           <div className="flex-1 min-w-0">
                             {t.kind === 'chat' ? (
-                              <div className="prose prose-sm prose-invert max-w-none prose-headings:font-heading prose-p:text-[#D8D4CC] prose-p:text-[15px] prose-p:leading-relaxed prose-strong:text-white prose-li:text-[#D8D4CC] prose-a:text-[#E39A7F] prose-code:text-[#E8B39C]">
+                              <div className="prose prose-sm prose-invert max-w-none prose-headings:font-heading prose-p:text-[#D8D4CC] prose-p:text-[15px] prose-p:leading-relaxed prose-strong:text-white prose-li:text-[#D8D4CC] prose-a:text-[#EAD28A] prose-code:text-[#F0DCA0]">
                                 <MathMarkdown>{t.text}</MathMarkdown>
                               </div>
                             ) : (
@@ -452,22 +511,7 @@ export default function AiStudio() {
                         </div>
                       );
                     })}
-                    {busy && (
-                      <div className="flex gap-3">
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 animate-pulse" style={{ background: C.accent }}>
-                          <Asterisk className="w-4 h-4 text-white" />
-                        </div>
-                        <div className={`flex items-center gap-2 text-sm ${C.dim} py-2`}>
-                          <span className="flex gap-1">
-                            {[0, 1, 2].map(d => (
-                              <motion.span key={d} className="w-1.5 h-1.5 rounded-full" style={{ background: C.accent }}
-                                animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2, delay: d * 0.2 }} />
-                            ))}
-                          </span>
-                          POCO is {skill ? 'creating' : 'thinking'}…
-                        </div>
-                      </div>
-                    )}
+                    {busy && <PocoWorking creating={!!skill} />}
                     <div ref={endRef} />
                   </div>
                 )}
@@ -477,11 +521,11 @@ export default function AiStudio() {
             {/* ── Composer ── */}
             <div className="shrink-0 px-4 sm:px-6 pb-5 pt-2">
               <div className="max-w-3xl mx-auto">
-                <div className={`rounded-3xl border ${C.border} ${C.surface} shadow-[0_8px_40px_rgba(0,0,0,0.35)] focus-within:border-[#D97757]/50 transition-colors`}>
+                <div className={`rounded-3xl border ${C.border} ${C.surface} shadow-[0_8px_40px_rgba(0,0,0,0.35)] focus-within:border-[#E8C15E]/50 transition-colors`}>
                   {/* Selected skill chip */}
                   {activeFormat && (
                     <div className="px-4 pt-3 -mb-1">
-                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(217,119,87,0.15)', color: C.accent }}>
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(232,193,94,0.18)', color: C.accent }}>
                         {activeFormat.icon} {activeFormat.label}
                         <button onClick={() => setSkill(null)} className="hover:text-white ml-0.5" title="Back to chat mode"><X className="w-3 h-3" /></button>
                       </span>
@@ -577,7 +621,7 @@ export default function AiStudio() {
                     <button
                       onClick={() => submit()}
                       disabled={busy || !input.trim()}
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-white disabled:opacity-30 transition-all hover:scale-105 active:scale-95"
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-[#1A1918] disabled:opacity-30 transition-all hover:scale-105 active:scale-95"
                       style={{ background: C.accent }}
                       title="Send"
                     >
@@ -613,7 +657,7 @@ function LibraryView({ user, library, loading, onDelete, onNew }: {
           </div>
           <button
             onClick={onNew}
-            className="flex items-center gap-2 px-4 py-2 rounded-full text-white text-sm font-semibold transition-transform hover:scale-105"
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-[#1A1918] text-sm font-semibold transition-transform hover:scale-105"
             style={{ background: C.accent }}
           >
             <Plus className="w-4 h-4" /> New chat
@@ -679,7 +723,7 @@ function LibraryView({ user, library, loading, onDelete, onNew }: {
 
 /* ─── Generation output renderer ───────────────────────────── */
 
-const PROSE_CLASSES = 'prose prose-sm prose-invert max-w-none prose-headings:font-heading prose-headings:text-white prose-p:text-[#D8D4CC] prose-strong:text-white prose-li:text-[#D8D4CC] prose-a:text-[#E39A7F] prose-blockquote:border-l-[#D97757] prose-blockquote:text-[#A8A296] prose-hr:border-[#3A3733] prose-code:text-[#E8B39C]';
+const PROSE_CLASSES = 'prose prose-sm prose-invert max-w-none prose-headings:font-heading prose-headings:text-white prose-p:text-[#D8D4CC] prose-strong:text-white prose-li:text-[#D8D4CC] prose-a:text-[#EAD28A] prose-blockquote:border-l-[#E8C15E] prose-blockquote:text-[#A8A296] prose-hr:border-[#3A3733] prose-code:text-[#F0DCA0]';
 
 function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
   if (format === 'flashcards' && Array.isArray(data)) {
@@ -687,7 +731,7 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
       <div className="grid sm:grid-cols-2 gap-3">
         {data.map((card: any, i: number) => (
           <div key={i} className="rounded-xl bg-[#1F1E1C] border border-[#2E2B28] p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#E39A7F' }}>Question</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#EAD28A' }}>Question</p>
             <p className="text-sm text-white mb-3">{card.question}</p>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-400 mb-2">Answer</p>
             <p className="text-sm text-[#D8D4CC]">{card.answer}</p>
@@ -724,7 +768,7 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
             <h3 className="font-heading text-2xl text-white mb-3">{slide.title}</h3>
             <ul className="space-y-2">
               {slide.bullets?.map((b: string, j: number) => (
-                <li key={j} className="text-sm text-[#D8D4CC] flex gap-2"><ChevronRight className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#D97757' }} />{b}</li>
+                <li key={j} className="text-sm text-[#D8D4CC] flex gap-2"><ChevronRight className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#E8C15E' }} />{b}</li>
               ))}
             </ul>
           </div>
@@ -737,7 +781,7 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
       <div className="space-y-2">
         {data.map((g: any, i: number) => (
           <div key={i} className="rounded-xl bg-[#1F1E1C] border border-[#2E2B28] p-4">
-            <p className="text-sm font-bold mb-1" style={{ color: '#E8B39C' }}>{g.term}</p>
+            <p className="text-sm font-bold mb-1" style={{ color: '#F0DCA0' }}>{g.term}</p>
             <p className="text-xs text-[#D8D4CC]">{g.definition}</p>
           </div>
         ))}

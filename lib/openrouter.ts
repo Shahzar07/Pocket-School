@@ -16,10 +16,11 @@ export const VIDEO_MODEL = 'openai/gpt-5-mini';
 export const SMART_MODEL = CONTENT_MODEL;
 
 /** OpenRouter routing fallbacks per primary model: if the primary is down,
- * unavailable, or rejected, OpenRouter tries the next id in the list. */
+ * unavailable, or rejected, OpenRouter tries the next id in the list.
+ * HARD LIMIT: OpenRouter rejects `models` arrays longer than 3 items. */
 const FALLBACKS: Record<string, string[]> = {
-  [CONTENT_MODEL]: [CONTENT_MODEL, 'z-ai/glm-4.6', 'google/gemini-2.0-flash-001', 'openai/gpt-4o-mini'],
-  [VIDEO_MODEL]: [VIDEO_MODEL, 'z-ai/glm-4.6', 'openai/gpt-4o-mini', 'google/gemini-2.0-flash-001'],
+  [CONTENT_MODEL]: [CONTENT_MODEL, 'z-ai/glm-4.6', 'google/gemini-2.0-flash-001'],
+  [VIDEO_MODEL]: [VIDEO_MODEL, 'z-ai/glm-4.6', 'openai/gpt-4o-mini'],
 };
 
 const MAX_RETRIES = 3;
@@ -60,7 +61,7 @@ export async function callOpenRouter(
         },
         body: JSON.stringify({
           model,
-          ...(FALLBACKS[model] ? { models: FALLBACKS[model] } : {}),
+          ...(FALLBACKS[model] ? { models: FALLBACKS[model].slice(0, 3) } : {}),
           ...(isGpt5
             ? { reasoning: { effort: 'low' } } // keep latency + cost minimal
             : { temperature: opts?.temperature ?? 0.7 }),
