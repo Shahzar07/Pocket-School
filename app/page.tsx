@@ -4,7 +4,6 @@ import { motion, useScroll, useTransform, AnimatePresence, type Variants, useRed
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { HomePreloader } from '@/components/preloader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -878,8 +877,6 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
-      <HomePreloader />
-
       {/* ── Hero ──────────────────────────────────────────────── */}
       <VideoHero />
 
