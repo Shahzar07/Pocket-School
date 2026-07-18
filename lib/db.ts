@@ -1,6 +1,6 @@
 import {
   collection, doc, getDoc, getDocs, setDoc, updateDoc, addDoc,
-  deleteDoc, query, where, orderBy, limit, serverTimestamp,
+  deleteDoc, query, where, orderBy, limit, serverTimestamp, onSnapshot,
   increment, arrayUnion, arrayRemove, Timestamp, writeBatch, runTransaction,
 } from 'firebase/firestore';
 import { db } from './firebase';
@@ -869,6 +869,104 @@ export async function sendMessage(msg: Omit<Message, 'id' | 'sentAt' | 'read'>) 
 
 export async function markMessageRead(messageId: string) {
   await updateDoc(doc(db, 'messages', messageId), { read: true });
+}
+
+// ─── Realtime chat (Messenger-style, built on the messages collection) ──
+
+/**
+ * Live-subscribe to every message involving `userId` (sent or received),
+ * merged and sorted oldest→newest. Uses two Firestore listeners because
+ * Firestore has no OR query across fromId/toId.
+ * Returns an unsubscribe function.
+ */
+export function subscribeUserMessages(userId: string, cb: (messages: Message[]) => void): () => void {
+  const received: Message[] = [];
+  const sent: Message[] = [];
+  let gotReceived = false, gotSent = false;
+
+  const emit = () => {
+    if (!gotReceived || !gotSent) return;
+    const byId = new Map<string, Message>();
+    [...received, ...sent].forEach(m => byId.set(m.id, m));
+    const all = [...byId.values()].sort(
+      (a, b) => (a.sentAt?.toMillis?.() ?? 0) - (b.sentAt?.toMillis?.() ?? 0)
+    );
+    cb(all);
+  };
+
+  const unsubR = onSnapshot(
+    query(collection(db, 'messages'), where('toId', '==', userId)),
+    snap => { received.length = 0; snap.forEach(d => received.push({ id: d.id, ...d.data() } as Message)); gotReceived = true; emit(); },
+    () => { gotReceived = true; emit(); }
+  );
+  const unsubS = onSnapshot(
+    query(collection(db, 'messages'), where('fromId', '==', userId)),
+    snap => { sent.length = 0; snap.forEach(d => sent.push({ id: d.id, ...d.data() } as Message)); gotSent = true; emit(); },
+    () => { gotSent = true; emit(); }
+  );
+  return () => { unsubR(); unsubS(); };
+}
+
+/** Send one direct chat message (Messenger-style; on the messages collection). */
+export async function sendDirectMessage(msg: {
+  fromId: string; fromName: string; fromRole: string;
+  toId: string; toName?: string; body: string; studentId?: string;
+}) {
+  await addDoc(collection(db, 'messages'), {
+    ...msg,
+    subject: 'chat',
+    read: false,
+    sentAt: serverTimestamp(),
+  });
+}
+
+/**
+ * People the given user is allowed to chat with.
+ * - Parents: their children's teachers + all admins.
+ * - Teachers: all admins + all parents/students who've messaged them (discovered
+ *   from existing messages, merged in the UI) — plus admins for escalation.
+ * - Students: their course teachers + admins.
+ * - Admins: all teachers (staff directory).
+ * Always includes anyone the user already has a thread with (handled in the UI).
+ */
+export async function getChatContacts(
+  userId: string, role: string
+): Promise<{ id: string; name: string; role: string }[]> {
+  const contacts = new Map<string, { id: string; name: string; role: string }>();
+
+  // Everyone can reach the admin team.
+  try {
+    const admins = await getDocs(query(collection(db, 'users'), where('role', '==', 'admin')));
+    admins.forEach(d => { if (d.id !== userId) contacts.set(d.id, { id: d.id, name: (d.data().name as string) || 'Admin', role: 'admin' }); });
+  } catch { /* ignore */ }
+
+  if (role === 'parent') {
+    try {
+      const children = await getChildrenProfiles(userId);
+      const enrollments = await Promise.all(children.map(c => getEnrolledCourses(c.id)));
+      enrollments.flat().forEach(({ course }) => {
+        if (course.ownerId && course.ownerId !== userId) {
+          contacts.set(course.ownerId, { id: course.ownerId, name: course.ownerName || 'Teacher', role: 'teacher' });
+        }
+      });
+    } catch { /* ignore */ }
+  } else if (role === 'student') {
+    try {
+      const enrollments = await getEnrolledCourses(userId);
+      enrollments.forEach(({ course }) => {
+        if (course.ownerId && course.ownerId !== userId) {
+          contacts.set(course.ownerId, { id: course.ownerId, name: course.ownerName || 'Teacher', role: 'teacher' });
+        }
+      });
+    } catch { /* ignore */ }
+  } else if (role === 'admin') {
+    try {
+      const teachers = await getDocs(query(collection(db, 'users'), where('role', '==', 'teacher')));
+      teachers.forEach(d => { if (d.id !== userId) contacts.set(d.id, { id: d.id, name: (d.data().name as string) || 'Teacher', role: 'teacher' }); });
+    } catch { /* ignore */ }
+  }
+
+  return [...contacts.values()];
 }
 
 // ─── Institutions ─────────────────────────────────────────────

@@ -11,7 +11,7 @@ import {
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
-  Sparkles, Store, Layers, LogOut,
+  Sparkles, Store, Layers, LogOut, Mail,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -45,6 +45,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/courses', icon: Store, label: 'Marketplace' },
       { href: '/dashboard/student/courses', icon: BookOpen, label: 'My Courses' },
       { href: '/dashboard/student/live', icon: Video, label: 'Live Classes' },
+      { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
       { href: '/dashboard/student/achievements', icon: CheckCircle, label: 'Achievements' },
     ]},
     { section: 'Academics', items: [
@@ -75,6 +76,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher/classes', icon: GraduationCap, label: 'My Classes' },
       { href: '/dashboard/teacher/courses', icon: Presentation, label: 'Courses & Products' },
       { href: '/courses', icon: Store, label: 'Marketplace' },
+      { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
       { href: '/dashboard/teacher/analytics', icon: Activity, label: 'Analytics' },
     ]},
     { section: 'Academics', items: [
@@ -103,9 +105,10 @@ const NAV: Record<Role, NavGroup[]> = {
   parent: [
     { items: [
       { href: '/dashboard/parent', icon: Home, label: 'Child Progress' },
+      { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
       { href: '/ai-studio', icon: Sparkles, label: 'AI Studio ↗' },
       { href: '/courses', icon: Store, label: 'Marketplace' },
-      { href: '/dashboard/parent/communications', icon: MessageSquare, label: 'Communications' },
+      { href: '/dashboard/parent/communications', icon: Mail, label: 'Mailbox' },
       { href: '/dashboard/parent/duedates', icon: Clock, label: 'Due Dates' },
     ]},
     { section: 'School', items: [
@@ -126,6 +129,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/courses', icon: Store, label: 'Marketplace' },
       { href: '/dashboard/admin/institutions', icon: Users, label: 'Institutions' },
       { href: '/dashboard/admin/access', icon: Shield, label: 'Access Config' },
+      { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
       { href: '/dashboard/admin/settings', icon: Settings, label: 'System Settings' },
       { href: '/dashboard/admin/verifications', icon: ShieldCheck, label: 'Verifications' },
     ]},

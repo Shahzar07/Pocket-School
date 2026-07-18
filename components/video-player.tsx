@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Captions, CaptionsOff, Loader2, Maximize, Minimize, Pause, Play,
+  Captions, CaptionsOff, Image as ImageIcon, Loader2, Maximize, Minimize, Pause, Play,
   SkipBack, SkipForward, Sparkles, Video,
 } from 'lucide-react';
 import { parseScenes, type Scene } from '@/components/video-storyboard';
@@ -47,6 +47,11 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
   const [hdState, setHdState] = useState<'off' | 'generating' | 'on' | 'unavailable'>('off');
   const [hdProgress, setHdProgress] = useState(0);
 
+  // AI-generated scene visuals
+  const [images, setImages] = useState<(string | null)[]>(() => scenes.map(() => null));
+  const [visualsState, setVisualsState] = useState<'idle' | 'generating' | 'done' | 'unavailable'>('idle');
+  const [visualsProgress, setVisualsProgress] = useState(0);
+
   const stageRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hdClips = useRef<(string | null)[]>([]);
@@ -68,6 +73,40 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
   }, []);
+
+  // Generate a real illustration for every scene, in order. Runs once per
+  // script; each image pops in as it arrives. If the provider can't produce
+  // images we quietly fall back to the animated gradient stage.
+  const generateVisuals = useCallback(async () => {
+    setVisualsState('generating');
+    setVisualsProgress(0);
+    let anyOk = false;
+    for (let i = 0; i < scenes.length; i++) {
+      try {
+        const res = await fetch('/api/ai/scene-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ visual: scenes[i].visual || scenes[i].narration.slice(0, 200), title: scenes[i].title }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (data.image) {
+          anyOk = true;
+          setImages(prev => { const next = [...prev]; next[i] = data.image; return next; });
+        }
+      } catch { /* keep gradient for this scene */ }
+      setVisualsProgress((i + 1) / scenes.length);
+    }
+    setVisualsState(anyOk ? 'done' : 'unavailable');
+  }, [scenes]);
+
+  // Reset + kick off visual generation whenever the script changes.
+  useEffect(() => {
+    setImages(scenes.map(() => null));
+    setVisualsState('idle');
+    let cancelled = false;
+    const t = setTimeout(() => { if (!cancelled) generateVisuals(); }, 400);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [scenes, generateVisuals]);
 
   useEffect(() => {
     const onFsChange = () => setFullscreen(!!document.fullscreenElement);
@@ -206,46 +245,60 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
             transition={{ duration: 0.5 }}
             className={`absolute inset-0 bg-gradient-to-br ${theme}`}
           >
-            {/* Ambient animated orbs */}
-            <motion.div
-              className="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-white/5 blur-3xl"
-              animate={{ x: [0, 40, 0], y: [0, 24, 0] }}
-              transition={{ repeat: Infinity, duration: 14, ease: 'easeInOut' }}
-            />
-            <motion.div
-              className="absolute -bottom-20 -right-10 w-80 h-80 rounded-full bg-white/5 blur-3xl"
-              animate={{ x: [0, -30, 0], y: [0, -20, 0] }}
-              transition={{ repeat: Infinity, duration: 18, ease: 'easeInOut' }}
-            />
-
-            <div className="absolute inset-0 flex flex-col items-center justify-center px-8 sm:px-16 text-center">
-              <motion.p
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-                className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.3em] text-white/50 mb-3"
-              >
-                Scene {current + 1} of {scenes.length}
-              </motion.p>
-              <motion.h3
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 }}
-                className="font-heading text-xl sm:text-3xl lg:text-4xl text-white leading-tight max-w-3xl"
-              >
-                {scene.title}
-              </motion.h3>
-              {scene.visual && (
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.45 }}
-                  className="mt-4 text-xs sm:text-sm italic text-cyan-200/70 max-w-xl"
-                >
-                  {scene.visual}
-                </motion.p>
-              )}
-            </div>
+            {images[current] ? (
+              <>
+                {/* AI-generated scene visual with a slow Ken Burns zoom/pan */}
+                <motion.img
+                  src={images[current]!}
+                  alt={scene.title}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  initial={{ scale: 1.04, x: 0, y: 0 }}
+                  animate={{ scale: 1.16, x: current % 2 ? -18 : 18, y: current % 2 ? 12 : -12 }}
+                  transition={{ duration: (durations[current] ?? 8) + 2, ease: 'linear' }}
+                />
+                {/* Legibility gradient for the caption + title zone */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/40" />
+                <div className="absolute top-4 left-1/2 -translate-x-1/2">
+                  <span className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.3em] text-white/70 px-3 py-1 rounded-full bg-black/40 backdrop-blur-sm">
+                    Scene {current + 1} of {scenes.length}
+                  </span>
+                </div>
+                <div className="absolute top-14 sm:top-16 left-0 right-0 px-6 text-center">
+                  <motion.h3
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="font-heading text-lg sm:text-2xl lg:text-3xl text-white leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
+                  >
+                    {scene.title}
+                  </motion.h3>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Fallback: animated gradient stage (visual still generating / unavailable) */}
+                <motion.div className="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-white/5 blur-3xl"
+                  animate={{ x: [0, 40, 0], y: [0, 24, 0] }} transition={{ repeat: Infinity, duration: 14, ease: 'easeInOut' }} />
+                <motion.div className="absolute -bottom-20 -right-10 w-80 h-80 rounded-full bg-white/5 blur-3xl"
+                  animate={{ x: [0, -30, 0], y: [0, -20, 0] }} transition={{ repeat: Infinity, duration: 18, ease: 'easeInOut' }} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center px-8 sm:px-16 text-center">
+                  <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.3em] text-white/50 mb-3">
+                    Scene {current + 1} of {scenes.length}
+                  </p>
+                  <h3 className="font-heading text-xl sm:text-3xl lg:text-4xl text-white leading-tight max-w-3xl">
+                    {scene.title}
+                  </h3>
+                  {scene.visual && (
+                    <p className="mt-4 text-xs sm:text-sm italic text-cyan-200/70 max-w-xl">{scene.visual}</p>
+                  )}
+                  {visualsState === 'generating' && (
+                    <span className="mt-5 inline-flex items-center gap-1.5 text-[11px] text-white/60">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Painting this scene…
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
           </motion.div>
         </AnimatePresence>
 
@@ -303,6 +356,20 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
               {fmtTime(elapsed)} / {fmtTime(totalDuration)}
             </span>
             <span className="flex-1" />
+            {visualsState === 'generating' && (
+              <span className="hidden sm:flex items-center gap-1.5 text-[11px] text-white/70" title="Generating scene visuals">
+                <ImageIcon className="w-3.5 h-3.5" /> {Math.round(visualsProgress * 100)}%
+              </span>
+            )}
+            {visualsState === 'unavailable' && (
+              <button
+                onClick={generateVisuals}
+                className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-amber-300 hover:text-amber-200"
+                title="Retry generating scene visuals"
+              >
+                <ImageIcon className="w-3.5 h-3.5" /> Retry visuals
+              </button>
+            )}
             {hdState === 'off' && (
               <button
                 onClick={generateHd}
