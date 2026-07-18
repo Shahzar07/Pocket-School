@@ -17,7 +17,12 @@ import { toast } from 'sonner';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 
-const SUPER_ADMIN_EMAIL = 'harry.seggu@gmail.com';
+const SUPER_ADMIN_EMAILS = ['harry.seggu@gmail.com', 'shahzarrayyan123@gmail.com'];
+const isSuperAdminEmail = (email: string) => SUPER_ADMIN_EMAILS.includes(email.trim().toLowerCase());
+const ADMIN_NAMES: Record<string, string> = {
+  'harry.seggu@gmail.com': 'Harry Seggu',
+  'shahzarrayyan123@gmail.com': 'Shahzar Rayyan',
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -46,12 +51,13 @@ export default function LoginPage() {
 
   // The super-admin account is provisioned in Firebase; this just keeps its
   // Firestore profile pinned to the admin role.
-  const ensureAdminProfile = async (uid: string) => {
+  const ensureAdminProfile = async (uid: string, adminEmail: string) => {
+    const lower = adminEmail.trim().toLowerCase();
     const snap = await getDoc(doc(db, 'users', uid));
     if (!snap.exists()) {
       await setDoc(doc(db, 'users', uid), {
-        name: 'Harry Seggu',
-        email: SUPER_ADMIN_EMAIL,
+        name: ADMIN_NAMES[lower] ?? 'Administrator',
+        email: lower,
         avatarUrl: '',
         role: 'admin',
         xp: 0,
@@ -93,7 +99,7 @@ export default function LoginPage() {
     // Super admin and unverified accounts go straight in; verified accounts
     // get an email 2FA code — unless the email service isn't configured, in
     // which case we never lock anyone out.
-    const isSuperAdmin = email.trim().toLowerCase() === SUPER_ADMIN_EMAIL;
+    const isSuperAdmin = isSuperAdminEmail(email);
     const wants2fa = !isSuperAdmin && !!(data?.emailVerified || data?.phoneVerified);
 
     if (!wants2fa) {
@@ -172,8 +178,8 @@ export default function LoginPage() {
       setLoading(true);
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      if (result.user.email?.toLowerCase() === SUPER_ADMIN_EMAIL) {
-        await ensureAdminProfile(result.user.uid);
+      if (result.user.email && isSuperAdminEmail(result.user.email)) {
+        await ensureAdminProfile(result.user.uid, result.user.email);
       }
       // Sync Google profile picture to Firestore if missing
       const snap = await getDoc(doc(db, 'users', result.user.uid));
@@ -208,8 +214,8 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const result = await signInWithEmailAndPassword(auth, email.trim(), password);
-      if (email.trim().toLowerCase() === SUPER_ADMIN_EMAIL) {
-        await ensureAdminProfile(result.user.uid);
+      if (isSuperAdminEmail(email)) {
+        await ensureAdminProfile(result.user.uid, email);
       }
       await afterCredentialSuccess(result.user.uid);
     } catch (e: any) {
