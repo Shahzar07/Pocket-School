@@ -68,7 +68,9 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
 
   if (!teacher) return null;
   const Icon = ICONS[teacher.iconKey];
-  const isLive = teacher.status === 'live';
+  // Every teacher is now backed by our own conversational AI tutor, so all are
+  // launchable — no more waiting on an external avatar service.
+  const isLive = true;
 
   const sessionPath = `/ai-teachers/${teacher.id}/session`;
 

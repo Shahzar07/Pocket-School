@@ -229,7 +229,10 @@ export default function AiStudio() {
     const res = await fetch('/api/ai/tutor', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, mode: chatMode, history: chatTurns }),
+      body: JSON.stringify({
+        message, mode: chatMode, history: chatTurns,
+        language: (typeof window !== 'undefined' && localStorage.getItem('pocket-school-lang')) || 'en',
+      }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));

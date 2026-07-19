@@ -43,7 +43,7 @@ export function LanguageSwitcher() {
     setSelected(code);
     localStorage.setItem('pocket-school-lang', code);
     document.documentElement.lang = code;
-    document.documentElement.dir = code === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.dir = ['ar', 'ur'].includes(code) ? 'rtl' : 'ltr';
     setOpen(false);
   };
 

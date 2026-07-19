@@ -61,6 +61,7 @@ export function AITutor() {
           message: userMsg,
           mode,
           lessonContext: lessonContext ?? '',
+          language: (typeof window !== 'undefined' && localStorage.getItem('pocket-school-lang')) || 'en',
           history,
         }),
       });
