@@ -8,9 +8,15 @@ const MODE_INSTRUCTIONS: Record<string, string> = {
   legal: 'You are a legal AI tutor. Use the IRAC method (Issue, Rule, Application, Conclusion) for problem questions. Reference relevant legislation and case law. Use OSCOLA citation format.',
 };
 
+const LANG_NAMES: Record<string, string> = {
+  ar: 'Arabic', es: 'Spanish', fr: 'French', de: 'German', pt: 'Portuguese',
+  zh: 'Chinese (Simplified)', hi: 'Hindi', ur: 'Urdu', tr: 'Turkish',
+  ja: 'Japanese', ko: 'Korean', it: 'Italian', ru: 'Russian', sw: 'Swahili',
+};
+
 export async function POST(req: NextRequest) {
   try {
-    const { message, mode, lessonContext, history } = await req.json();
+    const { message, mode, lessonContext, history, language, persona } = await req.json();
     if (!message) return NextResponse.json({ error: 'message is required' }, { status: 400 });
 
     const modeInstruction = MODE_INSTRUCTIONS[mode] ?? MODE_INSTRUCTIONS.college;
@@ -18,7 +24,16 @@ export async function POST(req: NextRequest) {
       ? `\n\nCurrent lesson context the student is studying: "${lessonContext}"\nWhen relevant, relate your explanations to this topic.`
       : '';
 
-    const systemPrompt = `You are POCO, Pocket School's intelligent AI learning companion. You are warm, sharp, and genuinely invested in the student's understanding. Refer to yourself as POCO if asked your name.\n\n${modeInstruction}${contextBlock}\n\nGuide students to answers using the Socratic method — ask leading questions when appropriate rather than giving direct answers. Be encouraging.\n\nWhen responding about mathematics, science, or any topic involving equations or formulas, use LaTeX notation: inline math with $...$ and display math with $$...$$. For example: $E = mc^2$, $\\frac{a}{b}$, $$\\int_0^1 f(x)\\,dx$$`;
+    // A named teacher persona overrides the default POCO identity.
+    const identity = persona
+      ? `You are ${persona}. Stay fully in character as this teacher — warm, expert, and encouraging.`
+      : `You are POCO, Pocket School's intelligent AI learning companion. You are warm, sharp, and genuinely invested in the student's understanding. Refer to yourself as POCO if asked your name.`;
+
+    const langInstruction = language && language !== 'en' && LANG_NAMES[language]
+      ? `\n\nIMPORTANT: Reply ENTIRELY in ${LANG_NAMES[language]}. Every sentence of your response must be in ${LANG_NAMES[language]}, unless quoting a technical term that has no translation.`
+      : '';
+
+    const systemPrompt = `${identity}\n\n${modeInstruction}${contextBlock}\n\nGuide students to answers using the Socratic method — ask leading questions when appropriate rather than giving direct answers. Be encouraging. Keep replies conversational and not too long.\n\nWhen responding about mathematics, science, or any topic involving equations or formulas, use LaTeX notation: inline math with $...$ and display math with $$...$$. For example: $E = mc^2$, $\\frac{a}{b}$, $$\\int_0^1 f(x)\\,dx$$${langInstruction}`;
 
     // Cap history so long chats can't blow past the model context / budget.
     const cappedHistory = (Array.isArray(history) ? history : []).slice(-12);
