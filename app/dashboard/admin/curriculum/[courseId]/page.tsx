@@ -28,8 +28,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import {
-  ArrowLeft, CheckCircle2, ChevronDown, ChevronRight, Copy, Eye, Loader2,
-  Pencil, Plus, RotateCcw, Send, Sparkles, Trash2, Archive,
+  ArrowLeft, AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Copy, CornerDownRight,
+  Eye, GripVertical, Loader2, Pencil, Plus, RotateCcw, Send, Sparkles, Trash2, Archive, X,
 } from 'lucide-react';
 
 /* ── Constants ──────────────────────────────────────────────── */
@@ -65,6 +65,22 @@ const STUDENT_GROUPS = ['Year 10 All', 'Year 11 Advanced', 'SPM Target', 'Free T
 
 const DEFAULT_BLOCKS = ['objectives', 'video', 'text', 'vocabulary', 'quiz'];
 
+/** Visibility options — wording fixed by the curriculum team. */
+const VISIBILITY_OPTIONS: { value: string; label: string }[] = [
+  { value: 'all', label: 'All Students' },
+  { value: 'teacher_only', label: 'Teachers Only' },
+  { value: 'teachers_students', label: 'Teachers & Students' },
+  { value: 'scheduled', label: 'Scheduled Release' },
+];
+
+/** A teaching week is planned as 5 × 60-minute sessions, so lesson duration can
+ * be entered in weeks and stored honestly in the existing `durationMinutes`. */
+const MINUTES_PER_WEEK = 300;
+const DURATION_PRESETS = [1, 2, 3, 4];
+
+/** Client-mandated publish disclaimer — do not reword. */
+const PUBLISH_DISCLAIMER = `Before you publish, please confirm the following. You are responsible for everything in this course — all text, questions, videos, audio, and materials. Poket School does not check or verify your content before it goes live. Make sure everything you publish is accurate, original or properly licensed, age-appropriate for your intended students, and compliant with the curriculum it references. Do not include content that is copied without permission, misleading, harmful, or in breach of any examination board's intellectual property. By clicking Publish, you confirm that this course is your own work or that you have the right to use all materials within it, and that you accept full responsibility for its content. Any violations may have your course taken down or account terminated.`;
+
 /** AI formats surfaced in the right-panel shortcuts. */
 const AI_SHORTCUTS: { id: keyof AiOutputs; label: string }[] = [
   { id: 'text', label: 'Lesson Text' }, { id: 'videoScript', label: 'Video Script' },
@@ -88,6 +104,93 @@ async function callGenerate(content: string, format: string, briefPrompt?: strin
   return data.result;
 }
 
+/** Quill — the CMS assistant (objectives, briefs, rewrites, assessments). */
+async function callQuill<T>(task: string, context: Record<string, unknown>): Promise<T> {
+  const res = await fetch('/api/ai/course-architect', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ task, context }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Quill could not complete that request.');
+  return data as T;
+}
+
+/* ── Firestore-safe cloning ─────────────────────────────────────
+ * A JSON round-trip would turn every Firestore Timestamp into a plain
+ * {seconds, nanoseconds} map — which is exactly why history entries and
+ * scheduled release dates lost their dates. These helpers keep Timestamps
+ * intact while still deep-copying / dropping undefined values. */
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  if (!v || typeof v !== 'object') return false;
+  const proto = Object.getPrototypeOf(v);
+  return proto === Object.prototype || proto === null;
+}
+
+function cloneDeep<T>(value: T): T {
+  if (Array.isArray(value)) return value.map(cloneDeep) as unknown as T;
+  if (isPlainObject(value)) {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) out[k] = cloneDeep(v);
+    return out as T;
+  }
+  return value; // Timestamps, primitives, class instances pass through untouched
+}
+
+function stripUndefined<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.filter(v => v !== undefined).map(stripUndefined) as unknown as T;
+  }
+  if (isPlainObject(value)) {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) {
+      if (v !== undefined) out[k] = stripUndefined(v);
+    }
+    return out as T;
+  }
+  return value;
+}
+
+/** Renders a history timestamp, tolerating legacy entries that were saved as
+ * plain {seconds} maps before the cloning bug was fixed. */
+function formatHistoryDate(at: unknown): string {
+  const d =
+    at instanceof Timestamp ? at.toDate()
+      : at && typeof (at as any).toDate === 'function' ? (at as any).toDate()
+      : at && typeof (at as any).seconds === 'number' ? new Date((at as any).seconds * 1000)
+      : null;
+  if (!d || Number.isNaN(d.getTime())) return 'Date unavailable';
+  return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+/* ── Lesson numbering (sub-lessons) ──────────────────────────── */
+
+/** Sub-lessons are numbered with decimals (L1.1) or titled "L1.1 …". */
+function isSubLesson(l: Lesson): boolean {
+  if (typeof l.lessonNumber === 'number' && !Number.isInteger(l.lessonNumber)) return true;
+  return /^L?\s*\d+\.\d+/i.test(l.title ?? '');
+}
+
+/** Renumbers a unit after a drag-drop: top-level lessons get 1,2,3…, and each
+ * sub-lesson hangs off the top-level lesson above it (1.1, 1.2 …). */
+function renumber(lessons: Lesson[]): Lesson[] {
+  let top = 0;
+  let sub = 0;
+  return lessons.map((l, i) => {
+    let lessonNumber: number;
+    if (isSubLesson(l) && top > 0) {
+      sub += 1;
+      lessonNumber = Number((top + sub / (sub < 10 ? 10 : 100)).toFixed(2));
+    } else {
+      top += 1;
+      sub = 0;
+      lessonNumber = top;
+    }
+    return { ...l, order: i + 1, lessonNumber };
+  });
+}
+
 /* ── Page ───────────────────────────────────────────────────── */
 
 export default function ContentBuilderPage() {
@@ -108,6 +211,10 @@ export default function ContentBuilderPage() {
   const [rightTab, setRightTab] = useState<'properties' | 'publish' | 'allocate' | 'history'>('properties');
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
   const [aiBusy, setAiBusy] = useState<string | null>(null);
+  const [quillBusy, setQuillBusy] = useState<string | null>(null);
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [publishAccepted, setPublishAccepted] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const draftRef = useRef<Lesson | null>(null);
   draftRef.current = draft;
@@ -142,7 +249,7 @@ export default function ContentBuilderPage() {
   useEffect(() => {
     if (!selUnit || !selLesson) { setDraft(null); return; }
     const lesson = units.find(u => u.module.id === selUnit)?.lessons.find(l => l.id === selLesson) ?? null;
-    setDraft(lesson ? JSON.parse(JSON.stringify(lesson)) : null);
+    setDraft(lesson ? cloneDeep(lesson) : null);
     setSaveState('saved');
   }, [selUnit, selLesson, units]);
 
@@ -157,8 +264,9 @@ export default function ContentBuilderPage() {
         ...(d.history ?? []),
       ].slice(0, 30);
       const { id: _id, ...fields } = d;
-      // Firestore rejects undefined values — strip them.
-      const clean = JSON.parse(JSON.stringify({ ...fields, ...(historyLabel ? { history } : {}) }));
+      // Firestore rejects undefined values — strip them, but keep Timestamps
+      // as Timestamps so history dates and release dates survive the round-trip.
+      const clean = stripUndefined({ ...fields, ...(historyLabel ? { history } : {}) });
       await updateLesson(courseId, selUnit, d.id, clean);
       setSaveState('saved');
       setUnits(prev => prev.map(u => u.module.id !== selUnit ? u : {
@@ -178,7 +286,14 @@ export default function ContentBuilderPage() {
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
         const cur = draftRef.current;
-        if (cur) persistDraft(cur);
+        if (!cur) return;
+        // Log auto-saves in the audit trail, but collapse a burst of typing
+        // into a single "Content edited" entry per 10-minute window.
+        const last = cur.history?.[0];
+        const lastAt = last?.at instanceof Timestamp ? last.at.toMillis() : 0;
+        const recentEdit =
+          last?.label === 'Content edited' && Date.now() - lastAt < 10 * 60 * 1000;
+        persistDraft(cur, recentEdit ? undefined : 'Content edited');
       }, 2000);
       return next;
     });
@@ -213,6 +328,87 @@ export default function ContentBuilderPage() {
     }
   }, [selUnit, persistDraft]);
 
+  /* ── Quill assistance ── */
+
+  /** Runs a Quill task against the selected lesson and persists the patch it
+   * produces, adding an audit-trail entry for the action. */
+  const runQuill = useCallback(async (
+    key: string,
+    task: string,
+    buildContext: (d: Lesson) => Record<string, unknown>,
+    apply: (d: Lesson, data: any) => Partial<Lesson> | null,
+    historyLabel: string,
+  ) => {
+    const d = draftRef.current;
+    if (!d || !selUnit) return;
+    setQuillBusy(key);
+    try {
+      const data = await callQuill<any>(task, buildContext(d));
+      const patch = apply(d, data);
+      if (!patch) { toast.error('Quill returned nothing usable — try again.'); return; }
+      const next = { ...d, ...patch } as Lesson;
+      setDraft(next);
+      await persistDraft(next, historyLabel);
+      toast.success(historyLabel);
+    } catch (e: any) {
+      toast.error(e?.message || 'Quill request failed.');
+    } finally {
+      setQuillBusy(null);
+    }
+  }, [selUnit, persistDraft]);
+
+  const suggestObjectives = useCallback(() => runQuill(
+    'objectives', 'objectives',
+    d => ({ lessonTitle: d.title, bloom: d.bloomsLevel ?? 'Understand', yearLevel: course?.yearGroup ?? course?.level ?? '' }),
+    (d, data) => {
+      const objectives = Array.isArray(data?.objectives) ? data.objectives : [];
+      if (!objectives.length) return null;
+      const blocks = d.blocksOrder?.length ? d.blocksOrder : DEFAULT_BLOCKS;
+      return {
+        objectives,
+        blocksOrder: blocks.includes('objectives') ? blocks : ['objectives', ...blocks],
+      };
+    },
+    'Quill suggested objectives',
+  ), [runQuill, course]);
+
+  const writeBrief = useCallback(() => runQuill(
+    'brief', 'brief',
+    d => ({ lessonTitle: d.title, subject: course?.subject ?? '', yearLevel: course?.yearGroup ?? course?.level ?? '' }),
+    (_d, data) => (typeof data?.brief === 'string' && data.brief.trim() ? { briefPrompt: data.brief } : null),
+    'Quill wrote the generation brief',
+  ), [runQuill, course]);
+
+  const improveText = useCallback((instruction: string) => runQuill(
+    'improve', 'improve',
+    d => ({
+      text: d.aiOutputs?.text ?? d.contentSources?.find(s => s.type === 'text')?.value ?? '',
+      instruction,
+    }),
+    (d, data) => (typeof data?.text === 'string' && data.text.trim()
+      ? { aiOutputs: { ...(d.aiOutputs ?? {}), text: data.text } }
+      : null),
+    'Quill rewrote the lesson text',
+  ), [runQuill]);
+
+  const draftAssessment = useCallback(() => runQuill(
+    'assessment', 'assessment',
+    d => ({ lessonTitle: d.title, totalMarks: d.assessmentConfig?.totalMarks ?? d.marks ?? 40 }),
+    (d, data) => {
+      const sections = Array.isArray(data?.sections) ? data.sections : [];
+      if (!sections.length) return null;
+      const total = sections.reduce((s: number, x: any) => s + (Number(x.marks) || 0), 0);
+      return {
+        assessmentConfig: {
+          ...(d.assessmentConfig ?? {}),
+          sections,
+          totalMarks: d.assessmentConfig?.totalMarks ?? total,
+        },
+      };
+    },
+    'Quill drafted assessment sections',
+  ), [runQuill]);
+
   /* ── Status workflow ── */
 
   const setStatus = async (next: NonNullable<Lesson['status']>, label: string) => {
@@ -225,6 +421,21 @@ export default function ContentBuilderPage() {
     setDraft(patched);
     await persistDraft(patched, label);
     toast.success(label);
+  };
+
+  /* ── Publish confirmation (responsibility disclaimer) ── */
+
+  const openPublishModal = () => { setPublishAccepted(false); setPublishOpen(true); };
+
+  const confirmPublish = async () => {
+    if (!publishAccepted) return;
+    setPublishing(true);
+    try {
+      await setStatus('published', 'Published');
+      setPublishOpen(false);
+    } finally {
+      setPublishing(false);
+    }
   };
 
   /* ── Tree actions ── */
@@ -264,6 +475,70 @@ export default function ContentBuilderPage() {
       setSelUnit(unitId);
       setSelLesson(id);
     } catch (e: any) { toast.error(e?.message || 'Failed.'); }
+  };
+
+  /** Inline rename from the course tree. */
+  const renameLesson = async (unitId: string, lesson: Lesson, title: string) => {
+    const next = title.trim();
+    if (!next || next === lesson.title) return;
+    try {
+      await updateLesson(courseId, unitId, lesson.id, { title: next });
+      setUnits(prev => prev.map(u => u.module.id !== unitId ? u : {
+        ...u, lessons: u.lessons.map(l => (l.id === lesson.id ? { ...l, title: next } : l)),
+      }));
+      toast.success('Lesson renamed.');
+    } catch (e: any) { toast.error(e?.message || 'Rename failed.'); }
+  };
+
+  /** Creates a nested lesson numbered off its parent, e.g. L1 → L1.1. */
+  const addSubLesson = async (unitId: string, parent: Lesson, lessons: Lesson[]) => {
+    const title = window.prompt(`New sub-lesson under “${parent.title}”:`);
+    if (!title?.trim()) return;
+    const parentIdx = lessons.findIndex(l => l.id === parent.id);
+    const top = Math.floor(parent.lessonNumber ?? parentIdx + 1) || parentIdx + 1;
+    const siblings = lessons.filter(l => isSubLesson(l) && Math.floor(l.lessonNumber ?? 0) === top);
+    const subIndex = siblings.length + 1;
+    try {
+      const id = await createLesson(courseId, unitId, {
+        title: title.trim(), moduleId: unitId, courseId,
+        order: (parent.order ?? parentIdx + 1) + subIndex / 100,
+        lessonNumber: Number((top + subIndex / (subIndex < 10 ? 10 : 100)).toFixed(2)),
+        status: 'draft', lessonType: 'lesson', blocksOrder: DEFAULT_BLOCKS,
+      });
+      await load(true);
+      setSelUnit(unitId);
+      setSelLesson(id);
+      toast.success('Sub-lesson created.');
+    } catch (e: any) { toast.error(e?.message || 'Failed.'); }
+  };
+
+  /** Drag-and-drop reordering inside one unit — rewrites order + lessonNumber. */
+  const reorderLessons = async (unitId: string, fromId: string, toId: string) => {
+    if (fromId === toId) return;
+    const unit = units.find(u => u.module.id === unitId);
+    if (!unit) return;
+    const from = unit.lessons.findIndex(l => l.id === fromId);
+    const to = unit.lessons.findIndex(l => l.id === toId);
+    if (from < 0 || to < 0) return;
+
+    // Flush any pending edit first — re-hydrating the tree resets the draft.
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    if (draftRef.current && saveState !== 'saved') await persistDraft(draftRef.current);
+
+    const list = [...unit.lessons];
+    const [moved] = list.splice(from, 1);
+    list.splice(to, 0, moved);
+    const next = renumber(list);
+    setUnits(prev => prev.map(u => (u.module.id === unitId ? { ...u, lessons: next } : u)));
+    try {
+      await Promise.all(next.map(l =>
+        updateLesson(courseId, unitId, l.id, { order: l.order, lessonNumber: l.lessonNumber })
+      ));
+      toast.success('Lesson order updated.');
+    } catch (e: any) {
+      toast.error(e?.message || 'Could not save the new order.');
+      load(true);
+    }
   };
 
   const removeLesson = async (unitId: string, lesson: Lesson) => {
@@ -345,10 +620,12 @@ export default function ContentBuilderPage() {
           {profile?.role === 'admin' ? 'Super Admin' : 'Teacher'}
         </span>
         {draft && (
+          /* Admin preview — always available, whatever the publish status. */
           <a
             href={`/dashboard/student/courses/${courseId}/lessons/${draft.id}`}
             target="_blank" rel="noreferrer"
-            className="hidden sm:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border border-border hover:bg-muted"
+            title="Open the student view of this lesson in a new tab"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border border-border hover:bg-muted"
           >
             <Eye className="w-3.5 h-3.5" /> Preview
           </a>
@@ -357,7 +634,7 @@ export default function ContentBuilderPage() {
           Save
         </Button>
         <Button size="sm" className="rounded-xl h-8 text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
-          disabled={!draft || status === 'published'} onClick={() => setStatus('published', 'Published')}>
+          disabled={!draft || status === 'published'} onClick={openPublishModal}>
           <Send className="w-3 h-3" /> Publish
         </Button>
       </div>
@@ -385,6 +662,9 @@ export default function ContentBuilderPage() {
                 onAddLesson={() => addLesson(u.module.id, u.lessons.length)}
                 onDeleteLesson={(l) => removeLesson(u.module.id, l)}
                 onDuplicateLesson={(l) => copyLesson(u.module.id, l)}
+                onRenameLesson={(l, title) => renameLesson(u.module.id, l, title)}
+                onAddSubLesson={(l) => addSubLesson(u.module.id, l, u.lessons)}
+                onReorder={(fromId, toId) => reorderLessons(u.module.id, fromId, toId)}
               />
             ))}
             {units.length === 0 && (
@@ -437,32 +717,78 @@ export default function ContentBuilderPage() {
                   </label>
                   <span className={`ml-auto text-[10px] font-bold px-2 py-1 rounded-full border ${statusCard.bg}`}>{statusCard.label}</span>
                 </div>
+
+                {/* Quill assist bar */}
+                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-violet-200 bg-violet-50/60 px-3 py-2">
+                  <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-violet-700">
+                    <Sparkles className="w-3.5 h-3.5" /> Quill
+                  </span>
+                  <Button size="sm" variant="outline" className="rounded-xl h-7 text-[11px] gap-1.5 bg-card border-violet-200 text-violet-700 hover:bg-violet-100"
+                    disabled={quillBusy !== null} onClick={suggestObjectives}>
+                    {quillBusy === 'objectives' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                    Suggest objectives
+                  </Button>
+                  <Button size="sm" variant="outline" className="rounded-xl h-7 text-[11px] gap-1.5 bg-card border-violet-200 text-violet-700 hover:bg-violet-100"
+                    disabled={quillBusy !== null} onClick={writeBrief}>
+                    {quillBusy === 'brief' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                    Write generation brief
+                  </Button>
+                  <span className="text-[10px] text-violet-700/70">Quill drafts — always review before publishing.</span>
+                </div>
+
+                {draft.briefPrompt && (
+                  <details className="rounded-xl border border-border bg-card px-3 py-2">
+                    <summary className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground cursor-pointer">
+                      Generation brief
+                    </summary>
+                    <textarea
+                      value={draft.briefPrompt}
+                      onChange={e => patchDraft({ briefPrompt: e.target.value })}
+                      className="mt-2 w-full min-h-32 rounded-lg border border-border bg-background p-2 text-xs leading-relaxed outline-none"
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Every AI generation on this lesson follows this brief.
+                    </p>
+                  </details>
+                )}
               </div>
+
+              {/* Duration sits directly below Objectives; if the Objectives block
+                  has been removed it stays pinned at the top of the editor. */}
+              {!blocksOrder.includes('objectives') && (
+                <DurationPanel draft={draft} patch={patchDraft} />
+              )}
 
               {/* Blocks */}
               <AnimatePresence>
                 {blocksOrder.map((blockId, idx) => (
-                  <BuilderBlock
-                    key={blockId}
-                    blockId={blockId}
-                    draft={draft}
-                    selected={selectedBlock === blockId}
-                    onSelect={() => setSelectedBlock(blockId)}
-                    onDelete={() => patchDraft({ blocksOrder: blocksOrder.filter(b => b !== blockId) })}
-                    onMoveUp={idx > 0 ? () => {
-                      const next = [...blocksOrder];
-                      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-                      patchDraft({ blocksOrder: next });
-                    } : undefined}
-                    onMoveDown={idx < blocksOrder.length - 1 ? () => {
-                      const next = [...blocksOrder];
-                      [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
-                      patchDraft({ blocksOrder: next });
-                    } : undefined}
-                    patch={patchDraft}
-                    ai={runAi}
-                    aiBusy={aiBusy}
-                  />
+                  <div key={blockId} className="space-y-5">
+                    <BuilderBlock
+                      blockId={blockId}
+                      draft={draft}
+                      selected={selectedBlock === blockId}
+                      onSelect={() => setSelectedBlock(blockId)}
+                      onDelete={() => patchDraft({ blocksOrder: blocksOrder.filter(b => b !== blockId) })}
+                      onMoveUp={idx > 0 ? () => {
+                        const next = [...blocksOrder];
+                        [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                        patchDraft({ blocksOrder: next });
+                      } : undefined}
+                      onMoveDown={idx < blocksOrder.length - 1 ? () => {
+                        const next = [...blocksOrder];
+                        [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
+                        patchDraft({ blocksOrder: next });
+                      } : undefined}
+                      patch={patchDraft}
+                      ai={runAi}
+                      aiBusy={aiBusy}
+                      quillBusy={quillBusy}
+                      onSuggestObjectives={suggestObjectives}
+                      onImproveText={improveText}
+                      onDraftAssessment={draftAssessment}
+                    />
+                    {blockId === 'objectives' && <DurationPanel draft={draft} patch={patchDraft} />}
+                  </div>
                 ))}
               </AnimatePresence>
 
@@ -508,12 +834,20 @@ export default function ContentBuilderPage() {
           </div>
           <div className="p-4 space-y-5 text-sm">
             {rightTab === 'properties' && draft && (
-              <PropertiesTab draft={draft} patch={patchDraft} ai={runAi} aiBusy={aiBusy} />
+              <PropertiesTab
+                draft={draft} patch={patchDraft} ai={runAi} aiBusy={aiBusy}
+                quillBusy={quillBusy}
+                onSuggestObjectives={suggestObjectives}
+                onWriteBrief={writeBrief}
+                onImproveText={improveText}
+                onDraftAssessment={draftAssessment}
+              />
             )}
             {rightTab === 'publish' && draft && (
               <PublishTab
                 draft={draft} course={course} statusCard={statusCard}
                 setStatus={setStatus} patchCourse={patchCourse} courseId={courseId}
+                onPublishRequest={openPublishModal}
               />
             )}
             {rightTab === 'allocate' && (
@@ -526,18 +860,168 @@ export default function ContentBuilderPage() {
           </div>
         </aside>
       </div>
+
+      {/* ── Publish responsibility confirmation ── */}
+      <AnimatePresence>
+        {publishOpen && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            role="dialog" aria-modal="true" aria-labelledby="publish-disclaimer-title"
+            onClick={() => !publishing && setPublishOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.98 }}
+              transition={{ duration: 0.2 }}
+              onClick={e => e.stopPropagation()}
+              className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl bg-card border border-border shadow-2xl"
+            >
+              <div className="flex items-start gap-3 px-5 py-4 border-b border-border">
+                <span className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-4.5 h-4.5 text-amber-600" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h2 id="publish-disclaimer-title" className="font-heading text-lg text-foreground leading-tight">
+                    Confirm before publishing
+                  </h2>
+                  <p className="text-xs text-muted-foreground truncate">{draft?.title}</p>
+                </div>
+                <button onClick={() => !publishing && setPublishOpen(false)}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted" title="Close">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="px-5 py-4 space-y-4">
+                <p className="text-sm leading-relaxed text-foreground">{PUBLISH_DISCLAIMER}</p>
+                <label className="flex items-start gap-2.5 rounded-xl border border-border bg-muted/40 px-3 py-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={publishAccepted}
+                    onChange={e => setPublishAccepted(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 accent-emerald-600 shrink-0"
+                  />
+                  <span className="text-sm font-semibold text-foreground">
+                    I understand and accept full responsibility
+                  </span>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-border">
+                <Button variant="outline" className="rounded-xl" disabled={publishing} onClick={() => setPublishOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  className="rounded-xl gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  disabled={!publishAccepted || publishing}
+                  onClick={confirmPublish}
+                >
+                  {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Publish
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+/* ── Duration (weeks ↔ minutes) ─────────────────────────────── */
+
+/** Course/Lesson duration, expressed in weeks for planners and stored in the
+ * existing `durationMinutes` field (1 week = 5 × 60-minute sessions). */
+function DurationPanel({ draft, patch }: { draft: Lesson; patch: (p: Partial<Lesson>) => void }) {
+  const minutes = draft.durationMinutes;
+  const weeks = minutes ? minutes / MINUTES_PER_WEEK : undefined;
+  const preset = weeks && DURATION_PRESETS.includes(weeks) ? weeks : undefined;
+  const [custom, setCustom] = useState(preset === undefined && minutes != null);
+
+  return (
+    <section className="rounded-2xl border border-border bg-card">
+      <header className="flex items-center gap-2 px-4 py-2.5 border-b border-border/60">
+        <span className="text-base leading-none">🗓️</span>
+        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Course / Lesson Duration</span>
+      </header>
+      <div className="p-4 space-y-3">
+        <div className="flex flex-wrap gap-2">
+          {DURATION_PRESETS.map(w => (
+            <button
+              key={w}
+              onClick={() => { setCustom(false); patch({ durationMinutes: w * MINUTES_PER_WEEK }); }}
+              className={`px-3 py-2 rounded-xl border text-xs font-semibold transition-colors ${
+                !custom && preset === w
+                  ? 'border-teal-400 bg-teal-50 text-teal-700'
+                  : 'border-border text-muted-foreground hover:border-teal-300'
+              }`}
+            >
+              {w} Week{w > 1 ? 's' : ''}
+            </button>
+          ))}
+          <button
+            onClick={() => setCustom(true)}
+            className={`px-3 py-2 rounded-xl border text-xs font-semibold transition-colors ${
+              custom ? 'border-teal-400 bg-teal-50 text-teal-700' : 'border-border text-muted-foreground hover:border-teal-300'
+            }`}
+          >
+            Custom
+          </button>
+        </div>
+
+        {custom && (
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Input
+                type="number" min={0} step={5}
+                value={minutes ?? ''}
+                placeholder="450"
+                onChange={e => patch({ durationMinutes: e.target.value ? Number(e.target.value) : undefined })}
+                className="h-9 w-24 rounded-xl text-xs"
+              />
+              minutes of teaching time
+            </label>
+          </div>
+        )}
+
+        <p className="text-[11px] text-muted-foreground">
+          {minutes
+            ? `${minutes} minutes ≈ ${(minutes / MINUTES_PER_WEEK).toFixed(minutes % MINUTES_PER_WEEK === 0 ? 0 : 1)} week(s) of teaching.`
+            : 'No duration set yet.'}
+          {' '}Planned as {MINUTES_PER_WEEK / 60} × 60-minute sessions per week.
+        </p>
+      </div>
+    </section>
   );
 }
 
 /* ── Tree unit ──────────────────────────────────────────────── */
 
-function TreeUnit({ unit, lessons, activeLessonId, onSelect, onRename, onAddLesson, onDeleteLesson, onDuplicateLesson }: {
+function TreeUnit({
+  unit, lessons, activeLessonId, onSelect, onRename, onAddLesson, onDeleteLesson,
+  onDuplicateLesson, onRenameLesson, onAddSubLesson, onReorder,
+}: {
   unit: Module; lessons: Lesson[]; activeLessonId: string | null;
   onSelect: (lessonId: string) => void; onRename: () => void; onAddLesson: () => void;
   onDeleteLesson: (l: Lesson) => void; onDuplicateLesson: (l: Lesson) => void;
+  onRenameLesson: (l: Lesson, title: string) => void;
+  onAddSubLesson: (l: Lesson) => void;
+  onReorder: (fromId: string, toId: string) => void;
 }) {
   const [open, setOpen] = useState<boolean>(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dropId, setDropId] = useState<string | null>(null);
+
+  const startEdit = (l: Lesson) => { setEditingId(l.id); setEditValue(l.title); };
+  const commitEdit = (l: Lesson) => {
+    if (editingId !== l.id) return;
+    setEditingId(null);
+    onRenameLesson(l, editValue);
+  };
+
   return (
     <div>
       <div className="group flex items-center gap-1 px-1.5 py-1.5 rounded-lg hover:bg-muted/60">
@@ -558,28 +1042,77 @@ function TreeUnit({ unit, lessons, activeLessonId, onSelect, onRename, onAddLess
         <div className="ml-4 border-l border-border/60 pl-2 space-y-0.5 py-0.5">
           {lessons.map(l => {
             const active = l.id === activeLessonId;
+            const sub = isSubLesson(l);
+            const editing = editingId === l.id;
             return (
               <div key={l.id}
+                draggable={!editing}
+                onDragStart={e => { setDragId(l.id); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', l.id); }}
+                onDragEnd={() => { setDragId(null); setDropId(null); }}
+                onDragOver={e => { if (dragId && dragId !== l.id) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDropId(l.id); } }}
+                onDragLeave={() => setDropId(d => (d === l.id ? null : d))}
+                onDrop={e => {
+                  e.preventDefault();
+                  const from = dragId ?? e.dataTransfer.getData('text/plain');
+                  setDragId(null); setDropId(null);
+                  if (from) onReorder(from, l.id);
+                }}
                 className={`group flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer text-xs transition-colors ${
+                  sub ? 'ml-4' : ''
+                } ${dropId === l.id ? 'ring-2 ring-teal-400' : ''} ${dragId === l.id ? 'opacity-40' : ''} ${
                   active ? 'bg-amber-100/80 text-amber-900 font-semibold' : 'hover:bg-muted/60 text-foreground'
                 }`}
-                onClick={() => onSelect(l.id)}
+                onClick={() => !editing && onSelect(l.id)}
               >
-                <span className="shrink-0">{TYPE_ICON[l.lessonType ?? 'lesson'] ?? '📝'}</span>
-                <span className="flex-1 truncate">{l.lessonNumber ? `L${l.lessonNumber}: ` : ''}{l.title}</span>
+                <GripVertical className="w-3 h-3 text-muted-foreground/40 shrink-0 cursor-grab" />
+                {sub
+                  ? <CornerDownRight className="w-3 h-3 text-muted-foreground/60 shrink-0" />
+                  : <span className="shrink-0">{TYPE_ICON[l.lessonType ?? 'lesson'] ?? '📝'}</span>}
+                {editing ? (
+                  <input
+                    autoFocus
+                    value={editValue}
+                    onChange={e => setEditValue(e.target.value)}
+                    onClick={e => e.stopPropagation()}
+                    onBlur={() => commitEdit(l)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') { e.preventDefault(); commitEdit(l); }
+                      if (e.key === 'Escape') { e.preventDefault(); setEditingId(null); }
+                    }}
+                    className="flex-1 min-w-0 h-6 rounded-md border border-teal-400 bg-card px-1.5 text-xs outline-none"
+                  />
+                ) : (
+                  <span className="flex-1 truncate">{l.lessonNumber ? `L${l.lessonNumber}: ` : ''}{l.title}</span>
+                )}
                 <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_DOT[l.status ?? 'draft']}`} title={l.status ?? 'draft'} />
-                <button onClick={e => { e.stopPropagation(); onDuplicateLesson(l); }}
-                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-muted text-muted-foreground shrink-0" title="Duplicate">
-                  <Copy className="w-3 h-3" />
-                </button>
-                <button onClick={e => { e.stopPropagation(); onDeleteLesson(l); }}
-                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600 shrink-0" title="Delete">
-                  <Trash2 className="w-3 h-3" />
-                </button>
+                {!editing && (
+                  <>
+                    <button onClick={e => { e.stopPropagation(); startEdit(l); }}
+                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-muted text-muted-foreground shrink-0" title="Rename lesson">
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                    {!sub && (
+                      <button onClick={e => { e.stopPropagation(); onAddSubLesson(l); }}
+                        className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-muted text-muted-foreground shrink-0" title="Add sub-lesson">
+                        <CornerDownRight className="w-3 h-3" />
+                      </button>
+                    )}
+                    <button onClick={e => { e.stopPropagation(); onDuplicateLesson(l); }}
+                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-muted text-muted-foreground shrink-0" title="Duplicate">
+                      <Copy className="w-3 h-3" />
+                    </button>
+                    <button onClick={e => { e.stopPropagation(); onDeleteLesson(l); }}
+                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600 shrink-0" title="Delete">
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </>
+                )}
               </div>
             );
           })}
-          {lessons.length === 0 && <p className="text-[10px] text-muted-foreground px-2 py-1">Empty — add a lesson.</p>}
+          {lessons.length === 0
+            ? <p className="text-[10px] text-muted-foreground px-2 py-1">Empty — add a lesson.</p>
+            : <p className="text-[10px] text-muted-foreground/70 px-2 pt-1">Drag to reorder · ✎ rename · ↳ add sub-lesson</p>}
         </div>
       )}
     </div>
@@ -588,13 +1121,20 @@ function TreeUnit({ unit, lessons, activeLessonId, onSelect, onRename, onAddLess
 
 /* ── Centre block dispatcher ────────────────────────────────── */
 
-function BuilderBlock({ blockId, draft, selected, onSelect, onDelete, onMoveUp, onMoveDown, patch, ai, aiBusy }: {
+function BuilderBlock({
+  blockId, draft, selected, onSelect, onDelete, onMoveUp, onMoveDown, patch, ai, aiBusy,
+  quillBusy, onSuggestObjectives, onImproveText, onDraftAssessment,
+}: {
   blockId: string; draft: Lesson; selected: boolean;
   onSelect: () => void; onDelete: () => void;
   onMoveUp?: () => void; onMoveDown?: () => void;
   patch: (p: Partial<Lesson>) => void;
   ai: (format: string, extraBrief?: string) => Promise<void>;
   aiBusy: string | null;
+  quillBusy: string | null;
+  onSuggestObjectives: () => void;
+  onImproveText: (instruction: string) => void;
+  onDraftAssessment: () => void;
 }) {
   const def: BlockDef = BLOCK_DEFS.find(d => d.id === blockId) ?? { id: blockId, icon: '📄', label: blockId };
   const outputs = draft.aiOutputs ?? {};
@@ -612,7 +1152,12 @@ function BuilderBlock({ blockId, draft, selected, onSelect, onDelete, onMoveUp, 
   switch (blockId) {
     case 'objectives':
       return shell(
-        <ObjectivesBlock value={draft.objectives ?? []} onChange={v => patch({ objectives: v })} />
+        <ObjectivesBlock
+          value={draft.objectives ?? []}
+          onChange={v => patch({ objectives: v })}
+          onSuggest={onSuggestObjectives}
+          suggesting={quillBusy === 'objectives'}
+        />
       );
     case 'video':
       return shell(
@@ -633,6 +1178,8 @@ function BuilderBlock({ blockId, draft, selected, onSelect, onDelete, onMoveUp, 
           onChange={v => patch({ aiOutputs: { ...outputs, text: v } })}
           ai={ai}
           generating={aiBusy === 'text'}
+          onImprove={onImproveText}
+          improving={quillBusy === 'improve'}
         />
       );
     case 'vocabulary':
@@ -675,6 +1222,8 @@ function BuilderBlock({ blockId, draft, selected, onSelect, onDelete, onMoveUp, 
           onChange={v => patch({ assessmentConfig: v })}
           ai={ai}
           generating={aiBusy === 'quiz'}
+          onDraftSections={onDraftAssessment}
+          draftingSections={quillBusy === 'assessment'}
         />
       );
     case 'audio':
@@ -708,24 +1257,64 @@ function BuilderBlock({ blockId, draft, selected, onSelect, onDelete, onMoveUp, 
 
 /* ── Right tabs ─────────────────────────────────────────────── */
 
-function PropertiesTab({ draft, patch, ai, aiBusy }: {
+function PropertiesTab({
+  draft, patch, ai, aiBusy, quillBusy,
+  onSuggestObjectives, onWriteBrief, onImproveText, onDraftAssessment,
+}: {
   draft: Lesson; patch: (p: Partial<Lesson>) => void;
   ai: (f: string) => Promise<void>; aiBusy: string | null;
+  quillBusy: string | null;
+  onSuggestObjectives: () => void;
+  onWriteBrief: () => void;
+  onImproveText: (instruction: string) => void;
+  onDraftAssessment: () => void;
 }) {
   const acc = draft.accessibility ?? {};
   const setAcc = (k: keyof NonNullable<Lesson['accessibility']>, v: boolean) =>
     patch({ accessibility: { ...acc, [k]: v } });
   const outputs = draft.aiOutputs ?? {};
+  const hasText = !!(outputs.text ?? '').trim();
+
+  const quillActions: { id: string; label: string; run: () => void; disabled?: boolean }[] = [
+    { id: 'objectives', label: 'Suggest objectives', run: onSuggestObjectives },
+    { id: 'brief', label: 'Write generation brief', run: onWriteBrief },
+    {
+      id: 'improve', label: 'Tighten lesson text', disabled: !hasText,
+      run: () => onImproveText('Tighten this lesson text: remove repetition, sharpen the explanations and keep every fact and example.'),
+    },
+    { id: 'assessment', label: 'Draft assessment sections', run: onDraftAssessment },
+  ];
 
   return (
     <>
       <section className="space-y-2">
+        <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-violet-700">
+          <Sparkles className="w-3 h-3" /> AI assist (Quill)
+        </p>
+        <div className="space-y-1.5">
+          {quillActions.map(a => (
+            <button
+              key={a.id}
+              onClick={a.run}
+              disabled={quillBusy !== null || a.disabled}
+              title={a.disabled ? 'Add or generate lesson text first' : undefined}
+              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl border text-[11px] font-semibold text-left transition-colors border-violet-200 text-violet-700 hover:bg-violet-50 disabled:opacity-45 disabled:hover:bg-transparent"
+            >
+              {quillBusy === a.id ? <Loader2 className="w-3 h-3 animate-spin shrink-0" /> : <Sparkles className="w-3 h-3 shrink-0" />}
+              <span className="truncate">{a.label}</span>
+            </button>
+          ))}
+        </div>
+        <p className="text-[10px] text-muted-foreground">
+          Quill writes drafts into this lesson — review everything before you publish.
+        </p>
+      </section>
+
+      <section className="space-y-2">
         <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Visibility</p>
         <select value={draft.visibility ?? 'all'} onChange={e => patch({ visibility: e.target.value as Lesson['visibility'] })}
           className="w-full h-9 rounded-xl border border-border bg-card px-2 text-xs">
-          <option value="all">All students</option>
-          <option value="teacher_only">Teacher only</option>
-          <option value="scheduled">Scheduled release</option>
+          {VISIBILITY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
         {draft.visibility === 'scheduled' && (
           <input
@@ -749,7 +1338,7 @@ function PropertiesTab({ draft, patch, ai, aiBusy }: {
       </section>
 
       <section className="space-y-2">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">AI generation</p>
+        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">AI generation (per format)</p>
         <div className="grid grid-cols-2 gap-1.5">
           {AI_SHORTCUTS.map(f => {
             const v = outputs[f.id];
@@ -788,12 +1377,13 @@ function PropertiesTab({ draft, patch, ai, aiBusy }: {
   );
 }
 
-function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseId }: {
+function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseId, onPublishRequest }: {
   draft: Lesson; course: Course;
   statusCard: { bg: string; label: string };
   setStatus: (s: NonNullable<Lesson['status']>, label: string) => Promise<void>;
   patchCourse: (p: Partial<Course>, msg?: string) => Promise<void>;
   courseId: string;
+  onPublishRequest: () => void;
 }) {
   const [scheduleDate, setScheduleDate] = useState('');
   const status = draft.status ?? 'draft';
@@ -807,7 +1397,7 @@ function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseI
 
       <div className="space-y-2">
         <Button className="w-full rounded-xl gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
-          disabled={status === 'published'} onClick={() => setStatus('published', 'Published')}>
+          disabled={status === 'published'} onClick={onPublishRequest}>
           <Send className="w-4 h-4" /> Publish Now
         </Button>
         <div className="flex gap-2">
@@ -821,6 +1411,7 @@ function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseI
             Schedule
           </Button>
         </div>
+        {/* Always available to admins, published or not. */}
         <a href={`/dashboard/student/courses/${courseId}/lessons/${draft.id}`} target="_blank" rel="noreferrer" className="block">
           <Button variant="outline" className="w-full rounded-xl gap-2 text-xs"><Eye className="w-3.5 h-3.5" /> Preview as Student</Button>
         </a>
@@ -840,7 +1431,7 @@ function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseI
         <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Scope</p>
         {([
           ['institution', 'Institution Only', 'Visible to allocated institutions'],
-          ['public', 'Public Site', 'Anyone on Pocket School can find it'],
+          ['public', 'Public Site', 'Anyone on Poket School can find it'],
           ['marketplace', 'Marketplace', 'Listed for purchase in the marketplace'],
         ] as const).map(([id, label, desc]) => (
           <button key={id} onClick={() => patchCourse({ publishScope: id }, `Scope: ${label}`)}
@@ -856,7 +1447,7 @@ function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseI
       <section className="space-y-1.5">
         {([
           ['allowComments', 'Student comments'],
-          ['enableLyra', 'Lyra AI Teacher'],
+          ['enableLyra', 'Ayla AI Tutor'],
           ['notifyOnPublish', 'Notify students on publish'],
           ['timedAssessmentMode', 'Timed assessment mode'],
         ] as const).map(([key, label]) => (
@@ -959,7 +1550,7 @@ function HistoryTab({ draft }: { draft: Lesson }) {
     <>
       <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Content audit log</p>
       {entries.length === 0 && (
-        <p className="text-xs text-muted-foreground">No history yet — saves, AI generations and publish actions will appear here.</p>
+        <p className="text-xs text-muted-foreground">No history yet — edits, saves, Quill assists and publish actions will appear here with the name of whoever made them.</p>
       )}
       <div className="space-y-3">
         {entries.map((h, i) => (
@@ -968,7 +1559,8 @@ function HistoryTab({ draft }: { draft: Lesson }) {
             <div className="min-w-0">
               <p className="text-xs font-semibold text-foreground">{h.label}</p>
               <p className="text-[10px] text-muted-foreground">
-                {h.actor} · {h.at?.toDate ? h.at.toDate().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—'}
+                <span className="font-medium text-foreground/70">{h.actor || 'Unknown user'}</span>
+                {' · '}{formatHistoryDate(h.at)}
               </p>
             </div>
           </div>

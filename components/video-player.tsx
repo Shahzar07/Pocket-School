@@ -7,7 +7,7 @@ import {
   SkipBack, SkipForward, Sparkles, Video, Volume2,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { parseScenes, type Scene } from '@/components/video-storyboard';
+import { cleanNarration, parseScenes, type Scene } from '@/components/video-storyboard';
 
 const SCENE_THEMES = [
   'from-indigo-950 via-blue-900 to-slate-950',
@@ -120,7 +120,17 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
   const currentRef = useRef(0);
   const voiceGenId = useRef(0); // cancels stale voice generation on lang change
 
-  const durations = useMemo(() => scenes.map(s => estimateSeconds(s.narration || s.title)), [scenes]);
+  /**
+   * The exact text that is spoken and captioned for each scene — always run
+   * back through cleanNarration() so no speaker label, stage direction,
+   * `[VISUAL: …]` note or markdown ever reaches TTS or the caption track.
+   */
+  const spokenText = useMemo(
+    () => scenes.map(s => cleanNarration(s.narration) || cleanNarration(s.title) || s.title),
+    [scenes]
+  );
+
+  const durations = useMemo(() => spokenText.map(t => estimateSeconds(t)), [spokenText]);
   const totalDuration = useMemo(() => durations.reduce((a, b) => a + b, 0), [durations]);
   const elapsedBefore = useMemo(() => {
     const arr: number[] = [];
@@ -208,8 +218,7 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
     currentRef.current = index;
     setSceneProgress(0);
 
-    const scene = scenes[index];
-    const narration = scene.narration || scene.title;
+    const narration = spokenText[index] || scenes[index].title;
     const advance = () => { if (playingRef.current) playScene(index + 1); };
 
     // Prefer the real AI voice clip for this scene whenever it's ready.
@@ -246,7 +255,7 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
     } else {
       setTimeout(advance, est * 1000);
     }
-  }, [scenes, lang, stopNarration]);
+  }, [scenes, spokenText, lang, stopNarration]);
 
   const togglePlay = () => {
     if (playing) {
@@ -277,21 +286,24 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
 
   // Generate a real human-sounding AI voice clip per scene (Gemini TTS).
   // Runs automatically so the video is voiced without any button press.
-  const generateVoices = useCallback(async (scenesToVoice: Scene[], voice: string) => {
+  const generateVoices = useCallback(async (texts: string[], voice: string) => {
     const genId = ++voiceGenId.current;
     // Free old clips
     hdClips.current.forEach(c => { if (c) URL.revokeObjectURL(c); });
-    hdClips.current = scenesToVoice.map(() => null);
+    hdClips.current = texts.map(() => null);
     setVoiceState('generating');
     setVoiceProgress(0);
     let anyOk = false;
-    for (let i = 0; i < scenesToVoice.length; i++) {
+    for (let i = 0; i < texts.length; i++) {
       if (voiceGenId.current !== genId) return; // superseded (language changed)
       try {
+        // Always narrate the cleaned prose — never stage directions.
+        const script = cleanNarration(texts[i]);
+        if (!script) { setVoiceProgress((i + 1) / texts.length); continue; }
         const res = await fetch('/api/ai/audio', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ script: scenesToVoice[i].narration || scenesToVoice[i].title, voice }),
+          body: JSON.stringify({ script, voice }),
         });
         const type = res.headers.get('content-type') ?? '';
         if (res.ok && type.includes('audio')) {
@@ -301,14 +313,14 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
         }
       } catch { /* keep browser-voice fallback for this scene */ }
       if (voiceGenId.current !== genId) return;
-      setVoiceProgress((i + 1) / scenesToVoice.length);
+      setVoiceProgress((i + 1) / texts.length);
     }
     setVoiceState(anyOk ? 'on' : 'unavailable');
   }, []);
 
   const changeVoice = (voice: string) => {
     setVoiceName(voice);
-    generateVoices(scenes, voice);
+    generateVoices(spokenText, voice);
   };
 
   // Auto-generate the human AI voice whenever the (possibly translated) scenes
@@ -316,9 +328,9 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
   const voiceNameRef = useRef(voiceName);
   voiceNameRef.current = voiceName;
   useEffect(() => {
-    if (!scenes.length) return;
-    generateVoices(scenes, voiceNameRef.current);
-  }, [scenes, generateVoices]);
+    if (!spokenText.length) return;
+    generateVoices(spokenText, voiceNameRef.current);
+  }, [spokenText, generateVoices]);
 
   // Switch language: translate the storyboard, then re-voice + re-render.
   const switchLanguage = async (code: string) => {
@@ -360,6 +372,8 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
 
   const theme = SCENE_THEMES[current % SCENE_THEMES.length];
   const scene: Scene | undefined = scenes[current];
+  // Captions mirror exactly what is spoken — cleaned prose, never directions.
+  const caption = (spokenText[current] ?? '').replace(/\s+/g, ' ').slice(0, 220);
   const elapsed = (elapsedBefore[current] ?? 0) + (durations[current] ?? 0) * sceneProgress;
 
   if (!scene) return null;
@@ -451,10 +465,10 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
         )}
 
         {/* Captions */}
-        {captionsOn && playing && scene.narration && (
+        {captionsOn && playing && caption && (
           <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-10 max-w-[85%] px-4 py-2 rounded-lg bg-black/70 backdrop-blur-sm">
             <p className="text-xs sm:text-sm text-white text-center leading-relaxed line-clamp-3">
-              {scene.narration.replace(/\s+/g, ' ').slice(0, 220)}
+              {caption}
             </p>
           </div>
         )}
@@ -518,7 +532,7 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
               </span>
             )}
             {voiceState === 'unavailable' && (
-              <button onClick={() => generateVoices(scenes, voiceName)} className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-amber-300 hover:text-amber-200" title="Retry AI voice">
+              <button onClick={() => generateVoices(spokenText, voiceName)} className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-amber-300 hover:text-amber-200" title="Retry AI voice">
                 <Volume2 className="w-3.5 h-3.5" /> Retry voice
               </button>
             )}

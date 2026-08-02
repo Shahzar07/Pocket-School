@@ -53,7 +53,7 @@ const platformIntelligence = [
   },
   {
     icon: <User className="w-5 h-5" />,
-    title: 'Mojo Tutor AI',
+    title: 'Ayla Tutor AI',
     desc: 'Your 24/7 AI tutor — explains concepts, answers questions, encourages progress, and adapts its teaching style to your intelligence profile. Always available, never impatient.',
     tag: null,
   },
@@ -78,7 +78,7 @@ const platformIntelligence = [
   {
     icon: <Trophy className="w-5 h-5" />,
     title: 'Gamified Mastery System',
-    desc: 'Streaks, milestones, leaderboards, and achievement badges transform the hard work of academic mastery into an engaging daily habit — because motivation is half the battle, and Pocket School is built to win it.',
+    desc: 'Streaks, milestones, leaderboards, and achievement badges transform the hard work of academic mastery into an engaging daily habit — because motivation is half the battle, and Poket School is built to win it.',
     tag: 'Engagement through gamification',
   },
 ];
@@ -95,20 +95,20 @@ const eightIntelligences = [
 ];
 
 const ninePathways = [
-  { num: '01', tag: 'QUALIFICATION', title: 'IGCSE Program', desc: 'International General Certificate of Secondary Education — delivered through a fully modular, self-paced format with AI-guided revision and visual concept tools for all subjects.', badge: 'Ideal for Cambridge, Pearson & AQA examination bodies' },
-  { num: '02', tag: 'QUALIFICATION', title: 'A Levels', desc: 'Advanced Level programmes opening pathways to universities worldwide. AI exam prep, structured study schedules, and visual subject mastery built around your timeline.', badge: 'Ideal for Cambridge, Pearson & AQA examination bodies' },
+  { num: '01', tag: 'QUALIFICATION', title: 'IGCSE Program', desc: 'International General Certificate of Secondary Education — delivered through a fully modular, self-paced format with AI-guided revision and visual concept tools for all subjects.', badge: 'Aligned with IGCSE & A Level curricula' },
+  { num: '02', tag: 'QUALIFICATION', title: 'A Levels', desc: 'Advanced Level programmes opening pathways to universities worldwide. AI exam prep, structured study schedules, and visual subject mastery built around your timeline.', badge: 'Aligned with IGCSE & A Level curricula' },
   { num: '03', tag: 'TRANSITION', title: 'Pre-University Programs', desc: 'Bridging programmes that close the gap between secondary school and degree-level study — developing critical thinking, academic writing, and research fluency.', badge: 'University prep' },
   { num: '04', tag: 'FOUNDATION', title: 'Foundation Programs', desc: 'Structured academic foundations across business, sciences, arts, and technology — preparing learners for direct entry into bachelor degree programmes.', badge: 'Degree entry' },
   { num: '05', tag: 'DEGREE', title: 'London External Law Degree', desc: 'Study a globally respected external LLB with full platform support, visual case study tools, and law-specialist AI guidance — entirely at your own pace.', badge: 'University of London' },
   { num: '06', tag: 'CREDENTIAL', title: 'Micro Degrees', desc: 'Focused, credit-bearing micro-qualifications in high-demand fields — completed in weeks. Portable, employer-recognised, and stackable toward full degrees.', badge: 'Flexible credential' },
   { num: '07', tag: 'QUALIFICATION', title: 'Diplomas', desc: 'Accredited diploma programmes in business, technology, education, and creative disciplines — a respected pathway for career changers and school leavers alike.', badge: 'Accredited' },
   { num: '08', tag: 'PROFESSIONAL', title: 'Professional Certifications', desc: 'Industry-aligned certifications that validate real skills — from project management to digital marketing, data analytics to educational coaching.', badge: 'Career ready' },
-  { num: '09', tag: 'OPEN LEARNING', title: 'Independent Learning Courses', desc: 'Self-directed exploration for curious minds. Pick a topic, learn at your pace, guided by Mojo AI and a rich visual resource library. No deadlines. Just growth.', badge: 'Self-paced' },
+  { num: '09', tag: 'OPEN LEARNING', title: 'Independent Learning Courses', desc: 'Self-directed exploration for curious minds. Pick a topic, learn at your pace, guided by Ayla and a rich visual resource library. No deadlines. Just growth.', badge: 'Self-paced' },
 ];
 
 const fourSteps = [
   { num: '01', title: 'Create Your Profile', desc: 'Share your goals, level, and time. Our AI builds your personalised learning map from day one.' },
-  { num: '02', title: 'Choose Your Pathway', desc: 'Pick from 9 academic pathways — or let Mojo AI recommend the best route for your goals.' },
+  { num: '02', title: 'Choose Your Pathway', desc: 'Pick from 9 academic pathways — or let Ayla recommend the best route for your goals.' },
   { num: '03', title: 'Learn Your Way', desc: 'Visual lessons, adaptive exercises, AI explanations — delivered in your intelligence style, at your pace.' },
   { num: '04', title: 'Track & Achieve', desc: 'Watch mastery grow in real time. Earn recognised credentials. Unlock your next level.' },
 ];
@@ -219,7 +219,7 @@ const testimonials = [
     stars: 5,
   },
   {
-    quote: "I've used three other AI study tools and Pocket School is the only one that made me feel like I was actually learning, not just staring at outputs.",
+    quote: "I've used three other AI study tools and Poket School is the only one that made me feel like I was actually learning, not just staring at outputs.",
     name: 'Tanya S.',
     role: 'University Foundation Year',
     avatarSeed: 'Tanya',
@@ -263,13 +263,13 @@ const testimonials = [
 const stats = [
   { value: '9', label: 'Academic Pathways' },
   { value: '8', label: 'Ways of Knowing' },
-  { value: '24/7', label: 'Mojo AI Tutor' },
-  { value: 'Cambridge · AQA', label: 'Examination Bodies' },
+  { value: '24/7', label: 'Ayla AI Tutor' },
+  { value: '12', label: 'AI Study Formats' },
 ];
 
 const faqs = [
   {
-    q: 'Is Pocket School free?',
+    q: 'Is Poket School free?',
     a: 'Yes. Individual students, teachers and parents can use the core platform free forever. Institutions get a paid tier for analytics, SSO and admin controls.',
   },
   {
@@ -277,7 +277,7 @@ const faqs = [
     a: 'PDFs, Word docs, plain text, YouTube and Vimeo URLs, audio recordings up to 200 MB, and pasted text. Scanned-image OCR is coming next quarter.',
   },
   {
-    q: 'Which AI model powers Pocket School?',
+    q: 'Which AI model powers Poket School?',
     a: "Advanced AI models for content generation and the Socratic tutor. We don't train on your uploads — your material stays yours.",
   },
   {
@@ -837,7 +837,7 @@ function PopularCoursesSection() {
                 </div>
                 <div className="p-4 flex flex-col flex-1">
                   <h3 className="font-bold text-sm text-foreground mb-1 line-clamp-2">{c.title}</h3>
-                  <p className="text-[11px] text-muted-foreground mb-3">{c.ownerName ?? 'Pocket School'}</p>
+                  <p className="text-[11px] text-muted-foreground mb-3">{c.ownerName ?? 'Poket School'}</p>
                   <div className="mt-auto flex items-center justify-between">
                     <span className={`text-sm font-extrabold ${c.price ? 'text-foreground' : 'text-emerald-600'}`}>
                       {fmtPrice(c)}
@@ -870,9 +870,9 @@ export default function LandingPage() {
 
 
   const portalTabUrl: Record<string, string> = {
-    student: 'pocketschool.app/student',
-    teacher: 'pocketschool.app/teacher',
-    parent: 'pocketschool.app/parent',
+    student: 'poketschool.ai/student',
+    teacher: 'poketschool.ai/teacher',
+    parent: 'poketschool.ai/parent',
   };
 
   return (
@@ -922,14 +922,19 @@ export default function LandingPage() {
               .&rdquo;
             </p>
             <div className="mt-8 flex items-center gap-3 flex-wrap">
-              <span className="text-xs font-semibold text-slate-500">Ideal for:</span>
-              {['Cambridge', 'Pearson', 'AQA'].map((b) => (
+              <span className="text-xs font-semibold text-slate-500">Curriculum aligned with:</span>
+              {['IGCSE', 'A Level', 'SPM', 'Professional'].map((b) => (
                 <span key={b} className="px-3 py-1.5 rounded-md border border-[#1A73E8]/20 bg-[#EEF3FF] text-xs font-bold text-[#1E3A8A]">
                   {b}
                 </span>
               ))}
-              <span className="text-xs text-slate-500">examination bodies</span>
+              <span className="text-xs text-slate-500">programmes</span>
             </div>
+            <p className="mt-4 text-xs text-slate-500 leading-relaxed max-w-lg">
+              Poket School is an independent learning platform. We are not affiliated with, endorsed by,
+              or accredited by any examination board or government body. Curriculum references are for
+              alignment and preparation purposes only.
+            </p>
           </motion.div>
 
           <motion.div
@@ -940,7 +945,7 @@ export default function LandingPage() {
             className="space-y-5 text-base sm:text-lg leading-relaxed text-slate-700"
           >
             <p>
-              Pocket School is not a tutoring platform or a content library. It is a full learning operating system — one that adapts to how you think, how you see, and how you make meaning of the world.
+              Poket School is not a tutoring platform or a content library. It is a full learning operating system — one that adapts to how you think, how you see, and how you make meaning of the world.
             </p>
             <p>
               Built on the science of multiple intelligences, every lesson, interaction, and assessment is designed to activate more than one way of knowing. Your unique intelligence profile shapes every step of your learning journey.
@@ -972,7 +977,7 @@ export default function LandingPage() {
               </h2>
             </div>
             <p className="text-base sm:text-lg text-slate-600 leading-relaxed lg:pt-12">
-              Every person processes the world differently. Pocket School&rsquo;s visual learning methodology is built on the science of multiple intelligences — activating several intelligence types in every lesson so content reaches learners the way they actually think, not the way a textbook assumes they should.
+              Every person processes the world differently. Poket School&rsquo;s visual learning methodology is built on the science of multiple intelligences — activating several intelligence types in every lesson so content reaches learners the way they actually think, not the way a textbook assumes they should.
             </p>
           </motion.div>
 
@@ -1001,6 +1006,151 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Meet the AI — Ayla & Quill ────────────────────────── */}
+      <section id="meet-the-ai" className="py-20 sm:py-28 bg-[#0B1B3F] text-white overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+            className="text-center max-w-2xl mx-auto mb-14"
+          >
+            <p className="text-xs font-bold tracking-[0.2em] text-[#60A5FA] mb-4">TWO AI SYSTEMS, ONE PLATFORM</p>
+            <h2 className="font-heading text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-[1.05] mb-5">
+              Meet <span className="bg-gradient-to-r from-[#60A5FA] to-[#C4B5FD] bg-clip-text text-transparent">Ayla</span>
+              {' '}and{' '}
+              <span className="bg-gradient-to-r from-[#F5B400] to-[#FCD34D] bg-clip-text text-transparent">Quill</span>
+            </h2>
+            <p className="text-base sm:text-lg text-white/60 leading-relaxed">
+              Most platforms give you one chatbot. We built two specialists — one who teaches you,
+              one who builds your materials.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 gap-5 max-w-4xl mx-auto">
+            {[
+              {
+                name: 'Ayla',
+                role: 'Your AI Tutor',
+                tint: 'from-[#1A73E8] to-[#7C3AED]',
+                blurb: 'Ayla teaches. She explains concepts, asks you leading questions, marks your work in real time, shows you exactly where a mistake happened, and re-teaches until it clicks — face to face, in 15 languages.',
+                points: ['Socratic one-to-one tutoring', 'Live quiz & problem marking', 'Pinpoints your exact misconception', 'Speaks and listens in your language'],
+                cta: { label: 'Meet the AI teachers', href: '/ai-teachers' },
+              },
+              {
+                name: 'Quill',
+                role: 'Your Content Generator',
+                tint: 'from-[#F5B400] to-[#EA580C]',
+                blurb: 'Quill builds. Give it any topic or upload your notes and it produces a full study kit — lessons, quizzes, flashcards, mind maps, infographics, narrated video and audio — in seconds.',
+                points: ['12 study formats from one topic', 'Playable narrated video lessons', 'AI-voiced audio revision', 'Saved to your personal library'],
+                cta: { label: 'Open AI Studio', href: '/ai-studio' },
+              },
+            ].map((ai, i) => (
+              <motion.div
+                key={ai.name}
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: '-40px' }}
+                custom={i}
+                className="rounded-3xl border border-white/10 bg-white/[0.04] p-7 backdrop-blur-sm hover:border-white/20 transition-colors"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${ai.tint} flex items-center justify-center shadow-lg`}>
+                    <Sparkles className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-heading text-2xl leading-none">{ai.name}</p>
+                    <p className="text-xs text-white/50 mt-1">{ai.role}</p>
+                  </div>
+                </div>
+                <p className="text-sm text-white/70 leading-relaxed mb-5">{ai.blurb}</p>
+                <ul className="space-y-2 mb-6">
+                  {ai.points.map(p => (
+                    <li key={p} className="text-sm text-white/60 flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/40 mt-1.5 shrink-0" />{p}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href={ai.cta.href}
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-white hover:gap-2.5 transition-all"
+                >
+                  {ai.cta.label} <ArrowRight className="w-4 h-4" />
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Bloom's Taxonomy — the mastery framework ──────────── */}
+      <section id="blooms" className="py-20 sm:py-28 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+            className="grid lg:grid-cols-2 gap-10 lg:gap-16 mb-14 items-start"
+          >
+            <div>
+              <p className="text-xs font-bold tracking-[0.2em] text-[#1A73E8] mb-4">MASTERY FRAMEWORK</p>
+              <h2 className="font-heading text-4xl sm:text-5xl lg:text-6xl tracking-tight text-[#0B1B3F] leading-[1.05]">
+                Built on{' '}
+                <span className="bg-gradient-to-r from-[#1A73E8] to-[#1E3A8A] bg-clip-text text-transparent">Bloom&rsquo;s Taxonomy</span>
+              </h2>
+            </div>
+            <p className="text-base sm:text-lg text-slate-600 leading-relaxed lg:pt-12">
+              Knowing a fact and being able to use it are different things. Every lesson, question and
+              report card on Poket School is tagged against the six levels of Bloom&rsquo;s Taxonomy — so
+              you can see not just <em>what</em> you know, but <em>how deeply</em> you know it. Ayla uses
+              your Bloom&rsquo;s profile to decide what to ask next.
+            </p>
+          </motion.div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+            {[
+              { level: 'Remember', desc: 'Recall facts and basic concepts', tone: 'from-sky-500 to-blue-600' },
+              { level: 'Understand', desc: 'Explain ideas in your own words', tone: 'from-cyan-500 to-teal-600' },
+              { level: 'Apply', desc: 'Use knowledge in new situations', tone: 'from-emerald-500 to-green-600' },
+              { level: 'Analyse', desc: 'Draw connections between ideas', tone: 'from-amber-500 to-orange-600' },
+              { level: 'Evaluate', desc: 'Justify a position or decision', tone: 'from-rose-500 to-red-600' },
+              { level: 'Create', desc: 'Produce original work from it', tone: 'from-violet-500 to-fuchsia-600' },
+            ].map((b, i) => (
+              <motion.div
+                key={b.level}
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: '-40px' }}
+                custom={i % 6}
+                className="rounded-2xl border border-slate-200 bg-[#F8FAFF] p-5 hover:shadow-lg hover:border-slate-300 transition-all"
+              >
+                <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${b.tone} flex items-center justify-center text-white text-xs font-black mb-3`}>
+                  {i + 1}
+                </div>
+                <h3 className="text-sm font-extrabold text-[#0B1B3F] mb-1.5">{b.level}</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">{b.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.p
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="text-center text-sm text-slate-500 mt-8 max-w-2xl mx-auto"
+          >
+            Combined with the eight intelligences above, this gives every learner a two-dimensional
+            profile: <strong className="text-[#0B1B3F]">how</strong> you learn best, and{' '}
+            <strong className="text-[#0B1B3F]">how deeply</strong> you&rsquo;ve mastered each topic.
+          </motion.p>
+        </div>
+      </section>
+
       {/* ── Platform Intelligence — AI That Actually Knows You ── */}
       <section id="platform" className="relative py-20 sm:py-28 bg-gradient-to-b from-[#F8FAFF] to-white overflow-hidden">
         <FloatingDecoration
@@ -1025,7 +1175,7 @@ export default function LandingPage() {
               <span className="bg-gradient-to-r from-[#1A73E8] to-[#1E3A8A] bg-clip-text text-transparent">Knows You</span>
             </h2>
             <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl">
-              Pocket School&rsquo;s intelligence layer adapts to how you learn and evolves with every session — not just what you study, but how you understand.
+              Poket School&rsquo;s intelligence layer adapts to how you learn and evolves with every session — not just what you study, but how you understand.
             </p>
           </motion.div>
 
@@ -1159,7 +1309,7 @@ export default function LandingPage() {
               <span className="bg-gradient-to-r from-[#1A73E8] to-[#1E3A8A] bg-clip-text text-transparent">in Four Steps</span>
             </h2>
             <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-              From sign-up to your first breakthrough — Pocket School gets you there faster than any platform you&rsquo;ve tried.
+              From sign-up to your first breakthrough — Poket School gets you there faster than any platform you&rsquo;ve tried.
             </p>
           </motion.div>
 
@@ -1297,7 +1447,7 @@ export default function LandingPage() {
                 {t.reply && (
                   <div className="mb-3 pl-3 border-l-2 border-primary/20">
                     <p className="text-[11px] text-muted-foreground">
-                      <span className="font-semibold text-primary">↳ Pocket School</span>
+                      <span className="font-semibold text-primary">↳ Poket School</span>
                       {' '}— {t.reply}
                     </p>
                   </div>
@@ -1430,7 +1580,7 @@ function GlassFooter() {
                 <div className="bg-white/10 backdrop-blur-sm p-2 rounded-xl border border-white/20">
                   <Brain className="w-5 h-5" />
                 </div>
-                <span className="text-xl font-semibold">Pocket School</span>
+                <span className="text-xl font-semibold">Poket School</span>
               </div>
               <p className="text-sm leading-relaxed max-w-sm text-white/60">
                 AI-powered adaptive learning for IGCSE, A-Levels, degrees and beyond — built around how you think.
@@ -1485,7 +1635,7 @@ function GlassFooter() {
           {/* Bottom bar */}
           <div className="pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-4">
             <p className="text-[10px] uppercase tracking-widest opacity-50">
-              &copy; {new Date().getFullYear()} Pocket School · Powered by Rochford&apos;s Education
+              &copy; {new Date().getFullYear()} Poket School · Powered by Rochford&apos;s Education
             </p>
             <div className="flex items-center gap-4">
               <span className="text-[10px] uppercase tracking-widest opacity-50">Follow Us:</span>

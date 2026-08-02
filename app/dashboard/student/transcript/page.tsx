@@ -110,7 +110,7 @@ export default function TranscriptPage() {
 
       {/* Print header */}
       <div className="hidden print:block border-b pb-4 mb-6">
-        <h1 className="text-3xl font-bold">Pocket School</h1>
+        <h1 className="text-3xl font-bold">Poket School</h1>
         <h2 className="text-xl mt-1">Official Academic Transcript</h2>
         <p className="text-sm text-muted-foreground mt-2">Student: {profile?.name}</p>
         <p className="text-sm text-muted-foreground">Issued: {new Date().toLocaleDateString()}</p>

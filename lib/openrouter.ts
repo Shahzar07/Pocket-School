@@ -56,8 +56,8 @@ export async function callOpenRouter(
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://pocket-school.app',
-          'X-Title': 'Pocket School',
+          'HTTP-Referer': 'https://poketschool.ai',
+          'X-Title': 'Poket School',
         },
         body: JSON.stringify({
           model,

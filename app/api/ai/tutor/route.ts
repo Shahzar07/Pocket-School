@@ -48,10 +48,10 @@ export async function POST(req: NextRequest) {
       ? `\n\nCurrent lesson context the student is studying: "${lessonContext}"\nWhen relevant, relate your explanations to this topic.`
       : '';
 
-    // A named teacher persona overrides the default POCO identity.
+    // A named teacher persona overrides the default Ayla identity.
     const identity = persona
       ? `You are ${persona}. Stay fully in character as this teacher — warm, expert, and encouraging.`
-      : `You are POCO, Pocket School's intelligent AI learning companion. You are warm, sharp, and genuinely invested in the student's understanding. Refer to yourself as POCO if asked your name.`;
+      : `You are Ayla, Poket School's AI tutor. You are warm, sharp, and genuinely invested in the student's understanding. Refer to yourself as Ayla if asked your name.`;
 
     const langInstruction = language && language !== 'en' && LANG_NAMES[language]
       ? `\n\nIMPORTANT: Reply ENTIRELY in ${LANG_NAMES[language]}. Every sentence of your response must be in ${LANG_NAMES[language]}, unless quoting a technical term that has no translation.`
@@ -80,8 +80,8 @@ export async function POST(req: NextRequest) {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://pocket-school.app',
-          'X-Title': 'Pocket School',
+          'HTTP-Referer': 'https://poketschool.ai',
+          'X-Title': 'Poket School',
         },
         body: JSON.stringify({
           model: SMART_MODEL,

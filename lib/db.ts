@@ -1727,6 +1727,179 @@ export async function deleteTask(id: string) {
   await deleteDoc(doc(db, 'tasks', id));
 }
 
+// ─── Daily Goals (accountability system) ──────────────────────────────────────
+
+export type GoalCategory = 'study' | 'revision' | 'practice' | 'reading' | 'other';
+export type GoalStatus = 'not_started' | 'in_progress' | 'completed' | 'overdue' | 'excused';
+
+export interface DailyGoal {
+  id: string;
+  studentId: string;
+  studentName?: string;
+  /** Local date key YYYY-MM-DD so a day's goals group without timezone drift. */
+  dateKey: string;
+  title: string;
+  category: GoalCategory;
+  /** Minutes the student estimated. */
+  estimateMinutes: number;
+  /** Deadline as HH:mm local time. */
+  deadline: string;
+  courseId?: string;
+  courseLabel?: string;
+  status: GoalStatus;
+  startedAt?: Timestamp;
+  completedAt?: Timestamp;
+  /** Actual minutes taken, filled on completion. */
+  actualMinutes?: number;
+  xpAwarded?: number;
+  excuseReason?: string;
+  excusedBy?: string;
+  /** Which parent alerts already fired, so we never double-notify. */
+  notifiedNotStarted?: boolean;
+  notifiedMissed?: boolean;
+  createdAt?: Timestamp;
+}
+
+/** Local YYYY-MM-DD (not UTC) — goals are a "today" concept for the student. */
+export function goalDateKey(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+export async function createDailyGoal(data: Omit<DailyGoal, 'id' | 'createdAt'>): Promise<string> {
+  const ref = await addDoc(collection(db, 'daily_goals'), { ...data, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function getDailyGoals(studentId: string, dateKey?: string): Promise<DailyGoal[]> {
+  // Single-field equality queries only — avoids composite index requirements.
+  const q = query(collection(db, 'daily_goals'), where('studentId', '==', studentId));
+  const snap = await getDocs(q);
+  const all = snap.docs.map(d => ({ id: d.id, ...d.data() } as DailyGoal));
+  const filtered = dateKey ? all.filter(g => g.dateKey === dateKey) : all;
+  return filtered.sort((a, b) => (a.deadline || '').localeCompare(b.deadline || ''));
+}
+
+/** Live goals feed — used by the student page and the parent dashboard. */
+export function subscribeDailyGoals(
+  studentId: string, cb: (goals: DailyGoal[]) => void, dateKey?: string
+): () => void {
+  return onSnapshot(
+    query(collection(db, 'daily_goals'), where('studentId', '==', studentId)),
+    snap => {
+      const all = snap.docs.map(d => ({ id: d.id, ...d.data() } as DailyGoal));
+      const filtered = dateKey ? all.filter(g => g.dateKey === dateKey) : all;
+      cb(filtered.sort((a, b) => (a.deadline || '').localeCompare(b.deadline || '')));
+    },
+    () => cb([])
+  );
+}
+
+export async function updateDailyGoal(id: string, data: Partial<DailyGoal>) {
+  await updateDoc(doc(db, 'daily_goals', id), data as Record<string, unknown>);
+}
+
+export async function deleteDailyGoal(id: string) {
+  await deleteDoc(doc(db, 'daily_goals', id));
+}
+
+export async function startDailyGoal(id: string) {
+  await updateDoc(doc(db, 'daily_goals', id), { status: 'in_progress', startedAt: serverTimestamp() });
+}
+
+/** Complete a goal, award XP (bonus on time) and notify the linked parents. */
+export async function completeDailyGoal(
+  goal: DailyGoal, onTime: boolean
+): Promise<{ xp: number }> {
+  const xp = onTime ? 50 : 25;
+  const started = goal.startedAt?.toMillis?.();
+  await updateDoc(doc(db, 'daily_goals', goal.id), {
+    status: 'completed',
+    completedAt: serverTimestamp(),
+    xpAwarded: xp,
+    ...(started ? { actualMinutes: Math.max(1, Math.round((Date.now() - started) / 60000)) } : {}),
+  });
+  try {
+    await updateDoc(doc(db, 'users', goal.studentId), { xp: increment(xp), updatedAt: serverTimestamp() });
+  } catch { /* XP is best-effort */ }
+  return { xp };
+}
+
+/** Parent-side waiver: protects the streak and stops further alerts. */
+export async function excuseDailyGoal(id: string, reason: string, parentName: string) {
+  await updateDoc(doc(db, 'daily_goals', id), {
+    status: 'excused', excuseReason: reason, excusedBy: parentName, notifiedMissed: true,
+  });
+}
+
+/** Consecutive days where every goal set that day was completed or excused. */
+export function computeGoalStreak(goals: DailyGoal[]): number {
+  const byDay = new Map<string, DailyGoal[]>();
+  goals.forEach(g => {
+    if (!byDay.has(g.dateKey)) byDay.set(g.dateKey, []);
+    byDay.get(g.dateKey)!.push(g);
+  });
+  let streak = 0;
+  const cursor = new Date();
+  // Today only counts if already fully done; otherwise start counting from yesterday.
+  for (let i = 0; i < 400; i++) {
+    const key = goalDateKey(cursor);
+    const day = byDay.get(key);
+    const complete = !!day?.length && day.every(g => g.status === 'completed' || g.status === 'excused');
+    if (complete) streak++;
+    else if (i > 0 || day?.length) break;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+/** All of a parent's children's goals for a date — powers the parent feed. */
+export async function getChildrenDailyGoals(
+  parentId: string, dateKey: string
+): Promise<{ childId: string; childName: string; goals: DailyGoal[] }[]> {
+  const children = await getChildrenProfiles(parentId);
+  return Promise.all(children.map(async c => ({
+    childId: c.id,
+    childName: c.data.name || 'Student',
+    goals: await getDailyGoals(c.id, dateKey).catch(() => []),
+  })));
+}
+
+/** Fire the "not started" / "missed" alerts once each, to every linked parent. */
+export async function checkGoalAlerts(studentId: string, studentName: string, goals: DailyGoal[]) {
+  const now = new Date();
+  const parents = await getDocs(
+    query(collection(db, 'users'), where('childIds', 'array-contains', studentId))
+  ).catch(() => null);
+  if (!parents || parents.empty) return;
+
+  for (const goal of goals) {
+    const [h, m] = (goal.deadline || '23:59').split(':').map(Number);
+    const due = new Date(now); due.setHours(h || 23, m || 59, 0, 0);
+    const overdue = now > due;
+
+    let title = '', message = '', flag: 'notifiedNotStarted' | 'notifiedMissed' | null = null;
+    if (overdue && goal.status !== 'completed' && goal.status !== 'excused' && !goal.notifiedMissed) {
+      title = `${studentName} missed a goal`;
+      message = `"${goal.title}" wasn't completed. It was due at ${goal.deadline}.`;
+      flag = 'notifiedMissed';
+    } else if (
+      !overdue && goal.status === 'not_started' && !goal.notifiedNotStarted &&
+      due.getTime() - now.getTime() < 60 * 60 * 1000
+    ) {
+      title = `${studentName} hasn't started a goal`;
+      message = `"${goal.title}" is due at ${goal.deadline} and hasn't been started yet.`;
+      flag = 'notifiedNotStarted';
+    }
+    if (!flag) continue;
+
+    await Promise.all(parents.docs.map(p => createNotification({
+      userId: p.id, title, message, type: 'general',
+      link: '/dashboard/parent', read: false,
+    }).catch(() => {})));
+    await updateDailyGoal(goal.id, { [flag]: true } as Partial<DailyGoal>);
+  }
+}
+
 
 // ─── Attendance ───────────────────────────────────────────────────────────────
 

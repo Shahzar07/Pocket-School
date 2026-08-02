@@ -54,7 +54,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/student/transcript', icon: GraduationCap, label: 'Transcript' },
       { href: '/dashboard/student/attendance', icon: ClipboardCheck, label: 'Attendance' },
       { href: '/dashboard/student/certificates', icon: Award, label: 'Certificates' },
-      { href: '/dashboard/student/tasks', icon: ListTodo, label: 'My Tasks' },
+      { href: '/dashboard/student/tasks', icon: ListTodo, label: 'Daily Goals' },
     ]},
     { section: 'Finance', items: [
       { href: '/dashboard/student/billing', icon: CreditCard, label: 'Billing' },
@@ -89,14 +89,11 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher/integrity', icon: AlertTriangle, label: 'Integrity' },
       { href: '/dashboard/teacher/behaviour', icon: Star, label: 'Behaviour' },
     ]},
-    { section: 'Finance', items: [
-      { href: '/dashboard/teacher/billing', icon: CreditCard, label: 'Billing' },
-    ]},
+    // Billing and Helpdesk are institution-admin responsibilities, not teachers'.
     { section: 'School', items: [
       { href: '/dashboard/announcements', icon: Megaphone, label: 'Announcements' },
       { href: '/dashboard/calendar', icon: Calendar, label: 'Calendar' },
       { href: '/dashboard/resources', icon: Library, label: 'Resources' },
-      { href: '/dashboard/helpdesk', icon: HelpCircle, label: 'Helpdesk' },
     ]},
     { section: 'Account', items: [
       { href: '/dashboard/profile', icon: UserCircle, label: 'My Profile' },
@@ -227,7 +224,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Sparkles className="w-[18px] h-[18px] text-white" />
             </div>
             <div className="leading-none">
-              <span className="font-heading text-xl text-white tracking-tight block">Pocket School</span>
+              <span className="font-heading text-xl text-white tracking-tight block">Poket School</span>
               <span className={`inline-block mt-1.5 text-[9px] font-bold uppercase tracking-[0.18em] text-white/90 bg-gradient-to-r ${accent.chip} px-2 py-[3px] rounded-full`}>
                 {role} portal
               </span>
@@ -272,7 +269,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </button>
             </div>
           </div>
-          <p className="text-[10px] text-center text-slate-600 mt-2.5">© 2026 Pocket School</p>
+          <p className="text-[10px] text-center text-slate-600 mt-2.5">© 2026 Poket School</p>
         </div>
       </aside>
 

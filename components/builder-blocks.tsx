@@ -22,8 +22,12 @@ import {
 /* ── Shared bits ────────────────────────────────────────────── */
 
 export const BLOOMS = ['Remember', 'Understand', 'Apply', 'Analyse', 'Evaluate', 'Create'];
+
+/** @deprecated Bloom's levels are always shown in full — teachers found the
+ * initials (R/U/Ap/An/Ev/C) unreadable. Kept only so older imports still build. */
 export const BLOOM_SHORT: Record<string, string> = {
-  Remember: 'R', Understand: 'U', Apply: 'Ap', Analyse: 'An', Evaluate: 'Ev', Create: 'C',
+  Remember: 'Remember', Understand: 'Understand', Apply: 'Apply',
+  Analyse: 'Analyse', Evaluate: 'Evaluate', Create: 'Create',
 };
 
 export interface BlockDef {
@@ -92,8 +96,11 @@ export function BlockShell({
         <span className="text-base leading-none">{def.icon}</span>
         <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{def.label}</span>
         {bloom && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 font-bold">
-            {BLOOM_SHORT[bloom] ?? bloom}
+          <span
+            className="text-[10px] px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 font-bold whitespace-nowrap"
+            title={`Bloom's level: ${bloom}`}
+          >
+            {bloom}
           </span>
         )}
         <span className="flex-1" />
@@ -129,9 +136,12 @@ export function BlockShell({
 
 /* ── Objectives ─────────────────────────────────────────────── */
 
-export function ObjectivesBlock({ value, onChange }: {
+export function ObjectivesBlock({ value, onChange, onSuggest, suggesting }: {
   value: { text: string; bloom: string }[];
   onChange: (v: { text: string; bloom: string }[]) => void;
+  /** Quill: fills this block with Bloom's-aligned objectives. */
+  onSuggest?: () => void;
+  suggesting?: boolean;
 }) {
   const rows = value.length ? value : [];
   const update = (i: number, patch: Partial<{ text: string; bloom: string }>) => {
@@ -145,10 +155,10 @@ export function ObjectivesBlock({ value, onChange }: {
           <select
             value={o.bloom}
             onChange={e => update(i, { bloom: e.target.value })}
-            className="text-[10px] font-bold rounded-lg border border-violet-200 bg-violet-50 text-violet-700 px-1.5 py-1.5 shrink-0"
+            className="text-[11px] font-semibold rounded-lg border border-violet-200 bg-violet-50 text-violet-700 px-2 py-2 shrink-0 w-28"
             title="Bloom's level"
           >
-            {BLOOMS.map(b => <option key={b} value={b}>{BLOOM_SHORT[b]}</option>)}
+            {BLOOMS.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
           <Input
             value={o.text}
@@ -161,10 +171,24 @@ export function ObjectivesBlock({ value, onChange }: {
           </button>
         </div>
       ))}
-      <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-8 text-xs"
-        onClick={() => onChange([...rows, { text: '', bloom: 'Understand' }])}>
-        <Plus className="w-3 h-3" /> Add Objective
-      </Button>
+      {rows.length === 0 && (
+        <p className="text-xs text-muted-foreground">
+          No objectives yet — add them by hand or let Quill suggest a Bloom’s-aligned set.
+        </p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-8 text-xs"
+          onClick={() => onChange([...rows, { text: '', bloom: 'Understand' }])}>
+          <Plus className="w-3 h-3" /> Add Objective
+        </Button>
+        {onSuggest && (
+          <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-50"
+            disabled={suggesting} onClick={onSuggest}>
+            {suggesting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+            Suggest with Quill
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
@@ -290,11 +314,14 @@ function VideoEmbed({ url }: { url: string }) {
 
 /* ── Lesson text ────────────────────────────────────────────── */
 
-export function LessonTextBlock({ value, onChange, ai, generating }: {
+export function LessonTextBlock({ value, onChange, ai, generating, onImprove, improving }: {
   value: string;
   onChange: (v: string) => void;
   ai: AiRunner;
   generating: boolean;
+  /** Quill: rewrites the existing text in place (expand / simplify / tighten). */
+  onImprove?: (instruction: string) => void;
+  improving?: boolean;
 }) {
   const words = value.trim() ? value.trim().split(/\s+/).length : 0;
   return (
@@ -312,14 +339,29 @@ export function LessonTextBlock({ value, onChange, ai, generating }: {
       <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
         <span>{words} words · ~{Math.max(1, Math.round(words / 200))} min read</span>
         <span className="flex-1" />
-        <Button size="sm" variant="outline" className="rounded-xl h-7 text-[11px] gap-1" disabled={generating}
-          onClick={() => ai('text', 'Expand the existing lesson text with more depth, worked examples and clearer explanations. Keep the same structure.')}>
-          <Sparkles className="w-3 h-3" /> AI Expand
-        </Button>
-        <Button size="sm" variant="outline" className="rounded-xl h-7 text-[11px] gap-1" disabled={generating}
-          onClick={() => ai('text', 'Simplify the existing lesson text for a younger reading level while keeping all key facts.')}>
-          <Sparkles className="w-3 h-3" /> Simplify
-        </Button>
+        {onImprove && value.trim() ? (
+          <>
+            <Button size="sm" variant="outline" className="rounded-xl h-7 text-[11px] gap-1 border-violet-200 text-violet-700 hover:bg-violet-50" disabled={improving}
+              onClick={() => onImprove('Expand this lesson text with more depth, worked examples and clearer explanations. Keep the same structure and headings.')}>
+              {improving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} Quill Expand
+            </Button>
+            <Button size="sm" variant="outline" className="rounded-xl h-7 text-[11px] gap-1 border-violet-200 text-violet-700 hover:bg-violet-50" disabled={improving}
+              onClick={() => onImprove('Simplify this lesson text for a younger reading level while keeping every key fact and all worked examples.')}>
+              {improving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} Quill Simplify
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button size="sm" variant="outline" className="rounded-xl h-7 text-[11px] gap-1" disabled={generating}
+              onClick={() => ai('text', 'Expand the existing lesson text with more depth, worked examples and clearer explanations. Keep the same structure.')}>
+              <Sparkles className="w-3 h-3" /> AI Expand
+            </Button>
+            <Button size="sm" variant="outline" className="rounded-xl h-7 text-[11px] gap-1" disabled={generating}
+              onClick={() => ai('text', 'Simplify the existing lesson text for a younger reading level while keeping all key facts.')}>
+              <Sparkles className="w-3 h-3" /> Simplify
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -510,12 +552,12 @@ export function AssignmentBlock({ value, onChange }: {
       <div className="space-y-2">
         <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Marking rubric</p>
         {rubric.map((r, i) => (
-          <div key={i} className="grid grid-cols-[1fr_2fr_70px_70px_auto] gap-2 items-center">
+          <div key={i} className="grid grid-cols-[1fr_2fr_64px_104px_auto] gap-2 items-center">
             <Input value={r.criterion} onChange={e => updateRubric(i, { criterion: e.target.value })} placeholder="Criterion" className="h-8 rounded-lg text-xs" />
             <Input value={r.descriptor} onChange={e => updateRubric(i, { descriptor: e.target.value })} placeholder="Descriptor" className="h-8 rounded-lg text-xs" />
             <Input type="number" value={r.marks} onChange={e => updateRubric(i, { marks: Number(e.target.value) || 0 })} placeholder="Marks" className="h-8 rounded-lg text-xs" />
-            <select value={r.bloom ?? 'Apply'} onChange={e => updateRubric(i, { bloom: e.target.value })} className="h-8 rounded-lg border border-border bg-card px-1 text-[10px]">
-              {BLOOMS.map(b => <option key={b} value={b}>{BLOOM_SHORT[b]}</option>)}
+            <select value={r.bloom ?? 'Apply'} onChange={e => updateRubric(i, { bloom: e.target.value })} className="h-8 rounded-lg border border-border bg-card px-1 text-[11px]" title="Bloom's level">
+              {BLOOMS.map(b => <option key={b} value={b}>{b}</option>)}
             </select>
             <button onClick={() => onChange({ ...value, rubric: rubric.filter((_, j) => j !== i) })} className="text-muted-foreground hover:text-red-600" title="Remove">
               <Trash2 className="w-3 h-3" />
@@ -539,11 +581,14 @@ const ASSESSMENT_KINDS = [
   { id: 'mock_exam', label: 'Mock Exam' },
 ] as const;
 
-export function AssessmentBlock({ value, onChange, ai, generating }: {
+export function AssessmentBlock({ value, onChange, ai, generating, onDraftSections, draftingSections }: {
   value: NonNullable<Lesson['assessmentConfig']>;
   onChange: (v: NonNullable<Lesson['assessmentConfig']>) => void;
   ai: AiRunner;
   generating: boolean;
+  /** Quill: proposes a Bloom's-weighted section structure for the total marks. */
+  onDraftSections?: () => void;
+  draftingSections?: boolean;
 }) {
   const sections = value.sections ?? [];
   return (
@@ -589,11 +634,17 @@ export function AssessmentBlock({ value, onChange, ai, generating }: {
             </button>
           </div>
         ))}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-7 text-[11px]"
             onClick={() => onChange({ ...value, sections: [...sections, { bloom: 'Remember', description: '', marks: 10 }] })}>
             <Plus className="w-3 h-3" /> Add Manually
           </Button>
+          {onDraftSections && (
+            <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-7 text-[11px] border-violet-200 text-violet-700 hover:bg-violet-50"
+              disabled={draftingSections} onClick={onDraftSections}>
+              {draftingSections ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} Draft Sections with Quill
+            </Button>
+          )}
           <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-7 text-[11px]" disabled={generating} onClick={() => ai('quiz')}>
             {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} AI Generate All Questions
           </Button>

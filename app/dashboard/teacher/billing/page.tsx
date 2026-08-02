@@ -118,7 +118,7 @@ export default function TeacherBillingPage() {
       <style>body{font-family:system-ui,sans-serif;max-width:640px;margin:40px auto;padding:0 24px;color:#111}
       h1{font-size:22px}table{width:100%;border-collapse:collapse;margin-top:16px}
       td{padding:8px 0;border-bottom:1px solid #e5e5e5}td:last-child{text-align:right;font-weight:600}</style></head>
-      <body><h1>Pocket School — Invoice</h1>
+      <body><h1>Poket School — Invoice</h1>
       <table>
         <tr><td>Student</td><td>${esc(inv.studentName)}</td></tr>
         <tr><td>Description</td><td>${esc(inv.description)}</td></tr>

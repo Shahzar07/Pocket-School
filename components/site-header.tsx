@@ -72,7 +72,7 @@ export function SiteHeader() {
                   useGlass ? 'text-white' : 'text-foreground'
                 }`}
               >
-                Pocket School
+                Poket School
               </span>
             </Link>
 

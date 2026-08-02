@@ -70,7 +70,7 @@ export default function AdminDashboard() {
           <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-3">
             Platform <span className="gradient-text italic">overview</span>
           </h1>
-          <p className="text-muted-foreground mt-2 text-[15px]">Everything happening across Pocket School, live.</p>
+          <p className="text-muted-foreground mt-2 text-[15px]">Everything happening across Poket School, live.</p>
         </div>
         <div className="flex gap-3 flex-wrap shrink-0">
           {!seeded ? (

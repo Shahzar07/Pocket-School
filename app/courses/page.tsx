@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { BookOpen, Search, Filter, ArrowRight, Loader2 } from 'lucide-react';
+import { BookOpen, Search, Filter, ArrowRight, Loader2, Sparkles, Mail, ShieldCheck } from 'lucide-react';
 import { getPublicCourses, type Course, type CourseType } from '@/lib/db';
 
 const TYPE_FILTERS: { id: CourseType | 'all'; label: string }[] = [
@@ -135,11 +135,81 @@ export default function MarketplacePage() {
             </div>
           )}
 
-          {!loading && filtered.length === 0 && (
+          {!loading && filtered.length === 0 && courses.length > 0 && (
             <div className="text-center py-20">
               <BookOpen className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
               <p className="text-sm text-muted-foreground">No products match these filters yet.</p>
             </div>
+          )}
+
+          {!loading && courses.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="relative max-w-3xl mx-auto rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-[0_30px_70px_-40px_rgba(15,23,42,0.35)]"
+            >
+              <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#1A73E8] via-[#7C3AED] to-[#F5B400]" />
+              <div className="p-8 sm:p-12 text-center">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#EEF3FF] border border-[#1A73E8]/20 text-[10px] font-bold tracking-[0.15em] text-[#1E3A8A]">
+                  <ShieldCheck className="w-3 h-3" />
+                  MARKETPLACE OPENING SOON
+                </span>
+
+                <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#0B1B3F] leading-[1.05] mt-6 mb-4">
+                  The shelves are being stocked.
+                </h2>
+                <p className="text-base text-slate-600 leading-relaxed max-w-xl mx-auto">
+                  We are onboarding verified educators right now — every course, eBook and past paper is
+                  reviewed before it goes live, so the marketplace opens with material worth paying for
+                  rather than whatever got uploaded first.
+                </p>
+
+                <div className="mt-8 grid sm:grid-cols-2 gap-3 text-left">
+                  <Link
+                    href="/ai-studio"
+                    className="group flex items-start gap-4 rounded-xl border border-slate-200 bg-[#F8FAFF] p-5 hover:border-[#1A73E8]/40 hover:shadow-[0_20px_50px_-20px_rgba(26,115,232,0.25)] transition-all"
+                  >
+                    <span className="w-10 h-10 shrink-0 rounded-xl bg-white border border-slate-200 text-[#1A73E8] flex items-center justify-center">
+                      <Sparkles className="w-4 h-4" />
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm font-extrabold text-[#0B1B3F] mb-0.5">
+                        Meanwhile, create your own
+                      </span>
+                      <span className="block text-xs text-slate-600 leading-relaxed">
+                        Build study materials with Quill in the AI Studio.
+                      </span>
+                      <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#1A73E8]">
+                        Open AI Studio
+                        <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+                      </span>
+                    </span>
+                  </Link>
+
+                  <a
+                    href="mailto:educators@poketschool.ai?subject=Teach%20with%20Poket%20School"
+                    className="group flex items-start gap-4 rounded-xl border border-slate-200 bg-[#F8FAFF] p-5 hover:border-[#1A73E8]/40 hover:shadow-[0_20px_50px_-20px_rgba(26,115,232,0.25)] transition-all"
+                  >
+                    <span className="w-10 h-10 shrink-0 rounded-xl bg-white border border-slate-200 text-[#1A73E8] flex items-center justify-center">
+                      <Mail className="w-4 h-4" />
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm font-extrabold text-[#0B1B3F] mb-0.5">
+                        Teach with us
+                      </span>
+                      <span className="block text-xs text-slate-600 leading-relaxed">
+                        Educators: list your material and earn from every sale.
+                      </span>
+                      <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#1A73E8]">
+                        educators@poketschool.ai
+                        <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+                      </span>
+                    </span>
+                  </a>
+                </div>
+              </div>
+            </motion.div>
           )}
 
           {!loading && filtered.length > 0 && (
@@ -171,7 +241,7 @@ export default function MarketplacePage() {
                       </div>
                       <div className="p-5 flex flex-col flex-1">
                         <h3 className="font-bold text-base text-foreground mb-1 line-clamp-2">{c.title}</h3>
-                        <p className="text-xs text-muted-foreground mb-3">{c.ownerName ?? 'Pocket School'}</p>
+                        <p className="text-xs text-muted-foreground mb-3">{c.ownerName ?? 'Poket School'}</p>
                         <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1">{c.description}</p>
                         <div className="flex items-center justify-between">
                           <span className={`text-base font-extrabold ${c.price ? 'text-foreground' : 'text-emerald-600'}`}>

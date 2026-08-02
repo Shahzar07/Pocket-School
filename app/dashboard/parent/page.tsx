@@ -5,12 +5,14 @@ import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
   getChildrenProfiles, getEnrolledCourses, getUnitQuizAttempts, getModulesWithLessons,
-  UserProfile, Course, Enrollment,
+  getChildrenDailyGoals, excuseDailyGoal, goalDateKey,
+  UserProfile, Course, Enrollment, DailyGoal,
 } from '@/lib/db';
 import { UnitReportCard, UnitReportData } from '@/components/unit-report-card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { buttonVariants } from '@/components/ui/button';
-import { Zap, BookOpen, MessageSquare, Trophy, UserRound, FileBarChart, TrendingUp } from 'lucide-react';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { Zap, BookOpen, MessageSquare, Trophy, UserRound, FileBarChart, TrendingUp, Target, Clock, ShieldCheck, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 interface ChildData {
@@ -20,10 +22,51 @@ interface ChildData {
   unitReports: UnitReportData[];
 }
 
+interface ChildGoals {
+  childId: string;
+  childName: string;
+  goals: DailyGoal[];
+}
+
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
   visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1], delay: i * 0.08 } }),
 };
+
+const GOAL_STATUS_META: Record<string, { label: string; pill: string }> = {
+  not_started: { label: 'Not started', pill: 'bg-muted text-muted-foreground' },
+  in_progress: { label: 'In progress', pill: 'bg-[#1A73E8]/10 text-[#1A73E8]' },
+  completed: { label: 'Completed', pill: 'bg-emerald-500/10 text-emerald-600' },
+  overdue: { label: 'Overdue', pill: 'bg-destructive/10 text-destructive' },
+  excused: { label: 'Excused', pill: 'bg-amber-500/10 text-amber-600' },
+};
+
+/** Deadline ('HH:mm') resolved against the goal's own dateKey. */
+function goalDeadlineMs(goal: DailyGoal): number {
+  const [y, mo, d] = (goal.dateKey || goalDateKey()).split('-').map(Number);
+  const [h, mi] = (goal.deadline || '23:59').split(':').map(Number);
+  return new Date(y, (mo || 1) - 1, d || 1, h || 23, mi || 59, 0, 0).getTime();
+}
+
+function goalDisplayStatus(goal: DailyGoal, nowMs: number): string {
+  if (goal.status === 'completed' || goal.status === 'excused') return goal.status;
+  return nowMs > goalDeadlineMs(goal) ? 'overdue' : goal.status;
+}
+
+function formatDeadline(hhmm: string): string {
+  const [h, m] = (hhmm || '23:59').split(':').map(Number);
+  const d = new Date();
+  d.setHours(h || 0, m || 0, 0, 0);
+  return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+
+/** Human countdown to (or past) the deadline. */
+function formatCountdown(goal: DailyGoal, nowMs: number): string {
+  const diff = goalDeadlineMs(goal) - nowMs;
+  const mins = Math.round(Math.abs(diff) / 60000);
+  const label = mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
+  return diff >= 0 ? `${label} left` : `${label} overdue`;
+}
 
 async function buildUnitReports(
   childId: string,
@@ -64,9 +107,58 @@ async function buildUnitReports(
 }
 
 export default function ParentDashboard() {
-  const { user } = useAuthSTORE();
+  const { user, profile } = useAuthSTORE();
   const [children, setChildren] = useState<ChildData[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // ── Today's Goals feed ──
+  const [childGoals, setChildGoals] = useState<ChildGoals[]>([]);
+  const [goalsLoading, setGoalsLoading] = useState(true);
+  const [goalsError, setGoalsError] = useState<string | null>(null);
+  const [excusingId, setExcusingId] = useState<string | null>(null);
+  const [goalsNow, setGoalsNow] = useState(() => Date.now());
+
+  const loadGoals = async () => {
+    if (!user) return;
+    setGoalsLoading(true);
+    setGoalsError(null);
+    try {
+      setChildGoals(await getChildrenDailyGoals(user.uid, goalDateKey()));
+    } catch (e: any) {
+      setGoalsError(e?.message ?? 'Could not load today’s goals.');
+    } finally {
+      setGoalsLoading(false);
+    }
+  };
+
+  useEffect(() => { loadGoals(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keep the feed and its countdowns fresh without a full page reload.
+  useEffect(() => {
+    const tick = setInterval(() => setGoalsNow(Date.now()), 30_000);
+    const refresh = setInterval(() => { loadGoals(); }, 60_000);
+    return () => { clearInterval(tick); clearInterval(refresh); };
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleExcuse = async (goal: DailyGoal) => {
+    const reason = window.prompt(`Why is "${goal.title}" being excused?`);
+    if (!reason || !reason.trim()) return;
+    setExcusingId(goal.id);
+    try {
+      await excuseDailyGoal(goal.id, reason.trim(), profile?.name ?? 'Parent');
+      setChildGoals(prev => prev.map(c => ({
+        ...c,
+        goals: c.goals.map(g => g.id === goal.id
+          ? { ...g, status: 'excused' as const, excuseReason: reason.trim(), excusedBy: profile?.name ?? 'Parent' }
+          : g),
+      })));
+      toast.success('Goal excused.');
+    } catch {
+      toast.error('Could not excuse that goal. Please try again.');
+    } finally {
+      setExcusingId(null);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -114,6 +206,110 @@ export default function ParentDashboard() {
           <MessageSquare className="w-4 h-4" /> Message teachers
         </Link>
       </motion.header>
+
+      {/* ── Today's Goals ── */}
+      <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={0.5} className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Target className="w-4 h-4 text-primary" />
+          <h2 className="font-heading text-2xl sm:text-3xl text-foreground">Today&apos;s Goals</h2>
+        </div>
+
+        {goalsLoading ? (
+          <div className="h-32 bg-muted animate-pulse rounded-[2rem]" />
+        ) : goalsError ? (
+          <div className="bg-card border border-border rounded-[2rem] p-6 text-center">
+            <p className="text-sm text-muted-foreground mb-4 break-words">{goalsError}</p>
+            <Button onClick={loadGoals} className="rounded-full h-10 px-5 font-bold">Retry</Button>
+          </div>
+        ) : childGoals.length === 0 ? (
+          <div className="bg-card border border-border rounded-[2rem] p-8 text-center">
+            <Target className="w-10 h-10 mx-auto mb-3 text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">No goals set yet today.</p>
+          </div>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {childGoals.map(child => {
+              const total = child.goals.length;
+              const done = child.goals.filter(g => g.status === 'completed' || g.status === 'excused').length;
+              const pct = total ? Math.round((done / total) * 100) : 0;
+
+              return (
+                <div key={child.childId} className="bg-card border border-border rounded-[2rem] p-5 sm:p-6 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-10 h-10 shrink-0">
+                      <AvatarFallback className="bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] text-white font-bold text-sm">
+                        {child.childName?.charAt(0)?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-heading text-xl text-foreground truncate">{child.childName}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {total === 0 ? 'No goals set yet today' : `${done} of ${total} complete`}
+                      </p>
+                    </div>
+                    {total > 0 && (
+                      <div className="text-right shrink-0">
+                        <p className={`font-heading text-3xl leading-none ${pct === 100 ? 'text-emerald-600' : pct >= 50 ? 'text-amber-600' : 'text-destructive'}`}>{pct}%</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {total === 0 ? (
+                    <p className="text-sm text-muted-foreground bg-muted/30 rounded-2xl p-4 text-center">No goals set yet today</p>
+                  ) : (
+                    <>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <motion.div
+                          className={`h-full rounded-full ${pct === 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-[#1A73E8] to-[#7C3AED]'}`}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ duration: 0.8, ease: 'easeOut' }}
+                        />
+                      </div>
+                      <div className="space-y-2.5">
+                        {child.goals.map(goal => {
+                          const st = goalDisplayStatus(goal, goalsNow);
+                          const meta = GOAL_STATUS_META[st] ?? GOAL_STATUS_META.not_started;
+                          const canExcuse = st === 'overdue';
+                          return (
+                            <div key={goal.id} className="bg-muted/30 border border-border rounded-2xl p-3.5 flex flex-wrap items-center gap-x-3 gap-y-2">
+                              {st === 'completed' ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                                : st === 'excused' ? <ShieldCheck className="w-4 h-4 text-amber-500 shrink-0" />
+                                : <Clock className={`w-4 h-4 shrink-0 ${st === 'overdue' ? 'text-destructive' : 'text-muted-foreground'}`} />}
+                              <p className="text-sm font-semibold text-foreground flex-1 min-w-[8rem] truncate">{goal.title}</p>
+                              <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${meta.pill}`}>
+                                {meta.label}
+                              </span>
+                              <span className={`text-xs shrink-0 ${st === 'overdue' ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
+                                {formatDeadline(goal.deadline)}
+                                {st !== 'completed' && st !== 'excused' && ` · ${formatCountdown(goal, goalsNow)}`}
+                              </span>
+                              {canExcuse && (
+                                <Button
+                                  variant="outline"
+                                  onClick={() => handleExcuse(goal)}
+                                  disabled={excusingId === goal.id}
+                                  className="rounded-full h-8 px-3 text-xs font-bold gap-1.5 shrink-0"
+                                >
+                                  {excusingId === goal.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
+                                  Excuse
+                                </Button>
+                              )}
+                              {goal.status === 'excused' && goal.excuseReason && (
+                                <p className="w-full text-xs text-amber-600">Excused by {goal.excusedBy || 'you'}: {goal.excuseReason}</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </motion.section>
 
       {children.length === 0 ? (
         <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}

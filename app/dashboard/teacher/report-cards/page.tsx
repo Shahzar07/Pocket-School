@@ -237,7 +237,7 @@ export default function ReportCardsPage() {
             {/* Header */}
             <div className="flex items-start justify-between border-b border-border pb-4 mb-4">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">Pocket School · Report Card</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">Poket School · Report Card</p>
                 <h2 className="text-xl font-bold text-foreground mt-1">{r.studentName}</h2>
                 <p className="text-sm text-muted-foreground">{selectedCourseName}</p>
               </div>
