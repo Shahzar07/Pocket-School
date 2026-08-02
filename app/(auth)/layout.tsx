@@ -5,7 +5,7 @@ import { Brain, BookOpen, Sparkles, Trophy, Users } from 'lucide-react';
 import Link from 'next/link';
 
 const FEATURES = [
-  { icon: <Brain className="w-4 h-4" />, title: 'Mojo — Your AI Tutor', desc: 'Adapts to how you think, 24 / 7' },
+  { icon: <Brain className="w-4 h-4" />, title: 'Ayla — Your AI Tutor', desc: 'Adapts to how you think, 24 / 7' },
   { icon: <BookOpen className="w-4 h-4" />, title: 'IGCSE · A-Levels · Degrees', desc: 'Full academic pathways, your pace' },
   { icon: <Sparkles className="w-4 h-4" />, title: 'Visual Learning Engine', desc: 'Mind maps, diagrams & interactive lessons' },
   { icon: <Trophy className="w-4 h-4" />, title: 'Smart Exam Prep', desc: 'Past papers, gap analysis, revision plans' },
@@ -35,7 +35,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                 <Brain className="w-5 h-5 text-white" />
               </div>
               <span className="text-white font-bold text-xl drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                Pocket School
+                Poket School
               </span>
             </Link>
 
@@ -90,7 +90,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <div className="bg-[#1A73E8]/20 p-2 rounded-xl border border-[#1A73E8]/30">
               <Brain className="w-5 h-5 text-[#1A73E8]" />
             </div>
-            <span className="text-white font-bold text-xl">Pocket School</span>
+            <span className="text-white font-bold text-xl">Poket School</span>
           </div>
 
           {children}

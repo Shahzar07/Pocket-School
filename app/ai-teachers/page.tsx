@@ -1,8 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Atom,
@@ -19,7 +17,6 @@ import {
   Mic,
   Sparkles,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { AiTeacherModal } from '@/components/ai-teacher-modal';
 import {
   AI_TEACHERS,
@@ -42,7 +39,6 @@ const ICONS: Record<TeacherIconKey, typeof Atom> = {
 };
 
 export default function AiTeachersPage() {
-  const router = useRouter();
   const [filter, setFilter] = useState<'All' | TeacherCategory>('All');
   const [selected, setSelected] = useState<AiTeacher | null>(null);
 
@@ -85,7 +81,7 @@ export default function AiTeachersPage() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
               </span>
-              {liveCount} LIVE NOW
+              {liveCount} AVAILABLE NOW
             </span>
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-md border border-black/[0.04]">
               <Sparkles className="w-3.5 h-3.5 text-[#F5B400]" />
@@ -163,16 +159,22 @@ export default function AiTeachersPage() {
               Help us train the next AI teacher.
             </span>
           </h2>
-          <p className="text-base text-white/70 mb-9 max-w-xl mx-auto">
-            Every Pocket School AI educator is modelled on a real teacher’s pedagogy. If you’d like to lend yours, we’d love to talk.
+          <p className="text-base text-white/70 mb-4 max-w-xl mx-auto">
+            Every Poket School AI educator is modelled on a real teacher’s pedagogy. If you’d like to lend yours, we’d love to talk.
           </p>
-          <Button
-            size="lg"
-            onClick={() => router.push('/signup?role=teacher')}
-            className="rounded-full h-12 px-7 text-sm font-bold bg-[#1A73E8] hover:bg-[#1967D2] text-white shadow-xl shadow-[#1A73E8]/40"
+          <p className="text-sm text-white/50 mb-9 max-w-xl mx-auto leading-relaxed">
+            Partnership means a short pedagogy interview, contributing your curriculum and teaching
+            approach to train an AI teacher, and an ongoing revenue share on every session it runs.
+          </p>
+          <a
+            href="mailto:educators@poketschool.ai?subject=Partner%20Educator%20Enquiry"
+            className="inline-flex items-center justify-center gap-2 rounded-full h-12 px-7 text-sm font-bold bg-[#1A73E8] hover:bg-[#1967D2] text-white shadow-xl shadow-[#1A73E8]/40 transition-colors"
           >
-            Become a partner educator <ArrowRight className="ml-2 w-4 h-4" />
-          </Button>
+            Become a partner educator <ArrowRight className="w-4 h-4" />
+          </a>
+          <p className="mt-4 text-xs text-white/40">
+            educators@poketschool.ai · we reply to every enquiry
+          </p>
         </div>
       </section>
 
@@ -225,7 +227,7 @@ function TeacherCard({
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
             </span>
-            <span className="text-[9px] font-bold tracking-widest text-white">LIVE 24/7</span>
+            <span className="text-[9px] font-bold tracking-widest text-white">AVAILABLE NOW</span>
           </div>
         )}
         {!isLive && (

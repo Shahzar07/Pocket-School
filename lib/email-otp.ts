@@ -49,13 +49,13 @@ export async function sendOtpEmail(to: string, code: string): Promise<void> {
   });
 
   await transport.sendMail({
-    from: process.env.SMTP_FROM || `Pocket School <${process.env.SMTP_USER}>`,
+    from: process.env.SMTP_FROM || `Poket School <${process.env.SMTP_USER}>`,
     to,
-    subject: `${code} is your Pocket School verification code`,
-    text: `Your Pocket School verification code is ${code}. It expires in 10 minutes. If you didn't request this, you can ignore this email.`,
+    subject: `${code} is your Poket School verification code`,
+    text: `Your Poket School verification code is ${code}. It expires in 10 minutes. If you didn't request this, you can ignore this email.`,
     html: `
       <div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#06060F;border-radius:16px;color:#fff">
-        <h1 style="font-size:20px;margin:0 0 8px;color:#fff">Pocket School</h1>
+        <h1 style="font-size:20px;margin:0 0 8px;color:#fff">Poket School</h1>
         <p style="color:rgba(255,255,255,0.6);font-size:14px;margin:0 0 24px">Use this code to verify your email address.</p>
         <div style="background:rgba(26,115,232,0.15);border:1px solid rgba(26,115,232,0.4);border-radius:12px;padding:20px;text-align:center;margin-bottom:24px">
           <span style="font-size:32px;font-weight:bold;letter-spacing:0.4em;color:#60A5FA">${code}</span>

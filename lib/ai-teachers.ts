@@ -59,7 +59,7 @@ export const AI_TEACHERS: AiTeacher[] = [
     iconKey: 'atom',
     tagline: 'Ask anything from quantum mechanics to cell biology — face-to-face, in real time.',
     bio: [
-      'Sarah is Pocket School’s flagship AI educator for the natural sciences, modelled on the methods of senior IGCSE and A-Level science teachers across the UK and Commonwealth. She speaks at a measured pace, asks the right clarifying questions, and never makes you feel small for not knowing.',
+      'Sarah is Poket School’s flagship AI educator for the natural sciences, modelled on the methods of senior IGCSE and A-Level science teachers across the UK and Commonwealth. She speaks at a measured pace, asks the right clarifying questions, and never makes you feel small for not knowing.',
       'She specialises in turning abstract science into intuition. Whether you’re grappling with electric fields, organic reaction mechanisms, or the inner workings of a mitochondrion, Sarah will walk you through it visually and verbally until it clicks.',
       'Sarah is calibrated against Cambridge, AQA, Pearson Edexcel and OCR specifications and adapts her explanations to your stated level — from Year 9 right through to first-year undergraduate.',
     ],

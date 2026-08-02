@@ -148,7 +148,7 @@ export default function CourseDetailPage() {
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
               <Brain className="w-4 h-4 text-white" />
             </div>
-            <span className="text-[15px] font-bold tracking-tight">Pocket School</span>
+            <span className="text-[15px] font-bold tracking-tight">Poket School</span>
           </Link>
           <Link href="/courses" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
             <ArrowLeft className="w-4 h-4" /> Back to marketplace
@@ -205,7 +205,7 @@ export default function CourseDetailPage() {
                 </h1>
                 <p className="text-base text-muted-foreground leading-relaxed mb-6">{course.description}</p>
                 <p className="text-sm text-muted-foreground">
-                  Created by <span className="font-semibold text-foreground">{course.ownerName ?? 'Pocket School'}</span>
+                  Created by <span className="font-semibold text-foreground">{course.ownerName ?? 'Poket School'}</span>
                   {course.durationHours ? ` · ${course.durationHours} hours of content` : ''}
                   {course.enrollmentCount ? ` · ${course.enrollmentCount} enrolled` : ''}
                 </p>

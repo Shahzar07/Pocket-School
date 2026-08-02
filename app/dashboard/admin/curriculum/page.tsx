@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
   getProgrammes, createProgramme, getAllCurriculumModules, createCurriculumModule,
+  createModule, createLesson,
   Programme, Course,
 } from '@/lib/db';
 import { seedY7ScienceUnit1 } from '@/lib/curriculum-seed';
@@ -13,7 +15,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Loader2, Plus, Layers, Sparkles, BookOpen, ChevronRight } from 'lucide-react';
+import {
+  Loader2, Plus, Layers, Sparkles, BookOpen, ChevronRight, Wand2, Check, RotateCcw,
+} from 'lucide-react';
 import Link from 'next/link';
 
 const STATUS_BADGE: Record<string, string> = {
@@ -22,7 +26,18 @@ const STATUS_BADGE: Record<string, string> = {
   published: 'bg-emerald-50 text-emerald-700',
 };
 
-const YEAR_GROUPS = ['Year 7', 'Year 8', 'Year 9'];
+/** Year/Level is free text — these are only suggestions, not a fixed list. */
+const YEAR_LEVEL_SUGGESTIONS = [
+  ...Array.from({ length: 13 }, (_, i) => `Year ${i + 1}`),
+  'Foundation', 'Advanced', 'Tertiary', 'K-12',
+];
+
+/** A teaching week is planned as 5 × 60-minute sessions. */
+const MINUTES_PER_WEEK = 300;
+const DEFAULT_BLOCKS = ['objectives', 'video', 'text', 'vocabulary', 'quiz'];
+
+interface OutlineLesson { title: string; objectives: string[]; durationWeeks: number }
+interface OutlineModule { title: string; description: string; lessons: OutlineLesson[] }
 
 export default function AdminCurriculumPage() {
   const { user } = useAuthSTORE();
@@ -43,9 +58,19 @@ export default function AdminCurriculumPage() {
   const [showModuleForm, setShowModuleForm] = useState(false);
   const [modTitle, setModTitle] = useState('');
   const [modSubject, setModSubject] = useState('');
-  const [modYearGroup, setModYearGroup] = useState(YEAR_GROUPS[0]);
+  const [modYearGroup, setModYearGroup] = useState('Year 7');
   const [modProgrammeId, setModProgrammeId] = useState<string>('');
   const [creatingModule, setCreatingModule] = useState(false);
+
+  // AI Course Architect (Quill)
+  const [archSubject, setArchSubject] = useState('');
+  const [archYear, setArchYear] = useState('Year 7');
+  const [archWeeks, setArchWeeks] = useState('12');
+  const [archTitle, setArchTitle] = useState('');
+  const [archOutline, setArchOutline] = useState<OutlineModule[] | null>(null);
+  const [archDesigning, setArchDesigning] = useState(false);
+  const [archCreating, setArchCreating] = useState(false);
+  const [archProgress, setArchProgress] = useState<{ done: number; total: number; step: string } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -78,6 +103,100 @@ export default function AdminCurriculumPage() {
       toast.error(e?.message || 'Seeding failed.');
     } finally {
       setSeeding(false);
+    }
+  };
+
+  /* ── AI Course Architect ─────────────────────────────────── */
+
+  const lessonCount = (archOutline ?? []).reduce((n, m) => n + m.lessons.length, 0);
+  const plannedWeeks = (archOutline ?? []).reduce(
+    (n, m) => n + m.lessons.reduce((x, l) => x + (l.durationWeeks || 1), 0), 0
+  );
+
+  const designWithQuill = async () => {
+    const subject = archSubject.trim();
+    if (!subject) { toast.error('Enter a subject for Quill to design.'); return; }
+    const weeks = Math.min(52, Math.max(1, Number(archWeeks) || 12));
+    setArchDesigning(true);
+    setArchOutline(null);
+    try {
+      const res = await fetch('/api/ai/course-architect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task: 'outline', context: { subject, yearLevel: archYear.trim(), weeks } }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Quill could not design that course.');
+      const modules: OutlineModule[] = Array.isArray(data.modules) ? data.modules : [];
+      if (!modules.length) throw new Error('Quill returned an empty outline — try again.');
+      setArchOutline(modules);
+      setArchTitle(prev => prev.trim() || `${subject}${archYear.trim() ? ` — ${archYear.trim()}` : ''}`);
+      toast.success(`Quill designed ${modules.length} modules.`);
+    } catch (e: any) {
+      toast.error(e?.message || 'Quill request failed.');
+    } finally {
+      setArchDesigning(false);
+    }
+  };
+
+  const createFromOutline = async () => {
+    if (!user || !archOutline?.length) return;
+    const title = archTitle.trim() || `${archSubject.trim()} — ${archYear.trim()}`;
+    const total = 1 + archOutline.length + lessonCount;
+    let done = 0;
+    const tick = (step: string) => { done += 1; setArchProgress({ done, total, step }); };
+
+    setArchCreating(true);
+    setArchProgress({ done: 0, total, step: 'Creating subject…' });
+    try {
+      const courseId = await createCurriculumModule({
+        title,
+        description: `${archSubject.trim()} — ${archYear.trim() || 'all levels'} · designed with Quill`,
+        subject: archSubject.trim(),
+        ownerId: user.uid,
+        status: 'draft',
+        isPublic: false,
+        yearGroup: archYear.trim() || undefined,
+        programmeId: modProgrammeId || undefined,
+      });
+      tick('Subject created');
+
+      for (const [mi, m] of archOutline.entries()) {
+        const moduleId = await createModule(courseId, {
+          title: m.title,
+          description: m.description,
+          courseId,
+          order: mi + 1,
+          unitNumber: mi + 1,
+          masteryThreshold: 70,
+        });
+        tick(`Module ${mi + 1}: ${m.title}`);
+
+        for (const [li, l] of m.lessons.entries()) {
+          await createLesson(courseId, moduleId, {
+            title: l.title,
+            moduleId,
+            courseId,
+            order: li + 1,
+            lessonNumber: li + 1,
+            status: 'draft',
+            lessonType: 'lesson',
+            bloomsLevel: 'Understand',
+            blocksOrder: DEFAULT_BLOCKS,
+            durationMinutes: Math.max(1, l.durationWeeks || 1) * MINUTES_PER_WEEK,
+            objectives: (l.objectives ?? []).map(text => ({ text, bloom: 'Understand' })),
+          });
+          tick(`Lesson: ${l.title}`);
+        }
+      }
+
+      toast.success(`Created ${archOutline.length} modules and ${lessonCount} lessons.`);
+      window.location.href = `/dashboard/admin/curriculum/${courseId}`;
+    } catch (e: any) {
+      toast.error(e?.message || 'Could not create the course structure.');
+      setArchCreating(false);
+      setArchProgress(null);
+      load();
     }
   };
 
@@ -125,7 +244,7 @@ export default function AdminCurriculumPage() {
       toast.success('Subject created.');
       setModTitle('');
       setModSubject('');
-      setModYearGroup(YEAR_GROUPS[0]);
+      setModYearGroup(YEAR_LEVEL_SUGGESTIONS[0]);
       setShowModuleForm(false);
       await load();
       window.location.href = `/dashboard/admin/curriculum/${courseId}`;
@@ -155,11 +274,161 @@ export default function AdminCurriculumPage() {
             Programmes, subjects and the lesson generation/review pipeline.
           </p>
         </div>
-        <Button onClick={handleSeed} disabled={seeding} variant="outline" className="gap-2 rounded-xl">
-          <Sparkles className="w-4 h-4" />
-          {seeding ? 'Seeding…' : 'Seed Y7 Science Unit 1'}
-        </Button>
+        <div className="sm:text-right">
+          <Button onClick={handleSeed} disabled={seeding} variant="outline" className="gap-2 rounded-xl">
+            <BookOpen className="w-4 h-4" />
+            {seeding ? 'Loading…' : 'Load Sample Curriculum (Year 7 Science)'}
+          </Button>
+          <p className="text-xs text-muted-foreground mt-1.5 max-w-xs sm:ml-auto">
+            Creates a ready-made demo subject you can edit or delete at any time.
+          </p>
+        </div>
       </div>
+
+      {/* ── AI Course Architect ── */}
+      <Card className="p-0 rounded-2xl overflow-hidden border-violet-200">
+        <div className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-teal-500 px-6 py-5 text-white">
+          <div className="flex items-start gap-3">
+            <span className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0">
+              <Wand2 className="w-5 h-5" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="font-bold text-lg leading-tight">AI Course Architect</h2>
+              <p className="text-sm text-white/85">
+                Tell Quill the subject, level and length — it designs the whole scheme of work,
+                module by module, lesson by lesson. Review it, then build it in one click.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-5">
+          <div className="grid sm:grid-cols-[1fr_1fr_140px_auto] gap-3 sm:items-end">
+            <div className="space-y-1.5">
+              <Label>Subject *</Label>
+              <Input value={archSubject} onChange={e => setArchSubject(e.target.value)}
+                placeholder="e.g. Combined Science" className="rounded-xl h-10" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Year / Level</Label>
+              <Input value={archYear} onChange={e => setArchYear(e.target.value)}
+                list="year-level-suggestions" placeholder="e.g. Year 9, Foundation, Tertiary"
+                className="rounded-xl h-10" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Duration (weeks)</Label>
+              <Input type="number" min={1} max={52} value={archWeeks}
+                onChange={e => setArchWeeks(e.target.value)} className="rounded-xl h-10" />
+            </div>
+            <Button
+              onClick={designWithQuill}
+              disabled={archDesigning || archCreating}
+              className="rounded-xl h-10 gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white"
+            >
+              {archDesigning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {archDesigning ? 'Designing…' : 'Design with Quill'}
+            </Button>
+          </div>
+
+          {archDesigning && (
+            <div className="rounded-xl border border-dashed border-violet-200 bg-violet-50/50 px-4 py-6 text-center">
+              <Loader2 className="w-5 h-5 animate-spin mx-auto text-violet-600" />
+              <p className="text-sm text-violet-700 font-medium mt-2">
+                Quill is planning {archWeeks || '—'} weeks of {archSubject || 'your subject'}…
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">This usually takes 10-30 seconds.</p>
+            </div>
+          )}
+
+          <AnimatePresence>
+            {archOutline && !archDesigning && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                className="space-y-4"
+              >
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  <span className="font-bold text-foreground text-sm">Proposed structure</span>
+                  <span>{archOutline.length} modules</span>
+                  <span>{lessonCount} lessons</span>
+                  <span>≈ {plannedWeeks} weeks planned</span>
+                </div>
+
+                <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                  {archOutline.map((m, mi) => (
+                    <div key={mi} className="rounded-xl border border-border p-4">
+                      <p className="font-bold text-foreground text-sm">
+                        Module {mi + 1}: {m.title}
+                      </p>
+                      {m.description && (
+                        <p className="text-xs text-muted-foreground mt-0.5">{m.description}</p>
+                      )}
+                      <ul className="mt-2.5 space-y-1.5">
+                        {m.lessons.map((l, li) => (
+                          <li key={li} className="text-xs">
+                            <div className="flex items-start gap-2">
+                              <span className="text-muted-foreground shrink-0">L{li + 1}</span>
+                              <div className="min-w-0">
+                                <span className="font-semibold text-foreground">{l.title}</span>
+                                <span className="text-muted-foreground"> · {l.durationWeeks || 1} wk</span>
+                                {l.objectives?.length > 0 && (
+                                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                                    {l.objectives.join(' · ')}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid sm:grid-cols-[1fr_auto_auto] gap-3 sm:items-end pt-1">
+                  <div className="space-y-1.5">
+                    <Label>Subject title (as it will appear in the CMS)</Label>
+                    <Input value={archTitle} onChange={e => setArchTitle(e.target.value)} className="rounded-xl h-10" />
+                  </div>
+                  <Button variant="outline" className="rounded-xl h-10 gap-2" disabled={archCreating} onClick={designWithQuill}>
+                    <RotateCcw className="w-3.5 h-3.5" /> Redesign
+                  </Button>
+                  <Button
+                    onClick={createFromOutline}
+                    disabled={archCreating}
+                    className="rounded-xl h-10 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    {archCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                    {archCreating ? 'Creating…' : 'Create this structure'}
+                  </Button>
+                </div>
+
+                {archProgress && (
+                  <div className="space-y-1.5">
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-violet-500 to-teal-500 transition-all duration-300"
+                        style={{ width: `${Math.round((archProgress.done / Math.max(1, archProgress.total)) * 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {archProgress.done} of {archProgress.total} · {archProgress.step}
+                    </p>
+                  </div>
+                )}
+
+                <p className="text-[11px] text-muted-foreground">
+                  Everything is created as a draft — nothing goes live until you publish it in the Content Builder.
+                  Quill drafts still need a human review.
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </Card>
+
+      <datalist id="year-level-suggestions">
+        {YEAR_LEVEL_SUGGESTIONS.map(y => <option key={y} value={y} />)}
+      </datalist>
 
       {/* Programmes */}
       <Card className="p-6 rounded-2xl">
@@ -250,12 +519,18 @@ export default function AdminCurriculumPage() {
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Year / Level</Label>
-                <Select value={modYearGroup} onValueChange={(v) => setModYearGroup(v ?? '')}>
-                  <SelectTrigger className="rounded-xl h-10"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {YEAR_GROUPS.map(yg => <SelectItem key={yg} value={yg}>{yg}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                {/* Free text with suggestions — schools use Year 1…13, Advanced,
+                    Tertiary, K-12 and their own custom labels. */}
+                <Input
+                  value={modYearGroup}
+                  onChange={e => setModYearGroup(e.target.value)}
+                  list="year-level-suggestions"
+                  placeholder="e.g. Year 7, Advanced, Tertiary"
+                  className="rounded-xl h-10"
+                />
+                <datalist id="year-level-suggestions">
+                  {YEAR_LEVEL_SUGGESTIONS.map(yg => <option key={yg} value={yg} />)}
+                </datalist>
               </div>
               <div className="space-y-1.5">
                 <Label>Programme</Label>

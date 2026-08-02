@@ -266,7 +266,7 @@ export default function StudentBillingPage() {
           <DialogHeader>
             <DialogTitle className="font-heading text-2xl">Online payment coming soon</DialogTitle>
             <DialogDescription>
-              Paying by card in Pocket School isn&apos;t available yet. Please pay this
+              Paying by card in Poket School isn&apos;t available yet. Please pay this
               invoice through your school — once payment is received, your teacher
               or school admin will mark it as paid here.
             </DialogDescription>

@@ -57,7 +57,7 @@ export default function StudentCertificatesPage() {
       <body>
         <div class="cert">
           <div class="seal">🎓</div>
-          <div class="logo">Pocket School</div>
+          <div class="logo">Poket School</div>
           <h1>Certificate of Achievement</h1>
           <div class="subtitle">This is to certify that</div>
           <div class="name">${cert.studentName}</div>
@@ -66,7 +66,7 @@ export default function StudentCertificatesPage() {
           <div class="detail">Issued on ${date} · Awarded by ${cert.issuedByName}</div>
           <div class="footer">
             <div>Certificate ID: <strong>${cert.id}</strong></div>
-            <div>Verify at: pocketschool.app/verify/${cert.id}</div>
+            <div>Verify at: poketschool.ai/verify/${cert.id}</div>
           </div>
         </div>
         <script>window.onload = () => { window.print(); }<\/script>

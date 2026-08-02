@@ -243,6 +243,24 @@ service cloud.firestore {
       );
     }
 
+    // ── Daily Goals (student accountability) ──────────────────
+    match /daily_goals/{goalId} {
+      allow read: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid
+        || isTeacherOrAdmin()
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.childIds.hasAny([resource.data.studentId])
+      );
+      allow create: if isSignedIn() && incoming().studentId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid
+        || isTeacherOrAdmin()
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.childIds.hasAny([resource.data.studentId])
+      );
+      allow delete: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid || isAdmin()
+      );
+    }
+
     // ── Grades ────────────────────────────────────────────────
     match /grades/{gradeId} {
       allow read: if isSignedIn() && (

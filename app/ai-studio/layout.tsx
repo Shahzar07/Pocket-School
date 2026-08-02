@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'AI Pocket School — Studio',
+  title: 'AI Poket School — Studio',
   description: 'Generate audio lessons, video scripts, flashcards, quizzes and more from any source.',
 };
 

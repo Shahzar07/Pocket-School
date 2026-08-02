@@ -66,7 +66,7 @@ export default function OnboardingPage() {
         const onboardedStamp: Partial<UserProfile> & { onboardedAt: Timestamp } = { onboardedAt: Timestamp.now() };
         await updateUser(user.uid, onboardedStamp);
       }
-      toast.success('Welcome to Pocket School! 🎉');
+      toast.success('Welcome to Poket School! 🎉');
       router.push('/dashboard/student');
     } catch {
       toast.error('Failed to save preferences');
@@ -109,7 +109,7 @@ export default function OnboardingPage() {
   };
 
   const completeParentOnboarding = () => {
-    toast.success('Welcome to Pocket School!');
+    toast.success('Welcome to Poket School!');
     router.push('/dashboard/parent');
   };
 
@@ -127,7 +127,7 @@ export default function OnboardingPage() {
               <Users className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Welcome, {profile.name}!</h1>
-            <p className="text-muted-foreground mt-2 text-base">Link your child's Pocket School account to monitor their progress.</p>
+            <p className="text-muted-foreground mt-2 text-base">Link your child's Poket School account to monitor their progress.</p>
           </div>
 
           <div className="bg-card border border-border rounded-2xl p-6 space-y-4 mb-4">

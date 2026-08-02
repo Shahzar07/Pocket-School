@@ -33,14 +33,14 @@ export function CopyrightDisclaimerModal() {
           <h2 className="text-lg font-bold text-[#202124]">Copyright & Upload Policy</h2>
         </div>
         <div className="text-sm text-[#5F6368] space-y-3 mb-5">
-          <p>Before uploading any content to Pocket School, please read and agree to the following:</p>
+          <p>Before uploading any content to Poket School, please read and agree to the following:</p>
           <ul className="list-disc list-inside space-y-1.5 text-xs">
             <li>You confirm you hold the legal right to upload, share, and use all content you submit.</li>
             <li>You are solely responsible for ensuring uploaded materials do not infringe any third-party copyright, trademark, or intellectual property rights.</li>
-            <li>Pocket School reserves the right to remove content that violates copyright laws without notice.</li>
+            <li>Poket School reserves the right to remove content that violates copyright laws without notice.</li>
             <li>Repeated violations may result in account suspension.</li>
           </ul>
-          <p className="text-xs text-gray-400">By accepting, you acknowledge your responsibility as the uploader and agree to Pocket School&apos;s content policy.</p>
+          <p className="text-xs text-gray-400">By accepting, you acknowledge your responsibility as the uploader and agree to Poket School&apos;s content policy.</p>
         </div>
         <label className="flex items-start gap-3 cursor-pointer mb-5">
           <input type="checkbox" checked={checked} onChange={e => setChecked(e.target.checked)} className="mt-0.5 w-4 h-4 accent-blue-600" />

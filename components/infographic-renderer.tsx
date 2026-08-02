@@ -1,6 +1,10 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { toast } from 'sonner';
+import {
+  BarChart3, Check, Copy, FileText, Lightbulb, Printer, Sparkles,
+} from 'lucide-react';
 
 /* ─── Types ───────────────────────────────────────────────── */
 
@@ -9,273 +13,440 @@ interface InfographicRendererProps {
   dark?: boolean;
 }
 
-type BlockType = 'heading' | 'blockquote' | 'stat' | 'list' | 'hr' | 'paragraph';
+interface Stat { value: string; label: string }
 
-interface Block {
-  type: BlockType;
-  text: string;
-  items?: string[];
-  level?: number; // heading level
+type Node =
+  | { kind: 'bullets'; items: string[] }
+  | { kind: 'para'; text: string }
+  | { kind: 'callout'; text: string }
+  | { kind: 'divider' };
+
+interface Section { title: string; nodes: Node[] }
+
+interface InfographicDoc {
+  title: string;
+  stats: Stat[];
+  lead: Node[];
+  sections: Section[];
+  takeaway: string | null;
 }
 
-/* ─── Section gradients ────────────────────────────────────── */
+/* ─── Accent palette (works on light + dark surfaces) ──────── */
 
-const SECTION_COLORS = [
-  { gradient: 'from-blue-500 to-indigo-600', accent: 'border-blue-500', bg: 'bg-blue-500/10', pill: 'from-blue-500 to-indigo-600', lightBg: 'bg-blue-50', lightAccent: 'border-blue-400', lightPill: 'from-blue-500 to-indigo-600' },
-  { gradient: 'from-emerald-500 to-teal-600', accent: 'border-emerald-500', bg: 'bg-emerald-500/10', pill: 'from-emerald-500 to-teal-600', lightBg: 'bg-emerald-50', lightAccent: 'border-emerald-400', lightPill: 'from-emerald-500 to-teal-600' },
-  { gradient: 'from-violet-500 to-purple-600', accent: 'border-violet-500', bg: 'bg-violet-500/10', pill: 'from-violet-500 to-purple-600', lightBg: 'bg-violet-50', lightAccent: 'border-violet-400', lightPill: 'from-violet-500 to-purple-600' },
-  { gradient: 'from-amber-500 to-orange-600', accent: 'border-amber-500', bg: 'bg-amber-500/10', pill: 'from-amber-500 to-orange-600', lightBg: 'bg-amber-50', lightAccent: 'border-amber-400', lightPill: 'from-amber-500 to-orange-600' },
-  { gradient: 'from-rose-500 to-pink-600', accent: 'border-rose-500', bg: 'bg-rose-500/10', pill: 'from-rose-500 to-pink-600', lightBg: 'bg-rose-50', lightAccent: 'border-rose-400', lightPill: 'from-rose-500 to-pink-600' },
-  { gradient: 'from-cyan-500 to-blue-600', accent: 'border-cyan-500', bg: 'bg-cyan-500/10', pill: 'from-cyan-500 to-blue-600', lightBg: 'bg-cyan-50', lightAccent: 'border-cyan-400', lightPill: 'from-cyan-500 to-blue-600' },
-  { gradient: 'from-fuchsia-500 to-pink-600', accent: 'border-fuchsia-500', bg: 'bg-fuchsia-500/10', pill: 'from-fuchsia-500 to-pink-600', lightBg: 'bg-fuchsia-50', lightAccent: 'border-fuchsia-400', lightPill: 'from-fuchsia-500 to-pink-600' },
-  { gradient: 'from-teal-500 to-cyan-600', accent: 'border-teal-500', bg: 'bg-teal-500/10', pill: 'from-teal-500 to-cyan-600', lightBg: 'bg-teal-50', lightAccent: 'border-teal-400', lightPill: 'from-teal-500 to-cyan-600' },
+const ACCENTS = [
+  { grad: 'from-blue-500 to-indigo-600', text: 'text-blue-500', soft: 'bg-blue-500/10', border: 'border-blue-500/25' },
+  { grad: 'from-emerald-500 to-teal-600', text: 'text-emerald-500', soft: 'bg-emerald-500/10', border: 'border-emerald-500/25' },
+  { grad: 'from-violet-500 to-purple-600', text: 'text-violet-500', soft: 'bg-violet-500/10', border: 'border-violet-500/25' },
+  { grad: 'from-amber-500 to-orange-600', text: 'text-amber-500', soft: 'bg-amber-500/10', border: 'border-amber-500/25' },
+  { grad: 'from-rose-500 to-pink-600', text: 'text-rose-500', soft: 'bg-rose-500/10', border: 'border-rose-500/25' },
+  { grad: 'from-cyan-500 to-blue-600', text: 'text-cyan-500', soft: 'bg-cyan-500/10', border: 'border-cyan-500/25' },
 ];
 
-/* ─── Icon SVGs ────────────────────────────────────────────── */
+const accent = (i: number) => ACCENTS[((i % ACCENTS.length) + ACCENTS.length) % ACCENTS.length];
 
-const BULLET_ICONS = [
-  // Checkmark
-  <svg key="check" xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>,
-  // Star
-  <svg key="star" xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>,
-  // Arrow right
-  <svg key="arrow" xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>,
-  // Lightning
-  <svg key="bolt" xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z" /></svg>,
-  // Diamond
-  <svg key="diamond" xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l10 10-10 10L2 12 12 2z" /></svg>,
-];
+/* ─── Parsing ─────────────────────────────────────────────── */
 
-/* ─── Markdown parser ──────────────────────────────────────── */
+const BULLET_RE = /^\s*(?:[-*•+]|\d+[.)])\s+(.*)$/;
+const HR_RE = /^\s*(?:[-*_]\s*){3,}$/;
 
-function parseInfographicMarkdown(md: string): Block[] {
-  const lines = md.split('\n');
-  const blocks: Block[] = [];
+/** `**42%** — label` / `**3 laws**: label` → a KPI tile. */
+function matchStat(line: string): Stat | null {
+  const body = line.replace(BULLET_RE, '$1').trim();
+  const m = body.match(/^\*\*\s*([^*]{1,30}?)\s*\*\*\s*(.*)$/);
+  if (!m) return null;
+  const value = m[1].trim();
+  const label = m[2].replace(/^[\s—–\-:•|]+/, '').trim();
+  const looksNumeric = /\d/.test(value) || /[%$€£¥×+]/.test(value);
+  if (!looksNumeric && value.length > 14) return null;
+  if (label.length > 110) return null;
+  if (!label && !looksNumeric) return null;
+  return { value, label };
+}
+
+function stripInline(text: string) {
+  return text.replace(/\*\*/g, '').replace(/\*/g, '').replace(/`/g, '').trim();
+}
+
+export function parseInfographic(md: string): InfographicDoc {
+  const lines = (md ?? '').replace(/\r\n/g, '\n').split('\n');
+  const doc: InfographicDoc = { title: '', stats: [], lead: [], sections: [], takeaway: null };
+
+  let section: Section | null = null;
+  const push = (n: Node) => (section ? section.nodes.push(n) : doc.lead.push(n));
+
   let i = 0;
-
   while (i < lines.length) {
     const line = lines[i];
+    const trimmed = line.trim();
 
-    // Horizontal rule
-    if (/^(\s*[-*_]\s*){3,}$/.test(line.trim()) || /^---+$/.test(line.trim())) {
-      blocks.push({ type: 'hr', text: '' });
+    if (!trimmed) { i++; continue; }
+
+    if (HR_RE.test(trimmed)) { push({ kind: 'divider' }); i++; continue; }
+
+    const heading = trimmed.match(/^(#{1,6})\s*(.+)$/);
+    if (heading) {
+      const level = heading[1].length;
+      const text = stripInline(heading[2]);
+      if (level === 1 && !doc.title) { doc.title = text; i++; continue; }
+      section = { title: text, nodes: [] };
+      doc.sections.push(section);
       i++;
       continue;
     }
 
-    // Heading
-    const headingMatch = line.match(/^(#{1,6})\s+(.+)/);
-    if (headingMatch) {
-      blocks.push({
-        type: 'heading',
-        text: headingMatch[2].replace(/\*\*/g, '').trim(),
-        level: headingMatch[1].length,
-      });
-      i++;
-      continue;
-    }
-
-    // Blockquote
-    if (line.trim().startsWith('>')) {
-      let quoteText = '';
+    if (trimmed.startsWith('>')) {
+      let quote = '';
       while (i < lines.length && lines[i].trim().startsWith('>')) {
-        quoteText += lines[i].replace(/^>\s*/, '').trim() + ' ';
+        quote += lines[i].trim().replace(/^>\s?/, '') + ' ';
         i++;
       }
-      blocks.push({ type: 'blockquote', text: quoteText.trim() });
+      const text = stripInline(quote);
+      if (text) push({ kind: 'callout', text });
       continue;
     }
 
-    // List
-    const bulletMatch = line.match(/^\s*([-*•]|\d+[.)]\s)\s*(.*)/);
-    if (bulletMatch) {
+    if (BULLET_RE.test(trimmed)) {
       const items: string[] = [];
-      while (i < lines.length) {
-        const bm = lines[i].match(/^\s*([-*•]|\d+[.)]\s)\s*(.*)/);
-        if (!bm) break;
-        const itemText = bm[2].trim();
-        if (itemText) items.push(itemText);
+      while (i < lines.length && BULLET_RE.test(lines[i].trim())) {
+        const raw = lines[i].trim().replace(BULLET_RE, '$1').trim();
+        const stat = matchStat(raw);
+        if (stat) doc.stats.push({ value: stat.value, label: stripInline(stat.label) });
+        else if (raw) items.push(raw);
         i++;
       }
-      if (items.length > 0) {
-        blocks.push({ type: 'list', text: '', items });
-      }
+      if (items.length) push({ kind: 'bullets', items });
       continue;
     }
 
-    // Check if the line is a stat (contains bold numbers/percentages)
-    const statMatch = line.match(/\*\*([^*]*\d+[^*]*)\*\*/);
-    if (statMatch && line.trim()) {
-      blocks.push({ type: 'stat', text: line.replace(/\*\*/g, '').trim() });
+    // Standalone stat line (not in a list).
+    const stat = matchStat(trimmed);
+    if (stat) {
+      doc.stats.push({ value: stat.value, label: stripInline(stat.label) });
       i++;
       continue;
     }
 
-    // Regular paragraph
-    if (line.trim()) {
-      let paraText = '';
-      while (i < lines.length && lines[i].trim() && !lines[i].match(/^#{1,6}\s/) && !lines[i].trim().startsWith('>') && !lines[i].match(/^\s*([-*•]|\d+[.)]\s)/) && !/^(\s*[-*_]\s*){3,}$/.test(lines[i].trim())) {
-        paraText += lines[i].trim() + ' ';
-        i++;
-      }
-      blocks.push({ type: 'paragraph', text: paraText.replace(/\*\*/g, '').replace(/\*/g, '').trim() });
-      continue;
+    // Paragraph — merge consecutive plain lines.
+    let para = '';
+    while (
+      i < lines.length &&
+      lines[i].trim() &&
+      !lines[i].trim().startsWith('>') &&
+      !/^#{1,6}\s/.test(lines[i].trim()) &&
+      !BULLET_RE.test(lines[i].trim()) &&
+      !HR_RE.test(lines[i].trim()) &&
+      !matchStat(lines[i].trim())
+    ) {
+      para += lines[i].trim() + ' ';
+      i++;
     }
-
-    i++;
+    if (para.trim()) push({ kind: 'para', text: para.trim() });
+    else i++;
   }
 
-  return blocks;
+  // The final callout becomes the key takeaway card at the bottom.
+  const bucket = doc.sections.length ? doc.sections[doc.sections.length - 1].nodes : doc.lead;
+  for (let k = bucket.length - 1; k >= 0; k--) {
+    const n = bucket[k];
+    if (n.kind === 'divider') continue;
+    if (n.kind === 'callout') { doc.takeaway = n.text; bucket.splice(k, 1); }
+    break;
+  }
+
+  if (!doc.title) {
+    const firstPara = doc.lead.find((n) => n.kind === 'para') as { text: string } | undefined;
+    doc.title = firstPara ? firstPara.text.split(/[.!?]/)[0].slice(0, 80) : 'Infographic';
+  }
+
+  return doc;
 }
 
-/* ─── Extract stat numbers for highlighting ────────────────── */
+/* ─── Inline markdown → React ─────────────────────────────── */
 
-function renderStatText(text: string, dark: boolean, colorIdx: number) {
-  const color = SECTION_COLORS[colorIdx % SECTION_COLORS.length];
-  // Find numbers (with %, $, etc.) in the text and highlight them
-  const parts = text.split(/(\d[\d,]*\.?\d*\s*[%$£€]?|[%$£€]\s*\d[\d,]*\.?\d*)/g);
-
-  return parts.map((part, i) => {
-    if (/\d/.test(part)) {
-      return (
-        <span
-          key={i}
-          className={`inline-block px-3 py-0.5 rounded-full font-bold text-white bg-gradient-to-r ${
-            dark ? color.pill : color.lightPill
-          } text-lg mx-1`}
-        >
-          {part.trim()}
-        </span>
-      );
-    }
-    return <span key={i}>{part}</span>;
-  });
-}
-
-/* ─── Inline bold rendering ────────────────────────────────── */
-
-function renderInlineMarkdown(text: string) {
-  // Handle **bold** markers
+function renderInline(text: string, key = 0): React.ReactNode {
   const parts = text.split(/\*\*([^*]+)\*\*/g);
   return parts.map((part, i) =>
-    i % 2 === 1 ? <strong key={i} className="font-bold">{part}</strong> : <span key={i}>{part}</span>
+    i % 2 === 1
+      ? <strong key={`${key}-${i}`} className="font-semibold">{part}</strong>
+      : <span key={`${key}-${i}`}>{part.replace(/\*/g, '')}</span>
   );
 }
 
-/* ─── Block renderers ──────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════
+   Shared export toolbar — used by the infographic AND mind map
+   renderers so the controls stay identical between them.
+   ═══════════════════════════════════════════════════════════ */
 
-function HeadingBlock({ block, sectionNum, dark, colorIdx }: { block: Block; sectionNum: number; dark: boolean; colorIdx: number }) {
-  const color = SECTION_COLORS[colorIdx % SECTION_COLORS.length];
-  const isTitle = block.level === 1;
+function escapeHtml(s: string) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 
-  if (isTitle) {
-    return (
-      <div className="text-center mb-6">
-        <h2 className={`text-2xl sm:text-3xl font-bold ${dark ? 'text-white' : 'text-foreground'}`}>
-          {block.text}
-        </h2>
-        <div className={`mt-3 mx-auto w-24 h-1 rounded-full bg-gradient-to-r ${color.gradient}`} />
-      </div>
-    );
+function inlineHtml(s: string) {
+  return escapeHtml(s)
+    .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>')
+    .replace(/`(.+?)`/g, '<code>$1</code>');
+}
+
+/** Minimal markdown → HTML good enough for print / Word export. */
+function markdownToHtml(md: string): string {
+  const out: string[] = [];
+  const lines = (md ?? '').replace(/\r\n/g, '\n').split('\n');
+  let listOpen = false;
+  const closeList = () => { if (listOpen) { out.push('</ul>'); listOpen = false; } };
+
+  for (const rawLine of lines) {
+    const line = rawLine.replace(/\s+$/, '');
+    const trimmed = line.trim();
+    if (!trimmed) { closeList(); continue; }
+
+    if (HR_RE.test(trimmed)) { closeList(); out.push('<hr />'); continue; }
+
+    const heading = trimmed.match(/^(#{1,6})\s*(.+)$/);
+    if (heading) {
+      closeList();
+      const level = Math.min(heading[1].length + 1, 6);
+      out.push(`<h${level}>${inlineHtml(heading[2])}</h${level}>`);
+      continue;
+    }
+
+    if (trimmed.startsWith('>')) {
+      closeList();
+      out.push(`<blockquote>${inlineHtml(trimmed.replace(/^>\s?/, ''))}</blockquote>`);
+      continue;
+    }
+
+    const bullet = line.match(/^(\s*)(?:[-*•+]|\d+[.)])\s+(.*)$/);
+    if (bullet) {
+      if (!listOpen) { out.push('<ul>'); listOpen = true; }
+      const indent = Math.min(Math.floor(bullet[1].length / 2), 5) * 18;
+      out.push(`<li style="margin-left:${indent}px">${inlineHtml(bullet[2])}</li>`);
+      continue;
+    }
+
+    closeList();
+    out.push(`<p>${inlineHtml(trimmed)}</p>`);
   }
+  closeList();
+  return out.join('\n');
+}
+
+const DOC_STYLES = `
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Helvetica, Arial, sans-serif; color: #16181d; margin: 0; padding: 36px 40px; line-height: 1.6; }
+  .ps-head { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 3px solid #4f46e5; padding-bottom: 10px; margin-bottom: 26px; }
+  .ps-mark { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; color: #4f46e5; }
+  .ps-mark span { color: #16181d; }
+  .ps-kind { font-size: 11px; text-transform: uppercase; letter-spacing: .18em; color: #6b7280; }
+  h1 { font-size: 26px; margin: 0 0 18px; letter-spacing: -0.02em; }
+  h2 { font-size: 19px; margin: 26px 0 8px; color: #1f2937; border-left: 4px solid #4f46e5; padding-left: 10px; }
+  h3, h4, h5, h6 { font-size: 15px; margin: 18px 0 6px; color: #374151; }
+  p { margin: 0 0 10px; font-size: 13.5px; }
+  ul { margin: 0 0 12px; padding-left: 20px; }
+  li { font-size: 13.5px; margin-bottom: 5px; }
+  blockquote { margin: 14px 0; padding: 12px 16px; background: #f3f4f6; border-left: 4px solid #f59e0b; font-style: italic; font-size: 13.5px; }
+  hr { border: none; border-top: 1px solid #e5e7eb; margin: 22px 0; }
+  code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; font-size: 12.5px; }
+  .ps-foot { margin-top: 32px; padding-top: 10px; border-top: 1px solid #e5e7eb; font-size: 10.5px; color: #9ca3af; }
+  @page { margin: 18mm; }
+`;
+
+function buildDocumentHtml(title: string, kind: string, markdown: string, forWord: boolean) {
+  const body = markdownToHtml(markdown);
+  const head = `
+    <div class="ps-head">
+      <div class="ps-mark">Poket <span>School</span></div>
+      <div class="ps-kind">${escapeHtml(kind)}</div>
+    </div>
+    <h1>${escapeHtml(title)}</h1>`;
+  const foot = `<div class="ps-foot">Generated with Quill on Poket School</div>`;
+  const wordNs = forWord
+    ? ' xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"'
+    : '';
+  return `<!DOCTYPE html>
+<html${wordNs}>
+<head>
+<meta charset="utf-8" />
+<title>${escapeHtml(title)}</title>
+<style>${DOC_STYLES}</style>
+</head>
+<body>
+${head}
+${body}
+${foot}
+</body>
+</html>`;
+}
+
+function safeFileName(title: string) {
+  const base = (title || 'poket-school').replace(/[^\w\s-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 60);
+  return base || 'poket-school';
+}
+
+/**
+ * Compact Download PDF / Download Word / Copy controls.
+ * Shared by the infographic and mind map renderers.
+ */
+export function ContentExportToolbar({
+  title, kind, markdown, dark = false,
+}: { title: string; kind: string; markdown: string; dark?: boolean }) {
+  const btn = `inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors border ${
+    dark
+      ? 'border-white/10 bg-white/[0.04] text-slate-300 hover:bg-white/[0.09] hover:text-white'
+      : 'border-border bg-background/70 text-muted-foreground hover:bg-muted hover:text-foreground'
+  }`;
+
+  const handlePdf = () => {
+    const html = buildDocumentHtml(title, kind, markdown, false);
+    const w = window.open('', '_blank', 'width=920,height=1000');
+    if (!w) {
+      toast.error('Allow pop-ups for this site to export a PDF.');
+      return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(() => { try { w.print(); } catch { /* user can print manually */ } }, 400);
+    toast.success('Print dialog opened — choose "Save as PDF".');
+  };
+
+  const handleWord = () => {
+    try {
+      const html = buildDocumentHtml(title, kind, markdown, true);
+      const blob = new Blob(['﻿', html], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${safeFileName(title)}.doc`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+      toast.success('Word document downloaded.');
+    } catch {
+      toast.error('Could not create the Word file.');
+    }
+  };
+
+  const handleCopy = async () => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(markdown);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = markdown;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+      toast.success('Copied to clipboard.');
+    } catch {
+      toast.error('Copy failed — try selecting the text manually.');
+    }
+  };
 
   return (
-    <div className="flex items-center gap-4 mb-4 mt-8">
-      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${color.gradient} flex items-center justify-center shrink-0 shadow-lg`}>
-        <span className="text-white font-bold text-sm">{sectionNum > 0 ? sectionNum : '#'}</span>
-      </div>
-      <div className="flex-1">
-        <h3 className={`text-lg sm:text-xl font-bold ${dark ? 'text-white' : 'text-foreground'}`}>
-          {block.text}
-        </h3>
-        <div className={`mt-1.5 w-12 h-0.5 rounded-full bg-gradient-to-r ${color.gradient}`} />
-      </div>
+    <div className="flex items-center gap-1.5 shrink-0 print:hidden">
+      <button type="button" onClick={handlePdf} className={btn} title="Open a printable version and save it as PDF">
+        <Printer className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">PDF</span>
+      </button>
+      <button type="button" onClick={handleWord} className={btn} title="Download as a Word document">
+        <FileText className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">Word</span>
+      </button>
+      <button type="button" onClick={handleCopy} className={btn} title="Copy the raw text">
+        <Copy className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">Copy</span>
+      </button>
     </div>
   );
 }
 
-function BlockquoteBlock({ block, dark, colorIdx }: { block: Block; dark: boolean; colorIdx: number }) {
-  const color = SECTION_COLORS[colorIdx % SECTION_COLORS.length];
-  return (
-    <div className={`relative rounded-xl p-4 my-3 border-l-4 ${
-      dark
-        ? `${color.accent} bg-white/[0.03]`
-        : `${color.lightAccent} ${color.lightBg}`
-    }`}>
-      <div className={`absolute top-3 right-3 text-3xl opacity-10 ${dark ? 'text-white' : 'text-slate-900'}`}>
-        &ldquo;
-      </div>
-      <p className={`text-sm leading-relaxed italic ${dark ? 'text-slate-300' : 'text-foreground/80'}`}>
-        {renderInlineMarkdown(block.text)}
-      </p>
-    </div>
-  );
-}
+/* ─── Sub-renderers ───────────────────────────────────────── */
 
-function StatBlock({ block, dark, colorIdx }: { block: Block; dark: boolean; colorIdx: number }) {
+function StatTiles({ stats, dark }: { stats: Stat[]; dark: boolean }) {
+  const cols = stats.length <= 2 ? 'sm:grid-cols-2' : stats.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-4';
   return (
-    <div className={`rounded-xl p-4 my-3 text-center ${
-      dark ? 'bg-white/[0.04] border border-white/10' : 'bg-slate-50 border border-border'
-    }`}>
-      <p className={`text-sm leading-relaxed font-medium ${dark ? 'text-slate-200' : 'text-foreground'}`}>
-        {renderStatText(block.text, dark, colorIdx)}
-      </p>
-    </div>
-  );
-}
-
-function ListBlock({ block, dark, colorIdx }: { block: Block; dark: boolean; colorIdx: number }) {
-  const color = SECTION_COLORS[colorIdx % SECTION_COLORS.length];
-  const icon = BULLET_ICONS[colorIdx % BULLET_ICONS.length];
-
-  return (
-    <div className="space-y-2 my-3">
-      {block.items?.map((item, i) => (
-        <div
-          key={i}
-          className={`flex items-start gap-3 rounded-xl px-4 py-2.5 transition-colors ${
-            dark
-              ? 'bg-white/[0.03] hover:bg-white/[0.06]'
-              : 'bg-slate-50/80 hover:bg-slate-100'
-          }`}
-        >
-          <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${color.gradient} flex items-center justify-center shrink-0 mt-0.5`}>
-            <span className="text-white">{icon}</span>
+    <div className={`grid grid-cols-2 ${cols} gap-3 mb-7`}>
+      {stats.map((s, i) => {
+        const a = accent(i);
+        return (
+          <div
+            key={i}
+            className={`relative overflow-hidden rounded-2xl border p-4 ${a.border} ${
+              dark ? 'bg-white/[0.03]' : 'bg-white'
+            }`}
+          >
+            <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${a.grad}`} />
+            <p className={`text-xl sm:text-2xl font-bold leading-none tracking-tight ${a.text}`}>{s.value}</p>
+            {s.label && (
+              <p className={`mt-2 text-[11px] leading-snug ${dark ? 'text-slate-400' : 'text-muted-foreground'}`}>
+                {s.label}
+              </p>
+            )}
           </div>
-          <p className={`text-sm leading-relaxed ${dark ? 'text-slate-300' : 'text-foreground/80'}`}>
-            {renderInlineMarkdown(item)}
-          </p>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
-function HrBlock({ dark, colorIdx }: { dark: boolean; colorIdx: number }) {
-  const color = SECTION_COLORS[colorIdx % SECTION_COLORS.length];
+function NodeList({ nodes, dark, idx }: { nodes: Node[]; dark: boolean; idx: number }) {
+  const a = accent(idx);
   return (
-    <div className="flex items-center gap-3 my-6">
-      <div className={`flex-1 h-px ${dark ? 'bg-white/10' : 'bg-border'}`} />
-      <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${color.gradient}`} />
-      <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${color.gradient} opacity-60`} />
-      <div className={`w-1 h-1 rounded-full bg-gradient-to-r ${color.gradient} opacity-30`} />
-      <div className={`flex-1 h-px ${dark ? 'bg-white/10' : 'bg-border'}`} />
-    </div>
-  );
-}
-
-function ParagraphBlock({ block, dark }: { block: Block; dark: boolean }) {
-  return (
-    <p className={`text-sm leading-relaxed my-2 ${dark ? 'text-slate-300' : 'text-foreground/80'}`}>
-      {renderInlineMarkdown(block.text)}
-    </p>
+    <>
+      {nodes.map((n, i) => {
+        if (n.kind === 'divider') {
+          return <div key={i} className={`my-4 h-px ${dark ? 'bg-white/10' : 'bg-border'}`} />;
+        }
+        if (n.kind === 'para') {
+          return (
+            <p key={i} className={`text-sm leading-relaxed mb-3 ${dark ? 'text-slate-300' : 'text-foreground/80'}`}>
+              {renderInline(n.text, i)}
+            </p>
+          );
+        }
+        if (n.kind === 'callout') {
+          return (
+            <div key={i} className={`my-3 rounded-xl border-l-[3px] px-4 py-3 ${a.border} ${a.soft}`}>
+              <div className="flex items-start gap-2.5">
+                <Sparkles className={`w-4 h-4 shrink-0 mt-0.5 ${a.text}`} />
+                <p className={`text-sm leading-relaxed ${dark ? 'text-slate-200' : 'text-foreground/90'}`}>
+                  {renderInline(n.text, i)}
+                </p>
+              </div>
+            </div>
+          );
+        }
+        return (
+          <ul key={i} className="space-y-2 mb-2">
+            {n.items.map((item, j) => (
+              <li key={j} className="flex items-start gap-2.5">
+                <span className={`mt-[3px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${a.soft}`}>
+                  <Check className={`h-2.5 w-2.5 ${a.text}`} strokeWidth={3} />
+                </span>
+                <span className={`text-sm leading-relaxed ${dark ? 'text-slate-300' : 'text-foreground/80'}`}>
+                  {renderInline(item, j)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        );
+      })}
+    </>
   );
 }
 
 /* ─── Main renderer ────────────────────────────────────────── */
 
 export function InfographicRenderer({ content, dark = false }: InfographicRendererProps) {
-  const blocks = useMemo(() => parseInfographicMarkdown(content), [content]);
+  const doc = useMemo(() => parseInfographic(content), [content]);
 
   if (!content.trim()) {
     return (
@@ -285,63 +456,92 @@ export function InfographicRenderer({ content, dark = false }: InfographicRender
     );
   }
 
-  // Track section numbers for headings
-  let sectionCount = 0;
-  let currentColorIdx = 0;
-
   return (
     <div
-      className={`w-full rounded-2xl p-6 sm:p-8 ${
+      className={`w-full rounded-2xl p-5 sm:p-8 ${
         dark
           ? 'bg-gradient-to-br from-[#0B0F1A] to-[#070A14] border border-white/10'
           : 'bg-gradient-to-br from-white to-slate-50 border border-border'
       }`}
     >
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5a1.5 1.5 0 0 0 1.5-1.5V5.25a1.5 1.5 0 0 0-1.5-1.5H3.75a1.5 1.5 0 0 0-1.5 1.5v14.25a1.5 1.5 0 0 0 1.5 1.5Z" />
-          </svg>
+      {/* Eyebrow + export toolbar */}
+      <div className="flex items-center justify-between gap-3 mb-5">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center shrink-0">
+            <BarChart3 className="w-4 h-4 text-white" />
+          </div>
+          <p className={`text-[11px] font-semibold uppercase tracking-[0.18em] truncate ${dark ? 'text-slate-400' : 'text-muted-foreground'}`}>
+            Infographic
+          </p>
         </div>
-        <h3 className={`font-bold text-lg ${dark ? 'text-white' : 'text-foreground'}`}>
-          Infographic
-        </h3>
+        <ContentExportToolbar title={doc.title} kind="Infographic" markdown={content} dark={dark} />
       </div>
 
-      {/* Blocks */}
-      <div className="space-y-1">
-        {blocks.map((block, i) => {
-          if (block.type === 'heading') {
-            if (block.level && block.level > 1) {
-              sectionCount++;
-              currentColorIdx = (sectionCount - 1) % SECTION_COLORS.length;
-            }
-            return (
-              <HeadingBlock
-                key={i}
-                block={block}
-                sectionNum={sectionCount}
-                dark={dark}
-                colorIdx={currentColorIdx}
-              />
-            );
-          }
-          if (block.type === 'blockquote') {
-            return <BlockquoteBlock key={i} block={block} dark={dark} colorIdx={currentColorIdx} />;
-          }
-          if (block.type === 'stat') {
-            return <StatBlock key={i} block={block} dark={dark} colorIdx={currentColorIdx} />;
-          }
-          if (block.type === 'list') {
-            return <ListBlock key={i} block={block} dark={dark} colorIdx={currentColorIdx} />;
-          }
-          if (block.type === 'hr') {
-            return <HrBlock key={i} dark={dark} colorIdx={currentColorIdx} />;
-          }
-          return <ParagraphBlock key={i} block={block} dark={dark} />;
+      {/* Title */}
+      <div className="mb-6">
+        <h2 className={`text-2xl sm:text-3xl font-bold leading-tight tracking-tight ${dark ? 'text-white' : 'text-foreground'}`}>
+          {doc.title}
+        </h2>
+        <div className="mt-3 h-1 w-20 rounded-full bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500" />
+      </div>
+
+      {/* Lead paragraphs */}
+      {doc.lead.length > 0 && (
+        <div className="mb-6">
+          <NodeList nodes={doc.lead} dark={dark} idx={0} />
+        </div>
+      )}
+
+      {/* KPI / stat tiles */}
+      {doc.stats.length > 0 && <StatTiles stats={doc.stats} dark={dark} />}
+
+      {/* Sections */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {doc.sections.map((s, i) => {
+          const a = accent(i);
+          return (
+            <section
+              key={i}
+              className={`rounded-2xl border p-4 sm:p-5 ${
+                dark ? 'border-white/10 bg-white/[0.02]' : 'border-border bg-white'
+              }`}
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${a.grad} flex items-center justify-center shrink-0 shadow-sm`}>
+                  <span className="text-white text-xs font-bold">{i + 1}</span>
+                </div>
+                <h3 className={`text-base font-semibold leading-tight ${dark ? 'text-white' : 'text-foreground'}`}>
+                  {s.title}
+                </h3>
+              </div>
+              <NodeList nodes={s.nodes} dark={dark} idx={i} />
+            </section>
+          );
         })}
       </div>
+
+      {/* Key takeaway */}
+      {doc.takeaway && (
+        <div
+          className={`mt-6 rounded-2xl border p-4 sm:p-5 ${
+            dark ? 'border-amber-500/30 bg-amber-500/[0.07]' : 'border-amber-300 bg-amber-50'
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shrink-0">
+              <Lightbulb className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <p className={`text-[10px] font-bold uppercase tracking-[0.18em] mb-1 ${dark ? 'text-amber-300' : 'text-amber-700'}`}>
+                Key takeaway
+              </p>
+              <p className={`text-sm leading-relaxed ${dark ? 'text-amber-50' : 'text-amber-900'}`}>
+                {renderInline(doc.takeaway)}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -35,7 +35,7 @@ export default function AdminSystemSettings() {
     setLoadError(false);
     getPlatformSettings()
       .then(s => {
-        setPlatformName(s.platformName ?? 'Pocket School');
+        setPlatformName(s.platformName ?? 'Poket School');
         setSupportEmail(s.supportEmail ?? '');
         setSmtpHost(s.smtpHost ?? '');
         setSmtpPort(s.smtpPort ?? '');

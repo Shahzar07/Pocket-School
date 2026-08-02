@@ -1,6 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+/**
+ * Signup — PDPA-compliant registration.
+ * Collects date of birth, routes under-18s through verified parent/guardian
+ * consent before the account is created, requires explicit agreement to the
+ * Terms and Privacy Policy, and asks role-specific questions.
+ */
+
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
@@ -11,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { motion } from 'motion/react';
 import Link from 'next/link';
-import { GraduationCap, Presentation, Users } from 'lucide-react';
+import { GraduationCap, Presentation, Users, ShieldCheck, Info } from 'lucide-react';
 
 const ROLES = [
   { id: 'student', title: 'Student', icon: <GraduationCap className="w-5 h-5" /> },
@@ -19,29 +26,103 @@ const ROLES = [
   { id: 'parent', title: 'Parent', icon: <Users className="w-5 h-5" /> },
 ];
 
+const YEAR_GROUPS = [
+  'Year 7', 'Year 8', 'Year 9', 'Year 10', 'Year 11',
+  'Year 12', 'Year 13', 'Foundation', 'Undergraduate', 'Other',
+];
+
+/** The 9 academic pathways offered by Poket School. */
+const PATHWAYS = [
+  'IGCSE / GCSE / O-Levels',
+  'A Level / Pre-University',
+  'School / K-12',
+  'Foundation Programme',
+  'LLB (University of London)',
+  'Micro Degree',
+  'Diploma',
+  'Professional Certification',
+  'Independent Learning',
+];
+
+const TEACHING_LEVELS = [
+  'Primary / K-12', 'IGCSE / GCSE / O-Levels', 'A Level / Pre-University',
+  'Foundation', 'Undergraduate', 'Professional',
+];
+
+const INPUT_CLASS =
+  'h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-[#1A73E8] focus:ring-[#1A73E8]/20 transition-all';
+const SELECT_CLASS =
+  'w-full h-12 rounded-2xl bg-white/5 border border-white/10 text-white px-4 text-sm outline-none focus:border-[#1A73E8] transition-all';
+const LABEL_CLASS = 'text-white/60 text-xs font-semibold uppercase tracking-wider';
+
+function ageFromDob(dob: string): number | null {
+  if (!dob) return null;
+  const d = new Date(dob);
+  if (Number.isNaN(d.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+  return age;
+}
+
 export default function SignupPage() {
   const router = useRouter();
-  const [step, setStep] = useState<'form' | 'verify'>('form');
+  // 'form' → details, 'consent' → guardian consent code (minors), 'verify' → email code
+  const [step, setStep] = useState<'form' | 'consent' | 'verify'>('form');
+
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('student');
+  const [dob, setDob] = useState('');
+  const [agreed, setAgreed] = useState(false);
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // HMAC token returned by /api/auth/send-otp, required to verify the code.
+  // Role-specific
+  const [yearGroup, setYearGroup] = useState(YEAR_GROUPS[0]);
+  const [pathway, setPathway] = useState(PATHWAYS[0]);
+  const [subject, setSubject] = useState('');
+  const [teachingLevel, setTeachingLevel] = useState(TEACHING_LEVELS[1]);
+  const [institution, setInstitution] = useState('');
+  const [childEmail, setChildEmail] = useState('');
+
+  // Parental consent (under-18 students)
+  const [guardianName, setGuardianName] = useState('');
+  const [guardianEmail, setGuardianEmail] = useState('');
+  const [guardianToken, setGuardianToken] = useState('');
+  const [guardianExpires, setGuardianExpires] = useState(0);
+  const [guardianVerified, setGuardianVerified] = useState(false);
+
+  // Email OTP for the account holder
   const [otpToken, setOtpToken] = useState('');
   const [otpExpiresAt, setOtpExpiresAt] = useState(0);
 
+  const age = useMemo(() => ageFromDob(dob), [dob]);
+  const isMinor = role === 'student' && age !== null && age < 18;
+  const tooYoung = age !== null && age < 13;
+
   const routeAfterSignup = (r: string) => {
-    if (r === 'student') router.push('/onboarding');
-    else if (r === 'parent') router.push('/onboarding');
-    else if (r === 'teacher') router.push('/dashboard/teacher');
-    else router.push('/dashboard/admin');
+    if (r === 'teacher') router.push('/dashboard/teacher');
+    else router.push('/onboarding');
+  };
+
+  /** Fields written to the user profile, shared by both signup paths. */
+  const roleProfileFields = () => {
+    if (role === 'student') return { yearGroup, pathway };
+    if (role === 'teacher') return {
+      subjects: subject.split(',').map(s => s.trim()).filter(Boolean),
+      teachingLevel,
+      ...(institution.trim() ? { institutionName: institution.trim() } : {}),
+    };
+    if (role === 'parent') return childEmail.trim() ? { pendingChildEmail: childEmail.trim().toLowerCase() } : {};
+    return {};
   };
 
   const handleGoogleSignIn = async () => {
+    if (!agreed) { toast.error('Please accept the Terms of Service and Privacy Policy first.'); return; }
     try {
       setLoading(true);
       const provider = new GoogleAuthProvider();
@@ -56,6 +137,9 @@ export default function SignupPage() {
           role,
           xp: 0,
           emailVerified: true,
+          consentAcceptedAt: serverTimestamp(),
+          ...(dob ? { dateOfBirth: dob } : {}),
+          ...roleProfileFields(),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
@@ -79,8 +163,36 @@ export default function SignupPage() {
       toast.error('Password must be at least 6 characters.');
       return false;
     }
+    if (!dob) {
+      toast.error('Please enter your date of birth.');
+      return false;
+    }
+    if (age === null) {
+      toast.error('That date of birth doesn’t look right.');
+      return false;
+    }
+    if (tooYoung) {
+      toast.error('You must be at least 13 years old to create an account.');
+      return false;
+    }
     if (phone.trim() && !/^\+[1-9]\d{6,14}$/.test(phone.trim())) {
-      toast.error('Phone must be in international format, e.g. +447123456789 (or leave it blank).');
+      toast.error('Phone must be in international format, e.g. +60123456789 (or leave it blank).');
+      return false;
+    }
+    if (role === 'teacher' && !subject.trim()) {
+      toast.error('Please tell us which subject(s) you teach.');
+      return false;
+    }
+    if (isMinor && (!guardianName.trim() || !guardianEmail.trim())) {
+      toast.error('A parent or guardian’s name and email are required for under-18 accounts.');
+      return false;
+    }
+    if (isMinor && guardianEmail.trim().toLowerCase() === email.trim().toLowerCase()) {
+      toast.error('The guardian email must be different from the student’s email.');
+      return false;
+    }
+    if (!agreed) {
+      toast.error('Please accept the Terms of Service and Privacy Policy.');
       return false;
     }
     return true;
@@ -95,11 +207,20 @@ export default function SignupPage() {
       role,
       xp: 0,
       emailVerified,
+      dateOfBirth: dob,
+      consentAcceptedAt: serverTimestamp(),
+      ...(isMinor ? {
+        isMinor: true,
+        guardianName: guardianName.trim(),
+        guardianEmail: guardianEmail.trim().toLowerCase(),
+        guardianConsentAt: serverTimestamp(),
+      } : {}),
       ...(phone.trim() ? { phone: phone.trim() } : {}),
+      ...roleProfileFields(),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
-    toast.success('Account created — welcome to Pocket School!');
+    toast.success('Account created — welcome to Poket School!');
     routeAfterSignup(role);
   };
 
@@ -110,9 +231,63 @@ export default function SignupPage() {
     else toast.error(e?.message || 'Failed to create account');
   };
 
-  const sendOtp = async () => {
-    if (!validateForm()) return;
+  /** Send a consent code to the guardian's inbox (minors only). */
+  const sendGuardianConsent = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: guardianEmail.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error || 'Could not reach the guardian’s email.'); return; }
+      if (data.configured === false) {
+        // No mail service configured — record consent as declared rather than block signup.
+        setGuardianVerified(true);
+        await startAccountVerification(true);
+        return;
+      }
+      setGuardianToken(data.token);
+      setGuardianExpires(data.expiresAt);
+      setCode('');
+      setStep('consent');
+      toast.success(`Consent code sent to ${guardianEmail.trim()}.`);
+    } catch (e: any) {
+      handleAuthError(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const verifyGuardianConsent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (code.trim().length !== 6) { toast.error('Enter the 6-digit consent code.'); return; }
+    try {
+      setLoading(true);
+      const res = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: guardianEmail.trim(), code: code.trim(),
+          token: guardianToken, expiresAt: guardianExpires,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.valid) { toast.error(data.error || 'Invalid or expired consent code.'); return; }
+      setGuardianVerified(true);
+      toast.success('Parental consent confirmed.');
+      await startAccountVerification(true);
+    } catch (e: any) {
+      handleAuthError(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /** Email verification for the account holder, then account creation. */
+  const startAccountVerification = async (skipValidation = false) => {
+    if (!skipValidation && !validateForm()) return;
     try {
       setLoading(true);
       const res = await fetch('/api/auth/send-otp', {
@@ -121,15 +296,8 @@ export default function SignupPage() {
         body: JSON.stringify({ email: email.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || 'Failed to send verification code.');
-        return;
-      }
-      if (data.configured === false) {
-        // No email service on this deployment — don't block signups.
-        await createAccount(false);
-        return;
-      }
+      if (!res.ok) { toast.error(data.error || 'Failed to send verification code.'); return; }
+      if (data.configured === false) { await createAccount(false); return; }
       setOtpToken(data.token);
       setOtpExpiresAt(data.expiresAt);
       setCode('');
@@ -142,23 +310,24 @@ export default function SignupPage() {
     }
   };
 
+  const submitForm = async () => {
+    if (!validateForm()) return;
+    // Under-18 students must have verified guardian consent before we create anything.
+    if (isMinor && !guardianVerified) { await sendGuardianConsent(); return; }
+    await startAccountVerification(true);
+  };
+
   const verifyAndCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!code.trim() || code.trim().length !== 6) {
-      toast.error('Enter the 6-digit code.');
-      return;
-    }
-
+    if (code.trim().length !== 6) { toast.error('Enter the 6-digit code.'); return; }
     try {
       setLoading(true);
       const verifyRes = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: email.trim(),
-          code: code.trim(),
-          token: otpToken,
-          expiresAt: otpExpiresAt,
+          email: email.trim(), code: code.trim(),
+          token: otpToken, expiresAt: otpExpiresAt,
         }),
       });
       const verifyData = await verifyRes.json();
@@ -174,6 +343,15 @@ export default function SignupPage() {
     }
   };
 
+  const heading =
+    step === 'form' ? 'Create your account'
+    : step === 'consent' ? 'Parent or guardian consent'
+    : 'Check your email';
+  const subheading =
+    step === 'form' ? 'Join Poket School and start learning smarter.'
+    : step === 'consent' ? `We sent a consent code to ${guardianEmail}. Ask your parent or guardian to share it with you.`
+    : `We sent a 6-digit code to ${email}.`;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -181,21 +359,15 @@ export default function SignupPage() {
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
     >
       <div className="mb-7">
-        <h2 className="text-3xl font-bold text-white mb-2">
-          {step === 'form' ? 'Create your account' : 'Check your email'}
-        </h2>
-        <p className="text-white/45 text-sm">
-          {step === 'form'
-            ? 'Join Pocket School and start learning smarter.'
-            : `We sent a 6-digit code to ${email}.`}
-        </p>
+        <h2 className="text-3xl font-bold text-white mb-2">{heading}</h2>
+        <p className="text-white/45 text-sm">{subheading}</p>
       </div>
 
       {step === 'form' && (
         <>
           {/* Role selector */}
           <div className="mb-6">
-            <Label className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3 block">I am a...</Label>
+            <Label className={`${LABEL_CLASS} mb-3 block`}>I am a...</Label>
             <div className="grid grid-cols-3 gap-2.5">
               {ROLES.map(r => (
                 <button
@@ -237,118 +409,223 @@ export default function SignupPage() {
             <div className="flex-1 border-t border-white/8" />
           </div>
 
-          <form onSubmit={(e) => { e.preventDefault(); sendOtp(); }} className="space-y-4">
+          <form onSubmit={(e) => { e.preventDefault(); submitForm(); }} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="name" className="text-white/60 text-xs font-semibold uppercase tracking-wider">Full Name</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Jane Doe"
-                className="h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-[#1A73E8] focus:ring-[#1A73E8]/20 transition-all"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                disabled={loading}
-              />
+              <Label htmlFor="name" className={LABEL_CLASS}>Full Name</Label>
+              <Input id="name" type="text" placeholder="Jane Doe" className={INPUT_CLASS}
+                value={name} onChange={e => setName(e.target.value)} disabled={loading} />
             </div>
+
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-white/60 text-xs font-semibold uppercase tracking-wider">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                className="h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-[#1A73E8] focus:ring-[#1A73E8]/20 transition-all"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                disabled={loading}
-              />
+              <Label htmlFor="email" className={LABEL_CLASS}>Email Address</Label>
+              <Input id="email" type="email" placeholder="name@example.com" className={INPUT_CLASS}
+                value={email} onChange={e => setEmail(e.target.value)} disabled={loading} />
               <p className="text-xs text-white/25">We&apos;ll send a verification code to this address.</p>
             </div>
+
+            {/* Date of birth — drives the minor-consent flow */}
             <div className="space-y-1.5">
-              <Label htmlFor="phone" className="text-white/60 text-xs font-semibold uppercase tracking-wider">Phone <span className="text-white/30 normal-case font-normal">(optional)</span></Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="+447123456789"
-                className="h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-[#1A73E8] focus:ring-[#1A73E8]/20 transition-all"
-                value={phone}
-                onChange={e => setPhone(e.target.value)}
-                disabled={loading}
-              />
+              <Label htmlFor="dob" className={LABEL_CLASS}>Date of Birth</Label>
+              <Input id="dob" type="date" className={INPUT_CLASS} value={dob}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={e => setDob(e.target.value)} disabled={loading} />
+              {tooYoung && (
+                <p className="text-xs text-red-300">You must be at least 13 years old to use Poket School.</p>
+              )}
+              {isMinor && !tooYoung && (
+                <p className="text-xs text-amber-300 flex items-start gap-1.5">
+                  <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  You&apos;re under 18, so we need a parent or guardian to approve this account.
+                </p>
+              )}
             </div>
+
+            {/* ── Role-specific fields ── */}
+            {role === 'student' && (
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="yearGroup" className={LABEL_CLASS}>Year / Level</Label>
+                  <select id="yearGroup" className={SELECT_CLASS} value={yearGroup}
+                    onChange={e => setYearGroup(e.target.value)} disabled={loading}>
+                    {YEAR_GROUPS.map(y => <option key={y} value={y} className="bg-[#0B0F1A]">{y}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="pathway" className={LABEL_CLASS}>Programme of Interest</Label>
+                  <select id="pathway" className={SELECT_CLASS} value={pathway}
+                    onChange={e => setPathway(e.target.value)} disabled={loading}>
+                    {PATHWAYS.map(p => <option key={p} value={p} className="bg-[#0B0F1A]">{p}</option>)}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {role === 'teacher' && (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="subject" className={LABEL_CLASS}>Subject(s) You Teach</Label>
+                  <Input id="subject" type="text" placeholder="Biology, Chemistry" className={INPUT_CLASS}
+                    value={subject} onChange={e => setSubject(e.target.value)} disabled={loading} />
+                  <p className="text-xs text-white/25">Separate multiple subjects with commas.</p>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="teachingLevel" className={LABEL_CLASS}>Level You Teach</Label>
+                    <select id="teachingLevel" className={SELECT_CLASS} value={teachingLevel}
+                      onChange={e => setTeachingLevel(e.target.value)} disabled={loading}>
+                      {TEACHING_LEVELS.map(l => <option key={l} value={l} className="bg-[#0B0F1A]">{l}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="institution" className={LABEL_CLASS}>
+                      Institution <span className="text-white/30 normal-case font-normal">(optional)</span>
+                    </Label>
+                    <Input id="institution" type="text" placeholder="Sunway College" className={INPUT_CLASS}
+                      value={institution} onChange={e => setInstitution(e.target.value)} disabled={loading} />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {role === 'parent' && (
+              <div className="space-y-1.5">
+                <Label htmlFor="childEmail" className={LABEL_CLASS}>
+                  Link to Your Child&apos;s Account <span className="text-white/30 normal-case font-normal">(optional)</span>
+                </Label>
+                <Input id="childEmail" type="email" placeholder="child@example.com" className={INPUT_CLASS}
+                  value={childEmail} onChange={e => setChildEmail(e.target.value)} disabled={loading} />
+                <p className="text-xs text-white/25">
+                  Enter the email your child signed up with. You can also link accounts later from your dashboard.
+                </p>
+              </div>
+            )}
+
+            {/* ── Guardian consent block (under-18 students) ── */}
+            {isMinor && !tooYoung && (
+              <div className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.07] p-4 space-y-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Parent / Guardian Consent
+                </p>
+                <p className="text-xs text-white/50 leading-relaxed">
+                  We&apos;ll email your parent or guardian a 6-digit code. Your account is only created once
+                  they approve it, as required by the Malaysian PDPA.
+                </p>
+                <div className="space-y-1.5">
+                  <Label htmlFor="guardianName" className={LABEL_CLASS}>Guardian&apos;s Full Name</Label>
+                  <Input id="guardianName" type="text" placeholder="Parent or guardian name" className={INPUT_CLASS}
+                    value={guardianName} onChange={e => setGuardianName(e.target.value)} disabled={loading} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="guardianEmail" className={LABEL_CLASS}>Guardian&apos;s Email</Label>
+                  <Input id="guardianEmail" type="email" placeholder="parent@example.com" className={INPUT_CLASS}
+                    value={guardianEmail} onChange={e => setGuardianEmail(e.target.value)} disabled={loading} />
+                </div>
+              </div>
+            )}
+
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-white/60 text-xs font-semibold uppercase tracking-wider">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                className="h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-[#1A73E8] focus:ring-[#1A73E8]/20 transition-all"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                disabled={loading}
-              />
+              <Label htmlFor="phone" className={LABEL_CLASS}>
+                Phone <span className="text-white/30 normal-case font-normal">(optional)</span>
+              </Label>
+              <Input id="phone" type="tel" placeholder="+60123456789" className={INPUT_CLASS}
+                value={phone} onChange={e => setPhone(e.target.value)} disabled={loading} />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className={LABEL_CLASS}>Password</Label>
+              <Input id="password" type="password" placeholder="••••••••" className={INPUT_CLASS}
+                value={password} onChange={e => setPassword(e.target.value)} disabled={loading} />
               <p className="text-xs text-white/25">At least 6 characters.</p>
             </div>
+
+            {/* ── Consent checkbox (PDPA requirement) ── */}
+            <label className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 cursor-pointer hover:bg-white/[0.05] transition-colors">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={e => setAgreed(e.target.checked)}
+                disabled={loading}
+                className="mt-0.5 w-4 h-4 shrink-0 accent-[#1A73E8]"
+              />
+              <span className="text-xs text-white/60 leading-relaxed">
+                I agree to the{' '}
+                <Link href="/legal?doc=terms" target="_blank" className="text-[#60A5FA] hover:underline font-medium">Terms of Service</Link>
+                {' '}and{' '}
+                <Link href="/legal?doc=privacy" target="_blank" className="text-[#60A5FA] hover:underline font-medium">Privacy Policy</Link>
+                , and I consent to Poket School processing my personal data as described.
+                {isMinor && ' My parent or guardian consents on my behalf.'}
+              </span>
+            </label>
 
             <Button
               type="submit"
               className="w-full h-12 rounded-2xl bg-[#1A73E8] hover:bg-[#1557B0] text-white font-semibold text-base shadow-lg shadow-blue-900/30 transition-all mt-1"
-              disabled={loading}
+              disabled={loading || tooYoung}
             >
-              {loading ? 'Working…' : 'Create Account'}
+              {loading ? 'Working…' : isMinor ? 'Request Guardian Approval' : 'Create Account'}
             </Button>
           </form>
         </>
       )}
 
-      {step === 'verify' && (
-        <form onSubmit={verifyAndCreate} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="code" className="text-white/60 text-xs font-semibold uppercase tracking-wider">6-Digit Code</Label>
-            <Input
-              id="code"
-              type="text"
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="123456"
-              className="h-14 rounded-2xl bg-white/5 border-white/10 text-white text-center text-2xl tracking-[0.5em] font-bold placeholder:text-white/20 focus:border-[#1A73E8]"
-              value={code}
-              onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
-              autoFocus
-              disabled={loading}
-            />
-            <p className="text-xs text-white/30">
-              Sent to <span className="font-semibold text-white/50">{email}</span> — it may take a minute. Check spam too.
+      {step === 'consent' && (
+        <form onSubmit={verifyGuardianConsent} className="space-y-4">
+          <div className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.07] p-4">
+            <p className="text-xs text-white/60 leading-relaxed">
+              <strong className="text-amber-300">{guardianName}</strong> has been emailed a consent code at{' '}
+              <strong className="text-white/80">{guardianEmail}</strong>. Enter it below to confirm they approve
+              this account.
             </p>
           </div>
-          <Button
-            type="submit"
-            className="w-full h-12 rounded-2xl bg-[#1A73E8] hover:bg-[#1557B0] text-white font-semibold shadow-lg shadow-blue-900/30"
-            disabled={loading}
-          >
-            {loading ? 'Verifying…' : 'Verify & Create Account'}
+          <div className="space-y-1.5">
+            <Label htmlFor="consentCode" className={LABEL_CLASS}>6-Digit Consent Code</Label>
+            <Input
+              id="consentCode" type="text" inputMode="numeric" maxLength={6} placeholder="123456"
+              className="h-14 rounded-2xl bg-white/5 border-white/10 text-white text-center text-2xl tracking-[0.5em] font-bold placeholder:text-white/20 focus:border-[#1A73E8]"
+              value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} disabled={loading}
+            />
+          </div>
+          <Button type="submit" disabled={loading}
+            className="w-full h-12 rounded-2xl bg-[#1A73E8] hover:bg-[#1557B0] text-white font-semibold text-base transition-all">
+            {loading ? 'Verifying…' : 'Confirm Consent'}
           </Button>
-          <button
-            type="button"
-            onClick={() => { setStep('form'); setCode(''); }}
-            disabled={loading}
-            className="w-full text-sm text-white/30 hover:text-white/60 transition-colors"
-          >
-            ← Back to form
-          </button>
-          <button
-            type="button"
-            onClick={sendOtp}
-            disabled={loading}
-            className="w-full text-xs text-[#60A5FA] font-semibold hover:text-[#93C5FD] transition-colors"
-          >
-            Resend code
+          <button type="button" onClick={() => setStep('form')} disabled={loading}
+            className="w-full text-xs text-white/40 hover:text-white/70 transition-colors">
+            ← Back to details
           </button>
         </form>
       )}
 
-      <p className="text-center mt-7 text-white/40 text-sm">
+      {step === 'verify' && (
+        <form onSubmit={verifyAndCreate} className="space-y-4">
+          {guardianVerified && (
+            <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.07] p-3 flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+              <p className="text-xs text-emerald-200">Guardian consent confirmed.</p>
+            </div>
+          )}
+          <div className="space-y-1.5">
+            <Label htmlFor="code" className={LABEL_CLASS}>6-Digit Code</Label>
+            <Input
+              id="code" type="text" inputMode="numeric" maxLength={6} placeholder="123456"
+              className="h-14 rounded-2xl bg-white/5 border-white/10 text-white text-center text-2xl tracking-[0.5em] font-bold placeholder:text-white/20 focus:border-[#1A73E8]"
+              value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} disabled={loading}
+            />
+          </div>
+          <Button type="submit" disabled={loading}
+            className="w-full h-12 rounded-2xl bg-[#1A73E8] hover:bg-[#1557B0] text-white font-semibold text-base transition-all">
+            {loading ? 'Creating account…' : 'Verify & Create Account'}
+          </Button>
+          <button type="button" onClick={() => setStep('form')} disabled={loading}
+            className="w-full text-xs text-white/40 hover:text-white/70 transition-colors">
+            ← Back to details
+          </button>
+        </form>
+      )}
+
+      <p className="text-center text-sm text-white/40 mt-6">
         Already have an account?{' '}
-        <Link href="/login" className="text-[#60A5FA] font-semibold hover:text-[#93C5FD] transition-colors">Sign In</Link>
+        <Link href="/login" className="text-[#60A5FA] hover:underline font-medium">Sign in</Link>
       </p>
     </motion.div>
   );

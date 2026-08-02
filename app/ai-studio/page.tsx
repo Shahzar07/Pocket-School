@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * AI Studio — POCO.
- * A Claude-style conversational studio: one thread where POCO both tutors
+ * AI Studio — Quill.
+ * A Claude-style conversational studio: one thread where Quill both tutors
  * (Socratic chat) and generates any of the 12 study formats as rich turns.
  * Warm charcoal palette, skills composer, session recents, persistent library.
  */
@@ -48,7 +48,17 @@ const FORMATS: { id: FormatId; label: string; desc: string; icon: React.ReactNod
   { id: 'audioScript', label: 'Audio', desc: 'AI-voiced summary', icon: <Headphones className="w-4 h-4" /> },
 ];
 
-const LEVELS = ['Primary', 'GCSE', 'A-Level', 'University', 'Professional'];
+const LEVELS = [
+  'IGCSE / GCSE / O-Levels',
+  'A Level / Pre-University',
+  'School / K-12',
+  'Foundation',
+  'LLB',
+  'Micro Degree',
+  'Diploma',
+  'Professional Certification',
+  'Independent Learning',
+];
 
 const CHAT_MODES: { id: 'k12' | 'college' | 'professional' | 'legal'; label: string; icon: React.ReactNode }[] = [
   { id: 'k12', label: 'K-12', icon: <Baby className="w-3.5 h-3.5" /> },
@@ -86,7 +96,7 @@ const C = {
   accentInk: '#1A1918',
 };
 
-/* Rotating status lines POCO shows while working. */
+/* Rotating status lines Quill shows while working. */
 const THINKING_PHRASES = [
   'Searching and thinking the best solutions for you…',
   'Good question — connecting the dots…',
@@ -94,7 +104,7 @@ const THINKING_PHRASES = [
   'Almost there — sharpening the answer…',
 ];
 const CREATING_PHRASES = [
-  'Welcome, future champ — POCO is on it ✨',
+  'Welcome, future champ — Quill is on it ✨',
   'Searching and thinking the best solutions for you…',
   'Good idea — there you got! Drafting it now…',
   'Sketching the big picture…',
@@ -146,6 +156,9 @@ function PocoWorking({ creating }: { creating: boolean }) {
 
 export default function AiStudio() {
   const [user, setUser] = useState<User | null>(null);
+  /** Undefined until Firebase reports the first auth state — prevents a
+   * sign-in flash for users who are already logged in. */
+  const [authReady, setAuthReady] = useState(false);
   const [view, setView] = useState<'chat' | 'library'>('chat');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -159,7 +172,7 @@ export default function AiStudio() {
   const [skill, setSkill] = useState<FormatId | null>(null);
   const [skillsOpen, setSkillsOpen] = useState(false);
   const [subject, setSubject] = useState('');
-  const [level, setLevel] = useState('GCSE');
+  const [level, setLevel] = useState(LEVELS[0]);
   const [chatMode, setChatMode] = useState<'k12' | 'college' | 'professional' | 'legal'>('college');
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState<number | null>(null);
@@ -171,7 +184,7 @@ export default function AiStudio() {
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => onAuthStateChanged(auth, u => setUser(u)), []);
+  useEffect(() => onAuthStateChanged(auth, u => { setUser(u); setAuthReady(true); }), []);
   useEffect(() => { if (view === 'library' && user) loadLibrary(); }, [view, user]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chat.turns.length, busy]);
 
@@ -236,7 +249,7 @@ export default function AiStudio() {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || `POCO hit an error (${res.status})`);
+      throw new Error(err.error || `Quill hit an error (${res.status})`);
     }
     const data = await res.json();
     pushTurns(chatId, { kind: 'chat', text: data.reply || '…' });
@@ -316,6 +329,79 @@ export default function AiStudio() {
   const activeFormat = skill ? FORMATS.find(f => f.id === skill) : null;
   const empty = chat.turns.length === 0;
 
+  // ── Auth gate: AI Studio is a paid feature and must not run anonymously ──
+  if (!authReady) {
+    return (
+      <div className={`flex h-screen items-center justify-center ${C.bg}`} style={{ colorScheme: 'dark' }}>
+        <Loader2 className="w-6 h-6 animate-spin" style={{ color: C.accent }} />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className={`flex h-screen items-center justify-center px-5 ${C.bg} ${C.text}`} style={{ colorScheme: 'dark' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="w-full max-w-md text-center"
+        >
+          <motion.div
+            initial={{ scale: 0.6, rotate: -30 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', damping: 14 }}
+            className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-6"
+            style={{ background: C.accent, boxShadow: '0 0 48px rgba(232,193,94,0.35)' }}
+          >
+            <Asterisk className="w-8 h-8" style={{ color: C.accentInk }} />
+          </motion.div>
+
+          <h1 className="font-heading text-3xl sm:text-4xl leading-tight mb-3">
+            Sign in to meet <span style={{ color: C.accent }}>Quill</span>
+          </h1>
+          <p className={`${C.dim} text-[15px] leading-relaxed mb-7`}>
+            Quill turns any topic into lessons, quizzes, flashcards, mind maps, narrated video and
+            audio — and saves everything to your personal library. Create a free account to start.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-2.5 justify-center mb-8">
+            <Link
+              href="/signup"
+              className="h-11 px-6 rounded-full font-bold text-sm flex items-center justify-center transition-transform hover:scale-105"
+              style={{ background: C.accent, color: C.accentInk }}
+            >
+              Create free account
+            </Link>
+            <Link
+              href="/login"
+              className={`h-11 px-6 rounded-full font-semibold text-sm flex items-center justify-center border ${C.border} ${C.surfaceHover} transition-colors`}
+            >
+              Sign in
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 mb-8">
+            {[
+              { icon: <Video className="w-4 h-4" />, label: 'Video lessons' },
+              { icon: <Headphones className="w-4 h-4" />, label: 'AI audio' },
+              { icon: <ClipboardList className="w-4 h-4" />, label: 'Quizzes' },
+            ].map(f => (
+              <div key={f.label} className={`rounded-2xl border ${C.borderSoft} ${C.surface} py-3 px-2`}>
+                <span className="flex justify-center mb-1.5" style={{ color: C.accent }}>{f.icon}</span>
+                <p className={`text-[11px] ${C.dim}`}>{f.label}</p>
+              </div>
+            ))}
+          </div>
+
+          <Link href="/" className={`text-xs ${C.faint} hover:text-white transition-colors inline-flex items-center gap-1.5`}>
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Poket School
+          </Link>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className={`flex h-screen ${C.bg} ${C.text} overflow-hidden`} style={{ colorScheme: 'dark' }}>
 
@@ -327,7 +413,7 @@ export default function AiStudio() {
               <Asterisk className="w-5 h-5 text-[#1A1918]" />
             </div>
             <div>
-              <p className="text-[15px] font-bold leading-tight">POCO</p>
+              <p className="text-[15px] font-bold leading-tight">Quill</p>
               <p className={`text-[10px] ${C.faint} tracking-[0.2em] uppercase leading-tight`}>AI Studio</p>
             </div>
           </Link>
@@ -390,7 +476,7 @@ export default function AiStudio() {
             </Link>
           )}
           <Link href="/" className={`flex items-center gap-2 text-xs ${C.faint} hover:text-white px-2.5 py-1.5 transition-colors`}>
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Pocket School
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Poket School
           </Link>
         </div>
       </aside>
@@ -406,7 +492,7 @@ export default function AiStudio() {
           <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: C.accent }}>
             <Asterisk className="w-4 h-4 text-[#1A1918]" />
           </div>
-          <span className="text-sm font-bold">POCO</span>
+          <span className="text-sm font-bold">Quill</span>
         </div>
 
         {view === 'library' ? (
@@ -431,7 +517,7 @@ export default function AiStudio() {
                       <Asterisk className="w-8 h-8 text-[#1A1918]" />
                     </motion.div>
                     <h1 className="font-heading text-3xl sm:text-[2.6rem] leading-tight tracking-tight mb-3">
-                      Hi, I&apos;m <span style={{ color: C.accent }}>POCO</span>.
+                      Hi, I&apos;m <span style={{ color: C.accent }}>Quill</span>.
                     </h1>
                     <p className={`${C.dim} text-base sm:text-lg max-w-md`}>
                       Ask me anything, or pick a skill and I&apos;ll turn any topic into a lesson, quiz, video, audio and more.
@@ -541,7 +627,7 @@ export default function AiStudio() {
                     onKeyDown={e => {
                       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
                     }}
-                    placeholder={activeFormat ? `What topic should the ${activeFormat.label.toLowerCase()} cover?` : 'Ask POCO anything…'}
+                    placeholder={activeFormat ? `What topic should the ${activeFormat.label.toLowerCase()} cover?` : 'Ask Quill anything…'}
                     rows={2}
                     disabled={busy}
                     className={`w-full bg-transparent outline-none resize-none px-4 pt-3 pb-1 text-[15px] ${C.text} placeholder:text-[#6E695F]`}
@@ -564,7 +650,7 @@ export default function AiStudio() {
                             transition={{ duration: 0.12 }}
                             className={`absolute bottom-full mb-2 left-0 w-[290px] sm:w-[330px] rounded-2xl border ${C.border} bg-[#242220] shadow-2xl p-2 z-30`}
                           >
-                            <p className={`px-2 pt-1 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] ${C.faint}`}>POCO&apos;s skills</p>
+                            <p className={`px-2 pt-1 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] ${C.faint}`}>Quill&apos;s skills</p>
                             <div className="grid grid-cols-2 gap-1 max-h-72 overflow-y-auto">
                               <button
                                 onClick={() => { setSkill(null); setSkillsOpen(false); inputRef.current?.focus(); }}
@@ -633,7 +719,7 @@ export default function AiStudio() {
                   </div>
                 </div>
                 <p className={`text-center text-[10px] ${C.faint} mt-2`}>
-                  POCO can make mistakes — double-check important answers. {activeFormat ? `Skill: ${activeFormat.label} · ` : ''}{level}
+                  Quill can make mistakes — double-check important answers. {activeFormat ? `Skill: ${activeFormat.label} · ` : ''}{level}
                 </p>
               </div>
             </div>
@@ -684,7 +770,7 @@ function LibraryView({ user, library, loading, onDelete, onNew }: {
         {user && !loading && library.length === 0 && (
           <div className="text-center py-24">
             <Sparkles className={`w-8 h-8 mx-auto mb-4 ${C.faint}`} />
-            <p className={`text-sm ${C.dim}`}>Nothing saved yet — generate something with POCO and hit &ldquo;Save to library&rdquo;.</p>
+            <p className={`text-sm ${C.dim}`}>Nothing saved yet — generate something with Quill and hit &ldquo;Save to library&rdquo;.</p>
           </div>
         )}
 
