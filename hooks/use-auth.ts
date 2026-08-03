@@ -3,12 +3,16 @@ import { User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { handleFirestoreError, OperationType } from '@/lib/firebase-errors';
+import type { Role } from '@/lib/roles';
 
 import type { Timestamp } from 'firebase/firestore';
 
 interface UserProfile {
   name: string;
-  role: 'student' | 'teacher' | 'parent' | 'admin';
+  email?: string;
+  role: Role;
+  /** Set for institution_admin — scopes what they can see and manage. */
+  institutionId?: string;
   avatarUrl?: string;
   level?: string;
   learningStyle?: string;

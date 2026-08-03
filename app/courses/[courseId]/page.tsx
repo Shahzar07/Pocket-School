@@ -20,6 +20,7 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { Timestamp } from 'firebase/firestore';
 import { getPublicCourseById, enrollStudent, incrementEnrollment, createInvoice, getUser, type Course, type UserProfile } from '@/lib/db';
+import { courseCover } from '@/lib/course-cover';
 import { toast } from 'sonner';
 
 function priceLabel(c: Course) {
@@ -218,12 +219,12 @@ export default function CourseDetailPage() {
               >
                 <Card className="p-6 border-2 shadow-lg">
                   <div className="aspect-video bg-gradient-to-br from-blue-100 via-indigo-100 to-violet-100 rounded-xl mb-5 flex items-center justify-center overflow-hidden">
-                    {course.thumbnailUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={course.thumbnailUrl} alt={course.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <BookOpen className="w-12 h-12 text-blue-400/60" />
-                    )}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={course.thumbnailUrl || courseCover(course.title, course.subject ?? '')}
+                      alt={course.title}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <p className="text-4xl font-extrabold tracking-tight mb-4">{priceLabel(course)}</p>
                   {isFree ? (

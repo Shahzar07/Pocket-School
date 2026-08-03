@@ -27,6 +27,7 @@ import { FormatPreview } from '@/components/lesson-format-views';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { ROLE_LABELS } from '@/lib/roles';
 import {
   ArrowLeft, AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Copy, CornerDownRight,
   Eye, GripVertical, Loader2, Pencil, Plus, RotateCcw, Send, Sparkles, Trash2, Archive, X,
@@ -617,7 +618,7 @@ export default function ContentBuilderPage() {
           {saveState === 'saved' ? 'All changes saved' : saveState === 'saving' ? 'Saving…' : 'Unsaved changes'}
         </span>
         <span className="hidden sm:inline-flex text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-violet-100 text-violet-700">
-          {profile?.role === 'admin' ? 'Super Admin' : 'Teacher'}
+          {profile?.role ? ROLE_LABELS[profile.role] : 'Teacher'}
         </span>
         {draft && (
           /* Admin preview — always available, whatever the publish status. */

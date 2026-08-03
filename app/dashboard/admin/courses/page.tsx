@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
-import { Plus, BookOpen, Edit, Trash2, Eye, EyeOff, ExternalLink, Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Plus, BookOpen, Edit, Trash2, Eye, EyeOff, ExternalLink, Loader2, CheckCircle2, XCircle, Clock, Sparkles } from 'lucide-react';
+import { seedMarketplaceCourses } from '@/lib/seed-courses';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { useAuthSTORE } from '@/hooks/use-auth';
@@ -51,6 +52,27 @@ export default function AdminCourseMgmt() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const [seeding, setSeeding] = useState(false);
+
+  /** Publish the launch catalogue. Idempotent — existing seeds are skipped. */
+  const onSeed = async () => {
+    if (!user) return;
+    setSeeding(true);
+    try {
+      const { created, skipped } = await seedMarketplaceCourses(user.uid, profile?.name ?? 'Poket School');
+      if (created === 0) {
+        toast.info(`Catalogue already published — all ${skipped} courses are live.`);
+      } else {
+        toast.success(`Published ${created} course${created === 1 ? '' : 's'} to the marketplace.`);
+      }
+      load();
+    } catch (e: any) {
+      toast.error(e?.message || 'Could not publish the catalogue.');
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   const onCreate = () => { setEditing(null); setEditorOpen(true); };
   const onEdit = (c: Course) => { setEditing(c); setEditorOpen(true); };
@@ -122,11 +144,20 @@ export default function AdminCourseMgmt() {
           </h1>
           <p className="text-muted-foreground mt-2 text-[15px]">Admin view of every product across all teachers.</p>
         </div>
-        <Button onClick={onCreate}
-          className="rounded-full h-11 px-5 gap-2 font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:opacity-90 text-white shrink-0"
-        >
-          <Plus className="w-4 h-4" /> New Product
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button onClick={onSeed} disabled={seeding} variant="outline"
+            title="Publish the five launch catalogue courses. Safe to re-run — existing ones are skipped."
+            className="rounded-full h-11 px-5 gap-2 font-semibold"
+          >
+            {seeding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            Seed catalogue
+          </Button>
+          <Button onClick={onCreate}
+            className="rounded-full h-11 px-5 gap-2 font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:opacity-90 text-white"
+          >
+            <Plus className="w-4 h-4" /> New Product
+          </Button>
+        </div>
       </motion.header>
 
       {/* Stat tiles */}

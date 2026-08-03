@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callOpenRouter, CONTENT_MODEL, VIDEO_MODEL } from '@/lib/openrouter';
+import { LANGUAGE_NAMES as LANG_NAMES } from '@/lib/languages';
 
 /** Video and audio scripts use the dedicated narrative model; everything
  * else uses the ultra-cheap content model. */
@@ -17,12 +18,6 @@ const MARKDOWN_HINT =
   'Never output a line made only of "#" characters and never use "#" as a separator or decoration. ' +
   'Do not escape markdown characters (no "\\#", no "\\*"). Do not wrap the answer in code fences. ' +
   'Leave exactly one blank line between blocks — never more.\n\n';
-
-const LANG_NAMES: Record<string, string> = {
-  ar: 'Arabic', es: 'Spanish', fr: 'French', de: 'German', pt: 'Portuguese',
-  zh: 'Chinese (Simplified)', hi: 'Hindi', ur: 'Urdu', tr: 'Turkish',
-  ja: 'Japanese', ko: 'Korean', it: 'Italian', ru: 'Russian', sw: 'Swahili',
-};
 
 const PROMPTS: Record<string, (c: string) => string> = {
   text: (c) => `You are an expert educator. ${MATH_HINT}${MARKDOWN_HINT}Transform the following raw lesson content into a well-structured, engaging lesson in Markdown format. Use headers (##, ###), bullet points, **bold** key terms, and clear explanations. Make it comprehensive yet readable.\n\nLesson content:\n${c}`,

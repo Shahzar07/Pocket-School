@@ -10,6 +10,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { MathMarkdown } from '@/components/math-markdown';
 import { useTutorContext } from '@/hooks/use-tutor-context';
+import { readLanguage } from '@/lib/languages';
 
 interface Message {
   role: 'user' | 'model';
@@ -61,7 +62,7 @@ export function AITutor() {
           message: userMsg,
           mode,
           lessonContext: lessonContext ?? '',
-          language: (typeof window !== 'undefined' && localStorage.getItem('pocket-school-lang')) || 'en',
+          language: readLanguage(),
           history,
         }),
       });

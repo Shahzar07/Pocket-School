@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { VideoPlayer } from '@/components/video-player';
 import { SmartAudioPlayer } from '@/components/smart-audio-player';
+import { RichTextEditor } from '@/components/rich-text-editor';
 import {
   AlertTriangle, Check, Copy, GripVertical, Loader2, Plus, Sparkles, Trash2, X,
 } from 'lucide-react';
@@ -330,14 +331,14 @@ export function LessonTextBlock({ value, onChange, ai, generating, onImprove, im
         <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
         Don’t paste copyrighted textbook content. Write original material or use licensed sources — AI checks flag verbatim textbook passages.
       </div>
-      <Textarea
+      <RichTextEditor
         value={value}
-        onChange={e => onChange(e.target.value)}
+        onChange={onChange}
+        minHeight={176}
         placeholder="Write or generate the core lesson text…"
-        className="min-h-44 rounded-xl text-sm leading-relaxed"
       />
       <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-        <span>{words} words · ~{Math.max(1, Math.round(words / 200))} min read</span>
+        <span>~{Math.max(1, Math.round(words / 200))} min read</span>
         <span className="flex-1" />
         {onImprove && value.trim() ? (
           <>

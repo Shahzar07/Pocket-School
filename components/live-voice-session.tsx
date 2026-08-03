@@ -13,6 +13,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mic, MicOff, PhoneOff, Loader2, Volume2, AlertCircle } from 'lucide-react';
 import type { AiTeacher } from '@/lib/ai-teachers';
+/** App language → BCP-47 tag the recogniser expects. */
+import { RECOGNITION_LANG } from '@/lib/languages';
 
 /* Minimal typings for the vendor-prefixed Web Speech API. */
 interface SpeechRecognitionAlternativeLike { transcript: string }
@@ -47,14 +49,6 @@ function getRecognition(): SpeechRecognitionLike | null {
   const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
   return Ctor ? new Ctor() : null;
 }
-
-/** App language → BCP-47 tag the recogniser expects. */
-const RECOGNITION_LANG: Record<string, string> = {
-  en: 'en-GB', ar: 'ar-SA', es: 'es-ES', fr: 'fr-FR', de: 'de-DE',
-  pt: 'pt-BR', zh: 'zh-CN', hi: 'hi-IN', ur: 'ur-PK', tr: 'tr-TR',
-  ja: 'ja-JP', ko: 'ko-KR', it: 'it-IT', ru: 'ru-RU', sw: 'sw-KE',
-  ms: 'ms-MY', id: 'id-ID',
-};
 
 export type VoiceState = 'idle' | 'listening' | 'thinking' | 'speaking';
 

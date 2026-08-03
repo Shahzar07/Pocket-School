@@ -4,10 +4,14 @@ import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Search, Sparkles, Loader2, GraduationCap } from 'lucide-react';
+import { Shield, Search, Sparkles, Loader2, GraduationCap, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useState } from 'react';
-import { getUserByEmail, setUserSubscription, UserProfile } from '@/lib/db';
+import { useEffect, useState } from 'react';
+import {
+  getUserByEmail, setUserSubscription, UserProfile,
+  getInstitutions, setInstitutionAdmin, Institution,
+} from '@/lib/db';
+import { isSuperAdminEmail } from '@/lib/roles';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -20,6 +24,42 @@ export default function AdminAccessConfig() {
   const [foundUser, setFoundUser] = useState<{ id: string; data: UserProfile } | null>(null);
   const [searched, setSearched] = useState(false);
   const [updatingTier, setUpdatingTier] = useState(false);
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [assignInstitution, setAssignInstitution] = useState('');
+  const [savingRole, setSavingRole] = useState(false);
+
+  // Institutions are needed only to populate the assignment dropdown; a
+  // failure here shouldn't block the rest of the page.
+  useEffect(() => { getInstitutions().then(setInstitutions).catch(() => setInstitutions([])); }, []);
+
+  // Preselect the user's current institution when one is found.
+  useEffect(() => {
+    setAssignInstitution(foundUser?.data.institutionId ?? '');
+  }, [foundUser]);
+
+  const handleSetInstitutionAdmin = async (institutionId: string | null) => {
+    if (!foundUser) return;
+    setSavingRole(true);
+    try {
+      await setInstitutionAdmin(foundUser.id, institutionId);
+      const name = institutions.find(i => i.id === institutionId)?.name;
+      setFoundUser({
+        ...foundUser,
+        data: {
+          ...foundUser.data,
+          role: institutionId ? 'institution_admin' : 'teacher',
+          institutionId: institutionId ?? undefined,
+        },
+      });
+      toast.success(institutionId
+        ? `${foundUser.data.name} now administers ${name ?? 'that institution'}.`
+        : `${foundUser.data.name} is no longer an institution admin.`);
+    } catch {
+      toast.error('Could not update that role.');
+    } finally {
+      setSavingRole(false);
+    }
+  };
 
   const handleSearch = async () => {
     const email = searchEmail.trim();
@@ -87,6 +127,7 @@ export default function AdminAccessConfig() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { role: 'Super Admin', color: 'text-violet-600', items: ['Full curriculum CMS & Content Builder', 'Approve / publish all content', 'Manage users, tiers & Sparks', 'Institutions & allocations'] },
+              { role: 'Institution Admin', color: 'text-indigo-600', items: ['Runs one institution only', 'Its courses, grades & attendance', 'Its report cards & reporting', 'White-label branding & subdomain'] },
               { role: 'Teacher', color: 'text-blue-600', items: ['Create & upload courses', 'Grade submissions & exams', 'Attendance, behaviour, billing', 'Live classes & report cards'] },
               { role: 'Student', color: 'text-emerald-600', items: ['Enrol & learn', 'Take quizzes, exams, assignments', 'Earn & spend Sparks', 'AI Studio & AI tutor'] },
               { role: 'Parent', color: 'text-amber-600', items: ['View linked children', 'Progress & report cards', 'Due dates & reminders', 'Message teachers'] },
@@ -178,6 +219,59 @@ export default function AdminAccessConfig() {
                   Grant Academic (+400 Sparks)
                 </Button>
               </div>
+            </div>
+          )}
+
+          {foundUser && (
+            <div className="rounded-2xl border border-border bg-muted/20 p-5 space-y-3">
+              <div>
+                <p className="text-sm font-bold text-foreground">Institution administrator</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  An institution admin runs one school — its users, courses and reports — and sees nothing outside it.
+                </p>
+              </div>
+
+              {isSuperAdminEmail(foundUser.data.email) ? (
+                <p className="text-xs text-violet-700 bg-violet-50 border border-violet-200 rounded-xl px-3 py-2">
+                  This account is a platform super admin and already has access to every institution.
+                </p>
+              ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    aria-label="Institution"
+                    value={assignInstitution}
+                    onChange={e => setAssignInstitution(e.target.value)}
+                    className="h-10 rounded-full border border-border bg-card px-4 text-sm font-medium text-foreground"
+                  >
+                    <option value="">Select institution…</option>
+                    {institutions.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                  </select>
+                  <Button
+                    disabled={savingRole || !assignInstitution}
+                    onClick={() => handleSetInstitutionAdmin(assignInstitution)}
+                    className="rounded-full h-10 px-4 font-bold"
+                  >
+                    {savingRole ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Building2 className="w-4 h-4 mr-2" />}
+                    Make institution admin
+                  </Button>
+                  {foundUser.data.role === 'institution_admin' && (
+                    <Button
+                      variant="outline"
+                      disabled={savingRole}
+                      onClick={() => handleSetInstitutionAdmin(null)}
+                      className="rounded-full h-10 px-4 font-semibold"
+                    >
+                      Revoke
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {institutions.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  No institutions yet — create one under Institutions first.
+                </p>
+              )}
             </div>
           )}
 

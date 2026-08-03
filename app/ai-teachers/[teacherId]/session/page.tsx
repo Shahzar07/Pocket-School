@@ -21,17 +21,7 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { AI_TEACHERS } from '@/lib/ai-teachers';
 import { MathMarkdown } from '@/components/math-markdown';
 import { LiveVoiceSession } from '@/components/live-voice-session';
-
-const LANGUAGES = [
-  { code: 'en', label: 'English', flag: '🇬🇧' }, { code: 'ar', label: 'العربية', flag: '🇸🇦' },
-  { code: 'es', label: 'Español', flag: '🇪🇸' }, { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'de', label: 'Deutsch', flag: '🇩🇪' }, { code: 'pt', label: 'Português', flag: '🇧🇷' },
-  { code: 'zh', label: '中文', flag: '🇨🇳' }, { code: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
-  { code: 'ur', label: 'اردو', flag: '🇵🇰' }, { code: 'tr', label: 'Türkçe', flag: '🇹🇷' },
-  { code: 'ja', label: '日本語', flag: '🇯🇵' }, { code: 'ko', label: '한국어', flag: '🇰🇷' },
-  { code: 'it', label: 'Italiano', flag: '🇮🇹' }, { code: 'ru', label: 'Русский', flag: '🇷🇺' },
-  { code: 'sw', label: 'Kiswahili', flag: '🇰🇪' },
-];
+import { LANGUAGES, LANGUAGE_STORAGE_KEY } from '@/lib/languages';
 
 type Msg = { role: 'user' | 'model'; text: string };
 
@@ -120,7 +110,7 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
   }, [loading, user, router, teacherId]);
 
   useEffect(() => {
-    const stored = typeof window !== 'undefined' ? localStorage.getItem('pocket-school-lang') : null;
+    const stored = typeof window !== 'undefined' ? localStorage.getItem(LANGUAGE_STORAGE_KEY) : null;
     if (stored) setLang(stored);
     const savedNotes = typeof window !== 'undefined' ? localStorage.getItem(`ps-notes-${teacherId}`) : null;
     if (savedNotes) setNotes(savedNotes);
@@ -349,7 +339,7 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
             {langOpen && (
               <div className="absolute top-full right-0 mt-1 w-40 max-h-64 overflow-y-auto rounded-xl bg-[#15161c] border border-white/10 shadow-2xl py-1 z-40">
                 {LANGUAGES.map(l => (
-                  <button key={l.code} onClick={() => { setLang(l.code); setLangOpen(false); localStorage.setItem('pocket-school-lang', l.code); }}
+                  <button key={l.code} onClick={() => { setLang(l.code); setLangOpen(false); localStorage.setItem(LANGUAGE_STORAGE_KEY, l.code); }}
                     className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left ${l.code === lang ? 'bg-white/10 font-semibold' : 'text-white/70 hover:bg-white/5'}`}>
                     <span>{l.flag}</span> {l.label}
                   </button>

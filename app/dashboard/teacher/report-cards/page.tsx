@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { getTeacherCourses, Course, getGradesForCourse, Grade, issueCertificate } from '@/lib/db';
 import { Timestamp } from 'firebase/firestore';
@@ -8,7 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Loader2, FileBarChart, Printer, Sparkles, Award } from 'lucide-react';
+import { Loader2, FileBarChart, Printer, Sparkles, Award, Search } from 'lucide-react';
+import {
+  TERMS, TermId, termRange, inRange, formatPeriod, selectableYears,
+} from '@/lib/reporting-periods';
 import { motion } from 'motion/react';
 
 interface StudentReport {
@@ -57,6 +60,25 @@ export default function ReportCardsPage() {
 
   const [loadError, setLoadError] = useState(false);
 
+  const [term, setTerm] = useState<TermId>('all');
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+  const [studentQuery, setStudentQuery] = useState('');
+
+  const range = useMemo(
+    () => termRange(term, year, customFrom, customTo),
+    [term, year, customFrom, customTo],
+  );
+  const periodLabel = useMemo(() => formatPeriod(range), [range]);
+
+  /** Name filter applied after generation so it never costs another fetch. */
+  const visibleReports = useMemo(() => {
+    const q = studentQuery.trim().toLowerCase();
+    if (!q) return reports;
+    return reports.filter(r => r.studentName.toLowerCase().includes(q));
+  }, [reports, studentQuery]);
+
   const loadCourses = () => {
     if (!user) return;
     setLoading(true);
@@ -73,8 +95,11 @@ export default function ReportCardsPage() {
     if (!selectedCourse) return;
     setGenerating(true);
     try {
-      const grades = await getGradesForCourse(selectedCourse);
+      const allGrades = await getGradesForCourse(selectedCourse);
       const course = courses.find(c => c.id === selectedCourse);
+      // Scope to the reporting period so a term report doesn't quietly include
+      // the whole year.
+      const grades = allGrades.filter(g => inRange(g.gradedAt, range));
 
       const byStudent: Record<string, { name: string; grades: Grade[] }> = {};
       for (const g of grades) {
@@ -99,7 +124,11 @@ export default function ReportCardsPage() {
 
       setReports(reps);
       if (reps.length === 0) {
-        toast.info('No grades recorded for this course yet.');
+        toast.info(
+          range
+            ? `No grades recorded for this course in ${periodLabel}.`
+            : 'No grades recorded for this course yet.',
+        );
       }
 
       // Generate AI comments
@@ -108,7 +137,13 @@ export default function ReportCardsPage() {
         try {
           const res = await fetch('/api/ai/report-comment', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ studentName: reps[i].studentName, courseTitle: course?.title, avgScore: reps[i].overall, submissionCount: reps[i].grades.length }),
+            body: JSON.stringify({
+              studentName: reps[i].studentName,
+              courseTitle: course?.title,
+              avgScore: reps[i].overall,
+              submissionCount: reps[i].grades.length,
+              period: periodLabel,
+            }),
           });
           const { comment } = await res.json();
           setReports(prev => prev.map((r, j) => j === i ? { ...r, comment, loadingComment: false } : r));
@@ -193,19 +228,71 @@ export default function ReportCardsPage() {
       </div>
 
       {/* Controls */}
-      <div className="flex items-center gap-3 print:hidden">
-        <Select value={selectedCourse} onValueChange={v => setSelectedCourse(v ?? '')}>
-          <SelectTrigger className="w-56 rounded-full"><SelectValue placeholder="Select course" /></SelectTrigger>
-          <SelectContent>{courses.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}</SelectContent>
-        </Select>
-        <Button
-          onClick={generateReports}
-          disabled={generating || !selectedCourse}
-          className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all gap-2"
-        >
-          {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          Generate Reports
-        </Button>
+      <div className="space-y-3 print:hidden">
+        <div className="flex flex-wrap items-center gap-3">
+          <Select value={selectedCourse} onValueChange={v => setSelectedCourse(v ?? '')}>
+            <SelectTrigger className="w-56 rounded-full"><SelectValue placeholder="Select course" /></SelectTrigger>
+            <SelectContent>{courses.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}</SelectContent>
+          </Select>
+
+          <select
+            aria-label="Reporting period"
+            value={term}
+            onChange={e => setTerm(e.target.value as TermId)}
+            className="h-11 rounded-full border border-border bg-card px-4 text-sm font-medium text-foreground"
+          >
+            {TERMS.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+          </select>
+
+          {term !== 'all' && term !== 'custom' && (
+            <select
+              aria-label="Year"
+              value={year}
+              onChange={e => setYear(Number(e.target.value))}
+              className="h-11 rounded-full border border-border bg-card px-4 text-sm font-medium text-foreground"
+            >
+              {selectableYears().map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          )}
+
+          {term === 'custom' && (
+            <>
+              <input aria-label="From date" type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)}
+                className="h-11 rounded-full border border-border bg-card px-4 text-sm font-medium text-foreground" />
+              <input aria-label="To date" type="date" value={customTo} onChange={e => setCustomTo(e.target.value)}
+                className="h-11 rounded-full border border-border bg-card px-4 text-sm font-medium text-foreground" />
+            </>
+          )}
+
+          <Button
+            onClick={generateReports}
+            disabled={generating || !selectedCourse}
+            className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all gap-2"
+          >
+            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            Generate Reports
+          </Button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            <input
+              type="search"
+              value={studentQuery}
+              onChange={e => setStudentQuery(e.target.value)}
+              placeholder="Filter by student name"
+              aria-label="Filter by student name"
+              className="h-11 w-64 rounded-full border border-border bg-card pl-11 pr-4 text-sm text-foreground"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Period <span className="font-semibold text-foreground">{periodLabel}</span>
+            {reports.length > 0 && (
+              <> · showing <span className="font-semibold text-foreground">{visibleReports.length}</span> of {reports.length} student{reports.length === 1 ? '' : 's'}</>
+            )}
+          </p>
+        </div>
       </div>
 
       {/* Empty state */}
@@ -226,8 +313,14 @@ export default function ReportCardsPage() {
       )}
 
       {/* Report cards */}
+      {reports.length > 0 && visibleReports.length === 0 && (
+        <p className="text-sm text-muted-foreground text-center py-10 print:hidden">
+          No student matches “{studentQuery}”.
+        </p>
+      )}
+
       <div className="space-y-6 report-cards-container">
-        {reports.map((r, idx) => (
+        {visibleReports.map((r, idx) => (
           <motion.div
             key={r.studentId}
             variants={fadeUp}
