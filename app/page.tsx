@@ -36,11 +36,6 @@ import {
   AlertCircle,
   Layers,
   ChevronUp,
-  Instagram,
-  Twitter,
-  Facebook,
-  Youtube,
-  Music2,
 } from 'lucide-react';
 
 /* ─── Data ──────────────────────────────────────────────────── */
@@ -1473,8 +1468,8 @@ export default function LandingPage() {
       {/* ── CTA + FAQ (two-column) ───────────────────────────── */}
       <CtaFaqSection />
 
-      {/* ── Footer (liquid-glass on video) ───────────────────── */}
-      <GlassFooter />
+      {/* Footer is rendered once globally from the root layout — see
+          components/site-footer.tsx. Do not add one here. */}
     </div>
   );
 }
@@ -1548,120 +1543,3 @@ function CtaFaqSection() {
   );
 }
 
-/* ─── Glass Footer (liquid-glass on video) ────────────────── */
-
-function GlassFooter() {
-  const FOOTER_VIDEO = 'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260429_114316_1c7889ad-2885-410e-b493-98119fee0ddb.mp4';
-
-  return (
-    <section className="relative w-full overflow-hidden bg-black">
-      <video
-        src={FOOTER_VIDEO}
-        autoPlay
-        muted
-        loop
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover z-0"
-      />
-      <div className="absolute inset-0 bg-black/40 z-[1]" />
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-32 sm:pt-48 pb-8">
-        <motion.footer
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 1, delay: 0.2, ease: 'easeOut' }}
-          className="liquid-glass w-full rounded-3xl p-6 md:p-10 text-white/70"
-        >
-          {/* Top grid */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-12 mb-10">
-            {/* Brand block */}
-            <div className="md:col-span-5">
-              <div className="flex items-center gap-2 text-white mb-4">
-                <div className="bg-white/10 backdrop-blur-sm p-2 rounded-xl border border-white/20">
-                  <Brain className="w-5 h-5" />
-                </div>
-                <span className="text-xl font-semibold">Poket School</span>
-              </div>
-              <p className="text-sm leading-relaxed max-w-sm text-white/60">
-                AI-powered adaptive learning for IGCSE, A-Levels, degrees and beyond — built around how you think.
-              </p>
-              <div className="mt-5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[11px] font-semibold text-white/70">
-                <Sparkles className="w-3 h-3 text-[#F5B400]" />
-                AI-Powered Platform
-              </div>
-            </div>
-
-            {/* Link columns */}
-            <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-8">
-              <div>
-                <h4 className="text-sm uppercase tracking-wider text-white font-medium mb-4">Platform</h4>
-                <ul className="text-xs space-y-2.5">
-                  {[
-                    { label: 'AI Teachers', href: '/ai-teachers' },
-                    { label: 'AI Studio', href: '/ai-studio' },
-                    { label: 'Marketplace', href: '/courses' },
-                    { label: 'Programs', href: '#programs' },
-                    { label: 'FAQ', href: '#faq' },
-                  ].map(l => (
-                    <li key={l.label}>
-                      <Link href={l.href} className="hover:text-white transition-colors">{l.label}</Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h4 className="text-sm uppercase tracking-wider text-white font-medium mb-4">For Learners</h4>
-                <ul className="text-xs space-y-2.5">
-                  {['Students', 'Teachers', 'Parents', 'Admins'].map(role => (
-                    <li key={role}>
-                      <Link href={`/signup?role=${role.toLowerCase()}`} className="hover:text-white transition-colors">{role}</Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h4 className="text-sm uppercase tracking-wider text-white font-medium mb-4">Legal</h4>
-                <ul className="text-xs space-y-2.5">
-                  {['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'Contact'].map(l => (
-                    <li key={l}>
-                      <Link href="#" className="hover:text-white transition-colors">{l}</Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom bar */}
-          <div className="pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-4">
-            <p className="text-[10px] uppercase tracking-widest opacity-50">
-              &copy; {new Date().getFullYear()} Poket School · Powered by Rochford&apos;s Education
-            </p>
-            <div className="flex items-center gap-4">
-              <span className="text-[10px] uppercase tracking-widest opacity-50">Follow Us:</span>
-              <div className="flex items-center gap-3">
-                {[
-                  { Icon: Instagram, label: 'Instagram' },
-                  { Icon: Twitter, label: 'Twitter' },
-                  { Icon: Youtube, label: 'YouTube' },
-                  { Icon: Facebook, label: 'Facebook' },
-                  { Icon: Music2, label: 'TikTok' },
-                ].map(({ Icon, label }) => (
-                  <a
-                    key={label}
-                    href="#"
-                    aria-label={label}
-                    className="opacity-70 hover:opacity-100 transition-opacity hover:text-white"
-                  >
-                    <Icon className="w-4 h-4" />
-                  </a>
-                ))}
-              </div>
-            </div>
-          </div>
-        </motion.footer>
-      </div>
-    </section>
-  );
-}
