@@ -10,56 +10,12 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { GraduationCap, Printer, TrendingUp } from 'lucide-react';
+import {
+  TERMS, TermId, termRange, inRange, formatPeriod, selectableYears,
+} from '@/lib/reporting-periods';
 
 interface CourseRecord { course: Course; enrollment: Enrollment; grades: Grade[]; avg: number | null; gpa: number; status: string }
 
-/** Reporting periods a report card can be issued for. */
-const TERMS = [
-  { id: 'all', label: 'All time' },
-  { id: 't1', label: 'Term 1 (Jan–Mar)', startMonth: 0, endMonth: 2 },
-  { id: 't2', label: 'Term 2 (Apr–Jun)', startMonth: 3, endMonth: 5 },
-  { id: 't3', label: 'Term 3 (Jul–Sep)', startMonth: 6, endMonth: 8 },
-  { id: 't4', label: 'Term 4 (Oct–Dec)', startMonth: 9, endMonth: 11 },
-  { id: 'custom', label: 'Custom dates' },
-] as const;
-
-type TermId = (typeof TERMS)[number]['id'];
-
-/** Resolve the selected term to a concrete [from, to] window, or null for all time. */
-function termRange(term: TermId, year: number, customFrom: string, customTo: string): [Date, Date] | null {
-  if (term === 'all') return null;
-  if (term === 'custom') {
-    if (!customFrom || !customTo) return null;
-    const from = new Date(`${customFrom}T00:00:00`);
-    const to = new Date(`${customTo}T23:59:59`);
-    return Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) ? null : [from, to];
-  }
-  const t = TERMS.find(x => x.id === term) as { startMonth: number; endMonth: number } | undefined;
-  if (!t) return null;
-  return [
-    new Date(year, t.startMonth, 1, 0, 0, 0),
-    new Date(year, t.endMonth + 1, 0, 23, 59, 59),
-  ];
-}
-
-/** Firestore Timestamp | Date | undefined → Date | null, without assuming a shape. */
-function toDate(value: unknown): Date | null {
-  if (!value) return null;
-  if (value instanceof Date) return value;
-  const ts = value as { toDate?: () => Date };
-  if (typeof ts.toDate === 'function') {
-    try { return ts.toDate(); } catch { return null; }
-  }
-  return null;
-}
-
-function inRange(value: unknown, range: [Date, Date] | null): boolean {
-  if (!range) return true;
-  const d = toDate(value);
-  // Undated records are kept — dropping them would silently understate a report.
-  if (!d) return true;
-  return d >= range[0] && d <= range[1];
-}
 
 const toGPA = (pct: number) => {
   if (pct >= 90) return 4.0;
@@ -125,11 +81,7 @@ export default function TranscriptPage() {
     [term, year, customFrom, customTo],
   );
 
-  const periodLabel = useMemo(() => {
-    if (!range) return 'All time';
-    const fmt = (d: Date) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
-    return `${fmt(range[0])} — ${fmt(range[1])}`;
-  }, [range]);
+  const periodLabel = useMemo(() => formatPeriod(range), [range]);
 
   const records = useMemo<CourseRecord[]>(() => {
     const scoped = allGrades.filter(g => inRange(g.gradedAt, range));
@@ -236,9 +188,7 @@ export default function TranscriptPage() {
               onChange={e => setYear(Number(e.target.value))}
               className="h-11 rounded-full border border-border bg-card px-4 text-sm font-medium text-foreground"
             >
-              {Array.from({ length: 6 }, (_, i) => thisYear - i).map(y => (
-                <option key={y} value={y}>{y}</option>
-              ))}
+              {selectableYears().map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
         )}

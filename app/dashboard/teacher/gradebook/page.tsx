@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { ClipboardList, CheckCircle2, Sparkles } from 'lucide-react';
+import { ClipboardList, CheckCircle2, Sparkles, Search, Download } from 'lucide-react';
 import { motion } from 'motion/react';
 
 const fadeUp: Record<string, any> = {
@@ -27,6 +27,7 @@ export default function GradebookPage() {
   const [feedback, setFeedback] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [query, setQuery] = useState('');
 
   const [loadError, setLoadError] = useState(false);
 
@@ -102,8 +103,41 @@ Write encouraging, constructive feedback in 2-3 sentences that acknowledges what
     }
   };
 
-  const ungraded = submissions.filter(s => s.score === undefined);
-  const graded = submissions.filter(s => s.score !== undefined);
+  /** Name filter — a full class is unusable without it. */
+  const matching = submissions.filter(s => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return (s.studentName ?? '').toLowerCase().includes(q)
+      || (s.lessonTitle ?? '').toLowerCase().includes(q);
+  });
+  const ungraded = matching.filter(s => s.score === undefined);
+  const graded = matching.filter(s => s.score !== undefined);
+
+  /** Download the gradebook so teachers can reconcile against school systems. */
+  const exportCsv = () => {
+    const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const rows = [
+      ['Student', 'Lesson', 'Score', 'Out of', 'Percentage', 'Status', 'Feedback'],
+      ...matching.map(s => [
+        s.studentName ?? 'Student',
+        s.lessonTitle ?? '',
+        s.score ?? '',
+        s.maxScore ?? '',
+        s.score !== undefined && s.maxScore ? `${Math.round((s.score / s.maxScore) * 100)}%` : '',
+        s.score === undefined ? 'Awaiting grading' : 'Graded',
+        s.gradedFeedback ?? '',
+      ]),
+    ];
+    const csv = rows.map(r => r.map(esc).join(',')).join('\n');
+    // Prepend a BOM so Excel reads UTF-8 names correctly.
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `gradebook-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (loading) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10 pt-8">
@@ -134,6 +168,35 @@ Write encouraging, constructive feedback in 2-3 sentences that acknowledges what
         <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight">
           Student <span className="gradient-text italic">Gradebook</span>
         </h1>
+      </motion.div>
+
+      {/* Filter + export */}
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
+        className="flex flex-wrap items-center gap-3">
+        <div className="relative">
+          <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <input
+            type="search"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Filter by student or lesson"
+            aria-label="Filter by student or lesson"
+            className="h-11 w-72 rounded-full border border-border bg-card pl-11 pr-4 text-sm text-foreground"
+          />
+        </div>
+        <Button
+          onClick={exportCsv}
+          variant="outline"
+          disabled={matching.length === 0}
+          className="rounded-full h-11 px-5 font-semibold gap-2"
+        >
+          <Download className="w-4 h-4" /> Export CSV
+        </Button>
+        <p className="text-xs text-muted-foreground">
+          <span className="font-semibold text-foreground">{ungraded.length}</span> awaiting grading ·{' '}
+          <span className="font-semibold text-foreground">{graded.length}</span> graded
+          {query.trim() && <> · filtered from {submissions.length}</>}
+        </p>
       </motion.div>
 
       {/* Submission detail modal */}

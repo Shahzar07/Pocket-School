@@ -6,12 +6,14 @@ export async function POST(req: NextRequest) {
   let courseTitle = 'this course';
   let avgScore = 0;
   let submissionCount = 0;
+  let period = '';
   try {
     const body = await req.json();
     studentName = body.studentName || studentName;
     courseTitle = body.courseTitle || courseTitle;
     avgScore = Number.isFinite(Number(body.avgScore)) ? Number(body.avgScore) : 0;
     submissionCount = Number(body.submissionCount) || 0;
+    period = String(body.period ?? '').slice(0, 80);
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
@@ -21,7 +23,17 @@ export async function POST(req: NextRequest) {
   try {
     const comment = await callOpenRouter([
       { role: 'system', content: 'You are a professional teacher writing short report card comments. Be warm, specific, and encouraging. Write exactly 2-3 sentences. No headings or labels.' },
-      { role: 'user', content: `Write a report card comment for:\nStudent: ${studentName}\nCourse: ${courseTitle}\nAverage: ${avgScore.toFixed(1)}% (Grade ${grade})\nAssessments completed: ${submissionCount}` },
+      {
+        role: 'user',
+        content:
+          `Write a report card comment for:\nStudent: ${studentName}\nCourse: ${courseTitle}\n` +
+          `Average: ${avgScore.toFixed(1)}% (Grade ${grade})\nAssessments completed: ${submissionCount}` +
+          // Without this the comment reads as a whole-year summary even when the
+          // teacher scoped the report to a single term.
+          (period && period !== 'All time'
+            ? `\nReporting period: ${period}\nRefer to this period, not the whole year.`
+            : ''),
+      },
     ], { model: SMART_MODEL });
     return NextResponse.json({ comment: comment.trim() });
   } catch {
