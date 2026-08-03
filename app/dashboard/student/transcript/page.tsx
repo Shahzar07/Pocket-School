@@ -1,14 +1,65 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { getEnrolledCourses, getGradesForStudent, Course, Enrollment, Grade } from '@/lib/db';
+import {
+  getEnrolledCourses, getGradesForStudent, getAttendanceForStudent,
+  Course, Enrollment, Grade, AttendanceRecord,
+} from '@/lib/db';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { GraduationCap, Printer, TrendingUp } from 'lucide-react';
 
 interface CourseRecord { course: Course; enrollment: Enrollment; grades: Grade[]; avg: number | null; gpa: number; status: string }
+
+/** Reporting periods a report card can be issued for. */
+const TERMS = [
+  { id: 'all', label: 'All time' },
+  { id: 't1', label: 'Term 1 (Jan–Mar)', startMonth: 0, endMonth: 2 },
+  { id: 't2', label: 'Term 2 (Apr–Jun)', startMonth: 3, endMonth: 5 },
+  { id: 't3', label: 'Term 3 (Jul–Sep)', startMonth: 6, endMonth: 8 },
+  { id: 't4', label: 'Term 4 (Oct–Dec)', startMonth: 9, endMonth: 11 },
+  { id: 'custom', label: 'Custom dates' },
+] as const;
+
+type TermId = (typeof TERMS)[number]['id'];
+
+/** Resolve the selected term to a concrete [from, to] window, or null for all time. */
+function termRange(term: TermId, year: number, customFrom: string, customTo: string): [Date, Date] | null {
+  if (term === 'all') return null;
+  if (term === 'custom') {
+    if (!customFrom || !customTo) return null;
+    const from = new Date(`${customFrom}T00:00:00`);
+    const to = new Date(`${customTo}T23:59:59`);
+    return Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) ? null : [from, to];
+  }
+  const t = TERMS.find(x => x.id === term) as { startMonth: number; endMonth: number } | undefined;
+  if (!t) return null;
+  return [
+    new Date(year, t.startMonth, 1, 0, 0, 0),
+    new Date(year, t.endMonth + 1, 0, 23, 59, 59),
+  ];
+}
+
+/** Firestore Timestamp | Date | undefined → Date | null, without assuming a shape. */
+function toDate(value: unknown): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  const ts = value as { toDate?: () => Date };
+  if (typeof ts.toDate === 'function') {
+    try { return ts.toDate(); } catch { return null; }
+  }
+  return null;
+}
+
+function inRange(value: unknown, range: [Date, Date] | null): boolean {
+  if (!range) return true;
+  const d = toDate(value);
+  // Undated records are kept — dropping them would silently understate a report.
+  if (!d) return true;
+  return d >= range[0] && d <= range[1];
+}
 
 const toGPA = (pct: number) => {
   if (pct >= 90) return 4.0;
@@ -33,31 +84,33 @@ const fadeUp: Record<string, any> = {
 
 export default function TranscriptPage() {
   const { user, profile } = useAuthSTORE();
-  const [records, setRecords] = useState<CourseRecord[]>([]);
+  const [enrolled, setEnrolled] = useState<{ course: Course; enrollment: Enrollment }[]>([]);
+  const [allGrades, setAllGrades] = useState<Grade[]>([]);
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const thisYear = new Date().getFullYear();
+  const [term, setTerm] = useState<TermId>('all');
+  const [year, setYear] = useState(thisYear);
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
 
   const load = async () => {
     if (!user) return;
     setLoading(true);
     setError(null);
     try {
-      const [enrollments, grades] = await Promise.all([
+      const [enrollments, grades, att] = await Promise.all([
         getEnrolledCourses(user.uid),
         getGradesForStudent(user.uid),
+        // Attendance is supporting detail — a failure here shouldn't blank the
+        // whole transcript.
+        getAttendanceForStudent(user.uid).catch(() => [] as AttendanceRecord[]),
       ]);
-      const mapped: CourseRecord[] = enrollments.map(({ course, enrollment }) => {
-        const cGrades = grades.filter(g => g.courseId === course.id);
-        const avg = cGrades.length > 0
-          ? Math.round(cGrades.reduce((s, g) => s + (g.score / g.maxScore) * 100, 0) / cGrades.length)
-          : null;
-        const gpa = avg !== null ? toGPA(avg) : 0;
-        const status = enrollment.progress === 100 ? 'Completed' : enrollment.progress > 0 ? 'In Progress' : 'Enrolled';
-        return { course, enrollment, grades: cGrades, avg, gpa, status };
-      });
-      // Defensive client-side sort (alphabetical by course title)
-      mapped.sort((a, b) => a.course.title.localeCompare(b.course.title));
-      setRecords(mapped);
+      setEnrolled(enrollments);
+      setAllGrades(grades);
+      setAttendance(att);
     } catch (e: any) {
       setError(e?.message ?? 'Something went wrong.');
     } finally {
@@ -67,9 +120,57 @@ export default function TranscriptPage() {
 
   useEffect(() => { load(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const overallGPA = records.filter(r => r.avg !== null).length > 0
-    ? (records.filter(r => r.avg !== null).reduce((s, r) => s + r.gpa, 0) / records.filter(r => r.avg !== null).length).toFixed(2)
+  const range = useMemo(
+    () => termRange(term, year, customFrom, customTo),
+    [term, year, customFrom, customTo],
+  );
+
+  const periodLabel = useMemo(() => {
+    if (!range) return 'All time';
+    const fmt = (d: Date) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+    return `${fmt(range[0])} — ${fmt(range[1])}`;
+  }, [range]);
+
+  const records = useMemo<CourseRecord[]>(() => {
+    const scoped = allGrades.filter(g => inRange(g.gradedAt, range));
+    return enrolled
+      .map(({ course, enrollment }) => {
+        const cGrades = scoped.filter(g => g.courseId === course.id);
+        const avg = cGrades.length > 0
+          ? Math.round(cGrades.reduce((s, g) => s + (g.score / g.maxScore) * 100, 0) / cGrades.length)
+          : null;
+        const gpa = avg !== null ? toGPA(avg) : 0;
+        const status = enrollment.progress === 100 ? 'Completed' : enrollment.progress > 0 ? 'In Progress' : 'Enrolled';
+        return { course, enrollment, grades: cGrades, avg, gpa, status };
+      })
+      .sort((a, b) => a.course.title.localeCompare(b.course.title));
+  }, [enrolled, allGrades, range]);
+
+  /** Attendance tally for the selected period, for the report card. */
+  const attendanceSummary = useMemo(() => {
+    const tally = { present: 0, absent: 0, late: 0, excused: 0, total: 0 };
+    if (!user) return tally;
+    for (const rec of attendance) {
+      if (!inRange(rec.date, range)) continue;
+      const entry = rec.records.find(e => e.studentId === user.uid);
+      if (!entry) continue;
+      tally[entry.status] += 1;
+      tally.total += 1;
+    }
+    return tally;
+  }, [attendance, range, user]);
+
+  const attendanceRate = attendanceSummary.total > 0
+    ? Math.round(((attendanceSummary.present + attendanceSummary.late) / attendanceSummary.total) * 100)
+    : null;
+
+  const graded = records.filter(r => r.avg !== null);
+  const overallGPA = graded.length > 0
+    ? (graded.reduce((s, r) => s + r.gpa, 0) / graded.length).toFixed(2)
     : '—';
+  const overallAverage = graded.length > 0
+    ? Math.round(graded.reduce((s, r) => s + (r.avg ?? 0), 0) / graded.length)
+    : null;
 
   if (loading) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-6 pt-8">
@@ -104,20 +205,92 @@ export default function TranscriptPage() {
           <p className="text-muted-foreground text-sm">Official record of your academic performance.</p>
         </div>
         <Button onClick={() => window.print()} variant="outline" className="rounded-full h-11 px-5 font-bold gap-2">
-          <Printer className="w-4 h-4" /> Print
+          <Printer className="w-4 h-4" /> Print report card
         </Button>
       </motion.div>
 
-      {/* Print header */}
-      <div className="hidden print:block border-b pb-4 mb-6">
-        <h1 className="text-3xl font-bold">Poket School</h1>
-        <h2 className="text-xl mt-1">Official Academic Transcript</h2>
-        <p className="text-sm text-muted-foreground mt-2">Student: {profile?.name}</p>
-        <p className="text-sm text-muted-foreground">Issued: {new Date().toLocaleDateString()}</p>
+      {/* Reporting period ─ drives every figure below and the printed card */}
+      <div className="print:hidden flex flex-wrap items-end gap-3">
+        <div className="space-y-1.5">
+          <label htmlFor="rc-term" className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            Reporting period
+          </label>
+          <select
+            id="rc-term"
+            value={term}
+            onChange={e => setTerm(e.target.value as TermId)}
+            className="h-11 rounded-full border border-border bg-card px-4 text-sm font-medium text-foreground"
+          >
+            {TERMS.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+          </select>
+        </div>
+
+        {term !== 'all' && term !== 'custom' && (
+          <div className="space-y-1.5">
+            <label htmlFor="rc-year" className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              Year
+            </label>
+            <select
+              id="rc-year"
+              value={year}
+              onChange={e => setYear(Number(e.target.value))}
+              className="h-11 rounded-full border border-border bg-card px-4 text-sm font-medium text-foreground"
+            >
+              {Array.from({ length: 6 }, (_, i) => thisYear - i).map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {term === 'custom' && (
+          <>
+            <div className="space-y-1.5">
+              <label htmlFor="rc-from" className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">From</label>
+              <input id="rc-from" type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)}
+                className="h-11 rounded-full border border-border bg-card px-4 text-sm font-medium text-foreground" />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="rc-to" className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">To</label>
+              <input id="rc-to" type="date" value={customTo} onChange={e => setCustomTo(e.target.value)}
+                className="h-11 rounded-full border border-border bg-card px-4 text-sm font-medium text-foreground" />
+            </div>
+          </>
+        )}
+
+        <p className="text-xs text-muted-foreground pb-3">
+          Showing <span className="font-semibold text-foreground">{periodLabel}</span>
+        </p>
+      </div>
+
+      {/* Report-card letterhead — print only */}
+      <div className="hidden print:block mb-6">
+        <div className="flex items-start justify-between border-b-2 border-black pb-3">
+          <div>
+            <h1 className="text-2xl font-bold leading-tight">Poket School</h1>
+            <p className="text-[10px] tracking-wide">Poket Media Sdn Bhd (1332289-X)</p>
+          </div>
+          <div className="text-right">
+            <h2 className="text-lg font-semibold leading-tight">Student Report Card</h2>
+            <p className="text-[11px]">Issued {new Date().toLocaleDateString()}</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-[12px] mt-3">
+          <p><span className="font-semibold">Student:</span> {profile?.name ?? '—'}</p>
+          <p><span className="font-semibold">Reporting period:</span> {periodLabel}</p>
+          <p><span className="font-semibold">Email:</span> {user?.email ?? '—'}</p>
+          <p><span className="font-semibold">Year group:</span> {profile?.yearGroup ?? '—'}</p>
+          <p><span className="font-semibold">Courses reported:</span> {records.length}</p>
+          <p><span className="font-semibold">Cumulative GPA:</span> {overallGPA}</p>
+          <p>
+            <span className="font-semibold">Overall average:</span>{' '}
+            {overallAverage !== null ? `${overallAverage}% (${toLetterGrade(overallAverage)})` : '—'}
+          </p>
+        </div>
       </div>
 
       {/* GPA Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 print:hidden">
         <motion.div
           variants={fadeUp}
           initial="hidden"
@@ -151,6 +324,19 @@ export default function TranscriptPage() {
           <p className="text-3xl font-extrabold text-foreground">{records.filter(r => r.status === 'Completed').length}</p>
           <p className="text-muted-foreground text-xs mt-1 font-medium">Completed</p>
         </motion.div>
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          custom={3}
+          className="bg-card border border-border rounded-3xl p-5 sm:p-6 relative overflow-hidden card-glow text-center"
+        >
+          <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-sky-500 opacity-80" />
+          <p className="text-3xl font-extrabold text-foreground">
+            {attendanceRate !== null ? `${attendanceRate}%` : '—'}
+          </p>
+          <p className="text-muted-foreground text-xs mt-1 font-medium">Attendance</p>
+        </motion.div>
       </div>
 
       {/* Course table */}
@@ -176,10 +362,12 @@ export default function TranscriptPage() {
           animate="visible"
           custom={3}
         >
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary mb-4">Course Records</p>
-          <div className="bg-card border border-border rounded-3xl overflow-hidden card-glow">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary mb-4 print:text-black print:text-sm print:tracking-wide">
+            Course Records
+          </p>
+          <div className="bg-card border border-border rounded-3xl overflow-hidden card-glow print:rounded-none print:border-black">
+            <table className="w-full text-sm print:text-[12px]">
+              <thead className="bg-muted/50 print:bg-transparent print:border-b print:border-black">
                 <tr>
                   <th className="text-left px-5 py-3 font-bold text-muted-foreground text-xs uppercase tracking-wide">Course</th>
                   <th className="text-left px-4 py-3 font-bold text-muted-foreground text-xs uppercase tracking-wide">Subject</th>
@@ -210,10 +398,10 @@ export default function TranscriptPage() {
                     <td className="px-4 py-4 text-center font-bold text-foreground">{r.avg !== null ? r.gpa.toFixed(1) : '—'}</td>
                     <td className="px-4 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="w-20 h-2 bg-muted rounded-full overflow-hidden print:hidden">
                           <div className="h-full bg-primary rounded-full" style={{ width: `${r.enrollment.progress}%` }} />
                         </div>
-                        <span className="text-xs text-muted-foreground">{r.enrollment.progress}%</span>
+                        <span className="text-xs text-muted-foreground print:text-black print:text-[12px]">{r.enrollment.progress}%</span>
                       </div>
                     </td>
                     <td className="px-4 py-4 text-center">
@@ -235,16 +423,71 @@ export default function TranscriptPage() {
         </motion.div>
       )}
 
+      {/* Attendance + sign-off — print only */}
+      <div className="hidden print:block mt-6 break-inside-avoid">
+        <h3 className="text-sm font-bold uppercase tracking-wide border-b border-black pb-1 mb-2">Attendance</h3>
+        {attendanceSummary.total === 0 ? (
+          <p className="text-[12px]">No attendance was recorded for this period.</p>
+        ) : (
+          <div className="grid grid-cols-5 gap-2 text-[12px]">
+            <p><span className="font-semibold">Sessions:</span> {attendanceSummary.total}</p>
+            <p><span className="font-semibold">Present:</span> {attendanceSummary.present}</p>
+            <p><span className="font-semibold">Late:</span> {attendanceSummary.late}</p>
+            <p><span className="font-semibold">Absent:</span> {attendanceSummary.absent}</p>
+            <p><span className="font-semibold">Excused:</span> {attendanceSummary.excused}</p>
+          </div>
+        )}
+
+        <h3 className="text-sm font-bold uppercase tracking-wide border-b border-black pb-1 mt-5 mb-2">
+          Teacher comments
+        </h3>
+        <div className="h-16 border border-black/40 rounded-sm" />
+
+        <div className="grid grid-cols-2 gap-10 mt-8 text-[11px]">
+          <div>
+            <div className="border-b border-black h-8" />
+            <p className="mt-1">Class teacher</p>
+          </div>
+          <div>
+            <div className="border-b border-black h-8" />
+            <p className="mt-1">Parent / guardian</p>
+          </div>
+        </div>
+
+        <p className="text-[10px] mt-6 pt-2 border-t border-black/30">
+          GPA scale: A=4.0 (≥90%), B=3.0 (≥80%), C=2.0 (≥70%), D=1.0 (≥60%), F=0.0.
+          This report card covers {periodLabel.toLowerCase()} and reflects records held at the time of issue.
+        </p>
+      </div>
+
       <motion.div
         variants={fadeUp}
         initial="hidden"
         animate="visible"
         custom={4}
-        className="flex items-center gap-2 text-xs text-muted-foreground print:block"
+        className="flex items-center gap-2 text-xs text-muted-foreground print:hidden"
       >
         <TrendingUp className="w-3.5 h-3.5" />
         GPA scale: A=4.0 (≥90%), B=3.0 (≥80%), C=2.0 (≥70%), D=1.0 (≥60%), F=0.0
       </motion.div>
+
+      {/* Report cards must print on white with visible rules regardless of theme. */}
+      <style jsx global>{`
+        @media print {
+          @page { size: A4 portrait; margin: 14mm; }
+          html, body {
+            background: #fff !important;
+            color: #000 !important;
+          }
+          nav, aside, header, footer,
+          [data-sidebar], [data-dashboard-nav] { display: none !important; }
+          .card-glow { box-shadow: none !important; }
+          table { page-break-inside: auto; }
+          tr { page-break-inside: avoid; page-break-after: auto; }
+          thead { display: table-header-group; }
+          .break-inside-avoid { break-inside: avoid; }
+        }
+      `}</style>
     </div>
   );
 }
