@@ -3,6 +3,7 @@ import './globals.css';
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { AuthProvider } from '@/components/auth-provider';
+import { WhiteLabelProvider } from '@/components/white-label-provider';
 import { Toaster } from "@/components/ui/sonner"
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
@@ -47,11 +48,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={cn("font-sans antialiased", plusJakarta.variable)} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans text-foreground" suppressHydrationWarning>
         <AuthProvider>
-          <SiteHeader />
-          {children}
-          <SiteFooter />
-          <CookieConsent />
-          <Toaster />
+          <WhiteLabelProvider>
+            <SiteHeader />
+            {children}
+            <SiteFooter />
+            <CookieConsent />
+            <Toaster />
+          </WhiteLabelProvider>
         </AuthProvider>
       </body>
     </html>

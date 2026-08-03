@@ -7,6 +7,7 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { isAdmin } from '@/lib/roles';
 import {
   ArrowRight,
   BookOpen,
@@ -864,7 +865,7 @@ export default function LandingPage() {
   const prefersReducedMotion = useReducedMotion();
 
   const dashPath = profile?.role === 'teacher' ? '/dashboard/teacher'
-    : profile?.role === 'admin' ? '/dashboard/admin'
+    : isAdmin(profile) ? '/dashboard/admin'
     : profile?.role === 'parent' ? '/dashboard/parent'
     : '/dashboard/student';
 

@@ -13,8 +13,18 @@ service cloud.firestore {
     function isUser(uid) { return isSignedIn() && request.auth.uid == uid; }
     function incoming() { return request.resource.data; }
     function role() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role; }
-    function isTeacherOrAdmin() { return isSignedIn() && role() in ['teacher', 'admin']; }
+    function myInstitution() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.institutionId; }
+
+    // Platform-wide administrator. Deliberately NOT widened to include
+    // institution admins: this gates platform switches (settings, deleting
+    // users and institutions) that a single school must not control.
     function isAdmin() { return isSignedIn() && role() == 'admin'; }
+
+    // Scoped to one institution. Gets teacher-grade capability so they can run
+    // their school's courses, grades, attendance and reports.
+    function isInstitutionAdmin() { return isSignedIn() && role() == 'institution_admin'; }
+
+    function isTeacherOrAdmin() { return isSignedIn() && role() in ['teacher', 'admin', 'institution_admin']; }
 
     // ── Users ─────────────────────────────────────────────────
     match /users/{userId} {
@@ -76,8 +86,14 @@ service cloud.firestore {
 
     // ── Institutions ──────────────────────────────────────────
     match /institutions/{institutionId} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      // Readable while signed out so a white-label subdomain can resolve its
+      // branding before anyone logs in.
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      // An institution admin may edit their own institution — branding,
+      // subdomain — but not create or remove one, and not touch another's.
+      allow update: if isAdmin()
+        || (isInstitutionAdmin() && myInstitution() == institutionId);
     }
 
     // ── Badges ────────────────────────────────────────────────

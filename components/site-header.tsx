@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { Globe, Menu, X, ArrowRight } from 'lucide-react';
+import { isAdmin } from '@/lib/roles';
 
 const NAV_LINKS = [
   { label: 'Marketplace', href: '/courses' },
@@ -39,7 +40,7 @@ export function SiteHeader() {
 
   const dashPath =
     profile?.role === 'teacher' ? '/dashboard/teacher' :
-    profile?.role === 'admin'   ? '/dashboard/admin'   :
+    isAdmin(profile)            ? '/dashboard/admin'   :
     profile?.role === 'parent'  ? '/dashboard/parent'  :
     '/dashboard/student';
 

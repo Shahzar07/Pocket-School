@@ -5,13 +5,18 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { ACADEMIC_MONTHLY_ALLOWANCE, UNIT_PASS_REWARD } from './sparks';
+import type { Role } from './roles';
+
+export type { Role };
 
 // ─── Types ────────────────────────────────────────────────────
 
 export interface UserProfile {
   name: string;
   email: string;
-  role: 'student' | 'teacher' | 'parent' | 'admin';
+  role: Role;
+  /** Set for institution_admin (and optionally members) — scopes what they see. */
+  institutionId?: string;
   avatarUrl?: string;
   level?: string;
   learningStyle?: string;
@@ -201,6 +206,40 @@ export interface Institution {
   teacherCount: number;
   status: 'active' | 'pending';
   createdAt?: Timestamp;
+
+  /** White-label: the host label this institution is served under, e.g.
+   * "kolej-utama" for kolej-utama.poketschool.ai. Lowercase, unique. */
+  subdomain?: string;
+  /** White-label branding. Absent values fall back to Poket School's own. */
+  branding?: {
+    displayName?: string;
+    logoUrl?: string;
+    /** CSS colour applied to the accent, e.g. "#f5c451". */
+    primaryColor?: string;
+    tagline?: string;
+    /** Hide "Powered by Poket School" for institutions on a plan that allows it. */
+    hidePoweredBy?: boolean;
+  };
+}
+
+/** Reserved hosts that must never resolve to an institution. */
+const RESERVED_SUBDOMAINS = new Set([
+  'www', 'app', 'api', 'admin', 'dashboard', 'mail', 'staging', 'dev', 'test', 'preview',
+]);
+
+/** Normalise user input into a valid host label, or null if unusable. */
+export function normaliseSubdomain(input: string): string | null {
+  const s = input.trim().toLowerCase()
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  if (s.length < 3 || s.length > 63) return null;
+  if (RESERVED_SUBDOMAINS.has(s)) return null;
+  return s;
+}
+
+export function isReservedSubdomain(s: string): boolean {
+  return RESERVED_SUBDOMAINS.has(s.trim().toLowerCase());
 }
 
 export interface LiveClass {
@@ -983,6 +1022,48 @@ export async function createInstitution(data: Omit<Institution, 'id'>): Promise<
 
 export async function deleteInstitution(id: string) {
   await deleteDoc(doc(db, 'institutions', id));
+}
+
+export async function getInstitution(id: string): Promise<Institution | null> {
+  const snap = await getDoc(doc(db, 'institutions', id));
+  return snap.exists() ? ({ id: snap.id, ...snap.data() } as Institution) : null;
+}
+
+/** Resolve a white-label host label to its institution, or null if unclaimed. */
+export async function getInstitutionBySubdomain(subdomain: string): Promise<Institution | null> {
+  const s = subdomain.trim().toLowerCase();
+  if (!s || isReservedSubdomain(s)) return null;
+  const snap = await getDocs(query(collection(db, 'institutions'), where('subdomain', '==', s), limit(1)));
+  const d = snap.docs[0];
+  return d ? ({ id: d.id, ...d.data() } as Institution) : null;
+}
+
+/**
+ * Is a subdomain free? `exceptId` lets an institution keep its own value while
+ * editing. Reserved labels are always taken.
+ */
+export async function isSubdomainAvailable(subdomain: string, exceptId?: string): Promise<boolean> {
+  const s = normaliseSubdomain(subdomain);
+  if (!s) return false;
+  const snap = await getDocs(query(collection(db, 'institutions'), where('subdomain', '==', s), limit(2)));
+  return snap.docs.every(d => d.id === exceptId);
+}
+
+/** Members of one institution — the listing an institution admin is scoped to. */
+export async function getInstitutionMembers(institutionId: string): Promise<{ id: string; data: UserProfile }[]> {
+  const snap = await getDocs(query(collection(db, 'users'), where('institutionId', '==', institutionId)));
+  return snap.docs.map(d => ({ id: d.id, data: d.data() as UserProfile }));
+}
+
+/**
+ * Grant or revoke the institution-admin role. Passing a null institution
+ * demotes the account back to teacher rather than leaving an admin with no
+ * scope, which would be an admin who can manage nothing.
+ */
+export async function setInstitutionAdmin(userId: string, institutionId: string | null) {
+  await updateDoc(doc(db, 'users', userId), institutionId
+    ? { role: 'institution_admin', institutionId }
+    : { role: 'teacher', institutionId: null });
 }
 
 export async function updateInstitution(id: string, data: Partial<Institution>) {
