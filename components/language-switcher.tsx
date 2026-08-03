@@ -2,24 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Globe } from 'lucide-react';
-
-const LANGUAGES = [
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'ar', label: 'العربية', flag: '🇸🇦' },
-  { code: 'es', label: 'Español', flag: '🇪🇸' },
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
-  { code: 'pt', label: 'Português', flag: '🇧🇷' },
-  { code: 'zh', label: '中文', flag: '🇨🇳' },
-  { code: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
-  { code: 'ur', label: 'اردو', flag: '🇵🇰' },
-  { code: 'tr', label: 'Türkçe', flag: '🇹🇷' },
-  { code: 'ja', label: '日本語', flag: '🇯🇵' },
-  { code: 'ko', label: '한국어', flag: '🇰🇷' },
-  { code: 'it', label: 'Italiano', flag: '🇮🇹' },
-  { code: 'ru', label: 'Русский', flag: '🇷🇺' },
-  { code: 'sw', label: 'Kiswahili', flag: '🇰🇪' },
-];
+import {
+  LANGUAGES, DEFAULT_LANGUAGE, LANGUAGE_STORAGE_KEY, textDirection,
+} from '@/lib/languages';
 
 export function LanguageSwitcher() {
   const [open, setOpen] = useState(false);
@@ -27,10 +12,10 @@ export function LanguageSwitcher() {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('pocket-school-lang') ?? 'en';
+    const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY) ?? DEFAULT_LANGUAGE;
     setSelected(stored);
     document.documentElement.lang = stored;
-    document.documentElement.dir = ['ar', 'ur'].includes(stored) ? 'rtl' : 'ltr';
+    document.documentElement.dir = textDirection(stored);
   }, []);
 
   useEffect(() => {
@@ -41,9 +26,12 @@ export function LanguageSwitcher() {
 
   const select = (code: string) => {
     setSelected(code);
-    localStorage.setItem('pocket-school-lang', code);
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, code);
     document.documentElement.lang = code;
-    document.documentElement.dir = ['ar', 'ur'].includes(code) ? 'rtl' : 'ltr';
+    document.documentElement.dir = textDirection(code);
+    // Let same-tab listeners (video player, tutor session) react immediately —
+    // the native `storage` event only fires in *other* tabs.
+    window.dispatchEvent(new CustomEvent('pocket-school-lang-change', { detail: code }));
     setOpen(false);
   };
 
@@ -62,7 +50,7 @@ export function LanguageSwitcher() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-1 w-44 bg-card border border-border rounded-2xl shadow-lg py-1 z-50">
+        <div className="absolute right-0 mt-1 w-52 max-h-80 overflow-y-auto bg-card border border-border rounded-2xl shadow-lg py-1 z-50">
           {LANGUAGES.map(lang => (
             <button
               key={lang.code}

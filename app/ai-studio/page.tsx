@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { MathMarkdown } from '@/components/math-markdown';
+import { readLanguage } from '@/lib/languages';
 import {
   Sparkles, ArrowUp, ArrowLeft, Library, MessageSquare,
   FileText, ClipboardList, Network, BookMarked,
@@ -219,7 +220,7 @@ export default function AiStudio() {
 
   /* ── Generation turn ── */
   const runGeneration = async (chatId: number, format: FormatId, topic: string) => {
-    const lang = (typeof window !== 'undefined' && localStorage.getItem('pocket-school-lang')) || 'en';
+    const lang = readLanguage();
     const prompt = `Topic: ${topic}\nSubject: ${subject || 'general'}\nLevel: ${level}`;
     const res = await fetch('/api/ai/generate', {
       method: 'POST',
@@ -244,7 +245,7 @@ export default function AiStudio() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message, mode: chatMode, history: chatTurns,
-        language: (typeof window !== 'undefined' && localStorage.getItem('pocket-school-lang')) || 'en',
+        language: readLanguage(),
       }),
     });
     if (!res.ok) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callOpenRouter, SMART_MODEL } from '@/lib/openrouter';
+import { languageInstruction } from '@/lib/languages';
 
 export const maxDuration = 60;
 
@@ -8,12 +9,6 @@ const MODE_INSTRUCTIONS: Record<string, string> = {
   college: 'You are a rigorous academic AI tutor for university students. Use precise academic language, reference relevant theories and models, and encourage critical thinking. Structure your responses with logical flow.',
   professional: 'You are a concise, efficient AI tutor for professionals. Get straight to the point. Use industry-standard terminology. Focus on practical application and real-world relevance.',
   legal: 'You are a legal AI tutor. Use the IRAC method (Issue, Rule, Application, Conclusion) for problem questions. Reference relevant legislation and case law. Use OSCOLA citation format.',
-};
-
-const LANG_NAMES: Record<string, string> = {
-  ar: 'Arabic', es: 'Spanish', fr: 'French', de: 'German', pt: 'Portuguese',
-  zh: 'Chinese (Simplified)', hi: 'Hindi', ur: 'Urdu', tr: 'Turkish',
-  ja: 'Japanese', ko: 'Korean', it: 'Italian', ru: 'Russian', sw: 'Swahili',
 };
 
 /** Interactive-classroom protocol: lets the model drop structured quiz and
@@ -53,9 +48,7 @@ export async function POST(req: NextRequest) {
       ? `You are ${persona}. Stay fully in character as this teacher — warm, expert, and encouraging.`
       : `You are Ayla, Poket School's AI tutor. You are warm, sharp, and genuinely invested in the student's understanding. Refer to yourself as Ayla if asked your name.`;
 
-    const langInstruction = language && language !== 'en' && LANG_NAMES[language]
-      ? `\n\nIMPORTANT: Reply ENTIRELY in ${LANG_NAMES[language]}. Every sentence of your response must be in ${LANG_NAMES[language]}, unless quoting a technical term that has no translation.`
-      : '';
+    const langInstruction = languageInstruction(language);
 
     const systemPrompt = `${identity}\n\n${modeInstruction}${contextBlock}\n\nGuide students to answers using the Socratic method — ask leading questions when appropriate rather than giving direct answers. Be encouraging. Keep replies conversational and not too long.\n\nWhen responding about mathematics, science, or any topic involving equations or formulas, use LaTeX notation: inline math with $...$ and display math with $$...$$. For example: $E = mc^2$, $\\frac{a}{b}$, $$\\int_0^1 f(x)\\,dx$$${workboard ? WORKBOARD_PROTOCOL : ''}${langInstruction}`;
 

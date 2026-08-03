@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cleanNarration, parseScenes, type Scene } from '@/components/video-storyboard';
+import { LANGUAGES, readLanguage } from '@/lib/languages';
 
 const SCENE_THEMES = [
   'from-indigo-950 via-blue-900 to-slate-950',
@@ -18,30 +19,11 @@ const SCENE_THEMES = [
   'from-emerald-950 via-green-900 to-slate-950',
 ];
 
-/** Languages the video can be translated + narrated into. */
-const LANGUAGES: { code: string; label: string; flag: string }[] = [
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'ar', label: 'العربية', flag: '🇸🇦' },
-  { code: 'es', label: 'Español', flag: '🇪🇸' },
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
-  { code: 'pt', label: 'Português', flag: '🇧🇷' },
-  { code: 'zh', label: '中文', flag: '🇨🇳' },
-  { code: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
-  { code: 'ur', label: 'اردو', flag: '🇵🇰' },
-  { code: 'tr', label: 'Türkçe', flag: '🇹🇷' },
-  { code: 'ja', label: '日本語', flag: '🇯🇵' },
-  { code: 'ko', label: '한국어', flag: '🇰🇷' },
-  { code: 'it', label: 'Italiano', flag: '🇮🇹' },
-  { code: 'ru', label: 'Русский', flag: '🇷🇺' },
-  { code: 'sw', label: 'Kiswahili', flag: '🇰🇪' },
-];
-
-/** BCP-47 hints for picking a matching browser voice per app language. */
-const LANG_BCP47: Record<string, string> = {
-  en: 'en', ar: 'ar', es: 'es', fr: 'fr', de: 'de', pt: 'pt', zh: 'zh',
-  hi: 'hi', ur: 'ur', tr: 'tr', ja: 'ja', ko: 'ko', it: 'it', ru: 'ru', sw: 'sw',
-};
+/** BCP-47 hints for picking a matching browser voice per app language.
+ * Only the primary subtag is used so any regional voice can match. */
+const LANG_BCP47: Record<string, string> = Object.fromEntries(
+  LANGUAGES.map(l => [l.code, l.bcp47.split('-')[0]]),
+);
 
 /**
  * Pick the most natural-sounding available browser voice for a language.
@@ -101,7 +83,7 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
   const [voiceName, setVoiceName] = useState('Kore');
 
   // Language / translation
-  const initialLang = typeof window !== 'undefined' ? (localStorage.getItem('pocket-school-lang') || 'en') : 'en';
+  const initialLang = readLanguage();
   const [lang, setLang] = useState(initialLang);
   const [langOpen, setLangOpen] = useState(false);
   const [translating, setTranslating] = useState(false);

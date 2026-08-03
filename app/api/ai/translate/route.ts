@@ -1,14 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callOpenRouter, CONTENT_MODEL } from '@/lib/openrouter';
+import { LANGUAGE_NAMES as LANG_NAMES } from '@/lib/languages';
 
 export const maxDuration = 60;
-
-const LANG_NAMES: Record<string, string> = {
-  en: 'English', ar: 'Arabic', es: 'Spanish', fr: 'French', de: 'German',
-  pt: 'Portuguese', zh: 'Chinese (Simplified)', hi: 'Hindi', ur: 'Urdu',
-  tr: 'Turkish', ja: 'Japanese', ko: 'Korean', it: 'Italian', ru: 'Russian',
-  sw: 'Swahili',
-};
 
 /**
  * POST /api/ai/translate — translate a video storyboard (or any lesson text)
