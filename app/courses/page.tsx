@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { BookOpen, Search, Filter, ArrowRight, Loader2, Sparkles, Mail, ShieldCheck } from 'lucide-react';
 import { getPublicCourses, type Course, type CourseType } from '@/lib/db';
+import { courseCover } from '@/lib/course-cover';
 
 const TYPE_FILTERS: { id: CourseType | 'all'; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -224,12 +225,12 @@ export default function MarketplacePage() {
                   <Link href={`/courses/${c.id}`}>
                     <Card className="overflow-hidden border hover:shadow-lg transition-all h-full flex flex-col">
                       <div className="aspect-video bg-gradient-to-br from-blue-100 via-indigo-100 to-violet-100 relative flex items-center justify-center">
-                        {c.thumbnailUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={c.thumbnailUrl} alt={c.title} className="w-full h-full object-cover" />
-                        ) : (
-                          <BookOpen className="w-12 h-12 text-blue-400/60" />
-                        )}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={c.thumbnailUrl || courseCover(c.title, c.subject ?? '')}
+                          alt={c.title}
+                          className="w-full h-full object-cover"
+                        />
                         <span className="absolute top-3 left-3 text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded bg-white/95 text-foreground shadow-sm">
                           {c.type ?? 'course'}
                         </span>
