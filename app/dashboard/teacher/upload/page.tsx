@@ -19,6 +19,7 @@ import {
 import Link from 'next/link';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
+import { RichTextEditor } from '@/components/rich-text-editor';
 
 const YEAR_GROUPS = ['Year 7', 'Year 8', 'Year 9'];
 
@@ -480,13 +481,12 @@ export default function UploadPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Lesson Content *</Label>
-              <Textarea
+              <RichTextEditor
                 value={content}
-                onChange={e => setContent(e.target.value)}
+                onChange={setContent}
+                minHeight={208}
                 placeholder={"Paste or write your source material here — notes, a lecture transcript, a chapter outline…\n\nTip: start with one line stating the learning objective, then the material in a few paragraphs, including key terms you want students to master."}
-                className="min-h-52 rounded-xl text-sm resize-none"
               />
-              <p className="text-xs text-muted-foreground text-right">{content.length} characters · {wordCount} words</p>
             </div>
           </div>
 
