@@ -8,18 +8,19 @@
  * Replies stream token-by-token and are spoken with the human AI voice.
  */
 
-import { use, useEffect, useRef, useState } from 'react';
+import { use, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeft, X, Send, Loader2, Volume2, VolumeX, Globe, Sparkles,
   MessageSquare, ClipboardList, StickyNote, CheckCircle2, XCircle,
-  Lightbulb, PenSquare, BookOpen, Wand2,
+  Lightbulb, PenSquare, BookOpen, Wand2, Phone,
 } from 'lucide-react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { AI_TEACHERS } from '@/lib/ai-teachers';
 import { MathMarkdown } from '@/components/math-markdown';
+import { LiveVoiceSession } from '@/components/live-voice-session';
 
 const LANGUAGES = [
   { code: 'en', label: 'English', flag: '🇬🇧' }, { code: 'ar', label: 'العربية', flag: '🇸🇦' },
@@ -96,6 +97,8 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
   const [streamingText, setStreamingText] = useState<string | null>(null);
   const [voiceOn, setVoiceOn] = useState(true);
   const [speaking, setSpeaking] = useState(false);
+  /** Full hands-free voice call with the teacher. */
+  const [liveVoice, setLiveVoice] = useState(false);
   const [lang, setLang] = useState('en');
   const [langOpen, setLangOpen] = useState(false);
   const [notes, setNotes] = useState('');
@@ -105,6 +108,8 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const greeted = useRef(false);
   const idCounter = useRef(0);
+  /** Latest transcript, readable from the voice loop without stale closures. */
+  const messagesRef = useRef<Msg[]>([]);
   const nextId = () => ++idCounter.current;
   const boardBadge = useRef(0); // unseen board items while on another tab
   const [unseenBoard, setUnseenBoard] = useState(0);
@@ -129,6 +134,9 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, streamingText, thinking]);
 
+  // Keep the ref in step so the voice loop always sends the full history.
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+
   useEffect(() => {
     if (typeof window !== 'undefined') localStorage.setItem(`ps-notes-${teacherId}`, notes);
   }, [notes, teacherId]);
@@ -141,7 +149,11 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
       setSpeaking(true);
       const res = await fetch('/api/ai/audio', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ script: clean, voice: 'Kore' }),
+        body: JSON.stringify({
+          script: clean,
+          voice: teacher?.voice ?? 'Kore',
+          style: teacher?.voiceStyle,
+        }),
       });
       const type = res.headers.get('content-type') ?? '';
       if (res.ok && type.includes('audio')) {
@@ -163,8 +175,10 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
     } else setSpeaking(false);
   };
 
-  /* ── streaming ask ── */
-  const ask = async (text: string, history: Msg[]) => {
+  /* ── streaming ask ──
+   * Returns the spoken-safe prose so live voice mode can say it itself.
+   * `silent` suppresses the built-in playback (voice mode owns the audio). */
+  const ask = async (text: string, history: Msg[], silent = false): Promise<string> => {
     setThinking(true);
     setStreamingText('');
     let full = '';
@@ -203,14 +217,25 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
       }
       const finalText = prose || (items.length ? 'I put something on your board — take a look! 📋' : '…');
       setMessages(prev => [...prev, { role: 'model', text: finalText }]);
-      speak(prose);
+      if (!silent) speak(prose);
+      return prose || finalText;
     } catch (e: any) {
-      setMessages(prev => [...prev, { role: 'model', text: `Sorry — ${e?.message || 'connection error'}. Try again.` }]);
+      const msg = `Sorry — ${e?.message || 'connection error'}. Try again.`;
+      setMessages(prev => [...prev, { role: 'model', text: msg }]);
+      return msg;
     } finally {
       setThinking(false);
       setStreamingText(null);
     }
   };
+
+  /* ── live voice: one turn, driven by the voice overlay ── */
+  const askByVoice = useCallback(async (spoken: string): Promise<string> => {
+    const next: Msg[] = [...messagesRef.current, { role: 'user', text: spoken }];
+    setMessages(next);
+    // Voice replies stay conversational — no markdown or board blocks to read aloud.
+    return ask(`${spoken}\n\n(Reply conversationally in 2-4 sentences — this is spoken aloud.)`, next, true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* greet */
   useEffect(() => {
@@ -279,6 +304,26 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
 
   return (
     <div className="fixed inset-0 bg-[#07070E] text-white overflow-hidden flex flex-col">
+      {/* ── Hands-free voice call overlay ── */}
+      <AnimatePresence>
+        {liveVoice && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }} className="absolute inset-0 z-40"
+          >
+            <LiveVoiceSession
+              teacher={teacher}
+              lang={lang}
+              onAsk={askByVoice}
+              // askByVoice already writes both sides into the transcript, so
+              // this hook stays a no-op to avoid duplicate bubbles.
+              onTurn={() => {}}
+              onClose={() => setLiveVoice(false)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Top bar ── */}
       <header className="h-12 px-3 sm:px-5 flex items-center justify-between border-b border-white/[0.06] shrink-0 bg-[#0D0D18] z-20">
         <Link href="/ai-teachers" className="flex items-center gap-2 text-sm font-semibold text-white/60 hover:text-white transition-colors">
@@ -312,6 +357,15 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
               </div>
             )}
           </div>
+          {/* Hands-free voice call — talk out loud, teacher replies instantly. */}
+          <button
+            onClick={() => { if (audioRef.current) audioRef.current.pause(); setLiveVoice(true); }}
+            className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full text-black transition-transform hover:scale-105"
+            style={{ background: teacher.accentColor }}
+            title={`Talk out loud with ${teacher.name.split(' ')[0]}`}
+          >
+            <Phone className="w-3.5 h-3.5" /><span className="hidden sm:inline">Talk live</span>
+          </button>
           <button onClick={() => { setVoiceOn(v => !v); if (voiceOn && audioRef.current) audioRef.current.pause(); }}
             className="text-white/70 hover:text-white p-1.5 rounded-lg hover:bg-white/5" title={voiceOn ? 'Mute voice' : 'Unmute voice'}>
             {voiceOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
