@@ -21,6 +21,12 @@ export type TeacherIconKey =
   | 'palette'
   | 'history';
 
+/** Gemini TTS prebuilt voices — each teacher gets a distinct one so students
+ * can tell who is speaking without looking at the screen. */
+export type TeacherVoice =
+  | 'Kore' | 'Charon' | 'Aoede' | 'Puck' | 'Leda' | 'Zephyr'
+  | 'Fenrir' | 'Orus' | 'Iapetus';
+
 export interface AiTeacher {
   id: string;
   name: string;
@@ -32,6 +38,10 @@ export interface AiTeacher {
   avatarUrl: string;
   accentColor: string;
   iconKey: TeacherIconKey;
+  /** Which synthetic voice speaks for this teacher in live voice sessions. */
+  voice: TeacherVoice;
+  /** Delivery direction passed to the TTS engine — sets pace and warmth. */
+  voiceStyle: string;
   tagline: string;
   bio: string[];
   yearsExperience?: number;
@@ -57,6 +67,8 @@ export const AI_TEACHERS: AiTeacher[] = [
     avatarUrl: dicebear('sarah-bennett-science'),
     accentColor: '#1A73E8',
     iconKey: 'atom',
+    voice: 'Kore',
+    voiceStyle: 'Warm, measured senior science teacher. Calm and encouraging, never rushed.',
     tagline: 'Ask anything from quantum mechanics to cell biology — face-to-face, in real time.',
     bio: [
       'Sarah is Poket School’s flagship AI educator for the natural sciences, modelled on the methods of senior IGCSE and A-Level science teachers across the UK and Commonwealth. She speaks at a measured pace, asks the right clarifying questions, and never makes you feel small for not knowing.',
@@ -99,6 +111,8 @@ export const AI_TEACHERS: AiTeacher[] = [
     avatarUrl: dicebear('pocket-school-mathematics'),
     accentColor: '#1E3A8A',
     iconKey: 'calculator',
+    voice: 'Charon',
+    voiceStyle: 'Patient and methodical. Speaks each step deliberately, with clear pauses between them.',
     tagline: 'Step-by-step problem solving, from primary times tables to multivariable calculus.',
     bio: [
       'Our Mathematics AI is in final calibration against IGCSE, GCSE and A-Level mark schemes.',
@@ -122,6 +136,8 @@ export const AI_TEACHERS: AiTeacher[] = [
     avatarUrl: dicebear('pocket-school-english'),
     accentColor: '#EC4899',
     iconKey: 'pen',
+    voice: 'Aoede',
+    voiceStyle: 'Expressive and literary. Lyrical phrasing, savours language, reads quotations with feeling.',
     tagline: 'Read closely, argue precisely, write beautifully — coached line by line.',
     bio: [
       'Trained on a broad canon from Shakespeare and the Romantics through to contemporary post-colonial voices, our English teacher will help you read deeper and write sharper.',
@@ -145,6 +161,8 @@ export const AI_TEACHERS: AiTeacher[] = [
     avatarUrl: dicebear('pocket-school-history'),
     accentColor: '#0B1B3F',
     iconKey: 'history',
+    voice: 'Iapetus',
+    voiceStyle: 'Measured and narrative. Speaks like a storyteller setting a scene, with gravity.',
     tagline: 'Source analysis, cause-and-consequence reasoning, and clear narrative writing.',
     bio: [
       'Our History tutor will be calibrated against IGCSE, A-Level and IB History specifications, with emphasis on source evaluation and structured argument.',
@@ -168,6 +186,8 @@ export const AI_TEACHERS: AiTeacher[] = [
     avatarUrl: dicebear('pocket-school-geography'),
     accentColor: '#10B981',
     iconKey: 'globe',
+    voice: 'Puck',
+    voiceStyle: 'Bright and curious. Energetic, wonder-filled delivery, like a field documentary presenter.',
     tagline: 'Maps, case studies, climate systems and urban patterns — explained clearly.',
     bio: [
       'A geography tutor for the modern syllabus: tectonics and rivers on one side, urbanisation and climate change on the other.',
@@ -191,6 +211,8 @@ export const AI_TEACHERS: AiTeacher[] = [
     avatarUrl: dicebear('pocket-school-languages'),
     accentColor: '#F5B400',
     iconKey: 'languages',
+    voice: 'Leda',
+    voiceStyle: 'Clear and friendly with precise diction. Slows down on new vocabulary so it can be copied.',
     tagline: 'Conversation, grammar and exam writing — corrected gently, in real time.',
     bio: [
       'Multilingual conversation partner with native-quality pronunciation across Spanish, French and Mandarin.',
@@ -214,6 +236,8 @@ export const AI_TEACHERS: AiTeacher[] = [
     avatarUrl: dicebear('pocket-school-computer-science'),
     accentColor: '#8B5CF6',
     iconKey: 'code',
+    voice: 'Fenrir',
+    voiceStyle: 'Upbeat and pragmatic. Crisp pacing, the tone of a friendly senior engineer pair-programming.',
     tagline: 'Pair-programme through projects, debug live, and master the theory behind the code.',
     bio: [
       'A patient pair-programmer for absolute beginners through A-Level Computer Science.',
@@ -237,6 +261,8 @@ export const AI_TEACHERS: AiTeacher[] = [
     avatarUrl: dicebear('pocket-school-business'),
     accentColor: '#1A73E8',
     iconKey: 'briefcase',
+    voice: 'Orus',
+    voiceStyle: 'Confident and concise. Boardroom clarity, emphasises the practical takeaway.',
     tagline: 'From price elasticity to strategic case studies — practical and exam-ready.',
     bio: [
       'A business and economics tutor with both academic rigour and real-world grounding.',
@@ -260,6 +286,8 @@ export const AI_TEACHERS: AiTeacher[] = [
     avatarUrl: dicebear('pocket-school-arts'),
     accentColor: '#EC4899',
     iconKey: 'palette',
+    voice: 'Zephyr',
+    voiceStyle: 'Light, warm and creative. Relaxed pacing, appreciative of detail.',
     tagline: 'Analyse a painting, decode a chord progression, plan a design portfolio.',
     bio: [
       'A creative-disciplines tutor that takes art and music as seriously as the sciences.',
