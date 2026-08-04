@@ -465,6 +465,31 @@ export async function updateProgramme(id: string, data: Partial<Programme>): Pro
   await updateDoc(doc(db, 'programmes', id), data as Record<string, unknown>);
 }
 
+/** How many curriculum subjects sit under a programme. */
+export async function countProgrammeSubjects(programmeId: string): Promise<number> {
+  const snap = await getDocs(query(collection(db, 'courses'), where('programmeId', '==', programmeId)));
+  return snap.size;
+}
+
+/**
+ * Delete a programme.
+ *
+ * Refuses while subjects still reference it — deleting anyway would leave
+ * those subjects pointing at a programme that no longer exists, and they would
+ * silently vanish from every year-group listing with no way to find them again.
+ * Move or delete the subjects first.
+ */
+export async function deleteProgramme(id: string): Promise<void> {
+  const subjects = await countProgrammeSubjects(id);
+  if (subjects > 0) {
+    throw new Error(
+      `This programme still has ${subjects} subject${subjects === 1 ? '' : 's'}. ` +
+      'Move or delete them first, otherwise they would be orphaned.',
+    );
+  }
+  await deleteDoc(doc(db, 'programmes', id));
+}
+
 /** Curriculum "Modules" are Course docs with kind === 'curriculum' (one subject for one
  * year group). Optionally filter to a specific year group for the student dashboard. */
 export async function getCurriculumModules(yearGroup?: string): Promise<Course[]> {
