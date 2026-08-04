@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
-  getProgrammes, createProgramme, getAllCurriculumModules, createCurriculumModule,
+  getProgrammes, createProgramme, updateProgramme, deleteProgramme,
+  getAllCurriculumModules, createCurriculumModule,
   createModule, createLesson,
   Programme, Course,
 } from '@/lib/db';
@@ -17,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import {
   Loader2, Plus, Layers, Sparkles, BookOpen, ChevronRight, Wand2, Check, RotateCcw,
+  Pencil, Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -53,6 +55,9 @@ export default function AdminCurriculumPage() {
   const [progYearGroups, setProgYearGroups] = useState('Year 7, Year 8, Year 9');
   const [progTier, setProgTier] = useState<'free' | 'academic'>('academic');
   const [creatingProgramme, setCreatingProgramme] = useState(false);
+  /** Programme being edited; null means the form creates a new one. */
+  const [editingProgramme, setEditingProgramme] = useState<Programme | null>(null);
+  const [deletingProgramme, setDeletingProgramme] = useState<string | null>(null);
 
   // New curriculum module form
   const [showModuleForm, setShowModuleForm] = useState(false);
@@ -200,28 +205,65 @@ export default function AdminCurriculumPage() {
     }
   };
 
-  const handleCreateProgramme = async () => {
+  const resetProgrammeForm = () => {
+    setProgName('');
+    setProgSubjects('');
+    setProgYearGroups('Year 7, Year 8, Year 9');
+    setProgTier('academic');
+    setEditingProgramme(null);
+    setShowProgrammeForm(false);
+  };
+
+  /** Load a programme into the shared form so editing reuses one form, not two. */
+  const startEditProgramme = (p: Programme) => {
+    setEditingProgramme(p);
+    setProgName(p.name);
+    setProgSubjects((p.subjects ?? []).join(', '));
+    setProgYearGroups((p.yearGroups ?? []).join(', '));
+    setProgTier(p.requiredTier ?? 'academic');
+    setShowProgrammeForm(true);
+  };
+
+  const handleSaveProgramme = async () => {
     if (!progName.trim()) { toast.error('Enter a programme name.'); return; }
     setCreatingProgramme(true);
+    const payload = {
+      name: progName.trim(),
+      yearGroups: progYearGroups.split(',').map(s => s.trim()).filter(Boolean),
+      subjects: progSubjects.split(',').map(s => s.trim()).filter(Boolean),
+      requiredTier: progTier,
+    };
     try {
-      await createProgramme({
-        name: progName.trim(),
-        yearGroups: progYearGroups.split(',').map(s => s.trim()).filter(Boolean),
-        subjects: progSubjects.split(',').map(s => s.trim()).filter(Boolean),
-        requiredTier: progTier,
-        status: 'active',
-      });
-      toast.success('Programme created.');
-      setProgName('');
-      setProgSubjects('');
-      setProgYearGroups('Year 7, Year 8, Year 9');
-      setProgTier('academic');
-      setShowProgrammeForm(false);
+      if (editingProgramme) {
+        await updateProgramme(editingProgramme.id, payload);
+        toast.success('Programme updated.');
+      } else {
+        await createProgramme({ ...payload, status: 'active' });
+        toast.success('Programme created.');
+      }
+      resetProgrammeForm();
       load();
     } catch (e: any) {
-      toast.error(e?.message || 'Failed to create programme.');
+      toast.error(e?.message || 'Failed to save programme.');
     } finally {
       setCreatingProgramme(false);
+    }
+  };
+
+  const handleDeleteProgramme = async (p: Programme) => {
+    if (!confirm(`Delete the programme "${p.name}"? This cannot be undone.`)) return;
+    setDeletingProgramme(p.id);
+    try {
+      await deleteProgramme(p.id);
+      toast.success(`"${p.name}" deleted.`);
+      if (editingProgramme?.id === p.id) resetProgrammeForm();
+      load();
+    } catch (e: any) {
+      // deleteProgramme refuses while subjects still reference the programme —
+      // surface that reason rather than a generic failure.
+      toast.error(e?.message || 'Failed to delete programme.');
+    } finally {
+      setDeletingProgramme(null);
     }
   };
 
@@ -434,13 +476,19 @@ export default function AdminCurriculumPage() {
       <Card className="p-6 rounded-2xl">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-foreground text-lg">Programmes ({programmes.length})</h2>
-          <Button size="sm" variant="outline" className="gap-1.5 rounded-xl" onClick={() => setShowProgrammeForm(o => !o)}>
-            <Plus className="w-3.5 h-3.5" /> New Programme
+          <Button size="sm" variant="outline" className="gap-1.5 rounded-xl"
+            onClick={() => (showProgrammeForm ? resetProgrammeForm() : setShowProgrammeForm(true))}>
+            <Plus className="w-3.5 h-3.5" /> {showProgrammeForm ? 'Cancel' : 'New Programme'}
           </Button>
         </div>
 
         {showProgrammeForm && (
           <div className="mb-4 p-4 bg-muted/40 rounded-xl border border-dashed border-border space-y-3">
+            {editingProgramme && (
+              <p className="text-xs font-semibold text-violet-700">
+                Editing “{editingProgramme.name}”
+              </p>
+            )}
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Name *</Label>
@@ -467,9 +515,16 @@ export default function AdminCurriculumPage() {
                 <Input value={progSubjects} onChange={e => setProgSubjects(e.target.value)} placeholder="e.g. Science, Maths, English, Computing" className="rounded-xl h-10" />
               </div>
             </div>
-            <Button onClick={handleCreateProgramme} disabled={creatingProgramme} className="rounded-xl">
-              {creatingProgramme ? 'Creating…' : 'Create Programme'}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button onClick={handleSaveProgramme} disabled={creatingProgramme} className="rounded-xl">
+                {creatingProgramme
+                  ? 'Saving…'
+                  : editingProgramme ? 'Save changes' : 'Create Programme'}
+              </Button>
+              {editingProgramme && (
+                <Button variant="ghost" onClick={resetProgrammeForm} className="rounded-xl">Cancel</Button>
+              )}
+            </div>
           </div>
         )}
 
@@ -489,6 +544,21 @@ export default function AdminCurriculumPage() {
                 </div>
                 <p className="text-xs text-muted-foreground">{p.yearGroups?.join(' · ')}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{p.subjects?.join(', ')}</p>
+                <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border">
+                  <Button size="sm" variant="ghost" className="h-8 rounded-lg text-xs gap-1.5"
+                    onClick={() => startEditProgramme(p)}>
+                    <Pencil className="w-3.5 h-3.5" /> Edit
+                  </Button>
+                  <Button size="sm" variant="ghost"
+                    className="h-8 rounded-lg text-xs gap-1.5 text-muted-foreground hover:text-destructive"
+                    disabled={deletingProgramme === p.id}
+                    onClick={() => handleDeleteProgramme(p)}>
+                    {deletingProgramme === p.id
+                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      : <Trash2 className="w-3.5 h-3.5" />}
+                    Delete
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
