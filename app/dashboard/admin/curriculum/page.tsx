@@ -7,6 +7,7 @@ import {
   getProgrammes, createProgramme, updateProgramme, deleteProgramme,
   getAllCurriculumModules, createCurriculumModule,
   createModule, createLesson,
+  updateCourse, deleteCurriculumSubject, getCurriculumSubjectSize,
   Programme, Course,
 } from '@/lib/db';
 import { seedY7ScienceUnit1 } from '@/lib/curriculum-seed';
@@ -58,6 +59,64 @@ export default function AdminCurriculumPage() {
   /** Programme being edited; null means the form creates a new one. */
   const [editingProgramme, setEditingProgramme] = useState<Programme | null>(null);
   const [deletingProgramme, setDeletingProgramme] = useState<string | null>(null);
+
+  // Inline subject editing
+  const [editingSubject, setEditingSubject] = useState<string | null>(null);
+  const [subjTitle, setSubjTitle] = useState('');
+  const [subjSubject, setSubjSubject] = useState('');
+  const [subjYear, setSubjYear] = useState('');
+  const [savingSubject, setSavingSubject] = useState(false);
+  const [deletingSubject, setDeletingSubject] = useState<string | null>(null);
+
+  const startEditSubject = (m: Course) => {
+    setEditingSubject(m.id);
+    setSubjTitle(m.title ?? '');
+    setSubjSubject(m.subject ?? '');
+    setSubjYear(m.yearGroup ?? '');
+  };
+
+  const handleSaveSubject = async (m: Course) => {
+    if (!subjTitle.trim()) { toast.error('Enter a title.'); return; }
+    setSavingSubject(true);
+    try {
+      await updateCourse(m.id, {
+        title: subjTitle.trim(),
+        subject: subjSubject.trim(),
+        yearGroup: subjYear.trim() || undefined,
+      });
+      toast.success('Subject updated.');
+      setEditingSubject(null);
+      load();
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to update subject.');
+    } finally {
+      setSavingSubject(false);
+    }
+  };
+
+  const handleDeleteSubject = async (m: Course) => {
+    setDeletingSubject(m.id);
+    try {
+      // Show what will actually be destroyed before asking — units and lessons
+      // live only inside the subject and go with it.
+      const { units, lessons } = await getCurriculumSubjectSize(m.id);
+      const detail = units === 0 && lessons === 0
+        ? 'It has no units yet.'
+        : `This will also delete ${units} unit${units === 1 ? '' : 's'} and ${lessons} lesson${lessons === 1 ? '' : 's'}.`;
+      if (!confirm(`Delete the subject "${m.title}"?\n\n${detail}\n\nThis cannot be undone.`)) {
+        setDeletingSubject(null);
+        return;
+      }
+      await deleteCurriculumSubject(m.id);
+      toast.success(`"${m.title}" deleted.`);
+      if (editingSubject === m.id) setEditingSubject(null);
+      load();
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to delete subject.');
+    } finally {
+      setDeletingSubject(null);
+    }
+  };
 
   // New curriculum module form
   const [showModuleForm, setShowModuleForm] = useState(false);
@@ -122,13 +181,33 @@ export default function AdminCurriculumPage() {
     const subject = archSubject.trim();
     if (!subject) { toast.error('Enter a subject for Quill to design.'); return; }
     const weeks = Math.min(52, Math.max(1, Number(archWeeks) || 12));
+
+    // Designing a second copy of a subject that already exists is almost always
+    // a mistake, and it is expensive to undo once units and lessons are built.
+    const year = archYear.trim();
+    const clash = modules.find(m =>
+      (m.subject ?? '').trim().toLowerCase() === subject.toLowerCase()
+      && (m.yearGroup ?? '').trim().toLowerCase() === year.toLowerCase());
+    if (clash && !confirm(
+      `"${clash.title}" already covers ${subject}${year ? ` for ${year}` : ''}.\n\n` +
+      'Design another one anyway? Consider opening the existing subject and adding units to it instead.',
+    )) return;
+
     setArchDesigning(true);
     setArchOutline(null);
     try {
       const res = await fetch('/api/ai/course-architect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task: 'outline', context: { subject, yearLevel: archYear.trim(), weeks } }),
+        body: JSON.stringify({
+          task: 'outline',
+          context: {
+            subject, yearLevel: year, weeks,
+            // Lets Quill continue from what a matching subject already teaches
+            // rather than proposing the same ground again.
+            existingUnits: clash ? [clash.title] : [],
+          },
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Quill could not design that course.');
@@ -626,22 +705,64 @@ export default function AdminCurriculumPage() {
         ) : (
           <div className="divide-y divide-border">
             {modules.map(m => (
-              <Link
-                key={m.id}
-                href={`/dashboard/admin/curriculum/${m.id}`}
-                className="flex items-center justify-between gap-4 py-3.5 hover:bg-muted/40 transition-colors -mx-2 px-2 rounded-lg"
-              >
-                <div className="min-w-0">
-                  <p className="font-semibold text-foreground text-sm truncate">{m.title}</p>
-                  <p className="text-xs text-muted-foreground">{m.subject} · {m.yearGroup ?? '—'}</p>
+              editingSubject === m.id ? (
+                <div key={m.id} className="py-3.5 -mx-2 px-2 rounded-lg bg-muted/40 space-y-3">
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Title</Label>
+                      <Input value={subjTitle} onChange={e => setSubjTitle(e.target.value)} className="rounded-xl h-10" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Subject</Label>
+                      <Input value={subjSubject} onChange={e => setSubjSubject(e.target.value)} className="rounded-xl h-10" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Year / Level</Label>
+                      <Input value={subjYear} onChange={e => setSubjYear(e.target.value)}
+                        list="year-level-suggestions" className="rounded-xl h-10" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" className="rounded-xl" disabled={savingSubject} onClick={() => handleSaveSubject(m)}>
+                      {savingSubject ? 'Saving…' : 'Save changes'}
+                    </Button>
+                    <Button size="sm" variant="ghost" className="rounded-xl" onClick={() => setEditingSubject(null)}>
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${STATUS_BADGE[m.status] ?? STATUS_BADGE.draft}`}>
-                    {m.status}
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              ) : (
+                <div
+                  key={m.id}
+                  className="flex items-center justify-between gap-4 py-3.5 hover:bg-muted/40 transition-colors -mx-2 px-2 rounded-lg"
+                >
+                  <Link href={`/dashboard/admin/curriculum/${m.id}`} className="min-w-0 flex-1">
+                    <p className="font-semibold text-foreground text-sm truncate">{m.title}</p>
+                    <p className="text-xs text-muted-foreground">{m.subject} · {m.yearGroup ?? '—'}</p>
+                  </Link>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${STATUS_BADGE[m.status] ?? STATUS_BADGE.draft}`}>
+                      {m.status}
+                    </span>
+                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-lg" title="Edit subject"
+                      onClick={() => startEditSubject(m)}>
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button size="sm" variant="ghost"
+                      className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-destructive"
+                      title="Delete subject"
+                      disabled={deletingSubject === m.id}
+                      onClick={() => handleDeleteSubject(m)}>
+                      {deletingSubject === m.id
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        : <Trash2 className="w-3.5 h-3.5" />}
+                    </Button>
+                    <Link href={`/dashboard/admin/curriculum/${m.id}`}>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </Link>
+                  </div>
                 </div>
-              </Link>
+              )
             ))}
           </div>
         )}

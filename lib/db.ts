@@ -437,6 +437,69 @@ export async function deleteLesson(courseId: string, moduleId: string, lessonId:
   await deleteDoc(doc(db, 'courses', courseId, 'modules', moduleId, 'lessons', lessonId));
 }
 
+/**
+ * Delete a unit and every lesson inside it.
+ *
+ * Cascades rather than refusing, unlike deleteProgramme: a lesson is only ever
+ * reachable through its unit, so deleting the unit alone would strand the
+ * lesson documents in Firestore where nothing can list or remove them.
+ * Returns how many lessons went with it, for the confirmation message.
+ */
+export async function deleteUnit(courseId: string, unitId: string): Promise<number> {
+  const lessonsRef = collection(db, 'courses', courseId, 'modules', unitId, 'lessons');
+  const snap = await getDocs(lessonsRef);
+  const batch = writeBatch(db);
+  snap.docs.forEach(d => batch.delete(d.ref));
+  batch.delete(doc(db, 'courses', courseId, 'modules', unitId));
+  await batch.commit();
+  return snap.size;
+}
+
+/**
+ * Delete a curriculum subject with all of its units and lessons.
+ *
+ * Same reasoning as deleteUnit — units and lessons live only inside the
+ * subject. Batched in chunks because a Firestore write batch caps at 500
+ * operations and a full subject can exceed that.
+ */
+export async function deleteCurriculumSubject(
+  courseId: string,
+): Promise<{ units: number; lessons: number }> {
+  const unitsSnap = await getDocs(collection(db, 'courses', courseId, 'modules'));
+
+  const refs: ReturnType<typeof doc>[] = [];
+  let lessons = 0;
+  for (const unit of unitsSnap.docs) {
+    const lessonsSnap = await getDocs(collection(db, 'courses', courseId, 'modules', unit.id, 'lessons'));
+    lessons += lessonsSnap.size;
+    lessonsSnap.docs.forEach(l => refs.push(l.ref));
+    refs.push(unit.ref);
+  }
+  refs.push(doc(db, 'courses', courseId));
+
+  const CHUNK = 400; // under the 500-op batch limit, with headroom
+  for (let i = 0; i < refs.length; i += CHUNK) {
+    const batch = writeBatch(db);
+    refs.slice(i, i + CHUNK).forEach(r => batch.delete(r));
+    await batch.commit();
+  }
+
+  return { units: unitsSnap.size, lessons };
+}
+
+/** Unit and lesson counts for a subject — shown before a destructive delete. */
+export async function getCurriculumSubjectSize(
+  courseId: string,
+): Promise<{ units: number; lessons: number }> {
+  const unitsSnap = await getDocs(collection(db, 'courses', courseId, 'modules'));
+  let lessons = 0;
+  for (const unit of unitsSnap.docs) {
+    const snap = await getDocs(collection(db, 'courses', courseId, 'modules', unit.id, 'lessons'));
+    lessons += snap.size;
+  }
+  return { units: unitsSnap.size, lessons };
+}
+
 export async function duplicateLesson(courseId: string, moduleId: string, lesson: Lesson): Promise<string> {
   const { id: _id, ...rest } = lesson;
   const ref = await addDoc(collection(db, 'courses', courseId, 'modules', moduleId, 'lessons'), {
