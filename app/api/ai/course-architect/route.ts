@@ -36,6 +36,61 @@ const clampInt = (v: unknown, min: number, max: number, fallback: number) => {
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
 };
 
+/** A short bullet list from a caller-supplied array, for prompt context. */
+const bulletList = (v: unknown, cap = 40, itemMax = 160): string => {
+  if (!Array.isArray(v)) return '';
+  return v
+    .map(x => (typeof x === 'string' ? clean(x, itemMax) : clean((x as any)?.title ?? (x as any)?.text, itemMax)))
+    .filter(Boolean)
+    .slice(0, cap)
+    .map(s => `- ${s}`)
+    .join('\n');
+};
+
+/**
+ * Force a set of integer parts to sum to an exact total, preserving their
+ * proportions. Models are told to make marks (and weeks) add up and reliably
+ * do not, which produced assessments worth 38 of a stated 40 marks.
+ *
+ * Every part is kept at 1 or more, so when there are more parts than the total
+ * can cover the surplus is dropped — five sections cannot share three marks.
+ * The returned array may therefore be shorter than the input, and callers must
+ * truncate their own list to match.
+ */
+function normaliseToTotal(parts: number[], total: number): number[] {
+  if (parts.length === 0 || total <= 0) return parts;
+  if (parts.length > total) parts = parts.slice(0, total);
+
+  const sum = parts.reduce((a, b) => a + b, 0);
+  if (sum === total) return parts;
+
+  // Scale proportionally, floor, then hand out the remainder largest-first so
+  // the rounding error lands where it is least noticeable.
+  const scaled = parts.map(p => (sum > 0 ? (p / sum) * total : total / parts.length));
+  const floored = scaled.map(s => Math.max(1, Math.floor(s)));
+  let diff = total - floored.reduce((a, b) => a + b, 0);
+
+  const order = scaled
+    .map((s, i) => ({ i, frac: s - Math.floor(s) }))
+    .sort((a, b) => b.frac - a.frac);
+
+  let k = 0;
+  while (diff > 0 && order.length) {
+    floored[order[k % order.length].i] += 1;
+    diff--; k++;
+  }
+  // If rounding overshot, claw back from the largest parts that can spare it.
+  k = 0;
+  while (diff < 0) {
+    const idx = floored.indexOf(Math.max(...floored));
+    if (floored[idx] <= 1) break;
+    floored[idx] -= 1;
+    diff++;
+    if (++k > 1000) break;
+  }
+  return floored;
+}
+
 const normaliseBloom = (v: unknown, fallback = 'Understand') => {
   const raw = clean(v, 40).toLowerCase();
   return BLOOMS.find(b => b.toLowerCase() === raw)
@@ -156,16 +211,23 @@ const RULES =
   'Return ONLY a single valid JSON object. No prose before or after, no markdown code fences. ' +
   'All content must be original, age-appropriate and free of copyrighted exam-board material.';
 
-function outlinePrompt(subject: string, yearLevel: string, weeks: number) {
+function outlinePrompt(subject: string, yearLevel: string, weeks: number, existingUnits: string) {
   const moduleHint = Math.max(2, Math.min(12, Math.round(weeks / 3)));
+  // Without this the architect re-proposes units the course already has, so a
+  // second run duplicates the first instead of extending it.
+  const continuation = existingUnits
+    ? `\n\nThis course ALREADY contains these units:\n${existingUnits}\n\nDo not repeat or re-word any of them. Design units that continue from where those leave off, assuming their content is already taught and can be built upon.`
+    : '';
   return `You are Quill, an expert curriculum architect designing a scheme of work.
 
 Design a complete course structure for:
 - Subject: ${subject}
 - Year / Level: ${yearLevel}
-- Total duration: ${weeks} teaching weeks
+- Total duration: ${weeks} teaching weeks${continuation}
 
-Produce roughly ${moduleHint} modules covering the whole ${weeks} weeks, sequenced from foundational to advanced. Each module holds 3-6 lessons. The sum of every lesson's durationWeeks across all modules must be close to ${weeks}. Each lesson lists 2-4 measurable learning objectives written as "Students will be able to…".
+Produce roughly ${moduleHint} modules covering the whole ${weeks} weeks, sequenced from foundational to advanced so each module depends only on earlier ones. Each module holds 3-6 lessons. The sum of every lesson's durationWeeks across all modules must be close to ${weeks}. Each lesson lists 2-4 measurable learning objectives written as "Students will be able to…".
+
+Pitch the vocabulary, examples and cognitive demand at ${yearLevel} specifically — not at a general audience.
 
 ${RULES}
 
@@ -173,12 +235,25 @@ Exact shape:
 {"modules":[{"title":"...","description":"...","lessons":[{"title":"...","objectives":["..."],"durationWeeks":1}]}]}`;
 }
 
-function objectivesPrompt(lessonTitle: string, bloom: string, yearLevel: string) {
+function objectivesPrompt(
+  lessonTitle: string, bloom: string, yearLevel: string,
+  subject: string, siblingLessons: string, lessonText: string,
+) {
+  // Objectives written blind describe the title; objectives written against the
+  // lesson's actual content and its neighbours describe the lesson.
+  const place = siblingLessons
+    ? `\n\nOther lessons in the same unit, in order:\n${siblingLessons}\n\nWrite objectives that belong to "${lessonTitle}" specifically — do not restate what neighbouring lessons cover.`
+    : '';
+  const body = lessonText
+    ? `\n\nThe lesson currently teaches this. Objectives must describe what THIS content achieves, not the title in the abstract:\n"""\n${lessonText}\n"""`
+    : '';
   return `You are Quill, an expert curriculum designer.
 
-Write 4-5 measurable learning objectives for the lesson "${lessonTitle}"${yearLevel ? ` aimed at ${yearLevel} students` : ''}.
+Write 4-5 measurable learning objectives for the lesson "${lessonTitle}"${subject ? ` in ${subject}` : ''}${yearLevel ? ` aimed at ${yearLevel} students` : ''}.${place}${body}
 
 Every objective starts with "Students will be able to" followed by an action verb. Centre the set on Bloom's level "${bloom}" — at least three objectives must use verbs from that level, and the remainder may sit one level either side. Use only these Bloom's labels: ${BLOOMS.join(', ')}.
+
+Each objective must be observable and assessable: avoid "understand", "know about" and "be aware of", which cannot be marked.
 
 ${RULES}
 
@@ -186,10 +261,19 @@ Exact shape:
 {"objectives":[{"text":"Students will be able to…","bloom":"${bloom}"}]}`;
 }
 
-function briefPrompt(lessonTitle: string, subject: string, yearLevel: string) {
+function briefPrompt(
+  lessonTitle: string, subject: string, yearLevel: string,
+  objectives: string, siblingLessons: string,
+) {
+  const aims = objectives
+    ? `\n\nThe brief must serve these agreed learning objectives:\n${objectives}`
+    : '';
+  const place = siblingLessons
+    ? `\n\nOther lessons in this unit:\n${siblingLessons}\nStay inside this lesson's scope and do not duplicate theirs.`
+    : '';
   return `You are Quill, a curriculum lead briefing an AI content generator.
 
-Write a generation brief in Markdown for the lesson "${lessonTitle}"${subject ? ` in ${subject}` : ''}${yearLevel ? ` for ${yearLevel} students` : ''}.
+Write a generation brief in Markdown for the lesson "${lessonTitle}"${subject ? ` in ${subject}` : ''}${yearLevel ? ` for ${yearLevel} students` : ''}.${aims}${place}
 
 Keep it under 300 words and use these headings exactly:
 ## Purpose
@@ -201,10 +285,15 @@ Keep it under 300 words and use these headings exactly:
 Be concrete and specific to this lesson — no filler, no generic advice. Reply with the Markdown brief only, no code fences and no commentary.`;
 }
 
-function improvePrompt(text: string, instruction: string) {
+function improvePrompt(text: string, instruction: string, subject: string, yearLevel: string) {
+  // "Simplify" is meaningless without a target reader; with the year level the
+  // model has an actual reading age to write for.
+  const audience = yearLevel || subject
+    ? `\n\nWrite for ${yearLevel || 'the stated level'}${subject ? ` studying ${subject}` : ''}. Judge vocabulary, sentence length and example choice against that reader.`
+    : '';
   return `You are Quill, an expert educational editor.
 
-Rewrite the lesson text below following this instruction: ${instruction}
+Rewrite the lesson text below following this instruction: ${instruction}${audience}
 
 Preserve every factual claim, keep the existing Markdown structure and heading levels where sensible, and keep mathematics in LaTeX ($…$ inline, $$…$$ display). Reply with the rewritten text only — no preamble, no commentary, no code fences.
 
@@ -212,10 +301,15 @@ Preserve every factual claim, keep the existing Markdown structure and heading l
 ${text}`;
 }
 
-function assessmentPrompt(lessonTitle: string, totalMarks: number) {
+function assessmentPrompt(lessonTitle: string, totalMarks: number, objectives: string, yearLevel: string) {
+  // An assessment that doesn't know the objectives tests the title, not the
+  // lesson — the single biggest cause of "the quiz doesn't match what I taught".
+  const aims = objectives
+    ? `\n\nEvery section must assess at least one of these stated objectives, and together the sections must cover all of them:\n${objectives}`
+    : '';
   return `You are Quill, an assessment designer.
 
-Design the section structure for an assessment on "${lessonTitle}" worth exactly ${totalMarks} marks in total.
+Design the section structure for an assessment on "${lessonTitle}"${yearLevel ? ` for ${yearLevel} students` : ''} worth exactly ${totalMarks} marks in total.${aims}
 
 Produce 3-5 sections ordered from lower to higher Bloom's demand. Each section states the Bloom's level (one of: ${BLOOMS.join(', ')}), a one-sentence description of what it tests and how it is answered, and its mark allocation. The marks across all sections must sum to exactly ${totalMarks}.
 
@@ -242,8 +336,17 @@ export async function POST(req: NextRequest) {
         const yearLevel = clean(context.yearLevel);
         const weeks = clampInt(context.weeks, MIN_WEEKS, MAX_WEEKS, 12);
         if (!subject) return NextResponse.json({ error: 'subject is required' }, { status: 400 });
-        const result = await runJsonTask(outlinePrompt(subject, yearLevel || 'general', weeks), validateOutline);
+        const existingUnits = bulletList(context.existingUnits, 40, 140);
+        const result = await runJsonTask(
+          outlinePrompt(subject, yearLevel || 'general', weeks, existingUnits),
+          validateOutline,
+        );
         if (!result) return NextResponse.json({ error: PARSE_ERROR }, { status: 422 });
+
+        // Deliberately not force-fitted to the week budget the way marks are.
+        // A course can legitimately hold more lessons than it has weeks, so
+        // pinning each lesson to a whole week would corrupt sensible outlines.
+        // A scheme of work is an estimate; an assessment's mark total is not.
         return NextResponse.json(result);
       }
 
@@ -252,7 +355,15 @@ export async function POST(req: NextRequest) {
         if (!lessonTitle) return NextResponse.json({ error: 'lessonTitle is required' }, { status: 400 });
         const bloom = normaliseBloom(context.bloom);
         const yearLevel = clean(context.yearLevel);
-        const result = await runJsonTask(objectivesPrompt(lessonTitle, bloom, yearLevel), validateObjectives);
+        const result = await runJsonTask(
+          objectivesPrompt(
+            lessonTitle, bloom, yearLevel,
+            clean(context.subject),
+            bulletList(context.siblingLessons, 20, 140),
+            String(context.lessonText ?? '').slice(0, 4000).trim(),
+          ),
+          validateObjectives,
+        );
         if (!result) return NextResponse.json({ error: PARSE_ERROR }, { status: 422 });
         return NextResponse.json(result);
       }
@@ -261,7 +372,11 @@ export async function POST(req: NextRequest) {
         const lessonTitle = clean(context.lessonTitle);
         if (!lessonTitle) return NextResponse.json({ error: 'lessonTitle is required' }, { status: 400 });
         const brief = await runTextTask(
-          briefPrompt(lessonTitle, clean(context.subject), clean(context.yearLevel)),
+          briefPrompt(
+            lessonTitle, clean(context.subject), clean(context.yearLevel),
+            bulletList(context.objectives, 10, 300),
+            bulletList(context.siblingLessons, 20, 140),
+          ),
         );
         if (!brief) return NextResponse.json({ error: PARSE_ERROR }, { status: 422 });
         return NextResponse.json({ brief });
@@ -271,7 +386,9 @@ export async function POST(req: NextRequest) {
         const text = String(context.text ?? '').slice(0, MAX_TEXT).trim();
         if (!text) return NextResponse.json({ error: 'text is required' }, { status: 400 });
         const instruction = clean(context.instruction, MAX_INSTRUCTION) || 'Improve clarity and flow without changing the meaning.';
-        const improved = await runTextTask(improvePrompt(text, instruction));
+        const improved = await runTextTask(
+          improvePrompt(text, instruction, clean(context.subject), clean(context.yearLevel)),
+        );
         if (!improved) return NextResponse.json({ error: PARSE_ERROR }, { status: 422 });
         return NextResponse.json({ text: improved });
       }
@@ -280,8 +397,23 @@ export async function POST(req: NextRequest) {
         const lessonTitle = clean(context.lessonTitle);
         if (!lessonTitle) return NextResponse.json({ error: 'lessonTitle is required' }, { status: 400 });
         const totalMarks = clampInt(context.totalMarks, 1, MAX_MARKS, 40);
-        const result = await runJsonTask(assessmentPrompt(lessonTitle, totalMarks), validateAssessment);
+        const result = await runJsonTask(
+          assessmentPrompt(
+            lessonTitle, totalMarks,
+            bulletList(context.objectives, 10, 300),
+            clean(context.yearLevel),
+          ),
+          validateAssessment,
+        );
         if (!result) return NextResponse.json({ error: PARSE_ERROR }, { status: 422 });
+
+        // The prompt demands the marks sum to the total and the model routinely
+        // misses by a few — an assessment "worth 40" totalling 38 is a defect.
+        const marks = normaliseToTotal(result.sections.map(s => s.marks), totalMarks);
+        // normaliseToTotal drops sections it cannot fund; keep the lists aligned.
+        result.sections = result.sections.slice(0, marks.length);
+        result.sections.forEach((s, i) => { s.marks = marks[i]; });
+
         return NextResponse.json(result);
       }
 

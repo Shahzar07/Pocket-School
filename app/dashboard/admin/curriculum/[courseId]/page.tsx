@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
   getCourse, getModulesWithLessons, updateCourse, createModule, updateUnit,
-  createLesson, updateLesson, deleteLesson, duplicateLesson, getInstitutions,
+  createLesson, updateLesson, deleteLesson, duplicateLesson, deleteUnit, getInstitutions,
   Course, Module, Lesson, AiOutputs, Institution,
 } from '@/lib/db';
 import {
@@ -360,7 +360,17 @@ export default function ContentBuilderPage() {
 
   const suggestObjectives = useCallback(() => runQuill(
     'objectives', 'objectives',
-    d => ({ lessonTitle: d.title, bloom: d.bloomsLevel ?? 'Understand', yearLevel: course?.yearGroup ?? course?.level ?? '' }),
+    d => ({
+      lessonTitle: d.title,
+      bloom: d.bloomsLevel ?? 'Understand',
+      yearLevel: course?.yearGroup ?? course?.level ?? '',
+      subject: course?.subject ?? '',
+      // Where this lesson sits, and what it actually teaches — without these
+      // Quill can only paraphrase the title.
+      siblingLessons: (units.find(u => u.module.id === selUnit)?.lessons ?? [])
+        .filter(l => l.id !== d.id).map(l => l.title),
+      lessonText: d.aiOutputs?.text ?? d.contentSources?.find(s => s.type === 'text')?.value ?? '',
+    }),
     (d, data) => {
       const objectives = Array.isArray(data?.objectives) ? data.objectives : [];
       if (!objectives.length) return null;
@@ -371,30 +381,46 @@ export default function ContentBuilderPage() {
       };
     },
     'Quill suggested objectives',
-  ), [runQuill, course]);
+  ), [runQuill, course, units, selUnit]);
 
   const writeBrief = useCallback(() => runQuill(
     'brief', 'brief',
-    d => ({ lessonTitle: d.title, subject: course?.subject ?? '', yearLevel: course?.yearGroup ?? course?.level ?? '' }),
+    d => ({
+      lessonTitle: d.title,
+      subject: course?.subject ?? '',
+      yearLevel: course?.yearGroup ?? course?.level ?? '',
+      objectives: (d.objectives ?? []).map((o: any) => (typeof o === 'string' ? o : o?.text)),
+      siblingLessons: (units.find(u => u.module.id === selUnit)?.lessons ?? [])
+        .filter(l => l.id !== d.id).map(l => l.title),
+    }),
     (_d, data) => (typeof data?.brief === 'string' && data.brief.trim() ? { briefPrompt: data.brief } : null),
     'Quill wrote the generation brief',
-  ), [runQuill, course]);
+  ), [runQuill, course, units, selUnit]);
 
   const improveText = useCallback((instruction: string) => runQuill(
     'improve', 'improve',
     d => ({
       text: d.aiOutputs?.text ?? d.contentSources?.find(s => s.type === 'text')?.value ?? '',
       instruction,
+      // "Simplify" needs a target reader to be meaningful.
+      subject: course?.subject ?? '',
+      yearLevel: course?.yearGroup ?? course?.level ?? '',
     }),
     (d, data) => (typeof data?.text === 'string' && data.text.trim()
       ? { aiOutputs: { ...(d.aiOutputs ?? {}), text: data.text } }
       : null),
     'Quill rewrote the lesson text',
-  ), [runQuill]);
+  ), [runQuill, course]);
 
   const draftAssessment = useCallback(() => runQuill(
     'assessment', 'assessment',
-    d => ({ lessonTitle: d.title, totalMarks: d.assessmentConfig?.totalMarks ?? d.marks ?? 40 }),
+    d => ({
+      lessonTitle: d.title,
+      totalMarks: d.assessmentConfig?.totalMarks ?? d.marks ?? 40,
+      // Without the objectives the assessment tests the title, not the lesson.
+      objectives: (d.objectives ?? []).map((o: any) => (typeof o === 'string' ? o : o?.text)),
+      yearLevel: course?.yearGroup ?? course?.level ?? '',
+    }),
     (d, data) => {
       const sections = Array.isArray(data?.sections) ? data.sections : [];
       if (!sections.length) return null;
@@ -408,7 +434,7 @@ export default function ContentBuilderPage() {
       };
     },
     'Quill drafted assessment sections',
-  ), [runQuill]);
+  ), [runQuill, course]);
 
   /* ── Status workflow ── */
 
@@ -461,6 +487,18 @@ export default function ContentBuilderPage() {
       await updateUnit(courseId, unit.id, { title: title.trim() });
       load(true);
     } catch (e: any) { toast.error(e?.message || 'Failed.'); }
+  };
+
+  const removeUnit = async (unit: Module, lessonCount: number) => {
+    const detail = lessonCount === 0
+      ? 'It has no lessons yet.'
+      : `This will also delete ${lessonCount} lesson${lessonCount === 1 ? '' : 's'} inside it.`;
+    if (!confirm(`Delete the unit "${unit.title}"?\n\n${detail}\n\nThis cannot be undone.`)) return;
+    try {
+      await deleteUnit(courseId, unit.id);
+      toast.success(`"${unit.title}" deleted.`);
+      await load(true);
+    } catch (e: any) { toast.error(e?.message || 'Failed to delete unit.'); }
   };
 
   const addLesson = async (unitId: string, count: number) => {
@@ -661,6 +699,7 @@ export default function ContentBuilderPage() {
                 onSelect={(lid) => { setSelUnit(u.module.id); setSelLesson(lid); }}
                 onRename={() => renameUnit(u.module)}
                 onAddLesson={() => addLesson(u.module.id, u.lessons.length)}
+                onDeleteUnit={() => removeUnit(u.module, u.lessons.length)}
                 onDeleteLesson={(l) => removeLesson(u.module.id, l)}
                 onDuplicateLesson={(l) => copyLesson(u.module.id, l)}
                 onRenameLesson={(l, title) => renameLesson(u.module.id, l, title)}
@@ -1000,11 +1039,12 @@ function DurationPanel({ draft, patch }: { draft: Lesson; patch: (p: Partial<Les
 /* ── Tree unit ──────────────────────────────────────────────── */
 
 function TreeUnit({
-  unit, lessons, activeLessonId, onSelect, onRename, onAddLesson, onDeleteLesson,
+  unit, lessons, activeLessonId, onSelect, onRename, onAddLesson, onDeleteUnit, onDeleteLesson,
   onDuplicateLesson, onRenameLesson, onAddSubLesson, onReorder,
 }: {
   unit: Module; lessons: Lesson[]; activeLessonId: string | null;
   onSelect: (lessonId: string) => void; onRename: () => void; onAddLesson: () => void;
+  onDeleteUnit: () => void;
   onDeleteLesson: (l: Lesson) => void; onDuplicateLesson: (l: Lesson) => void;
   onRenameLesson: (l: Lesson, title: string) => void;
   onAddSubLesson: (l: Lesson) => void;
@@ -1037,6 +1077,9 @@ function TreeUnit({
         </button>
         <button onClick={onAddLesson} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-muted text-muted-foreground" title="Add lesson">
           <Plus className="w-3 h-3" />
+        </button>
+        <button onClick={onDeleteUnit} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-muted text-muted-foreground hover:text-destructive" title="Delete unit">
+          <Trash2 className="w-3 h-3" />
         </button>
       </div>
       {open && (
