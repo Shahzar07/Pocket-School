@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: '%s · Poket School',
   },
   description:
-    'Adaptive AI learning built around how you think. Ayla tutors you one-to-one; Quill turns any topic into lessons, quizzes, videos and audio across 9 academic pathways.',
+    'Adaptive AI learning built around how you think. Ayla tutors you one-to-one; ET turns any topic into lessons, quizzes, videos and audio across 9 academic pathways.',
   applicationName: 'Poket School',
   keywords: ['IGCSE', 'A Level', 'AI tutor', 'online learning', 'Malaysia', 'SPM', 'Poket School'],
   authors: [{ name: 'Poket Media Sdn Bhd' }],
@@ -32,13 +32,13 @@ export const metadata: Metadata = {
     siteName: 'Poket School',
     title: 'Poket School — AI-Powered Learning',
     description:
-      'Adaptive AI learning built around how you think. Ayla tutors you; Quill builds your study materials.',
+      'Adaptive AI learning built around how you think. Ayla tutors you; ET builds your study materials.',
     locale: 'en_MY',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Poket School — AI-Powered Learning',
-    description: 'Ayla tutors you. Quill builds your study materials.',
+    description: 'Ayla tutors you. ET builds your study materials.',
   },
   robots: { index: true, follow: true },
 };

@@ -42,7 +42,7 @@ const CATEGORIES = [
   { key: 'essential', label: 'Strictly necessary', desc: 'Sign-in, security and session management. Always on — the platform cannot work without them.', locked: true },
   { key: 'functional', label: 'Functional', desc: 'Remembers your language, theme and notification preferences.', locked: false },
   { key: 'analytics', label: 'Analytics', desc: 'Anonymised usage data so we can improve the learning experience.', locked: false },
-  { key: 'aiPerformance', label: 'AI performance', desc: 'Helps us improve Ayla and Quill response quality and personalisation.', locked: false },
+  { key: 'aiPerformance', label: 'AI performance', desc: 'Helps us improve Ayla and ET response quality and personalisation.', locked: false },
 ] as const;
 
 export function CookieConsent() {

@@ -4,7 +4,7 @@ import { ArrowRight, BookOpen, Home, Sparkles, Tag } from 'lucide-react';
 const LINKS = [
   { href: '/', label: 'Back home', desc: 'Start from the top', icon: Home },
   { href: '/courses', label: 'Marketplace', desc: 'Courses & past papers', icon: BookOpen },
-  { href: '/ai-studio', label: 'AI Studio', desc: 'Create with Quill', icon: Sparkles },
+  { href: '/ai-studio', label: 'AI Studio', desc: 'Create with ET', icon: Sparkles },
   { href: '/pricing', label: 'Pricing', desc: 'Plans & Sparks', icon: Tag },
 ];
 

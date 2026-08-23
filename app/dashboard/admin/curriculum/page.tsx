@@ -11,6 +11,8 @@ import {
   Programme, Course,
 } from '@/lib/db';
 import { seedY7ScienceUnit1 } from '@/lib/curriculum-seed';
+import { TierSelector, TierBadge } from '@/components/tier-selector';
+import { detectTier, type TierSelection } from '@/lib/curriculum-tiers';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,6 +41,21 @@ const YEAR_LEVEL_SUGGESTIONS = [
 const MINUTES_PER_WEEK = 300;
 const DEFAULT_BLOCKS = ['objectives', 'video', 'text', 'vocabulary', 'quiz'];
 
+/** Turn a tier selection into the Course fields that store it, falling back to
+ * auto-detection when the admin never touched the selector. */
+function tierFields(
+  sel: TierSelection | null,
+  ctx: { programme?: string; subject?: string; yearLevel?: string; courseTitle?: string },
+) {
+  const resolved = sel ?? detectTier(ctx);
+  return {
+    tier: resolved.tier,
+    tierSubjectType: resolved.subjectType,
+    lawStage: resolved.lawStage,
+    tierAssessmentStyle: resolved.assessmentStyle,
+  };
+}
+
 interface OutlineLesson { title: string; objectives: string[]; durationWeeks: number }
 interface OutlineModule { title: string; description: string; lessons: OutlineLesson[] }
 
@@ -65,6 +82,8 @@ export default function AdminCurriculumPage() {
   const [subjTitle, setSubjTitle] = useState('');
   const [subjSubject, setSubjSubject] = useState('');
   const [subjYear, setSubjYear] = useState('');
+  const [subjTier, setSubjTier] = useState<TierSelection | null>(null);
+  const [subjTierManual, setSubjTierManual] = useState(false);
   const [savingSubject, setSavingSubject] = useState(false);
   const [deletingSubject, setDeletingSubject] = useState<string | null>(null);
 
@@ -73,6 +92,13 @@ export default function AdminCurriculumPage() {
     setSubjTitle(m.title ?? '');
     setSubjSubject(m.subject ?? '');
     setSubjYear(m.yearGroup ?? '');
+    setSubjTier(m.tier ? {
+      tier: m.tier,
+      subjectType: m.tierSubjectType ?? undefined,
+      lawStage: m.lawStage ?? undefined,
+      assessmentStyle: m.tierAssessmentStyle ?? undefined,
+    } : null);
+    setSubjTierManual(Boolean(m.tier));
   };
 
   const handleSaveSubject = async (m: Course) => {
@@ -83,6 +109,9 @@ export default function AdminCurriculumPage() {
         title: subjTitle.trim(),
         subject: subjSubject.trim(),
         yearGroup: subjYear.trim() || undefined,
+        ...tierFields(subjTier, {
+          subject: subjSubject.trim(), yearLevel: subjYear.trim(), courseTitle: subjTitle.trim(),
+        }),
       });
       toast.success('Subject updated.');
       setEditingSubject(null);
@@ -125,8 +154,12 @@ export default function AdminCurriculumPage() {
   const [modYearGroup, setModYearGroup] = useState('Year 7');
   const [modProgrammeId, setModProgrammeId] = useState<string>('');
   const [creatingModule, setCreatingModule] = useState(false);
+  /** Default generation tier for the new subject. Auto-detected from the
+   * Programme / Subject / Year, overridable before the subject is created. */
+  const [modTier, setModTier] = useState<TierSelection | null>(null);
+  const [modTierManual, setModTierManual] = useState(false);
 
-  // AI Course Architect (Quill)
+  // AI Course Architect (ET)
   const [archSubject, setArchSubject] = useState('');
   const [archYear, setArchYear] = useState('Year 7');
   const [archWeeks, setArchWeeks] = useState('12');
@@ -135,6 +168,8 @@ export default function AdminCurriculumPage() {
   const [archDesigning, setArchDesigning] = useState(false);
   const [archCreating, setArchCreating] = useState(false);
   const [archProgress, setArchProgress] = useState<{ done: number; total: number; step: string } | null>(null);
+  const [archTier, setArchTier] = useState<TierSelection | null>(null);
+  const [archTierManual, setArchTierManual] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -177,9 +212,9 @@ export default function AdminCurriculumPage() {
     (n, m) => n + m.lessons.reduce((x, l) => x + (l.durationWeeks || 1), 0), 0
   );
 
-  const designWithQuill = async () => {
+  const designWithET = async () => {
     const subject = archSubject.trim();
-    if (!subject) { toast.error('Enter a subject for Quill to design.'); return; }
+    if (!subject) { toast.error('Enter a subject for ET to design.'); return; }
     const weeks = Math.min(52, Math.max(1, Number(archWeeks) || 12));
 
     // Designing a second copy of a subject that already exists is almost always
@@ -203,21 +238,21 @@ export default function AdminCurriculumPage() {
           task: 'outline',
           context: {
             subject, yearLevel: year, weeks,
-            // Lets Quill continue from what a matching subject already teaches
+            // Lets ET continue from what a matching subject already teaches
             // rather than proposing the same ground again.
             existingUnits: clash ? [clash.title] : [],
           },
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Quill could not design that course.');
+      if (!res.ok) throw new Error(data.error || 'ET could not design that course.');
       const modules: OutlineModule[] = Array.isArray(data.modules) ? data.modules : [];
-      if (!modules.length) throw new Error('Quill returned an empty outline — try again.');
+      if (!modules.length) throw new Error('ET returned an empty outline — try again.');
       setArchOutline(modules);
       setArchTitle(prev => prev.trim() || `${subject}${archYear.trim() ? ` — ${archYear.trim()}` : ''}`);
-      toast.success(`Quill designed ${modules.length} modules.`);
+      toast.success(`ET designed ${modules.length} modules.`);
     } catch (e: any) {
-      toast.error(e?.message || 'Quill request failed.');
+      toast.error(e?.message || 'ET request failed.');
     } finally {
       setArchDesigning(false);
     }
@@ -235,13 +270,17 @@ export default function AdminCurriculumPage() {
     try {
       const courseId = await createCurriculumModule({
         title,
-        description: `${archSubject.trim()} — ${archYear.trim() || 'all levels'} · designed with Quill`,
+        description: `${archSubject.trim()} — ${archYear.trim() || 'all levels'} · designed with ET`,
         subject: archSubject.trim(),
         ownerId: user.uid,
         status: 'draft',
         isPublic: false,
         yearGroup: archYear.trim() || undefined,
         programmeId: modProgrammeId || undefined,
+        ...tierFields(archTier, {
+          programme: programmes.find(p => p.id === modProgrammeId)?.name,
+          subject: archSubject.trim(), yearLevel: archYear.trim(), courseTitle: title,
+        }),
       });
       tick('Subject created');
 
@@ -361,11 +400,17 @@ export default function AdminCurriculumPage() {
         isPublic: false,
         yearGroup: modYearGroup,
         programmeId: modProgrammeId || undefined,
+        ...tierFields(modTier, {
+          programme: programmes.find(p => p.id === modProgrammeId)?.name,
+          subject: modSubject.trim(), yearLevel: modYearGroup, courseTitle: modTitle.trim(),
+        }),
       });
       toast.success('Subject created.');
       setModTitle('');
       setModSubject('');
       setModYearGroup(YEAR_LEVEL_SUGGESTIONS[0]);
+      setModTier(null);
+      setModTierManual(false);
       setShowModuleForm(false);
       await load();
       window.location.href = `/dashboard/admin/curriculum/${courseId}`;
@@ -416,7 +461,7 @@ export default function AdminCurriculumPage() {
             <div className="min-w-0">
               <h2 className="font-bold text-lg leading-tight">AI Course Architect</h2>
               <p className="text-sm text-white/85">
-                Tell Quill the subject, level and length — it designs the whole scheme of work,
+                Tell ET the subject, level and length — it designs the whole scheme of work,
                 module by module, lesson by lesson. Review it, then build it in one click.
               </p>
             </div>
@@ -442,20 +487,35 @@ export default function AdminCurriculumPage() {
                 onChange={e => setArchWeeks(e.target.value)} className="rounded-xl h-10" />
             </div>
             <Button
-              onClick={designWithQuill}
+              onClick={designWithET}
               disabled={archDesigning || archCreating}
               className="rounded-xl h-10 gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white"
             >
               {archDesigning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {archDesigning ? 'Designing…' : 'Design with Quill'}
+              {archDesigning ? 'Designing…' : 'Design with ET'}
             </Button>
+          </div>
+
+          <div className="rounded-xl border border-teal-200 bg-teal-50/40 p-3 max-w-md">
+            <TierSelector
+              scope="Course"
+              value={archTier}
+              overridden={archTierManual}
+              onChange={(sel, manual) => { setArchTier(sel); if (manual) setArchTierManual(true); }}
+              onClearOverride={() => { setArchTierManual(false); setArchTier(null); }}
+              context={{
+                programme: programmes.find(p => p.id === modProgrammeId)?.name,
+                subject: archSubject, yearLevel: archYear, courseTitle: archTitle,
+              }}
+              disabled={archDesigning || archCreating}
+            />
           </div>
 
           {archDesigning && (
             <div className="rounded-xl border border-dashed border-violet-200 bg-violet-50/50 px-4 py-6 text-center">
               <Loader2 className="w-5 h-5 animate-spin mx-auto text-violet-600" />
               <p className="text-sm text-violet-700 font-medium mt-2">
-                Quill is planning {archWeeks || '—'} weeks of {archSubject || 'your subject'}…
+                ET is planning {archWeeks || '—'} weeks of {archSubject || 'your subject'}…
               </p>
               <p className="text-xs text-muted-foreground mt-1">This usually takes 10-30 seconds.</p>
             </div>
@@ -510,7 +570,7 @@ export default function AdminCurriculumPage() {
                     <Label>Subject title (as it will appear in the CMS)</Label>
                     <Input value={archTitle} onChange={e => setArchTitle(e.target.value)} className="rounded-xl h-10" />
                   </div>
-                  <Button variant="outline" className="rounded-xl h-10 gap-2" disabled={archCreating} onClick={designWithQuill}>
+                  <Button variant="outline" className="rounded-xl h-10 gap-2" disabled={archCreating} onClick={designWithET}>
                     <RotateCcw className="w-3.5 h-3.5" /> Redesign
                   </Button>
                   <Button
@@ -539,7 +599,7 @@ export default function AdminCurriculumPage() {
 
                 <p className="text-[11px] text-muted-foreground">
                   Everything is created as a draft — nothing goes live until you publish it in the Content Builder.
-                  Quill drafts still need a human review.
+                  ET drafts still need a human review.
                 </p>
               </motion.div>
             )}
@@ -691,6 +751,21 @@ export default function AdminCurriculumPage() {
                 </Select>
               </div>
             </div>
+            {/* Tier — sets the default field set and output format every lesson
+                in this subject generates from. Each lesson can override it. */}
+            <div className="rounded-xl border border-teal-200 bg-teal-50/40 p-3 max-w-md">
+              <TierSelector
+                scope="Subject"
+                value={modTier}
+                overridden={modTierManual}
+                onChange={(sel, manual) => { setModTier(sel); if (manual) setModTierManual(true); }}
+                onClearOverride={() => { setModTierManual(false); setModTier(null); }}
+                context={{
+                  programme: programmes.find(p => p.id === modProgrammeId)?.name,
+                  subject: modSubject, yearLevel: modYearGroup, courseTitle: modTitle,
+                }}
+              />
+            </div>
             <Button onClick={handleCreateModule} disabled={creatingModule} className="rounded-xl">
               {creatingModule ? 'Creating…' : 'Create Subject'}
             </Button>
@@ -722,6 +797,16 @@ export default function AdminCurriculumPage() {
                         list="year-level-suggestions" className="rounded-xl h-10" />
                     </div>
                   </div>
+                  <div className="rounded-xl border border-teal-200 bg-teal-50/40 p-3 max-w-md">
+                    <TierSelector
+                      scope="Subject"
+                      value={subjTier}
+                      overridden={subjTierManual}
+                      onChange={(sel, manual) => { setSubjTier(sel); if (manual) setSubjTierManual(true); }}
+                      onClearOverride={() => { setSubjTierManual(false); setSubjTier(null); }}
+                      context={{ subject: subjSubject, yearLevel: subjYear, courseTitle: subjTitle }}
+                    />
+                  </div>
                   <div className="flex items-center gap-2">
                     <Button size="sm" className="rounded-xl" disabled={savingSubject} onClick={() => handleSaveSubject(m)}>
                       {savingSubject ? 'Saving…' : 'Save changes'}
@@ -741,6 +826,15 @@ export default function AdminCurriculumPage() {
                     <p className="text-xs text-muted-foreground">{m.subject} · {m.yearGroup ?? '—'}</p>
                   </Link>
                   <div className="flex items-center gap-1 shrink-0">
+                    <TierBadge
+                      selection={{
+                        tier: m.tier ?? detectTier({ subject: m.subject, yearLevel: m.yearGroup, courseTitle: m.title }).tier,
+                        subjectType: m.tierSubjectType ?? undefined,
+                        lawStage: m.lawStage ?? undefined,
+                        assessmentStyle: m.tierAssessmentStyle ?? undefined,
+                      }}
+                      className="hidden sm:inline-block"
+                    />
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${STATUS_BADGE[m.status] ?? STATUS_BADGE.draft}`}>
                       {m.status}
                     </span>

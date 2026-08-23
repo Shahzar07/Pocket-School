@@ -260,7 +260,7 @@ function buildDocumentHtml(title: string, kind: string, markdown: string, forWor
       <div class="ps-kind">${escapeHtml(kind)}</div>
     </div>
     <h1>${escapeHtml(title)}</h1>`;
-  const foot = `<div class="ps-foot">Generated with Quill on Poket School</div>`;
+  const foot = `<div class="ps-foot">Generated with ET on Poket School</div>`;
   const wordNs = forWord
     ? ' xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"'
     : '';

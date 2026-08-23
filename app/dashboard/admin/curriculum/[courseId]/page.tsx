@@ -24,6 +24,12 @@ import {
   AudioBlock, type BlockDef,
 } from '@/components/builder-blocks';
 import { FormatPreview } from '@/components/lesson-format-views';
+import { TierSelector, TierBadge } from '@/components/tier-selector';
+import { LessonPackView } from '@/components/lesson-pack-view';
+import {
+  detectTier, describeSelection, TIER_BY_ID,
+  type TierSelection, type LessonPack,
+} from '@/lib/curriculum-tiers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -94,27 +100,65 @@ const AI_SHORTCUTS: { id: keyof AiOutputs; label: string }[] = [
 
 interface UnitWithLessons { module: Module; lessons: Lesson[] }
 
-async function callGenerate(content: string, format: string, briefPrompt?: string): Promise<unknown> {
+interface GenerateReply {
+  result: unknown;
+  pack?: LessonPack;
+  missingFields?: string[];
+}
+
+/** One generation call. `tier` decides which field schema and output format
+ * the server builds the prompt from — the core mechanic of the whole tier
+ * system. Formats the tiers do not own (quiz, flashcards…) ignore it. */
+async function callGenerate(
+  content: string,
+  format: string,
+  briefPrompt?: string,
+  tier?: TierSelection,
+  meta?: Record<string, unknown>,
+): Promise<GenerateReply> {
   const res = await fetch('/api/ai/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content, format, briefPrompt }),
+    body: JSON.stringify({ content, format, briefPrompt, ...(tier ?? {}), meta }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Generation failed: ${format}`);
-  return data.result;
+  return data as GenerateReply;
 }
 
-/** Quill — the CMS assistant (objectives, briefs, rewrites, assessments). */
-async function callQuill<T>(task: string, context: Record<string, unknown>): Promise<T> {
+/** ET — the CMS assistant (objectives, briefs, rewrites, assessments). */
+async function callET<T>(task: string, context: Record<string, unknown>): Promise<T> {
   const res = await fetch('/api/ai/course-architect', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ task, context }),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'Quill could not complete that request.');
+  if (!res.ok) throw new Error(data.error || 'ET could not complete that request.');
   return data as T;
+}
+
+/* ── Tier resolution ────────────────────────────────────────────
+ * Precedence: the lesson's own override → the chapter's → the subject's
+ * default → what the Programme/Subject/Year auto-detects. Nothing is ever
+ * left unset, so a generation call always carries a complete selection. */
+
+function tierForLesson(
+  lesson: Lesson | null,
+  course: Course | null,
+  unit?: Module | null,
+): TierSelection {
+  const detected = detectTier({
+    subject: course?.subject,
+    yearLevel: course?.yearGroup ?? course?.level,
+    courseTitle: course?.title,
+  });
+  return {
+    tier: lesson?.tier ?? unit?.tier ?? course?.tier ?? detected.tier,
+    subjectType: lesson?.tierSubjectType ?? unit?.tierSubjectType ?? course?.tierSubjectType ?? detected.subjectType,
+    lawStage: lesson?.lawStage ?? unit?.lawStage ?? course?.lawStage ?? detected.lawStage,
+    assessmentStyle: lesson?.tierAssessmentStyle ?? unit?.tierAssessmentStyle ?? course?.tierAssessmentStyle ?? 'checklist',
+  };
 }
 
 /* ── Firestore-safe cloning ─────────────────────────────────────
@@ -212,13 +256,21 @@ export default function ContentBuilderPage() {
   const [rightTab, setRightTab] = useState<'properties' | 'publish' | 'allocate' | 'history'>('properties');
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
   const [aiBusy, setAiBusy] = useState<string | null>(null);
-  const [quillBusy, setQuillBusy] = useState<string | null>(null);
+  const [etBusy, setEtBusy] = useState<string | null>(null);
+  const [createTarget, setCreateTarget] = useState<CreateTarget | null>(null);
+  const [creating, setCreating] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
   const [publishAccepted, setPublishAccepted] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const draftRef = useRef<Lesson | null>(null);
   draftRef.current = draft;
+  // runAi is a stable callback but needs the live subject + unit titles to
+  // build the tier's "lesson to generate" context.
+  const courseRef = useRef<Course | null>(null);
+  courseRef.current = course;
+  const unitsRef = useRef<UnitWithLessons[]>([]);
+  unitsRef.current = units;
 
   const actorName = profile?.name ?? user?.email ?? 'Admin';
 
@@ -316,12 +368,29 @@ export default function ContentBuilderPage() {
         d.contentSources?.find(s => s.type === 'text')?.value?.trim() ||
         (d.aiOutputs?.text ?? '') || d.title;
       const brief = [d.briefPrompt, extraBrief].filter(Boolean).join('\n');
-      const result = await callGenerate(content, format, brief || undefined);
-      const aiOutputs = { ...(d.aiOutputs ?? {}), [format]: result };
+      const unit = unitsRef.current.find(u => u.module.id === selUnit)?.module ?? null;
+      const tier = tierForLesson(d, courseRef.current, unit);
+      const unitTitle = unit?.title;
+      const reply = await callGenerate(content, format, brief || undefined, tier, {
+        subject: courseRef.current?.subject ?? courseRef.current?.title,
+        yearLevel: courseRef.current?.yearGroup ?? courseRef.current?.level,
+        unit: unitTitle,
+        topic: d.title,
+        generateLevel: 'lesson',
+      });
+      const aiOutputs = { ...(d.aiOutputs ?? {}), [format]: reply.result };
       const next = { ...d, aiOutputs } as Lesson;
+      // A tiered lesson also stores its parsed field set, so the CMS and the
+      // student view can render Key Case Law / Mock Exam / Checklist properly
+      // instead of one undifferentiated wall of markdown.
+      if (format === 'text' && reply.pack) next.lessonPack = reply.pack;
       setDraft(next);
-      await persistDraft(next, `AI generated: ${format}`);
-      toast.success(`${format} generated.`);
+      await persistDraft(next, `AI generated: ${format} (${describeSelection(tier)})`);
+      if (reply.missingFields?.length) {
+        toast.warning(`Generated, but these fields came back empty: ${reply.missingFields.join(', ')}.`);
+      } else {
+        toast.success(`${format} generated.`);
+      }
     } catch (e: any) {
       toast.error(e?.message || `Failed to generate ${format}.`);
     } finally {
@@ -329,11 +398,11 @@ export default function ContentBuilderPage() {
     }
   }, [selUnit, persistDraft]);
 
-  /* ── Quill assistance ── */
+  /* ── ET assistance ── */
 
-  /** Runs a Quill task against the selected lesson and persists the patch it
+  /** Runs a ET task against the selected lesson and persists the patch it
    * produces, adding an audit-trail entry for the action. */
-  const runQuill = useCallback(async (
+  const runET = useCallback(async (
     key: string,
     task: string,
     buildContext: (d: Lesson) => Record<string, unknown>,
@@ -342,23 +411,23 @@ export default function ContentBuilderPage() {
   ) => {
     const d = draftRef.current;
     if (!d || !selUnit) return;
-    setQuillBusy(key);
+    setEtBusy(key);
     try {
-      const data = await callQuill<any>(task, buildContext(d));
+      const data = await callET<any>(task, buildContext(d));
       const patch = apply(d, data);
-      if (!patch) { toast.error('Quill returned nothing usable — try again.'); return; }
+      if (!patch) { toast.error('ET returned nothing usable — try again.'); return; }
       const next = { ...d, ...patch } as Lesson;
       setDraft(next);
       await persistDraft(next, historyLabel);
       toast.success(historyLabel);
     } catch (e: any) {
-      toast.error(e?.message || 'Quill request failed.');
+      toast.error(e?.message || 'ET request failed.');
     } finally {
-      setQuillBusy(null);
+      setEtBusy(null);
     }
   }, [selUnit, persistDraft]);
 
-  const suggestObjectives = useCallback(() => runQuill(
+  const suggestObjectives = useCallback(() => runET(
     'objectives', 'objectives',
     d => ({
       lessonTitle: d.title,
@@ -366,7 +435,7 @@ export default function ContentBuilderPage() {
       yearLevel: course?.yearGroup ?? course?.level ?? '',
       subject: course?.subject ?? '',
       // Where this lesson sits, and what it actually teaches — without these
-      // Quill can only paraphrase the title.
+      // ET can only paraphrase the title.
       siblingLessons: (units.find(u => u.module.id === selUnit)?.lessons ?? [])
         .filter(l => l.id !== d.id).map(l => l.title),
       lessonText: d.aiOutputs?.text ?? d.contentSources?.find(s => s.type === 'text')?.value ?? '',
@@ -380,10 +449,10 @@ export default function ContentBuilderPage() {
         blocksOrder: blocks.includes('objectives') ? blocks : ['objectives', ...blocks],
       };
     },
-    'Quill suggested objectives',
-  ), [runQuill, course, units, selUnit]);
+    'ET suggested objectives',
+  ), [runET, course, units, selUnit]);
 
-  const writeBrief = useCallback(() => runQuill(
+  const writeBrief = useCallback(() => runET(
     'brief', 'brief',
     d => ({
       lessonTitle: d.title,
@@ -394,10 +463,10 @@ export default function ContentBuilderPage() {
         .filter(l => l.id !== d.id).map(l => l.title),
     }),
     (_d, data) => (typeof data?.brief === 'string' && data.brief.trim() ? { briefPrompt: data.brief } : null),
-    'Quill wrote the generation brief',
-  ), [runQuill, course, units, selUnit]);
+    'ET wrote the generation brief',
+  ), [runET, course, units, selUnit]);
 
-  const improveText = useCallback((instruction: string) => runQuill(
+  const improveText = useCallback((instruction: string) => runET(
     'improve', 'improve',
     d => ({
       text: d.aiOutputs?.text ?? d.contentSources?.find(s => s.type === 'text')?.value ?? '',
@@ -409,10 +478,10 @@ export default function ContentBuilderPage() {
     (d, data) => (typeof data?.text === 'string' && data.text.trim()
       ? { aiOutputs: { ...(d.aiOutputs ?? {}), text: data.text } }
       : null),
-    'Quill rewrote the lesson text',
-  ), [runQuill, course]);
+    'ET rewrote the lesson text',
+  ), [runET, course]);
 
-  const draftAssessment = useCallback(() => runQuill(
+  const draftAssessment = useCallback(() => runET(
     'assessment', 'assessment',
     d => ({
       lessonTitle: d.title,
@@ -433,8 +502,8 @@ export default function ContentBuilderPage() {
         },
       };
     },
-    'Quill drafted assessment sections',
-  ), [runQuill, course]);
+    'ET drafted assessment sections',
+  ), [runET, course]);
 
   /* ── Status workflow ── */
 
@@ -467,18 +536,16 @@ export default function ContentBuilderPage() {
 
   /* ── Tree actions ── */
 
-  const addUnit = async () => {
-    const title = window.prompt('New module (chapter) title:');
-    if (!title?.trim()) return;
-    try {
-      await createModule(courseId, {
-        title: title.trim(), courseId, order: units.length + 1,
-        unitNumber: units.length + 1, masteryThreshold: 70,
-      });
-      toast.success('Module created.');
-      load(true);
-    } catch (e: any) { toast.error(e?.message || 'Failed.'); }
-  };
+  const tierPatch = (sel: TierSelection | null) => sel ? {
+    tier: sel.tier, tierSubjectType: sel.subjectType,
+    lawStage: sel.lawStage, tierAssessmentStyle: sel.assessmentStyle,
+  } : {};
+
+  const addUnit = () => setCreateTarget({
+    kind: 'chapter',
+    inherited: tierForLesson(null, course, null),
+    inheritedFrom: 'the subject',
+  });
 
   const renameUnit = async (unit: Module) => {
     const title = window.prompt('Rename module:', unit.title);
@@ -501,19 +568,13 @@ export default function ContentBuilderPage() {
     } catch (e: any) { toast.error(e?.message || 'Failed to delete unit.'); }
   };
 
-  const addLesson = async (unitId: string, count: number) => {
-    const title = window.prompt('New lesson title:');
-    if (!title?.trim()) return;
-    try {
-      const id = await createLesson(courseId, unitId, {
-        title: title.trim(), moduleId: unitId, courseId,
-        order: count + 1, lessonNumber: count + 1, status: 'draft',
-        lessonType: 'lesson', blocksOrder: DEFAULT_BLOCKS,
-      });
-      await load(true);
-      setSelUnit(unitId);
-      setSelLesson(id);
-    } catch (e: any) { toast.error(e?.message || 'Failed.'); }
+  const addLesson = (unitId: string, count: number) => {
+    const unit = units.find(u => u.module.id === unitId)?.module ?? null;
+    setCreateTarget({
+      kind: 'lesson', unitId, count,
+      inherited: tierForLesson(null, course, unit),
+      inheritedFrom: unit?.tier ? `the chapter “${unit.title}”` : 'the subject',
+    });
   };
 
   /** Inline rename from the course tree. */
@@ -530,25 +591,68 @@ export default function ContentBuilderPage() {
   };
 
   /** Creates a nested lesson numbered off its parent, e.g. L1 → L1.1. */
-  const addSubLesson = async (unitId: string, parent: Lesson, lessons: Lesson[]) => {
-    const title = window.prompt(`New sub-lesson under “${parent.title}”:`);
-    if (!title?.trim()) return;
-    const parentIdx = lessons.findIndex(l => l.id === parent.id);
-    const top = Math.floor(parent.lessonNumber ?? parentIdx + 1) || parentIdx + 1;
-    const siblings = lessons.filter(l => isSubLesson(l) && Math.floor(l.lessonNumber ?? 0) === top);
-    const subIndex = siblings.length + 1;
+  const addSubLesson = (unitId: string, parent: Lesson, lessons: Lesson[]) => {
+    const unit = units.find(u => u.module.id === unitId)?.module ?? null;
+    setCreateTarget({
+      kind: 'sublesson', unitId, parent, lessons,
+      inherited: tierForLesson(null, course, unit),
+      inheritedFrom: unit?.tier ? `the chapter “${unit.title}”` : 'the subject',
+    });
+  };
+
+  /** Runs the create the dialog collected: chapter, lesson or sub-lesson. */
+  const runCreate = async (title: string, tier: TierSelection | null) => {
+    const t = createTarget;
+    if (!t) return;
+    setCreating(true);
     try {
-      const id = await createLesson(courseId, unitId, {
-        title: title.trim(), moduleId: unitId, courseId,
-        order: (parent.order ?? parentIdx + 1) + subIndex / 100,
-        lessonNumber: Number((top + subIndex / (subIndex < 10 ? 10 : 100)).toFixed(2)),
-        status: 'draft', lessonType: 'lesson', blocksOrder: DEFAULT_BLOCKS,
-      });
+      if (t.kind === 'chapter') {
+        await createModule(courseId, {
+          title, courseId, order: units.length + 1,
+          unitNumber: units.length + 1, masteryThreshold: 70,
+          ...tierPatch(tier),
+        });
+        setCreateTarget(null);
+        await load(true);
+        toast.success('Chapter created.');
+        return;
+      }
+
+      const unitId = t.unitId!;
+      const base = {
+        title, moduleId: unitId, courseId, status: 'draft' as const,
+        lessonType: 'lesson' as const, blocksOrder: DEFAULT_BLOCKS,
+        ...tierPatch(tier),
+      };
+
+      let id: string;
+      if (t.kind === 'sublesson') {
+        const lessons = t.lessons ?? [];
+        const parent = t.parent!;
+        const parentIdx = lessons.findIndex(l => l.id === parent.id);
+        const top = Math.floor(parent.lessonNumber ?? parentIdx + 1) || parentIdx + 1;
+        const siblings = lessons.filter(l => isSubLesson(l) && Math.floor(l.lessonNumber ?? 0) === top);
+        const subIndex = siblings.length + 1;
+        id = await createLesson(courseId, unitId, {
+          ...base,
+          order: (parent.order ?? parentIdx + 1) + subIndex / 100,
+          lessonNumber: Number((top + subIndex / (subIndex < 10 ? 10 : 100)).toFixed(2)),
+        });
+      } else {
+        const count = t.count ?? 0;
+        id = await createLesson(courseId, unitId, { ...base, order: count + 1, lessonNumber: count + 1 });
+      }
+
+      setCreateTarget(null);
       await load(true);
       setSelUnit(unitId);
       setSelLesson(id);
-      toast.success('Sub-lesson created.');
-    } catch (e: any) { toast.error(e?.message || 'Failed.'); }
+      toast.success(t.kind === 'sublesson' ? 'Sub-lesson created.' : 'Lesson created.');
+    } catch (e: any) {
+      toast.error(e?.message || 'Could not create that.');
+    } finally {
+      setCreating(false);
+    }
   };
 
   /** Drag-and-drop reordering inside one unit — rewrites order + lessonNumber. */
@@ -615,6 +719,65 @@ export default function ContentBuilderPage() {
     () => draft?.blocksOrder?.length ? draft.blocksOrder : DEFAULT_BLOCKS,
     [draft?.blocksOrder]
   );
+
+  /* ── Tier ── */
+
+  const selectedUnit = useMemo(
+    () => units.find(u => u.module.id === selUnit)?.module ?? null,
+    [units, selUnit],
+  );
+  const lessonTier = useMemo(
+    () => tierForLesson(draft, course, selectedUnit),
+    [draft, course, selectedUnit],
+  );
+  const chapterTier = useMemo(
+    () => tierForLesson(null, course, selectedUnit),
+    [course, selectedUnit],
+  );
+  /** A lesson is "overridden" only once an admin has set its own tier. */
+  const tierOverridden = Boolean(draft?.tier);
+
+  const setLessonTier = useCallback((sel: TierSelection, manual: boolean) => {
+    if (!manual) return; // auto-detect drives the subject default, not the lesson
+    patchDraft({
+      tier: sel.tier,
+      tierSubjectType: sel.subjectType,
+      lawStage: sel.lawStage,
+      tierAssessmentStyle: sel.assessmentStyle,
+    });
+  }, [patchDraft]);
+
+  const clearLessonTier = useCallback(() => {
+    patchDraft({
+      tier: null, tierSubjectType: null,
+      lawStage: null, tierAssessmentStyle: null,
+    });
+  }, [patchDraft]);
+
+  /** Chapter (unit) tier — the default every lesson inside it inherits. */
+  const patchUnitTier = useCallback(async (patch: Partial<Module>, msg: string) => {
+    if (!selUnit) return;
+    try {
+      await updateUnit(courseId, selUnit, patch);
+      setUnits(prev => prev.map(u => u.module.id !== selUnit ? u : { ...u, module: { ...u.module, ...patch } }));
+      toast.success(msg);
+    } catch (e: any) { toast.error(e?.message || 'Failed to update the chapter tier.'); }
+  }, [courseId, selUnit]);
+
+  const setChapterTier = useCallback((sel: TierSelection, manual: boolean) => {
+    if (!manual) return;
+    patchUnitTier({
+      tier: sel.tier, tierSubjectType: sel.subjectType,
+      lawStage: sel.lawStage, tierAssessmentStyle: sel.assessmentStyle,
+    }, `Chapter set to ${describeSelection(sel)}.`);
+  }, [patchUnitTier]);
+
+  const clearChapterTier = useCallback(() => {
+    patchUnitTier(
+      { tier: null, tierSubjectType: null, lawStage: null, tierAssessmentStyle: null },
+      'Chapter now inherits the subject tier.',
+    );
+  }, [patchUnitTier]);
 
   /* ── Render ── */
 
@@ -758,22 +921,48 @@ export default function ContentBuilderPage() {
                   <span className={`ml-auto text-[10px] font-bold px-2 py-1 rounded-full border ${statusCard.bg}`}>{statusCard.label}</span>
                 </div>
 
-                {/* Quill assist bar */}
+                {/* Tier — decides the field set and output format every AI
+                    generation on this lesson uses. */}
+                <div className="rounded-xl border border-teal-200 bg-teal-50/40 px-3 py-2.5">
+                  <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,240px)] items-start">
+                    <TierSelector
+                      scope="Lesson"
+                      value={lessonTier}
+                      overridden={tierOverridden}
+                      onChange={setLessonTier}
+                      onClearOverride={clearLessonTier}
+                      context={{
+                        subject: course.subject,
+                        yearLevel: course.yearGroup ?? course.level,
+                        courseTitle: course.title,
+                      }}
+                    />
+                    <div className="text-[10px] leading-snug text-muted-foreground sm:pt-6">
+                      Generating Lesson Text or Study Notes uses this tier&rsquo;s field set:
+                      <span className="font-semibold text-foreground"> {TIER_BY_ID[lessonTier.tier].blurb}</span>
+                      {!tierOverridden && course.tier && (
+                        <span className="block mt-1">Inherited from the subject default.</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ET assist bar */}
                 <div className="flex flex-wrap items-center gap-2 rounded-xl border border-violet-200 bg-violet-50/60 px-3 py-2">
                   <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-violet-700">
-                    <Sparkles className="w-3.5 h-3.5" /> Quill
+                    <Sparkles className="w-3.5 h-3.5" /> ET
                   </span>
                   <Button size="sm" variant="outline" className="rounded-xl h-7 text-[11px] gap-1.5 bg-card border-violet-200 text-violet-700 hover:bg-violet-100"
-                    disabled={quillBusy !== null} onClick={suggestObjectives}>
-                    {quillBusy === 'objectives' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                    disabled={etBusy !== null} onClick={suggestObjectives}>
+                    {etBusy === 'objectives' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                     Suggest objectives
                   </Button>
                   <Button size="sm" variant="outline" className="rounded-xl h-7 text-[11px] gap-1.5 bg-card border-violet-200 text-violet-700 hover:bg-violet-100"
-                    disabled={quillBusy !== null} onClick={writeBrief}>
-                    {quillBusy === 'brief' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                    disabled={etBusy !== null} onClick={writeBrief}>
+                    {etBusy === 'brief' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                     Write generation brief
                   </Button>
-                  <span className="text-[10px] text-violet-700/70">Quill drafts — always review before publishing.</span>
+                  <span className="text-[10px] text-violet-700/70">ET drafts — always review before publishing.</span>
                 </div>
 
                 {draft.briefPrompt && (
@@ -822,7 +1011,7 @@ export default function ContentBuilderPage() {
                       patch={patchDraft}
                       ai={runAi}
                       aiBusy={aiBusy}
-                      quillBusy={quillBusy}
+                      etBusy={etBusy}
                       onSuggestObjectives={suggestObjectives}
                       onImproveText={improveText}
                       onDraftAssessment={draftAssessment}
@@ -831,6 +1020,24 @@ export default function ContentBuilderPage() {
                   </div>
                 ))}
               </AnimatePresence>
+
+              {/* Structured preview of the last tiered generation — this is
+                  what the student actually sees. */}
+              {draft.lessonPack && (
+                <details className="rounded-2xl border border-border bg-card overflow-hidden" open>
+                  <summary className="flex items-center gap-2 cursor-pointer select-none px-4 py-3 border-b border-border/60">
+                    <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                      Generated lesson
+                    </span>
+                    <TierBadge selection={draft.lessonPack} />
+                    <span className="flex-1" />
+                    <span className="text-[10px] text-muted-foreground">Student view</span>
+                  </summary>
+                  <div className="px-4 py-5">
+                    <LessonPackView pack={draft.lessonPack} />
+                  </div>
+                </details>
+              )}
 
               {/* Add-block palette */}
               <div className="rounded-2xl border border-dashed border-border p-4">
@@ -873,10 +1080,31 @@ export default function ContentBuilderPage() {
             ))}
           </div>
           <div className="p-4 space-y-5 text-sm">
+            {rightTab === 'properties' && selectedUnit && (
+              <div className="rounded-xl border border-teal-200 bg-teal-50/40 p-3">
+                <TierSelector
+                  scope="Chapter"
+                  compact
+                  value={chapterTier}
+                  overridden={Boolean(selectedUnit.tier)}
+                  onChange={setChapterTier}
+                  onClearOverride={clearChapterTier}
+                  context={{
+                    subject: course.subject,
+                    yearLevel: course.yearGroup ?? course.level,
+                    courseTitle: course.title,
+                  }}
+                />
+                <p className="mt-2 text-[10px] text-muted-foreground leading-snug">
+                  Applies to <span className="font-semibold text-foreground">{selectedUnit.title}</span> and
+                  every lesson in it that has not set its own tier.
+                </p>
+              </div>
+            )}
             {rightTab === 'properties' && draft && (
               <PropertiesTab
                 draft={draft} patch={patchDraft} ai={runAi} aiBusy={aiBusy}
-                quillBusy={quillBusy}
+                etBusy={etBusy}
                 onSuggestObjectives={suggestObjectives}
                 onWriteBrief={writeBrief}
                 onImproveText={improveText}
@@ -902,6 +1130,19 @@ export default function ContentBuilderPage() {
       </div>
 
       {/* ── Publish responsibility confirmation ── */}
+      {/* Create chapter / lesson — title + Tier in one step. */}
+      <AnimatePresence>
+        {createTarget && (
+          <CreateDialog
+            target={createTarget}
+            course={course}
+            busy={creating}
+            onCancel={() => { if (!creating) setCreateTarget(null); }}
+            onCreate={runCreate}
+          />
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {publishOpen && (
           <motion.div
@@ -1038,6 +1279,108 @@ function DurationPanel({ draft, patch }: { draft: Lesson; patch: (p: Partial<Les
 
 /* ── Tree unit ──────────────────────────────────────────────── */
 
+/* ── Create dialog ──────────────────────────────────────────────
+ * Replaces window.prompt for new chapters and lessons: an admin names the
+ * item and picks its Tier in one step, instead of creating it blind and
+ * hunting for the tier afterwards. */
+
+interface CreateTarget {
+  kind: 'chapter' | 'lesson' | 'sublesson';
+  unitId?: string;
+  parent?: Lesson;
+  lessons?: Lesson[];
+  count?: number;
+  /** The tier this item would inherit if the admin does not override it. */
+  inherited: TierSelection;
+  inheritedFrom: string;
+}
+
+function CreateDialog({
+  target, course, busy, onCancel, onCreate,
+}: {
+  target: CreateTarget;
+  course: Course;
+  busy: boolean;
+  onCancel: () => void;
+  onCreate: (title: string, tier: TierSelection | null) => void;
+}) {
+  const [title, setTitle] = useState('');
+  const [tier, setTier] = useState<TierSelection | null>(null);
+  const [manual, setManual] = useState(false);
+
+  const heading =
+    target.kind === 'chapter' ? 'New chapter'
+      : target.kind === 'sublesson' ? `New sub-lesson under “${target.parent?.title}”`
+        : 'New lesson';
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur-sm p-4"
+      onClick={onCancel}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+        onClick={e => e.stopPropagation()}
+        className="w-full max-w-md rounded-2xl border border-border bg-card shadow-xl overflow-hidden"
+      >
+        <header className="flex items-center gap-2 px-5 py-3.5 border-b border-border">
+          <h3 className="font-heading text-base font-bold">{heading}</h3>
+          <span className="flex-1" />
+          <button onClick={onCancel} className="p-1 rounded-lg text-muted-foreground hover:bg-muted">
+            <X className="w-4 h-4" />
+          </button>
+        </header>
+
+        <div className="px-5 py-4 space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+              Title
+            </label>
+            <Input
+              autoFocus
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && title.trim() && !busy) onCreate(title.trim(), manual ? tier : null); }}
+              placeholder={target.kind === 'chapter' ? 'e.g. Unit 3: Formation of Contract' : 'e.g. Consideration and its limits'}
+              className="rounded-xl h-10"
+            />
+          </div>
+
+          <div className="rounded-xl border border-teal-200 bg-teal-50/40 p-3">
+            <TierSelector
+              scope={target.kind === 'chapter' ? 'Chapter' : 'Lesson'}
+              value={manual ? tier : target.inherited}
+              overridden={manual}
+              onChange={(sel, isManual) => { if (isManual) { setTier(sel); setManual(true); } }}
+              onClearOverride={() => { setManual(false); setTier(null); }}
+              context={{
+                subject: course.subject,
+                yearLevel: course.yearGroup ?? course.level,
+                courseTitle: course.title,
+              }}
+            />
+            {!manual && (
+              <p className="mt-2 text-[10px] text-muted-foreground">
+                Inherited from {target.inheritedFrom}. Change it here to override just this item.
+              </p>
+            )}
+          </div>
+        </div>
+
+        <footer className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border bg-muted/30">
+          <Button variant="ghost" className="rounded-xl h-9" onClick={onCancel} disabled={busy}>Cancel</Button>
+          <Button
+            className="rounded-xl h-9 gap-1.5"
+            disabled={!title.trim() || busy}
+            onClick={() => onCreate(title.trim(), manual ? tier : null)}
+          >
+            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+            Create
+          </Button>
+        </footer>
+      </motion.div>
+    </div>
+  );
+}
+
 function TreeUnit({
   unit, lessons, activeLessonId, onSelect, onRename, onAddLesson, onDeleteUnit, onDeleteLesson,
   onDuplicateLesson, onRenameLesson, onAddSubLesson, onReorder,
@@ -1167,7 +1510,7 @@ function TreeUnit({
 
 function BuilderBlock({
   blockId, draft, selected, onSelect, onDelete, onMoveUp, onMoveDown, patch, ai, aiBusy,
-  quillBusy, onSuggestObjectives, onImproveText, onDraftAssessment,
+  etBusy, onSuggestObjectives, onImproveText, onDraftAssessment,
 }: {
   blockId: string; draft: Lesson; selected: boolean;
   onSelect: () => void; onDelete: () => void;
@@ -1175,7 +1518,7 @@ function BuilderBlock({
   patch: (p: Partial<Lesson>) => void;
   ai: (format: string, extraBrief?: string) => Promise<void>;
   aiBusy: string | null;
-  quillBusy: string | null;
+  etBusy: string | null;
   onSuggestObjectives: () => void;
   onImproveText: (instruction: string) => void;
   onDraftAssessment: () => void;
@@ -1200,7 +1543,7 @@ function BuilderBlock({
           value={draft.objectives ?? []}
           onChange={v => patch({ objectives: v })}
           onSuggest={onSuggestObjectives}
-          suggesting={quillBusy === 'objectives'}
+          suggesting={etBusy === 'objectives'}
         />
       );
     case 'video':
@@ -1223,7 +1566,7 @@ function BuilderBlock({
           ai={ai}
           generating={aiBusy === 'text'}
           onImprove={onImproveText}
-          improving={quillBusy === 'improve'}
+          improving={etBusy === 'improve'}
         />
       );
     case 'vocabulary':
@@ -1267,7 +1610,7 @@ function BuilderBlock({
           ai={ai}
           generating={aiBusy === 'quiz'}
           onDraftSections={onDraftAssessment}
-          draftingSections={quillBusy === 'assessment'}
+          draftingSections={etBusy === 'assessment'}
         />
       );
     case 'audio':
@@ -1302,12 +1645,12 @@ function BuilderBlock({
 /* ── Right tabs ─────────────────────────────────────────────── */
 
 function PropertiesTab({
-  draft, patch, ai, aiBusy, quillBusy,
+  draft, patch, ai, aiBusy, etBusy,
   onSuggestObjectives, onWriteBrief, onImproveText, onDraftAssessment,
 }: {
   draft: Lesson; patch: (p: Partial<Lesson>) => void;
   ai: (f: string) => Promise<void>; aiBusy: string | null;
-  quillBusy: string | null;
+  etBusy: string | null;
   onSuggestObjectives: () => void;
   onWriteBrief: () => void;
   onImproveText: (instruction: string) => void;
@@ -1319,7 +1662,7 @@ function PropertiesTab({
   const outputs = draft.aiOutputs ?? {};
   const hasText = !!(outputs.text ?? '').trim();
 
-  const quillActions: { id: string; label: string; run: () => void; disabled?: boolean }[] = [
+  const etActions: { id: string; label: string; run: () => void; disabled?: boolean }[] = [
     { id: 'objectives', label: 'Suggest objectives', run: onSuggestObjectives },
     { id: 'brief', label: 'Write generation brief', run: onWriteBrief },
     {
@@ -1333,24 +1676,24 @@ function PropertiesTab({
     <>
       <section className="space-y-2">
         <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-violet-700">
-          <Sparkles className="w-3 h-3" /> AI assist (Quill)
+          <Sparkles className="w-3 h-3" /> AI assist (ET)
         </p>
         <div className="space-y-1.5">
-          {quillActions.map(a => (
+          {etActions.map(a => (
             <button
               key={a.id}
               onClick={a.run}
-              disabled={quillBusy !== null || a.disabled}
+              disabled={etBusy !== null || a.disabled}
               title={a.disabled ? 'Add or generate lesson text first' : undefined}
               className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl border text-[11px] font-semibold text-left transition-colors border-violet-200 text-violet-700 hover:bg-violet-50 disabled:opacity-45 disabled:hover:bg-transparent"
             >
-              {quillBusy === a.id ? <Loader2 className="w-3 h-3 animate-spin shrink-0" /> : <Sparkles className="w-3 h-3 shrink-0" />}
+              {etBusy === a.id ? <Loader2 className="w-3 h-3 animate-spin shrink-0" /> : <Sparkles className="w-3 h-3 shrink-0" />}
               <span className="truncate">{a.label}</span>
             </button>
           ))}
         </div>
         <p className="text-[10px] text-muted-foreground">
-          Quill writes drafts into this lesson — review everything before you publish.
+          ET writes drafts into this lesson — review everything before you publish.
         </p>
       </section>
 
@@ -1594,7 +1937,7 @@ function HistoryTab({ draft }: { draft: Lesson }) {
     <>
       <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Content audit log</p>
       {entries.length === 0 && (
-        <p className="text-xs text-muted-foreground">No history yet — edits, saves, Quill assists and publish actions will appear here with the name of whoever made them.</p>
+        <p className="text-xs text-muted-foreground">No history yet — edits, saves, ET assists and publish actions will appear here with the name of whoever made them.</p>
       )}
       <div className="space-y-3">
         {entries.map((h, i) => (

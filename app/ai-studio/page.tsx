@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * AI Studio — Quill.
- * A Claude-style conversational studio: one thread where Quill both tutors
+ * AI Studio — ET.
+ * A Claude-style conversational studio: one thread where ET both tutors
  * (Socratic chat) and generates any of the 12 study formats as rich turns.
  * Warm charcoal palette, skills composer, session recents, persistent library.
  */
@@ -11,6 +11,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
+import { detectTier, detectSubjectType, type TierSelection } from '@/lib/curriculum-tiers';
 import { MathMarkdown } from '@/components/math-markdown';
 import { readLanguage } from '@/lib/languages';
 import {
@@ -48,6 +49,17 @@ const FORMATS: { id: FormatId; label: string; desc: string; icon: React.ReactNod
   { id: 'videoScript', label: 'Video', desc: 'Playable video lesson', icon: <Video className="w-4 h-4" /> },
   { id: 'audioScript', label: 'Audio', desc: 'AI-voiced summary', icon: <Headphones className="w-4 h-4" /> },
 ];
+
+/** AI Studio levels map onto the same four generation tiers the Curriculum
+ * CMS uses, so a lesson made here has the same shape as one made there. */
+const TIER_FOR_LEVEL: Record<string, TierSelection> = {
+  'IGCSE / GCSE / O-Levels': { tier: 'tier1' },
+  'School / K-12': { tier: 'tier1' },
+  'A Level / Pre-University': { tier: 'tier2', subjectType: 'essay' },
+  'Foundation': { tier: 'tier2', subjectType: 'essay' },
+  'LLB': { tier: 'tier4', lawStage: 'llb' },
+  'Micro Degree': { tier: 'tier3', assessmentStyle: 'checklist' },
+};
 
 const LEVELS = [
   'IGCSE / GCSE / O-Levels',
@@ -97,7 +109,7 @@ const C = {
   accentInk: '#1A1918',
 };
 
-/* Rotating status lines Quill shows while working. */
+/* Rotating status lines ET shows while working. */
 const THINKING_PHRASES = [
   'Searching and thinking the best solutions for you…',
   'Good question — connecting the dots…',
@@ -105,7 +117,7 @@ const THINKING_PHRASES = [
   'Almost there — sharpening the answer…',
 ];
 const CREATING_PHRASES = [
-  'Welcome, future champ — Quill is on it ✨',
+  'Welcome, future champ — ET is on it ✨',
   'Searching and thinking the best solutions for you…',
   'Good idea — there you got! Drafting it now…',
   'Sketching the big picture…',
@@ -222,10 +234,23 @@ export default function AiStudio() {
   const runGeneration = async (chatId: number, format: FormatId, topic: string) => {
     const lang = readLanguage();
     const prompt = `Topic: ${topic}\nSubject: ${subject || 'general'}\nLevel: ${level}`;
+    // Lesson text and study notes follow the tier's field set and output
+    // format. Law always routes to Tier 4 whatever level is selected, so a
+    // Law topic gets real Key Case Law rather than generic prose.
+    const detected = detectTier({ subject, yearLevel: level });
+    const tier: TierSelection = detected.tier === 'tier4'
+      ? detected
+      : (TIER_FOR_LEVEL[level] ?? detected);
+    if (tier.tier === 'tier2' && !tier.subjectType) tier.subjectType = detectSubjectType(subject);
+
     const res = await fetch('/api/ai/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: prompt, format, language: lang !== 'en' ? lang : undefined }),
+      body: JSON.stringify({
+        content: prompt, format, language: lang !== 'en' ? lang : undefined,
+        ...tier,
+        meta: { subject: subject || undefined, yearLevel: level, topic, generateLevel: 'lesson' },
+      }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -250,7 +275,7 @@ export default function AiStudio() {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || `Quill hit an error (${res.status})`);
+      throw new Error(err.error || `ET hit an error (${res.status})`);
     }
     const data = await res.json();
     pushTurns(chatId, { kind: 'chat', text: data.reply || '…' });
@@ -359,10 +384,10 @@ export default function AiStudio() {
           </motion.div>
 
           <h1 className="font-heading text-3xl sm:text-4xl leading-tight mb-3">
-            Sign in to meet <span style={{ color: C.accent }}>Quill</span>
+            Sign in to meet <span style={{ color: C.accent }}>ET</span>
           </h1>
           <p className={`${C.dim} text-[15px] leading-relaxed mb-7`}>
-            Quill turns any topic into lessons, quizzes, flashcards, mind maps, narrated video and
+            ET turns any topic into lessons, quizzes, flashcards, mind maps, narrated video and
             audio — and saves everything to your personal library. Create a free account to start.
           </p>
 
@@ -414,7 +439,7 @@ export default function AiStudio() {
               <Asterisk className="w-5 h-5 text-[#1A1918]" />
             </div>
             <div>
-              <p className="text-[15px] font-bold leading-tight">Quill</p>
+              <p className="text-[15px] font-bold leading-tight">ET</p>
               <p className={`text-[10px] ${C.faint} tracking-[0.2em] uppercase leading-tight`}>AI Studio</p>
             </div>
           </Link>
@@ -493,7 +518,7 @@ export default function AiStudio() {
           <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: C.accent }}>
             <Asterisk className="w-4 h-4 text-[#1A1918]" />
           </div>
-          <span className="text-sm font-bold">Quill</span>
+          <span className="text-sm font-bold">ET</span>
         </div>
 
         {view === 'library' ? (
@@ -518,7 +543,7 @@ export default function AiStudio() {
                       <Asterisk className="w-8 h-8 text-[#1A1918]" />
                     </motion.div>
                     <h1 className="font-heading text-3xl sm:text-[2.6rem] leading-tight tracking-tight mb-3">
-                      Hi, I&apos;m <span style={{ color: C.accent }}>Quill</span>.
+                      Hi, I&apos;m <span style={{ color: C.accent }}>ET</span>.
                     </h1>
                     <p className={`${C.dim} text-base sm:text-lg max-w-md`}>
                       Ask me anything, or pick a skill and I&apos;ll turn any topic into a lesson, quiz, video, audio and more.
@@ -628,7 +653,7 @@ export default function AiStudio() {
                     onKeyDown={e => {
                       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
                     }}
-                    placeholder={activeFormat ? `What topic should the ${activeFormat.label.toLowerCase()} cover?` : 'Ask Quill anything…'}
+                    placeholder={activeFormat ? `What topic should the ${activeFormat.label.toLowerCase()} cover?` : 'Ask ET anything…'}
                     rows={2}
                     disabled={busy}
                     className={`w-full bg-transparent outline-none resize-none px-4 pt-3 pb-1 text-[15px] ${C.text} placeholder:text-[#6E695F]`}
@@ -651,7 +676,7 @@ export default function AiStudio() {
                             transition={{ duration: 0.12 }}
                             className={`absolute bottom-full mb-2 left-0 w-[290px] sm:w-[330px] rounded-2xl border ${C.border} bg-[#242220] shadow-2xl p-2 z-30`}
                           >
-                            <p className={`px-2 pt-1 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] ${C.faint}`}>Quill&apos;s skills</p>
+                            <p className={`px-2 pt-1 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] ${C.faint}`}>ET&apos;s skills</p>
                             <div className="grid grid-cols-2 gap-1 max-h-72 overflow-y-auto">
                               <button
                                 onClick={() => { setSkill(null); setSkillsOpen(false); inputRef.current?.focus(); }}
@@ -720,7 +745,7 @@ export default function AiStudio() {
                   </div>
                 </div>
                 <p className={`text-center text-[10px] ${C.faint} mt-2`}>
-                  Quill can make mistakes — double-check important answers. {activeFormat ? `Skill: ${activeFormat.label} · ` : ''}{level}
+                  ET can make mistakes — double-check important answers. {activeFormat ? `Skill: ${activeFormat.label} · ` : ''}{level}
                 </p>
               </div>
             </div>
@@ -771,7 +796,7 @@ function LibraryView({ user, library, loading, onDelete, onNew }: {
         {user && !loading && library.length === 0 && (
           <div className="text-center py-24">
             <Sparkles className={`w-8 h-8 mx-auto mb-4 ${C.faint}`} />
-            <p className={`text-sm ${C.dim}`}>Nothing saved yet — generate something with Quill and hit &ldquo;Save to library&rdquo;.</p>
+            <p className={`text-sm ${C.dim}`}>Nothing saved yet — generate something with ET and hit &ldquo;Save to library&rdquo;.</p>
           </div>
         )}
 

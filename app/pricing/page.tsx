@@ -59,7 +59,7 @@ const PLANS: Plan[] = [
     sparks: 'No monthly Sparks — top-up packs available',
     features: [
       'Ayla AI tutor — 20 messages a day',
-      'Quill generator — 3 items a day',
+      'ET generator — 3 items a day',
       '1 course enrolment',
       'Community access',
     ],
@@ -75,7 +75,7 @@ const PLANS: Plan[] = [
     sparks: '400 Sparks a month',
     features: [
       'Unlimited Ayla AI tutoring',
-      'Unlimited Quill generations',
+      'Unlimited ET generations',
       'All 12 study formats',
       'Full curriculum access',
       '400 Sparks per month',
@@ -121,7 +121,7 @@ const SPARK_USES = [
 const FAQS = [
   {
     q: 'What are Sparks?',
-    a: 'Sparks are the credits that power premium AI generation — long-form podcasts, narrated audio, generated imagery and full mock-paper marking. Everyday tutoring with Ayla and standard Quill generations do not consume Sparks on paid plans. Each plan includes a monthly allowance that resets on your billing date, and you can buy top-up packs at any time if you run out mid-term.',
+    a: 'Sparks are the credits that power premium AI generation — long-form podcasts, narrated audio, generated imagery and full mock-paper marking. Everyday tutoring with Ayla and standard ET generations do not consume Sparks on paid plans. Each plan includes a monthly allowance that resets on your billing date, and you can buy top-up packs at any time if you run out mid-term.',
   },
   {
     q: 'Can I cancel anytime?',
@@ -133,7 +133,7 @@ const FAQS = [
   },
   {
     q: 'Is there a free trial?',
-    a: 'There is no time-limited trial because the Free plan does the same job better — use Ayla and Quill every day, indefinitely, with daily caps instead of a ticking clock. When the caps start getting in your way, that is the honest signal to upgrade.',
+    a: 'There is no time-limited trial because the Free plan does the same job better — use Ayla and ET every day, indefinitely, with daily caps instead of a ticking clock. When the caps start getting in your way, that is the honest signal to upgrade.',
   },
   {
     q: 'What payment methods do you accept?',
@@ -164,7 +164,7 @@ export default function PricingPage() {
               </span>
             </h1>
             <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
-              One price, everything included — Ayla for tutoring, Quill for study materials, and every
+              One price, everything included — Ayla for tutoring, ET for study materials, and every
               format in between. No per-subject fees, no surprise add-ons.
             </p>
           </motion.div>
@@ -250,7 +250,7 @@ export default function PricingPage() {
               <p className="text-base text-slate-600 leading-relaxed mb-4">
                 Sparks are credits for the heavyweight AI work — the generations that take real compute
                 rather than a quick answer. Chatting with Ayla and making standard notes, flashcards or
-                quizzes with Quill never touches them on a paid plan.
+                quizzes with ET never touches them on a paid plan.
               </p>
               <p className="text-base text-slate-600 leading-relaxed mb-8">
                 Every plan includes a monthly allowance that refreshes on your billing date. Run dry
@@ -407,7 +407,7 @@ export default function PricingPage() {
               <em>Decide later.</em>
             </h2>
             <p className="text-[0.95rem] sm:text-base mb-8 font-normal text-white/90 max-w-md leading-relaxed">
-              No card needed. Meet Ayla, make something with Quill, and see whether it changes how you study.
+              No card needed. Meet Ayla, make something with ET, and see whether it changes how you study.
             </p>
             <Link
               href="/signup"

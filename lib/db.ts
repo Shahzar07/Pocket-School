@@ -9,6 +9,9 @@ import type { Role } from './roles';
 
 export type { Role };
 
+import type { TierId, Tier2SubjectType, LawStage, Tier3Assessment, LessonPack } from '@/lib/curriculum-tiers';
+export type { TierId, Tier2SubjectType, LawStage, Tier3Assessment, LessonPack };
+
 // ─── Types ────────────────────────────────────────────────────
 
 export interface UserProfile {
@@ -66,6 +69,16 @@ export interface Course {
   programmeId?: string;
   yearGroup?: string;
   academicYear?: string;
+  /** Default generation tier for every lesson in this subject. Auto-detected
+   * from the Programme/Subject when the subject is created; each lesson can
+   * still override it. See lib/curriculum-tiers.ts. */
+  tier?: TierId;
+  /** Tier 2 only — Essay/Scenario vs Technical/Calculation case-study format. */
+  tierSubjectType?: Tier2SubjectType;
+  /** Tier 4 only — drives how far case-law depth scales. */
+  lawStage?: LawStage;
+  /** Tier 3 only — competency checklist vs graded rubric. */
+  tierAssessmentStyle?: Tier3Assessment;
   // ── Content Builder publish & allocation controls ──
   publishScope?: 'institution' | 'public' | 'marketplace';
   allocatedInstitutionIds?: string[];
@@ -92,6 +105,12 @@ export interface Module {
   masteryThreshold?: number;
   estimatedHours?: number;
   sparkBudget?: number;
+  /** Chapter-level generation tier. Absent or null = inherit the subject's.
+   * Cleared with an explicit null (Firestore leaves omitted keys untouched). */
+  tier?: TierId | null;
+  tierSubjectType?: Tier2SubjectType | null;
+  lawStage?: LawStage | null;
+  tierAssessmentStyle?: Tier3Assessment | null;
 }
 
 export interface Lesson {
@@ -108,6 +127,17 @@ export interface Lesson {
   isUnitQuiz?: boolean;
   briefPrompt?: string;
   teacherNotes?: string;
+  /** Per-lesson override of the subject's generation tier. Absent or null =
+   * inherit the subject's tier. Cleared with an explicit null, because
+   * Firestore's updateDoc leaves omitted keys untouched. */
+  tier?: TierId | null;
+  tierSubjectType?: Tier2SubjectType | null;
+  lawStage?: LawStage | null;
+  tierAssessmentStyle?: Tier3Assessment | null;
+  /** Structured result of the last tiered generation. Firestore is schemaless,
+   * so one optional map carries every tier's field set without a migration:
+   * a Tier 1 lesson simply has no `keyCaseLaw`, a Tier 4 lesson no `mockExam`. */
+  lessonPack?: LessonPack;
   reviewedBy?: string;
   reviewedAt?: Timestamp;
   createdAt?: Timestamp;

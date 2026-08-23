@@ -1002,7 +1002,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Meet the AI — Ayla & Quill ────────────────────────── */}
+      {/* ── Meet the AI — Ayla & ET ────────────────────────── */}
       <section id="meet-the-ai" className="py-20 sm:py-28 bg-[#0B1B3F] text-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <motion.div
@@ -1016,7 +1016,7 @@ export default function LandingPage() {
             <h2 className="font-heading text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-[1.05] mb-5">
               Meet <span className="bg-gradient-to-r from-[#60A5FA] to-[#C4B5FD] bg-clip-text text-transparent">Ayla</span>
               {' '}and{' '}
-              <span className="bg-gradient-to-r from-[#F5B400] to-[#FCD34D] bg-clip-text text-transparent">Quill</span>
+              <span className="bg-gradient-to-r from-[#F5B400] to-[#FCD34D] bg-clip-text text-transparent">ET</span>
             </h2>
             <p className="text-base sm:text-lg text-white/60 leading-relaxed">
               Most platforms give you one chatbot. We built two specialists — one who teaches you,
@@ -1035,10 +1035,10 @@ export default function LandingPage() {
                 cta: { label: 'Meet the AI teachers', href: '/ai-teachers' },
               },
               {
-                name: 'Quill',
+                name: 'ET',
                 role: 'Your Content Generator',
                 tint: 'from-[#F5B400] to-[#EA580C]',
-                blurb: 'Quill builds. Give it any topic or upload your notes and it produces a full study kit — lessons, quizzes, flashcards, mind maps, infographics, narrated video and audio — in seconds.',
+                blurb: 'ET builds. Give it any topic or upload your notes and it produces a full study kit — lessons, quizzes, flashcards, mind maps, infographics, narrated video and audio — in seconds.',
                 points: ['12 study formats from one topic', 'Playable narrated video lessons', 'AI-voiced audio revision', 'Saved to your personal library'],
                 cta: { label: 'Open AI Studio', href: '/ai-studio' },
               },

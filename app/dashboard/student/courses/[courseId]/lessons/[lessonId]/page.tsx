@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'motion/react';
 import { MathMarkdown } from '@/components/math-markdown';
+import { LessonPackView } from '@/components/lesson-pack-view';
 import { Timestamp } from 'firebase/firestore';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { useTutorContext } from '@/hooks/use-tutor-context';
@@ -914,11 +915,19 @@ export default function LessonPage() {
             ))}
           </TabsList>
 
-          {/* Text */}
+          {/* Text — a tier-generated lesson renders its own field set (Key Case
+              Law, Mock Exam, Competency Checklist…); anything older falls back
+              to plain markdown. */}
           <TabsContent value="text">
             {gate('text',
-              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
-                <MathMarkdown>{aiOutputs.text ?? ''}</MathMarkdown>
+              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
+                {lesson.lessonPack ? (
+                  <LessonPackView pack={lesson.lessonPack} />
+                ) : (
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <MathMarkdown>{aiOutputs.text ?? ''}</MathMarkdown>
+                  </div>
+                )}
               </motion.div>
             )}
           </TabsContent>

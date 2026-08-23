@@ -179,7 +179,7 @@ export default function MarketplacePage() {
                         Meanwhile, create your own
                       </span>
                       <span className="block text-xs text-slate-600 leading-relaxed">
-                        Build study materials with Quill in the AI Studio.
+                        Build study materials with ET in the AI Studio.
                       </span>
                       <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#1A73E8]">
                         Open AI Studio

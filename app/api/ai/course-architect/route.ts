@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { callOpenRouter, CONTENT_MODEL } from '@/lib/openrouter';
 
 /**
- * Quill — Course Architect.
+ * ET — Course Architect.
  *
  * Powers the AI assistance inside the Curriculum CMS. One route, five tasks:
  *   outline     → a full course structure (modules + lessons)
@@ -218,7 +218,7 @@ function outlinePrompt(subject: string, yearLevel: string, weeks: number, existi
   const continuation = existingUnits
     ? `\n\nThis course ALREADY contains these units:\n${existingUnits}\n\nDo not repeat or re-word any of them. Design units that continue from where those leave off, assuming their content is already taught and can be built upon.`
     : '';
-  return `You are Quill, an expert curriculum architect designing a scheme of work.
+  return `You are ET, an expert curriculum architect designing a scheme of work.
 
 Design a complete course structure for:
 - Subject: ${subject}
@@ -247,7 +247,7 @@ function objectivesPrompt(
   const body = lessonText
     ? `\n\nThe lesson currently teaches this. Objectives must describe what THIS content achieves, not the title in the abstract:\n"""\n${lessonText}\n"""`
     : '';
-  return `You are Quill, an expert curriculum designer.
+  return `You are ET, an expert curriculum designer.
 
 Write 4-5 measurable learning objectives for the lesson "${lessonTitle}"${subject ? ` in ${subject}` : ''}${yearLevel ? ` aimed at ${yearLevel} students` : ''}.${place}${body}
 
@@ -271,7 +271,7 @@ function briefPrompt(
   const place = siblingLessons
     ? `\n\nOther lessons in this unit:\n${siblingLessons}\nStay inside this lesson's scope and do not duplicate theirs.`
     : '';
-  return `You are Quill, a curriculum lead briefing an AI content generator.
+  return `You are ET, a curriculum lead briefing an AI content generator.
 
 Write a generation brief in Markdown for the lesson "${lessonTitle}"${subject ? ` in ${subject}` : ''}${yearLevel ? ` for ${yearLevel} students` : ''}.${aims}${place}
 
@@ -291,7 +291,7 @@ function improvePrompt(text: string, instruction: string, subject: string, yearL
   const audience = yearLevel || subject
     ? `\n\nWrite for ${yearLevel || 'the stated level'}${subject ? ` studying ${subject}` : ''}. Judge vocabulary, sentence length and example choice against that reader.`
     : '';
-  return `You are Quill, an expert educational editor.
+  return `You are ET, an expert educational editor.
 
 Rewrite the lesson text below following this instruction: ${instruction}${audience}
 
@@ -307,7 +307,7 @@ function assessmentPrompt(lessonTitle: string, totalMarks: number, objectives: s
   const aims = objectives
     ? `\n\nEvery section must assess at least one of these stated objectives, and together the sections must cover all of them:\n${objectives}`
     : '';
-  return `You are Quill, an assessment designer.
+  return `You are ET, an assessment designer.
 
 Design the section structure for an assessment on "${lessonTitle}"${yearLevel ? ` for ${yearLevel} students` : ''} worth exactly ${totalMarks} marks in total.${aims}
 
@@ -321,7 +321,7 @@ Exact shape:
 
 /* ── Route ──────────────────────────────────────────────────── */
 
-const PARSE_ERROR = 'Quill could not produce a usable result. Please try again.';
+const PARSE_ERROR = 'ET could not produce a usable result. Please try again.';
 
 export async function POST(req: NextRequest) {
   let task = '';
@@ -422,6 +422,6 @@ export async function POST(req: NextRequest) {
     }
   } catch (err: any) {
     console.error('[course-architect]', task, err);
-    return NextResponse.json({ error: err?.message || 'Quill request failed' }, { status: 500 });
+    return NextResponse.json({ error: err?.message || 'ET request failed' }, { status: 500 });
   }
 }

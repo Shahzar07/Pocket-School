@@ -1,11 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callOpenRouter, CONTENT_MODEL, VIDEO_MODEL } from '@/lib/openrouter';
 import { LANGUAGE_NAMES as LANG_NAMES } from '@/lib/languages';
+import {
+  buildLessonPrompt, buildNotesPrompt, parseLessonPack, missingFields,
+  TIER_BY_ID, type TierSelection, type GenerationMeta, type TierId,
+} from '@/lib/curriculum-tiers';
 
 /** Video and audio scripts use the dedicated narrative model; everything
  * else uses the ultra-cheap content model. */
 const MODEL_FOR_FORMAT = (format: string) =>
   format === 'videoScript' || format === 'audioScript' ? VIDEO_MODEL : CONTENT_MODEL;
+
+/** Formats the tier system owns end to end. Everything else keeps the generic
+ * prompts below, so adding tiers never regressed flashcards/quiz/slides. */
+const TIERED_FORMATS = new Set(['text', 'notes']);
+
+/** A Tier 4 lesson carries six or seven full case-law entries on top of the
+ * normal field set, so it needs materially more room than a Tier 1 lesson. */
+const MAX_TOKENS_FOR_TIER: Record<TierId, number> = {
+  tier1: 5_000, tier2: 6_000, tier3: 5_000, tier4: 12_000,
+};
 
 const MATH_HINT = 'If the content involves mathematics, science formulas, or equations, use LaTeX notation: inline math with $...$ and display math with $$...$$. For example: $E = mc^2$, $\\frac{a}{b}$, $$\\int_0^1 f(x)\\,dx$$.\n\n';
 
@@ -152,24 +166,98 @@ function extractJsonArray(text: string, format: string): any[] | null {
   return valid;
 }
 
+/** Normalise whatever the CMS sent into a valid, complete tier selection. */
+function readSelection(body: any): TierSelection | null {
+  const tier = body?.tier;
+  if (typeof tier !== 'string' || !(tier in TIER_BY_ID)) return null;
+  const sel: TierSelection = { tier: tier as TierId };
+  if (tier === 'tier2') {
+    sel.subjectType = body?.subjectType === 'technical' ? 'technical' : 'essay';
+  }
+  if (tier === 'tier4') {
+    const stages = ['a_level', 'pre_university', 'llb', 'university'];
+    sel.lawStage = stages.includes(body?.lawStage) ? body.lawStage : 'llb';
+  }
+  if (tier === 'tier3') {
+    sel.assessmentStyle = body?.assessmentStyle === 'rubric' ? 'rubric' : 'checklist';
+  }
+  return sel;
+}
+
+const MAX_META = 300;
+const cleanMeta = (v: unknown) => {
+  const s = String(v ?? '').replace(/\s+/g, ' ').trim();
+  return s ? s.slice(0, MAX_META) : undefined;
+};
+
+function readMeta(raw: any): GenerationMeta {
+  const level = raw?.generateLevel;
+  return {
+    programme: cleanMeta(raw?.programme),
+    subject: cleanMeta(raw?.subject),
+    yearLevel: cleanMeta(raw?.yearLevel),
+    unit: cleanMeta(raw?.unit),
+    chapter: cleanMeta(raw?.chapter),
+    topic: cleanMeta(raw?.topic),
+    priorContent: raw?.priorContent ? String(raw.priorContent).slice(0, 1_500) : undefined,
+    generateLevel: level === 'chapter' || level === 'subtopic' ? level : 'lesson',
+  };
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { content, format, briefPrompt, language } = await req.json();
+    const body = await req.json();
+    const { content, format, briefPrompt, language } = body;
     if (!content) return NextResponse.json({ error: 'content is required' }, { status: 400 });
 
     const promptFn = PROMPTS[format];
     if (!promptFn) return NextResponse.json({ error: `Unknown format: ${format}` }, { status: 400 });
 
-    // Curriculum CMS passes the lesson's authored generation brief; prepend it
-    // so every format follows the curriculum team's instructions.
     const cappedContent = String(content).slice(0, MAX_CONTENT_CHARS);
-    const fullContent = briefPrompt
-      ? `CONTENT BRIEF (follow these instructions):\n${String(briefPrompt).slice(0, MAX_BRIEF_CHARS)}\n\n${cappedContent}`
-      : cappedContent;
+    const cappedBrief = briefPrompt ? String(briefPrompt).slice(0, MAX_BRIEF_CHARS) : undefined;
 
     const langInstruction = language && language !== 'en'
       ? `\n\nIMPORTANT: Generate ALL content in the ${LANG_NAMES[language] || language} language. All text, explanations, questions, answers, terms, and definitions must be in ${LANG_NAMES[language] || language}. Only keep technical/scientific terms in their original form where appropriate.`
       : '';
+
+    /* ── Tiered curriculum generation ────────────────────────────
+     * When the CMS passes a tier, the lesson text and study notes are
+     * produced from that tier's own field schema and output format rather
+     * than the generic prompt. The reply carries both the markdown (which
+     * every existing viewer already renders) and the parsed field set. */
+    const selection = readSelection(body);
+    if (selection && TIERED_FORMATS.has(format)) {
+      const meta = readMeta(body.meta ?? {});
+      const prompt = format === 'notes'
+        ? buildNotesPrompt(selection, meta, cappedContent)
+        : buildLessonPrompt(selection, meta, cappedContent, cappedBrief);
+
+      const text = await callOpenRouter(
+        [{ role: 'user', content: prompt + langInstruction }],
+        { model: CONTENT_MODEL, maxTokens: MAX_TOKENS_FOR_TIER[selection.tier] },
+      );
+
+      if (format === 'notes') {
+        return NextResponse.json({ result: text, tier: selection.tier });
+      }
+
+      const pack = parseLessonPack(text, selection);
+      // A parse that recovers nothing means the model ignored the field
+      // labels; the markdown is still returned so the author keeps the work.
+      const missing = pack.explainer ? missingFields(pack) : [];
+      return NextResponse.json({
+        result: text,
+        pack,
+        tier: selection.tier,
+        missingFields: missing,
+      });
+    }
+
+    // Curriculum CMS passes the lesson's authored generation brief; prepend it
+    // so every format follows the curriculum team's instructions.
+    const fullContent = cappedBrief
+      ? `CONTENT BRIEF (follow these instructions):\n${cappedBrief}\n\n${cappedContent}`
+      : cappedContent;
 
     const prompt = promptFn(fullContent) + langInstruction;
     const text = await callOpenRouter([{ role: 'user', content: prompt }], { model: MODEL_FOR_FORMAT(format) });
