@@ -344,13 +344,43 @@ export interface UnitQuizAttempt {
 
 // ─── User ─────────────────────────────────────────────────────
 
+/* ── Firestore write hygiene ─────────────────────────────────────
+ * Firestore rejects `undefined` outright: addDoc/updateDoc throw
+ * "Unsupported field value: undefined". Optional fields on our own interfaces
+ * are undefined all the time (a Tier 1 subject has no `lawStage`), so every
+ * write strips them here rather than at each of the ~40 call sites.
+ *
+ * `null` is deliberately preserved — that is how a caller clears a stored
+ * value, since updateDoc leaves omitted keys untouched. */
+
+function isPlainObj(v: unknown): v is Record<string, unknown> {
+  if (!v || typeof v !== 'object') return false;
+  const proto = Object.getPrototypeOf(v);
+  return proto === Object.prototype || proto === null;
+}
+
+export function pruneUndefined<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.filter(v => v !== undefined).map(pruneUndefined) as unknown as T;
+  }
+  // Timestamps, FieldValues and other class instances must pass through whole.
+  if (isPlainObj(value)) {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) {
+      if (v !== undefined) out[k] = pruneUndefined(v);
+    }
+    return out as T;
+  }
+  return value;
+}
+
 export async function getUser(uid: string): Promise<UserProfile | null> {
   const snap = await getDoc(doc(db, 'users', uid));
   return snap.exists() ? (snap.data() as UserProfile) : null;
 }
 
 export async function updateUser(uid: string, data: Partial<UserProfile>) {
-  await updateDoc(doc(db, 'users', uid), { ...data, updatedAt: serverTimestamp() });
+  await updateDoc(doc(db, 'users', uid), { ...pruneUndefined(data), updatedAt: serverTimestamp() });
 }
 
 export async function getUserByEmail(email: string): Promise<{ id: string; data: UserProfile } | null> {
@@ -388,7 +418,7 @@ export async function getCourse(courseId: string): Promise<Course | null> {
 
 export async function createCourse(data: Omit<Course, 'id'>): Promise<string> {
   const ref = await addDoc(collection(db, 'courses'), {
-    ...data,
+    ...pruneUndefined(data),
     enrollmentCount: data.enrollmentCount ?? 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -442,24 +472,24 @@ export async function saveAiOutputsToLesson(
 }
 
 export async function createModule(courseId: string, data: Omit<Module, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'courses', courseId, 'modules'), { ...data, createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'courses', courseId, 'modules'), { ...pruneUndefined(data), createdAt: serverTimestamp() });
   return ref.id;
 }
 
 export async function createLesson(courseId: string, moduleId: string, data: Omit<Lesson, 'id'>): Promise<string> {
   const ref = await addDoc(collection(db, 'courses', courseId, 'modules', moduleId, 'lessons'), {
-    ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+    ...pruneUndefined(data), createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
   });
   return ref.id;
 }
 
 export async function updateUnit(courseId: string, unitId: string, data: Partial<Module>): Promise<void> {
-  await updateDoc(doc(db, 'courses', courseId, 'modules', unitId), data as Record<string, unknown>);
+  await updateDoc(doc(db, 'courses', courseId, 'modules', unitId), pruneUndefined(data) as Record<string, unknown>);
 }
 
 export async function updateLesson(courseId: string, moduleId: string, lessonId: string, data: Partial<Lesson>): Promise<void> {
   await updateDoc(doc(db, 'courses', courseId, 'modules', moduleId, 'lessons', lessonId), {
-    ...data, updatedAt: serverTimestamp(),
+    ...pruneUndefined(data), updatedAt: serverTimestamp(),
   });
 }
 
@@ -533,7 +563,7 @@ export async function getCurriculumSubjectSize(
 export async function duplicateLesson(courseId: string, moduleId: string, lesson: Lesson): Promise<string> {
   const { id: _id, ...rest } = lesson;
   const ref = await addDoc(collection(db, 'courses', courseId, 'modules', moduleId, 'lessons'), {
-    ...rest,
+    ...pruneUndefined(rest),
     title: `${lesson.title} (copy)`,
     status: 'draft',
     createdAt: serverTimestamp(),
@@ -550,7 +580,7 @@ export async function getProgrammes(): Promise<Programme[]> {
 }
 
 export async function createProgramme(data: Omit<Programme, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'programmes'), { ...data, createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'programmes'), { ...pruneUndefined(data), createdAt: serverTimestamp() });
   return ref.id;
 }
 
@@ -868,7 +898,7 @@ export async function saveUnitQuizAttempt(
   const recommendedLessonIds = Array.from(reviewLessonIds);
 
   const ref = await addDoc(collection(db, 'unit_quiz_attempts'), {
-    ...data,
+    ...pruneUndefined(data),
     attemptNumber,
     ...(weakestObjective ? { weakestObjective } : {}),
     recommendedLessonIds,
@@ -986,7 +1016,7 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
 }
 
 export async function savePlatformSettings(data: Partial<PlatformSettings>) {
-  await setDoc(doc(db, 'platform_settings', 'main'), { ...data, updatedAt: serverTimestamp() }, { merge: true });
+  await setDoc(doc(db, 'platform_settings', 'main'), { ...pruneUndefined(data), updatedAt: serverTimestamp() }, { merge: true });
 }
 
 export async function unlinkChildFromParent(parentId: string, childId: string) {
@@ -1021,7 +1051,7 @@ export async function getSentMessages(userId: string): Promise<Message[]> {
 }
 
 export async function sendMessage(msg: Omit<Message, 'id' | 'sentAt' | 'read'>) {
-  await addDoc(collection(db, 'messages'), { ...msg, read: false, sentAt: serverTimestamp() });
+  await addDoc(collection(db, 'messages'), { ...pruneUndefined(msg), read: false, sentAt: serverTimestamp() });
 }
 
 export async function markMessageRead(messageId: string) {
@@ -1070,7 +1100,7 @@ export async function sendDirectMessage(msg: {
   toId: string; toName?: string; body: string; studentId?: string;
 }) {
   await addDoc(collection(db, 'messages'), {
-    ...msg,
+    ...pruneUndefined(msg),
     subject: 'chat',
     read: false,
     sentAt: serverTimestamp(),
@@ -1134,7 +1164,7 @@ export async function getInstitutions(): Promise<Institution[]> {
 }
 
 export async function createInstitution(data: Omit<Institution, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'institutions'), { ...data, createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'institutions'), { ...pruneUndefined(data), createdAt: serverTimestamp() });
   return ref.id;
 }
 
@@ -1217,7 +1247,7 @@ export async function getSubmissionsForTeacher(teacherId: string): Promise<Submi
 }
 
 export async function saveSubmission(data: Omit<Submission, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'submissions'), { ...data, submittedAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'submissions'), { ...pruneUndefined(data), submittedAt: serverTimestamp() });
   return ref.id;
 }
 
@@ -1346,7 +1376,7 @@ export interface GradeWeights {
 const DEFAULT_WEIGHTS: GradeWeights = { quiz: 30, assignment: 40, exam: 20, participation: 10 };
 
 export async function createGrade(grade: Omit<Grade, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'grades'), { ...grade, gradedAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'grades'), { ...pruneUndefined(grade), gradedAt: serverTimestamp() });
   return ref.id;
 }
 
@@ -1414,7 +1444,7 @@ export interface AssignmentSubmission {
 }
 
 export async function createAssignment(data: Omit<Assignment, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'assignments'), { ...data, createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'assignments'), { ...pruneUndefined(data), createdAt: serverTimestamp() });
   return ref.id;
 }
 
@@ -1444,7 +1474,7 @@ export async function getAssignmentsForStudent(courseIds: string[]): Promise<Ass
 }
 
 export async function submitAssignment(data: Omit<AssignmentSubmission, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'assignment_submissions'), { ...data, submittedAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'assignment_submissions'), { ...pruneUndefined(data), submittedAt: serverTimestamp() });
   return ref.id;
 }
 
@@ -1506,7 +1536,7 @@ export interface ExamSubmission {
 }
 
 export async function createExam(data: Omit<Exam, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'exams'), { ...data, createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'exams'), { ...pruneUndefined(data), createdAt: serverTimestamp() });
   return ref.id;
 }
 
@@ -1536,7 +1566,7 @@ export async function getPublishedExamsForStudent(courseIds: string[]): Promise<
 }
 
 export async function submitExam(data: Omit<ExamSubmission, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'exam_submissions'), { ...data, submittedAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'exam_submissions'), { ...pruneUndefined(data), submittedAt: serverTimestamp() });
   return ref.id;
 }
 
@@ -1579,7 +1609,7 @@ export async function getCalendarEvents(options: { courseId?: string; audience?:
 }
 
 export async function createCalendarEvent(data: Omit<CalendarEvent, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'calendar_events'), { ...data, createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'calendar_events'), { ...pruneUndefined(data), createdAt: serverTimestamp() });
   return ref.id;
 }
 
@@ -1612,7 +1642,7 @@ export async function getAnnouncements(audience: string, courseId?: string): Pro
 }
 
 export async function createAnnouncement(data: Omit<Announcement, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'announcements'), { ...data, createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'announcements'), { ...pruneUndefined(data), createdAt: serverTimestamp() });
   return ref.id;
 }
 
@@ -1638,7 +1668,7 @@ export interface Notification {
 }
 
 export async function createNotification(data: Omit<Notification, 'id'>): Promise<void> {
-  await addDoc(collection(db, 'notifications'), { ...data, read: false, createdAt: serverTimestamp() });
+  await addDoc(collection(db, 'notifications'), { ...pruneUndefined(data), read: false, createdAt: serverTimestamp() });
 }
 
 export async function getNotifications(userId: string): Promise<Notification[]> {
@@ -1679,7 +1709,7 @@ export interface ChatMessage {
 }
 
 export async function sendChatMessage(data: Omit<ChatMessage, 'id'>): Promise<void> {
-  await addDoc(collection(db, 'chat_messages'), { ...data, createdAt: serverTimestamp() });
+  await addDoc(collection(db, 'chat_messages'), { ...pruneUndefined(data), createdAt: serverTimestamp() });
 }
 
 export async function getChatMessages(roomId: string): Promise<ChatMessage[]> {
@@ -1714,7 +1744,7 @@ export interface IntegrityReport {
 }
 
 export async function createIntegrityReport(data: Omit<IntegrityReport, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'integrity_reports'), { ...data, createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'integrity_reports'), { ...pruneUndefined(data), createdAt: serverTimestamp() });
   return ref.id;
 }
 
@@ -1754,7 +1784,7 @@ export interface Invoice {
 }
 
 export async function createInvoice(data: Omit<Invoice, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'invoices'), { ...data, createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'invoices'), { ...pruneUndefined(data), createdAt: serverTimestamp() });
   return ref.id;
 }
 
@@ -1804,7 +1834,7 @@ export interface Resource {
 }
 
 export async function createResource(data: Omit<Resource, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'resources'), { ...data, uploadedAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'resources'), { ...pruneUndefined(data), uploadedAt: serverTimestamp() });
   return ref.id;
 }
 
@@ -1839,7 +1869,7 @@ export interface BehaviourRecord {
 }
 
 export async function createBehaviourRecord(data: Omit<BehaviourRecord, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'behaviour_records'), { ...data, createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'behaviour_records'), { ...pruneUndefined(data), createdAt: serverTimestamp() });
   return ref.id;
 }
 
@@ -1874,7 +1904,7 @@ export interface SupportTicket {
 }
 
 export async function createSupportTicket(data: Omit<SupportTicket, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'support_tickets'), { ...data, status: 'open', createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'support_tickets'), { ...pruneUndefined(data), status: 'open', createdAt: serverTimestamp() });
   return ref.id;
 }
 
@@ -1908,7 +1938,7 @@ export interface Task {
 }
 
 export async function createTask(data: Omit<Task, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'tasks'), { ...data, createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'tasks'), { ...pruneUndefined(data), createdAt: serverTimestamp() });
   return ref.id;
 }
 
@@ -1965,7 +1995,7 @@ export function goalDateKey(d: Date = new Date()): string {
 }
 
 export async function createDailyGoal(data: Omit<DailyGoal, 'id' | 'createdAt'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'daily_goals'), { ...data, createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'daily_goals'), { ...pruneUndefined(data), createdAt: serverTimestamp() });
   return ref.id;
 }
 
@@ -2120,7 +2150,7 @@ export interface AttendanceRecord {
 }
 
 export async function createAttendanceRecord(data: Omit<AttendanceRecord, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'attendance_records'), { ...data, createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'attendance_records'), { ...pruneUndefined(data), createdAt: serverTimestamp() });
   return ref.id;
 }
 
@@ -2156,7 +2186,7 @@ export interface Certificate {
 
 export async function issueCertificate(data: Omit<Certificate, 'id'>): Promise<string> {
   const uuid = crypto.randomUUID();
-  await setDoc(doc(db, 'certificates', uuid), { ...data, createdAt: serverTimestamp() });
+  await setDoc(doc(db, 'certificates', uuid), { ...pruneUndefined(data), createdAt: serverTimestamp() });
   return uuid;
 }
 
@@ -2213,7 +2243,7 @@ export interface ParentVerification {
 }
 
 export async function createParentVerification(data: Omit<ParentVerification, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'parent_verifications'), { ...data, createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'parent_verifications'), { ...pruneUndefined(data), createdAt: serverTimestamp() });
   return ref.id;
 }
 
@@ -2250,7 +2280,7 @@ export async function getUserPhone(uid: string): Promise<string | null> {
 
 export async function updateCourse(id: string, data: Partial<Course>): Promise<void> {
   await updateDoc(doc(db, 'courses', id), {
-    ...data,
+    ...pruneUndefined(data),
     updatedAt: serverTimestamp(),
   });
 }
@@ -2322,7 +2352,7 @@ export async function saveAiGeneration(
   data: Omit<AiGeneration, 'id' | 'userId' | 'createdAt'>
 ): Promise<string> {
   const ref = await addDoc(collection(db, 'users', userId, 'ai_generations'), {
-    ...data,
+    ...pruneUndefined(data),
     createdAt: serverTimestamp(),
   });
   return ref.id;

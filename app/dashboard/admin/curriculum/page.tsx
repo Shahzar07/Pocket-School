@@ -34,7 +34,11 @@ const STATUS_BADGE: Record<string, string> = {
 /** Year/Level is free text — these are only suggestions, not a fixed list. */
 const YEAR_LEVEL_SUGGESTIONS = [
   ...Array.from({ length: 13 }, (_, i) => `Year ${i + 1}`),
-  'Foundation', 'Advanced', 'Tertiary', 'K-12',
+  // Stage labels the tier auto-detection recognises, so typing one here
+  // routes the subject to the right generation tier without extra clicks.
+  'IGCSE', 'GCSE', 'AS-Level', 'A-Level', 'Pre-University', 'Foundation',
+  'LLB Year 1', 'LLB Year 2', 'LLB Year 3', 'University', 'Micro Degree',
+  'Professional', 'Advanced', 'Tertiary', 'K-12',
 ];
 
 /** A teaching week is planned as 5 × 60-minute sessions. */
@@ -151,7 +155,7 @@ export default function AdminCurriculumPage() {
   const [showModuleForm, setShowModuleForm] = useState(false);
   const [modTitle, setModTitle] = useState('');
   const [modSubject, setModSubject] = useState('');
-  const [modYearGroup, setModYearGroup] = useState('Year 7');
+  const [modYearGroup, setModYearGroup] = useState('');
   const [modProgrammeId, setModProgrammeId] = useState<string>('');
   const [creatingModule, setCreatingModule] = useState(false);
   /** Default generation tier for the new subject. Auto-detected from the
@@ -161,7 +165,7 @@ export default function AdminCurriculumPage() {
 
   // AI Course Architect (ET)
   const [archSubject, setArchSubject] = useState('');
-  const [archYear, setArchYear] = useState('Year 7');
+  const [archYear, setArchYear] = useState('');
   const [archWeeks, setArchWeeks] = useState('12');
   const [archTitle, setArchTitle] = useState('');
   const [archOutline, setArchOutline] = useState<OutlineModule[] | null>(null);
@@ -393,22 +397,24 @@ export default function AdminCurriculumPage() {
     try {
       const courseId = await createCurriculumModule({
         title: modTitle.trim(),
-        description: `${modSubject.trim()} subject — ${modYearGroup}`,
+        description: modYearGroup.trim()
+          ? `${modSubject.trim()} subject — ${modYearGroup.trim()}`
+          : `${modSubject.trim()} subject`,
         subject: modSubject.trim(),
         ownerId: user.uid,
         status: 'draft',
         isPublic: false,
-        yearGroup: modYearGroup,
+        yearGroup: modYearGroup.trim() || undefined,
         programmeId: modProgrammeId || undefined,
         ...tierFields(modTier, {
           programme: programmes.find(p => p.id === modProgrammeId)?.name,
-          subject: modSubject.trim(), yearLevel: modYearGroup, courseTitle: modTitle.trim(),
+          subject: modSubject.trim(), yearLevel: modYearGroup.trim(), courseTitle: modTitle.trim(),
         }),
       });
       toast.success('Subject created.');
       setModTitle('');
       setModSubject('');
-      setModYearGroup(YEAR_LEVEL_SUGGESTIONS[0]);
+      setModYearGroup('');
       setModTier(null);
       setModTierManual(false);
       setShowModuleForm(false);
@@ -478,7 +484,7 @@ export default function AdminCurriculumPage() {
             <div className="space-y-1.5">
               <Label>Year / Level</Label>
               <Input value={archYear} onChange={e => setArchYear(e.target.value)}
-                list="year-level-suggestions" placeholder="e.g. Year 9, Foundation, Tertiary"
+                list="year-level-suggestions" placeholder="e.g. Year 9, A-Level, LLB Year 1"
                 className="rounded-xl h-10" />
             </div>
             <div className="space-y-1.5">
@@ -734,7 +740,7 @@ export default function AdminCurriculumPage() {
                   value={modYearGroup}
                   onChange={e => setModYearGroup(e.target.value)}
                   list="year-level-suggestions"
-                  placeholder="e.g. Year 7, Advanced, Tertiary"
+                  placeholder="e.g. Year 7, IGCSE, A-Level, LLB Year 1"
                   className="rounded-xl h-10"
                 />
                 <datalist id="year-level-suggestions">

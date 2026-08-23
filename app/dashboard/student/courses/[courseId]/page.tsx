@@ -9,7 +9,11 @@ import { getUnitStatuses, getCurriculumLessonStatus } from '@/lib/curriculum';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, BookOpen, CheckCircle2, Lock, PlayCircle, ChevronDown, ChevronRight, Trophy } from 'lucide-react';
+import {
+  ArrowLeft, BookOpen, CheckCircle2, Lock, PlayCircle, ChevronDown, ChevronRight,
+  Trophy, Clock, Layers, Award,
+} from 'lucide-react';
+import { formatDuration } from '@/components/course-curriculum';
 
 interface ModuleWithLessons { module: Module; lessons: Lesson[] }
 
@@ -67,6 +71,10 @@ export default function CourseDetailPage() {
   const completedIds = new Set(enrollment?.completedLessons ?? []);
   const totalLessons = modules.reduce((acc, m) => acc + m.lessons.length, 0);
   const unitStatuses = isCurriculum ? getUnitStatuses(modules, enrollment, attempts) : [];
+  const courseMinutes = modules.reduce(
+    (acc, m) => acc + m.lessons.reduce((n, l) => n + (l.durationMinutes ?? 0), 0), 0,
+  );
+  const unitsPassed = unitStatuses.filter(u => u.state === 'passed').length;
 
   const getLessonStatus = (lesson: Lesson, modIndex: number, lesIndex: number): 'completed' | 'available' | 'locked' => {
     if (isCurriculum) {
@@ -81,6 +89,17 @@ export default function CourseDetailPage() {
     const prev = allLessons[currentIndex - 1];
     return completedIds.has(prev?.id) ? 'available' : 'locked';
   };
+
+  /** The first lesson this learner can actually open, in course order. */
+  const nextLesson: Lesson | null = (() => {
+    for (const [mi, m] of modules.entries()) {
+      if (isCurriculum && unitStatuses[mi]?.state === 'locked') continue;
+      for (const [li, l] of m.lessons.entries()) {
+        if (getLessonStatus(l, mi, li) === 'available') return l;
+      }
+    }
+    return null;
+  })();
 
   if (loading) return (
     <div className="max-w-5xl mx-auto px-0 sm:px-2 pb-12 space-y-8 pt-6">
@@ -152,6 +171,50 @@ export default function CourseDetailPage() {
           )}
         </div>
       </motion.div>
+
+      {/* At a glance — the same facts the marketplace page promises, now with
+          this learner's own progress against them. */}
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1.5}
+        className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { icon: Clock, value: courseMinutes > 0 ? formatDuration(courseMinutes) : '—', label: 'Total length' },
+          { icon: BookOpen, value: `${completedIds.size}/${totalLessons}`, label: 'Lessons complete' },
+          { icon: Layers, value: String(modules.length), label: 'Chapters' },
+          {
+            icon: Award,
+            value: isCurriculum ? `${unitsPassed}/${modules.length}` : `${enrollment?.progress ?? 0}%`,
+            label: isCurriculum ? 'Mastery quizzes passed' : 'Toward certificate',
+          },
+        ].map((s, i) => (
+          <div key={i} className="flex items-center gap-2.5 rounded-2xl border border-border bg-card px-3.5 py-3">
+            <s.icon className="w-4 h-4 shrink-0 text-primary" />
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-foreground leading-tight truncate">{s.value}</p>
+              <p className="text-[11px] text-muted-foreground leading-tight">{s.label}</p>
+            </div>
+          </div>
+        ))}
+      </motion.div>
+
+      {/* Continue where you left off — one click back into the course. */}
+      {nextLesson && (
+        <motion.button
+          variants={fadeUp} initial="hidden" animate="visible" custom={1.8}
+          onClick={() => router.push(`/dashboard/student/courses/${courseId}/lessons/${nextLesson.id}`)}
+          className="w-full flex items-center gap-4 rounded-3xl border border-primary/25 bg-primary/5 px-5 py-4 text-left hover:bg-primary/10 transition-colors"
+        >
+          <span className="w-11 h-11 rounded-2xl bg-primary/15 grid place-items-center shrink-0">
+            <PlayCircle className="w-5 h-5 text-primary" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[11px] font-bold uppercase tracking-widest text-primary">
+              {completedIds.size === 0 ? 'Start learning' : 'Continue where you left off'}
+            </span>
+            <span className="block text-sm font-semibold text-foreground truncate mt-0.5">{nextLesson.title}</span>
+          </span>
+          <ChevronRight className="w-5 h-5 text-primary shrink-0" />
+        </motion.button>
+      )}
 
       {/* Modules */}
       <div className="space-y-4">
@@ -233,6 +296,7 @@ export default function CourseDetailPage() {
                           {isCurriculum && lesson.lessonNumber ? `L${lesson.lessonNumber} · ` : ''}{lesson.title}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
+                          {lesson.durationMinutes ? `${formatDuration(lesson.durationMinutes)} · ` : ''}
                           {lesson.isUnitQuiz
                             ? status === 'completed' ? '✓ Mastery quiz passed'
                               : status === 'available' ? `Mastery quiz · score ≥${mod.module.masteryThreshold ?? 70}% to unlock the next module`

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { BookOpen, Search, Filter, ArrowRight, Loader2, Sparkles, Mail, ShieldCheck } from 'lucide-react';
+import { BookOpen, Search, Filter, ArrowRight, Loader2, Sparkles, Mail, ShieldCheck, Clock, Users, FileText, Award } from 'lucide-react';
 import { getPublicCourses, type Course, type CourseType } from '@/lib/db';
 import { courseCover } from '@/lib/course-cover';
 
@@ -243,7 +243,20 @@ export default function MarketplacePage() {
                       <div className="p-5 flex flex-col flex-1">
                         <h3 className="font-bold text-base text-foreground mb-1 line-clamp-2">{c.title}</h3>
                         <p className="text-xs text-muted-foreground mb-3">{c.ownerName ?? 'Poket School'}</p>
-                        <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1">{c.description}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3 flex-1">{c.description}</p>
+                        {/* The facts a buyer scans for before clicking through. */}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground mb-3">
+                          {c.durationHours ? (
+                            <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{c.durationHours}h</span>
+                          ) : null}
+                          {c.enrollmentCount ? (
+                            <span className="flex items-center gap-1"><Users className="w-3 h-3" />{c.enrollmentCount} enrolled</span>
+                          ) : null}
+                          {c.workbookUrl ? (
+                            <span className="flex items-center gap-1"><FileText className="w-3 h-3" />Workbook</span>
+                          ) : null}
+                          <span className="flex items-center gap-1"><Award className="w-3 h-3" />Certificate</span>
+                        </div>
                         <div className="flex items-center justify-between">
                           <span className={`text-base font-extrabold ${c.price ? 'text-foreground' : 'text-emerald-600'}`}>
                             {priceLabel(c)}
