@@ -29,8 +29,12 @@ export const UNIT_PASS_REWARD = 50;
 /** Monthly Sparks allowance for the Academic subscription tier. */
 export const ACADEMIC_MONTHLY_ALLOWANCE = 400;
 
-/** One-off welcome grant on student onboarding. */
-export const SIGNUP_GRANT = 100;
+/** One-off welcome grant every student receives on onboarding. */
+export const SIGNUP_GRANT = 50;
+
+/** Working balance given to administrator accounts so they can exercise every
+ * paid surface while testing, without spending a student's allowance. */
+export const ADMIN_SPARKS_GRANT = 2000;
 
 /** Human-readable labels for format keys (shared by player tabs + CMS). */
 export const FORMAT_LABELS: Record<string, string> = {

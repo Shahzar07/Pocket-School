@@ -61,8 +61,11 @@ export default function OnboardingPage() {
       if (!alreadyOnboarded) {
         if (isYearGroup) {
           await enrollInProgrammeModules(user.uid, yearGroup);
-          await awardSparks(user.uid, SIGNUP_GRANT, 'admin_grant', 'Welcome bonus');
         }
+        // Every student gets the welcome grant. This used to sit inside the
+        // year-group branch, so anyone on GCSE, A-Level or any other pathway
+        // started with a zero balance and could not open a single paid format.
+        await awardSparks(user.uid, SIGNUP_GRANT, 'admin_grant', 'Welcome bonus');
         const onboardedStamp: Partial<UserProfile> & { onboardedAt: Timestamp } = { onboardedAt: Timestamp.now() };
         await updateUser(user.uid, onboardedStamp);
       }
