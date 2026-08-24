@@ -640,6 +640,24 @@ export async function markLessonComplete(
   const userUpdate: Record<string, unknown> = { xp: increment(xpReward), updatedAt: serverTimestamp() };
   if (sparksReward > 0) userUpdate.sparksBalance = increment(sparksReward);
   batch.update(doc(db, 'users', studentId), userUpdate);
+
+  // Lesson rewards used to bump sparksBalance without writing a ledger entry,
+  // so a student's transaction history never matched their balance. Recorded
+  // in the same batch so the balance and the ledger cannot diverge.
+  if (sparksReward > 0) {
+    const userSnap = await getDoc(doc(db, 'users', studentId));
+    const balanceAfter = ((userSnap.data()?.sparksBalance as number) ?? 0) + sparksReward;
+    batch.set(doc(collection(db, 'users', studentId, 'spark_transactions')), {
+      amount: sparksReward,
+      type: 'earn',
+      lessonId,
+      courseId,
+      balanceAfter,
+      note: 'Lesson completed',
+      createdAt: serverTimestamp(),
+    });
+  }
+
   await batch.commit();
 
   // Award badges based on XP milestones

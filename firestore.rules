@@ -228,7 +228,15 @@ service cloud.firestore {
       allow read: if isSignedIn() && (
         resource.data.studentId == request.auth.uid || isTeacherOrAdmin()
       );
-      allow create, update: if isTeacherOrAdmin();
+      // A student buying a course raises their own invoice. Without this the
+      // purchase completed with no billing record at all, because the client
+      // swallowed the permission error. They may only raise an unpaid invoice
+      // for themselves — marking one paid stays with teachers and admins.
+      allow create: if isTeacherOrAdmin()
+        || (isSignedIn()
+            && incoming().studentId == request.auth.uid
+            && incoming().status in ['sent', 'draft']);
+      allow update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
     }
 
