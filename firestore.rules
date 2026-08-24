@@ -59,16 +59,26 @@ service cloud.firestore {
 
     // ── Courses ───────────────────────────────────────────────
     match /courses/{courseId} {
-      allow read: if isSignedIn();
+      // Published marketplace courses are browsable without an account —
+      // the marketplace advertises "browse and buy without an account".
+      allow read: if isSignedIn()
+        || (resource.data.status == 'published' && resource.data.isPublic == true);
       allow create: if isTeacherOrAdmin();
-      allow update: if isTeacherOrAdmin();
+      // A student enrolling bumps enrollmentCount. Without this, enrolment
+      // fails with a permissions error AFTER the enrollment doc is written,
+      // leaving the student enrolled but stranded on the sales page.
+      allow update: if isTeacherOrAdmin()
+        || (isSignedIn()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['enrollmentCount']));
       allow delete: if isAdmin();
 
       match /enrollments/{studentId} {
         allow read: if isSignedIn();
-        allow create: if isSignedIn();
-        allow update: if isSignedIn();
-        allow delete: if isAdmin();
+        // Enrol yourself, or be enrolled by a teacher/admin. Previously any
+        // signed-in user could write an enrollment for any other user, because
+        // the student id is the document id and nothing checked it.
+        allow create, update: if isUser(studentId) || isTeacherOrAdmin();
+        allow delete: if isUser(studentId) || isAdmin();
       }
 
       match /modules/{moduleId} {

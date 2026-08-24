@@ -748,6 +748,37 @@ export async function awardSparks(
   });
 }
 
+/** Everyone who has signed up, newest first — the admin user directory. */
+export async function getAllUsers(max = 500): Promise<{ id: string; data: UserProfile }[]> {
+  // Not every legacy user doc has createdAt, and ordering by a missing field
+  // silently drops those rows, so sort client-side instead.
+  const snap = await getDocs(query(collection(db, 'users'), limit(max)));
+  return snap.docs
+    .map(d => ({ id: d.id, data: d.data() as UserProfile }))
+    .sort((a, b) => {
+      const at = (a.data.createdAt as Timestamp | undefined)?.toMillis() ?? 0;
+      const bt = (b.data.createdAt as Timestamp | undefined)?.toMillis() ?? 0;
+      return bt - at;
+    });
+}
+
+/**
+ * Give an administrator a working Sparks balance, once.
+ *
+ * Admins need to exercise every paid surface while testing without draining a
+ * student's allowance. Guarded on adminSparksGrantedAt so it tops up a new
+ * admin but never re-grants on each sign-in.
+ */
+export async function ensureAdminSparks(uid: string, amount: number): Promise<boolean> {
+  const snap = await getDoc(doc(db, 'users', uid));
+  if (!snap.exists()) return false;
+  const data = snap.data() as UserProfile & { adminSparksGrantedAt?: Timestamp };
+  if (data.adminSparksGrantedAt) return false;
+  await awardSparks(uid, amount, 'admin_grant', 'Administrator working balance');
+  await updateDoc(doc(db, 'users', uid), { adminSparksGrantedAt: serverTimestamp() });
+  return true;
+}
+
 /** Top up the monthly allowance for Academic subscribers, at most once per 30 days. */
 export async function grantMonthlySparksIfDue(uid: string, profile: UserProfile): Promise<boolean> {
   if (profile.subscriptionTier !== 'academic') return false;
@@ -2257,11 +2288,14 @@ export async function getPublicCourseById(courseId: string): Promise<Course | nu
 }
 
 export async function incrementEnrollment(courseId: string): Promise<void> {
-  const ref = doc(db, 'courses', courseId);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) return;
-  const current = (snap.data().enrollmentCount as number) ?? 0;
-  await updateDoc(ref, { enrollmentCount: current + 1 });
+  // increment() is atomic — the previous read-then-write lost enrolments when
+  // two students enrolled at the same moment. Failures are swallowed on
+  // purpose: a display counter must never block someone from enrolling.
+  try {
+    await updateDoc(doc(db, 'courses', courseId), { enrollmentCount: increment(1) });
+  } catch (err) {
+    console.warn('[incrementEnrollment] counter not updated', err);
+  }
 }
 
 export async function getTeachers(): Promise<{ id: string; data: UserProfile }[]> {
