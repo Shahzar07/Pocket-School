@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { ROLE_LABELS } from '@/lib/roles';
+import { getFormatCost } from '@/lib/sparks';
 import {
   ArrowLeft, AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Copy, CornerDownRight,
   Eye, GripVertical, Loader2, Pencil, Plus, RotateCcw, Send, Sparkles, Trash2, Archive, X,
@@ -67,11 +68,11 @@ const STUDENT_GROUPS = ['Year 10 All', 'Year 11 Advanced', 'SPM Target', 'Free T
 const DEFAULT_BLOCKS = ['objectives', 'video', 'text', 'vocabulary', 'quiz'];
 
 /** Visibility options — wording fixed by the curriculum team. */
-const VISIBILITY_OPTIONS: { value: string; label: string }[] = [
-  { value: 'all', label: 'All Students' },
-  { value: 'teacher_only', label: 'Teachers Only' },
-  { value: 'teachers_students', label: 'Teachers & Students' },
-  { value: 'scheduled', label: 'Scheduled Release' },
+const VISIBILITY_OPTIONS: { value: string; label: string; hint: string }[] = [
+  { value: 'all', label: 'All Students', hint: 'Every enrolled student can open this lesson now.' },
+  { value: 'teacher_only', label: 'Teachers Only', hint: 'Hidden from students — use while the lesson is still being written.' },
+  { value: 'teachers_students', label: 'Teachers & Students', hint: 'Visible to enrolled students and their teachers.' },
+  { value: 'scheduled', label: 'Scheduled Release', hint: 'Hidden until the release date below.' },
 ];
 
 /** A teaching week is planned as 5 × 60-minute sessions, so lesson duration can
@@ -877,6 +878,7 @@ export default function ContentBuilderPage() {
               <PropertiesTab
                 draft={draft} patch={patchDraft} ai={runAi} aiBusy={aiBusy}
                 quillBusy={quillBusy}
+                isCurriculumCourse={course?.kind === 'curriculum'}
                 onSuggestObjectives={suggestObjectives}
                 onWriteBrief={writeBrief}
                 onImproveText={improveText}
@@ -1302,12 +1304,14 @@ function BuilderBlock({
 /* ── Right tabs ─────────────────────────────────────────────── */
 
 function PropertiesTab({
-  draft, patch, ai, aiBusy, quillBusy,
+  draft, patch, ai, aiBusy, quillBusy, isCurriculumCourse,
   onSuggestObjectives, onWriteBrief, onImproveText, onDraftAssessment,
 }: {
   draft: Lesson; patch: (p: Partial<Lesson>) => void;
   ai: (f: string) => Promise<void>; aiBusy: string | null;
   quillBusy: string | null;
+  /** Sparks only gate curriculum lessons; marketplace lessons are free. */
+  isCurriculumCourse: boolean;
   onSuggestObjectives: () => void;
   onWriteBrief: () => void;
   onImproveText: (instruction: string) => void;
@@ -1318,6 +1322,8 @@ function PropertiesTab({
     patch({ accessibility: { ...acc, [k]: v } });
   const outputs = draft.aiOutputs ?? {};
   const hasText = !!(outputs.text ?? '').trim();
+  // What a student pays to open every format on this lesson.
+  const unlockAllCost = AI_SHORTCUTS.reduce((sum, f) => sum + getFormatCost(f.id), 0);
 
   const quillActions: { id: string; label: string; run: () => void; disabled?: boolean }[] = [
     { id: 'objectives', label: 'Suggest objectives', run: onSuggestObjectives },
@@ -1360,6 +1366,9 @@ function PropertiesTab({
           className="w-full h-9 rounded-xl border border-border bg-card px-2 text-xs">
           {VISIBILITY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
+          {VISIBILITY_OPTIONS.find(o => o.value === (draft.visibility ?? 'all'))?.hint}
+        </p>
         {draft.visibility === 'scheduled' && (
           <input
             type="date"
@@ -1382,7 +1391,20 @@ function PropertiesTab({
       </section>
 
       <section className="space-y-2">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">AI generation (per format)</p>
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">AI generation (per format)</p>
+          {isCurriculumCourse && (
+            <span className="text-[10px] font-semibold text-amber-600 shrink-0">
+              {unlockAllCost} ⚡ to unlock all
+            </span>
+          )}
+        </div>
+        {isCurriculumCourse && (
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            The number on each format is what a student spends to unlock it. Generating costs you
+            nothing — students are only charged when they open it.
+          </p>
+        )}
         <div className="grid grid-cols-2 gap-1.5">
           {AI_SHORTCUTS.map(f => {
             const v = outputs[f.id];
@@ -1395,7 +1417,12 @@ function PropertiesTab({
                 {aiBusy === f.id ? <Loader2 className="w-3 h-3 animate-spin shrink-0" />
                   : done ? <CheckCircle2 className="w-3 h-3 shrink-0" />
                   : <Sparkles className="w-3 h-3 shrink-0" />}
-                <span className="truncate">{f.label}</span>
+                <span className="truncate flex-1">{f.label}</span>
+                {isCurriculumCourse && (
+                  <span className="text-[10px] font-bold text-amber-600 shrink-0 tabular-nums">
+                    {getFormatCost(f.id)}
+                  </span>
+                )}
               </button>
             );
           })}
