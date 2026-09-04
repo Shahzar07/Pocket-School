@@ -8,9 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { BookOpen, Search, Filter, ArrowRight, Loader2, Sparkles, Mail, ShieldCheck } from 'lucide-react';
+import { BookOpen, Search, Filter, ArrowRight, Loader2, Sparkles, Mail, ShieldCheck, Star } from 'lucide-react';
 import { getPublicCourses, type Course, type CourseType } from '@/lib/db';
 import { courseCover } from '@/lib/course-cover';
+import { coursePriceType, freePreviewCount, courseMinTier, tierDefinition } from '@/lib/entitlements';
 
 const TYPE_FILTERS: { id: CourseType | 'all'; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -23,6 +24,21 @@ const TYPE_FILTERS: { id: CourseType | 'all'; label: string }[] = [
 ];
 
 const LEVEL_FILTERS = ['All', 'Primary', 'Secondary', 'GCSE', 'A-Level', 'University'];
+
+/** Badge for the free lessons at the start of a paid course. */
+function freePreviewLabel(c: Course): string {
+  if (coursePriceType(c) === 'FREE') return 'Free course';
+  const n = freePreviewCount(c);
+  if (n === Number.MAX_SAFE_INTEGER || n <= 0) return '';
+  return `${n} free lesson${n === 1 ? '' : 's'}`;
+}
+
+/** Which subscription includes this course, when it isn't a one-off purchase. */
+function tierBadge(c: Course): string {
+  if (coursePriceType(c) !== 'SUBSCRIPTION_INCLUDED') return '';
+  const t = courseMinTier(c);
+  return t > 0 ? tierDefinition(t).name : '';
+}
 
 function priceLabel(c: Course) {
   if (!c.price || c.price === 0) return 'Free';
@@ -222,35 +238,58 @@ export default function MarketplacePage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: i * 0.04 }}
                 >
-                  <Link href={`/courses/${c.id}`}>
-                    <Card className="overflow-hidden border hover:shadow-lg transition-all h-full flex flex-col">
-                      <div className="aspect-video bg-gradient-to-br from-blue-100 via-indigo-100 to-violet-100 relative flex items-center justify-center">
+                  <Link href={`/courses/${c.id}`} className="group block h-full">
+                    <Card className="overflow-hidden border hover:border-foreground/25 hover:shadow-xl transition-all h-full flex flex-col rounded-xl">
+                      <div className="aspect-video bg-muted relative overflow-hidden">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={c.thumbnailUrl || courseCover(c.title, c.subject ?? '')}
                           alt={c.title}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
                         />
-                        <span className="absolute top-3 left-3 text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded bg-white/95 text-foreground shadow-sm">
+                        <span className="absolute top-2.5 left-2.5 text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded bg-white/95 text-foreground shadow-sm">
                           {c.type ?? 'course'}
                         </span>
-                        {c.level && (
-                          <span className="absolute top-3 right-3 text-[10px] font-semibold px-2 py-1 rounded bg-black/70 text-white">
-                            {c.level}
+                        {freePreviewLabel(c) && (
+                          <span className="absolute bottom-2.5 left-2.5 text-[10px] font-bold px-2 py-1 rounded bg-emerald-600 text-white shadow-sm">
+                            {freePreviewLabel(c)}
                           </span>
                         )}
                       </div>
-                      <div className="p-5 flex flex-col flex-1">
-                        <h3 className="font-bold text-base text-foreground mb-1 line-clamp-2">{c.title}</h3>
-                        <p className="text-xs text-muted-foreground mb-3">{c.ownerName ?? 'Poket School'}</p>
-                        <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1">{c.description}</p>
-                        <div className="flex items-center justify-between">
-                          <span className={`text-base font-extrabold ${c.price ? 'text-foreground' : 'text-emerald-600'}`}>
+
+                      <div className="p-4 flex flex-col flex-1">
+                        <h3 className="font-bold text-[15px] leading-snug text-foreground mb-1 line-clamp-2 group-hover:text-blue-700 transition-colors">
+                          {c.title}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mb-2">{c.ownerName ?? 'Poket School'}</p>
+
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <span className="text-[13px] font-bold text-amber-700 tabular-nums">New</span>
+                          <span className="flex items-center gap-0.5">
+                            {[1, 2, 3, 4, 5].map(n => (
+                              <Star key={n} className="w-3 h-3 fill-amber-400 text-amber-400" />
+                            ))}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground">
+                            ({(c.enrollmentCount ?? 0).toLocaleString()})
+                          </span>
+                        </div>
+
+                        <p className="text-[11px] text-muted-foreground mb-3 flex flex-wrap items-center gap-x-2 gap-y-1">
+                          {c.durationHours ? <span>{c.durationHours} total hours</span> : null}
+                          {c.level && <><span aria-hidden>·</span><span>{c.level}</span></>}
+                          {c.subject && <><span aria-hidden>·</span><span className="truncate">{c.subject}</span></>}
+                        </p>
+
+                        <div className="mt-auto flex items-baseline gap-2">
+                          <span className={`text-lg font-extrabold ${c.price ? 'text-foreground' : 'text-emerald-600'}`}>
                             {priceLabel(c)}
                           </span>
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            View <ArrowRight className="w-3 h-3" />
-                          </span>
+                          {tierBadge(c) && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                              {tierBadge(c)}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </Card>
