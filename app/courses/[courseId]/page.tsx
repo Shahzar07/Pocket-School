@@ -15,11 +15,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { BookOpen, Brain, CheckCircle2, FileText, Download, Loader2, ArrowLeft } from 'lucide-react';
+import {
+  BookOpen, Brain, CheckCircle2, FileText, Download, Loader2, ArrowLeft,
+  Star, Users, Globe, Clock, PlayCircle, Lock, ChevronDown, Award, Infinity as InfinityIcon,
+  Smartphone, BarChart3, ShieldCheck,
+} from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { Timestamp } from 'firebase/firestore';
-import { getPublicCourseById, enrollStudent, incrementEnrollment, createInvoice, getUser, type Course, type UserProfile } from '@/lib/db';
+import {
+  getPublicCourseById, enrollStudent, incrementEnrollment, createInvoice, getUser,
+  getPublicCurriculum, type Course, type UserProfile, type Module, type Lesson,
+} from '@/lib/db';
+import { coursePriceType, freePreviewCount, isLessonFree, courseMinTier, tierDefinition } from '@/lib/entitlements';
 import { courseCover } from '@/lib/course-cover';
 import { toast } from 'sonner';
 
@@ -39,6 +47,8 @@ export default function CourseDetailPage() {
   const [user, setUser] = useState<User | null>(null);
   const [enrolling, setEnrolling] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [curriculum, setCurriculum] = useState<{ module: Module; lessons: Lesson[]; lessonsHidden: boolean }[]>([]);
+  const [openChapters, setOpenChapters] = useState<Set<string>>(new Set());
 
   const load = async () => {
     if (!courseId) return;
@@ -47,6 +57,14 @@ export default function CourseDetailPage() {
     try {
       const c = await getPublicCourseById(courseId);
       setCourse(c);
+      // Curriculum is supporting detail — never let it break the page.
+      getPublicCurriculum(courseId)
+        .then(cur => {
+          setCurriculum(cur);
+          // Open the first chapter so the page never looks empty.
+          if (cur[0]) setOpenChapters(new Set([cur[0].module.id]));
+        })
+        .catch(() => setCurriculum([]));
     } catch (e: any) {
       setError(e?.message ?? 'Something went wrong.');
     } finally {
@@ -62,6 +80,16 @@ export default function CourseDetailPage() {
   }, []);
 
   const isFree = !course?.price || course.price === 0;
+
+  const totalLessons = curriculum.reduce((n, c) => n + c.lessons.length, 0);
+  const priceType = course ? coursePriceType(course) : 'FREE';
+  // MAX_SAFE_INTEGER means "the whole course is free" — don't advertise that
+  // as a preview count.
+  const rawPreview = course ? freePreviewCount(course) : 0;
+  const previewCount = rawPreview === Number.MAX_SAFE_INTEGER ? 0 : rawPreview;
+  const tierLabel = course && courseMinTier(course) > 0 && priceType === 'SUBSCRIPTION_INCLUDED'
+    ? tierDefinition(courseMinTier(course)).name
+    : '';
 
   // Only student accounts may enrol; returns the profile on success, null otherwise.
   const getStudentProfile = async (): Promise<UserProfile | null> => {
@@ -182,43 +210,226 @@ export default function CourseDetailPage() {
 
       {course && (
         <>
-          <section className="py-12 sm:py-16 bg-gradient-to-b from-blue-50 via-background to-background">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 grid lg:grid-cols-[1.4fr_1fr] gap-10">
-              {/* Left — hero text */}
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                <div className="flex items-center gap-2 mb-4">
-                  <Badge className="rounded-full bg-blue-50 text-blue-700 border-blue-200 text-xs font-semibold uppercase">
-                    {course.type ?? 'course'}
-                  </Badge>
-                  {course.level && (
-                    <Badge className="rounded-full bg-muted text-foreground border-border text-xs font-semibold">
-                      {course.level}
-                    </Badge>
-                  )}
-                  {course.category && (
-                    <Badge className="rounded-full bg-amber-50 text-amber-700 border-amber-200 text-xs font-semibold">
-                      {course.category}
-                    </Badge>
-                  )}
-                </div>
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground mb-4">
+          {/* ── Hero: dark band, sticky buy card overlaps it ── */}
+          <section className="relative bg-[#0f1117] text-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+              <div className="lg:max-w-[62%]">
+                <nav className="flex items-center gap-2 text-xs text-white/50 mb-4">
+                  <Link href="/courses" className="hover:text-white">Marketplace</Link>
+                  {course.category && <><span>›</span><span>{course.category}</span></>}
+                  {course.subject && <><span>›</span><span className="text-white/70">{course.subject}</span></>}
+                </nav>
+
+                <h1 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold leading-[1.15] tracking-tight mb-4">
                   {course.title}
                 </h1>
-                <p className="text-base text-muted-foreground leading-relaxed mb-6">{course.description}</p>
-                <p className="text-sm text-muted-foreground">
-                  Created by <span className="font-semibold text-foreground">{course.ownerName ?? 'Poket School'}</span>
-                  {course.durationHours ? ` · ${course.durationHours} hours of content` : ''}
-                  {course.enrollmentCount ? ` · ${course.enrollmentCount} enrolled` : ''}
-                </p>
-              </motion.div>
+                {course.description && (
+                  <p className="text-base sm:text-lg text-white/70 leading-relaxed mb-5 line-clamp-3">
+                    {course.description}
+                  </p>
+                )}
 
-              {/* Right — sticky buy card */}
-              <motion.div
-                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
-                className="lg:sticky lg:top-24 h-fit"
-              >
-                <Card className="p-6 border-2 shadow-lg">
-                  <div className="aspect-video bg-gradient-to-br from-blue-100 via-indigo-100 to-violet-100 rounded-xl mb-5 flex items-center justify-center overflow-hidden">
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm mb-4">
+                  <span className="inline-flex items-center gap-1.5 text-amber-300 font-bold">
+                    {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-3.5 h-3.5 fill-amber-300" />)}
+                    <span className="ml-1 text-white/80 font-medium">New course</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-white/70">
+                    <Users className="w-4 h-4" />
+                    {(course.enrollmentCount ?? 0).toLocaleString()} enrolled
+                  </span>
+                  {totalLessons > 0 && (
+                    <span className="inline-flex items-center gap-1.5 text-white/70">
+                      <BookOpen className="w-4 h-4" /> {totalLessons} lessons
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-white/60">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Award className="w-3.5 h-3.5" /> Created by{' '}
+                    <span className="text-white/90 font-semibold underline underline-offset-2">
+                      {course.ownerName || 'Poket School'}
+                    </span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" /> English</span>
+                  {course.level && (
+                    <span className="inline-flex items-center gap-1.5"><BarChart3 className="w-3.5 h-3.5" /> {course.level}</span>
+                  )}
+                  {tierLabel && (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-white/10 text-white/80 font-semibold">
+                      {tierLabel}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ── Body: content left, sticky purchase card right ── */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 relative">
+            <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-10 lg:items-start">
+
+              {/* Left column */}
+              <div className="py-10 space-y-10 min-w-0">
+
+                {/* What you'll learn */}
+                {course.whatYouLearn && course.whatYouLearn.length > 0 && (
+                  <section className="border border-border rounded-xl p-6">
+                    <h2 className="text-xl font-bold mb-4">What you&apos;ll learn</h2>
+                    <div className="grid sm:grid-cols-2 gap-x-8 gap-y-3">
+                      {course.whatYouLearn.map((item, i) => (
+                        <div key={i} className="flex items-start gap-2.5">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                          <span className="text-sm text-foreground/85 leading-relaxed">{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* Course content — the accordion */}
+                <section>
+                  <h2 className="text-xl font-bold mb-2">Course content</h2>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {curriculum.length} chapter{curriculum.length === 1 ? '' : 's'}
+                    {totalLessons > 0 && <> · {totalLessons} lesson{totalLessons === 1 ? '' : 's'}</>}
+                    {previewCount > 0 && previewCount !== Number.MAX_SAFE_INTEGER && (
+                      <> · <span className="text-emerald-600 font-semibold">
+                        first {previewCount} lesson{previewCount === 1 ? '' : 's'} free
+                      </span></>
+                    )}
+                  </p>
+
+                  {curriculum.length === 0 ? (
+                    <div className="border border-border rounded-xl p-8 text-center">
+                      <BookOpen className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        The curriculum for this course is being finalised.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="border border-border rounded-xl overflow-hidden divide-y divide-border">
+                      {curriculum.map((ch, ci) => {
+                        const open = openChapters.has(ch.module.id);
+                        return (
+                          <div key={ch.module.id}>
+                            <button
+                              onClick={() => setOpenChapters(prev => {
+                                const next = new Set(prev);
+                                next.has(ch.module.id) ? next.delete(ch.module.id) : next.add(ch.module.id);
+                                return next;
+                              })}
+                              aria-expanded={open}
+                              className="w-full flex items-center gap-3 px-4 sm:px-5 py-4 bg-muted/40 hover:bg-muted/70 transition-colors text-left"
+                            >
+                              <ChevronDown className={`w-4 h-4 shrink-0 text-muted-foreground transition-transform ${open ? '' : '-rotate-90'}`} />
+                              <span className="font-bold text-sm flex-1 min-w-0 truncate">
+                                {ch.module.title}
+                              </span>
+                              <span className="text-xs text-muted-foreground shrink-0">
+                                {ch.lessonsHidden
+                                  ? 'Sign in to view'
+                                  : `${ch.lessons.length} lesson${ch.lessons.length === 1 ? '' : 's'}`}
+                              </span>
+                            </button>
+
+                            {open && (
+                              <div className="bg-card">
+                                {ch.lessonsHidden ? (
+                                  <div className="px-5 py-4 flex items-center gap-2.5 text-sm text-muted-foreground">
+                                    <Lock className="w-4 h-4 shrink-0" />
+                                    <span>
+                                      <Link href={`/login?next=/courses/${course.id}`} className="font-semibold text-foreground underline">
+                                        Sign in
+                                      </Link>{' '}
+                                      to see the lessons in this chapter.
+                                    </span>
+                                  </div>
+                                ) : ch.lessons.length === 0 ? (
+                                  <p className="px-5 py-4 text-sm text-muted-foreground">No lessons yet.</p>
+                                ) : ch.lessons.map((l, li) => {
+                                  // Free-preview window runs across the whole course, not per chapter.
+                                  const absoluteIndex = curriculum
+                                    .slice(0, ci)
+                                    .reduce((n, c) => n + c.lessons.length, 0) + li;
+                                  const free = isLessonFree(course, absoluteIndex);
+                                  return (
+                                    <div key={l.id} className="flex items-center gap-3 px-5 py-3 border-t border-border/60">
+                                      {free
+                                        ? <PlayCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                                        : <Lock className="w-4 h-4 text-muted-foreground/60 shrink-0" />}
+                                      <span className="text-sm flex-1 min-w-0 truncate text-foreground/85">{l.title}</span>
+                                      {free && (
+                                        <span className="text-[11px] font-bold text-emerald-600 shrink-0">Preview</span>
+                                      )}
+                                      {l.durationMinutes ? (
+                                        <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
+                                          {l.durationMinutes}m
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
+
+                {/* Requirements */}
+                {course.requirements && course.requirements.length > 0 && (
+                  <section>
+                    <h2 className="text-xl font-bold mb-4">Requirements</h2>
+                    <ul className="space-y-2">
+                      {course.requirements.map((r, i) => (
+                        <li key={i} className="flex items-start gap-2.5 text-sm text-foreground/85">
+                          <span className="mt-2 w-1.5 h-1.5 rounded-full bg-foreground/50 shrink-0" />
+                          {r}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                )}
+
+                {/* Description */}
+                {course.description && (
+                  <section>
+                    <h2 className="text-xl font-bold mb-4">Description</h2>
+                    <p className="text-sm sm:text-[15px] text-foreground/80 leading-[1.75] whitespace-pre-line">
+                      {course.description}
+                    </p>
+                  </section>
+                )}
+
+                {/* Instructor */}
+                <section>
+                  <h2 className="text-xl font-bold mb-4">Instructor</h2>
+                  <div className="flex items-start gap-4">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shrink-0">
+                      {(course.ownerName || 'P').charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-bold underline underline-offset-2">{course.ownerName || 'Poket School'}</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {course.subject ? `${course.subject} educator` : 'Educator'}
+                      </p>
+                      <p className="text-sm text-foreground/75 mt-3 leading-relaxed">
+                        Courses on Poket School are built with Quill, our AI curriculum architect, and reviewed
+                        by the educator who publishes them.
+                      </p>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              {/* Right column — sticky purchase card, pulled up over the hero */}
+              <aside className="lg:sticky lg:top-20 lg:-mt-56 pb-10">
+                <div className="bg-card border border-border rounded-xl shadow-2xl overflow-hidden">
+                  <div className="aspect-video relative bg-muted">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={course.thumbnailUrl || courseCover(course.title, course.subject ?? '')}
@@ -226,106 +437,93 @@ export default function CourseDetailPage() {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <p className="text-4xl font-extrabold tracking-tight mb-4">{priceLabel(course)}</p>
-                  {isFree ? (
-                    <Button
-                      onClick={enrolFree}
-                      disabled={enrolling}
-                      className="w-full h-12 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold"
-                    >
-                      {enrolling ? 'Enrolling…' : user ? 'Enrol for free' : 'Sign in to enrol'}
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={buyPaid}
-                      disabled={enrolling}
-                      className="w-full h-12 rounded-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-semibold"
-                    >
-                      {enrolling ? 'Enrolling…' : user ? `Buy now — ${priceLabel(course)}` : 'Sign in to buy'}
-                    </Button>
-                  )}
-                  {course.previewUrl && (
-                    <a href={course.previewUrl} target="_blank" rel="noreferrer" className="block mt-3">
-                      <Button variant="outline" className="w-full h-12 rounded-full">
-                        Free preview
+
+                  <div className="p-6">
+                    <p className="text-3xl font-extrabold tracking-tight mb-1">{priceLabel(course)}</p>
+                    <p className="text-xs text-muted-foreground mb-5">
+                      {priceType === 'SUBSCRIPTION_INCLUDED'
+                        ? 'Included in your subscription'
+                        : priceType === 'MARKETPLACE_PURCHASE'
+                          ? 'One-time purchase · lifetime access'
+                          : 'No card required'}
+                    </p>
+
+                    {isFree ? (
+                      <Button
+                        onClick={enrolFree}
+                        disabled={enrolling}
+                        className="w-full h-12 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold"
+                      >
+                        {enrolling ? 'Enrolling…' : user ? 'Enrol for free' : 'Sign in to enrol'}
                       </Button>
-                    </a>
-                  )}
-                  <ul className="mt-5 space-y-2 text-sm text-muted-foreground">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Lifetime access
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Mobile & desktop
-                    </li>
-                    {course.workbookUrl && (
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Downloadable workbook PDF
-                      </li>
+                    ) : (
+                      <Button
+                        onClick={buyPaid}
+                        disabled={enrolling}
+                        className="w-full h-12 rounded-lg font-bold"
+                      >
+                        {enrolling ? 'Processing…' : user ? 'Buy this course' : 'Sign in to buy'}
+                      </Button>
                     )}
-                  </ul>
-                </Card>
-              </motion.div>
-            </div>
-          </section>
 
-          {/* What you'll learn */}
-          {course.whatYouLearn && course.whatYouLearn.length > 0 && (
-            <section className="py-12 sm:py-16">
-              <div className="max-w-4xl mx-auto px-4 sm:px-6">
-                <h2 className="text-2xl font-bold mb-6">What you&apos;ll learn</h2>
-                <ul className="grid sm:grid-cols-2 gap-3">
-                  {course.whatYouLearn.map((item, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-500" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </section>
-          )}
+                    <p className="text-[11px] text-center text-muted-foreground mt-3">
+                      30-day money-back guarantee
+                    </p>
 
-          {/* Requirements */}
-          {course.requirements && course.requirements.length > 0 && (
-            <section className="py-12 sm:py-16 bg-muted/30">
-              <div className="max-w-4xl mx-auto px-4 sm:px-6">
-                <h2 className="text-2xl font-bold mb-6">Requirements</h2>
-                <ul className="space-y-2 text-sm">
-                  {course.requirements.map((r, i) => (
-                    <li key={i} className="flex items-start gap-2"><span className="text-muted-foreground">•</span>{r}</li>
-                  ))}
-                </ul>
-              </div>
-            </section>
-          )}
+                    <div className="mt-6 pt-5 border-t border-border">
+                      <p className="text-xs font-bold uppercase tracking-wider mb-3">This course includes</p>
+                      <ul className="space-y-2.5 text-sm text-foreground/80">
+                        {totalLessons > 0 && (
+                          <li className="flex items-center gap-2.5">
+                            <BookOpen className="w-4 h-4 text-muted-foreground shrink-0" />
+                            {totalLessons} lessons across {curriculum.length} chapter{curriculum.length === 1 ? '' : 's'}
+                          </li>
+                        )}
+                        {course.durationHours ? (
+                          <li className="flex items-center gap-2.5">
+                            <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                            {course.durationHours} hours of content
+                          </li>
+                        ) : null}
+                        <li className="flex items-center gap-2.5">
+                          <Brain className="w-4 h-4 text-muted-foreground shrink-0" />
+                          AI study kit: notes, flashcards, quizzes, audio
+                        </li>
+                        <li className="flex items-center gap-2.5">
+                          <Smartphone className="w-4 h-4 text-muted-foreground shrink-0" />
+                          Learn on mobile and desktop
+                        </li>
+                        <li className="flex items-center gap-2.5">
+                          <InfinityIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+                          Lifetime access
+                        </li>
+                        <li className="flex items-center gap-2.5">
+                          <ShieldCheck className="w-4 h-4 text-muted-foreground shrink-0" />
+                          Certificate on completion
+                        </li>
+                      </ul>
+                    </div>
 
-          {/* Workbook */}
-          {course.workbookUrl && (
-            <section className="py-12 sm:py-16">
-              <div className="max-w-4xl mx-auto px-4 sm:px-6">
-                <Card className="p-6 border-2 border-dashed flex items-center gap-4">
-                  <FileText className="w-8 h-8 text-blue-500 shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold">Workbook PDF</p>
-                    <p className="text-xs text-muted-foreground">Available after enrolment / purchase.</p>
+                    {course.workbookUrl && (
+                      <a
+                        href={course.workbookUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-5 flex items-center justify-center gap-2 text-sm font-semibold text-foreground border border-border rounded-lg h-11 hover:bg-muted transition-colors"
+                      >
+                        <Download className="w-4 h-4" /> Download workbook
+                      </a>
+                    )}
                   </div>
-                  {user ? (
-                    <a href={course.workbookUrl} target="_blank" rel="noreferrer">
-                      <Button variant="outline">
-                        <Download className="w-4 h-4 mr-2" /> Download
-                      </Button>
-                    </a>
-                  ) : (
-                    <Button variant="outline" disabled>Sign in to download</Button>
-                  )}
-                </Card>
-              </div>
-            </section>
-          )}
+                </div>
+              </aside>
+            </div>
+          </div>
+        </>
+      )}
 
-          {/* Paid enrolment confirmation */}
-          <Dialog open={confirmOpen} onOpenChange={open => !enrolling && setConfirmOpen(open)}>
+      {course && (
+        <Dialog open={confirmOpen} onOpenChange={open => !enrolling && setConfirmOpen(open)}>
             <DialogContent className="rounded-2xl">
               <DialogHeader>
                 <DialogTitle>Confirm enrolment</DialogTitle>
@@ -352,7 +550,6 @@ export default function CourseDetailPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        </>
       )}
     </div>
   );

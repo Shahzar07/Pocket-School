@@ -42,64 +42,99 @@ interface Plan {
   tagline: string;
   monthly: number;
   annual: number;
+  /** International monthly rate in USD. */
+  usdMonthly: number;
+  /** Access tier from lib/entitlements.ts. */
+  tier: number;
   popular?: boolean;
   cta: string;
   features: string[];
   sparks: string;
 }
 
+/**
+ * The four plans from the Access Tiers brief (August 2026). Prices are the
+ * Malaysian ringgit rates; `usd` carries the international rate shown on the
+ * currency toggle. Tier numbers map to lib/entitlements.ts.
+ */
 const PLANS: Plan[] = [
   {
     id: 'free',
-    name: 'Free',
-    tagline: 'Everything you need to see whether this works for you. No card, no countdown.',
+    name: 'Free Preview',
+    tier: 0,
+    tagline: 'Browse everything, and take the first lesson of any course. No card, no countdown.',
     monthly: 0,
     annual: 0,
+    usdMonthly: 0,
     cta: 'Start free',
-    sparks: 'No monthly Sparks — top-up packs available',
+    sparks: '50 welcome Sparks',
     features: [
+      'Full course catalogue',
+      'First lesson of every course',
       'Ayla AI tutor — 20 messages a day',
       'Quill generator — 3 items a day',
-      '1 course enrolment',
-      'Community access',
+      'Buy any marketplace course outright',
     ],
   },
   {
-    id: 'academic',
-    name: 'Academic',
-    tagline: 'For students in the thick of IGCSE, A-Levels or foundation year.',
+    id: 'primary_secondary',
+    name: 'Primary & Lower Secondary',
+    tier: 1,
+    tagline: 'Years 1–9. Every core subject, built to the curriculum.',
     monthly: 49,
-    annual: 490,
-    popular: true,
-    cta: 'Get Academic',
-    sparks: '400 Sparks a month',
+    annual: 441,
+    usdMonthly: 19,
+    cta: 'Choose this plan',
+    sparks: '300 Sparks a month · 100 roll over',
     features: [
-      'Unlimited Ayla AI tutoring',
-      'Unlimited Quill generations',
-      'All 12 study formats',
-      'Full curriculum access',
-      '400 Sparks per month',
-      'Progress reports',
+      'Primary Years 1–6, all subjects',
+      'Lower Secondary Years 7–9',
+      'Unlimited Quill study materials',
+      'Progress tracking and streaks',
+      '300 Sparks a month',
+    ],
+  },
+  {
+    id: 'igcse_alevel',
+    name: 'IGCSE & A-Level',
+    tier: 2,
+    tagline: 'Years 10–13. The exam years, with everything below included.',
+    monthly: 352,
+    annual: 3168,
+    usdMonthly: 79,
+    popular: true,
+    cta: 'Choose this plan',
+    sparks: '800 Sparks a month · 300 roll over',
+    features: [
+      'IGCSE / GCSE — Cambridge & Edexcel',
+      'A-Level and AS-Level',
+      'Pre-University and Foundation',
+      'Everything in Primary & Lower Secondary',
+      'Ayla AI tutor, unlimited',
+      "Bloom's progress tracking",
       'Parent dashboard',
       'Completion certificates',
+      '800 Sparks a month',
     ],
   },
   {
     id: 'professional',
-    name: 'Professional',
-    tagline: 'For degree-level and professional learners who need the deep end.',
-    monthly: 99,
-    annual: 990,
-    cta: 'Get Professional',
-    sparks: '1,200 Sparks a month',
+    name: 'Professional & Degrees',
+    tier: 3,
+    tagline: 'Micro degrees, professional certifications and the UoL External LLB.',
+    monthly: 441,
+    annual: 3969,
+    usdMonthly: 99,
+    cta: 'Choose this plan',
+    sparks: '2,000 Sparks a month · 700 roll over',
     features: [
-      'Everything in Academic',
-      'LLB & professional pathways',
-      'Priority AI processing',
-      '1,200 Sparks per month',
-      'Full exam simulation',
-      '1:1 AI teacher sessions',
-      'Downloadable resources',
+      'Micro Degrees and Diplomas',
+      'Professional Certifications',
+      'University of London External LLB — all 12 modules',
+      'Amara, the law specialist AI teacher',
+      'IRAC coaching and case law analysis',
+      'Everything in IGCSE & A-Level',
+      '2,000 Sparks a month',
     ],
   },
 ];
@@ -208,7 +243,7 @@ export default function PricingPage() {
             </div>
             <p className="text-xs font-semibold text-[#1A73E8] inline-flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-[#F5B400]" />
-              Pay annually and get 2 months free
+              Pay annually and save 25% — three months free
             </p>
           </motion.div>
         </div>
@@ -217,14 +252,16 @@ export default function PricingPage() {
       {/* ── Plans ──────────────────────────────────────────────── */}
       <section className="bg-white pb-20 lg:pb-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="grid lg:grid-cols-3 gap-6 items-start">
+          <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-5 items-start">
             {PLANS.map((plan, i) => (
               <PlanCard key={plan.id} plan={plan} billing={billing} index={i} />
             ))}
           </div>
 
           <p className="mt-8 text-center text-xs text-slate-500">
-            All prices in Malaysian Ringgit (RM) and inclusive of applicable taxes. Cancel anytime.
+            All prices in Malaysian Ringgit (RM), inclusive of applicable taxes. Cancel anytime.
+            International pricing is billed in USD — {PLANS.filter(p => p.usdMonthly > 0).map(p => `${p.name} $${p.usdMonthly}/mo`).join(' · ')}.
+            Regional pricing is available for Nigeria, Pakistan, Bangladesh and Ghana — contact us.
           </p>
         </div>
       </section>

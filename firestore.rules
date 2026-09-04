@@ -82,11 +82,16 @@ service cloud.firestore {
       }
 
       match /modules/{moduleId} {
-        allow read: if isSignedIn();
+        // Chapter titles are public so the marketplace can show a course's
+        // curriculum before signup, the way every course marketplace does.
+        // Module documents hold titles and ordering only — no lesson content.
+        allow read: if true;
         allow create, update: if isTeacherOrAdmin();
         allow delete: if isAdmin();
 
         match /lessons/{lessonId} {
+          // Deliberately NOT public: lesson documents carry aiOutputs, the
+          // full generated content the paywall exists to protect.
           allow read: if isSignedIn();
           allow create, update: if isTeacherOrAdmin();
           allow delete: if isAdmin();

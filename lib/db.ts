@@ -27,6 +27,10 @@ export interface UserProfile {
   phoneVerified?: boolean;
   yearGroup?: 'Year 7' | 'Year 8' | 'Year 9';
   subscriptionTier?: 'free' | 'academic';
+  /** Entitlement tier 0-6. Absent falls back to subscriptionTier via accessTierFor(). */
+  accessTier?: number;
+  /** Manual allocation strings (alloc:free:*, alloc:marketplace:* and friends). */
+  permissions?: string[];
   sparksBalance?: number;
   sparksMonthlyAllowance?: number;
   sparksGrantedAt?: Timestamp;
@@ -59,6 +63,18 @@ export interface Course {
   enrollmentCount?: number;
   durationHours?: number;
   previewUrl?: string;
+  /** Entitlement gate 1 — minimum access tier (0-6). Absent values are derived
+   * from `level` and `kind` by courseMinTier(), so existing courses keep working. */
+  minTier?: number;
+  /** Entitlement gate 2 — how this course is paid for. Derived by
+   * coursePriceType() when absent. */
+  priceType?: 'FREE' | 'FREE_PREVIEW' | 'SUBSCRIPTION_INCLUDED' | 'MARKETPLACE_PURCHASE' | 'INSTITUTION_ALLOCATED' | 'COUPON_SCHOLARSHIP';
+  /** Opening lessons that are free to everyone. Defaults to 1 on paid courses. */
+  freePreviewCount?: number;
+  /** Content type used by checkEntitlement(). */
+  contentType?: string;
+  /** Marketplace revenue split, when teacher-created. */
+  revenueSplit?: { teacher: number; platform: number };
   /** Discriminator: absent or 'marketplace' = teacher/marketplace course. 'curriculum' = a
    * Programme Module (one subject for one academic year), organised into Units (the
    * `modules` subcollection) and Lessons. */
@@ -1187,6 +1203,31 @@ export async function isSubdomainAvailable(subdomain: string, exceptId?: string)
 }
 
 /** Members of one institution — the listing an institution admin is scoped to. */
+/* ── Entitlement allocations ─────────────────────────────────── */
+
+/**
+ * Grant an allocation permission to a user.
+ *
+ * Allocations are additive strings on the profile — scholarships, marketplace
+ * purchases, institution contracts. arrayUnion keeps the write idempotent so
+ * granting twice is harmless.
+ */
+export async function grantPermission(userId: string, permission: string): Promise<void> {
+  await updateDoc(doc(db, 'users', userId), { permissions: arrayUnion(permission) });
+}
+
+export async function revokePermission(userId: string, permission: string): Promise<void> {
+  await updateDoc(doc(db, 'users', userId), { permissions: arrayRemove(permission) });
+}
+
+/** Set a user's access tier (0-6). */
+export async function setAccessTier(userId: string, tier: number): Promise<void> {
+  await updateDoc(doc(db, 'users', userId), {
+    accessTier: Math.max(0, Math.min(6, Math.round(tier))),
+    updatedAt: serverTimestamp(),
+  });
+}
+
 export async function getInstitutionMembers(institutionId: string): Promise<{ id: string; data: UserProfile }[]> {
   const snap = await getDocs(query(collection(db, 'users'), where('institutionId', '==', institutionId)));
   return snap.docs.map(d => ({ id: d.id, data: d.data() as UserProfile }));
@@ -1325,6 +1366,35 @@ export async function seedDemoData(adminId: string): Promise<{ coursesCreated: n
 export async function getModules(courseId: string): Promise<Module[]> {
   const snap = await getDocs(query(collection(db, 'courses', courseId, 'modules'), orderBy('order', 'asc')));
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as Module));
+}
+
+/**
+ * Course curriculum for the public course page.
+ *
+ * Chapters are readable without an account; lessons are not, because lesson
+ * documents carry the generated content the paywall protects. Signed-out
+ * visitors therefore get chapter titles and the page invites them to sign in
+ * for the lesson list, rather than the whole request failing.
+ */
+export async function getPublicCurriculum(courseId: string): Promise<{
+  module: Module; lessons: Lesson[]; lessonsHidden: boolean;
+}[]> {
+  const modSnap = await getDocs(
+    query(collection(db, 'courses', courseId, 'modules'), orderBy('order', 'asc')),
+  );
+  const out: { module: Module; lessons: Lesson[]; lessonsHidden: boolean }[] = [];
+  for (const m of modSnap.docs) {
+    const module = { id: m.id, ...m.data() } as Module;
+    try {
+      const les = await getDocs(
+        query(collection(db, 'courses', courseId, 'modules', m.id, 'lessons'), orderBy('order', 'asc')),
+      );
+      out.push({ module, lessons: les.docs.map(d => ({ id: d.id, ...d.data() } as Lesson)), lessonsHidden: false });
+    } catch {
+      out.push({ module, lessons: [], lessonsHidden: true });
+    }
+  }
+  return out;
 }
 
 export async function getEnrollmentsForCourse(courseId: string): Promise<{ studentId: string; progress: number; completedLessons: string[] }[]> {
