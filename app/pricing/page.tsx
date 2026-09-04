@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion, type Variants } from 'motion/react';
+import { ADDONS, TIERS } from '@/lib/entitlements';
 import {
   ArrowRight,
   Check,
+  Video,
   ChevronDown,
   ChevronUp,
   Sparkles,
@@ -263,6 +265,51 @@ export default function PricingPage() {
             International pricing is billed in USD — {PLANS.filter(p => p.usdMonthly > 0).map(p => `${p.name} $${p.usdMonthly}/mo`).join(' · ')}.
             Regional pricing is available for Nigeria, Pakistan, Bangladesh and Ghana — contact us.
           </p>
+        </div>
+      </section>
+
+      {/* ── Add-ons ────────────────────────────────────────────── */}
+      <section id="addons" className="bg-white pb-20 lg:pb-24 scroll-mt-24">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-8">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#7C3AED]">Add-ons</p>
+            <h2 className="font-heading text-3xl sm:text-4xl text-slate-900 tracking-tight mt-2">
+              Bought on top of a plan
+            </h2>
+            <p className="text-slate-600 mt-2 text-sm sm:text-base">
+              Independent of your subscription — cancel either without touching the other.
+            </p>
+          </div>
+
+          {ADDONS.map(a => (
+            <div
+              key={a.id}
+              className="rounded-2xl border-2 border-slate-200 bg-white p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center gap-6 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.4)]"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#1A73E8] grid place-items-center shrink-0">
+                <Video className="w-7 h-7 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-lg text-slate-900">{a.name}</h3>
+                <p className="text-sm text-slate-600 mt-1 leading-relaxed">{a.blurb}</p>
+                <p className="text-xs text-slate-500 mt-2">
+                  Requires the {TIERS.find(t => t.tier === a.requiresTier)?.name} plan or above.
+                </p>
+              </div>
+              <div className="text-center sm:text-right shrink-0">
+                <p className="text-2xl font-extrabold text-slate-900">
+                  RM{a.myrMonthly}<span className="text-sm font-medium text-slate-500">/mo</span>
+                </p>
+                <p className="text-[11px] text-slate-500">or ${a.usdMonthly}/mo</p>
+                <a
+                  href="mailto:hello@poketschool.ai?subject=Lyra%20Live%20add-on"
+                  className="mt-3 inline-flex items-center justify-center h-10 px-5 rounded-full bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 transition-colors"
+                >
+                  Request access
+                </a>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 

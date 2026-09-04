@@ -26,11 +26,27 @@ service cloud.firestore {
 
     function isTeacherOrAdmin() { return isSignedIn() && role() in ['teacher', 'admin', 'institution_admin']; }
 
+    // Fields a user must never be able to set on their own profile. Writing
+    // any of these is privilege escalation: role grants the admin console,
+    // accessTier and subscriptionTier unlock paid content, permissions can
+    // carry alloc:free:* for any course, and institutionId joins someone
+    // else's school. Only an admin may change them.
+    function privilegedUserFields() {
+      // childIds is deliberately NOT here: a parent adds their own children
+      // during onboarding, and that link is guarded by parent_verifications
+      // rather than by this rule.
+      return ['role', 'accessTier', 'subscriptionTier', 'permissions',
+              'institutionId', 'adminSparksGrantedAt'];
+    }
+
     // ── Users ─────────────────────────────────────────────────
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isUser(userId);
-      allow update: if isUser(userId) || isAdmin();
+      allow update: if isAdmin()
+        || (isUser(userId)
+            && !request.resource.data.diff(resource.data).affectedKeys()
+                 .hasAny(privilegedUserFields()));
       allow delete: if isAdmin();
 
       // Sparks wallet ledger
@@ -97,6 +113,46 @@ service cloud.firestore {
           allow delete: if isAdmin();
         }
       }
+    }
+
+    // ── Coupon codes ──────────────────────────────────────────
+    match /coupon_codes/{code} {
+      // Readable so a student can validate a code they were given.
+      allow read: if isSignedIn();
+      allow create, delete: if isAdmin();
+      // A redeemer may only bump the counter by one and add themselves to the
+      // redeemed list; everything else about a coupon is the admin's.
+      allow update: if isAdmin()
+        || (isSignedIn()
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['usedCount', 'redeemedBy'])
+            && request.resource.data.usedCount == resource.data.usedCount + 1
+            && request.resource.data.redeemedBy.hasAll(resource.data.redeemedBy)
+            && request.auth.uid in request.resource.data.redeemedBy);
+    }
+
+    // ── Coupon redemptions ────────────────────────────────────
+    // A redemption is the record of a coupon grant. It lives here rather than
+    // as a permission string on the profile because users cannot be trusted to
+    // write their own permissions — the rule below re-reads the real coupon and
+    // refuses anything that does not match it, so a forged redemption is
+    // impossible even though the write comes from the client.
+    match /coupon_redemptions/{redemptionId} {
+      allow read: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || isTeacherOrAdmin());
+      allow create: if isSignedIn()
+        && incoming().userId == request.auth.uid
+        && exists(/databases/$(database)/documents/coupon_codes/$(incoming().code))
+        && get(/databases/$(database)/documents/coupon_codes/$(incoming().code)).data.active == true
+        && get(/databases/$(database)/documents/coupon_codes/$(incoming().code)).data.discountPct >= 100
+        && get(/databases/$(database)/documents/coupon_codes/$(incoming().code)).data.courseId == incoming().courseId
+        && get(/databases/$(database)/documents/coupon_codes/$(incoming().code)).data.expiresAt == incoming().expiresAt
+        && request.time < timestamp.date(
+             int(incoming().expiresAt[0:4]),
+             int(incoming().expiresAt[5:7]),
+             int(incoming().expiresAt[8:10])) + duration.value(1, 'd');
+      allow update: if false;
+      allow delete: if isAdmin();
     }
 
     // ── Institutions ──────────────────────────────────────────

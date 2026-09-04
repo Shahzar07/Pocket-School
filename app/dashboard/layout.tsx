@@ -7,7 +7,7 @@ import { auth } from '@/lib/firebase';
 import { useEffect, useState } from 'react';
 import {
   Loader2, Menu, Home, BookOpen, Clock, Activity, MessageSquare,
-  ClipboardList, Presentation, Shield, BarChart, Settings, FileText,
+  ClipboardList, Presentation, Shield, BarChart, Settings, FileText, KeyRound,
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
@@ -127,6 +127,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/admin/users', icon: UserCog, label: 'Users & Sparks' },
       { href: '/dashboard/admin/institutions', icon: Users, label: 'Institutions' },
       { href: '/dashboard/admin/access', icon: Shield, label: 'Access Config' },
+      { href: '/dashboard/admin/allocations', icon: KeyRound, label: 'Allocations' },
       { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
       { href: '/dashboard/admin/settings', icon: Settings, label: 'System Settings' },
       { href: '/dashboard/admin/verifications', icon: ShieldCheck, label: 'Verifications' },

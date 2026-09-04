@@ -25,7 +25,8 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import { Timestamp } from 'firebase/firestore';
 import {
   getPublicCourseById, enrollStudent, incrementEnrollment, createInvoice, getUser,
-  getPublicCurriculum, type Course, type UserProfile, type Module, type Lesson,
+  getPublicCurriculum, redeemCouponCode, getCouponPermissions,
+  type Course, type UserProfile, type Module, type Lesson,
 } from '@/lib/db';
 import { coursePriceType, freePreviewCount, isLessonFree, courseMinTier, tierDefinition } from '@/lib/entitlements';
 import { courseCover } from '@/lib/course-cover';
@@ -49,6 +50,11 @@ export default function CourseDetailPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [curriculum, setCurriculum] = useState<{ module: Module; lessons: Lesson[]; lessonsHidden: boolean }[]>([]);
   const [openChapters, setOpenChapters] = useState<Set<string>>(new Set());
+  const [couponOpen, setCouponOpen] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [redeeming, setRedeeming] = useState(false);
+  /** Coupon grants held by the signed-in user, for this course. */
+  const [couponGranted, setCouponGranted] = useState(false);
 
   const load = async () => {
     if (!courseId) return;
@@ -78,6 +84,43 @@ export default function CourseDetailPage() {
     const unsub = onAuthStateChanged(auth, (u) => setUser(u));
     return () => unsub();
   }, []);
+
+  // Does this person already hold a live coupon for this course?
+  useEffect(() => {
+    if (!user || !courseId) { setCouponGranted(false); return; }
+    let cancelled = false;
+    getCouponPermissions(user.uid)
+      .then(perms => {
+        if (!cancelled) setCouponGranted(perms.some(p => p.startsWith(`alloc:coupon:${courseId}:`)));
+      })
+      .catch(() => { if (!cancelled) setCouponGranted(false); });
+    return () => { cancelled = true; };
+  }, [user, courseId]);
+
+  const redeem = async () => {
+    if (!user) { router.push(`/login?next=/courses/${courseId}`); return; }
+    const code = couponCode.trim();
+    if (!code) return;
+    setRedeeming(true);
+    try {
+      const r = await redeemCouponCode(user.uid, code);
+      if (r.courseId !== courseId) {
+        toast.error('That code is for a different course.');
+      } else if (r.grantedAccess) {
+        setCouponGranted(true);
+        setCouponOpen(false);
+        setCouponCode('');
+        toast.success(`Code applied — free access until ${r.expiresAt}.`);
+      } else {
+        toast.success(`${r.discountPct}% discount applied at checkout.`);
+        setCouponOpen(false);
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'That code could not be redeemed.');
+    } finally {
+      setRedeeming(false);
+    }
+  };
 
   const isFree = !course?.price || course.price === 0;
 
@@ -469,6 +512,39 @@ export default function CourseDetailPage() {
                     <p className="text-[11px] text-center text-muted-foreground mt-3">
                       30-day money-back guarantee
                     </p>
+
+                    {/* Coupon / scholarship code */}
+                    {couponGranted ? (
+                      <p className="mt-4 flex items-center justify-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg py-2.5">
+                        <CheckCircle2 className="w-4 h-4" /> A scholarship code is applied to this course
+                      </p>
+                    ) : couponOpen ? (
+                      <div className="mt-4 space-y-2">
+                        <input
+                          value={couponCode}
+                          onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                          onKeyDown={e => e.key === 'Enter' && redeem()}
+                          placeholder="Enter code"
+                          aria-label="Coupon or scholarship code"
+                          className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm font-mono tracking-wider uppercase"
+                        />
+                        <div className="flex gap-2">
+                          <Button onClick={redeem} disabled={redeeming || !couponCode.trim()} className="flex-1 h-10 rounded-lg font-bold">
+                            {redeeming ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
+                          </Button>
+                          <Button variant="ghost" onClick={() => setCouponOpen(false)} className="h-10 rounded-lg">
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setCouponOpen(true)}
+                        className="mt-4 w-full text-xs font-semibold text-muted-foreground hover:text-foreground underline underline-offset-4"
+                      >
+                        Have a coupon or scholarship code?
+                      </button>
+                    )}
 
                     <div className="mt-6 pt-5 border-t border-border">
                       <p className="text-xs font-bold uppercase tracking-wider mb-3">This course includes</p>
