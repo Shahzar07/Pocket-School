@@ -15,13 +15,14 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeft, X, Send, Loader2, Volume2, VolumeX, Globe, Sparkles,
   MessageSquare, ClipboardList, StickyNote, CheckCircle2, XCircle,
-  Lightbulb, PenSquare, BookOpen, Wand2, Phone,
+  Lightbulb, PenSquare, BookOpen, Wand2, Phone, Lock,
 } from 'lucide-react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { AI_TEACHERS } from '@/lib/ai-teachers';
 import { MathMarkdown } from '@/components/math-markdown';
 import { LiveVoiceSession } from '@/components/live-voice-session';
 import { LANGUAGES, LANGUAGE_STORAGE_KEY } from '@/lib/languages';
+import { permissionsFor, hasAddOn, addOn } from '@/lib/entitlements';
 
 type Msg = { role: 'user' | 'model'; text: string };
 
@@ -76,8 +77,12 @@ const QUICK_ACTIONS = [
 export default function TeacherSessionPage({ params }: { params: Promise<{ teacherId: string }> }) {
   const { teacherId } = use(params);
   const router = useRouter();
-  const { user, loading } = useAuthSTORE();
+  const { user, profile, loading } = useAuthSTORE();
   const teacher = AI_TEACHERS.find((t) => t.id === teacherId);
+
+  /** Lyra Live is sold as an add-on, so it is not implied by any plan. */
+  const lyraUnlocked = hasAddOn(permissionsFor(profile), 'lyra_live');
+  const lyra = addOn('lyra_live');
 
   const [messages, setMessages] = useState<Msg[]>([]);
   const [board, setBoard] = useState<BoardItem[]>([]);
@@ -89,6 +94,7 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
   const [speaking, setSpeaking] = useState(false);
   /** Full hands-free voice call with the teacher. */
   const [liveVoice, setLiveVoice] = useState(false);
+  const [lyraPrompt, setLyraPrompt] = useState(false);
   const [lang, setLang] = useState('en');
   const [langOpen, setLangOpen] = useState(false);
   const [notes, setNotes] = useState('');
@@ -296,6 +302,48 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
     <div className="fixed inset-0 bg-[#07070E] text-white overflow-hidden flex flex-col">
       {/* ── Hands-free voice call overlay ── */}
       <AnimatePresence>
+        {lyraPrompt && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 bg-black/70 backdrop-blur-sm grid place-items-center p-4"
+            onClick={() => setLyraPrompt(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.96, y: 10 }} animate={{ scale: 1, y: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-[#15161c] border border-white/10 rounded-3xl p-7 max-w-sm w-full text-center"
+            >
+              <div className="w-12 h-12 rounded-2xl grid place-items-center mx-auto mb-4"
+                style={{ background: teacher?.accentColor }}>
+                <Phone className="w-6 h-6 text-black" />
+              </div>
+              <h3 className="text-white font-bold text-lg">{lyra?.name ?? 'Lyra Live'}</h3>
+              <p className="text-white/60 text-sm mt-2 leading-relaxed">
+                {lyra?.blurb}
+              </p>
+              <p className="text-white text-2xl font-extrabold mt-5">
+                ${lyra?.usdMonthly}<span className="text-sm font-medium text-white/50">/month</span>
+              </p>
+              <p className="text-white/40 text-[11px] mt-1">
+                Added on top of your plan. Chat with {teacher?.name.split(' ')[0]} stays free.
+              </p>
+              <Link
+                href="/pricing#addons"
+                className="mt-5 block w-full h-11 rounded-full font-bold text-black grid place-items-center"
+                style={{ background: teacher?.accentColor }}
+              >
+                See Lyra Live
+              </Link>
+              <button
+                onClick={() => setLyraPrompt(false)}
+                className="mt-3 text-white/50 hover:text-white text-xs font-semibold"
+              >
+                Keep chatting instead
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+
         {liveVoice && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -349,12 +397,21 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
           </div>
           {/* Hands-free voice call — talk out loud, teacher replies instantly. */}
           <button
-            onClick={() => { if (audioRef.current) audioRef.current.pause(); setLiveVoice(true); }}
+            onClick={() => {
+              // Lyra Live is a paid add-on, not part of any base plan.
+              if (!lyraUnlocked) { setLyraPrompt(true); return; }
+              if (audioRef.current) audioRef.current.pause();
+              setLiveVoice(true);
+            }}
             className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full text-black transition-transform hover:scale-105"
             style={{ background: teacher.accentColor }}
-            title={`Talk out loud with ${teacher.name.split(' ')[0]}`}
+            title={lyraUnlocked
+              ? `Talk out loud with ${teacher.name.split(' ')[0]}`
+              : 'Talk live is part of the Lyra Live add-on'}
           >
-            <Phone className="w-3.5 h-3.5" /><span className="hidden sm:inline">Talk live</span>
+            <Phone className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Talk live</span>
+            {!lyraUnlocked && <Lock className="w-3 h-3" />}
           </button>
           <button onClick={() => { setVoiceOn(v => !v); if (voiceOn && audioRef.current) audioRef.current.pause(); }}
             className="text-white/70 hover:text-white p-1.5 rounded-lg hover:bg-white/5" title={voiceOn ? 'Mute voice' : 'Unmute voice'}>

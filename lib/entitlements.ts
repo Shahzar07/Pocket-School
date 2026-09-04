@@ -188,6 +188,46 @@ export const allocCoupon = (courseId: string, expiry: string) => `alloc:coupon:$
 export const allocInstitution = (instId: string, courseId: string) =>
   `alloc:institution:${instId}:${courseId}`;
 
+/* ── Add-ons ─────────────────────────────────────────────────── */
+
+export interface AddOn {
+  id: string;
+  permission: string;
+  name: string;
+  blurb: string;
+  usdMonthly: number;
+  myrMonthly: number;
+  /** Base tier required before the add-on can be bought. */
+  requiresTier: AccessTier;
+}
+
+/**
+ * Add-ons are bought on top of a qualifying plan and are independent of it —
+ * cancelling the add-on leaves the plan intact, and vice versa.
+ */
+export const ADDONS: AddOn[] = [
+  {
+    id: 'lyra_live',
+    permission: 'addon:lyra_live',
+    name: 'Lyra Live',
+    blurb: 'Real-time face-to-face sessions with an AI teacher who sees and hears you.',
+    usdMonthly: 49,
+    myrMonthly: 219,
+    requiresTier: 2,
+  },
+];
+
+export function addOn(id: string): AddOn | undefined {
+  return ADDONS.find(a => a.id === id);
+}
+
+/** Does this permission set include a given add-on? Super admins always do. */
+export function hasAddOn(permissions: string[], id: string): boolean {
+  if (permissions.includes('role:super_admin')) return true;
+  const a = addOn(id);
+  return !!a && permissions.includes(a.permission);
+}
+
 /** Permissions implied by an access tier. Cumulative — each tier includes those below. */
 export function permissionsForTier(tier: AccessTier): string[] {
   const p = ['free:preview', 'plan:marketplace_purchase'];

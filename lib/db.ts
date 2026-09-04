@@ -1203,6 +1203,163 @@ export async function isSubdomainAvailable(subdomain: string, exceptId?: string)
 }
 
 /** Members of one institution — the listing an institution admin is scoped to. */
+/* ── Coupon codes ────────────────────────────────────────────── */
+
+export interface CouponCode {
+  id: string;
+  /** 6-character uppercase code. Stored uppercase; matched case-insensitively. */
+  code: string;
+  courseId: string;
+  courseTitle?: string;
+  /** 1-100. Only 100 grants access outright; lower values are a price discount. */
+  discountPct: number;
+  maxUses: number;
+  usedCount: number;
+  /** ISO date (YYYY-MM-DD). Access lasts through this day. */
+  expiresAt: string;
+  createdBy: string;
+  createdByName?: string;
+  /** Uids that have already redeemed, so nobody can redeem twice. */
+  redeemedBy?: string[];
+  active?: boolean;
+  createdAt?: Timestamp;
+}
+
+/** Unambiguous alphabet — no O/0 or I/1, which get mistyped off a printed code. */
+const COUPON_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+export function generateCouponCode(length = 6): string {
+  let out = '';
+  const bytes = typeof crypto !== 'undefined' && crypto.getRandomValues
+    ? crypto.getRandomValues(new Uint8Array(length))
+    : null;
+  for (let i = 0; i < length; i++) {
+    const n = bytes ? bytes[i] : Math.floor(Math.random() * 256);
+    out += COUPON_ALPHABET[n % COUPON_ALPHABET.length];
+  }
+  return out;
+}
+
+export async function createCouponCode(
+  data: Omit<CouponCode, 'id' | 'usedCount' | 'redeemedBy' | 'createdAt'>,
+): Promise<string> {
+  const code = data.code.trim().toUpperCase();
+  // The code is the document id, so Firestore itself enforces uniqueness and a
+  // duplicate can never be created by two admins at once.
+  const ref = doc(db, 'coupon_codes', code);
+  const existing = await getDoc(ref);
+  if (existing.exists()) throw new Error(`Code "${code}" already exists.`);
+  await setDoc(ref, {
+    ...data, code, usedCount: 0, redeemedBy: [], active: true, createdAt: serverTimestamp(),
+  });
+  return code;
+}
+
+export async function getCouponCodes(): Promise<CouponCode[]> {
+  const snap = await getDocs(query(collection(db, 'coupon_codes'), orderBy('createdAt', 'desc')));
+  return snap.docs.map(d => ({ ...(d.data() as CouponCode), id: d.id }));
+}
+
+export async function setCouponActive(code: string, active: boolean): Promise<void> {
+  await updateDoc(doc(db, 'coupon_codes', code.trim().toUpperCase()), { active });
+}
+
+export async function deleteCouponCode(code: string): Promise<void> {
+  await deleteDoc(doc(db, 'coupon_codes', code.trim().toUpperCase()));
+}
+
+export interface CouponRedemption {
+  courseId: string;
+  courseTitle?: string;
+  discountPct: number;
+  expiresAt: string;
+  /** True when the coupon granted access outright rather than a discount. */
+  grantedAccess: boolean;
+}
+
+/**
+ * Redeem a coupon for the signed-in user.
+ *
+ * Runs in a transaction so `usedCount` cannot exceed `maxUses` when several
+ * students redeem the last remaining use at the same moment — the classic way
+ * a scholarship code gets over-issued.
+ *
+ * The grant is written to `coupon_redemptions`, NOT as a permission string on
+ * the profile. Users cannot be trusted to write their own permissions (that
+ * would let anyone grant themselves alloc:free for any course), so security
+ * rules re-read the real coupon and reject a redemption whose course, expiry
+ * or discount does not match it. getCouponPermissions() turns these records
+ * back into permission strings at read time.
+ */
+export async function redeemCouponCode(userId: string, rawCode: string): Promise<CouponRedemption> {
+  const code = rawCode.trim().toUpperCase();
+  if (!code) throw new Error('Enter a code.');
+
+  const couponRef = doc(db, 'coupon_codes', code);
+  return runTransaction(db, async (tx) => {
+    const snap = await tx.get(couponRef);
+    if (!snap.exists()) throw new Error('That code was not recognised.');
+    const c = snap.data() as CouponCode;
+
+    if (c.active === false) throw new Error('That code is no longer active.');
+    const today = new Date().toISOString().slice(0, 10);
+    if (c.expiresAt && c.expiresAt < today) throw new Error('That code has expired.');
+    if ((c.redeemedBy ?? []).includes(userId)) throw new Error('You have already redeemed this code.');
+    if (c.usedCount >= c.maxUses) throw new Error('That code has been fully redeemed.');
+
+    tx.update(couponRef, {
+      usedCount: c.usedCount + 1,
+      redeemedBy: arrayUnion(userId),
+    });
+
+    const grantedAccess = c.discountPct >= 100;
+    if (grantedAccess) {
+      // One document per user per code, so a redemption can never be duplicated.
+      tx.set(doc(db, 'coupon_redemptions', `${userId}_${code}`), {
+        userId, code, courseId: c.courseId, courseTitle: c.courseTitle ?? '',
+        expiresAt: c.expiresAt, discountPct: c.discountPct,
+        redeemedAt: serverTimestamp(),
+      });
+    }
+    return {
+      courseId: c.courseId, courseTitle: c.courseTitle,
+      discountPct: c.discountPct, expiresAt: c.expiresAt, grantedAccess,
+    };
+  });
+}
+
+/**
+ * A user's live coupon grants as permission strings.
+ *
+ * Expired redemptions are filtered here rather than deleted, so the record of
+ * who redeemed what survives for reporting while access ends on the day.
+ */
+export async function getCouponPermissions(userId: string): Promise<string[]> {
+  try {
+    const snap = await getDocs(
+      query(collection(db, 'coupon_redemptions'), where('userId', '==', userId)),
+    );
+    const today = new Date().toISOString().slice(0, 10);
+    return snap.docs
+      .map(d => d.data() as { courseId: string; expiresAt: string })
+      .filter(r => !r.expiresAt || r.expiresAt >= today)
+      .map(r => `alloc:coupon:${r.courseId}:${r.expiresAt}`);
+  } catch {
+    // Entitlements must degrade to "no coupon" rather than failing the page.
+    return [];
+  }
+}
+
+/** Every redemption of a code, for the admin coupon list. */
+export async function getCouponRedemptions(code: string): Promise<
+  { userId: string; courseId: string; expiresAt: string; redeemedAt?: Timestamp }[]
+> {
+  const snap = await getDocs(
+    query(collection(db, 'coupon_redemptions'), where('code', '==', code.trim().toUpperCase())),
+  );
+  return snap.docs.map(d => d.data() as { userId: string; courseId: string; expiresAt: string; redeemedAt?: Timestamp });
+}
+
 /* ── Entitlement allocations ─────────────────────────────────── */
 
 /**
