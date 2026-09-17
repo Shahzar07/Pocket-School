@@ -21,6 +21,8 @@ import { DashboardSearch } from '@/components/dashboard-search';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { SparksChip } from '@/components/sparks-chip';
 import { upsertUserSession, accountStatusOf } from '@/lib/db';
+import { PipGuide } from '@/components/pip-guide';
+import type { TourRole } from '@/lib/tour-steps';
 import Link from 'next/link';
 
 type Role = 'student' | 'teacher' | 'parent' | 'admin';
@@ -236,7 +238,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* ── Sidebar — dark glass ── */}
-      <aside className={`relative bg-[#070B14] flex flex-col transition-all duration-300 shrink-0 ${sidebarOpen ? 'w-[270px]' : 'w-0 opacity-0 overflow-hidden'}`}>
+      <aside data-tour="sidebar" className={`relative bg-[#070B14] flex flex-col transition-all duration-300 shrink-0 ${sidebarOpen ? 'w-[270px]' : 'w-0 opacity-0 overflow-hidden'}`}>
         {/* ambient glow inside sidebar */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -top-24 -left-24 w-72 h-72 rounded-full bg-[#1A73E8]/10 blur-[90px]" />
@@ -308,13 +310,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => setSidebarOpen(!sidebarOpen)}>
               <Menu className="w-5 h-5 text-muted-foreground" />
             </Button>
-            <DashboardSearch />
+            <PipGuide role={role as TourRole} />
+            <span data-tour="search"><DashboardSearch /></span>
           </div>
           <div className="flex items-center gap-1.5">
-            <SparksChip />
-            <LanguageSwitcher />
-            <NotificationsBell />
-            <button onClick={() => router.push('/dashboard/profile')} className="ml-1">
+            <span data-tour="sparks"><SparksChip /></span>
+            <span data-tour="language"><LanguageSwitcher /></span>
+            <span data-tour="notifications"><NotificationsBell /></span>
+            <button onClick={() => router.push('/dashboard/profile')} className="ml-1" data-tour="profile">
               <Avatar className="w-9 h-9 border-2 border-border cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all">
                 <AvatarImage src={profile.avatarUrl ?? user.photoURL ?? undefined} />
                 <AvatarFallback className="bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] text-white text-sm font-bold">
