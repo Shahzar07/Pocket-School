@@ -31,6 +31,10 @@ export interface UserProfile {
   accessTier?: number;
   /** Manual allocation strings (alloc:free:*, alloc:marketplace:* and friends). */
   permissions?: string[];
+  /** Account lifecycle. Absent means active — existing accounts predate this
+   * field and must not be treated as suspended. */
+  accountStatus?: 'active' | 'suspended' | 'pending' | 'inactive';
+  lastActiveAt?: Timestamp;
   sparksBalance?: number;
   sparksMonthlyAllowance?: number;
   sparksGrantedAt?: Timestamp;
@@ -1380,6 +1384,48 @@ export async function grantPermission(userId: string, permission: string): Promi
 
 export async function revokePermission(userId: string, permission: string): Promise<void> {
   await updateDoc(doc(db, 'users', userId), { permissions: arrayRemove(permission) });
+}
+
+export type AccountStatus = 'active' | 'suspended' | 'pending' | 'inactive';
+
+/** Absent status means active — accounts created before the field existed. */
+export function accountStatusOf(p: { accountStatus?: string } | null | undefined): AccountStatus {
+  const s = p?.accountStatus;
+  return s === 'suspended' || s === 'pending' || s === 'inactive' ? s : 'active';
+}
+
+/**
+ * Admin: change an account's status. Suspending blocks sign-in on the next
+ * load — see the dashboard guard — rather than only greying out a row.
+ */
+export async function setAccountStatus(userId: string, status: AccountStatus): Promise<void> {
+  await updateDoc(doc(db, 'users', userId), { accountStatus: status, updatedAt: serverTimestamp() });
+}
+
+export async function setAccountStatusBulk(userIds: string[], status: AccountStatus): Promise<void> {
+  // Chunked under Firestore's 500-operation batch limit.
+  const CHUNK = 400;
+  for (let i = 0; i < userIds.length; i += CHUNK) {
+    const batch = writeBatch(db);
+    for (const id of userIds.slice(i, i + CHUNK)) {
+      batch.update(doc(db, 'users', id), { accountStatus: status, updatedAt: serverTimestamp() });
+    }
+    await batch.commit();
+  }
+}
+
+/** Admin: remove a user profile. Auth record removal is a console action. */
+export async function deleteUserProfile(userId: string): Promise<void> {
+  await deleteDoc(doc(db, 'users', userId));
+}
+
+export async function deleteUserProfiles(userIds: string[]): Promise<void> {
+  const CHUNK = 400;
+  for (let i = 0; i < userIds.length; i += CHUNK) {
+    const batch = writeBatch(db);
+    for (const id of userIds.slice(i, i + CHUNK)) batch.delete(doc(db, 'users', id));
+    await batch.commit();
+  }
 }
 
 /** Set a user's access tier (0-6). */

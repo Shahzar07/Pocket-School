@@ -36,7 +36,7 @@ service cloud.firestore {
       // during onboarding, and that link is guarded by parent_verifications
       // rather than by this rule.
       return ['role', 'accessTier', 'subscriptionTier', 'permissions',
-              'institutionId', 'adminSparksGrantedAt'];
+              'institutionId', 'adminSparksGrantedAt', 'accountStatus'];
     }
 
     // ── Users ─────────────────────────────────────────────────
