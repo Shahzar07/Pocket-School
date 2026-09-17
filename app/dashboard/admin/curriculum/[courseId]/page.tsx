@@ -28,6 +28,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { ROLE_LABELS } from '@/lib/roles';
+import {
+  BUILT_IN_TEMPLATES, getTemplate, suggestTemplateId, templatesForSubject,
+} from '@/lib/content-templates';
 import { getFormatCost } from '@/lib/sparks';
 import {
   ArrowLeft, AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Copy, CornerDownRight,
@@ -95,11 +98,13 @@ const AI_SHORTCUTS: { id: keyof AiOutputs; label: string }[] = [
 
 interface UnitWithLessons { module: Module; lessons: Lesson[] }
 
-async function callGenerate(content: string, format: string, briefPrompt?: string): Promise<unknown> {
+async function callGenerate(
+  content: string, format: string, briefPrompt?: string, templateId?: string,
+): Promise<unknown> {
   const res = await fetch('/api/ai/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content, format, briefPrompt }),
+    body: JSON.stringify({ content, format, briefPrompt, templateId }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Generation failed: ${format}`);
@@ -317,7 +322,12 @@ export default function ContentBuilderPage() {
         d.contentSources?.find(s => s.type === 'text')?.value?.trim() ||
         (d.aiOutputs?.text ?? '') || d.title;
       const brief = [d.briefPrompt, extraBrief].filter(Boolean).join('\n');
-      const result = await callGenerate(content, format, brief || undefined);
+      // Lesson override wins, else the course default, else the suggestion for
+      // the subject — so generation always has a shape to follow.
+      const templateId = d.contentTemplateId
+        || course?.contentTemplateId
+        || suggestTemplateId(course?.subject);
+      const result = await callGenerate(content, format, brief || undefined, templateId);
       const aiOutputs = { ...(d.aiOutputs ?? {}), [format]: result };
       const next = { ...d, aiOutputs } as Lesson;
       setDraft(next);
@@ -775,6 +785,36 @@ export default function ContentBuilderPage() {
                     Write generation brief
                   </Button>
                   <span className="text-[10px] text-violet-700/70">Quill drafts — always review before publishing.</span>
+                </div>
+
+                {/* Content format — decides the shape everything Quill writes. */}
+                <div className="rounded-xl border border-border bg-card px-3 py-2.5 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Content format
+                    </span>
+                    <select
+                      aria-label="Content format template"
+                      value={draft.contentTemplateId ?? ''}
+                      onChange={e => patchDraft({ contentTemplateId: e.target.value || undefined })}
+                      className="h-8 rounded-lg border border-border bg-background px-2 text-xs font-medium"
+                    >
+                      <option value="">
+                        Course default — {getTemplate(course?.contentTemplateId || suggestTemplateId(course?.subject)).name}
+                      </option>
+                      {templatesForSubject(course?.subject).map(t => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">
+                    {getTemplate(
+                      draft.contentTemplateId
+                        || course?.contentTemplateId
+                        || suggestTemplateId(course?.subject),
+                    ).description}
+                    {' '}Generation follows this shape instead of defaulting to bullet points.
+                  </p>
                 </div>
 
                 {draft.briefPrompt && (
@@ -1497,6 +1537,29 @@ function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseI
           </Button>
         )}
       </div>
+
+      <section className="space-y-2">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+          Content format
+        </p>
+        <select
+          aria-label="Default content format for this course"
+          value={course.contentTemplateId ?? suggestTemplateId(course.subject)}
+          onChange={e => patchCourse(
+            { contentTemplateId: e.target.value },
+            `Format: ${getTemplate(e.target.value).name}`,
+          )}
+          className="w-full h-10 rounded-xl border border-border bg-card px-3 text-xs font-medium"
+        >
+          {templatesForSubject(course.subject).map(t => (
+            <option key={t.id} value={t.id}>{t.name}</option>
+          ))}
+        </select>
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
+          {getTemplate(course.contentTemplateId ?? suggestTemplateId(course.subject)).description}
+          {' '}Every lesson follows this unless it sets its own.
+        </p>
+      </section>
 
       <section className="space-y-2">
         <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Scope</p>

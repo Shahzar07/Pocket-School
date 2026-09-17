@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callOpenRouter, CONTENT_MODEL } from '@/lib/openrouter';
+import { getTemplate, objectiveDirective } from '@/lib/content-templates';
 
 /**
  * Quill — Course Architect.
@@ -238,6 +239,7 @@ Exact shape:
 function objectivesPrompt(
   lessonTitle: string, bloom: string, yearLevel: string,
   subject: string, siblingLessons: string, lessonText: string,
+  styleRule: string,
 ) {
   // Objectives written blind describe the title; objectives written against the
   // lesson's actual content and its neighbours describe the lesson.
@@ -254,6 +256,8 @@ Write 4-5 measurable learning objectives for the lesson "${lessonTitle}"${subjec
 Every objective starts with "Students will be able to" followed by an action verb. Centre the set on Bloom's level "${bloom}" — at least three objectives must use verbs from that level, and the remainder may sit one level either side. Use only these Bloom's labels: ${BLOOMS.join(', ')}.
 
 Each objective must be observable and assessable: avoid "understand", "know about" and "be aware of", which cannot be marked.
+
+${styleRule}
 
 ${RULES}
 
@@ -361,6 +365,9 @@ export async function POST(req: NextRequest) {
             clean(context.subject),
             bulletList(context.siblingLessons, 20, 140),
             String(context.lessonText ?? '').slice(0, 4000).trim(),
+            // Law objectives read as fragments when bulleted, so the course's
+            // content template decides how they are written.
+            objectiveDirective(getTemplate(clean(context.templateId, 60))),
           ),
           validateObjectives,
         );

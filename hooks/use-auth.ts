@@ -13,6 +13,8 @@ interface UserProfile {
   role: Role;
   /** Set for institution_admin — scopes what they can see and manage. */
   institutionId?: string;
+  /** Account lifecycle. Absent means active. */
+  accountStatus?: 'active' | 'suspended' | 'pending' | 'inactive';
   avatarUrl?: string;
   level?: string;
   learningStyle?: string;

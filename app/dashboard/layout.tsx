@@ -20,7 +20,7 @@ import { NotificationsBell } from '@/components/notifications-bell';
 import { DashboardSearch } from '@/components/dashboard-search';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { SparksChip } from '@/components/sparks-chip';
-import { upsertUserSession } from '@/lib/db';
+import { upsertUserSession, accountStatusOf } from '@/lib/db';
 import Link from 'next/link';
 
 type Role = 'student' | 'teacher' | 'parent' | 'admin';
@@ -200,6 +200,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // A suspended account keeps its Firebase session, so without this check a
+  // suspended user would carry on using the dashboard until their token expired.
+  if (accountStatusOf(profile) === 'suspended') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+        <div className="max-w-md w-full bg-card border border-border rounded-3xl p-8 text-center card-glow">
+          <div className="w-12 h-12 rounded-2xl bg-destructive/10 grid place-items-center mx-auto mb-4">
+            <ShieldCheck className="w-6 h-6 text-destructive" />
+          </div>
+          <h1 className="font-heading text-2xl text-foreground">Your account is suspended</h1>
+          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+            Access has been paused by an administrator. If you think this is a mistake, reply to your
+            welcome email or contact your school.
+          </p>
+          <a
+            href="mailto:support@poketschool.ai"
+            className="mt-6 inline-flex items-center justify-center h-11 px-6 rounded-full bg-foreground text-background font-bold text-sm"
+          >
+            Contact support
+          </a>
+        </div>
       </div>
     );
   }
