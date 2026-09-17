@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callOpenRouter, CONTENT_MODEL, VIDEO_MODEL } from '@/lib/openrouter';
 import { LANGUAGE_NAMES as LANG_NAMES } from '@/lib/languages';
+import { getTemplate, formatDirective, type ContentTemplate } from '@/lib/content-templates';
 
 /** Video and audio scripts use the dedicated narrative model; everything
  * else uses the ultra-cheap content model. */
@@ -20,7 +21,10 @@ const MARKDOWN_HINT =
   'Leave exactly one blank line between blocks — never more.\n\n';
 
 const PROMPTS: Record<string, (c: string) => string> = {
-  text: (c) => `You are an expert educator. ${MATH_HINT}${MARKDOWN_HINT}Transform the following raw lesson content into a well-structured, engaging lesson in Markdown format. Use headers (##, ###), bullet points, **bold** key terms, and clear explanations. Make it comprehensive yet readable.\n\nLesson content:\n${c}`,
+  // Deliberately says nothing about bullets or headings — the chosen content
+  // template supplies the shape. This prompt used to demand bullet points, which
+  // is why every lesson came out bulleted regardless of subject.
+  text: (c) => `You are an expert educator. ${MATH_HINT}${MARKDOWN_HINT}Transform the following raw lesson content into a well-structured, engaging lesson in Markdown. Make it comprehensive yet readable, and teach rather than summarise.\n\nLesson content:\n${c}`,
 
   flashcards: (c) => `You are a study expert. ${MATH_HINT}Create 6-8 high-quality flashcard pairs from this lesson content. Return ONLY a valid JSON array, no prose before or after it:\n[{"question":"...","answer":"..."}]\n\nLesson content:\n${c}`,
 
@@ -154,7 +158,7 @@ function extractJsonArray(text: string, format: string): any[] | null {
 
 export async function POST(req: NextRequest) {
   try {
-    const { content, format, briefPrompt, language } = await req.json();
+    const { content, format, briefPrompt, language, templateId, customTemplate } = await req.json();
     if (!content) return NextResponse.json({ error: 'content is required' }, { status: 400 });
 
     const promptFn = PROMPTS[format];
@@ -171,7 +175,15 @@ export async function POST(req: NextRequest) {
       ? `\n\nIMPORTANT: Generate ALL content in the ${LANG_NAMES[language] || language} language. All text, explanations, questions, answers, terms, and definitions must be in ${LANG_NAMES[language] || language}. Only keep technical/scientific terms in their original form where appropriate.`
       : '';
 
-    const prompt = promptFn(fullContent) + langInstruction;
+    // Formats whose shape a template can meaningfully control. JSON formats and
+    // the speech scripts have their own rigid contracts, so a template's
+    // headings would break them.
+    const TEMPLATED = new Set(['text', 'notes', 'problems', 'mindmap']);
+    const templateDirective = TEMPLATED.has(format)
+      ? formatDirective(getTemplate(templateId, customTemplate ? [customTemplate] : []))
+      : '';
+
+    const prompt = templateDirective + promptFn(fullContent) + langInstruction;
     const text = await callOpenRouter([{ role: 'user', content: prompt }], { model: MODEL_FOR_FORMAT(format) });
 
     if (JSON_FORMATS.has(format)) {

@@ -73,6 +73,9 @@ export interface Course {
   freePreviewCount?: number;
   /** Content type used by checkEntitlement(). */
   contentType?: string;
+  /** Content format template id — the shape AI generation follows for this
+   * course. See lib/content-templates.ts. Lessons may override it. */
+  contentTemplateId?: string;
   /** Marketplace revenue split, when teacher-created. */
   revenueSplit?: { teacher: number; platform: number };
   /** Discriminator: absent or 'marketplace' = teacher/marketplace course. 'curriculum' = a
@@ -158,6 +161,8 @@ export interface Lesson {
   };
   /** Which builder blocks this lesson shows, in order. */
   blocksOrder?: string[];
+  /** Overrides the course's content template for this lesson only. */
+  contentTemplateId?: string;
   /** Audit trail of builder actions, newest first (capped client-side). */
   history?: { label: string; actor: string; at: Timestamp; action?: string }[];
 }
