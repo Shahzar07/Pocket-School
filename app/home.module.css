@@ -1,7 +1,7 @@
 .home {
   --ink: #203337;
   --teal: #2786a4;
-  --muted: #718084;
+  --muted: #5f7074;
   color: var(--ink);
   background: #f4f6f6;
   font-family: var(--font-sans), Arial, sans-serif;
@@ -53,6 +53,7 @@
   position: relative;
   padding-top: 185px;
   isolation: isolate;
+  overflow: clip;
 }
 .heroCopy {
   width: 660px;
@@ -165,7 +166,7 @@
 }
 .heroShowcase {
   position: absolute;
-  bottom: -40px;
+  bottom: -80px;
   left: 50%;
   transform: translateX(-50%);
   width: min(1120px, 94%);
@@ -1091,6 +1092,7 @@
   }
   .heroShowcase {
     height: 500px;
+    bottom: -40px;
   }
   .floatingNotes {
     width: 25%;
@@ -1162,7 +1164,7 @@
     opacity: 0.85;
   }
   .ctaInner > div:first-child {
-    max-width: 60%;
+    max-width: calc(100% - 310px);
   }
   .ctaNote {
     display: none;
@@ -1177,7 +1179,7 @@
     max-width: calc(100% - 40px);
   }
   .home h1 {
-    font-size: 47px;
+    font-size: clamp(38px, 11vw, 47px);
   }
   .heroCopy p {
     font-size: 14px;
@@ -1351,11 +1353,13 @@
     text-align: center;
   }
   .finalCta {
-    height: 760px;
+    height: auto;
+    overflow: clip;
   }
   .ctaInner {
-    padding: 60px 24px;
-    align-items: flex-start;
+    display: block;
+    height: auto;
+    padding: 60px 24px 0;
   }
   .ctaInner > div:first-child {
     max-width: 100%;
@@ -1363,13 +1367,17 @@
   .ctaInner h2 {
     font-size: 33px;
   }
-  .ctaInner p br {
+  .ctaInner > div:first-child > p br {
     display: none;
   }
   .ctaPhone {
-    top: 395px;
-    right: 50%;
-    transform: translateX(50%);
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 275px;
+    height: 365px;
+    margin: 48px auto 0;
+    transform: none;
     opacity: 1;
   }
   .compactPhone {
@@ -1387,5 +1395,141 @@
   }
   .button:hover {
     transform: none;
+  }
+}
+
+/* Keep the illustration inside the hero and anchors clear of fixed chrome. */
+.home section[id] {
+  scroll-margin-top: 100px;
+}
+.pathwayStrip {
+  position: relative;
+  z-index: 1;
+  justify-content: safe center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #afc7ca transparent;
+  padding-inline: 24px;
+}
+.pathwayStrip a {
+  flex: 0 0 auto;
+  opacity: 1;
+  color: #697d80;
+}
+.featureCard,
+.priceCard {
+  min-width: 0;
+}
+.featureCard h3,
+.priceTop h3 {
+  overflow-wrap: anywhere;
+}
+.featureCard > a {
+  min-height: 32px;
+  width: fit-content;
+}
+.subjectPreview {
+  pointer-events: none;
+}
+.bars i {
+  transform-origin: center bottom;
+}
+.progressTrack i {
+  transform-origin: left center;
+}
+.button > svg,
+.textLink > svg,
+.featureCard > a > svg {
+  transition: transform 220ms ease;
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .featureCard,
+  .priceCard {
+    transition:
+      transform 300ms ease,
+      box-shadow 300ms ease;
+  }
+  .featureCard:hover,
+  .priceCard:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px #2348580c;
+  }
+  .button:hover > svg,
+  .textLink:hover > svg,
+  .featureCard > a:hover > svg {
+    transform: translateX(3px);
+  }
+}
+@media (min-width: 641px) and (prefers-reduced-motion: no-preference) {
+  .hero > .cloudscape i {
+    translate: 0 calc(var(--hero-depth, 0) * 38px);
+  }
+  .hero > .cloudscape i:nth-child(3) {
+    translate: 0 calc(var(--hero-depth, 0) * -18px);
+  }
+  .heroShowcase > .phone {
+    translate: 0 calc(var(--hero-depth, 0) * -30px);
+  }
+  .heroShowcase > .floatingNotes {
+    translate: 0 calc(var(--hero-depth, 0) * -12px);
+  }
+}
+@media (min-width: 641px) and (max-width: 900px) {
+  .ctaInner {
+    padding-inline: 28px;
+  }
+  .ctaPhone {
+    right: 25px;
+  }
+  .compactPhone {
+    width: 260px;
+  }
+  .ctaInner .actions {
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 640px) {
+  .home section[id] {
+    scroll-margin-top: 90px;
+  }
+  .pathwayStrip {
+    justify-content: flex-start;
+  }
+  .button,
+  .textLink,
+  .featureCard > a,
+  .billingToggle button {
+    min-height: 44px;
+  }
+  .comparisonCard dl > div {
+    gap: 10px;
+  }
+  .comparisonCard dd {
+    text-align: right;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home *,
+  .home *::before,
+  .home *::after {
+    scroll-behavior: auto;
+  }
+  .button > svg,
+  .textLink > svg,
+  .featureCard > a > svg {
+    transition: none;
+  }
+}
+
+/* Keep atmospheric highlights away from the reading area on small screens. */
+@media (max-width: 900px) {
+  .finalCta .cloudscape i:first-child {
+    opacity: 0.16;
+  }
+  .finalCta .cloudscape i:nth-child(2) {
+    right: -280px;
   }
 }

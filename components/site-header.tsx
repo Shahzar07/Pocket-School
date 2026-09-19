@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthSTORE } from "@/hooks/use-auth";
@@ -27,9 +27,11 @@ export function SiteHeader() {
   const { user, profile } = useAuthSTORE();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 72);
+    onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -37,6 +39,26 @@ export function SiteHeader() {
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    };
+    const wide = window.matchMedia("(min-width: 641px)");
+    const closeOnResize = () => {
+      if (wide.matches) setMobileOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    wide.addEventListener("change", closeOnResize);
+    return () => {
+      window.removeEventListener("keydown", closeOnEscape);
+      wide.removeEventListener("change", closeOnResize);
+    };
+  }, [mobileOpen]);
 
   const isHidden =
     HIDDEN_PREFIXES.some((p) => pathname.startsWith(p)) ||
@@ -78,6 +100,8 @@ export function SiteHeader() {
           </Link>
           <button
             className={styles.menuButton}
+            ref={menuButtonRef}
+            type="button"
             aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
             aria-expanded={mobileOpen}
             aria-controls="home-navigation"

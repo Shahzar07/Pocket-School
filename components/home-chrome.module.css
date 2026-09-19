@@ -1,5 +1,5 @@
 .header {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -254,5 +254,37 @@
     margin-left: -5px;
     font-size: 16vw;
     margin-bottom: -10px;
+  }
+}
+
+.header {
+  transition:
+    background-color 220ms ease,
+    box-shadow 220ms ease,
+    color 220ms ease;
+}
+.headerCta,
+.desktopNav a {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+}
+@media (max-width: 640px) {
+  .menuButton {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .headerCta {
+    min-height: 44px;
+  }
+  .mobileNav {
+    max-height: calc(100svh - 110px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .header {
+    transition: none;
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -23,6 +23,7 @@ import { TIERS, ANNUAL_DISCOUNT } from "@/lib/entitlements";
 import { useAuthSTORE } from "@/hooks/use-auth";
 import { isAdmin } from "@/lib/roles";
 import s from "./home.module.css";
+import { useHomeMotion } from "@/hooks/use-home-motion";
 
 function Cloudscape() {
   return (
@@ -227,6 +228,8 @@ const comparison = [
 
 export default function LandingPage() {
   const [annual, setAnnual] = useState(false);
+  const rootRef = useRef<HTMLElement>(null);
+  useHomeMotion(rootRef);
   const { user, profile } = useAuthSTORE();
   const dashboard =
     profile?.role === "teacher"
@@ -238,8 +241,8 @@ export default function LandingPage() {
           : "/dashboard/student";
   const startHref = user ? dashboard : "/signup";
   return (
-    <main className={s.home}>
-      <section className={s.hero}>
+    <main className={s.home} ref={rootRef}>
+      <section className={s.hero} data-home-hero>
         <Cloudscape />
         <div className={s.heroCopy}>
           <Link href="#features" className={s.eyebrow}>
@@ -307,7 +310,7 @@ export default function LandingPage() {
         </div>
         <div className={s.heroMist} />
       </section>
-      <div className={s.pathwayStrip} aria-label="Learning pathways">
+      <nav className={s.pathwayStrip} aria-label="Learning pathways">
         {[
           "Primary",
           "IGCSE",
@@ -321,9 +324,9 @@ export default function LandingPage() {
             {label}
           </Link>
         ))}
-      </div>
+      </nav>
       <section className={`${s.section} ${s.features}`} id="features">
-        <div className={s.sectionHeading}>
+        <div className={s.sectionHeading} data-home-reveal="heading">
           <div>
             <span className={s.eyebrow}>
               AI-powered learning <Sparkles size={14} />
@@ -344,6 +347,8 @@ export default function LandingPage() {
               <article
                 className={`${s.featureCard} ${wide ? s.wideCard : ""}`}
                 key={title}
+                data-home-reveal="card"
+                data-home-delay={(index % 3) * 65}
               >
                 {index === 0 ? (
                   <div className={s.tutorPreview}>
@@ -424,6 +429,8 @@ export default function LandingPage() {
             {[false, true].map((positive) => (
               <article
                 className={`${s.comparisonCard} ${positive ? s.positive : ""}`}
+                data-home-reveal="comparison"
+                data-home-delay={positive ? 90 : 0}
                 key={String(positive)}
               >
                 <header>
@@ -458,6 +465,7 @@ export default function LandingPage() {
       <section className={`${s.section} ${s.progress}`} id="progress">
         <div
           className={s.progressBoard}
+          data-home-reveal="chart"
           role="img"
           aria-label="Example progress dashboard: a 12-day streak, 84 percent weekly goal, and a weekly activity chart"
         >
@@ -469,7 +477,7 @@ export default function LandingPage() {
               </span>
               <strong>12 Days</strong>
               <div className={s.progressTrack}>
-                <i />
+                <i data-home-track />
               </div>
             </div>
             <div>
@@ -488,7 +496,7 @@ export default function LandingPage() {
             <div className={s.bars}>
               {[25, 43, 65, 91, 34, 55, 42].map((height, i) => (
                 <div key={i}>
-                  <i style={{ height: `${height}%` }} />
+                  <i data-home-bar style={{ height: `${height}%` }} />
                   <span>
                     {["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"][i]}
                   </span>
@@ -497,7 +505,7 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-        <div className={s.progressCopy}>
+        <div className={s.progressCopy} data-home-reveal="copy">
           <span className={s.eyebrow}>
             Every little step counts <Zap size={14} />
           </span>
@@ -657,7 +665,7 @@ export default function LandingPage() {
               </Link>
             </div>
           </div>
-          <div className={s.ctaPhone}>
+          <div className={s.ctaPhone} data-home-reveal="phone">
             <div className={s.ctaNote}>
               <Headphones size={24} />
               <span>
