@@ -1,19 +1,26 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useAuthSTORE } from '@/hooks/use-auth';
-import { Globe, Menu, X, ArrowRight } from 'lucide-react';
-import { isAdmin } from '@/lib/roles';
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useAuthSTORE } from "@/hooks/use-auth";
+import { Globe, Menu, X, ArrowRight } from "lucide-react";
+import { isAdmin } from "@/lib/roles";
+import styles from "./home-chrome.module.css";
 
 const NAV_LINKS = [
-  { label: 'Marketplace', href: '/courses' },
-  { label: 'AI Studio', href: '/ai-studio' },
-  { label: 'AI Teachers', href: '/ai-teachers' },
+  { label: "Marketplace", href: "/courses" },
+  { label: "AI Studio", href: "/ai-studio" },
+  { label: "AI Teachers", href: "/ai-teachers" },
 ];
 
-const HIDDEN_PREFIXES = ['/login', '/signup', '/dashboard', '/onboarding', '/ai-studio'];
+const HIDDEN_PREFIXES = [
+  "/login",
+  "/signup",
+  "/dashboard",
+  "/onboarding",
+  "/ai-studio",
+];
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -23,39 +30,94 @@ export function SiteHeader() {
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 72);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => { setMobileOpen(false); }, [pathname]);
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   const isHidden =
-    HIDDEN_PREFIXES.some(p => pathname.startsWith(p)) ||
-    pathname.includes('/session');
+    HIDDEN_PREFIXES.some((p) => pathname.startsWith(p)) ||
+    pathname.includes("/session");
 
   if (isHidden) return null;
 
-  const isLanding = pathname === '/';
+  const isLanding = pathname === "/";
   const useGlass = isLanding && !scrolled;
 
   const dashPath =
-    profile?.role === 'teacher' ? '/dashboard/teacher' :
-    isAdmin(profile)            ? '/dashboard/admin'   :
-    profile?.role === 'parent'  ? '/dashboard/parent'  :
-    '/dashboard/student';
+    profile?.role === "teacher"
+      ? "/dashboard/teacher"
+      : isAdmin(profile)
+        ? "/dashboard/admin"
+        : profile?.role === "parent"
+          ? "/dashboard/parent"
+          : "/dashboard/student";
+
+  if (isLanding)
+    return (
+      <header className={`${styles.header} ${scrolled ? styles.scrolled : ""}`}>
+        <div className={styles.headerInner}>
+          <Link href="/" className={styles.brand}>
+            <Globe size={25} />{" "}
+            <span>
+              Poket School <small>/ AI</small>
+            </span>
+          </Link>
+          <nav className={styles.desktopNav} aria-label="Main navigation">
+            <Link href="/">Home</Link>
+            <Link href="/#features">Features</Link>
+            <Link href="/#pricing">Pricing</Link>
+            <Link href="/courses">Courses</Link>
+            {!user && <Link href="/login">Sign in</Link>}
+          </nav>
+          <Link className={styles.headerCta} href={user ? dashPath : "/signup"}>
+            {user ? "Dashboard" : "Start for free"} <ArrowRight size={14} />
+          </Link>
+          <button
+            className={styles.menuButton}
+            aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
+            aria-expanded={mobileOpen}
+            aria-controls="home-navigation"
+            onClick={() => setMobileOpen(!mobileOpen)}
+          >
+            {mobileOpen ? <X /> : <Menu />}
+          </button>
+        </div>
+        {mobileOpen && (
+          <nav
+            className={styles.mobileNav}
+            id="home-navigation"
+            aria-label="Mobile navigation"
+            onClick={() => setMobileOpen(false)}
+          >
+            <Link href="/#features">Features</Link>
+            <Link href="/courses">Courses</Link>
+            <Link href="/ai-studio">AI Studio</Link>
+            <Link href="/ai-teachers">AI Teachers</Link>
+            <Link href="/#pricing">Pricing</Link>
+            <Link href={user ? dashPath : "/login"}>
+              {user ? "Dashboard" : "Sign in"}
+            </Link>
+          </nav>
+        )}
+      </header>
+    );
 
   return (
     <>
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          useGlass ? 'px-6 py-4' : 'px-0 py-0 border-b border-border'
+          useGlass ? "px-6 py-4" : "px-0 py-0 border-b border-border"
         }`}
       >
         <div
           className={`flex items-center justify-between transition-all duration-300 ${
             useGlass
-              ? 'liquid-glass rounded-full px-6 py-3 max-w-5xl mx-auto'
-              : 'bg-white/90 backdrop-blur-xl px-6 h-14 max-w-none'
+              ? "liquid-glass rounded-full px-6 py-3 max-w-5xl mx-auto"
+              : "bg-white/90 backdrop-blur-xl px-6 h-14 max-w-none"
           }`}
         >
           {/* Logo */}
@@ -70,7 +132,7 @@ export function SiteHeader() {
               )}
               <span
                 className={`font-semibold text-[15px] transition-colors ${
-                  useGlass ? 'text-white' : 'text-foreground'
+                  useGlass ? "text-white" : "text-foreground"
                 }`}
               >
                 Poket School
@@ -84,8 +146,12 @@ export function SiteHeader() {
                   href={href}
                   className={`text-sm font-medium transition-colors ${
                     pathname === href
-                      ? useGlass ? 'text-white' : 'text-[#1A73E8]'
-                      : useGlass ? 'text-white/75 hover:text-white' : 'text-muted-foreground hover:text-foreground'
+                      ? useGlass
+                        ? "text-white"
+                        : "text-[#1A73E8]"
+                      : useGlass
+                        ? "text-white/75 hover:text-white"
+                        : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {label}
@@ -101,12 +167,12 @@ export function SiteHeader() {
                 href={dashPath}
                 className={`flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition-colors ${
                   useGlass
-                    ? 'liquid-glass text-white hover:bg-white/5'
-                    : 'bg-[#1A73E8] text-white hover:bg-[#1557B0] shadow-md shadow-blue-900/20'
+                    ? "liquid-glass text-white hover:bg-white/5"
+                    : "bg-[#1A73E8] text-white hover:bg-[#1557B0] shadow-md shadow-blue-900/20"
                 }`}
               >
                 <span className="inline-flex w-6 h-6 rounded-full bg-[#1A73E8] items-center justify-center text-[10px] font-bold uppercase">
-                  {(user.displayName || user.email || 'U')[0]}
+                  {(user.displayName || user.email || "U")[0]}
                 </span>
                 Dashboard
               </Link>
@@ -115,7 +181,9 @@ export function SiteHeader() {
                 <Link
                   href="/signup"
                   className={`text-sm font-medium transition-colors ${
-                    useGlass ? 'text-white/80 hover:text-white' : 'text-muted-foreground hover:text-foreground'
+                    useGlass
+                      ? "text-white/80 hover:text-white"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   Sign Up
@@ -124,8 +192,8 @@ export function SiteHeader() {
                   href="/login"
                   className={`rounded-full px-5 py-2 text-sm font-semibold transition-colors ${
                     useGlass
-                      ? 'liquid-glass text-white hover:bg-white/5'
-                      : 'bg-[#1A73E8] text-white hover:bg-[#1557B0] shadow-md shadow-blue-900/20'
+                      ? "liquid-glass text-white hover:bg-white/5"
+                      : "bg-[#1A73E8] text-white hover:bg-[#1557B0] shadow-md shadow-blue-900/20"
                   }`}
                 >
                   Sign In
@@ -138,12 +206,18 @@ export function SiteHeader() {
           <button
             type="button"
             className={`md:hidden p-2 rounded-lg transition-colors ${
-              useGlass ? 'text-white hover:bg-white/10' : 'text-foreground hover:bg-muted'
+              useGlass
+                ? "text-white hover:bg-white/10"
+                : "text-foreground hover:bg-muted"
             }`}
-            onClick={() => setMobileOpen(o => !o)}
+            onClick={() => setMobileOpen((o) => !o)}
             aria-label="Toggle menu"
           >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
           </button>
         </div>
 
@@ -156,7 +230,7 @@ export function SiteHeader() {
                   key={label}
                   href={href}
                   className={`text-sm font-medium py-1 ${
-                    pathname === href ? 'text-[#1A73E8]' : 'text-foreground'
+                    pathname === href ? "text-[#1A73E8]" : "text-foreground"
                   }`}
                 >
                   {label}
@@ -164,15 +238,23 @@ export function SiteHeader() {
               ))}
               <div className="border-t border-border pt-3 flex flex-col gap-2">
                 {user ? (
-                  <Link href={dashPath} className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <Link
+                    href={dashPath}
+                    className="flex items-center gap-2 text-sm font-medium text-foreground"
+                  >
                     <span className="inline-flex w-6 h-6 rounded-full bg-[#1A73E8] items-center justify-center text-[10px] font-bold text-white uppercase">
-                      {(user.displayName || user.email || 'U')[0]}
+                      {(user.displayName || user.email || "U")[0]}
                     </span>
                     Dashboard
                   </Link>
                 ) : (
                   <>
-                    <Link href="/login" className="text-sm font-medium text-muted-foreground">Sign In</Link>
+                    <Link
+                      href="/login"
+                      className="text-sm font-medium text-muted-foreground"
+                    >
+                      Sign In
+                    </Link>
                     <Link
                       href="/signup"
                       className="flex items-center justify-center gap-2 rounded-xl h-10 text-sm font-semibold bg-[#1A73E8] text-white"
