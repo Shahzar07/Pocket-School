@@ -48,7 +48,9 @@ export function SiteHeader() {
         menuButtonRef.current?.focus();
       }
     };
-    const wide = window.matchMedia("(min-width: 641px)");
+    const wide = window.matchMedia(
+      pathname === "/" ? "(min-width: 801px)" : "(min-width: 768px)",
+    );
     const closeOnResize = () => {
       if (wide.matches) setMobileOpen(false);
     };
@@ -58,7 +60,7 @@ export function SiteHeader() {
       window.removeEventListener("keydown", closeOnEscape);
       wide.removeEventListener("change", closeOnResize);
     };
-  }, [mobileOpen]);
+  }, [mobileOpen, pathname]);
 
   const isHidden =
     HIDDEN_PREFIXES.some((p) => pathname.startsWith(p)) ||

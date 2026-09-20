@@ -37,6 +37,16 @@ fs.mkdirSync(base + "/shots", { recursive: true });
     viewport: { width: 1280, height: 900 },
   });
   await page.addInitScript(() => {
+    // Wait for the motion hook to mount before simulating a later scroll.
+    // A real deep-link load intentionally keeps its visible chart static.
+    const NativeObserver = window.IntersectionObserver;
+    window.IntersectionObserver = class extends NativeObserver {
+      observe(target) {
+        super.observe(target);
+        if (target.hasAttribute("data-home-reveal"))
+          window.homeMotionReady = true;
+      }
+    };
     Element.prototype.requestPointerLock = function () {};
     Element.prototype.setPointerCapture = function () {};
     Element.prototype.releasePointerCapture = function () {};
@@ -44,6 +54,7 @@ fs.mkdirSync(base + "/shots", { recursive: true });
   });
   await page.goto("http://127.0.0.1:3101", { waitUntil: "load" });
   await page.evaluate(() => document.fonts.ready);
+  await page.waitForFunction(() => window.homeMotionReady);
   await page.evaluate(() =>
     scrollTo({
       top: document.querySelector("#progress").offsetTop - 180,

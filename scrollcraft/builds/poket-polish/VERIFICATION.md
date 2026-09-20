@@ -39,3 +39,30 @@ node scrollcraft/builds/poket-polish/verify-motion.cjs
 Optional environment variables: `PLAYWRIGHT_MODULE` (module path), `CHROME_PATH` (browser executable), and `HOME_QA_OUTPUT` (output folder). Native pointer capture/lock are disabled in scripted contexts. The visual run uses the production Next build locally.
 
 The initial browser failures were environmental (missing browser/font configuration); the completed runs supersede those failed attempts. Existing ESLint configuration ignores TSX, so it is not counted as passing validation. Real iOS/Android hardware, remote production deployment, and authenticated backend/payment transactions are not covered by these layout checks.
+
+## Follow-up: responsive and animation defects (2026-09-20)
+
+Reproduced the previous revision locally before changing it. At 320px the hero phone overlapped the copy/actions by approximately 49px. At 641px the desktop navigation wrapped its sign-in label. Tablet widths retained narrow three-column cards. The header also changed height at its scroll threshold, while staggered animations used `fill: none`, exposing the final frame during their delay.
+
+Changes:
+- The hero illustration participates in normal layout, with space reserved for its parallax range. Wrapped copy and buttons now increase section height instead of colliding with the phone.
+- The closing illustration has its own grid column, then follows the copy below 801px. Its label has a readable solid background, and bright clouds stay away from the copy.
+- The header keeps a constant height when its scroll state changes. Mobile navigation starts at 800px, with a matching resize listener. Navigation labels do not wrap.
+- Feature cards use two columns on tablets and one on compact phones. Comparison, progress, and pricing sections reflow before their columns become cramped. Annual prices and buttons wrap without overflowing.
+- Staggered reveals hold their first frame during delays and start just before entering the viewport. Already-visible content stays static on hydration; completed reveals do not replay after motion preferences change. Tab visibility/page restoration settle active animations.
+
+Verification of this revision:
+- `npm run build`, `npx tsc --noEmit`, and `git diff --check` passed.
+- `verify-responsive.cjs` checks 320, 360, 390, 640, 641, 768, 800, 801, 900, 901, 1024, 1280, and 1536px widths. Checks include document overflow, header bounds and constant height, hero/closing phone clearance, section anchors, mobile Escape handling, and annual pricing.
+- The same script checks the chart's staggered frames, cancellation of in-flight animations when reduced motion is enabled, no replay after changing preferences or revisiting, deep-link loading, and closing mobile navigation across the desktop breakpoint.
+- `verify-motion.cjs` checks chart progression, one-time playback, and no-JavaScript rendering. Its readiness check now waits for the motion hook before simulating a later scroll; an initial deep-link view intentionally stays static.
+- No page JavaScript errors in the responsive run. Full-page and closing-section screenshots were reviewed at desktop, tablet, and compact/mobile widths.
+- Results: `evidence/responsive-results.json` and `evidence/motion-results.json`. Screenshots remain local QA artifacts. Browser coverage is desktop Chromium with emulated viewport sizes; real-device Safari and Android rendering are not covered.
+
+Reproduce the new regression run after building:
+
+```sh
+node scrollcraft/builds/poket-polish/verify-responsive.cjs
+```
+
+Use the same optional `PLAYWRIGHT_MODULE`, `CHROME_PATH`, and `HOME_QA_OUTPUT` variables documented above.

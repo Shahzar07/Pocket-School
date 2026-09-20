@@ -5,7 +5,7 @@
   color: var(--ink);
   background: #f4f6f6;
   font-family: var(--font-sans), Arial, sans-serif;
-  overflow: hidden;
+  overflow: clip;
   font-size: 14px;
 }
 .home h1,
@@ -47,7 +47,9 @@
   outline-offset: 5px;
 }
 .hero {
-  height: 1050px;
+  min-height: 1050px;
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(170deg, #3697b7 0%, #67b1c6 64%, #aad5de 100%);
   color: white;
   position: relative;
@@ -58,7 +60,8 @@
 .heroCopy {
   width: 660px;
   max-width: calc(100% - 48px);
-  margin: auto;
+  margin: 0 auto;
+  flex-shrink: 0;
   position: relative;
   z-index: 3;
 }
@@ -165,12 +168,11 @@
   opacity: 0.6;
 }
 .heroShowcase {
-  position: absolute;
-  bottom: -80px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
+  margin: 60px auto 0;
   width: min(1120px, 94%);
-  height: 550px;
+  min-height: 470px;
+  flex: 1 0 470px;
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -932,10 +934,14 @@
 }
 .priceAction {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 10px;
+}
+.priceAction > div {
+  white-space: nowrap;
 }
 .priceAction strong {
   font-size: 30px;
@@ -1015,14 +1021,17 @@
     6% 98%,
     0 99%
   );
-  height: 490px;
+  min-height: 490px;
+  overflow: clip;
 }
 .ctaInner {
   max-width: 1020px;
-  height: 100%;
+  min-height: 490px;
   padding: 85px 24px;
   margin: auto;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 64px;
   position: relative;
   align-items: center;
 }
@@ -1039,9 +1048,9 @@
   margin: 22px 0 32px;
 }
 .ctaPhone {
-  position: absolute;
-  right: 0;
-  top: 90px;
+  position: relative;
+  width: 300px;
+  height: 320px;
 }
 .compactPhone {
   width: 300px;
@@ -1049,14 +1058,15 @@
 }
 .ctaNote {
   position: absolute;
-  top: -20px;
-  left: -150px;
+  top: -58px;
+  left: 0;
   display: flex;
   gap: 14px;
   align-items: center;
-  background: #ffffff40;
-  border: 1px solid #ffffff65;
-  backdrop-filter: blur(8px);
+  background: #fffffff2;
+  color: #326477;
+  border: 1px solid #ffffff80;
+  box-shadow: 0 4px 18px #23485818;
   padding: 15px 19px;
   border-radius: 10px;
   font-size: 10px;
@@ -1064,19 +1074,19 @@
 }
 .finalCta .cloudscape i {
   top: 250px;
-  opacity: 0.5;
+  opacity: 0.16;
 }
 .finalCta .cloudscape i:nth-child(2) {
   top: 280px;
-  right: 170px;
-  opacity: 0.9;
+  right: -280px;
+  opacity: 0.55;
 }
 .finalCta .cloudscape i:nth-child(n + 3) {
   display: none;
 }
 @media (min-width: 1500px) {
   .hero {
-    height: 1120px;
+    min-height: 1120px;
   }
   .heroCopy {
     padding-top: 30px;
@@ -1084,15 +1094,16 @@
 }
 @media (max-width: 900px) {
   .hero {
-    height: 950px;
+    min-height: 950px;
     padding-top: 160px;
   }
   .heroCopy {
     width: 580px;
   }
   .heroShowcase {
-    height: 500px;
-    bottom: -40px;
+    min-height: 460px;
+    flex-basis: 460px;
+    margin-top: 54px;
   }
   .floatingNotes {
     width: 25%;
@@ -1159,12 +1170,12 @@
   .ctaInner h2 {
     font-size: 35px;
   }
-  .ctaPhone {
-    right: 30px;
-    opacity: 0.85;
+  .ctaInner {
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 40px;
   }
-  .ctaInner > div:first-child {
-    max-width: calc(100% - 310px);
+  .ctaPhone {
+    width: 260px;
   }
   .ctaNote {
     display: none;
@@ -1172,7 +1183,7 @@
 }
 @media (max-width: 640px) {
   .hero {
-    height: 990px;
+    min-height: 990px;
     padding-top: 135px;
   }
   .heroCopy {
@@ -1199,8 +1210,9 @@
     font-size: 11px;
   }
   .heroShowcase {
-    height: 480px;
-    bottom: -5px;
+    min-height: 480px;
+    flex-basis: 480px;
+    margin-top: 64px;
   }
   .phone {
     width: 285px;
@@ -1343,7 +1355,7 @@
     min-height: 0;
   }
   .priceAction {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
   }
   .priceCard li {
     font-size: 12px;
@@ -1480,9 +1492,7 @@
   .ctaInner {
     padding-inline: 28px;
   }
-  .ctaPhone {
-    right: 25px;
-  }
+
   .compactPhone {
     width: 260px;
   }
@@ -1524,12 +1534,115 @@
   }
 }
 
-/* Keep atmospheric highlights away from the reading area on small screens. */
-@media (max-width: 900px) {
-  .finalCta .cloudscape i:first-child {
-    opacity: 0.16;
+/* Reflow at the widths where the content needs room, including tablet sizes. */
+@media (min-width: 641px) and (max-width: 1000px) {
+  .featureGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .finalCta .cloudscape i:nth-child(2) {
-    right: -280px;
+  .featureCard,
+  .wideCard {
+    grid-column: span 1;
+  }
+  .featureCard {
+    min-height: 300px;
+  }
+  .tutorPreview {
+    height: 135px;
+  }
+}
+@media (max-width: 900px) {
+  .pricingHeading,
+  .comparisonHeading {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+  }
+  .pricingHeading > div:last-child,
+  .comparisonHeading > div:last-child {
+    max-width: 520px;
+  }
+  .pricingHeading > div:last-child {
+    margin-top: 0;
+  }
+}
+@media (min-width: 641px) and (max-width: 800px) {
+  .comparisonGrid,
+  .progress,
+  .priceGrid {
+    grid-template-columns: 1fr;
+  }
+  .progress {
+    gap: 40px;
+  }
+  .progressBoard {
+    width: 100%;
+    max-width: 540px;
+    margin-inline: auto;
+    padding: 24px;
+  }
+  .comparisonCard dl > div {
+    font-size: 13px;
+  }
+  .comparisonCard dd {
+    font-size: 11px;
+  }
+  .priceCard {
+    padding: 28px;
+    min-height: 0;
+  }
+  .priceTop,
+  .priceCard > p {
+    min-height: 0;
+  }
+  .priceAction {
+    flex-wrap: wrap;
+  }
+  .priceCard li {
+    font-size: 13px;
+  }
+}
+@media (max-width: 800px) {
+  .finalCta {
+    height: auto;
+  }
+  .ctaInner {
+    display: block;
+    padding: 64px 24px 0;
+  }
+  .ctaInner > div:first-child {
+    max-width: 100%;
+  }
+  .ctaInner .actions {
+    flex-wrap: wrap;
+  }
+  .ctaPhone {
+    width: 275px;
+    height: 365px;
+    margin: 48px auto 0;
+  }
+  .compactPhone {
+    width: 275px;
+  }
+}
+@media (max-width: 380px) {
+  .featureGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .featureCard,
+  .featureCard:first-child,
+  .featureCard:last-child {
+    grid-column: span 1;
+    min-height: 0;
+    padding: 24px;
+  }
+  .home h1 {
+    font-size: clamp(32px, 10vw, 38px);
+  }
+  .ctaInner {
+    padding-inline: 20px;
+  }
+  .ctaPhone,
+  .compactPhone {
+    width: 260px;
   }
 }
