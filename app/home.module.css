@@ -58,6 +58,7 @@
   overflow: clip;
 }
 .heroCopy {
+  text-align: center;
   width: 660px;
   max-width: calc(100% - 48px);
   margin: 0 auto;
@@ -81,8 +82,11 @@
 .heroCopy p {
   font-size: 16px;
   color: #edf8fa;
-  margin: 24px 0 34px;
+  margin: 24px auto 34px;
   max-width: 430px;
+}
+.heroCopy .actions {
+  justify-content: center;
 }
 .actions {
   display: flex;
