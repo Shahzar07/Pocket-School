@@ -7,7 +7,7 @@ import { auth } from '@/lib/firebase';
 import { useEffect, useState } from 'react';
 import {
   Loader2, Menu, Home, BookOpen, Clock, Activity, MessageSquare,
-  ClipboardList, Presentation, Shield, BarChart, Settings, FileText, KeyRound,
+  ClipboardList, Presentation, Shield, BarChart, Settings, FileText, KeyRound, ChevronsUpDown,
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
@@ -23,6 +23,7 @@ import { SparksChip } from '@/components/sparks-chip';
 import { upsertUserSession, accountStatusOf } from '@/lib/db';
 import { PipGuide } from '@/components/pip-guide';
 import type { TourRole } from '@/lib/tour-steps';
+import { ROLE_LABELS } from '@/lib/roles';
 import Link from 'next/link';
 
 type Role = 'student' | 'teacher' | 'parent' | 'admin';
@@ -156,7 +157,6 @@ function isNavActive(href: string, pathname: string): boolean {
 const NavItem = ({ entry, role, pathname, onClick, router }: {
   entry: NavEntry; role: Role; pathname: string; onClick: () => void; router: ReturnType<typeof useRouter>;
 }) => {
-  const accent = ROLE_ACCENT[role];
   const active = isNavActive(entry.href, pathname);
   const Icon = entry.icon;
 
@@ -164,14 +164,17 @@ const NavItem = ({ entry, role, pathname, onClick, router }: {
     <button
       type="button"
       onClick={() => { onClick(); router.push(entry.href); }}
-      className={`relative w-full px-3 py-[9px] rounded-xl flex items-center gap-3 cursor-pointer transition-all duration-200 text-left text-[13px] group ${
+      className={`relative w-full px-3 h-9 rounded-xl flex items-center gap-3 cursor-pointer transition-colors text-left text-[13px] ${
         active
-          ? 'bg-white/[0.07] text-white font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
-          : 'text-slate-400 hover:text-slate-100 hover:bg-white/[0.04] font-medium'
+          ? 'bg-muted text-foreground font-semibold shadow-[var(--shadow-card)]'
+          : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground font-medium'
       }`}
     >
-      {active && <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full ${accent.bar} shadow-[0_0_8px_currentColor]`} />}
-      <Icon className={`w-4 h-4 shrink-0 transition-colors ${active ? accent.icon : 'text-slate-500 group-hover:text-slate-300'}`} />
+      {/* Active marker sits in the gutter, as in the reference design. */}
+      {active && (
+        <span className="absolute -left-3 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full bg-primary" />
+      )}
+      <Icon className={`w-[17px] h-[17px] shrink-0 ${active ? 'text-primary' : ''}`} />
       <span className="truncate">{entry.label}</span>
     </button>
   );
@@ -237,36 +240,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* ── Sidebar — dark glass ── */}
-      <aside data-tour="sidebar" className={`relative bg-[#070B14] flex flex-col transition-all duration-300 shrink-0 ${sidebarOpen ? 'w-[270px]' : 'w-0 opacity-0 overflow-hidden'}`}>
-        {/* ambient glow inside sidebar */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -top-24 -left-24 w-72 h-72 rounded-full bg-[#1A73E8]/10 blur-[90px]" />
-          <div className="absolute bottom-0 -right-20 w-64 h-64 rounded-full bg-[#7C3AED]/10 blur-[90px]" />
-        </div>
-        <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-white/[0.08] via-white/[0.04] to-white/[0.08]" />
+      {/* ── Sidebar — light, profile-led, grouped ── */}
+      <aside data-tour="sidebar" className={`relative bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-300 shrink-0 ${sidebarOpen ? 'w-[264px]' : 'w-0 opacity-0 overflow-hidden'}`}>
 
-        {/* Logo */}
-        <div className="relative h-[68px] flex items-center px-5 shrink-0">
-          <Link href={`/dashboard/${role}`} className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1A73E8] via-[#3B82F6] to-[#7C3AED] flex items-center justify-center shadow-[0_0_24px_rgba(26,115,232,0.45)] shrink-0">
-              <Sparkles className="w-[18px] h-[18px] text-white" />
+        {/* Who you are, at the top — the reference design leads with identity
+            rather than a logo lockup. */}
+        <div className="px-4 pt-4 pb-3 shrink-0">
+          <Link
+            href="/dashboard/profile"
+            className="flex items-center gap-3 p-2 -m-2 rounded-2xl hover:bg-muted transition-colors"
+          >
+            <Avatar className="w-10 h-10 border border-border shrink-0">
+              <AvatarImage src={profile.avatarUrl ?? user.photoURL ?? undefined} />
+              <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-bold">
+                {profile.name?.charAt(0)?.toUpperCase() ?? 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13.5px] font-semibold text-foreground truncate leading-tight">
+                {profile.name ?? 'User'}
+              </p>
+              <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+                {ROLE_LABELS[role] ?? role}
+              </p>
             </div>
-            <div className="leading-none">
-              <span className="font-heading text-xl text-white tracking-tight block">Poket School</span>
-              <span className={`inline-block mt-1.5 text-[9px] font-bold uppercase tracking-[0.18em] text-white/90 bg-gradient-to-r ${accent.chip} px-2 py-[3px] rounded-full`}>
-                {role} portal
-              </span>
-            </div>
+            <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
           </Link>
         </div>
 
         {/* Nav */}
-        <nav className="relative flex-1 overflow-y-auto px-3 pt-3 pb-2 space-y-0.5 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.12)_transparent]">
+        <nav className="relative flex-1 overflow-y-auto px-3 pb-2 space-y-0.5 [scrollbar-width:thin]">
           {nav.map((group, gi) => (
             <div key={gi} className="space-y-0.5">
               {group.section && (
-                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em] px-3 pt-5 pb-1.5">{group.section}</p>
+                <p className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-[0.14em] px-3 pt-5 pb-1.5">
+                  {group.section}
+                </p>
               )}
               {group.items.map(entry => (
                 <NavItem key={entry.href + entry.label} entry={entry} role={role} pathname={pathname} onClick={handleNavClick} router={router} />
@@ -275,39 +284,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           ))}
         </nav>
 
-        {/* User card + logout */}
-        <div className="relative px-3 py-3 shrink-0">
-          <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] p-3 backdrop-blur-xl">
-            <div className="flex items-center gap-2.5">
-              <Avatar className="w-9 h-9 border border-white/10 shrink-0">
-                <AvatarImage src={profile.avatarUrl ?? user.photoURL ?? undefined} />
-                <AvatarFallback className={`bg-gradient-to-br ${accent.chip} text-white text-xs font-bold`}>
-                  {profile.name?.charAt(0)?.toUpperCase() ?? 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-white truncate">{profile.name ?? 'User'}</p>
-                <p className="text-[11px] text-slate-500 truncate capitalize">{role}</p>
-              </div>
-              <button
-                onClick={() => { signOut(auth).then(() => { useAuthSTORE.getState().setUser(null); router.push('/login'); }); }}
-                className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
-                title="Logout"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-          <p className="text-[10px] text-center text-slate-600 mt-2.5">© 2026 Poket School</p>
+        {/* Footer actions */}
+        <div className="px-3 py-3 shrink-0 border-t border-sidebar-border">
+          <Link
+            href="/dashboard/helpdesk"
+            className="flex items-center gap-3 px-3 h-9 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <HelpCircle className="w-[17px] h-[17px] shrink-0" /> Help Center
+          </Link>
+          <button
+            onClick={() => { signOut(auth).then(() => { useAuthSTORE.getState().setUser(null); router.push('/login'); }); }}
+            className="w-full flex items-center gap-3 px-3 h-9 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+          >
+            <LogOut className="w-[17px] h-[17px] shrink-0" /> Sign out
+          </button>
         </div>
       </aside>
 
       {/* ── Main Content ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
-        <header className="h-[68px] bg-background/70 backdrop-blur-xl border-b border-border/60 flex items-center justify-between px-4 lg:px-6 shrink-0 z-10">
+        <header className="h-[72px] bg-background/80 backdrop-blur-xl flex items-center justify-between gap-4 px-4 lg:px-6 shrink-0 z-10">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => setSidebarOpen(!sidebarOpen)}>
+            <Button variant="ghost" size="icon" className="rounded-xl shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Toggle sidebar">
               <Menu className="w-5 h-5 text-muted-foreground" />
             </Button>
             <PipGuide role={role as TourRole} />
@@ -343,8 +342,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Scrollable Main with ambient gradient wash */}
         <main className="flex-1 overflow-y-auto relative">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[420px] bg-[radial-gradient(58%_100%_at_50%_0%,rgba(26,115,232,0.07)_0%,rgba(124,58,237,0.04)_45%,transparent_100%)]" />
-          <div className="relative p-4 lg:p-8">
+          {/* A faint teal wash at the top, echoing the homepage sky. */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(39,134,164,0.06)_0%,transparent_100%)]" />
+          <div className="relative px-4 pb-6 pt-1 lg:px-6 lg:pb-10">
             {children}
           </div>
         </main>
