@@ -14,6 +14,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Zap, BookOpen, MessageSquare, Trophy, UserRound, FileBarChart, TrendingUp, Target, Clock, ShieldCheck, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { DashPage, DashHeader } from '@/components/dash-ui';
 
 interface ChildData {
   id: string;
@@ -35,7 +36,7 @@ const fadeUp: Record<string, any> = {
 
 const GOAL_STATUS_META: Record<string, { label: string; pill: string }> = {
   not_started: { label: 'Not started', pill: 'bg-muted text-muted-foreground' },
-  in_progress: { label: 'In progress', pill: 'bg-[#1A73E8]/10 text-[#1A73E8]' },
+  in_progress: { label: 'In progress', pill: 'bg-[#2786A4]/10 text-[#2786A4]' },
   completed: { label: 'Completed', pill: 'bg-emerald-500/10 text-emerald-600' },
   overdue: { label: 'Overdue', pill: 'bg-destructive/10 text-destructive' },
   excused: { label: 'Excused', pill: 'bg-amber-500/10 text-amber-600' },
@@ -185,27 +186,20 @@ export default function ParentDashboard() {
   );
 
   return (
-    <div className="max-w-5xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
-
-      {/* ── Greeting ── */}
-      <motion.header variants={fadeUp} initial="hidden" animate="visible" custom={0}
-        className="pt-2 flex flex-col sm:flex-row sm:items-end justify-between gap-6"
-      >
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-amber-600 flex items-center gap-2">
-            <span className="w-5 h-px bg-amber-600 inline-block" /> Family overview · {today}
-          </p>
-          <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-3">
-            Your family's <span className="gradient-text italic">progress</span>
-          </h1>
-          <p className="text-muted-foreground mt-2 text-[15px]">Every lesson, score, and milestone — in one place.</p>
-        </div>
-        <Link href="/dashboard/parent/communications"
-          className={buttonVariants({ variant: 'outline' }) + ' rounded-full h-11 px-5 gap-2 font-semibold shrink-0'}
-        >
-          <MessageSquare className="w-4 h-4" /> Message teachers
-        </Link>
-      </motion.header>
+    <DashPage>
+      <DashHeader
+        eyebrow={`Family overview · ${today}`}
+        title="Your family's"
+        accent="progress"
+        description="Every lesson, score and milestone, in one place."
+        actions={
+          <Link href="/dashboard/parent/communications"
+            className={buttonVariants({ variant: 'outline' }) + ' h-10 px-4 rounded-xl gap-2 font-semibold text-[13px]'}
+          >
+            <MessageSquare className="w-3.5 h-3.5" /> Message teachers
+          </Link>
+        }
+      />
 
       {/* ── Today's Goals ── */}
       <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={0.5} className="space-y-4">
@@ -237,7 +231,7 @@ export default function ParentDashboard() {
                 <div key={child.childId} className="bg-card border border-border rounded-[2rem] p-5 sm:p-6 space-y-4">
                   <div className="flex items-center gap-3">
                     <Avatar className="w-10 h-10 shrink-0">
-                      <AvatarFallback className="bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] text-white font-bold text-sm">
+                      <AvatarFallback className="bg-gradient-to-br from-[#2786A4] to-[#1E6A83] text-white font-bold text-sm">
                         {child.childName?.charAt(0)?.toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
@@ -260,7 +254,7 @@ export default function ParentDashboard() {
                     <>
                       <div className="h-2 bg-muted rounded-full overflow-hidden">
                         <motion.div
-                          className={`h-full rounded-full ${pct === 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-[#1A73E8] to-[#7C3AED]'}`}
+                          className={`h-full rounded-full ${pct === 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-[#2786A4] to-[#1E6A83]'}`}
                           initial={{ width: 0 }}
                           animate={{ width: `${pct}%` }}
                           transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -334,14 +328,14 @@ export default function ParentDashboard() {
                 className="bg-card border border-border rounded-[2rem] overflow-hidden shadow-[0_8px_40px_-12px_rgba(15,23,42,0.08)]"
               >
                 {/* Child hero band */}
-                <div className="relative bg-[#070B14] p-7 sm:p-8 text-white overflow-hidden">
+                <div className="relative bg-[#203337] p-7 sm:p-8 text-white overflow-hidden">
                   <div className="pointer-events-none absolute inset-0">
-                    <div className="absolute -top-20 -left-16 w-72 h-72 rounded-full bg-[#1A73E8]/25 blur-[80px]" />
-                    <div className="absolute -bottom-24 -right-10 w-72 h-72 rounded-full bg-[#7C3AED]/20 blur-[80px]" />
+                    <div className="absolute -top-20 -left-16 w-72 h-72 rounded-full bg-[#2786A4]/25 blur-[80px]" />
+                    <div className="absolute -bottom-24 -right-10 w-72 h-72 rounded-full bg-[#1E6A83]/20 blur-[80px]" />
                   </div>
                   <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
-                    <Avatar className="w-16 h-16 border-2 border-white/20 shadow-[0_0_30px_rgba(26,115,232,0.35)] shrink-0">
-                      <AvatarFallback className="bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] text-white font-bold text-2xl">
+                    <Avatar className="w-16 h-16 border-2 border-white/20 shadow-[0_0_30px_rgba(39,134,164,0.35)] shrink-0">
+                      <AvatarFallback className="bg-gradient-to-br from-[#2786A4] to-[#1E6A83] text-white font-bold text-2xl">
                         {childProfile.name?.charAt(0)?.toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
@@ -365,7 +359,7 @@ export default function ParentDashboard() {
                 {/* Stats band */}
                 <div className="grid grid-cols-3 divide-x divide-border border-b border-border bg-muted/30">
                   {[
-                    { label: 'Enrolled', value: enrollments.length, icon: BookOpen, accent: 'text-[#1A73E8]' },
+                    { label: 'Enrolled', value: enrollments.length, icon: BookOpen, accent: 'text-[#2786A4]' },
                     { label: 'In Progress', value: inProgress.length, icon: TrendingUp, accent: 'text-amber-600' },
                     { label: 'Completed', value: completed.length, icon: Trophy, accent: 'text-emerald-600' },
                   ].map((s) => (
@@ -410,7 +404,7 @@ export default function ParentDashboard() {
                             </div>
                             <div className="h-2.5 bg-muted rounded-full overflow-hidden">
                               <motion.div
-                                className="h-full rounded-full bg-gradient-to-r from-[#1A73E8] to-[#7C3AED]"
+                                className="h-full rounded-full bg-gradient-to-r from-[#2786A4] to-[#1E6A83]"
                                 initial={{ width: 0 }}
                                 animate={{ width: `${pct}%` }}
                                 transition={{ duration: 1, delay: 0.3 + i * 0.1, ease: 'easeOut' }}
@@ -427,6 +421,6 @@ export default function ParentDashboard() {
           })}
         </div>
       )}
-    </div>
+    </DashPage>
   );
 }

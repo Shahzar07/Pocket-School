@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
                 id="email"
                 type="email"
                 placeholder="name@example.com"
-                className="h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-[#1A73E8] focus:ring-[#1A73E8]/20 transition-all"
+                className="h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-[#2786A4] focus:ring-[#2786A4]/20 transition-all"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 disabled={loading}
@@ -68,7 +68,7 @@ export default function ForgotPasswordPage() {
             </div>
             <Button
               type="submit"
-              className="w-full h-12 rounded-2xl bg-[#1A73E8] hover:bg-[#1557B0] text-white font-semibold text-base shadow-lg shadow-blue-900/30 transition-all mt-2"
+              className="w-full h-12 rounded-2xl bg-[#2786A4] hover:bg-[#1E6A83] text-white font-semibold text-base shadow-lg shadow-blue-900/30 transition-all mt-2"
               disabled={loading}
             >
               {loading ? 'Sending…' : 'Send Reset Link'}
@@ -77,8 +77,8 @@ export default function ForgotPasswordPage() {
         </>
       ) : (
         <div className="text-center">
-          <div className="mx-auto w-14 h-14 rounded-2xl bg-[#1A73E8]/15 border border-[#1A73E8]/30 flex items-center justify-center mb-6">
-            <MailCheck className="w-7 h-7 text-[#60A5FA]" />
+          <div className="mx-auto w-14 h-14 rounded-2xl bg-[#2786A4]/15 border border-[#2786A4]/30 flex items-center justify-center mb-6">
+            <MailCheck className="w-7 h-7 text-[#6FBBCE]" />
           </div>
           <h2 className="text-3xl font-bold text-white mb-2">Check your inbox</h2>
           <p className="text-white/45 text-sm mb-8">
@@ -97,7 +97,7 @@ export default function ForgotPasswordPage() {
 
       <p className="text-center mt-7 text-white/40 text-sm">
         Remembered it?{' '}
-        <Link href="/login" className="text-[#60A5FA] font-semibold hover:text-[#93C5FD] transition-colors">Back to Sign In</Link>
+        <Link href="/login" className="text-[#6FBBCE] font-semibold hover:text-[#93C5FD] transition-colors">Back to Sign In</Link>
       </p>
     </motion.div>
   );

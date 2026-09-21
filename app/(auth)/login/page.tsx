@@ -271,7 +271,7 @@ export default function LoginPage() {
                 id="email"
                 type="email"
                 placeholder="name@example.com"
-                className="h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-[#1A73E8] focus:ring-[#1A73E8]/20 transition-all"
+                className="h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-[#2786A4] focus:ring-[#2786A4]/20 transition-all"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 disabled={loading}
@@ -280,7 +280,7 @@ export default function LoginPage() {
             <div className="space-y-1.5">
               <div className="flex justify-between items-center">
                 <Label htmlFor="password" className="text-white/60 text-xs font-semibold uppercase tracking-wider">Password</Label>
-                <Link href="/forgot-password" className="text-xs font-medium text-[#60A5FA] hover:text-[#93C5FD] transition-colors">
+                <Link href="/forgot-password" className="text-xs font-medium text-[#6FBBCE] hover:text-[#93C5FD] transition-colors">
                   Forgot password?
                 </Link>
               </div>
@@ -288,7 +288,7 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 placeholder="••••••••"
-                className="h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-[#1A73E8] focus:ring-[#1A73E8]/20 transition-all"
+                className="h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-[#2786A4] focus:ring-[#2786A4]/20 transition-all"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 disabled={loading}
@@ -296,7 +296,7 @@ export default function LoginPage() {
             </div>
             <Button
               type="submit"
-              className="w-full h-12 rounded-2xl bg-[#1A73E8] hover:bg-[#1557B0] text-white font-semibold text-base shadow-lg shadow-blue-900/30 transition-all mt-2"
+              className="w-full h-12 rounded-2xl bg-[#2786A4] hover:bg-[#1E6A83] text-white font-semibold text-base shadow-lg shadow-blue-900/30 transition-all mt-2"
               disabled={loading}
             >
               {loading ? 'Signing in…' : 'Sign In'}
@@ -305,7 +305,7 @@ export default function LoginPage() {
 
           <p className="text-center mt-7 text-white/40 text-sm">
             Don&apos;t have an account?{' '}
-            <Link href="/signup" className="text-[#60A5FA] font-semibold hover:text-[#93C5FD] transition-colors">
+            <Link href="/signup" className="text-[#6FBBCE] font-semibold hover:text-[#93C5FD] transition-colors">
               Create one free
             </Link>
           </p>
@@ -331,7 +331,7 @@ export default function LoginPage() {
                   inputMode="numeric"
                   maxLength={6}
                   placeholder="123456"
-                  className="h-14 rounded-2xl bg-white/5 border-white/10 text-white text-center text-2xl tracking-[0.5em] font-bold placeholder:text-white/20 focus:border-[#1A73E8]"
+                  className="h-14 rounded-2xl bg-white/5 border-white/10 text-white text-center text-2xl tracking-[0.5em] font-bold placeholder:text-white/20 focus:border-[#2786A4]"
                   value={code}
                   onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
                   autoFocus
@@ -341,7 +341,7 @@ export default function LoginPage() {
               </div>
               <Button
                 type="submit"
-                className="w-full h-12 rounded-2xl bg-[#1A73E8] hover:bg-[#1557B0] text-white font-semibold shadow-lg shadow-blue-900/30"
+                className="w-full h-12 rounded-2xl bg-[#2786A4] hover:bg-[#1E6A83] text-white font-semibold shadow-lg shadow-blue-900/30"
                 disabled={loading}
               >
                 {loading ? 'Verifying…' : 'Verify & Continue'}
@@ -350,7 +350,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={resendCode}
                 disabled={loading}
-                className="w-full text-xs text-[#60A5FA] font-semibold hover:text-[#93C5FD] transition-colors"
+                className="w-full text-xs text-[#6FBBCE] font-semibold hover:text-[#93C5FD] transition-colors"
               >
                 Resend code
               </button>

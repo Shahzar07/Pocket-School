@@ -41,7 +41,7 @@
     --color-foreground: var(--foreground);
     --color-background: var(--background);
 
-    --color-google-blue: #1A73E8;
+    --color-google-blue: #2786A4;
     --color-google-teal: #00897B;
     --color-google-amber: #F9AB00;
 
@@ -55,81 +55,99 @@
 
     --shadow-google-soft: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
     --shadow-google-hover: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
-    --shadow-glow-blue: 0 0 0 1px rgba(26,115,232,0.15), 0 4px 24px rgba(26,115,232,0.12);
-    --shadow-glow-hover: 0 0 0 1px rgba(26,115,232,0.25), 0 8px 40px rgba(26,115,232,0.18);
-    --shadow-card: 0 1px 4px 0 rgba(15,23,42,0.06), 0 4px 16px 0 rgba(15,23,42,0.06);
-    --shadow-card-hover: 0 4px 8px 0 rgba(15,23,42,0.08), 0 16px 40px 0 rgba(15,23,42,0.10);
+    --shadow-glow-blue: 0 0 0 1px rgba(39,134,164,0.15), 0 4px 24px rgba(39,134,164,0.12);
+    --shadow-glow-hover: 0 0 0 1px rgba(39,134,164,0.25), 0 8px 40px rgba(39,134,164,0.18);
+    /* Cooler and softer than a neutral drop — matches the homepage's
+     * 0 3px 6px #23485812 card lift. */
+    --shadow-card: 0 1px 2px 0 rgba(35,72,88,0.04), 0 3px 10px 0 rgba(35,72,88,0.06);
+    --shadow-card-hover: 0 2px 6px 0 rgba(35,72,88,0.07), 0 14px 32px 0 rgba(35,72,88,0.10);
 }
 
+/* ── Product palette ──────────────────────────────────────────
+ * Taken from the homepage (app/home.module.css) so the marketing site
+ * and the product read as one thing: ink #203337, teal #2786A4, a warm
+ * off-white page and hairline #E7EDED borders.
+ *
+ * Every component already consumes these tokens (bg-card, border-border,
+ * text-foreground, bg-primary), so the palette is changed here once rather
+ * than edited into hundreds of components.
+ */
 :root {
-    --background: #FAFAFA;
-    --foreground: #0F172A;
+    --background: #F4F6F6;
+    --foreground: #203337;
     --card: #FFFFFF;
-    --card-foreground: #0F172A;
+    --card-foreground: #203337;
     --popover: #FFFFFF;
-    --popover-foreground: #0F172A;
-    --primary: #1A73E8;
+    --popover-foreground: #203337;
+    --primary: #2786A4;
     --primary-foreground: #FFFFFF;
-    --secondary: #EEF2FF;
-    --secondary-foreground: #1967D2;
-    --muted: #F1F5F9;
-    --muted-foreground: #64748B;
-    --accent: #EEF2FF;
-    --accent-foreground: #1967D2;
-    --destructive: #D93025;
+    --secondary: #E9F7FA;
+    --secondary-foreground: #1E6A83;
+    --muted: #F0F5F4;
+    --muted-foreground: #5F7074;
+    --accent: #E9F7FA;
+    --accent-foreground: #1E6A83;
+    --destructive: #D0553F;
     --destructive-foreground: #FFFFFF;
-    --border: #E2E8F0;
-    --input: #E2E8F0;
-    --ring: #1A73E8;
-    --chart-1: #1A73E8;
-    --chart-2: #00897B;
-    --chart-3: #F9AB00;
-    --chart-4: #E53935;
-    --chart-5: #8E24AA;
-    --radius: 1rem;
+    --border: #E7EDED;
+    --input: #E7EDED;
+    --ring: #2786A4;
+    --chart-1: #2786A4;
+    --chart-2: #6FBBCE;
+    --chart-3: #E2AF4D;
+    --chart-4: #D0553F;
+    --chart-5: #4F7F8C;
+    /* The whole radius ladder above derives from this one value, so it sets
+     * the roundness of every card in the app. 0.5rem lands the ladder on
+     * 8 / 12 / 16 / 24px — the homepage's own range. It was 1rem, which made
+     * the `rounded-3xl` cards used across the dashboard 48px: far rounder
+     * than anything on the homepage. */
+    --radius: 0.5rem;
     --sidebar: #FFFFFF;
-    --sidebar-foreground: #0F172A;
-    --sidebar-primary: #1A73E8;
+    --sidebar-foreground: #203337;
+    --sidebar-primary: #2786A4;
     --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #EEF2FF;
-    --sidebar-accent-foreground: #1967D2;
-    --sidebar-border: #E2E8F0;
-    --sidebar-ring: #1A73E8;
+    --sidebar-accent: #E9F7FA;
+    --sidebar-accent-foreground: #1E6A83;
+    --sidebar-border: #E7EDED;
+    --sidebar-ring: #2786A4;
 }
 
+/* Dark mode keeps the same teal family, cooled into a deep slate-teal so the
+ * two themes read as one product rather than two. */
 .dark {
-    --background: #0A0A0F;
-    --foreground: #F1F5F9;
-    --card: #111118;
-    --card-foreground: #F1F5F9;
-    --popover: #111118;
-    --popover-foreground: #F1F5F9;
-    --primary: #60A5FA;
-    --primary-foreground: #0A0A0F;
-    --secondary: #1E1E2E;
-    --secondary-foreground: #93C5FD;
-    --muted: #1E1E2E;
-    --muted-foreground: #94A3B8;
-    --accent: #1E1E2E;
-    --accent-foreground: #93C5FD;
-    --destructive: #F87171;
-    --destructive-foreground: #0A0A0F;
-    --border: #1E2035;
-    --input: #1E2035;
-    --ring: #60A5FA;
-    --chart-1: #60A5FA;
-    --chart-2: #34D399;
-    --chart-3: #FCD34D;
-    --chart-4: #F87171;
-    --chart-5: #C084FC;
-    --sidebar: #111118;
-    --sidebar-foreground: #F1F5F9;
-    --sidebar-primary: #60A5FA;
-    --sidebar-primary-foreground: #0A0A0F;
-    --sidebar-accent: #1E1E2E;
-    --sidebar-accent-foreground: #93C5FD;
-    --sidebar-border: #1E2035;
-    --sidebar-ring: #60A5FA;
+    --background: #0B1417;
+    --foreground: #E8EFEF;
+    --card: #121E22;
+    --card-foreground: #E8EFEF;
+    --popover: #121E22;
+    --popover-foreground: #E8EFEF;
+    --primary: #6FBBCE;
+    --primary-foreground: #0B1417;
+    --secondary: #17282D;
+    --secondary-foreground: #A7D9E5;
+    --muted: #17282D;
+    --muted-foreground: #93A7AB;
+    --accent: #17282D;
+    --accent-foreground: #A7D9E5;
+    --destructive: #E88976;
+    --destructive-foreground: #0B1417;
+    --border: #1E3238;
+    --input: #1E3238;
+    --ring: #6FBBCE;
+    --chart-1: #6FBBCE;
+    --chart-2: #2786A4;
+    --chart-3: #E2AF4D;
+    --chart-4: #E88976;
+    --chart-5: #8FB3BC;
+    --sidebar: #0E191D;
+    --sidebar-foreground: #E8EFEF;
+    --sidebar-primary: #6FBBCE;
+    --sidebar-primary-foreground: #0B1417;
+    --sidebar-accent: #17282D;
+    --sidebar-accent-foreground: #A7D9E5;
+    --sidebar-border: #1E3238;
+    --sidebar-ring: #6FBBCE;
 }
 
 @layer base {
@@ -143,14 +161,14 @@
     @apply bg-background text-foreground;
   }
   ::selection {
-    background-color: rgba(26, 115, 232, 0.18);
-    color: #1A73E8;
+    background-color: rgba(39, 134, 164, 0.18);
+    color: #2786A4;
   }
 }
 
 /* Gradient text utility */
 .gradient-text {
-  background: linear-gradient(135deg, #1A73E8 0%, #7C3AED 100%);
+  background: linear-gradient(135deg, #2786A4 0%, #1E6A83 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -247,13 +265,13 @@
 @property --c5-s5 { syntax: '<percentage>'; inherits: false; initial-value: 65%; }
 
 .c5-animated-gradient {
-  background-color: #1A73E8;
+  background-color: #2786A4;
   background-image:
     radial-gradient(circle at var(--c5-x1) var(--c5-y1), #93C5FD 0px, transparent var(--c5-s1)),
     radial-gradient(circle at var(--c5-x2) var(--c5-y2), #1E3A8A 0px, transparent var(--c5-s2)),
-    radial-gradient(circle at var(--c5-x3) var(--c5-y3), #F5B400 0px, transparent var(--c5-s3)),
-    radial-gradient(circle at var(--c5-x4) var(--c5-y4), #60A5FA 0px, transparent var(--c5-s4)),
-    radial-gradient(circle at var(--c5-x5) var(--c5-y5), #7C3AED 0px, transparent var(--c5-s5));
+    radial-gradient(circle at var(--c5-x3) var(--c5-y3), #E2AF4D 0px, transparent var(--c5-s3)),
+    radial-gradient(circle at var(--c5-x4) var(--c5-y4), #6FBBCE 0px, transparent var(--c5-s4)),
+    radial-gradient(circle at var(--c5-x5) var(--c5-y5), #1E6A83 0px, transparent var(--c5-s5));
   animation:
     c5-blob1 5s ease-in-out infinite,
     c5-blob2 6s ease-in-out infinite,

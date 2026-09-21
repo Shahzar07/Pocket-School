@@ -1,0 +1,1652 @@
+.home {
+  --ink: #203337;
+  --teal: #2786a4;
+  --muted: #5f7074;
+  color: var(--ink);
+  background: #f4f6f6;
+  font-family: var(--font-sans), Arial, sans-serif;
+  overflow: clip;
+  font-size: 14px;
+}
+.home h1,
+.home h2,
+.home h3 {
+  font-family: inherit;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: -0.055em;
+}
+.home h1 {
+  font-size: clamp(44px, 5.25vw, 76px);
+  line-height: 1.08;
+}
+.home h2 {
+  font-size: clamp(32px, 3.65vw, 49px);
+  line-height: 1.15;
+}
+.home h3 {
+  font-size: 18px;
+  letter-spacing: -0.035em;
+}
+.home em {
+  font-style: normal;
+  color: var(--teal);
+}
+.home p {
+  line-height: 1.7;
+}
+.home a,
+.home button {
+  transition:
+    background 0.2s,
+    transform 0.2s;
+}
+.home a:focus-visible,
+.home button:focus-visible {
+  outline: 3px solid #e2af4d;
+  outline-offset: 5px;
+}
+.hero {
+  min-height: 1050px;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(170deg, #3697b7 0%, #67b1c6 64%, #aad5de 100%);
+  color: white;
+  position: relative;
+  padding-top: 185px;
+  isolation: isolate;
+  overflow: clip;
+}
+.heroCopy {
+  text-align: center;
+  width: 660px;
+  max-width: calc(100% - 48px);
+  margin: 0 auto;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 3;
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  margin-bottom: 24px;
+  letter-spacing: -0.015em;
+}
+.heroCopy > .eyebrow {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  color: #e4f4f7;
+}
+.heroCopy p {
+  font-size: 16px;
+  color: #edf8fa;
+  margin: 24px auto 34px;
+  max-width: 430px;
+}
+.heroCopy .actions {
+  justify-content: center;
+}
+.actions {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+}
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 13px 20px;
+  background: #fff;
+  color: #326477;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid #e7eded;
+  border-radius: 8px;
+  box-shadow: 0 3px 6px #23485812;
+  white-space: nowrap;
+}
+.button:hover {
+  transform: translateY(-2px);
+  background: #e9f7fa;
+}
+.textLink {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  color: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+.cloudscape {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: -1;
+  pointer-events: none;
+}
+.cloudscape i {
+  position: absolute;
+  width: 410px;
+  height: 170px;
+  background:
+    radial-gradient(ellipse at 25% 70%, #f2ffff 0 22%, transparent 48%),
+    radial-gradient(ellipse at 45% 42%, #fff 0 22%, transparent 48%),
+    radial-gradient(ellipse at 68% 58%, #e7f8fc 0 23%, transparent 50%),
+    radial-gradient(ellipse at 50% 90%, #e8fbff 0 30%, transparent 65%);
+  filter: blur(9px);
+  opacity: 0.3;
+  left: -100px;
+  top: 145px;
+}
+.cloudscape i:nth-child(2) {
+  left: auto;
+  right: -60px;
+  top: 370px;
+  width: 610px;
+  height: 260px;
+  opacity: 0.24;
+}
+.cloudscape i:nth-child(3) {
+  left: -130px;
+  top: 570px;
+  width: 590px;
+  height: 320px;
+  opacity: 0.85;
+}
+.cloudscape i:nth-child(4) {
+  left: 58%;
+  top: 680px;
+  width: 700px;
+  height: 260px;
+  opacity: 0.55;
+}
+.cloudscape i:nth-child(5) {
+  left: 35%;
+  top: 920px;
+  width: 900px;
+  height: 250px;
+  opacity: 0.6;
+}
+.heroShowcase {
+  position: relative;
+  margin: 60px auto 0;
+  width: min(1120px, 94%);
+  min-height: 470px;
+  flex: 1 0 470px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+.glassPanel {
+  position: absolute;
+  inset: 80px 0 0;
+  background: linear-gradient(115deg, #ffffff70, #f7fafaad);
+  border: 1px solid #ffffff80;
+  border-radius: 30px;
+  box-shadow: inset 0 0 50px #ffffff60;
+  backdrop-filter: blur(8px);
+}
+.phone {
+  position: relative;
+  width: 324px;
+  height: 625px;
+  background: #fff;
+  border: 8px solid #333c40;
+  outline: 5px solid #c4c5c3;
+  border-radius: 55px;
+  padding: 23px 13px;
+  box-shadow:
+    0 0 0 8px #ffffff8a,
+    10px 20px 28px #254f6636;
+  flex-shrink: 0;
+  transform: rotate(-1deg);
+  color: #27393d;
+}
+.phoneNotch {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 24px;
+  width: 145px;
+  border-radius: 0 0 19px 19px;
+  background: #263034;
+}
+.phoneStatus {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  margin: -10px 10px 23px;
+}
+.phoneWelcome {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 18px;
+}
+.avatar {
+  background: #f28a79;
+  color: #512c34;
+  font-weight: 700;
+  border-radius: 50%;
+  width: 33px;
+  height: 33px;
+  display: grid;
+  place-items: center;
+}
+.phoneWelcome small {
+  display: block;
+  font-size: 8px;
+  color: #80908b;
+}
+.phoneWelcome strong {
+  font-size: 14px;
+}
+.phoneWelcome > svg {
+  margin-left: auto;
+}
+.lessonCard {
+  height: 205px;
+  border-radius: 14px;
+  background: linear-gradient(120deg, #087897, #42a7c1);
+  color: white;
+  position: relative;
+  overflow: hidden;
+  padding: 18px 12px;
+}
+.lessonCard p {
+  font-size: 15px;
+  line-height: 1.35;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+.lessonCard .owl {
+  width: 165px;
+  position: absolute;
+  right: -12px;
+  bottom: 0;
+  transform: rotate(-7deg);
+}
+.lessonCircles {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 17px 0;
+}
+.lessonCircles > span {
+  border: 2px solid #b5e0e9;
+  border-radius: 50%;
+  height: 37px;
+  width: 37px;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+}
+.lessonCircles > svg {
+  border: 1px solid #a0dbe7;
+  border-radius: 50%;
+  padding: 6px;
+  width: 32px;
+  height: 32px;
+}
+.lessonCard small {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 9px;
+}
+.phoneChips {
+  display: flex;
+  justify-content: space-between;
+  margin: 14px 0;
+  padding: 10px 0;
+  background: #f0f5f4;
+  font-size: 8px;
+  border-radius: 7px;
+}
+.phoneChips span {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.phoneLesson {
+  padding: 16px 9px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: #f0f6f5;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+.phoneLesson strong {
+  font-size: 9px;
+  display: block;
+}
+.phoneLesson small {
+  font-size: 8px;
+  color: #80938f;
+}
+.phoneStats {
+  display: flex;
+  gap: 9px;
+  margin-bottom: 12px;
+}
+.phoneStats > div {
+  flex: 1;
+  background: #f2f6f5;
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.phoneStats svg {
+  color: #3f9eb6;
+}
+.phoneStats b {
+  font-size: 13px;
+}
+.phoneStats small {
+  font-size: 8px;
+  color: #728582;
+}
+.phoneBottom {
+  position: absolute;
+  bottom: 7px;
+  left: 35%;
+  width: 30%;
+  height: 4px;
+  background: #203337;
+  border-radius: 10px;
+}
+.floatingNotes {
+  position: absolute;
+  top: 120px;
+  width: 27%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.notesLeft {
+  left: 4%;
+  top: 185px;
+}
+.notesRight {
+  right: 4%;
+}
+.floatingNotes > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 7px;
+  background: #ffffffe6;
+  padding: 17px 14px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #6b8183;
+  box-shadow: 0 4px 16px #4d899312;
+}
+.floatingNotes svg {
+  width: 22px;
+  flex-shrink: 0;
+  color: #66b2c5;
+}
+.notesLeft > div:first-child svg {
+  color: #e9b145;
+}
+.floatingNotes > div:nth-child(2) {
+  opacity: 0.6;
+}
+.floatingNotes > div:nth-child(3) {
+  opacity: 0.25;
+}
+.heroMist {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 175px;
+  background: linear-gradient(transparent, #a7d2dc 80%, #6bb2c7);
+  z-index: 4;
+  pointer-events: none;
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 96%,
+    96% 98%,
+    91% 97%,
+    87% 100%,
+    80% 98%,
+    74% 99%,
+    68% 97%,
+    63% 99%,
+    57% 98%,
+    52% 100%,
+    47% 98%,
+    41% 100%,
+    35% 98%,
+    28% 100%,
+    20% 97%,
+    14% 99%,
+    8% 97%,
+    0 100%
+  );
+}
+.pathwayStrip {
+  display: flex;
+  justify-content: space-around;
+  gap: 32px;
+  padding: 28px 0;
+  background: #fff;
+  color: #687678;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.pathwayStrip a {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 18px;
+  opacity: 0.6;
+}
+.pathwayStrip svg {
+  width: 25px;
+}
+.section {
+  max-width: 1180px;
+  margin: auto;
+  padding: 90px 24px;
+}
+.sectionHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 55px;
+}
+.sectionHeading .eyebrow,
+.progress .eyebrow,
+.pricing .eyebrow {
+  margin-bottom: 20px;
+}
+.ghostOwl {
+  width: 140px;
+  opacity: 0.12;
+  transform: rotate(-12deg);
+  margin-right: 55px;
+  filter: grayscale(1);
+}
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 18px;
+}
+.featureCard {
+  grid-column: span 3;
+  background: #fff;
+  border: 1px solid #ffffff;
+  box-shadow:
+    0 0 0 5px #ffffff60,
+    0 5px 30px #284a4a04;
+  border-radius: 22px;
+  padding: 24px;
+  min-height: 290px;
+  display: flex;
+  flex-direction: column;
+}
+.wideCard {
+  grid-column: span 4;
+}
+.featureCard p {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 12px 0 22px;
+  max-width: 330px;
+}
+.featureCard > a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  color: #247a90;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font-size: 12px;
+}
+.iconTile {
+  width: 45px;
+  height: 45px;
+  border-radius: 11px;
+  background: linear-gradient(120deg, #eff4f3, #f8fafa);
+  display: grid;
+  place-items: center;
+  margin-bottom: 38px;
+}
+.tutorPreview {
+  background: linear-gradient(135deg, #f0f2f2, #fafbfb);
+  border: 5px solid #f7f9f9;
+  padding: 11px 10px;
+  border-radius: 12px;
+  margin: -7px -6px 20px;
+  font-size: 9px;
+  color: #8b9796;
+  height: 135px;
+  box-shadow: inset 0 0 10px #cad9d433;
+}
+.tutorPreview > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.tutorPreview span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tutorPreview p {
+  font-size: 10px;
+  color: #566568;
+  margin: 15px 0;
+}
+.tutorAnswer {
+  background: #fff;
+  border-radius: 6px;
+  padding: 6px;
+  font-size: 8px;
+}
+.subjectPreview {
+  display: flex;
+  gap: 13px;
+  overflow: hidden;
+  padding: 24px 0 36px;
+  margin-bottom: 12px;
+  mask-image: linear-gradient(90deg, #000 80%, transparent);
+}
+.subjectPreview span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: 10px;
+  background: #f8faf9;
+  padding: 8px;
+  border-radius: 5px;
+}
+.subjectPreview i {
+  width: 16px;
+  height: 12px;
+  border-radius: 2px;
+}
+.comparison {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(#0585b3, #7bbacd);
+  color: #fff;
+  clip-path: polygon(
+    0 1.5%,
+    4% 0.6%,
+    10% 0,
+    18% 0.8%,
+    25% 0.3%,
+    34% 1%,
+    42% 0.6%,
+    50% 0,
+    59% 0.8%,
+    68% 0.1%,
+    78% 1.1%,
+    86% 0.7%,
+    94% 0.2%,
+    100% 0.6%,
+    100% 99%,
+    95% 99.6%,
+    88% 99%,
+    81% 100%,
+    72% 99.5%,
+    64% 100%,
+    56% 99%,
+    48% 99.8%,
+    40% 99%,
+    31% 100%,
+    23% 99.4%,
+    15% 100%,
+    7% 99%,
+    0 99.7%
+  );
+}
+.comparison .section {
+  padding-top: 100px;
+  padding-bottom: 110px;
+}
+.comparisonHeading {
+  display: flex;
+  justify-content: space-between;
+  gap: 70px;
+  align-items: center;
+  margin-bottom: 55px;
+}
+.comparisonHeading > div:last-child {
+  max-width: 370px;
+}
+.comparisonHeading p {
+  color: #e0f2f7;
+  font-size: 14px;
+  margin: 0 0 25px;
+}
+.comparisonGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+.comparisonCard {
+  padding: 18px 17px 22px;
+  border: 6px solid #ffffff80;
+  border-radius: 30px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 10px 35px #20495a08;
+}
+.comparisonCard header {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  background: #f7f7f7;
+  border-radius: 15px;
+  padding: 20px 15px;
+  margin-bottom: 20px;
+}
+.comparisonCard header h3 {
+  color: #a86767;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+.comparisonCard header p {
+  font-size: 11px;
+  color: #7c8587;
+  margin: 5px 0 0;
+}
+.comparisonCard header > svg {
+  width: 25px;
+}
+.comparisonCard dl > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 6px;
+  border-bottom: 1px solid #f2f5f4;
+  font-size: 12px;
+}
+.comparisonCard dl > div:last-child {
+  border: 0;
+}
+.comparisonCard dd {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #b66f78;
+  background: #fff3f4;
+  border-radius: 20px;
+  padding: 5px 8px;
+  margin: 0;
+}
+.positive header h3 {
+  color: #358ca0;
+}
+.positive dd {
+  color: #2b88a3;
+  background: #eaf6fa;
+}
+.progress {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: center;
+  background: #fff;
+  max-width: none;
+  padding-left: max(24px, calc((100% - 1132px) / 2));
+  padding-right: max(24px, calc((100% - 1132px) / 2));
+}
+.progressBoard {
+  background: #f1f4f4;
+  border: 12px solid #f6f8f7;
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 0 25px #34484806;
+}
+.exampleLabel {
+  display: block;
+  font-size: 9px;
+  color: #879593;
+  text-align: right;
+  margin-bottom: 12px;
+}
+.statGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.statGrid > div {
+  background: #fafbfb;
+  box-shadow: 0 3px 14px #87979510;
+  border-radius: 12px;
+  padding: 16px;
+}
+.statGrid span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 9px;
+  gap: 10px;
+}
+.statGrid svg {
+  color: var(--teal);
+}
+.statGrid strong {
+  display: block;
+  margin-top: 16px;
+  font-size: 20px;
+  font-weight: 500;
+}
+.statGrid small {
+  display: block;
+  font-size: 9px;
+  margin-top: 9px;
+  color: #81908e;
+}
+.progressTrack {
+  height: 5px;
+  background: #e3eaea;
+  border-radius: 6px;
+  margin-top: 15px;
+}
+.progressTrack i {
+  display: block;
+  width: 78%;
+  height: 100%;
+  background: #258bac;
+  border-radius: 6px;
+}
+.chart {
+  background: linear-gradient(#fafbfb, #ffffff70);
+  padding: 18px 12px 8px;
+  border-radius: 12px;
+  margin-top: 20px;
+}
+.chart > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+}
+.chart b {
+  font-weight: 500;
+}
+.chart > div:first-child span {
+  font-size: 8px;
+  color: var(--teal);
+  background: #edf7f9;
+  padding: 3px 6px;
+  border-radius: 10px;
+}
+.bars {
+  height: 190px;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding-top: 24px;
+}
+.bars > div {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 13px;
+}
+.bars i {
+  width: 100%;
+  background: #fff;
+  box-shadow: 0 0 15px #dee7e650;
+  border-radius: 5px 5px 0 0;
+}
+.bars > div:nth-child(4) i {
+  background: #2c91b0;
+}
+.bars span {
+  font-size: 8px;
+  color: #71817e;
+}
+.progressCopy > p {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 22px 0 36px;
+  max-width: 435px;
+}
+.progressCopy ul,
+.priceCard ul {
+  padding: 0;
+  list-style: none;
+  margin: 0;
+}
+.progressCopy li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #eef1f0;
+  padding: 17px 0;
+  font-size: 13px;
+}
+.progressCopy li:last-child {
+  border: 0;
+}
+.progressCopy li svg,
+.priceCard li svg {
+  color: var(--teal);
+  flex-shrink: 0;
+}
+.pricing {
+  padding-top: 95px;
+  padding-bottom: 75px;
+}
+.pricingHeading {
+  display: flex;
+  justify-content: space-between;
+  gap: 40px;
+  align-items: center;
+  margin-bottom: 55px;
+}
+.pricingHeading > div:last-child {
+  max-width: 340px;
+}
+.pricingHeading p {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 24px;
+}
+.billingToggle {
+  display: inline-flex;
+  gap: 3px;
+  border: 4px solid white;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px #364e5010;
+}
+.billingToggle button {
+  padding: 11px 17px;
+  font-size: 11px;
+  border-radius: 7px;
+  cursor: pointer;
+  color: #37494b;
+  background: white;
+}
+.billingToggle button[aria-pressed="true"] {
+  background: #22363b;
+  color: white;
+}
+.billingToggle span {
+  font-size: 9px;
+}
+.priceGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+.priceCard {
+  padding: 24px;
+  background: #ffffff85;
+  border-radius: 20px;
+  border: 5px solid #ffffff60;
+  min-height: 470px;
+}
+.featuredPrice {
+  border-color: #fff;
+  box-shadow: 0 0 0 3px #fff8;
+}
+.priceTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 72px;
+}
+.priceTop small {
+  font-size: 11px;
+  color: #85918f;
+}
+.priceTop h3 {
+  font-size: 18px;
+  color: var(--teal);
+  line-height: 1.45;
+  letter-spacing: -0.04em;
+  margin-top: 8px;
+}
+.priceTop > svg {
+  color: #269ec3;
+  flex-shrink: 0;
+  margin-top: 4px;
+  filter: drop-shadow(2px 3px 0 #c4e7ee);
+}
+.priceCard > p {
+  color: var(--muted);
+  font-size: 12px;
+  min-height: 45px;
+  margin: 20px 0;
+}
+.priceAction {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.priceAction > div {
+  white-space: nowrap;
+}
+.priceAction strong {
+  font-size: 30px;
+  font-weight: 500;
+  color: var(--teal);
+  letter-spacing: -0.05em;
+}
+.priceAction small {
+  font-size: 9px;
+  color: #8b9898;
+}
+.priceAction .button {
+  padding: 10px 11px;
+  gap: 10px;
+  font-size: 10px;
+  background: #edf0ef;
+  color: #203337;
+}
+.featuredPrice .priceAction .button {
+  background: #203337;
+  color: white;
+}
+.billingNote {
+  font-size: 9px;
+  color: #798b8b;
+  display: block;
+  margin-bottom: 18px;
+}
+.priceCard li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 0;
+  border-bottom: 1px solid #eef1f0;
+  font-size: 11px;
+}
+.priceCard li:last-child {
+  border: 0;
+}
+.allPlans {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  justify-content: center;
+  margin-top: 30px;
+  font-size: 12px;
+  color: #38879c;
+}
+.finalCta {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(#0b87b0, #77bacc);
+  color: white;
+  clip-path: polygon(
+    0 2%,
+    6% 0,
+    14% 1%,
+    24% 0.4%,
+    33% 1.4%,
+    43% 0.3%,
+    55% 1%,
+    64% 0.5%,
+    75% 2%,
+    84% 0.7%,
+    94% 1.4%,
+    100% 0.5%,
+    100% 99%,
+    92% 100%,
+    81% 98%,
+    72% 100%,
+    63% 99%,
+    53% 100%,
+    42% 98%,
+    32% 100%,
+    24% 98%,
+    15% 100%,
+    6% 98%,
+    0 99%
+  );
+  min-height: 490px;
+  overflow: clip;
+}
+.ctaInner {
+  max-width: 1020px;
+  min-height: 490px;
+  padding: 85px 24px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 64px;
+  position: relative;
+  align-items: center;
+}
+.ctaInner > div:first-child {
+  position: relative;
+  z-index: 2;
+}
+.ctaInner h2 {
+  font-size: 42px;
+}
+.ctaInner p {
+  color: #e1f2f7;
+  font-size: 13px;
+  margin: 22px 0 32px;
+}
+.ctaPhone {
+  position: relative;
+  width: 300px;
+  height: 320px;
+}
+.compactPhone {
+  width: 300px;
+  transform: rotate(3deg);
+}
+.ctaNote {
+  position: absolute;
+  top: -58px;
+  left: 0;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  background: #fffffff2;
+  color: #326477;
+  border: 1px solid #ffffff80;
+  box-shadow: 0 4px 18px #23485818;
+  padding: 15px 19px;
+  border-radius: 10px;
+  font-size: 10px;
+  z-index: 3;
+}
+.finalCta .cloudscape i {
+  top: 250px;
+  opacity: 0.16;
+}
+.finalCta .cloudscape i:nth-child(2) {
+  top: 280px;
+  right: -280px;
+  opacity: 0.55;
+}
+.finalCta .cloudscape i:nth-child(n + 3) {
+  display: none;
+}
+@media (min-width: 1500px) {
+  .hero {
+    min-height: 1120px;
+  }
+  .heroCopy {
+    padding-top: 30px;
+  }
+}
+@media (max-width: 900px) {
+  .hero {
+    min-height: 950px;
+    padding-top: 160px;
+  }
+  .heroCopy {
+    width: 580px;
+  }
+  .heroShowcase {
+    min-height: 460px;
+    flex-basis: 460px;
+    margin-top: 54px;
+  }
+  .floatingNotes {
+    width: 25%;
+  }
+  .floatingNotes > div {
+    font-size: 9px;
+    padding: 12px;
+    gap: 7px;
+  }
+  .floatingNotes svg {
+    width: 16px;
+  }
+  .notesLeft {
+    left: 2%;
+  }
+  .notesRight {
+    right: 2%;
+  }
+  .phone {
+    width: 290px;
+  }
+  .section {
+    padding: 70px 24px;
+  }
+  .featureCard {
+    padding: 20px;
+    min-height: 280px;
+  }
+  .comparisonCard dl > div {
+    font-size: 10px;
+  }
+  .comparisonCard dd {
+    font-size: 8px;
+  }
+  .progress {
+    gap: 30px;
+  }
+  .progressBoard {
+    padding: 12px;
+    border-width: 8px;
+  }
+  .statGrid {
+    gap: 8px;
+  }
+  .statGrid > div {
+    padding: 10px;
+  }
+  .bars {
+    gap: 7px;
+    height: 165px;
+  }
+  .priceGrid {
+    gap: 12px;
+  }
+  .priceCard {
+    padding: 16px 12px;
+  }
+  .priceAction {
+    flex-wrap: wrap;
+  }
+  .ctaInner {
+    padding-left: 35px;
+  }
+  .ctaInner h2 {
+    font-size: 35px;
+  }
+  .ctaInner {
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 40px;
+  }
+  .ctaPhone {
+    width: 260px;
+  }
+  .ctaNote {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .hero {
+    min-height: 990px;
+    padding-top: 135px;
+  }
+  .heroCopy {
+    max-width: calc(100% - 40px);
+  }
+  .home h1 {
+    font-size: clamp(38px, 11vw, 47px);
+  }
+  .heroCopy p {
+    font-size: 14px;
+  }
+  .eyebrow {
+    font-size: 11px;
+  }
+  .actions {
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .button {
+    padding: 12px 15px;
+    gap: 10px;
+  }
+  .textLink {
+    font-size: 11px;
+  }
+  .heroShowcase {
+    min-height: 480px;
+    flex-basis: 480px;
+    margin-top: 64px;
+  }
+  .phone {
+    width: 285px;
+    height: 590px;
+  }
+  .floatingNotes {
+    display: none;
+  }
+  .glassPanel {
+    inset: 65px -10px 0;
+  }
+  .heroMist {
+    height: 120px;
+  }
+  .pathwayStrip {
+    justify-content: flex-start;
+    padding: 23px 20px;
+    gap: 30px;
+  }
+  .pathwayStrip a {
+    font-size: 15px;
+  }
+  .section {
+    padding: 60px 20px;
+  }
+  .sectionHeading {
+    margin-bottom: 35px;
+  }
+  .home h2 {
+    font-size: 33px;
+  }
+  .ghostOwl {
+    display: none;
+  }
+  .featureGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 13px;
+  }
+  .featureCard,
+  .wideCard {
+    grid-column: span 1;
+    padding: 17px;
+    min-height: 285px;
+    border-radius: 17px;
+  }
+  .featureCard:first-child,
+  .featureCard:last-child {
+    grid-column: span 2;
+    min-height: 265px;
+  }
+  .home h3 {
+    font-size: 16px;
+  }
+  .featureCard p {
+    font-size: 12px;
+  }
+  .featureCard > a {
+    font-size: 11px;
+  }
+  .tutorPreview {
+    height: 115px;
+  }
+  .iconTile {
+    margin-bottom: 28px;
+  }
+  .subjectPreview {
+    padding: 12px 0 20px;
+  }
+  .comparison .section {
+    padding: 70px 20px;
+  }
+  .comparisonHeading {
+    display: block;
+    margin-bottom: 30px;
+  }
+  .comparisonHeading > div:last-child {
+    margin-top: 25px;
+    max-width: 100%;
+  }
+  .comparisonHeading p {
+    font-size: 13px;
+  }
+  .comparisonGrid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .comparisonCard {
+    padding: 12px;
+    border-radius: 24px;
+  }
+  .comparisonCard header {
+    padding: 15px;
+  }
+  .comparisonCard dl > div {
+    font-size: 11px;
+    padding: 14px 3px;
+  }
+  .comparisonCard dd {
+    font-size: 9px;
+  }
+  .progress {
+    grid-template-columns: 1fr;
+    gap: 36px;
+    padding: 60px 20px;
+  }
+  .progressBoard {
+    padding: 18px;
+  }
+  .progressCopy p {
+    font-size: 13px;
+  }
+  .progressCopy li {
+    font-size: 12px;
+  }
+  .bars {
+    height: 190px;
+  }
+  .pricingHeading {
+    display: block;
+    margin-bottom: 30px;
+  }
+  .pricingHeading > div:last-child {
+    margin-top: 25px;
+  }
+  .priceGrid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .priceCard {
+    min-height: 0;
+    padding: 24px;
+  }
+  .priceTop {
+    min-height: 50px;
+  }
+  .priceTop h3 {
+    font-size: 21px;
+  }
+  .priceCard > p {
+    min-height: 0;
+  }
+  .priceAction {
+    flex-wrap: wrap;
+  }
+  .priceCard li {
+    font-size: 12px;
+  }
+  .allPlans {
+    font-size: 11px;
+    text-align: center;
+  }
+  .finalCta {
+    height: auto;
+    overflow: clip;
+  }
+  .ctaInner {
+    display: block;
+    height: auto;
+    padding: 60px 24px 0;
+  }
+  .ctaInner > div:first-child {
+    max-width: 100%;
+  }
+  .ctaInner h2 {
+    font-size: 33px;
+  }
+  .ctaInner > div:first-child > p br {
+    display: none;
+  }
+  .ctaPhone {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 275px;
+    height: 365px;
+    margin: 48px auto 0;
+    transform: none;
+    opacity: 1;
+  }
+  .compactPhone {
+    width: 275px;
+  }
+  .finalCta .cloudscape i:nth-child(2) {
+    top: 480px;
+    right: -200px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home a,
+  .home button {
+    transition: none;
+  }
+  .button:hover {
+    transform: none;
+  }
+}
+
+/* Keep the illustration inside the hero and anchors clear of fixed chrome. */
+.home section[id] {
+  scroll-margin-top: 100px;
+}
+.pathwayStrip {
+  position: relative;
+  z-index: 1;
+  justify-content: safe center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #afc7ca transparent;
+  padding-inline: 24px;
+}
+.pathwayStrip a {
+  flex: 0 0 auto;
+  opacity: 1;
+  color: #697d80;
+}
+.featureCard,
+.priceCard {
+  min-width: 0;
+}
+.featureCard h3,
+.priceTop h3 {
+  overflow-wrap: anywhere;
+}
+.featureCard > a {
+  min-height: 32px;
+  width: fit-content;
+}
+.subjectPreview {
+  pointer-events: none;
+}
+.bars i {
+  transform-origin: center bottom;
+}
+.progressTrack i {
+  transform-origin: left center;
+}
+.button > svg,
+.textLink > svg,
+.featureCard > a > svg {
+  transition: transform 220ms ease;
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .featureCard,
+  .priceCard {
+    transition:
+      transform 300ms ease,
+      box-shadow 300ms ease;
+  }
+  .featureCard:hover,
+  .priceCard:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px #2348580c;
+  }
+  .button:hover > svg,
+  .textLink:hover > svg,
+  .featureCard > a:hover > svg {
+    transform: translateX(3px);
+  }
+}
+@media (min-width: 641px) and (prefers-reduced-motion: no-preference) {
+  .hero > .cloudscape i {
+    translate: 0 calc(var(--hero-depth, 0) * 38px);
+  }
+  .hero > .cloudscape i:nth-child(3) {
+    translate: 0 calc(var(--hero-depth, 0) * -18px);
+  }
+  .heroShowcase > .phone {
+    translate: 0 calc(var(--hero-depth, 0) * -30px);
+  }
+  .heroShowcase > .floatingNotes {
+    translate: 0 calc(var(--hero-depth, 0) * -12px);
+  }
+}
+@media (min-width: 641px) and (max-width: 900px) {
+  .ctaInner {
+    padding-inline: 28px;
+  }
+
+  .compactPhone {
+    width: 260px;
+  }
+  .ctaInner .actions {
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 640px) {
+  .home section[id] {
+    scroll-margin-top: 90px;
+  }
+  .pathwayStrip {
+    justify-content: flex-start;
+  }
+  .button,
+  .textLink,
+  .featureCard > a,
+  .billingToggle button {
+    min-height: 44px;
+  }
+  .comparisonCard dl > div {
+    gap: 10px;
+  }
+  .comparisonCard dd {
+    text-align: right;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home *,
+  .home *::before,
+  .home *::after {
+    scroll-behavior: auto;
+  }
+  .button > svg,
+  .textLink > svg,
+  .featureCard > a > svg {
+    transition: none;
+  }
+}
+
+/* Reflow at the widths where the content needs room, including tablet sizes. */
+@media (min-width: 641px) and (max-width: 1000px) {
+  .featureGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .featureCard,
+  .wideCard {
+    grid-column: span 1;
+  }
+  .featureCard {
+    min-height: 300px;
+  }
+  .tutorPreview {
+    height: 135px;
+  }
+}
+@media (max-width: 900px) {
+  .pricingHeading,
+  .comparisonHeading {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+  }
+  .pricingHeading > div:last-child,
+  .comparisonHeading > div:last-child {
+    max-width: 520px;
+  }
+  .pricingHeading > div:last-child {
+    margin-top: 0;
+  }
+}
+@media (min-width: 641px) and (max-width: 800px) {
+  .comparisonGrid,
+  .progress,
+  .priceGrid {
+    grid-template-columns: 1fr;
+  }
+  .progress {
+    gap: 40px;
+  }
+  .progressBoard {
+    width: 100%;
+    max-width: 540px;
+    margin-inline: auto;
+    padding: 24px;
+  }
+  .comparisonCard dl > div {
+    font-size: 13px;
+  }
+  .comparisonCard dd {
+    font-size: 11px;
+  }
+  .priceCard {
+    padding: 28px;
+    min-height: 0;
+  }
+  .priceTop,
+  .priceCard > p {
+    min-height: 0;
+  }
+  .priceAction {
+    flex-wrap: wrap;
+  }
+  .priceCard li {
+    font-size: 13px;
+  }
+}
+@media (max-width: 800px) {
+  .finalCta {
+    height: auto;
+  }
+  .ctaInner {
+    display: block;
+    padding: 64px 24px 0;
+  }
+  .ctaInner > div:first-child {
+    max-width: 100%;
+  }
+  .ctaInner .actions {
+    flex-wrap: wrap;
+  }
+  .ctaPhone {
+    width: 275px;
+    height: 365px;
+    margin: 48px auto 0;
+  }
+  .compactPhone {
+    width: 275px;
+  }
+}
+@media (max-width: 380px) {
+  .featureGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .featureCard,
+  .featureCard:first-child,
+  .featureCard:last-child {
+    grid-column: span 1;
+    min-height: 0;
+    padding: 24px;
+  }
+  .home h1 {
+    font-size: clamp(32px, 10vw, 38px);
+  }
+  .ctaInner {
+    padding-inline: 20px;
+  }
+  .ctaPhone,
+  .compactPhone {
+    width: 260px;
+  }
+}

@@ -120,7 +120,7 @@ export default function StudentCertificatesPage() {
             Complete a course to earn your first certificate.
           </p>
           <Link href="/dashboard/student/courses">
-            <Button className="mt-6 rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white border-0 hover:opacity-90 transition-opacity">
+            <Button className="mt-6 rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white border-0 hover:opacity-90 transition-opacity">
               Browse Courses
             </Button>
           </Link>
@@ -140,11 +140,11 @@ export default function StudentCertificatesPage() {
                 custom={i + 1}
                 className="bg-card border border-border rounded-3xl p-6 card-glow relative overflow-hidden"
               >
-                <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] opacity-80" />
+                <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-gradient-to-r from-[#2786A4] to-[#1E6A83] opacity-80" />
 
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] flex items-center justify-center shrink-0 shadow-md">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-r from-[#2786A4] to-[#1E6A83] flex items-center justify-center shrink-0 shadow-md">
                       <Award className="w-7 h-7 text-white" />
                     </div>
                     <div>

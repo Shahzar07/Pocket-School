@@ -67,7 +67,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                     transition={{ duration: 0.45, delay: 0.35 + i * 0.09, ease: [0.16, 1, 0.3, 1] }}
                     className="flex items-center gap-3 bg-black/25 backdrop-blur-md rounded-2xl px-4 py-3 border border-white/10"
                   >
-                    <div className="bg-[#1A73E8]/80 backdrop-blur-sm p-2 rounded-lg text-white shrink-0">
+                    <div className="bg-[#2786A4]/80 backdrop-blur-sm p-2 rounded-lg text-white shrink-0">
                       {f.icon}
                     </div>
                     <div>
@@ -87,8 +87,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="w-full max-w-md">
           {/* Mobile-only logo */}
           <div className="lg:hidden mb-10 flex items-center gap-2">
-            <div className="bg-[#1A73E8]/20 p-2 rounded-xl border border-[#1A73E8]/30">
-              <Brain className="w-5 h-5 text-[#1A73E8]" />
+            <div className="bg-[#2786A4]/20 p-2 rounded-xl border border-[#2786A4]/30">
+              <Brain className="w-5 h-5 text-[#2786A4]" />
             </div>
             <span className="text-white font-bold text-xl">Poket School</span>
           </div>

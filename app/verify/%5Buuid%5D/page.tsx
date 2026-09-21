@@ -47,7 +47,7 @@ export default function VerifyCertificate() {
             placeholder="e.g. 1234-5678"
             className="flex-1 h-12 rounded-xl"
           />
-          <Button onClick={handleVerify} className="h-12 rounded-xl bg-google-blue hover:bg-[#1967D2] px-6">
+          <Button onClick={handleVerify} className="h-12 rounded-xl bg-google-blue hover:bg-[#1E6A83] px-6">
             <Search className="w-5 h-5" />
           </Button>
         </div>

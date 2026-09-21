@@ -111,7 +111,7 @@ export function DailyGoalsModal({ open, studentId, studentName, onDone }: Props)
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.25 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-[#070B14]/80 backdrop-blur-md overflow-y-auto"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-[#203337]/80 backdrop-blur-md overflow-y-auto"
           role="dialog"
           aria-modal="true"
           aria-label="Set your daily goals"
@@ -124,13 +124,13 @@ export function DailyGoalsModal({ open, studentId, studentName, onDone }: Props)
             className="relative w-full max-w-2xl my-auto bg-card border border-border rounded-[2rem] overflow-hidden shadow-[0_24px_80px_-20px_rgba(15,23,42,0.45)]"
           >
             {/* Ayla band */}
-            <div className="relative bg-[#070B14] p-6 sm:p-7 text-white overflow-hidden">
+            <div className="relative bg-[#203337] p-6 sm:p-7 text-white overflow-hidden">
               <div className="pointer-events-none absolute inset-0">
-                <div className="absolute -top-24 -left-16 w-72 h-72 rounded-full bg-[#1A73E8]/30 blur-[80px]" />
-                <div className="absolute -bottom-24 -right-10 w-72 h-72 rounded-full bg-[#7C3AED]/25 blur-[80px]" />
+                <div className="absolute -top-24 -left-16 w-72 h-72 rounded-full bg-[#2786A4]/30 blur-[80px]" />
+                <div className="absolute -bottom-24 -right-10 w-72 h-72 rounded-full bg-[#1E6A83]/25 blur-[80px]" />
               </div>
               <div className="relative flex items-start gap-4">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] flex items-center justify-center shrink-0 shadow-[0_0_28px_rgba(26,115,232,0.45)]">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#2786A4] to-[#1E6A83] flex items-center justify-center shrink-0 shadow-[0_0_28px_rgba(39,134,164,0.45)]">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div className="min-w-0">
@@ -230,7 +230,7 @@ export function DailyGoalsModal({ open, studentId, studentName, onDone }: Props)
               <Button
                 onClick={handleSubmit}
                 disabled={saving || valid.length === 0}
-                className="rounded-full h-11 px-6 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white hover:opacity-90 transition-opacity gap-2 shrink-0"
+                className="rounded-full h-11 px-6 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white hover:opacity-90 transition-opacity gap-2 shrink-0"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Target className="w-4 h-4" />}
                 {saving ? 'Saving…' : 'Commit to today'}

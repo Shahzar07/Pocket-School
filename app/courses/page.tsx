@@ -85,9 +85,9 @@ export default function MarketplacePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero */}
-      <section className="relative py-16 sm:py-20 bg-gradient-to-b from-amber-50 via-background to-background overflow-hidden">
+      <section className="relative py-16 sm:py-20 bg-gradient-to-b from-secondary via-background to-background overflow-hidden">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center">
-          <Badge className="mb-4 rounded-full bg-blue-50 text-blue-700 border-blue-200 text-xs font-semibold">
+          <Badge className="mb-4 rounded-full bg-secondary text-secondary-foreground border-primary/20 text-xs font-semibold">
             Marketplace
           </Badge>
           <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl tracking-tight text-foreground mb-4">
@@ -96,8 +96,8 @@ export default function MarketplacePage() {
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
             Browse and buy without an account. AI-enhanced study materials from real educators.
           </p>
-          <div className="bg-white rounded-full p-1 pl-4 flex items-center shadow-lg max-w-xl mx-auto">
-            <Search className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
+          <div className="bg-card border border-border rounded-full p-1 pl-4 flex items-center shadow-[var(--shadow-card)] max-w-xl mx-auto">
+            <Search className="w-4 h-4 text-muted-foreground mr-2 shrink-0" />
             <input
               type="text"
               placeholder="Search by subject, topic or product…"
@@ -110,7 +110,7 @@ export default function MarketplacePage() {
       </section>
 
       {/* Filters */}
-      <section className="border-y border-border bg-muted/30 py-4 sticky top-16 z-30 backdrop-blur-xl bg-white/80">
+      <section className="border-y border-border bg-muted/30 py-4 sticky top-16 z-30 backdrop-blur-xl bg-background/85">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-wrap items-center gap-3">
           <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
           <div className="flex gap-1.5 flex-wrap">
@@ -119,7 +119,7 @@ export default function MarketplacePage() {
                 key={t.id}
                 onClick={() => setTypeFilter(t.id)}
                 className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
-                  typeFilter === t.id ? 'bg-google-blue text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  typeFilter === t.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >
                 {t.label}
@@ -164,19 +164,19 @@ export default function MarketplacePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="relative max-w-3xl mx-auto rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-[0_30px_70px_-40px_rgba(15,23,42,0.35)]"
+              className="relative max-w-3xl mx-auto rounded-2xl border border-border bg-card overflow-hidden shadow-[var(--shadow-card-hover)]"
             >
-              <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#1A73E8] via-[#7C3AED] to-[#F5B400]" />
+              <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-primary via-[#6FBBCE] to-[#E2AF4D]" />
               <div className="p-8 sm:p-12 text-center">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#EEF3FF] border border-[#1A73E8]/20 text-[10px] font-bold tracking-[0.15em] text-[#1E3A8A]">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary border border-primary/20 text-[10px] font-bold tracking-[0.15em] text-secondary-foreground">
                   <ShieldCheck className="w-3 h-3" />
                   MARKETPLACE OPENING SOON
                 </span>
 
-                <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#0B1B3F] leading-[1.05] mt-6 mb-4">
+                <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-foreground leading-[1.05] mt-6 mb-4">
                   The shelves are being stocked.
                 </h2>
-                <p className="text-base text-slate-600 leading-relaxed max-w-xl mx-auto">
+                <p className="text-base text-muted-foreground leading-relaxed max-w-xl mx-auto">
                   We are onboarding verified educators right now — every course, eBook and past paper is
                   reviewed before it goes live, so the marketplace opens with material worth paying for
                   rather than whatever got uploaded first.
@@ -185,19 +185,19 @@ export default function MarketplacePage() {
                 <div className="mt-8 grid sm:grid-cols-2 gap-3 text-left">
                   <Link
                     href="/ai-studio"
-                    className="group flex items-start gap-4 rounded-xl border border-slate-200 bg-[#F8FAFF] p-5 hover:border-[#1A73E8]/40 hover:shadow-[0_20px_50px_-20px_rgba(26,115,232,0.25)] transition-all"
+                    className="group flex items-start gap-4 rounded-xl border border-border bg-muted/40 p-5 hover:border-primary/40 hover:shadow-[var(--shadow-card-hover)] transition-all"
                   >
-                    <span className="w-10 h-10 shrink-0 rounded-xl bg-white border border-slate-200 text-[#1A73E8] flex items-center justify-center">
+                    <span className="w-10 h-10 shrink-0 rounded-xl bg-card border border-border text-primary flex items-center justify-center">
                       <Sparkles className="w-4 h-4" />
                     </span>
                     <span className="flex-1 min-w-0">
-                      <span className="block text-sm font-extrabold text-[#0B1B3F] mb-0.5">
+                      <span className="block text-sm font-extrabold text-foreground mb-0.5">
                         Meanwhile, create your own
                       </span>
-                      <span className="block text-xs text-slate-600 leading-relaxed">
+                      <span className="block text-xs text-muted-foreground leading-relaxed">
                         Build study materials with Quill in the AI Studio.
                       </span>
-                      <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#1A73E8]">
+                      <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-primary">
                         Open AI Studio
                         <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
                       </span>
@@ -206,19 +206,19 @@ export default function MarketplacePage() {
 
                   <a
                     href="mailto:educators@poketschool.ai?subject=Teach%20with%20Poket%20School"
-                    className="group flex items-start gap-4 rounded-xl border border-slate-200 bg-[#F8FAFF] p-5 hover:border-[#1A73E8]/40 hover:shadow-[0_20px_50px_-20px_rgba(26,115,232,0.25)] transition-all"
+                    className="group flex items-start gap-4 rounded-xl border border-border bg-muted/40 p-5 hover:border-primary/40 hover:shadow-[var(--shadow-card-hover)] transition-all"
                   >
-                    <span className="w-10 h-10 shrink-0 rounded-xl bg-white border border-slate-200 text-[#1A73E8] flex items-center justify-center">
+                    <span className="w-10 h-10 shrink-0 rounded-xl bg-card border border-border text-primary flex items-center justify-center">
                       <Mail className="w-4 h-4" />
                     </span>
                     <span className="flex-1 min-w-0">
-                      <span className="block text-sm font-extrabold text-[#0B1B3F] mb-0.5">
+                      <span className="block text-sm font-extrabold text-foreground mb-0.5">
                         Teach with us
                       </span>
-                      <span className="block text-xs text-slate-600 leading-relaxed">
+                      <span className="block text-xs text-muted-foreground leading-relaxed">
                         Educators: list your material and earn from every sale.
                       </span>
-                      <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#1A73E8]">
+                      <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-primary">
                         educators@poketschool.ai
                         <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
                       </span>
@@ -258,7 +258,7 @@ export default function MarketplacePage() {
                       </div>
 
                       <div className="p-4 flex flex-col flex-1">
-                        <h3 className="font-bold text-[15px] leading-snug text-foreground mb-1 line-clamp-2 group-hover:text-blue-700 transition-colors">
+                        <h3 className="font-bold text-[15px] leading-snug text-foreground mb-1 line-clamp-2 group-hover:text-primary transition-colors">
                           {c.title}
                         </h3>
                         <p className="text-xs text-muted-foreground mb-2">{c.ownerName ?? 'Poket School'}</p>

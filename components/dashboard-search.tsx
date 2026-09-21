@@ -20,6 +20,23 @@ export function DashboardSearch() {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // The "/" hint in the field has to actually do something.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = document.activeElement;
+      const typing = el instanceof HTMLInputElement
+        || el instanceof HTMLTextAreaElement
+        || (el instanceof HTMLElement && el.isContentEditable);
+      if (typing) return;
+      e.preventDefault();
+      inputRef.current?.focus();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   useEffect(() => {
     if (query.length < 2) { setResults(null); setOpen(false); return; }
@@ -51,12 +68,20 @@ export function DashboardSearch() {
   const total = results ? results.courses.length + results.announcements.length + results.resources.length : 0;
 
   return (
-    <div className="relative hidden md:block w-96" ref={wrapperRef}>
-      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-      {loading && <Loader2 className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 animate-spin" />}
+    <div className="relative hidden md:block w-[420px] max-w-[46vw]" ref={wrapperRef}>
+      <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+      {loading
+        ? <Loader2 className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground animate-spin" />
+        : (
+          /* Keyboard hint, as in the reference topbar. */
+          <kbd className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 grid place-items-center rounded-md border border-border bg-muted text-[11px] font-semibold text-muted-foreground pointer-events-none">
+            /
+          </kbd>
+        )}
       <Input
-        placeholder="Search courses, lessons, resources..."
-        className="pl-9 h-10 bg-muted border-transparent focus:bg-card rounded-full text-sm"
+        ref={inputRef}
+        placeholder="What are you working on..."
+        className="pl-11 pr-11 h-11 bg-card border-border rounded-2xl text-[13.5px] shadow-[var(--shadow-card)] focus-visible:ring-primary/30"
         value={query}
         onChange={e => setQuery(e.target.value)}
         onFocus={() => results && setOpen(true)}

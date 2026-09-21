@@ -186,17 +186,17 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-white text-foreground overflow-x-hidden">
       {/* ── Hero ───────────────────────────────────────────────── */}
-      <section className="relative pt-24 lg:pt-32 pb-14 bg-gradient-to-b from-[#EEF3FF] via-[#F5F1FF] to-white overflow-hidden">
-        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-[#1A73E8]/10 blur-3xl" aria-hidden />
-        <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[#F5B400]/10 blur-3xl" aria-hidden />
+      <section className="relative pt-24 lg:pt-32 pb-14 bg-gradient-to-b from-[#E9F7FA] via-[#F5F1FF] to-white overflow-hidden">
+        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-[#2786A4]/10 blur-3xl" aria-hidden />
+        <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[#E2AF4D]/10 blur-3xl" aria-hidden />
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <motion.div variants={fadeUp} initial="hidden" animate="visible">
-            <p className="text-xs font-bold tracking-[0.25em] text-[#1A73E8] mb-5">PLANS &amp; PRICING</p>
-            <h1 className="font-heading text-4xl sm:text-5xl lg:text-7xl tracking-tight text-[#0B1B3F] leading-[0.98] mb-6">
+            <p className="text-xs font-bold tracking-[0.25em] text-[#2786A4] mb-5">PLANS &amp; PRICING</p>
+            <h1 className="font-heading text-4xl sm:text-5xl lg:text-7xl tracking-tight text-[#203337] leading-[0.98] mb-6">
               Learn free.
               <br />
-              <span className="bg-gradient-to-r from-[#1A73E8] via-[#1E3A8A] to-[#1A73E8] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#2786A4] via-[#1E3A8A] to-[#2786A4] bg-clip-text text-transparent">
                 Upgrade when it earns it.
               </span>
             </h1>
@@ -228,14 +228,14 @@ export default function PricingPage() {
                     onClick={() => setBilling(b)}
                     aria-pressed={active}
                     className={`relative text-xs sm:text-sm font-bold px-5 sm:px-6 py-2.5 rounded-full transition-colors ${
-                      active ? 'text-white' : 'text-slate-600 hover:text-[#0B1B3F]'
+                      active ? 'text-white' : 'text-slate-600 hover:text-[#203337]'
                     }`}
                   >
                     {active && (
                       <motion.span
                         layoutId="billing-pill"
                         transition={{ duration: 0.35, ease: EASE_OUT_EXPO }}
-                        className="absolute inset-0 rounded-full bg-[#0B1B3F]"
+                        className="absolute inset-0 rounded-full bg-[#203337]"
                       />
                     )}
                     <span className="relative">{b === 'monthly' ? 'Monthly' : 'Annual'}</span>
@@ -243,8 +243,8 @@ export default function PricingPage() {
                 );
               })}
             </div>
-            <p className="text-xs font-semibold text-[#1A73E8] inline-flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#F5B400]" />
+            <p className="text-xs font-semibold text-[#2786A4] inline-flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#E2AF4D]" />
               Pay annually and save 25% — three months free
             </p>
           </motion.div>
@@ -272,7 +272,7 @@ export default function PricingPage() {
       <section id="addons" className="bg-white pb-20 lg:pb-24 scroll-mt-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-8">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#7C3AED]">Add-ons</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#1E6A83]">Add-ons</p>
             <h2 className="font-heading text-3xl sm:text-4xl text-slate-900 tracking-tight mt-2">
               Bought on top of a plan
             </h2>
@@ -286,7 +286,7 @@ export default function PricingPage() {
               key={a.id}
               className="rounded-2xl border-2 border-slate-200 bg-white p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center gap-6 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.4)]"
             >
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#1A73E8] grid place-items-center shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1E6A83] to-[#2786A4] grid place-items-center shrink-0">
                 <Video className="w-7 h-7 text-white" />
               </div>
               <div className="flex-1 min-w-0">
@@ -314,7 +314,7 @@ export default function PricingPage() {
       </section>
 
       {/* ── Sparks explainer ───────────────────────────────────── */}
-      <section className="py-20 lg:py-28 bg-[#F8FAFF] border-y border-slate-100">
+      <section className="py-20 lg:py-28 bg-[#F4F6F6] border-y border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid lg:grid-cols-[1fr_1.1fr] gap-12 lg:gap-16 items-start">
             <motion.div
@@ -323,10 +323,10 @@ export default function PricingPage() {
               whileInView="visible"
               viewport={{ once: true, margin: '-60px' }}
             >
-              <p className="text-xs font-bold tracking-[0.2em] text-[#1A73E8] mb-4">THE SPARKS SYSTEM</p>
-              <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#0B1B3F] leading-[1.05] mb-5">
+              <p className="text-xs font-bold tracking-[0.2em] text-[#2786A4] mb-4">THE SPARKS SYSTEM</p>
+              <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#203337] leading-[1.05] mb-5">
                 What exactly is a{' '}
-                <span className="bg-gradient-to-r from-[#1A73E8] to-[#1E3A8A] bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-[#2786A4] to-[#1E3A8A] bg-clip-text text-transparent">
                   Spark
                 </span>
                 ?
@@ -354,8 +354,8 @@ export default function PricingPage() {
                     <p className="text-[10px] font-bold tracking-[0.15em] uppercase text-slate-400 mb-1.5">
                       {s.plan}
                     </p>
-                    <p className="font-heading text-3xl text-[#0B1B3F] leading-none flex items-center justify-center gap-1.5">
-                      <Zap className="w-4 h-4 text-[#F5B400] fill-[#F5B400]" />
+                    <p className="font-heading text-3xl text-[#203337] leading-none flex items-center justify-center gap-1.5">
+                      <Zap className="w-4 h-4 text-[#E2AF4D] fill-[#E2AF4D]" />
                       {s.amount}
                     </p>
                     <p className="text-[11px] text-slate-500 mt-1.5">{s.note}</p>
@@ -372,22 +372,22 @@ export default function PricingPage() {
               custom={1}
               className="space-y-4"
             >
-              <p className="text-sm font-bold text-[#0B1B3F] mb-1">Sparks are spent on</p>
+              <p className="text-sm font-bold text-[#203337] mb-1">Sparks are spent on</p>
               {SPARK_USES.map((u) => (
                 <div
                   key={u.title}
-                  className="flex gap-4 rounded-2xl bg-white border border-slate-200 p-5 hover:border-[#1A73E8]/40 hover:shadow-[0_20px_50px_-20px_rgba(26,115,232,0.25)] transition-all"
+                  className="flex gap-4 rounded-2xl bg-white border border-slate-200 p-5 hover:border-[#2786A4]/40 hover:shadow-[0_20px_50px_-20px_rgba(39,134,164,0.25)] transition-all"
                 >
                   <div className="w-10 h-10 shrink-0 rounded-xl bg-[#FFF8E6] flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-[#F5B400] fill-[#F5B400]" />
+                    <Zap className="w-4 h-4 text-[#E2AF4D] fill-[#E2AF4D]" />
                   </div>
                   <div>
-                    <h3 className="text-base font-extrabold text-[#0B1B3F] mb-1">{u.title}</h3>
+                    <h3 className="text-base font-extrabold text-[#203337] mb-1">{u.title}</h3>
                     <p className="text-sm text-slate-600 leading-relaxed">{u.desc}</p>
                   </div>
                 </div>
               ))}
-              <div className="rounded-2xl border border-dashed border-[#1A73E8]/30 bg-[#EEF3FF] p-5">
+              <div className="rounded-2xl border border-dashed border-[#2786A4]/30 bg-[#E9F7FA] p-5">
                 <p className="text-sm text-[#1E3A8A] leading-relaxed">
                   <span className="font-bold">Never expire mid-cycle.</span> Unused monthly Sparks reset
                   each billing period, but purchased top-up Sparks roll over for as long as your account
@@ -400,9 +400,9 @@ export default function PricingPage() {
       </section>
 
       {/* ── Institutions ───────────────────────────────────────── */}
-      <section className="py-20 lg:py-28 bg-[#0B1B3F] relative overflow-hidden">
+      <section className="py-20 lg:py-28 bg-[#203337] relative overflow-hidden">
         <div
-          className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(26,115,232,0.25),transparent)]"
+          className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(39,134,164,0.25),transparent)]"
           aria-hidden
         />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
@@ -413,11 +413,11 @@ export default function PricingPage() {
               whileInView="visible"
               viewport={{ once: true, margin: '-60px' }}
             >
-              <p className="text-xs font-bold tracking-[0.25em] text-[#60A5FA] mb-5">FOR INSTITUTIONS</p>
+              <p className="text-xs font-bold tracking-[0.25em] text-[#6FBBCE] mb-5">FOR INSTITUTIONS</p>
               <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-white leading-[1.05] mb-5">
                 Schools, colleges and
                 <br />
-                <span className="bg-gradient-to-r from-[#1A73E8] via-[#60A5FA] to-[#F5B400] bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-[#2786A4] via-[#6FBBCE] to-[#E2AF4D] bg-clip-text text-transparent">
                   training providers.
                 </span>
               </h2>
@@ -427,7 +427,7 @@ export default function PricingPage() {
               </p>
               <a
                 href="mailto:institutions@poketschool.ai?subject=Institutional%20Pricing%20Enquiry"
-                className="inline-flex items-center gap-2 rounded-full h-12 px-7 text-sm font-bold bg-[#1A73E8] hover:bg-[#1967D2] text-white shadow-xl shadow-[#1A73E8]/40 transition-colors"
+                className="inline-flex items-center gap-2 rounded-full h-12 px-7 text-sm font-bold bg-[#2786A4] hover:bg-[#1E6A83] text-white shadow-xl shadow-[#2786A4]/40 transition-colors"
               >
                 <Building2 className="w-4 h-4" />
                 Talk to us
@@ -451,7 +451,7 @@ export default function PricingPage() {
                   key={f.label}
                   className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur-sm"
                 >
-                  <div className="w-9 h-9 rounded-xl bg-[#1A73E8]/20 text-[#60A5FA] flex items-center justify-center mb-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#2786A4]/20 text-[#6FBBCE] flex items-center justify-center mb-3">
                     {f.icon}
                   </div>
                   <p className="text-sm font-extrabold text-white mb-1">{f.label}</p>
@@ -529,14 +529,14 @@ function PlanCard({ plan, billing, index }: { plan: Plan; billing: Billing; inde
       custom={index}
       className={`relative flex flex-col rounded-2xl border transition-all h-full ${
         plan.popular
-          ? 'border-[#1A73E8] bg-white shadow-[0_30px_70px_-30px_rgba(26,115,232,0.55)] lg:-mt-4 lg:mb-4'
-          : 'border-slate-200 bg-white hover:border-[#1A73E8]/40 hover:shadow-[0_20px_50px_-20px_rgba(26,115,232,0.25)]'
+          ? 'border-[#2786A4] bg-white shadow-[0_30px_70px_-30px_rgba(39,134,164,0.55)] lg:-mt-4 lg:mb-4'
+          : 'border-slate-200 bg-white hover:border-[#2786A4]/40 hover:shadow-[0_20px_50px_-20px_rgba(39,134,164,0.25)]'
       }`}
     >
       {plan.popular && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#1A73E8] text-white text-[10px] font-bold tracking-[0.15em] shadow-lg shadow-[#1A73E8]/30">
-            <Sparkles className="w-3 h-3 text-[#F5B400]" />
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#2786A4] text-white text-[10px] font-bold tracking-[0.15em] shadow-lg shadow-[#2786A4]/30">
+            <Sparkles className="w-3 h-3 text-[#E2AF4D]" />
             MOST POPULAR
           </span>
         </div>
@@ -544,14 +544,14 @@ function PlanCard({ plan, billing, index }: { plan: Plan; billing: Billing; inde
 
       <div className={`p-7 sm:p-8 ${plan.popular ? 'pt-9 sm:pt-10' : ''}`}>
         <div className="flex items-center gap-2 mb-2">
-          <GraduationCap className={`w-4 h-4 ${plan.popular ? 'text-[#1A73E8]' : 'text-slate-400'}`} />
-          <h2 className="text-sm font-bold tracking-[0.15em] uppercase text-[#0B1B3F]">{plan.name}</h2>
+          <GraduationCap className={`w-4 h-4 ${plan.popular ? 'text-[#2786A4]' : 'text-slate-400'}`} />
+          <h2 className="text-sm font-bold tracking-[0.15em] uppercase text-[#203337]">{plan.name}</h2>
         </div>
         <p className="text-sm text-slate-600 leading-relaxed min-h-[3.25rem]">{plan.tagline}</p>
 
         <div className="mt-6 flex items-end gap-2">
           <span className="text-lg font-bold text-slate-500 pb-2">RM</span>
-          <span className="font-heading text-6xl leading-none text-[#0B1B3F] tracking-tight tabular-nums">
+          <span className="font-heading text-6xl leading-none text-[#203337] tracking-tight tabular-nums">
             {price}
           </span>
           <span className="text-sm font-semibold text-slate-500 pb-2">{suffix}</span>
@@ -575,8 +575,8 @@ function PlanCard({ plan, billing, index }: { plan: Plan; billing: Billing; inde
           href="/signup"
           className={`mt-6 w-full inline-flex items-center justify-center gap-2 h-12 rounded-full text-sm font-bold transition-all ${
             plan.popular
-              ? 'bg-[#1A73E8] hover:bg-[#1967D2] text-white shadow-lg shadow-[#1A73E8]/30'
-              : 'bg-[#0B1B3F] hover:bg-[#132a5e] text-white'
+              ? 'bg-[#2786A4] hover:bg-[#1E6A83] text-white shadow-lg shadow-[#2786A4]/30'
+              : 'bg-[#203337] hover:bg-[#132a5e] text-white'
           }`}
         >
           {plan.cta}
@@ -594,10 +594,10 @@ function PlanCard({ plan, billing, index }: { plan: Plan; billing: Billing; inde
               <li key={f} className="flex items-start gap-2.5">
                 <span
                   className={`mt-0.5 w-4 h-4 shrink-0 rounded-full flex items-center justify-center ${
-                    plan.popular ? 'bg-[#1A73E8]' : 'bg-[#EEF3FF]'
+                    plan.popular ? 'bg-[#2786A4]' : 'bg-[#E9F7FA]'
                   }`}
                 >
-                  <Check className={`w-2.5 h-2.5 ${plan.popular ? 'text-white' : 'text-[#1A73E8]'}`} strokeWidth={3.5} />
+                  <Check className={`w-2.5 h-2.5 ${plan.popular ? 'text-white' : 'text-[#2786A4]'}`} strokeWidth={3.5} />
                 </span>
                 <span className="text-sm text-slate-700 leading-snug">{f}</span>
               </li>
@@ -606,7 +606,7 @@ function PlanCard({ plan, billing, index }: { plan: Plan; billing: Billing; inde
         </div>
 
         <div className="mt-auto pt-6">
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-md border border-[#F5B400]/30 bg-[#FFF8E6] text-[#8A6100]">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-md border border-[#E2AF4D]/30 bg-[#FFF8E6] text-[#8A6100]">
             <Zap className="w-3 h-3 fill-current" />
             {plan.sparks}
           </span>
@@ -631,8 +631,8 @@ function PricingFaq() {
           viewport={{ once: true, margin: '-60px' }}
           className="text-center mb-10"
         >
-          <p className="text-xs font-bold tracking-[0.2em] text-[#1A73E8] mb-4">PRICING QUESTIONS</p>
-          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#0B1B3F] leading-[1.05]">
+          <p className="text-xs font-bold tracking-[0.2em] text-[#2786A4] mb-4">PRICING QUESTIONS</p>
+          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#203337] leading-[1.05]">
             The things people actually ask
           </h2>
         </motion.div>
@@ -653,7 +653,7 @@ function PricingFaq() {
                   type="button"
                   onClick={() => setActive(open ? null : i)}
                   aria-expanded={open}
-                  className="w-full text-left flex justify-between items-center gap-3 font-semibold text-[0.95rem] text-[#0B1B3F] px-5 py-[18px] cursor-pointer"
+                  className="w-full text-left flex justify-between items-center gap-3 font-semibold text-[0.95rem] text-[#203337] px-5 py-[18px] cursor-pointer"
                 >
                   <span className="flex-1">{item.q}</span>
                   {open ? (
