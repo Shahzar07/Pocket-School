@@ -325,7 +325,7 @@ export default function AdminUsersPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total users', value: stats.total, accent: 'bg-[#1A73E8]' },
+          { label: 'Total users', value: stats.total, accent: 'bg-[#2786A4]' },
           { label: 'Students', value: stats.students, accent: 'bg-emerald-500' },
           { label: 'Suspended', value: stats.suspended, accent: 'bg-red-500' },
           { label: 'Sparks in circulation', value: stats.sparks.toLocaleString(), accent: 'bg-amber-500' },

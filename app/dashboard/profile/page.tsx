@@ -104,7 +104,7 @@ export default function ProfilePage() {
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
         className="bg-card border border-border rounded-3xl p-6 sm:p-7 space-y-5 card-glow relative overflow-hidden"
       >
-        <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-[#1A73E8] opacity-80" />
+        <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-[#2786A4] opacity-80" />
         <div className="flex items-center gap-2 mb-1">
           <User className="w-4 h-4 text-primary" />
           <h2 className="font-heading text-xl text-foreground">Personal Information</h2>
@@ -114,7 +114,7 @@ export default function ProfilePage() {
         <div className="flex items-center gap-4">
           <Avatar className="w-16 h-16 border-2 border-border shadow-lg">
             <AvatarImage src={avatarUrl} />
-            <AvatarFallback className="bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] text-white text-xl font-bold">{initials}</AvatarFallback>
+            <AvatarFallback className="bg-gradient-to-br from-[#2786A4] to-[#1E6A83] text-white text-xl font-bold">{initials}</AvatarFallback>
           </Avatar>
           <div>
             <p className="font-bold text-foreground">{profile?.name}</p>
@@ -175,7 +175,7 @@ export default function ProfilePage() {
           </div>
         )}
 
-        <Button onClick={handleSaveProfile} disabled={saving} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white gap-2">
+        <Button onClick={handleSaveProfile} disabled={saving} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white gap-2">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           Save Changes
         </Button>

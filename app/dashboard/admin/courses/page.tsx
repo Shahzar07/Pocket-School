@@ -23,7 +23,7 @@ const fadeUp: Record<string, any> = {
 };
 
 const COURSE_GRADIENTS = [
-  'from-[#1A73E8] to-[#7C3AED]',
+  'from-[#2786A4] to-[#1E6A83]',
   'from-emerald-500 to-teal-600',
   'from-amber-500 to-orange-600',
   'from-rose-500 to-pink-600',
@@ -163,7 +163,7 @@ export default function AdminCourseMgmt() {
       {/* Stat tiles */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
         {[
-          { label: 'All Courses', value: courses.length, icon: BookOpen, accent: 'text-[#1A73E8]', bar: 'bg-[#1A73E8]' },
+          { label: 'All Courses', value: courses.length, icon: BookOpen, accent: 'text-[#2786A4]', bar: 'bg-[#2786A4]' },
           { label: 'Pending', value: pendingCourses.length, icon: Clock, accent: 'text-amber-600', bar: 'bg-amber-500' },
           { label: 'Published', value: courses.filter(c => c.status === 'published').length, icon: CheckCircle2, accent: 'text-emerald-600', bar: 'bg-emerald-500' },
           { label: 'Drafts', value: courses.filter(c => c.status === 'draft').length, icon: Edit, accent: 'text-violet-600', bar: 'bg-violet-500' },

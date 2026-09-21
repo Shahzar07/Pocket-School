@@ -123,7 +123,7 @@ export default function HelpdeskPage() {
         </div>
         {!isAdmin && (
           <Button onClick={() => setShowCreate(true)}
-            className="rounded-full h-11 px-5 gap-2 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] hover:opacity-90 text-white shrink-0"
+            className="rounded-full h-11 px-5 gap-2 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] hover:opacity-90 text-white shrink-0"
           >
             <Plus className="w-4 h-4" /> New Ticket
           </Button>
@@ -155,7 +155,7 @@ export default function HelpdeskPage() {
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={handleCreate} disabled={saving} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white gap-2">
+          <Button onClick={handleCreate} disabled={saving} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white gap-2">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageSquare className="w-4 h-4" />}
             Submit Ticket
           </Button>
@@ -241,7 +241,7 @@ export default function HelpdeskPage() {
               placeholder="Write your reply…"
               className="rounded-xl text-sm resize-none min-h-24 bg-muted/50"
             />
-            <Button onClick={handleReply} disabled={!reply.trim()} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white gap-2">
+            <Button onClick={handleReply} disabled={!reply.trim()} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white gap-2">
               <MessageSquare className="w-4 h-4" /> Send Reply
             </Button>
           </motion.div>

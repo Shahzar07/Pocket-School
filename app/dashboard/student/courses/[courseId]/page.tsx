@@ -129,7 +129,7 @@ export default function CourseDetailPage() {
 
       {/* Course header hero */}
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
-        className="relative overflow-hidden bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] rounded-[2rem] p-7 sm:p-9 text-white"
+        className="relative overflow-hidden bg-gradient-to-br from-[#2786A4] to-[#1E6A83] rounded-[2rem] p-7 sm:p-9 text-white"
       >
         <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-[60px]" />
         <div className="pointer-events-none absolute -bottom-20 -left-12 w-72 h-72 rounded-full bg-white/10 blur-[70px]" />

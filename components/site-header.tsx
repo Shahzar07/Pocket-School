@@ -152,7 +152,7 @@ export function SiteHeader() {
               {useGlass ? (
                 <Globe className="w-5 h-5 text-white" />
               ) : (
-                <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-[#1A73E8] to-[#1E3A8A] flex items-center justify-center">
+                <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-[#2786A4] to-[#1E3A8A] flex items-center justify-center">
                   <Globe className="w-3.5 h-3.5 text-white" />
                 </div>
               )}
@@ -174,7 +174,7 @@ export function SiteHeader() {
                     pathname === href
                       ? useGlass
                         ? "text-white"
-                        : "text-[#1A73E8]"
+                        : "text-[#2786A4]"
                       : useGlass
                         ? "text-white/75 hover:text-white"
                         : "text-muted-foreground hover:text-foreground"
@@ -194,10 +194,10 @@ export function SiteHeader() {
                 className={`flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition-colors ${
                   useGlass
                     ? "liquid-glass text-white hover:bg-white/5"
-                    : "bg-[#1A73E8] text-white hover:bg-[#1557B0] shadow-md shadow-blue-900/20"
+                    : "bg-[#2786A4] text-white hover:bg-[#1E6A83] shadow-md shadow-blue-900/20"
                 }`}
               >
-                <span className="inline-flex w-6 h-6 rounded-full bg-[#1A73E8] items-center justify-center text-[10px] font-bold uppercase">
+                <span className="inline-flex w-6 h-6 rounded-full bg-[#2786A4] items-center justify-center text-[10px] font-bold uppercase">
                   {(user.displayName || user.email || "U")[0]}
                 </span>
                 Dashboard
@@ -219,7 +219,7 @@ export function SiteHeader() {
                   className={`rounded-full px-5 py-2 text-sm font-semibold transition-colors ${
                     useGlass
                       ? "liquid-glass text-white hover:bg-white/5"
-                      : "bg-[#1A73E8] text-white hover:bg-[#1557B0] shadow-md shadow-blue-900/20"
+                      : "bg-[#2786A4] text-white hover:bg-[#1E6A83] shadow-md shadow-blue-900/20"
                   }`}
                 >
                   Sign In
@@ -256,7 +256,7 @@ export function SiteHeader() {
                   key={label}
                   href={href}
                   className={`text-sm font-medium py-1 ${
-                    pathname === href ? "text-[#1A73E8]" : "text-foreground"
+                    pathname === href ? "text-[#2786A4]" : "text-foreground"
                   }`}
                 >
                   {label}
@@ -268,7 +268,7 @@ export function SiteHeader() {
                     href={dashPath}
                     className="flex items-center gap-2 text-sm font-medium text-foreground"
                   >
-                    <span className="inline-flex w-6 h-6 rounded-full bg-[#1A73E8] items-center justify-center text-[10px] font-bold text-white uppercase">
+                    <span className="inline-flex w-6 h-6 rounded-full bg-[#2786A4] items-center justify-center text-[10px] font-bold text-white uppercase">
                       {(user.displayName || user.email || "U")[0]}
                     </span>
                     Dashboard
@@ -283,7 +283,7 @@ export function SiteHeader() {
                     </Link>
                     <Link
                       href="/signup"
-                      className="flex items-center justify-center gap-2 rounded-xl h-10 text-sm font-semibold bg-[#1A73E8] text-white"
+                      className="flex items-center justify-center gap-2 rounded-xl h-10 text-sm font-semibold bg-[#2786A4] text-white"
                     >
                       Get Started <ArrowRight className="w-3.5 h-3.5" />
                     </Link>

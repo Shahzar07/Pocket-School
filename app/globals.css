@@ -41,7 +41,7 @@
     --color-foreground: var(--foreground);
     --color-background: var(--background);
 
-    --color-google-blue: #1A73E8;
+    --color-google-blue: #2786A4;
     --color-google-teal: #00897B;
     --color-google-amber: #F9AB00;
 
@@ -55,8 +55,8 @@
 
     --shadow-google-soft: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
     --shadow-google-hover: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
-    --shadow-glow-blue: 0 0 0 1px rgba(26,115,232,0.15), 0 4px 24px rgba(26,115,232,0.12);
-    --shadow-glow-hover: 0 0 0 1px rgba(26,115,232,0.25), 0 8px 40px rgba(26,115,232,0.18);
+    --shadow-glow-blue: 0 0 0 1px rgba(39,134,164,0.15), 0 4px 24px rgba(39,134,164,0.12);
+    --shadow-glow-hover: 0 0 0 1px rgba(39,134,164,0.25), 0 8px 40px rgba(39,134,164,0.18);
     /* Cooler and softer than a neutral drop — matches the homepage's
      * 0 3px 6px #23485812 card lift. */
     --shadow-card: 0 1px 2px 0 rgba(35,72,88,0.04), 0 3px 10px 0 rgba(35,72,88,0.06);
@@ -161,14 +161,14 @@
     @apply bg-background text-foreground;
   }
   ::selection {
-    background-color: rgba(26, 115, 232, 0.18);
-    color: #1A73E8;
+    background-color: rgba(39, 134, 164, 0.18);
+    color: #2786A4;
   }
 }
 
 /* Gradient text utility */
 .gradient-text {
-  background: linear-gradient(135deg, #1A73E8 0%, #7C3AED 100%);
+  background: linear-gradient(135deg, #2786A4 0%, #1E6A83 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -265,13 +265,13 @@
 @property --c5-s5 { syntax: '<percentage>'; inherits: false; initial-value: 65%; }
 
 .c5-animated-gradient {
-  background-color: #1A73E8;
+  background-color: #2786A4;
   background-image:
     radial-gradient(circle at var(--c5-x1) var(--c5-y1), #93C5FD 0px, transparent var(--c5-s1)),
     radial-gradient(circle at var(--c5-x2) var(--c5-y2), #1E3A8A 0px, transparent var(--c5-s2)),
-    radial-gradient(circle at var(--c5-x3) var(--c5-y3), #F5B400 0px, transparent var(--c5-s3)),
-    radial-gradient(circle at var(--c5-x4) var(--c5-y4), #60A5FA 0px, transparent var(--c5-s4)),
-    radial-gradient(circle at var(--c5-x5) var(--c5-y5), #7C3AED 0px, transparent var(--c5-s5));
+    radial-gradient(circle at var(--c5-x3) var(--c5-y3), #E2AF4D 0px, transparent var(--c5-s3)),
+    radial-gradient(circle at var(--c5-x4) var(--c5-y4), #6FBBCE 0px, transparent var(--c5-s4)),
+    radial-gradient(circle at var(--c5-x5) var(--c5-y5), #1E6A83 0px, transparent var(--c5-s5));
   animation:
     c5-blob1 5s ease-in-out infinite,
     c5-blob2 6s ease-in-out infinite,

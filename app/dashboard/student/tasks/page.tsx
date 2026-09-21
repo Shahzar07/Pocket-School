@@ -23,8 +23,8 @@ const fadeUp: Record<string, any> = {
 };
 
 const CATEGORY_META: Record<GoalCategory, { label: string; pill: string; dot: string }> = {
-  study:    { label: 'Study',    pill: 'bg-[#1A73E8]/10 text-[#1A73E8]',   dot: 'bg-[#1A73E8]' },
-  revision: { label: 'Revision', pill: 'bg-[#7C3AED]/10 text-[#7C3AED]',   dot: 'bg-[#7C3AED]' },
+  study:    { label: 'Study',    pill: 'bg-[#2786A4]/10 text-[#2786A4]',   dot: 'bg-[#2786A4]' },
+  revision: { label: 'Revision', pill: 'bg-[#1E6A83]/10 text-[#1E6A83]',   dot: 'bg-[#1E6A83]' },
   practice: { label: 'Practice', pill: 'bg-amber-500/10 text-amber-600',   dot: 'bg-amber-500' },
   reading:  { label: 'Reading',  pill: 'bg-emerald-500/10 text-emerald-600', dot: 'bg-emerald-500' },
   other:    { label: 'Other',    pill: 'bg-muted text-muted-foreground',   dot: 'bg-muted-foreground' },
@@ -37,7 +37,7 @@ type DisplayStatus = 'not_started' | 'in_progress' | 'completed' | 'overdue' | '
 
 const STATUS_META: Record<DisplayStatus, { label: string; pill: string }> = {
   not_started: { label: 'Not Started', pill: 'bg-muted text-muted-foreground' },
-  in_progress: { label: 'In Progress', pill: 'bg-[#1A73E8]/10 text-[#1A73E8]' },
+  in_progress: { label: 'In Progress', pill: 'bg-[#2786A4]/10 text-[#2786A4]' },
   completed:   { label: 'Completed',   pill: 'bg-emerald-500/10 text-emerald-600' },
   overdue:     { label: 'Overdue',     pill: 'bg-destructive/10 text-destructive' },
   excused:     { label: 'Excused',     pill: 'bg-amber-500/10 text-amber-600' },
@@ -96,7 +96,7 @@ function CountdownRing({ goal, nowMs }: { goal: DailyGoal; nowMs: number }) {
   // Ring depletes as the estimate is used up; a finished goal shows a full ring.
   const elapsedFrac = done ? 0 : Math.min(1, Math.max(0, 1 - remainingSec / totalSec));
   const urgent = !done && remainingSec <= 15 * 60;
-  const stroke = done ? '#10b981' : urgent ? '#ef4444' : '#1A73E8';
+  const stroke = done ? '#10b981' : urgent ? '#ef4444' : '#2786A4';
   const mins = Math.ceil(remainingSec / 60);
 
   return (
@@ -460,7 +460,7 @@ export default function StudentDailyGoalsPage() {
             <Button
               onClick={() => handleStart(goal)}
               disabled={busyId === goal.id}
-              className="rounded-full h-10 px-4 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white hover:opacity-90 transition-opacity gap-2"
+              className="rounded-full h-10 px-4 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white hover:opacity-90 transition-opacity gap-2"
             >
               {busyId === goal.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
               Start Goal
@@ -528,7 +528,7 @@ export default function StudentDailyGoalsPage() {
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1} className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: 'Goals Today', value: stats.total, accent: 'bg-primary', icon: Target },
-          { label: 'In Progress', value: stats.inProgress, accent: 'bg-[#1A73E8]', icon: Play },
+          { label: 'In Progress', value: stats.inProgress, accent: 'bg-[#2786A4]', icon: Play },
           { label: 'Completed', value: stats.completed, accent: 'bg-emerald-500', icon: CheckCircle2 },
           { label: '🔥 Streak', value: `${stats.streak}d`, accent: 'bg-amber-500', icon: Flame },
         ].map(stat => (
@@ -543,14 +543,14 @@ export default function StudentDailyGoalsPage() {
       {/* ── Ayla prompt strip ── */}
       <motion.div
         variants={fadeUp} initial="hidden" animate="visible" custom={2}
-        className="relative bg-[#070B14] rounded-3xl p-5 sm:p-6 text-white overflow-hidden"
+        className="relative bg-[#203337] rounded-3xl p-5 sm:p-6 text-white overflow-hidden"
       >
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-24 -left-16 w-72 h-72 rounded-full bg-[#1A73E8]/25 blur-[80px]" />
-          <div className="absolute -bottom-24 -right-10 w-72 h-72 rounded-full bg-[#7C3AED]/20 blur-[80px]" />
+          <div className="absolute -top-24 -left-16 w-72 h-72 rounded-full bg-[#2786A4]/25 blur-[80px]" />
+          <div className="absolute -bottom-24 -right-10 w-72 h-72 rounded-full bg-[#1E6A83]/20 blur-[80px]" />
         </div>
         <div className="relative flex items-start gap-4">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] flex items-center justify-center shrink-0 shadow-[0_0_28px_rgba(26,115,232,0.4)]">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#2786A4] to-[#1E6A83] flex items-center justify-center shrink-0 shadow-[0_0_28px_rgba(39,134,164,0.4)]">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div className="min-w-0">
@@ -653,7 +653,7 @@ export default function StudentDailyGoalsPage() {
         <Button
           onClick={handleAdd}
           disabled={adding || !title.trim()}
-          className="rounded-full h-11 px-6 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white hover:opacity-90 transition-opacity gap-2 w-full sm:w-auto"
+          className="rounded-full h-11 px-6 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white hover:opacity-90 transition-opacity gap-2 w-full sm:w-auto"
         >
           {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
           Add Goal
@@ -816,7 +816,7 @@ export default function StudentDailyGoalsPage() {
                         variants={fadeUp} initial="hidden" animate="visible" custom={i}
                         className="bg-card border border-border rounded-2xl p-4 flex items-start gap-3 card-glow"
                       >
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#2786A4] to-[#1E6A83] flex items-center justify-center shrink-0">
                           <Sparkles className="w-4 h-4 text-white" />
                         </div>
                         <p className="text-sm text-foreground leading-relaxed">{line as string}</p>

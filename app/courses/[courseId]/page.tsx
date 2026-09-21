@@ -217,7 +217,7 @@ export default function CourseDetailPage() {
       <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/80 border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-[#1E6A83] flex items-center justify-center shadow-md">
               <Brain className="w-4 h-4 text-white" />
             </div>
             <span className="text-[15px] font-bold tracking-tight">Poket School</span>
@@ -254,7 +254,7 @@ export default function CourseDetailPage() {
       {course && (
         <>
           {/* ── Hero: dark band, sticky buy card overlaps it ── */}
-          <section className="relative bg-[#0f1117] text-white">
+          <section className="relative bg-[#203337] text-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
               <div className="lg:max-w-[62%]">
                 <nav className="flex items-center gap-2 text-xs text-white/50 mb-4">
@@ -452,7 +452,7 @@ export default function CourseDetailPage() {
                 <section>
                   <h2 className="text-xl font-bold mb-4">Instructor</h2>
                   <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shrink-0">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-[#1E6A83] flex items-center justify-center text-white text-xl font-bold shrink-0">
                       {(course.ownerName || 'P').charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
@@ -495,7 +495,7 @@ export default function CourseDetailPage() {
                       <Button
                         onClick={enrolFree}
                         disabled={enrolling}
-                        className="w-full h-12 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold"
+                        className="w-full h-12 rounded-lg bg-gradient-to-r from-primary to-[#1E6A83] hover:opacity-90 text-white font-bold"
                       >
                         {enrolling ? 'Enrolling…' : user ? 'Enrol for free' : 'Sign in to enrol'}
                       </Button>

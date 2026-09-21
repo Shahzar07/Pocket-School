@@ -21,7 +21,7 @@ const fadeUp: Record<string, any> = {
 };
 
 const COURSE_GRADIENTS = [
-  'from-[#1A73E8] to-[#7C3AED]',
+  'from-[#2786A4] to-[#1E6A83]',
   'from-emerald-500 to-teal-600',
   'from-amber-500 to-orange-600',
   'from-rose-500 to-pink-600',

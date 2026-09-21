@@ -177,7 +177,7 @@ export default function AdminAccessConfig() {
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               className="rounded-xl h-11 bg-muted/50"
             />
-            <Button onClick={handleSearch} disabled={searching || !searchEmail.trim()} className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white shrink-0">
+            <Button onClick={handleSearch} disabled={searching || !searchEmail.trim()} className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white shrink-0">
               {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
               <span className="ml-2">Search</span>
             </Button>

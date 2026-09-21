@@ -41,8 +41,8 @@ export function PipCharacter({
       <defs>
         <linearGradient id="pip-body" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#5B8DEF" />
-          <stop offset="55%" stopColor="#1A73E8" />
-          <stop offset="100%" stopColor="#7C3AED" />
+          <stop offset="55%" stopColor="#2786A4" />
+          <stop offset="100%" stopColor="#1E6A83" />
         </linearGradient>
         <radialGradient id="pip-glow" cx="50%" cy="45%" r="55%">
           <stop offset="0%" stopColor="#fff" stopOpacity="0.45" />
@@ -51,8 +51,8 @@ export function PipCharacter({
       </defs>
 
       {/* antenna */}
-      <line x1="60" y1="24" x2="60" y2="12" stroke="#7C3AED" strokeWidth="4" strokeLinecap="round" />
-      <circle cx="60" cy="9" r="6" fill="#F5B400">
+      <line x1="60" y1="24" x2="60" y2="12" stroke="#1E6A83" strokeWidth="4" strokeLinecap="round" />
+      <circle cx="60" cy="9" r="6" fill="#E2AF4D">
         <animate attributeName="r" values="6;7;6" dur="2s" repeatCount="indefinite" />
       </circle>
 
@@ -61,7 +61,7 @@ export function PipCharacter({
       <rect x="18" y="24" width="84" height="74" rx="26" fill="url(#pip-glow)" />
 
       {/* face plate */}
-      <rect x="30" y="38" width="60" height="40" rx="18" fill="#0B1B3F" opacity="0.92" />
+      <rect x="30" y="38" width="60" height="40" rx="18" fill="#203337" opacity="0.92" />
 
       {/* eyes */}
       {mood === 'thinking' ? (
@@ -92,21 +92,21 @@ export function PipCharacter({
       <circle cx="84" cy="66" r="4" fill="#EC4899" opacity="0.5" />
 
       {/* arms */}
-      <rect x="6" y="52" width="12" height="26" rx="6" fill="#1A73E8" />
+      <rect x="6" y="52" width="12" height="26" rx="6" fill="#2786A4" />
       {mood === 'waving' ? (
         <g style={{ transformOrigin: '108px 58px' }}>
-          <rect x="102" y="40" width="12" height="26" rx="6" fill="#7C3AED">
+          <rect x="102" y="40" width="12" height="26" rx="6" fill="#1E6A83">
             <animateTransform attributeName="transform" type="rotate"
               values="0 108 58; -22 108 58; 0 108 58" dur="1.4s" repeatCount="indefinite" />
           </rect>
         </g>
       ) : (
-        <rect x="102" y="52" width="12" height="26" rx="6" fill="#7C3AED" />
+        <rect x="102" y="52" width="12" height="26" rx="6" fill="#1E6A83" />
       )}
 
       {/* feet */}
-      <rect x="34" y="96" width="20" height="10" rx="5" fill="#0B1B3F" opacity="0.8" />
-      <rect x="66" y="96" width="20" height="10" rx="5" fill="#0B1B3F" opacity="0.8" />
+      <rect x="34" y="96" width="20" height="10" rx="5" fill="#203337" opacity="0.8" />
+      <rect x="66" y="96" width="20" height="10" rx="5" fill="#203337" opacity="0.8" />
     </svg>
   );
 }
@@ -309,7 +309,7 @@ export function PipGuide({ role }: { role: TourRole }) {
       >
         <PipCharacter size={28} mood="waving" />
         <span className="text-xs font-bold text-foreground hidden sm:inline">Show me around</span>
-        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#F5B400] opacity-0 group-hover:opacity-100 transition-opacity" />
+        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#E2AF4D] opacity-0 group-hover:opacity-100 transition-opacity" />
       </button>
 
       <AnimatePresence>
@@ -329,7 +329,7 @@ export function PipGuide({ role }: { role: TourRole }) {
                 <motion.div
                   layout
                   transition={{ type: 'spring', stiffness: 280, damping: 30 }}
-                  className="absolute rounded-2xl ring-4 ring-[#F5B400] pointer-events-none"
+                  className="absolute rounded-2xl ring-4 ring-[#E2AF4D] pointer-events-none"
                   style={{ ...rect, boxShadow: '0 0 0 9999px rgba(0,0,0,0)' }}
                 />
               </>
@@ -347,12 +347,12 @@ export function PipGuide({ role }: { role: TourRole }) {
               style={cardStyle}
             >
               {/* header */}
-              <div className="flex items-start gap-3 p-5 pb-3 bg-gradient-to-br from-[#1A73E8]/8 to-[#7C3AED]/8">
+              <div className="flex items-start gap-3 p-5 pb-3 bg-gradient-to-br from-[#2786A4]/8 to-[#1E6A83]/8">
                 <div className="shrink-0 -mt-1">
                   <PipCharacter size={56} mood={moving || asking ? 'thinking' : 'happy'} />
                 </div>
                 <div className="min-w-0 flex-1 pt-1">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#7C3AED]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#1E6A83]">
                     Pip · your guide
                   </p>
                   <h3 className="font-heading text-lg text-foreground leading-snug mt-0.5">
@@ -367,7 +367,7 @@ export function PipGuide({ role }: { role: TourRole }) {
 
               <div className="px-5 pb-4">
                 {intro && index === 0 && (
-                  <p className="text-xs text-[#7C3AED] font-semibold mb-2">{intro}</p>
+                  <p className="text-xs text-[#1E6A83] font-semibold mb-2">{intro}</p>
                 )}
                 <p className="text-sm text-foreground/80 leading-relaxed">
                   {(step && notes[step.id]) || step?.body}
@@ -382,12 +382,12 @@ export function PipGuide({ role }: { role: TourRole }) {
                     placeholder="Ask me anything — e.g. how do I add a course?"
                     aria-label="Ask Pip what you want to learn"
                     disabled={asking}
-                    className="flex-1 min-w-0 h-9 rounded-full border border-border bg-background px-3.5 text-xs outline-none focus:border-[#7C3AED] disabled:opacity-60"
+                    className="flex-1 min-w-0 h-9 rounded-full border border-border bg-background px-3.5 text-xs outline-none focus:border-[#1E6A83] disabled:opacity-60"
                   />
                   <button
                     onClick={ask} disabled={asking || !question.trim()}
                     aria-label="Build my walkthrough"
-                    className="shrink-0 w-9 h-9 grid place-items-center rounded-full bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] text-white disabled:opacity-40"
+                    className="shrink-0 w-9 h-9 grid place-items-center rounded-full bg-gradient-to-br from-[#2786A4] to-[#1E6A83] text-white disabled:opacity-40"
                   >
                     {asking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                   </button>
@@ -400,7 +400,7 @@ export function PipGuide({ role }: { role: TourRole }) {
                   {steps.map((s, i) => (
                     <span key={s.id}
                       className={`h-1.5 rounded-full transition-all ${
-                        i === index ? 'w-5 bg-[#7C3AED]' : i < index ? 'w-1.5 bg-[#7C3AED]/40' : 'w-1.5 bg-border'
+                        i === index ? 'w-5 bg-[#1E6A83]' : i < index ? 'w-1.5 bg-[#1E6A83]/40' : 'w-1.5 bg-border'
                       }`} />
                   ))}
                 </div>
@@ -420,7 +420,7 @@ export function PipGuide({ role }: { role: TourRole }) {
                   </button>
                 ) : (
                   <button onClick={() => setIndex(i => i + 1)} disabled={moving}
-                    className="h-9 px-4 rounded-full text-xs font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white flex items-center gap-1.5 disabled:opacity-60">
+                    className="h-9 px-4 rounded-full text-xs font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white flex items-center gap-1.5 disabled:opacity-60">
                     {moving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>Next <ArrowRight className="w-3.5 h-3.5" /></>}
                   </button>
                 )}

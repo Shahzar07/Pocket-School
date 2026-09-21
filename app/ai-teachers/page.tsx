@@ -59,23 +59,23 @@ export default function AiTeachersPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* ── Hero ───────────────────────────────────────────────── */}
-      <section className="relative pt-14 lg:pt-20 pb-12 bg-gradient-to-b from-[#EEF3FF] via-[#F5F1FF] to-[#F8F4EE] overflow-hidden">
-        <div className="absolute -top-20 -left-20 w-96 h-96 rounded-full bg-[#1A73E8]/10 blur-3xl" />
-        <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[#F5B400]/10 blur-3xl" />
+      <section className="relative pt-14 lg:pt-20 pb-12 bg-gradient-to-b from-[#E9F7FA] via-[#F5F1FF] to-[#F8F4EE] overflow-hidden">
+        <div className="absolute -top-20 -left-20 w-96 h-96 rounded-full bg-[#2786A4]/10 blur-3xl" />
+        <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[#E2AF4D]/10 blur-3xl" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 text-center">
-          <p className="text-xs font-bold tracking-[0.25em] text-[#1A73E8] mb-5">AI TEACHERS LIBRARY</p>
-          <h1 className="font-heading text-4xl sm:text-5xl lg:text-7xl tracking-tight text-[#0B1B3F] leading-[0.95] mb-6 max-w-4xl mx-auto">
+          <p className="text-xs font-bold tracking-[0.25em] text-[#2786A4] mb-5">AI TEACHERS LIBRARY</p>
+          <h1 className="font-heading text-4xl sm:text-5xl lg:text-7xl tracking-tight text-[#203337] leading-[0.95] mb-6 max-w-4xl mx-auto">
             Your 24/7 Faculty.
             <br />
-            <span className="bg-gradient-to-r from-[#1A73E8] via-[#1E3A8A] to-[#1A73E8] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#2786A4] via-[#1E3A8A] to-[#2786A4] bg-clip-text text-transparent">
               Always Available.
             </span>
           </h1>
           <p className="text-base sm:text-lg text-slate-700 leading-relaxed max-w-2xl mx-auto mb-8">
             Talk face-to-face with AI educators trained on the curricula that matter. No appointments. No waiting. Just learning.
           </p>
-          <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap text-xs sm:text-sm font-bold text-[#0B1B3F]">
+          <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap text-xs sm:text-sm font-bold text-[#203337]">
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-md border border-black/[0.04]">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
@@ -84,11 +84,11 @@ export default function AiTeachersPage() {
               {liveCount} AVAILABLE NOW
             </span>
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-md border border-black/[0.04]">
-              <Sparkles className="w-3.5 h-3.5 text-[#F5B400]" />
+              <Sparkles className="w-3.5 h-3.5 text-[#E2AF4D]" />
               {AI_TEACHERS.length} SUBJECTS
             </span>
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-md border border-black/[0.04]">
-              <Mic className="w-3.5 h-3.5 text-[#1A73E8]" />
+              <Mic className="w-3.5 h-3.5 text-[#2786A4]" />
               VOICE + TEXT
             </span>
           </div>
@@ -96,12 +96,12 @@ export default function AiTeachersPage() {
       </section>
 
       {/* ── Filter + grid ─────────────────────────────────────── */}
-      <section className="bg-[#F8FAFF] py-16 lg:py-20 border-t border-slate-100">
+      <section className="bg-[#F4F6F6] py-16 lg:py-20 border-t border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="mb-10 flex items-end justify-between flex-wrap gap-4">
             <div>
-              <p className="text-xs font-bold tracking-[0.2em] text-[#1A73E8] mb-3">EXPLORE THE FACULTY</p>
-              <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#0B1B3F] leading-[1.05]">
+              <p className="text-xs font-bold tracking-[0.2em] text-[#2786A4] mb-3">EXPLORE THE FACULTY</p>
+              <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#203337] leading-[1.05]">
                 Meet every teacher on the bench.
               </h2>
             </div>
@@ -120,8 +120,8 @@ export default function AiTeachersPage() {
                   onClick={() => setFilter(c)}
                   className={`text-xs font-bold px-4 py-2 rounded-full transition-all ${
                     active
-                      ? 'bg-[#0B1B3F] text-white shadow-md'
-                      : 'bg-white text-slate-700 border border-slate-200 hover:border-[#1A73E8] hover:text-[#1A73E8]'
+                      ? 'bg-[#203337] text-white shadow-md'
+                      : 'bg-white text-slate-700 border border-slate-200 hover:border-[#2786A4] hover:text-[#2786A4]'
                   }`}
                 >
                   {c}
@@ -148,14 +148,14 @@ export default function AiTeachersPage() {
       </section>
 
       {/* ── Closing CTA ───────────────────────────────────────── */}
-      <section className="py-20 lg:py-28 bg-[#0B1B3F] relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(26,115,232,0.25),transparent)]" />
+      <section className="py-20 lg:py-28 bg-[#203337] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(39,134,164,0.25),transparent)]" />
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
-          <p className="text-xs font-bold tracking-[0.25em] text-[#1A73E8] mb-5">JOIN THE FACULTY</p>
+          <p className="text-xs font-bold tracking-[0.25em] text-[#2786A4] mb-5">JOIN THE FACULTY</p>
           <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-white leading-[1.05] mb-5">
             Know a great educator?
             <br />
-            <span className="bg-gradient-to-r from-[#1A73E8] via-[#60A5FA] to-[#F5B400] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#2786A4] via-[#6FBBCE] to-[#E2AF4D] bg-clip-text text-transparent">
               Help us train the next AI teacher.
             </span>
           </h2>
@@ -168,7 +168,7 @@ export default function AiTeachersPage() {
           </p>
           <a
             href="mailto:educators@poketschool.ai?subject=Partner%20Educator%20Enquiry"
-            className="inline-flex items-center justify-center gap-2 rounded-full h-12 px-7 text-sm font-bold bg-[#1A73E8] hover:bg-[#1967D2] text-white shadow-xl shadow-[#1A73E8]/40 transition-colors"
+            className="inline-flex items-center justify-center gap-2 rounded-full h-12 px-7 text-sm font-bold bg-[#2786A4] hover:bg-[#1E6A83] text-white shadow-xl shadow-[#2786A4]/40 transition-colors"
           >
             Become a partner educator <ArrowRight className="w-4 h-4" />
           </a>
@@ -207,7 +207,7 @@ function TeacherCard({
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: index * 0.04 }}
       whileHover={{ y: -4 }}
       onClick={onOpen}
-      className="group text-left bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-[#1A73E8]/40 hover:shadow-[0_20px_50px_-20px_rgba(26,115,232,0.25)] transition-all flex flex-col"
+      className="group text-left bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-[#2786A4]/40 hover:shadow-[0_20px_50px_-20px_rgba(39,134,164,0.25)] transition-all flex flex-col"
     >
       {/* Avatar pane */}
       <div
@@ -239,7 +239,7 @@ function TeacherCard({
 
       {/* Body */}
       <div className="p-5 flex flex-col flex-1">
-        <h3 className="font-heading text-lg text-[#0B1B3F] leading-tight mb-1">{teacher.name}</h3>
+        <h3 className="font-heading text-lg text-[#203337] leading-tight mb-1">{teacher.name}</h3>
         <p className="text-xs text-slate-500 leading-snug mb-3 line-clamp-2">{teacher.title}</p>
 
         <div className="flex flex-wrap gap-1 mb-4">
@@ -256,7 +256,7 @@ function TeacherCard({
 
         <p className="text-xs text-slate-600 leading-relaxed mb-4 flex-1 line-clamp-2">{teacher.tagline}</p>
 
-        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0B1B3F] group-hover:text-[#1A73E8] transition-colors">
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#203337] group-hover:text-[#2786A4] transition-colors">
           {isLive ? 'Start conversation' : 'See details'}
           <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
         </span>

@@ -242,7 +242,7 @@ export default function StudentExamsPage() {
           <Button
             onClick={handleSubmit}
             disabled={submitting}
-            className="rounded-full h-12 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white w-full gap-2 hover:opacity-90 transition-opacity"
+            className="rounded-full h-12 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white w-full gap-2 hover:opacity-90 transition-opacity"
           >
             {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
             {submitting ? 'Grading...' : 'Submit Exam'}
@@ -301,7 +301,7 @@ export default function StudentExamsPage() {
                 className="bg-card border border-border rounded-2xl p-4 flex items-center justify-between gap-4 card-glow"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#2786A4] to-[#1E6A83] flex items-center justify-center shrink-0">
                     <PenSquare className="w-5 h-5 text-white" />
                   </div>
                   <div>
@@ -321,7 +321,7 @@ export default function StudentExamsPage() {
                 {availability.available ? (
                   <Button
                     onClick={() => startExam(item.exam)}
-                    className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white hover:opacity-90 transition-opacity gap-2 shrink-0"
+                    className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white hover:opacity-90 transition-opacity gap-2 shrink-0"
                   >
                     Start <ChevronRight className="w-4 h-4" />
                   </Button>

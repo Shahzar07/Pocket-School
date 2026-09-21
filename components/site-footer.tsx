@@ -216,7 +216,7 @@ export function SiteFooter() {
                 beyond — built around how you think.
               </p>
               <div className="mt-5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[11px] font-semibold text-white/70">
-                <Sparkles className="w-3 h-3 text-[#F5B400]" />
+                <Sparkles className="w-3 h-3 text-[#E2AF4D]" />
                 AI-Powered Platform
               </div>
             </div>

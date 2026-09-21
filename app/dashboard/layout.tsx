@@ -29,7 +29,7 @@ import Link from 'next/link';
 type Role = 'student' | 'teacher' | 'parent' | 'admin';
 
 const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string }> = {
-  student: { icon: 'text-[#60A5FA]', bar: 'bg-[#60A5FA]', chip: 'from-[#1A73E8] to-[#7C3AED]' },
+  student: { icon: 'text-[#6FBBCE]', bar: 'bg-[#6FBBCE]', chip: 'from-[#2786A4] to-[#1E6A83]' },
   teacher: { icon: 'text-emerald-400', bar: 'bg-emerald-400', chip: 'from-emerald-500 to-teal-600' },
   parent:  { icon: 'text-amber-400',  bar: 'bg-amber-400',  chip: 'from-amber-500 to-orange-600' },
   admin:   { icon: 'text-violet-400', bar: 'bg-violet-400', chip: 'from-violet-500 to-fuchsia-600' },
@@ -319,7 +319,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <button onClick={() => router.push('/dashboard/profile')} className="ml-1" data-tour="profile">
               <Avatar className="w-9 h-9 border-2 border-border cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all">
                 <AvatarImage src={profile.avatarUrl ?? user.photoURL ?? undefined} />
-                <AvatarFallback className="bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] text-white text-sm font-bold">
+                <AvatarFallback className="bg-gradient-to-br from-[#2786A4] to-[#1E6A83] text-white text-sm font-bold">
                   {profile.name?.charAt(0)?.toUpperCase() ?? 'U'}
                 </AvatarFallback>
               </Avatar>

@@ -151,9 +151,9 @@ export default function AdminSystemSettings() {
         <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}
           className="bg-card border border-border rounded-3xl p-6 sm:p-7 relative overflow-hidden card-glow"
         >
-          <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-[#1A73E8] opacity-80" />
+          <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-[#2786A4] opacity-80" />
           <div className="flex items-center gap-3 mb-5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1A73E8] to-[#7C3AED] flex items-center justify-center shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#2786A4] to-[#1E6A83] flex items-center justify-center shadow-md">
               <Mail className="w-5 h-5 text-white" />
             </div>
             <h2 className="font-heading text-2xl text-foreground">Email Integration</h2>

@@ -18,7 +18,7 @@ const fadeUp: Record<string, any> = {
 };
 
 const TYPE_COLORS: Record<string, string> = {
-  assignment: 'bg-[#1A73E8]',
+  assignment: 'bg-[#2786A4]',
   exam: 'bg-violet-500',
   event: 'bg-emerald-500',
   holiday: 'bg-amber-500',
@@ -131,7 +131,7 @@ export default function CalendarPage() {
         </div>
         {canCreate && (
           <Button onClick={() => setShowCreate(true)}
-            className="rounded-full h-11 px-5 gap-2 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] hover:opacity-90 text-white shrink-0"
+            className="rounded-full h-11 px-5 gap-2 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] hover:opacity-90 text-white shrink-0"
           >
             <Plus className="w-4 h-4" /> Add Event
           </Button>
@@ -165,7 +165,7 @@ export default function CalendarPage() {
             </Select>
             <Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Description (optional)" className="rounded-xl h-11 bg-muted/50" />
           </div>
-          <Button onClick={handleCreate} disabled={saving} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white gap-2">
+          <Button onClick={handleCreate} disabled={saving} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white gap-2">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
             Create Event
           </Button>
@@ -197,7 +197,7 @@ export default function CalendarPage() {
                 <div key={i} className={`min-h-[80px] border-t border-r border-border p-1.5 ${!day ? 'bg-muted/10' : 'hover:bg-muted/20 cursor-pointer transition-colors'}`}>
                   {day && (
                     <>
-                      <p className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full mb-1 ${isToday ? 'bg-gradient-to-r from-[#1A73E8] to-[#7C3AED] text-white' : 'text-foreground'}`}>
+                      <p className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full mb-1 ${isToday ? 'bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white' : 'text-foreground'}`}>
                         {day}
                       </p>
                       {dayEvents.slice(0, 2).map(e => (
