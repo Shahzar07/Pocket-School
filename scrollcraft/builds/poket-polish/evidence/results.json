@@ -1,0 +1,45 @@
+{
+  "results": [
+    {
+      "label": "desktop",
+      "width": 1280,
+      "height": 900,
+      "layout": "passed",
+      "pricing": "passed",
+      "reducedMotion": "passed"
+    },
+    {
+      "label": "tablet",
+      "width": 768,
+      "height": 1024,
+      "layout": "passed",
+      "pricing": "passed",
+      "reducedMotion": "passed"
+    },
+    {
+      "label": "phone",
+      "width": 390,
+      "height": 844,
+      "layout": "passed",
+      "pricing": "passed",
+      "reducedMotion": "passed"
+    },
+    {
+      "label": "compact",
+      "width": 360,
+      "height": 640,
+      "layout": "passed",
+      "pricing": "passed",
+      "reducedMotion": "passed"
+    },
+    {
+      "label": "reduced",
+      "width": 1280,
+      "height": 900,
+      "layout": "passed",
+      "pricing": "passed",
+      "reducedMotion": "passed"
+    }
+  ],
+  "errors": []
+}

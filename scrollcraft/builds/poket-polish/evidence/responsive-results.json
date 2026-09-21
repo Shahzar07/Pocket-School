@@ -1,0 +1,84 @@
+{
+  "results": [
+    {
+      "width": 320,
+      "layout": "passed",
+      "header": "passed",
+      "controls": "passed"
+    },
+    {
+      "width": 360,
+      "layout": "passed",
+      "header": "passed",
+      "controls": "passed"
+    },
+    {
+      "width": 390,
+      "layout": "passed",
+      "header": "passed",
+      "controls": "passed"
+    },
+    {
+      "width": 640,
+      "layout": "passed",
+      "header": "passed",
+      "controls": "passed"
+    },
+    {
+      "width": 641,
+      "layout": "passed",
+      "header": "passed",
+      "controls": "passed"
+    },
+    {
+      "width": 768,
+      "layout": "passed",
+      "header": "passed",
+      "controls": "passed"
+    },
+    {
+      "width": 800,
+      "layout": "passed",
+      "header": "passed",
+      "controls": "passed"
+    },
+    {
+      "width": 801,
+      "layout": "passed",
+      "header": "passed",
+      "controls": "passed"
+    },
+    {
+      "width": 900,
+      "layout": "passed",
+      "header": "passed",
+      "controls": "passed"
+    },
+    {
+      "width": 901,
+      "layout": "passed",
+      "header": "passed",
+      "controls": "passed"
+    },
+    {
+      "width": 1024,
+      "layout": "passed",
+      "header": "passed",
+      "controls": "passed"
+    },
+    {
+      "width": 1280,
+      "layout": "passed",
+      "header": "passed",
+      "controls": "passed"
+    },
+    {
+      "width": 1536,
+      "layout": "passed",
+      "header": "passed",
+      "controls": "passed"
+    }
+  ],
+  "motion": "passed",
+  "errors": []
+}
