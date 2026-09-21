@@ -14,6 +14,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Zap, BookOpen, MessageSquare, Trophy, UserRound, FileBarChart, TrendingUp, Target, Clock, ShieldCheck, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { DashPage, DashHeader } from '@/components/dash-ui';
 
 interface ChildData {
   id: string;
@@ -185,27 +186,20 @@ export default function ParentDashboard() {
   );
 
   return (
-    <div className="max-w-5xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
-
-      {/* ── Greeting ── */}
-      <motion.header variants={fadeUp} initial="hidden" animate="visible" custom={0}
-        className="pt-2 flex flex-col sm:flex-row sm:items-end justify-between gap-6"
-      >
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-amber-600 flex items-center gap-2">
-            <span className="w-5 h-px bg-amber-600 inline-block" /> Family overview · {today}
-          </p>
-          <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-3">
-            Your family's <span className="gradient-text italic">progress</span>
-          </h1>
-          <p className="text-muted-foreground mt-2 text-[15px]">Every lesson, score, and milestone — in one place.</p>
-        </div>
-        <Link href="/dashboard/parent/communications"
-          className={buttonVariants({ variant: 'outline' }) + ' rounded-full h-11 px-5 gap-2 font-semibold shrink-0'}
-        >
-          <MessageSquare className="w-4 h-4" /> Message teachers
-        </Link>
-      </motion.header>
+    <DashPage>
+      <DashHeader
+        eyebrow={`Family overview · ${today}`}
+        title="Your family's"
+        accent="progress"
+        description="Every lesson, score and milestone, in one place."
+        actions={
+          <Link href="/dashboard/parent/communications"
+            className={buttonVariants({ variant: 'outline' }) + ' h-10 px-4 rounded-xl gap-2 font-semibold text-[13px]'}
+          >
+            <MessageSquare className="w-3.5 h-3.5" /> Message teachers
+          </Link>
+        }
+      />
 
       {/* ── Today's Goals ── */}
       <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={0.5} className="space-y-4">
@@ -427,6 +421,6 @@ export default function ParentDashboard() {
           })}
         </div>
       )}
-    </div>
+    </DashPage>
   );
 }

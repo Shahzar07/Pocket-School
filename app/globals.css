@@ -97,9 +97,12 @@
     --chart-3: #E2AF4D;
     --chart-4: #D0553F;
     --chart-5: #4F7F8C;
-    /* The homepage keeps cards at 8–22px; 0.875rem sits in that range and
-     * scales through the --radius-* ladder above. */
-    --radius: 0.875rem;
+    /* The whole radius ladder above derives from this one value, so it sets
+     * the roundness of every card in the app. 0.5rem lands the ladder on
+     * 8 / 12 / 16 / 24px — the homepage's own range. It was 1rem, which made
+     * the `rounded-3xl` cards used across the dashboard 48px: far rounder
+     * than anything on the homepage. */
+    --radius: 0.5rem;
     --sidebar: #FFFFFF;
     --sidebar-foreground: #203337;
     --sidebar-primary: #2786A4;
