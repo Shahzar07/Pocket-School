@@ -180,8 +180,13 @@ service cloud.firestore {
         resource.data.fromId == request.auth.uid ||
         resource.data.toId == request.auth.uid
       );
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource.data.toId == request.auth.uid;
+      // Send as yourself only. This was `isSignedIn()`, so any user could
+      // forge fromId and post a message that appeared to come from a teacher.
+      allow create: if isSignedIn() && incoming().fromId == request.auth.uid;
+      // The recipient marks it read; nobody edits a sent message's contents.
+      allow update: if isSignedIn()
+        && resource.data.toId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
       allow delete: if isAdmin();
     }
 
