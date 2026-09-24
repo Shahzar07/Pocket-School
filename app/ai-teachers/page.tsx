@@ -18,6 +18,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { AiTeacherModal } from '@/components/ai-teacher-modal';
+import { teacherPortrait } from '@/lib/teacher-portrait';
 import {
   AI_TEACHERS,
   TEACHER_CATEGORIES,
@@ -209,18 +210,15 @@ function TeacherCard({
       onClick={onOpen}
       className="group text-left bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-[#2786A4]/40 hover:shadow-[0_20px_50px_-20px_rgba(39,134,164,0.25)] transition-all flex flex-col"
     >
-      {/* Avatar pane */}
-      <div
-        className="relative h-44 flex items-center justify-center"
-        style={{
-          background: `linear-gradient(135deg, ${teacher.accentColor}, ${teacher.accentColor}cc)`,
-        }}
-      >
-        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_30%_30%,white,transparent_60%)]" />
-        <div className="relative w-24 h-24 rounded-2xl bg-white/95 backdrop-blur shadow-lg flex items-center justify-center overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={teacher.avatarUrl} alt={teacher.name} className="w-full h-full object-cover" />
-        </div>
+      {/* Portrait pane — a full-bleed illustration rather than a small tile */}
+      <div className="relative h-44 overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={teacherPortrait(teacher)}
+          alt={teacher.name}
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
+        />
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/25 to-transparent" />
         {isLive && (
           <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-sm">
             <span className="relative flex h-1.5 w-1.5">
