@@ -23,6 +23,9 @@ import {
 
 const SEEN_KEY = 'poket-pip-onboarded';
 
+/** One spring for the spotlight, so the dim and the ring move as one piece. */
+const SPOTLIGHT_SPRING = { type: 'spring', stiffness: 420, damping: 38, mass: 0.7 } as const;
+
 /* ── The character ─────────────────────────────────────────────── */
 
 /**
@@ -130,17 +133,33 @@ function rectOf(selector: string): Rect | null {
   };
 }
 
-/** Wait for an element to exist, polling because routes render asynchronously. */
-function waitForTarget(selector: string, timeout = 2500): Promise<Rect | null> {
+/**
+ * Wait for an element to appear.
+ *
+ * Uses MutationObserver rather than a requestAnimationFrame poll: the poll ran
+ * a DOM query every frame for up to 2.5 seconds, which competed with the
+ * spotlight's own animation and made the tour feel stuttery. This wakes only
+ * when the DOM actually changes, and resolves the instant the target exists.
+ */
+function waitForTarget(selector: string, timeout = 3000): Promise<Rect | null> {
   return new Promise(resolve => {
-    const started = Date.now();
-    const tick = () => {
-      const r = rectOf(selector);
-      if (r) return resolve(r);
-      if (Date.now() - started > timeout) return resolve(null);
-      requestAnimationFrame(tick);
+    const immediate = rectOf(selector);
+    if (immediate) return resolve(immediate);
+
+    let settled = false;
+    const finish = (r: Rect | null) => {
+      if (settled) return;
+      settled = true;
+      observer.disconnect();
+      clearTimeout(timer);
+      resolve(r);
     };
-    tick();
+    const observer = new MutationObserver(() => {
+      const r = rectOf(selector);
+      if (r) finish(r);
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    const timer = setTimeout(() => finish(rectOf(selector)), timeout);
   });
 }
 
@@ -204,8 +223,9 @@ export function PipGuide({ role }: { role: TourRole }) {
     (async () => {
       if (step.route && pathname !== step.route) {
         router.push(step.route);
-        // Give the route a moment to commit before hunting for the target.
-        await new Promise(r => setTimeout(r, 450));
+        // Short yield so the router commits; waitForTarget below then resolves
+        // as soon as the element lands rather than after a fixed delay.
+        await new Promise(r => setTimeout(r, 120));
       }
       if (stale || cancelled.current) return;
 
@@ -220,9 +240,20 @@ export function PipGuide({ role }: { role: TourRole }) {
         setIndex(i => (i + 1 < steps.length ? i + 1 : i));
         return;
       }
-      document.querySelector(`[data-tour="${step.target}"]`)
-        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setRect(found);
+      // Only scroll when the target is actually out of view. Scrolling an
+      // already-visible element moved the page under the spotlight for no
+      // reason, which read as the tour jumping around.
+      const el = document.querySelector(`[data-tour="${step.target}"]`);
+      const box = el?.getBoundingClientRect();
+      const offscreen = !box || box.top < 72 || box.bottom > window.innerHeight - 72;
+      if (el && offscreen) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Let the scroll settle before measuring, or the cutout lands where
+        // the element used to be.
+        await new Promise(r => setTimeout(r, 320));
+        if (stale || cancelled.current) return;
+      }
+      setRect(rectOf(`[data-tour="${step.target}"]`) ?? found);
       setMoving(false);
     })();
 
@@ -233,10 +264,21 @@ export function PipGuide({ role }: { role: TourRole }) {
   /* Keep the cutout glued to the element while things move. */
   useEffect(() => {
     if (!open || !step?.target) return;
-    const sync = () => setRect(rectOf(`[data-tour="${step.target}"]`));
+    // Coalesce to one update per frame. Firing setRect on every scroll and
+    // resize event re-rendered the overlay dozens of times a second, which is
+    // what made the spotlight judder while the page settled.
+    let frame = 0;
+    const sync = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        setRect(rectOf(`[data-tour="${step.target}"]`));
+      });
+    };
     window.addEventListener('resize', sync);
     window.addEventListener('scroll', sync, true);
     return () => {
+      if (frame) cancelAnimationFrame(frame);
       window.removeEventListener('resize', sync);
       window.removeEventListener('scroll', sync, true);
     };
@@ -322,19 +364,38 @@ export function PipGuide({ role }: { role: TourRole }) {
                 hole stays crisp and the element underneath stays clickable. */}
             {rect ? (
               <>
-                <div className="absolute bg-black/65 left-0 right-0" style={{ top: 0, height: rect.top }} onClick={close} />
-                <div className="absolute bg-black/65 left-0" style={{ top: rect.top, height: rect.height, width: rect.left }} onClick={close} />
-                <div className="absolute bg-black/65 right-0" style={{ top: rect.top, height: rect.height, left: rect.left + rect.width }} onClick={close} />
-                <div className="absolute bg-black/65 left-0 right-0 bottom-0" style={{ top: rect.top + rect.height }} onClick={close} />
+                {/* Dim with a cutout. Four panels rather than an SVG mask so the
+                    hole stays crisp and the element underneath stays clickable.
+                    Each panel animates with the same spring as the ring, so the
+                    dim and the highlight move together instead of tearing. */}
+                {([
+                  { key: 't', style: { top: 0, left: 0, right: 0, height: rect.top } },
+                  { key: 'l', style: { top: rect.top, left: 0, width: rect.left, height: rect.height } },
+                  { key: 'r', style: { top: rect.top, left: rect.left + rect.width, right: 0, height: rect.height } },
+                  { key: 'b', style: { top: rect.top + rect.height, left: 0, right: 0, bottom: 0 } },
+                ] as const).map(panel => (
+                  <motion.div
+                    key={panel.key}
+                    className="absolute bg-[#0B1417]/60 backdrop-blur-[1px]"
+                    style={panel.style}
+                    animate={panel.style}
+                    transition={SPOTLIGHT_SPRING}
+                    onClick={close}
+                  />
+                ))}
                 <motion.div
-                  layout
-                  transition={{ type: 'spring', stiffness: 280, damping: 30 }}
-                  className="absolute rounded-2xl ring-4 ring-[#E2AF4D] pointer-events-none"
-                  style={{ ...rect, boxShadow: '0 0 0 9999px rgba(0,0,0,0)' }}
+                  className="absolute rounded-xl pointer-events-none ring-2 ring-primary"
+                  initial={false}
+                  animate={{
+                    top: rect.top, left: rect.left,
+                    width: rect.width, height: rect.height,
+                  }}
+                  transition={SPOTLIGHT_SPRING}
+                  style={{ boxShadow: '0 0 0 4px rgba(39,134,164,0.18)' }}
                 />
               </>
             ) : (
-              <div className="absolute inset-0 bg-black/70" onClick={close} />
+              <div className="absolute inset-0 bg-[#0B1417]/70 backdrop-blur-[2px]" onClick={close} />
             )}
 
             {/* The card */}

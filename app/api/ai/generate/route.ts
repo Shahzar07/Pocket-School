@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { callOpenRouter, CONTENT_MODEL, VIDEO_MODEL } from '@/lib/openrouter';
 import { LANGUAGE_NAMES as LANG_NAMES } from '@/lib/languages';
 import { getTemplate, formatDirective, type ContentTemplate } from '@/lib/content-templates';
+import {
+  buildLessonPrompt, buildNotesPrompt, detectTier,
+  type TierSelection, type TierId, type Tier2SubjectType,
+  type LawStage, type Tier3Assessment,
+} from '@/lib/curriculum-tiers';
 
 /** Video and audio scripts use the dedicated narrative model; everything
  * else uses the ultra-cheap content model. */
@@ -158,7 +163,10 @@ function extractJsonArray(text: string, format: string): any[] | null {
 
 export async function POST(req: NextRequest) {
   try {
-    const { content, format, briefPrompt, language, templateId, customTemplate } = await req.json();
+    const {
+      content, format, briefPrompt, language, templateId, customTemplate,
+      tier, tierMeta,
+    } = await req.json();
     if (!content) return NextResponse.json({ error: 'content is required' }, { status: 400 });
 
     const promptFn = PROMPTS[format];
@@ -183,7 +191,31 @@ export async function POST(req: NextRequest) {
       ? formatDirective(getTemplate(templateId, customTemplate ? [customTemplate] : []))
       : '';
 
-    const prompt = templateDirective + promptFn(fullContent) + langInstruction;
+    // Curriculum tiers own the academic depth and assessment shape of a
+    // lesson, so when one is supplied it builds the prompt instead of the
+    // generic template — tier 4 law, for instance, demands real case law with
+    // ratio and obiter that no generic prompt asks for.
+    let prompt: string;
+    if (tier && (format === 'text' || format === 'notes')) {
+      const meta = (tierMeta ?? {}) as Record<string, string | undefined>;
+      const detected = detectTier({
+        subject: meta.subject, yearLevel: meta.yearLevel, courseTitle: meta.courseTitle,
+      });
+      const selection: TierSelection = {
+        tier: (tier as TierId) ?? detected.tier,
+        subjectType: (meta.subjectType as Tier2SubjectType | undefined) ?? detected.subjectType,
+        lawStage: (meta.lawStage as LawStage | undefined) ?? detected.lawStage,
+        assessmentStyle: (meta.assessmentStyle as Tier3Assessment | undefined) ?? detected.assessmentStyle,
+      };
+      const build = format === 'notes' ? buildNotesPrompt : buildLessonPrompt;
+      prompt = build(selection, {
+        subject: meta.subject, yearLevel: meta.yearLevel,
+        unit: meta.unit, topic: meta.topic,
+      }, fullContent, briefPrompt ? String(briefPrompt).slice(0, MAX_BRIEF_CHARS) : undefined)
+        + langInstruction;
+    } else {
+      prompt = templateDirective + promptFn(fullContent) + langInstruction;
+    }
     const text = await callOpenRouter([{ role: 'user', content: prompt }], { model: MODEL_FOR_FORMAT(format) });
 
     if (JSON_FORMATS.has(format)) {

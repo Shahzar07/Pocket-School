@@ -180,8 +180,8 @@ export default function ParentDashboard() {
 
   if (loading) return (
     <div className="max-w-5xl mx-auto px-0 sm:px-2 py-2 space-y-5">
-      <div className="h-24 bg-muted animate-pulse rounded-3xl" />
-      {[1, 2].map(i => <div key={i} className="h-64 bg-muted animate-pulse rounded-[2rem]" />)}
+      <div className="h-24 bg-muted animate-pulse rounded-2xl" />
+      {[1, 2].map(i => <div key={i} className="h-64 bg-muted animate-pulse rounded-2xl" />)}
     </div>
   );
 
@@ -205,18 +205,18 @@ export default function ParentDashboard() {
       <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={0.5} className="space-y-4">
         <div className="flex items-center gap-2">
           <Target className="w-4 h-4 text-primary" />
-          <h2 className="font-heading text-2xl sm:text-3xl text-foreground">Today&apos;s Goals</h2>
+          <h2 className="text-[15px] font-semibold tracking-[-0.02em] text-foreground">Today&apos;s Goals</h2>
         </div>
 
         {goalsLoading ? (
-          <div className="h-32 bg-muted animate-pulse rounded-[2rem]" />
+          <div className="h-32 bg-muted animate-pulse rounded-2xl" />
         ) : goalsError ? (
-          <div className="bg-card border border-border rounded-[2rem] p-6 text-center">
+          <div className="bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] p-6 text-center">
             <p className="text-sm text-muted-foreground mb-4 break-words">{goalsError}</p>
             <Button onClick={loadGoals} className="rounded-full h-10 px-5 font-bold">Retry</Button>
           </div>
         ) : childGoals.length === 0 ? (
-          <div className="bg-card border border-border rounded-[2rem] p-8 text-center">
+          <div className="bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] p-8 text-center">
             <Target className="w-10 h-10 mx-auto mb-3 text-muted-foreground/40" />
             <p className="text-sm text-muted-foreground">No goals set yet today.</p>
           </div>
@@ -228,7 +228,7 @@ export default function ParentDashboard() {
               const pct = total ? Math.round((done / total) * 100) : 0;
 
               return (
-                <div key={child.childId} className="bg-card border border-border rounded-[2rem] p-5 sm:p-6 space-y-4">
+                <div key={child.childId} className="bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] p-5 sm:p-6 space-y-4">
                   <div className="flex items-center gap-3">
                     <Avatar className="w-10 h-10 shrink-0">
                       <AvatarFallback className="bg-gradient-to-br from-[#2786A4] to-[#1E6A83] text-white font-bold text-sm">
@@ -243,13 +243,13 @@ export default function ParentDashboard() {
                     </div>
                     {total > 0 && (
                       <div className="text-right shrink-0">
-                        <p className={`font-heading text-3xl leading-none ${pct === 100 ? 'text-emerald-600' : pct >= 50 ? 'text-amber-600' : 'text-destructive'}`}>{pct}%</p>
+                        <p className={`text-[26px] font-semibold tracking-[-0.03em] leading-none tabular-nums ${pct === 100 ? 'text-emerald-600' : pct >= 50 ? 'text-amber-600' : 'text-destructive'}`}>{pct}%</p>
                       </div>
                     )}
                   </div>
 
                   {total === 0 ? (
-                    <p className="text-sm text-muted-foreground bg-muted/30 rounded-2xl p-4 text-center">No goals set yet today</p>
+                    <p className="text-sm text-muted-foreground bg-muted/50 rounded-xl p-4 text-center">No goals set yet today</p>
                   ) : (
                     <>
                       <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -266,7 +266,7 @@ export default function ParentDashboard() {
                           const meta = GOAL_STATUS_META[st] ?? GOAL_STATUS_META.not_started;
                           const canExcuse = st === 'overdue';
                           return (
-                            <div key={goal.id} className="bg-muted/30 border border-border rounded-2xl p-3.5 flex flex-wrap items-center gap-x-3 gap-y-2">
+                            <div key={goal.id} className="bg-muted/50 border border-border rounded-xl p-3.5 flex flex-wrap items-center gap-x-3 gap-y-2">
                               {st === 'completed' ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                                 : st === 'excused' ? <ShieldCheck className="w-4 h-4 text-amber-500 shrink-0" />
                                 : <Clock className={`w-4 h-4 shrink-0 ${st === 'overdue' ? 'text-destructive' : 'text-muted-foreground'}`} />}
@@ -307,11 +307,11 @@ export default function ParentDashboard() {
 
       {children.length === 0 ? (
         <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
-          className="relative text-center py-20 bg-card rounded-[2rem] border border-border overflow-hidden"
+          className="relative text-center py-20 bg-card rounded-2xl border border-border shadow-[var(--shadow-card)] overflow-hidden"
         >
           <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-amber-500/8 blur-[80px]" />
           <UserRound className="w-12 h-12 mx-auto mb-5 text-amber-600/40" />
-          <h3 className="font-heading text-3xl text-foreground mb-2">No linked children yet</h3>
+          <h3 className="font-heading text-2xl text-foreground mb-2">No linked children yet</h3>
           <p className="text-sm text-muted-foreground max-w-sm mx-auto">
             Link your child's account via profile settings or during onboarding to see their progress here.
           </p>
@@ -325,7 +325,7 @@ export default function ParentDashboard() {
 
             return (
               <motion.div key={id} variants={fadeUp} initial="hidden" animate="visible" custom={1 + ci}
-                className="bg-card border border-border rounded-[2rem] overflow-hidden shadow-[0_8px_40px_-12px_rgba(15,23,42,0.08)]"
+                className="bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] overflow-hidden shadow-[0_8px_40px_-12px_rgba(15,23,42,0.08)]"
               >
                 {/* Child hero band */}
                 <div className="relative bg-[#203337] p-7 sm:p-8 text-white overflow-hidden">
@@ -340,7 +340,7 @@ export default function ParentDashboard() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <h2 className="font-heading text-3xl sm:text-4xl leading-tight">{childProfile.name}</h2>
+                      <h2 className="font-heading text-2xl sm:text-3xl leading-tight">{childProfile.name}</h2>
                       <p className="text-slate-400 text-sm capitalize mt-1">
                         {childProfile.level || 'Student'} · {childProfile.learningStyle || 'Visual'} learner
                       </p>
@@ -348,7 +348,7 @@ export default function ParentDashboard() {
                     <div className="sm:text-right shrink-0">
                       <div className="flex sm:justify-end items-center gap-2 text-amber-300">
                         <Zap className="w-5 h-5 fill-amber-300" />
-                        <span className="font-heading text-3xl leading-none">{xp.toLocaleString()}</span>
+                        <span className="text-[26px] font-semibold tracking-[-0.03em] leading-none tabular-nums">{xp.toLocaleString()}</span>
                         <span className="text-xs font-bold uppercase tracking-wider text-amber-300/70 mt-1">XP</span>
                       </div>
                       <p className="text-slate-500 text-xs mt-1.5">{enrollments.length} course{enrollments.length !== 1 ? 's' : ''} enrolled</p>
@@ -357,7 +357,7 @@ export default function ParentDashboard() {
                 </div>
 
                 {/* Stats band */}
-                <div className="grid grid-cols-3 divide-x divide-border border-b border-border bg-muted/30">
+                <div className="grid grid-cols-3 divide-x divide-border border-b border-border bg-muted/40">
                   {[
                     { label: 'Enrolled', value: enrollments.length, icon: BookOpen, accent: 'text-[#2786A4]' },
                     { label: 'In Progress', value: inProgress.length, icon: TrendingUp, accent: 'text-amber-600' },
@@ -365,7 +365,7 @@ export default function ParentDashboard() {
                   ].map((s) => (
                     <div key={s.label} className="p-5 text-center">
                       <s.icon className={`w-4 h-4 mx-auto ${s.accent}`} />
-                      <p className="font-heading text-3xl sm:text-4xl text-foreground mt-2 leading-none">{s.value}</p>
+                      <p className="text-[28px] font-semibold tracking-[-0.03em] text-foreground mt-2 leading-none tabular-nums">{s.value}</p>
                       <p className="text-[11px] text-muted-foreground mt-1.5 font-semibold uppercase tracking-wider">{s.label}</p>
                     </div>
                   ))}

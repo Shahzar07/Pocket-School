@@ -239,7 +239,7 @@ export default function MessagesPage() {
       <div className={`${activePartner ? 'flex' : 'hidden md:flex'} flex-1 flex-col bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22><circle cx=%222%22 cy=%222%22 r=%221%22 fill=%22rgba(120,120,120,0.06)%22/></svg>')] bg-muted/10`}>
         {!activeThread ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
-            <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center mb-4">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
               <MessageSquare className="w-8 h-8 text-primary" />
             </div>
             <h2 className="font-heading text-xl text-foreground mb-1">Your messages</h2>

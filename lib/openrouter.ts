@@ -12,6 +12,18 @@ export const CONTENT_MODEL = 'openai/gpt-5-nano';
  * from a slightly stronger model; GPT-5 mini is still budget-tier. */
 export const VIDEO_MODEL = 'openai/gpt-5-mini';
 
+/**
+ * Live conversation — the AI teachers and the tutor.
+ *
+ * Deliberately NOT a reasoning model. GPT-5 nano thinks before it emits a
+ * single token, which adds seconds of silence before a reply starts. That is
+ * fine for generating a lesson in the background and completely wrong for a
+ * conversation, where the teacher felt broken because nothing happened for
+ * several seconds. Gemini 2.0 Flash starts streaming almost immediately and
+ * costs less per token.
+ */
+export const LIVE_MODEL = 'google/gemini-2.0-flash-001';
+
 /** Back-compat alias — existing routes import SMART_MODEL. */
 export const SMART_MODEL = CONTENT_MODEL;
 
@@ -21,6 +33,7 @@ export const SMART_MODEL = CONTENT_MODEL;
 const FALLBACKS: Record<string, string[]> = {
   [CONTENT_MODEL]: [CONTENT_MODEL, 'z-ai/glm-4.6', 'google/gemini-2.0-flash-001'],
   [VIDEO_MODEL]: [VIDEO_MODEL, 'z-ai/glm-4.6', 'openai/gpt-4o-mini'],
+  [LIVE_MODEL]: [LIVE_MODEL, 'openai/gpt-4o-mini', 'z-ai/glm-4.6'],
 };
 
 const MAX_RETRIES = 3;

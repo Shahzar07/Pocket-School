@@ -130,13 +130,13 @@ function Phone({ compact = false }: { compact?: boolean }) {
       </div>
       <div className={s.phoneChips}>
         <span>
-          <Brain size={12} /> Ayla
+          <Brain size={12} /> ET
         </span>
         <span>
           <Layers size={12} /> My lessons
         </span>
         <span>
-          <Zap size={12} /> Quill
+          <Zap size={12} /> ET
         </span>
       </div>
       <div className={s.phoneLesson}>
@@ -176,7 +176,7 @@ const features = [
     icon: Brain,
     title: "Your personal AI tutor",
     description:
-      "Meet Ayla. Ask questions, explore ideas, and get explanations that make things click.",
+      "Meet ET. Ask questions, explore ideas, and get explanations that make things click.",
     href: "/ai-teachers",
     wide: true,
   },
@@ -198,7 +198,7 @@ const features = [
     icon: Sparkles,
     title: "Turn notes into knowledge",
     description:
-      "Create lessons, quizzes, and study materials with Quill in AI Studio.",
+      "Create lessons, quizzes, and study materials with ET in AI Studio.",
     href: "/ai-studio",
   },
   {
@@ -354,7 +354,7 @@ export default function LandingPage() {
                   <div className={s.tutorPreview}>
                     <div>
                       <span>
-                        <Sparkles size={13} /> Ask Ayla anything
+                        <Sparkles size={13} /> Ask ET anything
                       </span>
                       <span>•••</span>
                     </div>

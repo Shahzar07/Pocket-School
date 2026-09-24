@@ -519,7 +519,7 @@ export default function StudentDailyGoalsPage() {
           My Daily <span className="gradient-text italic">Goals</span>
         </h1>
         <p className="text-muted-foreground text-sm mt-2 max-w-lg">
-          Set what you&apos;re committing to before you start your modules. Ayla checks in, your streak keeps score,
+          Set what you&apos;re committing to before you start your modules. ET checks in, your streak keeps score,
           and your parent sees how the day went.
         </p>
       </motion.div>
@@ -540,7 +540,7 @@ export default function StudentDailyGoalsPage() {
         ))}
       </motion.div>
 
-      {/* ── Ayla prompt strip ── */}
+      {/* ── ET prompt strip ── */}
       <motion.div
         variants={fadeUp} initial="hidden" animate="visible" custom={2}
         className="relative bg-[#203337] rounded-3xl p-5 sm:p-6 text-white overflow-hidden"
@@ -554,7 +554,7 @@ export default function StudentDailyGoalsPage() {
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/60">Ayla · AI Tutor</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/60">ET · AI Tutor</p>
             <p className="text-[15px] leading-relaxed mt-1.5 text-white/90">{aylaMessage}</p>
           </div>
         </div>
@@ -778,7 +778,7 @@ export default function StudentDailyGoalsPage() {
                 <div className="text-center py-20">
                   <LineChart className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-40" />
                   <h3 className="font-heading text-2xl text-foreground">Not enough data yet</h3>
-                  <p className="text-sm text-muted-foreground mt-2">Set and complete a few goals and Ayla will spot your patterns.</p>
+                  <p className="text-sm text-muted-foreground mt-2">Set and complete a few goals and ET will spot your patterns.</p>
                 </div>
               ) : (
                 <>

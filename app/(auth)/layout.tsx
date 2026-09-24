@@ -5,7 +5,7 @@ import { Brain, BookOpen, Sparkles, Trophy, Users } from 'lucide-react';
 import Link from 'next/link';
 
 const FEATURES = [
-  { icon: <Brain className="w-4 h-4" />, title: 'Ayla — Your AI Tutor', desc: 'Adapts to how you think, 24 / 7' },
+  { icon: <Brain className="w-4 h-4" />, title: 'ET — Your AI Tutor', desc: 'Adapts to how you think, 24 / 7' },
   { icon: <BookOpen className="w-4 h-4" />, title: 'IGCSE · A-Levels · Degrees', desc: 'Full academic pathways, your pace' },
   { icon: <Sparkles className="w-4 h-4" />, title: 'Visual Learning Engine', desc: 'Mind maps, diagrams & interactive lessons' },
   { icon: <Trophy className="w-4 h-4" />, title: 'Smart Exam Prep', desc: 'Past papers, gap analysis, revision plans' },
