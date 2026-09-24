@@ -126,7 +126,7 @@ export default function AdminCurriculumPage() {
   const [modProgrammeId, setModProgrammeId] = useState<string>('');
   const [creatingModule, setCreatingModule] = useState(false);
 
-  // AI Course Architect (Quill)
+  // AI Course Architect (ET)
   const [archSubject, setArchSubject] = useState('');
   const [archYear, setArchYear] = useState('Year 7');
   const [archWeeks, setArchWeeks] = useState('12');
@@ -177,9 +177,9 @@ export default function AdminCurriculumPage() {
     (n, m) => n + m.lessons.reduce((x, l) => x + (l.durationWeeks || 1), 0), 0
   );
 
-  const designWithQuill = async () => {
+  const designWithEt = async () => {
     const subject = archSubject.trim();
-    if (!subject) { toast.error('Enter a subject for Quill to design.'); return; }
+    if (!subject) { toast.error('Enter a subject for ET to design.'); return; }
     const weeks = Math.min(52, Math.max(1, Number(archWeeks) || 12));
 
     // Designing a second copy of a subject that already exists is almost always
@@ -203,21 +203,21 @@ export default function AdminCurriculumPage() {
           task: 'outline',
           context: {
             subject, yearLevel: year, weeks,
-            // Lets Quill continue from what a matching subject already teaches
+            // Lets ET continue from what a matching subject already teaches
             // rather than proposing the same ground again.
             existingUnits: clash ? [clash.title] : [],
           },
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Quill could not design that course.');
+      if (!res.ok) throw new Error(data.error || 'ET could not design that course.');
       const modules: OutlineModule[] = Array.isArray(data.modules) ? data.modules : [];
-      if (!modules.length) throw new Error('Quill returned an empty outline — try again.');
+      if (!modules.length) throw new Error('ET returned an empty outline — try again.');
       setArchOutline(modules);
       setArchTitle(prev => prev.trim() || `${subject}${archYear.trim() ? ` — ${archYear.trim()}` : ''}`);
-      toast.success(`Quill designed ${modules.length} modules.`);
+      toast.success(`ET designed ${modules.length} modules.`);
     } catch (e: any) {
-      toast.error(e?.message || 'Quill request failed.');
+      toast.error(e?.message || 'ET request failed.');
     } finally {
       setArchDesigning(false);
     }
@@ -235,7 +235,7 @@ export default function AdminCurriculumPage() {
     try {
       const courseId = await createCurriculumModule({
         title,
-        description: `${archSubject.trim()} — ${archYear.trim() || 'all levels'} · designed with Quill`,
+        description: `${archSubject.trim()} — ${archYear.trim() || 'all levels'} · designed with ET`,
         subject: archSubject.trim(),
         ownerId: user.uid,
         status: 'draft',
@@ -416,7 +416,7 @@ export default function AdminCurriculumPage() {
             <div className="min-w-0">
               <h2 className="font-bold text-lg leading-tight">AI Course Architect</h2>
               <p className="text-sm text-white/85">
-                Tell Quill the subject, level and length — it designs the whole scheme of work,
+                Tell ET the subject, level and length — it designs the whole scheme of work,
                 module by module, lesson by lesson. Review it, then build it in one click.
               </p>
             </div>
@@ -442,12 +442,12 @@ export default function AdminCurriculumPage() {
                 onChange={e => setArchWeeks(e.target.value)} className="rounded-xl h-10" />
             </div>
             <Button
-              onClick={designWithQuill}
+              onClick={designWithEt}
               disabled={archDesigning || archCreating}
               className="rounded-xl h-10 gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white"
             >
               {archDesigning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {archDesigning ? 'Designing…' : 'Design with Quill'}
+              {archDesigning ? 'Designing…' : 'Design with ET'}
             </Button>
           </div>
 
@@ -455,7 +455,7 @@ export default function AdminCurriculumPage() {
             <div className="rounded-xl border border-dashed border-violet-200 bg-violet-50/50 px-4 py-6 text-center">
               <Loader2 className="w-5 h-5 animate-spin mx-auto text-violet-600" />
               <p className="text-sm text-violet-700 font-medium mt-2">
-                Quill is planning {archWeeks || '—'} weeks of {archSubject || 'your subject'}…
+                ET is planning {archWeeks || '—'} weeks of {archSubject || 'your subject'}…
               </p>
               <p className="text-xs text-muted-foreground mt-1">This usually takes 10-30 seconds.</p>
             </div>
@@ -510,7 +510,7 @@ export default function AdminCurriculumPage() {
                     <Label>Subject title (as it will appear in the CMS)</Label>
                     <Input value={archTitle} onChange={e => setArchTitle(e.target.value)} className="rounded-xl h-10" />
                   </div>
-                  <Button variant="outline" className="rounded-xl h-10 gap-2" disabled={archCreating} onClick={designWithQuill}>
+                  <Button variant="outline" className="rounded-xl h-10 gap-2" disabled={archCreating} onClick={designWithEt}>
                     <RotateCcw className="w-3.5 h-3.5" /> Redesign
                   </Button>
                   <Button
@@ -539,7 +539,7 @@ export default function AdminCurriculumPage() {
 
                 <p className="text-[11px] text-muted-foreground">
                   Everything is created as a draft — nothing goes live until you publish it in the Content Builder.
-                  Quill drafts still need a human review.
+                  ET drafts still need a human review.
                 </p>
               </motion.div>
             )}

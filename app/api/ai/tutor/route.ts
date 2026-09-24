@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { callOpenRouter, SMART_MODEL } from '@/lib/openrouter';
+import { callOpenRouter, LIVE_MODEL } from '@/lib/openrouter';
 import { languageInstruction } from '@/lib/languages';
 
 export const maxDuration = 60;
@@ -43,10 +43,10 @@ export async function POST(req: NextRequest) {
       ? `\n\nCurrent lesson context the student is studying: "${lessonContext}"\nWhen relevant, relate your explanations to this topic.`
       : '';
 
-    // A named teacher persona overrides the default Ayla identity.
+    // A named teacher persona overrides the default ET identity.
     const identity = persona
       ? `You are ${persona}. Stay fully in character as this teacher — warm, expert, and encouraging.`
-      : `You are Ayla, Poket School's AI tutor. You are warm, sharp, and genuinely invested in the student's understanding. Refer to yourself as Ayla if asked your name.`;
+      : `You are ET, Poket School's AI tutor. You are warm, sharp, and genuinely invested in the student's understanding. Refer to yourself as ET if asked your name.`;
 
     const langInstruction = languageInstruction(language);
 
@@ -77,10 +77,12 @@ export async function POST(req: NextRequest) {
           'X-Title': 'Poket School',
         },
         body: JSON.stringify({
-          model: SMART_MODEL,
-          models: [SMART_MODEL, 'z-ai/glm-4.6', 'google/gemini-2.0-flash-001'],
-          reasoning: { effort: 'low' },
-          max_tokens: 4096,
+          model: LIVE_MODEL,
+          models: [LIVE_MODEL, 'openai/gpt-4o-mini', 'z-ai/glm-4.6'],
+          temperature: 0.8,
+          // A spoken turn is a few sentences. Capping it keeps replies
+          // conversational and the first words arriving fast.
+          max_tokens: 900,
           stream: true,
           messages,
         }),
@@ -124,7 +126,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const reply = await callOpenRouter(messages, { model: SMART_MODEL });
+    const reply = await callOpenRouter(messages, { model: LIVE_MODEL, maxTokens: 900 });
     return NextResponse.json({ reply });
   } catch (err: any) {
     console.error('[tutor]', err);

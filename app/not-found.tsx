@@ -4,7 +4,7 @@ import { ArrowRight, BookOpen, Home, Sparkles, Tag } from 'lucide-react';
 const LINKS = [
   { href: '/', label: 'Back home', desc: 'Start from the top', icon: Home },
   { href: '/courses', label: 'Marketplace', desc: 'Courses & past papers', icon: BookOpen },
-  { href: '/ai-studio', label: 'AI Studio', desc: 'Create with Quill', icon: Sparkles },
+  { href: '/ai-studio', label: 'AI Studio', desc: 'Create with ET', icon: Sparkles },
   { href: '/pricing', label: 'Pricing', desc: 'Plans & Sparks', icon: Tag },
 ];
 
@@ -31,7 +31,7 @@ export default function NotFound() {
         </h1>
         <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl mx-auto">
           We could not find what you were looking for — the link may be old, or the page may have moved.
-          Ayla is still here, and so is everything else.
+          ET is still here, and so is everything else.
         </p>
 
         <div className="mt-10 grid sm:grid-cols-2 gap-3 text-left">

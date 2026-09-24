@@ -80,6 +80,15 @@ export interface Course {
   /** Content format template id — the shape AI generation follows for this
    * course. See lib/content-templates.ts. Lessons may override it. */
   contentTemplateId?: string;
+  /** Curriculum tier for AI generation (tier1-tier4). Absent = auto-detect
+   * from subject and year level. See lib/curriculum-tiers.ts. */
+  curriculumTier?: string;
+  /** Tier 2 subject type, Tier 3 assessment style, Tier 4 law stage. */
+  tierSubjectType?: string;
+  tierLawStage?: string;
+  tierAssessmentStyle?: string;
+  /** True when an admin overrode the auto-detected tier. */
+  tierOverridden?: boolean;
   /** Marketplace revenue split, when teacher-created. */
   revenueSplit?: { teacher: number; platform: number };
   /** Discriminator: absent or 'marketplace' = teacher/marketplace course. 'curriculum' = a
@@ -167,6 +176,12 @@ export interface Lesson {
   blocksOrder?: string[];
   /** Overrides the course's content template for this lesson only. */
   contentTemplateId?: string;
+  /** Overrides the course's curriculum tier for this lesson only. */
+  curriculumTier?: string;
+  tierSubjectType?: string;
+  tierLawStage?: string;
+  tierAssessmentStyle?: string;
+  tierOverridden?: boolean;
   /** Audit trail of builder actions, newest first (capped client-side). */
   history?: { label: string; actor: string; at: Timestamp; action?: string }[];
 }

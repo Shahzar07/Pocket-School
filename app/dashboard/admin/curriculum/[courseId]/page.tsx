@@ -31,6 +31,10 @@ import { ROLE_LABELS } from '@/lib/roles';
 import {
   BUILT_IN_TEMPLATES, getTemplate, suggestTemplateId, templatesForSubject,
 } from '@/lib/content-templates';
+import { TierSelector } from '@/components/tier-selector';
+import type {
+  TierId, Tier2SubjectType, LawStage, Tier3Assessment,
+} from '@/lib/curriculum-tiers';
 import { getFormatCost } from '@/lib/sparks';
 import {
   ArrowLeft, AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Copy, CornerDownRight,
@@ -100,26 +104,27 @@ interface UnitWithLessons { module: Module; lessons: Lesson[] }
 
 async function callGenerate(
   content: string, format: string, briefPrompt?: string, templateId?: string,
+  tier?: string, tierMeta?: Record<string, string | undefined>,
 ): Promise<unknown> {
   const res = await fetch('/api/ai/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content, format, briefPrompt, templateId }),
+    body: JSON.stringify({ content, format, briefPrompt, templateId, tier, tierMeta }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Generation failed: ${format}`);
   return data.result;
 }
 
-/** Quill — the CMS assistant (objectives, briefs, rewrites, assessments). */
-async function callQuill<T>(task: string, context: Record<string, unknown>): Promise<T> {
+/** ET — the CMS assistant (objectives, briefs, rewrites, assessments). */
+async function callEt<T>(task: string, context: Record<string, unknown>): Promise<T> {
   const res = await fetch('/api/ai/course-architect', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ task, context }),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'Quill could not complete that request.');
+  if (!res.ok) throw new Error(data.error || 'ET could not complete that request.');
   return data as T;
 }
 
@@ -218,7 +223,7 @@ export default function ContentBuilderPage() {
   const [rightTab, setRightTab] = useState<'properties' | 'publish' | 'allocate' | 'history'>('properties');
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
   const [aiBusy, setAiBusy] = useState<string | null>(null);
-  const [quillBusy, setQuillBusy] = useState<string | null>(null);
+  const [etBusy, setEtBusy] = useState<string | null>(null);
   const [publishOpen, setPublishOpen] = useState(false);
   const [publishAccepted, setPublishAccepted] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -327,7 +332,18 @@ export default function ContentBuilderPage() {
       const templateId = d.contentTemplateId
         || course?.contentTemplateId
         || suggestTemplateId(course?.subject);
-      const result = await callGenerate(content, format, brief || undefined, templateId);
+      // Lesson override, else the course's tier, else auto-detect downstream.
+      const tier = d.curriculumTier || course?.curriculumTier;
+      const result = await callGenerate(content, format, brief || undefined, templateId, tier, {
+        subject: course?.subject,
+        yearLevel: course?.yearGroup ?? course?.level,
+        courseTitle: course?.title,
+        unit: units.find(u => u.module.id === selUnit)?.module.title,
+        topic: d.title,
+        subjectType: d.tierSubjectType || course?.tierSubjectType,
+        lawStage: d.tierLawStage || course?.tierLawStage,
+        assessmentStyle: d.tierAssessmentStyle || course?.tierAssessmentStyle,
+      });
       const aiOutputs = { ...(d.aiOutputs ?? {}), [format]: result };
       const next = { ...d, aiOutputs } as Lesson;
       setDraft(next);
@@ -340,11 +356,11 @@ export default function ContentBuilderPage() {
     }
   }, [selUnit, persistDraft]);
 
-  /* ── Quill assistance ── */
+  /* ── ET assistance ── */
 
-  /** Runs a Quill task against the selected lesson and persists the patch it
+  /** Runs a ET task against the selected lesson and persists the patch it
    * produces, adding an audit-trail entry for the action. */
-  const runQuill = useCallback(async (
+  const runEt = useCallback(async (
     key: string,
     task: string,
     buildContext: (d: Lesson) => Record<string, unknown>,
@@ -353,23 +369,23 @@ export default function ContentBuilderPage() {
   ) => {
     const d = draftRef.current;
     if (!d || !selUnit) return;
-    setQuillBusy(key);
+    setEtBusy(key);
     try {
-      const data = await callQuill<any>(task, buildContext(d));
+      const data = await callEt<any>(task, buildContext(d));
       const patch = apply(d, data);
-      if (!patch) { toast.error('Quill returned nothing usable — try again.'); return; }
+      if (!patch) { toast.error('ET returned nothing usable — try again.'); return; }
       const next = { ...d, ...patch } as Lesson;
       setDraft(next);
       await persistDraft(next, historyLabel);
       toast.success(historyLabel);
     } catch (e: any) {
-      toast.error(e?.message || 'Quill request failed.');
+      toast.error(e?.message || 'ET request failed.');
     } finally {
-      setQuillBusy(null);
+      setEtBusy(null);
     }
   }, [selUnit, persistDraft]);
 
-  const suggestObjectives = useCallback(() => runQuill(
+  const suggestObjectives = useCallback(() => runEt(
     'objectives', 'objectives',
     d => ({
       lessonTitle: d.title,
@@ -377,7 +393,7 @@ export default function ContentBuilderPage() {
       yearLevel: course?.yearGroup ?? course?.level ?? '',
       subject: course?.subject ?? '',
       // Where this lesson sits, and what it actually teaches — without these
-      // Quill can only paraphrase the title.
+      // ET can only paraphrase the title.
       siblingLessons: (units.find(u => u.module.id === selUnit)?.lessons ?? [])
         .filter(l => l.id !== d.id).map(l => l.title),
       lessonText: d.aiOutputs?.text ?? d.contentSources?.find(s => s.type === 'text')?.value ?? '',
@@ -391,10 +407,10 @@ export default function ContentBuilderPage() {
         blocksOrder: blocks.includes('objectives') ? blocks : ['objectives', ...blocks],
       };
     },
-    'Quill suggested objectives',
-  ), [runQuill, course, units, selUnit]);
+    'ET suggested objectives',
+  ), [runEt, course, units, selUnit]);
 
-  const writeBrief = useCallback(() => runQuill(
+  const writeBrief = useCallback(() => runEt(
     'brief', 'brief',
     d => ({
       lessonTitle: d.title,
@@ -405,10 +421,10 @@ export default function ContentBuilderPage() {
         .filter(l => l.id !== d.id).map(l => l.title),
     }),
     (_d, data) => (typeof data?.brief === 'string' && data.brief.trim() ? { briefPrompt: data.brief } : null),
-    'Quill wrote the generation brief',
-  ), [runQuill, course, units, selUnit]);
+    'ET wrote the generation brief',
+  ), [runEt, course, units, selUnit]);
 
-  const improveText = useCallback((instruction: string) => runQuill(
+  const improveText = useCallback((instruction: string) => runEt(
     'improve', 'improve',
     d => ({
       text: d.aiOutputs?.text ?? d.contentSources?.find(s => s.type === 'text')?.value ?? '',
@@ -420,10 +436,10 @@ export default function ContentBuilderPage() {
     (d, data) => (typeof data?.text === 'string' && data.text.trim()
       ? { aiOutputs: { ...(d.aiOutputs ?? {}), text: data.text } }
       : null),
-    'Quill rewrote the lesson text',
-  ), [runQuill, course]);
+    'ET rewrote the lesson text',
+  ), [runEt, course]);
 
-  const draftAssessment = useCallback(() => runQuill(
+  const draftAssessment = useCallback(() => runEt(
     'assessment', 'assessment',
     d => ({
       lessonTitle: d.title,
@@ -444,8 +460,8 @@ export default function ContentBuilderPage() {
         },
       };
     },
-    'Quill drafted assessment sections',
-  ), [runQuill, course]);
+    'ET drafted assessment sections',
+  ), [runEt, course]);
 
   /* ── Status workflow ── */
 
@@ -769,25 +785,57 @@ export default function ContentBuilderPage() {
                   <span className={`ml-auto text-[10px] font-bold px-2 py-1 rounded-full border ${statusCard.bg}`}>{statusCard.label}</span>
                 </div>
 
-                {/* Quill assist bar */}
+                {/* ET assist bar */}
                 <div className="flex flex-wrap items-center gap-2 rounded-xl border border-violet-200 bg-violet-50/60 px-3 py-2">
                   <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-violet-700">
-                    <Sparkles className="w-3.5 h-3.5" /> Quill
+                    <Sparkles className="w-3.5 h-3.5" /> ET
                   </span>
                   <Button size="sm" variant="outline" className="rounded-xl h-7 text-[11px] gap-1.5 bg-card border-violet-200 text-violet-700 hover:bg-violet-100"
-                    disabled={quillBusy !== null} onClick={suggestObjectives}>
-                    {quillBusy === 'objectives' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                    disabled={etBusy !== null} onClick={suggestObjectives}>
+                    {etBusy === 'objectives' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                     Suggest objectives
                   </Button>
                   <Button size="sm" variant="outline" className="rounded-xl h-7 text-[11px] gap-1.5 bg-card border-violet-200 text-violet-700 hover:bg-violet-100"
-                    disabled={quillBusy !== null} onClick={writeBrief}>
-                    {quillBusy === 'brief' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                    disabled={etBusy !== null} onClick={writeBrief}>
+                    {etBusy === 'brief' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                     Write generation brief
                   </Button>
-                  <span className="text-[10px] text-violet-700/70">Quill drafts — always review before publishing.</span>
+                  <span className="text-[10px] text-violet-700/70">ET drafts — always review before publishing.</span>
                 </div>
 
-                {/* Content format — decides the shape everything Quill writes. */}
+                {/* Curriculum tier — sets the academic depth and the
+                    assessment shape the AI writes to. Auto-detected from the
+                    subject and year, overridable per lesson. */}
+                <TierSelector
+                  compact
+                  scope="Lesson"
+                  context={{
+                    subject: course?.subject,
+                    yearLevel: course?.yearGroup ?? course?.level,
+                    courseTitle: course?.title,
+                  }}
+                  value={draft.curriculumTier ? {
+                    tier: draft.curriculumTier as TierId,
+                    subjectType: draft.tierSubjectType as Tier2SubjectType | undefined,
+                    lawStage: draft.tierLawStage as LawStage | undefined,
+                    assessmentStyle: draft.tierAssessmentStyle as Tier3Assessment | undefined,
+                  } : null}
+                  overridden={draft.tierOverridden}
+                  onClearOverride={() => patchDraft({
+                    curriculumTier: undefined, tierSubjectType: undefined,
+                    tierLawStage: undefined, tierAssessmentStyle: undefined,
+                    tierOverridden: false,
+                  })}
+                  onChange={(sel, manual) => patchDraft({
+                    curriculumTier: sel.tier,
+                    tierSubjectType: sel.subjectType,
+                    tierLawStage: sel.lawStage,
+                    tierAssessmentStyle: sel.assessmentStyle,
+                    tierOverridden: manual,
+                  })}
+                />
+
+                {/* Content format — decides the shape everything ET writes. */}
                 <div className="rounded-xl border border-border bg-card px-3 py-2.5 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -863,7 +911,7 @@ export default function ContentBuilderPage() {
                       patch={patchDraft}
                       ai={runAi}
                       aiBusy={aiBusy}
-                      quillBusy={quillBusy}
+                      etBusy={etBusy}
                       onSuggestObjectives={suggestObjectives}
                       onImproveText={improveText}
                       onDraftAssessment={draftAssessment}
@@ -917,7 +965,7 @@ export default function ContentBuilderPage() {
             {rightTab === 'properties' && draft && (
               <PropertiesTab
                 draft={draft} patch={patchDraft} ai={runAi} aiBusy={aiBusy}
-                quillBusy={quillBusy}
+                etBusy={etBusy}
                 isCurriculumCourse={course?.kind === 'curriculum'}
                 onSuggestObjectives={suggestObjectives}
                 onWriteBrief={writeBrief}
@@ -1209,7 +1257,7 @@ function TreeUnit({
 
 function BuilderBlock({
   blockId, draft, selected, onSelect, onDelete, onMoveUp, onMoveDown, patch, ai, aiBusy,
-  quillBusy, onSuggestObjectives, onImproveText, onDraftAssessment,
+  etBusy, onSuggestObjectives, onImproveText, onDraftAssessment,
 }: {
   blockId: string; draft: Lesson; selected: boolean;
   onSelect: () => void; onDelete: () => void;
@@ -1217,7 +1265,7 @@ function BuilderBlock({
   patch: (p: Partial<Lesson>) => void;
   ai: (format: string, extraBrief?: string) => Promise<void>;
   aiBusy: string | null;
-  quillBusy: string | null;
+  etBusy: string | null;
   onSuggestObjectives: () => void;
   onImproveText: (instruction: string) => void;
   onDraftAssessment: () => void;
@@ -1242,7 +1290,7 @@ function BuilderBlock({
           value={draft.objectives ?? []}
           onChange={v => patch({ objectives: v })}
           onSuggest={onSuggestObjectives}
-          suggesting={quillBusy === 'objectives'}
+          suggesting={etBusy === 'objectives'}
         />
       );
     case 'video':
@@ -1265,7 +1313,7 @@ function BuilderBlock({
           ai={ai}
           generating={aiBusy === 'text'}
           onImprove={onImproveText}
-          improving={quillBusy === 'improve'}
+          improving={etBusy === 'improve'}
         />
       );
     case 'vocabulary':
@@ -1309,7 +1357,7 @@ function BuilderBlock({
           ai={ai}
           generating={aiBusy === 'quiz'}
           onDraftSections={onDraftAssessment}
-          draftingSections={quillBusy === 'assessment'}
+          draftingSections={etBusy === 'assessment'}
         />
       );
     case 'audio':
@@ -1344,12 +1392,12 @@ function BuilderBlock({
 /* ── Right tabs ─────────────────────────────────────────────── */
 
 function PropertiesTab({
-  draft, patch, ai, aiBusy, quillBusy, isCurriculumCourse,
+  draft, patch, ai, aiBusy, etBusy, isCurriculumCourse,
   onSuggestObjectives, onWriteBrief, onImproveText, onDraftAssessment,
 }: {
   draft: Lesson; patch: (p: Partial<Lesson>) => void;
   ai: (f: string) => Promise<void>; aiBusy: string | null;
-  quillBusy: string | null;
+  etBusy: string | null;
   /** Sparks only gate curriculum lessons; marketplace lessons are free. */
   isCurriculumCourse: boolean;
   onSuggestObjectives: () => void;
@@ -1379,24 +1427,24 @@ function PropertiesTab({
     <>
       <section className="space-y-2">
         <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-violet-700">
-          <Sparkles className="w-3 h-3" /> AI assist (Quill)
+          <Sparkles className="w-3 h-3" /> AI assist (ET)
         </p>
         <div className="space-y-1.5">
           {quillActions.map(a => (
             <button
               key={a.id}
               onClick={a.run}
-              disabled={quillBusy !== null || a.disabled}
+              disabled={etBusy !== null || a.disabled}
               title={a.disabled ? 'Add or generate lesson text first' : undefined}
               className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl border text-[11px] font-semibold text-left transition-colors border-violet-200 text-violet-700 hover:bg-violet-50 disabled:opacity-45 disabled:hover:bg-transparent"
             >
-              {quillBusy === a.id ? <Loader2 className="w-3 h-3 animate-spin shrink-0" /> : <Sparkles className="w-3 h-3 shrink-0" />}
+              {etBusy === a.id ? <Loader2 className="w-3 h-3 animate-spin shrink-0" /> : <Sparkles className="w-3 h-3 shrink-0" />}
               <span className="truncate">{a.label}</span>
             </button>
           ))}
         </div>
         <p className="text-[10px] text-muted-foreground">
-          Quill writes drafts into this lesson — review everything before you publish.
+          ET writes drafts into this lesson — review everything before you publish.
         </p>
       </section>
 
@@ -1581,7 +1629,7 @@ function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseI
       <section className="space-y-1.5">
         {([
           ['allowComments', 'Student comments'],
-          ['enableLyra', 'Ayla AI Tutor'],
+          ['enableLyra', 'ET AI Tutor'],
           ['notifyOnPublish', 'Notify students on publish'],
           ['timedAssessmentMode', 'Timed assessment mode'],
         ] as const).map(([key, label]) => (
@@ -1684,7 +1732,7 @@ function HistoryTab({ draft }: { draft: Lesson }) {
     <>
       <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Content audit log</p>
       {entries.length === 0 && (
-        <p className="text-xs text-muted-foreground">No history yet — edits, saves, Quill assists and publish actions will appear here with the name of whoever made them.</p>
+        <p className="text-xs text-muted-foreground">No history yet — edits, saves, ET assists and publish actions will appear here with the name of whoever made them.</p>
       )}
       <div className="space-y-3">
         {entries.map((h, i) => (

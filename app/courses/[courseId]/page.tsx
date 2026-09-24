@@ -461,7 +461,7 @@ export default function CourseDetailPage() {
                         {course.subject ? `${course.subject} educator` : 'Educator'}
                       </p>
                       <p className="text-sm text-foreground/75 mt-3 leading-relaxed">
-                        Courses on Poket School are built with Quill, our AI curriculum architect, and reviewed
+                        Courses on Poket School are built with ET, our AI curriculum architect, and reviewed
                         by the educator who publishes them.
                       </p>
                     </div>
