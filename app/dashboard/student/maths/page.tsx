@@ -24,12 +24,16 @@ import { DashPage, DashHeader, Panel, PanelHeader, Segmented } from '@/component
 import { MathMarkdown } from '@/components/math-markdown';
 import { MathInput } from '@/components/study/math-input';
 import { ScanCropper } from '@/components/study/scan-cropper';
-import { FunctionPlot } from '@/components/study/function-plot';
+import dynamic from 'next/dynamic';
+// The maths engine behind the graph is large; load it only when a graph shows.
+const FunctionPlot = dynamic(() => import('@/components/study/function-plot').then(m => m.FunctionPlot), {
+  ssr: false,
+  loading: () => <div className="h-[300px] rounded-2xl bg-muted animate-pulse" />,
+});
 import { compressImage } from '@/lib/study/files';
 import { postJSON } from '@/lib/authed-fetch';
 import { streamText, parseTutorReply, type Verdict } from '@/lib/study/client';
 import { assertSparks, chargeSparks, saveMathSession, listMathSessions, deleteMathSession, recordStudyDay, InsufficientSparks } from '@/lib/study/db';
-import { numericValues } from '@/lib/study/math-expr';
 import { readLanguage } from '@/lib/languages';
 import { STUDY_COSTS } from '@/lib/sparks';
 import type { MathMessage, MathMode, MathSession, MathSolution } from '@/lib/study/types';
@@ -185,6 +189,7 @@ export default function MathsTutorPage() {
     if (action === 'check' && solution.checkValues?.length) {
       // Every value the student gives must be right, and every value in the
       // key must be given — "3" alone is not the answer to a quadratic.
+      const { numericValues } = await import('@/lib/study/math-expr');
       const given = numericValues(input);
       if (given.length) {
         const near = (a: number, b: number) => Math.abs(a - b) <= 1e-6 * Math.max(1, Math.abs(b));

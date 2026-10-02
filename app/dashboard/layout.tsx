@@ -11,7 +11,7 @@ import {
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
-  Sparkles, Store, Layers, LogOut, Mail, UserCog,
+  Sparkles, Store, Layers, LogOut, Mail, UserCog, Target, Calculator,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -42,6 +42,8 @@ const NAV: Record<Role, NavGroup[]> = {
   student: [
     { items: [
       { href: '/dashboard/student', icon: Home, label: 'Dashboard' },
+      { href: '/dashboard/student/exam-prep', icon: Target, label: 'Exam Prep' },
+      { href: '/dashboard/student/maths', icon: Calculator, label: 'ET Maths' },
       { href: '/ai-studio', icon: Sparkles, label: 'AI Studio ↗' },
       { href: '/ai-teachers', icon: Users, label: 'AI Teachers ↗' },
       { href: '/dashboard/student/learning', icon: GraduationCap, label: 'My Learning' },

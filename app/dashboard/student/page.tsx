@@ -8,6 +8,7 @@ import { getEnrolledCourses, getUserBadges, Course, Enrollment, Badge } from '@/
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ArrowUpRight, BookOpen, Zap, Trophy, Target, TrendingUp, Sparkles, Users, GraduationCap, Play } from 'lucide-react';
 import Link from 'next/link';
+import { StudyLaunchpad } from '@/components/study/study-launchpad';
 import {
   DashPage, DashHeader, Panel, PanelHeader, StatCard, ProgressBar,
   ListRow, Initials, EmptyState,
@@ -139,6 +140,8 @@ export default function StudentDashboard() {
           </Button>
         )}
       />
+
+      <StudyLaunchpad />
 
       {/* ── Stat row ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

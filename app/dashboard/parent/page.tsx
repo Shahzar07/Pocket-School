@@ -14,6 +14,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Zap, BookOpen, MessageSquare, Trophy, UserRound, FileBarChart, TrendingUp, Target, Clock, ShieldCheck, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { ChildExamPrep } from '@/components/study/child-exam-prep';
 import { DashPage, DashHeader } from '@/components/dash-ui';
 
 interface ChildData {
@@ -415,6 +416,7 @@ export default function ParentDashboard() {
                       })}
                     </div>
                   )}
+                  <ChildExamPrep childId={id} name={childProfile.name} />
                 </div>
               </motion.div>
             );
