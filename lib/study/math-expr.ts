@@ -45,6 +45,21 @@ export function compileFn(input: string): CompiledFn {
   };
 }
 
+/** Typeset an expression for display: "2*x^2-5*x-3" → "2x^{2}-5x-3". */
+export function exprToTex(input: string): string {
+  try {
+    return parse(normaliseExpr(input)).toTex({ parenthesis: 'auto', implicit: 'hide' }).replace(/\\cdot/g, '');
+  } catch { return input; }
+}
+
+/** Every number in an answer like "x = 3 or x = -1/2" — for exact checking. */
+export function numericValues(input: string): number[] {
+  return input
+    .split(/\bor\b|\band\b|,|;|\n/i)
+    .map(part => numericValue(part.replace(/^[^=]*=/, '').trim()))
+    .filter((v): v is number => v !== null);
+}
+
 export function derivativeOf(expr: string): string {
   return simplify(derivative(parse(normaliseExpr(expr)), 'x')).toString();
 }

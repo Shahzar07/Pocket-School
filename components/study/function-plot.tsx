@@ -8,7 +8,8 @@
 
 import { useMemo, useRef, useState, useCallback, useEffect } from 'react';
 import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
-import { compileFn, type CompiledFn } from '@/lib/study/math-expr';
+import { compileFn, exprToTex, type CompiledFn } from '@/lib/study/math-expr';
+import { MathMarkdown } from '@/components/math-markdown';
 
 export const SERIES_COLORS = ['#2786A4', '#E8A33D', '#8B5CF6', '#E5484D', '#30A46C'];
 
@@ -223,7 +224,9 @@ export function FunctionPlot({ functions, points = [], xMin = -10, xMax = 10, he
           {compiled.map(({ src, color, error }, i) => (
             <span key={i} className="inline-flex items-center gap-1.5 font-mono">
               <span className="w-3 h-0.5 rounded" style={{ background: color }} />
-              <span className={error ? 'text-destructive' : 'text-foreground'}>y = {src}</span>
+              <span className={`[&_p]:my-0 font-sans ${error ? 'text-destructive' : 'text-foreground'}`}>
+                {error ? `y = ${src}` : <MathMarkdown>{`$y = ${exprToTex(src)}$`}</MathMarkdown>}
+              </span>
               {error && <span className="text-destructive font-sans">— can&apos;t plot</span>}
             </span>
           ))}

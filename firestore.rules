@@ -275,6 +275,52 @@ service cloud.firestore {
       allow delete: if isUser(userId) || isAdmin();
     }
 
+    // ── Study tools: exam preps, maths sessions, exam packs ────
+    // Private to the student. A linked parent can read progress (never
+    // write it); nobody else can see it.
+    function isParentOf(uid) {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('childIds', []).hasAny([uid]);
+    }
+
+    match /users/{userId}/exam_preps/{prepId} {
+      allow read: if isUser(userId) || isParentOf(userId) || isAdmin();
+      allow create: if isUser(userId) && incoming().ownerId == userId;
+      allow update: if isUser(userId) && incoming().ownerId == userId;
+      allow delete: if isUser(userId);
+
+      // Material, cached lessons and quizzes, exam attempts.
+      match /{sub=**} {
+        allow read: if isUser(userId) || isParentOf(userId) || isAdmin();
+        allow write: if isUser(userId);
+      }
+    }
+
+    match /users/{userId}/math_sessions/{sessionId} {
+      allow read: if isUser(userId) || isParentOf(userId) || isAdmin();
+      allow write: if isUser(userId);
+    }
+
+    match /users/{userId}/pack_progress/{packId} {
+      allow read: if isUser(userId) || isParentOf(userId) || isAdmin();
+      allow write: if isUser(userId);
+    }
+
+    // A classmate can read a shared plan's content to start their own copy;
+    // only the person who shared it can change or withdraw it.
+    match /shared_preps/{shareId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
+      allow update, delete: if isSignedIn()
+        && (resource.data.ownerId == request.auth.uid || isAdmin());
+    }
+
+    // "Something's wrong with this answer" reports, reviewed by admins.
+    match /ai_reports/{reportId} {
+      allow create: if isSignedIn() && incoming().uid == request.auth.uid;
+      allow read, update, delete: if isAdmin();
+    }
+
     // ── Behaviour Records ─────────────────────────────────────
     match /behaviour_records/{recordId} {
       allow read: if isSignedIn();
