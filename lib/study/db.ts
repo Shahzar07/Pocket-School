@@ -13,6 +13,7 @@ import { db } from '@/lib/firebase';
 import { STUDY_COSTS, type StudyCostKey } from '@/lib/sparks';
 import type { ExamAttempt, ExamPrep, MathSession, StudyAsset } from './types';
 import { isoDay, nextStreak } from './schedule';
+import { useAuthSTORE } from '@/hooks/use-auth';
 
 /* Firestore rejects undefined anywhere in a document; strip it. */
 export function clean<T>(v: T): T {
@@ -46,14 +47,18 @@ export async function chargeSparks(uid: string, key: StudyCostKey, note: string,
   if (cost <= 0) return null;
   const userRef = doc(db, 'users', uid);
   const txRef = doc(collection(db, 'users', uid, 'spark_transactions'));
-  return runTransaction(db, async tx => {
+  const after = await runTransaction(db, async tx => {
     const snap = await tx.get(userRef);
     const balance = (snap.data()?.sparksBalance as number) ?? 0;
-    const after = Math.max(0, balance - cost);
-    tx.update(userRef, { sparksBalance: after, updatedAt: serverTimestamp() });
-    tx.set(txRef, { amount: -cost, type: 'study', format: key, note, balanceAfter: after, createdAt: serverTimestamp() });
-    return after;
+    const next = Math.max(0, balance - cost);
+    tx.update(userRef, { sparksBalance: next, updatedAt: serverTimestamp() });
+    tx.set(txRef, { amount: -cost, type: 'study', format: key, note, balanceAfter: next, createdAt: serverTimestamp() });
+    return next;
   });
+  // Keep the header's Sparks counter in step without a reload.
+  const { profile, setProfile } = useAuthSTORE.getState();
+  if (profile) setProfile({ ...profile, sparksBalance: after });
+  return after;
 }
 
 /* ── Exam preps ───────────────────────────────────────────────── */
