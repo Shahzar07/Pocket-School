@@ -25,6 +25,7 @@ import { LANGUAGES, LANGUAGE_STORAGE_KEY, RECOGNITION_LANG } from '@/lib/languag
 import { Speaker, SentenceStream } from '@/lib/speech';
 import { tutorModeFor } from '@/lib/learner-level';
 import { correctIndex } from '@/lib/quiz-answer';
+import { parseLatexJson } from '@/lib/latex-json';
 import { permissionsFor, hasAddOn, addOn } from '@/lib/entitlements';
 
 type Msg = { role: 'user' | 'model'; text: string };
@@ -55,7 +56,7 @@ function extractBoardItems(text: string, nextId: () => number): { prose: string;
   const items: BoardItem[] = [];
   const prose = text.replace(/```(QUIZ|PROBLEM)\s*\n?([\s\S]*?)```/g, (full, kind: string, body: string) => {
     try {
-      const data = JSON.parse(body.trim());
+      const data = parseLatexJson<any>(body.trim());
       if (kind === 'QUIZ' && data.question && Array.isArray(data.options)) {
         const options: string[] = data.options.map(String);
         const idx = correctIndex(options, String(data.answer ?? ''));

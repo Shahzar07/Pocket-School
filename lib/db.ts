@@ -316,7 +316,7 @@ export interface Programme {
 export interface SparkTransaction {
   id: string;
   amount: number;
-  type: 'allowance' | 'unlock' | 'earn' | 'admin_grant' | 'ai_studio';
+  type: 'allowance' | 'unlock' | 'earn' | 'admin_grant' | 'ai_studio' | 'study';
   format?: string;
   courseId?: string;
   lessonId?: string;

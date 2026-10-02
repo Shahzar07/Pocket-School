@@ -12,6 +12,7 @@ const TYPE_LABELS: Record<SparkTransaction['type'], string> = {
   earn: 'Earned',
   admin_grant: 'Granted',
   ai_studio: 'AI Studio',
+  study: 'Study tools',
 };
 
 /**
