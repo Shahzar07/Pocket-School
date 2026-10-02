@@ -228,3 +228,26 @@ export async function deleteMathSession(uid: string, id: string) {
 }
 
 export { STUDY_COSTS };
+
+/* ── Official exam packs ──────────────────────────────────────── */
+
+export interface PackProgress { mastery: Record<string, number>; setsDone: number; lastTopic?: string }
+
+export async function getPackProgress(uid: string, packId: string): Promise<PackProgress> {
+  const snap = await getDoc(doc(db, 'users', uid, 'pack_progress', packId));
+  const d = snap.data() as Partial<PackProgress> | undefined;
+  return { mastery: d?.mastery ?? {}, setsDone: d?.setsDone ?? 0, lastTopic: d?.lastTopic };
+}
+
+export async function savePackProgress(uid: string, packId: string, p: PackProgress) {
+  await setDoc(doc(db, 'users', uid, 'pack_progress', packId), { ...clean(p), updatedAt: serverTimestamp() }, { merge: true });
+}
+
+export async function getPackSet<T>(uid: string, packId: string, key: string): Promise<T | null> {
+  const snap = await getDoc(doc(db, 'users', uid, 'pack_progress', packId, 'sets', key));
+  return snap.exists() ? (snap.data().questions as T) : null;
+}
+
+export async function savePackSet(uid: string, packId: string, key: string, questions: unknown) {
+  await setDoc(doc(db, 'users', uid, 'pack_progress', packId, 'sets', key), { questions: clean(questions), createdAt: serverTimestamp() });
+}

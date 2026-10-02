@@ -44,15 +44,21 @@ function fmt(v: number) {
 
 export function FunctionPlot({ functions, points = [], xMin = -10, xMax = 10, height = 360, legend = true, className = '' }: Props) {
   const H = height;
+  // Callers often pass a fresh array each render. Key on the content, or the
+  // view resets every render and the reset re-renders the caller — a loop.
+  const fnKey = functions.join('\u0001');
+  const ptKey = JSON.stringify(points);
+  const stableFns = useMemo(() => fnKey.split('\u0001'), [fnKey]);
+  const stablePts = useMemo(() => JSON.parse(ptKey) as PlotPoint[], [ptKey]);
   const compiled = useMemo(() => {
     const out: { c: CompiledFn | null; error?: string; color: string; src: string }[] = [];
-    functions.forEach((f, i) => {
+    stableFns.forEach((f, i) => {
       if (!f.trim()) return;
       try { out.push({ c: compileFn(f), color: SERIES_COLORS[i % SERIES_COLORS.length], src: f }); }
       catch (e) { out.push({ c: null, error: e instanceof Error ? e.message : 'Invalid', color: SERIES_COLORS[i % SERIES_COLORS.length], src: f }); }
     });
     return out;
-  }, [functions]);
+  }, [stableFns]);
 
   const autoY = useCallback((x0: number, x1: number) => {
     const ys: number[] = [];
@@ -63,7 +69,7 @@ export function FunctionPlot({ functions, points = [], xMin = -10, xMax = 10, he
         if (Number.isFinite(y)) ys.push(y);
       }
     }
-    for (const p of points) ys.push(p.y);
+    for (const p of stablePts) ys.push(p.y);
     if (!ys.length) return [-10, 10] as const;
     ys.sort((a, b) => a - b);
     // Trim the extremes so an asymptote doesn't flatten the whole graph.
@@ -75,7 +81,7 @@ export function FunctionPlot({ functions, points = [], xMin = -10, xMax = 10, he
     if (lo > 0 && lo < (hi - lo) * 0.6) lo = -(hi - lo) * 0.05;
     if (hi < 0 && -hi < (hi - lo) * 0.6) hi = (hi - lo) * 0.05;
     return [lo, hi] as const;
-  }, [compiled, points]);
+  }, [compiled, stablePts]);
 
   const initial = useMemo(() => {
     const [y0, y1] = autoY(xMin, xMax);

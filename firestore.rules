@@ -304,6 +304,12 @@ service cloud.firestore {
     match /users/{userId}/pack_progress/{packId} {
       allow read: if isUser(userId) || isParentOf(userId) || isAdmin();
       allow write: if isUser(userId);
+
+      // Cached question sets for each topic.
+      match /{sub=**} {
+        allow read: if isUser(userId) || isParentOf(userId) || isAdmin();
+        allow write: if isUser(userId);
+      }
     }
 
     // A classmate can read a shared plan's content to start their own copy;

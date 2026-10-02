@@ -93,6 +93,12 @@ export default function MathsTutorPage() {
   useEffect(() => { loadHistory(); }, [loadHistory]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
+
+  // Arriving from an exam pack ("work through it with ET"): pre-fill the problem.
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get('problem');
+    if (p) { setProblem(p); setMode('guide'); }
+  }, []);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [session?.messages.length]);
   useEffect(() => { if (streamRaw) endRef.current?.scrollIntoView({ block: 'end' }); }, [streamRaw]);
 
@@ -681,7 +687,11 @@ export default function MathsTutorPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/dashboard/student/maths/lab" className="mt-4 flex items-center justify-between rounded-xl bg-muted/50 px-3 py-2.5 text-[13px] font-semibold hover:bg-muted">
+              <Link href="/dashboard/student/maths/packs" className="mt-4 flex items-center justify-between rounded-xl bg-primary/10 text-primary px-3 py-2.5 text-[13px] font-semibold hover:bg-primary/15">
+                <span className="inline-flex items-center gap-2"><Target className="w-4 h-4" /> SPM · IGCSE · A Level · IB exam packs</span>
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+              <Link href="/dashboard/student/maths/lab" className="mt-2 flex items-center justify-between rounded-xl bg-muted/50 px-3 py-2.5 text-[13px] font-semibold hover:bg-muted">
                 <span className="inline-flex items-center gap-2"><BookOpen className="w-4 h-4 text-primary" /> Graphing calculator &amp; Maths Lab</span>
                 <ChevronRight className="w-4 h-4" />
               </Link>
