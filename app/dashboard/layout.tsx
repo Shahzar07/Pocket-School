@@ -12,7 +12,7 @@ import {
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
   Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked, Compass, Camera, MessagesSquare,
-  Wallet, Gift, Landmark, Plug, PieChart,
+  Wallet, Gift, Landmark, Plug, PieChart, Search,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,9 @@ import { upsertUserSession, accountStatusOf, clearUserFields, updateUser } from 
 import { deletionClosed, formatDeletionDate, sessionRevoked } from '@/lib/account-settings';
 import { AccountMenu } from '@/components/account/account-menu';
 import { ModeSwitch } from '@/components/account/mode-switch';
+import { Breadcrumbs } from '@/components/shell/breadcrumbs';
+import { MobileNav } from '@/components/shell/mobile-nav';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { useAccountMode } from '@/hooks/use-account-mode';
 import { homeForMode, learnerSpaceRoles, modeRedirect, MODE_NAMES, type AccountMode } from '@/lib/account-modes';
 import { loginBlocked, resolveStaffRole } from '@/lib/admin-console';
@@ -260,6 +263,7 @@ const NavItem = ({ entry, role, pathname, onClick, router }: {
     <button
       type="button"
       onClick={() => { onClick(); router.push(entry.href); }}
+      aria-current={active ? 'page' : undefined}
       className={`relative w-full px-3 h-9 rounded-xl flex items-center gap-3 cursor-pointer transition-colors text-start text-[13px] ${
         active
           ? 'bg-muted text-foreground font-semibold shadow-[var(--shadow-card)]'
@@ -461,6 +465,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
+      <a href="#dashboard-main" className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-xl focus:bg-card focus:px-3 focus:py-2">
+        Skip to content
+      </a>
       {/* ── Sidebar — light, profile-led, grouped ── */}
       <aside data-tour="sidebar" className={`relative bg-sidebar border-e border-sidebar-border flex flex-col transition-all duration-300 shrink-0 ${sidebarOpen ? 'w-[264px]' : 'w-0 opacity-0 overflow-hidden'}`}>
 
@@ -542,13 +549,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Header */}
         <header className="h-[72px] bg-background/80 backdrop-blur-xl flex items-center justify-between gap-4 px-4 lg:px-6 shrink-0 z-10">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="rounded-xl shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={t('nav.toggleSidebar')}>
+            <Button variant="ghost" size="icon" className="rounded-xl shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={t('nav.toggleSidebar')} aria-expanded={sidebarOpen}>
               <Menu className="w-5 h-5 text-muted-foreground" />
             </Button>
             <PipGuide role={role as TourRole} />
+            <button
+              type="button"
+              className="grid h-9 w-9 place-items-center rounded-xl text-muted-foreground hover:bg-muted md:hidden"
+              aria-label="Search"
+              onClick={() => document.getElementById('dashboard-search')?.focus()}
+            >
+              <Search className="h-4 w-4" />
+            </button>
             <span data-tour="search"><DashboardSearch /></span>
           </div>
           <div className="flex items-center gap-1.5">
+            <ThemeToggle />
             {showModes && (
               <ModeSwitch
                 modes={account.modes}
@@ -597,7 +613,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
 
         {/* Scrollable Main with ambient gradient wash */}
-        <main className="flex-1 overflow-y-auto relative">
+        <div className="px-4 lg:px-6 pb-2">
+          <Breadcrumbs />
+        </div>
+        <main id="dashboard-main" className="flex-1 overflow-y-auto relative pb-20 lg:pb-0">
           {/* A faint teal wash at the top, echoing the homepage sky. */}
           <div className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(39,134,164,0.06)_0%,transparent_100%)]" />
           <OfflineBanner />
@@ -608,6 +627,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
       </div>
 
+      <MobileNav role={role} onMore={() => setSidebarOpen(true)} />
       {viewAs ? null : <AITutor />}
     </div>
   );

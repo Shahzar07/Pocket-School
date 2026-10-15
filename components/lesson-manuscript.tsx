@@ -1,16 +1,22 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import {
-  ContentEditor,
   ImportPanel,
   VersionHistory,
   pushRevision,
   readAutosave,
   useAutosave,
 } from '@/components/editor';
+
 import type { ContentRevision, ImportResult } from '@/components/editor';
 import { manuscriptToMarkdown } from '@/lib/lesson-body';
+
+const ContentEditor = dynamic(
+  () => import('@/components/editor/content-editor').then(mod => mod.ContentEditor),
+  { ssr: false, loading: () => <div className="ps-skeleton h-40 rounded-2xl" aria-hidden="true" /> },
+);
 
 /**
  * The course authoring surface over the shared editor.

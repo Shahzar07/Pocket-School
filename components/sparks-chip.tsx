@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { Zap, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 import { formatAppDate, formatAppNumber } from '@/lib/i18n/detect';
+import { SparksNote } from '@/components/shell/sparks-note';
 
 /**
  * Amber ⚡ wallet pill shown in the dashboard header for students.
@@ -37,7 +38,8 @@ export function SparksChip() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 px-3 h-9 rounded-full bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 transition-colors"
+        className="flex items-center gap-1.5 px-3 h-9 rounded-full bg-secondary border border-border text-secondary-foreground hover:bg-muted transition-colors"
+        aria-label={`Sparks balance ${balance}. Opens your Sparks history.`}
         title={t('sparks.title')}
       >
         <Zap className="w-4 h-4 fill-amber-400 text-amber-500" />
@@ -53,6 +55,7 @@ export function SparksChip() {
             </DialogTitle>
           </DialogHeader>
 
+          <SparksNote cost={0} balance={balance} />
           <p className="text-xs text-muted-foreground -mt-2">
             {t('sparks.spend')}
           </p>

@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { loginBlocked, requiresAdminLogin } from '@/lib/admin-console';
 import { landingPath, readActiveMode } from '@/lib/account-modes';
+import { friendlyError } from '@/lib/design/system';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -141,7 +142,7 @@ export default function LoginPage() {
       }
       await routeUser(pendingUid);
     } catch (e: any) {
-      toast.error(e?.message || 'Verification failed.');
+      toast.error(friendlyError(e) || 'Verification failed.');
     } finally {
       setLoading(false);
     }
@@ -198,7 +199,7 @@ export default function LoginPage() {
         );
         return;
       }
-      toast.error(e?.message || t('authForm.googleFailed'));
+      toast.error(e?.code ? friendlyError(e) : (e?.message || t('authForm.googleFailed')));
     } finally {
       setLoading(false);
     }

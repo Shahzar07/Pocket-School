@@ -8,8 +8,8 @@ import { Globe, Menu, X, ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { isAdmin } from "@/lib/roles";
 import { LanguageSwitcher } from "@/components/language-switcher";
-import { CurrencySwitcher } from "@/components/currency-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { CurrencySwitcher } from "@/components/currency-switcher";
 import styles from "./home-chrome.module.css";
 
 const NAV_LINKS = [
