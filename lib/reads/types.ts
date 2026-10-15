@@ -110,7 +110,7 @@ export interface Book {
   /** Listed in the store once published. */
   allocateMarketplace: boolean;
   /** Who this book is for. Absent means the default set from the library and marketplace flags. */
-  targets?: BookTarget[];
+  targets?: string[];
   series?: BookSeries;
   chapters: BookChapter[];
   /** Pictures for this book. Alt text is required before one can be placed or published. */

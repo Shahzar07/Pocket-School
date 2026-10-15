@@ -8,7 +8,7 @@ Status as of 15 Oct 2026. The canonical base for every stacked agent is `cursor/
 | Language packs | Merged from draft PR #57 |
 | Admin-managed USD pricing | Merged from draft PR #58. Charged prices live in `lib/pricing.ts` |
 | Dual-currency display (USD plus local, daily rates) | Not in this branch. Stash `wip dual price and daily rates` on `cursor/dynamic-pricing-f0ff` is unfinished and must be kept |
-| Allocation, OEM academies | Merged from draft PR #59 |
+| Allocation, OEM academies | Multi-select target list on courses, books, academies, announcements, and the calendar. Any matching target can see the item. |
 | Product access audiences | Merged from draft PR #60 |
 | Device tokens, goals hooks, Books hooks | Merged from draft PR #61 |
 | Buzan maps, downloads, shared editor and media | Merged from draft PR #62 |

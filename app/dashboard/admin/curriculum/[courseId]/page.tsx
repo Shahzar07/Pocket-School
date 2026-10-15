@@ -49,6 +49,8 @@ import { filesToAssets, LessonIllustrationBlock, LessonImageBlock } from '@/comp
 import type { ImportResult } from '@/components/editor';
 import { LessonLanguagePanel } from '@/components/lesson-language-panel';
 import { AllocationPanel } from '@/components/allocation-panel';
+import { AllocationPicker } from '@/components/allocation-picker';
+import { allocationFields, migrateAllocation } from '@/lib/allocation-targets';
 import { moveItem, popUndo, pushUndo, type UndoEntry } from '@/lib/reorder';
 import {
   ArrowLeft, AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Copy, CornerDownRight,
@@ -1258,6 +1260,7 @@ export default function ContentBuilderPage() {
               <PublishTab
                 draft={draft} course={course} statusCard={statusCard}
                 setStatus={setStatus} patchCourse={patchCourse} courseId={courseId}
+                institutions={institutions}
                 onPublishRequest={openPublishModal}
               />
             )}
@@ -1893,12 +1896,13 @@ function PropertiesTab({
   );
 }
 
-function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseId, onPublishRequest }: {
+function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseId, institutions, onPublishRequest }: {
   draft: Lesson; course: Course;
   statusCard: { bg: string; label: string };
   setStatus: (s: NonNullable<Lesson['status']>, label: string) => Promise<void>;
   patchCourse: (p: CoursePatch, msg?: string) => Promise<void>;
   courseId: string;
+  institutions: Institution[];
   onPublishRequest: () => void;
 }) {
   const [scheduleDate, setScheduleDate] = useState('');
@@ -2015,22 +2019,22 @@ function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseI
         </p>
       </section>
 
-      <section className="space-y-2">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Scope</p>
-        {([
-          ['institution', 'Institution Only', 'Visible to allocated institutions'],
-          ['public', 'Public Site', 'Anyone on Poket School can find it'],
-          ['marketplace', 'Marketplace', 'Listed for purchase in the marketplace'],
-        ] as const).map(([id, label, desc]) => (
-          <button key={id} onClick={() => patchCourse({ publishScope: id }, `Scope: ${label}`)}
-            className={`w-full text-left px-3 py-2.5 rounded-xl border transition-colors ${
-              (course.publishScope ?? 'institution') === id ? 'border-teal-400 bg-teal-50' : 'border-border hover:border-teal-300'
-            }`}>
-            <p className="text-xs font-bold text-foreground">{label}</p>
-            <p className="text-[10px] text-muted-foreground">{desc}</p>
-          </button>
-        ))}
-      </section>
+      <AllocationPicker
+        label="Who can see this"
+        value={migrateAllocation(course)}
+        options={institutions.map(school => ({ token: `institution:${school.id}`, label: school.name, group: 'Institutions' }))}
+        onChange={targets => {
+          const fields = allocationFields(targets, course.accessPolicy ?? { include: [], exclude: [] });
+          void patchCourse({
+            targets: fields.targets,
+            classIds: fields.classIds,
+            audiences: fields.audiences,
+            allocatedInstitutionIds: fields.allocatedInstitutionIds,
+            accessPolicy: fields.accessPolicy,
+            publishScope: fields.publishScope,
+          }, 'Allocation updated');
+        }}
+      />
 
       <section className="space-y-1.5">
         {([
@@ -2085,6 +2089,9 @@ function AllocateTab({ course, institutions, patchCourse }: {
             ...(patch.audiences ? { audiences: [...patch.audiences] } : {}),
             ...(patch.allocatedInstitutionIds ? { allocatedInstitutionIds: [...patch.allocatedInstitutionIds] } : {}),
             ...(patch.accessPolicy ? { accessPolicy: patch.accessPolicy } : {}),
+            ...(patch.targets ? { targets: [...patch.targets] } : {}),
+            ...(patch.classIds ? { classIds: [...patch.classIds] } : {}),
+            ...(patch.publishScope ? { publishScope: patch.publishScope } : {}),
             ...('freePreviewCount' in patch && patch.freePreviewCount != null ? { freePreviewCount: patch.freePreviewCount } : {}),
             ...('minTier' in patch ? { minTier: patch.minTier ?? null } : {}),
             ...('priceType' in patch ? { priceType: (patch.priceType ?? null) as Course['priceType'] | null } : {}),

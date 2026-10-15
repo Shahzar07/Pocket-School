@@ -9,6 +9,9 @@ import {
   saveAcademyClass, saveAcademyInvites, saveJoinCode, updateInstitution, type Institution,
 } from '@/lib/db';
 import { brandedInvite, licencePhase, makeJoinCode, parseInviteCsv, seatsRemaining, type OemLicence } from '@/lib/oem';
+import { PROGRAMMES } from '@/lib/programmes';
+import { AllocationPicker } from '@/components/allocation-picker';
+import { describeTargets } from '@/lib/allocation-targets';
 import { institutionOrigin } from '@/lib/white-label';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +29,7 @@ export default function InstitutionAcademyPage() {
   const [csv, setCsv] = useState('email,name,role\n');
   const [joinCode, setJoinCode] = useState('');
   const [className, setClassName] = useState('');
+  const [classProgrammes, setClassProgrammes] = useState<string[]>([]);
   const [classCount, setClassCount] = useState(0);
   const [displayName, setDisplayName] = useState('');
 
@@ -79,11 +83,13 @@ export default function InstitutionAcademyPage() {
 
   const addClass = async () => {
     if (!institutionId || !className.trim()) return;
-    const programmeIds = live.flatMap(licence => licence.programmeIds);
+    if (!classProgrammes.length) { toast.error('Choose at least one programme.'); return; }
+    const programmeIds = classProgrammes;
     try {
       await saveAcademyClass(institutionId, { name: className.trim(), programmeIds, memberIds: [] });
       setClassCount(count => count + 1);
       setClassName('');
+      setClassProgrammes([]);
       toast.success('Class created.');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not create the class.');
@@ -148,11 +154,22 @@ export default function InstitutionAcademyPage() {
 
       <section className="rounded-3xl border border-border p-5 space-y-3">
         <h2 className="font-semibold">Classes</h2>
-        <p className="text-xs text-muted-foreground">{classCount} classes. A new class is assigned every programme on a live licence.</p>
-        <div className="flex gap-2">
-          <Input value={className} onChange={event => setClassName(event.target.value)} placeholder="Year 8 Science" className="rounded-xl h-11" />
-          <Button onClick={() => void addClass()} className="rounded-full" disabled={!live.length}>Add class</Button>
-        </div>
+        <p className="text-xs text-muted-foreground">{classCount} classes. Choose the programmes this class can open.</p>
+        <Input value={className} onChange={event => setClassName(event.target.value)} placeholder="Year 8 Science" className="rounded-xl h-11" />
+        <AllocationPicker
+          label="Programmes"
+          chips={[]}
+          allowCustom={false}
+          value={classProgrammes.map(id => `programme:${id}`)}
+          options={[...new Set(live.flatMap(licence => licence.programmeIds))].map(id => ({
+            token: `programme:${id}`,
+            label: PROGRAMMES.find(programme => programme.value === id)?.label ?? id,
+            group: 'Programmes',
+          }))}
+          onChange={tokens => setClassProgrammes(tokens.filter(token => token.startsWith('programme:')).map(token => token.slice('programme:'.length)))}
+        />
+        <p className="text-sm text-muted-foreground">{describeTargets(classProgrammes.map(id => `programme:${id}`), Object.fromEntries(classProgrammes.map(id => [`programme:${id}`, PROGRAMMES.find(programme => programme.value === id)?.label ?? id])))}</p>
+        <Button onClick={() => void addClass()} className="rounded-full" disabled={!live.length}>Add class</Button>
       </section>
 
       {ownCourses && (

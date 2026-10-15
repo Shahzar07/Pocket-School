@@ -139,6 +139,10 @@ export interface Course {
   audiences?: ('students' | 'teachers' | 'parents' | 'institutions' | 'all' | 'marketplace')[];
   /** Richer include, exclude, schedule and quota. When set, it decides access. */
   accessPolicy?: AccessPolicy;
+  /** Every chosen audience, person, class, parent, and institution. Any match can see this. */
+  targets?: string[];
+  /** Class ids copied from `class:` targets so security rules can match a cohort. */
+  classIds?: string[];
   viewCount?: number;
   completionCount?: number;
   /** Sum of recorded purchase amounts, in the product currency. */
@@ -2234,6 +2238,8 @@ export interface CalendarEvent {
   type: 'assignment' | 'exam' | 'event' | 'holiday' | 'class' | 'payment';
   courseId?: string;
   audience: 'all' | 'students' | 'teachers' | 'parents';
+  /** Several audiences at once. `audience` is kept for older rows. */
+  targets?: string[];
   createdBy: string;
   createdAt?: Timestamp;
 }
@@ -2266,6 +2272,8 @@ export interface Announcement {
   content: string;
   priority: 'low' | 'normal' | 'high' | 'urgent';
   audience: 'all' | 'students' | 'teachers' | 'parents';
+  /** Several audiences at once. `audience` is kept for older rows. */
+  targets?: string[];
   courseId?: string;
   pinned: boolean;
   createdBy: string;
@@ -2279,7 +2287,14 @@ export async function getAnnouncements(audience: string, courseId?: string): Pro
   const snap = await getDocs(q);
   return snap.docs
     .map(d => ({ id: d.id, ...d.data() } as Announcement))
-    .filter(a => a.audience === 'all' || a.audience === audience || (courseId && a.courseId === courseId));
+    .filter(a => announcementVisible(a, audience) || (courseId && a.courseId === courseId));
+}
+
+function announcementVisible(item: { audience?: string; targets?: string[] }, audience: string): boolean {
+  if (audience === 'admin') return true;
+  const targets = item.targets?.length ? item.targets : [item.audience];
+  if (audience === 'all') return targets.includes('all') || targets.includes('marketplace');
+  return targets.includes('all') || targets.includes(audience) || targets.includes('marketplace');
 }
 
 export async function createAnnouncement(data: Omit<Announcement, 'id'>): Promise<string> {

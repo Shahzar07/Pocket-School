@@ -51,7 +51,8 @@ export function bookAllocation(book: Book): ProductAllocation {
   return {
     kind: 'book',
     id: book.id,
-    audiences: book.targets?.length ? book.targets : defaultBookTargets(book),
+    audiences: (book.targets?.length ? book.targets : defaultBookTargets(book))
+      .filter((target): target is BookTarget => (BOOK_TARGETS as readonly string[]).includes(target)),
     minTier: book.minTier,
     priceType,
     sparksCost: book.sparksCost,

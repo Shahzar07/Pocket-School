@@ -35,6 +35,7 @@ import {
 } from '@/lib/course-builder';
 import type { AccessPolicy } from '@/lib/access-policy';
 import { describeAccess } from '@/lib/access-policy';
+import { describeTargets, migrateAllocation } from '@/lib/allocation-targets';
 import {
   createCouponCode,
   createCourse,
@@ -52,23 +53,6 @@ import {
   type Institution,
   type Lesson,
 } from '@/lib/db';
-
-function audienceFor(target: AllocationTarget): 'users' | 'cohorts' | 'parents' | 'institutions' | 'all' | 'marketplace' {
-  if (target === 'students') return 'users';
-  if (target === 'classes') return 'cohorts';
-  if (target === 'institution') return 'institutions';
-  if (target === 'everyone') return 'all';
-  return target;
-}
-
-const TARGETS: { id: AllocationTarget; label: string; detail: string }[] = [
-  { id: 'students', label: 'My students', detail: 'Named learners on this course' },
-  { id: 'classes', label: 'Classes', detail: 'A class or cohort you teach' },
-  { id: 'parents', label: 'Linked parents', detail: 'Parents connected to those students' },
-  { id: 'institution', label: 'Institution', detail: 'A school you allocate this to' },
-  { id: 'everyone', label: 'Everyone', detail: 'Every signed-in person' },
-  { id: 'marketplace', label: 'Marketplace', detail: 'Public listing after admin approval' },
-];
 
 function lectureFromLesson(lesson: Lesson): StudioLecture {
   const kind: LectureKind = lesson.lessonType === 'assessment' || lesson.isUnitQuiz
@@ -200,9 +184,19 @@ export function TeacherCourseStudio({
         ? applyAllocationPreset(blankPolicy(), 'marketplace')
         : blankPolicy()
   ));
-  const [people, setPeople] = useState((initial?.accessPolicy?.userIds ?? (sample || initialTarget === 'students' ? ['student-demo'] : [])).join(', '));
-  const [classes, setClasses] = useState((initial?.accessPolicy?.cohortIds ?? []).join(', '));
-  const [schoolId, setSchoolId] = useState(initial?.accessPolicy?.institutionIds?.[0] ?? institutions[0]?.id ?? '');
+  const [targets, setTargets] = useState<string[]>(() => migrateAllocation({
+    targets: initial?.targets,
+    accessPolicy: initial?.accessPolicy ?? (
+      initialTarget === 'students'
+        ? applyAllocationPreset(blankPolicy(), 'students', ['student-demo'])
+        : initialTarget === 'marketplace'
+          ? applyAllocationPreset(blankPolicy(), 'marketplace')
+          : undefined
+    ),
+    audiences: initial?.audiences,
+    publishScope: initial?.publishScope,
+    allocatedInstitutionIds: initial?.allocatedInstitutionIds,
+  }));
   const [couponCode, setCouponCode] = useState(generateCouponCode());
   const [discount, setDiscount] = useState('20');
   const [couponNote, setCouponNote] = useState('');
@@ -225,29 +219,13 @@ export function TeacherCourseStudio({
     status: decision.status,
     price: numericPrice,
     accessPolicy: policy,
+    targets,
     audiences: policy.include.filter((item): item is 'students' | 'teachers' | 'parents' | 'institutions' | 'all' | 'marketplace' =>
       ['students', 'teachers', 'parents', 'institutions', 'all', 'marketplace'].includes(item)),
     priceType: free ? 'FREE' : 'MARKETPLACE_PURCHASE',
     enrollmentCount: initial?.enrollmentCount ?? 0,
     revenueTotal: initial?.revenueTotal ?? 0,
-  }), [savedId, title, decision.status, numericPrice, policy, free, initial?.enrollmentCount, initial?.revenueTotal]);
-
-  const applyTarget = (target: AllocationTarget) => {
-    const selected = target === 'students'
-      ? people.split(/[,;\n]/)
-      : target === 'classes'
-        ? classes.split(/[,;\n]/)
-        : target === 'institution' && schoolId
-          ? [schoolId]
-          : [];
-    const next = applyAllocationPreset(policy, target, selected);
-    setPolicy(next);
-    const outcome = publishDecision({ intent: 'publish', policy: next, role });
-    const summary = target === 'marketplace'
-      ? 'Marketplace listing will wait for admin approval.'
-      : `Allocated to ${target}. Students can receive it without a marketplace listing.`;
-    setStatusNote(`${summary} Status: ${outcome.status.replace('_', ' ')}.`);
-  };
+  }), [savedId, title, decision.status, numericPrice, policy, targets, free, initial?.enrollmentCount, initial?.revenueTotal]);
 
   const patchLecture = (patch: Partial<StudioLecture>) => {
     if (!section || !lecture) return;
@@ -321,7 +299,7 @@ export function TeacherCourseStudio({
     const payload = courseWrite({
       title, subtitle, description, category, level, language,
       thumbnailUrl, previewUrl, ownerId, ownerName,
-      price: numericPrice, free, policy, intent, role,
+      price: numericPrice, free, policy, targets, intent, role,
     });
     if (demo) {
       setStatusNote(intent === 'draft'
@@ -615,38 +593,21 @@ export function TeacherCourseStudio({
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="grid gap-2 sm:grid-cols-2">
-                {TARGETS.map(target => (
-                  <button
-                    key={target.id}
-                    type="button"
-                    data-alloc={target.id}
-                    onClick={() => applyTarget(target.id)}
-                    className={`rounded-2xl border px-3 py-3 text-left ${policy.include.includes(audienceFor(target.id)) ? 'border-emerald-600 bg-emerald-500/10' : 'border-border'}`}
-                  >
-                    <span className="block font-semibold">{target.label}</span>
-                    <span className="text-xs text-muted-foreground">{target.detail}</span>
-                  </button>
-                ))}
-              </div>
-              <label className="block text-sm font-semibold">Student ids
-                <textarea className="mt-1 min-h-16 w-full rounded-xl border border-border p-2 font-normal" value={people} onChange={event => setPeople(event.target.value)} />
-              </label>
-              <label className="block text-sm font-semibold">Class ids
-                <Input value={classes} onChange={event => setClasses(event.target.value)} />
-              </label>
-              <label className="block text-sm font-semibold">Institution
-                <select className="mt-1 h-10 w-full rounded-xl border border-border bg-background px-2" value={schoolId} onChange={event => setSchoolId(event.target.value)}>
-                  <option value="">Choose a school</option>
-                  {institutions.map(school => <option key={school.id} value={school.id}>{school.name}</option>)}
-                </select>
-              </label>
-              <p className="text-sm" data-allocation-summary>{describeAccess(product)}</p>
+              <p className="text-sm" data-allocation-summary>{describeTargets(targets, Object.fromEntries(institutions.map(school => [`institution:${school.id}`, school.name])))}</p>
               <AllocationPanel
                 product={product}
                 institutions={institutions}
                 onChange={patch => {
                   if (patch.accessPolicy) setPolicy(patch.accessPolicy);
+                  if (patch.targets) setTargets(patch.targets);
+                  if (patch.targets) {
+                    const outcome = publishDecision({
+                      intent: 'publish',
+                      policy: patch.accessPolicy ?? policy,
+                      role,
+                    });
+                    setStatusNote(`${describeTargets(patch.targets)} Status: ${outcome.status.replaceAll('_', ' ')}.`);
+                  }
                 }}
               />
             </div>

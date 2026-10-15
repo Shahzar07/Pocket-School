@@ -8,6 +8,7 @@ import { getInstitution, getProgrammes, listOemLicences, saveOemLicence, type In
 import { licencePhase, programmeLicensed, type OemLicence } from '@/lib/oem';
 import { usePricing } from '@/hooks/use-pricing';
 import { formatMoney, quotePlan } from '@/lib/pricing';
+import { AllocationPicker } from '@/components/allocation-picker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -86,20 +87,15 @@ export default function InstitutionLicencePage() {
       </div>
 
       <section className="rounded-3xl border border-border p-5 space-y-4">
-        <div className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Programmes</p>
-          {programmes.map(programme => (
-            <label key={programme.id} className="flex items-center justify-between text-sm">
-              <span>{programme.name}</span>
-              <input
-                type="checkbox"
-                checked={programmeIds.includes(programme.id)}
-                onChange={() => setProgrammeIds(ids => ids.includes(programme.id) ? ids.filter(id => id !== programme.id) : [...ids, programme.id])}
-              />
-            </label>
-          ))}
-          {programmes.length === 0 && <p className="text-sm text-muted-foreground">Create a programme in the curriculum CMS first.</p>}
-        </div>
+        <AllocationPicker
+          label="Programmes on this licence"
+          chips={[]}
+          allowCustom={false}
+          value={programmeIds.map(id => `programme:${id}`)}
+          options={programmes.map(programme => ({ token: `programme:${programme.id}`, label: programme.name, group: 'Programmes' }))}
+          onChange={tokens => setProgrammeIds(tokens.filter(token => token.startsWith('programme:')).map(token => token.slice('programme:'.length)))}
+        />
+        {programmes.length === 0 && <p className="text-sm text-muted-foreground">Create a programme in the curriculum CMS first.</p>}
         <div className="grid sm:grid-cols-2 gap-3">
           <div>
             <Label>Seats</Label>

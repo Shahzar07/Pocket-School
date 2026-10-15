@@ -18,6 +18,7 @@ import {
   type PriceType,
 } from './entitlements';
 import { evaluatePolicy, policyActive, priceDecision, type AccessPolicy } from './access-policy';
+import { anyTargetMatch, migrateAllocation, normaliseTargets } from './allocation-targets';
 
 export const AUDIENCES = ['students', 'teachers', 'parents', 'institutions', 'all', 'marketplace'] as const;
 export type Audience = (typeof AUDIENCES)[number];
@@ -75,6 +76,8 @@ export interface AllocatableProduct {
   publishScope?: string | null;
   contentType?: string | null;
   accessPolicy?: AccessPolicy | null;
+  /** Shared allocation list. Any matching target can see the product. */
+  targets?: readonly string[] | null;
   viewCount?: number | null;
   enrollmentCount?: number | null;
   completionCount?: number | null;
@@ -139,13 +142,27 @@ export function productAccess(product: AllocatableProduct, viewer: AllocationVie
   if (viewer.role === 'admin' || viewer.isOwner) {
     return { listed: true, open: true, reason: viewer.role === 'admin' ? 'Platform admin' : 'You own this' };
   }
+  const explicitTargets = normaliseTargets(product.targets ?? []);
+  const audiences = audiencesOf(product);
+  const targets = explicitTargets.length
+    ? explicitTargets
+    : (!policyActive(product) && audiences.length === 0
+      ? migrateAllocation({
+          publishScope: product.publishScope,
+          allocatedInstitutionIds: product.allocatedInstitutionIds,
+        })
+      : []);
+
   if (policyActive(product) && product.accessPolicy) {
     const decision = evaluatePolicy({ ...product, accessPolicy: product.accessPolicy }, viewer);
     if (!(decision.open && decision.reason === 'Included')) return decision;
   } else if (viewer.enrolled) {
     return { listed: true, open: true, reason: 'Already enrolled' };
+  } else if (targets.length) {
+    if (!published(product)) return { listed: false, open: false, reason: 'Not published' };
+    const match = anyTargetMatch(targets, viewer);
+    if (!match.hit) return { listed: false, open: false, reason: match.reason ?? 'Not allocated to this audience' };
   } else {
-    const audiences = audiencesOf(product);
     const listed = audiences.length === 0
       ? legacyListed(product, viewer)
       : audienceListed(product, viewer, audiences);
