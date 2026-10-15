@@ -166,6 +166,27 @@ export const METRICS: readonly MetricDefinition[] = [
     summary: 'Average seconds spent on a question when the quiz recorded time.',
     formula: 'Mean of recorded seconds.',
   },
+  {
+    id: 'certificate_count',
+    label: 'Certificates',
+    unit: 'certificates',
+    summary: 'Course certificates issued to the student.',
+    formula: 'Count of certificate records in the range.',
+  },
+  {
+    id: 'enrolment_count',
+    label: 'Enrolments',
+    unit: 'enrolments',
+    summary: 'Students enrolled on the courses in this view.',
+    formula: 'Count of enrolment records. Student names stay off institution charts.',
+  },
+  {
+    id: 'revenue',
+    label: 'Revenue',
+    unit: 'USD',
+    summary: 'Course fees for enrolments in this view. Students and parents do not see this figure.',
+    formula: 'Sum of enrolment amounts in the range.',
+  },
 ];
 
 const BY_ID = new Map(METRICS.map(m => [m.id, m]));

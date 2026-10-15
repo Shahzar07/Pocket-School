@@ -56,6 +56,7 @@ export interface QuizPoint {
   correct?: boolean;
   attempts?: number;
   seconds?: number;
+  courseId?: string;
 }
 
 export function tagBloom(text: string): BloomLevel {

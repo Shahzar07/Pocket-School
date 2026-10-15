@@ -36,9 +36,11 @@ import {
   hourHeatmap, masteryRadar, quizAverage, retentionForecast, strengthsAndWeaknesses, tagBloom,
   threeActions, understandingScore, weeklyInsights, weeklySummary, withBloomTags,
 } from './analytics';
-import { attendanceRate, automaticStatus } from './attendance';
+import { attendanceRate, automaticMark, automaticStatus, mergeMarks } from './attendance';
+import { seedChecks, seedHub, SEED_MARKS } from './hub-seed';
+import { buildReportHub } from './hub';
 import { buildSnapshot } from './aggregate';
-import { toCsv } from './reports';
+import { nextScheduleDate, toCsv } from './reports';
 import { buildXlsx, readStoredZip } from './xlsx';
 import { buildPdf } from './pdf';
 import { gradeOnScale, scaleById } from './report-cards';
@@ -342,6 +344,89 @@ describe('calendar', () => {
     const paced = mapUnitsToWeeks([{ id: 'u1', title: 'Atoms' }, { id: 'u2', title: 'Bonds' }], weeks);
     expect(paced[0]?.weekStart).toBe('2026-10-12');
     expect(dripDates('2026-10-12', 2, ['2026-10-12'])).toEqual(['2026-10-13', '2026-10-14']);
+  });
+});
+
+describe('attendance and the reports hub', () => {
+  it('marks a scheduled class from a login and leaves a holiday or a lone login unmarked', () => {
+    const base = {
+      dateKey: '2026-10-02', studentId: 'mina', courseId: 'fractions', holiday: false,
+      loggedIn: false, joinedLive: false, scheduledSession: true, openedLesson: false, submittedWork: false,
+    };
+    expect(automaticMark({ ...base, loggedIn: true })?.status).toBe('present');
+    expect(automaticMark(base)?.status).toBe('absent');
+    expect(automaticMark({ ...base, holiday: true, loggedIn: true })).toBeNull();
+    expect(automaticMark({ ...base, scheduledSession: false, loggedIn: true })).toBeNull();
+    expect(automaticMark({ ...base, loggedIn: true, minutesLate: 11 })?.status).toBe('late');
+  });
+
+  it('lets a teacher mark replace the automatic one', () => {
+    const merged = mergeMarks(
+      [{ dateKey: '2026-10-02', studentId: 'mina', courseId: 'fractions', status: 'present', source: 'automatic' }],
+      [{ dateKey: '2026-10-02', studentId: 'mina', courseId: 'fractions', status: 'late', source: 'manual', note: 'After the starter' }],
+    );
+    expect(merged).toHaveLength(1);
+    expect(merged[0]?.status).toBe('late');
+    expect(merged[0]?.source).toBe('manual');
+  });
+
+  it('matches the seeded report for a student and hides revenue', () => {
+    const hub = seedHub('student');
+    for (const check of seedChecks(hub, '')) {
+      assert.equal(check.actual, check.expected, check.label);
+    }
+    expect(hub.sections.some(section => section.id === 'revenue')).toBe(false);
+    expect(hub.alerts).toHaveLength(3);
+    const quiz = hub.sections.flatMap(section => section.kpis).find(kpi => kpi.metricId === 'quiz_average');
+    expect(quiz?.records.map(row => row.when).join(' ')).toContain('2026-10-08T10:15');
+  });
+
+  it('keeps the same attendance when Bloom is Apply and shows staff revenue', () => {
+    const applied = seedHub('student', { bloom: 'apply' });
+    for (const check of seedChecks(applied, 'apply')) {
+      assert.equal(check.actual, check.expected, check.label);
+    }
+    const teacher = seedHub('teacher');
+    for (const check of seedChecks(teacher, '')) {
+      assert.equal(check.actual, check.expected, check.label);
+    }
+    expect(teacher.sections.find(section => section.id === 'revenue')?.kpis.find(kpi => kpi.metricId === 'revenue')?.value).toBe(158);
+  });
+
+  it('flags a stored attendance total that does not match the raw marks', () => {
+    const sample = seedHub('student');
+    const hub = buildReportHub({
+      role: 'student',
+      scopeLabel: sample.scopeLabel,
+      computedAt: sample.computedAt,
+      filters: sample.filters,
+      holidays: ['2026-10-05'],
+      marks: SEED_MARKS,
+      previousMarks: [],
+      classRates: [],
+      institutionRates: [],
+      quizzes: [],
+      goals: [],
+      studyEvents: [],
+      focusSessions: [],
+      certificates: [],
+      enrolments: [],
+      notes: [],
+      cohortScores: [],
+      hints: 0,
+      questions: 0,
+      aiTurns: 0,
+      sparksEarned: 0,
+      storedAttendance: 50,
+      now: new Date(2026, 9, 15),
+    });
+    expect(hub.reconciliation.raw).toBe(80);
+    expect(hub.reconciliation.stored).toBe(50);
+    expect(hub.reconciliation.match).toBe(false);
+  });
+
+  it('steps a daily schedule forward one day', () => {
+    expect(nextScheduleDate('daily', '2026-10-15')).toBe('2026-10-16');
   });
 });
 

@@ -197,7 +197,7 @@ export async function writeStudentSnapshot(studentId: string, now = new Date()) 
       correct: data.passed === true,
     };
   });
-  const attendance: AttendanceMark[] = attendanceSnap.docs.map(doc => {
+  const flat: AttendanceMark[] = attendanceSnap.docs.map(doc => {
     const data = doc.data();
     return {
       dateKey: (data.dateKey as string) ?? end,
@@ -208,6 +208,27 @@ export async function writeStudentSnapshot(studentId: string, now = new Date()) 
       note: data.note as string | undefined,
     };
   });
+  let sessionMarks: AttendanceMark[] = [];
+  try {
+    const sessions = await db.collection('attendance_records').where('studentIds', 'array-contains', studentId).limit(80).get();
+    sessionMarks = sessions.docs.flatMap(row => {
+      const data = row.data();
+      const dateKey = (data.dateKey as string) || end;
+      const entries = Array.isArray(data.records) ? data.records as { studentId?: string; status?: AttendanceMark['status']; note?: string; source?: AttendanceMark['source'] }[] : [];
+      return entries.filter(entry => entry.studentId === studentId).map(entry => ({
+        dateKey,
+        status: entry.status ?? 'present',
+        studentId,
+        courseId: data.courseId as string | undefined,
+        source: entry.source ?? 'manual',
+        note: entry.note,
+      }));
+    });
+  } catch (error) {
+    console.error('Attendance sessions unavailable', error);
+  }
+  const { mergeMarks } = await import('../insights/attendance');
+  const attendance = mergeMarks(flat.filter(mark => mark.source === 'automatic'), [...flat.filter(mark => mark.source !== 'automatic'), ...sessionMarks]);
   const sparksEarned = goalsSnap.docs.reduce((sum, doc) => sum + (doc.data().sparksAwarded ? Number(doc.data().sparksBonus) || 0 : 0), 0);
   let holidays: string[] = [];
   try {
@@ -282,8 +303,9 @@ export async function runDueSchedules(now = new Date()): Promise<{ sent: number 
       pref: 'reports',
     });
     const { nextScheduleDate } = await import('../insights/reports');
+    const cadence = data.cadence === 'daily' || data.cadence === 'term' || data.cadence === 'weekly' ? data.cadence : 'weekly';
     await doc.ref.update({
-      nextRun: nextScheduleDate((data.cadence as 'weekly' | 'term') || 'weekly', today),
+      nextRun: nextScheduleDate(cadence, today),
       lastRunAt: FieldValue.serverTimestamp(),
     });
     sent += 1;

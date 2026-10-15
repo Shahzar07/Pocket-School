@@ -561,6 +561,75 @@ describe('goals, snapshots, integrity, and published reports', () => {
     await assertFails(getDocs(collection(anon, 'published_reports')));
   });
 
+  it('scopes attendance reads to the class, the student, a linked parent, and the school', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'attendance_records/session1'), {
+        teacherId: 'teacher1', courseId: 'fractions', institutionId: 'school-a', dateKey: '2026-10-09',
+        studentIds: ['student1'], parentIds: ['parent1'],
+        records: [{ studentId: 'student1', status: 'absent' }],
+      });
+      await setDoc(doc(ctx.firestore(), 'attendance_records/other-school'), {
+        teacherId: 'teacher1', courseId: 'fractions', institutionId: 'school-b', dateKey: '2026-10-09',
+        studentIds: ['student2'], parentIds: [],
+        records: [{ studentId: 'student2', status: 'present' }],
+      });
+    });
+    const student = env.authenticatedContext('student1').firestore();
+    const other = env.authenticatedContext('student2').firestore();
+    const teacher = env.authenticatedContext('teacher1').firestore();
+    const strangerTeacher = env.authenticatedContext('teacher2').firestore();
+    const parent = env.authenticatedContext('parent1').firestore();
+    const school = env.authenticatedContext('instadmin1').firestore();
+    await assertSucceeds(getDoc(doc(student, 'attendance_records/session1')));
+    await assertFails(getDoc(doc(other, 'attendance_records/session1')));
+    await assertSucceeds(getDoc(doc(teacher, 'attendance_records/session1')));
+    await assertFails(getDoc(doc(strangerTeacher, 'attendance_records/session1')));
+    await assertSucceeds(getDoc(doc(parent, 'attendance_records/session1')));
+    await assertSucceeds(getDoc(doc(school, 'attendance_records/session1')));
+    await assertFails(getDoc(doc(school, 'attendance_records/other-school')));
+  });
+
+  it('lets a linked parent file an absence note and a teacher accept it', async () => {
+    const parent = env.authenticatedContext('parent1').firestore();
+    await assertSucceeds(setDoc(doc(parent, 'absence_notes/note1'), {
+      studentId: 'student1', parentId: 'parent1', dateKey: '2026-10-09', reason: 'Flu', status: 'submitted',
+    }));
+    await assertFails(setDoc(doc(parent, 'absence_notes/note2'), {
+      studentId: 'student2', parentId: 'parent1', dateKey: '2026-10-09', reason: 'Flu', status: 'submitted',
+    }));
+    const student = env.authenticatedContext('student1').firestore();
+    await assertSucceeds(getDoc(doc(student, 'absence_notes/note1')));
+    const teacher = env.authenticatedContext('teacher1').firestore();
+    await assertSucceeds(updateDoc(doc(teacher, 'absence_notes/note1'), { status: 'accepted' }));
+    await assertFails(updateDoc(doc(teacher, 'absence_notes/note1'), { reason: 'Changed' }));
+  });
+
+  it('lets a linked parent read a grade', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'grades/g1'), { studentId: 'student1', score: 8, maxScore: 10 });
+    });
+    const parent = env.authenticatedContext('parent1').firestore();
+    await assertSucceeds(getDoc(doc(parent, 'grades/g1')));
+    const other = env.authenticatedContext('student2').firestore();
+    await assertFails(getDoc(doc(other, 'grades/g1')));
+  });
+
+  it('records a report export for the actor and an admin only', async () => {
+    const student = env.authenticatedContext('student1').firestore();
+    await assertSucceeds(setDoc(doc(student, 'report_exports/exp1'), {
+      actorId: 'student1', role: 'student', format: 'pdf', metricIds: ['attendance_rate'], scopeId: 'student1', at: '2026-10-15T18:00:00.000Z',
+    }));
+    await assertSucceeds(getDoc(doc(student, 'report_exports/exp1')));
+    await assertFails(updateDoc(doc(student, 'report_exports/exp1'), { format: 'csv' }));
+    const other = env.authenticatedContext('student2').firestore();
+    await assertFails(getDoc(doc(other, 'report_exports/exp1')));
+    await assertFails(setDoc(doc(other, 'report_exports/exp2'), {
+      actorId: 'student1', role: 'student', format: 'csv', metricIds: ['quiz_average'], scopeId: 'student1', at: '2026-10-15T18:00:00.000Z',
+    }));
+    const admin = env.authenticatedContext('admin1').firestore();
+    await assertSucceeds(getDoc(doc(admin, 'report_exports/exp1')));
+  });
+
   it('lets a linked parent acknowledge a report card and blocks a grade change', async () => {
     const parent = env.authenticatedContext('parent1').firestore();
     await assertSucceeds(getDoc(doc(parent, 'report_cards/card1')));

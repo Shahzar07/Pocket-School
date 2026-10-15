@@ -9,6 +9,8 @@ import {
   AttendanceRecord, AttendanceEntry, Course,
 } from '@/lib/db';
 import { Timestamp } from 'firebase/firestore';
+import { flattenSessionRecords, meanRate, summariseAttendance } from '@/lib/insights/attendance';
+import { isoDateKey } from '@/lib/insights/dates';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -237,6 +239,22 @@ export default function TeacherAttendancePage() {
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">History</p>
             <h2 className="font-heading text-3xl text-foreground">Past Records ({records.length})</h2>
+            {(() => {
+              const marks = flattenSessionRecords(records.map(record => ({
+                courseId: record.courseId,
+                dateKey: record.dateKey || (record.date?.toDate ? isoDateKey(record.date.toDate()) : ''),
+                records: record.records,
+              })));
+              const students = [...new Set(marks.map(mark => mark.studentId))];
+              const rates = students.map(id => summariseAttendance(marks.filter(mark => mark.studentId === id)));
+              const classRate = meanRate(rates.map(row => row.rate));
+              const chronic = rates.filter(row => row.chronic).length;
+              return (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Class attendance {classRate ?? '—'}%. {chronic > 0 ? `${chronic} student${chronic === 1 ? '' : 's'} flagged for chronic absence.` : 'No chronic absence flag.'}
+                </p>
+              );
+            })()}
           </div>
           {records.map((r, i) => {
             const date = r.date instanceof Timestamp ? r.date.toDate() : new Date(r.date as any);
