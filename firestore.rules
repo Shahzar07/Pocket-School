@@ -367,6 +367,21 @@ service cloud.firestore {
              .hasOnly(['name', 'displayName', 'bio', 'avatarUrl', 'photoStoragePath', 'updatedAt']);
     }
 
+    function studentGoalUpdate() {
+      return resource.data.studentId == request.auth.uid
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['sparksAwarded', 'cosignedBy', 'cosignedAt', 'excusedBy', 'excuseReason']);
+    }
+    function parentGoalUpdate() {
+      return linkedTo(resource.data.studentId)
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'excuseReason', 'excusedBy', 'notifiedMissed', 'cosignedBy', 'cosignedAt', 'parentNote'])
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status'])
+          || request.resource.data.status == 'excused'
+        );
+    }
+
     // ── Users ─────────────────────────────────────────────────
     match /users/{userId} {
       allow read: if isSignedIn();
@@ -1219,14 +1234,26 @@ service cloud.firestore {
 
     // ── Report Cards ──────────────────────────────────────────
     match /report_cards/{cardId} {
-      allow read: if isSignedIn();
-      allow create, update: if isTeacherOrAdmin();
+      allow read: if isSignedIn() && (
+        isTeacherOrAdmin()
+        || resource.data.studentId == request.auth.uid
+        || resource.data.get('teacherId', '') == request.auth.uid
+        || linkedTo(resource.data.studentId)
+      );
+      allow create: if isTeacherOrAdmin();
+      allow update: if isTeacherOrAdmin()
+        || (linkedTo(resource.data.studentId)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['acknowledgement'])
+            && request.resource.data.acknowledgement.status == 'acknowledged'
+            && request.resource.data.acknowledgement.parentId == request.auth.uid);
       allow delete: if isAdmin();
     }
 
     // ── Integrity Reports ─────────────────────────────────────
     match /integrity_reports/{reportId} {
-      allow read: if isSignedIn();
+      allow read: if isTeacherOrAdmin()
+        || (isSignedIn() && resource.data.studentId == request.auth.uid)
+        || linkedTo(resource.data.studentId);
       allow create, update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
     }
@@ -1258,14 +1285,12 @@ service cloud.firestore {
       allow read: if isSignedIn() && (
         resource.data.studentId == request.auth.uid
         || isTeacherOrAdmin()
-        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.childIds.hasAny([resource.data.studentId])
+        || linkedTo(resource.data.studentId)
       );
-      allow create: if isSignedIn() && incoming().studentId == request.auth.uid;
-      allow update: if isSignedIn() && (
-        resource.data.studentId == request.auth.uid
-        || isTeacherOrAdmin()
-        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.childIds.hasAny([resource.data.studentId])
-      );
+      allow create: if isSignedIn()
+        && incoming().studentId == request.auth.uid
+        && !incoming().keys().hasAny(['sparksAwarded', 'cosignedBy', 'cosignedAt', 'excusedBy', 'excuseReason']);
+      allow update: if isTeacherOrAdmin() || studentGoalUpdate() || parentGoalUpdate();
       allow delete: if isSignedIn() && (
         resource.data.studentId == request.auth.uid || isAdmin()
       );
@@ -1784,6 +1809,118 @@ service cloud.firestore {
     match /resource_purchases/{id} {
       allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
       allow write: if false;
+    }
+
+    match /focus_sessions/{sessionId} {
+      allow read: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid
+        || isAdmin()
+        || linkedTo(resource.data.studentId)
+        || (isTeacherOrAdmin() && resource.data.get('courseId', '') != '' && ownsCourse(resource.data.courseId))
+      );
+      allow create: if isSignedIn() && incoming().studentId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.studentId == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    match /study_events/{eventId} {
+      allow read: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid
+        || isAdmin()
+        || linkedTo(resource.data.studentId)
+        || (isTeacherOrAdmin() && resource.data.get('courseId', '') != '' && ownsCourse(resource.data.courseId))
+      );
+      allow create: if isSignedIn() && incoming().studentId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /mood_checkins/{checkinId} {
+      allow read: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid
+        || isTeacherOrAdmin()
+        || linkedTo(resource.data.studentId)
+      );
+      allow create: if isSignedIn() && incoming().studentId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.studentId == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    match /goal_suggestions/{suggestionId} {
+      allow create: if isSignedIn()
+        && linkedTo(incoming().studentId)
+        && incoming().parentId == request.auth.uid
+        && incoming().status == 'pending';
+      allow read: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid
+        || resource.data.parentId == request.auth.uid
+        || isAdmin()
+      );
+      allow update: if isSignedIn()
+        && resource.data.studentId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.status in ['accepted', 'declined'];
+      allow delete: if isAdmin();
+    }
+
+    match /analytics_snapshots/{snapshotId} {
+      allow read: if isSignedIn() && (
+        resource.data.scopeId == request.auth.uid
+        || isAdmin()
+        || linkedTo(resource.data.get('subjectStudentId', ''))
+        || (isInstitutionAdmin() && resource.data.get('institutionId', '') == myInstitution())
+      );
+      allow write: if false;
+    }
+
+    match /integrity_cases/{caseId} {
+      allow read: if isTeacherOrAdmin()
+        || (isSignedIn() && resource.data.studentId == request.auth.uid)
+        || linkedTo(resource.data.studentId);
+      allow create: if isTeacherOrAdmin() && incoming().automaticPenalty == false;
+      allow update: if isTeacherOrAdmin()
+        || (isSignedIn()
+            && resource.data.studentId == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['appealNote', 'appealAt', 'appealStatus'])
+            && request.resource.data.appealStatus == 'submitted');
+      allow delete: if isAdmin();
+
+      match /audit/{entryId} {
+        allow read: if isTeacherOrAdmin()
+          || linkedTo(get(/databases/$(database)/documents/integrity_cases/$(caseId)).data.studentId)
+          || get(/databases/$(database)/documents/integrity_cases/$(caseId)).data.studentId == request.auth.uid;
+        allow create: if isTeacherOrAdmin() && incoming().actorId == request.auth.uid;
+        allow update, delete: if false;
+      }
+    }
+
+    match /academic_calendars/{calendarId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isTeacherOrAdmin();
+    }
+
+    match /calendar_drafts/{draftId} {
+      allow read, create, update, delete: if isTeacherOrAdmin();
+    }
+
+    match /bloom_tags/{tagId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isTeacherOrAdmin();
+    }
+
+    match /report_schedules/{scheduleId} {
+      allow read: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn()
+        && incoming().ownerId == request.auth.uid
+        && (isTeacherOrAdmin() || role() == 'parent');
+      allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+    }
+
+    // Public lookup by id for the QR. Listing every card is refused.
+    match /published_reports/{token} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if isTeacherOrAdmin();
+      allow delete: if isAdmin();
     }
   }
 }

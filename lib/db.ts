@@ -5,6 +5,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { ACADEMIC_MONTHLY_ALLOWANCE, UNIT_PASS_REWARD } from './sparks';
+import { computeGoalStreak as streakFromGoals } from './insights/goals';
 import type { Role } from './roles';
 import type { OemLicence } from './oem';
 import type { AccessPolicy } from './access-policy';
@@ -3007,6 +3008,34 @@ export interface DailyGoal {
   notifiedMissed?: boolean;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
+  /**
+   * Richer plan. Optional on purpose: the mobile DailyGoal reader ignores
+   * fields it does not know, and the required fields above are unchanged.
+   */
+  targetKind?: 'free_text' | 'unit' | 'lessons';
+  unitId?: string;
+  unitTitle?: string;
+  lessonIds?: string[];
+  freeTextTarget?: string;
+  startDate?: string;
+  endDate?: string;
+  recurrence?: 'none' | 'daily' | 'weekdays' | 'weekly';
+  checklist?: { id: string; label: string; done: boolean }[];
+  reminderMinutes?: number;
+  reflection?: string;
+  sparksBonus?: number;
+  /** Set only by the server when the Sparks bonus is granted. */
+  sparksAwarded?: boolean;
+  progress?: number;
+  source?: 'student' | 'parent' | 'ai';
+  suggestedBy?: string;
+  suggestedByName?: string;
+  cosignedBy?: string;
+  cosignedAt?: string;
+  parentNote?: string;
+  focusMinutes?: number;
+  completedLessonIds?: string[];
+  quizScore?: number;
 }
 
 /** Local YYYY-MM-DD (not UTC) — goals are a "today" concept for the student. */
@@ -3015,11 +3044,11 @@ export function goalDateKey(d: Date = new Date()): string {
 }
 
 export async function createDailyGoal(data: Omit<DailyGoal, 'id' | 'createdAt'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'daily_goals'), {
+  const ref = await addDoc(collection(db, 'daily_goals'), omitUndefined({
     ...data,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-  });
+  }));
   return ref.id;
 }
 
@@ -3060,7 +3089,7 @@ export function subscribeDailyGoals(
 }
 
 export async function updateDailyGoal(id: string, data: Partial<DailyGoal> & Record<string, unknown>) {
-  await updateDoc(doc(db, 'daily_goals', id), { ...data, updatedAt: serverTimestamp() });
+  await updateDoc(doc(db, 'daily_goals', id), omitUndefined({ ...data, updatedAt: serverTimestamp() }) as Record<string, unknown>);
 }
 
 export async function deleteDailyGoal(id: string) {
@@ -3098,28 +3127,12 @@ export async function excuseDailyGoal(id: string, reason: string, parentName: st
 
 /** Consecutive days where every goal set that day was completed or excused. */
 export function computeGoalStreak(goals: DailyGoal[]): number {
-  const byDay = new Map<string, DailyGoal[]>();
-  goals.forEach(g => {
-    if (!byDay.has(g.dateKey)) byDay.set(g.dateKey, []);
-    byDay.get(g.dateKey)!.push(g);
-  });
-  let streak = 0;
-  const cursor = new Date();
-  // Today only counts if already fully done; otherwise start counting from yesterday.
-  for (let i = 0; i < 400; i++) {
-    const key = goalDateKey(cursor);
-    const day = byDay.get(key);
-    const complete = !!day?.length && day.every(g => g.status === 'completed' || g.status === 'excused');
-    if (complete) streak++;
-    else if (i > 0 || day?.length) break;
-    cursor.setDate(cursor.getDate() - 1);
-  }
-  return streak;
+  return streakFromGoals(goals);
 }
 
 /** All of a parent's children's goals for a date — powers the parent feed. */
 export async function getChildrenDailyGoals(
-  parentId: string, dateKey: string
+  parentId: string, dateKey?: string
 ): Promise<{ childId: string; childName: string; goals: DailyGoal[] }[]> {
   const children = await getChildrenProfiles(parentId);
   return Promise.all(children.map(async c => ({
@@ -3172,6 +3185,9 @@ export interface AttendanceEntry {
   studentId: string;
   studentName: string;
   status: 'present' | 'absent' | 'late' | 'excused';
+  /** Why the student was absent or excused. Holidays are not stored as absences. */
+  note?: string;
+  source?: 'automatic' | 'manual';
 }
 
 export interface AttendanceRecord {

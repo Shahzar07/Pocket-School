@@ -1,5 +1,5 @@
 /**
- * Kill switches for the community, tutor, exam, store, and snap surfaces.
+ * Kill switches for community, tutor, exam, store, snap, and learning surfaces.
  *
  * Stored at platform_settings/feature_flags. A missing document or a missing
  * key uses the default below, so a review build shows the flows and an admin
@@ -14,6 +14,13 @@ export const FEATURE_FLAGS = [
   'creatorStore',
   'snapAndSolve',
   'lessonQa',
+  'studentGoals',
+  'insights',
+  'behaviour',
+  'reportsHub',
+  'reportCards',
+  'integrityCases',
+  'academicCalendar',
 ] as const;
 
 export type FeatureFlag = (typeof FEATURE_FLAGS)[number];
@@ -26,6 +33,13 @@ export const FEATURE_FLAG_LABELS: Record<FeatureFlag, string> = {
   creatorStore: 'Creator store',
   snapAndSolve: 'Snap and solve',
   lessonQa: 'Lesson Q&A',
+  studentGoals: 'Student goals',
+  insights: 'Insights',
+  behaviour: 'Behaviour',
+  reportsHub: 'Reports hub',
+  reportCards: 'Report cards',
+  integrityCases: 'Integrity cases',
+  academicCalendar: 'Academic calendar',
 };
 
 export const DEFAULT_FLAGS: Record<FeatureFlag, boolean> = {
@@ -36,6 +50,13 @@ export const DEFAULT_FLAGS: Record<FeatureFlag, boolean> = {
   creatorStore: true,
   snapAndSolve: true,
   lessonQa: true,
+  studentGoals: true,
+  insights: true,
+  behaviour: true,
+  reportsHub: true,
+  reportCards: true,
+  integrityCases: true,
+  academicCalendar: true,
 };
 
 export function resolveFlags(raw: unknown): Record<FeatureFlag, boolean> {

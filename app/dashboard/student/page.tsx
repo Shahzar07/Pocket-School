@@ -141,25 +141,36 @@ export default function StudentDashboard() {
           : "Here's where your learning stands today."}${hasAccountRole(profile, 'teacher') || hasAccountRole(profile, 'parent')
           ? ' Your courses, progress, certificates, and Sparks stay here. Classes you teach and children you monitor stay in the other views.'
           : ''}`}
-        actions={resumeCourse ? (
-          <Button
-            onClick={() => router.push(
-              resumeCourse.enrollment.lastLessonId
-                ? `/dashboard/student/courses/${resumeCourse.course.id}/lessons/${resumeCourse.enrollment.lastLessonId}`
-                : `/dashboard/student/courses/${resumeCourse.course.id}`,
+        actions={(
+          <div className="flex flex-wrap gap-2">
+            {resumeCourse ? (
+              <Button
+                onClick={() => router.push(
+                  resumeCourse.enrollment.lastLessonId
+                    ? `/dashboard/student/courses/${resumeCourse.course.id}/lessons/${resumeCourse.enrollment.lastLessonId}`
+                    : `/dashboard/student/courses/${resumeCourse.course.id}`,
+                )}
+                className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" /> Resume learning
+              </Button>
+            ) : canBecomeInstructor(profile) ? (
+              <Button onClick={() => router.push('/dashboard/student/become-instructor')} className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2" data-become-instructor>
+                Become an instructor
+              </Button>
+            ) : (
+              <Button onClick={() => router.push('/courses')} className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2">
+                Browse courses <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
             )}
-            className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2"
-          >
-            <Play className="w-3.5 h-3.5 fill-current" /> Resume learning
-          </Button>
-        ) : canBecomeInstructor(profile) ? (
-          <Button onClick={() => router.push('/dashboard/student/become-instructor')} className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2" data-become-instructor>
-            Become an instructor
-          </Button>
-        ) : (
-          <Button onClick={() => router.push('/courses')} className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2">
-            Browse courses <ArrowRight className="w-3.5 h-3.5" />
-          </Button>
+            <Button
+              variant="outline"
+              onClick={() => router.push('/dashboard/student/goals?add=1')}
+              className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2"
+            >
+              <Target className="w-3.5 h-3.5" /> Add goal
+            </Button>
+          </div>
         )}
       />
 

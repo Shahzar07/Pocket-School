@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Plus, ChevronLeft, ChevronRight, X, Calendar, Trash2, Loader2 } from 'lucide-react';
+import { CalendarTools } from '@/components/calendar/calendar-tools';
+import type { CalendarItem } from '@/lib/insights/calendar';
 import { Timestamp } from 'firebase/firestore';
 import { AllocationPicker } from '@/components/allocation-picker';
 import { describeTargets, recordVisible } from '@/lib/allocation-targets';
@@ -154,6 +156,24 @@ export default function CalendarPage() {
           </Button>
         )}
       </motion.header>
+
+      {canCreate && user && (
+        <CalendarTools onPublish={async (items: CalendarItem[]) => {
+          for (const item of items) {
+            await createCalendarEvent({
+              title: item.title,
+              ...(item.description ? { description: item.description } : {}),
+              startDate: Timestamp.fromDate(new Date(`${item.date}T00:00:00Z`)),
+              ...(item.endDate ? { endDate: Timestamp.fromDate(new Date(`${item.endDate}T00:00:00Z`)) } : {}),
+              type: item.type,
+              createdBy: user.uid,
+              audience: 'all',
+            });
+          }
+          toast.success('Calendar dates published.');
+          await load();
+        }} />
+      )}
 
       {/* Create form */}
       {showCreate && canCreate && (

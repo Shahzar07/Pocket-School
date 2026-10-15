@@ -28,6 +28,15 @@ export const LESSON_COMPLETE_REWARD = 10;
 export const UNIT_PASS_REWARD = 50;
 
 /**
+ * Server-granted bonus when a goal is completed on time. The browser cannot
+ * write sparksBalance; `/api/insights/award-goal` uses this number.
+ */
+export const GOAL_ON_TIME_BONUS = 15;
+
+/** Extra Sparks when that on-time goal also keeps a streak of three days or more. */
+export const GOAL_STREAK_BONUS = 5;
+
+/**
  * @deprecated Use monthlySparksForProfile(). Kept so older imports compile.
  * The number is the IGCSE & A-Level plan (tier 2) from lib/entitlements.ts — the
  * single source of truth — not a separate 400-Spark figure.
@@ -92,6 +101,7 @@ export const SPARKS_EXPLAINER = {
     `You receive ⚡${SIGNUP_GRANT} when you finish signing up.`,
     `You earn ⚡${LESSON_COMPLETE_REWARD} each time you finish a lesson.`,
     `You earn ⚡${UNIT_PASS_REWARD} when you pass a module quiz.`,
+    `You earn ⚡${GOAL_ON_TIME_BONUS} for finishing a goal on time, and ⚡${GOAL_STREAK_BONUS} more when that keeps a streak of three days.`,
     'Your plan adds a monthly allowance. The pricing page and your balance use the same numbers.',
   ],
   spend: 'Before anything is spent, you see the cost and your balance, and you confirm.',
