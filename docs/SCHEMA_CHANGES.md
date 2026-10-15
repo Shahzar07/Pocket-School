@@ -355,7 +355,6 @@ Book Studio writes the shared `media_assets` documents from `components/media` w
 
 A reading notice uses the shared push body: `recipientUid`, `category` (`goals` for a reading goal), `title`, `body`, optional `link`. `POST /api/push` verifies the signed-in caller and sends through `deviceTokens` (Expo and Web Push). Clients cannot read those documents. A missing sender configuration returns an error with `{ sent: 0, pruned: [] }`.
 
-
 ## Community, tutors, exams, and the creator store
 
 The section below is the contract from `cursor/community-tutor-exam-de9a`. `users.ageTier` and `users.dateOfBirth` are in `privilegedUserFields()`, so clients cannot write them. Direct messages in `messages` are adult-only. `deviceTokens` on this tip stay unreadable by clients; delivery uses the Admin SDK. The user document itself is still readable by any signed-in person so class dashboards can load a name. Age walls are enforced on `community_profiles`, `spaces`, `posts`, and `messages`.
@@ -575,3 +574,49 @@ Always written, including blocked attempts. Blocked when the caller is in an ass
 | GET/POST | `/api/lessons/qa` | lessonQa |
 | GET | `/api/moderation/queue` | community |
 | POST | `/api/moderation/resolve` | community |
+
+## Scope B additions
+
+These fields and collections sit on top of the contract above. Mobile DailyGoal documents stay in `daily_goals`. New fields are optional. An older app ignores fields it does not know. Push for these events uses the shared sender and the categories `goals`, `flags`, `attendance`, and `digests`.
+
+## `daily_goals`
+
+Required fields stay: `studentId`, `dateKey` (local `YYYY-MM-DD`), `title`, `category` (`study|revision|practice|reading|other`), `estimateMinutes`, `deadline` (`HH:mm`), `status` (`not_started|in_progress|completed|overdue|excused`).
+
+Optional additions:
+
+| Field | Meaning |
+| --- | --- |
+| `targetKind` | `free_text`, `unit`, or `lessons` |
+| `unitId`, `unitTitle`, `lessonIds`, `freeTextTarget` | What the goal covers |
+| `startDate`, `endDate`, `recurrence` | Planner window. Recurrence is `none`, `daily`, `weekdays`, or `weekly` |
+| `checklist` | `{ id, label, done }[]` |
+| `reminderMinutes`, `reflection`, `progress`, `focusMinutes` | Reminder, reflection, 0–100 progress, logged focus |
+| `source` | `student`, `parent`, or `ai` |
+| `suggestedBy`, `suggestedByName`, `parentNote` | Parent suggestion |
+| `cosignedBy`, `cosignedAt` | Parent co-sign. Students cannot write these |
+| `sparksBonus`, `sparksAwarded` | Server-only award. Students cannot write `sparksAwarded` |
+| `completedLessonIds`, `quizScore` | Auto progress inputs |
+| `courseId`, `courseLabel` | Already optional on the mobile shape |
+
+Parents may set `status` only to `excused`, plus `excuseReason`, `excusedBy`, `notifiedMissed`, co-sign fields, and `parentNote`.
+
+## New collections
+
+| Collection | Who writes | Notes |
+| --- | --- | --- |
+| `focus_sessions` | The student | Planned and actual minutes for a goal |
+| `study_events` | The student, create only | Minutes, weekday, hour, source |
+| `mood_checkins/{studentId_dateKey}` | The student | Mood 1–5 |
+| `goal_suggestions` | A linked parent creates `pending`. The student sets `accepted` or `declined` | |
+| `analytics_snapshots` | Admin SDK only | Client read is scoped. Document id `student_{id}` includes `subjectStudentId` |
+| `integrity_cases` | A teacher, with `automaticPenalty == false` | Students may add only `appealNote`, `appealAt`, `appealStatus: submitted`. `audit` is append-only |
+| `academic_calendars`, `calendar_drafts` | Teachers | Drafts are reviewed before they become `calendar_events` |
+| `bloom_tags` | Teachers | Bloom level on a prompt or lesson |
+| `report_schedules` | Teacher or parent owner | |
+| `published_reports/{token}` | Teacher | Public `get` for the QR. `list` is denied. Comments stay off this document |
+| `report_cards` | Teacher creates. A linked parent may set `acknowledgement` to `acknowledged` | |
+
+`attendance` records may include `note` and `source` (`automatic` or `manual`). Holidays are excluded from the attendance rate.
+
+Sparks amounts for goals live only in `lib/sparks.ts` (`GOAL_ON_TIME_BONUS`, `GOAL_STREAK_BONUS`). The ledger type is `earn`.

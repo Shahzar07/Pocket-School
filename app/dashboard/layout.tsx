@@ -7,7 +7,7 @@ import { auth } from '@/lib/firebase';
 import { useEffect, useState } from 'react';
 import {
   Loader2, Menu, Home, BookOpen, Clock, Activity, MessageSquare,
-  ClipboardList, Presentation, Shield, BarChart, Settings, FileText, KeyRound, ChevronsUpDown,
+  ClipboardList, Presentation, Shield, BarChart, Settings, FileText, KeyRound, ChevronsUpDown, Target,
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
@@ -70,6 +70,10 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/student/attendance', icon: ClipboardCheck, labelKey: 'nav.attendance' },
       { href: '/dashboard/student/certificates', icon: Award, labelKey: 'nav.certificates' },
       { href: '/dashboard/student/tasks', icon: ListTodo, labelKey: 'nav.dailyGoals' },
+      { href: '/dashboard/student/goals', icon: Target, labelKey: 'nav.goals' },
+      { href: '/dashboard/student/analytics', icon: Activity, labelKey: 'nav.insights' },
+      { href: '/dashboard/student/integrity', icon: Shield, labelKey: 'nav.integrity' },
+      { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
     ]},
     { sectionKey: 'nav.section.finance', items: [
       { href: '/dashboard/student/billing', icon: CreditCard, labelKey: 'nav.billing' },
@@ -102,15 +106,19 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
       { href: '/dashboard/teacher/analytics', icon: Activity, labelKey: 'nav.analytics' },
+      { href: '/dashboard/teacher/insights', icon: BarChart, labelKey: 'nav.insights' },
     ]},
     { sectionKey: 'nav.section.academics', items: [
       { href: '/dashboard/teacher/gradebook', icon: ClipboardList, labelKey: 'nav.gradebook' },
       { href: '/dashboard/teacher/assignments', icon: FileText, labelKey: 'nav.assignments' },
       { href: '/dashboard/teacher/exams', icon: PenSquare, labelKey: 'nav.examBuilder' },
       { href: '/dashboard/teacher/report-cards', icon: FileBarChart, labelKey: 'nav.reportCards' },
+      { href: '/dashboard/teacher/report-studio', icon: FileText, labelKey: 'nav.reportStudio' },
       { href: '/dashboard/teacher/attendance', icon: ClipboardCheck, labelKey: 'nav.attendance' },
       { href: '/dashboard/teacher/live', icon: Video, labelKey: 'nav.liveClasses' },
       { href: '/dashboard/teacher/integrity', icon: AlertTriangle, labelKey: 'nav.integrity' },
+      { href: '/dashboard/teacher/integrity/cases', icon: Shield, labelKey: 'nav.integrityCases' },
+      { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
       { href: '/dashboard/teacher/behaviour', icon: Star, labelKey: 'nav.behaviour' },
     ]},
     // Billing and Helpdesk are institution-admin responsibilities, not teachers'.
@@ -139,6 +147,10 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/parent/communications', icon: Mail, labelKey: 'nav.mailbox' },
       { href: '/dashboard/parent/duedates', icon: Clock, labelKey: 'nav.dueDates' },
+      { href: '/dashboard/parent/goals', icon: Target, labelKey: 'nav.goals' },
+      { href: '/dashboard/parent/analytics', icon: Activity, labelKey: 'nav.insights' },
+      { href: '/dashboard/parent/reports', icon: FileBarChart, labelKey: 'nav.reportCards' },
+      { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
     ]},
     { sectionLabel: 'Family', items: [
       { href: '/dashboard/channels', icon: MessagesSquare, labelKey: 'nav.messages', label: 'Channels', flag: 'messagingHub' },
@@ -168,6 +180,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
       { href: '/dashboard/admin/settings', icon: Settings, labelKey: 'nav.systemSettings' },
       { href: '/dashboard/admin/verifications', icon: ShieldCheck, labelKey: 'nav.verifications' },
+      { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
       { href: '/dashboard/admin/moderation', icon: Shield, labelKey: 'nav.dashboard', label: 'Moderation', flag: 'community' },
       { href: '/dashboard/community', icon: Compass, labelKey: 'nav.dashboard', label: 'Community', flag: 'community' },
       { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.dashboard', label: 'Tutors', flag: 'tutorMarketplace' },
@@ -191,6 +204,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
+      { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },

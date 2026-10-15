@@ -222,6 +222,35 @@ async function addSparks(uid: string, amount: number, type: string, note: string
   return balance;
 }
 
+/** Goal bonus and the goal flag move together, so a double tap cannot pay twice. */
+export async function grantGoalSparks(uid: string, goalId: string, amount: number, note: string) {
+  if (!Number.isFinite(amount) || amount <= 0) return { granted: false as const, balance: 0, amount: 0 };
+  const userRef = db().doc(`users/${uid}`);
+  const goalRef = db().doc(`daily_goals/${goalId}`);
+  return db().runTransaction(async (tx) => {
+    const [userSnap, goalSnap] = await Promise.all([tx.get(userRef), tx.get(goalRef)]);
+    if (!userSnap.exists) throw new ActionError('USER_NOT_FOUND');
+    if (!goalSnap.exists || goalSnap.data()?.studentId !== uid) throw new ActionError('FORBIDDEN', 'That goal belongs to someone else.');
+    const balanceNow = (userSnap.data()?.sparksBalance as number) ?? 0;
+    if (goalSnap.data()?.sparksAwarded === true) return { granted: false as const, balance: balanceNow, amount: 0 };
+    if (goalSnap.data()?.status !== 'completed') {
+      throw new ActionError('NOT_COMPLETE', 'Finish the goal before the Sparks bonus.');
+    }
+    const balanceAfter = balanceNow + amount;
+    tx.update(userRef, { sparksBalance: balanceAfter, updatedAt: FieldValue.serverTimestamp() });
+    tx.set(userRef.collection('spark_transactions').doc(), {
+      amount,
+      type: 'earn',
+      balanceAfter,
+      note,
+      goalId,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    tx.update(goalRef, { sparksAwarded: true, sparksBonus: amount });
+    return { granted: true as const, balance: balanceAfter, amount };
+  });
+}
+
 export async function grantWelcome(uid: string) {
   const userRef = db().doc(`users/${uid}`);
   const snap = await userRef.get();

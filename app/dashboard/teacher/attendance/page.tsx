@@ -55,6 +55,7 @@ export default function TeacherAttendancePage() {
   const [selectedLesson, setSelectedLesson] = useState('');
   const [students, setStudents] = useState<{ studentId: string; name: string }[]>([]);
   const [statuses, setStatuses] = useState<Record<string, AttStatus>>({});
+  const [notes, setNotes] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -105,6 +106,8 @@ export default function TeacherAttendancePage() {
         studentId: s.studentId,
         studentName: s.name,
         status: statuses[s.studentId] ?? 'present',
+        note: notes[s.studentId]?.trim() || undefined,
+        source: 'manual',
       }));
       await createAttendanceRecord({
         courseId: selectedCourse,
@@ -147,7 +150,7 @@ export default function TeacherAttendancePage() {
         <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight">
           Track <span className="gradient-text italic">Attendance</span>
         </h1>
-        <p className="text-muted-foreground mt-1">Mark attendance for each lesson session.</p>
+        <p className="text-muted-foreground mt-1">Mark attendance for each lesson. Add a note for an absence. Dates marked as holidays on the calendar are left out of the attendance rate.</p>
       </motion.div>
 
       {/* Mark Attendance */}
@@ -187,7 +190,7 @@ export default function TeacherAttendancePage() {
               <>
                 {students.map((s, i) => (
                   <motion.div key={s.studentId} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
-                    className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4 card-glow"
+                    className="bg-card border border-border rounded-2xl p-4 flex flex-wrap items-center gap-4 card-glow"
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
@@ -206,6 +209,14 @@ export default function TeacherAttendancePage() {
                         </button>
                       ))}
                     </div>
+                    {(statuses[s.studentId] === 'absent' || statuses[s.studentId] === 'excused') && (
+                      <input
+                        value={notes[s.studentId] ?? ''}
+                        onChange={e => setNotes(prev => ({ ...prev, [s.studentId]: e.target.value }))}
+                        placeholder="Absence note"
+                        className="mt-2 w-full rounded-xl border border-border bg-background px-3 h-9 text-sm"
+                      />
+                    )}
                   </motion.div>
                 ))}
                 <Button onClick={handleSave} disabled={saving}
