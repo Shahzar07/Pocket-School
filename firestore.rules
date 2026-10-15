@@ -55,7 +55,8 @@ service cloud.firestore {
       // during onboarding, and that link is guarded by parent_verifications
       // rather than by this rule.
       return ['role', 'accessTier', 'subscriptionTier', 'permissions',
-              'institutionId', 'adminSparksGrantedAt', 'accountStatus'];
+              'institutionId', 'adminSparksGrantedAt', 'accountStatus',
+              'cohortIds'];
     }
 
     // ── Users ─────────────────────────────────────────────────
@@ -97,6 +98,243 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // ── Product access policy ────────────────────────────────
+    // A policy is active when include is a non-empty list. Courses without
+    // one keep the audience rules above. Country and region stay writable by
+    // the user, so a region gate can be self-reported. Seat and analytics
+    // counters move by a fixed step; a client can still repeat that step.
+    function policyOn(data) {
+      return data.keys().hasAny(['accessPolicy'])
+        && data.accessPolicy is map
+        && data.accessPolicy.keys().hasAny(['include'])
+        && data.accessPolicy.include is list
+        && data.accessPolicy.include.size() > 0;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasItems(data, key) {
+      return data.accessPolicy.keys().hasAny([key])
+        && data.accessPolicy[key] is list
+        && data.accessPolicy[key].size() > 0;
+    }
+
+    function targetingEmpty(data) {
+      return !hasItems(data, 'programmeIds')
+        && !hasItems(data, 'yearGroups')
+        && !hasItems(data, 'levels')
+        && !hasItems(data, 'countries')
+        && !hasItems(data, 'regions')
+        && !hasItems(data, 'languages');
+    }
+
+    function targeted(data) {
+      return (!hasItems(data, 'programmeIds') || data.accessPolicy.programmeIds.hasAny([userDoc().get('programmeId', '')]))
+        && (!hasItems(data, 'yearGroups') || data.accessPolicy.yearGroups.hasAny([userDoc().get('yearGroup', '')]))
+        && (!hasItems(data, 'levels') || data.accessPolicy.levels.hasAny([userDoc().get('level', '')]))
+        && (!hasItems(data, 'countries') || data.accessPolicy.countries.hasAny([userDoc().get('country', '').upper()]))
+        && (!hasItems(data, 'regions') || data.accessPolicy.regions.hasAny([userDoc().get('region', '')]))
+        && (!hasItems(data, 'languages') || data.accessPolicy.languages.hasAny([userDoc().get('language', 'en')]));
+    }
+
+    function uidGrant(courseId) {
+      return exists(/databases/$(database)/documents/courses/$(courseId)/grants/$(request.auth.uid))
+        && get(/databases/$(database)/documents/courses/$(courseId)/grants/$(request.auth.uid)).data.get('active', true) != false;
+    }
+
+    function emailGrant(courseId) {
+      return request.auth.token.email is string
+        && exists(/databases/$(database)/documents/courses/$(courseId)/grants/$(request.auth.token.email.lower()))
+        && get(/databases/$(database)/documents/courses/$(courseId)/grants/$(request.auth.token.email.lower())).data.get('active', true) != false;
+    }
+
+    function grantActive(courseId) {
+      return isSignedIn() && (uidGrant(courseId) || emailGrant(courseId));
+    }
+
+    function institutionIncluded(data) {
+      return myInstitution() != null
+        && !data.accessPolicy.get('excludeInstitutionIds', []).hasAny([myInstitution()])
+        && (data.accessPolicy.get('institutionMode', 'specific') == 'all'
+            || data.accessPolicy.get('institutionIds', []).hasAny([myInstitution()])
+            || data.get('allocatedInstitutionIds', []).hasAny([myInstitution()]));
+    }
+
+    function includeHit(data, courseId) {
+      return data.accessPolicy.include.hasAny(['marketplace'])
+        || (isSignedIn() && (
+          data.accessPolicy.include.hasAny(['all'])
+          || (role() == 'student' && data.accessPolicy.include.hasAny(['students']))
+          || (role() == 'teacher' && data.accessPolicy.include.hasAny(['teachers']))
+          || (role() == 'parent' && data.accessPolicy.include.hasAny(['parents']))
+          || (data.accessPolicy.include.hasAny(['institutions']) && institutionIncluded(data))
+          || (data.accessPolicy.include.hasAny(['users']) && data.accessPolicy.get('userIds', []).hasAny([request.auth.uid]))
+          || (data.accessPolicy.include.hasAny(['cohorts']) && userDoc().get('cohortIds', []).hasAny(data.accessPolicy.get('cohortIds', [])))
+          || grantActive(courseId)
+        ));
+    }
+
+    function excludeHit(data) {
+      return (!isSignedIn() && data.accessPolicy.get('exclude', []).hasAny(['marketplace']))
+        || (isSignedIn() && (
+          data.accessPolicy.get('exclude', []).hasAny(['all'])
+          || data.accessPolicy.get('excludeUserIds', []).hasAny([request.auth.uid])
+          || (myInstitution() != null && data.accessPolicy.get('excludeInstitutionIds', []).hasAny([myInstitution()]))
+          || userDoc().get('cohortIds', []).hasAny(data.accessPolicy.get('excludeCohortIds', []))
+          || (role() == 'student' && data.accessPolicy.get('exclude', []).hasAny(['students']))
+          || (role() == 'teacher' && data.accessPolicy.get('exclude', []).hasAny(['teachers']))
+          || (role() == 'parent' && data.accessPolicy.get('exclude', []).hasAny(['parents']))
+          || (data.accessPolicy.get('exclude', []).hasAny(['institutions']) && myInstitution() != null
+              && (data.accessPolicy.get('institutionMode', 'specific') == 'all'
+                  || data.accessPolicy.get('institutionIds', []).hasAny([myInstitution()])))
+        ));
+    }
+
+    function enrolledHere(courseId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/courses/$(courseId)/enrollments/$(request.auth.uid));
+    }
+
+    function enrollmentStart(courseId) {
+      let enrolledAt = get(/databases/$(database)/documents/courses/$(courseId)/enrollments/$(request.auth.uid)).data.enrolledAt;
+      return timestamp.date(enrolledAt.year(), enrolledAt.month(), enrolledAt.day());
+    }
+
+    function isoReady(value) {
+      return value is string && value.size() >= 10;
+    }
+
+    function released(data) {
+      return !data.accessPolicy.keys().hasAny(['releaseOn'])
+        || !isoReady(data.accessPolicy.releaseOn)
+        || request.time >= timestamp.date(
+             int(data.accessPolicy.releaseOn[0:4]),
+             int(data.accessPolicy.releaseOn[5:7]),
+             int(data.accessPolicy.releaseOn[8:10]));
+    }
+
+    function beforeExpiry(data) {
+      return !data.accessPolicy.keys().hasAny(['expiresOn'])
+        || !isoReady(data.accessPolicy.expiresOn)
+        || request.time < timestamp.date(
+             int(data.accessPolicy.expiresOn[0:4]),
+             int(data.accessPolicy.expiresOn[5:7]),
+             int(data.accessPolicy.expiresOn[8:10])) + duration.value(1, 'd');
+    }
+
+    function withinAccessDays(data, courseId) {
+      return !data.accessPolicy.keys().hasAny(['accessDays'])
+        || !(data.accessPolicy.accessDays is int)
+        || data.accessPolicy.accessDays <= 0
+        || !enrolledHere(courseId)
+        || request.time < enrollmentStart(courseId) + duration.value(data.accessPolicy.accessDays + 1, 'd');
+    }
+
+    function trialOpen(data, courseId) {
+      return !data.accessPolicy.keys().hasAny(['trialDays'])
+        || !(data.accessPolicy.trialDays is int)
+        || data.accessPolicy.trialDays <= 0
+        || !enrolledHere(courseId)
+        || get(/databases/$(database)/documents/courses/$(courseId)/enrollments/$(request.auth.uid)).data.get('trial', false) != true
+        || request.time < enrollmentStart(courseId) + duration.value(data.accessPolicy.trialDays + 1, 'd');
+    }
+
+    function nonNegative(n) {
+      return n > 0 ? n : 0;
+    }
+
+    function dripSteps(data, courseId, moduleId) {
+      return data.accessPolicy.dripMode == 'unit'
+        ? nonNegative(get(/databases/$(database)/documents/courses/$(courseId)/modules/$(moduleId)).data.get('order', 1) - 1)
+        : nonNegative(resource.data.get('order', 1) - 1);
+    }
+
+    function dripOpen(data, courseId, moduleId) {
+      return !data.accessPolicy.keys().hasAny(['dripMode'])
+        || data.accessPolicy.dripMode == 'none'
+        || !(data.accessPolicy.get('dripEveryDays', 0) is int)
+        || data.accessPolicy.dripEveryDays <= 0
+        || !enrolledHere(courseId)
+        || request.time >= enrollmentStart(courseId) + duration.value(dripSteps(data, courseId, moduleId) * data.accessPolicy.dripEveryDays, 'd');
+    }
+
+    function scheduleOpen(data, courseId, moduleId) {
+      return released(data) && beforeExpiry(data) && withinAccessDays(data, courseId) && trialOpen(data, courseId) && dripOpen(data, courseId, moduleId);
+    }
+
+    function seatsOpen(courseId) {
+      let data = get(/databases/$(database)/documents/courses/$(courseId)).data;
+      return !policyOn(data)
+        || !data.accessPolicy.keys().hasAny(['seatLimit'])
+        || !(data.accessPolicy.seatLimit is int)
+        || data.accessPolicy.seatLimit <= 0
+        || data.accessPolicy.get('seatsUsed', 0) < data.accessPolicy.seatLimit;
+    }
+
+    function seatsUnchanged() {
+      return isAdmin()
+        || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['accessPolicy'])
+        || !resource.data.keys().hasAny(['accessPolicy'])
+        || !(resource.data.accessPolicy is map)
+        || !resource.data.accessPolicy.keys().hasAny(['seatsUsed'])
+        || (request.resource.data.keys().hasAny(['accessPolicy'])
+            && request.resource.data.accessPolicy is map
+            && request.resource.data.accessPolicy.keys().hasAny(['seatsUsed'])
+            && request.resource.data.accessPolicy.seatsUsed == resource.data.accessPolicy.seatsUsed);
+    }
+
+    function seatIncrement(courseId) {
+      return isSignedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['accessPolicy'])
+        && resource.data.keys().hasAny(['accessPolicy'])
+        && resource.data.accessPolicy is map
+        && request.resource.data.accessPolicy is map
+        && request.resource.data.accessPolicy.diff(resource.data.accessPolicy).affectedKeys().hasOnly(['seatsUsed'])
+        && request.resource.data.accessPolicy.seatsUsed == resource.data.accessPolicy.get('seatsUsed', 0) + 1
+        && (isTeacherOrAdmin()
+            || (!exists(/databases/$(database)/documents/courses/$(courseId)/enrollments/$(request.auth.uid))
+                && existsAfter(/databases/$(database)/documents/courses/$(courseId)/enrollments/$(request.auth.uid))));
+    }
+
+    function plusOne(field) {
+      return isSignedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([field])
+        && request.resource.data[field] is number
+        && request.resource.data[field] == resource.data.get(field, 0) + 1;
+    }
+
+    function revenueIncrement(courseId) {
+      return isSignedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['revenueTotal'])
+        && request.resource.data.revenueTotal is number
+        && !exists(/databases/$(database)/documents/courses/$(courseId)/purchases/$(request.auth.uid))
+        && existsAfter(/databases/$(database)/documents/courses/$(courseId)/purchases/$(request.auth.uid))
+        && getAfter(/databases/$(database)/documents/courses/$(courseId)/purchases/$(request.auth.uid)).data.userId == request.auth.uid
+        && getAfter(/databases/$(database)/documents/courses/$(courseId)/purchases/$(request.auth.uid)).data.amount is number
+        && getAfter(/databases/$(database)/documents/courses/$(courseId)/purchases/$(request.auth.uid)).data.amount > 0
+        && request.resource.data.revenueTotal == resource.data.get('revenueTotal', 0) + getAfter(/databases/$(database)/documents/courses/$(courseId)/purchases/$(request.auth.uid)).data.amount;
+    }
+
+    function couponGrantCreate(courseId) {
+      return isSignedIn()
+        && incoming().kind == 'coupon'
+        && incoming().active == true
+        && incoming().userId == request.auth.uid
+        && incoming().courseId == courseId
+        && incoming().code is string
+        && exists(/databases/$(database)/documents/coupon_codes/$(incoming().code))
+        && get(/databases/$(database)/documents/coupon_codes/$(incoming().code)).data.active == true
+        && get(/databases/$(database)/documents/coupon_codes/$(incoming().code)).data.discountPct >= 100
+        && get(/databases/$(database)/documents/coupon_codes/$(incoming().code)).data.courseId == courseId
+        && get(/databases/$(database)/documents/coupon_codes/$(incoming().code)).data.expiresAt == incoming().expiresOn
+        && request.time < timestamp.date(
+             int(incoming().expiresOn[0:4]),
+             int(incoming().expiresOn[5:7]),
+             int(incoming().expiresOn[8:10])) + duration.value(1, 'd');
+    }
+
     // ── Courses ───────────────────────────────────────────────
     match /courses/{courseId} {
       // Published marketplace courses are browsable without an account —
@@ -105,33 +343,75 @@ service cloud.firestore {
       // Courses without the field keep the older signed-in read.
       allow read: if isAdmin()
         || (isSignedIn() && resource.data.ownerId == request.auth.uid)
-        || (isSignedIn() && exists(/databases/$(database)/documents/courses/$(courseId)/enrollments/$(request.auth.uid)))
-        || (!audienceGated(resource.data) && (
+        || (enrolledHere(courseId) && (!policyOn(resource.data) || !excludeHit(resource.data)))
+        || (!policyOn(resource.data) && !audienceGated(resource.data) && (
              isSignedIn()
              || (resource.data.status == 'published' && resource.data.isPublic == true)
            ))
-        || (audienceGated(resource.data)
+        || (!policyOn(resource.data) && audienceGated(resource.data)
             && resource.data.status == 'published'
             && (
               resource.data.audiences.hasAny(['marketplace'])
               || (isSignedIn() && audienceHit(resource.data))
+            ))
+        || (policyOn(resource.data)
+            && resource.data.status == 'published'
+            && !excludeHit(resource.data)
+            && includeHit(resource.data, courseId)
+            && (
+              (isSignedIn() && (enrolledHere(courseId) || targeted(resource.data)))
+              || (!isSignedIn() && targetingEmpty(resource.data) && resource.data.accessPolicy.include.hasAny(['marketplace']))
             ));
       allow create: if isTeacherOrAdmin();
-      // A student enrolling bumps enrollmentCount. Without this, enrolment
-      // fails with a permissions error AFTER the enrollment doc is written,
-      // leaving the student enrolled but stranded on the sales page.
-      allow update: if isTeacherOrAdmin()
-        || (isSignedIn()
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['enrollmentCount']));
+      // Staff may edit a course, but only an enrolment transaction may move
+      // seatsUsed, and only by one. Counters accept a single step.
+      allow update: if (isTeacherOrAdmin() && seatsUnchanged())
+        || seatIncrement(courseId)
+        || plusOne('enrollmentCount')
+        || plusOne('viewCount')
+        || plusOne('completionCount')
+        || revenueIncrement(courseId);
       allow delete: if isAdmin();
 
       match /enrollments/{studentId} {
         allow read: if isSignedIn();
-        // Enrol yourself, or be enrolled by a teacher/admin. Previously any
-        // signed-in user could write an enrollment for any other user, because
-        // the student id is the document id and nothing checked it.
-        allow create, update: if isUser(studentId) || isTeacherOrAdmin();
+        // Enrol yourself, or be enrolled by a teacher/admin. A seat limit
+        // refuses a new self-enrolment once seatsUsed has reached it.
+        allow create: if isTeacherOrAdmin() || (isUser(studentId) && seatsOpen(courseId));
+        allow update: if isUser(studentId) || isTeacherOrAdmin();
         allow delete: if isUser(studentId) || isAdmin();
+      }
+
+      match /grants/{grantId} {
+        allow read: if isTeacherOrAdmin()
+          || isUser(grantId)
+          || (isSignedIn() && request.auth.token.email is string && request.auth.token.email.lower() == grantId);
+        allow create: if (isTeacherOrAdmin()
+              && incoming().kind == 'user'
+              && incoming().active is bool)
+          || (grantId == request.auth.uid && couponGrantCreate(courseId));
+        allow update: if isTeacherOrAdmin()
+          && incoming().kind == 'user'
+          && incoming().active is bool;
+        allow delete: if isAdmin();
+      }
+
+      match /access_audit/{entryId} {
+        allow read: if isTeacherOrAdmin();
+        allow create: if isTeacherOrAdmin()
+          && incoming().actorId == request.auth.uid
+          && incoming().action is string
+          && incoming().detail is string;
+        allow update, delete: if false;
+      }
+
+      match /purchases/{userId} {
+        allow read: if isAdmin() || isUser(userId);
+        allow create: if isUser(userId)
+          && incoming().userId == userId
+          && incoming().amount is number
+          && incoming().amount > 0;
+        allow update, delete: if false;
       }
 
       match /reviews/{userId} {
@@ -160,15 +440,36 @@ service cloud.firestore {
           // Audience-gated courses open the full lesson to enrolled learners
           // and to staff in that audience. Everyone else gets the free preview.
           allow read: if isAdmin()
-            || (isSignedIn() && exists(/databases/$(database)/documents/courses/$(courseId)/enrollments/$(request.auth.uid)))
-            || (!audienceGated(get(/databases/$(database)/documents/courses/$(courseId)).data) && isSignedIn())
-            || (isSignedIn()
-                && audienceGated(get(/databases/$(database)/documents/courses/$(courseId)).data)
-                && get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published'
-                && audienceHit(get(/databases/$(database)/documents/courses/$(courseId)).data)
+            || (isSignedIn() && get(/databases/$(database)/documents/courses/$(courseId)).data.ownerId == request.auth.uid)
+            || (!policyOn(get(/databases/$(database)/documents/courses/$(courseId)).data)
                 && (
-                  role() in ['teacher', 'institution_admin', 'admin']
-                  || resource.data.get('order', 999) <= get(/databases/$(database)/documents/courses/$(courseId)).data.get('freePreviewCount', 1)
+                  enrolledHere(courseId)
+                  || (!audienceGated(get(/databases/$(database)/documents/courses/$(courseId)).data) && isSignedIn())
+                  || (isSignedIn()
+                      && audienceGated(get(/databases/$(database)/documents/courses/$(courseId)).data)
+                      && get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published'
+                      && audienceHit(get(/databases/$(database)/documents/courses/$(courseId)).data)
+                      && (
+                        role() in ['teacher', 'institution_admin', 'admin']
+                        || resource.data.get('order', 999) <= get(/databases/$(database)/documents/courses/$(courseId)).data.get('freePreviewCount', 1)
+                      ))
+                ))
+            || (policyOn(get(/databases/$(database)/documents/courses/$(courseId)).data)
+                && isSignedIn()
+                && !excludeHit(get(/databases/$(database)/documents/courses/$(courseId)).data)
+                && (
+                  (role() in ['teacher', 'institution_admin']
+                    && get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published'
+                    && includeHit(get(/databases/$(database)/documents/courses/$(courseId)).data, courseId))
+                  || (scheduleOpen(get(/databases/$(database)/documents/courses/$(courseId)).data, courseId, moduleId)
+                      && (
+                        enrolledHere(courseId)
+                        || grantActive(courseId)
+                        || (get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published'
+                            && includeHit(get(/databases/$(database)/documents/courses/$(courseId)).data, courseId)
+                            && get(/databases/$(database)/documents/courses/$(courseId)).data.accessPolicy.get('freePreviewCount', 0) is int
+                            && resource.data.get('order', 999) <= get(/databases/$(database)/documents/courses/$(courseId)).data.accessPolicy.get('freePreviewCount', 0))
+                      ))
                 ));
           allow create, update: if isTeacherOrAdmin();
           allow delete: if isAdmin();

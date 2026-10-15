@@ -38,7 +38,7 @@ export default function CoursesPage() {
       ec.sort((a, b) => a.course.title.localeCompare(b.course.title));
       setEnrolled(ec);
       const enrolledIds = new Set(ec.map(e => e.course.id));
-      const viewer = viewerFromProfile(profile);
+      const viewer = viewerFromProfile(profile, { userId: user.uid });
       setAvailable(all.filter(c => !enrolledIds.has(c.id) && productAccess(c, viewer).listed).sort((a, b) => a.title.localeCompare(b.title)));
     } catch (e: any) {
       setError(e?.message ?? 'Something went wrong.');

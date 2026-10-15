@@ -31,6 +31,10 @@ interface UserProfile {
   studyDates?: string[];
   accessTier?: number;
   permissions?: string[];
+  country?: string;
+  region?: string;
+  programmeId?: string;
+  cohortIds?: string[];
 }
 
 interface AuthState {

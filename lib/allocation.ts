@@ -16,6 +16,7 @@ import {
   type AccessTier,
   type PriceType,
 } from './entitlements';
+import { evaluatePolicy, policyActive, priceDecision, type AccessPolicy } from './access-policy';
 
 export const AUDIENCES = ['students', 'teachers', 'parents', 'institutions', 'all', 'marketplace'] as const;
 export type Audience = (typeof AUDIENCES)[number];
@@ -40,6 +41,23 @@ export interface AllocationViewer {
   enrolled?: boolean;
   /** The signed-in user owns this product. */
   isOwner?: boolean;
+  userId?: string | null;
+  cohortIds?: string[] | null;
+  yearGroup?: string | null;
+  level?: string | null;
+  programmeId?: string | null;
+  country?: string | null;
+  region?: string | null;
+  language?: string | null;
+  /** YYYY-MM-DD. Tests pin this so a release date does not depend on the clock. */
+  now?: string | null;
+  enrolledOn?: string | null;
+  granted?: boolean;
+  revoked?: boolean;
+  sparksUnlocked?: boolean;
+  trial?: boolean;
+  bundleIds?: string[] | null;
+  couponCourseIds?: string[] | null;
 }
 
 export interface AllocatableProduct {
@@ -55,6 +73,11 @@ export interface AllocatableProduct {
   isPublic?: boolean | null;
   publishScope?: string | null;
   contentType?: string | null;
+  accessPolicy?: AccessPolicy | null;
+  viewCount?: number | null;
+  enrollmentCount?: number | null;
+  completionCount?: number | null;
+  revenueTotal?: number | null;
 }
 
 export interface ProductAccess {
@@ -114,21 +137,24 @@ export function productAccess(product: AllocatableProduct, viewer: AllocationVie
   if (viewer.role === 'admin' || viewer.isOwner) {
     return { listed: true, open: true, reason: viewer.role === 'admin' ? 'Platform admin' : 'You own this' };
   }
-  if (viewer.enrolled) {
+  if (policyActive(product) && product.accessPolicy) {
+    const decision = evaluatePolicy({ ...product, accessPolicy: product.accessPolicy }, viewer);
+    if (!(decision.open && decision.reason === 'Included')) return decision;
+  } else if (viewer.enrolled) {
     return { listed: true, open: true, reason: 'Already enrolled' };
-  }
+  } else {
+    const audiences = audiencesOf(product);
+    const listed = audiences.length === 0
+      ? legacyListed(product, viewer)
+      : audienceListed(product, viewer, audiences);
 
-  const audiences = audiencesOf(product);
-  const listed = audiences.length === 0
-    ? legacyListed(product, viewer)
-    : audienceListed(product, viewer, audiences);
-
-  if (!listed) {
-    if (!published(product)) return { listed: false, open: false, reason: 'Not published' };
-    if (audiences.includes('institutions') && !(product.allocatedInstitutionIds ?? []).length) {
-      return { listed: false, open: false, reason: 'No institution selected' };
+    if (!listed) {
+      if (!published(product)) return { listed: false, open: false, reason: 'Not published' };
+      if (audiences.includes('institutions') && !(product.allocatedInstitutionIds ?? []).length) {
+        return { listed: false, open: false, reason: 'No institution selected' };
+      }
+      return { listed: false, open: false, reason: 'Not allocated to this audience' };
     }
-    return { listed: false, open: false, reason: 'Not allocated to this audience' };
   }
 
   const priceType = coursePriceType(product);
@@ -141,6 +167,9 @@ export function productAccess(product: AllocatableProduct, viewer: AllocationVie
     return inSchool
       ? { listed: true, open: true, reason: 'Allocated to this institution' }
       : { listed: true, open: false, reason: 'Institution allocation required' };
+  }
+  if (priceType === 'SPARKS_UNLOCK') {
+    return priceDecision(product, viewer, true);
   }
   if (priceType === 'MARKETPLACE_PURCHASE') {
     const held = permissionsFor({
@@ -210,13 +239,21 @@ export function previewViewer(
 
 export function viewerFromProfile(
   profile: {
+    id?: string | null;
     role?: string | null;
     institutionId?: string | null;
     accessTier?: number | null;
     subscriptionTier?: string | null;
     permissions?: string[] | null;
+    yearGroup?: string | null;
+    level?: string | null;
+    country?: string | null;
+    region?: string | null;
+    language?: string | null;
+    programmeId?: string | null;
+    cohortIds?: string[] | null;
   } | null | undefined,
-  opts: { enrolled?: boolean; isOwner?: boolean } = {},
+  opts: { enrolled?: boolean; isOwner?: boolean; userId?: string | null } = {},
 ): AllocationViewer {
   const role = profile?.role;
   const known: ViewerRole = role === 'student' || role === 'teacher' || role === 'parent'
@@ -231,6 +268,14 @@ export function viewerFromProfile(
     permissions: profile?.permissions,
     enrolled: opts.enrolled,
     isOwner: opts.isOwner,
+    userId: opts.userId ?? profile?.id ?? null,
+    yearGroup: profile?.yearGroup,
+    level: profile?.level,
+    country: profile?.country,
+    region: profile?.region,
+    language: profile?.language,
+    programmeId: profile?.programmeId,
+    cohortIds: profile?.cohortIds,
   };
 }
 

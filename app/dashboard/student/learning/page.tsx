@@ -68,7 +68,7 @@ export default function MyLearningPage() {
       setProgramme(programmes.find(p => p.status === 'active') ?? null);
 
       const result: ModuleTree[] = [];
-      const viewer = viewerFromProfile(profile);
+      const viewer = viewerFromProfile(profile, { userId: user.uid });
       for (const course of courses) {
         let enrollment = await getEnrollment(user.uid, course.id);
         const access = productAccess(course, { ...viewer, enrolled: !!enrollment });

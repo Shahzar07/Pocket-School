@@ -17,6 +17,8 @@ import {
   AiOutputs, Course, Module, Lesson, Enrollment, UnitQuizAttempt,
 } from '@/lib/db';
 import { getUnitStatuses, getCurriculumLessonStatus } from '@/lib/curriculum';
+import { productAccess, viewerFromProfile } from '@/lib/allocation';
+import { lessonWindow } from '@/lib/access-policy';
 import { recordStudyDay, streakFromDates, toggleBookmark } from '@/lib/learning';
 import { rememberOfflineLesson } from '@/components/offline-banner';
 import { FORMAT_COSTS, FORMAT_LABELS, LESSON_COMPLETE_REWARD, UNIT_PASS_REWARD } from '@/lib/sparks';
@@ -614,6 +616,7 @@ export default function LessonPage() {
   const [unlockingFormat, setUnlockingFormat] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [closedReason, setClosedReason] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
@@ -630,9 +633,12 @@ export default function LessonPage() {
       if (!result) { setLoading(false); return; }
       setNote(savedNote);
       setCourse(courseDoc);
+      let lessonIndex = Math.max(0, (result.lesson.order ?? 1) - 1);
+      let unitIndex = 0;
+      let enroll: Enrollment | null = null;
 
       if (courseDoc?.kind === 'curriculum') {
-        const [allUnits, enroll, quizAttempts] = await Promise.all([
+        const [allUnits, enrollDoc, quizAttempts] = await Promise.all([
           getModulesWithLessons(courseId),
           getEnrollment(user.uid, courseId),
           getUnitQuizAttempts(user.uid, courseId),
@@ -640,12 +646,12 @@ export default function LessonPage() {
         const units = allUnits
           .map(u => ({ module: u.module, lessons: u.lessons.filter(l => l.status === 'published') }))
           .filter(u => u.lessons.length > 0);
-        const unitIndex = units.findIndex(u => u.module.id === result.moduleId);
-        const completedIds = new Set(enroll?.completedLessons ?? []);
+        unitIndex = units.findIndex(u => u.module.id === result.moduleId);
+        const completedIds = new Set(enrollDoc?.completedLessons ?? []);
 
         // Lock guard — direct URLs can't bypass unit/lesson progression
         if (unitIndex >= 0) {
-          const statuses = getUnitStatuses(units, enroll, quizAttempts);
+          const statuses = getUnitStatuses(units, enrollDoc, quizAttempts);
           const lessonStatus = getCurriculumLessonStatus(
             result.lesson, units[unitIndex].lessons, statuses[unitIndex].state, completedIds
           );
@@ -654,17 +660,43 @@ export default function LessonPage() {
             router.replace(`/dashboard/student/courses/${courseId}`);
             return;
           }
+          lessonIndex = Math.max(0, units[unitIndex].lessons.findIndex(item => item.id === lessonId));
           setUnit(units[unitIndex].module);
           setUnitLessons(units[unitIndex].lessons);
         }
+        enroll = enrollDoc;
         setEnrollment(enroll);
         setAttempts(quizAttempts.filter(a => a.lessonId === lessonId));
         setCompleted(completedIds.has(lessonId));
       } else {
         // Marketplace courses also track enrollment/completion.
-        const enroll = await getEnrollment(user.uid, courseId);
+        enroll = await getEnrollment(user.uid, courseId);
         setEnrollment(enroll);
         setCompleted((enroll?.completedLessons ?? []).includes(lessonId));
+      }
+
+      if (courseDoc?.accessPolicy) {
+        const enrolledOn = enroll?.enrolledAt?.toDate?.().toISOString().slice(0, 10);
+        const accessViewer = {
+          ...viewerFromProfile(profile, { userId: user.uid, enrolled: !!enroll }),
+          enrolled: !!enroll,
+          enrolledOn,
+          now: new Date().toISOString().slice(0, 10),
+          trial: enroll?.trial === true,
+        };
+        const productDecision = productAccess(courseDoc, accessViewer);
+        const lessonDecision = lessonWindow(courseDoc.accessPolicy, accessViewer, lessonIndex, unitIndex);
+        const scheduleClosed = productDecision.reason.startsWith('Releases')
+          || productDecision.reason === 'Access ended'
+          || productDecision.reason === 'Excluded'
+          || productDecision.reason === 'Trial ended';
+        if (!productDecision.listed) setClosedReason(productDecision.reason);
+        else if (scheduleClosed) setClosedReason(productDecision.reason);
+        else if (!lessonDecision.open) setClosedReason(lessonDecision.reason);
+        else if (!productDecision.open && lessonDecision.reason !== 'Free preview') setClosedReason(productDecision.reason);
+        else setClosedReason(null);
+      } else {
+        setClosedReason(null);
       }
 
       setLesson(result.lesson);
@@ -850,6 +882,17 @@ export default function LessonPage() {
 
   if (!lesson) return (
     <div className="text-center py-16 text-muted-foreground">Lesson not found.</div>
+  );
+
+  if (closedReason) return (
+    <div className="max-w-xl mx-auto px-4 sm:px-6 py-24 text-center">
+      <Lock className="w-10 h-10 mx-auto mb-4 text-muted-foreground" />
+      <h1 className="font-heading text-xl text-foreground mb-2">{lesson.title}</h1>
+      <p className="text-sm text-muted-foreground mb-6">{closedReason}</p>
+      <Button onClick={() => router.push(`/dashboard/student/courses/${courseId}`)} className="rounded-full px-6 font-bold gap-2">
+        <ArrowLeft className="w-4 h-4" /> Back to the course
+      </Button>
+    </div>
   );
 
   const copy = resolveLessonCopy(lesson, i18n.language);
