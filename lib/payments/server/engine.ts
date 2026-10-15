@@ -376,8 +376,18 @@ export async function startCheckout(input: CheckoutInput) {
     }
   }
 
-  if (!url && mode === 'mock' && provider !== 'wallet') {
-    url = `${input.origin}/dashboard/checkout?paid=${id}&sandbox=1`;
+  // No Stripe or gateway key: do not open a sandbox that grants a real plan.
+  if (provider !== 'wallet' && mode === 'mock') {
+    return {
+      checkoutId: id,
+      mode,
+      sandbox: false,
+      available: false,
+      alreadyPaid: false,
+      amount: quote.total,
+      currency: quote.currency,
+      message: 'Payments are coming soon.',
+    };
   }
 
   await db().doc(`checkouts/${id}`).set({
@@ -864,6 +874,9 @@ async function maybeTransfer(checkout: CheckoutDoc, payeeId: string, amount: num
 }
 
 export async function completeSandbox(uid: string, checkoutId: string) {
+  if (process.env.PAYMENTS_SANDBOX !== '1') {
+    throw new ActionError('UNAVAILABLE', 'Payments are coming soon.');
+  }
   const snap = await db().doc(`checkouts/${checkoutId}`).get();
   if (!snap.exists) throw new ActionError('NOT_FOUND', 'Checkout not found.');
   const checkout = asCheckout(checkoutId, snap.data() ?? {});

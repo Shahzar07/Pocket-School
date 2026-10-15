@@ -8,6 +8,7 @@ import { expoShouldPrune, webPushShouldPrune } from './push';
 const EXPO_URL = 'https://exp.host/--/api/v2/push/send';
 
 export async function sendExpo(token: DeviceToken, message: PushMessage): Promise<SendOutcome> {
+  try {
   const response = await fetch(EXPO_URL, {
     method: 'POST',
     headers: {
@@ -25,6 +26,9 @@ export async function sendExpo(token: DeviceToken, message: PushMessage): Promis
   const body: unknown = await response.json().catch(() => null);
   if (expoShouldPrune(body)) return { ok: false, prune: true };
   return { ok: response.ok, prune: false };
+  } catch {
+    return { ok: false, prune: false };
+  }
 }
 
 export async function sendWebPush(token: DeviceToken, message: PushMessage): Promise<SendOutcome> {

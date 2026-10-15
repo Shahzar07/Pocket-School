@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   if (!process.env.STRIPE_SECRET_KEY) {
     return NextResponse.json(
-      { error: 'Stripe not configured. Add STRIPE_SECRET_KEY to environment variables.' },
+      { error: 'Payments are coming soon.', code: 'COMING_SOON' },
       { status: 503 }
     );
   }

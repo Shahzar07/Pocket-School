@@ -53,7 +53,8 @@ function expect(actual: unknown) {
     },
     toThrow(errorType?: new (...args: never[]) => Error) {
       assert.equal(typeof actual, 'function');
-      assert.throws(actual as () => void, errorType);
+      if (errorType) assert.throws(actual as () => void, errorType);
+      else assert.throws(actual as () => void);
     },
     not: {
       toContain(item: unknown) {

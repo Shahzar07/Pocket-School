@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   const user = await requireUser(req);
   if (isNextResponse(user)) return user;
   if (!process.env.STRIPE_SECRET_KEY) {
-    return NextResponse.json({ error: 'Stripe not configured. Add STRIPE_SECRET_KEY to environment variables.' }, { status: 503 });
+    return NextResponse.json({ error: 'Payments are coming soon.', code: 'COMING_SOON' }, { status: 503 });
   }
 
   const { invoiceId } = await req.json();

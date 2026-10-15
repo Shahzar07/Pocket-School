@@ -44,11 +44,7 @@ function CheckoutScreen() {
 
   useEffect(() => {
     if (!sandboxId) return;
-    authedFetch('/api/payments/sandbox-complete', {
-      method: 'POST',
-      body: JSON.stringify({ checkoutId: sandboxId }),
-    }).then(() => setNotice('Sandbox payment recorded. The entitlement is on the account.'))
-      .catch((error: unknown) => setNotice(error instanceof ApiError ? error.message : 'Sandbox completion failed.'));
+    setNotice('Payments are coming soon.');
   }, [sandboxId]);
 
   const pay = async () => {
@@ -58,6 +54,10 @@ function CheckoutScreen() {
         method: 'POST',
         body: JSON.stringify({ kind, sku, country, coupon, seats, interval, currency, method, idempotencyKey: `${kind}:${sku}:${method}:${country}` }),
       });
+      if (data.available === false) {
+        setNotice(typeof data.message === 'string' ? data.message : 'Payments are coming soon.');
+        return;
+      }
       if (typeof data.url === 'string' && data.url) {
         window.location.assign(data.url);
         return;
