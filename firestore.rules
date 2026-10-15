@@ -370,16 +370,20 @@ service cloud.firestore {
     function studentGoalUpdate() {
       return resource.data.studentId == request.auth.uid
         && !request.resource.data.diff(resource.data).affectedKeys()
-          .hasAny(['sparksAwarded', 'cosignedBy', 'cosignedAt', 'excusedBy', 'excuseReason']);
+          .hasAny(['sparksAwarded', 'cosignedBy', 'cosignedAt', 'excusedBy', 'excuseReason', 'reactions']);
     }
     function parentGoalUpdate() {
       return linkedTo(resource.data.studentId)
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['status', 'excuseReason', 'excusedBy', 'notifiedMissed', 'cosignedBy', 'cosignedAt', 'parentNote'])
+          .hasOnly(['status', 'excuseReason', 'excusedBy', 'notifiedMissed', 'cosignedBy', 'cosignedAt', 'parentNote', 'reactions'])
         && (
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status'])
           || request.resource.data.status == 'excused'
         );
+    }
+    function teacherMayReadGoal() {
+      return resource.data.get('shareWithTeachers', true) != false
+        && resource.data.get('teacherIds', []).hasAny([request.auth.uid]);
     }
 
     // ── Users ─────────────────────────────────────────────────
@@ -427,7 +431,9 @@ service cloud.firestore {
           && incoming().sparksDailyLimit is number
           && incoming().sparksDailyLimit >= 0
           && incoming().purchaseApproval is bool
-          && incoming().teacherMessages in ['all', 'digest', 'off'];
+          && incoming().teacherMessages in ['all', 'digest', 'off']
+          && (!incoming().keys().hasAny(['goalPush']) || incoming().goalPush is bool)
+          && (!incoming().keys().hasAny(['digestCadence']) || incoming().digestCadence in ['off', 'daily', 'weekly']);
         allow delete: if isUser(userId) && hasRole('parent');
       }
 
@@ -1201,14 +1207,39 @@ service cloud.firestore {
 
     // ── Behaviour Records ─────────────────────────────────────
     match /behaviour_records/{recordId} {
-      allow read: if isSignedIn();
-      allow create, update: if isTeacherOrAdmin();
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || resource.data.studentId == request.auth.uid
+        || linkedTo(resource.data.studentId)
+        || resource.data.recordedBy == request.auth.uid
+        || resource.data.get('teacherIds', []).hasAny([request.auth.uid])
+        || (isInstitutionAdmin()
+            && resource.data.get('institutionId', '') != ''
+            && resource.data.get('institutionId', '') == myInstitution())
+      );
+      allow create: if isTeacherOrAdmin() && incoming().recordedBy == request.auth.uid;
+      allow update: if isTeacherOrAdmin() && resource.data.recordedBy == request.auth.uid;
       allow delete: if isAdmin();
     }
 
     // ── Attendance Records ────────────────────────────────────
+    // Reads stay with the teacher who marked the row, the student, a linked
+    // parent, or the institution admin for that school. A signed-in stranger
+    // cannot list the register.
+    function attendanceReadable(data) {
+      return isAdmin()
+        || data.get('teacherId', '') == request.auth.uid
+        || data.get('studentId', '') == request.auth.uid
+        || data.get('studentIds', []).hasAny([request.auth.uid])
+        || data.get('parentIds', []).hasAny([request.auth.uid])
+        || linkedTo(data.get('studentId', ''))
+        || (isInstitutionAdmin()
+            && data.get('institutionId', '') is string
+            && data.get('institutionId', '') != ''
+            && data.get('institutionId', '') == myInstitution());
+    }
     match /attendance/{recordId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && attendanceReadable(resource.data);
       allow create, update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
     }
@@ -1284,13 +1315,14 @@ service cloud.firestore {
     match /daily_goals/{goalId} {
       allow read: if isSignedIn() && (
         resource.data.studentId == request.auth.uid
-        || isTeacherOrAdmin()
+        || isAdmin()
         || linkedTo(resource.data.studentId)
+        || teacherMayReadGoal()
       );
       allow create: if isSignedIn()
         && incoming().studentId == request.auth.uid
         && !incoming().keys().hasAny(['sparksAwarded', 'cosignedBy', 'cosignedAt', 'excusedBy', 'excuseReason']);
-      allow update: if isTeacherOrAdmin() || studentGoalUpdate() || parentGoalUpdate();
+      allow update: if isAdmin() || studentGoalUpdate() || parentGoalUpdate();
       allow delete: if isSignedIn() && (
         resource.data.studentId == request.auth.uid || isAdmin()
       );
@@ -1299,7 +1331,9 @@ service cloud.firestore {
     // ── Grades ────────────────────────────────────────────────
     match /grades/{gradeId} {
       allow read: if isSignedIn() && (
-        resource.data.studentId == request.auth.uid || isTeacherOrAdmin()
+        resource.data.studentId == request.auth.uid
+        || isTeacherOrAdmin()
+        || linkedTo(resource.data.studentId)
       );
       allow create, update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
@@ -1323,9 +1357,44 @@ service cloud.firestore {
 
     // ── Attendance Records ────────────────────────────────────
     match /attendance_records/{recordId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && attendanceReadable(resource.data);
       allow create, update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
+    }
+
+    match /absence_notes/{noteId} {
+      allow read: if isSignedIn() && (
+        isTeacherOrAdmin()
+        || resource.data.studentId == request.auth.uid
+        || resource.data.parentId == request.auth.uid
+        || linkedTo(resource.data.studentId)
+      );
+      allow create: if isSignedIn()
+        && incoming().parentId == request.auth.uid
+        && linkedTo(incoming().studentId)
+        && incoming().status == 'submitted'
+        && incoming().dateKey is string
+        && incoming().reason is string
+        && incoming().reason.size() > 0
+        && incoming().reason.size() <= 500
+        && incoming().keys().hasOnly(['studentId', 'parentId', 'dateKey', 'reason', 'courseId', 'status', 'createdAt']);
+      allow update: if isTeacherOrAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.status == 'accepted';
+      allow delete: if isAdmin();
+    }
+
+    match /report_exports/{exportId} {
+      allow read: if isSignedIn() && (resource.data.actorId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn()
+        && incoming().actorId == request.auth.uid
+        && incoming().format in ['pdf', 'csv', 'xlsx']
+        && incoming().metricIds is list
+        && incoming().role is string
+        && incoming().scopeId is string
+        && incoming().at is string
+        && incoming().keys().hasOnly(['actorId', 'role', 'format', 'metricIds', 'scopeId', 'at']);
+      allow update, delete: if false;
     }
 
     // ── Notifications ─────────────────────────────────────────
@@ -1837,8 +1906,12 @@ service cloud.firestore {
     match /mood_checkins/{checkinId} {
       allow read: if isSignedIn() && (
         resource.data.studentId == request.auth.uid
-        || isTeacherOrAdmin()
+        || isAdmin()
         || linkedTo(resource.data.studentId)
+        || resource.data.get('teacherIds', []).hasAny([request.auth.uid])
+        || (isInstitutionAdmin()
+            && resource.data.get('institutionId', '') != ''
+            && resource.data.get('institutionId', '') == myInstitution())
       );
       allow create: if isSignedIn() && incoming().studentId == request.auth.uid;
       allow update: if isSignedIn() && resource.data.studentId == request.auth.uid;
@@ -1867,6 +1940,7 @@ service cloud.firestore {
         resource.data.scopeId == request.auth.uid
         || isAdmin()
         || linkedTo(resource.data.get('subjectStudentId', ''))
+        || resource.data.get('teacherIds', []).hasAny([request.auth.uid])
         || (isInstitutionAdmin() && resource.data.get('institutionId', '') == myInstitution())
       );
       allow write: if false;
@@ -1913,6 +1987,65 @@ service cloud.firestore {
         && incoming().ownerId == request.auth.uid
         && (isTeacherOrAdmin() || role() == 'parent');
       allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+    }
+
+    // Concern flags are review signals. Wellbeing stays off the institution read.
+    match /concern_flags/{flagId} {
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || resource.data.studentId == request.auth.uid
+        || linkedTo(resource.data.studentId)
+        || resource.data.get('teacherId', '') == request.auth.uid
+        || resource.data.get('teacherIds', []).hasAny([request.auth.uid])
+        || (isInstitutionAdmin()
+            && resource.data.get('institutionId', '') == myInstitution()
+            && resource.data.kind != 'wellbeing')
+      );
+      allow create: if isTeacherOrAdmin() && incoming().automaticPenalty == false;
+      allow update: if isTeacherOrAdmin() && resource.data.get('teacherId', '') == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    // A re-examination answer belongs to the student. It does not change a mark.
+    match /reexam_responses/{responseId} {
+      allow create: if isSignedIn()
+        && incoming().studentId == request.auth.uid
+        && incoming().automaticPenalty == false;
+      allow read: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid
+        || linkedTo(resource.data.studentId)
+        || resource.data.teacherId == request.auth.uid
+        || isAdmin()
+      );
+      allow update, delete: if isAdmin();
+    }
+
+    match /notify_settings/{settingsId} {
+      allow read: if isSignedIn() && (
+        request.auth.uid == settingsId
+        || isAdmin()
+        || (isInstitutionAdmin() && settingsId == 'school_' + myInstitution())
+      );
+      allow create, update: if isSignedIn() && (
+        (request.auth.uid == settingsId
+          && incoming().quietStart is string
+          && incoming().quietEnd is string)
+        || (isInstitutionAdmin()
+            && settingsId == 'school_' + myInstitution()
+            && incoming().institutionId == myInstitution())
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /report_templates/{templateId} {
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || (isInstitutionAdmin() && resource.data.institutionId == myInstitution())
+        || (role() == 'teacher' && resource.data.institutionId == myInstitution())
+      );
+      allow create, update: if isInstitutionAdmin() && incoming().institutionId == myInstitution()
+        || (isAdmin() && incoming().institutionId is string);
+      allow delete: if isAdmin();
     }
 
     // Public lookup by id for the QR. Listing every card is refused.

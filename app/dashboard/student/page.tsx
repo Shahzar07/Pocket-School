@@ -4,11 +4,14 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { getEnrolledCourses, getUserBadges, Course, Enrollment, Badge } from '@/lib/db';
+import { createDailyGoal, getEnrolledCourses, getUserBadges, goalDateKey, subscribeDailyGoals, Course, Enrollment, Badge, type DailyGoal } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ArrowUpRight, BookOpen, Zap, Trophy, Target, TrendingUp, Sparkles, Users, GraduationCap, Play } from 'lucide-react';
 import Link from 'next/link';
 import { StudyLaunchpad } from '@/components/study/study-launchpad';
+import { LearningCharts } from '@/components/insights/learning-charts';
+import { readSnapshot } from '@/lib/insights/client';
+import type { AnalyticsSnapshot } from '@/lib/insights/aggregate';
 import { streakFromDates } from '@/lib/learning';
 import { canBecomeInstructor, forLearnerView, hasAccountRole } from '@/lib/account-modes';
 import {
@@ -63,6 +66,21 @@ export default function StudentDashboard() {
   const [badges, setBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [todayGoals, setTodayGoals] = useState<DailyGoal[]>([]);
+  const [snapshot, setSnapshot] = useState<AnalyticsSnapshot | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    readSnapshot(user.uid).then(data => setSnapshot((data as AnalyticsSnapshot) ?? null)).catch(() => setSnapshot(null));
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    return subscribeDailyGoals(user.uid, rows => {
+      const today = goalDateKey();
+      setTodayGoals(rows.filter(goal => goal.dateKey === today));
+    });
+  }, [user]);
 
   const load = async () => {
     if (!user) return;
@@ -175,6 +193,66 @@ export default function StudentDashboard() {
       />
 
       <StudyLaunchpad />
+
+      <Panel>
+        <PanelHeader
+          title="Today's goals"
+          action={
+            <Link href="/dashboard/student/goals" className="text-[12px] font-semibold text-primary hover:underline">
+              All goals
+            </Link>
+          }
+        />
+        {todayGoals.length === 0 ? (
+          <EmptyState
+            icon={Target}
+            title="Nothing set for today"
+            body="Add a goal beside Resume learning."
+            action={
+              <Button onClick={() => router.push('/dashboard/student/goals?add=1')} className="h-9 px-4 rounded-xl text-[13px] font-semibold">
+                Add goal
+              </Button>
+            }
+          />
+        ) : (
+          <div className="space-y-2" data-today-goals>
+            {todayGoals.map(goal => (
+              <Link key={goal.id} href="/dashboard/student/goals" className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2">
+                <span className="text-sm font-medium">{goal.title}</span>
+                <span className="text-[11px] uppercase text-muted-foreground">{goal.status.replace('_', ' ')}{goal.progress != null ? ` · ${goal.progress}%` : ''}</span>
+              </Link>
+            ))}
+          </div>
+        )}
+      </Panel>
+
+      {snapshot && (
+        <Panel>
+          <PanelHeader
+            title="Learning analytics"
+            action={<Link href="/dashboard/student/analytics" className="text-[12px] font-semibold text-primary hover:underline">Full charts</Link>}
+          />
+          <LearningCharts
+            snapshot={snapshot}
+            compact
+            onMakeGoal={(title, minutes) => {
+              if (!user) return;
+              createDailyGoal({
+                studentId: user.uid,
+                studentName: profile?.name ?? 'Student',
+                dateKey: goalDateKey(),
+                title,
+                category: 'study',
+                estimateMinutes: minutes,
+                deadline: '18:00',
+                status: 'not_started',
+                source: 'ai',
+                progress: 0,
+              }).catch(() => router.push(`/dashboard/student/goals?add=1&title=${encodeURIComponent(title)}`));
+            }}
+          />
+        </Panel>
+      )}
 
       {/* ── Stat row ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

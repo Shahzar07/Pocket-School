@@ -62,8 +62,40 @@ export async function sendWebPush(token: DeviceToken, message: PushMessage): Pro
   }
 }
 
+/**
+ * FCM web push. Without FCM_SERVER_KEY this returns quietly so a missing
+ * key never throws. Expo tokens stay on the expo provider. A service-account
+ * JSON in FCM_SERVICE_ACCOUNT is recognised and still no-ops here: sending
+ * with that credential needs the Admin SDK messaging client, which this
+ * process does not initialise.
+ */
+export async function sendFcm(token: DeviceToken, message: PushMessage): Promise<SendOutcome> {
+  const serverKey = process.env.FCM_SERVER_KEY;
+  if (!serverKey || serverKey.trim().startsWith('{') || !token.token) {
+    return { ok: false, prune: false };
+  }
+  try {
+    const response = await fetch('https://fcm.googleapis.com/fcm/send', {
+      method: 'POST',
+      headers: {
+        Authorization: `key=${serverKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: token.token,
+        notification: { title: message.title, body: message.body },
+        data: { link: message.link ?? '', category: message.category },
+      }),
+    });
+    return { ok: response.ok, prune: false };
+  } catch {
+    return { ok: false, prune: false };
+  }
+}
+
 export async function sendToDevice(token: DeviceToken, message: PushMessage): Promise<SendOutcome> {
   if (token.provider === 'expo') return sendExpo(token, message);
   if (token.provider === 'webpush') return sendWebPush(token, message);
+  if (token.provider === 'fcm') return sendFcm(token, message);
   return { ok: false, prune: false };
 }

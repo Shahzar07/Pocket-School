@@ -79,7 +79,7 @@ export function downloadBytes(filename: string, bytes: Uint8Array, type: string)
   URL.revokeObjectURL(url);
 }
 
-export function ExportBar({ kpis }: { kpis: Kpi[] }) {
+export function ExportBar({ kpis, onExport }: { kpis: Kpi[]; onExport?: (format: 'csv' | 'xlsx' | 'pdf') => void }) {
   const year = new Date().getFullYear();
   const headers = ['Metric', 'Value', 'Record', 'When', 'Detail'];
   const rows = kpis.flatMap(kpi => {
@@ -95,9 +95,9 @@ export function ExportBar({ kpis }: { kpis: Kpi[] }) {
   });
   return (
     <div className="flex flex-wrap gap-2">
-      <button type="button" className="h-8 px-3 rounded-lg border border-border text-xs font-semibold" onClick={() => downloadText('poket-report.csv', toCsv(headers, rows, year), 'text/csv')}>CSV</button>
-      <button type="button" className="h-8 px-3 rounded-lg border border-border text-xs font-semibold" onClick={() => downloadBytes('poket-report.xlsx', buildXlsx(headers, rows, year), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')}>XLSX</button>
-      <button type="button" className="h-8 px-3 rounded-lg border border-border text-xs font-semibold" onClick={() => downloadBytes('poket-report.pdf', buildPdf('Poket School report', rows.map(row => row.filter(Boolean).join(' · ')), year), 'application/pdf')}>PDF</button>
+      <button type="button" className="h-8 px-3 rounded-lg border border-border text-xs font-semibold" onClick={() => { downloadText('poket-report.csv', toCsv(headers, rows, year), 'text/csv'); onExport?.('csv'); }}>CSV</button>
+      <button type="button" className="h-8 px-3 rounded-lg border border-border text-xs font-semibold" onClick={() => { downloadBytes('poket-report.xlsx', buildXlsx(headers, rows, year), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); onExport?.('xlsx'); }}>XLSX</button>
+      <button type="button" className="h-8 px-3 rounded-lg border border-border text-xs font-semibold" onClick={() => { downloadBytes('poket-report.pdf', buildPdf('Poket School report', rows.map(row => row.filter(Boolean).join(' · ')), year), 'application/pdf'); onExport?.('pdf'); }}>PDF</button>
       <span className="text-[11px] text-muted-foreground self-center">{copyrightLine(year)}</span>
     </div>
   );

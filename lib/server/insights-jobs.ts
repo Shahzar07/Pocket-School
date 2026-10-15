@@ -10,8 +10,12 @@ import { adminDb } from '../firebase-admin';
 import { buildSnapshot } from '../insights/aggregate';
 import type { AttendanceMark } from '../insights/attendance';
 import type { QuizPoint, StudyEvent } from '../insights/analytics';
-import type { GoalLike } from '../insights/goals';
+import { digestHeadlines } from '../insights/analytics';
+import { formatProgressDigest, type GoalLike } from '../insights/goals';
+import { digestDue, type DigestCadence } from '../parent-controls';
 import { addDays, isoDateKey } from '../insights/dates';
+import { behaviourAlertMessages, buildBehaviourBoard } from '../insights/behaviour-board';
+import type { Mood } from '../insights/behaviour';
 import { notifyParents, notifyUser } from './device-push';
 
 function yesterdayKey(now = new Date()): string {
@@ -60,45 +64,89 @@ export async function runMissedGoalAlerts(now = new Date()): Promise<{ checked: 
 }
 
 export async function runWeeklyDigest(now = new Date()): Promise<{ parents: number }> {
-  if (now.getDay() !== 1) return { parents: 0 };
   const end = yesterdayKey(now);
   const start = addDays(end, -6);
   const snap = await adminDb().collection('daily_goals').where('dateKey', '>=', start).where('dateKey', '<=', end).limit(800).get();
-  const byStudent = new Map<string, { name: string; done: number; missed: number }>();
+  const byStudent = new Map<string, { name: string; goals: Record<string, unknown>[] }>();
   for (const doc of snap.docs) {
     const data = doc.data();
     const id = data.studentId as string;
-    const row = byStudent.get(id) ?? { name: (data.studentName as string) || 'Your child', done: 0, missed: 0 };
-    if (data.status === 'completed') row.done += 1;
-    else if (data.status === 'overdue' || data.status === 'not_started' || data.status === 'in_progress') row.missed += 1;
+    const row = byStudent.get(id) ?? { name: (data.studentName as string) || 'Your child', goals: [] };
+    row.goals.push(data);
     byStudent.set(id, row);
   }
-  const parentNotes = new Map<string, string[]>();
+  const sent = new Set<string>();
   for (const [studentId, row] of byStudent) {
     const parents = await adminDb().collection('users').where('childIds', 'array-contains', studentId).get();
-    const line = `${row.name}: ${row.done} goal${row.done === 1 ? '' : 's'} finished, ${row.missed} still open.`;
     for (const parent of parents.docs) {
-      const list = parentNotes.get(parent.id) ?? [];
-      list.push(line);
-      parentNotes.set(parent.id, list);
+      const controls = await adminDb().doc(`users/${parent.id}/child_controls/${studentId}`).get();
+      const cadence = (controls.data()?.digestCadence as DigestCadence | undefined) ?? 'weekly';
+      if (!digestDue(cadence, now)) continue;
+      const windowStart = cadence === 'daily' ? end : start;
+      const slice = row.goals.filter(goal => {
+        const key = goal.dateKey as string;
+        return key >= windowStart && key <= end;
+      });
+      const minutes = slice.reduce((sum, goal) => sum + (Number(goal.focusMinutes) || Number(goal.actualMinutes) || 0), 0);
+      const lessons = slice.reduce((sum, goal) => sum + (Array.isArray(goal.completedLessonIds) ? goal.completedLessonIds.length : 0), 0);
+      const quizScores = slice.flatMap(goal => typeof goal.quizScore === 'number' ? [goal.quizScore] : []);
+      const goalsMet = slice.filter(goal => goal.status === 'completed').length;
+      const stored = await adminDb().doc(`analytics_snapshots/student_${studentId}`).get();
+      const headlines = digestHeadlines((stored.data()?.metrics ?? {}) as Record<string, number | null | undefined>);
+      await notifyUser({
+        userId: parent.id,
+        title: cadence === 'daily' ? 'Daily learning digest' : 'Weekly learning digest',
+        message: formatProgressDigest({
+          childName: row.name,
+          minutes,
+          lessons,
+          quizScores,
+          goalsMet,
+          goalsSet: slice.length,
+        }) + headlines,
+        type: 'general',
+        link: '/dashboard/parent/goals',
+        pref: 'digest',
+      });
+      sent.add(`${parent.id}:${studentId}`);
     }
   }
-  for (const [parentId, lines] of parentNotes) {
-    await notifyUser({
-      userId: parentId,
-      title: 'Weekly learning digest',
-      message: lines.join(' '),
-      type: 'general',
-      link: '/dashboard/parent/analytics',
-      pref: 'digest',
-    });
-  }
-  return { parents: parentNotes.size };
+  return { parents: sent.size };
 }
 
 function millis(value: unknown): number | undefined {
   const ts = value as { toMillis?: () => number } | undefined;
   return ts?.toMillis?.();
+}
+
+async function sparksSpentFor(studentId: string): Promise<number> {
+  try {
+    const tx = await adminDb().collection(`users/${studentId}/spark_transactions`).limit(80).get();
+    return tx.docs.reduce((sum, row) => {
+      const amount = Number(row.data().amount) || 0;
+      return row.data().type === 'spend' || amount < 0 ? sum + Math.abs(amount) : sum;
+    }, 0);
+  } catch {
+    return 0;
+  }
+}
+
+async function teacherIdsFor(studentId: string): Promise<string[]> {
+  try {
+    const enrolled = await adminDb().collectionGroup('enrollments').where('studentId', '==', studentId).limit(20).get();
+    const ids = new Set<string>();
+    for (const row of enrolled.docs) {
+      const courseId = row.ref.parent.parent?.id;
+      if (!courseId) continue;
+      const course = await adminDb().doc(`courses/${courseId}`).get();
+      const owner = course.data()?.ownerId;
+      if (typeof owner === 'string' && owner) ids.add(owner);
+    }
+    return [...ids];
+  } catch (error) {
+    console.error('Teacher ids for analytics', error);
+    return [];
+  }
 }
 
 /** Store one student's aggregate. Screens read this and show computedAt. */
@@ -151,7 +199,7 @@ export async function writeStudentSnapshot(studentId: string, now = new Date()) 
       correct: data.passed === true,
     };
   });
-  const attendance: AttendanceMark[] = attendanceSnap.docs.map(doc => {
+  const flat: AttendanceMark[] = attendanceSnap.docs.map(doc => {
     const data = doc.data();
     return {
       dateKey: (data.dateKey as string) ?? end,
@@ -162,6 +210,27 @@ export async function writeStudentSnapshot(studentId: string, now = new Date()) 
       note: data.note as string | undefined,
     };
   });
+  let sessionMarks: AttendanceMark[] = [];
+  try {
+    const sessions = await db.collection('attendance_records').where('studentIds', 'array-contains', studentId).limit(80).get();
+    sessionMarks = sessions.docs.flatMap(row => {
+      const data = row.data();
+      const dateKey = (data.dateKey as string) || end;
+      const entries = Array.isArray(data.records) ? data.records as { studentId?: string; status?: AttendanceMark['status']; note?: string; source?: AttendanceMark['source'] }[] : [];
+      return entries.filter(entry => entry.studentId === studentId).map(entry => ({
+        dateKey,
+        status: entry.status ?? 'present',
+        studentId,
+        courseId: data.courseId as string | undefined,
+        source: entry.source ?? 'manual',
+        note: entry.note,
+      }));
+    });
+  } catch (error) {
+    console.error('Attendance sessions unavailable', error);
+  }
+  const { mergeMarks } = await import('../insights/attendance');
+  const attendance = mergeMarks(flat.filter(mark => mark.source === 'automatic'), [...flat.filter(mark => mark.source !== 'automatic'), ...sessionMarks]);
   const sparksEarned = goalsSnap.docs.reduce((sum, doc) => sum + (doc.data().sparksAwarded ? Number(doc.data().sparksBonus) || 0 : 0), 0);
   let holidays: string[] = [];
   try {
@@ -193,6 +262,7 @@ export async function writeStudentSnapshot(studentId: string, now = new Date()) 
     questions: quizzes.length,
     aiTurns: 0,
     sparksEarned,
+    sparksSpent: await sparksSpentFor(studentId),
     deadlinesMs: [],
     cohortScores: [],
     previousStudyMinutes: null,
@@ -200,9 +270,119 @@ export async function writeStudentSnapshot(studentId: string, now = new Date()) 
     streakBroken: false,
     now,
   });
-  await db.collection('analytics_snapshots').doc(`student_${studentId}`).set({
+  const teacherIds = await teacherIdsFor(studentId);
+  const userDoc = await db.doc(`users/${studentId}`).get();
+  const studentName = (userDoc.data()?.name as string) || 'Student';
+  const institutionId = (userDoc.data()?.institutionId as string) || '';
+  let behaviourBoard: Record<string, unknown> | null = null;
+  try {
+    const [moodSnap, noteSnap] = await Promise.all([
+      db.collection('mood_checkins').where('studentId', '==', studentId).limit(60).get(),
+      db.collection('behaviour_records').where('studentId', '==', studentId).limit(40).get(),
+    ]);
+    const board = buildBehaviourBoard({
+      role: 'student',
+      scopeLabel: studentName,
+      computedAt: now.toISOString(),
+      precomputed: true,
+      now,
+      moods: moodSnap.docs.map(row => {
+        const data = row.data();
+        const mood = Number(data.mood);
+        return {
+          dateKey: String(data.dateKey ?? ''),
+          mood: (mood >= 1 && mood <= 5 ? mood : 3) as Mood,
+          effort: typeof data.effort === 'number' ? data.effort : undefined,
+          at: `${data.dateKey ?? end}T12:00:00.000Z`,
+        };
+      }),
+      notes: noteSnap.docs.map(row => {
+        const data = row.data();
+        const created = data.createdAt as { toDate?: () => Date } | undefined;
+        return {
+          id: row.id,
+          studentId,
+          studentLabel: (data.studentName as string) || studentName,
+          type: (data.type as 'merit' | 'demerit' | 'commendation' | 'warning' | 'note') || 'note',
+          points: Number(data.points) || 0,
+          description: (data.description as string) || '',
+          at: created?.toDate?.().toISOString() ?? now.toISOString(),
+        };
+      }),
+      focusSessions: focusSnap.docs.map(row => ({
+        plannedMinutes: Number(row.data().plannedMinutes) || 0,
+        actualMinutes: Number(row.data().actualMinutes) || 0,
+        goalId: row.data().goalId as string | undefined,
+      })),
+      snapshotInput: {
+        scope: 'student',
+        scopeId: studentId,
+        computedAt: now.toISOString(),
+        rangeStart: start,
+        rangeEnd: end,
+        studyEvents,
+        quizzes,
+        goals,
+        attendance,
+        holidays,
+        focusSessions: focusSnap.docs.map(row => ({
+          plannedMinutes: Number(row.data().plannedMinutes) || 0,
+          actualMinutes: Number(row.data().actualMinutes) || 0,
+        })),
+        hints: 0,
+        questions: quizzes.length,
+        aiTurns: 0,
+        sparksEarned,
+        sparksSpent: snapshot.metrics.sparks_spent ?? 0,
+        deadlinesMs: [],
+        cohortScores: [],
+        previousStudyMinutes: null,
+        integrityOpen: false,
+        streakBroken: false,
+        now,
+      },
+    });
+    const { snapshot: _snapshot, ...rest } = board;
+    behaviourBoard = rest;
+  } catch (error) {
+    console.error('Behaviour board', error);
+  }
+  const ref = db.collection('analytics_snapshots').doc(`student_${studentId}`);
+  const prior = await ref.get();
+  const today = isoDateKey(now);
+  const alerts = behaviourAlertMessages(snapshot.behaviour.anomalies, studentName);
+  let behaviourAlertedOn = prior.data()?.behaviourAlertedOn as string | undefined;
+  if (alerts.length > 0 && behaviourAlertedOn !== today) {
+    try {
+      for (const alert of alerts) {
+        await notifyParents(studentId, studentName, {
+          title: alert.title,
+          message: alert.message,
+          type: 'general',
+          link: alert.link,
+          pref: 'behaviour',
+        });
+        await Promise.all(teacherIds.map(teacherId => notifyUser({
+          userId: teacherId,
+          title: alert.title,
+          message: alert.message,
+          type: 'general',
+          link: '/dashboard/behaviour',
+          pref: 'behaviour',
+        })));
+      }
+      behaviourAlertedOn = today;
+    } catch (error) {
+      console.error('Behaviour alert', error);
+    }
+  }
+  await ref.set({
     ...snapshot,
     subjectStudentId: studentId,
+    teacherIds,
+    ...(institutionId ? { institutionId } : {}),
+    ...(behaviourBoard ? { behaviourBoard } : {}),
+    ...(behaviourAlertedOn ? { behaviourAlertedOn } : {}),
     computedAt: now.toISOString(),
   });
   return snapshot;
@@ -233,8 +413,9 @@ export async function runDueSchedules(now = new Date()): Promise<{ sent: number 
       pref: 'reports',
     });
     const { nextScheduleDate } = await import('../insights/reports');
+    const cadence = data.cadence === 'daily' || data.cadence === 'term' || data.cadence === 'weekly' ? data.cadence : 'weekly';
     await doc.ref.update({
-      nextRun: nextScheduleDate((data.cadence as 'weekly' | 'term') || 'weekly', today),
+      nextRun: nextScheduleDate(cadence, today),
       lastRunAt: FieldValue.serverTimestamp(),
     });
     sent += 1;

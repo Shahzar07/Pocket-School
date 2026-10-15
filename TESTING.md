@@ -64,7 +64,7 @@ Delete the five QA accounts after the Sunday pass. They write into the live Auth
 From `/workspace` on this branch:
 
 - `npx tsc --noEmit` passed.
-- `npx tsx --test $(find lib -name '*.test.ts')` — 210 passed, 0 failed, after the payments, community, and goals merges.
+- `npx tsx --test $(find lib -name '*.test.ts')` — 229 passed, 0 failed, after integrity flags and report cards.
 - `npm run test:rules` runs the community age-tier cases against the Firestore emulator.
 
 Signed-in browser passes were not run. There is no QA session in this environment until the seed script has been executed.

@@ -68,17 +68,18 @@ export interface ReportSchedule {
   id?: string;
   ownerId: string;
   role: 'teacher' | 'parent' | 'admin' | 'institution_admin';
-  cadence: 'weekly' | 'term';
+  cadence: 'daily' | 'weekly' | 'term';
   metricIds: string[];
   scopeId: string;
   scopeLabel: string;
   nextRun: string;
 }
 
-export function nextScheduleDate(cadence: 'weekly' | 'term', from: string): string {
+export function nextScheduleDate(cadence: 'daily' | 'weekly' | 'term', from: string): string {
   const [y, m, d] = from.split('-').map(Number);
   const date = new Date(y, (m || 1) - 1, d || 1);
-  if (cadence === 'weekly') date.setDate(date.getDate() + 7);
+  if (cadence === 'daily') date.setDate(date.getDate() + 1);
+  else if (cadence === 'weekly') date.setDate(date.getDate() + 7);
   else date.setMonth(date.getMonth() + 3);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }

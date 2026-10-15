@@ -4,9 +4,11 @@
  */
 
 import {
-  cohortBenchmark, consistencyScore, dailyMinutes, daysSince, examReadiness, hourHeatmap, masteryRadar,
-  masteryScore, misconceptions, quizAverage, quizTrend, retentionForecast, studyMinutes,
-  trendDelta, understandingScore, weakestBloom, weeklyInsights, type QuizPoint, type StudyEvent,
+  averageSession, bestStudySlot, bloomByTopic, cohortBenchmark, confidenceMastery, consistencyScore,
+  dailyMinutes, daysSince, examReadiness, hourHeatmap, masteryRadar, masteryScore, misconceptions,
+  paceVersusPlan, questionPace, quizAverage, quizTrend, retentionForecast, strengthsAndWeaknesses,
+  dropOffPoints, studyMinutes, studySeries, trendDelta, understandingScore, weakestBloom, weeklyInsights, weeklySummary,
+  weightedMastery, type BloomTopicBar, type QuizPoint, type StudyBar, type StudyEvent, type TopicMastery,
 } from './analytics';
 import { attendanceRate, type AttendanceMark } from './attendance';
 import { behaviourAnomalies, crammingShare, engagementQuadrant, focusAdherence, procrastinationShare, type FocusSessionLike } from './behaviour';
@@ -31,6 +33,8 @@ export interface SnapshotInput {
   questions: number;
   aiTurns: number;
   sparksEarned: number;
+  sparksSpent?: number;
+  courseProgress?: { label: string; progress: number }[];
   deadlinesMs: number[];
   cohortScores: number[];
   previousStudyMinutes: number | null;
@@ -60,7 +64,25 @@ export interface AnalyticsSnapshot {
     procrastination: number | null;
     quadrant: Quadrant | null;
     anomalies: Anomaly[];
+    averageSession: number | null;
+    bestDay: string | null;
+    bestHour: number | null;
+    attemptsPerQuestion: number | null;
+    secondsPerQuestion: number | null;
+    pace: number | null;
   };
+  studySeries: StudyBar[];
+  topics: TopicMastery[];
+  bloomTopics: BloomTopicBar[];
+  strengths: string[];
+  weaknesses: string[];
+  goalsMet: number;
+  goalsMissed: number;
+  lessonsCompleted: number;
+  courseProgress: { label: string; progress: number }[];
+  sparksSpent: number;
+  summary: string;
+  dropOffs: string[];
 }
 
 /** Completed ÷ (completed + overdue). Excused and still-open goals stay out of the rate. */
@@ -97,6 +119,25 @@ export function buildSnapshot(input: SnapshotInput): AnalyticsSnapshot {
   const procrastination = procrastinationShare(input.goals);
   const adherence = focusAdherence(input.focusSessions);
   const streak = computeGoalStreak(input.goals, input.now);
+  const topics = confidenceMastery(quizzes);
+  const topicSplit = strengthsAndWeaknesses(topics);
+  const heatmap = hourHeatmap(input.studyEvents);
+  const slot = bestStudySlot(heatmap);
+  const paceStats = questionPace(quizzes);
+  const planned = input.goals.reduce((sum, goal) => sum + (goal.estimateMinutes ?? 0), 0);
+  const goalsMet = input.goals.filter(goal => goal.status === 'completed').length;
+  const goalsMissed = input.goals.filter(goal => goal.status === 'overdue').length;
+  const lessonsCompleted = input.goals.reduce((sum, goal) => sum + (goal.completedLessonIds?.length ?? 0), 0);
+  const series = studySeries(input.studyEvents, input.rangeStart, input.rangeEnd);
+  const progress = input.courseProgress ?? [];
+  const summary = weeklySummary(weeklyInsights({
+    retention,
+    cramming,
+    readiness: readiness.score,
+    streak,
+    weakBloom: weakestBloom(radar),
+    goalCompletion: goalsPct,
+  }), readiness.score);
   const hintRate = input.questions > 0 ? Math.round((100 * input.hints) / input.questions) : null;
   const aiUsage = minutes > 0 ? Math.round((input.aiTurns / (minutes / 60)) * 10) / 10 : null;
   const absenceRun = trailingAbsences(input.attendance, input.holidays);
@@ -132,19 +173,18 @@ export function buildSnapshot(input: SnapshotInput): AnalyticsSnapshot {
       ai_usage: aiUsage,
       attendance_rate: attendance,
       sparks_earned: input.sparksEarned,
+      sparks_spent: input.sparksSpent ?? 0,
+      confidence_mastery: weightedMastery(topics),
+      lessons_completed: lessonsCompleted,
+      pace: paceVersusPlan(minutes, planned),
+      attempts_per_question: paceStats.attempts,
+      seconds_per_question: paceStats.seconds,
     },
-    heatmap: hourHeatmap(input.studyEvents),
+    heatmap,
     radar,
     quizTrend: trend,
     misconceptions: misconceptions(quizzes),
-    insights: weeklyInsights({
-      retention,
-      cramming,
-      readiness: readiness.score,
-      streak,
-      weakBloom: weakestBloom(radar),
-      goalCompletion: goalsPct,
-    }),
+    insights: summary.actions,
     examReadiness: { score: readiness.score, band: readiness.band },
     cohort: input.scope === 'institution'
       ? null
@@ -156,7 +196,25 @@ export function buildSnapshot(input: SnapshotInput): AnalyticsSnapshot {
       procrastination,
       quadrant: engagementQuadrant(minutes, average),
       anomalies,
+      averageSession: averageSession(input.studyEvents),
+      bestDay: slot?.day ?? null,
+      bestHour: slot?.hour ?? null,
+      attemptsPerQuestion: paceStats.attempts,
+      secondsPerQuestion: paceStats.seconds,
+      pace: paceVersusPlan(minutes, planned),
     },
+    studySeries: series,
+    topics,
+    bloomTopics: bloomByTopic(quizzes),
+    strengths: topicSplit.strengths,
+    weaknesses: topicSplit.weaknesses,
+    goalsMet,
+    goalsMissed,
+    lessonsCompleted,
+    courseProgress: progress,
+    sparksSpent: input.sparksSpent ?? 0,
+    summary: summary.text,
+    dropOffs: dropOffPoints(progress, series),
   };
 }
 

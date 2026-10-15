@@ -100,6 +100,8 @@ test('child controls clamp screen time and Sparks, and a card keeps four digits'
   assert.equal(controls.screenTimeMinutes, 1440);
   assert.equal(controls.sparksDailyLimit, 0);
   assert.equal(controls.teacherMessages, 'digest');
+  assert.equal(controls.goalPush, true);
+  assert.equal(controls.digestCadence, 'weekly');
   assert.deepEqual(reportChannels(controls), { email: false, inApp: true });
   assert.equal(withinSparksLimit(40, 20, 50), false);
   assert.equal(withinSparksLimit(10, 20, 50), true);

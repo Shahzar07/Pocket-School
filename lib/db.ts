@@ -246,6 +246,7 @@ export interface Lesson {
   assignmentConfig?: {
     title?: string; submissionType?: string; dueInDays?: number;
     totalMarks?: number; passMark?: number; latePolicy?: string; brief?: string;
+    bloom?: string;
     rubric?: { criterion: string; descriptor: string; marks: number; bloom?: string }[];
   };
   assessmentConfig?: {
@@ -296,10 +297,10 @@ export interface LessonMediaAsset {
 
 export interface AiOutputs {
   text?: string;
-  flashcards?: { question: string; answer: string }[];
+  flashcards?: { question: string; answer: string; bloom?: string }[];
   quiz?: {
     question: string; options: string[]; answer: string; explanation?: string;
-    objectiveCode?: string; sourceLessonId?: string;
+    objectiveCode?: string; sourceLessonId?: string; bloom?: string;
   }[];
   slides?: { title: string; bullets: string[] }[];
   notes?: string;
@@ -592,8 +593,9 @@ export async function getLessonByIds(courseId: string, lessonId: string): Promis
 export async function saveAiOutputsToLesson(
   courseId: string, moduleId: string, lessonId: string, aiOutputs: AiOutputs
 ) {
+  const { withBloomTags } = await import('./insights/analytics');
   await updateDoc(doc(db, 'courses', courseId, 'modules', moduleId, 'lessons', lessonId), {
-    aiOutputs,
+    aiOutputs: withBloomTags(aiOutputs),
     status: 'published',
     updatedAt: serverTimestamp(),
   });
@@ -2402,6 +2404,7 @@ export interface Assignment {
   status: 'draft' | 'published';
   allowLate: boolean;
   createdBy: string;
+  bloom?: string;
   createdAt?: Timestamp;
 }
 
@@ -2420,10 +2423,18 @@ export interface AssignmentSubmission {
   gradedAt?: Timestamp;
   integrityScore?: number;
   integrityFlag?: boolean;
+  integritySignals?: {
+    pasteEvents?: number;
+    largeInsertChars?: number;
+    focusLosses?: number;
+    secondsToAnswer?: number;
+  };
 }
 
 export async function createAssignment(data: Omit<Assignment, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'assignments'), { ...data, createdAt: serverTimestamp() });
+  const { tagBloom } = await import('./insights/analytics');
+  const bloom = data.bloom || tagBloom(`${data.title} ${data.description}`);
+  const ref = await addDoc(collection(db, 'assignments'), { ...data, bloom, createdAt: serverTimestamp() });
   return ref.id;
 }
 
@@ -2512,6 +2523,12 @@ export interface ExamSubmission {
   passed: boolean;
   timeTakenSeconds?: number;
   submittedAt?: Timestamp;
+  integritySignals?: {
+    pasteEvents?: number;
+    largeInsertChars?: number;
+    focusLosses?: number;
+    secondsToAnswer?: number;
+  };
 }
 
 export async function createExam(data: Omit<Exam, 'id'>): Promise<string> {
@@ -3012,7 +3029,7 @@ export interface DailyGoal {
    * Richer plan. Optional on purpose: the mobile DailyGoal reader ignores
    * fields it does not know, and the required fields above are unchanged.
    */
-  targetKind?: 'free_text' | 'unit' | 'lessons';
+  targetKind?: 'free_text' | 'unit' | 'lessons' | 'revision' | 'quiz_score' | 'studio';
   unitId?: string;
   unitTitle?: string;
   lessonIds?: string[];
@@ -3036,6 +3053,18 @@ export interface DailyGoal {
   focusMinutes?: number;
   completedLessonIds?: string[];
   quizScore?: number;
+  priority?: 'low' | 'medium' | 'high';
+  reminderTime?: string;
+  quizTarget?: number;
+  studioTask?: string;
+  shareWithTeachers?: boolean;
+  teacherIds?: string[];
+  reactions?: { parentId: string; emoji: string; at: string }[];
+  pomodoroWork?: number;
+  pomodoroBreak?: number;
+  reflectionPrompt?: string;
+  reward?: string;
+  lessonTitles?: string[];
 }
 
 /** Local YYYY-MM-DD (not UTC) — goals are a "today" concept for the student. */
@@ -3085,6 +3114,21 @@ export function subscribeDailyGoals(
       cb(filtered.sort((a, b) => (a.deadline || '').localeCompare(b.deadline || '')));
     },
     () => cb([])
+  );
+}
+
+/** Goals a class teacher may see: the student listed them and left sharing on. */
+export function subscribeTeacherGoals(teacherId: string, cb: (goals: DailyGoal[]) => void): () => void {
+  return onSnapshot(
+    query(collection(db, 'daily_goals'), where('teacherIds', 'array-contains', teacherId)),
+    snap => {
+      const all = snap.docs.flatMap(d => {
+        const goal = mapDailyGoal(d.id, d.data() as Record<string, unknown>);
+        return goal && goal.shareWithTeachers !== false ? [goal] : [];
+      });
+      cb(all.sort((a, b) => (b.dateKey || '').localeCompare(a.dateKey || '')));
+    },
+    () => cb([]),
   );
 }
 
@@ -3199,10 +3243,27 @@ export interface AttendanceRecord {
   teacherId: string;
   date: Timestamp;
   records: AttendanceEntry[];
+  studentIds?: string[];
+  parentIds?: string[];
+  institutionId?: string;
+  dateKey?: string;
 }
 
 export async function createAttendanceRecord(data: Omit<AttendanceRecord, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'attendance_records'), { ...data, createdAt: serverTimestamp() });
+  const studentIds = [...new Set(data.records.map(entry => entry.studentId))];
+  const parentIds = new Set<string>(data.parentIds ?? []);
+  for (const studentId of studentIds) {
+    const parents = await getDocs(query(collection(db, 'users'), where('childIds', 'array-contains', studentId))).catch(() => null);
+    parents?.docs.forEach(parent => parentIds.add(parent.id));
+  }
+  const dateKey = data.dateKey || (data.date?.toDate ? data.date.toDate().toISOString().slice(0, 10) : undefined);
+  const ref = await addDoc(collection(db, 'attendance_records'), {
+    ...data,
+    studentIds,
+    parentIds: [...parentIds],
+    ...(dateKey ? { dateKey } : {}),
+    createdAt: serverTimestamp(),
+  });
   await notifyAttendance(data).catch(() => {});
   return ref.id;
 }
@@ -3257,10 +3318,9 @@ export async function getAttendanceForCourse(courseId: string): Promise<Attendan
 }
 
 export async function getAttendanceForStudent(studentId: string): Promise<AttendanceRecord[]> {
-  const snap = await getDocs(collection(db, 'attendance_records'));
-  return snap.docs
-    .map(d => ({ id: d.id, ...d.data() } as AttendanceRecord))
-    .filter(r => r.records.some(e => e.studentId === studentId));
+  const q = query(collection(db, 'attendance_records'), where('studentIds', 'array-contains', studentId), orderBy('date', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as AttendanceRecord));
 }
 
 export async function updateAttendanceRecord(id: string, data: Partial<AttendanceRecord>) {

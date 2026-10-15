@@ -10,6 +10,7 @@ function expect(actual: unknown) {
     toBeLessThan(n: number) { assert.ok(typeof actual === 'number' && actual < n); },
     toMatch(pattern: RegExp) { assert.match(String(actual), pattern); },
     toContain(part: string) { assert.ok(String(actual).includes(part)); },
+    toHaveLength(n: number) { assert.equal((actual as { length: number }).length, n); },
     toMatchObject(partial: Record<string, unknown>) {
       assert.equal(typeof actual, 'object');
       assert.ok(actual);
@@ -27,19 +28,30 @@ import { GOAL_ON_TIME_BONUS, GOAL_STREAK_BONUS } from '../sparks';
 import { isFeatureEnabled, resolveFlags } from '../feature-flags';
 import { copyrightLine } from './copyright';
 import {
-  autoProgress, computeGoalStreak, focusSeconds, pomodoroPlan, sparksForGoal, spawnNextGoal, startedLate,
+  autoProgress, computeGoalStreak, focusSeconds, formatProgressDigest, overdueNudge, pomodoroPlan,
+  resolvePomodoro, sparksForGoal, spawnNextGoal, startedLate, suggestGoalsFromSignals,
 } from './goals';
 import {
-  cohortBenchmark, examReadiness, hourHeatmap, masteryRadar, quizAverage, retentionForecast,
-  tagBloom, understandingScore, weeklyInsights,
+  bloomByTopic, cohortBenchmark, confidenceMastery, digestHeadlines, dropOffPoints, examReadiness,
+  hourHeatmap, masteryRadar, quizAverage, retentionForecast, strengthsAndWeaknesses, tagBloom,
+  threeActions, understandingScore, weeklyInsights, weeklySummary, withBloomTags,
 } from './analytics';
-import { attendanceRate, automaticStatus } from './attendance';
+import { attendanceRate, automaticMark, automaticStatus, mergeMarks } from './attendance';
+import { behaviourAlertMessages } from './behaviour-board';
+import { behaviourChecks, seedBehaviour } from './behaviour-seed';
+import { seedChecks, seedHub, SEED_MARKS } from './hub-seed';
+import { buildReportHub } from './hub';
 import { buildSnapshot } from './aggregate';
-import { toCsv } from './reports';
+import { nextScheduleDate, toCsv } from './reports';
 import { buildXlsx, readStoredZip } from './xlsx';
 import { buildPdf } from './pdf';
-import { gradeOnScale, scaleById } from './report-cards';
-import { aiLikelihoodSignal, AUTOMATIC_PENALTY, buildIntegrityCase, tokenSimilarity } from './integrity';
+import { gradeOnScale, normaliseTemplate, scaleById } from './report-cards';
+import { aiLikelihoodSignal, AUTOMATIC_PENALTY, bestMatch, buildIntegrityCase, countIdenticalWrong, parseClassifierScore, STUDENT_INTEGRITY_NOTICE, tokenSimilarity } from './integrity';
+import { applyCapture, captureToSignals, emptyCapture } from './integrity-capture';
+import { deskChecks } from './integrity-seed';
+import { applyReview, compareReexam, equivalentVariant, proctorLite, recordVerdict } from './reexam';
+import { buildConcerns, inQuietHours, planDelivery, DEFAULT_NOTIFY_SETTINGS } from './concerns';
+import { assembleCard, integrityNoteFor, subjectLine } from './report-card-model';
 import { dripDates, extractDatesFromText, mapUnitsToWeeks, parseCsv, parseIcs, teachingMondays } from './calendar';
 
 describe('goals', () => {
@@ -99,6 +111,52 @@ describe('goals', () => {
   it('plans a Pomodoro and sums focus segments', () => {
     expect(pomodoroPlan(50)).toEqual({ rounds: 2, work: 25, breakMinutes: 5 });
     expect(focusSeconds([{ start: 0, end: 1500 }, { start: 2000, end: 3000 }])).toBe(2.5);
+  });
+
+  it('completes a quiz-score goal once the target is met', () => {
+    const short = autoProgress(
+      { dateKey: '2026-10-15', title: 'Quiz', status: 'not_started', targetKind: 'quiz_score', quizTarget: 80, unitId: 'u1' },
+      [{ kind: 'quiz', unitId: 'u1', scorePercent: 60 }],
+    );
+    expect(short.progress).toBe(75);
+    expect(short.status).toBe('in_progress');
+    const met = autoProgress(
+      { dateKey: '2026-10-15', title: 'Quiz', status: 'in_progress', targetKind: 'quiz_score', quizTarget: 80, unitId: 'u1' },
+      [{ kind: 'quiz', unitId: 'u1', scorePercent: 80 }],
+    );
+    expect(met).toMatchObject({ progress: 100, status: 'completed', quizScore: 80 });
+  });
+
+  it('suggests revision from a weak topic and an exam date', () => {
+    const cards = suggestGoalsFromSignals({
+      weakTopics: [{ topic: 'fractions', scorePercent: 40 }, { topic: 'decimals', scorePercent: 90 }],
+      examDates: [{ title: 'Unit check', dateKey: '2026-10-22' }],
+    });
+    expect(cards.length).toBe(2);
+    expect(cards[0]?.title).toBe('Revise fractions');
+    expect(cards[1]?.reason).toContain('2026-10-22');
+  });
+
+  it('nudges only after the deadline and writes a digest line', () => {
+    const open = { status: 'in_progress', dateKey: '2026-10-15', deadline: '09:00', title: 'Read' };
+    expect(overdueNudge(open, new Date(2026, 9, 15, 8, 0))).toBeNull();
+    expect(overdueNudge(open, new Date(2026, 9, 15, 10, 0))).toContain('Read');
+    expect(overdueNudge({ ...open, status: 'completed' }, new Date(2026, 9, 15, 10, 0))).toBeNull();
+    const line = formatProgressDigest({
+      childName: 'Harry', minutes: 40, lessons: 1, quizScores: [80, 100], goalsMet: 1, goalsSet: 2,
+    });
+    expect(line).toContain('40 min studied');
+    expect(line).toContain('quiz average 90%');
+    expect(line).toContain('1 of 2 goals met');
+  });
+
+  it('honours a custom Pomodoro and a turned-off Sparks bonus', () => {
+    expect(resolvePomodoro({ mode: 'custom', workMinutes: 50, breakMinutes: 10, estimateMinutes: 100 })).toEqual({
+      rounds: 2, work: 50, breakMinutes: 10,
+    });
+    const goal = { status: 'completed', dateKey: '2026-10-15', deadline: '18:00', sparksBonus: 0 };
+    expect(sparksForGoal(goal, new Date(2026, 9, 15, 17, 0), 4)).toBe(0);
+    expect(sparksForGoal({ ...goal, sparksBonus: 20 }, new Date(2026, 9, 15, 17, 0), 1)).toBe(20);
   });
 
   it('flags a start in the last fifth of the window', () => {
@@ -195,6 +253,48 @@ describe('snapshot', () => {
     expect(snap.misconceptions[0]?.topic).toBe('fractions');
     expect(snap.behaviour.anomalies.some(a => a.id === 'study-drop')).toBe(true);
     expect(snap.cohort?.size).toBe(8);
+    expect(snap.insights).toHaveLength(3);
+    expect(snap.summary).toMatch(/exam readiness/);
+    expect(snap.metrics.confidence_mastery).not.toBeNull();
+    expect(snap.topics[0]?.topic).toBe('fractions');
+  });
+
+  it('weights mastery by how often a topic was tried', () => {
+    const rows = confidenceMastery([
+      { at: '2026-10-01', score: 9, max: 10, topic: 'fractions', attempts: 3, seconds: 40 },
+      { at: '2026-10-02', score: 4, max: 10, topic: 'decimals', attempts: 1, seconds: 90 },
+    ]);
+    expect(rows.find(row => row.topic === 'fractions')?.confidence).toBe(100);
+    expect(rows.find(row => row.topic === 'decimals')?.confidence).toBe(33);
+    expect(strengthsAndWeaknesses(rows).strengths).toContain('fractions');
+    expect(strengthsAndWeaknesses(rows).weaknesses).toContain('decimals');
+  });
+
+  it('keeps three next actions and writes digest headlines', () => {
+    const summary = weeklySummary([], 72);
+    expect(summary.actions).toHaveLength(3);
+    expect(threeActions([{ id: 'only', title: 'One', body: 'One', metricId: 'streak', suggestedGoal: { title: 'One', category: 'study', estimateMinutes: 10 } }])).toHaveLength(3);
+    expect(digestHeadlines({ study_time: 60, quiz_average: 80, exam_readiness: 72, streak: 4 })).toMatch(/Headlines: 60 min/);
+    expect(digestHeadlines({})).toBe('');
+  });
+
+  it('tags AI flashcards, quizzes, and stalled courses', () => {
+    const tagged = withBloomTags({
+      flashcards: [{ question: 'Define a fraction', answer: 'A part of a whole' }],
+      quiz: [{ question: 'Design a new fraction model', explanation: 'Create a picture' }],
+    });
+    expect(tagged.flashcards?.[0]?.bloom).toBe('remember');
+    expect(tagged.quiz?.[0]?.bloom).toBe('create');
+    const bars = bloomByTopic([
+      { at: '2026-10-01', score: 8, max: 10, topic: 'fractions', bloom: 'apply' },
+      { at: '2026-10-02', score: 5, max: 10, topic: 'fractions', prompt: 'Compare two fractions' },
+    ]);
+    expect(bars[0]?.topic).toBe('fractions');
+    expect(bars[0]?.apply).toBe(80);
+    expect(dropOffPoints(
+      [{ label: 'Fractions', progress: 40 }, { label: 'Done', progress: 100 }],
+      [{ label: '2026-10-12', minutes: 40 }, { label: '2026-10-13', minutes: 10 }],
+    ).join(' ')).toMatch(/Fractions stops at 40%/);
   });
 });
 
@@ -234,6 +334,116 @@ describe('report cards and integrity', () => {
     expect(tokenSimilarity('the cat sat on the mat today', 'the cat sat on the mat today')).toBe(100);
     expect(aiLikelihoodSignal('One. Two. Three.')).toBe(0);
   });
+
+  it('combines paste, time, style, similarity, and identical wrong answers without a penalty', () => {
+    const result = buildIntegrityCase({
+      assignmentTitle: 'Fractions essay',
+      signals: {
+        pasteEvents: 2,
+        largeInsertChars: 420,
+        typingCadenceCv: 0.05,
+        secondsToAnswer: 20,
+        baselineSeconds: 180,
+        focusLosses: 4,
+        styleShift: 55,
+        aiLikelihood: 70,
+        similarity: 62,
+        matchSource: 'classmate',
+        identicalWrongCount: 4,
+      },
+    });
+    expect(result.automaticPenalty).toBe(false);
+    expect(result.level === 'clear').toBe(false);
+    expect(result.evidence.map(item => item.label)).toContain('Identical wrong answers');
+    expect(result.evidence.map(item => item.label)).toContain('Time to answer');
+    expect(result.evidence.map(item => item.detail).join(' ')).toMatch(/not named/);
+    expect(STUDENT_INTEGRITY_NOTICE).toMatch(/Nothing is marked down automatically/);
+    expect(countIdenticalWrong([
+      { studentId: 'mina', answer: '1/3', correct: false },
+      { studentId: 'leo', answer: '1/3', correct: false },
+      { studentId: 'noor', answer: '1/4', correct: true },
+    ], 'mina')).toBe(1);
+    expect(bestMatch('the cat sat on the mat today', [{ source: 'ai_studio', text: 'the cat sat on the mat today' }]).matchSource).toBe('ai_studio');
+    expect(parseClassifierScore('The signal is 64.')).toBe(64);
+    const started = emptyCapture(1_000);
+    const typed = applyCapture(applyCapture(started, { type: 'paste' }), { type: 'input', length: 120 });
+    expect(captureToSignals(applyCapture(typed, { type: 'blur' }), 11_000).pasteEvents).toBe(1);
+    expect(captureToSignals(typed, 11_000).largeInsertChars).toBe(120);
+  });
+
+  it('builds a different variant, a viva, and a teacher verdict', () => {
+    const variant = equivalentVariant({
+      title: 'Fractions essay',
+      topic: 'Fractions',
+      bloom: 'apply',
+      originalPrompts: ['Shade 1/4 of the bar.'],
+    });
+    expect(variant.bloom).toBe('apply');
+    expect(variant.questions).toHaveLength(3);
+    expect(variant.questions.some(question => question.prompt === 'Shade 1/4 of the bar.')).toBe(false);
+    expect(proctorLite(20).allowPaste).toBe(false);
+    const compared = compareReexam({
+      originalText: 'I split the bar into four equal parts and shade one.',
+      resitText: 'Four friends share a bar. Each person gets one equal piece, which is one quarter.',
+      originalScore: 80,
+      resitScore: 78,
+      vivaAnswered: 3,
+      vivaCount: 3,
+    });
+    expect(compared.automaticPenalty).toBe(false);
+    expect(compared.recommendation).toBe('supports_original');
+    expect(applyReview('dismiss').decision).toBe('no_action');
+    expect(recordVerdict('confirm').integrityNote).toMatch(/not changed automatically/);
+    expect(recordVerdict('clear').integrityNote).toBeNull();
+    expect(integrityNoteFor(['pending', 'dismissed', 'upheld_appeal'])).toBeNull();
+    expect(integrityNoteFor(['confirmed'])).toMatch(/confirmed/);
+  });
+
+  it('routes concerns with quiet hours and keeps wellbeing off the school list', () => {
+    const flags = buildConcerns({
+      atRisk: true,
+      studyMinutes: 150,
+      previousStudyMinutes: 400,
+      missedGoals: 2,
+      attendanceRate: 80,
+      absenceRun: 2,
+      mood: 2,
+    });
+    expect(flags.map(flag => flag.kind)).toContain('wellbeing');
+    expect(flags.find(flag => flag.kind === 'wellbeing')?.notify.includes('institution')).toBe(false);
+    expect(flags.find(flag => flag.kind === 'chronic_absence')?.notify).toContain('institution');
+    expect(inQuietHours(new Date(2026, 9, 15, 22, 30), '21:00', '07:00')).toBe(true);
+    expect(inQuietHours(new Date(2026, 9, 15, 10, 0), '21:00', '07:00')).toBe(false);
+    const night = planDelivery(flags[0], 'parent', DEFAULT_NOTIFY_SETTINGS, new Date(2026, 9, 15, 22, 30));
+    expect(night.inApp).toBe(true);
+    expect(night.push).toBe(false);
+    expect(night.deferred).toBe(true);
+  });
+
+  it('grades A to E, hides an open case, and compares terms', () => {
+    expect(gradeOnScale(74, scaleById('a_to_e'))).toBe('B');
+    expect(gradeOnScale(49, scaleById('a_to_e'))).toBe('E');
+    expect(normaliseTemplate({ institutionId: 'school-a', logoUrl: 'javascript:alert(1)' }).logoUrl).toBe('');
+    const subject = subjectLine({
+      courseId: 'fractions', courseTitle: 'Fractions', percent: 74, scaleId: 'a_to_e',
+      bloomMastery: 60, attendanceRate: 80, behaviour: 'Engaged', effort: 4,
+      goalsAchieved: 3, goalsSet: 4, teacherId: 'teacher1', teacherName: 'Ada', studentName: 'Mina',
+    });
+    const card = assembleCard({
+      studentId: 'mina', studentName: 'Mina', termId: 't4', year: 2026,
+      template: normaliseTemplate({ institutionId: 'school-a', scaleId: 'a_to_e', logoUrl: 'https://poketschool.ai/logo.png' }),
+      subjects: [subject],
+      decisions: ['pending'],
+      previous: [{ courseId: 'fractions', courseTitle: 'Fractions', percent: 60 }],
+    });
+    expect(card.integrityNote).toBeNull();
+    expect(card.comparison[0]?.delta).toBe(14);
+    expect(card.automaticPenalty).toBe(false);
+    expect(subject.commentDraft).toMatch(/edit this draft/);
+    for (const side of ['student', 'parent', 'teacher', 'institution'] as const) {
+      for (const check of deskChecks(side)) assert.equal(check.actual, check.expected, `${side} ${check.label}`);
+    }
+  });
 });
 
 describe('calendar', () => {
@@ -251,6 +461,109 @@ describe('calendar', () => {
     const paced = mapUnitsToWeeks([{ id: 'u1', title: 'Atoms' }, { id: 'u2', title: 'Bonds' }], weeks);
     expect(paced[0]?.weekStart).toBe('2026-10-12');
     expect(dripDates('2026-10-12', 2, ['2026-10-12'])).toEqual(['2026-10-13', '2026-10-14']);
+  });
+});
+
+describe('attendance and the reports hub', () => {
+  it('marks a scheduled class from a login and leaves a holiday or a lone login unmarked', () => {
+    const base = {
+      dateKey: '2026-10-02', studentId: 'mina', courseId: 'fractions', holiday: false,
+      loggedIn: false, joinedLive: false, scheduledSession: true, openedLesson: false, submittedWork: false,
+    };
+    expect(automaticMark({ ...base, loggedIn: true })?.status).toBe('present');
+    expect(automaticMark(base)?.status).toBe('absent');
+    expect(automaticMark({ ...base, holiday: true, loggedIn: true })).toBeNull();
+    expect(automaticMark({ ...base, scheduledSession: false, loggedIn: true })).toBeNull();
+    expect(automaticMark({ ...base, loggedIn: true, minutesLate: 11 })?.status).toBe('late');
+  });
+
+  it('lets a teacher mark replace the automatic one', () => {
+    const merged = mergeMarks(
+      [{ dateKey: '2026-10-02', studentId: 'mina', courseId: 'fractions', status: 'present', source: 'automatic' }],
+      [{ dateKey: '2026-10-02', studentId: 'mina', courseId: 'fractions', status: 'late', source: 'manual', note: 'After the starter' }],
+    );
+    expect(merged).toHaveLength(1);
+    expect(merged[0]?.status).toBe('late');
+    expect(merged[0]?.source).toBe('manual');
+  });
+
+  it('matches the seeded report for a student and hides revenue', () => {
+    const hub = seedHub('student');
+    for (const check of seedChecks(hub, '')) {
+      assert.equal(check.actual, check.expected, check.label);
+    }
+    expect(hub.sections.some(section => section.id === 'revenue')).toBe(false);
+    expect(hub.alerts).toHaveLength(3);
+    const quiz = hub.sections.flatMap(section => section.kpis).find(kpi => kpi.metricId === 'quiz_average');
+    expect(quiz?.records.map(row => row.when).join(' ')).toContain('2026-10-08T10:15');
+  });
+
+  it('keeps the same attendance when Bloom is Apply and shows staff revenue', () => {
+    const applied = seedHub('student', { bloom: 'apply' });
+    for (const check of seedChecks(applied, 'apply')) {
+      assert.equal(check.actual, check.expected, check.label);
+    }
+    const teacher = seedHub('teacher');
+    for (const check of seedChecks(teacher, '')) {
+      assert.equal(check.actual, check.expected, check.label);
+    }
+    expect(teacher.sections.find(section => section.id === 'revenue')?.kpis.find(kpi => kpi.metricId === 'revenue')?.value).toBe(158);
+  });
+
+  it('flags a stored attendance total that does not match the raw marks', () => {
+    const sample = seedHub('student');
+    const hub = buildReportHub({
+      role: 'student',
+      scopeLabel: sample.scopeLabel,
+      computedAt: sample.computedAt,
+      filters: sample.filters,
+      holidays: ['2026-10-05'],
+      marks: SEED_MARKS,
+      previousMarks: [],
+      classRates: [],
+      institutionRates: [],
+      quizzes: [],
+      goals: [],
+      studyEvents: [],
+      focusSessions: [],
+      certificates: [],
+      enrolments: [],
+      notes: [],
+      cohortScores: [],
+      hints: 0,
+      questions: 0,
+      aiTurns: 0,
+      sparksEarned: 0,
+      storedAttendance: 50,
+      now: new Date(2026, 9, 15),
+    });
+    expect(hub.reconciliation.raw).toBe(80);
+    expect(hub.reconciliation.stored).toBe(50);
+    expect(hub.reconciliation.match).toBe(false);
+  });
+
+  it('steps a daily schedule forward one day', () => {
+    expect(nextScheduleDate('daily', '2026-10-15')).toBe('2026-10-16');
+  });
+});
+
+describe('behaviour dashboard', () => {
+  it('matches the seeded student board and hides other students', () => {
+    const board = seedBehaviour('student');
+    for (const check of behaviourChecks(board)) assert.equal(check.actual, check.expected, check.label);
+    expect(board.classPoints).toHaveLength(1);
+    expect(board.heatmap).toHaveLength(7);
+    expect(board.heatmap[0]).toHaveLength(24);
+    expect(board.timeline.some(item => item.kind === 'cramming' && item.at.startsWith('2026-10-14T20:00'))).toBe(true);
+  });
+
+  it('flags one at-risk classmate for a teacher and alerts on a study drop', () => {
+    const board = seedBehaviour('teacher');
+    for (const check of behaviourChecks(board)) assert.equal(check.actual, check.expected, check.label);
+    expect(board.classPoints.find(point => point.label === 'Leo')?.quadrant).toBe('needs-attention');
+    const alerts = behaviourAlertMessages(board.snapshot.behaviour.anomalies, 'Mina');
+    expect(alerts.map(alert => alert.title)).toContain('Study time dropped');
+    expect(alerts[0]?.link).toBe('/dashboard/behaviour');
   });
 });
 

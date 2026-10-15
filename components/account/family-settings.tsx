@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { NEUTRAL_LINK, defaultChildControls, type ChildControls, type PaymentMethod, type TeacherMessagePref } from '@/lib/parent-controls';
+import { NEUTRAL_LINK, defaultChildControls, normaliseChildControls, type ChildControls, type DigestCadence, type PaymentMethod, type TeacherMessagePref } from '@/lib/parent-controls';
 import { ProfilePhoto } from '@/components/account/profile-photo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -206,7 +206,7 @@ function ChildCard({
     avatarUrl: child.avatarUrl ?? '',
     photoStoragePath: '',
   });
-  const [controls, setControls] = useState<ChildControls>(child.controls ?? defaultChildControls(child.id));
+  const [controls, setControls] = useState<ChildControls>(normaliseChildControls(child.controls ?? defaultChildControls(child.id)));
 
   return (
     <li className="space-y-4 rounded-2xl border border-border p-4" data-child-id={child.id}>
@@ -268,6 +268,22 @@ function ChildCard({
           <input type="checkbox" checked={controls.purchaseApproval} onChange={event => setControls({ ...controls, purchaseApproval: event.target.checked })} />
           Ask me before this child buys
         </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={controls.goalPush} onChange={event => setControls({ ...controls, goalPush: event.target.checked })} />
+          Push me when this child sets, finishes, or misses a goal
+        </label>
+        <Field label="Progress digest">
+          <select
+            aria-label="Progress digest"
+            value={controls.digestCadence}
+            onChange={event => setControls({ ...controls, digestCadence: event.target.value as DigestCadence })}
+            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+          >
+            <option value="daily">Daily digest</option>
+            <option value="weekly">Weekly digest</option>
+            <option value="off">No digest</option>
+          </select>
+        </Field>
         <Field label="Teacher messages">
           <select
             aria-label="Teacher messages"

@@ -78,6 +78,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/student/tasks', icon: ListTodo, labelKey: 'nav.dailyGoals' },
       { href: '/dashboard/student/goals', icon: Target, labelKey: 'nav.goals' },
       { href: '/dashboard/student/analytics', icon: Activity, labelKey: 'nav.insights' },
+      { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
       { href: '/dashboard/student/integrity', icon: Shield, labelKey: 'nav.integrity' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
     ]},
@@ -118,6 +119,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
       { href: '/dashboard/teacher/analytics', icon: Activity, labelKey: 'nav.analytics' },
       { href: '/dashboard/teacher/insights', icon: BarChart, labelKey: 'nav.insights' },
+      { href: '/dashboard/teacher/goals', icon: Target, labelKey: 'nav.goals' },
     ]},
     { sectionKey: 'nav.section.academics', items: [
       { href: '/dashboard/teacher/gradebook', icon: ClipboardList, labelKey: 'nav.gradebook' },
@@ -130,7 +132,8 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher/integrity', icon: AlertTriangle, labelKey: 'nav.integrity' },
       { href: '/dashboard/teacher/integrity/cases', icon: Shield, labelKey: 'nav.integrityCases' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
-      { href: '/dashboard/teacher/behaviour', icon: Star, labelKey: 'nav.behaviour' },
+      { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
+      { href: '/dashboard/teacher/behaviour', icon: Star, labelKey: 'nav.behaviour', label: 'Merits' },
     ]},
     // Billing and Helpdesk are institution-admin responsibilities, not teachers'.
     { sectionLabel: 'Community', items: [
@@ -162,6 +165,8 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
       { href: '/dashboard/parent/goals', icon: Target, labelKey: 'nav.goals' },
       { href: '/dashboard/parent/analytics', icon: Activity, labelKey: 'nav.insights' },
+      { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
+      { href: '/dashboard/parent/integrity', icon: Shield, labelKey: 'nav.integrity' },
       { href: '/dashboard/parent/reports', icon: FileBarChart, labelKey: 'nav.reportCards' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
     ]},
@@ -225,6 +230,8 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
+      { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
+      { href: '/dashboard/institution/templates', icon: FileText, labelKey: 'nav.reportStudio' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },

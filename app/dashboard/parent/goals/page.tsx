@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { GoalsWorkspace, type WorkspaceGoal } from '@/components/goals/goals-workspace';
 import { createSuggestion } from '@/lib/insights/client';
+import { addDays, isoDateKey, weekdayOf } from '@/lib/insights/dates';
 
 export default function ParentGoalsPage() {
   const { user, profile } = useAuthSTORE();
@@ -52,6 +53,25 @@ export default function ParentGoalsPage() {
         onCosign={async goal => {
           await updateDailyGoal(goal.id, { cosignedBy: profile?.name ?? 'Parent', cosignedAt: new Date().toISOString() });
           toast.success('Co-signed');
+          await load();
+        }}
+        onCosignWeek={async () => {
+          const today = isoDateKey();
+          const start = addDays(today, -weekdayOf(today));
+          const end = addDays(start, 6);
+          const openGoals = goals.filter(goal => !goal.cosignedBy && goal.status !== 'excused' && goal.dateKey >= start && goal.dateKey <= end);
+          await Promise.all(openGoals.map(goal => updateDailyGoal(goal.id, {
+            cosignedBy: profile?.name ?? 'Parent',
+            cosignedAt: new Date().toISOString(),
+          })));
+          toast.success('This week is co-signed');
+          await load();
+        }}
+        onCheer={async (goal, emoji) => {
+          if (!user) return;
+          const reactions = [...(goal.reactions ?? []), { parentId: user.uid, emoji, at: new Date().toISOString() }];
+          await updateDailyGoal(goal.id, { reactions });
+          toast.success('Sent');
           await load();
         }}
       />

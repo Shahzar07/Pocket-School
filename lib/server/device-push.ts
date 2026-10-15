@@ -8,6 +8,7 @@
 
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '../firebase-admin';
+import { goalPushAllowed } from '../parent-controls';
 import { sendPush, type PushCategory } from '../push';
 import { adminPushStore } from '../push-store';
 import { sendToDevice } from '../push-transport';
@@ -37,6 +38,7 @@ export interface NotifyPayload {
   type: 'grade' | 'assignment' | 'announcement' | 'message' | 'exam' | 'integrity' | 'payment' | 'general';
   link?: string;
   pref: PushPref;
+  skipPush?: boolean;
 }
 
 export async function parentIdsFor(studentId: string): Promise<string[]> {
@@ -56,6 +58,8 @@ export async function notifyUser(payload: NotifyPayload): Promise<{ inApp: boole
     createdAt: FieldValue.serverTimestamp(),
   });
 
+  if (payload.skipPush) return { inApp: true, pushed: 0, skipped: 0 };
+
   const report = await sendPush({
     recipientUid: payload.userId,
     category: categoryFor(payload.pref),
@@ -72,6 +76,14 @@ export async function notifyParents(
   payload: Omit<NotifyPayload, 'userId'> ,
 ): Promise<number> {
   const parents = await parentIdsFor(studentId);
-  await Promise.all(parents.map(userId => notifyUser({ ...payload, userId, title: payload.title.replace('{name}', studentName) })));
+  const goalPref = payload.pref === 'goals' || payload.pref === 'focus' || payload.pref === 'streaks';
+  await Promise.all(parents.map(async userId => {
+    let skipPush = payload.skipPush === true;
+    if (goalPref && !skipPush) {
+      const controls = await adminDb().doc(`users/${userId}/child_controls/${studentId}`).get();
+      if (controls.exists && !goalPushAllowed(controls.data() as { goalPush?: boolean })) skipPush = true;
+    }
+    await notifyUser({ ...payload, userId, skipPush, title: payload.title.replace('{name}', studentName) });
+  }));
   return parents.length;
 }

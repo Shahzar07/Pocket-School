@@ -6,6 +6,8 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { getTeacherCourses, getSubmissionsForTeacher, getEnrollmentsForCourse, Course, Submission } from '@/lib/db';
 import { Badge } from '@/components/ui/badge';
 import { Users, BookOpen, ClipboardList, BarChart3, CheckCircle2, Clock } from 'lucide-react';
+import { ClassCharts } from '@/components/insights/learning-charts';
+import { ExportBar } from '@/components/insights/boards';
 
 interface CourseStats {
   course: Course;
@@ -106,6 +108,18 @@ export default function TeacherAnalytics() {
           </motion.div>
         ))}
       </div>
+
+      <ClassCharts rows={courseStats.map(row => ({
+        title: row.course.title,
+        progress: row.avgProgress,
+        quiz: row.avgScore,
+        students: row.enrolledCount,
+      }))} />
+      <ExportBar kpis={courseStats.map(row => ({
+        metricId: 'mastery',
+        value: row.avgProgress,
+        records: [{ id: row.course.id || row.course.title, label: row.course.title, when: 'class', value: `${row.avgProgress}% progress` }],
+      }))} />
 
       {/* Per-course breakdown */}
       {courseStats.length > 0 && (

@@ -16,6 +16,9 @@ import { Zap, BookOpen, MessageSquare, Trophy, UserRound, FileBarChart, Trending
 import Link from 'next/link';
 import { ChildExamPrep } from '@/components/study/child-exam-prep';
 import { DashPage, DashHeader } from '@/components/dash-ui';
+import { LearningCharts } from '@/components/insights/learning-charts';
+import { createSuggestion, readSnapshot } from '@/lib/insights/client';
+import type { AnalyticsSnapshot } from '@/lib/insights/aggregate';
 
 interface ChildData {
   id: string;
@@ -119,6 +122,7 @@ export default function ParentDashboard() {
   const [goalsError, setGoalsError] = useState<string | null>(null);
   const [excusingId, setExcusingId] = useState<string | null>(null);
   const [goalsNow, setGoalsNow] = useState(() => Date.now());
+  const [snapshots, setSnapshots] = useState<Record<string, AnalyticsSnapshot>>({});
 
   const loadGoals = async () => {
     if (!user) return;
@@ -174,6 +178,12 @@ export default function ParentDashboard() {
       );
       setChildren(data);
       setLoading(false);
+      const saved: Record<string, AnalyticsSnapshot> = {};
+      await Promise.all(data.map(async child => {
+        const snap = await readSnapshot(child.id).catch(() => null);
+        if (snap && (snap as AnalyticsSnapshot).metrics) saved[child.id] = snap as AnalyticsSnapshot;
+      }));
+      setSnapshots(saved);
     });
   }, [user]);
 
@@ -371,6 +381,24 @@ export default function ParentDashboard() {
                     </div>
                   ))}
                 </div>
+
+                {snapshots[id] && (
+                  <div className="p-6 sm:p-7 border-b border-border space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="font-heading text-xl text-foreground">Learning analytics</h3>
+                      <Link href="/dashboard/parent/analytics" className="text-[12px] font-semibold text-primary hover:underline">Full charts</Link>
+                    </div>
+                    <LearningCharts
+                      snapshot={snapshots[id]}
+                      compact
+                      onMakeGoal={async (title) => {
+                        if (!user) return;
+                        await createSuggestion({ studentId: id, parentId: user.uid, title, parentName: profile?.name });
+                        toast.success('Suggested. Your child can accept it as a goal.');
+                      }}
+                    />
+                  </div>
+                )}
 
                 {/* Unit mastery report cards */}
                 {unitReports.length > 0 && (

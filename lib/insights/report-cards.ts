@@ -41,6 +41,14 @@ export const SCALES: readonly GradingScale[] = [
     ],
   },
   {
+    id: 'a_to_e',
+    label: 'A to E',
+    bands: [
+      { min: 80, grade: 'A' }, { min: 70, grade: 'B' }, { min: 60, grade: 'C' },
+      { min: 50, grade: 'D' }, { min: 0, grade: 'E' },
+    ],
+  },
+  {
     id: 'percent',
     label: 'Percent',
     bands: [{ min: 0, grade: '%' }],
@@ -59,7 +67,38 @@ export const REPORT_TEMPLATES: readonly ReportTemplate[] = [
   { id: 'uk', label: 'UK secondary', scaleId: 'letter', heading: 'Progress report' },
   { id: 'igcse', label: 'IGCSE', scaleId: 'igcse_9_1', heading: 'IGCSE report' },
   { id: 'alevel', label: 'A-Level', scaleId: 'alevel', heading: 'A-Level report' },
+  { id: 'a_to_e', label: 'A to E', scaleId: 'a_to_e', heading: 'Term report' },
 ];
+
+export interface SchoolTemplate {
+  id: string;
+  institutionId: string;
+  label: string;
+  heading: string;
+  scaleId: string;
+  logoUrl: string;
+}
+
+/** A school logo must be an https URL. Anything else is stored blank. */
+export function normaliseTemplate(input: {
+  id?: string;
+  institutionId: string;
+  label?: string;
+  heading?: string;
+  scaleId?: string;
+  logoUrl?: string;
+}): SchoolTemplate {
+  const logo = (input.logoUrl ?? '').trim();
+  const logoUrl = logo.startsWith('https://') ? logo : '';
+  return {
+    id: input.id?.trim() || `tpl_${input.institutionId}`,
+    institutionId: input.institutionId,
+    label: input.label?.trim() || 'School report',
+    heading: input.heading?.trim() || 'Term report',
+    scaleId: scaleById(input.scaleId || 'a_to_e').id,
+    logoUrl,
+  };
+}
 
 export function scaleById(id: string): GradingScale {
   return SCALES.find(s => s.id === id) ?? SCALES[0];

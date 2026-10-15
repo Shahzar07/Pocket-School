@@ -2,15 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { focusSeconds, pomodoroPlan } from '@/lib/insights/goals';
+import { focusSeconds, resolvePomodoro } from '@/lib/insights/goals';
 
 export function FocusTimer({
-  estimateMinutes, onLog,
+  estimateMinutes, workMinutes, breakMinutes, onLog,
 }: {
   estimateMinutes: number;
+  workMinutes?: number;
+  breakMinutes?: number;
   onLog: (actualMinutes: number, plannedMinutes: number) => Promise<void> | void;
 }) {
-  const plan = pomodoroPlan(estimateMinutes);
+  const plan = resolvePomodoro({
+    mode: workMinutes ? 'custom' : 'classic',
+    workMinutes,
+    breakMinutes,
+    estimateMinutes,
+  });
   const [running, setRunning] = useState(false);
   const [segments, setSegments] = useState<{ start: number; end: number }[]>([]);
   const [openStart, setOpenStart] = useState<number | null>(null);

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { getAttendanceForStudent, AttendanceRecord } from '@/lib/db';
+import { summariseAttendance, type AttendanceMark } from '@/lib/insights/attendance';
+import { isoDateKey } from '@/lib/insights/dates';
 import { Timestamp } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -75,10 +77,15 @@ export default function StudentAttendancePage() {
 
   useEffect(() => { load(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const getRate = (ca: CourseAttendance) => {
-    if (!ca.records.length) return 0;
-    const present = ca.records.filter(r => r.status === 'present' || r.status === 'late').length;
-    return Math.round((present / ca.records.length) * 100);
+  const summaryFor = (ca: CourseAttendance) => {
+    const marks: AttendanceMark[] = ca.records.map(record => ({
+      dateKey: isoDateKey(record.date),
+      status: record.status,
+      studentId: user?.uid ?? '',
+      courseId: ca.courseId,
+      source: 'manual',
+    }));
+    return summariseAttendance(marks);
   };
 
   if (loading) return (
@@ -140,7 +147,8 @@ export default function StudentAttendancePage() {
       ) : (
         <div className="space-y-6">
           {courseMap.map((ca, i) => {
-            const rate = getRate(ca);
+            const summary = summaryFor(ca);
+            const rate = summary.rate ?? 0;
             const rateColor = rate >= 80 ? 'text-emerald-500' : rate >= 60 ? 'text-amber-500' : 'text-destructive';
             const barColor = rate >= 80 ? 'bg-emerald-500' : rate >= 60 ? 'bg-amber-500' : 'bg-destructive';
             return (
@@ -169,6 +177,10 @@ export default function StudentAttendancePage() {
                     <p className={`font-heading text-4xl ${rateColor}`}>{rate}%</p>
                     <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mt-1">
                       attendance rate
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Streak {summary.streak} day{summary.streak === 1 ? '' : 's'}
+                      {summary.chronic ? ' · Chronic absence' : ''}
                     </p>
                   </div>
                 </div>
