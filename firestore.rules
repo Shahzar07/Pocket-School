@@ -38,7 +38,8 @@ service cloud.firestore {
       return ['role', 'accessTier', 'subscriptionTier', 'permissions',
               'institutionId', 'adminSparksGrantedAt', 'accountStatus',
               'sparksBalance', 'xp', 'sparksMonthlyAllowance', 'sparksGrantedAt',
-              'sparksWelcomeGrantedAt', 'childIds', 'emailVerified', 'stripeCustomerId'];
+              'sparksWelcomeGrantedAt', 'childIds', 'emailVerified', 'stripeCustomerId',
+              'stripeAccountId'];
     }
 
     function myChildIds() {
@@ -76,7 +77,8 @@ service cloud.firestore {
         && !incoming().keys().hasAny([
           'accessTier', 'subscriptionTier', 'permissions', 'institutionId',
           'adminSparksGrantedAt', 'accountStatus', 'sparksMonthlyAllowance',
-          'sparksGrantedAt', 'sparksWelcomeGrantedAt', 'childIds', 'stripeCustomerId'
+          'sparksGrantedAt', 'sparksWelcomeGrantedAt', 'childIds', 'stripeCustomerId',
+          'stripeAccountId'
         ]);
     }
 
@@ -516,6 +518,49 @@ service cloud.firestore {
       allow read, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn() && incoming().userId == request.auth.uid;
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Money, secrets and webhook claims are server-only. The Admin SDK bypasses these rules.
+    match /platform_secrets/{id} { allow read, write: if false; }
+    match /payment_events/{id} { allow read, write: if false; }
+    match /payment_links/{id} { allow read, write: if false; }
+    match /checkouts/{id} { allow read, write: if false; }
+    match /wallets/{userId} {
+      allow read, write: if false;
+      match /ledger/{entryId} { allow read, write: if false; }
+    }
+    match /transactions/{id} { allow read, write: if false; }
+    match /coupons/{id} { allow read, write: if false; }
+    match /affiliate_ledger/{id} { allow read, write: if false; }
+    match /refund_requests/{id} { allow read: if isAdmin(); allow write: if false; }
+    match /disputes/{id} { allow read: if isAdmin(); allow write: if false; }
+    match /library/{userId}/books/{bookId} {
+      allow read: if isUser(userId) || isAdmin();
+      allow write: if false;
+    }
+    match /subscriptions/{userId} {
+      allow read: if isUser(userId) || isAdmin();
+      allow write: if false;
+    }
+    match /payouts/{id} {
+      allow read: if isSignedIn() && (resource.data.payeeId == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+    match /tutor_offers/{id} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+    match /bookings/{id} {
+      allow read: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid
+        || resource.data.tutorId == request.auth.uid
+        || isAdmin()
+      );
+      allow write: if false;
+    }
+    match /resource_purchases/{id} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false;
     }
   }
 }

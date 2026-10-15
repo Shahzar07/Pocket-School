@@ -80,7 +80,7 @@ export function SparksChip() {
           <p className="text-xs text-muted-foreground -mt-2">{SPARKS_EXPLAINER.summary}</p>
           <div className="flex gap-3 text-xs font-semibold">
             <Link href="/dashboard/student/sparks" className="text-amber-700" onClick={() => setOpen(false)}>What are Sparks?</Link>
-            <Link href="/pricing" className="text-primary" onClick={() => setOpen(false)}>Get more Sparks</Link>
+            <Link href="/dashboard/checkout?kind=sparks&sku=sparks_100" className="text-primary" onClick={() => setOpen(false)}>Get more Sparks</Link>
           </div>
 
           <div className="max-h-80 overflow-y-auto space-y-2 pr-1">

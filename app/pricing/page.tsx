@@ -502,7 +502,7 @@ function PlanCard({ plan, billing, index }: { plan: Plan; billing: Billing; inde
         </div>
 
         <Link
-          href="/signup"
+          href={isFree ? '/signup' : `/dashboard/checkout?kind=subscription&sku=${plan.id}&interval=${billing === 'annual' ? 'year' : 'month'}`}
           className={`mt-6 w-full inline-flex items-center justify-center gap-2 h-12 rounded-full text-sm font-bold transition-all ${
             plan.popular
               ? 'bg-[#2786A4] hover:bg-[#1E6A83] text-white shadow-lg shadow-[#2786A4]/30'

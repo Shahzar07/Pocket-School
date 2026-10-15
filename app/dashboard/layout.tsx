@@ -11,7 +11,7 @@ import {
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X, Bell,
-  Sparkles, Store, Layers, LogOut, Mail, UserCog,
+  Sparkles, Store, Layers, LogOut, Mail, UserCog, Wallet, Gift, Landmark, Plug, PieChart,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,7 @@ import { LanguageSwitcher } from '@/components/language-switcher';
 import { SparksChip } from '@/components/sparks-chip';
 import { upsertUserSession, accountStatusOf, grantMonthlySparksIfDue } from '@/lib/db';
 import { authedFetch } from '@/lib/api-client';
-import { homeForRole } from '@/lib/roles';
+import { homeForRole, isSuperAdmin } from '@/lib/roles';
 import { PipGuide } from '@/components/pip-guide';
 import type { TourRole } from '@/lib/tour-steps';
 import { ROLE_LABELS } from '@/lib/roles';
@@ -37,7 +37,7 @@ const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string }> = {
   admin:   { icon: 'text-violet-400', bar: 'bg-violet-400', chip: 'from-violet-500 to-fuchsia-600' },
 };
 
-interface NavEntry { href: string; icon: React.ElementType; label: string }
+interface NavEntry { href: string; icon: React.ElementType; label: string; superOnly?: boolean }
 interface NavGroup { section?: string; items: NavEntry[] }
 
 const NAV: Record<Role, NavGroup[]> = {
@@ -64,6 +64,8 @@ const NAV: Record<Role, NavGroup[]> = {
     ]},
     { section: 'Finance', items: [
       { href: '/dashboard/student/billing', icon: CreditCard, label: 'Billing' },
+      { href: '/dashboard/wallet', icon: Wallet, label: 'Wallet' },
+      { href: '/dashboard/referrals', icon: Gift, label: 'Referrals' },
     ]},
     { section: 'School', items: [
       { href: '/dashboard/announcements', icon: Megaphone, label: 'Announcements' },
@@ -84,6 +86,8 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher/upload', icon: PenSquare, label: 'Lesson Studio' },
       { href: '/dashboard/marketplace', icon: Store, label: 'Marketplace' },
       { href: '/dashboard/teacher/earnings', icon: CreditCard, label: 'Earnings' },
+      { href: '/dashboard/wallet', icon: Wallet, label: 'Wallet' },
+      { href: '/dashboard/referrals', icon: Gift, label: 'Referrals' },
       { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
       { href: '/dashboard/teacher/analytics', icon: Activity, label: 'Analytics' },
     ]},
@@ -115,6 +119,8 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/marketplace', icon: Store, label: 'Marketplace' },
       { href: '/dashboard/parent/duedates', icon: Clock, label: 'Due Dates' },
       { href: '/dashboard/parent/billing', icon: CreditCard, label: 'Billing' },
+      { href: '/dashboard/wallet', icon: Wallet, label: 'Wallet' },
+      { href: '/dashboard/referrals', icon: Gift, label: 'Referrals' },
       { href: '/dashboard/parent/notifications', icon: Bell, label: 'Notifications' },
     ]},
     { section: 'School', items: [
@@ -140,6 +146,13 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
       { href: '/dashboard/admin/settings', icon: Settings, label: 'System Settings' },
       { href: '/dashboard/admin/verifications', icon: ShieldCheck, label: 'Verifications' },
+    ]},
+    { section: 'Money', items: [
+      { href: '/dashboard/admin/payments', icon: Landmark, label: 'Payments', superOnly: true },
+      { href: '/dashboard/admin/integrations', icon: Plug, label: 'Integrations', superOnly: true },
+      { href: '/dashboard/admin/finance', icon: PieChart, label: 'Finance', superOnly: true },
+      { href: '/dashboard/wallet', icon: Wallet, label: 'Wallet' },
+      { href: '/dashboard/referrals', icon: Gift, label: 'Referrals' },
     ]},
     { section: 'Platform', items: [
       { href: '/dashboard/announcements', icon: Megaphone, label: 'Announcements' },
@@ -266,7 +279,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const role = (profile.role === 'institution_admin' ? 'admin' : profile.role ?? 'student') as Role;
-  const nav = NAV[role] ?? NAV.student;
+  const superAdmin = isSuperAdmin(profile);
+  const nav = (NAV[role] ?? NAV.student)
+    .map((group) => ({ ...group, items: group.items.filter((item) => !item.superOnly || superAdmin) }))
+    .filter((group) => group.items.length > 0);
   const accent = ROLE_ACCENT[role];
 
   return (

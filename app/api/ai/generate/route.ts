@@ -165,6 +165,9 @@ function extractJsonArray(text: string, format: string): any[] | null {
 export async function POST(req: NextRequest) {
   const denied = await enforceAiAccess(req);
   if (denied) return denied;
+  const { gateAiSpend } = await import('@/lib/payments/server/settings');
+  const capped = await gateAiSpend('openrouter');
+  if (capped) return NextResponse.json({ error: capped, code: 'SPEND_CAP' }, { status: 402 });
   try {
     const {
       content, format, briefPrompt, language, templateId, customTemplate,

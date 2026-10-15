@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { SPARKS_EXPLAINER, FORMAT_COSTS, FORMAT_LABELS, monthlySparksForProfile } from '@/lib/sparks';
+import { SPARK_PACKS } from '@/lib/payments/catalog';
+import { formatMoney } from '@/lib/money';
 import { TIERS } from '@/lib/entitlements';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { getSparkTransactions, SparkTransaction } from '@/lib/db';
@@ -47,7 +49,13 @@ export default function SparksPage() {
           ))}
         </ul>
       </div>
-      <Link href="/pricing" className="inline-flex h-11 items-center rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground">Get more Sparks</Link>
+      <div className="flex flex-wrap gap-2">
+        {SPARK_PACKS.map((pack) => (
+          <Link key={pack.id} href={`/dashboard/checkout?kind=sparks&sku=${pack.id}`} className="inline-flex h-11 items-center rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground">
+            {pack.title} · {formatMoney(pack.usd)}
+          </Link>
+        ))}
+      </div>
       <div>
         <h2 className="font-semibold mb-2">History</h2>
         {rows.length === 0 && <p className="text-sm text-muted-foreground">Nothing here yet. Finish a lesson to earn your first Sparks.</p>}
