@@ -1,6 +1,6 @@
 # Remaining work
 
-Status as of 15 Oct 2026, on `cursor/integrated-preview-f0ff`. Sunday testing uses `TESTING.md`.
+Status as of 15 Oct 2026. The canonical base for every stacked agent is `cursor/clarity-security-sparks-f0ff`. `cursor/integrated-preview-f0ff` is the same tip until a later commit splits them. Sunday testing uses `TESTING.md`.
 
 | Work | Status |
 |---|---|
@@ -14,7 +14,7 @@ Status as of 15 Oct 2026, on `cursor/integrated-preview-f0ff`. Sunday testing us
 | Buzan maps, downloads, shared editor and media | Merged from draft PR #62 |
 | Admin console, three super admins, MFA | Merged from draft PR #63. MFA needs SMTP |
 | Teacher course studio | Merged from draft PR #64. Signed-in Firestore writes were not browser-tested. Rules need an owner deploy |
-| Poket Reads catalogue, reader, studio | Merged from draft PR #55 |
+| Poket Reads catalogue, reader, studio | Merged from draft PR #55, including the wallet checkout commit. Book and Reads purchases use `POST /api/stripe/create-checkout`. Add-ons use the admin price table. Touch 'n Go is still session metadata. XP, badges, streaks, community win posts, and the Cache API download stay local until those agents land |
 | Payments, wallet, subscriptions, integrations config | Not merged. Agent https://cursor.com/agents/bc-33e2d362-a376-5efe-ab4d-91ab3617b08c had no branch yet |
 | Goals, analytics, Bloom's, behaviour, attendance, reports, integrity, calendar | Not merged. Agent https://cursor.com/agents/bc-0e18e888-9c3a-5fa9-84c3-f2e7e5eb53a7 had no branch yet |
 | Community, age tiers, tutor marketplace, exam centre, resource store, snap-and-solve | Not merged. Agent https://cursor.com/agents/bc-c81088ed-5201-53e7-ab82-87472894de9a had no branch yet. No `tutor` role yet |

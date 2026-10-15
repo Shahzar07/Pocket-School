@@ -13,6 +13,9 @@ import { bookById } from '@/lib/reads/seed';
 import { viewerCurrency } from '@/lib/platform/pricing';
 import { recommend } from '@/lib/shelf/recommend';
 import { minutesToday, myList, progressMap, streakDays, toggleList } from '@/lib/shelf/storage';
+import { readAwards } from '@/lib/platform/gamification';
+import { localDateKey, readingGoal } from '@/lib/platform/reading';
+import { booksFinishedFromProgress, parentReadingReport } from '@/lib/platform/reports';
 import type { ShelfItem } from '@/lib/shelf/types';
 
 export function ReadsHome() {
@@ -75,7 +78,14 @@ export function ReadsHome() {
   if (!heroItem || !heroBook) return null;
 
   const searching = query.trim().length > 0 || filter !== 'all';
-  const goal = 15;
+  const goalDoc = readingGoal({
+    studentId: profile.id,
+    dateKey: localDateKey(),
+    estimateMinutes: 15,
+    activeSeconds: today * 60,
+  });
+  const goal = goalDoc?.estimateMinutes ?? 15;
+  const awards = readAwards(profile.id);
 
   return (
     <div className="space-y-8">
@@ -89,7 +99,8 @@ export function ReadsHome() {
         <div className="flex flex-wrap items-center gap-3">
           <div className="rounded-2xl border border-border bg-card px-4 py-3 shadow-[var(--shadow-card)]">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{t('reads.home.streak', { count: streak })}</p>
-            <p className="mt-1 text-sm text-foreground">{t('reads.home.goal')}</p>
+            <p className="mt-1 text-sm text-foreground">{t('reads.home.goalCategory')}</p>
+            {awards.xp > 0 && <p className="text-[12px] text-muted-foreground">{t('reads.home.xp', { count: awards.xp })}</p>}
           </div>
           <div className="min-w-[200px] flex-1 rounded-2xl border border-border bg-card px-4 py-3 shadow-[var(--shadow-card)]">
             <div className="flex items-center justify-between text-[12px] text-muted-foreground">
@@ -160,29 +171,39 @@ export function ReadsHome() {
 
 function FamilyReport() {
   const t = useReadsT();
-  const aisha = minutesToday('aisha');
-  const imran = minutesToday('imran');
+  const aisha = parentReadingReport({
+    studentId: 'aisha',
+    period: 'week',
+    readingMinutes: minutesToday('aisha'),
+    booksFinished: booksFinishedFromProgress(progressMap('aisha')),
+  });
+  const imran = parentReadingReport({
+    studentId: 'imran',
+    period: 'week',
+    readingMinutes: minutesToday('imran'),
+    booksFinished: booksFinishedFromProgress(progressMap('imran')),
+  });
   return (
     <section className="rounded-[28px] border border-border bg-card p-6 shadow-[var(--shadow-card)]">
       <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">{t('reads.library.family')}</p>
       <h2 className="mt-2 font-heading text-[32px] tracking-[-0.04em]">{t('reads.library.familyLead')}</h2>
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <Report name="Aisha" minutes={aisha} tint="#2786A4" />
-        <Report name="Imran" minutes={imran} tint="#E2AF4D" />
+        <Report name="Aisha" minutes={aisha.readingMinutes} finished={aisha.booksFinished} tint="var(--primary)" />
+        <Report name="Imran" minutes={imran.readingMinutes} finished={imran.booksFinished} tint="var(--chart-3)" />
       </div>
     </section>
   );
 }
 
-function Report({ name, minutes, tint }: { name: string; minutes: number; tint: string }) {
+function Report({ name, minutes, finished, tint }: { name: string; minutes: number; finished: number; tint: string }) {
   const t = useReadsT();
   return (
     <div className="rounded-2xl border border-border p-4">
       <div className="flex items-center gap-3">
-        <span className="grid h-10 w-10 place-items-center rounded-full text-sm font-bold text-white" style={{ background: tint }}>{name.slice(0, 1)}</span>
+        <span className="grid h-10 w-10 place-items-center rounded-full text-sm font-bold text-primary-foreground" style={{ background: tint }}>{name.slice(0, 1)}</span>
         <div>
           <p className="font-semibold">{name}</p>
-          <p className="text-sm text-muted-foreground">{t('reads.board.minutes', { count: minutes })}</p>
+          <p className="text-sm text-muted-foreground">{t('reads.board.minutes', { count: minutes })} · {t('reads.library.finished', { count: finished })}</p>
         </div>
       </div>
     </div>

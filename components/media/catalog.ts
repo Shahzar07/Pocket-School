@@ -27,7 +27,7 @@ export async function recordMediaAsset(scopeId: string, asset: MediaAsset): Prom
       updatedAt: Date.now(),
     }, { merge: true });
   } catch {
-    /* The picture is still on the lesson. The shared index can catch up later. */
+    /* The picture is still saved. The shared index can catch up later. */
   }
 }
 

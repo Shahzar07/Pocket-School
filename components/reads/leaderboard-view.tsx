@@ -35,7 +35,7 @@ export function LeaderboardView() {
       </header>
       <div className="flex flex-wrap gap-2">
         {PERIODS.map(p => (
-          <button key={p} type="button" aria-pressed={period === p} onClick={() => setPeriod(p)} className={`h-9 rounded-full px-3 text-[13px] font-semibold ${period === p ? 'bg-[#203337] text-white' : 'border border-border'}`}>
+          <button key={p} type="button" aria-pressed={period === p} onClick={() => setPeriod(p)} className={`h-9 rounded-full px-3 text-[13px] font-semibold ${period === p ? 'bg-foreground text-background' : 'border border-border'}`}>
             {t(periodLabel[p])}
           </button>
         ))}

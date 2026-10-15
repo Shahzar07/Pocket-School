@@ -1,21 +1,32 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { startWalletCheckout } from '@/app/api/stripe/create-checkout/route';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 /**
- * Buy-to-own is not granted from the browser.
- *
- * TODO: the Stripe webhook should grant `alloc:marketplace:{bookId}` (or
- * `alloc:paid:{bookId}`) with the Admin SDK and write the library document.
- * `decideBook` already treats those strings as ownership. This route stays
- * a stub until that grant exists. A purchased book then stays after the plan ends.
+ * Book purchase and Reads subscription both go through the wallet checkout.
+ * The body is `{ bookId }` or `{ planId: 'reads' | 'reads-family', interval }`.
+ * The webhook grants `alloc:marketplace:{bookId}` or `plan:reads` / `plan:reads-family`.
  */
-export async function POST() {
-  return NextResponse.json(
-    {
-      error: 'Book purchase is not wired yet. The Stripe webhook has to grant alloc:marketplace on the server before this can charge a card.',
-      todo: 'Stripe webhook → alloc:marketplace:{bookId} and a library write via Admin SDK',
-    },
-    { status: 501 },
-  );
+export async function POST(request: NextRequest) {
+  const body = await request.json().catch(() => null) as { bookId?: string; planId?: string; interval?: string } | null;
+  const id = body?.bookId || body?.planId;
+  const kind = body?.bookId ? 'book' : 'reads';
+  if (!id) return NextResponse.json({ error: 'A book or a Reads plan is required.' }, { status: 400 });
+
+  const headers = new Headers(request.headers);
+  headers.delete('content-length');
+  headers.set('content-type', 'application/json');
+  const forwarded = new NextRequest(new URL('/api/stripe/create-checkout', request.url), {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      kind,
+      id,
+      interval: body?.interval === 'annual' ? 'annual' : 'monthly',
+      currency: 'USD',
+    }),
+  });
+  return startWalletCheckout(forwarded);
 }

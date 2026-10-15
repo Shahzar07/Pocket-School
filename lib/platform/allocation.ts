@@ -6,7 +6,7 @@ import {
   type PriceType,
 } from '@/lib/entitlements';
 import { checkBookAccess, type BookAccess, type ReadsProfile } from '@/lib/reads/access';
-import type { Book, BookChapter } from '@/lib/reads/types';
+import { BOOK_TARGETS, type Book, type BookChapter, type BookTarget } from '@/lib/reads/types';
 
 /**
  * A book is a product. The fields mirror the allocator Harry described.
@@ -17,7 +17,7 @@ import type { Book, BookChapter } from '@/lib/reads/types';
 export interface ProductAllocation {
   kind: 'book';
   id: string;
-  audiences: Array<'public' | 'student' | 'parent' | 'teacher' | 'institution'>;
+  audiences: BookTarget[];
   minTier: number;
   priceType: PriceType | 'SPARKS_UNLOCK';
   sparksCost?: number;
@@ -34,6 +34,14 @@ export interface ProductAllocation {
   };
 }
 
+/** Default multi-select when a book has not chosen targets yet. */
+export function defaultBookTargets(book: { allocateLibrary?: boolean; allocateMarketplace?: boolean }): BookTarget[] {
+  const targets: BookTarget[] = ['students', 'parents'];
+  if (book.allocateLibrary) targets.push('institutions');
+  if (book.allocateMarketplace) targets.push('marketplace');
+  return BOOK_TARGETS.filter(target => targets.includes(target));
+}
+
 export function bookAllocation(book: Book): ProductAllocation {
   const priceType: PriceType | 'SPARKS_UNLOCK' = book.accessMode === 'subscription' && book.priceUsd <= 0
     ? 'SUBSCRIPTION_INCLUDED'
@@ -43,7 +51,7 @@ export function bookAllocation(book: Book): ProductAllocation {
   return {
     kind: 'book',
     id: book.id,
-    audiences: ['public', 'student', 'parent', 'institution'],
+    audiences: book.targets?.length ? book.targets : defaultBookTargets(book),
     minTier: book.minTier,
     priceType,
     sparksCost: book.sparksCost,

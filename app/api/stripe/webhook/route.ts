@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb, isAdminConfigured } from '@/lib/firebase-admin';
 import { applyStripeSubscription, enrollFromPayment, tierFromId } from '@/lib/server/actions';
 import type { AccessTier } from '@/lib/entitlements';
@@ -42,6 +43,24 @@ export async function POST(req: NextRequest) {
       if (meta.kind === 'subscription' && meta.uid) {
         const tier = tierFromId(meta.tierId ?? '') ?? (Number(meta.accessTier) as AccessTier);
         if (tier != null) await applyStripeSubscription(meta.uid, tier);
+      }
+      if (meta.kind === 'book' && meta.studentId && meta.bookId) {
+        await adminDb().doc(`users/${meta.studentId}`).set({
+          permissions: FieldValue.arrayUnion(`alloc:marketplace:${meta.bookId}`),
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+        await adminDb().doc(`library/${meta.studentId}/books/${meta.bookId}`).set({
+          bookId: meta.bookId,
+          source: 'purchase',
+          purchasedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
+      if (meta.kind === 'plan' && meta.uid && (meta.id === 'reads' || meta.id === 'reads-family')) {
+        await applyStripeSubscription(meta.uid, 1);
+        await adminDb().doc(`users/${meta.uid}`).set({
+          permissions: FieldValue.arrayUnion(meta.id === 'reads-family' ? 'plan:reads-family' : 'plan:reads'),
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
       }
     }
 

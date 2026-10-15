@@ -9,9 +9,12 @@ import { bookToShelf, courseToShelf, relatedCoursesForBook, seedCourseViews, vis
 import { recommend } from '@/lib/shelf/recommend';
 import { SAMPLE_OWNED, SAMPLE_READER, planLabel } from '@/lib/reads/access';
 import { decideBook } from '@/lib/platform/allocation';
+import { discussionSpace, suggestWinPost } from '@/lib/platform/community';
 import { licenceOffer } from '@/lib/platform/licence';
 import { editionFor } from '@/lib/platform/localization';
+import { downloadBookOffline } from '@/lib/platform/offline';
 import { quotePrice, viewerCurrency } from '@/lib/platform/pricing';
+import { authedFetch, ApiError } from '@/lib/api-client';
 import { useReadsT } from '@/lib/reads/i18n';
 import { bookById, publishedBooks } from '@/lib/reads/seed';
 import { myList, toggleList } from '@/lib/shelf/storage';
@@ -24,6 +27,9 @@ export function BookDetail({ bookId }: { bookId: string }) {
   const [list, setList] = useState<string[]>([]);
   const [lang, setLang] = useState('en');
   const [currency, setCurrency] = useState('USD');
+  const [buying, setBuying] = useState(false);
+  const [note, setNote] = useState('');
+  const [savedOffline, setSavedOffline] = useState(false);
 
   useEffect(() => {
     if (!ready) return;
@@ -50,6 +56,30 @@ export function BookDetail({ bookId }: { bookId: string }) {
   );
   const courses = relatedCoursesForBook(book, seedCourseViews()).map(c => courseToShelf(c, undefined, currency));
   const seriesMates = publishedBooks().filter(b => b.series?.id && b.series.id === book.series?.id && b.id !== book.id);
+  const space = discussionSpace(book);
+  const win = suggestWinPost({ kind: 'finish', title, audience: space.audience });
+
+  const checkout = async (body: { bookId?: string; planId?: string }) => {
+    setBuying(true);
+    setNote('');
+    try {
+      const data = await authedFetch('/api/reads/purchase', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+      if (typeof data.url === 'string') window.location.assign(data.url);
+    } catch (error) {
+      setNote(error instanceof ApiError ? error.message : 'Checkout is not available.');
+    } finally {
+      setBuying(false);
+    }
+  };
+
+  const download = async () => {
+    const result = await downloadBookOffline(book.id);
+    setSavedOffline(result.cached > 0);
+    if (result.cached === 0) setNote(t('reads.detail.downloadFail'));
+  };
 
   return (
     <article className="space-y-8">
@@ -65,9 +95,24 @@ export function BookDetail({ bookId }: { bookId: string }) {
             <div>{book.category === 'academic' ? t('reads.filter.academic') : t('reads.filter.general')}</div>
           </dl>
           <div className="mt-6 flex flex-wrap gap-2">
-            <Link href={`/reads/read/${book.id}?lang=${lang}`} className="inline-flex h-11 items-center rounded-full bg-[#203337] px-5 text-sm font-bold text-white">
+            <Link href={`/reads/read/${book.id}?lang=${lang}`} className="inline-flex h-11 items-center rounded-full bg-foreground px-5 text-sm font-bold text-background">
               {access.allowed && access.source !== 'preview' ? t('reads.detail.read') : t('reads.detail.sample')}
             </Link>
+            {book.priceUsd > 0 && !(access.allowed && access.source === 'owned') && (
+              <button type="button" disabled={buying} onClick={() => void checkout({ bookId: book.id })} className="inline-flex h-11 items-center rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground">
+                {t('reads.detail.buyNow')}
+              </button>
+            )}
+            {!(access.allowed && (access.source === 'subscription' || access.source === 'owned')) && (
+              <>
+                <button type="button" disabled={buying} onClick={() => void checkout({ planId: 'reads' })} className="inline-flex h-11 items-center rounded-full border border-border px-4 text-sm font-semibold">
+                  {t('reads.detail.subscribe')}
+                </button>
+                <button type="button" disabled={buying} onClick={() => void checkout({ planId: 'reads-family' })} className="inline-flex h-11 items-center rounded-full border border-border px-4 text-sm font-semibold">
+                  {t('reads.detail.family')}
+                </button>
+              </>
+            )}
             <button
               type="button"
               onClick={() => setList(toggleList(profile.id, book.id))}
@@ -75,7 +120,11 @@ export function BookDetail({ bookId }: { bookId: string }) {
             >
               {list.includes(book.id) ? t('reads.listed') : t('reads.myList')}
             </button>
+            <button type="button" onClick={() => void download()} className="inline-flex h-11 items-center rounded-full border border-border px-4 text-sm font-semibold">
+              {savedOffline ? t('reads.detail.downloaded') : t('reads.detail.download')}
+            </button>
           </div>
+          {note && <p className="mt-3 text-sm text-muted-foreground" role="status">{note}</p>}
           <p className="mt-4 text-sm text-foreground">
             {access.allowed && access.source === 'owned' && t('reads.badge.owned')}
             {access.allowed && access.source === 'subscription' && `${t('reads.badge.included')} · ${planLabel(book.minTier)}`}
@@ -130,6 +179,13 @@ export function BookDetail({ bookId }: { bookId: string }) {
         </section>
       )}
 
+      <section className="rounded-3xl border border-border bg-card p-6">
+        <h2 className="font-heading text-[26px]">{t('reads.detail.discussion')}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t('reads.detail.discussionLead')}</p>
+        <p className="mt-3 text-sm font-semibold">{space.title} · {space.audience === 'adult' ? 'Adult room' : 'Under-18 room'}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{win.body}</p>
+      </section>
+
       <ShelfRow title={t('reads.detail.more')} items={more} />
       <ShelfRow title={t('reads.detail.related')} items={courses} />
     </article>
@@ -138,7 +194,7 @@ export function BookDetail({ bookId }: { bookId: string }) {
 
 function LangButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
   return (
-    <button type="button" onClick={onClick} aria-pressed={active} className={`h-9 rounded-full px-3 text-[13px] font-semibold ${active ? 'bg-[#203337] text-white' : 'border border-border'}`}>
+    <button type="button" onClick={onClick} aria-pressed={active} className={`h-9 rounded-full px-3 text-[13px] font-semibold ${active ? 'bg-foreground text-background' : 'border border-border'}`}>
       {children}
     </button>
   );

@@ -4,6 +4,10 @@ import type { AccessTier } from '@/lib/entitlements';
 import type { CoverBrief } from '@/lib/reads/cover';
 import type { CoverStyle } from '@/lib/shelf/types';
 
+/** Audiences the shared allocator multi-selects. A book stores the chosen array. */
+export const BOOK_TARGETS = ['students', 'teachers', 'parents', 'institutions', 'all', 'marketplace'] as const;
+export type BookTarget = (typeof BOOK_TARGETS)[number];
+
 export type BookCategory = 'academic' | 'general';
 export type BookForm = 'fiction' | 'non-fiction';
 export type BookStatus = 'draft' | 'review' | 'published';
@@ -105,6 +109,8 @@ export interface Book {
   allocateLibrary: boolean;
   /** Listed in the store once published. */
   allocateMarketplace: boolean;
+  /** Who this book is for. Absent means the default set from the library and marketplace flags. */
+  targets?: BookTarget[];
   series?: BookSeries;
   chapters: BookChapter[];
   /** Pictures for this book. Alt text is required before one can be placed or published. */
