@@ -8,6 +8,9 @@ import { canDownload } from './export/allow';
 import { copyrightNotice } from './export/notice';
 import { buildExport } from './export/files';
 import { problemsForExport } from './export/payload';
+import { stripUnitPrefix } from './unit-title';
+import { describeSaveError } from './save-status';
+import { hasCmsAddon } from './entitlements';
 
 const STUDY_NOTES = '## Introduction\n\nA note.\n\n## Core explanation\n\nMore.';
 
@@ -38,7 +41,27 @@ test('a Buzan map keeps one keyword, a curve, a colour, and a thinner child', ()
 test('study-note prose is not a mind map or a worked problem', () => {
   assert.equal(parseBuzan(STUDY_NOTES), null);
   assert.equal(problemsAreWorked(STUDY_NOTES), false);
+  assert.equal(problemsAreWorked('The problem of revenue has a worked solution in the notes.'), false);
+  assert.equal(problemsAreWorked(`${STUDY_NOTES}\n\n## Problem 1\nFind it.\n\n### Worked solution\n2.`), false);
   assert.equal(problemsAreWorked('## Problem 1\nFind the revenue.\n\n### Worked solution\nMultiply price by quantity.'), true);
+  assert.equal(problemsAreWorked('## Problem 1\nFind it.\n\nNo solution here.'), false);
+});
+
+test('a stored unit title does not keep the prefix the tree adds', () => {
+  assert.equal(stripUnitPrefix('Unit 6: Markets', 6), 'Markets');
+  assert.equal(stripUnitPrefix('Unit 6: Unit 6: Markets', 6), 'Markets');
+  assert.equal(stripUnitPrefix('Unit 1: Living Organisms', 1), 'Living Organisms');
+  assert.equal(stripUnitPrefix('Chapter 2: Cells', 2), 'Cells');
+  assert.equal(stripUnitPrefix('Unit 5: Markets', 6), 'Unit 5: Markets');
+});
+
+test('a quota failure is an error, and admins always have the CMS add-on', () => {
+  assert.match(describeSaveError({ code: 'resource-exhausted', message: 'Quota exceeded.' }), /quota/);
+  assert.match(describeSaveError(new Error('Saving timed out.')), /kept on this device/);
+  assert.equal(hasCmsAddon({ role: 'admin' }), true);
+  assert.equal(hasCmsAddon({ role: 'teacher', permissions: [] }), false);
+  assert.equal(hasCmsAddon({ role: 'teacher', permissions: ['addon:cms'] }), true);
+  assert.equal(hasCmsAddon({ role: 'institution_admin', permissions: ['addon:cms'] }), true);
 });
 
 test('infographic figures must match the lesson number and its label', () => {

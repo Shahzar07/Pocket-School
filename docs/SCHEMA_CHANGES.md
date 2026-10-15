@@ -199,3 +199,37 @@ Server-side file export. Requires `Authorization: Bearer <Firebase ID token>`.
 Every file includes `© {current year} PoketSchool.Ai. All rights reserved.` The year is `new Date().getFullYear()` at generation time. The file also carries the Poket School wordmark. The legal entity name stays in the terms, privacy policy, and creator agreement.
 
 When `FIREBASE_SERVICE_ACCOUNT` is set, the route replaces `viewer` with the Firestore user and `courses.downloadsEnabled`. Without that credential, the route checks the ID token and applies `canDownload` to the posted viewer. That fallback is a limitation of this environment.
+
+## media_assets (new)
+
+Reusable picture metadata. The file itself is in Firebase Storage at `media/{scopeId}/{name}`, or a data URL when Storage rejects the upload.
+
+| Field | Type | Notes |
+|---|---|---|
+| `scopeId` | string | Course id or book id. Pictures in one scope can be reused. |
+| `ownerId` | string | Firebase uid of the uploader. |
+| `src` | string | Download URL or data URL. |
+| `alt` | string | Required before the picture is placed. May be empty in the library. |
+| `caption` | string | Optional. |
+| `width`, `height` | number | After resize. The long edge is at most 1600. |
+| `storagePath` | string | Present when Storage accepted the file. |
+| `fullBleed` | boolean | Optional. |
+| `updatedAt` | number | Client timestamp in milliseconds. |
+
+A signed-in user can create and update their own documents. Teachers and admins can read the library. Rules need an owner deploy.
+
+## addon:cms
+
+Permission string `addon:cms`. Priced in `seedPricing()` at 29 USD per month. `normalizePricing` merges that row into an existing pricing document, so the admin pricing screen shows it on the next load. Saving pricing writes it to `pricing_config/current`.
+
+| Who | CMS editor, import, image library, illustrations, covers |
+|---|---|
+| `role == admin` | Always. |
+| Teacher or institution admin | When `users.permissions` contains `addon:cms`. |
+| Everyone else | The allocation screen can grant it. The Institution tier is the listed requirement. |
+
+Grant and revoke use the existing add-on controls on Access allocation.
+
+## modules.title
+
+`createModule` strips a leading `Unit N:`, `Module N:`, or `Chapter N:` when `N` is that module's `unitNumber`, including a repeated prefix. The course tree still prints `Unit N:` once. Opening a course repairs stored titles that still have the duplicate.

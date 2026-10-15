@@ -28,6 +28,7 @@ import { RoleChecklist } from '@/components/role-checklist';
 import dynamic from 'next/dynamic';
 import type { TourRole } from '@/lib/tour-steps';
 import { ROLE_LABELS } from '@/lib/roles';
+import { hasCmsAddon } from '@/lib/entitlements';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
@@ -262,7 +263,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const role = (profile.role ?? 'student') as Role;
-  const nav = NAV[role] ?? NAV.student;
+  const nav = (NAV[role] ?? NAV.student).map((group, index) => {
+    if (index !== 0 || role === 'admin' || !hasCmsAddon(profile)) return group;
+    if (role !== 'teacher' && role !== 'institution_admin') return group;
+    return {
+      ...group,
+      items: [
+        ...group.items,
+        { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' },
+      ],
+    };
+  });
   const accent = ROLE_ACCENT[role];
 
   return (

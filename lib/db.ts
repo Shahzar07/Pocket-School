@@ -9,6 +9,7 @@ import type { Role } from './roles';
 import type { OemLicence } from './oem';
 import type { AccessPolicy } from './access-policy';
 import { coerceDailyGoal } from './goals';
+import { stripUnitPrefix } from './unit-title';
 import { requestPush } from './push-client';
 import type { PushCategory } from './push';
 
@@ -516,7 +517,12 @@ export async function saveAiOutputsToLesson(
 }
 
 export async function createModule(courseId: string, data: Omit<Module, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'courses', courseId, 'modules'), { ...data, createdAt: serverTimestamp() });
+  const title = stripUnitPrefix(data.title, data.unitNumber);
+  const ref = await addDoc(collection(db, 'courses', courseId, 'modules'), {
+    ...data,
+    title,
+    createdAt: serverTimestamp(),
+  });
   return ref.id;
 }
 

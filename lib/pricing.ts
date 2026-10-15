@@ -109,7 +109,10 @@ export function seedPricing(): PricingConfig {
       ...plan,
       annualUsd: annualFromMonthly(plan.monthlyUsd, annualDiscount),
     })),
-    addons: [{ id: 'lyra_live', monthlyUsd: 49 }],
+    addons: [
+      { id: 'lyra_live', monthlyUsd: 49 },
+      { id: 'cms', monthlyUsd: 29 },
+    ],
     currencies: [
       emptyCurrency('USD', { enabled: true, mode: 'base', rate: 1, rounding: 'none' }),
       emptyCurrency('MYR', { enabled: true, mode: 'rate', rate: 4.7, rounding: 'charm' }),

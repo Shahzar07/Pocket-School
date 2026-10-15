@@ -906,6 +906,25 @@ service cloud.firestore {
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
+    // Shared image library. Storage holds the bytes at media/{scopeId}/{name}.
+    // This document is the metadata a course or a book can list again.
+    match /media_assets/{assetId} {
+      allow read: if isSignedIn() && (
+        resource.data.ownerId == request.auth.uid || isTeacherOrAdmin()
+      );
+      allow create: if isSignedIn()
+        && incoming().ownerId == request.auth.uid
+        && incoming().scopeId is string
+        && incoming().src is string
+        && incoming().alt is string;
+      allow update: if isSignedIn()
+        && resource.data.ownerId == request.auth.uid
+        && incoming().ownerId == request.auth.uid;
+      allow delete: if isSignedIn() && (
+        resource.data.ownerId == request.auth.uid || isAdmin()
+      );
+    }
+
     // ── Device push tokens (Poketschool app + web) ───────────
     // Clients may register and remove their own device. They may not read
     // or list the collection; the Admin SDK delivers pushes.

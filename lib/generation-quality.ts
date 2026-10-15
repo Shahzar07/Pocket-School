@@ -6,12 +6,19 @@ import { isStudyNoteProse, parseBuzan, type BuzanMap } from './mindmap';
 
 const STOP = new Set(['the', 'and', 'for', 'with', 'from', 'that', 'this', 'into', 'over', 'under', 'than', 'then', 'was', 'were', 'are', 'its', 'per', 'total']);
 
+const STUDY_HEADING = /^##\s+(introduction|core explanation|common misconceptions|summary|worked example)\b/im;
+
+/**
+ * Practice problems are a list of `## Problem N` blocks, each with
+ * `### Worked solution`. Study-note headings fail even when the words
+ * "problem" and "worked solution" appear in the prose.
+ */
 export function problemsAreWorked(text: string): boolean {
   const body = text.trim();
-  if (!body) return false;
-  const worked = /worked solution/i.test(body) && /\bproblem\b/i.test(body);
-  if (isStudyNoteProse(body) && !worked) return false;
-  return worked;
+  if (!body || isStudyNoteProse(body) || STUDY_HEADING.test(body)) return false;
+  const blocks = body.split(/^##\s+Problem\s+\d+\b/im).slice(1);
+  if (blocks.length === 0) return false;
+  return blocks.every(block => /^###\s+Worked solution\b/im.test(block));
 }
 
 export function mindmapIsBuzan(text: string): BuzanMap | null {

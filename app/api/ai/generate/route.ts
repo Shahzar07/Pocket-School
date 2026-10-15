@@ -42,23 +42,17 @@ const PROMPTS: Record<string, (c: string) => string> = {
 
   summary: (c) => `You are an expert summariser. ${MATH_HINT}${MARKDOWN_HINT}Write a clear, concise 3-5 sentence summary of this lesson content that captures all the essential takeaways. Use accessible language.\n\nLesson content:\n${c}`,
 
-  problems: (c) => `You are a practice-problems author. ${MATH_HINT}Write 4-5 practice problems from this lesson. Return Markdown only, using this shape for every problem:
-
-## Problem 1
-The problem statement, in one short paragraph.
-
-### Worked solution
-The steps a student follows, then the final answer.
-
-Rules:
-- Every item starts with "## Problem N".
-- Every item includes a "### Worked solution" section.
-- Do not write study notes.
-- Do not use the headings "Introduction" or "Core explanation".
-- Do not add a summary or a list of misconceptions.
+  problems: (c) => `You are a practice-problems author. ${MATH_HINT}Write 4-5 practice problems from this lesson. Return Markdown only.
 
 Lesson content:
-${c}`,
+${c}
+
+Output shape — this overrides any content brief, template, or study-note request above:
+- Every item starts with "## Problem N".
+- Every item includes a "### Worked solution" section with the steps and the final answer.
+- Do not write study notes.
+- Do not use the headings "Introduction", "Core explanation", "Common misconceptions", "Summary", or "Worked example".
+- Do not add a summary.`,
 
   glossary: (c) => `You are a vocabulary expert. Extract 6-8 key terms from this lesson content and provide clear, concise definitions. Return ONLY a valid JSON array, no prose before or after it:\n[{"term":"...","definition":"..."}]\n\nLesson content:\n${c}`,
 
@@ -206,8 +200,14 @@ export async function POST(req: NextRequest) {
     // Curriculum CMS passes the lesson's authored generation brief; prepend it
     // so every format follows the curriculum team's instructions.
     const cappedContent = String(content).slice(0, MAX_CONTENT_CHARS);
-    const fullContent = briefPrompt
-      ? `CONTENT BRIEF (follow these instructions):\n${String(briefPrompt).slice(0, MAX_BRIEF_CHARS)}\n\n${cappedContent}`
+    const brief = briefPrompt ? String(briefPrompt).slice(0, MAX_BRIEF_CHARS) : '';
+    // Problems, mind maps, and infographics have a fixed shape. A lesson brief
+    // that asks for study-note headings must not replace that shape.
+    const shapeLocked = format === 'problems' || format === 'mindmap' || format === 'infographic';
+    const fullContent = brief
+      ? shapeLocked
+        ? `${cappedContent}\n\nAuthor note (context only — do not change the required output shape):\n${brief}`
+        : `CONTENT BRIEF (follow these instructions):\n${brief}\n\n${cappedContent}`
       : cappedContent;
 
     const langInstruction = language && language !== 'en'
