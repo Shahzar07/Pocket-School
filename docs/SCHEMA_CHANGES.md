@@ -270,6 +270,43 @@ Signing in at `/admin/login` also writes that profile when the rules allow it, t
 
 A super admin cannot remove the last super admin, and cannot demote or block their own super admin account. Another super admin has to do that.
 
+## Teacher course studio
+
+Teachers build a course in the studio at `/dashboard/teacher/courses/build`. The course document gains two optional fields:
+
+| Field | Type | Notes |
+|---|---|---|
+| `subtitle` | string | Short line under the title. Omitted when blank. |
+| `language` | string | Language code such as `en` or `ms`. |
+
+`currency` on a studio course is `USD`. The price the student is charged is that USD amount. Local currency on the pricing step uses the existing admin pricing rates.
+
+Allocation reuses `accessPolicy`. `users` plus `userIds` is a named student. `cohorts` is a class. `parents` is linked parents. `institutions` is a school. `all` is every signed-in person. `marketplace` is the public catalogue. A teacher publish that includes `marketplace` is stored as `pending_approval` with `isPublic: false`. An admin approval sets `published` and `isPublic: true`, and writes `courses/{id}/access_audit` plus `admin_audit` with action `course.approve`. A private allocation can be `published` without `isPublic`.
+
+`createCourse` and `updateCourse` omit `undefined` before the write. Firestore rejects a document that still contains `undefined`.
+
+### Ownership
+
+A teacher or institution admin may create a course only when `ownerId` is their uid, and may update or delete it only while `ownerId` stays theirs. They cannot set a marketplace listing to `published`. An admin can edit any course. Enrolment, view, completion, and revenue counters still move by one without being the owner. Modules, lessons, grants, and the access audit on that course follow the same owner check.
+
+### Questions
+
+`courses/{courseId}/questions/{questionId}` holds a student question and the instructor reply.
+
+| Field | Type | Notes |
+|---|---|---|
+| `authorId` | string | Must be the signed-in uid on create. |
+| `authorName` | string | Display name. |
+| `text` | string | The question. |
+| `reply` | string | Written by the course owner. |
+| `repliedBy` | string | Owner uid. |
+
+An enrolled student can create a question. The course owner can read and reply. Rules need an owner deploy.
+
+### Coupons
+
+`coupon_codes/{code}` can be created by the course owner as well as an admin. `createdBy` must be the owner's uid, `code` must match the document id, and `discountPct` is from 1 to 100. The owner can set `active` or delete their own code. Redemption still only bumps `usedCount` and `redeemedBy`.
+
 ## modules.title
 
 `createModule` strips a leading `Unit N:`, `Module N:`, or `Chapter N:` when `N` is that module's `unitNumber`, including a repeated prefix. The course tree still prints `Unit N:` once. Opening a course repairs stored titles that still have the duplicate.

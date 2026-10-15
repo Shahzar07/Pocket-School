@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Plus, BookOpen, Edit, Trash2, Eye, EyeOff, ExternalLink, Loader2, Send, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
-  getTeacherCourses, deleteCourse, updateCourse,
+  getTeacherCourses, deleteCourse, updateCourse, writeAccessAudit,
   type Course,
 } from '@/lib/db';
-import CourseEditorModal from '@/components/course-editor-modal';
+import { awaitsMarketplaceReview } from '@/lib/course-builder';
 import { usePricing } from '@/hooks/use-pricing';
 import { motion } from 'motion/react';
 
@@ -31,12 +32,11 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
 };
 
 export default function TeacherCourseMgmt() {
+  const router = useRouter();
   const { courseLabel } = usePricing();
-  const { user, profile } = useAuthSTORE();
+  const { user } = useAuthSTORE();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editing, setEditing] = useState<Course | null>(null);
 
   const load = useCallback(async () => {
     if (!user?.uid) return;
@@ -53,16 +53,6 @@ export default function TeacherCourseMgmt() {
 
   useEffect(() => { load(); }, [load]);
 
-  const onCreate = () => {
-    setEditing(null);
-    setEditorOpen(true);
-  };
-
-  const onEdit = (c: Course) => {
-    setEditing(c);
-    setEditorOpen(true);
-  };
-
   const onDelete = async (c: Course) => {
     if (!confirm(`Delete "${c.title}"? This cannot be undone.`)) return;
     try {
@@ -76,7 +66,8 @@ export default function TeacherCourseMgmt() {
 
   const submitForReview = async (c: Course) => {
     try {
-      await updateCourse(c.id, { status: 'pending_approval' });
+      await updateCourse(c.id, { status: 'pending_approval', isPublic: false });
+      if (user) await writeAccessAudit(c.id, { actorId: user.uid, action: 'submit', detail: 'Submitted for marketplace review' });
       toast.success('Submitted for admin review. You\'ll be notified once approved.');
       load();
     } catch (e: any) {
@@ -128,10 +119,10 @@ export default function TeacherCourseMgmt() {
           </p>
         </div>
         <Button
-          onClick={onCreate}
+          onClick={() => router.push('/dashboard/teacher/courses/build')}
           className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all"
         >
-          <Plus className="w-5 h-5 mr-2" /> New Product
+          <Plus className="w-5 h-5 mr-2" /> New course
         </Button>
       </motion.div>
 
@@ -171,10 +162,10 @@ export default function TeacherCourseMgmt() {
           <h2 className="font-heading text-2xl text-foreground mb-2">No products yet</h2>
           <p className="text-muted-foreground mb-6">You haven&apos;t created any products yet.</p>
           <Button
-            onClick={onCreate}
+            onClick={() => router.push('/dashboard/teacher/courses/build')}
             className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all"
           >
-            <Plus className="w-4 h-4 mr-2" /> Create your first product
+            <Plus className="w-4 h-4 mr-2" /> Create your first course
           </Button>
         </motion.div>
       )}
@@ -238,13 +229,22 @@ export default function TeacherCourseMgmt() {
 
                   <div className="mt-4 pt-4 border-t border-border space-y-2">
                     {/* Primary action by status */}
-                    {c.status === 'draft' && (
+                    {c.status === 'draft' && awaitsMarketplaceReview(c) && (
                       <Button
                         size="sm"
                         className="w-full rounded-full font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all"
                         onClick={() => submitForReview(c)}
                       >
                         <Send className="w-3.5 h-3.5 mr-1.5" /> Submit for Review
+                      </Button>
+                    )}
+                    {c.status === 'draft' && !awaitsMarketplaceReview(c) && (
+                      <Button
+                        size="sm"
+                        className="w-full rounded-full font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white"
+                        onClick={() => router.push(`/dashboard/teacher/courses/${c.id}`)}
+                      >
+                        Continue in studio
                       </Button>
                     )}
                     {c.status === 'pending_approval' && (
@@ -271,11 +271,11 @@ export default function TeacherCourseMgmt() {
                     {/* Secondary actions */}
                     <div className="flex justify-between gap-2">
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => onEdit(c)}
-                          disabled={c.status === 'pending_approval'}
-                          title={c.status === 'pending_approval' ? 'Withdraw review to edit' : undefined}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/teacher/courses/${c.id}`)}>
                           <Edit className="w-4 h-4 mr-1" /> Edit
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/teacher/courses/${c.id}/preview`)}>
+                          <Eye className="w-4 h-4" />
                         </Button>
                       </div>
                       <div className="flex gap-1">
@@ -299,16 +299,6 @@ export default function TeacherCourseMgmt() {
         </div>
       )}
 
-      {user && (
-        <CourseEditorModal
-          open={editorOpen}
-          onOpenChange={setEditorOpen}
-          initial={editing}
-          ownerId={user.uid}
-          ownerName={profile?.name || user.email || 'Teacher'}
-          onSaved={load}
-        />
-      )}
     </div>
   );
 }

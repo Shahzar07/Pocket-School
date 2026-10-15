@@ -350,6 +350,40 @@ service cloud.firestore {
         && request.resource.data.revenueTotal == resource.data.get('revenueTotal', 0) + getAfter(/databases/$(database)/documents/courses/$(courseId)/purchases/$(request.auth.uid)).data.amount;
     }
 
+    function ownsCourse(courseId) {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/courses/$(courseId)).data.ownerId == request.auth.uid;
+    }
+
+    // A public marketplace listing. Teachers may prepare one, but only an
+    // admin may set the published public state. Editing a listing an admin
+    // already approved is allowed when that state does not change.
+    function marketplaceListing(data) {
+      return data.status == 'published'
+        && (
+          data.get('isPublic', false) == true
+          || (data.keys().hasAny(['accessPolicy'])
+              && data.accessPolicy is map
+              && data.accessPolicy.keys().hasAny(['include'])
+              && data.accessPolicy.include is list
+              && data.accessPolicy.include.hasAny(['marketplace']))
+          || (data.keys().hasAny(['audiences'])
+              && data.audiences is list
+              && data.audiences.hasAny(['marketplace']))
+        );
+    }
+
+    function teacherCourseUpdate() {
+      return isTeacherOrAdmin()
+        && resource.data.ownerId == request.auth.uid
+        && incoming().ownerId == resource.data.ownerId
+        && seatsUnchanged()
+        && (
+          !marketplaceListing(incoming())
+          || marketplaceListing(resource.data)
+        );
+    }
+
     function couponGrantCreate(courseId) {
       return isSignedIn()
         && incoming().kind == 'coupon'
@@ -395,23 +429,30 @@ service cloud.firestore {
               (isSignedIn() && (enrolledHere(courseId) || targeted(resource.data)))
               || (!isSignedIn() && targetingEmpty(resource.data) && resource.data.accessPolicy.include.hasAny(['marketplace']))
             ));
-      allow create: if isTeacherOrAdmin();
-      // Staff may edit a course, but only an enrolment transaction may move
-      // seatsUsed, and only by one. Counters accept a single step.
-      allow update: if (isTeacherOrAdmin() && seatsUnchanged())
+      allow create: if isAdmin()
+        || (isTeacherOrAdmin()
+            && incoming().ownerId == request.auth.uid
+            && !marketplaceListing(incoming()));
+      // The owner may edit their course. Counters still move by one for
+      // enrolment, views, completion, and revenue. An admin may edit any course.
+      allow update: if (isAdmin() && seatsUnchanged())
+        || teacherCourseUpdate()
         || seatIncrement(courseId)
         || plusOne('enrollmentCount')
         || plusOne('viewCount')
         || plusOne('completionCount')
         || revenueIncrement(courseId);
-      allow delete: if isAdmin();
+      allow delete: if isAdmin()
+        || (isTeacherOrAdmin() && resource.data.ownerId == request.auth.uid);
 
       match /enrollments/{studentId} {
         allow read: if isSignedIn();
         // Enrol yourself, or be enrolled by a teacher/admin. A seat limit
         // refuses a new self-enrolment once seatsUsed has reached it.
-        allow create: if isTeacherOrAdmin() || (isUser(studentId) && seatsOpen(courseId));
-        allow update: if isUser(studentId) || isTeacherOrAdmin();
+        allow create: if isAdmin()
+          || (isTeacherOrAdmin() && ownsCourse(courseId))
+          || (isUser(studentId) && seatsOpen(courseId));
+        allow update: if isUser(studentId) || isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId));
         allow delete: if isUser(studentId) || isAdmin();
       }
 
@@ -419,19 +460,19 @@ service cloud.firestore {
         allow read: if isTeacherOrAdmin()
           || isUser(grantId)
           || (isSignedIn() && request.auth.token.email is string && request.auth.token.email.lower() == grantId);
-        allow create: if (isTeacherOrAdmin()
+        allow create: if ((isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId)))
               && incoming().kind == 'user'
               && incoming().active is bool)
           || (grantId == request.auth.uid && couponGrantCreate(courseId));
-        allow update: if isTeacherOrAdmin()
+        allow update: if (isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId)))
           && incoming().kind == 'user'
           && incoming().active is bool;
         allow delete: if isAdmin();
       }
 
       match /access_audit/{entryId} {
-        allow read: if isTeacherOrAdmin();
-        allow create: if isTeacherOrAdmin()
+        allow read: if isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId));
+        allow create: if (isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId)))
           && incoming().actorId == request.auth.uid
           && incoming().action is string
           && incoming().detail is string;
@@ -459,13 +500,29 @@ service cloud.firestore {
         allow delete: if isUser(userId) || isAdmin();
       }
 
+      match /questions/{questionId} {
+        allow read: if isAdmin()
+          || (isTeacherOrAdmin() && ownsCourse(courseId))
+          || enrolledHere(courseId);
+        allow create: if isSignedIn()
+          && incoming().authorId == request.auth.uid
+          && incoming().text is string
+          && incoming().text.size() > 0
+          && incoming().text.size() < 2000
+          && (enrolledHere(courseId) || ownsCourse(courseId));
+        allow update: if isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId));
+        allow delete: if isAdmin()
+          || (isTeacherOrAdmin() && ownsCourse(courseId))
+          || (isSignedIn() && resource.data.authorId == request.auth.uid);
+      }
+
       match /modules/{moduleId} {
         // Chapter titles are public so the marketplace can show a course's
         // curriculum before signup, the way every course marketplace does.
         // Module documents hold titles and ordering only — no lesson content.
         allow read: if true;
-        allow create, update: if isTeacherOrAdmin();
-        allow delete: if isAdmin();
+        allow create, update: if isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId));
+        allow delete: if isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId));
 
         match /lessons/{lessonId} {
           // Deliberately NOT public: lesson documents carry aiOutputs, the
@@ -504,8 +561,8 @@ service cloud.firestore {
                             && resource.data.get('order', 999) <= get(/databases/$(database)/documents/courses/$(courseId)).data.accessPolicy.get('freePreviewCount', 0))
                       ))
                 ));
-          allow create, update: if isTeacherOrAdmin();
-          allow delete: if isAdmin();
+          allow create, update: if isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId));
+          allow delete: if isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId));
         }
       }
     }
@@ -514,16 +571,34 @@ service cloud.firestore {
     match /coupon_codes/{code} {
       // Readable so a student can validate a code they were given.
       allow read: if isSignedIn();
-      allow create, delete: if isAdmin();
+      allow create: if isAdmin()
+        || (isTeacherOrAdmin()
+            && incoming().createdBy == request.auth.uid
+            && incoming().courseId is string
+            && ownsCourse(incoming().courseId)
+            && incoming().code is string
+            && incoming().code == code
+            && incoming().discountPct is number
+            && incoming().discountPct >= 1
+            && incoming().discountPct <= 100);
+      allow delete: if isAdmin()
+        || (isSignedIn()
+            && resource.data.createdBy == request.auth.uid
+            && ownsCourse(resource.data.courseId));
       // A redeemer may only bump the counter by one and add themselves to the
-      // redeemed list; everything else about a coupon is the admin's.
+      // redeemed list. The course owner may turn their own code on or off.
       allow update: if isAdmin()
         || (isSignedIn()
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['usedCount', 'redeemedBy'])
             && request.resource.data.usedCount == resource.data.usedCount + 1
             && request.resource.data.redeemedBy.hasAll(resource.data.redeemedBy)
-            && request.auth.uid in request.resource.data.redeemedBy);
+            && request.auth.uid in request.resource.data.redeemedBy)
+        || (isSignedIn()
+            && resource.data.createdBy == request.auth.uid
+            && ownsCourse(resource.data.courseId)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active'])
+            && incoming().active is bool);
     }
 
     // ── Coupon redemptions ────────────────────────────────────
