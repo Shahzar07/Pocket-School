@@ -17,6 +17,7 @@ import {
   parentOverview,
   recordUnitQuiz,
   requestParentLink,
+  syncModuleCertificates,
   respondParentLink,
   setSubscription,
   syncPublicProfile,
@@ -51,6 +52,8 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
         return ensureAdminBootstrap(user.uid);
       case 'progress-complete':
         return completeLesson(user.uid, str(body.courseId), str(body.lessonId), Number(body.xpReward) || 50, true);
+      case 'sync-certificates':
+        return syncModuleCertificates(user.uid, str(body.studentId) || user.uid, str(body.courseId) || undefined);
       case 'unit-quiz':
         return recordUnitQuiz(user.uid, {
           courseId: str(body.courseId),

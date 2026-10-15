@@ -1290,10 +1290,22 @@ service cloud.firestore {
     }
 
     // ── Certificates ──────────────────────────────────────────
+    // Public get so /verify/{id} works without a login. The Admin SDK writes
+    // these after it has checked published-lesson completion. A signed-in
+    // teacher or student must not mint one from the browser.
     match /certificates/{certId} {
-      allow read: if isSignedIn();
-      allow create: if isTeacherOrAdmin();
+      allow get: if true;
+      allow list: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid
+        || isTeacherOrAdmin()
+        || linkedTo(resource.data.studentId)
+      );
+      allow create, update: if false;
       allow delete: if isAdmin();
+    }
+
+    match /certificate_keys/{keyId} {
+      allow read, write: if false;
     }
 
     // ── Tasks ─────────────────────────────────────────────────

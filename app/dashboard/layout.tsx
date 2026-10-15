@@ -160,6 +160,7 @@ const NAV: Record<Role, NavGroup[]> = {
   parent: [
     { items: [
       { href: '/dashboard/parent', icon: Home, labelKey: 'nav.childProgress' },
+      { href: '/dashboard/parent#certificates', icon: Award, labelKey: 'nav.certificates' },
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
