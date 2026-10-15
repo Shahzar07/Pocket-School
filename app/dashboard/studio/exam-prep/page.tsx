@@ -27,18 +27,18 @@ export default function ExamPrepListPage() {
 
   const join = () => {
     const m = /join\/([A-Za-z0-9]+)/.exec(joinLink) ?? /^([A-Za-z0-9]{12,})$/.exec(joinLink.trim());
-    if (m) location.href = `/dashboard/student/exam-prep/join/${m[1]}`;
+    if (m) location.href = `/dashboard/studio/exam-prep/join/${m[1]}`;
   };
 
   return (
     <DashPage>
       <DashHeader
-        eyebrow="Exam Prep"
+        eyebrow={<><Link href="/dashboard/studio" className="hover:underline">AI Studio</Link> · Exam Prep</>}
         title="Walk into every exam"
         accent="ready."
         description="Add your notes, slides and past papers. ET turns them into a day-by-day plan that ends on your exam date — lessons, quizzes, flashcards, podcasts and a full mock."
         actions={
-          <Link href="/dashboard/student/exam-prep/new" className="h-10 px-4 rounded-full bg-primary text-primary-foreground text-sm font-semibold inline-flex items-center gap-1.5 hover:opacity-90">
+          <Link href="/dashboard/studio/exam-prep/new" className="h-10 px-4 rounded-full bg-primary text-primary-foreground text-sm font-semibold inline-flex items-center gap-1.5 hover:opacity-90">
             <Plus className="w-4 h-4" /> New exam prep
           </Link>
         }
@@ -52,7 +52,7 @@ export default function ExamPrepListPage() {
             <div>
               <p className="font-heading text-2xl text-foreground mb-2">Your notes in. Your study plan out.</p>
               <p className="text-sm text-muted-foreground mb-5 leading-relaxed">Upload photos of your notes, PDFs, slides or old exams and set your exam date. ET finds the topics, builds your plan and teaches you from your own material — so you only study what&apos;s actually on the exam.</p>
-              <Link href="/dashboard/student/exam-prep/new" className="h-11 px-5 rounded-full bg-primary text-primary-foreground font-semibold inline-flex items-center gap-2"><Sparkles className="w-4 h-4" /> Create my first plan</Link>
+              <Link href="/dashboard/studio/exam-prep/new" className="h-11 px-5 rounded-full bg-primary text-primary-foreground font-semibold inline-flex items-center gap-2"><Sparkles className="w-4 h-4" /> Create my first plan</Link>
             </div>
             <ol className="space-y-3">
               {[
@@ -109,7 +109,7 @@ function PrepCard({ prep, index }: { prep: ExamPrep; index: number }) {
   const grade = Object.keys(prep.mastery ?? {}).length ? gradeFor(prep.gradeScale, mastery) : '—';
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-      <Link href={`/dashboard/student/exam-prep/${prep.id}`} className="block group bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] p-5 hover:border-primary/40 transition-colors">
+      <Link href={`/dashboard/studio/exam-prep/${prep.id}`} className="block group bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] p-5 hover:border-primary/40 transition-colors">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary truncate">{prep.subject || 'Exam'}</p>

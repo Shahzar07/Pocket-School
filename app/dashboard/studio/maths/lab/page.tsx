@@ -25,7 +25,7 @@ export default function MathsLabPage() {
   const [tool, setTool] = useState<Tool>('graph');
   return (
     <DashPage>
-      <Link href="/dashboard/student/maths" className="text-[13px] font-semibold text-muted-foreground hover:text-foreground inline-flex items-center gap-1"><ArrowLeft className="w-4 h-4" /> ET Maths</Link>
+      <Link href="/dashboard/studio/maths" className="text-[13px] font-semibold text-muted-foreground hover:text-foreground inline-flex items-center gap-1"><ArrowLeft className="w-4 h-4" /> ET Maths</Link>
       <DashHeader eyebrow="Maths Lab" title="See the maths" accent="move." description="Plot anything, take a function apart, and keep sharp with today's equation puzzle." />
       <Segmented options={[{ id: 'graph', label: 'Graphing calculator' }, { id: 'analyse', label: 'Function analysis' }, { id: 'puzzle', label: 'Guess the equation' }] as const} value={tool} onChange={setTool} />
       {tool === 'graph' && <GraphingCalculator />}

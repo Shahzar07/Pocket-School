@@ -40,7 +40,7 @@ export default function JoinPrepPage({ params }: { params: Promise<{ shareId: st
         streak: 0, studyDays: [], sharedFrom: shareId,
       }, shared.material ?? '');
       toast.success('Your copy is ready.');
-      router.push(`/dashboard/student/exam-prep/${id}`);
+      router.push(`/dashboard/studio/exam-prep/${id}`);
     } catch {
       toast.error('Could not create your copy.');
       setBusy(false);

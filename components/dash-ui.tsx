@@ -25,7 +25,7 @@ export function DashPage({ children, className = '' }: { children: ReactNode; cl
 export function DashHeader({
   eyebrow, title, accent, description, actions,
 }: {
-  eyebrow?: string;
+  eyebrow?: ReactNode;
   title: string;
   /** Rendered in teal after the title, the way the homepage emphasises. */
   accent?: string;

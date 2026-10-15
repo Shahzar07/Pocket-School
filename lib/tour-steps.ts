@@ -152,7 +152,7 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     id: 'ai-studio',
-    route: '/ai-studio',
+    route: '/dashboard/studio',
     title: 'Turn anything into study material',
     body: 'Drop in notes, a PDF or a transcript and get flashcards, quizzes, mind maps, audio and video back.',
     roles: ['student', 'teacher'],

@@ -145,7 +145,7 @@ export default function NewExamPrepPage() {
       }, material);
       await chargeSparks(user.uid, 'examPrep', `Exam prep: ${title}`).catch(() => null);
       toast.success('Your plan is ready.');
-      router.push(`/dashboard/student/exam-prep/${id}`);
+      router.push(`/dashboard/studio/exam-prep/${id}`);
     } catch (e) {
       if (e instanceof InsufficientSparks) toast.error(e.message, { action: { label: 'Get Sparks', onClick: () => router.push('/dashboard/student/billing') } });
       else toast.error(e instanceof Error ? e.message : 'Could not create the plan.');

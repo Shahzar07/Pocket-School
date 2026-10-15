@@ -142,21 +142,19 @@ export function AITutor() {
               </div>
               <div className="flex items-center gap-1">
                 <Link
-                  href="/dashboard/student/maths"
+                  href="/dashboard/studio/maths"
                   className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors inline-flex items-center gap-1"
                   title="Scan a maths problem"
                 >
                   <Camera className="w-3 h-3" /> Maths
                 </Link>
-                <a
-                  href="/ai-studio"
-                  target="_blank"
-                  rel="noreferrer"
+                <Link
+                  href="/dashboard/studio"
                   className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-                  title="Open in AI Studio"
+                  title="Open AI Studio"
                 >
-                  AI Studio ↗
-                </a>
+                  AI Studio
+                </Link>
                 <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/20 rounded-full" onClick={() => setIsOpen(false)}>
                   <X className="w-5 h-5" />
                 </Button>

@@ -202,7 +202,7 @@ export default function TeacherDashboard() {
             <PanelHeader title="Jump to" />
             <div className="space-y-2">
               {[
-                { href: '/ai-studio', icon: Sparkles, title: 'AI Studio', sub: 'Build study material from anything' },
+                { href: '/dashboard/studio', icon: Sparkles, title: 'AI Studio', sub: 'ET, Maths, and Exam Prep' },
                 { href: '/dashboard/teacher/attendance', icon: CheckCircle2, title: 'Attendance', sub: 'Mark a register' },
                 { href: '/dashboard/teacher/analytics', icon: BarChart3, title: 'Analytics', sub: 'How your class is doing' },
               ].map(x => (

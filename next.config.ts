@@ -1,6 +1,10 @@
 import type {NextConfig} from 'next';
+import { studioRedirects } from './lib/studio-paths';
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [...studioRedirects];
+  },
   reactStrictMode: true,
   eslint: {
     ignoreDuringBuilds: true,

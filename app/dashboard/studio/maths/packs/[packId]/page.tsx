@@ -94,7 +94,7 @@ export default function PackPage({ params }: { params: Promise<{ packId: string 
 
   return (
     <DashPage>
-      <Link href="/dashboard/student/maths/packs" className="text-[13px] font-semibold text-muted-foreground hover:text-foreground inline-flex items-center gap-1"><ArrowLeft className="w-4 h-4" /> All exam packs</Link>
+      <Link href="/dashboard/studio/maths/packs" className="text-[13px] font-semibold text-muted-foreground hover:text-foreground inline-flex items-center gap-1"><ArrowLeft className="w-4 h-4" /> All exam packs</Link>
 
       <div className="grid lg:grid-cols-12 gap-5">
         <Panel className="lg:col-span-5 relative overflow-hidden">
@@ -194,7 +194,7 @@ export default function PackPage({ params }: { params: Promise<{ packId: string 
                       exercises={questions.map(q => ({ prompt: `${q.paper ? `*${q.paper}* · ` : ''}${q.question}`, hint: '', solution: q.solution, answer: q.answer, marks: q.marks }))}
                       onComplete={finish}
                       extraAction={(_, i) => (
-                        <Link href={`/dashboard/student/maths?problem=${encodeURIComponent(questions[i].question)}`}
+                        <Link href={`/dashboard/studio/maths?problem=${encodeURIComponent(questions[i].question)}`}
                           className="h-9 px-3.5 rounded-full border border-primary/30 text-primary text-[13px] font-semibold inline-flex items-center gap-1.5 hover:bg-primary/5">
                           Work through it with ET <ChevronRight className="w-4 h-4" />
                         </Link>

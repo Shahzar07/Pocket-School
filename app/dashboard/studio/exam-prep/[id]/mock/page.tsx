@@ -128,7 +128,7 @@ export default function MockExamPage({ params }: { params: Promise<{ id: string 
 
   return (
     <DashPage>
-      <Link href={`/dashboard/student/exam-prep/${prep.id}`} className="text-[13px] font-semibold text-muted-foreground hover:text-foreground inline-flex items-center gap-1"><ArrowLeft className="w-4 h-4" /> {prep.title}</Link>
+      <Link href={`/dashboard/studio/exam-prep/${prep.id}`} className="text-[13px] font-semibold text-muted-foreground hover:text-foreground inline-flex items-center gap-1"><ArrowLeft className="w-4 h-4" /> {prep.title}</Link>
 
       {phase === 'setup' && (
         <div className="max-w-2xl mx-auto w-full">
@@ -236,7 +236,7 @@ export default function MockExamPage({ params }: { params: Promise<{ id: string 
                           <p className="text-[13px] text-foreground mt-1"><span className="font-semibold">Next: </span>{g.fix}</p>
                         </div>
                         {prep.topics.some(t => t.id === g.topicId) && (
-                          <Link href={`/dashboard/student/exam-prep/${prep.id}/topic/${g.topicId}?tab=exercises`} className="self-center h-8 px-3 rounded-full bg-primary/10 text-primary text-[12px] font-semibold inline-flex items-center gap-1 shrink-0"><BookOpen className="w-3.5 h-3.5" /> Practise</Link>
+                          <Link href={`/dashboard/studio/exam-prep/${prep.id}/topic/${g.topicId}?tab=exercises`} className="self-center h-8 px-3 rounded-full bg-primary/10 text-primary text-[12px] font-semibold inline-flex items-center gap-1 shrink-0"><BookOpen className="w-3.5 h-3.5" /> Practise</Link>
                         )}
                       </li>
                     ))}

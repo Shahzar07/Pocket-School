@@ -173,7 +173,7 @@ export default function OralExamPage({ params }: { params: Promise<{ id: string 
 
   return (
     <DashPage>
-      <Link href={`/dashboard/student/exam-prep/${prep.id}`} className="text-[13px] font-semibold text-muted-foreground hover:text-foreground inline-flex items-center gap-1"><ArrowLeft className="w-4 h-4" /> {prep.title}</Link>
+      <Link href={`/dashboard/studio/exam-prep/${prep.id}`} className="text-[13px] font-semibold text-muted-foreground hover:text-foreground inline-flex items-center gap-1"><ArrowLeft className="w-4 h-4" /> {prep.title}</Link>
 
       {phase === 'setup' && (
         <div className="max-w-2xl mx-auto w-full">
@@ -272,7 +272,7 @@ export default function OralExamPage({ params }: { params: Promise<{ id: string 
             <motion.p initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="font-heading text-[96px] leading-none mt-2 bg-gradient-to-b from-primary to-emerald-600 bg-clip-text text-transparent">{gradeFor(prep.gradeScale, grade.percent)}</motion.p>
             <p className="font-semibold text-[18px] tabular-nums">{grade.percent}%</p>
             <p className="text-[14px] text-muted-foreground mt-3">{grade.summary}</p>
-            <Link href={`/dashboard/student/exam-prep/${prep.id}`} className="mt-5 inline-flex h-10 px-4 rounded-full border border-border text-sm font-semibold items-center">Back to my plan</Link>
+            <Link href={`/dashboard/studio/exam-prep/${prep.id}`} className="mt-5 inline-flex h-10 px-4 rounded-full border border-border text-sm font-semibold items-center">Back to my plan</Link>
           </Panel>
           <div className="lg:col-span-8 space-y-5">
             <Panel>

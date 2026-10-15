@@ -133,7 +133,7 @@ function TopicInner({ params }: { params: Promise<{ id: string; topicId: string 
 
   return (
     <DashPage>
-      <Link href={`/dashboard/student/exam-prep/${prep.id}`} className="text-[13px] font-semibold text-muted-foreground hover:text-foreground inline-flex items-center gap-1"><ArrowLeft className="w-4 h-4" /> {prep.title}</Link>
+      <Link href={`/dashboard/studio/exam-prep/${prep.id}`} className="text-[13px] font-semibold text-muted-foreground hover:text-foreground inline-flex items-center gap-1"><ArrowLeft className="w-4 h-4" /> {prep.title}</Link>
 
       <Panel>
         <div className="flex flex-wrap items-start justify-between gap-4">
