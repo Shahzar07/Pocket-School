@@ -50,8 +50,11 @@ The QA password accounts are not in Firebase until this is run with the owner se
 
 ```bash
 export FIREBASE_SERVICE_ACCOUNT='{"type":"service_account",...}'
+export SEED_QA_PASSWORD='set-this-outside-the-repo'
 npx tsx scripts/seed-test-accounts.ts
 ```
+
+`SEED_QA_PASSWORD` is required and is not stored in this repository.
 
 This environment did not have `FIREBASE_SERVICE_ACCOUNT`, so the accounts were not created from here. The script does not create a super admin and does not change the three owner emails.
 

@@ -2,6 +2,7 @@
  * Preview QA accounts for Harry's Sunday pass.
  *
  *   export FIREBASE_SERVICE_ACCOUNT='{"type":"service_account",...}'
+ *   export SEED_QA_PASSWORD='(ask the owner; do not commit it)'
  *   npx tsx scripts/seed-test-accounts.ts
  *
  * Writes to the named database in firebase-applet-config.json.
@@ -13,7 +14,11 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
-const PASSWORD = 'Poket-QA-Sunday-2026';
+const PASSWORD = process.env.SEED_QA_PASSWORD ?? '';
+if (PASSWORD.length < 8) {
+  console.error('Set SEED_QA_PASSWORD to a password of at least 8 characters. Do not commit that password.');
+  process.exit(1);
+}
 
 const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
 if (!serviceAccount) {

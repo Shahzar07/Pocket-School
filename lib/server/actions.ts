@@ -561,6 +561,12 @@ export async function lessonContentFor(uid: string, courseId: string, lessonId: 
   const unlocked = ((enroll.data()?.unlockedFormats as Record<string, string[]> | undefined)?.[lessonId]) ?? [];
   const allowed = new Set<string>(isStaff || waived ? formats : formats.filter((f) => unlocked.includes(f)));
   if (outputs?.summary && (isStaff || waived || unlocked.includes('text'))) allowed.add('summary');
+  // Pictures sit inside the lesson text, so they travel with it.
+  if (isStaff || waived || unlocked.includes('text') || allowed.has('text')) {
+    if (outputs?.image) allowed.add('image');
+    if (outputs?.illustration) allowed.add('illustration');
+    if (outputs?.vocabulary) allowed.add('vocabulary');
+  }
   return {
     formats,
     unlocked: isStaff || waived ? formats : unlocked,

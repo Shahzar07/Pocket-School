@@ -10,6 +10,10 @@ import {
 } from '@/lib/curriculum-tiers';
 import { groundInfographic, mindmapIsBuzan, problemsAreWorked } from '@/lib/generation-quality';
 import { noteGenerationFailure } from '@/lib/admin-signals';
+import {
+  inventedNumbers, lessonUsesCjk, plannedSceneCount, questionsWithSingleAnswer,
+  stripStrayCjk, stripStrayCjkFromQuiz, type QuizQuestion,
+} from '@/lib/cms-guards';
 
 /** Video and audio scripts use the dedicated narrative model; everything
  * else uses the ultra-cheap content model. */
@@ -36,7 +40,7 @@ const PROMPTS: Record<string, (c: string) => string> = {
 
   flashcards: (c) => `You are a study expert. ${MATH_HINT}Create 6-8 high-quality flashcard pairs from this lesson content. Return ONLY a valid JSON array, no prose before or after it:\n[{"question":"...","answer":"..."}]\n\nLesson content:\n${c}`,
 
-  quiz: (c) => `You are an assessment expert. ${MATH_HINT}Create 5 multiple-choice quiz questions from this lesson content. Return ONLY a valid JSON array, no prose before or after it. CRITICAL: "answer" must be the EXACT full text of the correct option (copied verbatim from "options"), never a letter or index:\n[{"question":"...","options":["first option text","second option text","third option text","fourth option text"],"answer":"second option text","explanation":"why it is correct"}]\n\nLesson content:\n${c}`,
+  quiz: (c) => quizPrompt(c, 5),
 
   slides: (c) => `You are a presentation designer. Create 5-6 presentation slides from this lesson content. Return ONLY a valid JSON array — no prose, no markdown code fences, before or after it. Every element MUST be an object with exactly two keys: "title" (a string) and "bullets" (an array of 3-4 short strings). Never use "heading", "points" or "content" as keys, and never return the bullets as one long string:\n[{"title":"...","bullets":["...","...","..."]}]\n\nLesson content:\n${c}`,
 
@@ -54,9 +58,11 @@ Output shape — this overrides any content brief, template, or study-note reque
 - Every item includes a "### Worked solution" section with the steps and the final answer.
 - Do not write study notes.
 - Do not use the headings "Introduction", "Core explanation", "Common misconceptions", "Summary", or "Worked example".
-- Do not add a summary.`,
+- Do not add a summary.
+- Use only names, places, companies and figures that appear in the lesson. Do not invent statistics, prices, percentages or settings. If the lesson has no numbers, do not add any.
+- Write currency with words or an escaped dollar (US\\$50), never a bare $ before a number.`,
 
-  glossary: (c) => `You are a vocabulary expert. Extract 6-8 key terms from this lesson content and provide clear, concise definitions. Return ONLY a valid JSON array, no prose before or after it:\n[{"term":"...","definition":"..."}]\n\nLesson content:\n${c}`,
+  glossary: (c) => `You are a vocabulary expert. Extract 6-8 key terms from this lesson content and provide clear, concise definitions. Keep each term's original capitalisation from the lesson — do not lowercase it. Return ONLY a valid JSON array, no prose before or after it:\n[{"term":"...","definition":"..."}]\n\nLesson content:\n${c}`,
 
   mindmap: (c) => `You are a Tony Buzan mind-map author. Return ONLY a JSON object. No markdown, no code fences, no prose.
 
@@ -86,6 +92,7 @@ The stat must be a compact number, percentage, count, ratio or date that already
 6. Finish with ONE blockquote line starting with "> " containing the single key takeaway (max 30 words). This must be the last line of the output.
 
 Do not add commentary, headings, or sections beyond that structure.
+FACT RULE: every number, percentage, date and ratio must appear in the lesson content. If the lesson has no such figure, do not invent one — use a short qualitative label such as "Key idea" instead of a made-up percentage.
 
 Lesson content:\n${c}`,
 
@@ -111,6 +118,11 @@ Lesson content:\n${c}`,
 
   audioScript: (c) => `You are an educational podcast writer. Write a 60-90 second audio revision summary script for this lesson. Conversational, friendly tone as if speaking directly to one student. Plain prose only — no headings, no stage directions, no markdown — because it will be read aloud by text-to-speech. Cover the key points in a memorable order and end with one quick self-check question.\n\nLesson content:\n${c}`,
 };
+
+function quizPrompt(content: string, count: number): string {
+  const n = Math.min(20, Math.max(1, Math.round(count) || 5));
+  return `You are an assessment expert. ${MATH_HINT}Create exactly ${n} multiple-choice quiz questions from this lesson content. Return ONLY a valid JSON array, no prose before or after it. CRITICAL: "answer" must be the EXACT full text of exactly one option (copied verbatim from "options"), never a letter, never blank, never matching more than one option:\n[{"question":"...","options":["first option text","second option text","third option text","fourth option text"],"answer":"second option text","explanation":"why it is correct"}]\n\nLesson content:\n${content}`;
+}
 
 const JSON_FORMATS = new Set(['flashcards', 'quiz', 'slides', 'glossary']);
 
@@ -194,10 +206,13 @@ export async function POST(req: NextRequest) {
   const { gateAiSpend } = await import('@/lib/payments/server/settings');
   const capped = await gateAiSpend('openrouter');
   if (capped) return NextResponse.json({ error: capped, code: 'SPEND_CAP' }, { status: 402 });
+  if (!process.env.OPENROUTER_API_KEY) {
+    return NextResponse.json({ error: 'AI is not configured on this server yet.' }, { status: 503 });
+  }
   try {
     const {
       content, format, briefPrompt, language, templateId, customTemplate,
-      tier, tierMeta,
+      tier, tierMeta, quizCount, scaffold,
     } = await req.json();
     if (!content) return NextResponse.json({ error: 'content is required' }, { status: 400 });
 
@@ -251,8 +266,20 @@ export async function POST(req: NextRequest) {
         unit: meta.unit, topic: meta.topic,
       }, fullContent, briefPrompt ? String(briefPrompt).slice(0, MAX_BRIEF_CHARS) : undefined)
         + langInstruction;
+    } else if (format === 'quiz') {
+      const count = Number(quizCount);
+      prompt = quizPrompt(fullContent, Number.isFinite(count) && count > 0 ? count : 5) + langInstruction;
     } else {
       prompt = templateDirective + promptFn(fullContent) + langInstruction;
+    }
+    if (format === 'videoScript') {
+      const planned = plannedSceneCount(typeof briefPrompt === 'string' ? briefPrompt : undefined);
+      if (planned) {
+        prompt += `\n\nSCENE PLAN: the brief already lists ${planned} scenes. Write exactly ${planned} scenes, one per planned scene, in the same order. Do not merge, drop, or add scenes.`;
+      }
+    }
+    if (format === 'problems' && scaffold === true) {
+      prompt += '\n\nAlso include a short "Idea" hint and a worked-example scaffold before the problems.';
     }
     const text = await callOpenRouter([{ role: 'user', content: prompt }], { model: MODEL_FOR_FORMAT(format) });
 
@@ -275,6 +302,19 @@ export async function POST(req: NextRequest) {
         // and crashes the typed viewers downstream.
         return NextResponse.json({ error: 'The AI response could not be parsed. Please try again.' }, { status: 422 });
       }
+      if (format === 'quiz') {
+        const grounded = stripStrayCjkFromQuiz(questionsWithSingleAnswer(parsed as QuizQuestion[]), cappedContent);
+        if (!grounded.length) {
+          return NextResponse.json({ error: 'Every generated question was missing a single correct option. Nothing was saved — try again.' }, { status: 422 });
+        }
+        const dropped = parsed.length - grounded.length;
+        return NextResponse.json({
+          result: grounded,
+          warning: dropped > 0
+            ? `${dropped} question${dropped === 1 ? '' : 's'} had no single correct option and were left out.`
+            : undefined,
+        });
+      }
       return NextResponse.json({ result: parsed });
     }
 
@@ -286,7 +326,8 @@ export async function POST(req: NextRequest) {
           { status: 422 },
         );
       }
-      return NextResponse.json({ result: worked });
+      const prose = await groundProse(prompt, format, worked, cappedContent);
+      return prose;
     }
 
     if (format === 'mindmap') {
@@ -302,15 +343,41 @@ export async function POST(req: NextRequest) {
 
     if (format === 'infographic') {
       const grounded = await groundedInfographic(prompt, text, cappedContent);
-      return NextResponse.json({ result: grounded });
+      return groundProse(prompt, format, grounded, cappedContent);
     }
 
-    return NextResponse.json({ result: text });
+    return groundProse(prompt, format, text, cappedContent);
   } catch (err: any) {
     console.error('[generate]', err);
     await noteGenerationFailure();
     return NextResponse.json({ error: err.message || 'AI generation failed' }, { status: 500 });
   }
+}
+
+async function groundProse(prompt: string, format: string, text: string, cappedContent: string) {
+  let prose = lessonUsesCjk(cappedContent) ? text : stripStrayCjk(text);
+  if (format === 'infographic' || format === 'problems') {
+    const invented = inventedNumbers(cappedContent, prose);
+    if (invented.length) {
+      const repaired = await callOpenRouter(
+        [
+          { role: 'user', content: prompt },
+          { role: 'assistant', content: prose },
+          { role: 'user', content: `These figures are not in the lesson and must be removed: ${invented.join(', ')}. Rewrite the same ${format} using only facts and numbers from the lesson. If a statistic is not in the lesson, delete that line instead of replacing it with a new number.` },
+        ],
+        { model: MODEL_FOR_FORMAT(format), temperature: 0.2 },
+      );
+      prose = lessonUsesCjk(cappedContent) ? repaired : stripStrayCjk(repaired);
+      const still = inventedNumbers(cappedContent, prose);
+      if (still.length) {
+        return NextResponse.json({
+          result: prose,
+          warning: `Some figures are still not in the lesson text (${still.slice(0, 6).join(', ')}). Edit them before publishing.`,
+        });
+      }
+    }
+  }
+  return NextResponse.json({ result: prose });
 }
 
 async function requireWorkedProblems(prompt: string, first: string): Promise<string | null> {

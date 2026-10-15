@@ -7,6 +7,8 @@ import { MathMarkdown } from '@/components/math-markdown';
 import { LessonBody } from '@/components/lesson-body';
 import { readLessonBody } from '@/lib/lesson-body';
 import { LessonQa } from '@/components/scope-c/lesson-qa';
+import { LessonFigure } from '@/components/lesson-visual';
+import { normalizeMarkdown } from '@/components/lesson-format-views';
 import { Timestamp } from 'firebase/firestore';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { useTutorContext } from '@/hooks/use-tutor-context';
@@ -1060,12 +1062,16 @@ export default function LessonPage() {
             {gate('text',
               <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
                 {downloadFor('notes', copy.text, 'text')}
+                {aiOutputs.image?.placement === 'before' && <LessonFigure visual={aiOutputs.image} />}
+                {aiOutputs.illustration?.placement === 'before' && <LessonFigure visual={aiOutputs.illustration} />}
                 <LessonBody
                   markdown={copy.text}
                   imageDownload={downloadsOn && !isFormatLocked('text') ? image => (
                     <DownloadMenu asset="image" title={image.alt} content={{ url: image.src }} viewer={downloadViewer} courseId={courseId} />
                   ) : undefined}
                 />
+                {aiOutputs.image?.placement !== 'before' && <LessonFigure visual={aiOutputs.image} />}
+                {aiOutputs.illustration?.placement !== 'before' && <LessonFigure visual={aiOutputs.illustration} />}
                 {(lesson.mediaLibrary ?? []).length > 0 && downloadsOn && !isFormatLocked('text') && (
                   <div className="not-prose mt-6 space-y-3">
                     {(lesson.mediaLibrary ?? []).map(image => (
@@ -1195,7 +1201,9 @@ export default function LessonPage() {
                 <Headphones className="w-5 h-5 text-primary" />
                 <h3 className="font-heading text-2xl text-foreground">Quick Summary</h3>
               </div>
-              <p className="text-base text-foreground leading-relaxed">{aiOutputs.summary}</p>
+              <div className="prose prose-sm max-w-none text-foreground">
+                <MathMarkdown>{normalizeMarkdown(aiOutputs.summary ?? '')}</MathMarkdown>
+              </div>
             </motion.div>
           </TabsContent>
 

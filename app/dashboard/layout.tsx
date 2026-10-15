@@ -291,9 +291,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push(pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login');
-    }
+    if (loading || user) return;
+    // Closing a preview tab can make Firebase report a signed-out user for a
+    // moment. Wait, then redirect only if the session is still gone.
+    const timer = window.setTimeout(() => {
+      if (!useAuthSTORE.getState().user) {
+        router.push(pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login');
+      }
+    }, 600);
+    return () => window.clearTimeout(timer);
   }, [user, loading, router, pathname]);
 
   const staffRole = resolveStaffRole(profile ? {

@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
+import { escapeCurrencyDollars } from '@/lib/cms-guards';
 
 /**
  * Models write maths in two dialects. remark-math only understands dollar
@@ -28,7 +29,7 @@ export function normaliseMath(text: string): string {
 export function MathMarkdown({ children }: { children: string }) {
   return (
     <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
-      {normaliseMath(children ?? '')}
+      {escapeCurrencyDollars(normaliseMath(children ?? ''))}
     </ReactMarkdown>
   );
 }
