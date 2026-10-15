@@ -12,6 +12,7 @@ import {
   type Course,
 } from '@/lib/db';
 import CourseEditorModal from '@/components/course-editor-modal';
+import { usePricing } from '@/hooks/use-pricing';
 import { motion } from 'motion/react';
 
 const fadeUp: Record<string, any> = {
@@ -30,6 +31,7 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
 };
 
 export default function TeacherCourseMgmt() {
+  const { courseLabel } = usePricing();
   const { user, profile } = useAuthSTORE();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,11 +104,7 @@ export default function TeacherCourseMgmt() {
     }
   };
 
-  const fmtPrice = (c: Course) => {
-    if (!c.price || c.price === 0) return 'Free';
-    const symbol = c.currency === 'USD' ? '$' : c.currency === 'EUR' ? '€' : '£';
-    return `${symbol}${c.price.toFixed(2)}`;
-  };
+  const fmtPrice = (c: Course) => courseLabel(c.price, c.currency);
 
   return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">

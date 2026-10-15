@@ -12,6 +12,7 @@ import { BookOpen, Search, Filter, ArrowRight, Loader2, Sparkles, Mail, ShieldCh
 import { getPublicCourses, type Course, type CourseType } from '@/lib/db';
 import { courseCover } from '@/lib/course-cover';
 import { coursePriceType, freePreviewCount, courseMinTier, tierDefinition } from '@/lib/entitlements';
+import { usePricing } from '@/hooks/use-pricing';
 
 const TYPE_FILTERS: { id: CourseType | 'all'; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -40,14 +41,10 @@ function tierBadge(c: Course): string {
   return t > 0 ? tierDefinition(t).name : '';
 }
 
-function priceLabel(c: Course) {
-  if (!c.price || c.price === 0) return 'Free';
-  const symbol = c.currency === 'USD' ? '$' : c.currency === 'EUR' ? '€' : '£';
-  return `${symbol}${c.price.toFixed(2)}`;
-}
 
 export default function MarketplacePage() {
   const router = useRouter();
+  const { courseLabel } = usePricing();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<CourseType | 'all'>('all');
@@ -283,7 +280,7 @@ export default function MarketplacePage() {
 
                         <div className="mt-auto flex items-baseline gap-2">
                           <span className={`text-lg font-extrabold ${c.price ? 'text-foreground' : 'text-emerald-600'}`}>
-                            {priceLabel(c)}
+                            {courseLabel(c.price, c.currency)}
                           </span>
                           {tierBadge(c) && (
                             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPublicCourseById } from '@/lib/db';
+import { loadPricingConfig } from '@/lib/pricing-store';
+import { quoteCourse, stripeUnitAmount } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +13,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { courseId?: string; email?: string };
+  let body: { courseId?: string; email?: string; currency?: string };
   try {
     body = await req.json();
   } catch {
@@ -31,9 +33,11 @@ export async function POST(req: NextRequest) {
     const Stripe = (await import('stripe')).default;
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-04-22.dahlia' as any });
 
+    const config = await loadPricingConfig();
+    const quote = quoteCourse(config, course.price, course.currency, body.currency ?? course.currency ?? 'USD');
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(course.price * 100),
-      currency: (course.currency ?? 'GBP').toLowerCase(),
+      amount: stripeUnitAmount(quote.amount, quote.currency),
+      currency: quote.currency.toLowerCase(),
       metadata: {
         courseId,
         courseTitle: course.title,
@@ -46,8 +50,8 @@ export async function POST(req: NextRequest) {
       clientSecret: paymentIntent.client_secret,
       courseId,
       title: course.title,
-      amount: course.price,
-      currency: course.currency ?? 'GBP',
+      amount: quote.amount,
+      currency: quote.currency,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Payment intent creation failed.';

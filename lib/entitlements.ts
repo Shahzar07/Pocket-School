@@ -27,11 +27,10 @@ export interface TierDefinition {
   id: string;
   name: string;
   blurb: string;
-  /** Monthly price in USD. 0 = free, null = not sold directly (institution/marketplace). */
-  usd: number | null;
-  /** Monthly price in MYR. */
-  myr: number | null;
-  /** Monthly Sparks allowance. */
+  /**
+   * Monthly Sparks allowance and rollover are product constants for gates and
+   * copy. Charged prices and the displayed allowance live in lib/pricing.ts.
+   */
   sparks: number;
   /** Sparks that roll over into the next month. */
   sparksRollover: number;
@@ -45,43 +44,43 @@ export interface TierDefinition {
  */
 export const TIERS: TierDefinition[] = [
   {
-    tier: 0, id: 'preview', name: 'Free Preview', usd: 0, myr: 0,
+    tier: 0, id: 'preview', name: 'Free Preview',
     blurb: 'Public access, no account required.',
     sparks: 0, sparksRollover: 0,
     programmes: ['Course catalogue', 'First lesson of any course', 'Certificate verification'],
   },
   {
-    tier: 1, id: 'primary_secondary', name: 'Primary & Lower Secondary', usd: 19, myr: 49,
+    tier: 1, id: 'primary_secondary', name: 'Primary & Lower Secondary',
     blurb: 'Years 1–9, entry-level individual subscription.',
     sparks: 300, sparksRollover: 100,
     programmes: ['Primary Years 1–6', 'Lower Secondary Years 7–9', 'All core subjects'],
   },
   {
-    tier: 2, id: 'igcse_alevel', name: 'IGCSE & A-Level', usd: 79, myr: 352,
+    tier: 2, id: 'igcse_alevel', name: 'IGCSE & A-Level',
     blurb: 'Years 10–13, the core academic subscription.',
     sparks: 800, sparksRollover: 300,
     programmes: ['IGCSE / GCSE Years 10–11', 'A-Level Years 12–13', 'Pre-University & Foundation', 'Everything in Tier 1'],
   },
   {
-    tier: 3, id: 'professional', name: 'Professional & Degrees', usd: 99, myr: 441,
+    tier: 3, id: 'professional', name: 'Professional & Degrees',
     blurb: 'Micro degrees, professional certifications and the LLB.',
     sparks: 2000, sparksRollover: 700,
     programmes: ['Micro Degrees & Diplomas', 'Professional Certifications', 'Independent Learning', 'Everything in Tier 2'],
   },
   {
-    tier: 4, id: 'llb', name: 'Law & LLB', usd: 99, myr: 441,
+    tier: 4, id: 'llb', name: 'Law & LLB',
     blurb: 'University of London External LLB. Unlocks within Professional & Degrees.',
     sparks: 2000, sparksRollover: 700,
     programmes: ['UoL External LLB — all 12 modules', 'A-Level Law', 'Pre-University Law', 'Everything in Tier 3'],
   },
   {
-    tier: 5, id: 'institution', name: 'Institution', usd: null, myr: null,
+    tier: 5, id: 'institution', name: 'Institution',
     blurb: 'Annual contract for schools, learning centres and exam centres.',
     sparks: 10000, sparksRollover: 0,
     programmes: ['Everything in Tiers 0–4', 'Teacher CMS', 'Institution admin dashboard', 'Shared Sparks pool', 'White-label'],
   },
   {
-    tier: 6, id: 'marketplace', name: 'Marketplace', usd: null, myr: null,
+    tier: 6, id: 'marketplace', name: 'Marketplace',
     blurb: 'Buy a single course outright. No subscription required.',
     sparks: 0, sparksRollover: 0,
     programmes: ['Any individual course', 'Permanent access after purchase'],
@@ -91,9 +90,6 @@ export const TIERS: TierDefinition[] = [
 export function tierDefinition(tier: AccessTier): TierDefinition {
   return TIERS.find(t => t.tier === tier) ?? TIERS[0];
 }
-
-/** Annual billing discount from the brief. */
-export const ANNUAL_DISCOUNT = 0.25;
 
 /* ── Content types ───────────────────────────────────────────── */
 
@@ -195,8 +191,6 @@ export interface AddOn {
   permission: string;
   name: string;
   blurb: string;
-  usdMonthly: number;
-  myrMonthly: number;
   /** Base tier required before the add-on can be bought. */
   requiresTier: AccessTier;
 }
@@ -211,8 +205,6 @@ export const ADDONS: AddOn[] = [
     permission: 'addon:lyra_live',
     name: 'Lyra Live',
     blurb: 'Real-time face-to-face sessions with an AI teacher who sees and hears you.',
-    usdMonthly: 49,
-    myrMonthly: 219,
     requiresTier: 2,
   },
 ];

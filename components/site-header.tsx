@@ -8,6 +8,7 @@ import { Globe, Menu, X, ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { isAdmin } from "@/lib/roles";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { CurrencySwitcher } from "@/components/currency-switcher";
 import styles from "./home-chrome.module.css";
 
 const NAV_LINKS = [
@@ -105,6 +106,7 @@ export function SiteHeader() {
             {!user && <Link href="/login">{t("header.signIn")}</Link>}
           </nav>
           <LanguageSwitcher tone={isLanding && !scrolled ? "onDark" : "default"} />
+          <CurrencySwitcher tone={isLanding && !scrolled ? "onDark" : "default"} />
           <Link className={styles.headerCta} href={user ? dashPath : "/signup"}>
             {user ? t("header.dashboard") : t("header.startFree")} <ArrowRight size={14} className="ps-dir-icon" />
           </Link>

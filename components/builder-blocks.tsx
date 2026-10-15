@@ -15,7 +15,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { VideoPlayer } from '@/components/video-player';
 import { SmartAudioPlayer } from '@/components/smart-audio-player';
-import { RichTextEditor } from '@/components/rich-text-editor';
+import { LessonManuscript } from '@/components/lesson-manuscript';
+import type { ImportResult } from '@/components/editor';
 import {
   AlertTriangle, Check, Copy, GripVertical, Loader2, Plus, Sparkles, Trash2, X,
 } from 'lucide-react';
@@ -42,6 +43,8 @@ export const BLOCK_DEFS: BlockDef[] = [
   { id: 'objectives', icon: '🎯', label: 'Objectives' },
   { id: 'video', icon: '🎬', label: 'Video', sparks: 15 },
   { id: 'text', icon: '📝', label: 'Lesson Text' },
+  { id: 'image', icon: '🏞️', label: 'Image' },
+  { id: 'illustration', icon: '🎨', label: 'Illustration', sparks: 15 },
   { id: 'vocabulary', icon: '📖', label: 'Vocabulary', sparks: 5 },
   { id: 'activity', icon: '✏️', label: 'Activity' },
   { id: 'quiz', icon: '✅', label: 'Quiz', sparks: 5 },
@@ -315,7 +318,7 @@ function VideoEmbed({ url }: { url: string }) {
 
 /* ── Lesson text ────────────────────────────────────────────── */
 
-export function LessonTextBlock({ value, onChange, ai, generating, onImprove, improving }: {
+export function LessonTextBlock({ value, onChange, ai, generating, onImprove, improving, storageKey, onImport, onPasteImages }: {
   value: string;
   onChange: (v: string) => void;
   ai: AiRunner;
@@ -323,6 +326,9 @@ export function LessonTextBlock({ value, onChange, ai, generating, onImprove, im
   /** ET: rewrites the existing text in place (expand / simplify / tighten). */
   onImprove?: (instruction: string) => void;
   improving?: boolean;
+  storageKey: string;
+  onImport?: (result: ImportResult) => void;
+  onPasteImages?: (files: File[]) => void;
 }) {
   const words = value.trim() ? value.trim().split(/\s+/).length : 0;
   return (
@@ -331,11 +337,14 @@ export function LessonTextBlock({ value, onChange, ai, generating, onImprove, im
         <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
         Don’t paste copyrighted textbook content. Write original material or use licensed sources — AI checks flag verbatim textbook passages.
       </div>
-      <RichTextEditor
+      <LessonManuscript
+        key={storageKey}
         value={value}
         onChange={onChange}
-        minHeight={176}
+        storageKey={storageKey}
         placeholder="Write or generate the core lesson text…"
+        onImport={onImport}
+        onPasteImages={onPasteImages}
       />
       <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
         <span>~{Math.max(1, Math.round(words / 200))} min read</span>

@@ -8,6 +8,7 @@
 
 import { DEFAULT_LANGUAGE, isSupportedLanguage } from '../languages';
 import { getLanguage } from '../languages';
+import { readLessonBody } from '../lesson-body';
 
 /** ISO country → interface language. Unknown countries fall through. */
 const COUNTRY_LANGUAGE: Record<string, string> = {
@@ -105,6 +106,7 @@ export function languageShortcut(country: string | null | undefined, current: st
 export interface LessonCopySource {
   title?: string;
   aiOutputs?: { text?: string } | null;
+  contentSources?: { type: string; value: string }[] | null;
   localizations?: Record<string, { title?: string; text?: string } | undefined> | null;
 }
 
@@ -123,7 +125,7 @@ export interface ResolvedLessonCopy {
  */
 export function resolveLessonCopy(lesson: LessonCopySource, language: string): ResolvedLessonCopy {
   const englishTitle = lesson.title ?? '';
-  const englishText = lesson.aiOutputs?.text ?? '';
+  const englishText = readLessonBody(lesson);
   if (!language || language === DEFAULT_LANGUAGE || !isSupportedLanguage(language)) {
     return { title: englishTitle, text: englishText, language: DEFAULT_LANGUAGE, fellBack: false };
   }

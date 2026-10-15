@@ -113,6 +113,11 @@ test('lesson copy uses a localization and falls back to english', () => {
   const en = resolveLessonCopy(lesson, 'en');
   assert.equal(en.fellBack, false);
   assert.equal(en.title, 'Fractions');
+  const authored = resolveLessonCopy({
+    title: 'Cells',
+    contentSources: [{ type: 'text', value: 'From the manuscript' }],
+  }, 'en');
+  assert.equal(authored.text, 'From the manuscript');
 });
 
 test('interpolation tokens survive every catalog', () => {

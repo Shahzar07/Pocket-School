@@ -19,6 +19,7 @@ import { AITutor } from '@/components/ai-tutor';
 import { NotificationsBell } from '@/components/notifications-bell';
 import { DashboardSearch } from '@/components/dashboard-search';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { CurrencySwitcher } from '@/components/currency-switcher';
 import { SparksChip } from '@/components/sparks-chip';
 import { upsertUserSession, accountStatusOf } from '@/lib/db';
 import { PipGuide } from '@/components/pip-guide';
@@ -317,6 +318,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="flex items-center gap-1.5">
             <span data-tour="sparks"><SparksChip /></span>
             <span data-tour="language"><LanguageSwitcher /></span>
+            <CurrencySwitcher />
             <span data-tour="notifications"><NotificationsBell /></span>
             <button onClick={() => router.push('/dashboard/profile')} className="ms-1" data-tour="profile">
               <Avatar className="w-9 h-9 border-2 border-border cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all">

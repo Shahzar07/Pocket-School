@@ -1,0 +1,128 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import {
+  annualFromMonthly,
+  currencyForCountry,
+  diffPricing,
+  formatMoney,
+  quoteCourse,
+  quotePlan,
+  resolveDisplayCurrency,
+  roundMoney,
+  seedPricing,
+  stripeUnitAmount,
+  type PricingConfig,
+} from './pricing';
+
+function withMyr(patch: Partial<PricingConfig['currencies'][number]>): PricingConfig {
+  const config = seedPricing();
+  config.currencies = config.currencies.map(currency =>
+    currency.code === 'MYR' ? { ...currency, ...patch } : currency,
+  );
+  return config;
+}
+
+test('USD quotes use the stored monthly and annual amounts', () => {
+  const config = seedPricing();
+  const monthly = quotePlan(config, 'igcse_alevel', 'monthly', 'USD');
+  const annual = quotePlan(config, 'igcse_alevel', 'annual', 'USD');
+  assert.equal(monthly?.currency, 'USD');
+  assert.equal(monthly?.amount, 79);
+  assert.equal(annual?.amount, 711);
+  assert.equal(annualFromMonthly(19, 0.25), 171);
+  assert.equal(quotePlan(config, 'primary_secondary', 'annual', 'usd')?.amount, 171);
+});
+
+test('a stored annual price is charged even when the discount would differ', () => {
+  const config = seedPricing();
+  const plan = config.plans.find(item => item.id === 'primary_secondary');
+  assert.ok(plan);
+  plan.annualUsd = 100;
+  assert.equal(quotePlan(config, 'primary_secondary', 'annual', 'USD')?.amount, 100);
+});
+
+test('MYR rate mode applies charm rounding', () => {
+  const quote = quotePlan(seedPricing(), 'primary_secondary', 'monthly', 'MYR');
+  assert.equal(quote?.currency, 'MYR');
+  assert.equal(quote?.amount, roundMoney(19 * 4.7, 'charm', 'MYR'));
+  assert.equal(quote?.amount, 89.99);
+});
+
+test('a fixed local price beats the converted rate, and a missing key falls back', () => {
+  const config = withMyr({
+    mode: 'fixed',
+    fixedMonthly: { primary_secondary: 80 },
+    fixedAnnual: {},
+  });
+  assert.equal(quotePlan(config, 'primary_secondary', 'monthly', 'MYR')?.amount, 80);
+  assert.equal(quotePlan(config, 'primary_secondary', 'annual', 'MYR')?.amount, 803.99);
+});
+
+test('a disabled currency falls back to USD', () => {
+  const config = withMyr({ enabled: false });
+  const quote = quotePlan(config, 'primary_secondary', 'monthly', 'MYR');
+  assert.equal(quote?.currency, 'USD');
+  assert.equal(quote?.amount, 19);
+});
+
+test('geolocation picks an enabled local currency and otherwise stays on USD', () => {
+  const config = seedPricing();
+  assert.equal(currencyForCountry('MY', config), 'MYR');
+  assert.equal(currencyForCountry('my', config), 'MYR');
+  assert.equal(currencyForCountry('US', config), 'USD');
+  assert.equal(currencyForCountry('GB', config), 'GBP');
+  assert.equal(currencyForCountry(null, config), 'USD');
+  assert.equal(currencyForCountry('MY', withMyr({ enabled: false })), 'USD');
+  assert.equal(
+    resolveDisplayCurrency(config, { source: 'user', stored: 'USD', country: 'MY' }),
+    'USD',
+  );
+  assert.equal(
+    resolveDisplayCurrency(config, { source: 'auto', stored: 'USD', country: 'MY' }),
+    'MYR',
+  );
+  assert.equal(
+    resolveDisplayCurrency(config, { source: null, stored: 'GBP', country: null }),
+    'USD',
+  );
+});
+
+test('Stripe unit amounts use cents except for zero-decimal currencies', () => {
+  assert.equal(stripeUnitAmount(19.99, 'USD'), 1999);
+  assert.equal(stripeUnitAmount(89.99, 'MYR'), 8999);
+  assert.equal(stripeUnitAmount(1500, 'JPY'), 1500);
+  assert.equal(roundMoney(1500.4, 'charm', 'JPY'), 1500);
+  assert.equal(roundMoney(0.4, 'charm', 'USD'), 0.4);
+});
+
+test('formatMoney is the single display helper', () => {
+  assert.match(formatMoney(19, 'USD'), /\$19\.00/);
+  assert.match(formatMoney(89.99, 'MYR'), /RM\s?89\.99/);
+  assert.match(formatMoney(15.99, 'GBP'), /£15\.99/);
+});
+
+test('course prices convert through stored rates and default missing currency to USD', () => {
+  const config = seedPricing();
+  assert.equal(quoteCourse(config, 79, 'GBP', 'USD').amount, 100);
+  assert.equal(quoteCourse(config, 79, 'GBP', 'GBP').amount, 79);
+  assert.equal(quoteCourse(config, 50, undefined, 'USD').amount, 50);
+  assert.equal(quoteCourse(config, 50, undefined, 'USD').currency, 'USD');
+});
+
+test('the audit diff names the fields that changed', () => {
+  const before = seedPricing();
+  const after = seedPricing();
+  const plan = after.plans.find(item => item.id === 'primary_secondary');
+  assert.ok(plan);
+  plan.monthlyUsd = 29;
+  after.annualDiscount = 0.2;
+  const myr = after.currencies.find(item => item.code === 'MYR');
+  assert.ok(myr);
+  myr.rate = 4.8;
+  myr.fixedMonthly = { primary_secondary: 90 };
+  const lines = diffPricing(before, after);
+  assert.ok(lines.some(line => line.includes('Annual discount') && line.includes('20%')));
+  assert.ok(lines.some(line => line.includes('primary_secondary monthly USD 19 → 29')));
+  assert.ok(lines.some(line => line.includes('MYR rate 4.7 → 4.8')));
+  assert.ok(lines.some(line => line.includes('primary_secondary monthly fixed')));
+});

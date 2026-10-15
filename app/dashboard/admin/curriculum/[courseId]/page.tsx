@@ -36,6 +36,9 @@ import type {
   TierId, Tier2SubjectType, LawStage, Tier3Assessment,
 } from '@/lib/curriculum-tiers';
 import { getFormatCost } from '@/lib/sparks';
+import { appendImageMarkdown, lessonBodyPatch, manuscriptToMarkdown, readLessonBody } from '@/lib/lesson-body';
+import { filesToAssets, LessonIllustrationBlock, LessonImageBlock } from '@/components/lesson-pictures';
+import type { ImportResult } from '@/components/editor';
 import { LessonLanguagePanel } from '@/components/lesson-language-panel';
 import {
   ArrowLeft, AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Copy, CornerDownRight,
@@ -324,9 +327,7 @@ export default function ContentBuilderPage() {
     if (!d || !selUnit) return;
     setAiBusy(format);
     try {
-      const content =
-        d.contentSources?.find(s => s.type === 'text')?.value?.trim() ||
-        (d.aiOutputs?.text ?? '') || d.title;
+      const content = readLessonBody(d).trim() || d.title;
       const brief = [d.briefPrompt, extraBrief].filter(Boolean).join('\n');
       // Lesson override wins, else the course default, else the suggestion for
       // the subject — so generation always has a shape to follow.
@@ -346,7 +347,10 @@ export default function ContentBuilderPage() {
         assessmentStyle: d.tierAssessmentStyle || course?.tierAssessmentStyle,
       });
       const aiOutputs = { ...(d.aiOutputs ?? {}), [format]: result };
-      const next = { ...d, aiOutputs } as Lesson;
+      const bodySync = format === 'text' && typeof result === 'string'
+        ? lessonBodyPatch({ ...d, aiOutputs }, result)
+        : null;
+      const next = { ...d, aiOutputs, ...(bodySync ?? {}) } as Lesson;
       setDraft(next);
       await persistDraft(next, `AI generated: ${format}`);
       toast.success(`${format} generated.`);
@@ -397,7 +401,7 @@ export default function ContentBuilderPage() {
       // ET can only paraphrase the title.
       siblingLessons: (units.find(u => u.module.id === selUnit)?.lessons ?? [])
         .filter(l => l.id !== d.id).map(l => l.title),
-      lessonText: d.aiOutputs?.text ?? d.contentSources?.find(s => s.type === 'text')?.value ?? '',
+      lessonText: readLessonBody(d),
     }),
     (d, data) => {
       const objectives = Array.isArray(data?.objectives) ? data.objectives : [];
@@ -428,17 +432,74 @@ export default function ContentBuilderPage() {
   const improveText = useCallback((instruction: string) => runEt(
     'improve', 'improve',
     d => ({
-      text: d.aiOutputs?.text ?? d.contentSources?.find(s => s.type === 'text')?.value ?? '',
+      text: readLessonBody(d),
       instruction,
       // "Simplify" needs a target reader to be meaningful.
       subject: course?.subject ?? '',
       yearLevel: course?.yearGroup ?? course?.level ?? '',
     }),
     (d, data) => (typeof data?.text === 'string' && data.text.trim()
-      ? { aiOutputs: { ...(d.aiOutputs ?? {}), text: data.text } }
+      ? lessonBodyPatch(d, data.text)
       : null),
     'ET rewrote the lesson text',
   ), [runEt, course]);
+
+  const applyManuscript = useCallback(async (result: ImportResult) => {
+    const d = draftRef.current;
+    if (!d || !selUnit || result.blocks.length === 0) return;
+    const [first, ...rest] = result.blocks;
+    const next = {
+      ...d,
+      ...lessonBodyPatch(d, manuscriptToMarkdown([first])),
+      title: d.title?.trim() ? d.title : first.title,
+    };
+    setDraft(next);
+    await persistDraft(next, 'Imported manuscript');
+    if (rest.length === 0) {
+      toast.success('Imported into this lesson.');
+      return;
+    }
+    try {
+      const unit = units.find(u => u.module.id === selUnit);
+      let count = unit?.lessons.length ?? 0;
+      for (const block of rest) {
+        count += 1;
+        const body = manuscriptToMarkdown([block]);
+        await createLesson(courseId, selUnit, {
+          title: block.title || `Lesson ${count}`,
+          moduleId: selUnit,
+          courseId,
+          order: count,
+          lessonNumber: count,
+          status: 'draft',
+          lessonType: 'lesson',
+          blocksOrder: DEFAULT_BLOCKS,
+          ...lessonBodyPatch({ aiOutputs: {} }, body),
+        });
+      }
+      toast.success(`Imported this lesson and added ${rest.length} more from the headings.`);
+      await load(true);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'The extra sections could not be saved.');
+    }
+  }, [selUnit, persistDraft, units, courseId, load]);
+
+  const takePastedImages = useCallback(async (files: File[]) => {
+    const d = draftRef.current;
+    if (!d) return;
+    try {
+      const added = await filesToAssets(d.id, files);
+      if (added.length === 0) return;
+      const blocks = d.blocksOrder?.length ? d.blocksOrder : DEFAULT_BLOCKS;
+      patchDraft({
+        mediaLibrary: [...(d.mediaLibrary ?? []), ...added],
+        blocksOrder: blocks.includes('image') ? blocks : [...blocks, 'image'],
+      });
+      toast.message('Images are in the Image block. Add alt text, then place them.');
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'That image could not be added.');
+    }
+  }, [patchDraft]);
 
   const draftAssessment = useCallback(() => runEt(
     'assessment', 'assessment',
@@ -918,6 +979,8 @@ export default function ContentBuilderPage() {
                       onSuggestObjectives={suggestObjectives}
                       onImproveText={improveText}
                       onDraftAssessment={draftAssessment}
+                      onImport={result => { void applyManuscript(result); }}
+                      onPasteImages={files => { void takePastedImages(files); }}
                     />
                     {blockId === 'objectives' && <DurationPanel draft={draft} patch={patchDraft} />}
                   </div>
@@ -1260,7 +1323,7 @@ function TreeUnit({
 
 function BuilderBlock({
   blockId, draft, selected, onSelect, onDelete, onMoveUp, onMoveDown, patch, ai, aiBusy,
-  etBusy, onSuggestObjectives, onImproveText, onDraftAssessment,
+  etBusy, onSuggestObjectives, onImproveText, onDraftAssessment, onImport, onPasteImages,
 }: {
   blockId: string; draft: Lesson; selected: boolean;
   onSelect: () => void; onDelete: () => void;
@@ -1272,6 +1335,8 @@ function BuilderBlock({
   onSuggestObjectives: () => void;
   onImproveText: (instruction: string) => void;
   onDraftAssessment: () => void;
+  onImport?: (result: ImportResult) => void;
+  onPasteImages?: (files: File[]) => void;
 }) {
   const def: BlockDef = BLOCK_DEFS.find(d => d.id === blockId) ?? { id: blockId, icon: '📄', label: blockId };
   const outputs = draft.aiOutputs ?? {};
@@ -1311,12 +1376,33 @@ function BuilderBlock({
     case 'text':
       return shell(
         <LessonTextBlock
-          value={outputs.text ?? draft.contentSources?.find(s => s.type === 'text')?.value ?? ''}
-          onChange={v => patch({ aiOutputs: { ...outputs, text: v } })}
+          value={readLessonBody(draft)}
+          onChange={v => patch(lessonBodyPatch(draft, v))}
           ai={ai}
           generating={aiBusy === 'text'}
           onImprove={onImproveText}
           improving={etBusy === 'improve'}
+          storageKey={`poket-lesson:${draft.id}`}
+          onImport={onImport}
+          onPasteImages={onPasteImages}
+        />
+      );
+    case 'image':
+      return shell(
+        <LessonImageBlock
+          scopeId={draft.id}
+          images={draft.mediaLibrary ?? []}
+          onChange={images => patch({ mediaLibrary: images })}
+          onInsert={image => patch(lessonBodyPatch(draft, appendImageMarkdown(readLessonBody(draft), image)))}
+        />
+      );
+    case 'illustration':
+      return shell(
+        <LessonIllustrationBlock
+          scopeId={draft.id}
+          images={draft.mediaLibrary ?? []}
+          onChange={images => patch({ mediaLibrary: images })}
+          onInsert={image => patch(lessonBodyPatch(draft, appendImageMarkdown(readLessonBody(draft), image)))}
         />
       );
     case 'vocabulary':

@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { Plus, Trash2, Loader2, CreditCard, CheckCircle2, Printer } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Timestamp } from 'firebase/firestore';
+import { formatMoney } from '@/lib/pricing';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -29,15 +30,13 @@ const STATUS_STYLES: Record<string, string> = {
   cancelled: 'bg-muted text-muted-foreground/60',
 };
 
-const CURRENCY_SYMBOLS: Record<string, string> = { USD: '$', GBP: '£', EUR: '€', MYR: 'RM ' };
-
 function totalsByCurrency(list: Invoice[]): string {
   const totals: Record<string, number> = {};
   for (const inv of list) totals[inv.currency] = (totals[inv.currency] ?? 0) + inv.amount;
   const parts = Object.entries(totals)
     .filter(([, amount]) => amount > 0)
-    .map(([currency, amount]) => `${CURRENCY_SYMBOLS[currency] ?? `${currency} `}${amount.toLocaleString()}`);
-  return parts.length ? parts.join(' · ') : '$0';
+    .map(([currency, amount]) => formatMoney(amount, currency));
+  return parts.length ? parts.join(' · ') : formatMoney(0, 'USD');
 }
 
 export default function TeacherBillingPage() {
@@ -122,7 +121,7 @@ export default function TeacherBillingPage() {
       <table>
         <tr><td>Student</td><td>${esc(inv.studentName)}</td></tr>
         <tr><td>Description</td><td>${esc(inv.description)}</td></tr>
-        <tr><td>Amount</td><td>${esc(inv.currency)} ${inv.amount.toFixed(2)}</td></tr>
+        <tr><td>Amount</td><td>${esc(formatMoney(inv.amount, inv.currency))}</td></tr>
         <tr><td>Status</td><td>${esc(inv.status)}</td></tr>
         <tr><td>Due date</td><td>${esc(dueDate)}</td></tr>
       </table></body></html>`;
@@ -328,7 +327,7 @@ export default function TeacherBillingPage() {
                 <p className="text-xs text-muted-foreground/60 mt-1">Due: {(inv.dueDate as any)?.toDate?.().toLocaleDateString() ?? inv.dueDate}</p>
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                <p className="text-lg font-bold text-foreground">{inv.currency} {inv.amount.toFixed(2)}</p>
+                <p className="text-lg font-bold text-foreground">{formatMoney(inv.amount, inv.currency)}</p>
                 {inv.status !== 'paid' && inv.status !== 'cancelled' && (
                   <Button
                     size="sm"

@@ -195,6 +195,20 @@ export interface Lesson {
   history?: { label: string; actor: string; at: Timestamp; action?: string }[];
   /** Localized copies of the lesson title and body, keyed by language code. */
   localizations?: Record<string, LessonLocalization>;
+  /** Pictures staged on this lesson. Alt text is required before one is placed in the body. */
+  mediaLibrary?: LessonMediaAsset[];
+}
+
+/** A picture waiting in the lesson Image or Illustration block. */
+export interface LessonMediaAsset {
+  id: string;
+  src: string;
+  alt: string;
+  caption?: string;
+  width: number;
+  height: number;
+  fullBleed?: boolean;
+  storagePath?: string;
 }
 
 export interface AiOutputs {

@@ -17,6 +17,8 @@ import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebas
 import { storage } from '@/lib/firebase';
 import type { Course, CourseType } from '@/lib/db';
 import { createCourse, updateCourse } from '@/lib/db';
+import { formatMoney } from '@/lib/pricing';
+import { CoverArtPicker, storeMedia } from '@/components/media';
 
 interface Props {
   open: boolean;
@@ -302,6 +304,29 @@ export default function CourseEditorModal({
                 )}
               </div>
               <input ref={thumbInputRef} type="file" accept="image/*" className="hidden" onChange={handleThumbnailChange} />
+              <div className="rounded-xl border border-border p-3">
+                <p className="text-sm font-semibold">Or generate cover art</p>
+                <p className="mt-1 text-xs text-muted-foreground">Pictures are text-free. Choosing one sets the course thumbnail.</p>
+                <div className="mt-3">
+                  <CoverArtPicker
+                    brief={[title, description, subject].filter(Boolean).join('. ')}
+                    onSelect={option => {
+                      void (async () => {
+                        try {
+                          const blob = await (await fetch(option.artSrc)).blob();
+                          const stored = await storeMedia(ownerId || 'course', blob, `cover-${Date.now()}.jpg`);
+                          setThumbnailFile(null);
+                          setThumbnailUrl(stored.src);
+                          setThumbnailPreview(stored.src);
+                          toast.success(option.fallback ? 'Stand-in cover selected.' : 'Cover selected.');
+                        } catch (err) {
+                          toast.error(err instanceof Error ? err.message : 'That cover could not be saved.');
+                        }
+                      })();
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </TabsContent>
 
@@ -433,7 +458,7 @@ export default function CourseEditorModal({
 
                 <div className="flex items-center gap-3 text-sm">
                   <span className="font-semibold text-foreground">
-                    {Number(price) === 0 ? 'Free' : `${currency === 'USD' ? '$' : currency === 'EUR' ? '€' : '£'}${Number(price).toFixed(2)}`}
+                    {Number(price) === 0 ? 'Free' : formatMoney(Number(price), currency || 'USD')}
                   </span>
                   {durationHours && <span className="text-muted-foreground">{durationHours}h content</span>}
                   {isPublic && <span className="text-blue-600 text-xs font-medium">Marketplace listing</span>}

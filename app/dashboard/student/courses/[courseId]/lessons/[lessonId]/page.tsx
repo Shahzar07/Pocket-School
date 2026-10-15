@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'motion/react';
 import { MathMarkdown } from '@/components/math-markdown';
+import { LessonBody } from '@/components/lesson-body';
+import { readLessonBody } from '@/lib/lesson-body';
 import { Timestamp } from 'firebase/firestore';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { useTutorContext } from '@/hooks/use-tutor-context';
@@ -771,7 +773,7 @@ export default function LessonPage() {
   const glossary = Array.isArray(aiOutputs?.glossary) ? aiOutputs.glossary : [];
 
   const TABS: { id: string; label: string; icon: React.ReactNode; available: boolean; format?: string }[] = [
-    { id: 'text', label: 'Lesson', icon: <FileText className="w-3.5 h-3.5" />, available: !!aiOutputs?.text, format: 'text' },
+    { id: 'text', label: 'Lesson', icon: <FileText className="w-3.5 h-3.5" />, available: !!readLessonBody(lesson).trim(), format: 'text' },
     { id: 'video', label: 'Video', icon: <Video className="w-3.5 h-3.5" />, available: !!aiOutputs?.videoScript, format: 'videoScript' },
     { id: 'flashcards', label: 'Flashcards', icon: <FlipHorizontal className="w-3.5 h-3.5" />, available: flashcards.length > 0, format: 'flashcards' },
     { id: 'quiz', label: 'Quiz', icon: <ClipboardList className="w-3.5 h-3.5" />, available: quiz.length > 0, format: 'quiz' },
@@ -881,7 +883,7 @@ export default function LessonPage() {
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">{isCurriculum ? t('lesson.unit') : t('lesson.course')}</p>
             <h1 className="font-heading text-foreground text-2xl truncate">{copy.title}</h1>
             {languageNotice}
-            {!aiOutputs && <p className="text-xs text-muted-foreground">No content generated yet</p>}
+            {!aiOutputs && !copy.text.trim() && <p className="text-xs text-muted-foreground">No content generated yet</p>}
             {isCurriculum && lesson.objectiveCodes && lesson.objectiveCodes.length > 0 && (
               <p className="text-xs text-muted-foreground font-mono truncate">{lesson.objectiveCodes.join(' · ')}</p>
             )}
@@ -906,11 +908,15 @@ export default function LessonPage() {
         </div>
       </motion.div>
 
-      {!aiOutputs ? (
+      {!aiOutputs && !copy.text.trim() ? (
         <div className="text-center py-20 text-muted-foreground bg-muted/30 rounded-3xl border border-dashed border-border">
           <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-30" />
           <p className="font-semibold">Content not yet generated</p>
           <p className="text-sm mt-1">Your teacher needs to publish this lesson from the teacher upload page.</p>
+        </div>
+      ) : !aiOutputs ? (
+        <div className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
+          <LessonBody markdown={copy.text} />
         </div>
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -931,7 +937,7 @@ export default function LessonPage() {
           <TabsContent value="text">
             {gate('text',
               <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
-                <MathMarkdown>{copy.text}</MathMarkdown>
+                <LessonBody markdown={copy.text} />
               </motion.div>
             )}
           </TabsContent>
