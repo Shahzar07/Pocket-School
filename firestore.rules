@@ -898,5 +898,25 @@ service cloud.firestore {
       allow create: if isSignedIn() && incoming().userId == request.auth.uid;
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
+
+    // ── Device push tokens (Poketschool app + web) ───────────
+    // Clients may register and remove their own device. They may not read
+    // or list the collection; the Admin SDK delivers pushes.
+    // Delete has no new document, so the new userId is checked only when
+    // request.resource exists.
+    match /deviceTokens/{deviceId} {
+      allow read: if false;
+
+      allow create: if isSignedIn()
+        && incoming().userId == request.auth.uid;
+
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && incoming().userId == request.auth.uid;
+
+      allow delete: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && (request.resource == null || request.resource.data.userId == request.auth.uid);
+    }
   }
 }

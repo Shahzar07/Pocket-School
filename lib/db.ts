@@ -8,6 +8,9 @@ import { ACADEMIC_MONTHLY_ALLOWANCE, UNIT_PASS_REWARD } from './sparks';
 import type { Role } from './roles';
 import type { OemLicence } from './oem';
 import type { AccessPolicy } from './access-policy';
+import { coerceDailyGoal } from './goals';
+import { requestPush } from './push-client';
+import type { PushCategory } from './push';
 
 export type { Role };
 
@@ -2169,8 +2172,24 @@ export interface Notification {
   createdAt?: Timestamp;
 }
 
-export async function createNotification(data: Omit<Notification, 'id'>): Promise<void> {
-  await addDoc(collection(db, 'notifications'), { ...data, read: false, createdAt: serverTimestamp() });
+const PUSH_BY_TYPE: Partial<Record<Notification['type'], PushCategory>> = {
+  grade: 'grades',
+  assignment: 'assignments',
+};
+
+export async function createNotification(
+  data: Omit<Notification, 'id'> & { pushCategory?: PushCategory },
+): Promise<void> {
+  const { pushCategory, ...stored } = data;
+  await addDoc(collection(db, 'notifications'), { ...stored, read: false, createdAt: serverTimestamp() });
+  const category = pushCategory ?? PUSH_BY_TYPE[stored.type] ?? 'general';
+  await requestPush({
+    recipientUid: stored.userId,
+    category,
+    title: stored.title,
+    body: stored.message,
+    link: stored.link,
+  }).catch(() => {});
 }
 
 export async function getNotifications(userId: string): Promise<Notification[]> {
@@ -2247,6 +2266,18 @@ export interface IntegrityReport {
 
 export async function createIntegrityReport(data: Omit<IntegrityReport, 'id'>): Promise<string> {
   const ref = await addDoc(collection(db, 'integrity_reports'), { ...data, createdAt: serverTimestamp() });
+  if (data.flags.length > 0) {
+    const listed = data.flags.slice(0, 4).join(', ');
+    await createNotification({
+      userId: data.studentId,
+      title: 'Work flagged for review',
+      message: `${data.assignmentTitle ?? 'A submission'} was flagged: ${listed}.`,
+      type: 'integrity',
+      link: '/dashboard/student/assignments',
+      read: false,
+      pushCategory: 'flags',
+    }).catch(() => {});
+  }
   return ref.id;
 }
 
@@ -2489,6 +2520,7 @@ export interface DailyGoal {
   notifiedNotStarted?: boolean;
   notifiedMissed?: boolean;
   createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 /** Local YYYY-MM-DD (not UTC) — goals are a "today" concept for the student. */
@@ -2497,15 +2529,28 @@ export function goalDateKey(d: Date = new Date()): string {
 }
 
 export async function createDailyGoal(data: Omit<DailyGoal, 'id' | 'createdAt'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'daily_goals'), { ...data, createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'daily_goals'), {
+    ...data,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
   return ref.id;
+}
+
+function mapDailyGoal(id: string, data: Record<string, unknown>): DailyGoal | null {
+  const core = coerceDailyGoal(id, data);
+  if (!core) return null;
+  return { ...(data as unknown as DailyGoal), ...core };
 }
 
 export async function getDailyGoals(studentId: string, dateKey?: string): Promise<DailyGoal[]> {
   // Single-field equality queries only — avoids composite index requirements.
   const q = query(collection(db, 'daily_goals'), where('studentId', '==', studentId));
   const snap = await getDocs(q);
-  const all = snap.docs.map(d => ({ id: d.id, ...d.data() } as DailyGoal));
+  const all = snap.docs.flatMap(d => {
+    const goal = mapDailyGoal(d.id, d.data() as Record<string, unknown>);
+    return goal ? [goal] : [];
+  });
   const filtered = dateKey ? all.filter(g => g.dateKey === dateKey) : all;
   return filtered.sort((a, b) => (a.deadline || '').localeCompare(b.deadline || ''));
 }
@@ -2517,7 +2562,10 @@ export function subscribeDailyGoals(
   return onSnapshot(
     query(collection(db, 'daily_goals'), where('studentId', '==', studentId)),
     snap => {
-      const all = snap.docs.map(d => ({ id: d.id, ...d.data() } as DailyGoal));
+      const all = snap.docs.flatMap(d => {
+        const goal = mapDailyGoal(d.id, d.data() as Record<string, unknown>);
+        return goal ? [goal] : [];
+      });
       const filtered = dateKey ? all.filter(g => g.dateKey === dateKey) : all;
       cb(filtered.sort((a, b) => (a.deadline || '').localeCompare(b.deadline || '')));
     },
@@ -2525,8 +2573,8 @@ export function subscribeDailyGoals(
   );
 }
 
-export async function updateDailyGoal(id: string, data: Partial<DailyGoal>) {
-  await updateDoc(doc(db, 'daily_goals', id), data as Record<string, unknown>);
+export async function updateDailyGoal(id: string, data: Partial<DailyGoal> & Record<string, unknown>) {
+  await updateDoc(doc(db, 'daily_goals', id), { ...data, updatedAt: serverTimestamp() });
 }
 
 export async function deleteDailyGoal(id: string) {
@@ -2534,7 +2582,7 @@ export async function deleteDailyGoal(id: string) {
 }
 
 export async function startDailyGoal(id: string) {
-  await updateDoc(doc(db, 'daily_goals', id), { status: 'in_progress', startedAt: serverTimestamp() });
+  await updateDailyGoal(id, { status: 'in_progress', startedAt: serverTimestamp() } as Partial<DailyGoal>);
 }
 
 /** Complete a goal, award XP (bonus on time) and notify the linked parents. */
@@ -2543,12 +2591,12 @@ export async function completeDailyGoal(
 ): Promise<{ xp: number }> {
   const xp = onTime ? 50 : 25;
   const started = goal.startedAt?.toMillis?.();
-  await updateDoc(doc(db, 'daily_goals', goal.id), {
+  await updateDailyGoal(goal.id, {
     status: 'completed',
     completedAt: serverTimestamp(),
     xpAwarded: xp,
     ...(started ? { actualMinutes: Math.max(1, Math.round((Date.now() - started) / 60000)) } : {}),
-  });
+  } as Partial<DailyGoal>);
   try {
     await updateDoc(doc(db, 'users', goal.studentId), { xp: increment(xp), updatedAt: serverTimestamp() });
   } catch { /* XP is best-effort */ }
@@ -2557,7 +2605,7 @@ export async function completeDailyGoal(
 
 /** Parent-side waiver: protects the streak and stops further alerts. */
 export async function excuseDailyGoal(id: string, reason: string, parentName: string) {
-  await updateDoc(doc(db, 'daily_goals', id), {
+  await updateDailyGoal(id, {
     status: 'excused', excuseReason: reason, excusedBy: parentName, notifiedMissed: true,
   });
 }
@@ -2625,7 +2673,7 @@ export async function checkGoalAlerts(studentId: string, studentName: string, go
 
     await Promise.all(parents.docs.map(p => createNotification({
       userId: p.id, title, message, type: 'general',
-      link: '/dashboard/parent', read: false,
+      link: '/dashboard/parent', read: false, pushCategory: 'goals',
     }).catch(() => {})));
     await updateDailyGoal(goal.id, { [flag]: true } as Partial<DailyGoal>);
   }
@@ -2653,7 +2701,51 @@ export interface AttendanceRecord {
 
 export async function createAttendanceRecord(data: Omit<AttendanceRecord, 'id'>): Promise<string> {
   const ref = await addDoc(collection(db, 'attendance_records'), { ...data, createdAt: serverTimestamp() });
+  await notifyAttendance(data).catch(() => {});
   return ref.id;
+}
+
+async function notifyAttendance(data: Omit<AttendanceRecord, 'id'>) {
+  const notable = data.records.filter(entry => entry.status === 'absent' || entry.status === 'late');
+  for (const entry of notable) {
+    const title = entry.status === 'absent' ? 'Marked absent' : 'Marked late';
+    const message = `${entry.studentName} was marked ${entry.status} for ${data.lessonTitle} (${data.courseTitle}).`;
+    await createNotification({
+      userId: entry.studentId,
+      title,
+      message,
+      type: 'general',
+      link: '/dashboard/student/attendance',
+      read: false,
+      pushCategory: 'attendance',
+    }).catch(() => {});
+    const parents = await getDocs(
+      query(collection(db, 'users'), where('childIds', 'array-contains', entry.studentId)),
+    ).catch(() => null);
+    if (!parents) continue;
+    await Promise.all(parents.docs.map(parent => createNotification({
+      userId: parent.id,
+      title,
+      message,
+      type: 'general',
+      link: '/dashboard/parent',
+      read: false,
+      pushCategory: 'attendance',
+    }).catch(() => {})));
+  }
+}
+
+/** Inbox row plus a digest push. A scheduler can call this for each recipient. */
+export async function sendDigest(recipientUid: string, title: string, message: string, link?: string) {
+  await createNotification({
+    userId: recipientUid,
+    title,
+    message,
+    type: 'general',
+    link,
+    read: false,
+    pushCategory: 'digests',
+  });
 }
 
 export async function getAttendanceForCourse(courseId: string): Promise<AttendanceRecord[]> {

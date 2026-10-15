@@ -296,7 +296,8 @@ export function priceDecision(
       : { listed, open: false, reason: 'Institution allocation required' };
   }
   if (priceType === 'MARKETPLACE_PURCHASE' || priceType === 'COUPON_SCHOLARSHIP') {
-    const purchased = (viewer.permissions ?? []).includes(`alloc:marketplace:${product.id}`);
+    const purchased = (viewer.permissions ?? []).includes(`alloc:marketplace:${product.id}`)
+      || (viewer.permissions ?? []).includes(`alloc:book:${product.id}`);
     if (purchased || hasCoupon(product.id, viewer)) {
       return { listed, open: true, reason: purchased ? 'Purchased' : 'Coupon' };
     }

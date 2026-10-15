@@ -23,6 +23,7 @@ const HIDDEN_PREFIXES = [
   "/dashboard",
   "/onboarding",
   "/ai-studio",
+  "/reads",
 ];
 
 export function SiteHeader() {
@@ -102,6 +103,7 @@ export function SiteHeader() {
             <Link href="/courses">{t("header.courses")}</Link>
             <Link href="/ai-studio">{t("header.aiStudio")}</Link>
             <Link href="/ai-teachers">{t("header.aiTeachers")}</Link>
+            <Link href="/reads">{t("nav.books")}</Link>
             <Link href="/pricing">{t("header.pricing")}</Link>
             {!user && <Link href="/login">{t("header.signIn")}</Link>}
           </nav>
@@ -132,6 +134,7 @@ export function SiteHeader() {
             <Link href="/courses">{t("header.courses")}</Link>
             <Link href="/ai-studio">{t("header.aiStudio")}</Link>
             <Link href="/ai-teachers">{t("header.aiTeachers")}</Link>
+            <Link href="/reads">{t("nav.books")}</Link>
             <Link href="/pricing">{t("header.pricing")}</Link>
             <Link href={user ? dashPath : "/login"}>
               {user ? t("header.dashboard") : t("header.signIn")}
