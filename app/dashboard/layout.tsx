@@ -25,6 +25,7 @@ import { PipGuide } from '@/components/pip-guide';
 import type { TourRole } from '@/lib/tour-steps';
 import { ROLE_LABELS } from '@/lib/roles';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 
 type Role = 'student' | 'teacher' | 'parent' | 'admin';
 
@@ -35,115 +36,115 @@ const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string }> = {
   admin:   { icon: 'text-violet-400', bar: 'bg-violet-400', chip: 'from-violet-500 to-fuchsia-600' },
 };
 
-interface NavEntry { href: string; icon: React.ElementType; label: string }
-interface NavGroup { section?: string; items: NavEntry[] }
+interface NavEntry { href: string; icon: React.ElementType; labelKey: string }
+interface NavGroup { sectionKey?: string; items: NavEntry[] }
 
 const NAV: Record<Role, NavGroup[]> = {
   student: [
     { items: [
-      { href: '/dashboard/student', icon: Home, label: 'Dashboard' },
-      { href: '/dashboard/studio', icon: Sparkles, label: 'AI Studio' },
-      { href: '/ai-teachers', icon: Users, label: 'AI Teachers ↗' },
-      { href: '/dashboard/student/learning', icon: GraduationCap, label: 'My Learning' },
-      { href: '/courses', icon: Store, label: 'Marketplace' },
-      { href: '/dashboard/student/courses', icon: BookOpen, label: 'My Courses' },
-      { href: '/dashboard/student/live', icon: Video, label: 'Live Classes' },
-      { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
-      { href: '/dashboard/student/achievements', icon: CheckCircle, label: 'Achievements' },
+      { href: '/dashboard/student', icon: Home, labelKey: 'nav.dashboard' },
+      { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
+      { href: '/ai-teachers', icon: Users, labelKey: 'nav.aiTeachers' },
+      { href: '/dashboard/student/learning', icon: GraduationCap, labelKey: 'nav.myLearning' },
+      { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
+      { href: '/dashboard/student/courses', icon: BookOpen, labelKey: 'nav.myCourses' },
+      { href: '/dashboard/student/live', icon: Video, labelKey: 'nav.liveClasses' },
+      { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
+      { href: '/dashboard/student/achievements', icon: CheckCircle, labelKey: 'nav.achievements' },
     ]},
-    { section: 'Academics', items: [
-      { href: '/dashboard/student/assignments', icon: ClipboardList, label: 'Assignments' },
-      { href: '/dashboard/student/exams', icon: PenSquare, label: 'Exams' },
-      { href: '/dashboard/student/transcript', icon: GraduationCap, label: 'Transcript' },
-      { href: '/dashboard/student/attendance', icon: ClipboardCheck, label: 'Attendance' },
-      { href: '/dashboard/student/certificates', icon: Award, label: 'Certificates' },
-      { href: '/dashboard/student/tasks', icon: ListTodo, label: 'Daily Goals' },
+    { sectionKey: 'nav.section.academics', items: [
+      { href: '/dashboard/student/assignments', icon: ClipboardList, labelKey: 'nav.assignments' },
+      { href: '/dashboard/student/exams', icon: PenSquare, labelKey: 'nav.exams' },
+      { href: '/dashboard/student/transcript', icon: GraduationCap, labelKey: 'nav.transcript' },
+      { href: '/dashboard/student/attendance', icon: ClipboardCheck, labelKey: 'nav.attendance' },
+      { href: '/dashboard/student/certificates', icon: Award, labelKey: 'nav.certificates' },
+      { href: '/dashboard/student/tasks', icon: ListTodo, labelKey: 'nav.dailyGoals' },
     ]},
-    { section: 'Finance', items: [
-      { href: '/dashboard/student/billing', icon: CreditCard, label: 'Billing' },
+    { sectionKey: 'nav.section.finance', items: [
+      { href: '/dashboard/student/billing', icon: CreditCard, labelKey: 'nav.billing' },
     ]},
-    { section: 'School', items: [
-      { href: '/dashboard/announcements', icon: Megaphone, label: 'Announcements' },
-      { href: '/dashboard/calendar', icon: Calendar, label: 'Calendar' },
-      { href: '/dashboard/resources', icon: Library, label: 'Resources' },
-      { href: '/dashboard/helpdesk', icon: HelpCircle, label: 'Helpdesk' },
+    { sectionKey: 'nav.section.school', items: [
+      { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
+      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
+      { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
+      { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
-    { section: 'Account', items: [
-      { href: '/dashboard/profile', icon: UserCircle, label: 'My Profile' },
+    { sectionKey: 'nav.section.account', items: [
+      { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
   teacher: [
     { items: [
-      { href: '/dashboard/teacher', icon: Home, label: 'Overview' },
-      { href: '/dashboard/studio', icon: Sparkles, label: 'AI Studio' },
-      { href: '/dashboard/teacher/classes', icon: GraduationCap, label: 'My Classes' },
-      { href: '/dashboard/teacher/courses', icon: Presentation, label: 'Courses & Products' },
-      { href: '/courses', icon: Store, label: 'Marketplace' },
-      { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
-      { href: '/dashboard/teacher/analytics', icon: Activity, label: 'Analytics' },
+      { href: '/dashboard/teacher', icon: Home, labelKey: 'nav.overview' },
+      { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
+      { href: '/dashboard/teacher/classes', icon: GraduationCap, labelKey: 'nav.myClasses' },
+      { href: '/dashboard/teacher/courses', icon: Presentation, labelKey: 'nav.coursesProducts' },
+      { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
+      { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
+      { href: '/dashboard/teacher/analytics', icon: Activity, labelKey: 'nav.analytics' },
     ]},
-    { section: 'Academics', items: [
-      { href: '/dashboard/teacher/gradebook', icon: ClipboardList, label: 'Gradebook' },
-      { href: '/dashboard/teacher/assignments', icon: FileText, label: 'Assignments' },
-      { href: '/dashboard/teacher/exams', icon: PenSquare, label: 'Exam Builder' },
-      { href: '/dashboard/teacher/report-cards', icon: FileBarChart, label: 'Report Cards' },
-      { href: '/dashboard/teacher/attendance', icon: ClipboardCheck, label: 'Attendance' },
-      { href: '/dashboard/teacher/live', icon: Video, label: 'Live Classes' },
-      { href: '/dashboard/teacher/integrity', icon: AlertTriangle, label: 'Integrity' },
-      { href: '/dashboard/teacher/behaviour', icon: Star, label: 'Behaviour' },
+    { sectionKey: 'nav.section.academics', items: [
+      { href: '/dashboard/teacher/gradebook', icon: ClipboardList, labelKey: 'nav.gradebook' },
+      { href: '/dashboard/teacher/assignments', icon: FileText, labelKey: 'nav.assignments' },
+      { href: '/dashboard/teacher/exams', icon: PenSquare, labelKey: 'nav.examBuilder' },
+      { href: '/dashboard/teacher/report-cards', icon: FileBarChart, labelKey: 'nav.reportCards' },
+      { href: '/dashboard/teacher/attendance', icon: ClipboardCheck, labelKey: 'nav.attendance' },
+      { href: '/dashboard/teacher/live', icon: Video, labelKey: 'nav.liveClasses' },
+      { href: '/dashboard/teacher/integrity', icon: AlertTriangle, labelKey: 'nav.integrity' },
+      { href: '/dashboard/teacher/behaviour', icon: Star, labelKey: 'nav.behaviour' },
     ]},
     // Billing and Helpdesk are institution-admin responsibilities, not teachers'.
-    { section: 'School', items: [
-      { href: '/dashboard/announcements', icon: Megaphone, label: 'Announcements' },
-      { href: '/dashboard/calendar', icon: Calendar, label: 'Calendar' },
-      { href: '/dashboard/resources', icon: Library, label: 'Resources' },
+    { sectionKey: 'nav.section.school', items: [
+      { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
+      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
+      { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
     ]},
-    { section: 'Account', items: [
-      { href: '/dashboard/profile', icon: UserCircle, label: 'My Profile' },
+    { sectionKey: 'nav.section.account', items: [
+      { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
   parent: [
     { items: [
-      { href: '/dashboard/parent', icon: Home, label: 'Child Progress' },
-      { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
-      { href: '/dashboard/studio', icon: Sparkles, label: 'AI Studio' },
-      { href: '/courses', icon: Store, label: 'Marketplace' },
-      { href: '/dashboard/parent/communications', icon: Mail, label: 'Mailbox' },
-      { href: '/dashboard/parent/duedates', icon: Clock, label: 'Due Dates' },
+      { href: '/dashboard/parent', icon: Home, labelKey: 'nav.childProgress' },
+      { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
+      { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
+      { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
+      { href: '/dashboard/parent/communications', icon: Mail, labelKey: 'nav.mailbox' },
+      { href: '/dashboard/parent/duedates', icon: Clock, labelKey: 'nav.dueDates' },
     ]},
-    { section: 'School', items: [
-      { href: '/dashboard/announcements', icon: Megaphone, label: 'Announcements' },
-      { href: '/dashboard/calendar', icon: Calendar, label: 'Calendar' },
-      { href: '/dashboard/helpdesk', icon: HelpCircle, label: 'Helpdesk' },
+    { sectionKey: 'nav.section.school', items: [
+      { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
+      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
+      { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
-    { section: 'Account', items: [
-      { href: '/dashboard/profile', icon: UserCircle, label: 'My Profile' },
+    { sectionKey: 'nav.section.account', items: [
+      { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
   admin: [
     { items: [
-      { href: '/dashboard/admin', icon: BarChart, label: 'Analytics' },
-      { href: '/dashboard/studio', icon: Sparkles, label: 'AI Studio' },
-      { href: '/dashboard/admin/courses', icon: Presentation, label: 'All Courses' },
-      { href: '/dashboard/admin/curriculum', icon: Layers, label: 'Curriculum CMS' },
-      { href: '/courses', icon: Store, label: 'Marketplace' },
-      { href: '/dashboard/admin/users', icon: UserCog, label: 'Users & Sparks' },
-      { href: '/dashboard/admin/institutions', icon: Users, label: 'Institutions' },
-      { href: '/dashboard/admin/access', icon: Shield, label: 'Access Config' },
-      { href: '/dashboard/admin/allocations', icon: KeyRound, label: 'Allocations' },
-      { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
-      { href: '/dashboard/admin/settings', icon: Settings, label: 'System Settings' },
-      { href: '/dashboard/admin/verifications', icon: ShieldCheck, label: 'Verifications' },
+      { href: '/dashboard/admin', icon: BarChart, labelKey: 'nav.analytics' },
+      { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
+      { href: '/dashboard/admin/courses', icon: Presentation, labelKey: 'nav.allCourses' },
+      { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' },
+      { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
+      { href: '/dashboard/admin/users', icon: UserCog, labelKey: 'nav.usersSparks' },
+      { href: '/dashboard/admin/institutions', icon: Users, labelKey: 'nav.institutions' },
+      { href: '/dashboard/admin/access', icon: Shield, labelKey: 'nav.accessConfig' },
+      { href: '/dashboard/admin/allocations', icon: KeyRound, labelKey: 'nav.allocations' },
+      { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
+      { href: '/dashboard/admin/settings', icon: Settings, labelKey: 'nav.systemSettings' },
+      { href: '/dashboard/admin/verifications', icon: ShieldCheck, labelKey: 'nav.verifications' },
     ]},
-    { section: 'Platform', items: [
-      { href: '/dashboard/announcements', icon: Megaphone, label: 'Announcements' },
-      { href: '/dashboard/calendar', icon: Calendar, label: 'Calendar' },
-      { href: '/dashboard/resources', icon: Library, label: 'Resources' },
-      { href: '/dashboard/teacher/billing', icon: CreditCard, label: 'Billing' },
-      { href: '/dashboard/helpdesk', icon: HelpCircle, label: 'Helpdesk' },
+    { sectionKey: 'nav.section.platform', items: [
+      { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
+      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
+      { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
+      { href: '/dashboard/teacher/billing', icon: CreditCard, labelKey: 'nav.billing' },
+      { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
-    { section: 'Account', items: [
-      { href: '/dashboard/profile', icon: UserCircle, label: 'My Profile' },
+    { sectionKey: 'nav.section.account', items: [
+      { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
 };
@@ -157,6 +158,7 @@ function isNavActive(href: string, pathname: string): boolean {
 const NavItem = ({ entry, role, pathname, onClick, router }: {
   entry: NavEntry; role: Role; pathname: string; onClick: () => void; router: ReturnType<typeof useRouter>;
 }) => {
+  const { t } = useTranslation();
   const active = isNavActive(entry.href, pathname);
   const Icon = entry.icon;
 
@@ -164,7 +166,7 @@ const NavItem = ({ entry, role, pathname, onClick, router }: {
     <button
       type="button"
       onClick={() => { onClick(); router.push(entry.href); }}
-      className={`relative w-full px-3 h-9 rounded-xl flex items-center gap-3 cursor-pointer transition-colors text-left text-[13px] ${
+      className={`relative w-full px-3 h-9 rounded-xl flex items-center gap-3 cursor-pointer transition-colors text-start text-[13px] ${
         active
           ? 'bg-muted text-foreground font-semibold shadow-[var(--shadow-card)]'
           : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground font-medium'
@@ -172,15 +174,16 @@ const NavItem = ({ entry, role, pathname, onClick, router }: {
     >
       {/* Active marker sits in the gutter, as in the reference design. */}
       {active && (
-        <span className="absolute -left-3 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full bg-primary" />
+        <span data-nav-marker className="absolute -start-3 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full bg-primary" />
       )}
       <Icon className={`w-[17px] h-[17px] shrink-0 ${active ? 'text-primary' : ''}`} />
-      <span className="truncate">{entry.label}</span>
+      <span className="truncate">{t(entry.labelKey)}</span>
     </button>
   );
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const { user, profile, loading } = useAuthSTORE();
   const router = useRouter();
   const pathname = usePathname();
@@ -218,16 +221,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="w-12 h-12 rounded-2xl bg-destructive/10 grid place-items-center mx-auto mb-4">
             <ShieldCheck className="w-6 h-6 text-destructive" />
           </div>
-          <h1 className="font-heading text-2xl text-foreground">Your account is suspended</h1>
+          <h1 className="font-heading text-2xl text-foreground">{t('account.suspendedTitle')}</h1>
           <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-            Access has been paused by an administrator. If you think this is a mistake, reply to your
-            welcome email or contact your school.
+            {t('account.suspendedBody')}
           </p>
           <a
             href="mailto:support@poketschool.ai"
             className="mt-6 inline-flex items-center justify-center h-11 px-6 rounded-full bg-foreground text-background font-bold text-sm"
           >
-            Contact support
+            {t('account.contactSupport')}
           </a>
         </div>
       </div>
@@ -241,7 +243,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* ── Sidebar — light, profile-led, grouped ── */}
-      <aside data-tour="sidebar" className={`relative bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-300 shrink-0 ${sidebarOpen ? 'w-[264px]' : 'w-0 opacity-0 overflow-hidden'}`}>
+      <aside data-tour="sidebar" className={`relative bg-sidebar border-e border-sidebar-border flex flex-col transition-all duration-300 shrink-0 ${sidebarOpen ? 'w-[264px]' : 'w-0 opacity-0 overflow-hidden'}`}>
 
         {/* Who you are, at the top — the reference design leads with identity
             rather than a logo lockup. */}
@@ -261,7 +263,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {profile.name ?? 'User'}
               </p>
               <p className="text-[11px] text-muted-foreground truncate mt-0.5">
-                {ROLE_LABELS[role] ?? role}
+                {t(`roles.${profile.role}`, { defaultValue: ROLE_LABELS[profile.role] ?? profile.role })}
               </p>
             </div>
             <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
@@ -272,13 +274,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <nav className="relative flex-1 overflow-y-auto px-3 pb-2 space-y-0.5 [scrollbar-width:thin]">
           {nav.map((group, gi) => (
             <div key={gi} className="space-y-0.5">
-              {group.section && (
+              {group.sectionKey && (
                 <p className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-[0.14em] px-3 pt-5 pb-1.5">
-                  {group.section}
+                  {t(group.sectionKey)}
                 </p>
               )}
               {group.items.map(entry => (
-                <NavItem key={entry.href + entry.label} entry={entry} role={role} pathname={pathname} onClick={handleNavClick} router={router} />
+                <NavItem key={entry.href} entry={entry} role={role} pathname={pathname} onClick={handleNavClick} router={router} />
               ))}
             </div>
           ))}
@@ -290,13 +292,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             href="/dashboard/helpdesk"
             className="flex items-center gap-3 px-3 h-9 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
-            <HelpCircle className="w-[17px] h-[17px] shrink-0" /> Help Center
+            <HelpCircle className="w-[17px] h-[17px] shrink-0" /> {t('nav.helpCenter')}
           </Link>
           <button
             onClick={() => { signOut(auth).then(() => { useAuthSTORE.getState().setUser(null); router.push('/login'); }); }}
             className="w-full flex items-center gap-3 px-3 h-9 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
           >
-            <LogOut className="w-[17px] h-[17px] shrink-0" /> Sign out
+            <LogOut className="w-[17px] h-[17px] shrink-0" /> {t('nav.signOut')}
           </button>
         </div>
       </aside>
@@ -306,7 +308,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Header */}
         <header className="h-[72px] bg-background/80 backdrop-blur-xl flex items-center justify-between gap-4 px-4 lg:px-6 shrink-0 z-10">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="rounded-xl shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Toggle sidebar">
+            <Button variant="ghost" size="icon" className="rounded-xl shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={t('nav.toggleSidebar')}>
               <Menu className="w-5 h-5 text-muted-foreground" />
             </Button>
             <PipGuide role={role as TourRole} />
@@ -316,7 +318,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span data-tour="sparks"><SparksChip /></span>
             <span data-tour="language"><LanguageSwitcher /></span>
             <span data-tour="notifications"><NotificationsBell /></span>
-            <button onClick={() => router.push('/dashboard/profile')} className="ml-1" data-tour="profile">
+            <button onClick={() => router.push('/dashboard/profile')} className="ms-1" data-tour="profile">
               <Avatar className="w-9 h-9 border-2 border-border cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all">
                 <AvatarImage src={profile.avatarUrl ?? user.photoURL ?? undefined} />
                 <AvatarFallback className="bg-gradient-to-br from-[#2786A4] to-[#1E6A83] text-white text-sm font-bold">

@@ -13,6 +13,7 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 import { linkChildToParent, createParentVerification, enrollInProgrammeModules, awardSparks, getUser, updateUser, UserProfile } from '@/lib/db';
 import { SIGNUP_GRANT } from '@/lib/sparks';
+import { LanguageSwitcher } from '@/components/language-switcher';
 import { Timestamp } from 'firebase/firestore';
 
 const YEAR_GROUPS = ['Year 7', 'Year 8', 'Year 9'] as const;
@@ -119,7 +120,8 @@ export default function OnboardingPage() {
   // ── Parent onboarding ──────────────────────────────────────
   if (isParent) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      <div className="relative min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <div className="absolute top-4 end-4 z-20"><LanguageSwitcher /></div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -183,7 +185,8 @@ export default function OnboardingPage() {
 
   // ── Student onboarding ─────────────────────────────────────
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+    <div className="relative min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      <div className="absolute top-4 end-4 z-20"><LanguageSwitcher /></div>
       <div className="w-full max-w-3xl">
         {/* Progress */}
         <div className="flex items-center justify-center gap-2 mb-10">

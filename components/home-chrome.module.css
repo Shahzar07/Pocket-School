@@ -201,7 +201,7 @@
     display: none;
   }
   .headerCta {
-    margin-left: auto;
+    margin-inline-start: auto;
     font-size: 10px;
     gap: 5px;
   }
@@ -255,7 +255,7 @@
     margin-bottom: 0;
   }
   .footerWordmark {
-    margin-left: -5px;
+    margin-inline-start: -5px;
     font-size: 16vw;
     margin-bottom: -10px;
   }

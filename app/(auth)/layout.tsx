@@ -1,17 +1,20 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Brain, BookOpen, Sparkles, Trophy, Users } from 'lucide-react';
+import { Brain, BookOpen, Sparkles, Trophy } from 'lucide-react';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from '@/components/language-switcher';
 
 const FEATURES = [
-  { icon: <Brain className="w-4 h-4" />, title: 'ET — Your AI Tutor', desc: 'Adapts to how you think, 24 / 7' },
-  { icon: <BookOpen className="w-4 h-4" />, title: 'IGCSE · A-Levels · Degrees', desc: 'Full academic pathways, your pace' },
-  { icon: <Sparkles className="w-4 h-4" />, title: 'Visual Learning Engine', desc: 'Mind maps, diagrams & interactive lessons' },
-  { icon: <Trophy className="w-4 h-4" />, title: 'Smart Exam Prep', desc: 'Past papers, gap analysis, revision plans' },
+  { icon: <Brain className="w-4 h-4" />, title: 'auth.f1title', desc: 'auth.f1desc' },
+  { icon: <BookOpen className="w-4 h-4" />, title: 'auth.f2title', desc: 'auth.f2desc' },
+  { icon: <Sparkles className="w-4 h-4" />, title: 'auth.f3title', desc: 'auth.f3desc' },
+  { icon: <Trophy className="w-4 h-4" />, title: 'auth.f4title', desc: 'auth.f4desc' },
 ];
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen flex bg-[#06060F]">
       {/* ── Left: video hero panel ── */}
@@ -50,11 +53,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                   className="text-[2.6rem] leading-[1.1] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] mb-3"
                   style={{ fontFamily: "'Instrument Serif', serif" }}
                 >
-                  Your Smartest<br />
-                  <em>Classroom in Your Pocket</em>
+                  {t('auth.line1')}<br />
+                  <em>{t('auth.line2')}</em>
                 </h1>
                 <p className="text-white/70 text-sm leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                  AI-powered learning for IGCSE, A-Levels, degrees &amp; beyond.
+                  {t('auth.subtitle')}
                 </p>
               </motion.div>
 
@@ -71,8 +74,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                       {f.icon}
                     </div>
                     <div>
-                      <p className="text-white text-sm font-semibold leading-tight">{f.title}</p>
-                      <p className="text-white/50 text-xs mt-0.5">{f.desc}</p>
+                      <p className="text-white text-sm font-semibold leading-tight">{t(f.title)}</p>
+                      <p className="text-white/50 text-xs mt-0.5">{t(f.desc)}</p>
                     </div>
                   </motion.div>
                 ))}
@@ -83,7 +86,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </div>
 
       {/* ── Right: form area ── */}
-      <div className="flex-1 flex items-center justify-center px-8 py-12 bg-[#06060F]">
+      <div className="relative flex-1 flex items-center justify-center px-8 py-12 bg-[#06060F]">
+        <div className="absolute top-4 end-4 z-20">
+          <LanguageSwitcher tone="onDark" />
+        </div>
         <div className="w-full max-w-md">
           {/* Mobile-only logo */}
           <div className="lg:hidden mb-10 flex items-center gap-2">

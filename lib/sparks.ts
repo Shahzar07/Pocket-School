@@ -87,4 +87,11 @@ export const STUDY_COSTS = {
   topicChat: 0,
 } as const;
 
+/**
+ * Sparks to AI-translate one lesson into another language.
+ * Charged only after the model returns a translation, and only after the
+ * editor confirms. Typing a translation by hand is free.
+ */
+export const LESSON_TRANSLATION_COST = 8;
+
 export type StudyCostKey = keyof typeof STUDY_COSTS;
