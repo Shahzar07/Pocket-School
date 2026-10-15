@@ -11,7 +11,7 @@ import {
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
-  Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked,
+  Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked, Compass, Camera, MessagesSquare,
   Wallet, Gift, Landmark, Plug, PieChart,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -32,6 +32,8 @@ import { RoleChecklist } from '@/components/role-checklist';
 import dynamic from 'next/dynamic';
 import type { TourRole } from '@/lib/tour-steps';
 import { hasCmsAddon } from '@/lib/entitlements';
+import { isFeatureEnabled, type FeatureFlag } from '@/lib/feature-flags';
+import { useFeatureFlags } from '@/hooks/use-feature-flags';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
@@ -45,8 +47,8 @@ const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string }> = {
   institution_admin: { icon: 'text-sky-400', bar: 'bg-sky-400', chip: 'from-sky-500 to-cyan-600' },
 };
 
-interface NavEntry { href: string; icon: React.ElementType; labelKey: string; superOnly?: boolean }
-interface NavGroup { sectionKey?: string; items: NavEntry[] }
+interface NavEntry { href: string; icon: React.ElementType; labelKey: string; label?: string; flag?: FeatureFlag; superOnly?: boolean }
+interface NavGroup { sectionKey?: string; sectionLabel?: string; items: NavEntry[] }
 
 const NAV: Record<Role, NavGroup[]> = {
   student: [
@@ -74,6 +76,14 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/student/billing', icon: CreditCard, labelKey: 'nav.billing' },
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
+    ]},
+    { sectionLabel: 'Community', items: [
+      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.dashboard', label: 'Community', flag: 'community' },
+      { href: '/dashboard/channels', icon: MessagesSquare, labelKey: 'nav.messages', label: 'Channels', flag: 'messagingHub' },
+      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.dashboard', label: 'Tutors', flag: 'tutorMarketplace' },
+      { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.exams', label: 'Exam centre', flag: 'examCentre' },
+      { href: '/dashboard/store', icon: Library, labelKey: 'nav.resources', label: 'Creator store', flag: 'creatorStore' },
+      { href: '/dashboard/snap', icon: Camera, labelKey: 'nav.dashboard', label: 'Snap & solve', flag: 'snapAndSolve' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
@@ -110,6 +120,13 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher/behaviour', icon: Star, labelKey: 'nav.behaviour' },
     ]},
     // Billing and Helpdesk are institution-admin responsibilities, not teachers'.
+    { sectionLabel: 'Community', items: [
+      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.dashboard', label: 'Community', flag: 'community' },
+      { href: '/dashboard/channels', icon: MessagesSquare, labelKey: 'nav.messages', label: 'Channels', flag: 'messagingHub' },
+      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.dashboard', label: 'Tutors', flag: 'tutorMarketplace' },
+      { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.exams', label: 'Exam centre', flag: 'examCentre' },
+      { href: '/dashboard/store', icon: Library, labelKey: 'nav.resources', label: 'Creator store', flag: 'creatorStore' },
+    ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
       { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
@@ -130,6 +147,10 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/parent/duedates', icon: Clock, labelKey: 'nav.dueDates' },
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
+    ]},
+    { sectionLabel: 'Family', items: [
+      { href: '/dashboard/channels', icon: MessagesSquare, labelKey: 'nav.messages', label: 'Channels', flag: 'messagingHub' },
+      { href: '/dashboard/parent/controls', icon: Shield, labelKey: 'nav.dashboard', label: 'Controls', flag: 'community' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
@@ -155,6 +176,10 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
       { href: '/dashboard/admin/settings', icon: Settings, labelKey: 'nav.systemSettings' },
       { href: '/dashboard/admin/verifications', icon: ShieldCheck, labelKey: 'nav.verifications' },
+      { href: '/dashboard/admin/moderation', icon: Shield, labelKey: 'nav.dashboard', label: 'Moderation', flag: 'community' },
+      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.dashboard', label: 'Community', flag: 'community' },
+      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.dashboard', label: 'Tutors', flag: 'tutorMarketplace' },
+      { href: '/dashboard/store', icon: Library, labelKey: 'nav.resources', label: 'Creator store', flag: 'creatorStore' },
     ]},
     { sectionKey: 'nav.section.money', items: [
       { href: '/dashboard/admin/payments', icon: Landmark, labelKey: 'nav.payments', superOnly: true },
@@ -220,13 +245,14 @@ const NavItem = ({ entry, role, pathname, onClick, router }: {
         <span data-nav-marker className="absolute -start-3 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full bg-primary" />
       )}
       <Icon className={`w-[17px] h-[17px] shrink-0 ${active ? 'text-primary' : ''}`} />
-      <span className="truncate">{t(entry.labelKey)}</span>
+      <span className="truncate">{entry.label ?? t(entry.labelKey)}</span>
     </button>
   );
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
+  const flags = useFeatureFlags();
   const { user, profile, loading } = useAuthSTORE();
   const router = useRouter();
   const pathname = usePathname();
@@ -306,12 +332,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const role = (profile.role ?? 'student') as Role;
   const superAdmin = isSuperAdmin(profile);
   const nav = (NAV[role] ?? NAV.student).map((group, index) => {
-    let items = group.items.filter((item) => !item.superOnly || superAdmin);
-    if (index === 0 && hasCmsAddon(profile) && (role === 'teacher' || role === 'institution_admin')) {
-      items = [...items, { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' }];
-    }
-    return { ...group, items };
-  }).filter((group) => group.items.length > 0);
+    const cmsItem: NavEntry = { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' };
+    const withCms = index !== 0 || role === 'admin' || !hasCmsAddon(profile) || (role !== 'teacher' && role !== 'institution_admin')
+      ? group.items
+      : [...group.items, cmsItem];
+    return {
+      ...group,
+      items: withCms.filter((item) => (!item.superOnly || superAdmin) && (!item.flag || isFeatureEnabled(flags, item.flag))),
+    };
+  }).filter(group => group.items.length > 0);
   const accent = ROLE_ACCENT[role];
 
   return (
@@ -348,9 +377,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <nav className="relative flex-1 overflow-y-auto px-3 pb-2 space-y-0.5 [scrollbar-width:thin]">
           {nav.map((group, gi) => (
             <div key={gi} className="space-y-0.5">
-              {group.sectionKey && (
+              {(group.sectionLabel || group.sectionKey) && (
                 <p className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-[0.14em] px-3 pt-5 pb-1.5">
-                  {t(group.sectionKey)}
+                  {group.sectionLabel ?? t(group.sectionKey!)}
                 </p>
               )}
               {group.items.map(entry => (

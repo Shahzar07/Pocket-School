@@ -1,6 +1,6 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb, isAdminConfigured } from '../../firebase-admin';
-import { resolveFlags } from '../../feature-flags';
+import { resolveFlags } from '../flags';
 import { SECRET_SLOTS, describeSecret, isPlaceholder, maskSecret, type SecretView } from '../secrets';
 import { DEFAULT_TAX, type TaxConfig } from '../tax';
 import type { GatewayVendor } from '../providers';

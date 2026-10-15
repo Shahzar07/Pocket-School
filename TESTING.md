@@ -64,7 +64,7 @@ Delete the five QA accounts after the Sunday pass. They write into the live Auth
 From `/workspace` on this branch:
 
 - `npx tsc --noEmit` passed.
-- `npx tsx --test lib/*.test.ts lib/reads/*.test.ts lib/platform/*.test.ts` — 104 passed, 0 failed.
+- `npx tsx --test lib/*.test.ts lib/reads/*.test.ts lib/platform/*.test.ts lib/community/*.test.ts` — 131 passed, 0 failed.
 
 Signed-in browser passes were not run. There is no QA session in this environment until the seed script has been executed.
 

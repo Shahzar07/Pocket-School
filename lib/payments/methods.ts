@@ -5,7 +5,7 @@
  * DuitNow QR go through the Malaysian gateway adapter.
  */
 
-import { isFlagEnabled } from '../feature-flags';
+import { isFlagEnabled } from './flags';
 
 export type MethodId =
   | 'card'

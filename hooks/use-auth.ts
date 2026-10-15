@@ -41,6 +41,10 @@ interface UserProfile {
   cohortIds?: string[];
   /** Children who approved a parent link. */
   childIds?: string[];
+  /** Server-set from dateOfBirth. Clients cannot write it. */
+  ageTier?: 'under13' | 'teen' | 'adult';
+  /** YYYY-MM-DD. Server-set. */
+  dateOfBirth?: string;
 }
 
 interface AuthState {

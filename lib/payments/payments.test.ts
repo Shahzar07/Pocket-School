@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isFlagEnabled, resolveFlags } from '../feature-flags';
+import { isFlagEnabled, resolveFlags } from './flags';
 import { SPARK_PACKS, subscriptionItem, walletTopUpItem } from './catalog';
 import { commissionMinor, couponRejection, discountMinor, referralCode, type Coupon } from './coupons';
 import { summariseFinance, reconcile } from './finance';

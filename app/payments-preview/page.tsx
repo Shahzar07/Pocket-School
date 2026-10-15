@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { CheckoutPanel } from '@/components/payments/checkout-panel';
 import { DashHeader, DashPage, DataTable, Panel, PanelHeader, StatCard } from '@/components/dash-ui';
-import { FEATURE_FLAGS } from '@/lib/feature-flags';
+import { FEATURE_FLAGS } from '@/lib/payments/flags';
 import { formatMoney } from '@/lib/money';
 import { quoteCheckout } from '@/lib/platform/wallet';
 import { seedPricing } from '@/lib/pricing';

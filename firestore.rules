@@ -58,8 +58,34 @@ service cloud.firestore {
               'institutionId', 'adminSparksGrantedAt', 'accountStatus',
               'sparksBalance', 'xp', 'sparksMonthlyAllowance', 'sparksGrantedAt',
               'sparksWelcomeGrantedAt', 'emailVerified', 'stripeCustomerId',
-              'stripeAccountId', 'adminRole', 'statusReason', 'deletedAt', 'cohortIds',
-              'ageTier', 'dateOfBirth'];
+              'stripeAccountId', 'adminRole', 'statusReason', 'deletedAt',
+              'cohortIds', 'ageTier', 'dateOfBirth'];
+    }
+
+    function callerIsSuper() {
+      return isSignedIn() && (
+        request.auth.token.adminRole == 'super_admin'
+        || request.auth.token.email == 'shahzarrayyan123@gmail.com'
+        || request.auth.token.email == 'harry.seggu@gmail.com'
+        || request.auth.token.email == 'harry@poketschool.ai'
+      );
+    }
+
+    function targetIsSuper() {
+      return resource.data.get('adminRole', '') == 'super_admin'
+        || resource.data.get('email', '') == 'shahzarrayyan123@gmail.com'
+        || resource.data.get('email', '') == 'harry.seggu@gmail.com'
+        || resource.data.get('email', '') == 'harry@poketschool.ai';
+    }
+
+    // A regular admin can change users. Promoting someone to super admin, or
+    // editing a super admin, requires the super admin claim or the owner email.
+    function staffWriteAllowed() {
+      return callerIsSuper()
+        || (
+          !targetIsSuper()
+          && incoming().get('adminRole', '') != 'super_admin'
+        );
     }
 
     // Missing ageTier fails closed as under-13. The server is the only writer.
@@ -71,14 +97,14 @@ service cloud.firestore {
     function userAgeTier(uid) {
       return get(/databases/$(database)/documents/users/$(uid)).data.get('ageTier', 'under13');
     }
-    function userRoleOf(uid) {
-      return get(/databases/$(database)/documents/users/$(uid)).data.get('role', '');
-    }
     function callerYear() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('yearGroup', '');
     }
     function callerSubjects() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('subjects', []);
+    }
+    function userRoleOf(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.get('role', '');
     }
     function isStaffRole(r) {
       return r == 'teacher' || r == 'admin' || r == 'institution_admin';
@@ -87,21 +113,18 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/community_profiles/$(uid))
         && get(/databases/$(database)/documents/community_profiles/$(uid)).data.get('adultDmOptIn', false) == true;
     }
-    function myChildIds() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('childIds', [])
-        : [];
+    function sameTierPair(a, b) {
+      return userAgeTier(a) == userAgeTier(b);
     }
-    function linkedTo(studentId) {
-      return isSignedIn() && studentId is string && myChildIds().hasAny([studentId]);
+    function bothAdults(a, b) {
+      return userAgeTier(a) == 'adult' && userAgeTier(b) == 'adult';
     }
     function dmCreateOk() {
       return incoming().fromId == request.auth.uid
         && incoming().toId is string
         && incoming().toId != request.auth.uid
         && callerAgeTier() == 'adult'
-        && userAgeTier(incoming().fromId) == 'adult'
-        && userAgeTier(incoming().toId) == 'adult'
+        && bothAdults(incoming().fromId, incoming().toId)
         && (
           isStaffRole(userRoleOf(incoming().fromId))
           || isStaffRole(userRoleOf(incoming().toId))
@@ -147,31 +170,27 @@ service cloud.firestore {
         )
       );
     }
-
-    function callerIsSuper() {
-      return isSignedIn() && (
-        request.auth.token.adminRole == 'super_admin'
-        || request.auth.token.email == 'shahzarrayyan123@gmail.com'
-        || request.auth.token.email == 'harry.seggu@gmail.com'
-        || request.auth.token.email == 'harry@poketschool.ai'
+    function canReadChannelData(data) {
+      return (
+        data.kind == 'class'
+        && data.get('staffIds', []).hasAny([request.auth.uid])
+        && isTeacherOrAdmin()
+      ) || (
+        data.ageTier == callerAgeTier()
+        && (
+          data.get('memberIds', []).hasAny([request.auth.uid])
+          || data.get('staffIds', []).hasAny([request.auth.uid])
+        )
       );
     }
 
-    function targetIsSuper() {
-      return resource.data.get('adminRole', '') == 'super_admin'
-        || resource.data.get('email', '') == 'shahzarrayyan123@gmail.com'
-        || resource.data.get('email', '') == 'harry.seggu@gmail.com'
-        || resource.data.get('email', '') == 'harry@poketschool.ai';
+    function myChildIds() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('childIds', [])
+        : [];
     }
-
-    // A regular admin can change users. Promoting someone to super admin, or
-    // editing a super admin, requires the super admin claim or the owner email.
-    function staffWriteAllowed() {
-      return callerIsSuper()
-        || (
-          !targetIsSuper()
-          && incoming().get('adminRole', '') != 'super_admin'
-        );
+    function linkedTo(studentId) {
+      return isSignedIn() && studentId is string && myChildIds().hasAny([studentId]);
     }
 
     // ── Users ─────────────────────────────────────────────────
@@ -773,9 +792,8 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // Adult-only direct messages. The mobile app reads this collection.
-    // Minors use class channels, never this inbox. fromId must be the caller
-    // so a student cannot forge a teacher.
+    // Adult-only direct messages. Minors never read or write this collection.
+    // fromId must be the signed-in user, so a message cannot be forged.
     match /messages/{messageId} {
       allow read: if isSignedIn() && (
         resource.data.fromId == request.auth.uid ||
@@ -1189,11 +1207,23 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // ── Community feed (shared with the Expo app) ─────────────
-    // Collections: spaces, posts, comments, reactions, follows, reports,
-    // moderation_queue, and messages (adult DMs, above).
+    // Leaderboards and messaging labels. XP and ageTier are written only by the server.
+    match /public_profiles/{userId} {
+      allow read: if isSignedIn() && (
+        resource.data.get('ageTier', '') == ''
+        || resource.data.get('ageTier', '') == callerAgeTier()
+      );
+      allow create: if isUser(userId)
+        && incoming().get('xp', 0) == 0
+        && incoming().get('ageTier', '') == '';
+      allow update: if isAdmin()
+        || (isUser(userId)
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['xp', 'ageTier']));
+      allow delete: if isAdmin();
+    }
+
     match /community_profiles/{userId} {
-      allow read: if isSignedIn() && role() != 'parent' && resource.data.ageTier == callerAgeTier();
+      allow read: if isSignedIn() && resource.data.ageTier == callerAgeTier();
       allow create: if isUser(userId)
         && incoming().ageTier == callerAgeTier()
         && incoming().ageTier in ['under13', 'teen', 'adult'];
@@ -1272,6 +1302,110 @@ service cloud.firestore {
         && incoming().messagingEnabled is bool
         && incoming().snapEnabled is bool;
       allow delete: if isAdmin();
+    }
+
+    match /channels/{channelId} {
+      allow read: if isSignedIn() && canReadChannelData(resource.data);
+      allow create, update, delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if isSignedIn()
+          && canReadChannelData(get(/databases/$(database)/documents/channels/$(channelId)).data);
+        allow create, update, delete: if false;
+      }
+    }
+
+    match /tutor_profiles/{userId} {
+      allow read: if isSignedIn()
+        && resource.data.ageTier == 'adult'
+        && resource.data.verificationStatus == 'verified';
+      allow create: if isUser(userId)
+        && callerAgeTier() == 'adult'
+        && incoming().ageTier == 'adult'
+        && incoming().verificationStatus == 'pending';
+      allow update: if isUser(userId)
+        && resource.data.ageTier == 'adult'
+        && request.resource.data.ageTier == 'adult'
+        && request.resource.data.verificationStatus == resource.data.verificationStatus
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['bio', 'subjects', 'hourlyCents', 'currency', 'updatedAt']);
+      allow delete: if isAdmin();
+    }
+
+    match /tutor_bookings/{bookingId} {
+      allow read: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid
+        || resource.data.tutorId == request.auth.uid
+        || isAdmin()
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /tutor_reviews/{reviewId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if false;
+    }
+
+    match /exam_papers/{paperId} {
+      allow read: if isSignedIn()
+        && resource.data.status == 'published'
+        && resource.data.license in ['licensed', 'teacher_upload'];
+      allow create: if isTeacherOrAdmin()
+        && incoming().license == 'teacher_upload'
+        && incoming().uploadedBy == request.auth.uid
+        && incoming().status == 'draft';
+      allow update: if isAdmin()
+        || (isTeacherOrAdmin()
+            && resource.data.uploadedBy == request.auth.uid
+            && resource.data.license == 'teacher_upload'
+            && request.resource.data.license == 'teacher_upload');
+      allow delete: if isAdmin();
+    }
+
+    match /mock_attempts/{attemptId} {
+      allow read: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid
+        || isAdmin()
+        || linkedTo(resource.data.studentId)
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /guidance_profiles/{userId} {
+      allow read: if isUser(userId) || isAdmin() || linkedTo(userId);
+      allow create, update, delete: if false;
+    }
+
+    match /creator_resources/{resourceId} {
+      allow read: if isSignedIn() && (
+        resource.data.status == 'approved'
+        || resource.data.authorId == request.auth.uid
+        || isAdmin()
+      );
+      allow create: if isTeacherOrAdmin()
+        && incoming().authorId == request.auth.uid
+        && incoming().status == 'draft'
+        && incoming().kind in ['note', 'worksheet', 'template'];
+      allow update: if isAdmin()
+        || (resource.data.authorId == request.auth.uid
+            && resource.data.status in ['draft', 'pending', 'rejected']
+            && request.resource.data.status in ['draft', 'pending']
+            && request.resource.data.authorId == resource.data.authorId);
+      allow delete: if isAdmin() || resource.data.authorId == request.auth.uid;
+    }
+
+    match /snap_sessions/{sessionId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create, update, delete: if false;
+    }
+
+    match /lesson_questions/{questionId} {
+      allow read: if isSignedIn() && (
+        resource.data.authorId == request.auth.uid
+        || isAdmin()
+        || linkedTo(resource.data.authorId)
+      );
+      allow create, update, delete: if false;
     }
 
     // Money, secrets and webhook claims are server-only. The Admin SDK bypasses these rules.

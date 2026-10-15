@@ -1,6 +1,8 @@
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import { adminDb } from '../firebase-admin';
 import { publicDisplayName } from '../display-name';
+import { canDirectMessage } from '../community/policy';
+import { asAgeTier, isAgeTier } from '../age-tier';
 import { accessTierFor, freePreviewCount, tierDefinition, type AccessTier } from '../entitlements';
 import { answersMatch } from '../quiz';
 import { isPublishedLesson, progressPercent } from '../progress';
@@ -650,6 +652,9 @@ export async function syncPublicProfile(uid: string) {
   if (!snap.exists) return;
   const data = snap.data() ?? {};
   await writePublicXp(uid, (data.name as string) ?? '', (data.xp as number) ?? 0, (data.role as string) ?? 'student');
+  if (isAgeTier(data.ageTier)) {
+    await db().doc(`public_profiles/${uid}`).set({ ageTier: data.ageTier }, { merge: true });
+  }
 }
 
 export async function messageContacts(uid: string, role: string) {
@@ -704,7 +709,27 @@ export async function messageContacts(uid: string, role: string) {
     }
   }
 
-  return [...contacts.values()];
+  const meSnap = await db().doc(`users/${uid}`).get();
+  const meProfile = await db().doc(`community_profiles/${uid}`).get();
+  const me = {
+    id: uid,
+    role,
+    ageTier: asAgeTier(meSnap.data()?.ageTier),
+    adultDmOptIn: meProfile.data()?.adultDmOptIn === true,
+  };
+  const allowed: { id: string; name: string; role: string }[] = [];
+  for (const contact of contacts.values()) {
+    const themSnap = await db().doc(`users/${contact.id}`).get();
+    const themProfile = await db().doc(`community_profiles/${contact.id}`).get();
+    const them = {
+      id: contact.id,
+      role: (themSnap.data()?.role as string) || contact.role,
+      ageTier: asAgeTier(themSnap.data()?.ageTier),
+      adultDmOptIn: themProfile.data()?.adultDmOptIn === true,
+    };
+    if (canDirectMessage(me, them).ok) allowed.push(contact);
+  }
+  return allowed;
 }
 
 export async function parentOverview(parentId: string, childId: string) {

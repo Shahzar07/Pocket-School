@@ -178,6 +178,23 @@
       "collectionGroup": "posts",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "ageTier", "order": "ASCENDING" },
+        { "fieldPath": "moderation", "order": "ASCENDING" },
+        { "fieldPath": "createdAtMs", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "posts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "spaceId", "order": "ASCENDING" },
+        { "fieldPath": "createdAtMs", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "posts",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "spaceId", "order": "ASCENDING" },
         { "fieldPath": "moderation", "order": "ASCENDING" },
         { "fieldPath": "createdAtMs", "order": "DESCENDING" }
@@ -233,6 +250,86 @@
       "fields": [
         { "fieldPath": "kind", "order": "ASCENDING" },
         { "fieldPath": "staffIds", "arrayConfig": "CONTAINS" }
+      ]
+    },
+    {
+      "collectionGroup": "comments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "postId", "order": "ASCENDING" },
+        { "fieldPath": "createdAtMs", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "spaces",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "ageTier", "order": "ASCENDING" },
+        { "fieldPath": "kind", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "channels",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "memberIds", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "updatedAtMs", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tutor_bookings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "studentId", "order": "ASCENDING" },
+        { "fieldPath": "createdAtMs", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tutor_bookings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tutorId", "order": "ASCENDING" },
+        { "fieldPath": "createdAtMs", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "mock_attempts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "studentId", "order": "ASCENDING" },
+        { "fieldPath": "startedAtMs", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "exam_papers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "board", "order": "ASCENDING" },
+        { "fieldPath": "subject", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "creator_resources",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "kind", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "lesson_questions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "lessonId", "order": "ASCENDING" },
+        { "fieldPath": "createdAtMs", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "snap_sessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "createdAtMs", "order": "DESCENDING" }
       ]
     }
   ],

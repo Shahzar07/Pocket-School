@@ -48,6 +48,10 @@ export interface UserProfile {
   /** Staff console role. Custom claims mirror this field. */
   adminRole?: 'super_admin' | 'admin' | 'content_editor' | 'support' | 'finance';
   country?: string;
+  /** Server-set from dateOfBirth. Clients cannot write it. */
+  ageTier?: 'under13' | 'teen' | 'adult';
+  /** YYYY-MM-DD. Server-set. Clients cannot write it. */
+  dateOfBirth?: string;
   lastActiveAt?: Timestamp;
   sparksBalance?: number;
   sparksMonthlyAllowance?: number;
