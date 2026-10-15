@@ -630,6 +630,34 @@ describe('goals, snapshots, integrity, and published reports', () => {
     await assertSucceeds(getDoc(doc(admin, 'report_exports/exp1')));
   });
 
+  it('keeps behaviour notes and mood check-ins to the student, parent, teacher, and school', async () => {
+    const teacher = env.authenticatedContext('teacher1').firestore();
+    await assertSucceeds(setDoc(doc(teacher, 'behaviour_records/note1'), {
+      studentId: 'student1', studentName: 'Mina', type: 'merit', points: 5,
+      description: 'Helped a classmate', recordedBy: 'teacher1', recordedByName: 'Ada', institutionId: 'school-a',
+    }));
+    const student = env.authenticatedContext('student1').firestore();
+    await assertSucceeds(getDoc(doc(student, 'behaviour_records/note1')));
+    const other = env.authenticatedContext('student2').firestore();
+    await assertFails(getDoc(doc(other, 'behaviour_records/note1')));
+    const parent = env.authenticatedContext('parent1').firestore();
+    await assertSucceeds(getDoc(doc(parent, 'behaviour_records/note1')));
+    const stranger = env.authenticatedContext('teacher2').firestore();
+    await assertFails(getDoc(doc(stranger, 'behaviour_records/note1')));
+    const school = env.authenticatedContext('instadmin1').firestore();
+    await assertSucceeds(getDoc(doc(school, 'behaviour_records/note1')));
+    await assertFails(setDoc(doc(other, 'behaviour_records/forged'), {
+      studentId: 'student2', type: 'merit', points: 5, description: 'Nope', recordedBy: 'teacher1',
+    }));
+
+    await assertSucceeds(setDoc(doc(student, 'mood_checkins/student1_2026-10-15'), {
+      studentId: 'student1', dateKey: '2026-10-15', mood: 4, effort: 3,
+    }));
+    await assertSucceeds(getDoc(doc(parent, 'mood_checkins/student1_2026-10-15')));
+    await assertFails(getDoc(doc(stranger, 'mood_checkins/student1_2026-10-15')));
+    await assertFails(getDoc(doc(other, 'mood_checkins/student1_2026-10-15')));
+  });
+
   it('lets a linked parent acknowledge a report card and blocks a grade change', async () => {
     const parent = env.authenticatedContext('parent1').firestore();
     await assertSucceeds(getDoc(doc(parent, 'report_cards/card1')));
