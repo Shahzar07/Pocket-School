@@ -196,6 +196,6 @@ Server-side file export. Requires `Authorization: Bearer <Firebase ID token>`.
 
 `pptx` is for slides. `jpg` and `png` are for images, infographics, and mind maps. `pdf` and `docx` are for the written assets and for slides. `answerKey: false` omits quiz answers and `### Worked solution` sections.
 
-Every file includes `© {year} Poket Media Sdn Bhd (1332289-X). All rights reserved.` and the Poket School wordmark.
+Every file includes `© {current year} poketschool.ai. All rights reserved.` The year is `new Date().getFullYear()` at generation time. The file also carries the Poket School wordmark. The legal entity name stays in the terms, privacy policy, and creator agreement.
 
 When `FIREBASE_SERVICE_ACCOUNT` is set, the route replaces `viewer` with the Firestore user and `courses.downloadsEnabled`. Without that credential, the route checks the ID token and applies `canDownload` to the posted viewer. That fallback is a limitation of this environment.

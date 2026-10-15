@@ -84,8 +84,9 @@ test('a generator that stalls is shown as failed', () => {
   assert.match(job?.error ?? '', /stopped/);
 });
 
-test('the copyright notice names Poket Media', () => {
-  assert.equal(copyrightNotice(2026), '© 2026 Poket Media Sdn Bhd (1332289-X). All rights reserved.');
+test('the copyright notice names poketschool.ai and the current year', () => {
+  const year = new Date().getFullYear();
+  assert.equal(copyrightNotice(), `© ${year} poketschool.ai. All rights reserved.`);
 });
 
 test('an export hides the worked solution and carries the notice', async () => {
@@ -100,7 +101,9 @@ test('an export hides the worked solution and carries the notice', async () => {
     content: 'Total revenue was £4 million.',
     answerKey: true,
   });
-  assert.match(pdf.bytes.toString('latin1'), /\\251 2026 Poket Media Sdn Bhd/);
+  const year = new Date().getFullYear();
+  assert.match(pdf.bytes.toString('latin1'), new RegExp(`\\\\251 ${year} poketschool.ai`));
+  assert.doesNotMatch(pdf.bytes.toString('latin1'), /Poket Media/);
 
   const docx = await buildExport({
     asset: 'problems',
@@ -112,8 +115,9 @@ test('an export hides the worked solution and carries the notice', async () => {
   const zip = await JSZip.loadAsync(docx.bytes);
   const footer = await zip.file('word/footer1.xml')?.async('string');
   const document = await zip.file('word/document.xml')?.async('string');
-  assert.match(footer ?? '', /Poket Media Sdn Bhd/);
+  assert.match(footer ?? '', new RegExp(`© ${new Date().getFullYear()} poketschool.ai`));
   assert.match(footer ?? '', /Poket School/);
+  assert.doesNotMatch(footer ?? '', /Poket Media/);
   assert.doesNotMatch(document ?? '', /Worked solution/);
 
   const png = await buildExport({
