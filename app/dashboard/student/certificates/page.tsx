@@ -33,6 +33,7 @@ function toFace(cert: Certificate): CertificateFace {
     courseId: cert.courseId,
     issuedAt: issued,
     issuedByName: cert.issuedByName,
+    status: cert.status,
   };
 }
 

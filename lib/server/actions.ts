@@ -1,10 +1,11 @@
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
+import { callerIsAdmin } from '../api-guard';
 import { adminDb } from '../firebase-admin';
 import { publicDisplayName } from '../display-name';
 import { accessTierFor, freePreviewCount, tierDefinition, type AccessTier } from '../entitlements';
 import { answersMatch } from '../quiz';
 import { countCompleted, isPublishedLesson, progressPercent } from '../progress';
-import { certificateKey, certificateStudentName, moduleIsComplete } from '../certificates';
+import { certificateKey, certificateStatus, certificateStudentName, moduleIsComplete } from '../certificates';
 import { issueInTransaction } from './module-certificates';
 import {
   ADMIN_SPARKS_GRANT,
@@ -815,6 +816,26 @@ export async function syncModuleCertificates(callerId: string, studentId: string
   return { issued };
 }
 
+/** Marks a certificate revoked. Clients cannot write certificates; only this admin path can. */
+export async function revokeCertificate(callerId: string, callerEmail: string | undefined, certificateId: string) {
+  if (!(await callerIsAdmin(callerId, callerEmail))) {
+    throw new ActionError('FORBIDDEN', 'Only an admin can revoke a certificate.');
+  }
+  const id = certificateId.trim();
+  if (!id) throw new ActionError('NOT_FOUND', 'Certificate not found');
+  const ref = db().doc(`certificates/${id}`);
+  const snap = await ref.get();
+  if (!snap.exists) throw new ActionError('NOT_FOUND', 'Certificate not found');
+  if (snap.data()?.status !== 'revoked') {
+    await ref.update({
+      status: 'revoked',
+      revokedAt: FieldValue.serverTimestamp(),
+      revokedBy: callerId,
+    });
+  }
+  return { id, status: 'revoked' as const };
+}
+
 export async function parentOverview(parentId: string, childId: string) {
   const parent = await db().doc(`users/${parentId}`).get();
   const childIds: string[] = Array.isArray(parent.data()?.childIds) ? parent.data()!.childIds as string[] : [];
@@ -860,6 +881,7 @@ export async function parentOverview(parentId: string, childId: string) {
       moduleTitle: (data.moduleTitle as string) ?? '',
       issuedAt: issued?.toDate ? issued.toDate().toISOString() : '',
       issuedByName: (data.issuedByName as string) ?? 'Poket School',
+      status: certificateStatus(data.status),
     };
   }).sort((a, b) => (a.issuedAt < b.issuedAt ? 1 : -1));
   return {

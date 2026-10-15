@@ -47,6 +47,7 @@ export function issueInTransaction(
     issuedByName: CERTIFICATE_ISSUER_NAME,
     kind: 'module',
     brand: 'Poket School',
+    status: 'valid',
     disclaimer: CERTIFICATE_DISCLAIMER,
   });
   tx.set(firestore.doc(`certificate_keys/${certificateKey(input.studentId, input.courseId, input.moduleId)}`), {

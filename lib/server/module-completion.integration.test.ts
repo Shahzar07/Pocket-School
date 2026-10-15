@@ -96,6 +96,7 @@ describe.skipIf(!EMULATOR.startsWith('127.0.0.1') && !EMULATOR.startsWith('local
       expect(saved.data()?.studentId).toBe(studentId);
       expect(saved.data()?.moduleId).toBe(moduleId);
       expect(saved.data()?.brand).toBe('Poket School');
+      expect(saved.data()?.status).toBe('valid');
       expect(saved.data()?.issuedBy).toBe('poket-school');
       expect(typeof saved.data()?.disclaimer).toBe('string');
 

@@ -2416,6 +2416,8 @@ export interface Certificate {
   issuedBy: string;
   issuedByName: string;
   kind?: 'module';
+  status?: 'valid' | 'revoked';
+  revokedAt?: Timestamp;
 }
 
 export async function getCertificatesForStudent(studentId: string): Promise<Certificate[]> {
