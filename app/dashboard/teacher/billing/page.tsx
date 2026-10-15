@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { createInvoice, getInvoicesForTeacher, getAllInvoices, updateInvoiceStatus, deleteInvoice, Invoice, getUserByEmail } from '@/lib/db';
+import { createInvoice, getInvoicesForTeacher, getAllInvoices, updateInvoiceStatus, deleteInvoice, Invoice } from '@/lib/db';
+import { authedFetch } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -71,10 +72,10 @@ export default function TeacherBillingPage() {
     }
     setSaving(true);
     try {
-      const student = await getUserByEmail(form.studentEmail.trim());
-      if (!student) { toast.error('No user found with that email'); setSaving(false); return; }
+      const student = await authedFetch(`/api/platform/teacher-student?email=${encodeURIComponent(form.studentEmail.trim())}`);
+      if (!student?.id) { toast.error((student?.message as string) || 'No student in your classes uses that email.'); setSaving(false); return; }
       await createInvoice({
-        studentId: student.id, studentName: student.data.name,
+        studentId: student.id as string, studentName: (student.name as string) || 'Student',
         description: form.description, amount: Number(form.amount),
         currency: form.currency, status: form.status,
         dueDate: Timestamp.fromDate(new Date(form.dueDate)),

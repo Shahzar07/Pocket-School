@@ -1,3 +1,4 @@
+import { enforceAiAccess } from '@/lib/api-guard';
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 
@@ -60,6 +61,8 @@ const VOICES = [
  * client can degrade to browser SpeechSynthesis instead of erroring.
  */
 export async function POST(req: NextRequest) {
+  const denied = await enforceAiAccess(req);
+  if (denied) return denied;
   let script = '';
   let voice: string = 'Kore';
   let style = '';

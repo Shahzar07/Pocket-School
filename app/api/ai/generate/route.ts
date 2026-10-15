@@ -1,3 +1,4 @@
+import { enforceAiAccess } from '@/lib/api-guard';
 import { NextRequest, NextResponse } from 'next/server';
 import { callOpenRouter, CONTENT_MODEL, VIDEO_MODEL } from '@/lib/openrouter';
 import { LANGUAGE_NAMES as LANG_NAMES } from '@/lib/languages';
@@ -188,6 +189,8 @@ function extractJsonArray(text: string, format: string): any[] | null {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await enforceAiAccess(req);
+  if (denied) return denied;
   try {
     const {
       content, format, briefPrompt, language, templateId, customTemplate,

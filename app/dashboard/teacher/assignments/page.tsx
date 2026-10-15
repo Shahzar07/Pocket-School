@@ -70,7 +70,8 @@ export default function TeacherAssignmentsPage() {
   }, [selectedCourse]);
 
   async function handleCreate() {
-    if (!user || !profile || !selectedCourse) return;
+    if (!user || !profile) return;
+    if (!selectedCourse) { toast.error('Choose a course first.'); return; }
     if (!form.title.trim() || !form.dueDate) { toast.error('Title and due date are required'); return; }
     setSaving(true);
     try {

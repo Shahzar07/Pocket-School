@@ -1,7 +1,10 @@
+import { enforceAiAccess } from '@/lib/api-guard';
 import { NextRequest, NextResponse } from 'next/server';
 import { callOpenRouter, SMART_MODEL } from '@/lib/openrouter';
 
 export async function POST(req: NextRequest) {
+  const denied = await enforceAiAccess(req);
+  if (denied) return denied;
   let content = '';
   let assignmentTitle: string | undefined;
   try {

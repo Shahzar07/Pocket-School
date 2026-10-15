@@ -1,3 +1,4 @@
+import { enforceAiAccess } from '@/lib/api-guard';
 import { NextRequest, NextResponse } from 'next/server';
 import { callOpenRouter, CONTENT_MODEL } from '@/lib/openrouter';
 import { stepsForRole, matchSteps, getStep, type TourRole } from '@/lib/tour-steps';
@@ -33,6 +34,8 @@ function extractJson(text: string): Record<string, any> | null {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await enforceAiAccess(req);
+  if (denied) return denied;
   let question = '';
   let role: TourRole = 'student';
   try {

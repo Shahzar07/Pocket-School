@@ -169,10 +169,10 @@ export function AITutor() {
                   <SelectValue placeholder="Select mode" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="k12">🧒 K-12 (Simple)</SelectItem>
-                  <SelectItem value="college">🎓 College (Academic)</SelectItem>
-                  <SelectItem value="professional">💼 Professional (Concise)</SelectItem>
-                  <SelectItem value="legal">⚖️ Legal (OSCOLA)</SelectItem>
+                  <SelectItem value="k12">School (simple)</SelectItem>
+                  <SelectItem value="college">IGCSE & A-Level</SelectItem>
+                  <SelectItem value="professional">Professional</SelectItem>
+                  <SelectItem value="legal">Law & Medicine</SelectItem>
                 </SelectContent>
               </Select>
             </div>

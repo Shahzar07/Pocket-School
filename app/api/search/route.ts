@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllPublishedCourses, getAnnouncements, getResources } from '@/lib/db';
 import { filterCatalog } from '@/lib/learning';
-import { searchBooks } from '@/lib/platform/books';
+import { searchBooks as searchShelf } from '@/lib/platform/search';
 
 export async function GET(req: NextRequest) {
   const q = (req.nextUrl.searchParams.get('q') ?? '').trim().toLowerCase();
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
       courses: matchCourses,
       announcements: matchAnnouncements,
       resources: matchResources,
-      books: searchBooks([], q),
+      books: searchShelf(q),
     });
   } catch {
     return NextResponse.json({ courses: [], announcements: [], resources: [], books: [] });

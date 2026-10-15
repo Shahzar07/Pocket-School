@@ -1,3 +1,4 @@
+import { enforceAiAccess } from '@/lib/api-guard';
 import { NextRequest, NextResponse } from 'next/server';
 import { callOpenRouter, FAST_MODEL } from '@/lib/openrouter';
 
@@ -17,6 +18,8 @@ function normalizeAnswer(answer: string, options?: string[]): string {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await enforceAiAccess(req);
+  if (denied) return denied;
   try {
     const { question, correctAnswer, studentAnswer, explanation, options } = await req.json();
     if (!question || !correctAnswer || studentAnswer === undefined) {

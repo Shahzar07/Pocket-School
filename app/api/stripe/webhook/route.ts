@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { updateInvoiceStatus } from '@/lib/db';
+import { adminDb, isAdminConfigured } from '@/lib/firebase-admin';
+import { applyStripeSubscription, enrollFromPayment, tierFromId } from '@/lib/server/actions';
+import type { AccessTier } from '@/lib/entitlements';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,14 +9,16 @@ export async function POST(req: NextRequest) {
   if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
     return NextResponse.json({ error: 'Stripe not configured' }, { status: 503 });
   }
+  if (!isAdminConfigured()) {
+    return NextResponse.json({ error: 'Firebase Admin is not configured', code: 'ADMIN_NOT_CONFIGURED' }, { status: 503 });
+  }
 
   const body = await req.text();
   const sig = req.headers.get('stripe-signature') ?? '';
 
   try {
     const Stripe = (await import('stripe')).default;
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-04-22.dahlia' as any });
-
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     let event;
     try {
       event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET);
@@ -22,11 +26,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Webhook signature verification failed' }, { status: 400 });
     }
 
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      const meta = session.metadata ?? {};
+      if (meta.kind === 'course' && meta.studentId && meta.courseId) {
+        await enrollFromPayment({
+          studentId: meta.studentId,
+          courseId: meta.courseId,
+          amount: (session.amount_total ?? 0) / 100,
+          currency: (session.currency ?? 'myr').toUpperCase(),
+          paymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : undefined,
+          description: meta.courseTitle ? `Course purchase: ${meta.courseTitle}` : undefined,
+        });
+      }
+      if (meta.kind === 'subscription' && meta.uid) {
+        const tier = tierFromId(meta.tierId ?? '') ?? (Number(meta.accessTier) as AccessTier);
+        if (tier != null) await applyStripeSubscription(meta.uid, tier);
+      }
+    }
+
     if (event.type === 'payment_intent.succeeded') {
-      const pi = event.data.object as any;
+      const pi = event.data.object;
       const invoiceId = pi.metadata?.invoiceId;
       if (invoiceId) {
-        await updateInvoiceStatus(invoiceId, 'paid', new Date());
+        await adminDb().doc(`invoices/${invoiceId}`).set({ status: 'paid', paidAt: new Date() }, { merge: true });
       }
     }
 

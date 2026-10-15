@@ -74,7 +74,8 @@ export default function TeacherExamsPage() {
   }
 
   async function handleCreate() {
-    if (!user || !selectedCourse) return;
+    if (!user) return;
+    if (!selectedCourse) { toast.error('Choose a course first.'); return; }
     if (!form.title.trim()) { toast.error('Title is required'); return; }
     if (questions.some(q => !q.question.trim())) { toast.error('All questions need text'); return; }
     setSaving(true);

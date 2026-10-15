@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Plus, Trash2, Loader2, Sparkles, Target } from 'lucide-react';
+import { greeting } from '@/lib/greeting';
 
 const CATEGORY_OPTIONS: { value: GoalCategory; label: string }[] = [
   { value: 'study', label: 'Study' },
@@ -136,7 +137,7 @@ export function DailyGoalsModal({ open, studentId, studentName, onDone }: Props)
                 <div className="min-w-0">
                   <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/60">ET · AI Tutor</p>
                   <p className="text-[15px] leading-relaxed mt-2 text-white/90">
-                    Good morning {firstName}. Before you start — what are you committing to today? Set your goals and
+                    {greeting()} {firstName}. Before you start — what are you committing to today? Set your goals and
                     I&apos;ll check in with you.
                   </p>
                 </div>

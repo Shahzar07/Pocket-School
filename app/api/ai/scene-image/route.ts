@@ -1,3 +1,4 @@
+import { enforceAiAccess } from '@/lib/api-guard';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const maxDuration = 60;
@@ -16,6 +17,8 @@ const IMAGE_MODELS = ['google/gemini-2.5-flash-image', 'google/gemini-2.5-flash-
  * player keeps its animated gradient stage instead of erroring.
  */
 export async function POST(req: NextRequest) {
+  const denied = await enforceAiAccess(req);
+  if (denied) return denied;
   let visual = '';
   let title = '';
   try {

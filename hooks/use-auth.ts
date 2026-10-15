@@ -39,6 +39,8 @@ interface UserProfile {
   region?: string;
   programmeId?: string;
   cohortIds?: string[];
+  /** Children who approved a parent link. */
+  childIds?: string[];
 }
 
 interface AuthState {
