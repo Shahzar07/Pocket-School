@@ -38,6 +38,7 @@ import type {
 } from '@/lib/curriculum-tiers';
 import { getFormatCost } from '@/lib/sparks';
 import { appendImageMarkdown, lessonBodyPatch, manuscriptToMarkdown, readLessonBody } from '@/lib/lesson-body';
+import { jobUpdate, visibleJob } from '@/lib/generation-jobs';
 import { filesToAssets, LessonIllustrationBlock, LessonImageBlock } from '@/components/lesson-pictures';
 import type { ImportResult } from '@/components/editor';
 import { LessonLanguagePanel } from '@/components/lesson-language-panel';
@@ -109,9 +110,10 @@ const AI_SHORTCUTS: { id: keyof AiOutputs; label: string }[] = [
 
 interface UnitWithLessons { module: Module; lessons: Lesson[] }
 
-type CoursePatch = Omit<Partial<Course>, 'minTier' | 'priceType'> & {
+type CoursePatch = Omit<Partial<Course>, 'minTier' | 'priceType' | 'downloadsEnabled'> & {
   minTier?: number | null;
   priceType?: Course['priceType'] | null;
+  downloadsEnabled?: boolean | null;
 };
 
 async function callGenerate(
@@ -334,7 +336,17 @@ export default function ContentBuilderPage() {
   const runAi = useCallback(async (format: string, extraBrief?: string) => {
     const d = draftRef.current;
     if (!d || !selUnit) return;
+    const queued = {
+      ...d,
+      generationJobs: jobUpdate(d.generationJobs, format, 'queued', Date.now()),
+    };
+    setDraft(queued);
     setAiBusy(format);
+    const generating = {
+      ...d,
+      generationJobs: jobUpdate(d.generationJobs, format, 'generating', Date.now()),
+    };
+    setDraft(generating);
     try {
       const content = readLessonBody(d).trim() || d.title;
       const brief = [d.briefPrompt, extraBrief].filter(Boolean).join('\n');
@@ -359,16 +371,28 @@ export default function ContentBuilderPage() {
       const bodySync = format === 'text' && typeof result === 'string'
         ? lessonBodyPatch({ ...d, aiOutputs }, result)
         : null;
-      const next = { ...d, aiOutputs, ...(bodySync ?? {}) } as Lesson;
+      const next = {
+        ...d,
+        aiOutputs,
+        generationJobs: jobUpdate(d.generationJobs, format, 'done', Date.now()),
+        ...(bodySync ?? {}),
+      } as Lesson;
       setDraft(next);
       await persistDraft(next, `AI generated: ${format}`);
       toast.success(`${format} generated.`);
     } catch (e: any) {
-      toast.error(e?.message || `Failed to generate ${format}.`);
+      const message = e?.message || `Failed to generate ${format}.`;
+      const failed = {
+        ...d,
+        generationJobs: jobUpdate(d.generationJobs, format, 'failed', Date.now(), message),
+      };
+      setDraft(failed);
+      await persistDraft(failed, `AI failed: ${format}`);
+      toast.error(message);
     } finally {
       setAiBusy(null);
     }
-  }, [selUnit, persistDraft]);
+  }, [selUnit, persistDraft, course, units]);
 
   /* ── ET assistance ── */
 
@@ -768,10 +792,10 @@ export default function ContentBuilderPage() {
 
   const patchCourse = async (patch: CoursePatch, msg?: string) => {
     if (!course) return;
-    const clears: ('minTier' | 'priceType')[] = [];
+    const clears: ('minTier' | 'priceType' | 'downloadsEnabled')[] = [];
     const data: Partial<Course> = {};
     for (const [key, value] of Object.entries(patch) as [keyof Course, unknown][]) {
-      if (value === null && (key === 'minTier' || key === 'priceType')) {
+      if (value === null && (key === 'minTier' || key === 'priceType' || key === 'downloadsEnabled')) {
         clears.push(key);
         continue;
       }
@@ -1613,7 +1637,16 @@ function BuilderBlock({
       );
     case 'audio':
       return shell(
-        <AudioBlock script={outputs.audioScript} ai={ai} generating={aiBusy === 'audioScript'} />
+        <AudioBlock
+          script={outputs.audioScript}
+          ai={ai}
+          generating={aiBusy === 'audioScript'}
+          scriptStatus={
+            aiBusy === 'audioScript'
+              ? (visibleJob(draft.generationJobs?.audioScript, Date.now())?.status === 'queued' ? 'queued' : 'generating')
+              : visibleJob(draft.generationJobs?.audioScript, Date.now())?.status
+          }
+        />
       );
     // Read-only AI format previews (flashcards, mindmap, infographic, slides, notes, summary, problems)
     default: {
@@ -1748,15 +1781,27 @@ function PropertiesTab({
           {AI_SHORTCUTS.map(f => {
             const v = outputs[f.id];
             const done = v != null && (!Array.isArray(v) || v.length > 0) && (typeof v !== 'string' || v.trim() !== '');
+            const job = visibleJob(draft.generationJobs?.[f.id], Date.now());
+            const status = aiBusy === f.id
+              ? (job?.status === 'queued' ? 'Queued' : 'Generating')
+              : job?.status === 'failed' ? 'Failed'
+              : job?.status === 'done' ? 'Done'
+              : null;
+            const tone = status === 'Failed'
+              ? 'border-red-200 bg-red-50 text-red-700'
+              : status === 'Queued' || status === 'Generating'
+                ? 'border-violet-200 bg-violet-50 text-violet-700'
+                : done
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                  : 'border-border text-muted-foreground hover:border-violet-300 hover:text-violet-700';
             return (
-              <button key={f.id} onClick={() => ai(f.id)} disabled={aiBusy !== null}
-                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border text-[11px] font-medium text-left transition-colors ${
-                  done ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-border text-muted-foreground hover:border-violet-300 hover:text-violet-700'
-                }`}>
-                {aiBusy === f.id ? <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+              <button key={f.id} onClick={() => ai(f.id)} disabled={aiBusy !== null} title={job?.error}
+                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border text-[11px] font-medium text-left transition-colors ${tone}`}>
+                {status === 'Queued' || status === 'Generating' ? <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+                  : status === 'Failed' ? <Sparkles className="w-3 h-3 shrink-0" />
                   : done ? <CheckCircle2 className="w-3 h-3 shrink-0" />
                   : <Sparkles className="w-3 h-3 shrink-0" />}
-                <span className="truncate flex-1">{f.label}</span>
+                <span className="truncate flex-1">{f.label}{status ? ` · ${status}` : ''}</span>
                 {isCurriculumCourse && (
                   <span className="text-[10px] font-bold text-amber-600 shrink-0 tabular-nums">
                     {getFormatCost(f.id)}
@@ -1791,7 +1836,7 @@ function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseI
   draft: Lesson; course: Course;
   statusCard: { bg: string; label: string };
   setStatus: (s: NonNullable<Lesson['status']>, label: string) => Promise<void>;
-  patchCourse: (p: Partial<Course>, msg?: string) => Promise<void>;
+  patchCourse: (p: CoursePatch, msg?: string) => Promise<void>;
   courseId: string;
   onPublishRequest: () => void;
 }) {
@@ -1857,6 +1902,30 @@ function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseI
         <p className="text-[10px] text-muted-foreground leading-relaxed">
           {getTemplate(course.contentTemplateId ?? suggestTemplateId(course.subject)).description}
           {' '}Every lesson follows this unless it sets its own.
+        </p>
+      </section>
+
+      <section className="space-y-2">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+          Downloads
+        </p>
+        <select
+          aria-label="Download allowance for this course"
+          value={course.downloadsEnabled === true ? 'on' : course.downloadsEnabled === false ? 'off' : 'tier'}
+          onChange={e => {
+            const value = e.target.value;
+            if (value === 'on') patchCourse({ downloadsEnabled: true }, 'Downloads turned on');
+            else if (value === 'off') patchCourse({ downloadsEnabled: false }, 'Downloads turned off');
+            else patchCourse({ downloadsEnabled: null }, 'Downloads follow tier and allocation');
+          }}
+          className="w-full h-10 rounded-xl border border-border bg-card px-3 text-xs font-medium"
+        >
+          <option value="tier">Follow tier and allocation</option>
+          <option value="on">Downloads on</option>
+          <option value="off">Downloads off</option>
+        </select>
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
+          Off stops student downloads. On allows them. The middle setting uses the paid tier or an allocation.
         </p>
       </section>
 

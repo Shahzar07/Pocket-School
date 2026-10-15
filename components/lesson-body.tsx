@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { MathMarkdown } from '@/components/math-markdown';
 
 const IMAGE = /^(!full|!)\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)$/;
@@ -9,7 +10,13 @@ const IMAGE = /^(!full|!)\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)$/;
  * Pictures placed by the shared editor (`![alt](src)` and `!full[alt](src)`)
  * render as figures, with the full-page flag spanning the column.
  */
-export function LessonBody({ markdown }: { markdown: string }) {
+export function LessonBody({
+  markdown,
+  imageDownload,
+}: {
+  markdown: string;
+  imageDownload?: (image: { src: string; alt: string }) => ReactNode;
+}) {
   const blocks = (markdown ?? '').replace(/\r\n?/g, '\n').split(/\n{2,}/);
   return (
     <div className="space-y-4">
@@ -34,6 +41,9 @@ export function LessonBody({ markdown }: { markdown: string }) {
               <figcaption className="mt-2 text-center text-sm leading-relaxed text-muted-foreground">
                 {caption}
               </figcaption>
+            )}
+            {imageDownload && (
+              <div className="mt-2 flex justify-center">{imageDownload({ src, alt: alt || caption || 'Illustration' })}</div>
             )}
           </figure>
         );

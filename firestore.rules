@@ -79,6 +79,13 @@ service cloud.firestore {
         allow read, create: if isUser(userId) || isAdmin();
         allow update, delete: if isAdmin();
       }
+
+      // Per-user push tokens written by the Poketschool app.
+      // The path owner is the signed-in user, so a missing userId field is still theirs.
+      match /deviceTokens/{tokenId} {
+        allow read: if false;
+        allow create, update, delete: if isUser(userId);
+      }
     }
 
     // ── Programmes (curriculum) ───────────────────────────────

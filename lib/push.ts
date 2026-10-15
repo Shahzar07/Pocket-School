@@ -45,7 +45,7 @@ export interface PushMessage {
 
 export interface PushStore {
   listForUser(userId: string): Promise<DeviceToken[]>;
-  deleteToken(deviceId: string): Promise<void>;
+  deleteToken(deviceId: string, userId?: string): Promise<void>;
 }
 
 export interface SendOutcome {
@@ -97,7 +97,7 @@ async function deliver(message: PushMessage, deps: PushDeps): Promise<PushReport
     }
     const outcome = await deps.send(token, message);
     if (outcome.prune && token.deviceId) {
-      await deps.store.deleteToken(token.deviceId);
+      await deps.store.deleteToken(token.deviceId, token.userId);
       pruned.push(token.deviceId);
       continue;
     }

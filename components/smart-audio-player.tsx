@@ -51,6 +51,7 @@ export function SmartAudioPlayer({ script, title, dark }: { script: string; titl
   }, [script]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const generate = async (v = voice) => {
+    if (!script.trim()) return;
     setState('generating');
     setPlaying(false);
     try {
@@ -99,6 +100,10 @@ export function SmartAudioPlayer({ script, title, dark }: { script: string; titl
     if (state === 'ready') generate(v);
   };
 
+  if (!script.trim()) {
+    return <p className={`text-sm ${dark ? 'text-slate-300' : 'text-muted-foreground'}`}>The audio script is not ready yet.</p>;
+  }
+
   if (state === 'fallback') {
     return <AudioPlayer script={script} title={title} />;
   }
@@ -131,13 +136,13 @@ export function SmartAudioPlayer({ script, title, dark }: { script: string; titl
           </select>
         </div>
 
-        {state === 'idle' && (
+        {state === 'idle' && script.trim() && (
           <Button onClick={() => generate()} className="rounded-xl gap-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white w-full sm:w-auto">
             <Mic className="w-4 h-4" /> Generate Audio
           </Button>
         )}
 
-        {state === 'generating' && (
+        {state === 'generating' && script.trim() && (
           <div className={`flex items-center gap-3 text-sm ${subtle}`}>
             <Loader2 className="w-4 h-4 animate-spin" />
             Generating AI narration… this takes a few seconds.

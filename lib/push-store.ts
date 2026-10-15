@@ -4,21 +4,28 @@
 import type { DeviceToken, PushStore } from './push';
 import firebaseConfig from '../firebase-applet-config.json';
 
-type AdminDb = {
-  collection(name: string): {
-    where(field: string, op: string, value: string): {
-      get(): Promise<{ docs: Array<{ id: string; data(): Record<string, unknown> }> }>;
-    };
-    doc(id: string): { delete(): Promise<unknown> };
+type DocSnap = { id: string; data(): Record<string, unknown> };
+type QuerySnap = { docs: DocSnap[] };
+
+type CollectionRef = {
+  where(field: string, op: string, value: string): { get(): Promise<QuerySnap> };
+  get(): Promise<QuerySnap>;
+  doc(id: string): {
+    delete(): Promise<unknown>;
+    collection(name: string): CollectionRef;
   };
+};
+
+type AdminDb = {
+  collection(name: string): CollectionRef;
 };
 
 let adminDb: AdminDb | null = null;
 
-function mapToken(id: string, data: Record<string, unknown>): DeviceToken {
+function mapToken(id: string, data: Record<string, unknown>, fallbackUserId = ''): DeviceToken {
   const keys = data.keys;
   return {
-    userId: typeof data.userId === 'string' ? data.userId : '',
+    userId: typeof data.userId === 'string' && data.userId ? data.userId : fallbackUserId,
     token: typeof data.token === 'string' ? data.token : '',
     platform: typeof data.platform === 'string' ? data.platform : '',
     provider: typeof data.provider === 'string' ? data.provider : '',
@@ -48,12 +55,19 @@ export function adminPushStore(): PushStore {
   return {
     async listForUser(userId) {
       const db = await firestore();
-      const snap = await db.collection('deviceTokens').where('userId', '==', userId).get();
-      return snap.docs.map(doc => mapToken(doc.id, doc.data()));
+      const [top, nested] = await Promise.all([
+        db.collection('deviceTokens').where('userId', '==', userId).get(),
+        db.collection('users').doc(userId).collection('deviceTokens').get(),
+      ]);
+      const byId = new Map<string, DeviceToken>();
+      for (const doc of top.docs) byId.set(doc.id, mapToken(doc.id, doc.data(), userId));
+      for (const doc of nested.docs) byId.set(doc.id, mapToken(doc.id, doc.data(), userId));
+      return [...byId.values()];
     },
-    async deleteToken(deviceId) {
+    async deleteToken(deviceId, userId) {
       const db = await firestore();
       await db.collection('deviceTokens').doc(deviceId).delete();
+      if (userId) await db.collection('users').doc(userId).collection('deviceTokens').doc(deviceId).delete();
     },
   };
 }

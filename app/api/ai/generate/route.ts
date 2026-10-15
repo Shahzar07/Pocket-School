@@ -7,6 +7,7 @@ import {
   type TierSelection, type TierId, type Tier2SubjectType,
   type LawStage, type Tier3Assessment,
 } from '@/lib/curriculum-tiers';
+import { groundInfographic, mindmapIsBuzan, problemsAreWorked } from '@/lib/generation-quality';
 
 /** Video and audio scripts use the dedicated narrative model; everything
  * else uses the ultra-cheap content model. */
@@ -41,11 +42,41 @@ const PROMPTS: Record<string, (c: string) => string> = {
 
   summary: (c) => `You are an expert summariser. ${MATH_HINT}${MARKDOWN_HINT}Write a clear, concise 3-5 sentence summary of this lesson content that captures all the essential takeaways. Use accessible language.\n\nLesson content:\n${c}`,
 
-  problems: (c) => `You are a practice problems creator. ${MATH_HINT}${MARKDOWN_HINT}Create 4-5 practice problems from this lesson content. Mix difficulty levels. For each, provide the problem statement and a detailed worked solution. Format in Markdown with LaTeX for all equations.\n\nLesson content:\n${c}`,
+  problems: (c) => `You are a practice-problems author. ${MATH_HINT}Write 4-5 practice problems from this lesson. Return Markdown only, using this shape for every problem:
+
+## Problem 1
+The problem statement, in one short paragraph.
+
+### Worked solution
+The steps a student follows, then the final answer.
+
+Rules:
+- Every item starts with "## Problem N".
+- Every item includes a "### Worked solution" section.
+- Do not write study notes.
+- Do not use the headings "Introduction" or "Core explanation".
+- Do not add a summary or a list of misconceptions.
+
+Lesson content:
+${c}`,
 
   glossary: (c) => `You are a vocabulary expert. Extract 6-8 key terms from this lesson content and provide clear, concise definitions. Return ONLY a valid JSON array, no prose before or after it:\n[{"term":"...","definition":"..."}]\n\nLesson content:\n${c}`,
 
-  mindmap: (c) => `You are a mind mapping expert. ${MATH_HINT}${MARKDOWN_HINT}Create a text-based mind map of this lesson content in Markdown. Use headings for main branches and nested bullet points for sub-branches. Put the main topic at the top.\n\nLesson content:\n${c}`,
+  mindmap: (c) => `You are a Tony Buzan mind-map author. Return ONLY a JSON object. No markdown, no code fences, no prose.
+
+{"center":"Topic","centerIcon":"💡","branches":[{"keyword":"Branch","icon":"📌","children":[{"keyword":"Detail","icon":"⭐","children":[]}]}]}
+
+Rules:
+- center is one keyword for the lesson topic.
+- 4 to 8 main branches.
+- Each keyword is a single word, at most 18 characters.
+- Each main branch has a different idea.
+- Every node has an emoji icon.
+- Children are thinner ideas of that branch, at most 5, and they may have their own children.
+- Do not write sentences, headings, or study notes.
+
+Lesson content:
+${c}`,
 
   infographic: (c) => `You are an information designer. ${MARKDOWN_HINT}Produce a scannable, data-forward infographic for this lesson in Markdown, using EXACTLY this structure and nothing else:
 
@@ -53,7 +84,7 @@ const PROMPTS: Record<string, (c: string) => string> = {
 2. One short intro sentence (max 25 words) as a plain paragraph.
 3. Then 3-5 stat lines, each on its own line, in EXACTLY this shape:
 **<stat>** — <short label>
-The stat must be a compact number, percentage, count, ratio or date (e.g. "70%", "3 laws", "1687", "2x"). The label must be under 8 words. No other text on the line.
+The stat must be a compact number, percentage, count, ratio or date that already appears in the lesson (e.g. "70%", "3 laws", "1687"). Copy the label from the sentence that contains that number. The label must be under 8 words. No other text on the line. If the lesson has no figures, omit the stat lines. Do not invent a number and do not attach a number to a different label.
 4. Then 3-5 sections. Each section is a "## Section name" heading (3 words max) followed by 3-4 "- " bullet points. Each bullet is one crisp fact of 12-20 words. Bold the key term inside the bullet with **term**.
 5. Optionally a "---" separator between major groups of sections.
 6. Finish with ONE blockquote line starting with "> " containing the single key takeaway (max 30 words). This must be the last line of the output.
@@ -186,7 +217,7 @@ export async function POST(req: NextRequest) {
     // Formats whose shape a template can meaningfully control. JSON formats and
     // the speech scripts have their own rigid contracts, so a template's
     // headings would break them.
-    const TEMPLATED = new Set(['text', 'notes', 'problems', 'mindmap']);
+    const TEMPLATED = new Set(['text', 'notes']);
     const templateDirective = TEMPLATED.has(format)
       ? formatDirective(getTemplate(templateId, customTemplate ? [customTemplate] : []))
       : '';
@@ -240,9 +271,78 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ result: parsed });
     }
 
+    if (format === 'problems') {
+      const worked = await requireWorkedProblems(prompt, text);
+      if (!worked) {
+        return NextResponse.json(
+          { error: 'Problems must be practice problems with a worked solution, not study notes.' },
+          { status: 422 },
+        );
+      }
+      return NextResponse.json({ result: worked });
+    }
+
+    if (format === 'mindmap') {
+      const map = await requireBuzanMap(prompt, text);
+      if (!map) {
+        return NextResponse.json(
+          { error: 'The mind map must be a radial keyword map, not study notes.' },
+          { status: 422 },
+        );
+      }
+      return NextResponse.json({ result: JSON.stringify(map) });
+    }
+
+    if (format === 'infographic') {
+      const grounded = await groundedInfographic(prompt, text, cappedContent);
+      return NextResponse.json({ result: grounded });
+    }
+
     return NextResponse.json({ result: text });
   } catch (err: any) {
     console.error('[generate]', err);
     return NextResponse.json({ error: err.message || 'AI generation failed' }, { status: 500 });
   }
+}
+
+async function requireWorkedProblems(prompt: string, first: string): Promise<string | null> {
+  if (problemsAreWorked(first)) return first;
+  const repaired = await callOpenRouter(
+    [
+      { role: 'user', content: prompt },
+      { role: 'assistant', content: first },
+      { role: 'user', content: 'That reply is study notes. Write practice problems only. Each item starts with "## Problem N" and includes "### Worked solution". Do not use the headings Introduction or Core explanation.' },
+    ],
+    { model: MODEL_FOR_FORMAT('problems'), temperature: 0.2 },
+  );
+  return problemsAreWorked(repaired) ? repaired : null;
+}
+
+async function requireBuzanMap(prompt: string, first: string) {
+  const parsed = mindmapIsBuzan(first);
+  if (parsed) return parsed;
+  const repaired = await callOpenRouter(
+    [
+      { role: 'user', content: prompt },
+      { role: 'assistant', content: first },
+      { role: 'user', content: 'That reply is not a Buzan mind map. Reply with ONLY the JSON object. One keyword per branch. No markdown and no study notes.' },
+    ],
+    { model: MODEL_FOR_FORMAT('mindmap'), temperature: 0.2 },
+  );
+  return mindmapIsBuzan(repaired);
+}
+
+async function groundedInfographic(prompt: string, first: string, source: string): Promise<string> {
+  const initial = groundInfographic(first, source);
+  if (initial.rejected.length === 0) return initial.markdown;
+  const repaired = await callOpenRouter(
+    [
+      { role: 'user', content: prompt },
+      { role: 'assistant', content: first },
+      { role: 'user', content: `These figures are not supported by the lesson and were rejected: ${initial.rejected.join('; ')}. Reply again using ONLY numbers that appear in the lesson, and copy each label from the sentence that contains that number. If the lesson has no figures, omit the stat lines.` },
+    ],
+    { model: MODEL_FOR_FORMAT('infographic'), temperature: 0.2 },
+  );
+  const second = groundInfographic(repaired, source);
+  return second.rejected.length <= initial.rejected.length ? second.markdown : initial.markdown;
 }

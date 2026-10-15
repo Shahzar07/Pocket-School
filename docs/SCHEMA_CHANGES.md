@@ -118,3 +118,84 @@ Signed-in clients can still read user documents under the existing rules. The sh
 | Parent due-date reminder | The signed-in parent | `assignments` |
 
 Email digests are not sent from this change. The push digest sender is the hook a later scheduler can call.
+
+## users/{userId}/deviceTokens (app subcollection)
+
+The Poketschool app may also store a token under the signed-in user. Both stores are delivered.
+
+| | |
+|---|---|
+| Path | `users/{userId}/deviceTokens/{tokenId}` |
+| Doc id | A device or token id chosen by the app. |
+
+Fields match the top-level `deviceTokens` document. `userId` may be omitted, because the path already names the owner. The server fills `userId` from the path when the field is missing.
+
+Rules:
+
+- Create, update, and delete: `isUser(userId)`. The signed-in user is the path owner. A `userId` field is not required.
+- Get and list: denied for every client.
+
+The senders read both stores:
+
+```
+deviceTokens where userId == recipientUid
+users/{recipientUid}/deviceTokens
+```
+
+The same device id in both stores is sent once. The per-user document wins. A pruned token is deleted from both places. Rules still need an owner deploy.
+
+## lessons.generationJobs
+
+Optional map on a lesson. Keys are AI format ids (`problems`, `mindmap`, `audioScript`, and the other generator formats).
+
+| Field | Type | Notes |
+|---|---|---|
+| `status` | string | `queued`, `generating`, `done`, or `failed`. |
+| `error` | string | Present when `status` is `failed`. |
+| `updatedAt` | number | Client timestamp in milliseconds. |
+
+The editor shows queued and generating while the request is in flight, and writes `done` or `failed` with the lesson. A queued or generating job older than three minutes is shown as failed, so a reload does not spin forever.
+
+`aiOutputs.mindmap` is a JSON string:
+
+```
+{ "center": "Topic", "centerIcon": "💡", "branches": [{ "keyword": "Branch", "icon": "📌", "children": [] }] }
+```
+
+One keyword per branch. The student view lays that JSON out as an SVG. Study-note prose is rejected and is not stored.
+
+`aiOutputs.problems` is Markdown. Each item starts with `## Problem N` and includes `### Worked solution`. Study-note headings are rejected with HTTP 422 and are not stored.
+
+`aiOutputs.infographic` keeps only figures that appear in the lesson text, with the label words taken from the sentence around that figure.
+
+## courses.downloadsEnabled
+
+Optional boolean on a course.
+
+| Value | Who can download |
+|---|---|
+| absent | A student with tier 1 or higher, or an allocation for that course. Teachers, institution admins, and admins can download. |
+| `true` | Downloads are on for every signed-in role, including tier 0. |
+| `false` | Downloads are off, except for an admin. |
+
+## POST /api/export
+
+Server-side file export. Requires `Authorization: Bearer <Firebase ID token>`.
+
+```
+{
+  "asset": "notes | glossary | flashcards | quiz | problems | slides | infographic | mindmap | image",
+  "format": "pdf | docx | jpg | png | pptx",
+  "title": "Lesson title",
+  "content": "markdown, JSON, or { url } for an image",
+  "answerKey": true,
+  "courseId": "course id",
+  "viewer": { "role": "student", "tier": 1, "permissions": [], "downloadsEnabled": null }
+}
+```
+
+`pptx` is for slides. `jpg` and `png` are for images, infographics, and mind maps. `pdf` and `docx` are for the written assets and for slides. `answerKey: false` omits quiz answers and `### Worked solution` sections.
+
+Every file includes `© {year} Poket Media Sdn Bhd (1332289-X). All rights reserved.` and the Poket School wordmark.
+
+When `FIREBASE_SERVICE_ACCOUNT` is set, the route replaces `viewer` with the Firestore user and `courses.downloadsEnabled`. Without that credential, the route checks the ID token and applies `canDownload` to the posted viewer. That fallback is a limitation of this environment.

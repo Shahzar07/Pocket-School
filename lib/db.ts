@@ -128,6 +128,11 @@ export interface Course {
   revenueTotal?: number;
   /** Manual order in the CMS. Absent sorts after numbered rows. */
   order?: number;
+  /**
+   * Download switch for this product.
+   * Absent follows tier and allocation. true forces downloads on. false forces them off.
+   */
+  downloadsEnabled?: boolean;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -216,6 +221,8 @@ export interface Lesson {
   localizations?: Record<string, LessonLocalization>;
   /** Pictures staged on this lesson. Alt text is required before one is placed in the body. */
   mediaLibrary?: LessonMediaAsset[];
+  /** Per-block generator state. A queued or generating job older than three minutes is shown as failed. */
+  generationJobs?: Record<string, { status: 'queued' | 'generating' | 'done' | 'failed'; error?: string; updatedAt: number }>;
 }
 
 /** A picture waiting in the lesson Image or Illustration block. */
@@ -2893,7 +2900,7 @@ export async function updateCourse(id: string, data: Partial<Course>): Promise<v
 }
 
 /** Drop optional course fields so "derive this" can return to the default. */
-export async function clearCourseFields(id: string, fields: readonly ('minTier' | 'priceType')[]): Promise<void> {
+export async function clearCourseFields(id: string, fields: readonly ('minTier' | 'priceType' | 'downloadsEnabled')[]): Promise<void> {
   const patch: Record<string, ReturnType<typeof deleteField>> = {};
   for (const field of fields) patch[field] = deleteField();
   await updateDoc(doc(db, 'courses', id), { ...patch, updatedAt: serverTimestamp() });
