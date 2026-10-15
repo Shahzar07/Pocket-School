@@ -218,11 +218,11 @@ export default function StudentDashboard() {
             <PanelHeader title="Jump back in" />
             <div className="space-y-2">
               <ListRow
-                href="/ai-studio"
+                href="/dashboard/studio"
                 leading={<span className="w-9 h-9 rounded-xl bg-secondary grid place-items-center shrink-0"><Sparkles className="w-4 h-4 text-primary" /></span>}
                 title="AI Studio"
-                subtitle="Turn notes into study material"
-                trailing={<ArrowUpRight className="w-4 h-4 text-muted-foreground" />}
+                subtitle="ET, Maths, and Exam Prep"
+                trailing={<ArrowRight className="w-4 h-4 text-muted-foreground" />}
               />
               <ListRow
                 href="/ai-teachers"

@@ -60,7 +60,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
     return (
       <DashPage>
         <Panel><p className="text-foreground font-semibold">This exam prep wasn&apos;t found.</p>
-          <Link href="/dashboard/student/exam-prep" className="text-primary text-sm font-semibold">Back to Exam Prep</Link></Panel>
+          <Link href="/dashboard/studio/exam-prep" className="text-primary text-sm font-semibold">Back to Exam Prep</Link></Panel>
       </DashPage>
     );
   }
@@ -80,7 +80,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
     try {
       const sid = await sharePrep(uid, profile?.name ?? 'A classmate', prep);
       if (!prep.shareId) await patch({ shareId: sid });
-      const link = `${location.origin}/dashboard/student/exam-prep/join/${sid}`;
+      const link = `${location.origin}/dashboard/studio/exam-prep/join/${sid}`;
       await navigator.clipboard.writeText(link).catch(() => {});
       toast.success('Share link copied — classmates get the plan, never your results.');
     } catch {
@@ -92,7 +92,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
     if (!uid || !confirm(`Delete "${prep.title}" and all its progress?`)) return;
     await deletePrep(uid, prep.id);
     toast.success('Exam prep deleted.');
-    router.push('/dashboard/student/exam-prep');
+    router.push('/dashboard/studio/exam-prep');
   };
 
   const examDay = parseDay(prep.examDate).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
@@ -100,7 +100,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
   return (
     <DashPage>
       <div className="flex items-center justify-between gap-3">
-        <Link href="/dashboard/student/exam-prep" className="text-[13px] font-semibold text-muted-foreground hover:text-foreground inline-flex items-center gap-1"><ArrowLeft className="w-4 h-4" /> All exam preps</Link>
+        <Link href="/dashboard/studio/exam-prep" className="text-[13px] font-semibold text-muted-foreground hover:text-foreground inline-flex items-center gap-1"><ArrowLeft className="w-4 h-4" /> All exam preps</Link>
         <div className="flex items-center gap-2">
           <button onClick={share} disabled={sharing} className="h-9 px-3.5 rounded-full border border-border text-[13px] font-semibold inline-flex items-center gap-1.5 hover:bg-muted">
             {sharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />} Share with classmates
@@ -149,7 +149,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
           value={tab}
           onChange={setTab}
         />
-        <Link href={`/dashboard/student/exam-prep/${prep.id}/topic/all?tab=chat`} className="text-[13px] font-semibold text-primary inline-flex items-center gap-1.5"><MessageCircle className="w-4 h-4" /> Ask ET about your notes</Link>
+        <Link href={`/dashboard/studio/exam-prep/${prep.id}/topic/all?tab=chat`} className="text-[13px] font-semibold text-primary inline-flex items-center gap-1.5"><MessageCircle className="w-4 h-4" /> Ask ET about your notes</Link>
       </div>
 
       {tab === 'today' && (
@@ -213,7 +213,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
             const m = prep.mastery?.[t.id] ?? 0;
             return (
               <motion.div key={t.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
-                <Link href={`/dashboard/student/exam-prep/${prep.id}/topic/${t.id}`} className="block h-full bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] p-5 hover:border-primary/40 transition-colors">
+                <Link href={`/dashboard/studio/exam-prep/${prep.id}/topic/${t.id}`} className="block h-full bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] p-5 hover:border-primary/40 transition-colors">
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-[11px] font-bold text-muted-foreground tabular-nums">TOPIC {i + 1}</span>
                     <span className="text-amber-400 text-[12px] tracking-tight" aria-label={`Weight ${t.weight}`}>{'★'.repeat(t.weight)}<span className="text-muted-foreground/30">{'★'.repeat(5 - t.weight)}</span></span>
@@ -267,13 +267,13 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
       {tab === 'exams' && (
         <div className="grid lg:grid-cols-12 gap-5">
           <div className="lg:col-span-7 grid sm:grid-cols-2 gap-4">
-            <Link href={`/dashboard/student/exam-prep/${prep.id}/mock`} className="group rounded-2xl p-5 bg-gradient-to-br from-[#0f2f3a] to-[#1b5566] text-white shadow-lg">
+            <Link href={`/dashboard/studio/exam-prep/${prep.id}/mock`} className="group rounded-2xl p-5 bg-gradient-to-br from-[#0f2f3a] to-[#1b5566] text-white shadow-lg">
               <GraduationCap className="w-8 h-8 mb-6 opacity-90" />
               <p className="font-heading text-xl">Timed mock exam</p>
               <p className="text-[13px] text-white/70 mt-1">A full paper in the style of the real thing, marked against a mark scheme, with your gaps.</p>
               <span className="mt-4 inline-flex items-center gap-1 text-[13px] font-semibold">Start <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" /></span>
             </Link>
-            <Link href={`/dashboard/student/exam-prep/${prep.id}/oral`} className="group rounded-2xl p-5 bg-card border border-border shadow-[var(--shadow-card)] hover:border-primary/40">
+            <Link href={`/dashboard/studio/exam-prep/${prep.id}/oral`} className="group rounded-2xl p-5 bg-card border border-border shadow-[var(--shadow-card)] hover:border-primary/40">
               <Mic className="w-8 h-8 mb-6 text-primary" />
               <p className="font-heading text-xl text-foreground">Oral exam with ET</p>
               <p className="text-[13px] text-muted-foreground mt-1">Answer out loud. ET examines, probes and grades how well you explain.</p>
@@ -302,7 +302,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
                 <ul className="space-y-2">
                   {attempts[0].gaps!.slice(0, 3).map((g, i) => (
                     <li key={i}>
-                      <Link href={`/dashboard/student/exam-prep/${prep.id}/topic/${g.topicId}`} className="block rounded-xl border border-border px-3 py-2 hover:border-primary/40">
+                      <Link href={`/dashboard/studio/exam-prep/${prep.id}/topic/${g.topicId}`} className="block rounded-xl border border-border px-3 py-2 hover:border-primary/40">
                         <span className={`text-[11px] font-bold uppercase ${g.severity === 'weakest' ? 'text-rose-600' : g.severity === 'attention' ? 'text-amber-600' : 'text-muted-foreground'}`}>{g.severity === 'weakest' ? 'Weakest area' : g.severity === 'attention' ? 'Needs attention' : 'Minor gap'}</span>
                         <span className="block text-[14px] font-semibold text-foreground">{g.topic}</span>
                         <span className="block text-[12px] text-muted-foreground">{g.fix}</span>

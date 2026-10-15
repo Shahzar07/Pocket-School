@@ -52,7 +52,7 @@ export function StudyLaunchpad() {
               <span className="absolute -top-1 w-0.5 h-4 bg-rose-300 rounded" style={{ left: `${next.targetScore}%` }} />
             </div>
             <p className="text-[12px] text-white/60 mt-1.5">{mastery}% mastered · target {next.targetGrade}</p>
-            <Link href={`/dashboard/student/exam-prep/${next.id}`} className="mt-4 inline-flex h-10 px-4 rounded-full bg-white text-[#0f2f3a] text-[13px] font-semibold items-center gap-1.5 hover:bg-white/90">
+            <Link href={`/dashboard/studio/exam-prep/${next.id}`} className="mt-4 inline-flex h-10 px-4 rounded-full bg-white text-[#0f2f3a] text-[13px] font-semibold items-center gap-1.5 hover:bg-white/90">
               {due ? 'Continue today’s plan' : 'Open my plan'} <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -61,7 +61,7 @@ export function StudyLaunchpad() {
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/60">Exam Prep</p>
             <p className="font-heading text-[26px] leading-tight mt-1.5">Your notes in.<br />Your study plan out.</p>
             <p className="text-[13px] text-white/70 mt-2 max-w-md">Upload notes, slides or past papers and set your exam date — ET builds a day-by-day plan with lessons, quizzes, podcasts and a mock.</p>
-            <Link href="/dashboard/student/exam-prep/new" className="mt-4 inline-flex h-10 px-4 rounded-full bg-white text-[#0f2f3a] text-[13px] font-semibold items-center gap-1.5 hover:bg-white/90">
+            <Link href="/dashboard/studio/exam-prep/new" className="mt-4 inline-flex h-10 px-4 rounded-full bg-white text-[#0f2f3a] text-[13px] font-semibold items-center gap-1.5 hover:bg-white/90">
               <Sparkles className="w-4 h-4" /> Create my plan
             </Link>
           </div>
@@ -73,12 +73,12 @@ export function StudyLaunchpad() {
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">ET Maths</p>
         <p className="font-heading text-[24px] leading-tight mt-1.5">Stuck on a problem?</p>
         <p className="text-[13px] text-muted-foreground mt-1">Snap it. ET walks you through it, one step at a time.</p>
-        <Link href="/dashboard/student/maths" className="mt-4 inline-flex h-10 px-4 rounded-full bg-primary text-primary-foreground text-[13px] font-semibold items-center gap-1.5 w-fit hover:opacity-90">
+        <Link href="/dashboard/studio/maths" className="mt-4 inline-flex h-10 px-4 rounded-full bg-primary text-primary-foreground text-[13px] font-semibold items-center gap-1.5 w-fit hover:opacity-90">
           <Camera className="w-4 h-4" /> Scan a problem
         </Link>
         <div className="mt-auto pt-4 flex flex-wrap gap-2 text-[12px] font-semibold">
-          <Link href="/dashboard/student/maths/packs" className="h-8 px-3 rounded-full border border-border inline-flex items-center gap-1.5 hover:border-primary/40"><BookMarked className="w-3.5 h-3.5 text-primary" /> SPM · IGCSE · A Level packs</Link>
-          <Link href="/dashboard/student/maths/lab" className="h-8 px-3 rounded-full border border-border inline-flex items-center gap-1.5 hover:border-primary/40"><Puzzle className="w-3.5 h-3.5 text-primary" /> Today&apos;s puzzle</Link>
+          <Link href="/dashboard/studio/maths/packs" className="h-8 px-3 rounded-full border border-border inline-flex items-center gap-1.5 hover:border-primary/40"><BookMarked className="w-3.5 h-3.5 text-primary" /> SPM · IGCSE · A Level packs</Link>
+          <Link href="/dashboard/studio/maths/lab" className="h-8 px-3 rounded-full border border-border inline-flex items-center gap-1.5 hover:border-primary/40"><Puzzle className="w-3.5 h-3.5 text-primary" /> Today&apos;s puzzle</Link>
         </div>
       </motion.div>
     </div>

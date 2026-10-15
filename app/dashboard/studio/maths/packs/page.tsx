@@ -33,7 +33,7 @@ export default function PacksPage() {
           const tried = pr ? Object.keys(pr.mastery).length : 0;
           return (
             <motion.div key={p.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-              <Link href={`/dashboard/student/maths/packs/${p.id}`} className="group block h-full bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] overflow-hidden hover:border-primary/40 transition-colors">
+              <Link href={`/dashboard/studio/maths/packs/${p.id}`} className="group block h-full bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] overflow-hidden hover:border-primary/40 transition-colors">
                 <div className="h-2" style={{ background: p.accent }} />
                 <div className="p-5">
                   <div className="flex items-center justify-between">

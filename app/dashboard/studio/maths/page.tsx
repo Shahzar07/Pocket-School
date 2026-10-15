@@ -324,7 +324,7 @@ export default function MathsTutorPage() {
   return (
     <DashPage>
       <DashHeader
-        eyebrow="ET Maths"
+        eyebrow={<><Link href="/dashboard/studio" className="hover:underline">AI Studio</Link> · ET Maths</>}
         title="Stuck on a problem?"
         accent="Snap it."
         description="Scan or type any maths problem. ET guides you one step at a time — you do the thinking — or shows a full worked solution."
@@ -692,11 +692,11 @@ export default function MathsTutorPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/dashboard/student/maths/packs" className="mt-4 flex items-center justify-between rounded-xl bg-primary/10 text-primary px-3 py-2.5 text-[13px] font-semibold hover:bg-primary/15">
+              <Link href="/dashboard/studio/maths/packs" className="mt-4 flex items-center justify-between rounded-xl bg-primary/10 text-primary px-3 py-2.5 text-[13px] font-semibold hover:bg-primary/15">
                 <span className="inline-flex items-center gap-2"><Target className="w-4 h-4" /> SPM · IGCSE · A Level · IB exam packs</span>
                 <ChevronRight className="w-4 h-4" />
               </Link>
-              <Link href="/dashboard/student/maths/lab" className="mt-2 flex items-center justify-between rounded-xl bg-muted/50 px-3 py-2.5 text-[13px] font-semibold hover:bg-muted">
+              <Link href="/dashboard/studio/maths/lab" className="mt-2 flex items-center justify-between rounded-xl bg-muted/50 px-3 py-2.5 text-[13px] font-semibold hover:bg-muted">
                 <span className="inline-flex items-center gap-2"><BookOpen className="w-4 h-4 text-primary" /> Graphing calculator &amp; Maths Lab</span>
                 <ChevronRight className="w-4 h-4" />
               </Link>

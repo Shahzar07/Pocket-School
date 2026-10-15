@@ -155,7 +155,8 @@ function PocoWorking({ creating }: { creating: boolean }) {
   );
 }
 
-export default function AiStudio() {
+export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
+  const frame = embedded ? 'h-full min-h-0' : 'h-screen';
   const [user, setUser] = useState<User | null>(null);
   /** Undefined until Firebase reports the first auth state — prevents a
    * sign-in flash for users who are already logged in. */
@@ -333,7 +334,7 @@ export default function AiStudio() {
   // ── Auth gate: AI Studio is a paid feature and must not run anonymously ──
   if (!authReady) {
     return (
-      <div className={`flex h-screen items-center justify-center ${C.bg}`} style={{ colorScheme: 'dark' }}>
+      <div className={`flex ${frame} items-center justify-center ${C.bg}`} style={{ colorScheme: 'dark' }}>
         <Loader2 className="w-6 h-6 animate-spin" style={{ color: C.accent }} />
       </div>
     );
@@ -341,7 +342,7 @@ export default function AiStudio() {
 
   if (!user) {
     return (
-      <div className={`flex h-screen items-center justify-center px-5 ${C.bg} ${C.text}`} style={{ colorScheme: 'dark' }}>
+      <div className={`flex ${frame} items-center justify-center px-5 ${C.bg} ${C.text}`} style={{ colorScheme: 'dark' }}>
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -404,12 +405,12 @@ export default function AiStudio() {
   }
 
   return (
-    <div className={`flex h-screen ${C.bg} ${C.text} overflow-hidden`} style={{ colorScheme: 'dark' }}>
+    <div className={`relative flex ${frame} ${C.bg} ${C.text} overflow-hidden`} style={{ colorScheme: 'dark' }}>
 
       {/* ── Sidebar ── */}
       <aside className={`${sidebarOpen ? 'flex' : 'hidden'} lg:flex w-[264px] shrink-0 flex-col border-r ${C.borderSoft} bg-[#1F1E1C] absolute lg:static inset-y-0 left-0 z-40`}>
         <div className="p-3">
-          <Link href="/" className="flex items-center gap-2.5 px-2 py-2 mb-1">
+          <Link href={embedded ? '/dashboard/studio' : '/'} className="flex items-center gap-2.5 px-2 py-2 mb-1">
             <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: C.accent }}>
               <Asterisk className="w-5 h-5 text-[#1A1918]" />
             </div>
@@ -476,8 +477,8 @@ export default function AiStudio() {
               <UserIcon className="w-3.5 h-3.5" /> Sign in to save
             </Link>
           )}
-          <Link href="/" className={`flex items-center gap-2 text-xs ${C.faint} hover:text-white px-2.5 py-1.5 transition-colors`}>
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Poket School
+          <Link href={embedded ? '/dashboard/studio' : '/'} className={`flex items-center gap-2 text-xs ${C.faint} hover:text-white px-2.5 py-1.5 transition-colors`}>
+            <ArrowLeft className="w-3.5 h-3.5" /> {embedded ? 'All AI Studio tools' : 'Back to Poket School'}
           </Link>
         </div>
       </aside>
@@ -908,4 +909,8 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
       <MathMarkdown>{text}</MathMarkdown>
     </div>
   );
+}
+
+export default function AiStudioPage() {
+  return <AiStudio />;
 }

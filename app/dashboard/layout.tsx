@@ -11,7 +11,7 @@ import {
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
-  Sparkles, Store, Layers, LogOut, Mail, UserCog, Target, Calculator,
+  Sparkles, Store, Layers, LogOut, Mail, UserCog,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -42,9 +42,7 @@ const NAV: Record<Role, NavGroup[]> = {
   student: [
     { items: [
       { href: '/dashboard/student', icon: Home, label: 'Dashboard' },
-      { href: '/dashboard/student/exam-prep', icon: Target, label: 'Exam Prep' },
-      { href: '/dashboard/student/maths', icon: Calculator, label: 'ET Maths' },
-      { href: '/ai-studio', icon: Sparkles, label: 'AI Studio ↗' },
+      { href: '/dashboard/studio', icon: Sparkles, label: 'AI Studio' },
       { href: '/ai-teachers', icon: Users, label: 'AI Teachers ↗' },
       { href: '/dashboard/student/learning', icon: GraduationCap, label: 'My Learning' },
       { href: '/courses', icon: Store, label: 'Marketplace' },
@@ -77,7 +75,7 @@ const NAV: Record<Role, NavGroup[]> = {
   teacher: [
     { items: [
       { href: '/dashboard/teacher', icon: Home, label: 'Overview' },
-      { href: '/ai-studio', icon: Sparkles, label: 'AI Studio ↗' },
+      { href: '/dashboard/studio', icon: Sparkles, label: 'AI Studio' },
       { href: '/dashboard/teacher/classes', icon: GraduationCap, label: 'My Classes' },
       { href: '/dashboard/teacher/courses', icon: Presentation, label: 'Courses & Products' },
       { href: '/courses', icon: Store, label: 'Marketplace' },
@@ -108,7 +106,7 @@ const NAV: Record<Role, NavGroup[]> = {
     { items: [
       { href: '/dashboard/parent', icon: Home, label: 'Child Progress' },
       { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
-      { href: '/ai-studio', icon: Sparkles, label: 'AI Studio ↗' },
+      { href: '/dashboard/studio', icon: Sparkles, label: 'AI Studio' },
       { href: '/courses', icon: Store, label: 'Marketplace' },
       { href: '/dashboard/parent/communications', icon: Mail, label: 'Mailbox' },
       { href: '/dashboard/parent/duedates', icon: Clock, label: 'Due Dates' },
@@ -125,7 +123,7 @@ const NAV: Record<Role, NavGroup[]> = {
   admin: [
     { items: [
       { href: '/dashboard/admin', icon: BarChart, label: 'Analytics' },
-      { href: '/ai-studio', icon: Sparkles, label: 'AI Studio ↗' },
+      { href: '/dashboard/studio', icon: Sparkles, label: 'AI Studio' },
       { href: '/dashboard/admin/courses', icon: Presentation, label: 'All Courses' },
       { href: '/dashboard/admin/curriculum', icon: Layers, label: 'Curriculum CMS' },
       { href: '/courses', icon: Store, label: 'Marketplace' },
