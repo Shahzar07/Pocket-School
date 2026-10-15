@@ -56,14 +56,40 @@ service cloud.firestore {
       // rather than by this rule.
       return ['role', 'accessTier', 'subscriptionTier', 'permissions',
               'institutionId', 'adminSparksGrantedAt', 'accountStatus',
-              'cohortIds'];
+              'adminRole', 'statusReason', 'deletedAt', 'cohortIds'];
+    }
+
+    function callerIsSuper() {
+      return isSignedIn() && (
+        request.auth.token.adminRole == 'super_admin'
+        || request.auth.token.email == 'shahzarrayyan123@gmail.com'
+        || request.auth.token.email == 'harry.seggu@gmail.com'
+        || request.auth.token.email == 'harry@poketschool.ai'
+      );
+    }
+
+    function targetIsSuper() {
+      return resource.data.get('adminRole', '') == 'super_admin'
+        || resource.data.get('email', '') == 'shahzarrayyan123@gmail.com'
+        || resource.data.get('email', '') == 'harry.seggu@gmail.com'
+        || resource.data.get('email', '') == 'harry@poketschool.ai';
+    }
+
+    // A regular admin can change users. Promoting someone to super admin, or
+    // editing a super admin, requires the super admin claim or the owner email.
+    function staffWriteAllowed() {
+      return callerIsSuper()
+        || (
+          !targetIsSuper()
+          && incoming().get('adminRole', '') != 'super_admin'
+        );
     }
 
     // ── Users ─────────────────────────────────────────────────
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isUser(userId);
-      allow update: if isAdmin()
+      allow update: if (isAdmin() && staffWriteAllowed())
         || (isUser(userId)
             && !request.resource.data.diff(resource.data).affectedKeys()
                  .hasAny(privilegedUserFields()))
@@ -923,6 +949,25 @@ service cloud.firestore {
       allow delete: if isSignedIn() && (
         resource.data.ownerId == request.auth.uid || isAdmin()
       );
+    }
+
+    // Admin action history. Super admins read it. Any platform admin can append.
+    match /admin_audit/{entryId} {
+      allow read: if callerIsSuper();
+      allow create: if isAdmin() && incoming().actorId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /admin_invites/{emailId} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && callerIsSuper()
+        || (isAdmin() && incoming().staffRole != 'super_admin');
+      allow delete: if callerIsSuper();
+    }
+
+    match /platform_signals/{signalId} {
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
     // ── Device push tokens (Poketschool app + web) ───────────

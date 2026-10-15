@@ -14,7 +14,9 @@ interface UserProfile {
   /** Set for institution_admin — scopes what they can see and manage. */
   institutionId?: string;
   /** Account lifecycle. Absent means active. */
-  accountStatus?: 'active' | 'suspended' | 'pending' | 'inactive';
+  accountStatus?: 'active' | 'suspended' | 'pending' | 'inactive' | 'banned' | 'deleted';
+  statusReason?: string;
+  adminRole?: 'super_admin' | 'admin' | 'content_editor' | 'support' | 'finance';
   avatarUrl?: string;
   level?: string;
   learningStyle?: string;

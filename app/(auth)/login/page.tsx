@@ -17,13 +17,7 @@ import { toast } from 'sonner';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
-
-const SUPER_ADMIN_EMAILS = ['harry.seggu@gmail.com', 'shahzarrayyan123@gmail.com'];
-const isSuperAdminEmail = (email: string) => SUPER_ADMIN_EMAILS.includes(email.trim().toLowerCase());
-const ADMIN_NAMES: Record<string, string> = {
-  'harry.seggu@gmail.com': 'Harry Seggu',
-  'shahzarrayyan123@gmail.com': 'Shahzar Rayyan',
-};
+import { loginBlocked, requiresAdminLogin } from '@/lib/admin-console';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -43,7 +37,13 @@ export default function LoginPage() {
   const routeUser = async (uid: string) => {
     const snap = await getDoc(doc(db, 'users', uid));
     if (!snap.exists()) { router.push('/onboarding'); return; }
-    const role = snap.data().role;
+    const data = snap.data();
+    if (loginBlocked(typeof data.accountStatus === 'string' ? data.accountStatus : 'active')) {
+      await signOut(auth);
+      toast.error('This account is closed. Contact support@poketschool.ai.');
+      return;
+    }
+    const role = data.role;
     if (role === 'student') router.push('/dashboard/student');
     else if (role === 'teacher') router.push('/dashboard/teacher');
     else if (role === 'parent') router.push('/dashboard/parent');
@@ -51,28 +51,18 @@ export default function LoginPage() {
     else router.push('/onboarding');
   };
 
-  // The super-admin account is provisioned in Firebase; this just keeps its
-  // Firestore profile pinned to the admin role.
-  const ensureAdminProfile = async (uid: string, adminEmail: string) => {
-    const lower = adminEmail.trim().toLowerCase();
+  const sendToAdminLogin = async (uid: string, address: string) => {
     const snap = await getDoc(doc(db, 'users', uid));
-    if (!snap.exists()) {
-      await setDoc(doc(db, 'users', uid), {
-        name: ADMIN_NAMES[lower] ?? 'Administrator',
-        email: lower,
-        avatarUrl: '',
-        role: 'admin',
-        xp: 0,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-    } else if (snap.data().role !== 'admin') {
-      await setDoc(doc(db, 'users', uid), {
-        ...snap.data(),
-        role: 'admin',
-        updatedAt: serverTimestamp(),
-      });
-    }
+    const data = snap.exists() ? snap.data() : {};
+    if (!requiresAdminLogin({
+      email: address,
+      role: typeof data.role === 'string' ? data.role : '',
+      adminRole: typeof data.adminRole === 'string' ? data.adminRole : '',
+    })) return false;
+    await signOut(auth);
+    toast.error('Admin accounts sign in at the admin page, with a verification code.');
+    router.push('/admin/login');
+    return true;
   };
 
   const sendOtp = async (targetEmail: string): Promise<'sent' | 'skip' | 'error'> => {
@@ -101,8 +91,7 @@ export default function LoginPage() {
     // Super admin and unverified accounts go straight in; verified accounts
     // get an email 2FA code — unless the email service isn't configured, in
     // which case we never lock anyone out.
-    const isSuperAdmin = isSuperAdminEmail(email);
-    const wants2fa = !isSuperAdmin && !!(data?.emailVerified || data?.phoneVerified);
+    const wants2fa = !!(data?.emailVerified || data?.phoneVerified);
 
     if (!wants2fa) {
       await routeUser(uid);
@@ -180,9 +169,7 @@ export default function LoginPage() {
       setLoading(true);
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      if (result.user.email && isSuperAdminEmail(result.user.email)) {
-        await ensureAdminProfile(result.user.uid, result.user.email);
-      }
+      if (await sendToAdminLogin(result.user.uid, result.user.email || '')) return;
       // Sync Google profile picture to Firestore if missing
       const snap = await getDoc(doc(db, 'users', result.user.uid));
       if (snap.exists() && !snap.data().avatarUrl && result.user.photoURL) {
@@ -216,9 +203,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const result = await signInWithEmailAndPassword(auth, email.trim(), password);
-      if (isSuperAdminEmail(email)) {
-        await ensureAdminProfile(result.user.uid, email);
-      }
+      if (await sendToAdminLogin(result.user.uid, result.user.email || email)) return;
       await afterCredentialSuccess(result.user.uid);
     } catch (e: any) {
       const code = e?.code ?? '';
