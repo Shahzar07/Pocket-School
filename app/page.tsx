@@ -19,7 +19,9 @@ import {
   TrendingUp,
   Zap,
 } from "lucide-react";
-import { TIERS, ANNUAL_DISCOUNT } from "@/lib/entitlements";
+import { TIERS } from "@/lib/entitlements";
+import { discountLabel, formatMoney, quotePlan } from "@/lib/pricing";
+import { usePricing } from "@/hooks/use-pricing";
 import { useAuthSTORE } from "@/hooks/use-auth";
 import { isAdmin } from "@/lib/roles";
 import s from "./home.module.css";
@@ -228,6 +230,7 @@ const comparison = [
 
 export default function LandingPage() {
   const [annual, setAnnual] = useState(false);
+  const { config, currency } = usePricing();
   const rootRef = useRef<HTMLElement>(null);
   useHomeMotion(rootRef);
   const { user, profile } = useAuthSTORE();
@@ -558,13 +561,19 @@ export default function LandingPage() {
                 Monthly
               </button>
               <button aria-pressed={annual} onClick={() => setAnnual(true)}>
-                Yearly <span>(25% off)</span>
+                Yearly <span>({discountLabel(config)} off)</span>
               </button>
             </div>
           </div>
         </div>
         <div className={s.priceGrid}>
-          {[TIERS[0], TIERS[1], TIERS[2]].map((tier, i) => (
+          {[TIERS[0], TIERS[1], TIERS[2]].map((tier, i) => {
+            const monthlyQuote = quotePlan(config, tier.id, "monthly", currency);
+            const annualQuote = quotePlan(config, tier.id, "annual", currency);
+            const code = monthlyQuote?.currency ?? currency;
+            const perMonth = annual ? (annualQuote?.amount ?? 0) / 12 : (monthlyQuote?.amount ?? 0);
+            const sparks = config.plans.find(plan => plan.id === tier.id)?.sparks ?? 0;
+            return (
             <article
               className={`${s.priceCard} ${i === 1 ? s.featuredPrice : ""}`}
               key={tier.id}
@@ -593,14 +602,7 @@ export default function LandingPage() {
               <p>{tier.blurb}</p>
               <div className={s.priceAction}>
                 <div>
-                  <strong>
-                    $
-                    {annual
-                      ? ((tier.usd ?? 0) * (1 - ANNUAL_DISCOUNT)).toFixed(
-                          tier.usd ? 2 : 0,
-                        )
-                      : tier.usd}
-                  </strong>
+                  <strong>{formatMoney(perMonth, code)}</strong>
                   <small>/month</small>
                 </div>
                 <Link
@@ -612,17 +614,18 @@ export default function LandingPage() {
                 </Link>
               </div>
               <small className={s.billingNote}>
-                {annual && tier.usd
-                  ? `$${(tier.usd * (1 - ANNUAL_DISCOUNT) * 12).toFixed(0)} billed yearly · USD`
-                  : "USD · " +
-                    (tier.usd ? "Billed monthly" : "No subscription needed")}
+                {annual && (annualQuote?.amount ?? 0) > 0
+                  ? `${formatMoney(annualQuote?.amount ?? 0, code)} billed yearly`
+                  : (monthlyQuote?.amount ?? 0) > 0
+                    ? "Billed monthly"
+                    : "No subscription needed"}
               </small>
               <ul>
                 {[
                   ...tier.programmes,
-                  ...(tier.sparks
+                  ...(sparks > 0
                     ? [
-                        `${tier.sparks.toLocaleString()} Sparks per month`,
+                        `${sparks.toLocaleString()} Sparks per month`,
                         "AI-powered learning tools",
                       ]
                     : []),
@@ -634,7 +637,8 @@ export default function LandingPage() {
                 ))}
               </ul>
             </article>
-          ))}
+            );
+          })}
         </div>
         <Link className={s.allPlans} href="/pricing">
           Compare all plans, degrees, and institution options{" "}

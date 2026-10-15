@@ -17,6 +17,7 @@ import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebas
 import { storage } from '@/lib/firebase';
 import type { Course, CourseType } from '@/lib/db';
 import { createCourse, updateCourse } from '@/lib/db';
+import { formatMoney } from '@/lib/pricing';
 
 interface Props {
   open: boolean;
@@ -433,7 +434,7 @@ export default function CourseEditorModal({
 
                 <div className="flex items-center gap-3 text-sm">
                   <span className="font-semibold text-foreground">
-                    {Number(price) === 0 ? 'Free' : `${currency === 'USD' ? '$' : currency === 'EUR' ? '€' : '£'}${Number(price).toFixed(2)}`}
+                    {Number(price) === 0 ? 'Free' : formatMoney(Number(price), currency || 'USD')}
                   </span>
                   {durationHours && <span className="text-muted-foreground">{durationHours}h content</span>}
                   {isPublic && <span className="text-blue-600 text-xs font-medium">Marketplace listing</span>}

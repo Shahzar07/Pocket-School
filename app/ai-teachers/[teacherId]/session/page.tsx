@@ -27,6 +27,8 @@ import { tutorModeFor } from '@/lib/learner-level';
 import { correctIndex } from '@/lib/quiz-answer';
 import { parseLatexJson } from '@/lib/latex-json';
 import { permissionsFor, hasAddOn, addOn } from '@/lib/entitlements';
+import { usePricing } from '@/hooks/use-pricing';
+import { formatMoney, quoteAddon } from '@/lib/pricing';
 
 type Msg = { role: 'user' | 'model'; text: string };
 
@@ -89,6 +91,8 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
   /** Lyra Live is sold as an add-on, so it is not implied by any plan. */
   const lyraUnlocked = hasAddOn(permissionsFor(profile), 'lyra_live');
   const lyra = addOn('lyra_live');
+  const { config, currency } = usePricing();
+  const lyraQuote = quoteAddon(config, 'lyra_live', currency);
 
   const [messages, setMessages] = useState<Msg[]>([]);
   const [board, setBoard] = useState<BoardItem[]>([]);
@@ -373,7 +377,7 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
                 {lyra?.blurb}
               </p>
               <p className="text-white text-2xl font-extrabold mt-5">
-                ${lyra?.usdMonthly}<span className="text-sm font-medium text-white/50">/month</span>
+                {lyraQuote ? formatMoney(lyraQuote.amount, lyraQuote.currency) : ''}<span className="text-sm font-medium text-white/50">/month</span>
               </p>
               <p className="text-white/40 text-[11px] mt-1">
                 Added on top of your plan. Chat with {teacher?.name.split(' ')[0]} stays free.

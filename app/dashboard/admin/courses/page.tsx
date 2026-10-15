@@ -14,6 +14,7 @@ import {
   type Course,
 } from '@/lib/db';
 import CourseEditorModal from '@/components/course-editor-modal';
+import { usePricing } from '@/hooks/use-pricing';
 
 type ViewTab = 'pending' | 'all';
 
@@ -30,6 +31,7 @@ const COURSE_GRADIENTS = [
 ];
 
 export default function AdminCourseMgmt() {
+  const { courseLabel } = usePricing();
   const { user, profile } = useAuthSTORE();
   const [courses, setCourses] = useState<Course[]>([]);
   const [pendingCourses, setPendingCourses] = useState<Course[]>([]);
@@ -120,11 +122,7 @@ export default function AdminCourseMgmt() {
     }
   };
 
-  const fmtPrice = (c: Course) => {
-    if (!c.price || c.price === 0) return 'Free';
-    const symbol = c.currency === 'USD' ? '$' : c.currency === 'EUR' ? '€' : '£';
-    return `${symbol}${c.price.toFixed(2)}`;
-  };
+  const fmtPrice = (c: Course) => courseLabel(c.price, c.currency);
 
   const displayCourses = activeTab === 'pending' ? pendingCourses : courses;
 

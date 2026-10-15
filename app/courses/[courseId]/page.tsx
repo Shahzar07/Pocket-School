@@ -29,16 +29,12 @@ import {
   type Course, type UserProfile, type Module, type Lesson,
 } from '@/lib/db';
 import { coursePriceType, freePreviewCount, isLessonFree, courseMinTier, tierDefinition } from '@/lib/entitlements';
+import { usePricing } from '@/hooks/use-pricing';
 import { courseCover } from '@/lib/course-cover';
 import { toast } from 'sonner';
 
-function priceLabel(c: Course) {
-  if (!c.price || c.price === 0) return 'Free';
-  const symbol = c.currency === 'USD' ? '$' : c.currency === 'EUR' ? '€' : '£';
-  return `${symbol}${c.price.toFixed(2)}`;
-}
-
 export default function CourseDetailPage() {
+  const { courseLabel } = usePricing();
   const params = useParams<{ courseId: string }>();
   const courseId = params?.courseId;
   const router = useRouter();
@@ -482,7 +478,7 @@ export default function CourseDetailPage() {
                   </div>
 
                   <div className="p-6">
-                    <p className="text-3xl font-extrabold tracking-tight mb-1">{priceLabel(course)}</p>
+                    <p className="text-3xl font-extrabold tracking-tight mb-1">{courseLabel(course.price, course.currency)}</p>
                     <p className="text-xs text-muted-foreground mb-5">
                       {priceType === 'SUBSCRIPTION_INCLUDED'
                         ? 'Included in your subscription'
@@ -604,13 +600,13 @@ export default function CourseDetailPage() {
               <DialogHeader>
                 <DialogTitle>Confirm enrolment</DialogTitle>
                 <DialogDescription>
-                  This is a paid course ({priceLabel(course)}). Your school account
+                  This is a paid course ({courseLabel(course.price, course.currency)}). Your school account
                   will be invoiced — no card payment is taken now.
                 </DialogDescription>
               </DialogHeader>
               <div className="bg-muted/50 border border-border rounded-xl p-4 text-sm space-y-1">
                 <p className="font-semibold text-foreground">{course.title}</p>
-                <p className="text-muted-foreground">Price: {priceLabel(course)}</p>
+                <p className="text-muted-foreground">Price: {courseLabel(course.price, course.currency)}</p>
               </div>
               <DialogFooter>
                 <Button variant="outline" className="rounded-full h-11 px-5" disabled={enrolling} onClick={() => setConfirmOpen(false)}>

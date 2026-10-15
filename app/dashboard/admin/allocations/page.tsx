@@ -29,6 +29,8 @@ import {
 import {
   TIERS, ADDONS, allocFree, allocPaid, allocMarketplace, accessTierFor, type AccessTier,
 } from '@/lib/entitlements';
+import { usePricing } from '@/hooks/use-pricing';
+import { formatMoney, quoteAddon } from '@/lib/pricing';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -87,6 +89,7 @@ export default function AccessAllocationPage() {
 /* ── People ──────────────────────────────────────────────────── */
 
 function PeoplePanel({ courses }: { courses: Course[] }) {
+  const { config, currency } = usePricing();
   const [email, setEmail] = useState('');
   const [searching, setSearching] = useState(false);
   const [found, setFound] = useState<{ id: string; data: UserProfile } | null>(null);
@@ -236,7 +239,10 @@ function PeoplePanel({ courses }: { courses: Course[] }) {
                   <div key={a.id} className="flex flex-wrap items-center gap-3 bg-muted/40 rounded-xl px-3 py-2.5">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground">
-                        {a.name} <span className="font-normal text-muted-foreground">· RM{a.myrMonthly}/mo</span>
+                        {a.name} <span className="font-normal text-muted-foreground">· {(() => {
+                          const quote = quoteAddon(config, a.id, currency);
+                          return quote ? `${formatMoney(quote.amount, quote.currency)}/mo` : '';
+                        })()}</span>
                       </p>
                       <p className="text-[11px] text-muted-foreground">
                         {eligible

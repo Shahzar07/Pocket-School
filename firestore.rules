@@ -477,6 +477,19 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ── Public pricing (admin-managed). Deploy with the rest of these rules.
+    match /pricing_config/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Who changed a price. Clients may append a row for themselves; nobody edits history.
+    match /pricing_audit/{auditId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && incoming().actorId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
     // ── User sessions (device history) ────────────────────────
     match /user_sessions/{sessionId} {
       allow read, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
