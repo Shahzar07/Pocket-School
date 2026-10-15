@@ -9,6 +9,9 @@ import {
 } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { IntegrityNotice } from '@/components/insights/integrity-notice';
+import { applyCapture, captureToSignals, emptyCapture } from '@/lib/insights/integrity-capture';
+import { authedFetch } from '@/lib/api-client';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -32,6 +35,7 @@ export default function StudentAssignmentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [captures, setCaptures] = useState<Record<string, ReturnType<typeof emptyCapture>>>({});
 
   const load = async () => {
     if (!user) return;
@@ -76,7 +80,21 @@ export default function StudentAssignmentsPage() {
     setSubmitting(a.id!);
     try {
       const due = a.dueDate?.toDate?.() ?? null;
-      await submitAssignment({ assignmentId: a.id!, studentId: user.uid, studentName: profile?.name ?? 'Student', courseId: a.courseId, content, isLate: due ? new Date() > due : false });
+      const signals = captureToSignals(captures[a.id!] ?? emptyCapture(Date.now()), Date.now());
+      await submitAssignment({
+        assignmentId: a.id!, studentId: user.uid, studentName: profile?.name ?? 'Student', courseId: a.courseId,
+        content, isLate: due ? new Date() > due : false, integritySignals: signals,
+      });
+      await authedFetch('/api/insights/integrity-flag', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...signals,
+          submission: content,
+          assignmentTitle: a.title,
+          teacherId: a.createdBy,
+          studentName: profile?.name ?? 'Student',
+        }),
+      }).catch(() => null);
       toast.success('Submitted!');
       setItems(prev => prev.map(i => i.assignment.id === a.id
         ? { ...i, submission: { assignmentId: a.id!, studentId: user.uid, courseId: a.courseId, content, id: '' } as AssignmentSubmission }
@@ -184,6 +202,7 @@ export default function StudentAssignmentsPage() {
                   </div>
                   <Badge className={`rounded-full text-[10px] shrink-0 ${STATUS_STYLES[status]}`}>{status}</Badge>
                 </div>
+                <IntegrityNotice />
                 <div className="space-y-3">
                   {item.assignment.submissionType === 'link' ? (
                     <Input
@@ -195,7 +214,20 @@ export default function StudentAssignmentsPage() {
                   ) : (
                     <Textarea
                       value={answers[item.assignment.id!] ?? ''}
-                      onChange={e => setAnswers(a => ({ ...a, [item.assignment.id!]: e.target.value }))}
+                      onPaste={() => setCaptures(current => {
+                        const id = item.assignment.id!;
+                        return { ...current, [id]: applyCapture(current[id] ?? emptyCapture(Date.now()), { type: 'paste' }) };
+                      })}
+                      onBlur={() => setCaptures(current => {
+                        const id = item.assignment.id!;
+                        return { ...current, [id]: applyCapture(current[id] ?? emptyCapture(Date.now()), { type: 'blur' }) };
+                      })}
+                      onChange={e => {
+                        const id = item.assignment.id!;
+                        const value = e.target.value;
+                        setAnswers(a => ({ ...a, [id]: value }));
+                        setCaptures(current => ({ ...current, [id]: applyCapture(current[id] ?? emptyCapture(Date.now()), { type: 'input', length: value.length }) }));
+                      }}
                       placeholder="Write your answer here…"
                       className="bg-background rounded-xl min-h-24 text-sm resize-none"
                     />

@@ -166,6 +166,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/parent/goals', icon: Target, labelKey: 'nav.goals' },
       { href: '/dashboard/parent/analytics', icon: Activity, labelKey: 'nav.insights' },
       { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
+      { href: '/dashboard/parent/integrity', icon: Shield, labelKey: 'nav.integrity' },
       { href: '/dashboard/parent/reports', icon: FileBarChart, labelKey: 'nav.reportCards' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
     ]},
@@ -230,6 +231,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
       { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
+      { href: '/dashboard/institution/templates', icon: FileText, labelKey: 'nav.reportStudio' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },

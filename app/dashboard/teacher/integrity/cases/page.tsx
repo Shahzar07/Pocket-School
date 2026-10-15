@@ -18,6 +18,8 @@ interface Draft {
   studentSummary: string;
   viva: string[];
   variant: string;
+  questions?: { id: string; prompt: string; bloom: string; topic: string }[];
+  proctor?: { focusLock: boolean; timerMinutes: number; allowPaste: boolean };
   automaticPenalty: false;
 }
 
@@ -67,6 +69,8 @@ export default function IntegrityCasesPage() {
       studentSummary: draft.studentSummary,
       viva: draft.viva,
       variant: draft.variant,
+      questions: draft.questions ?? [],
+      proctor: draft.proctor ?? { focusLock: true, timerMinutes: 25, allowPaste: false },
       decision: 'pending',
       automaticPenalty: AUTOMATIC_PENALTY,
     });

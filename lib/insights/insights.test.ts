@@ -45,8 +45,13 @@ import { buildSnapshot } from './aggregate';
 import { nextScheduleDate, toCsv } from './reports';
 import { buildXlsx, readStoredZip } from './xlsx';
 import { buildPdf } from './pdf';
-import { gradeOnScale, scaleById } from './report-cards';
-import { aiLikelihoodSignal, AUTOMATIC_PENALTY, buildIntegrityCase, tokenSimilarity } from './integrity';
+import { gradeOnScale, normaliseTemplate, scaleById } from './report-cards';
+import { aiLikelihoodSignal, AUTOMATIC_PENALTY, bestMatch, buildIntegrityCase, countIdenticalWrong, parseClassifierScore, STUDENT_INTEGRITY_NOTICE, tokenSimilarity } from './integrity';
+import { applyCapture, captureToSignals, emptyCapture } from './integrity-capture';
+import { deskChecks } from './integrity-seed';
+import { applyReview, compareReexam, equivalentVariant, proctorLite, recordVerdict } from './reexam';
+import { buildConcerns, inQuietHours, planDelivery, DEFAULT_NOTIFY_SETTINGS } from './concerns';
+import { assembleCard, integrityNoteFor, subjectLine } from './report-card-model';
 import { dripDates, extractDatesFromText, mapUnitsToWeeks, parseCsv, parseIcs, teachingMondays } from './calendar';
 
 describe('goals', () => {
@@ -328,6 +333,116 @@ describe('report cards and integrity', () => {
     expect(result.recommendation).toMatch(/teacher/i);
     expect(tokenSimilarity('the cat sat on the mat today', 'the cat sat on the mat today')).toBe(100);
     expect(aiLikelihoodSignal('One. Two. Three.')).toBe(0);
+  });
+
+  it('combines paste, time, style, similarity, and identical wrong answers without a penalty', () => {
+    const result = buildIntegrityCase({
+      assignmentTitle: 'Fractions essay',
+      signals: {
+        pasteEvents: 2,
+        largeInsertChars: 420,
+        typingCadenceCv: 0.05,
+        secondsToAnswer: 20,
+        baselineSeconds: 180,
+        focusLosses: 4,
+        styleShift: 55,
+        aiLikelihood: 70,
+        similarity: 62,
+        matchSource: 'classmate',
+        identicalWrongCount: 4,
+      },
+    });
+    expect(result.automaticPenalty).toBe(false);
+    expect(result.level === 'clear').toBe(false);
+    expect(result.evidence.map(item => item.label)).toContain('Identical wrong answers');
+    expect(result.evidence.map(item => item.label)).toContain('Time to answer');
+    expect(result.evidence.map(item => item.detail).join(' ')).toMatch(/not named/);
+    expect(STUDENT_INTEGRITY_NOTICE).toMatch(/Nothing is marked down automatically/);
+    expect(countIdenticalWrong([
+      { studentId: 'mina', answer: '1/3', correct: false },
+      { studentId: 'leo', answer: '1/3', correct: false },
+      { studentId: 'noor', answer: '1/4', correct: true },
+    ], 'mina')).toBe(1);
+    expect(bestMatch('the cat sat on the mat today', [{ source: 'ai_studio', text: 'the cat sat on the mat today' }]).matchSource).toBe('ai_studio');
+    expect(parseClassifierScore('The signal is 64.')).toBe(64);
+    const started = emptyCapture(1_000);
+    const typed = applyCapture(applyCapture(started, { type: 'paste' }), { type: 'input', length: 120 });
+    expect(captureToSignals(applyCapture(typed, { type: 'blur' }), 11_000).pasteEvents).toBe(1);
+    expect(captureToSignals(typed, 11_000).largeInsertChars).toBe(120);
+  });
+
+  it('builds a different variant, a viva, and a teacher verdict', () => {
+    const variant = equivalentVariant({
+      title: 'Fractions essay',
+      topic: 'Fractions',
+      bloom: 'apply',
+      originalPrompts: ['Shade 1/4 of the bar.'],
+    });
+    expect(variant.bloom).toBe('apply');
+    expect(variant.questions).toHaveLength(3);
+    expect(variant.questions.some(question => question.prompt === 'Shade 1/4 of the bar.')).toBe(false);
+    expect(proctorLite(20).allowPaste).toBe(false);
+    const compared = compareReexam({
+      originalText: 'I split the bar into four equal parts and shade one.',
+      resitText: 'Four friends share a bar. Each person gets one equal piece, which is one quarter.',
+      originalScore: 80,
+      resitScore: 78,
+      vivaAnswered: 3,
+      vivaCount: 3,
+    });
+    expect(compared.automaticPenalty).toBe(false);
+    expect(compared.recommendation).toBe('supports_original');
+    expect(applyReview('dismiss').decision).toBe('no_action');
+    expect(recordVerdict('confirm').integrityNote).toMatch(/not changed automatically/);
+    expect(recordVerdict('clear').integrityNote).toBeNull();
+    expect(integrityNoteFor(['pending', 'dismissed', 'upheld_appeal'])).toBeNull();
+    expect(integrityNoteFor(['confirmed'])).toMatch(/confirmed/);
+  });
+
+  it('routes concerns with quiet hours and keeps wellbeing off the school list', () => {
+    const flags = buildConcerns({
+      atRisk: true,
+      studyMinutes: 150,
+      previousStudyMinutes: 400,
+      missedGoals: 2,
+      attendanceRate: 80,
+      absenceRun: 2,
+      mood: 2,
+    });
+    expect(flags.map(flag => flag.kind)).toContain('wellbeing');
+    expect(flags.find(flag => flag.kind === 'wellbeing')?.notify.includes('institution')).toBe(false);
+    expect(flags.find(flag => flag.kind === 'chronic_absence')?.notify).toContain('institution');
+    expect(inQuietHours(new Date(2026, 9, 15, 22, 30), '21:00', '07:00')).toBe(true);
+    expect(inQuietHours(new Date(2026, 9, 15, 10, 0), '21:00', '07:00')).toBe(false);
+    const night = planDelivery(flags[0], 'parent', DEFAULT_NOTIFY_SETTINGS, new Date(2026, 9, 15, 22, 30));
+    expect(night.inApp).toBe(true);
+    expect(night.push).toBe(false);
+    expect(night.deferred).toBe(true);
+  });
+
+  it('grades A to E, hides an open case, and compares terms', () => {
+    expect(gradeOnScale(74, scaleById('a_to_e'))).toBe('B');
+    expect(gradeOnScale(49, scaleById('a_to_e'))).toBe('E');
+    expect(normaliseTemplate({ institutionId: 'school-a', logoUrl: 'javascript:alert(1)' }).logoUrl).toBe('');
+    const subject = subjectLine({
+      courseId: 'fractions', courseTitle: 'Fractions', percent: 74, scaleId: 'a_to_e',
+      bloomMastery: 60, attendanceRate: 80, behaviour: 'Engaged', effort: 4,
+      goalsAchieved: 3, goalsSet: 4, teacherId: 'teacher1', teacherName: 'Ada', studentName: 'Mina',
+    });
+    const card = assembleCard({
+      studentId: 'mina', studentName: 'Mina', termId: 't4', year: 2026,
+      template: normaliseTemplate({ institutionId: 'school-a', scaleId: 'a_to_e', logoUrl: 'https://poketschool.ai/logo.png' }),
+      subjects: [subject],
+      decisions: ['pending'],
+      previous: [{ courseId: 'fractions', courseTitle: 'Fractions', percent: 60 }],
+    });
+    expect(card.integrityNote).toBeNull();
+    expect(card.comparison[0]?.delta).toBe(14);
+    expect(card.automaticPenalty).toBe(false);
+    expect(subject.commentDraft).toMatch(/edit this draft/);
+    for (const side of ['student', 'parent', 'teacher', 'institution'] as const) {
+      for (const check of deskChecks(side)) assert.equal(check.actual, check.expected, `${side} ${check.label}`);
+    }
   });
 });
 

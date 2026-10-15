@@ -7,7 +7,8 @@ import { getGradesForCourse, getTeacherCourses, type Course, type Grade } from '
 import { authedFetch } from '@/lib/api-client';
 import { DashHeader, DashPage, Panel } from '@/components/dash-ui';
 import { Button } from '@/components/ui/button';
-import { saveReportCard } from '@/lib/insights/client';
+import { listIntegrityCases, saveReportCard } from '@/lib/insights/client';
+import { integrityNoteFor } from '@/lib/insights/report-card-model';
 import { buildPdf } from '@/lib/insights/pdf';
 import { copyrightLine } from '@/lib/insights/copyright';
 import { downloadBytes } from '@/components/insights/boards';
@@ -114,7 +115,18 @@ export default function ReportStudioPage() {
       institutionId: profile?.institutionId,
     }, token);
     const published = publicCard(draft);
-    await saveReportCard(`${row.studentId}_${course.id}_${term}_${year}`, { ...draft, teacherName: profile?.name ?? 'Teacher' }, published);
+    const cases = await listIntegrityCases('studentId', row.studentId).catch(() => []);
+    const integrityNote = integrityNoteFor(cases.map(item => String(item.decision ?? '')));
+    await saveReportCard(`${row.studentId}_${course.id}_${term}_${year}`, {
+      ...draft,
+      teacherName: profile?.name ?? 'Teacher',
+      signedOff: true,
+      ...(integrityNote ? { integrityNote } : {}),
+    }, published);
+    await authedFetch('/api/insights/report-notify', {
+      method: 'POST',
+      body: JSON.stringify({ studentId: row.studentId, studentName: row.studentName }),
+    }).catch(() => null);
     setLastToken(token);
     return token;
   };

@@ -1989,6 +1989,65 @@ service cloud.firestore {
       allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
     }
 
+    // Concern flags are review signals. Wellbeing stays off the institution read.
+    match /concern_flags/{flagId} {
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || resource.data.studentId == request.auth.uid
+        || linkedTo(resource.data.studentId)
+        || resource.data.get('teacherId', '') == request.auth.uid
+        || resource.data.get('teacherIds', []).hasAny([request.auth.uid])
+        || (isInstitutionAdmin()
+            && resource.data.get('institutionId', '') == myInstitution()
+            && resource.data.kind != 'wellbeing')
+      );
+      allow create: if isTeacherOrAdmin() && incoming().automaticPenalty == false;
+      allow update: if isTeacherOrAdmin() && resource.data.get('teacherId', '') == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    // A re-examination answer belongs to the student. It does not change a mark.
+    match /reexam_responses/{responseId} {
+      allow create: if isSignedIn()
+        && incoming().studentId == request.auth.uid
+        && incoming().automaticPenalty == false;
+      allow read: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid
+        || linkedTo(resource.data.studentId)
+        || resource.data.teacherId == request.auth.uid
+        || isAdmin()
+      );
+      allow update, delete: if isAdmin();
+    }
+
+    match /notify_settings/{settingsId} {
+      allow read: if isSignedIn() && (
+        request.auth.uid == settingsId
+        || isAdmin()
+        || (isInstitutionAdmin() && settingsId == 'school_' + myInstitution())
+      );
+      allow create, update: if isSignedIn() && (
+        (request.auth.uid == settingsId
+          && incoming().quietStart is string
+          && incoming().quietEnd is string)
+        || (isInstitutionAdmin()
+            && settingsId == 'school_' + myInstitution()
+            && incoming().institutionId == myInstitution())
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /report_templates/{templateId} {
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || (isInstitutionAdmin() && resource.data.institutionId == myInstitution())
+        || (role() == 'teacher' && resource.data.institutionId == myInstitution())
+      );
+      allow create, update: if isInstitutionAdmin() && incoming().institutionId == myInstitution()
+        || (isAdmin() && incoming().institutionId is string);
+      allow delete: if isAdmin();
+    }
+
     // Public lookup by id for the QR. Listing every card is refused.
     match /published_reports/{token} {
       allow get: if true;

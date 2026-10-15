@@ -2423,6 +2423,12 @@ export interface AssignmentSubmission {
   gradedAt?: Timestamp;
   integrityScore?: number;
   integrityFlag?: boolean;
+  integritySignals?: {
+    pasteEvents?: number;
+    largeInsertChars?: number;
+    focusLosses?: number;
+    secondsToAnswer?: number;
+  };
 }
 
 export async function createAssignment(data: Omit<Assignment, 'id'>): Promise<string> {
@@ -2517,6 +2523,12 @@ export interface ExamSubmission {
   passed: boolean;
   timeTakenSeconds?: number;
   submittedAt?: Timestamp;
+  integritySignals?: {
+    pasteEvents?: number;
+    largeInsertChars?: number;
+    focusLosses?: number;
+    secondsToAnswer?: number;
+  };
 }
 
 export async function createExam(data: Omit<Exam, 'id'>): Promise<string> {

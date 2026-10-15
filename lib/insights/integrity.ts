@@ -5,10 +5,20 @@
 
 export const AUTOMATIC_PENALTY = false as const;
 
+/** Shown before an answer, essay, exam, or assignment is started. */
+export const STUDENT_INTEGRITY_NOTICE =
+  'Integrity checks run on this work. We record paste events and large text insertions, typing pace, time taken, and tab or focus changes. We also compare style with your earlier work, an AI-likelihood signal, and similarity with AI Studio outputs or other answers, including identical wrong answers in a class. A person reviews any flag. Nothing is marked down automatically, and the evidence is shown on the flag.';
+
 export interface IntegritySignals {
   pasteEvents?: number;
+  /** Characters added in one jump, apart from a paste event. */
+  largeInsertChars?: number;
   /** Coefficient of variation of keystroke gaps. Very low means unnaturally even typing. */
   typingCadenceCv?: number;
+  /** Seconds from opening the response to submitting it. */
+  secondsToAnswer?: number;
+  /** Typical seconds this student spends on similar questions. */
+  baselineSeconds?: number;
   focusLosses?: number;
   /** 0–100 change versus the student's earlier writing. */
   styleShift?: number;
@@ -16,6 +26,10 @@ export interface IntegritySignals {
   aiLikelihood?: number;
   /** 0–100 overlap with another text. */
   similarity?: number;
+  /** Where the closest overlap came from. Names of other students are never stored. */
+  matchSource?: 'none' | 'ai_studio' | 'classmate';
+  /** How many other scripts share this same incorrect answer. */
+  identicalWrongCount?: number;
 }
 
 export interface IntegrityEvidence {
@@ -49,6 +63,47 @@ export type IntegrityDecision = (typeof INTEGRITY_DECISIONS)[number]['id'];
 
 function clamp(n: number): number {
   return Math.max(0, Math.min(100, n));
+}
+
+export function parseClassifierScore(raw: string): number | null {
+  const match = raw.match(/\b(\d{1,3})\b/);
+  if (!match) return null;
+  const value = Number(match[1]);
+  if (!Number.isFinite(value) || value > 100) return null;
+  return value;
+}
+
+export function classifierPrompt(submission: string): string {
+  return `Give one integer from 0 to 100 for how machine-like this writing looks. Reply with the number only. This is a signal for a teacher, not a verdict.\n\n${submission.slice(0, 4000)}`;
+}
+
+/** Other students who gave the same incorrect answer. Zero when this answer is correct or blank. */
+export function countIdenticalWrong(
+  rows: { studentId: string; answer: string; correct: boolean }[],
+  studentId: string,
+): number {
+  const mine = rows.find(row => row.studentId === studentId);
+  if (!mine || mine.correct || !mine.answer.trim()) return 0;
+  const key = mine.answer.trim().toLowerCase();
+  return rows.filter(row => row.studentId !== studentId && !row.correct && row.answer.trim().toLowerCase() === key).length;
+}
+
+/** Closest overlap. The other text is not returned, so a classmate's writing stays off the flag. */
+export function bestMatch(
+  text: string,
+  others: { source: 'ai_studio' | 'classmate'; text: string }[],
+): { similarity: number; matchSource: 'none' | 'ai_studio' | 'classmate' } {
+  let similarity = 0;
+  let matchSource: 'none' | 'ai_studio' | 'classmate' = 'none';
+  for (const other of others) {
+    const score = tokenSimilarity(text, other.text);
+    if (score > similarity) {
+      similarity = score;
+      matchSource = other.source;
+    }
+  }
+  if (similarity < 30) return { similarity, matchSource: 'none' };
+  return { similarity, matchSource };
 }
 
 export function tokenSimilarity(a: string, b: string): number {
@@ -99,6 +154,29 @@ export function buildIntegrityCase(input: {
       });
     }
   }
+  if (s.largeInsertChars != null) {
+    const value = s.largeInsertChars >= 300 ? 70 : s.largeInsertChars >= 80 ? 40 : 0;
+    parts.push({ score: value, weight: 0.1 });
+    if (value >= 40) {
+      evidence.push({
+        label: 'Large insertion',
+        detail: `${s.largeInsertChars} characters arrived in one jump.`,
+        value,
+      });
+    }
+  }
+  if (s.secondsToAnswer != null && s.baselineSeconds != null && s.baselineSeconds >= 30) {
+    const ratio = s.secondsToAnswer / s.baselineSeconds;
+    const value = ratio < 0.25 ? 80 : ratio > 3 ? 40 : 10;
+    parts.push({ score: value, weight: 0.1 });
+    if (value >= 40) {
+      evidence.push({
+        label: 'Time to answer',
+        detail: `This answer took ${s.secondsToAnswer}s. Similar questions usually take about ${s.baselineSeconds}s.`,
+        value,
+      });
+    }
+  }
   if (s.typingCadenceCv != null) {
     const value = s.typingCadenceCv < 0.08 ? 80 : s.typingCadenceCv < 0.15 ? 40 : 10;
     parts.push({ score: value, weight: 0.1 });
@@ -138,7 +216,34 @@ export function buildIntegrityCase(input: {
   if (s.similarity != null) {
     const value = clamp(s.similarity);
     parts.push({ score: value, weight: 0.2 });
-    if (value >= 30) evidence.push({ label: 'Similarity', detail: 'Overlap with another text supplied for comparison.', value });
+    if (value >= 30) {
+      const where = s.matchSource === 'ai_studio'
+        ? 'Overlap with an AI Studio output.'
+        : s.matchSource === 'classmate'
+          ? 'Overlap with another answer in the class. The other student is not named.'
+          : 'Overlap with another text supplied for comparison.';
+      evidence.push({ label: 'Similarity', detail: where, value });
+    }
+  } else if (s.matchSource === 'ai_studio' || s.matchSource === 'classmate') {
+    parts.push({ score: 60, weight: 0.2 });
+    evidence.push({
+      label: 'Similarity',
+      detail: s.matchSource === 'ai_studio'
+        ? 'Overlap with an AI Studio output.'
+        : 'Overlap with another answer in the class. The other student is not named.',
+      value: 60,
+    });
+  }
+  if (s.identicalWrongCount != null) {
+    const value = s.identicalWrongCount >= 3 ? 75 : s.identicalWrongCount >= 1 ? 40 : 0;
+    parts.push({ score: value, weight: 0.15 });
+    if (value >= 40) {
+      evidence.push({
+        label: 'Identical wrong answers',
+        detail: `The same incorrect answer appears on ${s.identicalWrongCount} other ${s.identicalWrongCount === 1 ? 'script' : 'scripts'}. Names are not shown.`,
+        value,
+      });
+    }
   }
 
   const weight = parts.reduce((sum, p) => sum + p.weight, 0);
