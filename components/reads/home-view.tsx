@@ -10,6 +10,8 @@ import { seedCourseViews, courseToShelf, relatedCoursesForBook } from '@/lib/she
 import { SAMPLE_OWNED, SAMPLE_READER, ownsBook, subscriptionIncludes } from '@/lib/reads/access';
 import { useReadsT } from '@/lib/reads/i18n';
 import { bookById } from '@/lib/reads/seed';
+import { viewerCurrency } from '@/lib/platform/pricing';
+import { recommend } from '@/lib/shelf/recommend';
 import { minutesToday, myList, progressMap, streakDays, toggleList } from '@/lib/shelf/storage';
 import type { ShelfItem } from '@/lib/shelf/types';
 
@@ -22,6 +24,7 @@ export function ReadsHome() {
   const [progress, setProgress] = useState<Record<string, { percent: number }>>({});
   const [streak, setStreak] = useState(0);
   const [today, setToday] = useState(0);
+  const [currency, setCurrency] = useState('USD');
 
   useEffect(() => {
     if (!ready) return;
@@ -29,21 +32,20 @@ export function ReadsHome() {
     setProgress(progressMap(profile.id));
     setStreak(streakDays(profile.id));
     setToday(minutesToday(profile.id));
+    setCurrency(viewerCurrency());
   }, [ready, profile.id]);
 
   const books = useMemo(() => visibleBooks(profile.maxAge).map(book => {
-    const item = bookToShelf(book, SAMPLE_READER, SAMPLE_OWNED, progress[book.id]?.percent);
+    const item = bookToShelf(book, SAMPLE_READER, SAMPLE_OWNED, progress[book.id]?.percent, currency);
     return item;
-  }), [profile.maxAge, progress]);
+  }), [profile.maxAge, progress, currency]);
 
-  const courses = useMemo(() => seedCourseViews().map(c => courseToShelf(c, progress[c.id]?.percent)), [progress]);
+  const courses = useMemo(() => seedCourseViews().map(c => courseToShelf(c, progress[c.id]?.percent, currency)), [progress, currency]);
 
   const continueItems = books.filter(b => (b.progress ?? 0) > 0).sort((a, b) => (b.progress ?? 0) - (a.progress ?? 0));
   const becauseOf = continueItems[0];
   const becauseBook = becauseOf ? bookById(becauseOf.id) : undefined;
-  const because = becauseBook
-    ? books.filter(b => b.id !== becauseBook.id && (b.tags.some(tag => becauseBook.curriculumTags.some(c => tag.includes((c.subject ?? '').toLowerCase()))) || b.form === becauseBook.form))
-    : [];
+  const because = becauseOf ? recommend(books, becauseOf, 8) : [];
   const biology = books.filter(b => b.subject?.toLowerCase().includes('biology') || b.tags.includes('biology'));
   const kids = books.filter(b => (b.age ?? 18) <= 8);
   const owned = books.filter(b => b.badge.tone === 'owned');
@@ -51,7 +53,7 @@ export function ReadsHome() {
   const listed = books.filter(b => list.includes(b.id));
   const newest = [...books].sort((a, b) => b.releasedAt.localeCompare(a.releasedAt));
   const trending = [...books].filter(b => b.tags.length).sort((a, b) => b.weekly - a.weekly);
-  const study = becauseBook ? relatedCoursesForBook(becauseBook, seedCourseViews()).map(c => courseToShelf(c)) : courses.slice(0, 4);
+  const study = becauseBook ? relatedCoursesForBook(becauseBook, seedCourseViews()).map(c => courseToShelf(c, undefined, currency)) : courses.slice(0, 4);
 
   const filtered = books.filter(item => {
     if (filter === 'academic' && item.category !== 'academic') return false;

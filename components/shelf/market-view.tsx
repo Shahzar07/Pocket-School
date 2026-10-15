@@ -12,26 +12,15 @@ import {
   bookToShelf,
   courseToShelf,
   mergeCourses,
-  relatedBooksForCourse,
   seedCourseViews,
   topTen,
   visibleBooks,
   type CourseView,
 } from '@/lib/shelf/catalogue';
-import { ageNumber } from '@/lib/reads/types';
+import { viewerCurrency } from '@/lib/platform/pricing';
 import { myList, progressMap, toggleList } from '@/lib/shelf/storage';
+import { recommend } from '@/lib/shelf/recommend';
 import type { ShelfItem } from '@/lib/shelf/types';
-
-function sameShelf(source: ShelfItem, item: ShelfItem): boolean {
-  if (item.id === source.id) return false;
-  const stop = new Set(['course', 'complete', 'foundations', 'mastery', 'introduction', 'papers']);
-  const words = `${source.subject ?? ''} ${source.title} ${source.tags.join(' ')}`
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .filter(word => word.length > 4 && !stop.has(word));
-  const hay = `${item.subject ?? ''} ${item.title} ${item.level ?? ''} ${item.tags.join(' ')}`.toLowerCase();
-  return words.some(word => hay.includes(word));
-}
 
 export function MarketHome() {
   const t = useReadsT();
@@ -41,6 +30,7 @@ export function MarketHome() {
   const [filter, setFilter] = useState('all');
   const [list, setList] = useState<string[]>([]);
   const [progress, setProgress] = useState<Record<string, { percent: number }>>({});
+  const [currency, setCurrency] = useState('USD');
 
   useEffect(() => {
     let cancelled = false;
@@ -54,15 +44,16 @@ export function MarketHome() {
     if (!ready) return;
     setList(myList(profile.id));
     setProgress(progressMap(profile.id));
+    setCurrency(viewerCurrency());
   }, [ready, profile.id]);
 
   const courseItems = useMemo(
-    () => courses.map(course => courseToShelf(course, progress[course.id]?.percent)),
-    [courses, progress],
+    () => courses.map(course => courseToShelf(course, progress[course.id]?.percent, currency)),
+    [courses, progress, currency],
   );
   const bookItems = useMemo(
-    () => visibleBooks(profile.maxAge).map(book => bookToShelf(book, SAMPLE_READER, SAMPLE_OWNED, progress[book.id]?.percent)),
-    [profile.maxAge, progress],
+    () => visibleBooks(profile.maxAge).map(book => bookToShelf(book, SAMPLE_READER, SAMPLE_OWNED, progress[book.id]?.percent, currency)),
+    [profile.maxAge, progress, currency],
   );
 
   const continueItems = courseItems
@@ -71,20 +62,11 @@ export function MarketHome() {
   const hero = continueItems[0] ?? [...courseItems].sort((a, b) => b.weekly - a.weekly)[0];
   const heroCourse = hero ? courses.find(course => course.id === hero.id) : undefined;
   const becauseSource = continueItems[0];
-  const becauseBooks = becauseSource
-    ? relatedBooksForCourse(becauseSource.subject ?? '', becauseSource.tags)
-      .filter(book => profile.maxAge == null || ageNumber(book.ageRating) <= profile.maxAge)
-      .map(book => bookToShelf(book, SAMPLE_READER, SAMPLE_OWNED, progress[book.id]?.percent))
-    : [];
-  const because = becauseSource
-    ? [...courseItems.filter(item => sameShelf(becauseSource, item)), ...becauseBooks]
-    : [];
+  const because = becauseSource ? recommend([...courseItems, ...bookItems], becauseSource, 8) : [];
   const biology = courseItems.filter(item => `${item.subject ?? ''} ${item.tags.join(' ')}`.toLowerCase().includes('biology'));
   const levels = [...new Set(courseItems.map(item => item.level).filter((level): level is string => Boolean(level)))];
   const listed = [...courseItems, ...bookItems].filter(item => list.includes(item.id));
-  const alongside = bookItems
-    .filter(book => !becauseBooks.some(item => item.id === book.id))
-    .slice(0, 8);
+  const alongside = bookItems.filter(book => !because.some(item => item.id === book.id)).slice(0, 8);
 
   const pool: ShelfItem[] = filter === 'books' ? bookItems : filter === 'courses' ? courseItems : [...courseItems, ...bookItems];
   const filtered = pool.filter(item => {

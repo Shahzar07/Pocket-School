@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useReadsT } from '@/lib/reads/i18n';
-import { boardRows, type BoardPeriod, type BoardScope } from '@/lib/reads/leaderboard';
+import { privacyBoard } from '@/lib/platform/leaderboard';
+import type { BoardPeriod, BoardScope } from '@/lib/reads/leaderboard';
 import { childHidden, setChildHidden } from '@/lib/shelf/storage';
 import { useShelfProfile } from '@/components/shelf/profile-bar';
 
@@ -18,7 +19,7 @@ export function LeaderboardView() {
 
   useEffect(() => { setHidden(childHidden()); }, []);
 
-  const rows = boardRows(scope, period, hidden);
+  const rows = privacyBoard(scope, period, hidden);
   const scopeLabel: Record<BoardScope, 'reads.board.global' | 'reads.board.country' | 'reads.board.city' | 'reads.board.school' | 'reads.board.friends'> = {
     global: 'reads.board.global', country: 'reads.board.country', city: 'reads.board.city', school: 'reads.board.school', friends: 'reads.board.friends',
   };

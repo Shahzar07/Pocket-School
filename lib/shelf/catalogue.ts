@@ -2,10 +2,11 @@ import { courseCover } from '@/lib/course-cover';
 import { courseMinTier, coursePriceType, freePreviewCount, tierDefinition } from '@/lib/entitlements';
 import type { Course } from '@/lib/db';
 import { SEED_COURSES } from '@/lib/seed-courses';
-import { checkBookAccess, planLabel, SAMPLE_OWNED, SAMPLE_READER, type ReadsProfile } from '@/lib/reads/access';
+import { planLabel, SAMPLE_OWNED, SAMPLE_READER, type ReadsProfile } from '@/lib/reads/access';
+import { decideBook } from '@/lib/platform/allocation';
+import { quotePrice } from '@/lib/platform/pricing';
 import { publishedBooks } from '@/lib/reads/seed';
 import { ageNumber, type Book } from '@/lib/reads/types';
-import { formatMoney } from './money';
 import type { ShelfBadge, ShelfItem } from './types';
 
 export interface CourseView {
@@ -40,7 +41,7 @@ const COURSE_WEEKLY: Record<string, number> = {
   'spm-past-papers-bundle': 810,
 };
 
-function courseBadge(course: CourseView): ShelfBadge {
+function courseBadge(course: CourseView, currency = 'USD'): ShelfBadge {
   const like = {
     minTier: course.minTier,
     priceType: course.priceType,
@@ -55,7 +56,7 @@ function courseBadge(course: CourseView): ShelfBadge {
     const tier = courseMinTier(like);
     return { label: tier > 0 ? `Included · ${tierDefinition(tier).name}` : 'Included', tone: 'included' };
   }
-  return { label: formatMoney(course.price, course.currency), tone: 'buy' };
+  return { label: quotePrice(course.price, course.currency || 'USD', currency).combined, tone: 'buy' };
 }
 
 export function seedCourseViews(): CourseView[] {
@@ -115,7 +116,7 @@ export function mergeCourses(live: Course[]): CourseView[] {
   return [...fromLive, ...extras];
 }
 
-export function courseToShelf(course: CourseView, progress?: number): ShelfItem {
+export function courseToShelf(course: CourseView, progress?: number, currency = 'USD'): ShelfItem {
   const like = {
     price: course.price,
     priceType: course.priceType,
@@ -132,7 +133,7 @@ export function courseToShelf(course: CourseView, progress?: number): ShelfItem 
     subtitle: course.ownerName,
     description: course.description,
     image: course.image,
-    badge: courseBadge(course),
+    badge: courseBadge(course, currency),
     extra,
     tags: [...course.tags, course.subject, course.level, course.type].map(t => t.toLowerCase()),
     subject: course.subject,
@@ -144,20 +145,21 @@ export function courseToShelf(course: CourseView, progress?: number): ShelfItem 
   };
 }
 
-export function bookBadge(book: Book, profile: ReadsProfile, ownedIds: readonly string[]): ShelfBadge {
-  const access = checkBookAccess(book, profile, { ownedIds });
+export function bookBadge(book: Book, profile: ReadsProfile, ownedIds: readonly string[], currency = 'USD'): ShelfBadge {
+  const access = decideBook(book, profile, { ownedIds });
   if (access.allowed && access.source === 'owned') return { label: 'Yours to keep', tone: 'owned' };
-  if (access.allowed && access.source === 'subscription') {
+  if (access.allowed && (access.source === 'subscription' || access.source === 'institution')) {
     return { label: `Included · ${planLabel(book.minTier)}`, tone: 'included' };
   }
+  if (access.allowed && access.source === 'sparks') return { label: 'Sparks', tone: 'included' };
   if (!access.allowed && access.reason === 'UPGRADE') {
     return { label: `Included · ${planLabel(book.minTier)}`, tone: 'locked' };
   }
-  if (book.priceRM > 0) return { label: formatMoney(book.priceRM, 'MYR'), tone: access.allowed ? 'buy' : 'locked' };
+  if (book.priceUsd > 0) return { label: quotePrice(book.priceUsd, 'USD', currency).combined, tone: access.allowed ? 'buy' : 'locked' };
   return { label: 'Preview', tone: 'preview' };
 }
 
-export function bookToShelf(book: Book, profile: ReadsProfile, ownedIds: readonly string[], progress?: number): ShelfItem {
+export function bookToShelf(book: Book, profile: ReadsProfile, ownedIds: readonly string[], progress?: number, currency = 'USD'): ShelfItem {
   return {
     id: book.id,
     kind: 'book',
@@ -166,7 +168,7 @@ export function bookToShelf(book: Book, profile: ReadsProfile, ownedIds: readonl
     subtitle: 'ET AI',
     description: book.blurb,
     cover: book.cover,
-    badge: bookBadge(book, profile, ownedIds),
+    badge: bookBadge(book, profile, ownedIds, currency),
     extra: book.series ? `${book.series.name} · ${book.series.index}` : book.genre,
     tags: [book.genre, book.category, book.form, book.readingLevel, ...book.curriculumTags.flatMap(t => [t.subject, t.programme, t.year])].filter(Boolean).map(t => String(t).toLowerCase()),
     subject: book.curriculumTags[0]?.subject,
@@ -193,15 +195,17 @@ export interface ShelfSignals {
   maxAge?: number | null;
   progress?: Record<string, { percent: number }>;
   list?: string[];
+  currency?: string;
 }
 
 export function allShelfItems(courses: CourseView[], signals: ShelfSignals = {}): ShelfItem[] {
   const profile = signals.profile ?? SAMPLE_READER;
   const owned = signals.ownedIds ?? SAMPLE_OWNED;
+  const currency = signals.currency ?? 'USD';
   const books = visibleBooks(signals.maxAge ?? null).map(book =>
-    bookToShelf(book, profile, owned, signals.progress?.[book.id]?.percent),
+    bookToShelf(book, profile, owned, signals.progress?.[book.id]?.percent, currency),
   );
-  const courseItems = courses.map(course => courseToShelf(course, signals.progress?.[course.id]?.percent));
+  const courseItems = courses.map(course => courseToShelf(course, signals.progress?.[course.id]?.percent, currency));
   return [...books, ...courseItems];
 }
 

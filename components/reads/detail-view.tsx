@@ -5,11 +5,15 @@ import Link from 'next/link';
 import { BookCover } from '@/components/shelf/book-cover';
 import { useShelfProfile } from '@/components/shelf/profile-bar';
 import { ShelfRow } from '@/components/shelf/ui';
-import { courseToShelf, relatedCoursesForBook, seedCourseViews } from '@/lib/shelf/catalogue';
-import { SAMPLE_OWNED, SAMPLE_READER, checkBookAccess, planLabel } from '@/lib/reads/access';
+import { bookToShelf, courseToShelf, relatedCoursesForBook, seedCourseViews, visibleBooks } from '@/lib/shelf/catalogue';
+import { recommend } from '@/lib/shelf/recommend';
+import { SAMPLE_OWNED, SAMPLE_READER, planLabel } from '@/lib/reads/access';
+import { decideBook } from '@/lib/platform/allocation';
+import { licenceOffer } from '@/lib/platform/licence';
+import { editionFor } from '@/lib/platform/localization';
+import { quotePrice, viewerCurrency } from '@/lib/platform/pricing';
 import { useReadsT } from '@/lib/reads/i18n';
 import { bookById, publishedBooks } from '@/lib/reads/seed';
-import { formatMoney } from '@/lib/shelf/money';
 import { myList, toggleList } from '@/lib/shelf/storage';
 import { getLanguage } from '@/lib/languages';
 
@@ -19,23 +23,32 @@ export function BookDetail({ bookId }: { bookId: string }) {
   const { profile, ready } = useShelfProfile();
   const [list, setList] = useState<string[]>([]);
   const [lang, setLang] = useState('en');
+  const [currency, setCurrency] = useState('USD');
 
   useEffect(() => {
     if (!ready) return;
     setList(myList(profile.id));
+    setCurrency(viewerCurrency());
   }, [ready, profile.id]);
 
   if (!book || book.status !== 'published') {
     return <p className="text-sm text-muted-foreground">This book is not on the shelf.</p>;
   }
 
-  const version = book.languageVersions?.find(v => v.language === lang);
-  const title = version?.title ?? book.title;
-  const blurb = version?.blurb ?? book.blurb;
-  const preview = version?.chapters[0]?.markdown ?? book.chapters[0]?.markdown ?? '';
-  const access = checkBookAccess(book, SAMPLE_READER, { ownedIds: SAMPLE_OWNED });
-  const price = formatMoney(book.priceRM, 'MYR');
-  const courses = relatedCoursesForBook(book, seedCourseViews()).map(c => courseToShelf(c));
+  const edition = editionFor(book, lang);
+  const title = edition.title;
+  const blurb = edition.blurb;
+  const preview = edition.chapters[0]?.markdown ?? '';
+  const access = decideBook(book, SAMPLE_READER, { ownedIds: SAMPLE_OWNED });
+  const price = quotePrice(book.priceUsd, 'USD', currency).combined;
+  const licence = licenceOffer(book);
+  const shelf = bookToShelf(book, SAMPLE_READER, SAMPLE_OWNED, undefined, currency);
+  const more = recommend(
+    visibleBooks(profile.maxAge).filter(item => item.id !== book.id).map(item => bookToShelf(item, SAMPLE_READER, SAMPLE_OWNED, undefined, currency)),
+    shelf,
+    8,
+  );
+  const courses = relatedCoursesForBook(book, seedCourseViews()).map(c => courseToShelf(c, undefined, currency));
   const seriesMates = publishedBooks().filter(b => b.series?.id && b.series.id === book.series?.id && b.id !== book.id);
 
   return (
@@ -66,8 +79,11 @@ export function BookDetail({ bookId }: { bookId: string }) {
           <p className="mt-4 text-sm text-foreground">
             {access.allowed && access.source === 'owned' && t('reads.badge.owned')}
             {access.allowed && access.source === 'subscription' && `${t('reads.badge.included')} · ${planLabel(book.minTier)}`}
+            {access.allowed && access.source === 'institution' && t('reads.detail.school')}
+            {access.allowed && access.source === 'sparks' && t('reads.detail.sparks')}
             {!access.allowed && access.reason === 'PURCHASE' && t('reads.detail.buy', { price })}
             {!access.allowed && access.reason === 'UPGRADE' && t('reads.detail.upgrade', { plan: planLabel(book.minTier) })}
+            {licence.licensable && <span className="mt-2 block text-[12px] text-muted-foreground">{t('reads.detail.licence', { programme: licence.programme ?? book.genre })}</span>}
           </p>
           <div className="mt-5">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{t('reads.detail.languages')}</p>
@@ -79,10 +95,10 @@ export function BookDetail({ bookId }: { bookId: string }) {
                 </LangButton>
               ))}
             </div>
-            {version && (
+            {edition.locale !== 'en' && (
               <p className="mt-2 text-[12px] text-muted-foreground">
-                {version.status === 'approved' ? t('reads.detail.versionApproved') : t('reads.detail.versionReview')}
-                {version.sourceVersion !== book.version ? ` · ${t('reads.detail.versionStale')}` : ''}
+                {edition.status === 'approved' ? t('reads.detail.versionApproved') : t('reads.detail.versionReview')}
+                {edition.stale ? ` · ${t('reads.detail.versionStale')}` : ''}
               </p>
             )}
           </div>
@@ -114,6 +130,7 @@ export function BookDetail({ bookId }: { bookId: string }) {
         </section>
       )}
 
+      <ShelfRow title={t('reads.detail.more')} items={more} />
       <ShelfRow title={t('reads.detail.related')} items={courses} />
     </article>
   );

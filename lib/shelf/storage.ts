@@ -188,7 +188,9 @@ export function ensureDemoShelf() {
   if (typeof window === 'undefined') return;
   if (window.localStorage.getItem(SEEDED)) return;
   window.localStorage.setItem(SEEDED, '1');
-  window.localStorage.setItem(PROFILE_KEY, 'aisha');
+  if (!window.localStorage.getItem(PROFILE_KEY)) {
+    window.localStorage.setItem(PROFILE_KEY, 'aisha');
+  }
   writeJson('poket-progress:aisha', {
     'harbour-light': { chapterIndex: 1, pageIndex: 0, percent: 46, updatedAt: Date.now() },
     'cells-to-systems': { chapterIndex: 0, pageIndex: 0, percent: 18, updatedAt: Date.now() - 86400000 },

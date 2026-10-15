@@ -5,6 +5,8 @@ import {
   SHELF_PROFILES, currentProfile, ensureDemoShelf, setCurrentProfile, type ShelfProfile,
 } from '@/lib/shelf/storage';
 
+const PROFILE_EVENT = 'poket-shelf-profile-change';
+
 export function useShelfProfile(): { profile: ShelfProfile; choose: (id: string) => void; ready: boolean } {
   const [profile, setProfile] = useState<ShelfProfile>(SHELF_PROFILES[0]);
   const [ready, setReady] = useState(false);
@@ -12,13 +14,20 @@ export function useShelfProfile(): { profile: ShelfProfile; choose: (id: string)
     ensureDemoShelf();
     setProfile(currentProfile());
     setReady(true);
+    const sync = () => setProfile(currentProfile());
+    window.addEventListener(PROFILE_EVENT, sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener(PROFILE_EVENT, sync);
+      window.removeEventListener('storage', sync);
+    };
   }, []);
   return {
     ready,
     profile,
     choose: (id: string) => {
       setCurrentProfile(id);
-      setProfile(SHELF_PROFILES.find(p => p.id === id) ?? SHELF_PROFILES[0]);
+      window.dispatchEvent(new Event(PROFILE_EVENT));
     },
   };
 }

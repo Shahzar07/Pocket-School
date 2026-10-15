@@ -25,7 +25,7 @@ export function ShelfBadgePill({ badge }: { badge: ShelfBadge }) {
 
 export function Poster({ item, rank }: { item: ShelfItem; rank?: number }) {
   return (
-    <Link href={item.href} className="group relative block w-[168px] shrink-0 snap-start sm:w-[186px]">
+    <Link href={item.href} className="group relative block w-[168px] shrink-0 snap-start sm:w-[186px] [content-visibility:auto] [contain-intrinsic-size:186px_320px]">
       {typeof rank === 'number' && (
         <span className="pointer-events-none absolute -left-3 bottom-8 z-10 font-heading text-[84px] leading-none text-[#203337]/90 drop-shadow-[0_2px_0_#fff]" aria-hidden>
           {rank}

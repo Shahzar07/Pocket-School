@@ -6,6 +6,7 @@ import { ShelfRow } from '@/components/shelf/ui';
 import { bookToShelf, courseToShelf, seedCourseViews, visibleBooks } from '@/lib/shelf/catalogue';
 import { SAMPLE_OWNED, SAMPLE_READER, ownsBook, subscriptionIncludes } from '@/lib/reads/access';
 import { useReadsT } from '@/lib/reads/i18n';
+import { viewerCurrency } from '@/lib/platform/pricing';
 import { childHidden, minutesToday, myList, progressMap, setChildHidden } from '@/lib/shelf/storage';
 
 export function LibraryView() {
@@ -14,16 +15,18 @@ export function LibraryView() {
   const [progress, setProgress] = useState<Record<string, { percent: number }>>({});
   const [list, setList] = useState<string[]>([]);
   const [hidden, setHidden] = useState(false);
+  const [currency, setCurrency] = useState('USD');
 
   useEffect(() => {
     if (!ready) return;
     setProgress(progressMap(profile.id));
     setList(myList(profile.id));
     setHidden(childHidden());
+    setCurrency(viewerCurrency());
   }, [ready, profile.id]);
 
   const books = visibleBooks(profile.maxAge);
-  const items = books.map(b => bookToShelf(b, SAMPLE_READER, SAMPLE_OWNED, progress[b.id]?.percent));
+  const items = books.map(b => bookToShelf(b, SAMPLE_READER, SAMPLE_OWNED, progress[b.id]?.percent, currency));
   const owned = items.filter(i => ownsBook(i.id, SAMPLE_READER, SAMPLE_OWNED));
   const plan = items.filter(i => {
     const book = books.find(b => b.id === i.id);
@@ -31,7 +34,7 @@ export function LibraryView() {
   });
   const saved = [
     ...items.filter(i => list.includes(i.id)),
-    ...seedCourseViews().filter(c => list.includes(c.id)).map(c => courseToShelf(c)),
+    ...seedCourseViews().filter(c => list.includes(c.id)).map(c => courseToShelf(c, undefined, currency)),
   ];
 
   return (

@@ -7,7 +7,10 @@ import {
   ArrowLeft, Bookmark, Headphones, Highlighter, Languages, List, MessageCircle, Pause, Type,
 } from 'lucide-react';
 import { useShelfProfile } from '@/components/shelf/profile-bar';
-import { SAMPLE_OWNED, SAMPLE_READER, checkBookAccess } from '@/lib/reads/access';
+import { SAMPLE_OWNED, SAMPLE_READER } from '@/lib/reads/access';
+import { decideBook } from '@/lib/platform/allocation';
+import { bookToShelf, visibleBooks } from '@/lib/shelf/catalogue';
+import { recommend } from '@/lib/shelf/recommend';
 import { useReadsT } from '@/lib/reads/i18n';
 import { chapterProgress, paginateChapter, sentencesOf } from '@/lib/reads/paginate';
 import { QUIET_LABEL, isQuietHour } from '@/lib/reads/quiet';
@@ -48,8 +51,10 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
   const [answer, setAnswer] = useState('');
   const [asking, setAsking] = useState(false);
   const [quizPick, setQuizPick] = useState<Record<number, string>>({});
+  const [placed, setPlaced] = useState(false);
   const idle = useRef(Date.now());
   const spoken = useRef<SpeechSynthesisUtterance | null>(null);
+  const swipe = useRef<number | null>(null);
 
   useEffect(() => {
     const stored = readerPrefs();
@@ -67,6 +72,7 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
     }
     setMarks(bookmarks(profile.id, book.id));
     setNotes(notesFor(profile.id, book.id));
+    setPlaced(true);
     try {
       localStorage.setItem(`poket-offline:${book.id}`, JSON.stringify({ id: book.id, title: book.title, savedAt: Date.now() }));
     } catch { /* private mode */ }
@@ -85,17 +91,25 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
   const chapter = chapters[chapterIndex];
   const pages = useMemo(() => paginateChapter(chapter?.markdown ?? ''), [chapter]);
   const page = pages[Math.min(pageIndex, pages.length - 1)] ?? '';
-  const access = book && chapter ? checkBookAccess(book, SAMPLE_READER, { ownedIds: SAMPLE_OWNED, chapter }) : null;
+  const access = book && chapter ? decideBook(book, SAMPLE_READER, { ownedIds: SAMPLE_OWNED, chapter }) : null;
+  const upNext = useMemo(() => {
+    if (!book) return [];
+    const source = bookToShelf(book, SAMPLE_READER, SAMPLE_OWNED);
+    const others = visibleBooks(profile.maxAge)
+      .filter(item => item.id !== book.id)
+      .map(item => bookToShelf(item, SAMPLE_READER, SAMPLE_OWNED));
+    return recommend(others, source, 3);
+  }, [book, profile.maxAge]);
   const locked = access ? !access.allowed : true;
   const theme = THEMES[prefs.theme];
   const percent = book ? chapterProgress(chapterIndex, pageIndex, chapters.length, pages.length) : 0;
   const marked = marks.some(m => m.chapterIndex === chapterIndex && m.pageIndex === pageIndex);
 
   const persist = useCallback((c: number, p: number) => {
-    if (!book || !ready) return;
+    if (!book || !ready || !placed) return;
     const nextPercent = chapterProgress(c, p, chapters.length, paginateChapter(chapters[c]?.markdown ?? '').length);
     saveProgress(profile.id, book.id, { chapterIndex: c, pageIndex: p, percent: nextPercent, updatedAt: Date.now() });
-  }, [book, chapters, profile.id, ready]);
+  }, [book, chapters, profile.id, ready, placed]);
 
   const go = (c: number, p: number, direction: 1 | -1) => {
     setDir(direction);
@@ -274,6 +288,9 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
         <Tool label={listening ? t('reads.reader.stop') : t('reads.reader.listen')} onClick={listen}><Headphones className="h-5 w-5" /></Tool>
         <Tool label={t('reads.reader.ask')} onClick={() => setPanel(panel === 'ask' ? 'none' : 'ask')}><MessageCircle className="h-5 w-5" /></Tool>
       </header>
+      <div className="h-1 bg-black/5" aria-hidden>
+        <div className="h-full bg-[#E7C27D]" style={{ width: `${Math.min(100, percent)}%` }} />
+      </div>
 
       <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-28 lg:grid-cols-[1fr_280px] lg:px-6">
         <article
@@ -284,6 +301,14 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
             animation: `${dir > 0 ? 'reads-next' : 'reads-prev'} 280ms ease`,
           }}
           onMouseUp={captureSelection}
+          onTouchStart={e => { swipe.current = e.changedTouches[0]?.clientX ?? null; }}
+          onTouchEnd={e => {
+            if (swipe.current == null) return;
+            const dx = (e.changedTouches[0]?.clientX ?? swipe.current) - swipe.current;
+            if (dx < -48) next();
+            else if (dx > 48) prev();
+            swipe.current = null;
+          }}
           aria-label={chapter.title}
         >
           {version && (
@@ -328,6 +353,18 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
                 </div>
               )}
               {definition && <p className="mt-3 text-sm leading-relaxed" role="status">{definition}</p>}
+              {pageIndex === pages.length - 1 && upNext.length > 0 && (
+                <section className="mt-10">
+                  <h3 className="font-heading text-[26px]">{t('reads.reader.upNext')}</h3>
+                  <ul className="mt-3 space-y-2">
+                    {upNext.map(item => (
+                      <li key={item.id}>
+                        <Link href={item.href} className="text-[15px] font-semibold underline-offset-2 hover:underline">{item.title}</Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
               {pageIndex === pages.length - 1 && chapter.quiz && chapter.quiz.length > 0 && (
                 <section className="mt-10 rounded-3xl p-5" style={{ background: theme.paper }} aria-label={t('reads.reader.quiz')}>
                   <h3 className="font-heading text-[26px]">{t('reads.reader.quiz')}</h3>

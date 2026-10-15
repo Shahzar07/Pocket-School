@@ -30,9 +30,10 @@ export interface ReadsProfile {
   accessTier?: number | null;
   subscriptionTier?: string | null;
   permissions?: string[] | null;
+  institutionId?: string | null;
 }
 
-export type AccessSource = 'preview' | 'owned' | 'subscription' | 'staff';
+export type AccessSource = 'preview' | 'owned' | 'subscription' | 'staff' | 'institution' | 'sparks';
 
 export type BookAccess =
   | { allowed: true; source: AccessSource }

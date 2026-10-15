@@ -82,7 +82,20 @@ export interface Book {
   version: number;
   accessMode: AccessMode;
   minTier: AccessTier;
+  /** Canonical price. Local currency is a display conversion. */
+  priceUsd: number;
+  /** MYR list price at the dated FX table. Display does not read this. */
   priceRM: number;
+  /** An institution academy can licence this title. */
+  licensable: boolean;
+  /** Sparks to unlock, once the Sparks ledger can grant `sparks:book:{id}`. */
+  sparksCost?: number;
+  /** Licence cap. `used` is not a live counter. */
+  seats?: { total: number; used: number };
+  /** Matches a value in lib/programmes.ts. */
+  programme?: string;
+  /** ISO date the allocator should hide the title until. */
+  availableFrom?: string;
   /** On the subscription shelf once published. */
   allocateLibrary: boolean;
   /** Listed in the store once published. */

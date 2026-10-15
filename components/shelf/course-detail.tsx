@@ -7,6 +7,7 @@ import { useShelfProfile } from '@/components/shelf/profile-bar';
 import { ShelfBadgePill } from '@/components/shelf/ui';
 import { useReadsT } from '@/lib/reads/i18n';
 import { courseToShelf, seedCourseViews } from '@/lib/shelf/catalogue';
+import { viewerCurrency } from '@/lib/platform/pricing';
 import { myList, toggleList } from '@/lib/shelf/storage';
 
 export function CourseCatalogueDetail({ seedKey }: { seedKey: string }) {
@@ -14,17 +15,19 @@ export function CourseCatalogueDetail({ seedKey }: { seedKey: string }) {
   const course = seedCourseViews().find(item => item.id === `seed:${seedKey}` || item.href.endsWith(`/${seedKey}`));
   const { profile, ready } = useShelfProfile();
   const [list, setList] = useState<string[]>([]);
+  const [currency, setCurrency] = useState('USD');
 
   useEffect(() => {
     if (!ready) return;
     setList(myList(profile.id));
+    setCurrency(viewerCurrency());
   }, [ready, profile.id]);
 
   if (!course) {
     return <p className="text-sm text-muted-foreground">{t('reads.market.missing')}</p>;
   }
 
-  const item = courseToShelf(course);
+  const item = courseToShelf(course, undefined, currency);
   const preview = course.description.split(/(?<=\.)\s+/).slice(0, 2).join(' ');
 
   return (

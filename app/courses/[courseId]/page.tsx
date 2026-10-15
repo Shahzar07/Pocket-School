@@ -33,10 +33,10 @@ import { courseCover } from '@/lib/course-cover';
 import { RelatedReads } from '@/components/shelf/related-reads';
 import { toast } from 'sonner';
 import { authedFetch } from '@/lib/api-client';
-import { formatCoursePrice } from '@/lib/money';
+import { quotePrice, viewerCurrency } from '@/lib/platform/pricing';
 
-function priceLabel(c: Course) {
-  return formatCoursePrice(c.price, c.currency);
+function priceLabel(c: Course, local = 'USD') {
+  return quotePrice(c.price, c.currency || 'USD', local).combined;
 }
 
 export default function CourseDetailPage() {
@@ -56,6 +56,7 @@ export default function CourseDetailPage() {
   const [redeeming, setRedeeming] = useState(false);
   /** Coupon grants held by the signed-in user, for this course. */
   const [couponGranted, setCouponGranted] = useState(false);
+  const [currency, setCurrency] = useState('USD');
 
   const load = async () => {
     if (!courseId) return;
@@ -80,6 +81,7 @@ export default function CourseDetailPage() {
   };
 
   useEffect(() => { load(); }, [courseId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setCurrency(viewerCurrency()); }, []);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setUser(u));
@@ -466,7 +468,7 @@ export default function CourseDetailPage() {
                   </div>
 
                   <div className="p-6">
-                    <p className="text-3xl font-extrabold tracking-tight mb-1">{priceLabel(course)}</p>
+                    <p className="text-3xl font-extrabold tracking-tight mb-1">{priceLabel(course, currency)}</p>
                     <p className="text-xs text-muted-foreground mb-5">
                       {priceType === 'SUBSCRIPTION_INCLUDED'
                         ? 'Included in your subscription'
@@ -588,13 +590,13 @@ export default function CourseDetailPage() {
               <DialogHeader>
                 <DialogTitle>Confirm enrolment</DialogTitle>
                 <DialogDescription>
-                  This is a paid course ({priceLabel(course)}). Your school account
+                  This is a paid course ({priceLabel(course, currency)}). Your school account
                   will be invoiced — no card payment is taken now.
                 </DialogDescription>
               </DialogHeader>
               <div className="bg-muted/50 border border-border rounded-xl p-4 text-sm space-y-1">
                 <p className="font-semibold text-foreground">{course.title}</p>
-                <p className="text-muted-foreground">Price: {priceLabel(course)}</p>
+                <p className="text-muted-foreground">Price: {priceLabel(course, currency)}</p>
               </div>
               <DialogFooter>
                 <Button variant="outline" className="rounded-full h-11 px-5" disabled={enrolling} onClick={() => setConfirmOpen(false)}>

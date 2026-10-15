@@ -6,12 +6,14 @@ import { BOOKS } from '@/lib/reads/seed';
 import type { Book, BookStatus } from '@/lib/reads/types';
 import { useReadsT } from '@/lib/reads/i18n';
 import { getLanguage } from '@/lib/languages';
+import { moveItem } from '@/lib/platform/cms';
 import { planLabel } from '@/lib/reads/access';
 
 export function StudioView() {
   const t = useReadsT();
   const [books, setBooks] = useState<Book[]>(() => BOOKS.map(b => ({ ...b, chapters: b.chapters.map(c => ({ ...c })) })));
   const [id, setId] = useState('monsoon-market');
+  const [dragFrom, setDragFrom] = useState<number | null>(null);
   const book = books.find(b => b.id === id) ?? books[0];
 
   const update = (patch: Partial<Book>) => {
@@ -90,7 +92,10 @@ export function StudioView() {
           </label>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-sm font-semibold">{t('reads.studio.price')}
-              <input type="number" value={book.priceRM} onChange={e => update({ priceRM: Number(e.target.value) })} className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal" />
+              <input type="number" value={book.priceUsd} onChange={e => {
+                const priceUsd = Number(e.target.value);
+                update({ priceUsd, priceRM: Math.round(priceUsd * 4.7) });
+              }} className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal" />
             </label>
             <label className="text-sm font-semibold">{t('reads.studio.tier')}
               <input type="number" min={0} max={6} value={book.minTier} onChange={e => update({ minTier: Number(e.target.value) as Book['minTier'] })} className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal" />
@@ -112,7 +117,19 @@ export function StudioView() {
             <h2 className="font-heading text-[22px]">{t('reads.studio.chapters')}</h2>
             <ol className="mt-2 space-y-2">
               {book.chapters.map((chapter, index) => (
-                <li key={chapter.id} className="rounded-xl border border-border p-3 text-sm">
+                <li
+                  key={chapter.id}
+                  draggable
+                  onDragStart={() => setDragFrom(index)}
+                  onDragOver={event => event.preventDefault()}
+                  onDrop={() => {
+                    if (dragFrom == null) return;
+                    const chapters = moveItem(book.chapters, dragFrom, index).map((item, order) => ({ ...item, order }));
+                    update({ chapters });
+                    setDragFrom(null);
+                  }}
+                  className="cursor-grab rounded-xl border border-border p-3 text-sm active:cursor-grabbing"
+                >
                   <span className="font-semibold">{index + 1}. {chapter.title}</span>
                   <p className="mt-1 line-clamp-2 text-muted-foreground">{chapter.markdown}</p>
                 </li>
