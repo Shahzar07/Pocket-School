@@ -1428,6 +1428,7 @@ service cloud.firestore {
         || linkedTo(resource.data.authorId)
       );
       allow create, update, delete: if false;
+    }
 
     match /focus_sessions/{sessionId} {
       allow read: if isSignedIn() && (
@@ -1539,7 +1540,6 @@ service cloud.firestore {
       allow list: if false;
       allow create, update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
-    }
     }
   }
 }
