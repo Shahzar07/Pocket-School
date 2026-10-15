@@ -32,6 +32,8 @@ import {
   getAiGenerations, deleteAiGeneration, saveAiGeneration, type AiGeneration,
 } from '@/lib/db';
 import { PROGRAMMES, studioModeForProgramme, subjectsForProgramme } from '@/lib/programmes';
+import { bookSourcePrompt, parseBookCommand } from '@/lib/platform/studio-commands';
+import { BOOKS, bookById } from '@/lib/reads/seed';
 
 type FormatId = 'text' | 'flashcards' | 'quiz' | 'slides' | 'notes' | 'summary' | 'problems' | 'glossary' | 'mindmap' | 'infographic' | 'videoScript' | 'audioScript';
 
@@ -219,7 +221,7 @@ export default function AiStudio() {
   };
 
   /* ── Tutor turn ── */
-  const runTutor = async (chatId: number, message: string, history: Turn[]) => {
+  const runTutor = async (chatId: number, message: string, history: Turn[], bookContext?: string) => {
     const chatTurns = history
       .filter((t): t is Extract<Turn, { kind: 'user' | 'chat' }> => t.kind === 'user' || t.kind === 'chat')
       .map(t => ({ role: t.kind === 'user' ? 'user' : 'model', text: t.text }));
@@ -229,6 +231,7 @@ export default function AiStudio() {
       body: JSON.stringify({
         message, mode: chatMode, history: chatTurns,
         language: readLanguage(),
+        bookContext,
       }),
     });
     if (!res.ok) {
@@ -249,9 +252,17 @@ export default function AiStudio() {
     setBusy(true);
     setView('chat');
     pushTurns(chatId, { kind: 'user', text, skill: useSkill ?? undefined });
+    const command = parseBookCommand(text, BOOKS);
+    const attached = command?.matched ? bookById(command.bookId) : undefined;
+    if (command && !attached) {
+      pushTurns(chatId, { kind: 'chat', text: `I can't find a book called “${command.bookId}”. Try /book harbour-light.` });
+      setBusy(false);
+      return;
+    }
+    const prompt = attached ? bookSourcePrompt(attached, command?.rest ?? '') : text;
     try {
-      if (useSkill) await runGeneration(chatId, useSkill, text);
-      else await runTutor(chatId, text, historySnapshot);
+      if (useSkill) await runGeneration(chatId, useSkill, prompt);
+      else await runTutor(chatId, attached ? (command?.rest || `Teach ${attached.title}`) : text, historySnapshot, attached ? prompt : undefined);
     } catch (e: any) {
       pushTurns(chatId, { kind: 'chat', text: `Sorry — ${e?.message || 'something went wrong'}. Try again.` });
     } finally {

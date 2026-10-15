@@ -9,6 +9,9 @@ import {
 import { useShelfProfile } from '@/components/shelf/profile-bar';
 import { SAMPLE_OWNED, SAMPLE_READER } from '@/lib/reads/access';
 import { decideBook } from '@/lib/platform/allocation';
+import { awardReading } from '@/lib/platform/gamification';
+import { discussionSpace, suggestWinPost } from '@/lib/platform/community';
+import { localDateKey } from '@/lib/platform/reading';
 import { bookToShelf, visibleBooks } from '@/lib/shelf/catalogue';
 import { recommend } from '@/lib/shelf/recommend';
 import { useReadsT } from '@/lib/reads/i18n';
@@ -44,6 +47,8 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
   const [sentence, setSentence] = useState(-1);
   const [timer, setTimer] = useState<'counting' | 'idle' | 'hidden' | 'quiet'>('counting');
   const [seconds, setSeconds] = useState(0);
+  const [goalStatus, setGoalStatus] = useState<string | null>(null);
+  const [finishNote, setFinishNote] = useState<string | null>(null);
   const [marks, setMarks] = useState<ReturnType<typeof bookmarks>>([]);
   const [notes, setNotes] = useState<ReturnType<typeof notesFor>>([]);
   const [selection, setSelection] = useState('');
@@ -172,9 +177,25 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
     void fetch('/api/reads/sessions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bookId, activeSeconds: 30, localHour: new Date().getHours(), counted }),
+      body: JSON.stringify({
+        bookId,
+        activeSeconds: 30,
+        localHour: new Date().getHours(),
+        counted,
+        studentId: profile.id,
+        dateKey: localDateKey(),
+      }),
+    }).then(async res => {
+      const data = await res.json().catch(() => null) as { goal?: { status?: string; category?: string } } | null;
+      if (data?.goal?.category === 'reading' && data.goal.status) setGoalStatus(data.goal.status);
     }).catch(() => {});
   }, [seconds, timer, ready, profile.id, bookId]);
+
+  useEffect(() => {
+    if (!book || !placed || percent < 100) return;
+    const award = awardReading(profile.id, 'finish', book.id);
+    if (award.granted) setFinishNote(t('reads.reader.finished', { xp: award.xp }));
+  }, [book, placed, percent, profile.id, t]);
 
   const stopListen = () => {
     window.speechSynthesis?.cancel();
@@ -283,7 +304,7 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
           <p className="truncate text-[13px] font-semibold">{version?.title ?? book.title}</p>
           <p className="truncate text-[11px]" style={{ color: theme.muted }}>{chapter.title}</p>
         </div>
-        <span className="hidden text-[12px] font-semibold sm:inline" aria-live="polite">{timerLabel} · {formatClock(seconds)}</span>
+        <span className="hidden text-[12px] font-semibold sm:inline" aria-live="polite">{timerLabel} · {formatClock(seconds)}{goalStatus ? ` · ${t('reads.reader.goal', { status: goalStatus })}` : ''}</span>
         <Tool label={t('reads.reader.contents')} onClick={() => setPanel(panel === 'contents' ? 'none' : 'contents')}><List className="h-5 w-5" /></Tool>
         <Tool label={t('reads.reader.font')} onClick={() => setPanel(panel === 'type' ? 'none' : 'type')}><Type className="h-5 w-5" /></Tool>
         <Tool label={listening ? t('reads.reader.stop') : t('reads.reader.listen')} onClick={listen}><Headphones className="h-5 w-5" /></Tool>
@@ -321,7 +342,7 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
             <div className="rounded-3xl border p-8" style={{ borderColor: theme.muted }}>
               <h2 className="font-heading text-[32px]">{chapter.title}</h2>
               <p className="mt-4 leading-relaxed">{t('reads.reader.locked')}</p>
-              <Link href={`/reads/book/${book.id}`} className="mt-6 inline-flex h-11 items-center rounded-full px-5 text-sm font-bold text-white" style={{ background: '#203337' }}>
+              <Link href={`/reads/book/${book.id}`} className="mt-6 inline-flex h-11 items-center rounded-full bg-foreground px-5 text-sm font-bold text-background">
                 {t('reads.reader.lockedCta')}
               </Link>
             </div>
@@ -404,8 +425,14 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
             {highlighted ? '' : ''} · {t('reads.reader.saved')}
           </p>
           <div className="mt-3 h-1 overflow-hidden rounded-full" style={{ background: theme.paper }} aria-label={t('reads.reader.progress')}>
-            <div className="h-full bg-[#2786A4]" style={{ width: `${percent}%` }} />
+            <div className="h-full bg-primary" style={{ width: `${percent}%` }} />
           </div>
+          {finishNote && <p className="mt-3 text-sm font-semibold" role="status">{finishNote}</p>}
+          {percent >= 100 && book && (
+            <p className="mt-2 text-sm" style={{ color: theme.muted }}>
+              {suggestWinPost({ kind: 'finish', title: book.title, audience: discussionSpace(book).audience }).body}
+            </p>
+          )}
         </article>
 
         {panel !== 'none' && (
@@ -445,7 +472,7 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
                 </div>
                 <form className="mt-3 flex gap-2" onSubmit={e => { e.preventDefault(); if (question.trim()) void ask(question); }}>
                   <input value={question} onChange={e => setQuestion(e.target.value)} placeholder={t('reads.reader.askPlaceholder')} className="h-11 flex-1 rounded-full border bg-transparent px-3 text-sm" style={{ borderColor: theme.muted }} />
-                  <button type="submit" className="h-11 rounded-full px-4 text-sm font-bold text-white" style={{ background: '#203337' }} disabled={asking}>{t('reads.reader.askSend')}</button>
+                  <button type="submit" className="h-11 rounded-full bg-foreground px-4 text-sm font-bold text-background" disabled={asking}>{t('reads.reader.askSend')}</button>
                 </form>
                 {answer && <p className="mt-3 text-sm leading-relaxed" role="status">{answer}</p>}
               </div>

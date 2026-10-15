@@ -17,6 +17,8 @@ import { useReadsT } from '@/lib/reads/i18n';
 import { getLanguage } from '@/lib/languages';
 import { moveItem } from '@/lib/platform/cms';
 import { planLabel } from '@/lib/reads/access';
+import { AllocationPicker } from '@/components/allocation-picker';
+import { defaultBookTargets } from '@/lib/platform/allocation';
 
 const AUTOSAVE_KEY = 'poket-studio-books';
 
@@ -199,7 +201,7 @@ export function StudioView() {
               key={item.id}
               type="button"
               onClick={() => { setId(item.id); setChapterId(item.chapters[0]?.id ?? ''); }}
-              className={`w-full rounded-2xl border px-3 py-3 text-left ${item.id === book.id ? 'border-[#203337] bg-card' : 'border-border'}`}
+              className={`w-full rounded-2xl border px-3 py-3 text-left ${item.id === book.id ? 'border-foreground bg-card' : 'border-border'}`}
             >
               <span className="block text-sm font-semibold">{item.title}</span>
               <span className="mt-1 inline-flex rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">{item.status}</span>
@@ -244,10 +246,15 @@ export function StudioView() {
                 <label className="flex items-center gap-2"><input type="checkbox" checked={book.allocateLibrary} onChange={e => update({ allocateLibrary: e.target.checked })} />{t('reads.studio.library')}</label>
                 <label className="flex items-center gap-2"><input type="checkbox" checked={book.allocateMarketplace} onChange={e => update({ allocateMarketplace: e.target.checked })} />{t('reads.studio.market')}</label>
               </div>
+              <AllocationPicker
+                label={t('reads.studio.targets')}
+                value={book.targets?.length ? book.targets : defaultBookTargets(book)}
+                onChange={targets => update({ targets })}
+              />
               <div className="flex flex-wrap gap-2">
                 <button type="button" onClick={() => void generate()} className="h-10 rounded-full bg-secondary px-4 text-sm font-bold text-secondary-foreground">{t('reads.studio.generate')}</button>
-                {book.status === 'draft' && <button type="button" onClick={() => setStatus('review')} className="h-10 rounded-full bg-[#203337] px-4 text-sm font-bold text-white">{t('reads.studio.toReview')}</button>}
-                {book.status === 'review' && <button type="button" onClick={() => setStatus('published')} className="h-10 rounded-full bg-[#203337] px-4 text-sm font-bold text-white">{t('reads.studio.publish')}</button>}
+                {book.status === 'draft' && <button type="button" onClick={() => setStatus('review')} className="h-10 rounded-full bg-foreground px-4 text-sm font-bold text-background">{t('reads.studio.toReview')}</button>}
+                {book.status === 'review' && <button type="button" onClick={() => setStatus('published')} className="h-10 rounded-full bg-foreground px-4 text-sm font-bold text-background">{t('reads.studio.publish')}</button>}
                 {book.status === 'review' && <button type="button" onClick={() => setStatus('draft')} className="h-10 rounded-full border border-border px-4 text-sm font-semibold">{t('reads.studio.back')}</button>}
                 {book.status === 'published' && <button type="button" onClick={() => setStatus('review')} className="h-10 rounded-full border border-border px-4 text-sm font-semibold">{t('reads.studio.unpublish')}</button>}
               </div>
@@ -315,7 +322,7 @@ export function StudioView() {
                       update({ chapters });
                       setDragFrom(null);
                     }}
-                    className={`cursor-grab rounded-xl border p-3 text-sm active:cursor-grabbing ${item.id === chapter.id ? 'border-[#203337]' : 'border-border'}`}
+                    className={`cursor-grab rounded-xl border p-3 text-sm active:cursor-grabbing ${item.id === chapter.id ? 'border-foreground' : 'border-border'}`}
                   >
                     <button type="button" className="w-full text-left" onClick={() => setChapterId(item.id)}>
                       <span className="font-semibold">{index + 1}. {item.title}</span>
@@ -473,7 +480,7 @@ export function StudioView() {
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
-                  className="h-10 rounded-full bg-[#203337] px-4 text-sm font-bold text-white"
+                  className="h-10 rounded-full bg-foreground px-4 text-sm font-bold text-background"
                   onClick={() => {
                     const screen = screenCoverAge(book.ageRating, `${book.title}\n${book.blurb}\n${book.coverBrief?.prompt ?? ''}`);
                     update({
@@ -515,12 +522,12 @@ function OriginBadge({ origin }: { origin: 'ai' | 'human' | 'import' }) {
 }
 
 function Step({ active, label }: { active: boolean; label: string }) {
-  return <span className={`rounded-full px-3 py-1 text-[12px] font-bold ${active ? 'bg-[#203337] text-white' : 'bg-muted text-muted-foreground'}`}>{label}</span>;
+  return <span className={`rounded-full px-3 py-1 text-[12px] font-bold ${active ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'}`}>{label}</span>;
 }
 
 function Tab({ on, label, onClick }: { on: boolean; label: string; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className={`h-9 rounded-full px-3 text-sm font-semibold ${on ? 'bg-[#203337] text-white' : 'border border-border'}`}>
+    <button type="button" onClick={onClick} className={`h-9 rounded-full px-3 text-sm font-semibold ${on ? 'bg-foreground text-background' : 'border border-border'}`}>
       {label}
     </button>
   );

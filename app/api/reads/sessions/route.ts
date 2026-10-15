@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { isQuietHour } from '@/lib/reads/quiet';
+import { localDateKey, readingGoal } from '@/lib/platform/reading';
 
 export const runtime = 'nodejs';
 
@@ -14,6 +15,8 @@ export async function POST(request: Request) {
     bookId?: string;
     activeSeconds?: number;
     localHour?: number;
+    studentId?: string;
+    dateKey?: string;
   } | null;
 
   const hour = body?.localHour;
@@ -30,9 +33,15 @@ export async function POST(request: Request) {
   const probe = new Date();
   probe.setHours(hour, 30, 0, 0);
   const quiet = isQuietHour(probe);
+  const goal = readingGoal({
+    studentId: body.studentId || 'reader',
+    dateKey: body.dateKey || localDateKey(),
+    activeSeconds: body.activeSeconds,
+  });
   return NextResponse.json({
     credited: false,
     reason: quiet ? 'quiet_hours' : 'ledger_pending',
     quiet,
+    goal,
   });
 }

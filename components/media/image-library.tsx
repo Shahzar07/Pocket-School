@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ImagePlus } from 'lucide-react';
+import { listSharedMedia, recordMediaAsset } from './catalog';
 import { cropImage, optimiseImage } from './optimise';
 import { storeMedia } from './store';
 import type { MediaAsset } from './types';
@@ -23,10 +24,20 @@ export function ImageLibrary({
   onInsert?: (image: MediaAsset) => void;
 }) {
   const [error, setError] = useState('');
+  const [shared, setShared] = useState<MediaAsset[]>([]);
   const [cropId, setCropId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState(0);
   const cropping = images.find(image => image.id === cropId);
+  const reusable = shared.filter(asset => !images.some(image => image.src === asset.src || image.id === asset.id));
+
+  useEffect(() => {
+    let cancelled = false;
+    listSharedMedia(scopeId)
+      .then(found => { if (!cancelled) setShared(found); })
+      .catch(() => { if (!cancelled) setShared([]); });
+    return () => { cancelled = true; };
+  }, [scopeId]);
 
   const addFiles = async (files: File[]) => {
     setError('');
@@ -36,14 +47,17 @@ export function ImageLibrary({
       try {
         const fitted = await optimiseImage(file, 1600);
         const stored = await storeMedia(scopeId, fitted.blob, `${Date.now()}-${file.name || 'image'}.jpg`);
-        next.push({
+        const asset: MediaAsset = {
           id: `img-${Date.now()}-${next.length}`,
           src: stored.src,
           alt: '',
           width: fitted.width,
           height: fitted.height,
           storagePath: stored.storagePath,
-        });
+        };
+        next.push(asset);
+        setShared(current => current.some(item => item.id === asset.id) ? current : [...current, asset]);
+        void recordMediaAsset(scopeId, asset);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'That image could not be added.');
       }
@@ -72,6 +86,22 @@ export function ImageLibrary({
         <input type="file" accept="image/*" multiple className="sr-only" onChange={event => { void addFiles([...(event.target.files ?? [])]); event.target.value = ''; }} />
       </label>
       {error && <p className="text-sm text-red-700">{error}</p>}
+      {reusable.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-muted-foreground">Saved in this library</p>
+          <ul className="grid gap-2 sm:grid-cols-3">
+            {reusable.map(asset => (
+              <li key={asset.id}>
+                <button type="button" className="w-full rounded-xl border border-border p-2 text-left" onClick={() => onChange([...images, asset])}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={asset.src} alt={asset.alt || ''} className="aspect-[4/3] w-full rounded-lg object-cover" />
+                  <span className="mt-1 block text-[11px] font-semibold">Use this picture</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <ul className="grid gap-3 sm:grid-cols-2">
         {images.map(image => (
           <li key={image.id} className="rounded-2xl border border-border p-3">
@@ -82,6 +112,7 @@ export function ImageLibrary({
               <input
                 value={image.alt}
                 onChange={event => onChange(images.map(item => item.id === image.id ? { ...item, alt: event.target.value } : item))}
+                onBlur={() => { void recordMediaAsset(scopeId, image); }}
                 className="mt-1 h-9 w-full rounded-lg border border-border px-2 font-normal"
               />
             </label>
@@ -90,6 +121,7 @@ export function ImageLibrary({
               <input
                 value={image.caption ?? ''}
                 onChange={event => onChange(images.map(item => item.id === image.id ? { ...item, caption: event.target.value } : item))}
+                onBlur={() => { void recordMediaAsset(scopeId, image); }}
                 className="mt-1 h-9 w-full rounded-lg border border-border px-2 font-normal"
               />
             </label>
@@ -132,7 +164,9 @@ export function ImageLibrary({
               onClick={() => {
                 void cropImage(cropping.src, zoom, offset, 0).then(async result => {
                   const stored = await storeMedia(scopeId, result.blob, `${cropping.id}-crop.jpg`);
-                  onChange(images.map(item => item.id === cropping.id ? { ...item, src: stored.src, width: result.width, height: result.height, storagePath: stored.storagePath } : item));
+                  const next = { ...cropping, src: stored.src, width: result.width, height: result.height, storagePath: stored.storagePath };
+                  onChange(images.map(item => item.id === cropping.id ? next : item));
+                  void recordMediaAsset(scopeId, next);
                   setCropId(null);
                 }).catch(err => setError(err instanceof Error ? err.message : 'Crop failed.'));
               }}

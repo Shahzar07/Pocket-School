@@ -1,10 +1,19 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useReadsT } from '@/lib/reads/i18n';
 import { ProfileSwitch, useShelfProfile } from '@/components/shelf/profile-bar';
+import { ACCOUNT_MODES, readAccountMode, writeAccountMode, type AccountMode } from '@/lib/platform/roles';
+import type { ReadsKey } from '@/lib/reads/messages';
+
+const MODE_KEYS: Record<AccountMode, ReadsKey> = {
+  student: 'reads.mode.student',
+  parent: 'reads.mode.parent',
+  teacher: 'reads.mode.teacher',
+  admin: 'reads.mode.admin',
+};
 
 const LINKS = [
   { href: '/reads', key: 'reads.nav.home' as const },
@@ -18,7 +27,10 @@ export function ReadsShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const t = useReadsT();
   const { profile, choose } = useShelfProfile();
+  const [mode, setMode] = useState<AccountMode>('student');
   const reading = pathname.startsWith('/reads/read/');
+
+  useEffect(() => { setMode(readAccountMode()); }, []);
   if (reading) return <>{children}</>;
 
   return (
@@ -35,7 +47,7 @@ export function ReadsShell({ children }: { children: ReactNode }) {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`rounded-full px-3 py-1.5 text-[13px] font-semibold ${active ? 'bg-[#203337] text-white' : 'text-muted-foreground hover:text-foreground'}`}
+                  className={`rounded-full px-3 py-1.5 text-[13px] font-semibold ${active ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'}`}
                   aria-current={active ? 'page' : undefined}
                 >
                   {t(link.key)}
@@ -43,7 +55,24 @@ export function ReadsShell({ children }: { children: ReactNode }) {
               );
             })}
           </nav>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <label className="hidden items-center gap-2 text-[12px] font-semibold text-muted-foreground sm:flex">
+              {t('reads.mode.label')}
+              <select
+                aria-label={t('reads.mode.label')}
+                value={mode}
+                onChange={event => {
+                  const next = event.target.value as AccountMode;
+                  setMode(next);
+                  writeAccountMode(next);
+                }}
+                className="h-9 rounded-full border border-border bg-background px-3 text-[13px] font-semibold text-foreground"
+              >
+                {ACCOUNT_MODES.map(item => (
+                  <option key={item} value={item}>{t(MODE_KEYS[item])}</option>
+                ))}
+              </select>
+            </label>
             <ProfileSwitch profile={profile} onChoose={choose} label={t('reads.profile.switch')} />
           </div>
         </div>

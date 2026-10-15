@@ -38,12 +38,15 @@ export async function POST(req: NextRequest) {
   const denied = await enforceAiAccess(req);
   if (denied) return denied;
   try {
-    const { message, mode, lessonContext, history, language, persona, workboard, stream } = await req.json();
+    const { message, mode, lessonContext, history, language, persona, workboard, stream, bookContext } = await req.json();
     if (!message) return NextResponse.json({ error: 'message is required' }, { status: 400 });
 
     const modeInstruction = MODE_INSTRUCTIONS[mode] ?? MODE_INSTRUCTIONS.college;
     const contextBlock = lessonContext
       ? `\n\nCurrent lesson context the student is studying: "${lessonContext}"\nWhen relevant, relate your explanations to this topic.`
+      : '';
+    const bookBlock = typeof bookContext === 'string' && bookContext.trim()
+      ? `\n\nThe student attached a book as the source. Stay inside this text and do not invent later chapters:\n${String(bookContext).slice(0, 4000)}`
       : '';
 
     // A named teacher persona overrides the default ET identity.
@@ -53,7 +56,7 @@ export async function POST(req: NextRequest) {
 
     const langInstruction = languageInstruction(language);
 
-    const systemPrompt = `${identity}\n\n${modeInstruction}${contextBlock}\n\nGuide students to answers using the Socratic method — ask leading questions when appropriate rather than giving direct answers. Be encouraging. Keep replies conversational and not too long.\n\nWhen responding about mathematics, science, or any topic involving equations or formulas, use LaTeX notation: inline math with $...$ and display math with $$...$$. For example: $E = mc^2$, $\\frac{a}{b}$, $$\\int_0^1 f(x)\\,dx$$${workboard ? WORKBOARD_PROTOCOL : ''}${langInstruction}`;
+    const systemPrompt = `${identity}\n\n${modeInstruction}${contextBlock}${bookBlock}\n\nGuide students to answers using the Socratic method — ask leading questions when appropriate rather than giving direct answers. Be encouraging. Keep replies conversational and not too long.\n\nWhen responding about mathematics, science, or any topic involving equations or formulas, use LaTeX notation: inline math with $...$ and display math with $$...$$. For example: $E = mc^2$, $\\frac{a}{b}$, $$\\int_0^1 f(x)\\,dx$$${workboard ? WORKBOARD_PROTOCOL : ''}${langInstruction}`;
 
     // Cap history so long chats can't blow past the model context / budget.
     const cappedHistory = (Array.isArray(history) ? history : []).slice(-12);
