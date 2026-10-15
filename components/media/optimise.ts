@@ -20,6 +20,7 @@ export async function optimiseImage(file: Blob, maxEdge = 1600, quality = 0.82):
 export function cropImage(src: string, zoom: number, offsetX: number, offsetY: number, output = 1200): Promise<{ blob: Blob; width: number; height: number }> {
   return new Promise((resolve, reject) => {
     const image = new Image();
+    image.crossOrigin = 'anonymous';
     image.onload = () => {
       const canvas = document.createElement('canvas');
       canvas.width = output;

@@ -4,12 +4,15 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { handleFirestoreError, OperationType } from '@/lib/firebase-errors';
 import type { Role } from '@/lib/roles';
+import type { DeletionRequest, InstructorProfile, NotificationPrefs, PrivacySettings } from '@/lib/account-settings';
 
 import type { Timestamp } from 'firebase/firestore';
 
 interface UserProfile {
   name: string;
   email?: string;
+  displayName?: string;
+  bio?: string;
   role: Role;
   /** Set for institution_admin — scopes what they can see and manage. */
   institutionId?: string;
@@ -18,6 +21,7 @@ interface UserProfile {
   statusReason?: string;
   adminRole?: 'super_admin' | 'admin' | 'content_editor' | 'support' | 'finance';
   avatarUrl?: string;
+  photoStoragePath?: string;
   level?: string;
   learningStyle?: string;
   interests?: string[];
@@ -35,7 +39,16 @@ interface UserProfile {
   shareBoard?: boolean;
   accessTier?: number;
   permissions?: string[];
+  phone?: string;
   country?: string;
+  timezone?: string;
+  currency?: string;
+  notificationPrefs?: NotificationPrefs;
+  privacy?: PrivacySettings;
+  instructor?: InstructorProfile;
+  twoFactorEnabled?: boolean;
+  sessionsRevokedAt?: number;
+  deletionRequest?: DeletionRequest | null;
   region?: string;
   programmeId?: string;
   cohortIds?: string[];

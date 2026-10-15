@@ -11,6 +11,7 @@ import type { AccessPolicy } from './access-policy';
 import { coerceDailyGoal } from './goals';
 import { stripUnitPrefix } from './unit-title';
 import { omitUndefined } from './course-builder';
+import type { DeletionRequest, InstructorProfile, NotificationPrefs, PayoutDetails, PrivacySettings } from './account-settings';
 import { requestPush } from './push-client';
 import type { PushCategory } from './push';
 
@@ -21,10 +22,15 @@ export type { Role };
 export interface UserProfile {
   name: string;
   email: string;
+  /** Name shown in class lists when it differs from the legal name. */
+  displayName?: string;
+  bio?: string;
   role: Role;
   /** Set for institution_admin (and optionally members) — scopes what they see. */
   institutionId?: string;
   avatarUrl?: string;
+  /** Storage path for the profile photo, under media/{uid}/. */
+  photoStoragePath?: string;
   level?: string;
   learningStyle?: string;
   interests?: string[];
@@ -48,6 +54,19 @@ export interface UserProfile {
   /** Staff console role. Custom claims mirror this field. */
   adminRole?: 'super_admin' | 'admin' | 'content_editor' | 'support' | 'finance';
   country?: string;
+  timezone?: string;
+  /** Display currency code from the pricing table, for example USD or MYR. */
+  currency?: string;
+  notificationPrefs?: NotificationPrefs;
+  privacy?: PrivacySettings;
+  /** Teacher public profile. Payout details live in users/{uid}/private/payout. */
+  instructor?: InstructorProfile;
+  /** Email code at sign-in. Admin MFA is separate and still required for staff. */
+  twoFactorEnabled?: boolean;
+  /** Milliseconds. Devices whose session started earlier must sign in again. */
+  sessionsRevokedAt?: number;
+  /** Set by the person. Removal waits until scheduledFor. */
+  deletionRequest?: DeletionRequest | null;
   /** Server-set from dateOfBirth. Clients cannot write it. */
   ageTier?: 'under13' | 'teen' | 'adult';
   /** YYYY-MM-DD. Server-set. Clients cannot write it. */
@@ -445,7 +464,34 @@ export async function getUser(uid: string): Promise<UserProfile | null> {
 }
 
 export async function updateUser(uid: string, data: Partial<UserProfile>) {
-  await updateDoc(doc(db, 'users', uid), { ...data, updatedAt: serverTimestamp() });
+  await updateDoc(doc(db, 'users', uid), { ...omitUndefined(data), updatedAt: serverTimestamp() });
+}
+
+const CLEARABLE_PROFILE_FIELDS = ['avatarUrl', 'photoStoragePath', 'deletionRequest'] as const;
+
+export async function clearUserFields(uid: string, fields: readonly (typeof CLEARABLE_PROFILE_FIELDS)[number][]) {
+  const patch: Record<string, ReturnType<typeof deleteField>> = {};
+  for (const field of fields) {
+    if (CLEARABLE_PROFILE_FIELDS.includes(field)) patch[field] = deleteField();
+  }
+  await updateDoc(doc(db, 'users', uid), { ...patch, updatedAt: serverTimestamp() });
+}
+
+export async function savePayoutDetails(uid: string, payout: PayoutDetails): Promise<void> {
+  await setDoc(doc(db, 'users', uid, 'private', 'payout'), { ...payout, updatedAt: serverTimestamp() });
+}
+
+export async function getPayoutDetails(uid: string): Promise<PayoutDetails | null> {
+  const snap = await getDoc(doc(db, 'users', uid, 'private', 'payout'));
+  if (!snap.exists()) return null;
+  const data = snap.data();
+  return {
+    method: data.method === 'paypal' || data.method === 'bank' ? data.method : 'none',
+    email: typeof data.email === 'string' ? data.email : '',
+    accountName: typeof data.accountName === 'string' ? data.accountName : '',
+    bankName: typeof data.bankName === 'string' ? data.bankName : '',
+    accountLast4: typeof data.accountLast4 === 'string' ? data.accountLast4 : '',
+  };
 }
 
 export async function getUserByEmail(email: string): Promise<{ id: string; data: UserProfile } | null> {
@@ -1895,6 +1941,11 @@ export async function linkChildToParent(parentId: string, childEmail: string): P
   return { success: true, childName: child.data.name };
 }
 
+export async function getParentsOfStudent(studentId: string): Promise<{ id: string; data: UserProfile }[]> {
+  const snap = await getDocs(query(collection(db, 'users'), where('childIds', 'array-contains', studentId)));
+  return snap.docs.map(item => ({ id: item.id, data: item.data() as UserProfile }));
+}
+
 export async function getChildrenProfiles(parentId: string): Promise<{ id: string; data: UserProfile }[]> {
   const parent = await getUser(parentId);
   if (!parent?.childIds?.length) return [];
@@ -2957,15 +3008,26 @@ export interface UserSession {
   createdAt: Timestamp;
 }
 
-export async function upsertUserSession(userId: string, deviceInfo: string): Promise<boolean> {
+export async function upsertUserSession(userId: string, deviceInfo: string): Promise<{ isNew: boolean; createdAtMs: number }> {
   const q = query(collection(db, 'user_sessions'), where('userId', '==', userId), where('deviceInfo', '==', deviceInfo));
   const snap = await getDocs(q);
   if (!snap.empty) {
     await updateDoc(snap.docs[0].ref, { lastSeen: serverTimestamp() });
-    return false;
+    const created = snap.docs[0].data().createdAt as Timestamp | undefined;
+    return { isNew: false, createdAtMs: created?.toMillis?.() ?? Date.now() };
   }
+  const createdAtMs = Date.now();
   await addDoc(collection(db, 'user_sessions'), { userId, deviceInfo, lastSeen: serverTimestamp(), createdAt: serverTimestamp() });
-  return true;
+  return { isNew: true, createdAtMs };
+}
+
+export async function deleteUserSession(sessionId: string): Promise<void> {
+  await deleteDoc(doc(db, 'user_sessions', sessionId));
+}
+
+export async function deleteAllUserSessions(userId: string): Promise<void> {
+  const sessions = await getUserSessions(userId);
+  await Promise.all(sessions.map(session => session.id ? deleteDoc(doc(db, 'user_sessions', session.id)) : Promise.resolve()));
 }
 
 export async function getUserSessions(userId: string): Promise<UserSession[]> {

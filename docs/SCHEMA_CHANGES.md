@@ -574,6 +574,20 @@ Always written, including blocked attempts. Blocked when the caller is in an ass
 | POST | `/api/store/moderate` | creatorStore |
 | POST | `/api/store/allocate` | creatorStore |
 | POST | `/api/snap/solve` | snapAndSolve |
+
+## Profile and settings
+
+`/dashboard/profile` is My profile & settings for every role. The account menu in each dashboard opens it.
+
+A person may update only the fields in `selfServiceFields()` in `firestore.rules` (the same names as `SELF_SERVICE_FIELDS` in `lib/account-settings.ts`). That list includes name, display name, bio, photo, country, timezone, phone, language, currency, notification preferences, privacy, a teacher instructor profile, two-factor on/off, session revocation, and a deletion request. It does not include role, staff role, entitlements, wallet balance, XP, age tier, or date of birth.
+
+`users/{uid}/private/payout` holds payout method, email, account name, bank, and the last four digits. Only that user can read or write it. The user document stays readable by any signed-in person so class screens can show a name.
+
+`deletionRequest` is `{ requestedAt, scheduledFor }` with a 14-day gap. `sessionsRevokedAt` is a millisecond timestamp. Devices that started earlier sign out. `twoFactorEnabled` asks for the existing email code at password sign-in, and at Google sign-in when it is on. Admin MFA is unchanged.
+
+Profile photos use the shared media helpers and Firebase Storage at `media/{uid}/{fileName}`. `storage.rules` allows that user to write an image under 5 MB. Rules still need an owner deploy.
+
+Lesson rewards still update `sparksBalance` and `xp` through `walletProgressUpdate()`. A profile save cannot change those fields in the same write.
 | GET/POST | `/api/lessons/qa` | lessonQa |
 | GET | `/api/moderation/queue` | community |
 | POST | `/api/moderation/resolve` | community |

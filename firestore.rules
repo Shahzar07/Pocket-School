@@ -97,10 +97,54 @@ service cloud.firestore {
       // childIds is deliberately NOT here: a parent adds their own children
       // during onboarding, and that link is guarded by parent_verifications
       // rather than by this rule.
+      // Wallet and XP stay off the profile form. Lesson rewards still write
+      // them through walletProgressUpdate(), not through a profile save.
       return ['role', 'accessTier', 'subscriptionTier', 'permissions',
               'institutionId', 'adminSparksGrantedAt', 'accountStatus',
               'adminRole', 'statusReason', 'deletedAt', 'cohortIds',
-              'ageTier', 'dateOfBirth'];
+              'ageTier', 'dateOfBirth', 'emailVerified', 'phoneVerified',
+              'sparksBalance', 'sparksMonthlyAllowance', 'sparksGrantedAt', 'xp'];
+    }
+
+    // Profile & settings. Keep this list aligned with SELF_SERVICE_FIELDS
+    // in lib/account-settings.ts. A profile save cannot also change a
+    // privileged field, because the changed keys must be only these.
+    function selfServiceFields() {
+      return ['name', 'displayName', 'bio', 'avatarUrl', 'photoStoragePath',
+              'country', 'timezone', 'phone', 'language', 'currency',
+              'level', 'learningStyle', 'yearGroup', 'interests', 'shareBoard',
+              'notificationPrefs', 'privacy', 'instructor',
+              'twoFactorEnabled', 'sessionsRevokedAt', 'deletionRequest',
+              'email', 'updatedAt', 'onboardedAt', 'studyDates', 'childIds',
+              'lastActiveAt', 'region', 'parentContacts'];
+    }
+
+    function deletionRequestOk() {
+      let next = incoming().get('deletionRequest', null);
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['deletionRequest'])
+        || next == null
+        || (next is map
+            && next.keys().hasOnly(['requestedAt', 'scheduledFor'])
+            && next.requestedAt is number
+            && next.scheduledFor is number
+            && next.scheduledFor >= next.requestedAt + 1123200000
+            && next.scheduledFor <= next.requestedAt + 1296000000);
+    }
+
+    function selfProfileUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(selfServiceFields())
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['email'])
+            || incoming().get('email', '') == request.auth.token.email)
+        && deletionRequestOk();
+    }
+
+    function walletProgressUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['sparksBalance', 'xp', 'sparksGrantedAt', 'updatedAt'])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['sparksBalance'])
+            || incoming().sparksBalance is number)
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['xp'])
+            || incoming().xp is number);
     }
 
     function callerIsSuper() {
@@ -239,15 +283,20 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isUser(userId);
       allow update: if (isAdmin() && staffWriteAllowed())
-        || (isUser(userId)
-            && !request.resource.data.diff(resource.data).affectedKeys()
-                 .hasAny(privilegedUserFields()))
+        || (isUser(userId) && selfProfileUpdate())
+        || (isUser(userId) && walletProgressUpdate())
         // A person may join the one school that invited their email.
         || (isUser(userId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['institutionId'])
             && incoming().institutionId is string
             && exists(/databases/$(database)/documents/institutions/$(incoming().institutionId)/invites/$(request.auth.token.email)));
       allow delete: if isAdmin();
+
+      // Payout details. The user document itself is readable by any signed-in
+      // person so class screens can show a name. Bank details are not.
+      match /private/{docId} {
+        allow read, write: if isUser(userId);
+      }
 
       // Sparks wallet ledger
       match /spark_transactions/{txId} {

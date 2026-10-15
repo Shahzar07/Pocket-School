@@ -21,7 +21,9 @@ import { DashboardSearch } from '@/components/dashboard-search';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { CurrencySwitcher } from '@/components/currency-switcher';
 import { SparksChip } from '@/components/sparks-chip';
-import { upsertUserSession, accountStatusOf } from '@/lib/db';
+import { upsertUserSession, accountStatusOf, clearUserFields } from '@/lib/db';
+import { deletionClosed, formatDeletionDate, sessionRevoked } from '@/lib/account-settings';
+import { AccountMenu } from '@/components/account/account-menu';
 import { loginBlocked, resolveStaffRole } from '@/lib/admin-console';
 import { AdminViewAsBanner, clearViewAs, useAdminIdle, useViewAs } from '@/components/admin-session';
 import { PipGuide } from '@/components/pip-guide';
@@ -238,7 +240,7 @@ const NavItem = ({ entry, role, pathname, onClick, router }: {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const flags = useFeatureFlags();
-  const { user, profile, loading } = useAuthSTORE();
+  const { user, profile, loading, fetchProfile } = useAuthSTORE();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -266,13 +268,63 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     if (!user) return;
     const deviceInfo = `${navigator.userAgent.slice(0, 80)}|${screen.width}x${screen.height}`;
-    upsertUserSession(user.uid, deviceInfo).then(isNew => { if (isNew) setNewDevice(true); }).catch(() => {});
-  }, [user]);
+    upsertUserSession(user.uid, deviceInfo).then(result => {
+      sessionStorage.setItem('poket-session-at', String(result.createdAtMs));
+      if (result.isNew) setNewDevice(true);
+      const revokedAt = useAuthSTORE.getState().profile?.sessionsRevokedAt;
+      if (sessionRevoked(revokedAt, result.createdAtMs)) {
+        void signOut(auth).then(() => router.push(pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login'));
+      }
+    }).catch(() => {});
+  }, [user, router, pathname]);
+
+  useEffect(() => {
+    if (!profile) return;
+    const started = Number(sessionStorage.getItem('poket-session-at') || '0');
+    if (sessionRevoked(profile.sessionsRevokedAt, started)) {
+      void signOut(auth).then(() => router.push(pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login'));
+    }
+  }, [profile, router, pathname]);
 
   if (loading || !user || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (deletionClosed(profile.deletionRequest, Date.now())) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-6">
+        <div className="max-w-md space-y-4 text-center">
+          <h1 className="font-heading text-3xl">This account is closed</h1>
+          <p className="text-sm text-muted-foreground">
+            The 14-day grace period ended on {profile.deletionRequest ? formatDeletionDate(profile.deletionRequest) : 'the scheduled date'}.
+            Contact support@poketschool.ai if removal should continue, or cancel it if the account is still here.
+          </p>
+          <div className="flex justify-center gap-2">
+            <button
+              type="button"
+              className="h-10 rounded-full bg-[#203337] px-4 text-sm font-semibold text-white"
+              onClick={() => {
+                void clearUserFields(user.uid, ['deletionRequest']).then(() => fetchProfile(user.uid));
+              }}
+            >
+              Cancel deletion
+            </button>
+            <button
+              type="button"
+              className="h-10 rounded-full border border-border px-4 text-sm font-semibold"
+              onClick={() => {
+                clearViewAs();
+                void signOut(auth).then(() => router.push(staffRole ? '/admin/login' : '/login'));
+              }}
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -340,26 +392,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Who you are, at the top — the reference design leads with identity
             rather than a logo lockup. */}
         <div className="px-4 pt-4 pb-3 shrink-0">
-          <Link
-            href="/dashboard/profile"
-            className="flex items-center gap-3 p-2 -m-2 rounded-2xl hover:bg-muted transition-colors"
+          <AccountMenu
+            name={profile.displayName || profile.name || 'User'}
+            email={user.email || profile.email || ''}
+            roleLabel={t(`roles.${profile.role}`, { defaultValue: ROLE_LABELS[profile.role] ?? profile.role })}
+            staffHome={Boolean(staffRole)}
           >
-            <Avatar className="w-10 h-10 border border-border shrink-0">
-              <AvatarImage src={profile.avatarUrl ?? user.photoURL ?? undefined} />
-              <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-bold">
-                {profile.name?.charAt(0)?.toUpperCase() ?? 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <p className="text-[13.5px] font-semibold text-foreground truncate leading-tight">
-                {profile.name ?? 'User'}
-              </p>
-              <p className="text-[11px] text-muted-foreground truncate mt-0.5">
-                {t(`roles.${profile.role}`, { defaultValue: ROLE_LABELS[profile.role] ?? profile.role })}
-              </p>
-            </div>
-            <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          </Link>
+            <span className="flex items-center gap-3 p-2 -m-2 rounded-2xl hover:bg-muted transition-colors">
+              <Avatar className="w-10 h-10 border border-border shrink-0">
+                <AvatarImage src={profile.avatarUrl ?? user.photoURL ?? undefined} />
+                <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-bold">
+                  {profile.name?.charAt(0)?.toUpperCase() ?? 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[13.5px] font-semibold text-foreground truncate leading-tight">
+                  {profile.displayName || profile.name || 'User'}
+                </span>
+                <span className="block text-[11px] text-muted-foreground truncate mt-0.5">
+                  {t(`roles.${profile.role}`, { defaultValue: ROLE_LABELS[profile.role] ?? profile.role })}
+                </span>
+              </span>
+              <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            </span>
+          </AccountMenu>
         </div>
 
         {/* Nav */}
@@ -418,14 +474,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span data-tour="language"><LanguageSwitcher /></span>
             <CurrencySwitcher />
             <span data-tour="notifications"><NotificationsBell /></span>
-            <button onClick={() => router.push('/dashboard/profile')} className="ms-1" data-tour="profile">
-              <Avatar className="w-9 h-9 border-2 border-border cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all">
-                <AvatarImage src={profile.avatarUrl ?? user.photoURL ?? undefined} />
-                <AvatarFallback className="bg-gradient-to-br from-[#2786A4] to-[#1E6A83] text-white text-sm font-bold">
-                  {profile.name?.charAt(0)?.toUpperCase() ?? 'U'}
-                </AvatarFallback>
-              </Avatar>
-            </button>
+            <span className="ms-1" data-tour="profile">
+              <AccountMenu
+                name={profile.displayName || profile.name || 'User'}
+                email={user.email || profile.email || ''}
+                roleLabel={t(`roles.${profile.role}`, { defaultValue: ROLE_LABELS[profile.role] ?? profile.role })}
+                staffHome={Boolean(staffRole)}
+              >
+                <Avatar className="w-9 h-9 border-2 border-border cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all">
+                  <AvatarImage src={profile.avatarUrl ?? user.photoURL ?? undefined} />
+                  <AvatarFallback className="bg-gradient-to-br from-[#2786A4] to-[#1E6A83] text-white text-sm font-bold">
+                    {profile.name?.charAt(0)?.toUpperCase() ?? 'U'}
+                  </AvatarFallback>
+                </Avatar>
+              </AccountMenu>
+            </span>
           </div>
         </header>
 

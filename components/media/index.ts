@@ -23,7 +23,7 @@ export type { CoverArtOption, CoverStyleOption, MediaAsset, SparksConfirm, Spark
 export { COVER_STYLES } from './types';
 export { proceduralArt } from './fallback-art';
 export { cropImage, optimiseImage } from './optimise';
-export { storeMedia } from './store';
+export { removeStoredMedia, storeMedia } from './store';
 export { listSharedMedia, recordMediaAsset } from './catalog';
 export { generateCoverArt, generateIllustration } from './generate';
 export { ImageLibrary } from './image-library';

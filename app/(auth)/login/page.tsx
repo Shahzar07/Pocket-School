@@ -92,7 +92,7 @@ export default function LoginPage() {
     // Super admin and unverified accounts go straight in; verified accounts
     // get an email 2FA code — unless the email service isn't configured, in
     // which case we never lock anyone out.
-    const wants2fa = !!(data?.emailVerified || data?.phoneVerified);
+    const wants2fa = data?.twoFactorEnabled === true || !!(data?.emailVerified || data?.phoneVerified);
 
     if (!wants2fa) {
       await routeUser(uid);
@@ -176,8 +176,16 @@ export default function LoginPage() {
       if (snap.exists() && !snap.data().avatarUrl && result.user.photoURL) {
         await setDoc(doc(db, 'users', result.user.uid), { ...snap.data(), avatarUrl: result.user.photoURL, updatedAt: serverTimestamp() });
       }
-      // Google already verified this email — no extra 2FA hop needed.
       setEmail(result.user.email || '');
+      if (snap.exists() && snap.data().twoFactorEnabled === true && result.user.email) {
+        const otp = await sendOtp(result.user.email);
+        if (otp === 'sent') {
+          setPendingUid(result.user.uid);
+          setStep('twofa');
+          toast.success('We emailed you a 6-digit code.');
+          return;
+        }
+      }
       await routeUser(result.user.uid);
     } catch (e: any) {
       const code = e?.code ?? '';
