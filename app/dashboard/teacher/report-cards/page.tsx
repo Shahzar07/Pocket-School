@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { getTeacherCourses, Course, getGradesForCourse, Grade, issueCertificate } from '@/lib/db';
-import { Timestamp } from 'firebase/firestore';
+import { getTeacherCourses, Course, getGradesForCourse, Grade } from '@/lib/db';
+import { authedFetch } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -50,7 +50,7 @@ const fadeUp: Record<string, any> = {
 };
 
 export default function ReportCardsPage() {
-  const { user, profile } = useAuthSTORE();
+  const { user } = useAuthSTORE();
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState('');
   const [reports, setReports] = useState<StudentReport[]>([]);
@@ -159,23 +159,24 @@ export default function ReportCardsPage() {
   }
 
   const handleIssueCert = async (r: StudentReport) => {
-    if (!user) return;
-    const course = courses.find(c => c.id === selectedCourse);
-    if (!course) return;
+    if (!user || !selectedCourse) return;
     setIssuingCert(r.studentId);
     try {
-      const uuid = await issueCertificate({
-        studentId: r.studentId,
-        studentName: r.studentName,
-        courseId: selectedCourse,
-        courseTitle: course.title,
-        issuedAt: Timestamp.now(),
-        issuedBy: user.uid,
-        issuedByName: profile?.name ?? 'Teacher',
+      const result = await authedFetch('/api/platform/sync-certificates', {
+        method: 'POST',
+        body: JSON.stringify({ studentId: r.studentId, courseId: selectedCourse }),
       });
-      toast.success(`Certificate issued! ID: ${uuid.slice(0, 8)}…`);
-    } catch { toast.error('Failed to issue certificate.'); }
-    finally { setIssuingCert(null); }
+      const issued = Array.isArray(result.issued) ? result.issued as { moduleTitle?: string; id?: string }[] : [];
+      if (issued.length === 0) {
+        toast.message('No finished module to award yet. A certificate is issued when every published lesson in a module is complete.');
+      } else {
+        const names = issued.map((row) => row.moduleTitle).filter(Boolean).join(', ');
+        toast.success(names ? `Awarded: ${names}` : `Awarded ${issued.length} module certificate${issued.length === 1 ? '' : 's'}.`);
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Could not award a certificate.';
+      toast.error(message);
+    } finally { setIssuingCert(null); }
   };
 
   if (loading) return (
@@ -375,7 +376,7 @@ export default function ReportCardsPage() {
                 className="print:hidden rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white gap-1.5 text-xs font-bold"
               >
                 {issuingCert === r.studentId ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Award className="w-3.5 h-3.5" />}
-                Issue Certificate
+                Award finished modules
               </Button>
             </div>
           </motion.div>

@@ -12,7 +12,8 @@ import { UnitReportCard, UnitReportData } from '@/components/unit-report-card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Zap, BookOpen, MessageSquare, Trophy, UserRound, FileBarChart, TrendingUp, Target, Clock, ShieldCheck, CheckCircle2, Loader2 } from 'lucide-react';
+import { Zap, BookOpen, MessageSquare, Trophy, UserRound, FileBarChart, TrendingUp, Target, Clock, ShieldCheck, CheckCircle2, Loader2, Award } from 'lucide-react';
+import { certificateStatus, formatCertificateDate, type CertificateFace } from '@/lib/certificates';
 import Link from 'next/link';
 import { ParentLinkForm } from '@/components/parent-link-form';
 import { DashPage, DashHeader } from '@/components/dash-ui';
@@ -39,6 +40,7 @@ interface ChildData {
   grades: SchoolSlice[];
   attendance: SchoolSlice[];
   assignments: SchoolSlice[];
+  certificates: CertificateFace[];
 }
 
 interface ChildGoals {
@@ -169,7 +171,7 @@ export default function ParentDashboard() {
     (async () => {
       const data: ChildData[] = await Promise.all(ids.map(async (id) => {
         const overview = await authedFetch(`/api/platform/parent-overview?childId=${encodeURIComponent(id)}`);
-        const courses = (overview.courses ?? []) as { courseId: string; title: string; subject?: string; progress?: number; completedLessons?: number }[];
+        const courses = (overview.courses ?? []) as { courseId: string; title: string; subject?: string; progress?: number; completedLessons?: number; publishedLessons?: number }[];
         const asSlices = (value: unknown) => (Array.isArray(value) ? value as SchoolSlice[] : []);
         return {
           id,
@@ -193,6 +195,7 @@ export default function ParentDashboard() {
               courseId: course.courseId,
               progress: course.progress ?? 0,
               completedLessons: Array.from({ length: course.completedLessons ?? 0 }, (_, index) => `done-${index}`),
+              publishedLessons: course.publishedLessons ?? 0,
             },
           })),
           unitReports: [],
@@ -200,6 +203,7 @@ export default function ParentDashboard() {
           grades: asSlices(overview.grades),
           attendance: asSlices(overview.attendance),
           assignments: asSlices(overview.assignments),
+          certificates: (Array.isArray(overview.certificates) ? overview.certificates : []) as CertificateFace[],
         };
       }));
       setChildren(data);
@@ -349,7 +353,7 @@ export default function ParentDashboard() {
         </motion.div>
       ) : (
         <div className="space-y-10">
-          {children.map(({ id, profile: childProfile, enrollments, unitReports, quizzes, grades, attendance, assignments }, ci) => {
+          {children.map(({ id, profile: childProfile, enrollments, unitReports, quizzes, grades, attendance, assignments, certificates }, ci) => {
             const xp = childProfile.xp ?? 0;
             const completed = enrollments.filter(e => e.enrollment.progress === 100);
             const inProgress = enrollments.filter(e => e.enrollment.progress > 0 && e.enrollment.progress < 100);
@@ -402,6 +406,34 @@ export default function ParentDashboard() {
                   ))}
                 </div>
 
+                <div id={ci === 0 ? 'certificates' : undefined} className="p-6 sm:p-7 border-b border-border space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Award className="w-4 h-4 text-primary" />
+                    <h3 className="font-heading text-xl text-foreground">Module certificates</h3>
+                  </div>
+                  {certificates.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No module certificates yet. One is awarded when every published lesson in a module is complete.</p>
+                  ) : (
+                    <ul className="space-y-3">
+                      {certificates.map((cert) => (
+                        <li key={cert.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-foreground truncate">{cert.moduleTitle || cert.courseTitle}</p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {cert.moduleTitle ? `${cert.courseTitle} · ` : ''}{formatCertificateDate(cert.issuedAt)}
+                            </p>
+                            <p className="font-mono text-[11px] text-muted-foreground break-all mt-1">{cert.id}</p>
+                            <p className={`text-[11px] font-bold uppercase tracking-wider mt-1 ${certificateStatus(cert.status) === 'revoked' ? 'text-[#9B1C1C]' : 'text-[#0F6E56]'}`}>
+                              {certificateStatus(cert.status) === 'revoked' ? 'Revoked' : 'Valid'}
+                            </p>
+                          </div>
+                          <Link href={`/verify/${cert.id}`} className="text-sm font-bold text-primary shrink-0">Verify</Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
                 {/* Unit mastery report cards */}
                 {unitReports.length > 0 && (
                   <div className="p-6 sm:p-7 border-b border-border space-y-4">
@@ -434,11 +466,12 @@ export default function ParentDashboard() {
                       {enrollments.map(({ course, enrollment }, i) => {
                         const pct = enrollment.progress ?? 0;
                         const done = enrollment.completedLessons?.length ?? 0;
+                        const total = enrollment.publishedLessons ?? 0;
                         return (
                           <div key={course.id}>
                             <div className="flex items-center justify-between mb-2">
                               <p className="text-sm font-semibold text-foreground truncate max-w-[60%]">{course.title}</p>
-                              <span className="text-xs text-muted-foreground font-medium">{done} lesson{done !== 1 ? 's' : ''} done · <span className="font-heading text-base text-foreground">{pct}%</span></span>
+                              <span className="text-xs text-muted-foreground font-medium">{done} of {total} published · <span className="font-heading text-base text-foreground">{pct}%</span></span>
                             </div>
                             <div className="h-2.5 bg-muted rounded-full overflow-hidden">
                               <motion.div

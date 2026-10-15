@@ -9,6 +9,7 @@ import { isTransientError, sleep } from './net-retry';
 import { omitUndefined, makeJoinCode } from './firestore-sanitize';
 import { publicDisplayName } from './display-name';
 import type { Role } from './roles';
+import type { CertificateAward } from './certificates';
 
 export type { Role };
 
@@ -249,6 +250,8 @@ export interface Enrollment {
   courseId: string;
   progress: number;
   completedLessons: string[];
+  /** Published lessons in the course. Set on the parent overview, not stored on the enrollment. */
+  publishedLessons?: number;
   /** lessonId -> list of unlocked AiOutputs format keys (curriculum Sparks economy) */
   unlockedFormats?: Record<string, string[]>;
   enrolledAt?: Timestamp;
@@ -390,6 +393,9 @@ export interface UnitQuizAttempt {
   recommendedLessonIds?: string[];
   startedAt?: Timestamp;
   completedAt?: Timestamp;
+  /** Present when the server counted this pass toward the module. */
+  counted?: boolean;
+  certificate?: CertificateAward | null;
 }
 
 // ─── User ─────────────────────────────────────────────────────
@@ -753,13 +759,14 @@ export async function enrollInProgrammeModules(studentId: string, yearGroup: str
 
 export async function markLessonComplete(
   studentId: string, courseId: string, lessonId: string, xpReward = 50, _sparksReward = 0
-): Promise<void> {
+): Promise<{ accepted?: boolean; already?: boolean; certificate?: CertificateAward | null }> {
   void studentId;
   void _sparksReward;
-  await authedFetch('/api/platform/progress-complete', {
+  const data = await authedFetch('/api/platform/progress-complete', {
     method: 'POST',
     body: JSON.stringify({ courseId, lessonId, xpReward }),
   });
+  return data as { accepted?: boolean; already?: boolean; certificate?: CertificateAward | null };
 }
 
 // ─── Sparks Wallet ────────────────────────────────────────────
@@ -2403,15 +2410,14 @@ export interface Certificate {
   studentName: string;
   courseId: string;
   courseTitle: string;
+  moduleId?: string;
+  moduleTitle?: string;
   issuedAt: Timestamp;
   issuedBy: string;
   issuedByName: string;
-}
-
-export async function issueCertificate(data: Omit<Certificate, 'id'>): Promise<string> {
-  const uuid = crypto.randomUUID();
-  await setDoc(doc(db, 'certificates', uuid), { ...data, createdAt: serverTimestamp() });
-  return uuid;
+  kind?: 'module';
+  status?: 'valid' | 'revoked';
+  revokedAt?: Timestamp;
 }
 
 export async function getCertificatesForStudent(studentId: string): Promise<Certificate[]> {

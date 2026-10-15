@@ -7,7 +7,7 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from 'firebase/firestore';
 
 const PROJECT_ID = 'demo-poket';
 const hostEnv = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8080';
@@ -128,5 +128,58 @@ describe('ownership', () => {
     await assertFails(setDoc(doc(db, 'courses/paid1/enrollments/student1'), {
       studentId: 'student1', progress: 0, completedLessons: [],
     }));
+  });
+});
+
+describe('certificates', () => {
+  it('lets the public read a certificate and blocks every client write', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'certificates/cert-1'), {
+        studentId: 'student1',
+        studentName: 'Harry Student',
+        courseId: 'free1',
+        courseTitle: 'Biology',
+        moduleId: 'mod1',
+        moduleTitle: 'Cells',
+        issuedBy: 'poket-school',
+        issuedByName: 'Poket School',
+      });
+    });
+    const anon = env.unauthenticatedContext().firestore();
+    await assertSucceeds(getDoc(doc(anon, 'certificates/cert-1')));
+
+    const teacher = env.authenticatedContext('teacher1').firestore();
+    await assertFails(setDoc(doc(teacher, 'certificates/forged'), {
+      studentId: 'student2',
+      studentName: 'Forged Name',
+      courseId: 'free1',
+      courseTitle: 'Biology',
+      moduleTitle: 'Cells',
+      issuedBy: 'teacher1',
+      issuedByName: 'Ada Teacher',
+    }));
+    await assertFails(updateDoc(doc(teacher, 'certificates/cert-1'), { studentName: 'Changed' }));
+
+    const student = env.authenticatedContext('student1').firestore();
+    await assertSucceeds(getDocs(query(collection(student, 'certificates'), where('studentId', '==', 'student1'))));
+    await assertFails(setDoc(doc(student, 'certificates/self-made'), {
+      studentId: 'student1',
+      studentName: 'Harry Student',
+      courseId: 'free1',
+      courseTitle: 'Biology',
+    }));
+    await assertFails(setDoc(doc(student, 'certificate_keys/student1__free1__mod1'), {
+      certificateId: 'cert-1',
+    }));
+
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users/parent1'), {
+        role: 'parent', name: 'Parent', email: 'parent@example.com', childIds: ['student1'], xp: 0, sparksBalance: 0,
+      });
+    });
+    const parent = env.authenticatedContext('parent1').firestore();
+    await assertSucceeds(getDocs(query(collection(parent, 'certificates'), where('studentId', '==', 'student1'))));
+    const stranger = env.authenticatedContext('student2').firestore();
+    await assertFails(getDocs(query(collection(stranger, 'certificates'), where('studentId', '==', 'student1'))));
   });
 });
