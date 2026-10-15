@@ -10,8 +10,9 @@
  */
 import { aiDrafts } from './ai-drafts';
 import { pageNamespaces } from './page-copy';
+import { landingEn, landingMs, landingTa, landingZh, type LandingCopy } from './landing';
 
-const en = {
+const enCore = {
   header: {
     home: 'Home',
     courses: 'Courses',
@@ -495,7 +496,7 @@ const ms = {
     remembered: 'Sudah ingat?',
     back: 'Kembali ke log masuk',
   },
-} satisfies typeof en;
+} satisfies typeof enCore;
 
 const zh = {
   header: {
@@ -738,7 +739,7 @@ const zh = {
     remembered: '想起来了？',
     back: '返回登录',
   },
-} satisfies typeof en;
+} satisfies typeof enCore;
 
 const ta = {
   header: {
@@ -981,7 +982,13 @@ const ta = {
     remembered: 'நினைவுக்கு வந்ததா?',
     back: 'உள்நுழைவுக்குத் திரும்பு',
   },
-} satisfies typeof en;
+} satisfies typeof enCore;
+
+const en = { ...enCore, landing: landingEn };
+
+function withLanding<T extends typeof enCore>(catalog: T, landing: LandingCopy = landingEn): typeof en {
+  return { ...catalog, landing };
+}
 
 function catalogsOf<T extends Record<string, typeof en>>(value: T): T {
   return value;
@@ -1004,10 +1011,12 @@ function mergeCatalog(base: Record<string, unknown>, extra: Record<string, unkno
 
 const rawCatalogs = catalogsOf({
   en,
-  ms,
-  zh,
-  ta,
-  ...aiDrafts,
+  ms: withLanding(ms, landingMs),
+  zh: withLanding(zh, landingZh),
+  ta: withLanding(ta, landingTa),
+  ...Object.fromEntries(
+    Object.entries(aiDrafts).map(([code, catalog]) => [code, withLanding(catalog as typeof enCore)]),
+  ),
 });
 
 export const catalogs = Object.fromEntries(

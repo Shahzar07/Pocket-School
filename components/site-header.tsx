@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { isAdmin } from "@/lib/roles";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { CurrencySwitcher } from "@/components/currency-switcher";
+import { ThemeToggle } from "@/components/theme-toggle";
 import styles from "./home-chrome.module.css";
 
 const NAV_LINKS = [
@@ -24,6 +25,10 @@ const HIDDEN_PREFIXES = [
   "/onboarding",
   "/ai-studio",
   "/reads",
+  "/preview",
+  "/mode-preview",
+  "/payments-preview",
+  "/account-preview",
 ];
 
 export function SiteHeader() {
@@ -90,6 +95,9 @@ export function SiteHeader() {
   // navigated. Only the transparency differs now, and only over the hero.
   return (
     <>
+      <a className={styles.skip} href="#content">
+        {t("landing.skip")}
+      </a>
       <header className={`${styles.header} ${scrolled || !isLanding ? styles.scrolled : ""}`}>
         <div className={styles.headerInner}>
           <Link href="/" className={styles.brand}>
@@ -107,8 +115,11 @@ export function SiteHeader() {
             <Link href="/pricing">{t("header.pricing")}</Link>
             {!user && <Link href="/login">{t("header.signIn")}</Link>}
           </nav>
-          <LanguageSwitcher tone={isLanding && !scrolled ? "onDark" : "default"} />
-          <CurrencySwitcher tone={isLanding && !scrolled ? "onDark" : "default"} />
+          <div className={styles.headerTools}>
+            <LanguageSwitcher tone={isLanding && !scrolled ? "onDark" : "default"} />
+            <CurrencySwitcher tone={isLanding && !scrolled ? "onDark" : "default"} />
+            <ThemeToggle onDark={isLanding && !scrolled} />
+          </div>
           <Link className={styles.headerCta} href={user ? dashPath : "/signup"}>
             {user ? t("header.dashboard") : t("header.startFree")} <ArrowRight size={14} className="ps-dir-icon" />
           </Link>
@@ -139,6 +150,11 @@ export function SiteHeader() {
             <Link href={user ? dashPath : "/login"}>
               {user ? t("header.dashboard") : t("header.signIn")}
             </Link>
+            <div className={styles.mobileTools} onClick={(event) => event.stopPropagation()}>
+              <LanguageSwitcher />
+              <CurrencySwitcher />
+              <ThemeToggle />
+            </div>
           </nav>
         )}
       </header>
