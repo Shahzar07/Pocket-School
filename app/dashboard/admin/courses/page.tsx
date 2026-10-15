@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
   getAllCourses, getPendingCourses, deleteCourse, updateCourse,
-  approveCourse, rejectCourse,
+  approveCourse, rejectCourse, recordMarketplaceReview,
   type Course,
 } from '@/lib/db';
 import CourseEditorModal from '@/components/course-editor-modal';
@@ -93,6 +93,14 @@ export default function AdminCourseMgmt() {
   const onApprove = async (c: Course) => {
     try {
       await approveCourse(c.id);
+      if (user) {
+        await recordMarketplaceReview(c.id, {
+          actorId: user.uid,
+          actorEmail: user.email || profile?.email || '',
+          action: 'approve',
+          title: c.title,
+        });
+      }
       toast.success(`"${c.title}" approved and published to marketplace.`);
       load();
     } catch (e: any) {
@@ -104,6 +112,14 @@ export default function AdminCourseMgmt() {
     if (!confirm(`Reject "${c.title}"? It will be moved back to draft.`)) return;
     try {
       await rejectCourse(c.id);
+      if (user) {
+        await recordMarketplaceReview(c.id, {
+          actorId: user.uid,
+          actorEmail: user.email || profile?.email || '',
+          action: 'reject',
+          title: c.title,
+        });
+      }
       toast.success(`"${c.title}" rejected — moved back to draft.`);
       load();
     } catch (e: any) {

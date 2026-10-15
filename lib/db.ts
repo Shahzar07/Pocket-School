@@ -10,6 +10,7 @@ import type { OemLicence } from './oem';
 import type { AccessPolicy } from './access-policy';
 import { coerceDailyGoal } from './goals';
 import { stripUnitPrefix } from './unit-title';
+import { omitUndefined } from './course-builder';
 import { requestPush } from './push-client';
 import type { PushCategory } from './push';
 
@@ -66,6 +67,8 @@ export type CourseType = 'course' | 'ebook' | 'exam' | 'solutions' | 'paper' | '
 export interface Course {
   id: string;
   title: string;
+  /** Short line under the title on the course page. */
+  subtitle?: string;
   description: string;
   ownerId: string;
   ownerName?: string;
@@ -77,6 +80,8 @@ export interface Course {
   currency?: string;
   level?: string;
   category?: string;
+  /** Language code for the course, for example `en` or `ms`. */
+  language?: string;
   isPublic?: boolean;
   whatYouLearn?: string[];
   requirements?: string[];
@@ -470,7 +475,7 @@ export async function getCourse(courseId: string): Promise<Course | null> {
 
 export async function createCourse(data: Omit<Course, 'id'>): Promise<string> {
   const ref = await addDoc(collection(db, 'courses'), {
-    ...data,
+    ...omitUndefined(data),
     enrollmentCount: data.enrollmentCount ?? 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -526,7 +531,7 @@ export async function saveAiOutputsToLesson(
 export async function createModule(courseId: string, data: Omit<Module, 'id'>): Promise<string> {
   const title = stripUnitPrefix(data.title, data.unitNumber);
   const ref = await addDoc(collection(db, 'courses', courseId, 'modules'), {
-    ...data,
+    ...omitUndefined(data),
     title,
     createdAt: serverTimestamp(),
   });
@@ -535,18 +540,18 @@ export async function createModule(courseId: string, data: Omit<Module, 'id'>): 
 
 export async function createLesson(courseId: string, moduleId: string, data: Omit<Lesson, 'id'>): Promise<string> {
   const ref = await addDoc(collection(db, 'courses', courseId, 'modules', moduleId, 'lessons'), {
-    ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+    ...omitUndefined(data), createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
   });
   return ref.id;
 }
 
 export async function updateUnit(courseId: string, unitId: string, data: Partial<Module>): Promise<void> {
-  await updateDoc(doc(db, 'courses', courseId, 'modules', unitId), data as Record<string, unknown>);
+  await updateDoc(doc(db, 'courses', courseId, 'modules', unitId), omitUndefined(data) as Record<string, unknown>);
 }
 
 export async function updateLesson(courseId: string, moduleId: string, lessonId: string, data: Partial<Lesson>): Promise<void> {
   await updateDoc(doc(db, 'courses', courseId, 'modules', moduleId, 'lessons', lessonId), {
-    ...data, updatedAt: serverTimestamp(),
+    ...omitUndefined(data), updatedAt: serverTimestamp(),
   });
 }
 
@@ -1448,6 +1453,50 @@ export async function saveCourseReview(
     ...review,
     updatedAt: serverTimestamp(),
   });
+}
+
+export interface CourseQuestion {
+  id: string;
+  courseId: string;
+  authorId: string;
+  authorName: string;
+  text: string;
+  reply?: string;
+  repliedBy?: string;
+}
+
+export async function listCourseQuestions(courseId: string): Promise<CourseQuestion[]> {
+  const snap = await getDocs(query(collection(db, 'courses', courseId, 'questions'), limit(40)));
+  return snap.docs.map(item => ({ id: item.id, courseId, ...item.data() } as CourseQuestion));
+}
+
+export async function askCourseQuestion(
+  courseId: string,
+  question: { authorId: string; authorName: string; text: string },
+): Promise<void> {
+  await addDoc(collection(db, 'courses', courseId, 'questions'), {
+    ...question,
+    text: question.text.trim(),
+    createdAt: serverTimestamp(),
+  });
+}
+
+export async function replyToCourseQuestion(courseId: string, questionId: string, reply: string, repliedBy: string): Promise<void> {
+  await updateDoc(doc(db, 'courses', courseId, 'questions', questionId), {
+    reply: reply.trim(),
+    repliedBy,
+    repliedAt: serverTimestamp(),
+  });
+}
+
+export async function listInstructorActivity(courseIds: readonly string[]): Promise<{ reviews: CourseReview[]; questions: CourseQuestion[] }> {
+  const reviews: CourseReview[] = [];
+  const questions: CourseQuestion[] = [];
+  for (const courseId of courseIds.slice(0, 12)) {
+    try { reviews.push(...await listCourseReviews(courseId)); } catch { /* Reviews stay empty when the course cannot be read. */ }
+    try { questions.push(...await listCourseQuestions(courseId)); } catch { /* Questions need the owner rules deployed. */ }
+  }
+  return { reviews, questions };
 }
 
 /**
@@ -2957,8 +3006,9 @@ export async function getUserPhone(uid: string): Promise<string | null> {
 
 export async function updateCourse(id: string, data: Partial<Course>): Promise<void> {
   const ref = doc(db, 'courses', id);
-  if (data.accessPolicy) {
-    const policy = { ...data.accessPolicy };
+  const clean = omitUndefined(data);
+  if (clean.accessPolicy) {
+    const policy = { ...clean.accessPolicy };
     delete policy.seatsUsed;
     await runTransaction(db, async (tx) => {
       const snap = await tx.get(ref);
@@ -2966,11 +3016,11 @@ export async function updateCourse(id: string, data: Partial<Course>): Promise<v
         ? (snap.data().accessPolicy as AccessPolicy | undefined)?.seatsUsed
         : undefined;
       const accessPolicy = typeof current === 'number' ? { ...policy, seatsUsed: current } : policy;
-      tx.update(ref, { ...data, accessPolicy, updatedAt: serverTimestamp() });
+      tx.update(ref, { ...clean, accessPolicy, updatedAt: serverTimestamp() });
     });
     return;
   }
-  await updateDoc(ref, { ...data, updatedAt: serverTimestamp() });
+  await updateDoc(ref, { ...clean, updatedAt: serverTimestamp() });
 }
 
 /** Drop optional course fields so "derive this" can return to the default. */
@@ -3173,6 +3223,31 @@ export async function approveCourse(id: string): Promise<void> {
 export async function rejectCourse(id: string): Promise<void> {
   await updateDoc(doc(db, 'courses', id), {
     status: 'draft',
+    isPublic: false,
     updatedAt: serverTimestamp(),
+  });
+}
+
+/** Writes the existing course access log and the admin audit log for a review decision. */
+export async function recordMarketplaceReview(
+  courseId: string,
+  entry: { actorId: string; actorEmail: string; action: 'approve' | 'reject'; title: string },
+): Promise<void> {
+  const approved = entry.action === 'approve';
+  await writeAccessAudit(courseId, {
+    actorId: entry.actorId,
+    action: entry.action,
+    detail: approved
+      ? `Approved marketplace listing for ${entry.title}`
+      : `Rejected marketplace listing for ${entry.title}`,
+  });
+  await addDoc(collection(db, 'admin_audit'), {
+    actorId: entry.actorId,
+    actorEmail: entry.actorEmail,
+    action: `course.${entry.action}`,
+    targetId: courseId,
+    at: Date.now(),
+    before: { status: 'pending_approval' },
+    after: approved ? { status: 'published', isPublic: true } : { status: 'draft', isPublic: false },
   });
 }
