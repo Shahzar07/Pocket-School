@@ -10,7 +10,7 @@ import {
   ClipboardList, Presentation, Shield, BarChart, Settings, FileText, KeyRound, ChevronsUpDown, Target,
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
-  GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
+  GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X, CalendarDays,
   Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked, Compass, Camera, MessagesSquare,
   Wallet, Gift, Landmark, Plug, PieChart, Search,
 } from 'lucide-react';
@@ -101,6 +101,7 @@ const NAV: Record<Role, NavGroup[]> = {
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
       { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
+      { href: '/dashboard/planner', icon: CalendarDays, labelKey: 'nav.planner' },
       { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
@@ -149,6 +150,7 @@ const NAV: Record<Role, NavGroup[]> = {
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
       { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
+      { href: '/dashboard/planner', icon: CalendarDays, labelKey: 'nav.planner' },
       { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
     ]},
     { sectionKey: 'nav.section.account', items: [
@@ -180,6 +182,7 @@ const NAV: Record<Role, NavGroup[]> = {
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
       { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
+      { href: '/dashboard/planner', icon: CalendarDays, labelKey: 'nav.planner' },
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
     { sectionKey: 'nav.section.account', items: [
@@ -217,6 +220,7 @@ const NAV: Record<Role, NavGroup[]> = {
     { sectionKey: 'nav.section.platform', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
       { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
+      { href: '/dashboard/planner', icon: CalendarDays, labelKey: 'nav.planner' },
       { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
       { href: '/dashboard/teacher/billing', icon: CreditCard, labelKey: 'nav.billing' },
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
@@ -239,6 +243,7 @@ const NAV: Record<Role, NavGroup[]> = {
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
       { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
+      { href: '/dashboard/planner', icon: CalendarDays, labelKey: 'nav.planner' },
     ]},
     { sectionKey: 'nav.section.account', items: [
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },

@@ -51,6 +51,7 @@ export const kk = {
     finance: 'Қаржы',
     announcements: 'Хабарландырулар',
     calendar: 'Күнтізбе',
+    planner: 'Year planner',
     resources: 'Материалдар',
     helpdesk: 'Көмек',
     myProfile: 'Менің профилім',
