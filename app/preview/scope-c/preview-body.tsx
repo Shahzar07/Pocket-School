@@ -3,11 +3,11 @@
 import { useState } from 'react';
 import { CommunityScreen } from '@/components/scope-c/community-screen';
 import { ChannelsScreen } from '@/components/scope-c/channels-screen';
-import { ExamScreen, ModerationScreen, SnapScreen, StoreScreen, TutorsScreen, type AttemptCard, type BookingCard, type GradeCard, type PaperCard, type ResourceCard } from '@/components/scope-c/market-screens';
+import { ExamScreen, LessonQaScreen, ModerationScreen, SnapScreen, StoreScreen, TutorsScreen, type AttemptCard, type BookingCard, type GradeCard, type PaperCard, type ResourceCard } from '@/components/scope-c/market-screens';
 
 const OPEN_SLOT = Date.UTC(2026, 9, 20, 9, 0, 0);
 
-const SCREENS = ['community', 'channels', 'tutors', 'exams', 'store', 'snap', 'moderation'] as const;
+const SCREENS = ['community', 'channels', 'tutors', 'exams', 'store', 'snap', 'lesson', 'moderation'] as const;
 type ScreenId = (typeof SCREENS)[number];
 
 export function PreviewBody({ initial }: { initial?: string }) {
@@ -32,6 +32,7 @@ export function PreviewBody({ initial }: { initial?: string }) {
     { id: 'r2', title: 'Lesson note template', kind: 'template', status: 'approved', priceCents: 500, audiences: ['students', 'marketplace'] },
   ]);
   const [storeNote, setStoreNote] = useState('');
+  const [lessonNote, setLessonNote] = useState('');
 
   return (
     <div className="bg-background min-h-screen">
@@ -161,6 +162,19 @@ export function PreviewBody({ initial }: { initial?: string }) {
             });
           }}
         />
+      )}
+      {screen === 'lesson' && (
+        <>
+          <div className="max-w-[1400px] mx-auto px-4 pt-4">
+            <LessonQaScreen
+              suggestion="Move the constant to the other side, then divide."
+              questions={[{ id: 'q1', body: 'How do I isolate x?', aiSuggestedReply: 'Move the constant to the other side, then divide.', status: 'open' }]}
+              onAsk={(body) => setLessonNote(`Asked: ${body}`)}
+              onPublish={(id, reply) => setLessonNote(`Published ${id}: ${reply}`)}
+            />
+            {lessonNote && <p className="mt-3 text-sm text-muted-foreground">{lessonNote}</p>}
+          </div>
+        </>
       )}
       {screen === 'moderation' && (
         <ModerationScreen
