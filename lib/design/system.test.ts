@@ -6,6 +6,8 @@ test('tokens keep the Poket School teal and ink', () => {
   assert.equal(TOKENS.color.teal, '#2786A4');
   assert.equal(TOKENS.color.ink, '#203337');
   assert.equal(TOKENS.motion.base, '220ms');
+  assert.equal(TOKENS.color.page, '#F4F6F6');
+  assert.equal(TOKENS.color.danger, '#B23B2E');
 });
 
 test('sparks copy explains the lock', () => {
