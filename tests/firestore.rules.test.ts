@@ -668,4 +668,47 @@ describe('goals, snapshots, integrity, and published reports', () => {
     const stranger = env.authenticatedContext('student2').firestore();
     await assertFails(getDoc(doc(stranger, 'report_cards/card1')));
   });
+
+  it('keeps concern flags, re-exams, and school templates inside the role', async () => {
+    const teacher = env.authenticatedContext('teacher1').firestore();
+    await assertSucceeds(setDoc(doc(teacher, 'concern_flags/flag1'), {
+      studentId: 'student1', teacherId: 'teacher1', institutionId: 'school-a', kind: 'wellbeing',
+      severity: 'urgent', title: 'Wellbeing check-in', detail: 'Low check-in', automaticPenalty: false,
+      notify: ['parent', 'teacher'],
+    }));
+    await assertFails(setDoc(doc(teacher, 'concern_flags/penalty'), {
+      studentId: 'student1', teacherId: 'teacher1', kind: 'at_risk', automaticPenalty: true,
+    }));
+    const student = env.authenticatedContext('student1').firestore();
+    const other = env.authenticatedContext('student2').firestore();
+    const parent = env.authenticatedContext('parent1').firestore();
+    const school = env.authenticatedContext('instadmin1').firestore();
+    await assertSucceeds(getDoc(doc(student, 'concern_flags/flag1')));
+    await assertSucceeds(getDoc(doc(parent, 'concern_flags/flag1')));
+    await assertFails(getDoc(doc(other, 'concern_flags/flag1')));
+    await assertFails(getDoc(doc(school, 'concern_flags/flag1')));
+
+    await assertSucceeds(setDoc(doc(student, 'reexam_responses/resp1'), {
+      caseId: 'case1', studentId: 'student1', teacherId: 'teacher1', answers: 'One quarter.', automaticPenalty: false,
+    }));
+    await assertFails(setDoc(doc(other, 'reexam_responses/resp2'), {
+      caseId: 'case1', studentId: 'student1', teacherId: 'teacher1', answers: 'Copied.', automaticPenalty: false,
+    }));
+    await assertSucceeds(getDoc(doc(teacher, 'reexam_responses/resp1')));
+    await assertFails(updateDoc(doc(student, 'reexam_responses/resp1'), { answers: 'Changed' }));
+
+    await assertSucceeds(setDoc(doc(student, 'notify_settings/student1'), { quietStart: '21:00', quietEnd: '07:00' }));
+    await assertFails(setDoc(doc(student, 'notify_settings/student2'), { quietStart: '21:00', quietEnd: '07:00' }));
+    await assertSucceeds(setDoc(doc(school, 'notify_settings/school_school-a'), {
+      quietStart: '21:00', quietEnd: '07:00', institutionId: 'school-a',
+    }));
+
+    await assertSucceeds(setDoc(doc(school, 'report_templates/tpl-a'), {
+      institutionId: 'school-a', label: 'Term', heading: 'Term report', scaleId: 'a_to_e', logoUrl: 'https://poketschool.ai/logo.png',
+    }));
+    await assertFails(setDoc(doc(school, 'report_templates/tpl-b'), {
+      institutionId: 'school-b', label: 'Other', heading: 'Other', scaleId: 'a_to_e', logoUrl: '',
+    }));
+    await assertFails(getDoc(doc(other, 'report_templates/tpl-a')));
+  });
 });

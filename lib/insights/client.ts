@@ -162,6 +162,48 @@ export async function logReportExport(entry: {
   return ref.id;
 }
 
+export async function saveConcernFlag(data: Record<string, unknown>) {
+  const ref = await addDoc(collection(db, 'concern_flags'), omitUndefined({
+    ...data,
+    automaticPenalty: false,
+    createdAt: serverTimestamp(),
+  }));
+  return ref.id;
+}
+
+export async function listConcernFlags(field: 'studentId' | 'teacherId', id: string) {
+  const snap = await getDocs(query(collection(db, 'concern_flags'), where(field, '==', id)));
+  return snap.docs.map(row => ({ id: row.id, ...row.data() } as Record<string, unknown> & { id: string }));
+}
+
+export async function saveReexamResponse(data: { caseId: string; studentId: string; teacherId: string; answers: string; vivaAnswers?: string }) {
+  const ref = await addDoc(collection(db, 'reexam_responses'), omitUndefined({
+    ...data,
+    automaticPenalty: false,
+    submittedAt: serverTimestamp(),
+  }));
+  return ref.id;
+}
+
+export async function saveNotifySettings(userId: string, settings: { quietStart: string; quietEnd: string; institutionId?: string }) {
+  await setDoc(doc(db, 'notify_settings', userId), omitUndefined(settings), { merge: true });
+}
+
+export async function saveSchoolTemplate(id: string, template: {
+  institutionId: string;
+  label: string;
+  heading: string;
+  scaleId: string;
+  logoUrl: string;
+}) {
+  await setDoc(doc(db, 'report_templates', id), template, { merge: true });
+}
+
+export async function listSchoolTemplates(institutionId: string) {
+  const snap = await getDocs(query(collection(db, 'report_templates'), where('institutionId', '==', institutionId)));
+  return snap.docs.map(row => ({ id: row.id, ...row.data() } as Record<string, unknown> & { id: string }));
+}
+
 export async function readPublishedReport(token: string) {
   const snap = await getDoc(doc(db, 'published_reports', token));
   return snap.exists() ? snap.data() : null;

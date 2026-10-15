@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { PenSquare, CheckCircle2, Clock, Loader2, ChevronRight, Trophy } from 'lucide-react';
+import { IntegrityNotice } from '@/components/insights/integrity-notice';
+import { applyCapture, captureToSignals, emptyCapture } from '@/lib/insights/integrity-capture';
+import { authedFetch } from '@/lib/api-client';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -84,6 +87,7 @@ export default function StudentExamsPage() {
     }
     setActiveExam(exam);
     setAnswers({});
+    captureRef.current = emptyCapture(Date.now());
     if (exam.timeLimit) {
       setTimeLeft(exam.timeLimit * 60);
       timerRef.current = setInterval(() => {
@@ -100,6 +104,15 @@ export default function StudentExamsPage() {
 
   // Auto-submit when timer reaches 0
   const autoSubmitRef = useRef(false);
+  const captureRef = useRef(emptyCapture(Date.now()));
+  useEffect(() => {
+    if (!activeExam) return;
+    const onHide = () => {
+      if (document.hidden) captureRef.current = applyCapture(captureRef.current, { type: 'blur' });
+    };
+    document.addEventListener('visibilitychange', onHide);
+    return () => document.removeEventListener('visibilitychange', onHide);
+  }, [activeExam]);
   useEffect(() => {
     if (timeLeft === 0 && activeExam && !submitting && !autoSubmitRef.current) {
       autoSubmitRef.current = true;
@@ -134,7 +147,18 @@ export default function StudentExamsPage() {
       }
       const passed = maxScore > 0 ? (score / maxScore) * 100 >= activeExam.passingScore : false;
       const studentName = profile?.name ?? user.displayName ?? 'Student';
-      await submitExam({ examId: activeExam.id!, studentId: user.uid, studentName, courseId: activeExam.courseId, answers, score, maxScore, passed });
+      const integritySignals = captureToSignals(captureRef.current, Date.now());
+      await submitExam({ examId: activeExam.id!, studentId: user.uid, studentName, courseId: activeExam.courseId, answers, score, maxScore, passed, integritySignals });
+      await authedFetch('/api/insights/integrity-flag', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...integritySignals,
+          submission: Object.values(answers).join('\n'),
+          assignmentTitle: activeExam.title,
+          teacherId: activeExam.createdBy,
+          studentName,
+        }),
+      }).catch(() => null);
       toast.success(`Exam submitted! Score: ${score}/${maxScore}`);
       const newSub: ExamSubmission = { id: '', examId: activeExam.id!, studentId: user.uid, studentName, courseId: activeExam.courseId, answers, score, maxScore, passed };
       setExams(prev => prev.map(e => e.exam.id === activeExam.id ? { ...e, submission: newSub } : e));
@@ -180,6 +204,7 @@ export default function StudentExamsPage() {
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">EXAM IN PROGRESS</p>
             <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1.5">{activeExam.title}</h1>
+            <div className="mt-3"><IntegrityNotice /></div>
           </div>
           {timeLeft !== null && (
             <div className={`flex items-center gap-2 font-bold text-lg px-5 py-2.5 rounded-full ${timeLeft < 60 ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'}`}>
@@ -229,7 +254,12 @@ export default function StudentExamsPage() {
                   className="w-full bg-background border border-border rounded-2xl p-3 text-sm min-h-20 resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="Your answer..."
                   value={answers[q.id] ?? ''}
-                  onChange={e => setAnswers(a => ({ ...a, [q.id]: e.target.value }))}
+                  onPaste={() => { captureRef.current = applyCapture(captureRef.current, { type: 'paste' }); }}
+                  onChange={e => {
+                    const value = e.target.value;
+                    captureRef.current = applyCapture(captureRef.current, { type: 'input', length: value.length });
+                    setAnswers(a => ({ ...a, [q.id]: value }));
+                  }}
                 />
               )}
               <p className="text-xs text-muted-foreground text-right">{q.points} pt{q.points !== 1 ? 's' : ''}</p>
