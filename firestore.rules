@@ -1207,8 +1207,18 @@ service cloud.firestore {
 
     // ── Behaviour Records ─────────────────────────────────────
     match /behaviour_records/{recordId} {
-      allow read: if isSignedIn();
-      allow create, update: if isTeacherOrAdmin();
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || resource.data.studentId == request.auth.uid
+        || linkedTo(resource.data.studentId)
+        || resource.data.recordedBy == request.auth.uid
+        || resource.data.get('teacherIds', []).hasAny([request.auth.uid])
+        || (isInstitutionAdmin()
+            && resource.data.get('institutionId', '') != ''
+            && resource.data.get('institutionId', '') == myInstitution())
+      );
+      allow create: if isTeacherOrAdmin() && incoming().recordedBy == request.auth.uid;
+      allow update: if isTeacherOrAdmin() && resource.data.recordedBy == request.auth.uid;
       allow delete: if isAdmin();
     }
 
@@ -1896,8 +1906,12 @@ service cloud.firestore {
     match /mood_checkins/{checkinId} {
       allow read: if isSignedIn() && (
         resource.data.studentId == request.auth.uid
-        || isTeacherOrAdmin()
+        || isAdmin()
         || linkedTo(resource.data.studentId)
+        || resource.data.get('teacherIds', []).hasAny([request.auth.uid])
+        || (isInstitutionAdmin()
+            && resource.data.get('institutionId', '') != ''
+            && resource.data.get('institutionId', '') == myInstitution())
       );
       allow create: if isSignedIn() && incoming().studentId == request.auth.uid;
       allow update: if isSignedIn() && resource.data.studentId == request.auth.uid;

@@ -14,6 +14,8 @@ import { digestHeadlines } from '../insights/analytics';
 import { formatProgressDigest, type GoalLike } from '../insights/goals';
 import { digestDue, type DigestCadence } from '../parent-controls';
 import { addDays, isoDateKey } from '../insights/dates';
+import { behaviourAlertMessages, buildBehaviourBoard } from '../insights/behaviour-board';
+import type { Mood } from '../insights/behaviour';
 import { notifyParents, notifyUser } from './device-push';
 
 function yesterdayKey(now = new Date()): string {
@@ -269,10 +271,118 @@ export async function writeStudentSnapshot(studentId: string, now = new Date()) 
     now,
   });
   const teacherIds = await teacherIdsFor(studentId);
-  await db.collection('analytics_snapshots').doc(`student_${studentId}`).set({
+  const userDoc = await db.doc(`users/${studentId}`).get();
+  const studentName = (userDoc.data()?.name as string) || 'Student';
+  const institutionId = (userDoc.data()?.institutionId as string) || '';
+  let behaviourBoard: Record<string, unknown> | null = null;
+  try {
+    const [moodSnap, noteSnap] = await Promise.all([
+      db.collection('mood_checkins').where('studentId', '==', studentId).limit(60).get(),
+      db.collection('behaviour_records').where('studentId', '==', studentId).limit(40).get(),
+    ]);
+    const board = buildBehaviourBoard({
+      role: 'student',
+      scopeLabel: studentName,
+      computedAt: now.toISOString(),
+      precomputed: true,
+      now,
+      moods: moodSnap.docs.map(row => {
+        const data = row.data();
+        const mood = Number(data.mood);
+        return {
+          dateKey: String(data.dateKey ?? ''),
+          mood: (mood >= 1 && mood <= 5 ? mood : 3) as Mood,
+          effort: typeof data.effort === 'number' ? data.effort : undefined,
+          at: `${data.dateKey ?? end}T12:00:00.000Z`,
+        };
+      }),
+      notes: noteSnap.docs.map(row => {
+        const data = row.data();
+        const created = data.createdAt as { toDate?: () => Date } | undefined;
+        return {
+          id: row.id,
+          studentId,
+          studentLabel: (data.studentName as string) || studentName,
+          type: (data.type as 'merit' | 'demerit' | 'commendation' | 'warning' | 'note') || 'note',
+          points: Number(data.points) || 0,
+          description: (data.description as string) || '',
+          at: created?.toDate?.().toISOString() ?? now.toISOString(),
+        };
+      }),
+      focusSessions: focusSnap.docs.map(row => ({
+        plannedMinutes: Number(row.data().plannedMinutes) || 0,
+        actualMinutes: Number(row.data().actualMinutes) || 0,
+        goalId: row.data().goalId as string | undefined,
+      })),
+      snapshotInput: {
+        scope: 'student',
+        scopeId: studentId,
+        computedAt: now.toISOString(),
+        rangeStart: start,
+        rangeEnd: end,
+        studyEvents,
+        quizzes,
+        goals,
+        attendance,
+        holidays,
+        focusSessions: focusSnap.docs.map(row => ({
+          plannedMinutes: Number(row.data().plannedMinutes) || 0,
+          actualMinutes: Number(row.data().actualMinutes) || 0,
+        })),
+        hints: 0,
+        questions: quizzes.length,
+        aiTurns: 0,
+        sparksEarned,
+        sparksSpent: snapshot.metrics.sparks_spent ?? 0,
+        deadlinesMs: [],
+        cohortScores: [],
+        previousStudyMinutes: null,
+        integrityOpen: false,
+        streakBroken: false,
+        now,
+      },
+    });
+    const { snapshot: _snapshot, ...rest } = board;
+    behaviourBoard = rest;
+  } catch (error) {
+    console.error('Behaviour board', error);
+  }
+  const ref = db.collection('analytics_snapshots').doc(`student_${studentId}`);
+  const prior = await ref.get();
+  const today = isoDateKey(now);
+  const alerts = behaviourAlertMessages(snapshot.behaviour.anomalies, studentName);
+  let behaviourAlertedOn = prior.data()?.behaviourAlertedOn as string | undefined;
+  if (alerts.length > 0 && behaviourAlertedOn !== today) {
+    try {
+      for (const alert of alerts) {
+        await notifyParents(studentId, studentName, {
+          title: alert.title,
+          message: alert.message,
+          type: 'general',
+          link: alert.link,
+          pref: 'behaviour',
+        });
+        await Promise.all(teacherIds.map(teacherId => notifyUser({
+          userId: teacherId,
+          title: alert.title,
+          message: alert.message,
+          type: 'general',
+          link: '/dashboard/behaviour',
+          pref: 'behaviour',
+        })));
+      }
+      behaviourAlertedOn = today;
+    } catch (error) {
+      console.error('Behaviour alert', error);
+    }
+  }
+  await ref.set({
     ...snapshot,
     subjectStudentId: studentId,
     teacherIds,
+    ...(institutionId ? { institutionId } : {}),
+    ...(behaviourBoard ? { behaviourBoard } : {}),
+    ...(behaviourAlertedOn ? { behaviourAlertedOn } : {}),
     computedAt: now.toISOString(),
   });
   return snapshot;

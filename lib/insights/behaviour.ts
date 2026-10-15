@@ -140,3 +140,11 @@ export const MOOD_LABELS: Record<Mood, string> = {
   4: 'Good',
   5: 'Bright',
 };
+
+export const MOOD_EMOJI: Record<Mood, string> = {
+  1: '😔',
+  2: '😕',
+  3: '😐',
+  4: '🙂',
+  5: '😄',
+};

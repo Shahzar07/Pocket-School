@@ -102,6 +102,7 @@ export default function BehaviourPage() {
           <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1">
             Student <span className="gradient-text italic">Behaviour</span>
           </h1>
+          <p className="text-sm text-muted-foreground mt-2"><a className="underline" href="/dashboard/behaviour">Open the behaviour dashboard</a> for the class heatmap, quadrant, and alerts.</p>
         </div>
         <Button
           onClick={() => setShowForm(s => !s)}

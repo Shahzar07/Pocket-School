@@ -31,10 +31,41 @@ export async function logStudyEvent(data: {
   await addDoc(collection(db, 'study_events'), omitUndefined(data));
 }
 
-export async function saveMood(studentId: string, dateKey: string, mood: number) {
-  await setDoc(doc(db, 'mood_checkins', `${studentId}_${dateKey}`), {
-    studentId, dateKey, mood, updatedAt: serverTimestamp(),
-  }, { merge: true });
+export async function saveMood(studentId: string, dateKey: string, mood: number, effort?: number) {
+  await setDoc(doc(db, 'mood_checkins', `${studentId}_${dateKey}`), omitUndefined({
+    studentId, dateKey, mood, effort, updatedAt: serverTimestamp(),
+  }), { merge: true });
+}
+
+export async function listMoods(studentId: string) {
+  const snap = await getDocs(query(collection(db, 'mood_checkins'), where('studentId', '==', studentId)));
+  return snap.docs.map(row => {
+    const data = row.data();
+    return {
+      dateKey: String(data.dateKey ?? ''),
+      mood: Number(data.mood) as 1 | 2 | 3 | 4 | 5,
+      effort: typeof data.effort === 'number' ? data.effort : undefined,
+      at: String(data.updatedAt?.toDate?.()?.toISOString?.() ?? `${data.dateKey}T12:00:00.000Z`),
+    };
+  });
+}
+
+export async function listStudyEvents(studentId: string) {
+  const snap = await getDocs(query(collection(db, 'study_events'), where('studentId', '==', studentId)));
+  return snap.docs.map(row => row.data() as { minutes?: number; at?: string; weekday?: number; hour?: number; courseId?: string });
+}
+
+export async function listFocusSessions(studentId: string) {
+  const snap = await getDocs(query(collection(db, 'focus_sessions'), where('studentId', '==', studentId)));
+  return snap.docs.map(row => {
+    const data = row.data();
+    return {
+      plannedMinutes: Number(data.plannedMinutes) || 0,
+      actualMinutes: Number(data.actualMinutes) || 0,
+      at: typeof data.startedAt?.toDate === 'function' ? data.startedAt.toDate().toISOString() : undefined,
+      goalId: data.goalId as string | undefined,
+    };
+  });
 }
 
 export async function listSuggestions(studentId: string) {

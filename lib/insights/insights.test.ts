@@ -37,6 +37,8 @@ import {
   threeActions, understandingScore, weeklyInsights, weeklySummary, withBloomTags,
 } from './analytics';
 import { attendanceRate, automaticMark, automaticStatus, mergeMarks } from './attendance';
+import { behaviourAlertMessages } from './behaviour-board';
+import { behaviourChecks, seedBehaviour } from './behaviour-seed';
 import { seedChecks, seedHub, SEED_MARKS } from './hub-seed';
 import { buildReportHub } from './hub';
 import { buildSnapshot } from './aggregate';
@@ -427,6 +429,26 @@ describe('attendance and the reports hub', () => {
 
   it('steps a daily schedule forward one day', () => {
     expect(nextScheduleDate('daily', '2026-10-15')).toBe('2026-10-16');
+  });
+});
+
+describe('behaviour dashboard', () => {
+  it('matches the seeded student board and hides other students', () => {
+    const board = seedBehaviour('student');
+    for (const check of behaviourChecks(board)) assert.equal(check.actual, check.expected, check.label);
+    expect(board.classPoints).toHaveLength(1);
+    expect(board.heatmap).toHaveLength(7);
+    expect(board.heatmap[0]).toHaveLength(24);
+    expect(board.timeline.some(item => item.kind === 'cramming' && item.at.startsWith('2026-10-14T20:00'))).toBe(true);
+  });
+
+  it('flags one at-risk classmate for a teacher and alerts on a study drop', () => {
+    const board = seedBehaviour('teacher');
+    for (const check of behaviourChecks(board)) assert.equal(check.actual, check.expected, check.label);
+    expect(board.classPoints.find(point => point.label === 'Leo')?.quadrant).toBe('needs-attention');
+    const alerts = behaviourAlertMessages(board.snapshot.behaviour.anomalies, 'Mina');
+    expect(alerts.map(alert => alert.title)).toContain('Study time dropped');
+    expect(alerts[0]?.link).toBe('/dashboard/behaviour');
   });
 });
 
