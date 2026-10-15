@@ -98,7 +98,11 @@ Di hujung pantai, cermin ketiga menyala sekali, segi empat kuning yang hangat, l
 
 “Bagus,” kata Rashid. “Maknanya kau sudah mula memerhati. Itulah seluruh kerja ini.”`;
 
-const BLUE_1 = `The blue notebook lived in the cupboard under the stairs, which was not a scary cupboard. It smelled of biscuits and raincoats. Every Tuesday, after school, Imran was allowed to take it to the table and write one true thing.
+const NOTEBOOK_ART = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000"><rect width="800" height="1000" fill="#1e4d6b"/><rect x="190" y="150" width="420" height="560" rx="20" fill="#f4efe4"/><rect x="240" y="220" width="320" height="10" rx="5" fill="#d7c7ae"/><rect x="240" y="252" width="280" height="10" rx="5" fill="#d7c7ae"/><rect x="240" y="284" width="300" height="10" rx="5" fill="#d7c7ae"/><circle cx="400" cy="470" r="78" fill="#c9a36a"/><circle cx="372" cy="454" r="8" fill="#203337"/><circle cx="428" cy="454" r="8" fill="#203337"/><ellipse cx="400" cy="490" rx="16" ry="10" fill="#8a6844"/></svg>')}`;
+
+const BLUE_1 = `!full[A blue notebook open on a table, with a round hamster drawn in the margin](${NOTEBOOK_ART})
+
+The blue notebook lived in the cupboard under the stairs, which was not a scary cupboard. It smelled of biscuits and raincoats. Every Tuesday, after school, Imran was allowed to take it to the table and write one true thing.
 
 The rule was his grandmother’s. One true thing, and it had to fit on a single line, because a line is braver than a page. A page lets you wander off. A line makes you choose.
 
@@ -211,6 +215,14 @@ export const BOOKS: Book[] = [
       index: 1,
       nextTitle: 'The Lantern Market',
       nextBlurb: 'The second book follows the blue notebook off the water and into the market that only opens when the wind changes.',
+    },
+    coverBrief: {
+      styleId: 'novel',
+      placement: 'bottom',
+      font: 'serif',
+      brand: true,
+      ageOk: true,
+      ageNote: 'Suitable for 12+.',
     },
     weeklyReads: 980,
     releasedAt: '2026-09-02',

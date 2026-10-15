@@ -20,7 +20,9 @@
  * | Board | leaderboard.ts `privacyBoard` | Shared privacy-safe leaderboard. |
  * | Notices | notifications.ts `readingNotices` | Notifications centre. Shape is `{ title, message, href }`. |
  * | Search | search.ts `searchBooks` | Merged into `GET /api/search` as `books`, and shown in dashboard search. Replace the function when a shared index owns book documents. |
- * | CMS order | cms.ts `moveItem` | Drag-and-drop curriculum CMS. |
+ * | CMS order | cms.ts `moveItem` | Drag-and-drop curriculum CMS. Chapter reorder uses this, not a second helper. |
+ * | Editor | `components/editor` | WYSIWYG, paste, .docx/.md/.txt/.pdf/.epub import, autosave, version history. PR #52 owns the folder. |
+ * | Media | `components/media` | Image library, crop, required alt, Sparks illustrations, text-free cover art. PR #52 owns the folder. Book overlay, series style, tile/hero/thumb, and the age check stay in Book Studio. |
  */
 export { quotePrice, viewerCurrency, FX_AS_OF, FX_PER_USD } from './pricing';
 export { bookAllocation, decideBook } from './allocation';

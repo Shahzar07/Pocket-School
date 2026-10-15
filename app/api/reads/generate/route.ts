@@ -52,8 +52,17 @@ export async function POST(request: Request) {
       },
     ], { model: CONTENT_MODEL, jsonMode: true, maxTokens: 1200 });
 
-    const parsed = JSON.parse(raw) as { title?: string; blurb?: string };
-    return NextResponse.json({ title: parsed.title ?? body.title, blurb: parsed.blurb ?? '' });
+    const parsed = JSON.parse(raw) as {
+      title?: string;
+      blurb?: string;
+      chapters?: { title?: string; summary?: string }[];
+    };
+    const chapters = Array.isArray(parsed.chapters)
+      ? parsed.chapters
+        .filter(chapter => typeof chapter?.title === 'string' && chapter.title.trim())
+        .map(chapter => ({ title: chapter.title!.trim(), summary: (chapter.summary ?? '').trim() }))
+      : [];
+    return NextResponse.json({ title: parsed.title ?? body.title, blurb: parsed.blurb ?? '', chapters });
   } catch {
     return NextResponse.json({ error: 'Outline generation failed.' }, { status: 502 });
   }

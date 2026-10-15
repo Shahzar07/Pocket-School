@@ -8,6 +8,14 @@ export function BookCover({
   kicker?: string;
   className?: string;
 }) {
+  if (cover.image) {
+    return (
+      <div className={`relative overflow-hidden ${className}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={cover.image} alt={title} className="h-full w-full object-cover" />
+      </div>
+    );
+  }
   return (
     <div
       className={`relative overflow-hidden ${className}`}

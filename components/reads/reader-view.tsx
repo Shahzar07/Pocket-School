@@ -13,6 +13,7 @@ import { bookToShelf, visibleBooks } from '@/lib/shelf/catalogue';
 import { recommend } from '@/lib/shelf/recommend';
 import { useReadsT } from '@/lib/reads/i18n';
 import { chapterProgress, paginateChapter, sentencesOf } from '@/lib/reads/paginate';
+import { ChapterProse, proseForSpeech } from '@/components/reads/prose';
 import { QUIET_LABEL, isQuietHour } from '@/lib/reads/quiet';
 import { bookById } from '@/lib/reads/seed';
 import type { Book, BookChapter, LanguageVersion } from '@/lib/reads/types';
@@ -185,7 +186,7 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
   const listen = () => {
     if (listening) { stopListen(); return; }
     if (!window.speechSynthesis) return;
-    const parts = sentencesOf(page);
+    const parts = sentencesOf(proseForSpeech(page));
     setListening(true);
     let i = 0;
     const speak = () => {
@@ -268,7 +269,7 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
     : timer === 'hidden' ? t('reads.reader.hidden')
     : t('reads.reader.quiet');
 
-  const sentences = sentencesOf(page);
+  const sentences = sentencesOf(proseForSpeech(page));
   const highlighted = notes.some(n => page.includes(n.quote));
 
   return (
@@ -338,9 +339,9 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
               >
                 {listening ? sentences.map((s, i) => (
                   <span key={i} style={{ background: i === sentence ? '#E7C27D' : undefined, color: i === sentence ? '#1C2422' : undefined }}>{s} </span>
-                )) : page.split(/\n{2,}/).map(para => (
-                  <p key={para.slice(0, 32)} className="mb-[1em]">{renderQuote(para, notes.map(n => n.quote))}</p>
-                ))}
+                )) : (
+                  <ChapterProse markdown={page} quotes={notes.map(n => n.quote)} />
+                )}
               </div>
               {selection && (
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -528,13 +529,6 @@ function TypePanel({
       </div>
     </div>
   );
-}
-
-function renderQuote(para: string, quotes: string[]) {
-  const hit = quotes.find(q => q && para.includes(q));
-  if (!hit) return para;
-  const [before, after] = para.split(hit);
-  return <>{before}<mark className="rounded bg-[#E7C27D] px-0.5 text-[#1C2422]">{hit}</mark>{after}</>;
 }
 
 function formatClock(total: number) {

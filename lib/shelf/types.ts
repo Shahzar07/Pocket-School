@@ -11,6 +11,10 @@ export interface CoverStyle {
   from: string;
   to: string;
   accent: string;
+  /** Composed tile, with crisp title text. Absent while the cover is still a gradient. */
+  image?: string;
+  hero?: string;
+  thumb?: string;
 }
 
 export interface ShelfItem {

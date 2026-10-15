@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
     ],
   },
   output: 'standalone',
-  serverExternalPackages: ['firebase-admin'],
+  serverExternalPackages: ['firebase-admin', 'mammoth', 'unpdf'],
   transpilePackages: ['motion'],
   webpack: (config, { dev }) => {
     if (dev && process.env.DISABLE_HMR === 'true') {

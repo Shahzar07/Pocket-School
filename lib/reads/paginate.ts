@@ -13,6 +13,15 @@ export function paginateChapter(markdown: string, wordsPerPage = 220): string[] 
   const count = (s: string) => s.split(/\s+/).filter(Boolean).length;
 
   for (const paragraph of paragraphs) {
+    if (paragraph.startsWith('!full[')) {
+      if (bucket.length) {
+        pages.push(bucket.join('\n\n'));
+        bucket = [];
+        words = 0;
+      }
+      pages.push(paragraph);
+      continue;
+    }
     const n = count(paragraph);
     if (bucket.length > 0 && words + n > wordsPerPage) {
       pages.push(bucket.join('\n\n'));

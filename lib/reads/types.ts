@@ -1,4 +1,7 @@
+import type { ContentOrigin } from '@/components/editor/types';
+import type { MediaAsset } from '@/components/media/types';
 import type { AccessTier } from '@/lib/entitlements';
+import type { CoverBrief } from '@/lib/reads/cover';
 import type { CoverStyle } from '@/lib/shelf/types';
 
 export type BookCategory = 'academic' | 'general';
@@ -37,6 +40,8 @@ export interface BookChapter {
   quiz?: ChapterQuiz[];
   /** Spoiler-safe notes ET can answer from without calling the model. */
   guide?: { q: string; a: string }[];
+  /** Where the prose came from. Absent on the seeded source chapters. */
+  origin?: ContentOrigin;
 }
 
 /**
@@ -102,6 +107,10 @@ export interface Book {
   allocateMarketplace: boolean;
   series?: BookSeries;
   chapters: BookChapter[];
+  /** Pictures for this book. Alt text is required before one can be placed or published. */
+  images?: MediaAsset[];
+  /** Cover picture and the book-only overlay. The picture comes from components/media. */
+  coverBrief?: CoverBrief;
   /** Weekly reads, used for Trending and Top 10. Editorial, not a live counter. */
   weeklyReads: number;
   releasedAt: string;
