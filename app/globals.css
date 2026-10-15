@@ -86,10 +86,11 @@
     --secondary: #E9F7FA;
     --secondary-foreground: #1E6A83;
     --muted: #F0F5F4;
-    --muted-foreground: #5F7074;
+    /* Dark enough for WCAG AA body text on the page and on white cards. */
+    --muted-foreground: #3E5257;
     --accent: #E9F7FA;
     --accent-foreground: #1E6A83;
-    --destructive: #D0553F;
+    --destructive: #B23B2E;
     --destructive-foreground: #FFFFFF;
     --border: #E7EDED;
     --input: #E7EDED;
@@ -105,6 +106,23 @@
      * the `rounded-3xl` cards used across the dashboard 48px: far rounder
      * than anything on the homepage. */
     --radius: 0.5rem;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    --text-xs: 0.6875rem;
+    --text-sm: 0.8125rem;
+    --text-md: 0.875rem;
+    --text-lg: 1.0625rem;
+    --text-xl: 1.75rem;
+    --text-2xl: 2.125rem;
+    --motion-fast: 120ms;
+    --motion-base: 220ms;
+    --motion-slow: 420ms;
+    --ease-out: cubic-bezier(0.21, 0.6, 0.35, 1);
     --sidebar: #FFFFFF;
     --sidebar-foreground: #203337;
     --sidebar-primary: #2786A4;
@@ -215,11 +233,26 @@
   animation: marquee-scroll 24s linear infinite;
 }
 
+.ps-skeleton {
+  background: linear-gradient(90deg, var(--muted) 25%, var(--secondary) 37%, var(--muted) 63%);
+  background-size: 400% 100%;
+  animation: ps-shimmer 1.4s ease infinite;
+}
+@keyframes ps-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .blob-1, .blob-2, .blob-3 { animation: none; }
+  .blob-1, .blob-2, .blob-3, .ps-skeleton, .marquee-track, .c5-animated-gradient { animation: none; }
   .card-glow { transition: none; }
-  .marquee-track { animation: none; }
   html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Headings

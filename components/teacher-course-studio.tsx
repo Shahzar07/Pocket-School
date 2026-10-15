@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { GripVertical, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { ContentEditor } from '@/components/editor';
+import dynamic from 'next/dynamic';
 import { CoverArtPicker, storeMedia } from '@/components/media';
 import { AllocationPanel } from '@/components/allocation-panel';
 import { CourseStudentPreview } from '@/components/course-student-preview';
@@ -55,6 +55,11 @@ import {
   type Lesson,
 } from '@/lib/db';
 import { tagBloom } from '@/lib/insights/analytics';
+
+const ContentEditor = dynamic(
+  () => import('@/components/editor/content-editor').then(mod => mod.ContentEditor),
+  { ssr: false, loading: () => <div className="ps-skeleton h-40 rounded-2xl" aria-hidden="true" /> },
+);
 
 function lectureFromLesson(lesson: Lesson): StudioLecture {
   const kind: LectureKind = lesson.lessonType === 'assessment' || lesson.isUnitQuiz

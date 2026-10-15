@@ -14,6 +14,8 @@ import { AllocationPicker } from '@/components/allocation-picker';
 import { describeTargets } from '@/lib/allocation-targets';
 import { institutionOrigin } from '@/lib/white-label';
 import { Button } from '@/components/ui/button';
+import { DashPage, DashHeader, Panel } from '@/components/dash-ui';
+import { friendlyError } from '@/lib/design/system';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -77,7 +79,7 @@ export default function InstitutionAcademyPage() {
       toast.success(message.subject);
       await navigator.clipboard.writeText(message.text).catch(() => undefined);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not save the invites.');
+      toast.error(friendlyError(err));
     }
   };
 
@@ -92,7 +94,7 @@ export default function InstitutionAcademyPage() {
       setClassProgrammes([]);
       toast.success('Class created.');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not create the class.');
+      toast.error(friendlyError(err));
     }
   };
 
@@ -102,7 +104,7 @@ export default function InstitutionAcademyPage() {
       await updateInstitution(institutionId, { branding: { ...institution?.branding, displayName: displayName.trim() } });
       toast.success('Academy name saved.');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not save the name.');
+      toast.error(friendlyError(err));
     }
   };
 
@@ -116,11 +118,20 @@ export default function InstitutionAcademyPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto pb-16 space-y-8">
-      <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-violet-600">Academy</p>
-        <h1 className="font-heading text-4xl mt-2">{institution?.branding?.displayName || institution?.name || 'Your academy'}</h1>
-      </div>
+    <DashPage className="max-w-3xl">
+      <DashHeader
+        eyebrow="Today"
+        title={institution?.branding?.displayName || institution?.name || 'Your academy'}
+        description={`${seats} seats left · ${invites} invites waiting · ${classCount} classes.`}
+        actions={
+          <Button onClick={() => document.getElementById('academy-invite')?.scrollIntoView({ behavior: 'smooth' })} className="h-10 px-4 rounded-xl font-semibold text-[13px]">
+            Invite people
+          </Button>
+        }
+      />
+      <Panel>
+        <p className="text-sm text-muted-foreground">Invite teachers and students first. The name on certificates and emails is the academy name saved below.</p>
+      </Panel>
 
       <section className="grid sm:grid-cols-3 gap-3">
         {[
@@ -144,7 +155,7 @@ export default function InstitutionAcademyPage() {
         <p className="text-xs text-muted-foreground">Logo, colours, domain and certificate name are set with the platform admin. Invitations and certificates use the name saved here.</p>
       </section>
 
-      <section className="rounded-3xl border border-border p-5 space-y-3">
+      <section id="academy-invite" className="rounded-3xl border border-border bg-card p-5 space-y-3">
         <h2 className="font-semibold">Invite teachers and students</h2>
         <Label>CSV</Label>
         <textarea className="w-full min-h-28 rounded-xl border border-border p-3 text-sm" value={csv} onChange={event => setCsv(event.target.value)} />
@@ -178,6 +189,6 @@ export default function InstitutionAcademyPage() {
       {ownCourses && (
         <p className="text-sm">This licence includes the school’s own courses. <Link href="/dashboard/teacher/upload" className="font-semibold underline">Add a course</Link>.</p>
       )}
-    </div>
+    </DashPage>
   );
 }
