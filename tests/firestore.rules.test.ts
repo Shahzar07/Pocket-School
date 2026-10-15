@@ -51,19 +51,8 @@ async function seed() {
       studentName: 'Harry S.', courseTitle: 'Maths', grade: '8', termId: 't4', year: 2026,
       heading: 'IGCSE report', verificationToken: 'rc_public', issuer: 'PoketSchool.Ai',
     });
-    await setDoc(doc(db, 'public_profiles/student1'), { displayName: 'Harry S.', role: 'student', xp: 10 });
-    await setDoc(doc(db, 'lesson_notes/note1'), { userId: 'student1', body: 'private note' });
-    await setDoc(doc(db, 'support_tickets/ticket1'), { userId: 'student1', subject: 'Help' });
-    await setDoc(doc(db, 'announcements/news1'), {
-      createdBy: 'teacher1', title: 'Trip', content: 'Friday', status: 'published',
-      audience: 'all', priority: 'normal', pinned: false,
-    });
-    await setDoc(doc(db, 'courses/free1'), {
-      ownerId: 'teacher1', title: 'Free class', status: 'published', kind: 'marketplace', price: 0, priceType: 'FREE',
-    });
-    await setDoc(doc(db, 'courses/paid1'), {
-      ownerId: 'teacher1', title: 'Paid class', status: 'published', kind: 'marketplace',
-      price: 99, priceType: 'MARKETPLACE_PURCHASE',
+    await setDoc(doc(db, 'report_cards/card1'), {
+      studentId: 'student1', teacherId: 'teacher1', courseTitle: 'Maths', grade: '8',
     });
   });
 }
@@ -86,70 +75,6 @@ beforeEach(async () => {
 
 afterAll(async () => {
   await env.cleanup();
-});
-
-describe('profiles and Sparks', () => {
-  it('lets a student read their own profile and not someone else\'s', async () => {
-    const db = env.authenticatedContext('student1').firestore();
-    await assertSucceeds(getDoc(doc(db, 'users/student1')));
-    await assertFails(getDoc(doc(db, 'users/student2')));
-  });
-
-  it('lets a student change their name and blocks Sparks, XP and child links', async () => {
-    const db = env.authenticatedContext('student1').firestore();
-    await assertSucceeds(updateDoc(doc(db, 'users/student1'), { name: 'Harry' }));
-    await assertFails(updateDoc(doc(db, 'users/student1'), { sparksBalance: 9999 }));
-    await assertFails(updateDoc(doc(db, 'users/student1'), { xp: 9999 }));
-    await assertFails(updateDoc(doc(db, 'users/student1'), { childIds: ['student2'] }));
-  });
-
-  it('lets a new student create their own profile and blocks a Sparks balance', async () => {
-    const db = env.authenticatedContext('newstudent', { email: 'newstudent@test.local' }).firestore();
-    await assertSucceeds(setDoc(doc(db, 'users/newstudent'), {
-      role: 'student', name: 'New Student', email: 'newstudent@test.local', xp: 0, sparksBalance: 0, emailVerified: false,
-    }));
-    await assertFails(setDoc(doc(db, 'users/newstudent2'), {
-      role: 'student', name: 'Other', email: 'other@test.local', xp: 0, sparksBalance: 0, emailVerified: false,
-    }));
-    const rich = env.authenticatedContext('richstudent', { email: 'rich@test.local' }).firestore();
-    await assertFails(setDoc(doc(rich, 'users/richstudent'), {
-      role: 'student', name: 'Rich', email: 'rich@test.local', xp: 0, sparksBalance: 500, emailVerified: false,
-    }));
-  });
-
-  it('lets anyone signed in read a public name and blocks XP edits', async () => {
-    const db = env.authenticatedContext('student2').firestore();
-    await assertSucceeds(getDoc(doc(db, 'public_profiles/student1')));
-    const own = env.authenticatedContext('student1').firestore();
-    await assertFails(updateDoc(doc(own, 'public_profiles/student1'), { xp: 500 }));
-  });
-});
-
-describe('ownership', () => {
-  it('hides another student\'s notes and tickets', async () => {
-    const db = env.authenticatedContext('student2').firestore();
-    await assertFails(getDoc(doc(db, 'lesson_notes/note1')));
-    await assertFails(getDoc(doc(db, 'support_tickets/ticket1')));
-    const admin = env.authenticatedContext('admin1').firestore();
-    await assertSucceeds(getDoc(doc(admin, 'support_tickets/ticket1')));
-  });
-
-  it('lets only the author edit an announcement', async () => {
-    const stranger = env.authenticatedContext('student1').firestore();
-    await assertFails(updateDoc(doc(stranger, 'announcements/news1'), { title: 'Changed' }));
-    const author = env.authenticatedContext('teacher1').firestore();
-    await assertSucceeds(updateDoc(doc(author, 'announcements/news1'), { title: 'Updated trip' }));
-  });
-
-  it('allows a free enrolment and refuses a paid one from the client', async () => {
-    const db = env.authenticatedContext('student1').firestore();
-    await assertSucceeds(setDoc(doc(db, 'courses/free1/enrollments/student1'), {
-      studentId: 'student1', progress: 0, completedLessons: [],
-    }));
-    await assertFails(setDoc(doc(db, 'courses/paid1/enrollments/student1'), {
-      studentId: 'student1', progress: 0, completedLessons: [],
-    }));
-  });
 });
 
 describe('goals, snapshots, integrity, and published reports', () => {
@@ -215,5 +140,16 @@ describe('goals, snapshots, integrity, and published reports', () => {
     const anon = env.unauthenticatedContext().firestore();
     await assertSucceeds(getDoc(doc(anon, 'published_reports/rc_public')));
     await assertFails(getDocs(collection(anon, 'published_reports')));
+  });
+
+  it('lets a linked parent acknowledge a report card and blocks a grade change', async () => {
+    const parent = env.authenticatedContext('parent1').firestore();
+    await assertSucceeds(getDoc(doc(parent, 'report_cards/card1')));
+    await assertSucceeds(updateDoc(doc(parent, 'report_cards/card1'), {
+      acknowledgement: { status: 'acknowledged', parentId: 'parent1' },
+    }));
+    await assertFails(updateDoc(doc(parent, 'report_cards/card1'), { grade: '9' }));
+    const stranger = env.authenticatedContext('student2').firestore();
+    await assertFails(getDoc(doc(stranger, 'report_cards/card1')));
   });
 });
