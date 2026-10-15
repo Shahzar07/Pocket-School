@@ -188,7 +188,26 @@ export function resolveDisplayCurrency(
 ): string {
   const stored = input.stored?.trim().toUpperCase() ?? '';
   if (input.source === 'user' && stored && isCurrencyEnabled(config, stored)) return stored;
-  return currencyForCountry(input.country, config);
+  return 'USD';
+}
+
+/**
+ * A local amount beside the price the reader is actually shown.
+ * Absent when the local currency is the display currency, or the amount is free.
+ * `country` is only used for this conversion — it does not change the price.
+ */
+export function optionalLocalAmount(
+  config: PricingConfig,
+  usd: number,
+  displayCurrency: string,
+  country: string | null | undefined,
+): { amount: number; currency: string } | null {
+  if (!(usd > 0)) return null;
+  const local = currencyForCountry(country, config);
+  const display = (displayCurrency || 'USD').trim().toUpperCase() || 'USD';
+  if (!local || local === display) return null;
+  const quote = quoteCourse(config, usd, 'USD', local);
+  return { amount: quote.amount, currency: quote.currency };
 }
 
 export function quotePlan(

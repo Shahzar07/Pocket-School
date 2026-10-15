@@ -14,26 +14,43 @@ import { courseCover } from '@/lib/course-cover';
 import { filterCatalog, recommend } from '@/lib/learning';
 import { productAccess, previewViewer } from '@/lib/allocation';
 import { coursePriceType, freePreviewCount, courseMinTier, tierDefinition } from '@/lib/entitlements';
+import { useTranslation } from 'react-i18next';
 import { usePricing } from '@/hooks/use-pricing';
 
-const TYPE_FILTERS: { id: CourseType | 'all'; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'course', label: 'Courses' },
-  { id: 'ebook', label: 'eBooks' },
-  { id: 'exam', label: 'Exams' },
-  { id: 'solutions', label: 'Solutions' },
-  { id: 'paper', label: 'Past Papers' },
-  { id: 'bundle', label: 'Bundles' },
+const TYPE_FILTERS: { id: CourseType | 'all'; labelKey: string }[] = [
+  { id: 'all', labelKey: 'market.all' },
+  { id: 'course', labelKey: 'market.courses' },
+  { id: 'ebook', labelKey: 'market.ebooks' },
+  { id: 'exam', labelKey: 'market.exams' },
+  { id: 'solutions', labelKey: 'market.solutions' },
+  { id: 'paper', labelKey: 'market.papers' },
+  { id: 'bundle', labelKey: 'market.bundles' },
 ];
 
-const LEVEL_FILTERS = ['All', 'Primary', 'Secondary', 'GCSE', 'A-Level', 'University'];
+const LEVEL_FILTERS: { id: string; labelKey: string }[] = [
+  { id: 'All', labelKey: 'market.levelAll' },
+  { id: 'Primary', labelKey: 'market.levelPrimary' },
+  { id: 'Secondary', labelKey: 'market.levelSecondary' },
+  { id: 'GCSE', labelKey: 'market.levelGcse' },
+  { id: 'A-Level', labelKey: 'market.levelALevel' },
+  { id: 'University', labelKey: 'market.levelUniversity' },
+];
+
+const TYPE_LABEL_KEYS: Record<string, string> = {
+  course: 'market.courses',
+  ebook: 'market.ebooks',
+  exam: 'market.exams',
+  solutions: 'market.solutions',
+  paper: 'market.papers',
+  bundle: 'market.bundles',
+};
 
 /** Badge for the free lessons at the start of a paid course. */
-function freePreviewLabel(c: Course): string {
-  if (coursePriceType(c) === 'FREE') return 'Free course';
+function freePreviewLabel(c: Course, t: (key: string, options?: Record<string, unknown>) => string): string {
+  if (coursePriceType(c) === 'FREE') return t('market.freeCourse');
   const n = freePreviewCount(c);
   if (n === Number.MAX_SAFE_INTEGER || n <= 0) return '';
-  return `${n} free lesson${n === 1 ? '' : 's'}`;
+  return t(n === 1 ? 'market.freeLesson' : 'market.freeLessons', { count: n });
 }
 
 /** Which subscription includes this course, when it isn't a one-off purchase. */
@@ -46,7 +63,8 @@ function tierBadge(c: Course): string {
 
 export default function MarketplacePage() {
   const router = useRouter();
-  const { courseLabel } = usePricing();
+  const { t } = useTranslation();
+  const { courseLabel, courseConversion } = usePricing();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<CourseType | 'all'>('all');
@@ -97,19 +115,19 @@ export default function MarketplacePage() {
       <section className="relative py-16 sm:py-20 bg-gradient-to-b from-secondary via-background to-background overflow-hidden">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center">
           <Badge className="mb-4 rounded-full bg-secondary text-secondary-foreground border-primary/20 text-xs font-semibold">
-            Marketplace
+            {t('market.badge')}
           </Badge>
           <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl tracking-tight text-foreground mb-4">
-            Courses, eBooks &<br className="hidden sm:block" /> past papers, made by teachers.
+            {t('market.titleStart')}<br className="hidden sm:block" /> {t('market.titleEnd')}
           </h1>
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            Browse and buy without an account. AI-enhanced study materials from real educators.
+            {t('market.subtitle')}
           </p>
           <div className="bg-card border border-border rounded-full p-1 pl-4 flex items-center shadow-[var(--shadow-card)] max-w-xl mx-auto">
             <Search className="w-4 h-4 text-muted-foreground mr-2 shrink-0" />
             <input
               type="text"
-              placeholder="Search by subject, topic or product…"
+              placeholder={t('market.search')}
               className="flex-1 min-w-0 bg-transparent outline-none text-sm py-2"
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -123,29 +141,29 @@ export default function MarketplacePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-wrap items-center gap-3">
           <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
           <div className="flex gap-1.5 flex-wrap">
-            {TYPE_FILTERS.map(t => (
+            {TYPE_FILTERS.map(filter => (
               <button
-                key={t.id}
-                onClick={() => setTypeFilter(t.id)}
+                key={filter.id}
+                onClick={() => setTypeFilter(filter.id)}
                 className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
-                  typeFilter === t.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  typeFilter === filter.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >
-                {t.label}
+                {t(filter.labelKey)}
               </button>
             ))}
           </div>
           <div className="h-5 w-px bg-border mx-1 hidden sm:block" />
           <div className="flex gap-1.5 flex-wrap">
-            {LEVEL_FILTERS.map(l => (
+            {LEVEL_FILTERS.map(level => (
               <button
-                key={l}
-                onClick={() => setLevelFilter(l)}
+                key={level.id}
+                onClick={() => setLevelFilter(level.id)}
                 className={`text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
-                  levelFilter === l ? 'bg-foreground text-background' : 'bg-transparent text-muted-foreground hover:bg-muted'
+                  levelFilter === level.id ? 'bg-foreground text-background' : 'bg-transparent text-muted-foreground hover:bg-muted'
                 }`}
               >
-                {l}
+                {t(level.labelKey)}
               </button>
             ))}
           </div>
@@ -159,7 +177,7 @@ export default function MarketplacePage() {
                     subjectFilter === subject ? 'bg-foreground text-background' : 'bg-transparent text-muted-foreground hover:bg-muted'
                   }`}
                 >
-                  {subject === 'All' ? 'All subjects' : subject}
+                  {subject === 'All' ? t('market.allSubjects') : subject}
                 </button>
               ))}
             </div>
@@ -179,7 +197,7 @@ export default function MarketplacePage() {
           {!loading && filtered.length === 0 && courses.length > 0 && (
             <div className="text-center py-20">
               <BookOpen className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-              <p className="text-sm text-muted-foreground">No products match these filters yet.</p>
+              <p className="text-sm text-muted-foreground">{t('market.noMatch')}</p>
             </div>
           )}
 
@@ -194,16 +212,14 @@ export default function MarketplacePage() {
               <div className="p-8 sm:p-12 text-center">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary border border-primary/20 text-[10px] font-bold tracking-[0.15em] text-secondary-foreground">
                   <ShieldCheck className="w-3 h-3" />
-                  MARKETPLACE OPENING SOON
+                  {t('market.opening')}
                 </span>
 
                 <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-foreground leading-[1.05] mt-6 mb-4">
-                  The shelves are being stocked.
+                  {t('market.shelves')}
                 </h2>
                 <p className="text-base text-muted-foreground leading-relaxed max-w-xl mx-auto">
-                  We are onboarding verified educators right now — every course, eBook and past paper is
-                  reviewed before it goes live, so the marketplace opens with material worth paying for
-                  rather than whatever got uploaded first.
+                  {t('market.shelvesBody')}
                 </p>
 
                 <div className="mt-8 grid sm:grid-cols-2 gap-3 text-left">
@@ -216,13 +232,13 @@ export default function MarketplacePage() {
                     </span>
                     <span className="flex-1 min-w-0">
                       <span className="block text-sm font-extrabold text-foreground mb-0.5">
-                        Meanwhile, create your own
+                        {t('market.meanwhile')}
                       </span>
                       <span className="block text-xs text-muted-foreground leading-relaxed">
-                        Build study materials with ET in the AI Studio.
+                        {t('market.meanwhileBody')}
                       </span>
                       <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-primary">
-                        Open AI Studio
+                        {t('market.openStudio')}
                         <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
                       </span>
                     </span>
@@ -237,10 +253,10 @@ export default function MarketplacePage() {
                     </span>
                     <span className="flex-1 min-w-0">
                       <span className="block text-sm font-extrabold text-foreground mb-0.5">
-                        Teach with us
+                        {t('market.teach')}
                       </span>
                       <span className="block text-xs text-muted-foreground leading-relaxed">
-                        Educators: list your material and earn from every sale.
+                        {t('market.teachBody')}
                       </span>
                       <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-primary">
                         educators@poketschool.ai
@@ -256,7 +272,7 @@ export default function MarketplacePage() {
           {!loading && suggested.length > 0 && filtered[0] && (
             <div className="mb-8">
               <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-3">
-                Related to {filtered[0].title}
+                {t('market.related', { title: filtered[0].title })}
               </h2>
               <div className="flex gap-3 overflow-x-auto pb-2">
                 {suggested.map(course => (
@@ -266,7 +282,7 @@ export default function MarketplacePage() {
                     className="min-w-[220px] max-w-[260px] shrink-0 rounded-xl border border-border bg-card p-4 hover:border-foreground/25"
                   >
                     <p className="text-sm font-bold line-clamp-2">{course.title}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{course.subject || course.level || 'Course'}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{course.subject || course.level || t('market.course')}</p>
                   </Link>
                 ))}
               </div>
@@ -292,11 +308,11 @@ export default function MarketplacePage() {
                           className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
                         />
                         <span className="absolute top-2.5 left-2.5 text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded bg-white/95 text-foreground shadow-sm">
-                          {c.type ?? 'course'}
+                          {t(TYPE_LABEL_KEYS[c.type ?? 'course'] ?? 'market.courses')}
                         </span>
-                        {freePreviewLabel(c) && (
+                        {freePreviewLabel(c, t) && (
                           <span className="absolute bottom-2.5 left-2.5 text-[10px] font-bold px-2 py-1 rounded bg-emerald-600 text-white shadow-sm">
-                            {freePreviewLabel(c)}
+                            {freePreviewLabel(c, t)}
                           </span>
                         )}
                       </div>
@@ -308,7 +324,7 @@ export default function MarketplacePage() {
                         <p className="text-xs text-muted-foreground mb-2">{c.ownerName ?? 'Poket School'}</p>
 
                         <div className="flex items-center gap-1.5 mb-2">
-                          <span className="text-[13px] font-bold text-amber-700 tabular-nums">New</span>
+                          <span className="text-[13px] font-bold text-amber-700 tabular-nums">{t('market.new')}</span>
                           <span className="flex items-center gap-0.5">
                             {[1, 2, 3, 4, 5].map(n => (
                               <Star key={n} className="w-3 h-3 fill-amber-400 text-amber-400" />
@@ -320,15 +336,20 @@ export default function MarketplacePage() {
                         </div>
 
                         <p className="text-[11px] text-muted-foreground mb-3 flex flex-wrap items-center gap-x-2 gap-y-1">
-                          {c.durationHours ? <span>{c.durationHours} total hours</span> : null}
+                          {c.durationHours ? <span>{t('market.hours', { count: c.durationHours })}</span> : null}
                           {c.level && <><span aria-hidden>·</span><span>{c.level}</span></>}
                           {c.subject && <><span aria-hidden>·</span><span className="truncate">{c.subject}</span></>}
                         </p>
 
                         <div className="mt-auto flex items-baseline gap-2">
                           <span className={`text-lg font-extrabold ${c.price ? 'text-foreground' : 'text-emerald-600'}`}>
-                            {courseLabel(c.price, c.currency)}
+                            {!c.price || c.price <= 0 ? t('market.free') : courseLabel(c.price, c.currency)}
                           </span>
+                          {courseConversion(c.price, c.currency) && (
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {t('market.approx', { amount: courseConversion(c.price, c.currency) })}
+                            </span>
+                          )}
                           {tierBadge(c) && (
                             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
                               {tierBadge(c)}

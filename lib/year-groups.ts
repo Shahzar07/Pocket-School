@@ -4,7 +4,7 @@
  * `value` is what we store. `label` is what we show.
  */
 
-import { PROGRAMMES, tierForProgramme } from './programmes';
+import { PROGRAMMES, canonicalProgramme, tierForProgramme } from './programmes';
 
 export interface YearGroupOption {
   value: string;
@@ -31,24 +31,8 @@ export const LEVELS: readonly LevelOption[] = PROGRAMMES.map((programme) => ({
 }));
 
 /** Older stored values, mapped onto the current programme names. */
-const LEGACY_LEVELS: Record<string, string> = {
-  primary: 'Primary',
-  lower_secondary: 'Lower Secondary',
-  middle: 'Lower Secondary',
-  secondary: 'Lower Secondary',
-  igcse: 'IGCSE',
-  alevels: 'A-Level',
-  'a-level': 'A-Level',
-  foundation: 'A-Level',
-  undergraduate: 'LLB Law',
-  postgraduate: 'MBBS Medicine',
-  other: 'Independent Learning',
-};
-
 export function canonicalLevel(value: string | null | undefined): string {
-  if (!value) return '';
-  if (LEVELS.some((level) => level.value === value)) return value;
-  return LEGACY_LEVELS[value] ?? value;
+  return canonicalProgramme(value);
 }
 
 export function isYearGroup(value: string | null | undefined): boolean {

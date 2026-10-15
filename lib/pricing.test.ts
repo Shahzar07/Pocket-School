@@ -5,6 +5,7 @@ import {
   currencyForCountry,
   diffPricing,
   formatMoney,
+  optionalLocalAmount,
   quoteCourse,
   quotePlan,
   resolveDisplayCurrency,
@@ -65,7 +66,7 @@ test('a disabled currency falls back to USD', () => {
   assert.equal(quote?.amount, 19);
 });
 
-test('geolocation picks an enabled local currency and otherwise stays on USD', () => {
+test('display currency stays on USD unless the reader chose another', () => {
   const config = seedPricing();
   assert.equal(currencyForCountry('MY', config), 'MYR');
   assert.equal(currencyForCountry('my', config), 'MYR');
@@ -79,12 +80,31 @@ test('geolocation picks an enabled local currency and otherwise stays on USD', (
   );
   assert.equal(
     resolveDisplayCurrency(config, { source: 'auto', stored: 'USD', country: 'MY' }),
-    'MYR',
+    'USD',
+  );
+  assert.equal(
+    resolveDisplayCurrency(config, { source: 'auto', stored: 'MYR', country: 'MY' }),
+    'USD',
+  );
+  assert.equal(
+    resolveDisplayCurrency(config, { source: 'user', stored: 'GBP', country: 'MY' }),
+    'GBP',
   );
   assert.equal(
     resolveDisplayCurrency(config, { source: null, stored: 'GBP', country: null }),
     'USD',
   );
+});
+
+test('a local currency is only an optional conversion beside the displayed price', () => {
+  const config = seedPricing();
+  const myr = optionalLocalAmount(config, 19, 'USD', 'MY');
+  assert.equal(myr?.currency, 'MYR');
+  assert.equal(myr?.amount, 89.99);
+  assert.equal(optionalLocalAmount(config, 19, 'MYR', 'MY'), null);
+  assert.equal(optionalLocalAmount(config, 19, 'USD', 'US'), null);
+  assert.equal(optionalLocalAmount(config, 0, 'USD', 'MY'), null);
+  assert.equal(optionalLocalAmount(config, 19, 'USD', null), null);
 });
 
 test('Stripe unit amounts use cents except for zero-decimal currencies', () => {

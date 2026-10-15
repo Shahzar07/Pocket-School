@@ -17,6 +17,7 @@ import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebas
 import { storage } from '@/lib/firebase';
 import type { Course, CourseType } from '@/lib/db';
 import { createCourse, updateCourse } from '@/lib/db';
+import { COURSE_LEVELS, canonicalCourseLevel } from '@/lib/course-builder';
 import { formatMoney } from '@/lib/pricing';
 import { CoverArtPicker, storeMedia } from '@/components/media';
 
@@ -43,7 +44,6 @@ const CATEGORIES = [
   'Art', 'Technology', 'Business', 'Music', 'Other',
 ];
 
-const LEVELS = ['All', 'Primary', 'Lower Secondary', 'IGCSE', 'A-Level', 'LLB Law', 'MBBS Medicine', 'Micro Degree', 'Professional Certification', 'Independent Learning'];
 
 async function uploadFile(
   file: File,
@@ -115,7 +115,7 @@ export default function CourseEditorModal({
       setThumbnailUrl(initial.thumbnailUrl ?? '');
       setThumbnailPreview(initial.thumbnailUrl ?? '');
       setThumbnailFile(null);
-      setLevel(initial.level ?? 'All');
+      setLevel(canonicalCourseLevel(initial.level ?? 'All'));
       setPrice(String(initial.price ?? 0));
       setCurrency(initial.currency ?? 'USD');
       setWhatYouLearn((initial.whatYouLearn ?? []).join('\n'));
@@ -335,10 +335,10 @@ export default function CourseEditorModal({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Level</Label>
-                <Select value={level} onValueChange={(v) => v && setLevel(v)}>
+                <Select value={canonicalCourseLevel(level)} onValueChange={(v) => v && setLevel(v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {LEVELS.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                    {(COURSE_LEVELS.includes(canonicalCourseLevel(level)) ? COURSE_LEVELS : [canonicalCourseLevel(level), ...COURSE_LEVELS]).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

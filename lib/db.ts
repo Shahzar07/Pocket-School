@@ -57,7 +57,9 @@ export interface UserProfile {
   childIds?: string[];
   phone?: string;
   phoneVerified?: boolean;
-  yearGroup?: 'Year 7' | 'Year 8' | 'Year 9';
+  yearGroup?: string;
+  /** Programme chosen at sign-up. Same value as `level` for students. */
+  pathway?: string;
   subscriptionTier?: 'free' | 'academic';
   /** Entitlement tier 0-6. Absent falls back to subscriptionTier via accessTierFor(). */
   accessTier?: number;

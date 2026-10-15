@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { LANGUAGES } from '@/lib/languages';
 import {
   DEFAULT_NOTIFICATIONS,
@@ -29,6 +29,7 @@ import {
 import type { ChildControls, PaymentMethod } from '@/lib/parent-controls';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PROGRAMMES, canonicalProgramme, levelsForProgramme } from '@/lib/programmes';
 
 export interface SettingsSession {
   id: string;
@@ -71,6 +72,55 @@ export interface SettingsView {
 }
 
 const EMPTY_PAYOUT: PayoutDetails = { method: 'none', email: '', accountName: '', bankName: '', accountLast4: '' };
+
+function StudentPlacement({
+  draft,
+  onChange,
+}: {
+  draft: ProfileDraft;
+  onChange: (next: ProfileDraft) => void;
+}) {
+  const programme = canonicalProgramme(draft.level);
+  const years = levelsForProgramme(programme);
+  const year = years.includes(draft.yearGroup) ? draft.yearGroup : (years[0] ?? '');
+
+  useEffect(() => {
+    if (!programme) return;
+    if (draft.level === programme && draft.yearGroup === year) return;
+    onChange({ ...draft, level: programme, yearGroup: year });
+  }, [programme, year, draft, onChange]);
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <Field label="Programme">
+        <select
+          aria-label="Programme"
+          value={programme}
+          onChange={event => {
+            const next = event.target.value;
+            const nextYears = levelsForProgramme(next);
+            onChange({ ...draft, level: next, yearGroup: nextYears[0] ?? '' });
+          }}
+          className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+        >
+          <option value="">Not set</option>
+          {PROGRAMMES.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}
+        </select>
+      </Field>
+      <Field label="Year / Level">
+        <select
+          aria-label="Year / Level"
+          value={year}
+          disabled={!programme}
+          onChange={event => onChange({ ...draft, level: programme, yearGroup: event.target.value })}
+          className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+        >
+          {years.map(item => <option key={item} value={item}>{item}</option>)}
+        </select>
+      </Field>
+    </div>
+  );
+}
 
 export function blankDraft(partial: Partial<ProfileDraft> = {}): ProfileDraft {
   const draft: ProfileDraft = {
@@ -497,27 +547,8 @@ export function SettingsPanel({
       )}
 
       {view.role === 'student' && (
-        <Section title="Grade and linked parent">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Grade">
-              <select aria-label="Grade" value={draft.yearGroup} onChange={event => setDraft({ ...draft, yearGroup: event.target.value })} className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm">
-                <option value="">Not set</option>
-                <option value="Year 7">Year 7</option>
-                <option value="Year 8">Year 8</option>
-                <option value="Year 9">Year 9</option>
-              </select>
-            </Field>
-            <Field label="Education level">
-              <select aria-label="Education level" value={draft.level} onChange={event => setDraft({ ...draft, level: event.target.value })} className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm">
-                <option value="">Not set</option>
-                <option value="primary">Primary</option>
-                <option value="middle">Middle</option>
-                <option value="secondary">Secondary</option>
-                <option value="igcse">IGCSE</option>
-                <option value="alevels">A-Levels</option>
-              </select>
-            </Field>
-          </div>
+        <Section title="Programme and linked parent">
+          <StudentPlacement draft={draft} onChange={setDraft} />
           <p className="text-sm font-semibold">Linked parent</p>
           <ul className="space-y-2">
             {view.parents.length === 0 && <li className="text-sm text-muted-foreground">No parent is linked yet. Accept an invite code or a request below.</li>}
@@ -533,7 +564,7 @@ export function SettingsPanel({
             onAcceptInvite={onAcceptInvite}
             onRespond={onRespondLink}
           />
-          <Button type="button" className="rounded-full" onClick={() => void onSaveProfile(draft)}>Save grade</Button>
+          <Button type="button" className="rounded-full" onClick={() => void onSaveProfile(draft)}>Save programme</Button>
         </Section>
       )}
 

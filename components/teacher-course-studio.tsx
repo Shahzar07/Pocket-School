@@ -17,6 +17,7 @@ import {
   COURSE_CATEGORIES,
   COURSE_LANGUAGES,
   COURSE_LEVELS,
+  canonicalCourseLevel,
   STUDIO_STEPS,
   applyAllocationPreset,
   blankPolicy,
@@ -151,7 +152,7 @@ export function TeacherCourseStudio({
   initialPreview?: boolean;
   initialTarget?: AllocationTarget;
 }) {
-  const { courseLabel, currency } = usePricing();
+  const { courseLabel, currency, localMoney } = usePricing();
   const [step, setStep] = useState<StudioStep>(initialStep);
   const [preview, setPreview] = useState(initialPreview);
   const [savedId, setSavedId] = useState(courseId);
@@ -159,7 +160,7 @@ export function TeacherCourseStudio({
   const [subtitle, setSubtitle] = useState(initial?.subtitle ?? (sample ? 'A short course on how pushes and pulls change motion' : ''));
   const [description, setDescription] = useState(initial?.description ?? (sample ? 'Students explain contact and non-contact forces, then check their understanding.' : ''));
   const [category, setCategory] = useState(initial?.category ?? 'Science');
-  const [level, setLevel] = useState(initial?.level ?? 'Secondary');
+  const [level, setLevel] = useState(canonicalCourseLevel(initial?.level ?? 'Lower Secondary'));
   const [language, setLanguage] = useState(initial?.language ?? 'en');
   const [thumbnailUrl, setThumbnailUrl] = useState(initial?.thumbnailUrl ?? '');
   const [previewUrl, setPreviewUrl] = useState(initial?.previewUrl ?? '');
@@ -458,7 +459,7 @@ export function TeacherCourseStudio({
                 </label>
                 <label className="text-sm font-semibold">Level
                   <select className="mt-1 h-10 w-full rounded-xl border border-border bg-background px-2" value={level} onChange={event => setLevel(event.target.value)}>
-                    {COURSE_LEVELS.map(item => <option key={item}>{item}</option>)}
+                    {(COURSE_LEVELS.includes(level) ? COURSE_LEVELS : [level, ...COURSE_LEVELS]).map(item => <option key={item}>{item}</option>)}
                   </select>
                 </label>
                 <label className="text-sm font-semibold">Language
@@ -581,8 +582,10 @@ export function TeacherCourseStudio({
                 <Label htmlFor="usd-price">Price in USD</Label>
                 <Input id="usd-price" type="number" min={0} step="0.01" disabled={free} value={free ? '0' : price} onChange={event => setPrice(event.target.value)} />
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Charged in USD. Students currently see {localPrice}
-                  {currency !== 'USD' ? ` in ${currency}, using the admin pricing rates.` : '.'}
+                  Charged in USD.
+                  {currency === 'USD'
+                    ? localMoney(numericPrice) ? ` Optional conversion ≈ ${localMoney(numericPrice)}.` : ''
+                    : ` Students who chose ${currency} see ${localPrice}.`}
                 </p>
               </div>
               <div className="rounded-2xl border border-border p-4 space-y-3">

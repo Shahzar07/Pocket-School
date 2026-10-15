@@ -27,7 +27,9 @@ interface UserProfile {
   learningStyle?: string;
   interests?: string[];
   xp?: number;
-  yearGroup?: 'Year 7' | 'Year 8' | 'Year 9';
+  yearGroup?: string;
+  /** Programme chosen at sign-up. Same value as `level` for students. */
+  pathway?: string;
   subscriptionTier?: 'free' | 'academic';
   sparksBalance?: number;
   sparksMonthlyAllowance?: number;

@@ -57,6 +57,7 @@ test('a profile save never includes privileged fields', () => {
   }, 'student');
   assert.equal(patch.currency, 'MYR');
   assert.equal(patch.shareBoard, false);
+  assert.equal(patch.level, 'Lower Secondary');
   assert.equal(patch.yearGroup, 'Year 8');
   assert.equal('instructor' in patch, false);
   for (const field of PRIVILEGED_PROFILE_FIELDS) {

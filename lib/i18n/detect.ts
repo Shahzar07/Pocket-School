@@ -1,9 +1,10 @@
 /**
- * Default language for a visitor who has not chosen one.
+ * Language a visitor might prefer, used only as a dismissible suggestion.
  *
  * Order: Vercel country (with a few region overrides), then the browser
- * language list, then English. An explicit saved choice is applied by the
- * provider and is never passed in here.
+ * language list, then English. Nothing in this module changes the interface.
+ * The interface stays English until the reader chooses, and that choice is
+ * applied by the provider.
  */
 
 import { DEFAULT_LANGUAGE, isSupportedLanguage } from '../languages';
@@ -91,9 +92,49 @@ export function detectLanguage(input: {
 }
 
 /**
- * A one-click alternate for a country whose default is not the only language
- * people there read. Kazakhstan opens in Kazakh and offers Russian beside
- * the picker; once Russian is active, Kazakh is the one-click way back.
+ * The language to show before any suggestion. An explicit localStorage choice
+ * wins, then the language cookie, then English. A previous automatic value
+ * is ignored so a visit from Malaysia still opens in English.
+ */
+export function initialLanguage(input: {
+  stored?: string | null;
+  source?: string | null;
+  cookie?: string | null;
+}): string {
+  if (input.source === 'user' && isSupportedLanguage(input.stored ?? '')) return input.stored as string;
+  if (isSupportedLanguage(input.cookie ?? '')) return input.cookie as string;
+  return DEFAULT_LANGUAGE;
+}
+
+/**
+ * Geolocation may offer a language. It never includes the browser language,
+ * English, the language already on screen, a choice the reader made, or a
+ * suggestion they dismissed.
+ */
+export function suggestedLanguage(input: {
+  country?: string | null;
+  region?: string | null;
+  current?: string | null;
+  source?: string | null;
+  dismissed?: string | null;
+}): string | null {
+  if (input.source === 'user') return null;
+  const detected = detectLanguage({
+    country: input.country,
+    region: input.region,
+    navigatorLanguages: [],
+  });
+  const current = input.current && isSupportedLanguage(input.current) ? input.current : DEFAULT_LANGUAGE;
+  if (!detected || detected === DEFAULT_LANGUAGE || detected === current) return null;
+  if (input.dismissed && input.dismissed === detected) return null;
+  return detected;
+}
+
+/**
+ * A one-click alternate for a country whose readers commonly use a second
+ * language. Kazakhstan offers Russian beside the picker; once Russian is
+ * active, Kazakh is the one-click way back. It does not change the language
+ * until the reader clicks it.
  */
 export function languageShortcut(country: string | null | undefined, current: string): string | null {
   const code = country?.trim().toUpperCase() ?? '';

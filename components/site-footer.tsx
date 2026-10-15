@@ -25,7 +25,6 @@ import {
   Music2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { copyrightNotice } from "@/lib/export/notice";
 import styles from "./home-chrome.module.css";
 
 /**
@@ -156,7 +155,7 @@ export function SiteFooter() {
             <strong>{t("footer.independent")}</strong> {t("footer.disclaimer")}
           </p>
           <p>
-            {copyrightNotice()}
+            {t("footer.rights", { year: new Date().getFullYear() })}
           </p>
         </div>
         <div className={styles.footerWordmark} aria-hidden="true">
@@ -254,7 +253,7 @@ export function SiteFooter() {
           {/* Bottom bar */}
           <div className="pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-4">
             <p className="text-[10px] uppercase tracking-widest opacity-50 text-center md:text-left">
-              {copyrightNotice()}
+              {t("footer.rights", { year: new Date().getFullYear() })}
             </p>
             <div className="flex items-center gap-4">
               <span className="text-[10px] uppercase tracking-widest opacity-50">

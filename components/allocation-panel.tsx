@@ -12,13 +12,12 @@ import {
 import { allocationFields, describeTargets, migrateAllocation } from '@/lib/allocation-targets';
 import { AllocationPicker, type AllocationOption } from '@/components/allocation-picker';
 import { TIERS, PRICE_TYPE_LABELS, type PriceType } from '@/lib/entitlements';
+import { PROGRAMMES, allocationYearsFor } from '@/lib/programmes';
 import { listAccessAudit, saveAccessGrants, writeAccessAudit, type Institution } from '@/lib/db';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 
 const CLASSIC: Audience[] = ['students', 'teachers', 'parents', 'institutions', 'all', 'marketplace'];
-const YEARS = ['Year 7', 'Year 8', 'Year 9', 'Year 10', 'Year 11'];
-const LEVELS = ['Primary', 'Secondary', 'GCSE', 'A-Level', 'University'];
 
 type Patch = {
   audiences?: Audience[];
@@ -240,11 +239,37 @@ export function AllocationPanel({
       </Drawer>
 
       <Drawer title="Programme, place and language">
-        <label className="block text-xs font-semibold">Programme ids
-          <input className="mt-1 w-full h-9 rounded-xl border border-border px-2 font-normal" value={csv(policy.programmeIds)} onChange={event => commit({ ...policy, programmeIds: split(event.target.value) })} />
-        </label>
+        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Programme</p>
         <div className="flex flex-wrap gap-1">
-          {YEARS.map(year => (
+          {PROGRAMMES.map(programme => (
+            <button key={programme.value} type="button" className={`px-2 py-1 rounded-full text-[11px] ${(policy.programmeIds ?? []).includes(programme.value) ? 'bg-foreground text-background' : 'bg-muted'}`} onClick={() => {
+              const current = policy.programmeIds ?? [];
+              const programmeIds = current.includes(programme.value)
+                ? current.filter(item => item !== programme.value)
+                : [...current, programme.value];
+              const allowed = new Set(allocationYearsFor(programmeIds));
+              commit({
+                ...policy,
+                programmeIds,
+                yearGroups: (policy.yearGroups ?? []).filter(year => allowed.has(year)),
+              });
+            }}>{programme.label}</button>
+          ))}
+        </div>
+        <label className="block text-xs font-semibold">Other programme ids
+          <input className="mt-1 w-full h-9 rounded-xl border border-border px-2 font-normal" value={csv(policy.programmeIds)} onChange={event => {
+            const programmeIds = split(event.target.value);
+            const allowed = new Set(allocationYearsFor(programmeIds));
+            commit({
+              ...policy,
+              programmeIds,
+              yearGroups: (policy.yearGroups ?? []).filter(year => programmeIds.length === 0 || allowed.has(year)),
+            });
+          }} />
+        </label>
+        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Year / Level</p>
+        <div className="flex flex-wrap gap-1">
+          {allocationYearsFor(policy.programmeIds ?? []).map(year => (
             <button key={year} type="button" className={`px-2 py-1 rounded-full text-[11px] ${(policy.yearGroups ?? []).includes(year) ? 'bg-foreground text-background' : 'bg-muted'}`} onClick={() => {
               const years = policy.yearGroups ?? [];
               commit({ ...policy, yearGroups: years.includes(year) ? years.filter(item => item !== year) : [...years, year] });
@@ -252,11 +277,11 @@ export function AllocationPanel({
           ))}
         </div>
         <div className="flex flex-wrap gap-1">
-          {LEVELS.map(level => (
-            <button key={level} type="button" className={`px-2 py-1 rounded-full text-[11px] ${(policy.levels ?? []).includes(level) ? 'bg-foreground text-background' : 'bg-muted'}`} onClick={() => {
+          {PROGRAMMES.map(programme => (
+            <button key={programme.value} type="button" className={`px-2 py-1 rounded-full text-[11px] ${(policy.levels ?? []).includes(programme.value) ? 'bg-foreground text-background' : 'bg-muted'}`} onClick={() => {
               const levels = policy.levels ?? [];
-              commit({ ...policy, levels: levels.includes(level) ? levels.filter(item => item !== level) : [...levels, level] });
-            }}>{level}</button>
+              commit({ ...policy, levels: levels.includes(programme.value) ? levels.filter(item => item !== programme.value) : [...levels, programme.value] });
+            }}>{programme.label}</button>
           ))}
         </div>
         <label className="block text-xs font-semibold">Country codes

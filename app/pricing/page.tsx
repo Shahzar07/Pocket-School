@@ -159,7 +159,7 @@ const FAQS = [
 export default function PricingPage() {
   const [billing, setBilling] = useState<Billing>('monthly');
   const [checkingOut, setCheckingOut] = useState<string | null>(null);
-  const { config, currency, ready } = usePricing();
+  const { config, currency, ready, localMoney } = usePricing();
 
   const checkout = async (kind: 'plan' | 'addon', id: string) => {
     setCheckingOut(`${kind}:${id}`);
@@ -262,6 +262,8 @@ export default function PricingPage() {
             {PLANS.map((plan, i) => {
               const monthlyQuote = quotePlan(config, plan.id, 'monthly', currency);
               const annualQuote = quotePlan(config, plan.id, 'annual', currency);
+              const monthlyUsd = quotePlan(config, plan.id, 'monthly', 'USD')?.amount ?? 0;
+              const annualUsd = quotePlan(config, plan.id, 'annual', 'USD')?.amount ?? 0;
               return (
               <PlanCard
                 key={plan.id}
@@ -271,6 +273,7 @@ export default function PricingPage() {
                 currency={monthlyQuote?.currency ?? currency}
                 monthly={monthlyQuote?.amount ?? 0}
                 annual={annualQuote?.amount ?? 0}
+                conversion={localMoney(billing === 'monthly' ? monthlyUsd : annualUsd)}
                 sparks={planById(config, plan.id)?.sparks ?? 0}
                 rollover={TIERS.find(tier => tier.id === plan.id)?.sparksRollover ?? 0}
                 checkingOut={checkingOut === `plan:${plan.id}`}
@@ -542,7 +545,7 @@ export default function PricingPage() {
 /* ─── Plan card ─────────────────────────────────────────────── */
 
 function PlanCard({
-  plan, billing, index, currency, monthly, annual, sparks, rollover, checkingOut, onCheckout,
+  plan, billing, index, currency, monthly, annual, conversion, sparks, rollover, checkingOut, onCheckout,
 }: {
   plan: PlanCopy;
   billing: Billing;
@@ -550,6 +553,7 @@ function PlanCard({
   currency: string;
   monthly: number;
   annual: number;
+  conversion: string | null;
   sparks: number;
   rollover: number;
   checkingOut: boolean;
@@ -604,6 +608,11 @@ function PlanCard({
           </span>
           <span className="text-sm font-semibold text-slate-500 pb-2">{suffix}</span>
         </div>
+        {conversion && (
+          <p data-local-conversion={plan.id} className="mt-1 text-xs text-slate-500">
+            ≈ {conversion}
+          </p>
+        )}
 
         <div className="mt-2 h-5">
           {!isFree && billing === 'annual' && saving > 0 && (
