@@ -15,7 +15,8 @@ Firestore is the named database `ai-studio-5cdc1a69-b213-49e8-8c41-756df00d9e15`
 ## What this build contains
 
 - The product stack through the teacher course studio: language packs, USD pricing, allocation and OEM, product access, device tokens and goals hooks, Buzan exports and the CMS editor, the admin console, and the guided teacher studio.
-- Poket Reads from draft PR #55: catalogue, reader, library, leaderboard, and Book Studio, sharing `components/editor` and `components/media`.
+- Poket Reads from draft PR #55: catalogue, reader, library, leaderboard, and Book Studio, sharing `components/editor` and `components/media`. Book and Reads checkout uses `POST /api/stripe/create-checkout` (`kind` `book` or `reads`). School plans, add-ons, and courses use the same route with the admin price table.
+- `cursor/clarity-security-sparks-f0ff` and `cursor/integrated-preview-f0ff` point at the same commit. Stacked agents should merge this tip.
 - Books Firestore matches appended to the later rules file: `books`, `library`, `readingSessions`, `leaderboards`.
 
 ## Not in this preview yet
@@ -63,7 +64,7 @@ Delete the five QA accounts after the Sunday pass. They write into the live Auth
 From `/workspace` on this branch:
 
 - `npx tsc --noEmit` passed.
-- `npx tsx --test lib/*.test.ts lib/reads/*.test.ts lib/platform/*.test.ts` — 92 passed, 0 failed.
+- `npx tsx --test lib/*.test.ts lib/reads/*.test.ts lib/platform/*.test.ts` — 104 passed, 0 failed.
 
 Signed-in browser passes were not run. There is no QA session in this environment until the seed script has been executed.
 
