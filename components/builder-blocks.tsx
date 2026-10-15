@@ -686,13 +686,24 @@ export function AssessmentBlock({ value, onChange, ai, generating, onDraftSectio
 
 /* ── Audio (simple preview using SmartAudioPlayer) ─────────── */
 
-export function AudioBlock({ script, ai, generating }: { script?: string; ai: AiRunner; generating: boolean }) {
-  if (!script) {
+export function AudioBlock({
+  script, ai, generating, scriptStatus,
+}: {
+  script?: string;
+  ai: AiRunner;
+  generating: boolean;
+  scriptStatus?: 'queued' | 'generating' | 'done' | 'failed' | null;
+}) {
+  const writing = generating || scriptStatus === 'queued' || scriptStatus === 'generating';
+  if (!script?.trim()) {
     return (
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">No audio summary yet.</p>
+        <p className="text-sm text-muted-foreground">
+          {writing ? 'The audio script is being written.' : scriptStatus === 'failed' ? 'The audio script failed. Try again.' : 'No audio summary yet.'}
+        </p>
         <Button size="sm" className="rounded-xl gap-1.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white" disabled={generating} onClick={() => ai('audioScript')}>
-          {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} Generate Audio Script
+          {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+          {writing ? 'Writing the audio script…' : 'Generate Audio Script'}
         </Button>
       </div>
     );

@@ -26,6 +26,9 @@ import { SmartAudioPlayer } from '@/components/smart-audio-player';
 import { VideoPlayer } from '@/components/video-player';
 import { VideoStoryboard } from '@/components/video-storyboard';
 import { MindmapRenderer } from '@/components/mindmap-renderer';
+import { DownloadMenu } from '@/components/download-menu';
+import { canDownload } from '@/lib/export/allow';
+import { visibleJob } from '@/lib/generation-jobs';
 import { InfographicRenderer } from '@/components/infographic-renderer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -944,6 +947,32 @@ export default function LessonPage() {
     );
   }
 
+  const downloadViewer = {
+    role: profile?.role,
+    tier: profile?.accessTier ?? null,
+    permissions: profile?.permissions ?? [],
+    courseId,
+    downloadsEnabled: course?.downloadsEnabled ?? null,
+  };
+  const downloadsOn = canDownload(downloadViewer).allowed;
+  const downloadFor = (
+    asset: 'notes' | 'glossary' | 'flashcards' | 'quiz' | 'problems' | 'slides' | 'infographic' | 'mindmap',
+    content: unknown,
+    format?: string,
+    answerKeyToggle = false,
+  ) => (
+    downloadsOn && !isFormatLocked(format) ? (
+      <DownloadMenu
+        asset={asset}
+        title={copy.title}
+        content={content}
+        viewer={downloadViewer}
+        courseId={courseId}
+        answerKeyToggle={answerKeyToggle}
+      />
+    ) : null
+  );
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
       {/* Header */}
@@ -1002,7 +1031,13 @@ export default function LessonPage() {
         </div>
       ) : !aiOutputs ? (
         <div className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
-          <LessonBody markdown={copy.text} />
+          {downloadFor('notes', copy.text, 'text')}
+          <LessonBody
+            markdown={copy.text}
+            imageDownload={downloadsOn ? image => (
+              <DownloadMenu asset="image" title={image.alt} content={{ url: image.src }} viewer={downloadViewer} courseId={courseId} />
+            ) : undefined}
+          />
         </div>
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -1023,7 +1058,22 @@ export default function LessonPage() {
           <TabsContent value="text">
             {gate('text',
               <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
-                <LessonBody markdown={copy.text} />
+                {downloadFor('notes', copy.text, 'text')}
+                <LessonBody
+                  markdown={copy.text}
+                  imageDownload={downloadsOn && !isFormatLocked('text') ? image => (
+                    <DownloadMenu asset="image" title={image.alt} content={{ url: image.src }} viewer={downloadViewer} courseId={courseId} />
+                  ) : undefined}
+                />
+                {(lesson.mediaLibrary ?? []).length > 0 && downloadsOn && !isFormatLocked('text') && (
+                  <div className="not-prose mt-6 space-y-3">
+                    {(lesson.mediaLibrary ?? []).map(image => (
+                      <div key={image.id}>
+                        <DownloadMenu asset="image" title={image.alt || image.caption || 'Illustration'} content={{ url: image.src }} viewer={downloadViewer} courseId={courseId} />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </motion.div>
             )}
           </TabsContent>
@@ -1049,7 +1099,7 @@ export default function LessonPage() {
           <TabsContent value="flashcards">
             {gate('flashcards',
               flashcards.length
-                ? <FlashcardViewer cards={flashcards} />
+                ? <div>{downloadFor('flashcards', flashcards, 'flashcards')}<FlashcardViewer cards={flashcards} /></div>
                 : <p className="text-center py-8 text-muted-foreground">No flashcards available.</p>
             )}
           </TabsContent>
@@ -1058,7 +1108,7 @@ export default function LessonPage() {
           <TabsContent value="quiz">
             {gate('quiz',
               quiz.length
-                ? <QuizViewer questions={quiz} onComplete={handleQuizComplete} />
+                ? <div>{downloadFor('quiz', quiz, 'quiz', true)}<QuizViewer questions={quiz} onComplete={handleQuizComplete} /></div>
                 : <p className="text-center py-8 text-muted-foreground">No quiz available.</p>
             )}
           </TabsContent>
@@ -1067,6 +1117,7 @@ export default function LessonPage() {
           <TabsContent value="problems">
             {gate('problems',
               <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
+                {downloadFor('problems', aiOutputs.problems ?? '', 'problems', true)}
                 <MathMarkdown>{aiOutputs.problems ?? ''}</MathMarkdown>
               </motion.div>
             )}
@@ -1077,6 +1128,7 @@ export default function LessonPage() {
             {gate('slides',
               slides.length ? (
                 <div className="space-y-4">
+                  {downloadFor('slides', slides, 'slides')}
                   {slides.map((slide, i) => (
                     <motion.div key={i} initial="hidden" animate="visible" variants={fadeUp} custom={i} className="bg-card border border-border rounded-3xl p-6 card-glow">
                       <div className="flex items-center gap-3 mb-4">
@@ -1101,6 +1153,7 @@ export default function LessonPage() {
           <TabsContent value="notes">
             {gate('notes',
               <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-amber-500/10 dark:bg-amber-900/10 border border-amber-500/20 rounded-3xl p-6 sm:p-8">
+                {downloadFor('notes', aiOutputs.notes ?? '', 'notes')}
                 <MathMarkdown>{aiOutputs.notes ?? ''}</MathMarkdown>
               </motion.div>
             )}
@@ -1110,7 +1163,16 @@ export default function LessonPage() {
           <TabsContent value="audio">
             {gate('audioScript',
               <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-                <SmartAudioPlayer script={aiOutputs.audioScript ?? ''} title="Audio Summary" />
+                {(aiOutputs.audioScript ?? '').trim()
+                  ? <SmartAudioPlayer script={aiOutputs.audioScript ?? ''} title="Audio Summary" />
+                  : (
+                    <p className="text-sm text-muted-foreground">
+                      {visibleJob(lesson.generationJobs?.audioScript, Date.now())?.status === 'queued'
+                        || visibleJob(lesson.generationJobs?.audioScript, Date.now())?.status === 'generating'
+                        ? 'The audio script is being written.'
+                        : 'The audio script is not ready yet.'}
+                    </p>
+                  )}
               </motion.div>
             )}
           </TabsContent>
@@ -1119,6 +1181,7 @@ export default function LessonPage() {
           <TabsContent value="infographic">
             {gate('infographic',
               <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+                {downloadFor('infographic', aiOutputs.infographic ?? '', 'infographic')}
                 <InfographicRenderer content={aiOutputs.infographic ?? ''} />
               </motion.div>
             )}
@@ -1140,6 +1203,7 @@ export default function LessonPage() {
             {gate('glossary',
               glossary.length ? (
                 <div className="space-y-3">
+                  {downloadFor('glossary', glossary, 'glossary')}
                   {glossary.map((g, i) => (
                     <motion.div key={i} initial="hidden" animate="visible" variants={fadeUp} custom={i} className="bg-card border border-border rounded-3xl p-5 flex gap-4 card-glow">
                       <div className="w-8 h-8 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
@@ -1160,6 +1224,7 @@ export default function LessonPage() {
           <TabsContent value="mindmap">
             {gate('mindmap',
               <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+                {downloadFor('mindmap', aiOutputs.mindmap ?? '', 'mindmap')}
                 <MindmapRenderer content={aiOutputs.mindmap ?? ''} />
               </motion.div>
             )}

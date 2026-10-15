@@ -3,7 +3,7 @@
 import { toast } from 'sonner';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { awardSparks, type LessonMediaAsset } from '@/lib/db';
-import { IllustrationPrompt, ImageLibrary, optimiseImage, storeMedia } from '@/components/media';
+import { IllustrationPrompt, ImageLibrary, optimiseImage, recordMediaAsset, storeMedia } from '@/components/media';
 import type { MediaAsset } from '@/components/media';
 
 const ILLUSTRATION_SPARKS = 15;
@@ -15,14 +15,16 @@ export async function filesToAssets(scopeId: string, files: File[]): Promise<Les
     if (!file.type.startsWith('image/')) continue;
     const fitted = await optimiseImage(file, 1600);
     const stored = await storeMedia(scopeId, fitted.blob, `${Date.now()}-${file.name || 'image'}.jpg`);
-    assets.push({
+    const asset: LessonMediaAsset = {
       id: `img-${Date.now()}-${assets.length}`,
       src: stored.src,
       alt: '',
       width: fitted.width,
       height: fitted.height,
       ...(stored.storagePath ? { storagePath: stored.storagePath } : {}),
-    });
+    };
+    assets.push(asset);
+    void recordMediaAsset(scopeId, asset);
   }
   return assets;
 }

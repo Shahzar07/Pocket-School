@@ -212,6 +212,13 @@ export const ADDONS: AddOn[] = [
     blurb: 'Real-time face-to-face sessions with an AI teacher who sees and hears you.',
     requiresTier: 2,
   },
+  {
+    id: 'cms',
+    permission: 'addon:cms',
+    name: 'CMS',
+    blurb: 'Shared editor, document import, image library, illustrations, and course or book covers.',
+    requiresTier: 5,
+  },
 ];
 
 export function addOn(id: string): AddOn | undefined {
@@ -223,6 +230,24 @@ export function hasAddOn(permissions: string[], id: string): boolean {
   if (permissions.includes('role:super_admin')) return true;
   const a = addOn(id);
   return !!a && permissions.includes(a.permission);
+}
+
+/**
+ * The shared editor and media tools.
+ * A platform admin always has them. A teacher or institution admin has them
+ * when `addon:cms` is on their account.
+ */
+export function hasCmsAddon(
+  profile: {
+    role?: string | null;
+    permissions?: string[] | null;
+    accessTier?: number | null;
+    subscriptionTier?: string | null;
+  } | null | undefined,
+): boolean {
+  if (!profile) return false;
+  if (profile.role === 'admin') return true;
+  return hasAddOn(permissionsFor(profile), 'cms');
 }
 
 /** Permissions implied by an access tier. Cumulative — each tier includes those below. */

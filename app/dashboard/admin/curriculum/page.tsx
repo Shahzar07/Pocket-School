@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { reorderById, sortByOrder, withSequentialOrder } from '@/lib/reorder';
+import { hasCmsAddon } from '@/lib/entitlements';
+import { stripUnitPrefix } from '@/lib/unit-title';
 import { ReorderControls, reorderKeyDown } from '@/components/reorder-controls';
 
 const STATUS_BADGE: Record<string, string> = {
@@ -45,7 +47,7 @@ interface OutlineLesson { title: string; objectives: string[]; durationWeeks: nu
 interface OutlineModule { title: string; description: string; lessons: OutlineLesson[] }
 
 export default function AdminCurriculumPage() {
-  const { user } = useAuthSTORE();
+  const { user, profile } = useAuthSTORE();
   const [programmes, setProgrammes] = useState<Programme[]>([]);
   const [modules, setModules] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -266,7 +268,7 @@ export default function AdminCurriculumPage() {
 
       for (const [mi, m] of archOutline.entries()) {
         const moduleId = await createModule(courseId, {
-          title: m.title,
+          title: stripUnitPrefix(m.title, mi + 1),
           description: m.description,
           courseId,
           order: mi + 1,
@@ -394,6 +396,15 @@ export default function AdminCurriculumPage() {
       setCreatingModule(false);
     }
   };
+
+  if (!hasCmsAddon(profile)) {
+    return (
+      <div className="py-24 text-center space-y-3 max-w-md mx-auto">
+        <p className="font-semibold text-foreground">The CMS add-on is not on this account.</p>
+        <p className="text-sm text-muted-foreground">An admin can allocate it from Access allocation. Platform admins already have the course editor.</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

@@ -5,7 +5,7 @@
  *
  * This is the original liquid-glass footer design, with the legal content it
  * was missing folded in: working links to the legal documents (they used to
- * be href="#"), the registered entity and company number, and the mandatory
+ * be href="#"), the PoketSchool.Ai copyright line, and the mandatory
  * examination-board non-affiliation disclaimer.
  *
  * Placement rules live here rather than in each page, so there is exactly one
@@ -25,7 +25,7 @@ import {
   Music2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { LEGAL_ENTITY, LEGAL_COMPANY_NO } from "@/lib/legal-content";
+import { copyrightNotice } from "@/lib/export/notice";
 import styles from "./home-chrome.module.css";
 
 /**
@@ -156,8 +156,7 @@ export function SiteFooter() {
             <strong>{t("footer.independent")}</strong> {t("footer.disclaimer")}
           </p>
           <p>
-            © {new Date().getFullYear()} {LEGAL_ENTITY} ({LEGAL_COMPANY_NO}){" "}
-            {t("footer.trading")}
+            {copyrightNotice()}
           </p>
         </div>
         <div className={styles.footerWordmark} aria-hidden="true">
@@ -255,8 +254,7 @@ export function SiteFooter() {
           {/* Bottom bar */}
           <div className="pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-4">
             <p className="text-[10px] uppercase tracking-widest opacity-50 text-center md:text-left">
-              &copy; {new Date().getFullYear()} {LEGAL_ENTITY} (
-              {LEGAL_COMPANY_NO}) {t("footer.trading")}
+              {copyrightNotice()}
             </p>
             <div className="flex items-center gap-4">
               <span className="text-[10px] uppercase tracking-widest opacity-50">

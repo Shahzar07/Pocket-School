@@ -38,6 +38,13 @@ import type {
 } from '@/lib/curriculum-tiers';
 import { getFormatCost } from '@/lib/sparks';
 import { appendImageMarkdown, lessonBodyPatch, manuscriptToMarkdown, readLessonBody } from '@/lib/lesson-body';
+import { problemsAreWorked } from '@/lib/generation-quality';
+import { hasCmsAddon } from '@/lib/entitlements';
+import { stripUnitPrefix } from '@/lib/unit-title';
+import { describeSaveError, withTimeout } from '@/lib/save-status';
+import { writeAutosave } from '@/components/editor';
+import { CoverArtPicker, storeMedia } from '@/components/media';
+import { jobUpdate, visibleJob } from '@/lib/generation-jobs';
 import { filesToAssets, LessonIllustrationBlock, LessonImageBlock } from '@/components/lesson-pictures';
 import type { ImportResult } from '@/components/editor';
 import { LessonLanguagePanel } from '@/components/lesson-language-panel';
@@ -109,9 +116,10 @@ const AI_SHORTCUTS: { id: keyof AiOutputs; label: string }[] = [
 
 interface UnitWithLessons { module: Module; lessons: Lesson[] }
 
-type CoursePatch = Omit<Partial<Course>, 'minTier' | 'priceType'> & {
+type CoursePatch = Omit<Partial<Course>, 'minTier' | 'priceType' | 'downloadsEnabled'> & {
   minTier?: number | null;
   priceType?: Course['priceType'] | null;
+  downloadsEnabled?: boolean | null;
 };
 
 async function callGenerate(
@@ -231,7 +239,8 @@ export default function ContentBuilderPage() {
   const [selUnit, setSelUnit] = useState<string | null>(null);
   const [selLesson, setSelLesson] = useState<string | null>(null);
   const [draft, setDraft] = useState<Lesson | null>(null);
-  const [saveState, setSaveState] = useState<'saved' | 'dirty' | 'saving'>('saved');
+  const [saveState, setSaveState] = useState<'saved' | 'dirty' | 'saving' | 'error'>('saved');
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [undoStack, setUndoStack] = useState<UndoEntry<UnitWithLessons[]>[]>([]);
   const [rightTab, setRightTab] = useState<'properties' | 'publish' | 'allocate' | 'history'>('properties');
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
@@ -242,7 +251,9 @@ export default function ContentBuilderPage() {
   const [publishing, setPublishing] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const draftRef = useRef<Lesson | null>(null);
+  const saveSeq = useRef(0);
   draftRef.current = draft;
+  const cmsTools = hasCmsAddon(profile);
 
   const actorName = profile?.name ?? user?.email ?? 'Admin';
 
@@ -255,8 +266,19 @@ export default function ContentBuilderPage() {
         getCourse(courseId), getModulesWithLessons(courseId), getInstitutions().catch(() => []),
       ]);
       setCourse(c);
-      setUnits(mods);
+      const repaired = mods.map(entry => {
+        const title = stripUnitPrefix(entry.module.title, entry.module.unitNumber);
+        if (title === entry.module.title.trim()) return entry;
+        return { ...entry, module: { ...entry.module, title } };
+      });
+      setUnits(repaired);
       setInstitutions(inst);
+      const stale = mods.filter(entry => stripUnitPrefix(entry.module.title, entry.module.unitNumber) !== entry.module.title.trim());
+      if (stale.length) {
+        void Promise.all(stale.map(entry => updateUnit(courseId, entry.module.id, {
+          title: stripUnitPrefix(entry.module.title, entry.module.unitNumber),
+        }).catch(() => undefined)));
+      }
       if (!keepSelection && mods.length && mods[0].lessons.length) {
         setSelUnit(mods[0].module.id);
         setSelLesson(mods[0].lessons[0].id);
@@ -268,7 +290,13 @@ export default function ContentBuilderPage() {
     }
   }, [courseId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    if (!cmsTools) {
+      setLoading(false);
+      return;
+    }
+    load();
+  }, [load, cmsTools]);
 
   // Hydrate the editable draft when selection changes.
   useEffect(() => {
@@ -282,7 +310,10 @@ export default function ContentBuilderPage() {
 
   const persistDraft = useCallback(async (d: Lesson, historyLabel?: string) => {
     if (!selUnit) return;
+    const seq = ++saveSeq.current;
     setSaveState('saving');
+    setSaveError(null);
+    writeAutosave(`poket-lesson:${d.id}`, readLessonBody(d));
     try {
       const history = [
         ...(historyLabel ? [{ label: historyLabel, actor: actorName, at: Timestamp.now() }] : []),
@@ -292,14 +323,19 @@ export default function ContentBuilderPage() {
       // Firestore rejects undefined values — strip them, but keep Timestamps
       // as Timestamps so history dates and release dates survive the round-trip.
       const clean = stripUndefined({ ...fields, ...(historyLabel ? { history } : {}) });
-      await updateLesson(courseId, selUnit, d.id, clean);
+      await withTimeout(updateLesson(courseId, selUnit, d.id, clean));
+      if (seq !== saveSeq.current) return;
       setSaveState('saved');
       setUnits(prev => prev.map(u => u.module.id !== selUnit ? u : {
         ...u, lessons: u.lessons.map(l => l.id === d.id ? { ...d, ...(historyLabel ? { history } : {}) } : l),
       }));
-    } catch (e: any) {
-      setSaveState('dirty');
-      toast.error(e?.message || 'Save failed.');
+    } catch (e: unknown) {
+      if (seq !== saveSeq.current) return;
+      writeAutosave(`poket-lesson:${d.id}`, readLessonBody(d));
+      const message = describeSaveError(e);
+      setSaveError(message);
+      setSaveState('error');
+      toast.error(message);
     }
   }, [courseId, selUnit, actorName]);
 
@@ -334,7 +370,17 @@ export default function ContentBuilderPage() {
   const runAi = useCallback(async (format: string, extraBrief?: string) => {
     const d = draftRef.current;
     if (!d || !selUnit) return;
+    const queued = {
+      ...d,
+      generationJobs: jobUpdate(d.generationJobs, format, 'queued', Date.now()),
+    };
+    setDraft(queued);
     setAiBusy(format);
+    const generating = {
+      ...d,
+      generationJobs: jobUpdate(d.generationJobs, format, 'generating', Date.now()),
+    };
+    setDraft(generating);
     try {
       const content = readLessonBody(d).trim() || d.title;
       const brief = [d.briefPrompt, extraBrief].filter(Boolean).join('\n');
@@ -345,7 +391,7 @@ export default function ContentBuilderPage() {
         || suggestTemplateId(course?.subject);
       // Lesson override, else the course's tier, else auto-detect downstream.
       const tier = d.curriculumTier || course?.curriculumTier;
-      const result = await callGenerate(content, format, brief || undefined, templateId, tier, {
+      const result = await callGenerate(content, format, brief || undefined, format === 'problems' ? undefined : templateId, tier, {
         subject: course?.subject,
         yearLevel: course?.yearGroup ?? course?.level,
         courseTitle: course?.title,
@@ -355,20 +401,35 @@ export default function ContentBuilderPage() {
         lawStage: d.tierLawStage || course?.tierLawStage,
         assessmentStyle: d.tierAssessmentStyle || course?.tierAssessmentStyle,
       });
+      if (format === 'problems' && (typeof result !== 'string' || !problemsAreWorked(result))) {
+        throw new Error('Problems must be practice problems with a worked solution, not study notes.');
+      }
       const aiOutputs = { ...(d.aiOutputs ?? {}), [format]: result };
       const bodySync = format === 'text' && typeof result === 'string'
         ? lessonBodyPatch({ ...d, aiOutputs }, result)
         : null;
-      const next = { ...d, aiOutputs, ...(bodySync ?? {}) } as Lesson;
+      const next = {
+        ...d,
+        aiOutputs,
+        generationJobs: jobUpdate(d.generationJobs, format, 'done', Date.now()),
+        ...(bodySync ?? {}),
+      } as Lesson;
       setDraft(next);
       await persistDraft(next, `AI generated: ${format}`);
       toast.success(`${format} generated.`);
     } catch (e: any) {
-      toast.error(e?.message || `Failed to generate ${format}.`);
+      const message = e?.message || `Failed to generate ${format}.`;
+      const failed = {
+        ...d,
+        generationJobs: jobUpdate(d.generationJobs, format, 'failed', Date.now(), message),
+      };
+      setDraft(failed);
+      await persistDraft(failed, `AI failed: ${format}`);
+      toast.error(message);
     } finally {
       setAiBusy(null);
     }
-  }, [selUnit, persistDraft]);
+  }, [selUnit, persistDraft, course, units]);
 
   /* ── ET assistance ── */
 
@@ -497,7 +558,7 @@ export default function ContentBuilderPage() {
     const d = draftRef.current;
     if (!d) return;
     try {
-      const added = await filesToAssets(d.id, files);
+      const added = await filesToAssets(courseId, files);
       if (added.length === 0) return;
       const blocks = d.blocksOrder?.length ? d.blocksOrder : DEFAULT_BLOCKS;
       patchDraft({
@@ -508,7 +569,7 @@ export default function ContentBuilderPage() {
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'That image could not be added.');
     }
-  }, [patchDraft]);
+  }, [patchDraft, courseId]);
 
   const draftAssessment = useCallback(() => runEt(
     'assessment', 'assessment',
@@ -582,7 +643,7 @@ export default function ContentBuilderPage() {
     const title = window.prompt('Rename module:', unit.title);
     if (!title?.trim() || title === unit.title) return;
     try {
-      await updateUnit(courseId, unit.id, { title: title.trim() });
+      await updateUnit(courseId, unit.id, { title: stripUnitPrefix(title.trim(), unit.unitNumber) });
       load(true);
     } catch (e: any) { toast.error(e?.message || 'Failed.'); }
   };
@@ -768,10 +829,10 @@ export default function ContentBuilderPage() {
 
   const patchCourse = async (patch: CoursePatch, msg?: string) => {
     if (!course) return;
-    const clears: ('minTier' | 'priceType')[] = [];
+    const clears: ('minTier' | 'priceType' | 'downloadsEnabled')[] = [];
     const data: Partial<Course> = {};
     for (const [key, value] of Object.entries(patch) as [keyof Course, unknown][]) {
-      if (value === null && (key === 'minTier' || key === 'priceType')) {
+      if (value === null && (key === 'minTier' || key === 'priceType' || key === 'downloadsEnabled')) {
         clears.push(key);
         continue;
       }
@@ -801,6 +862,15 @@ export default function ContentBuilderPage() {
   );
 
   /* ── Render ── */
+
+  if (!cmsTools) {
+    return (
+      <div className="py-24 text-center space-y-3 max-w-md mx-auto">
+        <p className="font-semibold text-foreground">The CMS add-on is not on this account.</p>
+        <p className="text-sm text-muted-foreground">An admin can allocate it from Access allocation. Platform admins already have the editor, imports, image library, and covers.</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return <div className="py-24 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>;
@@ -833,11 +903,19 @@ export default function ContentBuilderPage() {
         </nav>
         <span className="flex-1" />
         {/* Save status */}
-        <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground" role="status" aria-live="polite" data-save-state={saveState}>
-          <span className={`w-2 h-2 rounded-full ${
-            saveState === 'saved' ? 'bg-emerald-500' : saveState === 'saving' ? 'bg-amber-400 animate-pulse' : 'bg-amber-400 animate-pulse'
+        <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground max-w-sm" role="status" aria-live="polite" data-save-state={saveState}>
+          <span className={`w-2 h-2 rounded-full shrink-0 ${
+            saveState === 'saved' ? 'bg-emerald-500' : saveState === 'error' ? 'bg-red-500' : 'bg-amber-400 animate-pulse'
           }`} />
-          {saveState === 'saved' ? 'All changes saved' : saveState === 'saving' ? 'Saving…' : 'Unsaved changes'}
+          {saveState === 'saved' && 'All changes saved'}
+          {saveState === 'saving' && 'Saving…'}
+          {saveState === 'dirty' && 'Unsaved changes'}
+          {saveState === 'error' && (
+            <span className="text-red-700">
+              {saveError ?? 'Saving failed. Your changes are kept on this device.'}{' '}
+              <button type="button" className="underline font-bold" onClick={saveNow}>Retry</button>
+            </span>
+          )}
         </span>
         <Button size="sm" variant="outline" className="rounded-xl h-8 text-xs" onClick={() => void undoStructure()} disabled={undoStack.length === 0}>
           Undo{undoStack[0] ? ` ${undoStack[0].label}` : ''}
@@ -856,7 +934,7 @@ export default function ContentBuilderPage() {
             <Eye className="w-3.5 h-3.5" /> Preview
           </a>
         )}
-        <Button size="sm" variant="outline" className="rounded-xl h-8 text-xs" onClick={saveNow} disabled={!draft || saveState === 'saved'}>
+        <Button size="sm" variant="outline" className="rounded-xl h-8 text-xs" onClick={saveNow} disabled={!draft || saveState === 'saved' || saveState === 'saving'}>
           Save
         </Button>
         <Button size="sm" className="rounded-xl h-8 text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -1103,6 +1181,7 @@ export default function ContentBuilderPage() {
                       onDraftAssessment={draftAssessment}
                       onImport={result => { void applyManuscript(result); }}
                       onPasteImages={files => { void takePastedImages(files); }}
+                      courseId={courseId}
                     />
                     {blockId === 'objectives' && <DurationPanel draft={draft} patch={patchDraft} />}
                   </div>
@@ -1373,7 +1452,7 @@ function TreeUnit({
         <button onClick={() => setOpen(o => !o)} className="flex items-center gap-1.5 flex-1 min-w-0 text-left">
           {open ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
           <span className="text-xs font-bold text-foreground truncate">
-            {unit.unitNumber ? `Unit ${unit.unitNumber}: ` : ''}{unit.title}
+            {unit.unitNumber ? `Unit ${unit.unitNumber}: ` : ''}{stripUnitPrefix(unit.title, unit.unitNumber)}
           </span>
         </button>
         <button onClick={onRename} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-muted text-muted-foreground" title="Rename">
@@ -1485,7 +1564,7 @@ function TreeUnit({
 
 function BuilderBlock({
   blockId, draft, selected, onSelect, onDelete, onMoveUp, onMoveDown, patch, ai, aiBusy,
-  etBusy, onSuggestObjectives, onImproveText, onDraftAssessment, onImport, onPasteImages,
+  etBusy, onSuggestObjectives, onImproveText, onDraftAssessment, onImport, onPasteImages, courseId,
 }: {
   blockId: string; draft: Lesson; selected: boolean;
   onSelect: () => void; onDelete: () => void;
@@ -1499,6 +1578,7 @@ function BuilderBlock({
   onDraftAssessment: () => void;
   onImport?: (result: ImportResult) => void;
   onPasteImages?: (files: File[]) => void;
+  courseId: string;
 }) {
   const def: BlockDef = BLOCK_DEFS.find(d => d.id === blockId) ?? { id: blockId, icon: '📄', label: blockId };
   const outputs = draft.aiOutputs ?? {};
@@ -1552,7 +1632,7 @@ function BuilderBlock({
     case 'image':
       return shell(
         <LessonImageBlock
-          scopeId={draft.id}
+          scopeId={courseId}
           images={draft.mediaLibrary ?? []}
           onChange={images => patch({ mediaLibrary: images })}
           onInsert={image => patch(lessonBodyPatch(draft, appendImageMarkdown(readLessonBody(draft), image)))}
@@ -1561,7 +1641,7 @@ function BuilderBlock({
     case 'illustration':
       return shell(
         <LessonIllustrationBlock
-          scopeId={draft.id}
+          scopeId={courseId}
           images={draft.mediaLibrary ?? []}
           onChange={images => patch({ mediaLibrary: images })}
           onInsert={image => patch(lessonBodyPatch(draft, appendImageMarkdown(readLessonBody(draft), image)))}
@@ -1613,16 +1693,30 @@ function BuilderBlock({
       );
     case 'audio':
       return shell(
-        <AudioBlock script={outputs.audioScript} ai={ai} generating={aiBusy === 'audioScript'} />
+        <AudioBlock
+          script={outputs.audioScript}
+          ai={ai}
+          generating={aiBusy === 'audioScript'}
+          scriptStatus={
+            aiBusy === 'audioScript'
+              ? (visibleJob(draft.generationJobs?.audioScript, Date.now())?.status === 'queued' ? 'queued' : 'generating')
+              : visibleJob(draft.generationJobs?.audioScript, Date.now())?.status
+          }
+        />
       );
     // Read-only AI format previews (flashcards, mindmap, infographic, slides, notes, summary, problems)
     default: {
       const formatKey = blockId as keyof AiOutputs;
       const has = outputs[formatKey] != null &&
         (!Array.isArray(outputs[formatKey]) || (outputs[formatKey] as unknown[]).length > 0);
+      const problemsText = typeof outputs.problems === 'string' ? outputs.problems : '';
+      const problemsInvalid = blockId === 'problems' && problemsText.trim().length > 0 && !problemsAreWorked(problemsText);
       return shell(
         has ? (
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-96 overflow-y-auto space-y-2">
+            {problemsInvalid && (
+              <p className="text-sm text-red-700">These are study notes. Use Regenerate on this block to replace them with worked problems.</p>
+            )}
             <FormatPreview format={blockId} outputs={outputs} />
           </div>
         ) : (
@@ -1748,15 +1842,27 @@ function PropertiesTab({
           {AI_SHORTCUTS.map(f => {
             const v = outputs[f.id];
             const done = v != null && (!Array.isArray(v) || v.length > 0) && (typeof v !== 'string' || v.trim() !== '');
+            const job = visibleJob(draft.generationJobs?.[f.id], Date.now());
+            const status = aiBusy === f.id
+              ? (job?.status === 'queued' ? 'Queued' : 'Generating')
+              : job?.status === 'failed' ? 'Failed'
+              : job?.status === 'done' ? 'Done'
+              : null;
+            const tone = status === 'Failed'
+              ? 'border-red-200 bg-red-50 text-red-700'
+              : status === 'Queued' || status === 'Generating'
+                ? 'border-violet-200 bg-violet-50 text-violet-700'
+                : done
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                  : 'border-border text-muted-foreground hover:border-violet-300 hover:text-violet-700';
             return (
-              <button key={f.id} onClick={() => ai(f.id)} disabled={aiBusy !== null}
-                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border text-[11px] font-medium text-left transition-colors ${
-                  done ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-border text-muted-foreground hover:border-violet-300 hover:text-violet-700'
-                }`}>
-                {aiBusy === f.id ? <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+              <button key={f.id} onClick={() => ai(f.id)} disabled={aiBusy !== null} title={job?.error}
+                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border text-[11px] font-medium text-left transition-colors ${tone}`}>
+                {status === 'Queued' || status === 'Generating' ? <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+                  : status === 'Failed' ? <Sparkles className="w-3 h-3 shrink-0" />
                   : done ? <CheckCircle2 className="w-3 h-3 shrink-0" />
                   : <Sparkles className="w-3 h-3 shrink-0" />}
-                <span className="truncate flex-1">{f.label}</span>
+                <span className="truncate flex-1">{f.label}{status ? ` · ${status}` : ''}</span>
                 {isCurriculumCourse && (
                   <span className="text-[10px] font-bold text-amber-600 shrink-0 tabular-nums">
                     {getFormatCost(f.id)}
@@ -1791,7 +1897,7 @@ function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseI
   draft: Lesson; course: Course;
   statusCard: { bg: string; label: string };
   setStatus: (s: NonNullable<Lesson['status']>, label: string) => Promise<void>;
-  patchCourse: (p: Partial<Course>, msg?: string) => Promise<void>;
+  patchCourse: (p: CoursePatch, msg?: string) => Promise<void>;
   courseId: string;
   onPublishRequest: () => void;
 }) {
@@ -1857,6 +1963,55 @@ function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseI
         <p className="text-[10px] text-muted-foreground leading-relaxed">
           {getTemplate(course.contentTemplateId ?? suggestTemplateId(course.subject)).description}
           {' '}Every lesson follows this unless it sets its own.
+        </p>
+      </section>
+
+      <section className="space-y-2">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Cover</p>
+        {course.thumbnailUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={course.thumbnailUrl} alt="" className="w-full h-28 object-cover rounded-xl" />
+        )}
+        <CoverArtPicker
+          brief={`${course.title}. ${course.subject ?? ''}`.trim()}
+          onSelect={option => {
+            void (async () => {
+              try {
+                const blob = await (await fetch(option.artSrc)).blob();
+                const stored = await storeMedia(courseId, blob, `cover-${Date.now()}.jpg`);
+                await patchCourse({ thumbnailUrl: stored.src }, 'Cover updated');
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : 'The cover could not be saved.');
+              }
+            })();
+          }}
+        />
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
+          Text-free pictures for this course. The same picker is what a book cover uses.
+        </p>
+      </section>
+
+      <section className="space-y-2">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+          Downloads
+        </p>
+        <select
+          aria-label="Download allowance for this course"
+          value={course.downloadsEnabled === true ? 'on' : course.downloadsEnabled === false ? 'off' : 'tier'}
+          onChange={e => {
+            const value = e.target.value;
+            if (value === 'on') patchCourse({ downloadsEnabled: true }, 'Downloads turned on');
+            else if (value === 'off') patchCourse({ downloadsEnabled: false }, 'Downloads turned off');
+            else patchCourse({ downloadsEnabled: null }, 'Downloads follow tier and allocation');
+          }}
+          className="w-full h-10 rounded-xl border border-border bg-card px-3 text-xs font-medium"
+        >
+          <option value="tier">Follow tier and allocation</option>
+          <option value="on">Downloads on</option>
+          <option value="off">Downloads off</option>
+        </select>
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
+          Off stops student downloads. On allows them. The middle setting uses the paid tier or an allocation.
         </p>
       </section>
 

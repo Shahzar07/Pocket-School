@@ -79,6 +79,13 @@ service cloud.firestore {
         allow read, create: if isUser(userId) || isAdmin();
         allow update, delete: if isAdmin();
       }
+
+      // Per-user push tokens written by the Poketschool app.
+      // The path owner is the signed-in user, so a missing userId field is still theirs.
+      match /deviceTokens/{tokenId} {
+        allow read: if false;
+        allow create, update, delete: if isUser(userId);
+      }
     }
 
     // ── Programmes (curriculum) ───────────────────────────────
@@ -897,6 +904,25 @@ service cloud.firestore {
       allow read, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn() && incoming().userId == request.auth.uid;
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Shared image library. Storage holds the bytes at media/{scopeId}/{name}.
+    // This document is the metadata a course or a book can list again.
+    match /media_assets/{assetId} {
+      allow read: if isSignedIn() && (
+        resource.data.ownerId == request.auth.uid || isTeacherOrAdmin()
+      );
+      allow create: if isSignedIn()
+        && incoming().ownerId == request.auth.uid
+        && incoming().scopeId is string
+        && incoming().src is string
+        && incoming().alt is string;
+      allow update: if isSignedIn()
+        && resource.data.ownerId == request.auth.uid
+        && incoming().ownerId == request.auth.uid;
+      allow delete: if isSignedIn() && (
+        resource.data.ownerId == request.auth.uid || isAdmin()
+      );
     }
 
     // ── Device push tokens (Poketschool app + web) ───────────
