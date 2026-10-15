@@ -10,7 +10,8 @@ import { adminDb } from '../firebase-admin';
 import { buildSnapshot } from '../insights/aggregate';
 import type { AttendanceMark } from '../insights/attendance';
 import type { QuizPoint, StudyEvent } from '../insights/analytics';
-import type { GoalLike } from '../insights/goals';
+import { formatProgressDigest, type GoalLike } from '../insights/goals';
+import { digestDue, type DigestCadence } from '../parent-controls';
 import { addDays, isoDateKey } from '../insights/dates';
 import { notifyParents, notifyUser } from './device-push';
 
@@ -60,40 +61,52 @@ export async function runMissedGoalAlerts(now = new Date()): Promise<{ checked: 
 }
 
 export async function runWeeklyDigest(now = new Date()): Promise<{ parents: number }> {
-  if (now.getDay() !== 1) return { parents: 0 };
   const end = yesterdayKey(now);
   const start = addDays(end, -6);
   const snap = await adminDb().collection('daily_goals').where('dateKey', '>=', start).where('dateKey', '<=', end).limit(800).get();
-  const byStudent = new Map<string, { name: string; done: number; missed: number }>();
+  const byStudent = new Map<string, { name: string; goals: Record<string, unknown>[] }>();
   for (const doc of snap.docs) {
     const data = doc.data();
     const id = data.studentId as string;
-    const row = byStudent.get(id) ?? { name: (data.studentName as string) || 'Your child', done: 0, missed: 0 };
-    if (data.status === 'completed') row.done += 1;
-    else if (data.status === 'overdue' || data.status === 'not_started' || data.status === 'in_progress') row.missed += 1;
+    const row = byStudent.get(id) ?? { name: (data.studentName as string) || 'Your child', goals: [] };
+    row.goals.push(data);
     byStudent.set(id, row);
   }
-  const parentNotes = new Map<string, string[]>();
+  const sent = new Set<string>();
   for (const [studentId, row] of byStudent) {
     const parents = await adminDb().collection('users').where('childIds', 'array-contains', studentId).get();
-    const line = `${row.name}: ${row.done} goal${row.done === 1 ? '' : 's'} finished, ${row.missed} still open.`;
     for (const parent of parents.docs) {
-      const list = parentNotes.get(parent.id) ?? [];
-      list.push(line);
-      parentNotes.set(parent.id, list);
+      const controls = await adminDb().doc(`users/${parent.id}/child_controls/${studentId}`).get();
+      const cadence = (controls.data()?.digestCadence as DigestCadence | undefined) ?? 'weekly';
+      if (!digestDue(cadence, now)) continue;
+      const windowStart = cadence === 'daily' ? end : start;
+      const slice = row.goals.filter(goal => {
+        const key = goal.dateKey as string;
+        return key >= windowStart && key <= end;
+      });
+      const minutes = slice.reduce((sum, goal) => sum + (Number(goal.focusMinutes) || Number(goal.actualMinutes) || 0), 0);
+      const lessons = slice.reduce((sum, goal) => sum + (Array.isArray(goal.completedLessonIds) ? goal.completedLessonIds.length : 0), 0);
+      const quizScores = slice.flatMap(goal => typeof goal.quizScore === 'number' ? [goal.quizScore] : []);
+      const goalsMet = slice.filter(goal => goal.status === 'completed').length;
+      await notifyUser({
+        userId: parent.id,
+        title: cadence === 'daily' ? 'Daily learning digest' : 'Weekly learning digest',
+        message: formatProgressDigest({
+          childName: row.name,
+          minutes,
+          lessons,
+          quizScores,
+          goalsMet,
+          goalsSet: slice.length,
+        }),
+        type: 'general',
+        link: '/dashboard/parent/goals',
+        pref: 'digest',
+      });
+      sent.add(`${parent.id}:${studentId}`);
     }
   }
-  for (const [parentId, lines] of parentNotes) {
-    await notifyUser({
-      userId: parentId,
-      title: 'Weekly learning digest',
-      message: lines.join(' '),
-      type: 'general',
-      link: '/dashboard/parent/analytics',
-      pref: 'digest',
-    });
-  }
-  return { parents: parentNotes.size };
+  return { parents: sent.size };
 }
 
 function millis(value: unknown): number | undefined {

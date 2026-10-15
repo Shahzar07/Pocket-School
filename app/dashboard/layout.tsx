@@ -118,6 +118,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
       { href: '/dashboard/teacher/analytics', icon: Activity, labelKey: 'nav.analytics' },
       { href: '/dashboard/teacher/insights', icon: BarChart, labelKey: 'nav.insights' },
+      { href: '/dashboard/teacher/goals', icon: Target, labelKey: 'nav.goals' },
     ]},
     { sectionKey: 'nav.section.academics', items: [
       { href: '/dashboard/teacher/gradebook', icon: ClipboardList, labelKey: 'nav.gradebook' },

@@ -18,6 +18,9 @@ export const UNDER13_PROFILE_FIELDS = [
 export const TEACHER_MESSAGE_PREFS = ['all', 'digest', 'off'] as const;
 export type TeacherMessagePref = (typeof TEACHER_MESSAGE_PREFS)[number];
 
+export const DIGEST_CADENCES = ['off', 'daily', 'weekly'] as const;
+export type DigestCadence = (typeof DIGEST_CADENCES)[number];
+
 export interface ChildControls {
   childId: string;
   weeklyReportEmail: boolean;
@@ -26,6 +29,10 @@ export interface ChildControls {
   sparksDailyLimit: number;
   purchaseApproval: boolean;
   teacherMessages: TeacherMessagePref;
+  /** Push when a goal is created, a focus session ends, a goal is met or missed, or a streak breaks. */
+  goalPush: boolean;
+  /** How often this parent wants the progress digest for this child. */
+  digestCadence: DigestCadence;
 }
 
 export interface PaymentMethod {
@@ -54,6 +61,8 @@ export function defaultChildControls(childId: string): ChildControls {
     sparksDailyLimit: 50,
     purchaseApproval: true,
     teacherMessages: 'all',
+    goalPush: true,
+    digestCadence: 'weekly',
   };
 }
 
@@ -64,6 +73,9 @@ export function normaliseChildControls(input: Partial<ChildControls> & { childId
   const messages = TEACHER_MESSAGE_PREFS.includes(input.teacherMessages as TeacherMessagePref)
     ? input.teacherMessages as TeacherMessagePref
     : base.teacherMessages;
+  const cadence = DIGEST_CADENCES.includes(input.digestCadence as DigestCadence)
+    ? input.digestCadence as DigestCadence
+    : base.digestCadence;
   return {
     childId: input.childId,
     weeklyReportEmail: input.weeklyReportEmail ?? base.weeklyReportEmail,
@@ -72,6 +84,8 @@ export function normaliseChildControls(input: Partial<ChildControls> & { childId
     sparksDailyLimit: Math.max(0, Math.round(Number.isFinite(sparks) ? sparks : base.sparksDailyLimit)),
     purchaseApproval: input.purchaseApproval ?? base.purchaseApproval,
     teacherMessages: messages,
+    goalPush: input.goalPush ?? base.goalPush,
+    digestCadence: cadence,
   };
 }
 
@@ -224,7 +238,26 @@ export function strictestControls(rows: ChildControls[]): ChildControls | null {
       : row.teacherMessages === 'digest' || tight.teacherMessages === 'digest'
         ? 'digest'
         : 'all',
+    goalPush: tight.goalPush && row.goalPush,
+    digestCadence: tighterDigest(tight.digestCadence, row.digestCadence),
   }));
+}
+
+function tighterDigest(left: DigestCadence, right: DigestCadence): DigestCadence {
+  if (left === 'off' || right === 'off') return 'off';
+  if (left === 'weekly' || right === 'weekly') return 'weekly';
+  return 'daily';
+}
+
+export function digestDue(cadence: DigestCadence | undefined, now: Date): boolean {
+  const value = cadence ?? 'weekly';
+  if (value === 'off') return false;
+  if (value === 'daily') return true;
+  return now.getDay() === 1;
+}
+
+export function goalPushAllowed(controls: { goalPush?: boolean } | null | undefined): boolean {
+  return controls?.goalPush !== false;
 }
 
 export function reportChannels(controls: Pick<ChildControls, 'weeklyReportEmail' | 'weeklyReportInApp'>): {

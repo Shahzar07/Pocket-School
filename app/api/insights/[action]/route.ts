@@ -61,7 +61,12 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
         status: (doc.data().status as string) ?? '',
       })));
       const amount = sparksForGoal(
-        { status: (data.status as string) ?? '', dateKey: (data.dateKey as string) ?? '', deadline: data.deadline as string | undefined },
+        {
+          status: (data.status as string) ?? '',
+          dateKey: (data.dateKey as string) ?? '',
+          deadline: data.deadline as string | undefined,
+          sparksBonus: typeof data.sparksBonus === 'number' ? data.sparksBonus : undefined,
+        },
         new Date(),
         streak,
       );

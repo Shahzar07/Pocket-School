@@ -20,7 +20,7 @@ export const PUSH_CATEGORIES = [
 
 export type PushCategory = (typeof PUSH_CATEGORIES)[number];
 
-export type PushProvider = 'expo' | 'webpush';
+export type PushProvider = 'expo' | 'webpush' | 'fcm';
 
 /** Document shape the Poketschool app writes at deviceTokens/{deviceId}. */
 export interface DeviceToken {

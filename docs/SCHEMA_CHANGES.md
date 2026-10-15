@@ -668,7 +668,7 @@ Optional additions:
 
 | Field | Meaning |
 | --- | --- |
-| `targetKind` | `free_text`, `unit`, or `lessons` |
+| `targetKind` | `free_text`, `unit`, `lessons`, `revision`, `quiz_score`, or `studio` |
 | `unitId`, `unitTitle`, `lessonIds`, `freeTextTarget` | What the goal covers |
 | `startDate`, `endDate`, `recurrence` | Planner window. Recurrence is `none`, `daily`, `weekdays`, or `weekly` |
 | `checklist` | `{ id, label, done }[]` |
@@ -680,7 +680,11 @@ Optional additions:
 | `completedLessonIds`, `quizScore` | Auto progress inputs |
 | `courseId`, `courseLabel` | Already optional on the mobile shape |
 
-Parents may set `status` only to `excused`, plus `excuseReason`, `excusedBy`, `notifiedMissed`, co-sign fields, and `parentNote`.
+Parents may set `status` only to `excused`, plus `excuseReason`, `excusedBy`, `notifiedMissed`, co-sign fields, `parentNote`, and `reactions` (`{ parentId, emoji, at }[]`). Students cannot write reactions.
+
+Further optional fields: `priority` (`low|medium|high`), `reminderTime` (`HH:mm`), `quizTarget`, `studioTask`, `pomodoroWork`, `pomodoroBreak`, `reflectionPrompt`, `reward`, `lessonTitles`, `shareWithTeachers`, and `teacherIds`. A goal is readable by the student, a linked parent, an admin, or a teacher whose id is in `teacherIds` while `shareWithTeachers` is not false. `deviceTokens.provider` may be `expo`, `webpush`, or `fcm`. The document shape is unchanged. FCM sends only when `FCM_SERVER_KEY` is set.
+
+`users/{parentId}/child_controls/{childId}` may include optional `goalPush` (bool) and `digestCadence` (`off|daily|weekly`). Older saves that omit them still pass the rules.
 
 ## New collections
 

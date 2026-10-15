@@ -3012,7 +3012,7 @@ export interface DailyGoal {
    * Richer plan. Optional on purpose: the mobile DailyGoal reader ignores
    * fields it does not know, and the required fields above are unchanged.
    */
-  targetKind?: 'free_text' | 'unit' | 'lessons';
+  targetKind?: 'free_text' | 'unit' | 'lessons' | 'revision' | 'quiz_score' | 'studio';
   unitId?: string;
   unitTitle?: string;
   lessonIds?: string[];
@@ -3036,6 +3036,18 @@ export interface DailyGoal {
   focusMinutes?: number;
   completedLessonIds?: string[];
   quizScore?: number;
+  priority?: 'low' | 'medium' | 'high';
+  reminderTime?: string;
+  quizTarget?: number;
+  studioTask?: string;
+  shareWithTeachers?: boolean;
+  teacherIds?: string[];
+  reactions?: { parentId: string; emoji: string; at: string }[];
+  pomodoroWork?: number;
+  pomodoroBreak?: number;
+  reflectionPrompt?: string;
+  reward?: string;
+  lessonTitles?: string[];
 }
 
 /** Local YYYY-MM-DD (not UTC) — goals are a "today" concept for the student. */
@@ -3085,6 +3097,21 @@ export function subscribeDailyGoals(
       cb(filtered.sort((a, b) => (a.deadline || '').localeCompare(b.deadline || '')));
     },
     () => cb([])
+  );
+}
+
+/** Goals a class teacher may see: the student listed them and left sharing on. */
+export function subscribeTeacherGoals(teacherId: string, cb: (goals: DailyGoal[]) => void): () => void {
+  return onSnapshot(
+    query(collection(db, 'daily_goals'), where('teacherIds', 'array-contains', teacherId)),
+    snap => {
+      const all = snap.docs.flatMap(d => {
+        const goal = mapDailyGoal(d.id, d.data() as Record<string, unknown>);
+        return goal && goal.shareWithTeachers !== false ? [goal] : [];
+      });
+      cb(all.sort((a, b) => (b.dateKey || '').localeCompare(a.dateKey || '')));
+    },
+    () => cb([]),
   );
 }
 

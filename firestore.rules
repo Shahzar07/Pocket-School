@@ -370,16 +370,20 @@ service cloud.firestore {
     function studentGoalUpdate() {
       return resource.data.studentId == request.auth.uid
         && !request.resource.data.diff(resource.data).affectedKeys()
-          .hasAny(['sparksAwarded', 'cosignedBy', 'cosignedAt', 'excusedBy', 'excuseReason']);
+          .hasAny(['sparksAwarded', 'cosignedBy', 'cosignedAt', 'excusedBy', 'excuseReason', 'reactions']);
     }
     function parentGoalUpdate() {
       return linkedTo(resource.data.studentId)
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['status', 'excuseReason', 'excusedBy', 'notifiedMissed', 'cosignedBy', 'cosignedAt', 'parentNote'])
+          .hasOnly(['status', 'excuseReason', 'excusedBy', 'notifiedMissed', 'cosignedBy', 'cosignedAt', 'parentNote', 'reactions'])
         && (
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status'])
           || request.resource.data.status == 'excused'
         );
+    }
+    function teacherMayReadGoal() {
+      return resource.data.get('shareWithTeachers', true) != false
+        && resource.data.get('teacherIds', []).hasAny([request.auth.uid]);
     }
 
     // ── Users ─────────────────────────────────────────────────
@@ -427,7 +431,9 @@ service cloud.firestore {
           && incoming().sparksDailyLimit is number
           && incoming().sparksDailyLimit >= 0
           && incoming().purchaseApproval is bool
-          && incoming().teacherMessages in ['all', 'digest', 'off'];
+          && incoming().teacherMessages in ['all', 'digest', 'off']
+          && (!incoming().keys().hasAny(['goalPush']) || incoming().goalPush is bool)
+          && (!incoming().keys().hasAny(['digestCadence']) || incoming().digestCadence in ['off', 'daily', 'weekly']);
         allow delete: if isUser(userId) && hasRole('parent');
       }
 
@@ -1284,13 +1290,14 @@ service cloud.firestore {
     match /daily_goals/{goalId} {
       allow read: if isSignedIn() && (
         resource.data.studentId == request.auth.uid
-        || isTeacherOrAdmin()
+        || isAdmin()
         || linkedTo(resource.data.studentId)
+        || teacherMayReadGoal()
       );
       allow create: if isSignedIn()
         && incoming().studentId == request.auth.uid
         && !incoming().keys().hasAny(['sparksAwarded', 'cosignedBy', 'cosignedAt', 'excusedBy', 'excuseReason']);
-      allow update: if isTeacherOrAdmin() || studentGoalUpdate() || parentGoalUpdate();
+      allow update: if isAdmin() || studentGoalUpdate() || parentGoalUpdate();
       allow delete: if isSignedIn() && (
         resource.data.studentId == request.auth.uid || isAdmin()
       );

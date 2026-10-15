@@ -497,6 +497,15 @@ describe('goals, snapshots, integrity, and published reports', () => {
     await assertFails(deleteDoc(doc(parent, 'daily_goals/goal1')));
     const stranger = env.authenticatedContext('student2').firestore();
     await assertFails(getDoc(doc(stranger, 'daily_goals/goal1')));
+    const teacher = env.authenticatedContext('teacher1').firestore();
+    await assertFails(getDoc(doc(teacher, 'daily_goals/goal1')));
+    const own = env.authenticatedContext('student1').firestore();
+    await assertSucceeds(updateDoc(doc(own, 'daily_goals/goal1'), {
+      shareWithTeachers: true, teacherIds: ['teacher1'],
+    }));
+    await assertSucceeds(getDoc(doc(teacher, 'daily_goals/goal1')));
+    await assertSucceeds(updateDoc(doc(own, 'daily_goals/goal1'), { shareWithTeachers: false }));
+    await assertFails(getDoc(doc(teacher, 'daily_goals/goal1')));
   });
 
   it('keeps device tokens and snapshots off other clients', async () => {

@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DashPage, DashHeader, Panel, PanelHeader, StatCard, EmptyState } from '@/components/dash-ui';
 import { FocusTimer } from '@/components/goals/focus-timer';
-import { computeGoalStreak, type ChecklistItem, type GoalLike } from '@/lib/insights/goals';
+import { computeGoalStreak, focusMinutesTotal, overdueNudge, type ChecklistItem, type GoalLike, type SuggestedGoal } from '@/lib/insights/goals';
 import { weeklyInsights } from '@/lib/insights/analytics';
 import { Flame, Target, Check } from 'lucide-react';
 import { isoDateKey, addDays, weekdayOf } from '@/lib/insights/dates';
@@ -17,6 +17,15 @@ export interface WorkspaceGoal extends GoalLike {
   cosignedBy?: string;
   source?: 'student' | 'parent' | 'ai';
   focusMinutes?: number;
+  priority?: GoalLike['priority'];
+  reactions?: GoalLike['reactions'];
+  reminderTime?: string;
+  reward?: string;
+  quizTarget?: number;
+  studioTask?: string;
+  pomodoroWork?: number;
+  pomodoroBreak?: number;
+  reflectionPrompt?: string;
 }
 
 const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -32,7 +41,10 @@ export function GoalsWorkspace({
   onLogFocus,
   onAcceptSuggestion,
   onCosign,
+  onCosignWeek,
+  onCheer,
   suggestions = [],
+  signalSuggestions = [],
   insights,
 }: {
   goals: WorkspaceGoal[];
@@ -45,13 +57,19 @@ export function GoalsWorkspace({
   onLogFocus: (goal: WorkspaceGoal, actual: number, planned: number) => void;
   onAcceptSuggestion?: (title: string, minutes: number, category: WorkspaceGoal['category']) => void;
   onCosign?: (goal: WorkspaceGoal) => void;
+  onCosignWeek?: () => void;
+  onCheer?: (goal: WorkspaceGoal, emoji: string) => void;
   suggestions?: { id: string; title: string; status: string }[];
+  signalSuggestions?: SuggestedGoal[];
   insights?: { retention: number | null; cramming: number | null; readiness: number | null; goalCompletion: number | null };
 }) {
   const today = isoDateKey();
   const streak = computeGoalStreak(goals);
   const todayGoals = goals.filter(g => g.dateKey === today);
   const done = todayGoals.filter(g => g.status === 'completed').length;
+  const focusTotal = focusMinutesTotal(goals);
+  const nudges = goals.map(goal => overdueNudge(goal)).filter((line): line is string => !!line).slice(0, 2);
+  const history = goals.filter(goal => goal.dateKey < today).sort((a, b) => b.dateKey.localeCompare(a.dateKey)).slice(0, 8);
   const [openId, setOpenId] = useState<string | null>(todayGoals[0]?.id ?? null);
   const cards = weeklyInsights({
     retention: insights?.retention ?? null,
@@ -73,15 +91,23 @@ export function GoalsWorkspace({
         eyebrow={viewer === 'parent' ? 'Family' : 'Learning'}
         title={viewer === 'parent' ? 'Goals for' : 'Your goals'}
         accent={childName}
-        description="A goal can cover a unit, a list of lessons, or a note to yourself. Lessons and quizzes move the progress. Parents can suggest and co-sign."
+        description="Pick a course, a revision target, a quiz score, or an AI Studio task. Lessons and quizzes move the progress. Parents can suggest, cheer, and co-sign the week."
         actions={viewer === 'student' ? (
           <Button onClick={onAdd} className="h-10 px-4 rounded-xl font-semibold text-[13px]">Add goal</Button>
+        ) : onCosignWeek ? (
+          <Button onClick={onCosignWeek} variant="outline" className="h-10 px-4 rounded-xl font-semibold text-[13px]">Co-sign this week</Button>
         ) : undefined}
       />
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+      {nudges.length > 0 && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950" data-overdue-nudge>
+          {nudges.map(line => <p key={line}>{line}</p>)}
+        </div>
+      )}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={Target} label="Today" value={`${done}/${todayGoals.length || 0}`} index={0} />
         <StatCard icon={Flame} label="Streak" value={`${streak}d`} index={1} />
-        <StatCard icon={Check} label="Co-signed" value={goals.filter(g => g.cosignedBy).length} index={2} />
+        <StatCard icon={Check} label="Focus" value={`${focusTotal}m`} index={2} />
+        <StatCard icon={Check} label="Co-signed" value={goals.filter(g => g.cosignedBy).length} index={3} />
       </div>
 
       <Panel>
@@ -117,9 +143,11 @@ export function GoalsWorkspace({
                   <span className="text-[11px] uppercase text-muted-foreground">{goal.status.replace('_', ' ')}</span>
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  {goal.targetKind === 'unit' ? goal.unitTitle || 'Unit' : goal.targetKind === 'lessons' ? `${goal.lessonIds?.length ?? 0} lessons` : goal.freeTextTarget || 'Free text'}
+                  {goal.targetKind === 'unit' ? goal.unitTitle || 'Unit' : goal.targetKind === 'lessons' ? `${goal.lessonIds?.length ?? 0} lessons` : goal.targetKind === 'quiz_score' ? `Quiz ${goal.quizTarget ?? 80}%` : goal.targetKind === 'studio' ? goal.studioTask || 'AI Studio' : goal.freeTextTarget || 'Free text'}
+                  {goal.priority ? ` · ${goal.priority}` : ''}
                   {goal.progress != null ? ` · ${goal.progress}%` : ''}
                   {goal.cosignedBy ? ' · Co-signed' : ''}
+                  {goal.reactions?.length ? ` · ${goal.reactions.map(reaction => reaction.emoji).join('')}` : ''}
                 </p>
               </button>
               {openId === goal.id && (
@@ -131,12 +159,19 @@ export function GoalsWorkspace({
                     </label>
                   ))}
                   {viewer === 'student' && goal.status !== 'completed' && (
-                    <FocusTimer estimateMinutes={goal.estimateMinutes ?? 25} onLog={(actual, planned) => onLogFocus(goal, actual, planned)} />
+                    <FocusTimer
+                      estimateMinutes={goal.estimateMinutes ?? 25}
+                      workMinutes={goal.pomodoroWork}
+                      breakMinutes={goal.pomodoroBreak}
+                      onLog={(actual, planned) => onLogFocus(goal, actual, planned)}
+                    />
                   )}
+                  {goal.reminderTime && <p className="text-xs text-muted-foreground">Reminder at {goal.reminderTime}</p>}
+                  {goal.reward && <p className="text-xs text-muted-foreground">Reward: {goal.reward}</p>}
                   {viewer === 'student' && (
                     <textarea
                       defaultValue={goal.reflection ?? ''}
-                      placeholder="What did you notice?"
+                      placeholder={goal.reflectionPrompt || 'What did you notice?'}
                       rows={2}
                       className="w-full rounded-lg border border-border p-2 text-sm"
                       onBlur={e => onReflect(goal, e.target.value)}
@@ -149,6 +184,9 @@ export function GoalsWorkspace({
                     {viewer === 'parent' && onCosign && !goal.cosignedBy && (
                       <Button type="button" variant="outline" onClick={() => onCosign(goal)}>Co-sign</Button>
                     )}
+                    {viewer === 'parent' && onCheer && ['👏', '⭐', '💪'].map(emoji => (
+                      <Button key={emoji} type="button" variant="outline" className="h-9 px-3" onClick={() => onCheer(goal, emoji)} aria-label={`Cheer ${emoji}`}>{emoji}</Button>
+                    ))}
                   </div>
                 </div>
               )}
@@ -172,6 +210,30 @@ export function GoalsWorkspace({
               </div>
             ))}
           </Panel>
+          {signalSuggestions.length > 0 && (
+            <Panel>
+              <PanelHeader title="From your results" meta="Weak topics and exam dates" />
+              {signalSuggestions.map(card => (
+                <div key={card.title} className="mb-3">
+                  <p className="text-sm font-semibold">{card.title}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{card.reason}</p>
+                  {viewer === 'student' && onAcceptSuggestion && (
+                    <Button type="button" variant="outline" className="mt-2 h-8" onClick={() => onAcceptSuggestion(card.title, card.estimateMinutes, card.category)}>
+                      Add as goal
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </Panel>
+          )}
+          {history.length > 0 && (
+            <Panel>
+              <PanelHeader title="History" />
+              {history.map(goal => (
+                <p key={goal.id} className="text-sm py-1">{goal.dateKey} · {goal.title} · {goal.status.replace('_', ' ')}</p>
+              ))}
+            </Panel>
+          )}
           {suggestions.length > 0 && (
             <Panel>
               <PanelHeader title="From a parent" />

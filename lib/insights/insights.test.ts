@@ -27,7 +27,8 @@ import { GOAL_ON_TIME_BONUS, GOAL_STREAK_BONUS } from '../sparks';
 import { isFeatureEnabled, resolveFlags } from '../feature-flags';
 import { copyrightLine } from './copyright';
 import {
-  autoProgress, computeGoalStreak, focusSeconds, pomodoroPlan, sparksForGoal, spawnNextGoal, startedLate,
+  autoProgress, computeGoalStreak, focusSeconds, formatProgressDigest, overdueNudge, pomodoroPlan,
+  resolvePomodoro, sparksForGoal, spawnNextGoal, startedLate, suggestGoalsFromSignals,
 } from './goals';
 import {
   cohortBenchmark, examReadiness, hourHeatmap, masteryRadar, quizAverage, retentionForecast,
@@ -99,6 +100,52 @@ describe('goals', () => {
   it('plans a Pomodoro and sums focus segments', () => {
     expect(pomodoroPlan(50)).toEqual({ rounds: 2, work: 25, breakMinutes: 5 });
     expect(focusSeconds([{ start: 0, end: 1500 }, { start: 2000, end: 3000 }])).toBe(2.5);
+  });
+
+  it('completes a quiz-score goal once the target is met', () => {
+    const short = autoProgress(
+      { dateKey: '2026-10-15', title: 'Quiz', status: 'not_started', targetKind: 'quiz_score', quizTarget: 80, unitId: 'u1' },
+      [{ kind: 'quiz', unitId: 'u1', scorePercent: 60 }],
+    );
+    expect(short.progress).toBe(75);
+    expect(short.status).toBe('in_progress');
+    const met = autoProgress(
+      { dateKey: '2026-10-15', title: 'Quiz', status: 'in_progress', targetKind: 'quiz_score', quizTarget: 80, unitId: 'u1' },
+      [{ kind: 'quiz', unitId: 'u1', scorePercent: 80 }],
+    );
+    expect(met).toMatchObject({ progress: 100, status: 'completed', quizScore: 80 });
+  });
+
+  it('suggests revision from a weak topic and an exam date', () => {
+    const cards = suggestGoalsFromSignals({
+      weakTopics: [{ topic: 'fractions', scorePercent: 40 }, { topic: 'decimals', scorePercent: 90 }],
+      examDates: [{ title: 'Unit check', dateKey: '2026-10-22' }],
+    });
+    expect(cards.length).toBe(2);
+    expect(cards[0]?.title).toBe('Revise fractions');
+    expect(cards[1]?.reason).toContain('2026-10-22');
+  });
+
+  it('nudges only after the deadline and writes a digest line', () => {
+    const open = { status: 'in_progress', dateKey: '2026-10-15', deadline: '09:00', title: 'Read' };
+    expect(overdueNudge(open, new Date(2026, 9, 15, 8, 0))).toBeNull();
+    expect(overdueNudge(open, new Date(2026, 9, 15, 10, 0))).toContain('Read');
+    expect(overdueNudge({ ...open, status: 'completed' }, new Date(2026, 9, 15, 10, 0))).toBeNull();
+    const line = formatProgressDigest({
+      childName: 'Harry', minutes: 40, lessons: 1, quizScores: [80, 100], goalsMet: 1, goalsSet: 2,
+    });
+    expect(line).toContain('40 min studied');
+    expect(line).toContain('quiz average 90%');
+    expect(line).toContain('1 of 2 goals met');
+  });
+
+  it('honours a custom Pomodoro and a turned-off Sparks bonus', () => {
+    expect(resolvePomodoro({ mode: 'custom', workMinutes: 50, breakMinutes: 10, estimateMinutes: 100 })).toEqual({
+      rounds: 2, work: 50, breakMinutes: 10,
+    });
+    const goal = { status: 'completed', dateKey: '2026-10-15', deadline: '18:00', sparksBonus: 0 };
+    expect(sparksForGoal(goal, new Date(2026, 9, 15, 17, 0), 4)).toBe(0);
+    expect(sparksForGoal({ ...goal, sparksBonus: 20 }, new Date(2026, 9, 15, 17, 0), 1)).toBe(20);
   });
 
   it('flags a start in the last fifth of the window', () => {
