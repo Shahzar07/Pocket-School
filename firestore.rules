@@ -1213,8 +1213,23 @@ service cloud.firestore {
     }
 
     // ── Attendance Records ────────────────────────────────────
+    // Reads stay with the teacher who marked the row, the student, a linked
+    // parent, or the institution admin for that school. A signed-in stranger
+    // cannot list the register.
+    function attendanceReadable(data) {
+      return isAdmin()
+        || data.get('teacherId', '') == request.auth.uid
+        || data.get('studentId', '') == request.auth.uid
+        || data.get('studentIds', []).hasAny([request.auth.uid])
+        || data.get('parentIds', []).hasAny([request.auth.uid])
+        || linkedTo(data.get('studentId', ''))
+        || (isInstitutionAdmin()
+            && data.get('institutionId', '') is string
+            && data.get('institutionId', '') != ''
+            && data.get('institutionId', '') == myInstitution());
+    }
     match /attendance/{recordId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && attendanceReadable(resource.data);
       allow create, update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
     }
@@ -1306,7 +1321,9 @@ service cloud.firestore {
     // ── Grades ────────────────────────────────────────────────
     match /grades/{gradeId} {
       allow read: if isSignedIn() && (
-        resource.data.studentId == request.auth.uid || isTeacherOrAdmin()
+        resource.data.studentId == request.auth.uid
+        || isTeacherOrAdmin()
+        || linkedTo(resource.data.studentId)
       );
       allow create, update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
@@ -1330,9 +1347,44 @@ service cloud.firestore {
 
     // ── Attendance Records ────────────────────────────────────
     match /attendance_records/{recordId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && attendanceReadable(resource.data);
       allow create, update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
+    }
+
+    match /absence_notes/{noteId} {
+      allow read: if isSignedIn() && (
+        isTeacherOrAdmin()
+        || resource.data.studentId == request.auth.uid
+        || resource.data.parentId == request.auth.uid
+        || linkedTo(resource.data.studentId)
+      );
+      allow create: if isSignedIn()
+        && incoming().parentId == request.auth.uid
+        && linkedTo(incoming().studentId)
+        && incoming().status == 'submitted'
+        && incoming().dateKey is string
+        && incoming().reason is string
+        && incoming().reason.size() > 0
+        && incoming().reason.size() <= 500
+        && incoming().keys().hasOnly(['studentId', 'parentId', 'dateKey', 'reason', 'courseId', 'status', 'createdAt']);
+      allow update: if isTeacherOrAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.status == 'accepted';
+      allow delete: if isAdmin();
+    }
+
+    match /report_exports/{exportId} {
+      allow read: if isSignedIn() && (resource.data.actorId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn()
+        && incoming().actorId == request.auth.uid
+        && incoming().format in ['pdf', 'csv', 'xlsx']
+        && incoming().metricIds is list
+        && incoming().role is string
+        && incoming().scopeId is string
+        && incoming().at is string
+        && incoming().keys().hasOnly(['actorId', 'role', 'format', 'metricIds', 'scopeId', 'at']);
+      allow update, delete: if false;
     }
 
     // ── Notifications ─────────────────────────────────────────

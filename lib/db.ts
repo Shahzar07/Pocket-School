@@ -3231,10 +3231,27 @@ export interface AttendanceRecord {
   teacherId: string;
   date: Timestamp;
   records: AttendanceEntry[];
+  studentIds?: string[];
+  parentIds?: string[];
+  institutionId?: string;
+  dateKey?: string;
 }
 
 export async function createAttendanceRecord(data: Omit<AttendanceRecord, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'attendance_records'), { ...data, createdAt: serverTimestamp() });
+  const studentIds = [...new Set(data.records.map(entry => entry.studentId))];
+  const parentIds = new Set<string>(data.parentIds ?? []);
+  for (const studentId of studentIds) {
+    const parents = await getDocs(query(collection(db, 'users'), where('childIds', 'array-contains', studentId))).catch(() => null);
+    parents?.docs.forEach(parent => parentIds.add(parent.id));
+  }
+  const dateKey = data.dateKey || (data.date?.toDate ? data.date.toDate().toISOString().slice(0, 10) : undefined);
+  const ref = await addDoc(collection(db, 'attendance_records'), {
+    ...data,
+    studentIds,
+    parentIds: [...parentIds],
+    ...(dateKey ? { dateKey } : {}),
+    createdAt: serverTimestamp(),
+  });
   await notifyAttendance(data).catch(() => {});
   return ref.id;
 }
@@ -3289,10 +3306,9 @@ export async function getAttendanceForCourse(courseId: string): Promise<Attendan
 }
 
 export async function getAttendanceForStudent(studentId: string): Promise<AttendanceRecord[]> {
-  const snap = await getDocs(collection(db, 'attendance_records'));
-  return snap.docs
-    .map(d => ({ id: d.id, ...d.data() } as AttendanceRecord))
-    .filter(r => r.records.some(e => e.studentId === studentId));
+  const q = query(collection(db, 'attendance_records'), where('studentIds', 'array-contains', studentId), orderBy('date', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as AttendanceRecord));
 }
 
 export async function updateAttendanceRecord(id: string, data: Partial<AttendanceRecord>) {

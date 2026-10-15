@@ -110,6 +110,27 @@ export async function saveSchedule(data: Record<string, unknown>) {
   return ref.id;
 }
 
+export async function submitAbsenceNote(note: { studentId: string; parentId: string; dateKey: string; reason: string; courseId?: string }) {
+  const ref = await addDoc(collection(db, 'absence_notes'), {
+    ...omitUndefined(note),
+    status: 'submitted',
+    createdAt: serverTimestamp(),
+  });
+  return ref.id;
+}
+
+export async function logReportExport(entry: {
+  actorId: string;
+  role: string;
+  format: 'csv' | 'xlsx' | 'pdf';
+  metricIds: string[];
+  scopeId: string;
+  at: string;
+}) {
+  const ref = await addDoc(collection(db, 'report_exports'), entry);
+  return ref.id;
+}
+
 export async function readPublishedReport(token: string) {
   const snap = await getDoc(doc(db, 'published_reports', token));
   return snap.exists() ? snap.data() : null;
