@@ -166,7 +166,7 @@ const NavItem = ({ entry, role, pathname, onClick, router }: {
     <button
       type="button"
       onClick={() => { onClick(); router.push(entry.href); }}
-      className={`relative w-full px-3 h-9 rounded-xl flex items-center gap-3 cursor-pointer transition-colors text-left text-[13px] ${
+      className={`relative w-full px-3 h-9 rounded-xl flex items-center gap-3 cursor-pointer transition-colors text-start text-[13px] ${
         active
           ? 'bg-muted text-foreground font-semibold shadow-[var(--shadow-card)]'
           : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground font-medium'
@@ -174,7 +174,7 @@ const NavItem = ({ entry, role, pathname, onClick, router }: {
     >
       {/* Active marker sits in the gutter, as in the reference design. */}
       {active && (
-        <span data-nav-marker className="absolute -left-3 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full bg-primary" />
+        <span data-nav-marker className="absolute -start-3 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full bg-primary" />
       )}
       <Icon className={`w-[17px] h-[17px] shrink-0 ${active ? 'text-primary' : ''}`} />
       <span className="truncate">{t(entry.labelKey)}</span>
@@ -243,7 +243,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* ── Sidebar — light, profile-led, grouped ── */}
-      <aside data-tour="sidebar" className={`relative bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-300 shrink-0 ${sidebarOpen ? 'w-[264px]' : 'w-0 opacity-0 overflow-hidden'}`}>
+      <aside data-tour="sidebar" className={`relative bg-sidebar border-e border-sidebar-border flex flex-col transition-all duration-300 shrink-0 ${sidebarOpen ? 'w-[264px]' : 'w-0 opacity-0 overflow-hidden'}`}>
 
         {/* Who you are, at the top — the reference design leads with identity
             rather than a logo lockup. */}
@@ -318,7 +318,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span data-tour="sparks"><SparksChip /></span>
             <span data-tour="language"><LanguageSwitcher /></span>
             <span data-tour="notifications"><NotificationsBell /></span>
-            <button onClick={() => router.push('/dashboard/profile')} className="ml-1" data-tour="profile">
+            <button onClick={() => router.push('/dashboard/profile')} className="ms-1" data-tour="profile">
               <Avatar className="w-9 h-9 border-2 border-border cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all">
                 <AvatarImage src={profile.avatarUrl ?? user.photoURL ?? undefined} />
                 <AvatarFallback className="bg-gradient-to-br from-[#2786A4] to-[#1E6A83] text-white text-sm font-bold">

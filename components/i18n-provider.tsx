@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { updateUser } from '@/lib/db';
 import { isSupportedLanguage, readLanguage } from '@/lib/languages';
-import { applyAppLanguage, detectAndStoreLanguage } from '@/lib/i18n/apply';
+import { applyAppLanguage, detectAndStoreLanguage, readLanguageSource } from '@/lib/i18n/apply';
 
 /**
  * Applies the saved or detected language once, then lets a signed-in profile
@@ -30,10 +30,14 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     hydratedFor.current = user.uid;
     const saved = profile.language;
     if (saved && isSupportedLanguage(saved)) {
-      applyAppLanguage(saved);
+      applyAppLanguage(saved, { explicit: true });
       return;
     }
+    // Only an explicit choice is written onto the account. An auto
+    // detection stays local so the next visit can follow geolocation.
+    if (readLanguageSource() !== 'user') return;
     const code = readLanguage();
+    if (!isSupportedLanguage(code)) return;
     updateUser(user.uid, { language: code })
       .then(() => {
         const current = profileRef.current;

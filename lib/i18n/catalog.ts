@@ -1,15 +1,14 @@
 /**
- * UI strings for the languages that have a full interface:
- * English, Bahasa Melayu, Chinese (Simplified) and Tamil.
+ * UI strings. Human catalogs: English, Bahasa Melayu, Chinese (Simplified)
+ * and Tamil. Every other interface language is an AI draft in
+ * `./ai-drafts`, marked `needs-review` in CATALOG_REVIEW.
  *
  * To add another interface language:
  * 1. Add it to LANGUAGES in lib/languages.ts
- * 2. Copy `en` below, translate it, and add it to `catalogs`
- * 3. Add its code to UI_LANGUAGE_CODES
- *
- * Picker languages without a catalog still set text direction and the
- * language ET replies in. Their menus stay in English.
+ * 2. Copy `en`, translate it, and add it to `catalogs` (or `aiDrafts`)
+ * 3. Set its review status in CATALOG_REVIEW
  */
+import { aiDrafts } from './ai-drafts';
 
 const en = {
   header: {
@@ -931,19 +930,33 @@ const ta = {
   },
 } satisfies typeof en;
 
-export const catalogs = { en, ms, zh, ta };
-
-export const UI_LANGUAGE_CODES = ['en', 'ms', 'zh', 'ta'] as const;
-
-export type UiLanguageCode = (typeof UI_LANGUAGE_CODES)[number];
-
-export function hasUiCatalog(code: string | undefined | null): boolean {
-  return !!code && (UI_LANGUAGE_CODES as readonly string[]).includes(code);
+function catalogsOf<T extends Record<string, typeof en>>(value: T): T {
+  return value;
 }
 
-export const resources = {
-  en: { translation: catalogs.en },
-  ms: { translation: catalogs.ms },
-  zh: { translation: catalogs.zh },
-  ta: { translation: catalogs.ta },
-};
+export const catalogs = catalogsOf({
+  en,
+  ms,
+  zh,
+  ta,
+  ...aiDrafts,
+});
+
+const HUMAN_CATALOGS = new Set(['en', 'ms', 'zh', 'ta']);
+
+/** Human copy versus an AI draft that still needs a reviewer. */
+export const CATALOG_REVIEW: Record<string, 'human' | 'needs-review'> = Object.fromEntries(
+  Object.keys(catalogs).map(code => [code, HUMAN_CATALOGS.has(code) ? 'human' as const : 'needs-review' as const]),
+);
+
+export const UI_LANGUAGE_CODES = Object.keys(catalogs);
+
+export type UiLanguageCode = keyof typeof catalogs;
+
+export function hasUiCatalog(code: string | undefined | null): boolean {
+  return !!code && Object.prototype.hasOwnProperty.call(catalogs, code);
+}
+
+export const resources = Object.fromEntries(
+  Object.entries(catalogs).map(([code, translation]) => [code, { translation }]),
+);

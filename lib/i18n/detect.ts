@@ -1,39 +1,90 @@
 /**
- * First-visit language choice, lesson fallback, and locale formatting.
- * Pure functions: no localStorage, no DOM, so they can be unit tested.
+ * Default language for a visitor who has not chosen one.
  *
- * Browser language wins when it matches a supported code. Timezone is only
- * a hint when the browser language does not. An explicit saved choice is
- * applied by the provider and is never passed in here.
+ * Order: Vercel country (with a few region overrides), then the browser
+ * language list, then English. An explicit saved choice is applied by the
+ * provider and is never passed in here.
  */
 
-import { DEFAULT_LANGUAGE, getLanguage, isSupportedLanguage } from '../languages';
+import { DEFAULT_LANGUAGE, isSupportedLanguage } from '../languages';
+import { getLanguage } from '../languages';
 
-const TIMEZONE_LANGUAGE: Record<string, string> = {
-  'Asia/Kuala_Lumpur': 'ms',
-  'Asia/Kuching': 'ms',
-  'Asia/Shanghai': 'zh',
-  'Asia/Chongqing': 'zh',
-  'Asia/Harbin': 'zh',
-  'Asia/Urumqi': 'zh',
-  'Asia/Colombo': 'ta',
+/** ISO country → interface language. Unknown countries fall through. */
+const COUNTRY_LANGUAGE: Record<string, string> = {
+  MY: 'ms', BN: 'ms',
+  ID: 'id',
+  CN: 'zh',
+  TW: 'zh-Hant', HK: 'zh-Hant', MO: 'zh-Hant',
+  IN: 'hi',
+  ES: 'es', MX: 'es', AR: 'es', CO: 'es', CL: 'es', PE: 'es', VE: 'es', EC: 'es',
+  GT: 'es', CU: 'es', BO: 'es', DO: 'es', HN: 'es', PY: 'es', SV: 'es', NI: 'es',
+  CR: 'es', PA: 'es', UY: 'es', PR: 'es',
+  FR: 'fr', BE: 'fr', SN: 'fr', CI: 'fr', CM: 'fr', MG: 'fr', ML: 'fr', NE: 'fr',
+  BF: 'fr', TG: 'fr', BJ: 'fr', CD: 'fr', CG: 'fr', GA: 'fr', GN: 'fr', HT: 'fr',
+  LU: 'fr', MC: 'fr',
+  SA: 'ar', AE: 'ar', EG: 'ar', QA: 'ar', KW: 'ar', BH: 'ar', OM: 'ar', JO: 'ar',
+  LB: 'ar', SY: 'ar', IQ: 'ar', YE: 'ar', LY: 'ar', TN: 'ar', DZ: 'ar', MA: 'ar',
+  SD: 'ar', PS: 'ar', MR: 'ar',
+  BD: 'bn',
+  BR: 'pt', PT: 'pt', AO: 'pt', MZ: 'pt',
+  RU: 'ru', BY: 'ru', KZ: 'ru', KG: 'ru',
+  PK: 'ur',
+  DE: 'de', AT: 'de', LI: 'de', CH: 'de',
+  JP: 'ja',
+  KR: 'ko', KP: 'ko',
+  TR: 'tr',
+  VN: 'vi',
+  LK: 'ta',
+  TH: 'th',
+  IT: 'it', SM: 'it',
+  US: 'en', GB: 'en', AU: 'en', NZ: 'en', IE: 'en', CA: 'en', SG: 'en', ZA: 'en',
+  NG: 'en', PH: 'en', KE: 'en',
 };
 
-function matchSupported(tag: string): string | null {
-  const primary = tag.toLowerCase().split(/[-_]/)[0] ?? '';
+/** `${country}-${region}` overrides, using Vercel's region code. */
+const REGION_LANGUAGE: Record<string, string> = {
+  'IN-TN': 'ta',
+  'IN-PY': 'ta',
+  'IN-WB': 'bn',
+  'CA-QC': 'fr',
+};
+
+function matchBrowserTag(tag: string): string | null {
+  const lower = tag.trim().toLowerCase().replace(/_/g, '-');
+  if (!lower) return null;
+  if (
+    lower === 'zh-hant' ||
+    lower.startsWith('zh-hant-') ||
+    lower.startsWith('zh-tw') ||
+    lower.startsWith('zh-hk') ||
+    lower.startsWith('zh-mo')
+  ) {
+    return 'zh-Hant';
+  }
+  if (lower === 'zh' || lower.startsWith('zh-')) return 'zh';
+  const primary = lower.split('-')[0] ?? '';
   return isSupportedLanguage(primary) ? primary : null;
 }
 
-export function detectLanguage(
-  navigatorLanguages: readonly string[] | undefined,
-  timeZone?: string,
-): string {
-  for (const tag of navigatorLanguages ?? []) {
+export function detectLanguage(input: {
+  country?: string | null;
+  region?: string | null;
+  navigatorLanguages?: readonly string[] | null;
+}): string {
+  const country = input.country?.trim().toUpperCase() ?? '';
+  const region = input.region?.trim().toUpperCase() ?? '';
+  if (country && region) {
+    const regional = REGION_LANGUAGE[`${country}-${region}`];
+    if (regional && isSupportedLanguage(regional)) return regional;
+  }
+  if (country && COUNTRY_LANGUAGE[country] && isSupportedLanguage(COUNTRY_LANGUAGE[country])) {
+    return COUNTRY_LANGUAGE[country];
+  }
+  for (const tag of input.navigatorLanguages ?? []) {
     if (!tag) continue;
-    const code = matchSupported(tag);
+    const code = matchBrowserTag(tag);
     if (code) return code;
   }
-  if (timeZone && TIMEZONE_LANGUAGE[timeZone]) return TIMEZONE_LANGUAGE[timeZone];
   return DEFAULT_LANGUAGE;
 }
 

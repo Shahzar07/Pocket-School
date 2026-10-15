@@ -8,10 +8,11 @@
  * not select it and the tutor would not reply in it. Add a language here and
  * every surface picks it up.
  *
- * Menus are translated for English, Bahasa Melayu, Chinese (Simplified) and
- * Tamil (`lib/i18n/catalog.ts`). Any other code in this list still sets
- * direction and the language ET replies in; the menus stay in English until
- * a catalog is added.
+ * Human catalogs: English, Bahasa Melayu, Chinese (Simplified) and Tamil.
+ * Every other code has an AI-assisted catalog marked for review in
+ * `lib/i18n/catalog.ts`. A saved choice (localStorage source `user`, or
+ * `users/{uid}.language`) wins over the Vercel country cookie, which wins
+ * over the browser language.
  */
 
 export interface AppLanguage {
@@ -29,30 +30,45 @@ export interface AppLanguage {
 }
 
 export const LANGUAGES: AppLanguage[] = [
-  { code: 'en', label: 'English',           englishName: 'English',              flag: '🇬🇧', bcp47: 'en-GB' },
-  { code: 'ms', label: 'Bahasa Malaysia',   englishName: 'Malay',                flag: '🇲🇾', bcp47: 'ms-MY' },
-  { code: 'id', label: 'Bahasa Indonesia',  englishName: 'Indonesian',           flag: '🇮🇩', bcp47: 'id-ID' },
-  { code: 'zh', label: '中文',               englishName: 'Chinese (Simplified)', flag: '🇨🇳', bcp47: 'zh-CN' },
-  { code: 'ta', label: 'தமிழ்',             englishName: 'Tamil',                flag: '🇮🇳', bcp47: 'ta-IN' },
-  { code: 'ar', label: 'العربية',            englishName: 'Arabic',               flag: '🇸🇦', bcp47: 'ar-SA', rtl: true },
-  { code: 'ur', label: 'اردو',               englishName: 'Urdu',                 flag: '🇵🇰', bcp47: 'ur-PK', rtl: true },
-  { code: 'hi', label: 'हिन्दी',               englishName: 'Hindi',                flag: '🇮🇳', bcp47: 'hi-IN' },
-  { code: 'es', label: 'Español',           englishName: 'Spanish',              flag: '🇪🇸', bcp47: 'es-ES' },
-  { code: 'fr', label: 'Français',          englishName: 'French',               flag: '🇫🇷', bcp47: 'fr-FR' },
-  { code: 'de', label: 'Deutsch',           englishName: 'German',               flag: '🇩🇪', bcp47: 'de-DE' },
-  { code: 'pt', label: 'Português',         englishName: 'Portuguese',           flag: '🇧🇷', bcp47: 'pt-BR' },
-  { code: 'it', label: 'Italiano',          englishName: 'Italian',              flag: '🇮🇹', bcp47: 'it-IT' },
-  { code: 'ru', label: 'Русский',           englishName: 'Russian',              flag: '🇷🇺', bcp47: 'ru-RU' },
-  { code: 'tr', label: 'Türkçe',            englishName: 'Turkish',              flag: '🇹🇷', bcp47: 'tr-TR' },
-  { code: 'ja', label: '日本語',              englishName: 'Japanese',             flag: '🇯🇵', bcp47: 'ja-JP' },
-  { code: 'ko', label: '한국어',              englishName: 'Korean',               flag: '🇰🇷', bcp47: 'ko-KR' },
-  { code: 'sw', label: 'Kiswahili',         englishName: 'Swahili',              flag: '🇰🇪', bcp47: 'sw-KE' },
+  { code: 'en', label: 'English',           englishName: 'English',                flag: '🇬🇧', bcp47: 'en-GB' },
+  { code: 'zh', label: '简体中文',           englishName: 'Chinese (Simplified)',   flag: '🇨🇳', bcp47: 'zh-CN' },
+  { code: 'zh-Hant', label: '繁體中文',      englishName: 'Chinese (Traditional)',  flag: '🇹🇼', bcp47: 'zh-TW' },
+  { code: 'hi', label: 'हिन्दी',             englishName: 'Hindi',                  flag: '🇮🇳', bcp47: 'hi-IN' },
+  { code: 'es', label: 'Español',           englishName: 'Spanish',                flag: '🇪🇸', bcp47: 'es-ES' },
+  { code: 'fr', label: 'Français',          englishName: 'French',                 flag: '🇫🇷', bcp47: 'fr-FR' },
+  { code: 'ar', label: 'العربية',           englishName: 'Arabic',                 flag: '🇸🇦', bcp47: 'ar-SA', rtl: true },
+  { code: 'bn', label: 'বাংলা',             englishName: 'Bengali',                flag: '🇧🇩', bcp47: 'bn-BD' },
+  { code: 'pt', label: 'Português',         englishName: 'Portuguese',             flag: '🇧🇷', bcp47: 'pt-BR' },
+  { code: 'ru', label: 'Русский',           englishName: 'Russian',                flag: '🇷🇺', bcp47: 'ru-RU' },
+  { code: 'ur', label: 'اردو',              englishName: 'Urdu',                   flag: '🇵🇰', bcp47: 'ur-PK', rtl: true },
+  { code: 'id', label: 'Bahasa Indonesia',  englishName: 'Indonesian',             flag: '🇮🇩', bcp47: 'id-ID' },
+  { code: 'ms', label: 'Bahasa Melayu',     englishName: 'Malay',                  flag: '🇲🇾', bcp47: 'ms-MY' },
+  { code: 'de', label: 'Deutsch',           englishName: 'German',                 flag: '🇩🇪', bcp47: 'de-DE' },
+  { code: 'ja', label: '日本語',             englishName: 'Japanese',               flag: '🇯🇵', bcp47: 'ja-JP' },
+  { code: 'ko', label: '한국어',             englishName: 'Korean',                 flag: '🇰🇷', bcp47: 'ko-KR' },
+  { code: 'tr', label: 'Türkçe',            englishName: 'Turkish',                flag: '🇹🇷', bcp47: 'tr-TR' },
+  { code: 'vi', label: 'Tiếng Việt',        englishName: 'Vietnamese',             flag: '🇻🇳', bcp47: 'vi-VN' },
+  { code: 'ta', label: 'தமிழ்',             englishName: 'Tamil',                  flag: '🇮🇳', bcp47: 'ta-IN' },
+  { code: 'th', label: 'ไทย',               englishName: 'Thai',                   flag: '🇹🇭', bcp47: 'th-TH' },
+  { code: 'it', label: 'Italiano',          englishName: 'Italian',                flag: '🇮🇹', bcp47: 'it-IT' },
+  { code: 'sw', label: 'Kiswahili',         englishName: 'Swahili',                flag: '🇰🇪', bcp47: 'sw-KE' },
 ];
 
 export const DEFAULT_LANGUAGE = 'en';
 
 /** Key used for the reader's language preference in localStorage. */
 export const LANGUAGE_STORAGE_KEY = 'pocket-school-lang';
+
+/**
+ * `user` when the reader picked a language (or their profile has one).
+ * `auto` when the value was only a geolocation or browser default, so the
+ * next visit may detect again.
+ */
+export const LANGUAGE_SOURCE_KEY = 'pocket-school-lang-source';
+
+/** Country and region cookies set from Vercel's geo headers. */
+export const GEO_COUNTRY_COOKIE = 'poket-geo-country';
+export const GEO_REGION_COOKIE = 'poket-geo-region';
 
 const BY_CODE = new Map(LANGUAGES.map(l => [l.code, l]));
 

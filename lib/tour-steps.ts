@@ -62,7 +62,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'language',
     target: 'language',
     title: 'Learn in your language',
-    body: 'Switch between 18 languages. Menus follow English, Bahasa Melayu, Chinese and Tamil. Lessons fall back to English when a translation is missing, and ET still replies in every language in the list.',
+    body: 'The site starts in the language of your location, then your browser. Your choice stays on this device and on your account. Lessons fall back to English when a translation is missing, and ET still replies in the language you pick.',
     roles: ['student', 'teacher', 'parent', 'admin', 'institution_admin'],
     keywords: ['language', 'translate', 'malay', 'bahasa', 'indonesian', 'multilingual'],
   },

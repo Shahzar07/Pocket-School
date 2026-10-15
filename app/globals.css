@@ -328,12 +328,9 @@ h1.font-heading, .font-heading.text-4xl, .font-heading.text-5xl {
   position: relative;
   overflow: hidden;
 }
-/* The language switcher sets dir on <html>. New menus use logical
-   properties (end, start). This flips the dashboard active-nav marker,
-   which is anchored to the physical left edge. */
-[dir='rtl'] [data-nav-marker] {
-  left: auto;
-  right: -0.75rem;
+/* Directional icons (arrows that mean "forward") mirror in Arabic and Urdu. */
+[dir='rtl'] .ps-dir-icon {
+  transform: scaleX(-1);
 }
 
 .liquid-glass::before {

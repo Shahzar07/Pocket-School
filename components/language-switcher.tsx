@@ -34,7 +34,7 @@ export function LanguageSwitcher({ tone = 'default' }: { tone?: 'default' | 'onD
 
   const select = (code: string) => {
     setSelected(code);
-    applyAppLanguage(code);
+    applyAppLanguage(code, { explicit: true });
     setOpen(false);
     if (!user) return;
     updateUser(user.uid, { language: code })

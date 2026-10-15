@@ -106,7 +106,7 @@ export function SiteHeader() {
           </nav>
           <LanguageSwitcher tone={isLanding && !scrolled ? "onDark" : "default"} />
           <Link className={styles.headerCta} href={user ? dashPath : "/signup"}>
-            {user ? t("header.dashboard") : t("header.startFree")} <ArrowRight size={14} />
+            {user ? t("header.dashboard") : t("header.startFree")} <ArrowRight size={14} className="ps-dir-icon" />
           </Link>
           <button
             className={styles.menuButton}

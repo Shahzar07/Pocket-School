@@ -398,7 +398,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
           </div>
 
           <Link href="/" className={`text-xs ${C.faint} hover:text-white transition-colors inline-flex items-center gap-1.5`}>
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Poket School
+            <ArrowLeft className="w-3.5 h-3.5 ps-dir-icon" /> Back to Poket School
           </Link>
         </motion.div>
       </div>
@@ -409,7 +409,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
     <div className={`relative flex ${frame} ${C.bg} ${C.text} overflow-hidden`} style={{ colorScheme: 'dark' }}>
 
       {/* ── Sidebar ── */}
-      <aside className={`${sidebarOpen ? 'flex' : 'hidden'} lg:flex w-[264px] shrink-0 flex-col border-r ${C.borderSoft} bg-[#1F1E1C] absolute lg:static inset-y-0 left-0 z-40`}>
+      <aside className={`${sidebarOpen ? 'flex' : 'hidden'} lg:flex w-[264px] shrink-0 flex-col border-e ${C.borderSoft} bg-[#1F1E1C] absolute lg:static inset-y-0 start-0 z-40`}>
         <div className="p-3">
           <Link href={embedded ? '/dashboard/studio' : '/'} className="flex items-center gap-2.5 px-2 py-2 mb-1">
             <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: C.accent }}>
