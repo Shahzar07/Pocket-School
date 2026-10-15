@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
-  getProgrammes, createProgramme, updateProgramme, deleteProgramme,
+  getProgrammes, createProgramme, updateProgramme, deleteProgramme, ProgrammeInUseError,
   getAllCurriculumModules, createCurriculumModule,
   createModule, createLesson,
   updateCourse, deleteCurriculumSubject, getCurriculumSubjectSize,
@@ -69,6 +69,8 @@ export default function AdminCurriculumPage() {
   const [subjTitle, setSubjTitle] = useState('');
   const [subjSubject, setSubjSubject] = useState('');
   const [subjYear, setSubjYear] = useState('');
+  const [subjProgrammeId, setSubjProgrammeId] = useState('');
+  const [blockedDelete, setBlockedDelete] = useState<{ name: string; subjects: { id: string; title: string }[] } | null>(null);
   const [savingSubject, setSavingSubject] = useState(false);
   const [deletingSubject, setDeletingSubject] = useState<string | null>(null);
 
@@ -77,16 +79,19 @@ export default function AdminCurriculumPage() {
     setSubjTitle(m.title ?? '');
     setSubjSubject(m.subject ?? '');
     setSubjYear(m.yearGroup ?? '');
+    setSubjProgrammeId(m.programmeId ?? '');
   };
 
   const handleSaveSubject = async (m: Course) => {
     if (!subjTitle.trim()) { toast.error('Enter a title.'); return; }
+    if (!subjProgrammeId) { toast.error('Choose the programme this subject belongs to.'); return; }
     setSavingSubject(true);
     try {
       await updateCourse(m.id, {
         title: subjTitle.trim(),
         subject: subjSubject.trim(),
         yearGroup: subjYear.trim() || undefined,
+        programmeId: subjProgrammeId,
       });
       toast.success('Subject updated.');
       setEditingSubject(null);
@@ -359,8 +364,9 @@ export default function AdminCurriculumPage() {
       if (editingProgramme?.id === p.id) resetProgrammeForm();
       load();
     } catch (e: any) {
-      // deleteProgramme refuses while subjects still reference the programme —
-      // surface that reason rather than a generic failure.
+      if (e instanceof ProgrammeInUseError) {
+        setBlockedDelete({ name: p.name, subjects: e.subjects });
+      }
       toast.error(e?.message || 'Failed to delete programme.');
     } finally {
       setDeletingProgramme(null);
@@ -371,6 +377,7 @@ export default function AdminCurriculumPage() {
     if (!user) return;
     if (!modTitle.trim()) { toast.error('Enter a subject title.'); return; }
     if (!modSubject.trim()) { toast.error('Enter a subject.'); return; }
+    if (!modProgrammeId) { toast.error('Choose the programme this subject belongs to.'); return; }
     setCreatingModule(true);
     try {
       const courseId = await createCurriculumModule({
@@ -637,6 +644,16 @@ export default function AdminCurriculumPage() {
           </div>
         )}
 
+        {blockedDelete && (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <p className="font-semibold">{blockedDelete.name} still has these subjects. Open one and change its programme, then delete again.</p>
+            <ul className="mt-1 space-y-1">
+              {blockedDelete.subjects.map(s => (
+                <li key={s.id}><Link className="underline" href={`/dashboard/admin/curriculum/${s.id}`}>{s.title}</Link></li>
+              ))}
+            </ul>
+          </div>
+        )}
         {programmes.length === 0 ? (
           <p className="text-sm text-muted-foreground">No programmes yet.</p>
         ) : (
@@ -772,6 +789,15 @@ export default function AdminCurriculumPage() {
                       <Input value={subjYear} onChange={e => setSubjYear(e.target.value)}
                         list="year-level-suggestions" className="rounded-xl h-10" />
                     </div>
+                    <div className="space-y-1.5 sm:col-span-3">
+                      <Label className="text-xs">Programme</Label>
+                      <Select value={subjProgrammeId} onValueChange={(v) => setSubjProgrammeId(v ?? '')}>
+                        <SelectTrigger className="rounded-xl h-10"><SelectValue placeholder="Choose a programme" /></SelectTrigger>
+                        <SelectContent>
+                          {programmes.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button size="sm" className="rounded-xl" disabled={savingSubject} onClick={() => handleSaveSubject(m)}>
@@ -807,7 +833,10 @@ export default function AdminCurriculumPage() {
                   />
                   <Link href={`/dashboard/admin/curriculum/${m.id}`} className="min-w-0 flex-1">
                     <p className="font-semibold text-foreground text-sm truncate">{m.title}</p>
-                    <p className="text-xs text-muted-foreground">{m.subject} · {m.yearGroup ?? '—'}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {m.subject} · {m.yearGroup ?? '—'}
+                      {m.programmeId ? ` · ${programmes.find(p => p.id === m.programmeId)?.name ?? 'Programme linked'}` : ' · No programme'}
+                    </p>
                   </Link>
                   <div className="flex items-center gap-1 shrink-0">
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${STATUS_BADGE[m.status] ?? STATUS_BADGE.draft}`}>

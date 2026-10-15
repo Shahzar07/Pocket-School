@@ -71,7 +71,7 @@ export const TIERS: TierDef[] = [
     id: 'tier1',
     label: 'Tier 1 — Primary / Lower Secondary / IGCSE',
     short: 'Tier 1 · Primary–IGCSE',
-    blurb: 'Mock Exam (3 questions, ascending marks) plus a Problem Q one Bloom’s level up.',
+    blurb: 'Mock exam: 4 questions totalling 12 marks, plus a Problem Q one Bloom’s level up.',
     fields: [
       'title', 'duration', 'blooms', 'objectives', 'vocabulary', 'mnemonic',
       'explainer', 'caseStudy', 'activity', 'assignment', 'summary',
@@ -273,7 +273,7 @@ function tier1Spec(meta: GenerationMeta): string {
   return `TIER 1 — PRIMARY / LOWER SECONDARY / IGCSE
 
 Case Study: 1 to 2 full paragraphs, distinct from the worked example inside the Explainer Text, with enough concrete detail (names, figures, circumstances) that the application question can test reasoning rather than recall. Scale the reading level to the stated Year.
-Assessment: a Mock Exam of exactly 3 questions in ascending difficulty. 1) recall (2 marks), 2) explain (3 marks), 3) apply to the Case Study, referring to it by name (3 to 4 marks).
+Assessment: a Mock Exam of exactly 4 questions totalling 12 marks, in ascending difficulty. 1) recall (2 marks), 2) explain (3 marks), 3) apply to the Case Study, referring to it by name (3 marks), 4) evaluate using the case (4 marks). Give each question a mark scheme with Level 3, Level 2 and Level 1 descriptors.
 Problem Q: included. One scenario question set one Bloom's level above the lesson's stated level.
 
 OUTPUT FORMAT (exact labels, exact order)

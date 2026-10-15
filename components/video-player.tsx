@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { fetchWithBackoff } from '@/lib/net-retry';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Captions, CaptionsOff, Globe, Image as ImageIcon, Loader2, Maximize, Minimize, Pause, Play,
@@ -65,7 +66,16 @@ function fmtTime(s: number) {
  * automatically; the timeline scrubber, captions toggle and fullscreen all
  * work like a normal video player.
  */
-export function VideoPlayer({ script, title }: { script: string; title?: string }) {
+export function VideoPlayer({
+  script, title, autoGenerate = true, initialImages, onSceneImage,
+}: {
+  script: string;
+  title?: string;
+  /** Builder passes false so opening a lesson never starts a new job. */
+  autoGenerate?: boolean;
+  initialImages?: (string | null)[];
+  onSceneImage?: (index: number, dataUrl: string) => void;
+}) {
   // The script actually played — starts as the prop, swapped when translated.
   const [activeScript, setActiveScript] = useState(script);
   const scenes = useMemo(() => parseScenes(activeScript), [activeScript]);
@@ -90,9 +100,12 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
   const translationCache = useRef<Record<string, string>>({ en: script });
 
   // AI-generated scene visuals
-  const [images, setImages] = useState<(string | null)[]>(() => scenes.map(() => null));
-  const [visualsState, setVisualsState] = useState<'idle' | 'generating' | 'done' | 'unavailable'>('idle');
-  const [visualsProgress, setVisualsProgress] = useState(0);
+  const [images, setImages] = useState<(string | null)[]>(() => scenes.map((_, i) => initialImages?.[i] ?? null));
+  const [visualsState, setVisualsState] = useState<'idle' | 'generating' | 'done' | 'unavailable' | 'error'>(
+    () => (initialImages?.some(Boolean) ? 'done' : 'idle'),
+  );
+  const [visualsProgress, setVisualsProgress] = useState(() => (initialImages?.some(Boolean) ? 1 : 0));
+  const [visualsError, setVisualsError] = useState<string | null>(null);
 
   const stageRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -130,13 +143,23 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
   // Generate a real illustration for every scene, in order. Runs once per
   // script; each image pops in as it arrives. If the provider can't produce
   // images we quietly fall back to the animated gradient stage.
+  const onSceneImageRef = useRef(onSceneImage);
+  onSceneImageRef.current = onSceneImage;
+
   const generateVisuals = useCallback(async () => {
     setVisualsState('generating');
+    setVisualsError(null);
     setVisualsProgress(0);
     let anyOk = false;
+    let lastError = '';
     for (let i = 0; i < scenes.length; i++) {
+      if (initialImages?.[i]) {
+        setVisualsProgress((p) => Math.max(p, (i + 1) / scenes.length));
+        anyOk = true;
+        continue;
+      }
       try {
-        const res = await fetch('/api/ai/scene-image', {
+        const res = await fetchWithBackoff('/api/ai/scene-image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ visual: scenes[i].visual || scenes[i].narration.slice(0, 200), title: scenes[i].title }),
@@ -145,21 +168,39 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
         if (data.image) {
           anyOk = true;
           setImages(prev => { const next = [...prev]; next[i] = data.image; return next; });
+          onSceneImageRef.current?.(i, data.image);
+        } else if (data.reason) {
+          lastError = String(data.reason);
         }
-      } catch { /* keep gradient for this scene */ }
-      setVisualsProgress((i + 1) / scenes.length);
+      } catch (error) {
+        lastError = error instanceof Error ? error.message : 'Connection closed while painting a scene.';
+      }
+      setVisualsProgress((p) => Math.max(p, (i + 1) / scenes.length));
     }
-    setVisualsState(anyOk ? 'done' : 'unavailable');
-  }, [scenes]);
+    if (anyOk) setVisualsState('done');
+    else {
+      setVisualsError(lastError || 'Scene images could not be created.');
+      setVisualsState('error');
+    }
+  }, [scenes, initialImages]);
 
-  // Reset + kick off visual generation whenever the script changes.
+  // Opening a lesson must not start a job. Students still auto-generate
+  // unless saved pictures already cover the scenes.
   useEffect(() => {
-    setImages(scenes.map(() => null));
-    setVisualsState('idle');
+    const saved = scenes.map((_, i) => initialImages?.[i] ?? null);
+    setImages(saved);
+    if (saved.some(Boolean)) {
+      setVisualsState('done');
+      setVisualsProgress(1);
+    } else {
+      setVisualsState('idle');
+      setVisualsProgress(0);
+    }
+    if (!autoGenerate || saved.filter(Boolean).length >= scenes.length) return;
     let cancelled = false;
     const t = setTimeout(() => { if (!cancelled) generateVisuals(); }, 400);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [scenes, generateVisuals]);
+  }, [scenes, generateVisuals, autoGenerate, initialImages]);
 
   // When the incoming script prop changes, reset language + translation cache.
   useEffect(() => {
@@ -282,7 +323,7 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
         // Always narrate the cleaned prose — never stage directions.
         const script = cleanNarration(texts[i]);
         if (!script) { setVoiceProgress((i + 1) / texts.length); continue; }
-        const res = await fetch('/api/ai/audio', {
+        const res = await fetchWithBackoff('/api/ai/audio', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ script, voice }),
@@ -293,9 +334,13 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
           hdClips.current[i] = URL.createObjectURL(await res.blob());
           anyOk = true;
         }
-      } catch { /* keep browser-voice fallback for this scene */ }
+      } catch {
+        if (voiceGenId.current !== genId) return;
+        setVoiceState('unavailable');
+        return;
+      }
       if (voiceGenId.current !== genId) return;
-      setVoiceProgress((i + 1) / texts.length);
+      setVoiceProgress((p) => Math.max(p, (i + 1) / texts.length));
     }
     setVoiceState(anyOk ? 'on' : 'unavailable');
   }, []);
@@ -310,9 +355,9 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
   const voiceNameRef = useRef(voiceName);
   voiceNameRef.current = voiceName;
   useEffect(() => {
-    if (!spokenText.length) return;
+    if (!autoGenerate || !spokenText.length) return;
     generateVoices(spokenText, voiceNameRef.current);
-  }, [spokenText, generateVoices]);
+  }, [spokenText, generateVoices, autoGenerate]);
 
   // Switch language: translate the storyboard, then re-voice + re-render.
   const switchLanguage = async (code: string) => {
@@ -492,13 +537,18 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
                 <ImageIcon className="w-3.5 h-3.5" /> {Math.round(visualsProgress * 100)}%
               </span>
             )}
-            {visualsState === 'unavailable' && (
+            {(visualsState === 'unavailable' || visualsState === 'error') && (
               <button
                 onClick={generateVisuals}
-                className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-amber-300 hover:text-amber-200"
-                title="Retry generating scene visuals"
+                className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-300 hover:text-amber-200"
+                title={visualsError || 'Retry generating scene visuals'}
               >
                 <ImageIcon className="w-3.5 h-3.5" /> Retry visuals
+              </button>
+            )}
+            {visualsState === 'idle' && !autoGenerate && (
+              <button onClick={generateVisuals} className="flex items-center gap-1.5 text-[11px] font-semibold text-white/80 hover:text-white">
+                <ImageIcon className="w-3.5 h-3.5" /> Paint scenes
               </button>
             )}
 
@@ -578,7 +628,14 @@ export function VideoPlayer({ script, title }: { script: string; title?: string 
         <span>·</span>
         <span>~{fmtTime(totalDuration)}</span>
         <span>·</span>
-        <span>{voiceState === 'on' ? 'Human AI voice' : voiceState === 'generating' ? 'Voicing…' : 'Narrated'}</span>
+        <span>{voiceState === 'on' ? 'Human AI voice' : voiceState === 'generating' ? `Voicing… ${Math.round(voiceProgress * 100)}%` : voiceState === 'unavailable' ? 'Voice failed' : autoGenerate ? 'Narrated' : 'Not voiced'}</span>
+        {voiceState === 'unavailable' && (
+          <button type="button" className="underline" onClick={() => generateVoices(spokenText, voiceName)}>Retry voice</button>
+        )}
+        {voiceState === 'idle' && !autoGenerate && (
+          <button type="button" className="underline" onClick={() => generateVoices(spokenText, voiceName)}>Generate voice</button>
+        )}
+        {visualsError && <span className="text-amber-700">{visualsError}</span>}
         {lang !== 'en' && <><span>·</span><span>{LANGUAGES.find(l => l.code === lang)?.label}</span></>}
       </div>
     </div>
