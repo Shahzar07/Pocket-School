@@ -360,7 +360,7 @@ A reading notice uses the shared push body: `recipientUid`, `category` (`goals` 
 
 ## Community, tutors, exams, and the creator store
 
-The section below is the contract from `cursor/community-tutor-exam-de9a`. `users.ageTier` and `users.dateOfBirth` are in `privilegedUserFields()`, so clients cannot write them. Direct messages in `messages` are adult-only. `deviceTokens` on this tip stay unreadable by clients; delivery uses the Admin SDK. The user document itself is still readable by any signed-in person so class dashboards can load a name. Age walls are enforced on `community_profiles`, `spaces`, `posts`, and `messages`.
+The section below is the contract from `cursor/community-tutor-exam-de9a`. Signup may store `dateOfBirth` once. After that it is privileged. `ageTier` is never client-writable, including when the account is created. Direct messages in `messages` are adult-only. `deviceTokens` on this tip stay unreadable by clients; delivery uses the Admin SDK. The user document itself is still readable by any signed-in person so class dashboards can load a name. Age walls are enforced on `community_profiles`, `spaces`, `posts`, and `messages`.
 
 # Schema changes — community, messaging, tutors, exams, store
 
@@ -368,7 +368,7 @@ Shared by the Next.js app and the Expo app. The mobile feed reads these collecti
 
 Both clients also call the HTTP routes under `/api`. The Admin SDK bypasses rules, so every route repeats the same checks as `lib/community/policy.ts`.
 
-`users.ageTier` is server-set from `users.dateOfBirth`. Clients cannot write `ageTier` or `dateOfBirth`. A missing tier fails closed as `under13`. `yearGroup` and `subjects` stay on the profile and only narrow teen Explore. They cannot move someone into another band.
+`users.ageTier` is server-set from `users.dateOfBirth`. Signup may store `dateOfBirth` when the account is created. Clients cannot change it afterwards, and they cannot write `ageTier` at all. A missing tier fails closed as `under13`. `yearGroup` and `subjects` stay on the profile and only narrow teen Explore. They cannot move someone into another band.
 
 | `ageTier` | Who | Wall |
 | --- | --- | --- |
@@ -378,7 +378,7 @@ Both clients also call the HTTP routes under `/api`. The Admin SDK bypasses rule
 
 Adults and minors cannot see, search, follow, or message each other. `under13` and `teen` are separate bands too. The only cross-band exception is a teacher or institution admin listed in `staffIds` on a **class** space or **class** channel. That exception does not cover search, follows, profiles, or direct messages.
 
-Parents get `parent_controls` only. They cannot read the wall (`spaces`, `posts`, `comments`, `reactions`, `follows`), including their child's class. A parent who is an adult can still direct-message a teacher.
+Parents get `parent_controls` only. They cannot read the wall (`community_profiles`, `spaces`, `posts`, `comments`, `reactions`, `follows`), including their child's class. A parent who is an adult can still direct-message a teacher.
 
 `platform_settings/feature_flags` turns each surface on or off. Missing keys default to on so a review build works; set a key to `false` to hide it. Flags: `community`, `messagingHub`, `tutorMarketplace`, `examCentre`, `creatorStore`, `snapAndSolve`, `lessonQa`.
 
@@ -391,7 +391,7 @@ Parents get `parent_controls` only. They cannot read the wall (`spaces`, `posts`
 | `yearGroup` | the student, on their profile | string, for example `Year 10`. Teens explore a `year` space only when this matches. It does not change `ageTier` |
 | `subjects` | the student, on their profile | string list. Teens explore a `subject` space only when it contains `spaces.subject` |
 
-Also copied onto `public_profiles.ageTier` and `community_profiles.ageTier`. Profiles with no `ageTier` stay readable (legacy leaderboard). Once the field is set, only the same tier can read the profile.
+Also copied onto `public_profiles.ageTier` and `community_profiles.ageTier`. A public profile with no `ageTier` stays readable (legacy leaderboard). Once the field is set, only the same tier can read it, and the owner can always read their own. Community profiles are same-tier only, and parents cannot read them.
 
 ## users/{uid}/deviceTokens/{tokenId}
 

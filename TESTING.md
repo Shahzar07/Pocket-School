@@ -65,6 +65,7 @@ From `/workspace` on this branch:
 
 - `npx tsc --noEmit` passed.
 - `npx tsx --test lib/*.test.ts lib/reads/*.test.ts lib/platform/*.test.ts lib/community/*.test.ts` — 143 passed, 0 failed.
+- `npm run test:rules` runs the community age-tier cases against the Firestore emulator.
 
 Signed-in browser passes were not run. There is no QA session in this environment until the seed script has been executed.
 
