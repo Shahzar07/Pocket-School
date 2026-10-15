@@ -10,6 +10,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 import { Cookie, X } from 'lucide-react';
 
 const STORAGE_KEY = 'poket-cookie-consent';
@@ -39,13 +40,14 @@ export function hasCookieConsent(category: 'functional' | 'analytics' | 'aiPerfo
 }
 
 const CATEGORIES = [
-  { key: 'essential', label: 'Strictly necessary', desc: 'Sign-in, security and session management. Always on — the platform cannot work without them.', locked: true },
-  { key: 'functional', label: 'Functional', desc: 'Remembers your language, theme and notification preferences.', locked: false },
-  { key: 'analytics', label: 'Analytics', desc: 'Anonymised usage data so we can improve the learning experience.', locked: false },
-  { key: 'aiPerformance', label: 'AI performance', desc: 'Helps us improve ET response quality and personalisation.', locked: false },
+  { key: 'essential', labelKey: 'cookie.essential', descKey: 'cookie.essentialDesc', locked: true },
+  { key: 'functional', labelKey: 'cookie.functional', descKey: 'cookie.functionalDesc', locked: false },
+  { key: 'analytics', labelKey: 'cookie.analytics', descKey: 'cookie.analyticsDesc', locked: false },
+  { key: 'aiPerformance', labelKey: 'cookie.aiPerformance', descKey: 'cookie.aiPerformanceDesc', locked: false },
 ] as const;
 
 export function CookieConsent() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [managing, setManaging] = useState(false);
   const [prefs, setPrefs] = useState({ functional: true, analytics: false, aiPerformance: false });
@@ -78,7 +80,7 @@ export function CookieConsent() {
           transition={{ type: 'spring', damping: 26, stiffness: 260 }}
           className="fixed bottom-0 inset-x-0 z-[200] p-3 sm:p-5 print:hidden"
           role="dialog"
-          aria-label="Cookie consent"
+          aria-label={t('cookie.dialog')}
         >
           <div className="max-w-4xl mx-auto rounded-3xl border border-border bg-card shadow-2xl overflow-hidden">
             <div className="p-5 sm:p-6">
@@ -87,17 +89,15 @@ export function CookieConsent() {
                   <Cookie className="w-4.5 h-4.5 text-amber-600" />
                 </span>
                 <div className="flex-1 min-w-0">
-                  <h2 className="font-bold text-foreground text-sm mb-1">We use cookies</h2>
+                  <h2 className="font-bold text-foreground text-sm mb-1">{t('cookie.title')}</h2>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    We use strictly necessary cookies to keep you signed in, and — only with your
-                    permission — optional cookies to remember preferences and improve the platform.
-                    Read our{' '}
-                    <Link href="/legal?doc=cookies" className="text-primary hover:underline font-medium">Cookie Policy</Link>{' '}
-                    and{' '}
-                    <Link href="/legal?doc=privacy" className="text-primary hover:underline font-medium">Privacy Policy</Link>.
+                    {t('cookie.intro')}{' '}
+                    <Link href="/legal?doc=cookies" className="text-primary hover:underline font-medium">{t('cookie.cookiePolicy')}</Link>{' '}
+                    {t('cookie.and')}{' '}
+                    <Link href="/legal?doc=privacy" className="text-primary hover:underline font-medium">{t('cookie.privacyPolicy')}</Link>.
                   </p>
                 </div>
-                <button onClick={rejectAll} aria-label="Reject optional cookies and close" className="text-muted-foreground hover:text-foreground shrink-0">
+                <button onClick={rejectAll} aria-label={t('cookie.close')} className="text-muted-foreground hover:text-foreground shrink-0">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -127,9 +127,9 @@ export function CookieConsent() {
                             />
                             <span className="min-w-0">
                               <span className="block text-sm font-semibold text-foreground">
-                                {c.label}{c.locked && <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Always on</span>}
+                                {t(c.labelKey)}{c.locked && <span className="ms-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('cookie.alwaysOn')}</span>}
                               </span>
-                              <span className="block text-xs text-muted-foreground leading-relaxed mt-0.5">{c.desc}</span>
+                              <span className="block text-xs text-muted-foreground leading-relaxed mt-0.5">{t(c.descKey)}</span>
                             </span>
                           </label>
                         );
@@ -144,28 +144,28 @@ export function CookieConsent() {
                   onClick={acceptAll}
                   className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity"
                 >
-                  Accept all
+                  {t('cookie.acceptAll')}
                 </button>
                 {managing ? (
                   <button
                     onClick={() => persist(prefs)}
                     className="flex-1 h-10 rounded-xl border border-border text-sm font-semibold text-foreground hover:bg-muted transition-colors"
                   >
-                    Save my choices
+                    {t('cookie.saveChoices')}
                   </button>
                 ) : (
                   <button
                     onClick={() => setManaging(true)}
                     className="flex-1 h-10 rounded-xl border border-border text-sm font-semibold text-foreground hover:bg-muted transition-colors"
                   >
-                    Manage preferences
+                    {t('cookie.manage')}
                   </button>
                 )}
                 <button
                   onClick={rejectAll}
                   className="flex-1 h-10 rounded-xl border border-border text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
                 >
-                  Reject optional
+                  {t('cookie.reject')}
                 </button>
               </div>
             </div>

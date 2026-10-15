@@ -38,6 +38,8 @@ export interface UserProfile {
   sparksBalance?: number;
   sparksMonthlyAllowance?: number;
   sparksGrantedAt?: Timestamp;
+  /** Preferred UI and lesson language. A short code from `lib/languages.ts`. */
+  language?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -126,6 +128,13 @@ export interface Module {
   sparkBudget?: number;
 }
 
+/** A localized title and lesson body. English stays on `title` and `aiOutputs.text`. */
+export interface LessonLocalization {
+  title?: string;
+  text?: string;
+  source?: 'manual' | 'ai';
+}
+
 export interface Lesson {
   id: string;
   title: string;
@@ -184,6 +193,8 @@ export interface Lesson {
   tierOverridden?: boolean;
   /** Audit trail of builder actions, newest first (capped client-side). */
   history?: { label: string; actor: string; at: Timestamp; action?: string }[];
+  /** Localized copies of the lesson title and body, keyed by language code. */
+  localizations?: Record<string, LessonLocalization>;
 }
 
 export interface AiOutputs {

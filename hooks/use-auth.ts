@@ -25,6 +25,8 @@ interface UserProfile {
   sparksBalance?: number;
   sparksMonthlyAllowance?: number;
   sparksGrantedAt?: Timestamp;
+  /** Preferred UI and lesson language. A short code from `lib/languages.ts`. */
+  language?: string;
 }
 
 interface AuthState {

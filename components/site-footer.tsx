@@ -24,6 +24,7 @@ import {
   Facebook,
   Music2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { LEGAL_ENTITY, LEGAL_COMPANY_NO } from "@/lib/legal-content";
 import styles from "./home-chrome.module.css";
 
@@ -47,25 +48,25 @@ const FOOTER_VIDEO =
   "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260429_114316_1c7889ad-2885-410e-b493-98119fee0ddb.mp4";
 
 const PLATFORM_LINKS = [
-  { label: "AI Teachers", href: "/ai-teachers" },
-  { label: "AI Studio", href: "/ai-studio" },
-  { label: "Marketplace", href: "/courses" },
-  { label: "Pricing", href: "/pricing" },
+  { labelKey: "footer.aiTeachers", href: "/ai-teachers" },
+  { labelKey: "footer.aiStudio", href: "/ai-studio" },
+  { labelKey: "footer.marketplace", href: "/courses" },
+  { labelKey: "footer.pricing", href: "/pricing" },
 ];
 
 const LEARNER_LINKS = [
-  { label: "Students", href: "/signup?role=student" },
-  { label: "Teachers", href: "/signup?role=teacher" },
-  { label: "Parents", href: "/signup?role=parent" },
-  { label: "Institutions", href: "mailto:institutions@poketschool.ai" },
+  { labelKey: "footer.students", href: "/signup?role=student" },
+  { labelKey: "footer.teachers", href: "/signup?role=teacher" },
+  { labelKey: "footer.parents", href: "/signup?role=parent" },
+  { labelKey: "footer.institutions", href: "mailto:institutions@poketschool.ai" },
 ];
 
 const LEGAL_LINKS = [
-  { label: "Privacy Policy", href: "/legal?doc=privacy" },
-  { label: "Terms of Service", href: "/legal?doc=terms" },
-  { label: "Cookie Policy", href: "/legal?doc=cookies" },
-  { label: "Acceptable Use", href: "/legal?doc=aup" },
-  { label: "Contact", href: "mailto:hello@poketschool.ai" },
+  { labelKey: "footer.privacy", href: "/legal?doc=privacy" },
+  { labelKey: "footer.terms", href: "/legal?doc=terms" },
+  { labelKey: "footer.cookies", href: "/legal?doc=cookies" },
+  { labelKey: "footer.aup", href: "/legal?doc=aup" },
+  { labelKey: "footer.contact", href: "mailto:hello@poketschool.ai" },
 ];
 
 const SOCIALS = [
@@ -98,6 +99,7 @@ function FooterLink({ href, label }: { href: string; label: string }) {
 }
 
 export function SiteFooter() {
+  const { t } = useTranslation();
   const pathname = usePathname() || "";
   if (HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))) return null;
 
@@ -113,35 +115,35 @@ export function SiteFooter() {
               </span>
             </Link>
             <p>
-              Big possibilities. A little every day.
+              {t("footer.tagline1")}
               <br />
-              Learning built around you.
+              {t("footer.tagline2")}
             </p>
           </div>
           <div>
-            <h2>Product</h2>
+            <h2>{t("footer.product")}</h2>
             {PLATFORM_LINKS.map((l) => (
-              <Link key={l.label} href={l.href}>
-                {l.label}
+              <Link key={l.labelKey} href={l.href}>
+                {t(l.labelKey)}
               </Link>
             ))}
           </div>
           <div>
-            <h2>For learners</h2>
+            <h2>{t("footer.forLearners")}</h2>
             {LEARNER_LINKS.map((l) => (
-              <Link key={l.label} href={l.href}>
-                {l.label}
+              <Link key={l.labelKey} href={l.href}>
+                {t(l.labelKey)}
               </Link>
             ))}
           </div>
           <div className={styles.contactCard}>
-            <h2>Let’s keep learning.</h2>
-            <p>Have a question? We’re here to help.</p>
+            <h2>{t("footer.keepLearning")}</h2>
+            <p>{t("footer.question")}</p>
             <a href="mailto:hello@poketschool.ai">hello@poketschool.ai ↗</a>
             <div className={styles.legalLinks}>
-              {LEGAL_LINKS.filter((l) => l.label !== "Contact").map((l) => (
-                <Link key={l.label} href={l.href}>
-                  {l.label}
+              {LEGAL_LINKS.filter((l) => l.labelKey !== "footer.contact").map((l) => (
+                <Link key={l.labelKey} href={l.href}>
+                  {t(l.labelKey)}
                 </Link>
               ))}
             </div>
@@ -149,16 +151,11 @@ export function SiteFooter() {
         </div>
         <div className={styles.footerLegal}>
           <p>
-            <strong>Independent platform.</strong> Poket School is not
-            affiliated with, endorsed by, or accredited by Cambridge Assessment
-            International Education, Pearson Edexcel, AQA, the Malaysian
-            Ministry of Education, or any other examination board or government
-            body. Curriculum references are for alignment and preparation only.
-            Platform certificates are not official academic qualifications.
+            <strong>{t("footer.independent")}</strong> {t("footer.disclaimer")}
           </p>
           <p>
-            © {new Date().getFullYear()} {LEGAL_ENTITY} ({LEGAL_COMPANY_NO})
-            trading as Poket School · Made in Malaysia
+            © {new Date().getFullYear()} {LEGAL_ENTITY} ({LEGAL_COMPANY_NO}){" "}
+            {t("footer.trading")}
           </p>
         </div>
         <div className={styles.footerWordmark} aria-hidden="true">
@@ -212,21 +209,20 @@ export function SiteFooter() {
                 <span className="text-xl font-semibold">Poket School</span>
               </Link>
               <p className="text-sm leading-relaxed max-w-sm text-white/60">
-                AI-powered adaptive learning for IGCSE, A-Levels, degrees and
-                beyond — built around how you think.
+                {t("footer.blurb")}
               </p>
               <div className="mt-5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[11px] font-semibold text-white/70">
                 <Sparkles className="w-3 h-3 text-[#E2AF4D]" />
-                AI-Powered Platform
+                {t("footer.badge")}
               </div>
             </div>
 
             {/* Link columns */}
             <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-8">
               {[
-                { title: "Platform", links: PLATFORM_LINKS },
-                { title: "For Learners", links: LEARNER_LINKS },
-                { title: "Legal", links: LEGAL_LINKS },
+                { title: t("footer.platform"), links: PLATFORM_LINKS },
+                { title: t("footer.forLearners"), links: LEARNER_LINKS },
+                { title: t("footer.legal"), links: LEGAL_LINKS },
               ].map((col) => (
                 <div key={col.title}>
                   <h4 className="text-sm uppercase tracking-wider text-white font-medium mb-4">
@@ -234,8 +230,8 @@ export function SiteFooter() {
                   </h4>
                   <ul className="text-xs space-y-2.5">
                     {col.links.map((l) => (
-                      <li key={l.label}>
-                        <FooterLink href={l.href} label={l.label} />
+                      <li key={l.labelKey}>
+                        <FooterLink href={l.href} label={t(l.labelKey)} />
                       </li>
                     ))}
                   </ul>
@@ -248,16 +244,9 @@ export function SiteFooter() {
           <div className="rounded-2xl bg-white/5 border border-white/10 px-5 py-4 mb-8">
             <p className="text-[11px] leading-relaxed text-white/55">
               <strong className="text-white/80 font-semibold">
-                Independent platform.
+                {t("footer.independent")}
               </strong>{" "}
-              Poket School is an independent learning and preparation platform.
-              We are not affiliated with, endorsed by, or accredited by
-              Cambridge Assessment International Education, Pearson Edexcel,
-              AQA, the Malaysian Ministry of Education, or any other examination
-              board or government body. All curriculum references are for
-              alignment and preparation purposes only. Certificates issued by
-              Poket School are platform-specific and do not constitute official
-              academic qualifications.
+              {t("footer.disclaimer")}
             </p>
           </div>
 
@@ -265,11 +254,11 @@ export function SiteFooter() {
           <div className="pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-4">
             <p className="text-[10px] uppercase tracking-widest opacity-50 text-center md:text-left">
               &copy; {new Date().getFullYear()} {LEGAL_ENTITY} (
-              {LEGAL_COMPANY_NO}) trading as Poket School · Made in Malaysia
+              {LEGAL_COMPANY_NO}) {t("footer.trading")}
             </p>
             <div className="flex items-center gap-4">
               <span className="text-[10px] uppercase tracking-widest opacity-50">
-                Follow Us:
+                {t("footer.follow")}
               </span>
               <div className="flex items-center gap-3">
                 {SOCIALS.map(({ Icon, label, href }) => (

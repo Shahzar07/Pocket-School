@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { MathMarkdown } from '@/components/math-markdown';
 import { readLanguage } from '@/lib/languages';
+import { LanguageSwitcher } from '@/components/language-switcher';
 import {
   Sparkles, ArrowUp, ArrowLeft, Library, MessageSquare,
   FileText, ClipboardList, Network, BookMarked,
@@ -419,6 +420,11 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
               <p className={`text-[10px] ${C.faint} tracking-[0.2em] uppercase leading-tight`}>AI Studio</p>
             </div>
           </Link>
+          {!embedded && (
+            <div className="flex justify-end px-2">
+              <LanguageSwitcher tone="onDark" />
+            </div>
+          )}
 
           <button
             onClick={newChat}

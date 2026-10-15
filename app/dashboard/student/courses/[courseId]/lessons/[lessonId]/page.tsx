@@ -26,6 +26,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
+import { resolveLessonCopy } from '@/lib/i18n/detect';
+import { getLanguage } from '@/lib/languages';
 import {
   ArrowLeft, CheckCircle2, FileText, Headphones, FlipHorizontal,
   ClipboardList, Presentation, BookMarked, BookOpen, Network,
@@ -586,6 +589,7 @@ function FormatLockCard({
 
 // ─── Main Page ────────────────────────────────────────────────
 export default function LessonPage() {
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
   const { user, profile, fetchProfile } = useAuthSTORE();
@@ -816,6 +820,13 @@ export default function LessonPage() {
     <div className="text-center py-16 text-muted-foreground">Lesson not found.</div>
   );
 
+  const copy = resolveLessonCopy(lesson, i18n.language);
+  const languageNotice = copy.fellBack ? (
+    <p className="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+      {t('lesson.fallback', { language: getLanguage(i18n.language).label })}
+    </p>
+  ) : null;
+
   // ── Unit mastery quiz takes over the whole page ──
   if (isUnitQuiz && unit) {
     return (
@@ -825,8 +836,9 @@ export default function LessonPage() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">Module Mastery Quiz</p>
-            <h1 className="font-heading text-foreground text-lg truncate">{lesson.title}</h1>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">{t('lesson.mastery')}</p>
+            <h1 className="font-heading text-foreground text-lg truncate">{copy.title}</h1>
+            {languageNotice}
           </div>
           {completed && (
             <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 rounded-full gap-1.5 shrink-0">
@@ -866,8 +878,9 @@ export default function LessonPage() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">{isCurriculum ? 'Lesson (Unit)' : 'Course Lesson'}</p>
-            <h1 className="font-heading text-foreground text-2xl truncate">{lesson.title}</h1>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">{isCurriculum ? t('lesson.unit') : t('lesson.course')}</p>
+            <h1 className="font-heading text-foreground text-2xl truncate">{copy.title}</h1>
+            {languageNotice}
             {!aiOutputs && <p className="text-xs text-muted-foreground">No content generated yet</p>}
             {isCurriculum && lesson.objectiveCodes && lesson.objectiveCodes.length > 0 && (
               <p className="text-xs text-muted-foreground font-mono truncate">{lesson.objectiveCodes.join(' · ')}</p>
@@ -918,7 +931,7 @@ export default function LessonPage() {
           <TabsContent value="text">
             {gate('text',
               <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
-                <MathMarkdown>{aiOutputs.text ?? ''}</MathMarkdown>
+                <MathMarkdown>{copy.text}</MathMarkdown>
               </motion.div>
             )}
           </TabsContent>

@@ -7,6 +7,11 @@
  * drifted: speech recognition already accepted Malay while the picker could
  * not select it and the tutor would not reply in it. Add a language here and
  * every surface picks it up.
+ *
+ * Menus are translated for English, Bahasa Melayu, Chinese (Simplified) and
+ * Tamil (`lib/i18n/catalog.ts`). Any other code in this list still sets
+ * direction and the language ET replies in; the menus stay in English until
+ * a catalog is added.
  */
 
 export interface AppLanguage {
@@ -28,6 +33,7 @@ export const LANGUAGES: AppLanguage[] = [
   { code: 'ms', label: 'Bahasa Malaysia',   englishName: 'Malay',                flag: '🇲🇾', bcp47: 'ms-MY' },
   { code: 'id', label: 'Bahasa Indonesia',  englishName: 'Indonesian',           flag: '🇮🇩', bcp47: 'id-ID' },
   { code: 'zh', label: '中文',               englishName: 'Chinese (Simplified)', flag: '🇨🇳', bcp47: 'zh-CN' },
+  { code: 'ta', label: 'தமிழ்',             englishName: 'Tamil',                flag: '🇮🇳', bcp47: 'ta-IN' },
   { code: 'ar', label: 'العربية',            englishName: 'Arabic',               flag: '🇸🇦', bcp47: 'ar-SA', rtl: true },
   { code: 'ur', label: 'اردو',               englishName: 'Urdu',                 flag: '🇵🇰', bcp47: 'ur-PK', rtl: true },
   { code: 'hi', label: 'हिन्दी',               englishName: 'Hindi',                flag: '🇮🇳', bcp47: 'hi-IN' },

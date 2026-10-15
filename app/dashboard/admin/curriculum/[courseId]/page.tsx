@@ -36,6 +36,7 @@ import type {
   TierId, Tier2SubjectType, LawStage, Tier3Assessment,
 } from '@/lib/curriculum-tiers';
 import { getFormatCost } from '@/lib/sparks';
+import { LessonLanguagePanel } from '@/components/lesson-language-panel';
 import {
   ArrowLeft, AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Copy, CornerDownRight,
   Eye, GripVertical, Loader2, Pencil, Plus, RotateCcw, Send, Sparkles, Trash2, Archive, X,
@@ -784,6 +785,8 @@ export default function ContentBuilderPage() {
                   </label>
                   <span className={`ml-auto text-[10px] font-bold px-2 py-1 rounded-full border ${statusCard.bg}`}>{statusCard.label}</span>
                 </div>
+
+                <LessonLanguagePanel draft={draft} patch={patchDraft} />
 
                 {/* ET assist bar */}
                 <div className="flex flex-wrap items-center gap-2 rounded-xl border border-violet-200 bg-violet-50/60 px-3 py-2">

@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { motion } from 'motion/react';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 
 const SUPER_ADMIN_EMAILS = ['harry.seggu@gmail.com', 'shahzarrayyan123@gmail.com'];
 const isSuperAdminEmail = (email: string) => SUPER_ADMIN_EMAILS.includes(email.trim().toLowerCase());
@@ -25,6 +26,7 @@ const ADMIN_NAMES: Record<string, string> = {
 };
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [step, setStep] = useState<'credentials' | 'twofa'>('credentials');
   const [email, setEmail] = useState('');
@@ -220,11 +222,11 @@ export default function LoginPage() {
       await afterCredentialSuccess(result.user.uid);
     } catch (e: any) {
       const code = e?.code ?? '';
-      if (code === 'auth/invalid-email') toast.error('Invalid email address.');
-      else if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') toast.error('Incorrect email or password.');
-      else if (code === 'auth/too-many-requests') toast.error('Too many failed attempts. Try again later or reset your password.');
-      else if (code === 'auth/operation-not-allowed') toast.error('Email/password sign-in is not enabled in Firebase.');
-      else toast.error('Sign in failed. Please try again.');
+      if (code === 'auth/invalid-email') toast.error(t('authForm.invalidEmail'));
+      else if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') toast.error(t('authForm.badPassword'));
+      else if (code === 'auth/too-many-requests') toast.error(t('authForm.tooMany'));
+      else if (code === 'auth/operation-not-allowed') toast.error(t('authForm.notEnabled'));
+      else toast.error(t('authForm.failed'));
     } finally {
       setLoading(false);
     }
@@ -239,8 +241,8 @@ export default function LoginPage() {
       {step === 'credentials' && (
         <>
           <div className="mb-9">
-            <h2 className="text-3xl font-bold text-white mb-2">Welcome back</h2>
-            <p className="text-white/45 text-sm">Enter your details to access your account.</p>
+            <h2 className="text-3xl font-bold text-white mb-2">{t('authForm.welcome')}</h2>
+            <p className="text-white/45 text-sm">{t('authForm.details')}</p>
           </div>
 
           <button
@@ -255,18 +257,18 @@ export default function LoginPage() {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            Continue with Google
+            {t('authForm.google')}
           </button>
 
           <div className="flex items-center my-6">
             <div className="flex-1 border-t border-white/8" />
-            <span className="px-4 text-xs text-white/30 font-medium uppercase tracking-widest">or email</span>
+            <span className="px-4 text-xs text-white/30 font-medium uppercase tracking-widest">{t('authForm.orEmail')}</span>
             <div className="flex-1 border-t border-white/8" />
           </div>
 
           <form onSubmit={handleEmailSignIn} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-white/60 text-xs font-semibold uppercase tracking-wider">Email</Label>
+              <Label htmlFor="email" className="text-white/60 text-xs font-semibold uppercase tracking-wider">{t('authForm.email')}</Label>
               <Input
                 id="email"
                 type="email"
@@ -279,9 +281,9 @@ export default function LoginPage() {
             </div>
             <div className="space-y-1.5">
               <div className="flex justify-between items-center">
-                <Label htmlFor="password" className="text-white/60 text-xs font-semibold uppercase tracking-wider">Password</Label>
+                <Label htmlFor="password" className="text-white/60 text-xs font-semibold uppercase tracking-wider">{t('authForm.password')}</Label>
                 <Link href="/forgot-password" className="text-xs font-medium text-[#6FBBCE] hover:text-[#93C5FD] transition-colors">
-                  Forgot password?
+                  {t('authForm.forgot')}
                 </Link>
               </div>
               <Input
@@ -299,14 +301,14 @@ export default function LoginPage() {
               className="w-full h-12 rounded-2xl bg-[#2786A4] hover:bg-[#1E6A83] text-white font-semibold text-base shadow-lg shadow-blue-900/30 transition-all mt-2"
               disabled={loading}
             >
-              {loading ? 'Signing in…' : 'Sign In'}
+              {loading ? t('authForm.signingIn') : t('authForm.signIn')}
             </Button>
           </form>
 
           <p className="text-center mt-7 text-white/40 text-sm">
-            Don&apos;t have an account?{' '}
+            {t('authForm.noAccount')}{' '}
             <Link href="/signup" className="text-[#6FBBCE] font-semibold hover:text-[#93C5FD] transition-colors">
-              Create one free
+              {t('authForm.createFree')}
             </Link>
           </p>
         </>
@@ -315,16 +317,16 @@ export default function LoginPage() {
       {step === 'twofa' && (
         <>
           <div className="mb-8">
-            <h2 className="text-3xl font-bold text-white mb-2">Check your email</h2>
+            <h2 className="text-3xl font-bold text-white mb-2">{t('authForm.checkEmail')}</h2>
             <p className="text-white/45 text-sm">
-              We sent a 6-digit code to <span className="text-white/70 font-semibold">{email}</span>.
+              {t('authForm.codeSent')} <span className="text-white/70 font-semibold">{email}</span>.
             </p>
           </div>
 
           {codeSent && (
             <form onSubmit={verifyTwoFa} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="2fa-code" className="text-white/60 text-xs font-semibold uppercase tracking-wider">6-digit code</Label>
+                <Label htmlFor="2fa-code" className="text-white/60 text-xs font-semibold uppercase tracking-wider">{t('authForm.codeLabel')}</Label>
                 <Input
                   id="2fa-code"
                   type="text"
@@ -337,14 +339,14 @@ export default function LoginPage() {
                   autoFocus
                   disabled={loading}
                 />
-                <p className="text-xs text-white/30">It may take a minute to arrive. Check spam too.</p>
+                <p className="text-xs text-white/30">{t('authForm.codeHint')}</p>
               </div>
               <Button
                 type="submit"
                 className="w-full h-12 rounded-2xl bg-[#2786A4] hover:bg-[#1E6A83] text-white font-semibold shadow-lg shadow-blue-900/30"
                 disabled={loading}
               >
-                {loading ? 'Verifying…' : 'Verify & Continue'}
+                {loading ? t('authForm.verifying') : t('authForm.verify')}
               </Button>
               <button
                 type="button"
@@ -352,7 +354,7 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full text-xs text-[#6FBBCE] font-semibold hover:text-[#93C5FD] transition-colors"
               >
-                Resend code
+                {t('authForm.resend')}
               </button>
             </form>
           )}
@@ -363,7 +365,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full mt-4 text-sm text-white/30 hover:text-white/60 transition-colors"
           >
-            ← Cancel and sign out
+            ← {t('authForm.cancelSignOut')}
           </button>
         </>
       )}
