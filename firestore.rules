@@ -38,7 +38,104 @@ service cloud.firestore {
       return ['role', 'accessTier', 'subscriptionTier', 'permissions',
               'institutionId', 'adminSparksGrantedAt', 'accountStatus',
               'sparksBalance', 'xp', 'sparksMonthlyAllowance', 'sparksGrantedAt',
-              'sparksWelcomeGrantedAt', 'childIds', 'emailVerified', 'stripeCustomerId'];
+              'sparksWelcomeGrantedAt', 'childIds', 'emailVerified', 'stripeCustomerId',
+              'ageTier', 'dateOfBirth'];
+    }
+
+    // Missing ageTier fails closed as under-13. The server is the only writer.
+    function callerAgeTier() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('ageTier', 'under13')
+        : 'under13';
+    }
+    function userAgeTier(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.get('ageTier', 'under13');
+    }
+    function callerYear() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('yearGroup', '');
+    }
+    function callerSubjects() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('subjects', []);
+    }
+    function userRoleOf(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.get('role', '');
+    }
+    function isStaffRole(r) {
+      return r == 'teacher' || r == 'admin' || r == 'institution_admin';
+    }
+    function adultOptIn(uid) {
+      return exists(/databases/$(database)/documents/community_profiles/$(uid))
+        && get(/databases/$(database)/documents/community_profiles/$(uid)).data.get('adultDmOptIn', false) == true;
+    }
+    function sameTierPair(a, b) {
+      return userAgeTier(a) == userAgeTier(b);
+    }
+    function bothAdults(a, b) {
+      return userAgeTier(a) == 'adult' && userAgeTier(b) == 'adult';
+    }
+    function dmCreateOk() {
+      return incoming().fromId == request.auth.uid
+        && incoming().toId is string
+        && incoming().toId != request.auth.uid
+        && callerAgeTier() == 'adult'
+        && bothAdults(incoming().fromId, incoming().toId)
+        && (
+          isStaffRole(userRoleOf(incoming().fromId))
+          || isStaffRole(userRoleOf(incoming().toId))
+          || userRoleOf(incoming().fromId) == 'parent'
+          || userRoleOf(incoming().toId) == 'parent'
+          || (adultOptIn(incoming().fromId) && adultOptIn(incoming().toId))
+        );
+    }
+    function spaceDoc(spaceId) {
+      return get(/databases/$(database)/documents/spaces/$(spaceId)).data;
+    }
+    function onSpaceRoster(data) {
+      return data.get('memberIds', []).hasAny([request.auth.uid])
+        || data.get('staffIds', []).hasAny([request.auth.uid]);
+    }
+    function canSeeSpaceData(data) {
+      return (
+        data.kind == 'class'
+        && data.get('staffIds', []).hasAny([request.auth.uid])
+        && isTeacherOrAdmin()
+      ) || (
+        role() != 'parent'
+        && data.ageTier == callerAgeTier()
+        && (
+          (
+            callerAgeTier() == 'under13'
+            && data.kind in ['class', 'school']
+            && onSpaceRoster(data)
+          ) || (
+            callerAgeTier() == 'teen'
+            && (
+              (data.kind in ['class', 'school'] && onSpaceRoster(data))
+              || (data.kind == 'year' && data.get('year', '') != '' && data.year == callerYear())
+              || (data.kind == 'subject' && data.get('subject', '') != '' && callerSubjects().hasAny([data.subject]))
+            )
+          ) || (
+            callerAgeTier() == 'adult'
+            && (
+              data.get('visibility', 'members') == 'tier'
+              || onSpaceRoster(data)
+            )
+          )
+        )
+      );
+    }
+    function canReadChannelData(data) {
+      return (
+        data.kind == 'class'
+        && data.get('staffIds', []).hasAny([request.auth.uid])
+        && isTeacherOrAdmin()
+      ) || (
+        data.ageTier == callerAgeTier()
+        && (
+          data.get('memberIds', []).hasAny([request.auth.uid])
+          || data.get('staffIds', []).hasAny([request.auth.uid])
+        )
+      );
     }
 
     function myChildIds() {
@@ -76,7 +173,8 @@ service cloud.firestore {
         && !incoming().keys().hasAny([
           'accessTier', 'subscriptionTier', 'permissions', 'institutionId',
           'adminSparksGrantedAt', 'accountStatus', 'sparksMonthlyAllowance',
-          'sparksGrantedAt', 'sparksWelcomeGrantedAt', 'childIds', 'stripeCustomerId'
+          'sparksGrantedAt', 'sparksWelcomeGrantedAt', 'childIds', 'stripeCustomerId',
+          'ageTier', 'dateOfBirth'
         ]);
     }
 
@@ -112,11 +210,16 @@ service cloud.firestore {
 
     // Leaderboards and messaging labels. XP is written only by the server.
     match /public_profiles/{userId} {
-      allow read: if isSignedIn();
-      allow create: if isUser(userId) && incoming().get('xp', 0) == 0;
+      allow read: if isSignedIn() && (
+        resource.data.get('ageTier', '') == ''
+        || resource.data.get('ageTier', '') == callerAgeTier()
+      );
+      allow create: if isUser(userId)
+        && incoming().get('xp', 0) == 0
+        && incoming().get('ageTier', '') == '';
       allow update: if isAdmin()
         || (isUser(userId)
-            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['xp']));
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['xp', 'ageTier']));
       allow delete: if isAdmin();
     }
 
@@ -230,14 +333,20 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Adult-only direct messages. Minors never read or write this collection.
     match /messages/{messageId} {
       allow read: if isSignedIn() && (
         resource.data.fromId == request.auth.uid ||
         resource.data.toId == request.auth.uid
-      );
-      allow create: if isSignedIn() && incoming().fromId == request.auth.uid;
+      ) && callerAgeTier() == 'adult'
+        && userAgeTier(resource.data.fromId) == 'adult'
+        && userAgeTier(resource.data.toId) == 'adult';
+      allow create: if isSignedIn() && dmCreateOk();
       allow update: if isSignedIn()
         && resource.data.toId == request.auth.uid
+        && callerAgeTier() == 'adult'
+        && userAgeTier(resource.data.fromId) == 'adult'
+        && userAgeTier(resource.data.toId) == 'adult'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
       allow delete: if isAdmin();
     }
@@ -516,6 +625,203 @@ service cloud.firestore {
       allow read, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn() && incoming().userId == request.auth.uid;
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Push tokens for the notification sender. Owner writes, sender reads via Admin SDK.
+    match /users/{userId}/deviceTokens/{tokenId} {
+      allow read: if isUser(userId) || isAdmin();
+      allow create, update: if isUser(userId)
+        && incoming().token is string
+        && incoming().token.size() > 0
+        && incoming().token.size() < 4096
+        && incoming().platform in ['ios', 'android', 'web'];
+      allow delete: if isUser(userId) || isAdmin();
+    }
+
+    match /community_profiles/{userId} {
+      allow read: if isSignedIn() && resource.data.ageTier == callerAgeTier();
+      allow create: if isUser(userId)
+        && incoming().ageTier == callerAgeTier()
+        && incoming().ageTier in ['under13', 'teen', 'adult'];
+      allow update: if isUser(userId)
+        && request.resource.data.ageTier == resource.data.ageTier
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['displayName', 'bio', 'isPublic', 'adultDmOptIn', 'updatedAt']);
+      allow delete: if isAdmin();
+    }
+
+    match /spaces/{spaceId} {
+      allow read: if isSignedIn() && canSeeSpaceData(resource.data);
+      allow create, update, delete: if false;
+    }
+
+    match /posts/{postId} {
+      allow read: if isSignedIn() && (
+        resource.data.authorId == request.auth.uid
+        || (resource.data.moderation == 'allow' && canSeeSpaceData(spaceDoc(resource.data.spaceId)))
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /comments/{commentId} {
+      allow read: if isSignedIn() && (
+        resource.data.authorId == request.auth.uid
+        || (resource.data.moderation == 'allow' && canSeeSpaceData(spaceDoc(resource.data.spaceId)))
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /reactions/{reactionId} {
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid
+        || canSeeSpaceData(spaceDoc(get(/databases/$(database)/documents/posts/$(resource.data.postId)).data.spaceId))
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /follows/{followId} {
+      allow read: if isSignedIn()
+        && role() != 'parent'
+        && (resource.data.followerId == request.auth.uid || resource.data.targetId == request.auth.uid)
+        && resource.data.followerAgeTier == resource.data.targetAgeTier
+        && resource.data.followerAgeTier == callerAgeTier();
+      allow create: if isSignedIn()
+        && role() != 'parent'
+        && incoming().followerId == request.auth.uid
+        && incoming().followerAgeTier == callerAgeTier()
+        && incoming().targetAgeTier == userAgeTier(incoming().targetId)
+        && incoming().followerAgeTier == incoming().targetAgeTier
+        && incoming().targetId != request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.followerId == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /reports/{reportId} {
+      allow read: if isSignedIn() && (resource.data.reporterId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn()
+        && incoming().reporterId == request.auth.uid
+        && incoming().reporterAgeTier == callerAgeTier()
+        && incoming().status == 'open';
+      allow update, delete: if isAdmin();
+    }
+
+    match /moderation_queue/{itemId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /parent_controls/{studentId} {
+      allow read: if isUser(studentId) || linkedTo(studentId) || isAdmin();
+      allow create, update: if linkedTo(studentId)
+        && incoming().studentId == studentId
+        && incoming().communityEnabled is bool
+        && incoming().messagingEnabled is bool
+        && incoming().snapEnabled is bool;
+      allow delete: if isAdmin();
+    }
+
+    match /channels/{channelId} {
+      allow read: if isSignedIn() && canReadChannelData(resource.data);
+      allow create, update, delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if isSignedIn()
+          && canReadChannelData(get(/databases/$(database)/documents/channels/$(channelId)).data);
+        allow create, update, delete: if false;
+      }
+    }
+
+    match /tutor_profiles/{userId} {
+      allow read: if isSignedIn()
+        && resource.data.ageTier == 'adult'
+        && resource.data.verificationStatus == 'verified';
+      allow create: if isUser(userId)
+        && callerAgeTier() == 'adult'
+        && incoming().ageTier == 'adult'
+        && incoming().verificationStatus == 'pending';
+      allow update: if isUser(userId)
+        && resource.data.ageTier == 'adult'
+        && request.resource.data.ageTier == 'adult'
+        && request.resource.data.verificationStatus == resource.data.verificationStatus
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['bio', 'subjects', 'hourlyCents', 'currency', 'updatedAt']);
+      allow delete: if isAdmin();
+    }
+
+    match /tutor_bookings/{bookingId} {
+      allow read: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid
+        || resource.data.tutorId == request.auth.uid
+        || isAdmin()
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /tutor_reviews/{reviewId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if false;
+    }
+
+    match /exam_papers/{paperId} {
+      allow read: if isSignedIn()
+        && resource.data.status == 'published'
+        && resource.data.license in ['licensed', 'teacher_upload'];
+      allow create: if isTeacherOrAdmin()
+        && incoming().license == 'teacher_upload'
+        && incoming().uploadedBy == request.auth.uid
+        && incoming().status == 'draft';
+      allow update: if isAdmin()
+        || (isTeacherOrAdmin()
+            && resource.data.uploadedBy == request.auth.uid
+            && resource.data.license == 'teacher_upload'
+            && request.resource.data.license == 'teacher_upload');
+      allow delete: if isAdmin();
+    }
+
+    match /mock_attempts/{attemptId} {
+      allow read: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid
+        || isAdmin()
+        || linkedTo(resource.data.studentId)
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /guidance_profiles/{userId} {
+      allow read: if isUser(userId) || isAdmin() || linkedTo(userId);
+      allow create, update, delete: if false;
+    }
+
+    match /creator_resources/{resourceId} {
+      allow read: if isSignedIn() && (
+        resource.data.status == 'approved'
+        || resource.data.authorId == request.auth.uid
+        || isAdmin()
+      );
+      allow create: if isTeacherOrAdmin()
+        && incoming().authorId == request.auth.uid
+        && incoming().status == 'draft'
+        && incoming().kind in ['note', 'worksheet', 'template'];
+      allow update: if isAdmin()
+        || (resource.data.authorId == request.auth.uid
+            && resource.data.status in ['draft', 'pending', 'rejected']
+            && request.resource.data.status in ['draft', 'pending']
+            && request.resource.data.authorId == resource.data.authorId);
+      allow delete: if isAdmin() || resource.data.authorId == request.auth.uid;
+    }
+
+    match /snap_sessions/{sessionId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create, update, delete: if false;
+    }
+
+    match /lesson_questions/{questionId} {
+      allow read: if isSignedIn() && (
+        resource.data.authorId == request.auth.uid
+        || isAdmin()
+        || linkedTo(resource.data.authorId)
+      );
+      allow create, update, delete: if false;
     }
   }
 }

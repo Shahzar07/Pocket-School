@@ -49,6 +49,9 @@ export interface UserProfile {
   /** Account lifecycle. Absent means active — existing accounts predate this
    * field and must not be treated as suspended. */
   accountStatus?: 'active' | 'suspended' | 'pending' | 'inactive';
+  /** Server-set from dateOfBirth. Clients cannot write it. */
+  ageTier?: 'under13' | 'teen' | 'adult';
+  dateOfBirth?: string;
   lastActiveAt?: Timestamp;
   sparksBalance?: number;
   sparksMonthlyAllowance?: number;

@@ -11,7 +11,7 @@ import {
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X, Bell,
-  Sparkles, Store, Layers, LogOut, Mail, UserCog,
+  Sparkles, Store, Layers, LogOut, Mail, UserCog, Compass, Camera, MessagesSquare,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,8 @@ import { homeForRole } from '@/lib/roles';
 import { PipGuide } from '@/components/pip-guide';
 import type { TourRole } from '@/lib/tour-steps';
 import { ROLE_LABELS } from '@/lib/roles';
+import { isFeatureEnabled, type FeatureFlag } from '@/lib/feature-flags';
+import { useFeatureFlags } from '@/hooks/use-feature-flags';
 import Link from 'next/link';
 
 type Role = 'student' | 'teacher' | 'parent' | 'admin';
@@ -37,7 +39,7 @@ const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string }> = {
   admin:   { icon: 'text-violet-400', bar: 'bg-violet-400', chip: 'from-violet-500 to-fuchsia-600' },
 };
 
-interface NavEntry { href: string; icon: React.ElementType; label: string }
+interface NavEntry { href: string; icon: React.ElementType; label: string; flag?: FeatureFlag }
 interface NavGroup { section?: string; items: NavEntry[] }
 
 const NAV: Record<Role, NavGroup[]> = {
@@ -64,6 +66,14 @@ const NAV: Record<Role, NavGroup[]> = {
     ]},
     { section: 'Finance', items: [
       { href: '/dashboard/student/billing', icon: CreditCard, label: 'Billing' },
+    ]},
+    { section: 'Community', items: [
+      { href: '/dashboard/community', icon: Compass, label: 'Community', flag: 'community' },
+      { href: '/dashboard/channels', icon: MessagesSquare, label: 'Channels', flag: 'messagingHub' },
+      { href: '/dashboard/tutors', icon: Users, label: 'Tutors', flag: 'tutorMarketplace' },
+      { href: '/dashboard/exam-centre', icon: PenSquare, label: 'Exam centre', flag: 'examCentre' },
+      { href: '/dashboard/store', icon: Library, label: 'Creator store', flag: 'creatorStore' },
+      { href: '/dashboard/snap', icon: Camera, label: 'Snap & solve', flag: 'snapAndSolve' },
     ]},
     { section: 'School', items: [
       { href: '/dashboard/announcements', icon: Megaphone, label: 'Announcements' },
@@ -98,6 +108,13 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher/behaviour', icon: Star, label: 'Behaviour' },
     ]},
     // Billing and Helpdesk are institution-admin responsibilities, not teachers'.
+    { section: 'Community', items: [
+      { href: '/dashboard/community', icon: Compass, label: 'Community', flag: 'community' },
+      { href: '/dashboard/channels', icon: MessagesSquare, label: 'Channels', flag: 'messagingHub' },
+      { href: '/dashboard/tutors', icon: Users, label: 'Tutors', flag: 'tutorMarketplace' },
+      { href: '/dashboard/exam-centre', icon: PenSquare, label: 'Exam centre', flag: 'examCentre' },
+      { href: '/dashboard/store', icon: Library, label: 'Creator store', flag: 'creatorStore' },
+    ]},
     { section: 'School', items: [
       { href: '/dashboard/announcements', icon: Megaphone, label: 'Announcements' },
       { href: '/dashboard/calendar', icon: Calendar, label: 'Calendar' },
@@ -116,6 +133,10 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/parent/duedates', icon: Clock, label: 'Due Dates' },
       { href: '/dashboard/parent/billing', icon: CreditCard, label: 'Billing' },
       { href: '/dashboard/parent/notifications', icon: Bell, label: 'Notifications' },
+    ]},
+    { section: 'Family', items: [
+      { href: '/dashboard/channels', icon: MessagesSquare, label: 'Channels', flag: 'messagingHub' },
+      { href: '/dashboard/parent/controls', icon: Shield, label: 'Controls', flag: 'community' },
     ]},
     { section: 'School', items: [
       { href: '/dashboard/announcements', icon: Megaphone, label: 'Announcements' },
@@ -140,6 +161,10 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
       { href: '/dashboard/admin/settings', icon: Settings, label: 'System Settings' },
       { href: '/dashboard/admin/verifications', icon: ShieldCheck, label: 'Verifications' },
+      { href: '/dashboard/admin/moderation', icon: Shield, label: 'Moderation', flag: 'community' },
+      { href: '/dashboard/community', icon: Compass, label: 'Community', flag: 'community' },
+      { href: '/dashboard/tutors', icon: Users, label: 'Tutors', flag: 'tutorMarketplace' },
+      { href: '/dashboard/store', icon: Library, label: 'Creator store', flag: 'creatorStore' },
     ]},
     { section: 'Platform', items: [
       { href: '/dashboard/announcements', icon: Megaphone, label: 'Announcements' },
@@ -192,6 +217,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [newDevice, setNewDevice] = useState(false);
+  const flags = useFeatureFlags();
 
   const handleNavClick = () => {
     if (window.innerWidth < 1024) setSidebarOpen(false);
@@ -266,7 +292,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const role = (profile.role === 'institution_admin' ? 'admin' : profile.role ?? 'student') as Role;
-  const nav = NAV[role] ?? NAV.student;
+  const nav = (NAV[role] ?? NAV.student)
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !item.flag || isFeatureEnabled(flags, item.flag)),
+    }))
+    .filter((group) => group.items.length > 0);
   const accent = ROLE_ACCENT[role];
 
   return (
