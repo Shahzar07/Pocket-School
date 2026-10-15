@@ -3,10 +3,14 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { getPlatformStats, getInstitutions, seedDemoData, Institution } from '@/lib/db';
+import {
+  getPlatformStats, getInstitutions, seedDemoData, getAllUsers, getSupportTickets,
+  getCourseRollup, getPlatformHealth, accountStatusOf, Institution,
+} from '@/lib/db';
+import { can, platformKpis, resolveStaffRole, systemHealth } from '@/lib/admin-console';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Building2, Users, BookOpen, Sparkles, CheckCircle2, BarChart3, ArrowRight, Layers, Shield } from 'lucide-react';
+import { Building2, Users, BookOpen, Sparkles, CheckCircle2, BarChart3, ArrowRight, Layers, Shield, LifeBuoy, Activity } from 'lucide-react';
 import Link from 'next/link';
 import {
   DashPage, DashHeader, Panel, PanelHeader, StatCard, ListRow, Initials, EmptyState,
@@ -17,19 +21,50 @@ const fadeUp: Record<string, any> = {
   visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1], delay: i * 0.08 } }),
 };
 
+const tsMillis = (value: unknown): number => {
+  const stamp = value as { toMillis?: () => number } | number | undefined;
+  if (typeof stamp === 'number') return stamp;
+  try { return typeof stamp?.toMillis === 'function' ? stamp.toMillis() : 0; } catch { return 0; }
+};
+
 export default function AdminDashboard() {
-  const { user } = useAuthSTORE();
+  const { user, profile } = useAuthSTORE();
   const [stats, setStats] = useState({ students: 0, teachers: 0, courses: 0 });
   const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [kpis, setKpis] = useState({ signups30: 0, active7: 0, sparksIssued: 0, sparksSpent: 0, revenue: 0, completions: 0, openTickets: 0 });
+  const [health, setHealth] = useState({ firestore: 'ok' as 'ok' | 'attention', generation: 'ok' as 'ok' | 'attention', quotaErrors: 0, generationFailures: 0 });
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
   const [seeded, setSeeded] = useState(false);
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([getPlatformStats(), getInstitutions()]).then(([s, inst]) => {
+    Promise.all([
+      getPlatformStats(),
+      getInstitutions(),
+      getAllUsers().catch(() => []),
+      getSupportTickets(user.uid, 'admin').catch(() => []),
+      getCourseRollup().catch(() => ({ completions: 0, revenue: 0 })),
+      getPlatformHealth().catch(() => ({ quotaErrors: 0, generationFailures: 0, sparksSpent: 0 })),
+    ]).then(([s, inst, people, tickets, rollup, signal]) => {
       setStats(s);
       setInstitutions(inst);
+      const circulation = people.reduce((sum, row) => sum + (row.data.sparksBalance ?? 0), 0);
+      setKpis(platformKpis({
+        users: people.map(row => ({
+          createdAt: tsMillis(row.data.createdAt),
+          lastActiveAt: tsMillis(row.data.lastActiveAt),
+          status: accountStatusOf(row.data),
+        })),
+        sparksIssued: circulation + signal.sparksSpent,
+        sparksSpent: signal.sparksSpent,
+        revenue: rollup.revenue,
+        completions: rollup.completions,
+        openTickets: tickets.filter(ticket => ticket.status === 'open' || ticket.status === 'in_progress').length,
+        now: Date.now(),
+      }));
+      const pulse = systemHealth(signal);
+      setHealth({ ...pulse, quotaErrors: signal.quotaErrors, generationFailures: signal.generationFailures });
       setLoading(false);
     });
   }, [user]);
@@ -109,6 +144,35 @@ export default function AdminDashboard() {
         />
       </div>
 
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          ['Signups, 30 days', kpis.signups30.toLocaleString()],
+          ['Active, 7 days', kpis.active7.toLocaleString()],
+          ['Revenue recorded', `$${kpis.revenue.toLocaleString()}`],
+          ['Sparks in circulation', (kpis.sparksIssued - kpis.sparksSpent).toLocaleString()],
+          ['Sparks spent', kpis.sparksSpent.toLocaleString()],
+          ['Course completions', kpis.completions.toLocaleString()],
+          ['Open tickets', kpis.openTickets.toLocaleString()],
+          ['Sparks issued', kpis.sparksIssued.toLocaleString()],
+        ].map(([label, value]) => (
+          <div key={label} className="bg-card border border-border rounded-2xl p-4">
+            <p className="text-xl font-bold tabular-nums">{value}</p>
+            <p className="text-xs text-muted-foreground mt-1">{label}</p>
+          </div>
+        ))}
+      </div>
+
+      <Panel>
+        <PanelHeader title="System health" meta={<Activity className="w-4 h-4 text-muted-foreground" />} />
+        <div className="grid sm:grid-cols-2 gap-3 text-sm">
+          <p>Firestore quota and errors: <strong className="capitalize">{health.firestore}</strong> ({health.quotaErrors})</p>
+          <p>AI generation failures: <strong className="capitalize">{health.generation}</strong> ({health.generationFailures})</p>
+        </div>
+        <p className="text-xs text-muted-foreground mt-3">
+          Revenue is the sum of course revenue totals. Sparks spent stays at zero until `platform_signals/health.sparksSpent` is recorded. Sparks issued adds that figure to the balances in circulation.
+        </p>
+      </Panel>
+
       {/* ── Institutions + shortcuts ── */}
       <div className="grid lg:grid-cols-[1.6fr_1fr] gap-4 items-start">
         <Panel>
@@ -162,11 +226,13 @@ export default function AdminDashboard() {
           <PanelHeader title="Jump to" />
           <div className="space-y-2">
             {[
-              { href: '/dashboard/admin/curriculum', icon: Layers, title: 'Curriculum CMS', sub: 'Programmes, subjects and lessons' },
-              { href: '/dashboard/admin/courses', icon: BookOpen, title: 'All courses', sub: 'Approve, publish and seed' },
-              { href: '/dashboard/admin/users', icon: Users, title: 'Users & Sparks', sub: 'Accounts, status and grants' },
-              { href: '/dashboard/admin/allocations', icon: Shield, title: 'Access & coupons', sub: 'Tiers, allocations, codes' },
-              { href: '/dashboard/admin/settings', icon: BarChart3, title: 'System settings', sub: 'Platform configuration' },
+              { href: '/dashboard/admin/curriculum', icon: Layers, title: 'CMS', sub: 'Programmes, subjects and lessons' },
+              { href: '/dashboard/admin/settings', icon: BarChart3, title: 'Pricing', sub: 'Plans, add-ons and currency' },
+              { href: '/dashboard/admin/allocations', icon: Shield, title: 'Allocation', sub: 'Tiers, access and codes' },
+              { href: '/dashboard/admin/institutions', icon: Building2, title: 'Institutions', sub: 'Schools and OEM' },
+              { href: '/dashboard/helpdesk', icon: LifeBuoy, title: 'Helpdesk', sub: 'Support tickets' },
+              { href: '/dashboard/admin/users', icon: Users, title: 'Users & Sparks', sub: 'Accounts, roles and grants' },
+              ...(can(resolveStaffRole(profile), 'audit') ? [{ href: '/dashboard/admin/audit', icon: Shield, title: 'Audit', sub: 'Admin actions' }] : []),
             ].map(x => (
               <ListRow
                 key={x.href}

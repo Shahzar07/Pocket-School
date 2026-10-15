@@ -12,7 +12,10 @@ import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 import { linkChildToParent, createParentVerification, enrollInProgrammeModules, awardSparks, getUser, updateUser, UserProfile } from '@/lib/db';
+import { NEUTRAL_LINK } from '@/lib/parent-controls';
+import { landingPath, readActiveMode } from '@/lib/account-modes';
 import { SIGNUP_GRANT } from '@/lib/sparks';
+import { LanguageSwitcher } from '@/components/language-switcher';
 import { Timestamp } from 'firebase/firestore';
 
 const YEAR_GROUPS = ['Year 7', 'Year 8', 'Year 9'] as const;
@@ -38,7 +41,7 @@ export default function OnboardingPage() {
   const isStudent = profile.role === 'student';
 
   if (!isStudent && !isParent) {
-    if (typeof window !== 'undefined') router.push(`/dashboard/${profile.role}`);
+    if (typeof window !== 'undefined') router.push(landingPath(profile, readActiveMode()));
     return null;
   }
 
@@ -82,28 +85,26 @@ export default function OnboardingPage() {
     if (!childEmail.trim()) { toast.error("Enter your child's email address"); return; }
     setLinkLoading(true);
     try {
-      const result = await linkChildToParent(user.uid, childEmail.trim().toLowerCase());
-      if (result.success) {
-        // Also create a verification request for admin approval
-        try {
-          await createParentVerification({
-            parentId: user.uid,
-            parentName: profile.name ?? 'Parent',
-            parentEmail: user.email ?? '',
-            studentEmail: childEmail.trim().toLowerCase(),
-            studentId: studentIdField.trim(),
-            status: 'pending',
-            createdAt: Timestamp.now(),
-          });
-          toast.success(`Linked to ${result.childName}'s account! Verification request sent.`);
-          setChildEmail('');
-          setStudentIdField('');
-        } catch {
-          toast.error('Verification request could not be submitted — please try again');
-        }
-      } else {
-        toast.error(result.error || 'Could not link account');
+      const result = await linkChildToParent(user.uid, childEmail.trim().toLowerCase(), {
+        name: profile.name,
+        email: user.email ?? '',
+      });
+      try {
+        await createParentVerification({
+          parentId: user.uid,
+          parentName: profile.name ?? 'Parent',
+          parentEmail: user.email ?? '',
+          studentEmail: childEmail.trim().toLowerCase(),
+          studentId: studentIdField.trim(),
+          status: 'pending',
+          createdAt: Timestamp.now(),
+        });
+      } catch {
+        /* Admin review is extra. The child still approves the link. */
       }
+      toast.success(result.message || NEUTRAL_LINK);
+      setChildEmail('');
+      setStudentIdField('');
     } catch {
       toast.error('Could not link account — please try again');
     } finally {
@@ -119,7 +120,8 @@ export default function OnboardingPage() {
   // ── Parent onboarding ──────────────────────────────────────
   if (isParent) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      <div className="relative min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <div className="absolute top-4 end-4 z-20"><LanguageSwitcher /></div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -130,7 +132,7 @@ export default function OnboardingPage() {
               <Users className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Welcome, {profile.name}!</h1>
-            <p className="text-muted-foreground mt-2 text-base">Link your child's Poket School account to monitor their progress.</p>
+            <p className="text-muted-foreground mt-2 text-base">Ask your child to approve a link, or share an invite code from settings.</p>
           </div>
 
           <div className="bg-card border border-border rounded-2xl p-6 space-y-4 mb-4">
@@ -155,10 +157,10 @@ export default function OnboardingPage() {
                 onKeyDown={e => e.key === 'Enter' && handleLinkChild()}
               />
               <Button onClick={handleLinkChild} disabled={linkLoading} className="rounded-xl h-11 px-5">
-                {linkLoading ? '…' : 'Link'}
+                {linkLoading ? '…' : 'Ask them to approve'}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">Your child must already have a student account. You can link multiple children. A verification request will be sent to the admin.</p>
+            <p className="text-xs text-muted-foreground">{NEUTRAL_LINK}</p>
           </div>
 
           <div className="flex gap-3">
@@ -183,7 +185,8 @@ export default function OnboardingPage() {
 
   // ── Student onboarding ─────────────────────────────────────
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+    <div className="relative min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      <div className="absolute top-4 end-4 z-20"><LanguageSwitcher /></div>
       <div className="w-full max-w-3xl">
         {/* Progress */}
         <div className="flex items-center justify-center gap-2 mb-10">

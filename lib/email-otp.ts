@@ -9,11 +9,12 @@ export const CODE_TTL_MS = 10 * 60 * 1000; // codes valid for 10 minutes
 export const RESEND_COOLDOWN_MS = 30 * 1000;
 
 export function getOtpSecret(): string {
-  return process.env.OTP_SECRET || process.env.SMTP_PASS || '';
+  return process.env.OTP_SECRET || '';
 }
 
+/** SMTP and a dedicated OTP secret. SMTP_PASS is not a substitute for OTP_SECRET. */
 export function isEmailServiceConfigured(): boolean {
-  return !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS && getOtpSecret());
+  return !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS && process.env.OTP_SECRET);
 }
 
 export function generateCode(): string {

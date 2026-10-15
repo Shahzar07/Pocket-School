@@ -3,7 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion, type Variants } from 'motion/react';
+import { toast } from 'sonner';
 import { ADDONS, TIERS } from '@/lib/entitlements';
+import { SIGNUP_GRANT } from '@/lib/sparks';
+import { discountLabel, formatMoney, planById, quoteAddon, quotePlan, type BillingInterval } from '@/lib/pricing';
+import { usePricing } from '@/hooks/use-pricing';
+import { CurrencySwitcher } from '@/components/currency-switcher';
 import {
   ArrowRight,
   Check,
@@ -36,40 +41,26 @@ const fadeUp: Variants = {
 
 /* ─── Data ──────────────────────────────────────────────────── */
 
-type Billing = 'monthly' | 'annual';
+type Billing = BillingInterval;
 
-interface Plan {
+interface PlanCopy {
   id: string;
   name: string;
   tagline: string;
-  monthly: number;
-  annual: number;
-  /** International monthly rate in USD. */
-  usdMonthly: number;
-  /** Access tier from lib/entitlements.ts. */
   tier: number;
   popular?: boolean;
   cta: string;
   features: string[];
-  sparks: string;
 }
 
-/**
- * The four plans from the Access Tiers brief (August 2026). Prices are the
- * Malaysian ringgit rates; `usd` carries the international rate shown on the
- * currency toggle. Tier numbers map to lib/entitlements.ts.
- */
-const PLANS: Plan[] = [
+/** Marketing copy for the sold plans. Amounts come from the pricing document. */
+const PLANS: PlanCopy[] = [
   {
-    id: 'free',
+    id: 'preview',
     name: 'Free Preview',
     tier: 0,
     tagline: 'Browse everything, and take the first lesson of any course. No card, no countdown.',
-    monthly: 0,
-    annual: 0,
-    usdMonthly: 0,
     cta: 'Start free',
-    sparks: '50 welcome Sparks',
     features: [
       'Full course catalogue',
       'First lesson of every course',
@@ -83,17 +74,12 @@ const PLANS: Plan[] = [
     name: 'Primary & Lower Secondary',
     tier: 1,
     tagline: 'Years 1–9. Every core subject, built to the curriculum.',
-    monthly: 49,
-    annual: 441,
-    usdMonthly: 19,
     cta: 'Choose this plan',
-    sparks: '300 Sparks a month · 100 roll over',
     features: [
       'Primary Years 1–6, all subjects',
       'Lower Secondary Years 7–9',
       'Unlimited ET study materials',
       'Progress tracking and streaks',
-      '300 Sparks a month',
     ],
   },
   {
@@ -101,12 +87,8 @@ const PLANS: Plan[] = [
     name: 'IGCSE & A-Level',
     tier: 2,
     tagline: 'Years 10–13. The exam years, with everything below included.',
-    monthly: 352,
-    annual: 3168,
-    usdMonthly: 79,
     popular: true,
     cta: 'Choose this plan',
-    sparks: '800 Sparks a month · 300 roll over',
     features: [
       'IGCSE / GCSE — Cambridge & Edexcel',
       'A-Level and AS-Level',
@@ -116,7 +98,6 @@ const PLANS: Plan[] = [
       "Bloom's progress tracking",
       'Parent dashboard',
       'Completion certificates',
-      '800 Sparks a month',
     ],
   },
   {
@@ -124,11 +105,7 @@ const PLANS: Plan[] = [
     name: 'Professional & Degrees',
     tier: 3,
     tagline: 'Micro degrees, professional certifications and the UoL External LLB.',
-    monthly: 441,
-    annual: 3969,
-    usdMonthly: 99,
     cta: 'Choose this plan',
-    sparks: '2,000 Sparks a month · 700 roll over',
     features: [
       'Micro Degrees and Diplomas',
       'Professional Certifications',
@@ -136,7 +113,6 @@ const PLANS: Plan[] = [
       'Amara, the law specialist AI teacher',
       'IRAC coaching and case law analysis',
       'Everything in IGCSE & A-Level',
-      '2,000 Sparks a month',
     ],
   },
 ];
@@ -182,9 +158,36 @@ const FAQS = [
 
 export default function PricingPage() {
   const [billing, setBilling] = useState<Billing>('monthly');
+  const [checkingOut, setCheckingOut] = useState<string | null>(null);
+  const { config, currency, ready } = usePricing();
+
+  const checkout = async (kind: 'plan' | 'addon', id: string) => {
+    setCheckingOut(`${kind}:${id}`);
+    try {
+      const res = await fetch('/api/stripe/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind, id, interval: billing, currency }),
+      });
+      const data = await res.json() as { url?: string; error?: string };
+      if (!res.ok || !data.url) {
+        toast.error(data.error ?? 'Checkout is unavailable.');
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      toast.error('Checkout is unavailable.');
+    } finally {
+      setCheckingOut(null);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-white text-foreground overflow-x-hidden">
+    <div
+      className="min-h-screen bg-white text-foreground overflow-x-hidden"
+      data-pricing-ready={ready ? '1' : '0'}
+      data-display-currency={currency}
+    >
       {/* ── Hero ───────────────────────────────────────────────── */}
       <section className="relative pt-24 lg:pt-32 pb-14 bg-gradient-to-b from-[#E9F7FA] via-[#F5F1FF] to-white overflow-hidden">
         <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-[#2786A4]/10 blur-3xl" aria-hidden />
@@ -214,6 +217,7 @@ export default function PricingPage() {
             custom={1}
             className="mt-10 flex flex-col items-center gap-3"
           >
+            <CurrencySwitcher />
             <div
               role="group"
               aria-label="Billing period"
@@ -245,7 +249,7 @@ export default function PricingPage() {
             </div>
             <p className="text-xs font-semibold text-[#2786A4] inline-flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-[#E2AF4D]" />
-              Pay annually and save 25% — three months free
+              Pay annually and save {discountLabel(config)}
             </p>
           </motion.div>
         </div>
@@ -255,14 +259,29 @@ export default function PricingPage() {
       <section className="bg-white pb-20 lg:pb-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-5 items-start">
-            {PLANS.map((plan, i) => (
-              <PlanCard key={plan.id} plan={plan} billing={billing} index={i} />
-            ))}
+            {PLANS.map((plan, i) => {
+              const monthlyQuote = quotePlan(config, plan.id, 'monthly', currency);
+              const annualQuote = quotePlan(config, plan.id, 'annual', currency);
+              return (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                billing={billing}
+                index={i}
+                currency={monthlyQuote?.currency ?? currency}
+                monthly={monthlyQuote?.amount ?? 0}
+                annual={annualQuote?.amount ?? 0}
+                sparks={planById(config, plan.id)?.sparks ?? 0}
+                rollover={TIERS.find(tier => tier.id === plan.id)?.sparksRollover ?? 0}
+                checkingOut={checkingOut === `plan:${plan.id}`}
+                onCheckout={() => checkout('plan', plan.id)}
+              />
+              );
+            })}
           </div>
 
           <p className="mt-8 text-center text-xs text-slate-500">
-            All prices in Malaysian Ringgit (RM), inclusive of applicable taxes. Cancel anytime.
-            International pricing is billed in USD — {PLANS.filter(p => p.usdMonthly > 0).map(p => `${p.name} $${p.usdMonthly}/mo`).join(' · ')}.
+            Prices shown in {currency}, inclusive of applicable taxes. Cancel anytime.
             Regional pricing is available for Nigeria, Pakistan, Bangladesh and Ghana — contact us.
           </p>
         </div>
@@ -281,7 +300,10 @@ export default function PricingPage() {
             </p>
           </div>
 
-          {ADDONS.map(a => (
+          {ADDONS.map(a => {
+            const quoted = quoteAddon(config, a.id, currency);
+            const addonQuoteAmount = quoted ? formatMoney(quoted.amount, quoted.currency) : formatMoney(0, currency);
+            return (
             <div
               key={a.id}
               className="rounded-2xl border-2 border-slate-200 bg-white p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center gap-6 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.4)]"
@@ -298,18 +320,20 @@ export default function PricingPage() {
               </div>
               <div className="text-center sm:text-right shrink-0">
                 <p className="text-2xl font-extrabold text-slate-900">
-                  RM{a.myrMonthly}<span className="text-sm font-medium text-slate-500">/mo</span>
+                  {addonQuoteAmount}<span className="text-sm font-medium text-slate-500">/mo</span>
                 </p>
-                <p className="text-[11px] text-slate-500">or ${a.usdMonthly}/mo</p>
-                <a
-                  href="mailto:hello@poketschool.ai?subject=Lyra%20Live%20add-on"
-                  className="mt-3 inline-flex items-center justify-center h-10 px-5 rounded-full bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 transition-colors"
+                <button
+                  type="button"
+                  onClick={() => checkout('addon', a.id)}
+                  disabled={checkingOut === `addon:${a.id}`}
+                  className="mt-3 inline-flex items-center justify-center h-10 px-5 rounded-full bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 transition-colors disabled:opacity-60"
                 >
-                  Request access
-                </a>
+                  {checkingOut === `addon:${a.id}` ? 'Starting checkout…' : 'Subscribe'}
+                </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -341,12 +365,15 @@ export default function PricingPage() {
                 before exams? Top-up packs are available from your dashboard at any time.
               </p>
 
-              <div className="grid sm:grid-cols-3 gap-3">
-                {[
-                  { plan: 'Free', amount: '0', note: 'top-ups only' },
-                  { plan: 'Academic', amount: '400', note: 'per month' },
-                  { plan: 'Professional', amount: '1,200', note: 'per month' },
-                ].map((s) => (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {PLANS.map(plan => {
+                  const sparks = planById(config, plan.id)?.sparks ?? 0;
+                  return {
+                    plan: plan.name,
+                    amount: sparks.toLocaleString('en'),
+                    note: sparks > 0 ? 'per month' : 'top-ups only',
+                  };
+                }).map((s) => (
                   <div
                     key={s.plan}
                     className="rounded-2xl bg-white border border-slate-200 p-4 text-center shadow-sm"
@@ -514,11 +541,30 @@ export default function PricingPage() {
 
 /* ─── Plan card ─────────────────────────────────────────────── */
 
-function PlanCard({ plan, billing, index }: { plan: Plan; billing: Billing; index: number }) {
-  const isFree = plan.monthly === 0;
-  const price = billing === 'monthly' ? plan.monthly : plan.annual;
+function PlanCard({
+  plan, billing, index, currency, monthly, annual, sparks, rollover, checkingOut, onCheckout,
+}: {
+  plan: PlanCopy;
+  billing: Billing;
+  index: number;
+  currency: string;
+  monthly: number;
+  annual: number;
+  sparks: number;
+  rollover: number;
+  checkingOut: boolean;
+  onCheckout: () => void;
+}) {
+  const isFree = monthly === 0 && annual === 0;
+  const price = billing === 'monthly' ? monthly : annual;
+  const shown = formatMoney(price, currency);
   const suffix = isFree ? 'forever' : billing === 'monthly' ? '/month' : '/year';
-  const saving = plan.monthly * 12 - plan.annual;
+  const annualLabel = formatMoney(annual, currency);
+  const saving = monthly * 12 - annual;
+  const sparksLine = sparks > 0
+    ? `${sparks.toLocaleString('en')} Sparks a month${rollover > 0 ? ` · ${rollover.toLocaleString('en')} roll over` : ''}`
+    : `${SIGNUP_GRANT.toLocaleString('en')} welcome Sparks`;
+  const features = sparks > 0 ? [...plan.features, `${sparks.toLocaleString('en')} Sparks a month`] : plan.features;
 
   return (
     <motion.div
@@ -550,38 +596,52 @@ function PlanCard({ plan, billing, index }: { plan: Plan; billing: Billing; inde
         <p className="text-sm text-slate-600 leading-relaxed min-h-[3.25rem]">{plan.tagline}</p>
 
         <div className="mt-6 flex items-end gap-2">
-          <span className="text-lg font-bold text-slate-500 pb-2">RM</span>
-          <span className="font-heading text-6xl leading-none text-[#203337] tracking-tight tabular-nums">
-            {price}
+          <span
+            data-plan-price={plan.id}
+            className="font-heading text-4xl sm:text-5xl leading-none text-[#203337] tracking-tight tabular-nums"
+          >
+            {shown}
           </span>
           <span className="text-sm font-semibold text-slate-500 pb-2">{suffix}</span>
         </div>
 
         <div className="mt-2 h-5">
-          {!isFree && billing === 'annual' && (
+          {!isFree && billing === 'annual' && saving > 0 && (
             <p className="text-xs font-bold text-emerald-600">
-              Save RM {saving} — two months free
+              Save {formatMoney(saving, currency)}
             </p>
           )}
           {!isFree && billing === 'monthly' && (
             <p className="text-xs text-slate-500">
-              or RM {plan.annual}/year — two months free
+              or {annualLabel}/year
             </p>
           )}
           {isFree && <p className="text-xs text-slate-500">No card required</p>}
         </div>
 
-        <Link
-          href="/signup"
-          className={`mt-6 w-full inline-flex items-center justify-center gap-2 h-12 rounded-full text-sm font-bold transition-all ${
-            plan.popular
-              ? 'bg-[#2786A4] hover:bg-[#1E6A83] text-white shadow-lg shadow-[#2786A4]/30'
-              : 'bg-[#203337] hover:bg-[#132a5e] text-white'
-          }`}
-        >
-          {plan.cta}
-          <ArrowRight className="w-4 h-4" />
-        </Link>
+        {isFree ? (
+          <Link
+            href="/signup"
+            className="mt-6 w-full inline-flex items-center justify-center gap-2 h-12 rounded-full text-sm font-bold transition-all bg-[#203337] hover:bg-[#132a5e] text-white"
+          >
+            {plan.cta}
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={onCheckout}
+            disabled={checkingOut}
+            className={`mt-6 w-full inline-flex items-center justify-center gap-2 h-12 rounded-full text-sm font-bold transition-all disabled:opacity-60 ${
+              plan.popular
+                ? 'bg-[#2786A4] hover:bg-[#1E6A83] text-white shadow-lg shadow-[#2786A4]/30'
+                : 'bg-[#203337] hover:bg-[#132a5e] text-white'
+            }`}
+          >
+            {checkingOut ? 'Starting checkout…' : plan.cta}
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       <div className="px-7 sm:px-8 pb-8 pt-1 flex-1 flex flex-col">
@@ -590,7 +650,7 @@ function PlanCard({ plan, billing, index }: { plan: Plan; billing: Billing; inde
             What&rsquo;s included
           </p>
           <ul className="space-y-3">
-            {plan.features.map((f) => (
+            {features.map((f) => (
               <li key={f} className="flex items-start gap-2.5">
                 <span
                   className={`mt-0.5 w-4 h-4 shrink-0 rounded-full flex items-center justify-center ${
@@ -608,7 +668,7 @@ function PlanCard({ plan, billing, index }: { plan: Plan; billing: Billing; inde
         <div className="mt-auto pt-6">
           <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-md border border-[#E2AF4D]/30 bg-[#FFF8E6] text-[#8A6100]">
             <Zap className="w-3 h-3 fill-current" />
-            {plan.sparks}
+            {sparksLine}
           </span>
         </div>
       </div>

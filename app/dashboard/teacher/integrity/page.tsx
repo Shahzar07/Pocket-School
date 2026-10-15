@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { AlertTriangle, CheckCircle2, Shield, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
+import Link from 'next/link';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -112,6 +113,9 @@ export default function IntegrityPage() {
           Academic <span className="gradient-text italic">Integrity</span>
         </h1>
         <p className="text-muted-foreground mt-2">Review AI-detection and plagiarism reports for submitted work</p>
+        <Link href="/dashboard/teacher/integrity/cases" className="inline-block mt-3 text-sm font-semibold text-primary hover:underline">
+          Open a case with evidence. Nothing changes a mark automatically.
+        </Link>
       </motion.div>
 
       {/* Stats */}

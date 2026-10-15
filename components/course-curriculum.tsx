@@ -13,6 +13,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import type { Lesson, Module } from '@/lib/db';
+import { stripUnitPrefix } from '@/lib/unit-title';
 import {
   ChevronDown, FileText, Video, ClipboardList, Award, Radio, FolderOpen,
   Lock, PlayCircle, CheckCircle2,
@@ -135,7 +136,7 @@ export function CourseCurriculum({
                 />
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-bold text-foreground truncate">
-                    {u.module.unitNumber ? `Chapter ${u.module.unitNumber}: ` : ''}{u.module.title}
+                    {u.module.unitNumber ? `Chapter ${u.module.unitNumber}: ` : ''}{stripUnitPrefix(u.module.title, u.module.unitNumber)}
                   </span>
                   {u.module.description && (
                     <span className="block text-xs text-muted-foreground truncate mt-0.5">{u.module.description}</span>

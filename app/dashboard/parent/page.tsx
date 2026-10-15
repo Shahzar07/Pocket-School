@@ -14,6 +14,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Zap, BookOpen, MessageSquare, Trophy, UserRound, FileBarChart, TrendingUp, Target, Clock, ShieldCheck, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { ChildExamPrep } from '@/components/study/child-exam-prep';
 import { DashPage, DashHeader } from '@/components/dash-ui';
 
 interface ChildData {
@@ -191,7 +192,7 @@ export default function ParentDashboard() {
         eyebrow={`Family overview · ${today}`}
         title="Your family's"
         accent="progress"
-        description="Every lesson, score and milestone, in one place."
+        description="Children you monitor. Your own courses, certificates, and Sparks stay in Learning."
         actions={
           <Link href="/dashboard/parent/communications"
             className={buttonVariants({ variant: 'outline' }) + ' h-10 px-4 rounded-xl gap-2 font-semibold text-[13px]'}
@@ -415,6 +416,7 @@ export default function ParentDashboard() {
                       })}
                     </div>
                   )}
+                  <ChildExamPrep childId={id} name={childProfile.name} />
                 </div>
               </motion.div>
             );

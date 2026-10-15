@@ -14,8 +14,9 @@ import { AnimatePresence, motion } from 'motion/react';
 import { toast } from 'sonner';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
-  getCourse, getModulesWithLessons, updateCourse, createModule, updateUnit,
+  getCourse, getModulesWithLessons, updateCourse, clearCourseFields, createModule, updateUnit,
   createLesson, updateLesson, deleteLesson, duplicateLesson, deleteUnit, getInstitutions,
+  moveLessonToUnit,
   Course, Module, Lesson, AiOutputs, Institution,
 } from '@/lib/db';
 import {
@@ -36,6 +37,21 @@ import type {
   TierId, Tier2SubjectType, LawStage, Tier3Assessment,
 } from '@/lib/curriculum-tiers';
 import { getFormatCost } from '@/lib/sparks';
+import { appendImageMarkdown, lessonBodyPatch, manuscriptToMarkdown, readLessonBody } from '@/lib/lesson-body';
+import { problemsAreWorked } from '@/lib/generation-quality';
+import { hasCmsAddon } from '@/lib/entitlements';
+import { stripUnitPrefix } from '@/lib/unit-title';
+import { describeSaveError, withTimeout } from '@/lib/save-status';
+import { writeAutosave } from '@/components/editor';
+import { CoverArtPicker, storeMedia } from '@/components/media';
+import { jobUpdate, visibleJob } from '@/lib/generation-jobs';
+import { filesToAssets, LessonIllustrationBlock, LessonImageBlock } from '@/components/lesson-pictures';
+import type { ImportResult } from '@/components/editor';
+import { LessonLanguagePanel } from '@/components/lesson-language-panel';
+import { AllocationPanel } from '@/components/allocation-panel';
+import { AllocationPicker } from '@/components/allocation-picker';
+import { allocationFields, migrateAllocation } from '@/lib/allocation-targets';
+import { moveItem, popUndo, pushUndo, type UndoEntry } from '@/lib/reorder';
 import {
   ArrowLeft, AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Copy, CornerDownRight,
   Eye, GripVertical, Loader2, Pencil, Plus, RotateCcw, Send, Sparkles, Trash2, Archive, X,
@@ -101,6 +117,12 @@ const AI_SHORTCUTS: { id: keyof AiOutputs; label: string }[] = [
 ];
 
 interface UnitWithLessons { module: Module; lessons: Lesson[] }
+
+type CoursePatch = Omit<Partial<Course>, 'minTier' | 'priceType' | 'downloadsEnabled'> & {
+  minTier?: number | null;
+  priceType?: Course['priceType'] | null;
+  downloadsEnabled?: boolean | null;
+};
 
 async function callGenerate(
   content: string, format: string, briefPrompt?: string, templateId?: string,
@@ -219,7 +241,9 @@ export default function ContentBuilderPage() {
   const [selUnit, setSelUnit] = useState<string | null>(null);
   const [selLesson, setSelLesson] = useState<string | null>(null);
   const [draft, setDraft] = useState<Lesson | null>(null);
-  const [saveState, setSaveState] = useState<'saved' | 'dirty' | 'saving'>('saved');
+  const [saveState, setSaveState] = useState<'saved' | 'dirty' | 'saving' | 'error'>('saved');
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [undoStack, setUndoStack] = useState<UndoEntry<UnitWithLessons[]>[]>([]);
   const [rightTab, setRightTab] = useState<'properties' | 'publish' | 'allocate' | 'history'>('properties');
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
   const [aiBusy, setAiBusy] = useState<string | null>(null);
@@ -229,7 +253,9 @@ export default function ContentBuilderPage() {
   const [publishing, setPublishing] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const draftRef = useRef<Lesson | null>(null);
+  const saveSeq = useRef(0);
   draftRef.current = draft;
+  const cmsTools = hasCmsAddon(profile);
 
   const actorName = profile?.name ?? user?.email ?? 'Admin';
 
@@ -242,8 +268,19 @@ export default function ContentBuilderPage() {
         getCourse(courseId), getModulesWithLessons(courseId), getInstitutions().catch(() => []),
       ]);
       setCourse(c);
-      setUnits(mods);
+      const repaired = mods.map(entry => {
+        const title = stripUnitPrefix(entry.module.title, entry.module.unitNumber);
+        if (title === entry.module.title.trim()) return entry;
+        return { ...entry, module: { ...entry.module, title } };
+      });
+      setUnits(repaired);
       setInstitutions(inst);
+      const stale = mods.filter(entry => stripUnitPrefix(entry.module.title, entry.module.unitNumber) !== entry.module.title.trim());
+      if (stale.length) {
+        void Promise.all(stale.map(entry => updateUnit(courseId, entry.module.id, {
+          title: stripUnitPrefix(entry.module.title, entry.module.unitNumber),
+        }).catch(() => undefined)));
+      }
       if (!keepSelection && mods.length && mods[0].lessons.length) {
         setSelUnit(mods[0].module.id);
         setSelLesson(mods[0].lessons[0].id);
@@ -255,7 +292,13 @@ export default function ContentBuilderPage() {
     }
   }, [courseId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    if (!cmsTools) {
+      setLoading(false);
+      return;
+    }
+    load();
+  }, [load, cmsTools]);
 
   // Hydrate the editable draft when selection changes.
   useEffect(() => {
@@ -269,7 +312,10 @@ export default function ContentBuilderPage() {
 
   const persistDraft = useCallback(async (d: Lesson, historyLabel?: string) => {
     if (!selUnit) return;
+    const seq = ++saveSeq.current;
     setSaveState('saving');
+    setSaveError(null);
+    writeAutosave(`poket-lesson:${d.id}`, readLessonBody(d));
     try {
       const history = [
         ...(historyLabel ? [{ label: historyLabel, actor: actorName, at: Timestamp.now() }] : []),
@@ -279,14 +325,19 @@ export default function ContentBuilderPage() {
       // Firestore rejects undefined values — strip them, but keep Timestamps
       // as Timestamps so history dates and release dates survive the round-trip.
       const clean = stripUndefined({ ...fields, ...(historyLabel ? { history } : {}) });
-      await updateLesson(courseId, selUnit, d.id, clean);
+      await withTimeout(updateLesson(courseId, selUnit, d.id, clean));
+      if (seq !== saveSeq.current) return;
       setSaveState('saved');
       setUnits(prev => prev.map(u => u.module.id !== selUnit ? u : {
         ...u, lessons: u.lessons.map(l => l.id === d.id ? { ...d, ...(historyLabel ? { history } : {}) } : l),
       }));
-    } catch (e: any) {
-      setSaveState('dirty');
-      toast.error(e?.message || 'Save failed.');
+    } catch (e: unknown) {
+      if (seq !== saveSeq.current) return;
+      writeAutosave(`poket-lesson:${d.id}`, readLessonBody(d));
+      const message = describeSaveError(e);
+      setSaveError(message);
+      setSaveState('error');
+      toast.error(message);
     }
   }, [courseId, selUnit, actorName]);
 
@@ -321,11 +372,19 @@ export default function ContentBuilderPage() {
   const runAi = useCallback(async (format: string, extraBrief?: string) => {
     const d = draftRef.current;
     if (!d || !selUnit) return;
+    const queued = {
+      ...d,
+      generationJobs: jobUpdate(d.generationJobs, format, 'queued', Date.now()),
+    };
+    setDraft(queued);
     setAiBusy(format);
+    const generating = {
+      ...d,
+      generationJobs: jobUpdate(d.generationJobs, format, 'generating', Date.now()),
+    };
+    setDraft(generating);
     try {
-      const content =
-        d.contentSources?.find(s => s.type === 'text')?.value?.trim() ||
-        (d.aiOutputs?.text ?? '') || d.title;
+      const content = readLessonBody(d).trim() || d.title;
       const brief = [d.briefPrompt, extraBrief].filter(Boolean).join('\n');
       // Lesson override wins, else the course default, else the suggestion for
       // the subject — so generation always has a shape to follow.
@@ -334,7 +393,7 @@ export default function ContentBuilderPage() {
         || suggestTemplateId(course?.subject);
       // Lesson override, else the course's tier, else auto-detect downstream.
       const tier = d.curriculumTier || course?.curriculumTier;
-      const result = await callGenerate(content, format, brief || undefined, templateId, tier, {
+      const result = await callGenerate(content, format, brief || undefined, format === 'problems' ? undefined : templateId, tier, {
         subject: course?.subject,
         yearLevel: course?.yearGroup ?? course?.level,
         courseTitle: course?.title,
@@ -344,17 +403,35 @@ export default function ContentBuilderPage() {
         lawStage: d.tierLawStage || course?.tierLawStage,
         assessmentStyle: d.tierAssessmentStyle || course?.tierAssessmentStyle,
       });
+      if (format === 'problems' && (typeof result !== 'string' || !problemsAreWorked(result))) {
+        throw new Error('Problems must be practice problems with a worked solution, not study notes.');
+      }
       const aiOutputs = { ...(d.aiOutputs ?? {}), [format]: result };
-      const next = { ...d, aiOutputs } as Lesson;
+      const bodySync = format === 'text' && typeof result === 'string'
+        ? lessonBodyPatch({ ...d, aiOutputs }, result)
+        : null;
+      const next = {
+        ...d,
+        aiOutputs,
+        generationJobs: jobUpdate(d.generationJobs, format, 'done', Date.now()),
+        ...(bodySync ?? {}),
+      } as Lesson;
       setDraft(next);
       await persistDraft(next, `AI generated: ${format}`);
       toast.success(`${format} generated.`);
     } catch (e: any) {
-      toast.error(e?.message || `Failed to generate ${format}.`);
+      const message = e?.message || `Failed to generate ${format}.`;
+      const failed = {
+        ...d,
+        generationJobs: jobUpdate(d.generationJobs, format, 'failed', Date.now(), message),
+      };
+      setDraft(failed);
+      await persistDraft(failed, `AI failed: ${format}`);
+      toast.error(message);
     } finally {
       setAiBusy(null);
     }
-  }, [selUnit, persistDraft]);
+  }, [selUnit, persistDraft, course, units]);
 
   /* ── ET assistance ── */
 
@@ -396,7 +473,7 @@ export default function ContentBuilderPage() {
       // ET can only paraphrase the title.
       siblingLessons: (units.find(u => u.module.id === selUnit)?.lessons ?? [])
         .filter(l => l.id !== d.id).map(l => l.title),
-      lessonText: d.aiOutputs?.text ?? d.contentSources?.find(s => s.type === 'text')?.value ?? '',
+      lessonText: readLessonBody(d),
     }),
     (d, data) => {
       const objectives = Array.isArray(data?.objectives) ? data.objectives : [];
@@ -427,17 +504,74 @@ export default function ContentBuilderPage() {
   const improveText = useCallback((instruction: string) => runEt(
     'improve', 'improve',
     d => ({
-      text: d.aiOutputs?.text ?? d.contentSources?.find(s => s.type === 'text')?.value ?? '',
+      text: readLessonBody(d),
       instruction,
       // "Simplify" needs a target reader to be meaningful.
       subject: course?.subject ?? '',
       yearLevel: course?.yearGroup ?? course?.level ?? '',
     }),
     (d, data) => (typeof data?.text === 'string' && data.text.trim()
-      ? { aiOutputs: { ...(d.aiOutputs ?? {}), text: data.text } }
+      ? lessonBodyPatch(d, data.text)
       : null),
     'ET rewrote the lesson text',
   ), [runEt, course]);
+
+  const applyManuscript = useCallback(async (result: ImportResult) => {
+    const d = draftRef.current;
+    if (!d || !selUnit || result.blocks.length === 0) return;
+    const [first, ...rest] = result.blocks;
+    const next = {
+      ...d,
+      ...lessonBodyPatch(d, manuscriptToMarkdown([first])),
+      title: d.title?.trim() ? d.title : first.title,
+    };
+    setDraft(next);
+    await persistDraft(next, 'Imported manuscript');
+    if (rest.length === 0) {
+      toast.success('Imported into this lesson.');
+      return;
+    }
+    try {
+      const unit = units.find(u => u.module.id === selUnit);
+      let count = unit?.lessons.length ?? 0;
+      for (const block of rest) {
+        count += 1;
+        const body = manuscriptToMarkdown([block]);
+        await createLesson(courseId, selUnit, {
+          title: block.title || `Lesson ${count}`,
+          moduleId: selUnit,
+          courseId,
+          order: count,
+          lessonNumber: count,
+          status: 'draft',
+          lessonType: 'lesson',
+          blocksOrder: DEFAULT_BLOCKS,
+          ...lessonBodyPatch({ aiOutputs: {} }, body),
+        });
+      }
+      toast.success(`Imported this lesson and added ${rest.length} more from the headings.`);
+      await load(true);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'The extra sections could not be saved.');
+    }
+  }, [selUnit, persistDraft, units, courseId, load]);
+
+  const takePastedImages = useCallback(async (files: File[]) => {
+    const d = draftRef.current;
+    if (!d) return;
+    try {
+      const added = await filesToAssets(courseId, files);
+      if (added.length === 0) return;
+      const blocks = d.blocksOrder?.length ? d.blocksOrder : DEFAULT_BLOCKS;
+      patchDraft({
+        mediaLibrary: [...(d.mediaLibrary ?? []), ...added],
+        blocksOrder: blocks.includes('image') ? blocks : [...blocks, 'image'],
+      });
+      toast.message('Images are in the Image block. Add alt text, then place them.');
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'That image could not be added.');
+    }
+  }, [patchDraft, courseId]);
 
   const draftAssessment = useCallback(() => runEt(
     'assessment', 'assessment',
@@ -511,7 +645,7 @@ export default function ContentBuilderPage() {
     const title = window.prompt('Rename module:', unit.title);
     if (!title?.trim() || title === unit.title) return;
     try {
-      await updateUnit(courseId, unit.id, { title: title.trim() });
+      await updateUnit(courseId, unit.id, { title: stripUnitPrefix(title.trim(), unit.unitNumber) });
       load(true);
     } catch (e: any) { toast.error(e?.message || 'Failed.'); }
   };
@@ -607,6 +741,74 @@ export default function ContentBuilderPage() {
     }
   };
 
+  const rememberStructure = (label: string) => {
+    setUndoStack(stack => pushUndo(stack, { label, snapshot: units }));
+  };
+
+  const undoStructure = async () => {
+    const popped = popUndo(undoStack);
+    setUndoStack(popped.stack);
+    const previous = popped.entry?.snapshot;
+    if (!previous) return;
+    const current = new Map(units.flatMap(unit => unit.lessons.map(lesson => [lesson.id, unit.module.id] as const)));
+    setUnits(previous);
+    try {
+      for (const unit of previous) {
+        await updateUnit(courseId, unit.module.id, { order: unit.module.order, unitNumber: unit.module.unitNumber });
+        for (const lesson of unit.lessons) {
+          const from = current.get(lesson.id);
+          if (from && from !== unit.module.id) {
+            await moveLessonToUnit(courseId, from, unit.module.id, lesson.id, lesson.order, lesson.lessonNumber ?? lesson.order);
+          } else {
+            await updateLesson(courseId, unit.module.id, lesson.id, { order: lesson.order, lessonNumber: lesson.lessonNumber });
+          }
+        }
+      }
+      toast.success('Undone.');
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Could not undo that.');
+      load(true);
+    }
+  };
+
+  const reorderUnits = async (from: number, to: number) => {
+    rememberStructure('Reorder units');
+    const next = moveItem(units, from, to).map((unit, index) => ({
+      ...unit,
+      module: { ...unit.module, order: index + 1, unitNumber: index + 1 },
+    }));
+    setUnits(next);
+    try {
+      await Promise.all(next.map(unit => updateUnit(courseId, unit.module.id, { order: unit.module.order, unitNumber: unit.module.unitNumber })));
+      toast.success('Unit order saved.');
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Could not save the unit order.');
+      load(true);
+    }
+  };
+
+  const moveLessonAcross = async (fromUnitId: string, lessonId: string, toUnitId: string) => {
+    if (fromUnitId === toUnitId) return;
+    const fromUnit = units.find(unit => unit.module.id === fromUnitId);
+    const lesson = fromUnit?.lessons.find(item => item.id === lessonId);
+    const toUnit = units.find(unit => unit.module.id === toUnitId);
+    if (!lesson || !toUnit) return;
+    rememberStructure('Move lesson');
+    const order = toUnit.lessons.length + 1;
+    setUnits(prev => prev.map(unit => {
+      if (unit.module.id === fromUnitId) return { ...unit, lessons: unit.lessons.filter(item => item.id !== lessonId) };
+      if (unit.module.id === toUnitId) return { ...unit, lessons: [...unit.lessons, { ...lesson, moduleId: toUnitId, order, lessonNumber: order }] };
+      return unit;
+    }));
+    try {
+      await moveLessonToUnit(courseId, fromUnitId, toUnitId, lessonId, order, order);
+      toast.success('Lesson moved.');
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Could not move that lesson.');
+      load(true);
+    }
+  };
+
   const removeLesson = async (unitId: string, lesson: Lesson) => {
     if (!window.confirm(`Delete "${lesson.title}"? This cannot be undone.`)) return;
     try {
@@ -627,11 +829,29 @@ export default function ContentBuilderPage() {
 
   /* ── Course-level updates (publish scope, allocation) ── */
 
-  const patchCourse = async (patch: Partial<Course>, msg?: string) => {
+  const patchCourse = async (patch: CoursePatch, msg?: string) => {
     if (!course) return;
+    const clears: ('minTier' | 'priceType' | 'downloadsEnabled')[] = [];
+    const data: Partial<Course> = {};
+    for (const [key, value] of Object.entries(patch) as [keyof Course, unknown][]) {
+      if (value === null && (key === 'minTier' || key === 'priceType' || key === 'downloadsEnabled')) {
+        clears.push(key);
+        continue;
+      }
+      if (value !== undefined) (data as Record<string, unknown>)[key] = value;
+    }
     try {
-      await updateCourse(course.id, patch);
-      setCourse({ ...course, ...patch });
+      if (Object.keys(data).length) await updateCourse(course.id, data);
+      if (clears.length) await clearCourseFields(course.id, clears);
+      setCourse(current => {
+        if (!current) return current;
+        const next = { ...current, ...data };
+        if (data.accessPolicy && typeof current.accessPolicy?.seatsUsed === 'number') {
+          next.accessPolicy = { ...data.accessPolicy, seatsUsed: current.accessPolicy.seatsUsed };
+        }
+        for (const field of clears) delete next[field];
+        return next;
+      });
       if (msg) toast.success(msg);
     } catch (e: any) { toast.error(e?.message || 'Failed.'); }
   };
@@ -644,6 +864,15 @@ export default function ContentBuilderPage() {
   );
 
   /* ── Render ── */
+
+  if (!cmsTools) {
+    return (
+      <div className="py-24 text-center space-y-3 max-w-md mx-auto">
+        <p className="font-semibold text-foreground">The CMS add-on is not on this account.</p>
+        <p className="text-sm text-muted-foreground">An admin can allocate it from Access allocation. Platform admins already have the editor, imports, image library, and covers.</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return <div className="py-24 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>;
@@ -676,12 +905,23 @@ export default function ContentBuilderPage() {
         </nav>
         <span className="flex-1" />
         {/* Save status */}
-        <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-          <span className={`w-2 h-2 rounded-full ${
-            saveState === 'saved' ? 'bg-emerald-500' : saveState === 'saving' ? 'bg-amber-400 animate-pulse' : 'bg-amber-400 animate-pulse'
+        <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground max-w-sm" role="status" aria-live="polite" data-save-state={saveState}>
+          <span className={`w-2 h-2 rounded-full shrink-0 ${
+            saveState === 'saved' ? 'bg-emerald-500' : saveState === 'error' ? 'bg-red-500' : 'bg-amber-400 animate-pulse'
           }`} />
-          {saveState === 'saved' ? 'All changes saved' : saveState === 'saving' ? 'Saving…' : 'Unsaved changes'}
+          {saveState === 'saved' && 'All changes saved'}
+          {saveState === 'saving' && 'Saving…'}
+          {saveState === 'dirty' && 'Unsaved changes'}
+          {saveState === 'error' && (
+            <span className="text-red-700">
+              {saveError ?? 'Saving failed. Your changes are kept on this device.'}{' '}
+              <button type="button" className="underline font-bold" onClick={saveNow}>Retry</button>
+            </span>
+          )}
         </span>
+        <Button size="sm" variant="outline" className="rounded-xl h-8 text-xs" onClick={() => void undoStructure()} disabled={undoStack.length === 0}>
+          Undo{undoStack[0] ? ` ${undoStack[0].label}` : ''}
+        </Button>
         <span className="hidden sm:inline-flex text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-violet-100 text-violet-700">
           {profile?.role ? ROLE_LABELS[profile.role] : 'Teacher'}
         </span>
@@ -696,7 +936,7 @@ export default function ContentBuilderPage() {
             <Eye className="w-3.5 h-3.5" /> Preview
           </a>
         )}
-        <Button size="sm" variant="outline" className="rounded-xl h-8 text-xs" onClick={saveNow} disabled={!draft || saveState === 'saved'}>
+        <Button size="sm" variant="outline" className="rounded-xl h-8 text-xs" onClick={saveNow} disabled={!draft || saveState === 'saved' || saveState === 'saving'}>
           Save
         </Button>
         <Button size="sm" className="rounded-xl h-8 text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -717,11 +957,13 @@ export default function ContentBuilderPage() {
             </button>
           </div>
           <div className="p-2 space-y-1">
-            {units.map(u => (
+            {units.map((u, unitIndex) => (
               <TreeUnit
                 key={u.module.id}
                 unit={u.module}
                 lessons={u.lessons}
+                unitIndex={unitIndex}
+                unitCount={units.length}
                 activeLessonId={selLesson}
                 onSelect={(lid) => { setSelUnit(u.module.id); setSelLesson(lid); }}
                 onRename={() => renameUnit(u.module)}
@@ -731,7 +973,12 @@ export default function ContentBuilderPage() {
                 onDuplicateLesson={(l) => copyLesson(u.module.id, l)}
                 onRenameLesson={(l, title) => renameLesson(u.module.id, l, title)}
                 onAddSubLesson={(l) => addSubLesson(u.module.id, l, u.lessons)}
-                onReorder={(fromId, toId) => reorderLessons(u.module.id, fromId, toId)}
+                onReorder={(fromId, toId) => {
+                  rememberStructure('Reorder lessons');
+                  void reorderLessons(u.module.id, fromId, toId);
+                }}
+                onMoveUnit={to => { void reorderUnits(unitIndex, to); }}
+                onReceiveLesson={(fromUnitId, lessonId) => { void moveLessonAcross(fromUnitId, lessonId, u.module.id); }}
               />
             ))}
             {units.length === 0 && (
@@ -784,6 +1031,8 @@ export default function ContentBuilderPage() {
                   </label>
                   <span className={`ml-auto text-[10px] font-bold px-2 py-1 rounded-full border ${statusCard.bg}`}>{statusCard.label}</span>
                 </div>
+
+                <LessonLanguagePanel draft={draft} patch={patchDraft} />
 
                 {/* ET assist bar */}
                 <div className="flex flex-wrap items-center gap-2 rounded-xl border border-violet-200 bg-violet-50/60 px-3 py-2">
@@ -891,7 +1140,24 @@ export default function ContentBuilderPage() {
               {/* Blocks */}
               <AnimatePresence>
                 {blocksOrder.map((blockId, idx) => (
-                  <div key={blockId} className="space-y-5">
+                  <div
+                    key={blockId}
+                    className="space-y-5"
+                    onDragOver={event => event.preventDefault()}
+                    onDrop={event => {
+                      const token = event.dataTransfer.getData('text/plain');
+                      if (!token.startsWith('block:')) return;
+                      const id = token.slice('block:'.length);
+                      if (!blocksOrder.includes(id)) {
+                        const next = [...blocksOrder];
+                        next.splice(idx, 0, id);
+                        patchDraft({ blocksOrder: next });
+                      } else if (id !== blockId) {
+                        const from = blocksOrder.indexOf(id);
+                        patchDraft({ blocksOrder: moveItem(blocksOrder, from, idx) });
+                      }
+                    }}
+                  >
                     <BuilderBlock
                       blockId={blockId}
                       draft={draft}
@@ -915,6 +1181,9 @@ export default function ContentBuilderPage() {
                       onSuggestObjectives={suggestObjectives}
                       onImproveText={improveText}
                       onDraftAssessment={draftAssessment}
+                      onImport={result => { void applyManuscript(result); }}
+                      onPasteImages={files => { void takePastedImages(files); }}
+                      courseId={courseId}
                     />
                     {blockId === 'objectives' && <DurationPanel draft={draft} patch={patchDraft} />}
                   </div>
@@ -922,7 +1191,16 @@ export default function ContentBuilderPage() {
               </AnimatePresence>
 
               {/* Add-block palette */}
-              <div className="rounded-2xl border border-dashed border-border p-4">
+              <div
+                className="rounded-2xl border border-dashed border-border p-4"
+                onDragOver={event => event.preventDefault()}
+                onDrop={event => {
+                  const token = event.dataTransfer.getData('text/plain');
+                  if (!token.startsWith('block:')) return;
+                  const id = token.slice('block:'.length);
+                  if (!blocksOrder.includes(id)) patchDraft({ blocksOrder: [...blocksOrder, id] });
+                }}
+              >
                 <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Add a block</p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {BLOCK_DEFS.map(def => {
@@ -931,6 +1209,11 @@ export default function ContentBuilderPage() {
                       <button
                         key={def.id}
                         disabled={added}
+                        draggable={!added}
+                        onDragStart={event => {
+                          event.dataTransfer.effectAllowed = 'copy';
+                          event.dataTransfer.setData('text/plain', `block:${def.id}`);
+                        }}
                         onClick={() => patchDraft({ blocksOrder: [...blocksOrder, def.id] })}
                         className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left text-xs font-semibold transition-all ${
                           added
@@ -977,6 +1260,7 @@ export default function ContentBuilderPage() {
               <PublishTab
                 draft={draft} course={course} statusCard={statusCard}
                 setStatus={setStatus} patchCourse={patchCourse} courseId={courseId}
+                institutions={institutions}
                 onPublishRequest={openPublishModal}
               />
             )}
@@ -1129,16 +1413,18 @@ function DurationPanel({ draft, patch }: { draft: Lesson; patch: (p: Partial<Les
 /* ── Tree unit ──────────────────────────────────────────────── */
 
 function TreeUnit({
-  unit, lessons, activeLessonId, onSelect, onRename, onAddLesson, onDeleteUnit, onDeleteLesson,
-  onDuplicateLesson, onRenameLesson, onAddSubLesson, onReorder,
+  unit, lessons, unitIndex, unitCount, activeLessonId, onSelect, onRename, onAddLesson, onDeleteUnit, onDeleteLesson,
+  onDuplicateLesson, onRenameLesson, onAddSubLesson, onReorder, onMoveUnit, onReceiveLesson,
 }: {
-  unit: Module; lessons: Lesson[]; activeLessonId: string | null;
+  unit: Module; lessons: Lesson[]; unitIndex: number; unitCount: number; activeLessonId: string | null;
   onSelect: (lessonId: string) => void; onRename: () => void; onAddLesson: () => void;
   onDeleteUnit: () => void;
   onDeleteLesson: (l: Lesson) => void; onDuplicateLesson: (l: Lesson) => void;
   onRenameLesson: (l: Lesson, title: string) => void;
   onAddSubLesson: (l: Lesson) => void;
   onReorder: (fromId: string, toId: string) => void;
+  onMoveUnit: (toIndex: number) => void;
+  onReceiveLesson: (fromUnitId: string, lessonId: string) => void;
 }) {
   const [open, setOpen] = useState<boolean>(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -1155,11 +1441,21 @@ function TreeUnit({
 
   return (
     <div>
-      <div className="group flex items-center gap-1 px-1.5 py-1.5 rounded-lg hover:bg-muted/60">
+      <div
+        className="group flex items-center gap-1 px-1.5 py-1.5 rounded-lg hover:bg-muted/60"
+        onDragOver={event => event.preventDefault()}
+        onDrop={event => {
+          const token = event.dataTransfer.getData('text/plain');
+          const [fromUnitId, lessonId] = token.split(':');
+          if (fromUnitId && lessonId && fromUnitId !== unit.id) onReceiveLesson(fromUnitId, lessonId);
+        }}
+      >
+        <button type="button" aria-label={`Move ${unit.title} up`} disabled={unitIndex === 0} className="p-0.5 disabled:opacity-30" onClick={() => onMoveUnit(unitIndex - 1)}>↑</button>
+        <button type="button" aria-label={`Move ${unit.title} down`} disabled={unitIndex >= unitCount - 1} className="p-0.5 disabled:opacity-30" onClick={() => onMoveUnit(unitIndex + 1)}>↓</button>
         <button onClick={() => setOpen(o => !o)} className="flex items-center gap-1.5 flex-1 min-w-0 text-left">
           {open ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
           <span className="text-xs font-bold text-foreground truncate">
-            {unit.unitNumber ? `Unit ${unit.unitNumber}: ` : ''}{unit.title}
+            {unit.unitNumber ? `Unit ${unit.unitNumber}: ` : ''}{stripUnitPrefix(unit.title, unit.unitNumber)}
           </span>
         </button>
         <button onClick={onRename} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-muted text-muted-foreground" title="Rename">
@@ -1174,22 +1470,36 @@ function TreeUnit({
       </div>
       {open && (
         <div className="ml-4 border-l border-border/60 pl-2 space-y-0.5 py-0.5">
-          {lessons.map(l => {
+          {lessons.map((l, lessonIndex) => {
             const active = l.id === activeLessonId;
             const sub = isSubLesson(l);
             const editing = editingId === l.id;
             return (
               <div key={l.id}
                 draggable={!editing}
-                onDragStart={e => { setDragId(l.id); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', l.id); }}
+                tabIndex={0}
+                onKeyDown={event => {
+                  if (!event.altKey) return;
+                  if (event.key === 'ArrowUp' && lessonIndex > 0) {
+                    event.preventDefault();
+                    onReorder(l.id, lessons[lessonIndex - 1].id);
+                  }
+                  if (event.key === 'ArrowDown' && lessonIndex < lessons.length - 1) {
+                    event.preventDefault();
+                    onReorder(l.id, lessons[lessonIndex + 1].id);
+                  }
+                }}
+                onDragStart={e => { setDragId(l.id); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', `${unit.id}:${l.id}`); }}
                 onDragEnd={() => { setDragId(null); setDropId(null); }}
                 onDragOver={e => { if (dragId && dragId !== l.id) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDropId(l.id); } }}
                 onDragLeave={() => setDropId(d => (d === l.id ? null : d))}
                 onDrop={e => {
                   e.preventDefault();
-                  const from = dragId ?? e.dataTransfer.getData('text/plain');
+                  const token = e.dataTransfer.getData('text/plain');
+                  const [fromUnitId, fromLessonId] = token.split(':');
                   setDragId(null); setDropId(null);
-                  if (from) onReorder(from, l.id);
+                  if (fromUnitId && fromLessonId && fromUnitId !== unit.id) onReceiveLesson(fromUnitId, fromLessonId);
+                  else if (fromLessonId) onReorder(fromLessonId, l.id);
                 }}
                 className={`group flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer text-xs transition-colors ${
                   sub ? 'ml-4' : ''
@@ -1246,7 +1556,7 @@ function TreeUnit({
           })}
           {lessons.length === 0
             ? <p className="text-[10px] text-muted-foreground px-2 py-1">Empty — add a lesson.</p>
-            : <p className="text-[10px] text-muted-foreground/70 px-2 pt-1">Drag to reorder · ✎ rename · ↳ add sub-lesson</p>}
+            : <p className="text-[10px] text-muted-foreground/70 px-2 pt-1">Drag to reorder or into another unit. Alt+Arrow moves a focused lesson.</p>}
         </div>
       )}
     </div>
@@ -1257,7 +1567,7 @@ function TreeUnit({
 
 function BuilderBlock({
   blockId, draft, selected, onSelect, onDelete, onMoveUp, onMoveDown, patch, ai, aiBusy,
-  etBusy, onSuggestObjectives, onImproveText, onDraftAssessment,
+  etBusy, onSuggestObjectives, onImproveText, onDraftAssessment, onImport, onPasteImages, courseId,
 }: {
   blockId: string; draft: Lesson; selected: boolean;
   onSelect: () => void; onDelete: () => void;
@@ -1269,6 +1579,9 @@ function BuilderBlock({
   onSuggestObjectives: () => void;
   onImproveText: (instruction: string) => void;
   onDraftAssessment: () => void;
+  onImport?: (result: ImportResult) => void;
+  onPasteImages?: (files: File[]) => void;
+  courseId: string;
 }) {
   const def: BlockDef = BLOCK_DEFS.find(d => d.id === blockId) ?? { id: blockId, icon: '📄', label: blockId };
   const outputs = draft.aiOutputs ?? {};
@@ -1308,12 +1621,33 @@ function BuilderBlock({
     case 'text':
       return shell(
         <LessonTextBlock
-          value={outputs.text ?? draft.contentSources?.find(s => s.type === 'text')?.value ?? ''}
-          onChange={v => patch({ aiOutputs: { ...outputs, text: v } })}
+          value={readLessonBody(draft)}
+          onChange={v => patch(lessonBodyPatch(draft, v))}
           ai={ai}
           generating={aiBusy === 'text'}
           onImprove={onImproveText}
           improving={etBusy === 'improve'}
+          storageKey={`poket-lesson:${draft.id}`}
+          onImport={onImport}
+          onPasteImages={onPasteImages}
+        />
+      );
+    case 'image':
+      return shell(
+        <LessonImageBlock
+          scopeId={courseId}
+          images={draft.mediaLibrary ?? []}
+          onChange={images => patch({ mediaLibrary: images })}
+          onInsert={image => patch(lessonBodyPatch(draft, appendImageMarkdown(readLessonBody(draft), image)))}
+        />
+      );
+    case 'illustration':
+      return shell(
+        <LessonIllustrationBlock
+          scopeId={courseId}
+          images={draft.mediaLibrary ?? []}
+          onChange={images => patch({ mediaLibrary: images })}
+          onInsert={image => patch(lessonBodyPatch(draft, appendImageMarkdown(readLessonBody(draft), image)))}
         />
       );
     case 'vocabulary':
@@ -1362,16 +1696,30 @@ function BuilderBlock({
       );
     case 'audio':
       return shell(
-        <AudioBlock script={outputs.audioScript} ai={ai} generating={aiBusy === 'audioScript'} />
+        <AudioBlock
+          script={outputs.audioScript}
+          ai={ai}
+          generating={aiBusy === 'audioScript'}
+          scriptStatus={
+            aiBusy === 'audioScript'
+              ? (visibleJob(draft.generationJobs?.audioScript, Date.now())?.status === 'queued' ? 'queued' : 'generating')
+              : visibleJob(draft.generationJobs?.audioScript, Date.now())?.status
+          }
+        />
       );
     // Read-only AI format previews (flashcards, mindmap, infographic, slides, notes, summary, problems)
     default: {
       const formatKey = blockId as keyof AiOutputs;
       const has = outputs[formatKey] != null &&
         (!Array.isArray(outputs[formatKey]) || (outputs[formatKey] as unknown[]).length > 0);
+      const problemsText = typeof outputs.problems === 'string' ? outputs.problems : '';
+      const problemsInvalid = blockId === 'problems' && problemsText.trim().length > 0 && !problemsAreWorked(problemsText);
       return shell(
         has ? (
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-96 overflow-y-auto space-y-2">
+            {problemsInvalid && (
+              <p className="text-sm text-red-700">These are study notes. Use Regenerate on this block to replace them with worked problems.</p>
+            )}
             <FormatPreview format={blockId} outputs={outputs} />
           </div>
         ) : (
@@ -1497,15 +1845,27 @@ function PropertiesTab({
           {AI_SHORTCUTS.map(f => {
             const v = outputs[f.id];
             const done = v != null && (!Array.isArray(v) || v.length > 0) && (typeof v !== 'string' || v.trim() !== '');
+            const job = visibleJob(draft.generationJobs?.[f.id], Date.now());
+            const status = aiBusy === f.id
+              ? (job?.status === 'queued' ? 'Queued' : 'Generating')
+              : job?.status === 'failed' ? 'Failed'
+              : job?.status === 'done' ? 'Done'
+              : null;
+            const tone = status === 'Failed'
+              ? 'border-red-200 bg-red-50 text-red-700'
+              : status === 'Queued' || status === 'Generating'
+                ? 'border-violet-200 bg-violet-50 text-violet-700'
+                : done
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                  : 'border-border text-muted-foreground hover:border-violet-300 hover:text-violet-700';
             return (
-              <button key={f.id} onClick={() => ai(f.id)} disabled={aiBusy !== null}
-                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border text-[11px] font-medium text-left transition-colors ${
-                  done ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-border text-muted-foreground hover:border-violet-300 hover:text-violet-700'
-                }`}>
-                {aiBusy === f.id ? <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+              <button key={f.id} onClick={() => ai(f.id)} disabled={aiBusy !== null} title={job?.error}
+                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border text-[11px] font-medium text-left transition-colors ${tone}`}>
+                {status === 'Queued' || status === 'Generating' ? <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+                  : status === 'Failed' ? <Sparkles className="w-3 h-3 shrink-0" />
                   : done ? <CheckCircle2 className="w-3 h-3 shrink-0" />
                   : <Sparkles className="w-3 h-3 shrink-0" />}
-                <span className="truncate flex-1">{f.label}</span>
+                <span className="truncate flex-1">{f.label}{status ? ` · ${status}` : ''}</span>
                 {isCurriculumCourse && (
                   <span className="text-[10px] font-bold text-amber-600 shrink-0 tabular-nums">
                     {getFormatCost(f.id)}
@@ -1536,12 +1896,13 @@ function PropertiesTab({
   );
 }
 
-function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseId, onPublishRequest }: {
+function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseId, institutions, onPublishRequest }: {
   draft: Lesson; course: Course;
   statusCard: { bg: string; label: string };
   setStatus: (s: NonNullable<Lesson['status']>, label: string) => Promise<void>;
-  patchCourse: (p: Partial<Course>, msg?: string) => Promise<void>;
+  patchCourse: (p: CoursePatch, msg?: string) => Promise<void>;
   courseId: string;
+  institutions: Institution[];
   onPublishRequest: () => void;
 }) {
   const [scheduleDate, setScheduleDate] = useState('');
@@ -1610,21 +1971,70 @@ function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseI
       </section>
 
       <section className="space-y-2">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Scope</p>
-        {([
-          ['institution', 'Institution Only', 'Visible to allocated institutions'],
-          ['public', 'Public Site', 'Anyone on Poket School can find it'],
-          ['marketplace', 'Marketplace', 'Listed for purchase in the marketplace'],
-        ] as const).map(([id, label, desc]) => (
-          <button key={id} onClick={() => patchCourse({ publishScope: id }, `Scope: ${label}`)}
-            className={`w-full text-left px-3 py-2.5 rounded-xl border transition-colors ${
-              (course.publishScope ?? 'institution') === id ? 'border-teal-400 bg-teal-50' : 'border-border hover:border-teal-300'
-            }`}>
-            <p className="text-xs font-bold text-foreground">{label}</p>
-            <p className="text-[10px] text-muted-foreground">{desc}</p>
-          </button>
-        ))}
+        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Cover</p>
+        {course.thumbnailUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={course.thumbnailUrl} alt="" className="w-full h-28 object-cover rounded-xl" />
+        )}
+        <CoverArtPicker
+          brief={`${course.title}. ${course.subject ?? ''}`.trim()}
+          onSelect={option => {
+            void (async () => {
+              try {
+                const blob = await (await fetch(option.artSrc)).blob();
+                const stored = await storeMedia(courseId, blob, `cover-${Date.now()}.jpg`);
+                await patchCourse({ thumbnailUrl: stored.src }, 'Cover updated');
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : 'The cover could not be saved.');
+              }
+            })();
+          }}
+        />
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
+          Text-free pictures for this course. The same picker is what a book cover uses.
+        </p>
       </section>
+
+      <section className="space-y-2">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+          Downloads
+        </p>
+        <select
+          aria-label="Download allowance for this course"
+          value={course.downloadsEnabled === true ? 'on' : course.downloadsEnabled === false ? 'off' : 'tier'}
+          onChange={e => {
+            const value = e.target.value;
+            if (value === 'on') patchCourse({ downloadsEnabled: true }, 'Downloads turned on');
+            else if (value === 'off') patchCourse({ downloadsEnabled: false }, 'Downloads turned off');
+            else patchCourse({ downloadsEnabled: null }, 'Downloads follow tier and allocation');
+          }}
+          className="w-full h-10 rounded-xl border border-border bg-card px-3 text-xs font-medium"
+        >
+          <option value="tier">Follow tier and allocation</option>
+          <option value="on">Downloads on</option>
+          <option value="off">Downloads off</option>
+        </select>
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
+          Off stops student downloads. On allows them. The middle setting uses the paid tier or an allocation.
+        </p>
+      </section>
+
+      <AllocationPicker
+        label="Who can see this"
+        value={migrateAllocation(course)}
+        options={institutions.map(school => ({ token: `institution:${school.id}`, label: school.name, group: 'Institutions' }))}
+        onChange={targets => {
+          const fields = allocationFields(targets, course.accessPolicy ?? { include: [], exclude: [] });
+          void patchCourse({
+            targets: fields.targets,
+            classIds: fields.classIds,
+            audiences: fields.audiences,
+            allocatedInstitutionIds: fields.allocatedInstitutionIds,
+            accessPolicy: fields.accessPolicy,
+            publishScope: fields.publishScope,
+          }, 'Allocation updated');
+        }}
+      />
 
       <section className="space-y-1.5">
         {([
@@ -1656,22 +2066,13 @@ function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseI
 
 function AllocateTab({ course, institutions, patchCourse }: {
   course: Course; institutions: Institution[];
-  patchCourse: (p: Partial<Course>, msg?: string) => Promise<void>;
+  patchCourse: (p: CoursePatch, msg?: string) => Promise<void>;
 }) {
-  const allocated = course.allocatedInstitutionIds ?? [];
   const groups = course.allocatedGroups ?? [];
   const override = course.accessOverride ?? {};
   const [price, setPrice] = useState(override.pricePerInstitution?.toString() ?? '');
   const [expiry, setExpiry] = useState(override.expiryDate ?? '');
   const [sparks, setSparks] = useState(override.sparksOverride?.toString() ?? '');
-
-  const toggleInstitution = (inst: Institution, on: boolean) => {
-    const next = on ? [...allocated, inst.id] : allocated.filter(id => id !== inst.id);
-    patchCourse(
-      { allocatedInstitutionIds: next },
-      on ? `Access granted to ${inst.name}` : `Access removed from ${inst.name}`
-    );
-  };
 
   const toggleGroup = (g: string, on: boolean) => {
     const next = on ? [...groups, g] : groups.filter(x => x !== g);
@@ -1680,24 +2081,27 @@ function AllocateTab({ course, institutions, patchCourse }: {
 
   return (
     <>
-      <section className="space-y-1.5">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Institutions</p>
-        {institutions.length === 0 && (
-          <p className="text-[11px] text-muted-foreground">No institutions yet — add them in Admin → Institutions.</p>
-        )}
-        {institutions.map(inst => (
-          <label key={inst.id} className="flex items-center justify-between gap-2 text-xs py-1 cursor-pointer">
-            <span className="min-w-0">
-              <span className="font-semibold text-foreground block truncate">{inst.name}</span>
-              <span className="text-[10px] text-muted-foreground">{inst.studentCount} students</span>
-            </span>
-            <Switch checked={allocated.includes(inst.id)} onCheckedChange={v => toggleInstitution(inst, v)} />
-          </label>
-        ))}
-      </section>
+      <AllocationPanel
+        product={course}
+        institutions={institutions}
+        onChange={patch => {
+          void patchCourse({
+            ...(patch.audiences ? { audiences: [...patch.audiences] } : {}),
+            ...(patch.allocatedInstitutionIds ? { allocatedInstitutionIds: [...patch.allocatedInstitutionIds] } : {}),
+            ...(patch.accessPolicy ? { accessPolicy: patch.accessPolicy } : {}),
+            ...(patch.targets ? { targets: [...patch.targets] } : {}),
+            ...(patch.classIds ? { classIds: [...patch.classIds] } : {}),
+            ...(patch.publishScope ? { publishScope: patch.publishScope } : {}),
+            ...('freePreviewCount' in patch && patch.freePreviewCount != null ? { freePreviewCount: patch.freePreviewCount } : {}),
+            ...('minTier' in patch ? { minTier: patch.minTier ?? null } : {}),
+            ...('priceType' in patch ? { priceType: (patch.priceType ?? null) as Course['priceType'] | null } : {}),
+          }, 'Allocation updated');
+        }}
+      />
 
       <section className="space-y-1.5">
         <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Student groups</p>
+        <p className="text-[10px] text-muted-foreground">Year groups, separate from the audience above.</p>
         {STUDENT_GROUPS.map(g => (
           <label key={g} className="flex items-center justify-between text-xs py-1 cursor-pointer">
             <span className="font-semibold text-foreground">{g}</span>

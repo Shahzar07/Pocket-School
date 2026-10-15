@@ -47,6 +47,8 @@ export interface Branding {
   primaryColor?: string;
   tagline?: string;
   hidePoweredBy: boolean;
+  emailFromName?: string;
+  certificateIssuer?: string;
   /** True when an institution's branding is in effect rather than the default. */
   isWhiteLabel: boolean;
 }
@@ -68,17 +70,22 @@ export function brandingFor(
       primaryColor?: string;
       tagline?: string;
       hidePoweredBy?: boolean;
+      emailFromName?: string;
+      certificateIssuer?: string;
     };
   } | null | undefined,
 ): Branding {
   if (!institution) return DEFAULT_BRANDING;
   const b = institution.branding ?? {};
+  const displayName = b.displayName || institution.name || DEFAULT_BRANDING.displayName;
   return {
-    displayName: b.displayName || institution.name || DEFAULT_BRANDING.displayName,
+    displayName,
     logoUrl: b.logoUrl,
     primaryColor: b.primaryColor,
     tagline: b.tagline ?? DEFAULT_BRANDING.tagline,
     hidePoweredBy: !!b.hidePoweredBy,
+    emailFromName: b.emailFromName || displayName,
+    certificateIssuer: b.certificateIssuer || displayName,
     isWhiteLabel: true,
   };
 }

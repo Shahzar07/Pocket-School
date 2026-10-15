@@ -19,9 +19,14 @@ import {
 import Link from 'next/link';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
-import { RichTextEditor } from '@/components/rich-text-editor';
+import { LessonManuscript } from '@/components/lesson-manuscript';
+import { filesToAssets, LessonIllustrationBlock, LessonImageBlock } from '@/components/lesson-pictures';
+import { appendImageMarkdown } from '@/lib/lesson-body';
+import { problemsAreWorked } from '@/lib/generation-quality';
+import { hasCmsAddon } from '@/lib/entitlements';
+import type { LessonMediaAsset } from '@/lib/db';
 
-const YEAR_GROUPS = ['Year 7', 'Year 8', 'Year 9'];
+import { YEAR_GROUPS } from '@/lib/year-groups';
 
 const FORMATS = [
   { id: 'text', label: 'Lesson Text' },
@@ -67,10 +72,12 @@ export default function UploadPage() {
 
   const [lessonTitle, setLessonTitle] = useState('');
   const [content, setContent] = useState('');
+  const [pictures, setPictures] = useState<LessonMediaAsset[]>([]);
   const [generatedOutputs, setGeneratedOutputs] = useState<AiOutputs>({});
   const [progress, setProgress] = useState<Record<string, 'pending' | 'done' | 'error'>>({});
   const [generating, setGenerating] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
 
   const [sessionLessons, setSessionLessons] = useState<SessionLesson[]>([]);
   const [sessionOpen, setSessionOpen] = useState(false);
@@ -85,7 +92,7 @@ export default function UploadPage() {
   // Curriculum SOW submission
   const [sowTitle, setSowTitle] = useState('');
   const [sowSubject, setSowSubject] = useState('');
-  const [sowYearGroup, setSowYearGroup] = useState(YEAR_GROUPS[0]);
+  const [sowYearGroup, setSowYearGroup] = useState(YEAR_GROUPS[0]?.value ?? 'Year 7');
   const [sowFile, setSowFile] = useState<File | null>(null);
   const [sowUploadPct, setSowUploadPct] = useState(0);
   const [sowSubmitting, setSowSubmitting] = useState(false);
@@ -94,6 +101,17 @@ export default function UploadPage() {
     if (!user) return;
     getTeacherCourses(user.uid).then(setCourses).catch(() => toast.error('Failed to load your courses.'));
   }, [user]);
+
+  const draftDirty = lessonTitle.trim().length > 0 || content.trim().length > 0 || Object.keys(generatedOutputs).length > 0;
+  useEffect(() => {
+    if (!draftDirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [draftDirty]);
 
   useEffect(() => {
     if (selectedCourseId === 'new') {
@@ -116,8 +134,11 @@ export default function UploadPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content, format }),
     });
-    if (!res.ok) throw new Error(`Failed: ${format}`);
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `Failed: ${format}`);
+    if (format === 'problems' && (typeof data.result !== 'string' || !problemsAreWorked(data.result))) {
+      throw new Error('Problems must be practice problems with a worked solution, not study notes.');
+    }
     setProgress(p => ({ ...p, [format]: 'done' }));
     return data.result;
   };
@@ -152,6 +173,69 @@ export default function UploadPage() {
       toast.error('All formats failed to generate. Please try again.');
     } else {
       toast.warning(`${failed} format${failed !== 1 ? 's' : ''} failed — you can regenerate them later.`);
+    }
+  };
+
+  const placeLesson = async (status: 'draft' | 'published') => {
+    if (!user) return null;
+    if (!lessonTitle.trim()) { toast.error('Enter a lesson title.'); return null; }
+    let courseId = selectedCourseId;
+    if (selectedCourseId === 'new') {
+      if (!courseTitle.trim()) { toast.error('Enter a course title.'); return null; }
+      courseId = await createCourse({
+        title: courseTitle.trim(),
+        description: `${courseSubject || 'General'} course`,
+        subject: courseSubject || 'General',
+        ownerId: user.uid,
+        ownerName: profile?.name,
+        status: status === 'published' ? 'published' : 'draft',
+        thumbnailUrl: '',
+      });
+      setCourses(await getTeacherCourses(user.uid));
+      setSelectedCourseId(courseId);
+      setCourseTitle('');
+    }
+    let moduleId = selectedModuleId;
+    if (selectedModuleId === 'new') {
+      const mTitle = moduleTitle.trim() || `Subject ${modules.length + 1}`;
+      moduleId = await createModule(courseId, {
+        title: mTitle,
+        description: '',
+        courseId,
+        order: modules.length + 1,
+      });
+      setModules(await getModules(courseId));
+      setSelectedModuleId(moduleId);
+      setModuleTitle('');
+    }
+    const lessonId = await createLesson(courseId, moduleId, {
+      title: lessonTitle.trim(),
+      moduleId,
+      courseId,
+      order: 1,
+      contentSources: content.trim() ? [{ type: 'text', value: content }] : [],
+      status,
+    });
+    if (Object.keys(generatedOutputs).length > 0) {
+      await saveAiOutputsToLesson(courseId, moduleId, lessonId, generatedOutputs);
+    }
+    return { courseId, lessonId };
+  };
+
+  const handleSaveDraft = async () => {
+    setSavingDraft(true);
+    try {
+      const saved = await placeLesson('draft');
+      if (!saved) return;
+      toast.success('Draft saved. You can come back to it from your courses.');
+      setLessonTitle('');
+      setContent('');
+      setGeneratedOutputs({});
+      setProgress({});
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not save the draft.');
+    } finally {
+      setSavingDraft(false);
     }
   };
 
@@ -207,10 +291,21 @@ export default function UploadPage() {
         courseId,
         order: 1,
         contentSources: [{ type: 'text', value: content }],
+        aiOutputs: { text: content },
+        mediaLibrary: pictures,
         status: 'published',
       });
 
-      await saveAiOutputsToLesson(courseId, moduleId, lessonId, generatedOutputs);
+      const placed = content
+        .split(/\n{2,}/)
+        .map(block => block.trim())
+        .filter(block => /^(!full|!)\[/.test(block))
+        .join('\n\n');
+      const generatedText = typeof generatedOutputs.text === 'string' ? generatedOutputs.text : content;
+      const text = placed && !generatedText.includes(placed)
+        ? `${generatedText.trim()}\n\n${placed}`
+        : generatedText;
+      await saveAiOutputsToLesson(courseId, moduleId, lessonId, { ...generatedOutputs, text });
 
       setSessionLessons(prev => [{
         title: lessonTitle.trim(),
@@ -224,6 +319,7 @@ export default function UploadPage() {
       // Reset lesson form only — keep course/module selection
       setLessonTitle('');
       setContent('');
+      setPictures([]);
       setGeneratedOutputs({});
       setProgress({});
 
@@ -272,7 +368,7 @@ export default function UploadPage() {
       toast.success('Curriculum SOW submitted for admin review!');
       setSowTitle('');
       setSowSubject('');
-      setSowYearGroup(YEAR_GROUPS[0]);
+      setSowYearGroup(YEAR_GROUPS[0]?.value ?? 'Year 7');
       setSowFile(null);
       setSowUploadPct(0);
     } catch (e: any) {
@@ -481,13 +577,58 @@ export default function UploadPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Lesson Content *</Label>
-              <RichTextEditor
-                value={content}
-                onChange={setContent}
-                minHeight={208}
-                placeholder={"Paste or write your source material here — notes, a lecture transcript, a chapter outline…\n\nTip: start with one line stating the learning objective, then the material in a few paragraphs, including key terms you want students to master."}
-              />
+              {hasCmsAddon(profile) ? (
+                <>
+                  <LessonManuscript
+                    key={user?.uid ?? 'teacher-draft'}
+                    value={content}
+                    onChange={setContent}
+                    storageKey={`poket-teacher-lesson:${user?.uid ?? 'draft'}`}
+                    placeholder="Paste or write your source material — notes, a lecture transcript, a chapter outline."
+                    onPasteImages={files => {
+                      void filesToAssets(user?.uid ?? 'teacher-draft', files)
+                        .then(added => setPictures(prev => [...prev, ...added]))
+                        .catch(err => toast.error(err instanceof Error ? err.message : 'That image could not be added.'));
+                    }}
+                  />
+                  <p className="text-[11px] text-muted-foreground">Start with the learning objective, then the material and the key terms students should master. Paste an image and it waits in the Image block until it has alt text.</p>
+                </>
+              ) : (
+                <>
+                  <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Write the lesson source. The editor, imports, and image library are on the CMS add-on." className="rounded-xl min-h-40" />
+                  <p className="text-[11px] text-muted-foreground">An admin can allocate the CMS add-on to this account for the shared editor, imports, image library, and illustrations.</p>
+                </>
+              )}
             </div>
+            {hasCmsAddon(profile) && (
+              <>
+                <div className="space-y-4 rounded-2xl border border-border p-4">
+                  <div>
+                    <p className="text-sm font-semibold">Image</p>
+                    <p className="text-[11px] text-muted-foreground">Drop, paste, or choose a picture. Alt text is required before it can be placed in the lesson.</p>
+                  </div>
+                  <LessonImageBlock
+                    scopeId={user?.uid ?? 'teacher-draft'}
+                    images={pictures}
+                    onChange={setPictures}
+                    onInsert={image => setContent(prev => appendImageMarkdown(prev, image))}
+                  />
+                </div>
+                <div className="space-y-4 rounded-2xl border border-border p-4">
+                  <div>
+                    <p className="text-sm font-semibold">Illustration</p>
+                    <p className="text-[11px] text-muted-foreground">Generating spends 15 Sparks after you confirm. The picture still needs alt text before it is placed.</p>
+                  </div>
+                  <LessonIllustrationBlock
+                    scopeId={user?.uid ?? 'teacher-draft'}
+                    images={pictures}
+                    onChange={setPictures}
+                    onInsert={image => setContent(prev => appendImageMarkdown(prev, image))}
+                    showLibrary={false}
+                  />
+                </div>
+              </>
+            )}
           </div>
 
           {/* Live quality checklist */}
@@ -584,6 +725,18 @@ export default function UploadPage() {
         </motion.div>
       )}
 
+      {lessonTitle.trim() && !canPublish && (
+        <div className="bg-card border border-border rounded-3xl p-5 flex items-center justify-between gap-4">
+          <div>
+            <h3 className="font-bold text-foreground">Keep this as a draft</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">Leaving this page asks you to confirm if the lesson is unsaved.</p>
+          </div>
+          <Button variant="outline" onClick={handleSaveDraft} disabled={savingDraft} className="rounded-full h-11 px-5 font-bold">
+            {savingDraft ? 'Saving...' : 'Save draft'}
+          </Button>
+        </div>
+      )}
+
       {/* Publish banner */}
       {canPublish && (
         <motion.div
@@ -600,14 +753,24 @@ export default function UploadPage() {
               <p className="text-sm text-muted-foreground mt-0.5">Final step — publish to make this lesson available to every enrolled student.</p>
             </div>
           </div>
-          <Button
-            onClick={handlePublish}
-            disabled={publishing}
-            className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all shrink-0 gap-2"
-          >
-            <BookOpen className="w-4 h-4" />
-            {publishing ? 'Publishing...' : 'Publish Lesson'}
-          </Button>
+          <div className="flex gap-2 shrink-0">
+            <Button
+              variant="outline"
+              onClick={handleSaveDraft}
+              disabled={publishing || savingDraft}
+              className="rounded-full h-11 px-5 font-bold"
+            >
+              {savingDraft ? 'Saving...' : 'Save draft'}
+            </Button>
+            <Button
+              onClick={handlePublish}
+              disabled={publishing || savingDraft}
+              className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all shrink-0 gap-2"
+            >
+              <BookOpen className="w-4 h-4" />
+              {publishing ? 'Publishing...' : 'Publish Lesson'}
+            </Button>
+          </div>
         </motion.div>
       )}
 
@@ -698,7 +861,7 @@ export default function UploadPage() {
               onChange={e => setSowYearGroup(e.target.value)}
               className="w-full h-11 rounded-xl border border-input bg-background px-3 text-sm text-foreground"
             >
-              {YEAR_GROUPS.map(yg => <option key={yg} value={yg}>{yg}</option>)}
+              {YEAR_GROUPS.map(yg => <option key={yg.value} value={yg.value}>{yg.label}</option>)}
             </select>
           </div>
           <div className="space-y-1.5">

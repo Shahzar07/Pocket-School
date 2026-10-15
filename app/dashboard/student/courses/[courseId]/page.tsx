@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { getCourse, getModulesWithLessons, getEnrolledCourses, getUnitQuizAttempts, Course, Module, Lesson, Enrollment, UnitQuizAttempt } from '@/lib/db';
+import { getCourse, getModulesWithLessons, getEnrolledCourses, getUnitQuizAttempts, listCourseQuestions, Course, Module, Lesson, Enrollment, UnitQuizAttempt, CourseQuestion } from '@/lib/db';
+import { CourseQuestions } from '@/components/course-questions';
 import { getUnitStatuses, getCurriculumLessonStatus } from '@/lib/curriculum';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +22,7 @@ const fadeUp: Record<string, any> = {
 export default function CourseDetailPage() {
   const router = useRouter();
   const { courseId } = useParams<{ courseId: string }>();
-  const { user } = useAuthSTORE();
+  const { user, profile } = useAuthSTORE();
   const [course, setCourse] = useState<Course | null>(null);
   const [modules, setModules] = useState<ModuleWithLessons[]>([]);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
@@ -29,6 +30,7 @@ export default function CourseDetailPage() {
   const [expanded, setExpanded] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [questions, setQuestions] = useState<CourseQuestion[]>([]);
 
   const load = async () => {
     if (!user || !courseId) return;
@@ -54,6 +56,7 @@ export default function CourseDetailPage() {
       setExpanded(mods.map(m => m.module.id));
       const e = enrolled.find(x => x.course.id === courseId);
       setEnrollment(e?.enrollment ?? null);
+      if (e) setQuestions(await listCourseQuestions(courseId));
     } catch (e: any) {
       setError(e?.message ?? 'Something went wrong.');
     } finally {
@@ -252,6 +255,17 @@ export default function CourseDetailPage() {
           );
         })}
       </div>
+
+      {enrollment && user && (
+        <CourseQuestions
+          courseId={courseId}
+          questions={questions}
+          mode="ask"
+          actorId={user.uid}
+          actorName={profile?.name || 'Student'}
+          onChanged={() => { void load(); }}
+        />
+      )}
 
       {modules.length === 0 && (
         <div className="relative flex flex-col items-center justify-center text-center py-24 overflow-hidden">

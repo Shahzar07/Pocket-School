@@ -8,6 +8,8 @@ import {
   normaliseSubdomain, isSubdomainAvailable, Institution,
 } from '@/lib/db';
 import { institutionOrigin } from '@/lib/white-label';
+import { normaliseCustomDomain } from '@/lib/oem';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,6 +34,7 @@ export default function AdminInstitutions() {
   const [savingBrand, setSavingBrand] = useState(false);
   const [bForm, setBForm] = useState({
     subdomain: '', displayName: '', tagline: '', logoUrl: '', primaryColor: '', hidePoweredBy: false,
+    emailFromName: '', certificateIssuer: '', customDomain: '',
   });
 
   const openBranding = (inst: Institution) => {
@@ -43,6 +46,9 @@ export default function AdminInstitutions() {
       logoUrl: inst.branding?.logoUrl ?? '',
       primaryColor: inst.branding?.primaryColor ?? '',
       hidePoweredBy: !!inst.branding?.hidePoweredBy,
+      emailFromName: inst.branding?.emailFromName ?? '',
+      certificateIssuer: inst.branding?.certificateIssuer ?? '',
+      customDomain: inst.customDomain ?? '',
     });
   };
 
@@ -69,16 +75,25 @@ export default function AdminInstitutions() {
 
     setSavingBrand(true);
     try {
+      const nextBranding = Object.fromEntries(Object.entries({
+        displayName: bForm.displayName.trim(),
+        tagline: bForm.tagline.trim(),
+        logoUrl: bForm.logoUrl.trim(),
+        primaryColor: bForm.primaryColor.trim(),
+        hidePoweredBy: bForm.hidePoweredBy,
+        emailFromName: bForm.emailFromName.trim(),
+        certificateIssuer: bForm.certificateIssuer.trim(),
+      }).filter(([, value]) => value !== '')) as NonNullable<Institution['branding']>;
       const patch: Partial<Institution> = {
         subdomain: subdomain ?? '',
-        branding: {
-          displayName: bForm.displayName.trim() || undefined,
-          tagline: bForm.tagline.trim() || undefined,
-          logoUrl: bForm.logoUrl.trim() || undefined,
-          primaryColor: bForm.primaryColor.trim() || undefined,
-          hidePoweredBy: bForm.hidePoweredBy,
-        },
+        branding: nextBranding,
+        customDomain: bForm.customDomain.trim() ? (normaliseCustomDomain(bForm.customDomain) ?? '') : '',
       };
+      if (bForm.customDomain.trim() && !patch.customDomain) {
+        toast.error('Use a hostname the school owns, such as learn.school.example.');
+        setSavingBrand(false);
+        return;
+      }
       await updateInstitution(branding.id, patch);
       setInstitutions(list => list.map(i => (i.id === branding.id ? { ...i, ...patch } : i)));
       toast.success(subdomain ? `Live at ${institutionOrigin(subdomain)}` : 'Branding saved.');
@@ -280,6 +295,23 @@ export default function AdminInstitutions() {
                 </div>
               </div>
 
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">Custom domain</Label>
+                <Input value={bForm.customDomain} onChange={e => setBForm(f => ({ ...f, customDomain: e.target.value }))}
+                  placeholder="learn.school.example" className="rounded-xl h-11 bg-muted/50" />
+              </div>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Email from name</Label>
+                  <Input value={bForm.emailFromName} onChange={e => setBForm(f => ({ ...f, emailFromName: e.target.value }))}
+                    className="rounded-xl h-11 bg-muted/50" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Certificate name</Label>
+                  <Input value={bForm.certificateIssuer} onChange={e => setBForm(f => ({ ...f, certificateIssuer: e.target.value }))}
+                    className="rounded-xl h-11 bg-muted/50" />
+                </div>
+              </div>
               <label className="flex items-center gap-2.5 text-sm text-foreground cursor-pointer">
                 <input type="checkbox" checked={bForm.hidePoweredBy}
                   onChange={e => setBForm(f => ({ ...f, hidePoweredBy: e.target.checked }))}
@@ -335,6 +367,9 @@ export default function AdminInstitutions() {
                 <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full shrink-0 ${inst.status === 'active' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'}`}>
                   {inst.status}
                 </span>
+                <Link href={`/dashboard/admin/institutions/${inst.id}`} className="text-xs font-semibold text-violet-700 px-2">
+                  Licence
+                </Link>
                 <Button variant="ghost" size="sm" className="rounded-xl shrink-0 text-xs font-semibold gap-1.5"
                   onClick={() => openBranding(inst)}
                 >

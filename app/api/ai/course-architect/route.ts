@@ -1,3 +1,4 @@
+import { enforceAiAccess } from '@/lib/api-guard';
 import { NextRequest, NextResponse } from 'next/server';
 import { callOpenRouter, CONTENT_MODEL } from '@/lib/openrouter';
 import { getTemplate, objectiveDirective } from '@/lib/content-templates';
@@ -328,6 +329,8 @@ Exact shape:
 const PARSE_ERROR = 'ET could not produce a usable result. Please try again.';
 
 export async function POST(req: NextRequest) {
+  const denied = await enforceAiAccess(req);
+  if (denied) return denied;
   let task = '';
   try {
     const body = await req.json().catch(() => ({}));

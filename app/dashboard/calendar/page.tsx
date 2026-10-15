@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
+import { useAccountMode } from '@/hooks/use-account-mode';
+import { hasAccountRole } from '@/lib/account-modes';
 import { getCalendarEvents, createCalendarEvent, deleteCalendarEvent, CalendarEvent } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Plus, ChevronLeft, ChevronRight, X, Calendar, Trash2, Loader2 } from 'lucide-react';
+import { CalendarTools } from '@/components/calendar/calendar-tools';
+import type { CalendarItem } from '@/lib/insights/calendar';
 import { Timestamp } from 'firebase/firestore';
+import { AllocationPicker } from '@/components/allocation-picker';
+import { describeTargets, recordVisible } from '@/lib/allocation-targets';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -40,16 +46,18 @@ const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 export default function CalendarPage() {
   const { user, profile } = useAuthSTORE();
+  const { mode } = useAccountMode();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [today] = useState(new Date());
   const [viewDate, setViewDate] = useState(new Date());
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ title: '', date: '', type: 'event' as CalendarEvent['type'], description: '' });
+  const [form, setForm] = useState({ title: '', date: '', type: 'event' as CalendarEvent['type'], description: '', targets: ['all'] as string[] });
   const [selected, setSelected] = useState<CalendarEvent | null>(null);
 
-  const canCreate = profile?.role === 'teacher' || profile?.role === 'admin';
+  const teaching = mode === 'teacher' && hasAccountRole(profile, 'teacher');
+  const canCreate = teaching || profile?.role === 'admin' || profile?.role === 'institution_admin';
 
   const load = async () => {
     const data = await getCalendarEvents({});
@@ -69,10 +77,11 @@ export default function CalendarPage() {
         startDate: Timestamp.fromDate(new Date(form.date)),
         type: form.type,
         createdBy: user.uid,
-        audience: 'all',
+        audience: (form.targets.find(target => target === 'all' || target === 'students' || target === 'teachers' || target === 'parents') ?? 'all') as CalendarEvent['audience'],
+        targets: form.targets,
       });
       toast.success('Event created!');
-      setForm({ title: '', date: '', type: 'event', description: '' });
+      setForm({ title: '', date: '', type: 'event', description: '', targets: ['all'] });
       setShowCreate(false);
       await load();
     } catch { toast.error('Failed to create event.'); }
@@ -95,13 +104,23 @@ export default function CalendarPage() {
     return dayNum >= 1 && dayNum <= daysInMonth ? dayNum : null;
   });
 
+  const visibleEvents = events.filter(event => {
+    if (profile?.role === 'admin' || profile?.role === 'institution_admin' || mode === 'teacher') return true;
+    return recordVisible(event, {
+      role: mode === 'parent' ? 'parent' : 'student',
+      userId: user?.uid,
+      institutionId: profile?.institutionId,
+      roles: mode === 'parent' ? ['parent'] : ['student'],
+    });
+  });
+
   const getEventsForDay = (day: number) =>
-    events.filter(e => {
+    visibleEvents.filter(e => {
       const d = e.startDate?.toDate?.();
       return d && d.getFullYear() === year && d.getMonth() === month && d.getDate() === day;
     });
 
-  const upcomingEvents = events
+  const upcomingEvents = visibleEvents
     .filter(e => e.startDate?.toDate?.() && e.startDate.toDate() >= today)
     .sort((a, b) => (a.startDate?.toDate?.()?.getTime() ?? 0) - (b.startDate?.toDate?.()?.getTime() ?? 0))
     .slice(0, 8);
@@ -138,6 +157,24 @@ export default function CalendarPage() {
         )}
       </motion.header>
 
+      {canCreate && user && (
+        <CalendarTools onPublish={async (items: CalendarItem[]) => {
+          for (const item of items) {
+            await createCalendarEvent({
+              title: item.title,
+              ...(item.description ? { description: item.description } : {}),
+              startDate: Timestamp.fromDate(new Date(`${item.date}T00:00:00Z`)),
+              ...(item.endDate ? { endDate: Timestamp.fromDate(new Date(`${item.endDate}T00:00:00Z`)) } : {}),
+              type: item.type,
+              createdBy: user.uid,
+              audience: 'all',
+            });
+          }
+          toast.success('Calendar dates published.');
+          await load();
+        }} />
+      )}
+
       {/* Create form */}
       {showCreate && canCreate && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
@@ -165,6 +202,17 @@ export default function CalendarPage() {
             </Select>
             <Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Description (optional)" className="rounded-xl h-11 bg-muted/50" />
           </div>
+          <AllocationPicker
+            label="Who can see this"
+            chips={[
+              { token: 'all', label: 'Everyone' },
+              { token: 'students', label: 'Students' },
+              { token: 'teachers', label: 'Teachers' },
+              { token: 'parents', label: 'Parents' },
+            ]}
+            value={form.targets}
+            onChange={targets => setForm(current => ({ ...current, targets }))}
+          />
           <Button onClick={handleCreate} disabled={saving} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white gap-2">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
             Create Event
@@ -260,6 +308,7 @@ export default function CalendarPage() {
               </button>
             </div>
             {selected.description && <p className="text-sm text-foreground">{selected.description}</p>}
+            <p className="text-sm text-muted-foreground">{describeTargets(selected.targets?.length ? selected.targets : [selected.audience])}</p>
             {canCreate && (
               <Button onClick={() => handleDelete(selected.id!)} variant="destructive" className="w-full gap-2 rounded-full h-11 font-bold">
                 <Trash2 className="w-4 h-4" /> Delete Event

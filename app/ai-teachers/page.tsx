@@ -13,6 +13,8 @@ import {
   Palette,
   ScrollText,
   Brain,
+  Heart,
+  Scale,
   ArrowRight,
   Mic,
   Sparkles,
@@ -21,6 +23,8 @@ import { AiTeacherModal } from '@/components/ai-teacher-modal';
 import { teacherPortrait } from '@/lib/teacher-portrait';
 import {
   AI_TEACHERS,
+  CEFR_BANNER,
+  CEFR_LEVELS,
   TEACHER_CATEGORIES,
   type AiTeacher,
   type TeacherCategory,
@@ -37,6 +41,9 @@ const ICONS: Record<TeacherIconKey, typeof Atom> = {
   briefcase: Briefcase,
   palette: Palette,
   history: ScrollText,
+  heart: Heart,
+  scale: Scale,
+  brain: Brain,
 };
 
 export default function AiTeachersPage() {
@@ -53,9 +60,8 @@ export default function AiTeachersPage() {
     });
   }, [filter]);
 
-  const liveCount = AI_TEACHERS.filter((t) => t.status === 'live').length;
-
   const open = (t: AiTeacher) => setSelected(t);
+  const showCefr = filter === 'All' || filter === 'Languages';
 
   return (
     <div className="min-h-screen bg-white">
@@ -82,11 +88,11 @@ export default function AiTeachersPage() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
               </span>
-              {liveCount} AVAILABLE NOW
+              30+ AVAILABLE NOW
             </span>
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-md border border-black/[0.04]">
               <Sparkles className="w-3.5 h-3.5 text-[#E2AF4D]" />
-              {AI_TEACHERS.length} SUBJECTS
+              30+ SUBJECTS
             </span>
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-md border border-black/[0.04]">
               <Mic className="w-3.5 h-3.5 text-[#2786A4]" />
@@ -107,7 +113,7 @@ export default function AiTeachersPage() {
               </h2>
             </div>
             <p className="text-sm font-semibold text-slate-500">
-              Showing {visible.length} of {AI_TEACHERS.length}
+              Showing {visible.length} of 30+
             </p>
           </div>
 
@@ -139,6 +145,21 @@ export default function AiTeachersPage() {
               ))}
             </AnimatePresence>
           </div>
+
+          {showCefr && (
+            <div className="mt-8 rounded-3xl border border-[#2786A4]/20 bg-white px-5 py-5 sm:px-7">
+              <p className="text-xs font-bold tracking-[0.18em] text-[#2786A4] mb-3">CEFR · LANGUAGES</p>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {CEFR_LEVELS.map((level) => (
+                  <span key={level.code} className="inline-flex items-center gap-1.5 rounded-full bg-[#E9F7FA] px-3 py-1.5 text-xs font-bold text-[#1E6A83]">
+                    {level.code}
+                    <span className="font-semibold text-[#2786A4]">{level.label}</span>
+                  </span>
+                ))}
+              </div>
+              <p className="text-sm text-slate-600 leading-relaxed">{CEFR_BANNER}</p>
+            </div>
+          )}
 
           {visible.length === 0 && (
             <div className="text-center py-20">

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { LEGAL_COMPANY_NO, LEGAL_ENTITY, LEGAL_UPDATED } from './legal';
 
 /**
  * Legal document content for Poket School.
@@ -7,9 +8,7 @@ import type { ReactNode } from 'react';
  * PDF export all render from one source of truth.
  */
 
-export const LEGAL_ENTITY = 'Poket Media Sdn Bhd';
-export const LEGAL_COMPANY_NO = '1332289-X';
-export const LEGAL_UPDATED = '21 July 2026';
+export { LEGAL_COMPANY_NO, LEGAL_ENTITY, LEGAL_UPDATED };
 
 export interface LegalDoc {
   id: string;

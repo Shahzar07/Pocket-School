@@ -328,6 +328,11 @@ h1.font-heading, .font-heading.text-4xl, .font-heading.text-5xl {
   position: relative;
   overflow: hidden;
 }
+/* Directional icons (arrows that mean "forward") mirror in Arabic and Urdu. */
+[dir='rtl'] .ps-dir-icon {
+  transform: scaleX(-1);
+}
+
 .liquid-glass::before {
   content: '';
   position: absolute;

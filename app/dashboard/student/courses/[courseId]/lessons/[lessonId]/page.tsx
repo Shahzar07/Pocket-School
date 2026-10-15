@@ -4,21 +4,32 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'motion/react';
 import { MathMarkdown } from '@/components/math-markdown';
+import { LessonBody } from '@/components/lesson-body';
+import { readLessonBody } from '@/lib/lesson-body';
+import { LessonQa } from '@/components/scope-c/lesson-qa';
 import { Timestamp } from 'firebase/firestore';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { useTutorContext } from '@/hooks/use-tutor-context';
 import {
   getLessonByIds, getCourse, getEnrollment, getModulesWithLessons,
   getUnitQuizAttempts, markLessonComplete, getLessonNote, saveLessonNote,
-  saveSubmission, unlockLessonFormat, saveUnitQuizAttempt,
+  saveSubmission, unlockLessonFormat, saveUnitQuizAttempt, rememberLesson,
+  setBookmarkedLessons, updateUser,
   AiOutputs, Course, Module, Lesson, Enrollment, UnitQuizAttempt,
 } from '@/lib/db';
 import { getUnitStatuses, getCurriculumLessonStatus } from '@/lib/curriculum';
+import { productAccess, viewerFromProfile } from '@/lib/allocation';
+import { lessonWindow } from '@/lib/access-policy';
+import { recordStudyDay, streakFromDates, toggleBookmark } from '@/lib/learning';
+import { rememberOfflineLesson } from '@/components/offline-banner';
 import { FORMAT_COSTS, FORMAT_LABELS, LESSON_COMPLETE_REWARD, UNIT_PASS_REWARD } from '@/lib/sparks';
 import { SmartAudioPlayer } from '@/components/smart-audio-player';
 import { VideoPlayer } from '@/components/video-player';
 import { VideoStoryboard } from '@/components/video-storyboard';
 import { MindmapRenderer } from '@/components/mindmap-renderer';
+import { DownloadMenu } from '@/components/download-menu';
+import { canDownload } from '@/lib/export/allow';
+import { visibleJob } from '@/lib/generation-jobs';
 import { InfographicRenderer } from '@/components/infographic-renderer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -26,11 +37,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
+import { resolveLessonCopy } from '@/lib/i18n/detect';
+import { getLanguage } from '@/lib/languages';
 import {
   ArrowLeft, CheckCircle2, FileText, Headphones, FlipHorizontal,
   ClipboardList, Presentation, BookMarked, BookOpen, Network,
   Zap, ChevronLeft, ChevronRight, RotateCcw, Check, X, Lock,
-  Video, Trophy, Timer, AlertTriangle, ArrowRight, ImageIcon, Calculator,
+  Video, Trophy, Timer, AlertTriangle, ArrowRight, ImageIcon, Calculator, Bookmark,
 } from 'lucide-react';
 
 const fadeUp: Record<string, any> = {
@@ -586,6 +600,7 @@ function FormatLockCard({
 
 // ─── Main Page ────────────────────────────────────────────────
 export default function LessonPage() {
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
   const { user, profile, fetchProfile } = useAuthSTORE();
@@ -605,6 +620,7 @@ export default function LessonPage() {
   const [unlockingFormat, setUnlockingFormat] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [closedReason, setClosedReason] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
@@ -621,9 +637,12 @@ export default function LessonPage() {
       if (!result) { setLoading(false); return; }
       setNote(savedNote);
       setCourse(courseDoc);
+      let lessonIndex = Math.max(0, (result.lesson.order ?? 1) - 1);
+      let unitIndex = 0;
+      let enroll: Enrollment | null = null;
 
       if (courseDoc?.kind === 'curriculum') {
-        const [allUnits, enroll, quizAttempts] = await Promise.all([
+        const [allUnits, enrollDoc, quizAttempts] = await Promise.all([
           getModulesWithLessons(courseId),
           getEnrollment(user.uid, courseId),
           getUnitQuizAttempts(user.uid, courseId),
@@ -631,12 +650,12 @@ export default function LessonPage() {
         const units = allUnits
           .map(u => ({ module: u.module, lessons: u.lessons.filter(l => l.status === 'published') }))
           .filter(u => u.lessons.length > 0);
-        const unitIndex = units.findIndex(u => u.module.id === result.moduleId);
-        const completedIds = new Set(enroll?.completedLessons ?? []);
+        unitIndex = units.findIndex(u => u.module.id === result.moduleId);
+        const completedIds = new Set(enrollDoc?.completedLessons ?? []);
 
         // Lock guard — direct URLs can't bypass unit/lesson progression
         if (unitIndex >= 0) {
-          const statuses = getUnitStatuses(units, enroll, quizAttempts);
+          const statuses = getUnitStatuses(units, enrollDoc, quizAttempts);
           const lessonStatus = getCurriculumLessonStatus(
             result.lesson, units[unitIndex].lessons, statuses[unitIndex].state, completedIds
           );
@@ -645,17 +664,43 @@ export default function LessonPage() {
             router.replace(`/dashboard/student/courses/${courseId}`);
             return;
           }
+          lessonIndex = Math.max(0, units[unitIndex].lessons.findIndex(item => item.id === lessonId));
           setUnit(units[unitIndex].module);
           setUnitLessons(units[unitIndex].lessons);
         }
+        enroll = enrollDoc;
         setEnrollment(enroll);
         setAttempts(quizAttempts.filter(a => a.lessonId === lessonId));
         setCompleted(completedIds.has(lessonId));
       } else {
         // Marketplace courses also track enrollment/completion.
-        const enroll = await getEnrollment(user.uid, courseId);
+        enroll = await getEnrollment(user.uid, courseId);
         setEnrollment(enroll);
         setCompleted((enroll?.completedLessons ?? []).includes(lessonId));
+      }
+
+      if (courseDoc?.accessPolicy) {
+        const enrolledOn = enroll?.enrolledAt?.toDate?.().toISOString().slice(0, 10);
+        const accessViewer = {
+          ...viewerFromProfile(profile, { userId: user.uid, enrolled: !!enroll }),
+          enrolled: !!enroll,
+          enrolledOn,
+          now: new Date().toISOString().slice(0, 10),
+          trial: enroll?.trial === true,
+        };
+        const productDecision = productAccess(courseDoc, accessViewer);
+        const lessonDecision = lessonWindow(courseDoc.accessPolicy, accessViewer, lessonIndex, unitIndex);
+        const scheduleClosed = productDecision.reason.startsWith('Releases')
+          || productDecision.reason === 'Access ended'
+          || productDecision.reason === 'Excluded'
+          || productDecision.reason === 'Trial ended';
+        if (!productDecision.listed) setClosedReason(productDecision.reason);
+        else if (scheduleClosed) setClosedReason(productDecision.reason);
+        else if (!lessonDecision.open) setClosedReason(lessonDecision.reason);
+        else if (!productDecision.open && lessonDecision.reason !== 'Free preview') setClosedReason(productDecision.reason);
+        else setClosedReason(null);
+      } else {
+        setClosedReason(null);
       }
 
       setLesson(result.lesson);
@@ -663,6 +708,12 @@ export default function LessonPage() {
         result.lesson.title,
         result.lesson.aiOutputs?.summary ?? result.lesson.aiOutputs?.text ?? ''
       );
+      rememberOfflineLesson(result.lesson.title);
+      void rememberLesson(user.uid, courseId, lessonId).catch(() => {});
+      const today = new Date().toISOString().slice(0, 10);
+      if (!(profile?.studyDates ?? []).includes(today)) {
+        void updateUser(user.uid, { studyDates: recordStudyDay(profile?.studyDates ?? [], today) }).catch(() => {});
+      }
       setLoading(false);
       } catch (err: any) {
         console.error('Failed to load lesson:', err);
@@ -728,6 +779,27 @@ export default function LessonPage() {
     setCompleting(false);
   };
 
+  const bookmarked = (enrollment?.bookmarkedLessons ?? []).includes(lessonId);
+  const studyStreak = streakFromDates(
+    recordStudyDay(profile?.studyDates ?? [], new Date().toISOString().slice(0, 10)),
+    new Date().toISOString().slice(0, 10),
+  ).current;
+
+  const handleBookmark = async () => {
+    if (!user || !enrollment) {
+      toast.error('Enrol in this course to bookmark a lesson.');
+      return;
+    }
+    const next = toggleBookmark(enrollment.bookmarkedLessons ?? [], lessonId);
+    setEnrollment({ ...enrollment, bookmarkedLessons: next });
+    try {
+      await setBookmarkedLessons(user.uid, courseId, next);
+    } catch (err) {
+      setEnrollment(enrollment);
+      toast.error(err instanceof Error ? err.message : 'That bookmark could not be saved.');
+    }
+  };
+
   const handleSaveNote = useCallback(async () => {
     if (!user) return;
     setNoteSaving(true);
@@ -767,7 +839,7 @@ export default function LessonPage() {
   const glossary = Array.isArray(aiOutputs?.glossary) ? aiOutputs.glossary : [];
 
   const TABS: { id: string; label: string; icon: React.ReactNode; available: boolean; format?: string }[] = [
-    { id: 'text', label: 'Lesson', icon: <FileText className="w-3.5 h-3.5" />, available: !!aiOutputs?.text, format: 'text' },
+    { id: 'text', label: 'Lesson', icon: <FileText className="w-3.5 h-3.5" />, available: !!readLessonBody(lesson).trim(), format: 'text' },
     { id: 'video', label: 'Video', icon: <Video className="w-3.5 h-3.5" />, available: !!aiOutputs?.videoScript, format: 'videoScript' },
     { id: 'flashcards', label: 'Flashcards', icon: <FlipHorizontal className="w-3.5 h-3.5" />, available: flashcards.length > 0, format: 'flashcards' },
     { id: 'quiz', label: 'Quiz', icon: <ClipboardList className="w-3.5 h-3.5" />, available: quiz.length > 0, format: 'quiz' },
@@ -816,6 +888,24 @@ export default function LessonPage() {
     <div className="text-center py-16 text-muted-foreground">Lesson not found.</div>
   );
 
+  if (closedReason) return (
+    <div className="max-w-xl mx-auto px-4 sm:px-6 py-24 text-center">
+      <Lock className="w-10 h-10 mx-auto mb-4 text-muted-foreground" />
+      <h1 className="font-heading text-xl text-foreground mb-2">{lesson.title}</h1>
+      <p className="text-sm text-muted-foreground mb-6">{closedReason}</p>
+      <Button onClick={() => router.push(`/dashboard/student/courses/${courseId}`)} className="rounded-full px-6 font-bold gap-2">
+        <ArrowLeft className="w-4 h-4" /> Back to the course
+      </Button>
+    </div>
+  );
+
+  const copy = resolveLessonCopy(lesson, i18n.language);
+  const languageNotice = copy.fellBack ? (
+    <p className="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+      {t('lesson.fallback', { language: getLanguage(i18n.language).label })}
+    </p>
+  ) : null;
+
   // ── Unit mastery quiz takes over the whole page ──
   if (isUnitQuiz && unit) {
     return (
@@ -825,8 +915,9 @@ export default function LessonPage() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">Module Mastery Quiz</p>
-            <h1 className="font-heading text-foreground text-lg truncate">{lesson.title}</h1>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">{t('lesson.mastery')}</p>
+            <h1 className="font-heading text-foreground text-lg truncate">{copy.title}</h1>
+            {languageNotice}
           </div>
           {completed && (
             <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 rounded-full gap-1.5 shrink-0">
@@ -857,6 +948,32 @@ export default function LessonPage() {
     );
   }
 
+  const downloadViewer = {
+    role: profile?.role,
+    tier: profile?.accessTier ?? null,
+    permissions: profile?.permissions ?? [],
+    courseId,
+    downloadsEnabled: course?.downloadsEnabled ?? null,
+  };
+  const downloadsOn = canDownload(downloadViewer).allowed;
+  const downloadFor = (
+    asset: 'notes' | 'glossary' | 'flashcards' | 'quiz' | 'problems' | 'slides' | 'infographic' | 'mindmap',
+    content: unknown,
+    format?: string,
+    answerKeyToggle = false,
+  ) => (
+    downloadsOn && !isFormatLocked(format) ? (
+      <DownloadMenu
+        asset={asset}
+        title={copy.title}
+        content={content}
+        viewer={downloadViewer}
+        courseId={courseId}
+        answerKeyToggle={answerKeyToggle}
+      />
+    ) : null
+  );
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
       {/* Header */}
@@ -866,15 +983,29 @@ export default function LessonPage() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">{isCurriculum ? 'Lesson (Unit)' : 'Course Lesson'}</p>
-            <h1 className="font-heading text-foreground text-2xl truncate">{lesson.title}</h1>
-            {!aiOutputs && <p className="text-xs text-muted-foreground">No content generated yet</p>}
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">{isCurriculum ? t('lesson.unit') : t('lesson.course')}</p>
+            <h1 className="font-heading text-foreground text-2xl truncate">{copy.title}</h1>
+            {languageNotice}
+            {!aiOutputs && !copy.text.trim() && <p className="text-xs text-muted-foreground">No content generated yet</p>}
             {isCurriculum && lesson.objectiveCodes && lesson.objectiveCodes.length > 0 && (
               <p className="text-xs text-muted-foreground font-mono truncate">{lesson.objectiveCodes.join(' · ')}</p>
             )}
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {studyStreak > 0 && (
+            <span className="hidden sm:inline text-xs font-semibold text-amber-700">{studyStreak}-day streak</span>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            className="rounded-full h-11 px-4 font-bold"
+            onClick={() => { void handleBookmark(); }}
+            aria-pressed={bookmarked}
+          >
+            <Bookmark className={`w-3.5 h-3.5 mr-1.5 ${bookmarked ? 'fill-current' : ''}`} />
+            {bookmarked ? 'Saved' : 'Bookmark'}
+          </Button>
           {completed ? (
             <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 rounded-full gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5" /> Completed
@@ -893,11 +1024,21 @@ export default function LessonPage() {
         </div>
       </motion.div>
 
-      {!aiOutputs ? (
+      {!aiOutputs && !copy.text.trim() ? (
         <div className="text-center py-20 text-muted-foreground bg-muted/30 rounded-3xl border border-dashed border-border">
           <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-30" />
           <p className="font-semibold">Content not yet generated</p>
           <p className="text-sm mt-1">Your teacher needs to publish this lesson from the teacher upload page.</p>
+        </div>
+      ) : !aiOutputs ? (
+        <div className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
+          {downloadFor('notes', copy.text, 'text')}
+          <LessonBody
+            markdown={copy.text}
+            imageDownload={downloadsOn ? image => (
+              <DownloadMenu asset="image" title={image.alt} content={{ url: image.src }} viewer={downloadViewer} courseId={courseId} />
+            ) : undefined}
+          />
         </div>
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -918,7 +1059,22 @@ export default function LessonPage() {
           <TabsContent value="text">
             {gate('text',
               <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
-                <MathMarkdown>{aiOutputs.text ?? ''}</MathMarkdown>
+                {downloadFor('notes', copy.text, 'text')}
+                <LessonBody
+                  markdown={copy.text}
+                  imageDownload={downloadsOn && !isFormatLocked('text') ? image => (
+                    <DownloadMenu asset="image" title={image.alt} content={{ url: image.src }} viewer={downloadViewer} courseId={courseId} />
+                  ) : undefined}
+                />
+                {(lesson.mediaLibrary ?? []).length > 0 && downloadsOn && !isFormatLocked('text') && (
+                  <div className="not-prose mt-6 space-y-3">
+                    {(lesson.mediaLibrary ?? []).map(image => (
+                      <div key={image.id}>
+                        <DownloadMenu asset="image" title={image.alt || image.caption || 'Illustration'} content={{ url: image.src }} viewer={downloadViewer} courseId={courseId} />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </motion.div>
             )}
           </TabsContent>
@@ -944,7 +1100,7 @@ export default function LessonPage() {
           <TabsContent value="flashcards">
             {gate('flashcards',
               flashcards.length
-                ? <FlashcardViewer cards={flashcards} />
+                ? <div>{downloadFor('flashcards', flashcards, 'flashcards')}<FlashcardViewer cards={flashcards} /></div>
                 : <p className="text-center py-8 text-muted-foreground">No flashcards available.</p>
             )}
           </TabsContent>
@@ -953,7 +1109,7 @@ export default function LessonPage() {
           <TabsContent value="quiz">
             {gate('quiz',
               quiz.length
-                ? <QuizViewer questions={quiz} onComplete={handleQuizComplete} />
+                ? <div>{downloadFor('quiz', quiz, 'quiz', true)}<QuizViewer questions={quiz} onComplete={handleQuizComplete} /></div>
                 : <p className="text-center py-8 text-muted-foreground">No quiz available.</p>
             )}
           </TabsContent>
@@ -962,6 +1118,7 @@ export default function LessonPage() {
           <TabsContent value="problems">
             {gate('problems',
               <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
+                {downloadFor('problems', aiOutputs.problems ?? '', 'problems', true)}
                 <MathMarkdown>{aiOutputs.problems ?? ''}</MathMarkdown>
               </motion.div>
             )}
@@ -972,6 +1129,7 @@ export default function LessonPage() {
             {gate('slides',
               slides.length ? (
                 <div className="space-y-4">
+                  {downloadFor('slides', slides, 'slides')}
                   {slides.map((slide, i) => (
                     <motion.div key={i} initial="hidden" animate="visible" variants={fadeUp} custom={i} className="bg-card border border-border rounded-3xl p-6 card-glow">
                       <div className="flex items-center gap-3 mb-4">
@@ -996,6 +1154,7 @@ export default function LessonPage() {
           <TabsContent value="notes">
             {gate('notes',
               <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-amber-500/10 dark:bg-amber-900/10 border border-amber-500/20 rounded-3xl p-6 sm:p-8">
+                {downloadFor('notes', aiOutputs.notes ?? '', 'notes')}
                 <MathMarkdown>{aiOutputs.notes ?? ''}</MathMarkdown>
               </motion.div>
             )}
@@ -1005,7 +1164,16 @@ export default function LessonPage() {
           <TabsContent value="audio">
             {gate('audioScript',
               <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-                <SmartAudioPlayer script={aiOutputs.audioScript ?? ''} title="Audio Summary" />
+                {(aiOutputs.audioScript ?? '').trim()
+                  ? <SmartAudioPlayer script={aiOutputs.audioScript ?? ''} title="Audio Summary" />
+                  : (
+                    <p className="text-sm text-muted-foreground">
+                      {visibleJob(lesson.generationJobs?.audioScript, Date.now())?.status === 'queued'
+                        || visibleJob(lesson.generationJobs?.audioScript, Date.now())?.status === 'generating'
+                        ? 'The audio script is being written.'
+                        : 'The audio script is not ready yet.'}
+                    </p>
+                  )}
               </motion.div>
             )}
           </TabsContent>
@@ -1014,6 +1182,7 @@ export default function LessonPage() {
           <TabsContent value="infographic">
             {gate('infographic',
               <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+                {downloadFor('infographic', aiOutputs.infographic ?? '', 'infographic')}
                 <InfographicRenderer content={aiOutputs.infographic ?? ''} />
               </motion.div>
             )}
@@ -1035,6 +1204,7 @@ export default function LessonPage() {
             {gate('glossary',
               glossary.length ? (
                 <div className="space-y-3">
+                  {downloadFor('glossary', glossary, 'glossary')}
                   {glossary.map((g, i) => (
                     <motion.div key={i} initial="hidden" animate="visible" variants={fadeUp} custom={i} className="bg-card border border-border rounded-3xl p-5 flex gap-4 card-glow">
                       <div className="w-8 h-8 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
@@ -1055,6 +1225,7 @@ export default function LessonPage() {
           <TabsContent value="mindmap">
             {gate('mindmap',
               <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+                {downloadFor('mindmap', aiOutputs.mindmap ?? '', 'mindmap')}
                 <MindmapRenderer content={aiOutputs.mindmap ?? ''} />
               </motion.div>
             )}
@@ -1079,6 +1250,7 @@ export default function LessonPage() {
           </TabsContent>
         </Tabs>
       )}
+      <LessonQa courseId={courseId} lessonId={lessonId} lessonTitle={lesson.title} inAssessment={activeTab === 'quiz'} />
     </div>
   );
 }

@@ -17,6 +17,8 @@ import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebas
 import { storage } from '@/lib/firebase';
 import type { Course, CourseType } from '@/lib/db';
 import { createCourse, updateCourse } from '@/lib/db';
+import { formatMoney } from '@/lib/pricing';
+import { CoverArtPicker, storeMedia } from '@/components/media';
 
 interface Props {
   open: boolean;
@@ -41,7 +43,7 @@ const CATEGORIES = [
   'Art', 'Technology', 'Business', 'Music', 'Other',
 ];
 
-const LEVELS = ['All', 'Primary', 'Secondary', 'GCSE', 'A-Level', 'University'];
+const LEVELS = ['All', 'Primary', 'Lower Secondary', 'IGCSE', 'A-Level', 'LLB Law', 'MBBS Medicine', 'Micro Degree', 'Professional Certification', 'Independent Learning'];
 
 async function uploadFile(
   file: File,
@@ -76,7 +78,7 @@ export default function CourseEditorModal({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState<CourseType>('course');
-  const [category, setCategory] = useState('Mathematics');
+  const [category, setCategory] = useState('Other');
   const [subject, setSubject] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
@@ -87,7 +89,7 @@ export default function CourseEditorModal({
   // Tab 2
   const [level, setLevel] = useState('All');
   const [price, setPrice] = useState<string>('0');
-  const [currency, setCurrency] = useState('GBP');
+  const [currency, setCurrency] = useState('USD');
   const [whatYouLearn, setWhatYouLearn] = useState('');
   const [requirements, setRequirements] = useState('');
   const [tags, setTags] = useState('');
@@ -108,14 +110,14 @@ export default function CourseEditorModal({
       setTitle(initial.title ?? '');
       setDescription(initial.description ?? '');
       setType((initial.type as CourseType) ?? 'course');
-      setCategory(initial.category ?? 'Mathematics');
+      setCategory(initial.category ?? 'Other');
       setSubject(initial.subject ?? '');
       setThumbnailUrl(initial.thumbnailUrl ?? '');
       setThumbnailPreview(initial.thumbnailUrl ?? '');
       setThumbnailFile(null);
       setLevel(initial.level ?? 'All');
       setPrice(String(initial.price ?? 0));
-      setCurrency(initial.currency ?? 'GBP');
+      setCurrency(initial.currency ?? 'USD');
       setWhatYouLearn((initial.whatYouLearn ?? []).join('\n'));
       setRequirements((initial.requirements ?? []).join('\n'));
       setTags((initial.tags ?? []).join(', '));
@@ -128,7 +130,7 @@ export default function CourseEditorModal({
     } else {
       setTitle(''); setDescription(''); setType('course'); setCategory('Mathematics');
       setSubject(''); setThumbnailUrl(''); setThumbnailPreview(''); setThumbnailFile(null);
-      setLevel('All'); setPrice('0'); setCurrency('GBP'); setWhatYouLearn('');
+      setLevel('All'); setPrice('0'); setCurrency('USD'); setWhatYouLearn(''); setCategory('Other');
       setRequirements(''); setTags(''); setWorkbookUrl(''); setWorkbookFile(null);
       setWorkbookFileName(''); setPreviewUrl(''); setDurationHours(''); setIsPublic(true);
     }
@@ -187,7 +189,7 @@ export default function CourseEditorModal({
         category,
         level,
         price: Number(price) || 0,
-        currency: currency.trim() || 'GBP',
+        currency: currency.trim() || 'USD',
         isPublic,
         whatYouLearn: whatYouLearn.split('\n').map(s => s.trim()).filter(Boolean),
         requirements: requirements.split('\n').map(s => s.trim()).filter(Boolean),
@@ -302,6 +304,29 @@ export default function CourseEditorModal({
                 )}
               </div>
               <input ref={thumbInputRef} type="file" accept="image/*" className="hidden" onChange={handleThumbnailChange} />
+              <div className="rounded-xl border border-border p-3">
+                <p className="text-sm font-semibold">Or generate cover art</p>
+                <p className="mt-1 text-xs text-muted-foreground">Pictures are text-free. Choosing one sets the course thumbnail.</p>
+                <div className="mt-3">
+                  <CoverArtPicker
+                    brief={[title, description, subject].filter(Boolean).join('. ')}
+                    onSelect={option => {
+                      void (async () => {
+                        try {
+                          const blob = await (await fetch(option.artSrc)).blob();
+                          const stored = await storeMedia(ownerId || 'course', blob, `cover-${Date.now()}.jpg`);
+                          setThumbnailFile(null);
+                          setThumbnailUrl(stored.src);
+                          setThumbnailPreview(stored.src);
+                          toast.success(option.fallback ? 'Stand-in cover selected.' : 'Cover selected.');
+                        } catch (err) {
+                          toast.error(err instanceof Error ? err.message : 'That cover could not be saved.');
+                        }
+                      })();
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </TabsContent>
 
@@ -332,6 +357,7 @@ export default function CourseEditorModal({
                 <Select value={currency} onValueChange={(v) => v && setCurrency(v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="MYR">MYR (RM)</SelectItem>
                     <SelectItem value="GBP">GBP (£)</SelectItem>
                     <SelectItem value="USD">USD ($)</SelectItem>
                     <SelectItem value="EUR">EUR (€)</SelectItem>
@@ -433,7 +459,7 @@ export default function CourseEditorModal({
 
                 <div className="flex items-center gap-3 text-sm">
                   <span className="font-semibold text-foreground">
-                    {Number(price) === 0 ? 'Free' : `${currency === 'USD' ? '$' : currency === 'EUR' ? '€' : '£'}${Number(price).toFixed(2)}`}
+                    {Number(price) === 0 ? 'Free' : formatMoney(Number(price), currency || 'USD')}
                   </span>
                   {durationHours && <span className="text-muted-foreground">{durationHours}h content</span>}
                   {isPublic && <span className="text-blue-600 text-xs font-medium">Marketplace listing</span>}
@@ -471,8 +497,8 @@ export default function CourseEditorModal({
               <Button variant="outline" onClick={() => save(false)} disabled={saving}>
                 {saving ? 'Saving…' : 'Save as draft'}
               </Button>
-              <Button onClick={() => save(false)} disabled={saving} className="bg-google-blue hover:bg-[#1E6A83] text-white">
-                {saving ? 'Saving…' : 'Save & Review later'}
+              <Button onClick={() => save(true)} disabled={saving} className="bg-google-blue hover:bg-[#1E6A83] text-white">
+                {saving ? 'Saving…' : 'Publish'}
               </Button>
             </div>
           </TabsContent>

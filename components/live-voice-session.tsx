@@ -11,8 +11,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mic, MicOff, PhoneOff, Loader2, Volume2, AlertCircle } from 'lucide-react';
+import { Mic, MicOff, PhoneOff, Loader2, Volume2, AlertCircle, Hand } from 'lucide-react';
 import type { AiTeacher } from '@/lib/ai-teachers';
+import { Speaker } from '@/lib/speech';
 /** App language → BCP-47 tag the recogniser expects. */
 import { RECOGNITION_LANG } from '@/lib/languages';
 
@@ -55,14 +56,22 @@ export type VoiceState = 'idle' | 'listening' | 'thinking' | 'speaking';
 export interface LiveVoiceSessionProps {
   teacher: AiTeacher;
   lang: string;
-  /** Ask the tutor for a reply. Returns the spoken-safe text to say back. */
-  onAsk: (text: string) => Promise<string>;
-  /** Mirror each turn into the visible transcript. */
-  onTurn: (role: 'user' | 'model', text: string) => void;
+  /**
+   * Ask the tutor for a reply. Call `say` with each sentence as it streams in
+   * so the teacher starts talking straight away; honour `signal` so an
+   * interruption stops the stream. Resolves with the full reply text.
+   */
+  onAsk: (text: string, say: (sentence: string) => void, signal: AbortSignal) => Promise<string>;
   onClose: () => void;
 }
 
-export function LiveVoiceSession({ teacher, lang, onAsk, onTurn, onClose }: LiveVoiceSessionProps) {
+/** Loudness that counts as the student speaking, and for how long. Tuned so
+ * the teacher's own voice leaking from laptop speakers doesn't interrupt her. */
+const BARGE_RMS = 0.16;
+const BARGE_FRAMES = 14; // ~230ms of sustained speech at 60fps
+const BARGE_GRACE_MS = 450; // ignore the first moment of each clip
+
+export function LiveVoiceSession({ teacher, lang, onAsk, onClose }: LiveVoiceSessionProps) {
   const [state, setState] = useState<VoiceState>('idle');
   const [interim, setInterim] = useState('');
   const [lastReply, setLastReply] = useState('');
@@ -71,24 +80,58 @@ export function LiveVoiceSession({ teacher, lang, onAsk, onTurn, onClose }: Live
   const [level, setLevel] = useState(0); // 0..1 mic loudness, drives the orb
 
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const rafRef = useRef<number>(0);
   const activeRef = useRef(true);      // session still open
   const busyRef = useRef(false);       // a turn is in flight
+  const bargedRef = useRef(false);     // the student cut in during this turn
+  const mutedRef = useRef(false);
   const finalRef = useRef('');         // accumulated final transcript
   const silenceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const speakStartRef = useRef(0);
 
-  const stopSpeaking = useCallback(() => {
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+  /*
+   * Callbacks from the parent change identity on every render — and the
+   * parent re-renders on every streamed token. Reading them through refs
+   * keeps the recogniser and microphone alive for the whole call; before,
+   * they were torn down and rebuilt dozens of times per reply.
+   */
+  const onAskRef = useRef(onAsk);
+  useEffect(() => { onAskRef.current = onAsk; }, [onAsk]);
+
+  const speakerRef = useRef<Speaker | null>(null);
+  if (!speakerRef.current) {
+    speakerRef.current = new Speaker({
+      voice: teacher.voice,
+      style: teacher.voiceStyle,
+      lang: RECOGNITION_LANG[lang] ?? 'en-GB',
+      onSpeakingChange: (on) => {
+        if (on) speakStartRef.current = performance.now();
+        if (!activeRef.current) return;
+        if (on) setState('speaking');
+      },
+    });
+  }
+  useEffect(() => {
+    speakerRef.current?.setOptions({ voice: teacher.voice, style: teacher.voiceStyle, lang: RECOGNITION_LANG[lang] ?? 'en-GB' });
+  }, [teacher.voice, teacher.voiceStyle, lang]);
+
+  /** Cut the teacher off: stop audio, cancel the stream, hand the floor back. */
+  const interrupt = useCallback(() => {
+    bargedRef.current = true;
+    abortRef.current?.abort();
+    speakerRef.current?.stop();
+    if (activeRef.current && !mutedRef.current) setState('listening');
   }, []);
 
   /* ── Mic level meter (also powers barge-in detection) ── */
   const startMeter = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
       streamRef.current = stream;
       const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       const ctx = new Ctx();
@@ -98,6 +141,8 @@ export function LiveVoiceSession({ teacher, lang, onAsk, onTurn, onClose }: Live
       analyser.fftSize = 512;
       source.connect(analyser);
       const data = new Uint8Array(analyser.frequencyBinCount);
+      let loudFrames = 0;
+      let lastLevel = -1;
 
       const tick = () => {
         analyser.getByteTimeDomainData(data);
@@ -107,12 +152,18 @@ export function LiveVoiceSession({ teacher, lang, onAsk, onTurn, onClose }: Live
           sum += v * v;
         }
         const rms = Math.sqrt(sum / data.length);
-        setLevel(Math.min(1, rms * 4));
+        // Only re-render when the orb would visibly change.
+        const lvl = Math.round(Math.min(1, rms * 4) * 20) / 20;
+        if (lvl !== lastLevel) { lastLevel = lvl; setLevel(lvl); }
 
-        // Barge-in: a clear burst of speech while the teacher talks cuts them off.
-        if (rms > 0.12 && audioRef.current && !audioRef.current.paused) {
-          stopSpeaking();
-          setState('listening');
+        // Barge-in needs sustained speech, not one loud frame — otherwise
+        // the teacher's own voice through the speakers cut her off.
+        const sp = speakerRef.current;
+        const talking = sp?.audible && performance.now() - speakStartRef.current > BARGE_GRACE_MS;
+        loudFrames = talking && rms > BARGE_RMS ? loudFrames + 1 : 0;
+        if (loudFrames >= BARGE_FRAMES && !mutedRef.current) {
+          loudFrames = 0;
+          interrupt();
         }
         rafRef.current = requestAnimationFrame(tick);
       };
@@ -122,68 +173,38 @@ export function LiveVoiceSession({ teacher, lang, onAsk, onTurn, onClose }: Live
       setError('Microphone access was blocked. Allow it in your browser to talk to your teacher.');
       return false;
     }
-  }, [stopSpeaking]);
-
-  /* ── Speak a reply in this teacher's voice ── */
-  const speak = useCallback(async (text: string) => {
-    if (!text.trim()) return;
-    setState('speaking');
-    try {
-      const res = await fetch('/api/ai/audio', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ script: text, voice: teacher.voice, style: teacher.voiceStyle }),
-      });
-      const type = res.headers.get('content-type') ?? '';
-      if (res.ok && type.includes('audio')) {
-        const url = URL.createObjectURL(await res.blob());
-        const audio = new Audio(url);
-        audioRef.current = audio;
-        await new Promise<void>(resolve => {
-          audio.onended = () => { URL.revokeObjectURL(url); resolve(); };
-          audio.onerror = () => { URL.revokeObjectURL(url); resolve(); };
-          audio.play().catch(() => resolve());
-        });
-        return;
-      }
-    } catch { /* fall through to browser voice */ }
-
-    // Fallback so a missing TTS key never breaks the conversation.
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      await new Promise<void>(resolve => {
-        const u = new SpeechSynthesisUtterance(text.replace(/[*#`_$]/g, ''));
-        u.lang = RECOGNITION_LANG[lang] ?? 'en-GB';
-        u.onend = () => resolve();
-        u.onerror = () => resolve();
-        window.speechSynthesis.speak(u);
-      });
-    }
-  }, [teacher.voice, teacher.voiceStyle, lang]);
+  }, [interrupt]);
 
   /* ── One conversational turn ── */
   const handleUtterance = useCallback(async (text: string) => {
     const clean = text.trim();
-    if (!clean || busyRef.current) return;
+    if (!clean || busyRef.current || !activeRef.current) return;
     busyRef.current = true;
+    bargedRef.current = false;
     finalRef.current = '';
     setInterim('');
-    onTurn('user', clean);
     setState('thinking');
+    const speaker = speakerRef.current!;
+    const turn = speaker.begin();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     try {
-      const reply = await onAsk(clean);
+      const reply = await onAskRef.current(clean, (sentence) => speaker.enqueue(sentence, turn), ctrl.signal);
       if (!activeRef.current) return;
-      setLastReply(reply);
-      await speak(reply);
+      if (!bargedRef.current) setLastReply(reply);
+      await speaker.whenIdle();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Something went wrong.';
-      setError(msg);
+      if (!(e instanceof DOMException && e.name === 'AbortError') && !bargedRef.current) {
+        setError(e instanceof Error ? e.message : 'Something went wrong.');
+      }
     } finally {
+      if (abortRef.current === ctrl) abortRef.current = null;
       busyRef.current = false;
-      if (activeRef.current) setState(muted ? 'idle' : 'listening');
+      if (activeRef.current) setState(mutedRef.current ? 'idle' : 'listening');
     }
-  }, [onAsk, onTurn, speak, muted]);
+  }, []);
 
-  /* ── Continuous recognition loop ── */
+  /* ── Continuous recognition loop — lives for the whole call ── */
   useEffect(() => {
     activeRef.current = true;
     const rec = getRecognition();
@@ -198,21 +219,24 @@ export function LiveVoiceSession({ teacher, lang, onAsk, onTurn, onClose }: Live
     rec.maxAlternatives = 1;
 
     rec.onresult = (e) => {
-      if (muted || busyRef.current) return;
+      if (mutedRef.current) return;
+      // While the teacher is mid-turn, what the mic hears is mostly her own
+      // voice — unless the student has cut in, in which case we listen.
+      if (busyRef.current && !bargedRef.current) return;
       let interimText = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const r = e.results[i];
-        if (r.isFinal) finalRef.current += r[0].transcript;
+        if (r.isFinal) finalRef.current += ' ' + r[0].transcript;
         else interimText += r[0].transcript;
       }
-      setInterim(interimText);
+      setInterim(interimText || finalRef.current.trim());
 
       // Send once the student pauses — an end-of-utterance heuristic.
       if (silenceTimer.current) clearTimeout(silenceTimer.current);
       silenceTimer.current = setTimeout(() => {
         const said = (finalRef.current + ' ' + interimText).trim();
-        if (said.length > 1) handleUtterance(said);
-      }, 900);
+        if (said.length > 1 && !busyRef.current) handleUtterance(said);
+      }, 850);
     };
 
     rec.onerror = (e) => {
@@ -234,6 +258,7 @@ export function LiveVoiceSession({ teacher, lang, onAsk, onTurn, onClose }: Live
       try { rec.start(); setState('listening'); } catch { /* already running */ }
     })();
 
+    const speaker = speakerRef.current;
     return () => {
       activeRef.current = false;
       if (silenceTimer.current) clearTimeout(silenceTimer.current);
@@ -241,17 +266,21 @@ export function LiveVoiceSession({ teacher, lang, onAsk, onTurn, onClose }: Live
       cancelAnimationFrame(rafRef.current);
       streamRef.current?.getTracks().forEach(t => t.stop());
       audioCtxRef.current?.close().catch(() => {});
-      stopSpeaking();
+      abortRef.current?.abort();
+      speaker?.stop();
     };
-  }, [lang, muted, handleUtterance, startMeter, stopSpeaking]);
+  }, [lang, handleUtterance, startMeter]);
 
   const toggleMute = () => {
-    setMuted(m => {
-      const next = !m;
-      if (next) { stopSpeaking(); setState('idle'); }
-      else setState('listening');
-      return next;
-    });
+    const next = !mutedRef.current;
+    mutedRef.current = next;
+    setMuted(next);
+    if (next) {
+      if (silenceTimer.current) clearTimeout(silenceTimer.current);
+      finalRef.current = '';
+      setInterim('');
+      if (!busyRef.current) setState('idle');
+    } else if (!busyRef.current) setState('listening');
   };
 
   const accent = teacher.accentColor;
@@ -336,6 +365,15 @@ export function LiveVoiceSession({ teacher, lang, onAsk, onTurn, onClose }: Live
 
       {/* Controls */}
       <div className="flex items-center gap-4">
+        {state === 'speaking' && (
+          <button
+            onClick={interrupt}
+            className="w-14 h-14 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/15 transition-colors"
+            title="Interrupt — your turn to talk"
+          >
+            <Hand className="w-6 h-6" />
+          </button>
+        )}
         <button
           onClick={toggleMute}
           className={`w-14 h-14 rounded-full flex items-center justify-center transition-all hover:scale-105 ${
@@ -347,7 +385,7 @@ export function LiveVoiceSession({ teacher, lang, onAsk, onTurn, onClose }: Live
           {muted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
         </button>
         <button
-          onClick={() => { activeRef.current = false; stopSpeaking(); onClose(); }}
+          onClick={() => { activeRef.current = false; abortRef.current?.abort(); speakerRef.current?.stop(); onClose(); }}
           className="w-14 h-14 rounded-full bg-red-500 text-white flex items-center justify-center hover:scale-105 transition-transform"
           title="End voice call"
         >
@@ -356,7 +394,7 @@ export function LiveVoiceSession({ teacher, lang, onAsk, onTurn, onClose }: Live
       </div>
 
       <p className="text-[11px] text-white/25 mt-6 text-center max-w-sm">
-        Everything you both say is added to the lesson transcript below.
+        Everything you both say is added to the lesson transcript.
       </p>
     </div>
   );

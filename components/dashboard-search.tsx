@@ -1,15 +1,23 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Search, BookOpen, Megaphone, FolderOpen, Loader2 } from 'lucide-react';
+import { Search, BookOpen, BookMarked, Megaphone, FolderOpen, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
 import { Course, Announcement, Resource } from '@/lib/db';
+
+interface BookHit {
+  id: string;
+  title: string;
+  href: string;
+  subject: string;
+}
 
 interface SearchResults {
   courses: Course[];
   announcements: Announcement[];
   resources: Resource[];
+  books?: BookHit[];
 }
 
 export function DashboardSearch() {
@@ -65,7 +73,8 @@ export function DashboardSearch() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const total = results ? results.courses.length + results.announcements.length + results.resources.length : 0;
+  const books = results?.books ?? [];
+  const total = results ? results.courses.length + results.announcements.length + results.resources.length + books.length : 0;
 
   return (
     <div className="relative hidden md:block w-[420px] max-w-[46vw]" ref={wrapperRef}>
@@ -92,6 +101,19 @@ export function DashboardSearch() {
             <p className="text-sm text-gray-400 text-center py-6">No results for &ldquo;{query}&rdquo;</p>
           ) : (
             <>
+              {books.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-4 pt-3 pb-1">Books</p>
+                  {books.slice(0, 3).map(b => (
+                    <button key={b.id} onClick={() => { router.push(b.href); setOpen(false); setQuery(''); }}
+                      className="w-full flex items-center gap-3 px-4 py-2 hover:bg-muted text-left">
+                      <BookMarked className="w-4 h-4 text-[#2786A4] shrink-0" />
+                      <div><p className="text-sm font-medium text-foreground truncate">{b.title}</p>
+                      <p className="text-xs text-gray-400 truncate">{b.subject}</p></div>
+                    </button>
+                  ))}
+                </div>
+              )}
               {results.courses.length > 0 && (
                 <div>
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-4 pt-3 pb-1">Courses</p>

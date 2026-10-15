@@ -39,7 +39,7 @@ export default function ResourcesPage() {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [form, setForm] = useState({ title: '', description: '', url: '', type: 'link' as Resource['type'] });
+  const [form, setForm] = useState({ title: '', description: '', url: '', type: 'link' as Resource['type'], price: '', currency: 'USD' });
 
   const canCreate = profile?.role === 'teacher' || profile?.role === 'admin';
 
@@ -64,9 +64,11 @@ export default function ResourcesPage() {
         uploadedBy: user.uid,
         uploadedByName: profile?.name ?? 'Staff',
         isPublic: true,
+        price: Number(form.price) > 0 ? Number(form.price) : undefined,
+        currency: form.currency,
       });
       toast.success('Resource added!');
-      setForm({ title: '', description: '', url: '', type: 'link' });
+      setForm({ title: '', description: '', url: '', type: 'link', price: '', currency: 'USD' });
       setShowCreate(false);
       await load();
     } catch { toast.error('Failed to add resource.'); }
@@ -143,6 +145,16 @@ export default function ResourcesPage() {
             </Select>
           </div>
           <Input value={form.url} onChange={e => setForm(f => ({ ...f, url: e.target.value }))} placeholder="URL *" className="rounded-xl h-11 bg-muted/50" />
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Input value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="Price (optional)" className="rounded-xl h-11 bg-muted/50" />
+            <Select value={form.currency} onValueChange={v => setForm(f => ({ ...f, currency: v ?? 'USD' }))}>
+              <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="USD">USD</SelectItem>
+                <SelectItem value="MYR">MYR</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Description (optional)" className="rounded-xl text-sm resize-none min-h-20 bg-muted/50" />
           <Button onClick={handleCreate} disabled={saving} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white gap-2">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Library className="w-4 h-4" />}
@@ -198,6 +210,11 @@ export default function ResourcesPage() {
                 <h3 className="font-bold text-foreground leading-tight">{r.title}</h3>
                 {r.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{r.description}</p>}
               </div>
+              {(r.price ?? 0) > 0 && (
+                <a href={`/dashboard/checkout?kind=resource&sku=${r.id}`} className="inline-flex items-center text-xs font-semibold text-primary">
+                  Buy · {r.currency || 'USD'} {r.price}
+                </a>
+              )}
               <a href={r.url} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
               >

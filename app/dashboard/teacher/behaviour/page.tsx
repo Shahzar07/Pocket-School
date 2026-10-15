@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
   getBehaviourRecordsForTeacher, createBehaviourRecord, BehaviourRecord,
-  getUserByEmail,
 } from '@/lib/db';
+import { authedFetch } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -55,10 +55,10 @@ export default function BehaviourPage() {
     if (!form.studentEmail.trim() || !form.description.trim()) { toast.error('All fields required'); return; }
     setSaving(true);
     try {
-      const student = await getUserByEmail(form.studentEmail.trim());
-      if (!student) { toast.error('Student not found'); setSaving(false); return; }
+      const student = await authedFetch(`/api/platform/teacher-student?email=${encodeURIComponent(form.studentEmail.trim())}`);
+      if (!student?.id) { toast.error((student?.message as string) || 'No student in your classes uses that email.'); setSaving(false); return; }
       await createBehaviourRecord({
-        studentId: student.id, studentName: student.data.name,
+        studentId: student.id as string, studentName: (student.name as string) || 'Student',
         type: form.type, points: TYPE_POINTS[form.type] ?? 0,
         description: form.description, recordedBy: user.uid, recordedByName: profile.name,
       });

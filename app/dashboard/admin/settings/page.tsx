@@ -8,6 +8,8 @@ import { Globe, Database, Mail, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { useEffect, useState } from 'react';
 import { getPlatformSettings, savePlatformSettings } from '@/lib/db';
+import { AdminPricingPanel } from '@/components/admin-pricing-panel';
+import { FlagToggles } from '@/components/scope-c/flag-toggles';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -119,7 +121,10 @@ export default function AdminSystemSettings() {
         <p className="text-muted-foreground mt-2 text-[15px]">Configure global platform settings, integrations, and preferences.</p>
       </motion.header>
 
+      <AdminPricingPanel />
+
       <div className="space-y-5">
+        <FlagToggles />
         {/* General */}
         <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
           className="bg-card border border-border rounded-3xl p-6 sm:p-7 relative overflow-hidden card-glow"

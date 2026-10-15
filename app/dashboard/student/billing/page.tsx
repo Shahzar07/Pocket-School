@@ -15,6 +15,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { CreditCard, Printer, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
+import Link from 'next/link';
+import { formatMoney } from '@/lib/pricing';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -121,7 +123,11 @@ export default function StudentBillingPage() {
               Outstanding Balance
             </p>
             <p className="font-heading text-4xl sm:text-5xl text-foreground mt-1">
-              ${totalOwed.toFixed(2)}
+              {Object.entries(outstanding.reduce<Record<string, number>>((totals, inv) => {
+                const code = inv.currency || 'USD';
+                totals[code] = (totals[code] ?? 0) + inv.amount;
+                return totals;
+              }, {})).map(([code, amount]) => formatMoney(amount, code)).join(' · ')}
             </p>
           </div>
           <AlertCircle className="w-10 h-10 text-muted-foreground opacity-40" />
@@ -185,7 +191,7 @@ export default function StudentBillingPage() {
                 <div className="flex items-center gap-3 shrink-0">
                   <div className="text-right">
                     <p className="font-heading text-lg text-foreground">
-                      {inv.currency} {inv.amount.toFixed(2)}
+                      {formatMoney(inv.amount, inv.currency || 'USD')}
                     </p>
                     <Badge className={`rounded-full text-[10px] ${STATUS_STYLES[inv.status]}`}>
                       {inv.status}
@@ -242,7 +248,7 @@ export default function StudentBillingPage() {
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <p className="font-semibold text-muted-foreground">
-                    {inv.currency} {inv.amount.toFixed(2)}
+                    {formatMoney(inv.amount, inv.currency || 'USD')}
                   </p>
                   <Badge className={`rounded-full text-[10px] ${STATUS_STYLES[inv.status]}`}>
                     {inv.status}
@@ -264,11 +270,9 @@ export default function StudentBillingPage() {
       <Dialog open={!!payDialogInvoice} onOpenChange={open => !open && setPayDialogInvoice(null)}>
         <DialogContent className="rounded-3xl">
           <DialogHeader>
-            <DialogTitle className="font-heading text-2xl">Online payment coming soon</DialogTitle>
+            <DialogTitle className="font-heading text-2xl">Pay this invoice</DialogTitle>
             <DialogDescription>
-              Paying by card in Poket School isn&apos;t available yet. Please pay this
-              invoice through your school — once payment is received, your teacher
-              or school admin will mark it as paid here.
+              Checkout charges the amount already on the invoice. School invoices are not taxed a second time.
             </DialogDescription>
           </DialogHeader>
           {payDialogInvoice && (
@@ -284,14 +288,19 @@ export default function StudentBillingPage() {
               <div className="flex items-center justify-between gap-4">
                 <span className="text-muted-foreground">Amount due</span>
                 <span className="font-heading text-lg text-foreground">
-                  {payDialogInvoice.currency} {payDialogInvoice.amount.toFixed(2)}
+                  {formatMoney(payDialogInvoice.amount, payDialogInvoice.currency || 'USD')}
                 </span>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button onClick={() => setPayDialogInvoice(null)} className="rounded-full h-11 px-6 font-bold">
-              Got it
+            {payDialogInvoice && (payDialogInvoice.status === 'sent' || payDialogInvoice.status === 'overdue') && (
+              <Link href={`/dashboard/checkout?kind=invoice&sku=${payDialogInvoice.id}`} className="inline-flex h-11 items-center rounded-full bg-primary px-6 text-sm font-bold text-primary-foreground">
+                Pay this invoice
+              </Link>
+            )}
+            <Button onClick={() => setPayDialogInvoice(null)} variant="outline" className="rounded-full h-11 px-6 font-bold">
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -20,6 +20,9 @@ import {
   Briefcase,
   Palette,
   ScrollText,
+  Heart,
+  Scale,
+  Brain,
   Mic,
   MessageSquare,
   Sparkles,
@@ -43,6 +46,9 @@ const ICONS: Record<TeacherIconKey, typeof Atom> = {
   briefcase: Briefcase,
   palette: Palette,
   history: ScrollText,
+  heart: Heart,
+  scale: Scale,
+  brain: Brain,
 };
 
 interface Props {

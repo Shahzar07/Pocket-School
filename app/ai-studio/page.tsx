@@ -13,12 +13,13 @@ import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { MathMarkdown } from '@/components/math-markdown';
 import { readLanguage } from '@/lib/languages';
+import { LanguageSwitcher } from '@/components/language-switcher';
 import {
   Sparkles, ArrowUp, ArrowLeft, Library, MessageSquare,
   FileText, ClipboardList, Network, BookMarked,
   Presentation, Image as ImageIcon, Calculator, FlipHorizontal,
   Loader2, Save, Trash2, Copy, Plus, ChevronRight, User as UserIcon,
-  GraduationCap, Building2, Scale, Baby, RefreshCw, X, Menu,
+  RefreshCw, X, Menu,
   Video, Headphones, Asterisk,
 } from 'lucide-react';
 import { MindmapRenderer } from '@/components/mindmap-renderer';
@@ -31,6 +32,9 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import {
   getAiGenerations, deleteAiGeneration, saveAiGeneration, type AiGeneration,
 } from '@/lib/db';
+import { PROGRAMMES, studioModeForProgramme, subjectsForProgramme } from '@/lib/programmes';
+import { bookSourcePrompt, parseBookCommand } from '@/lib/platform/studio-commands';
+import { BOOKS, bookById } from '@/lib/reads/seed';
 
 type FormatId = 'text' | 'flashcards' | 'quiz' | 'slides' | 'notes' | 'summary' | 'problems' | 'glossary' | 'mindmap' | 'infographic' | 'videoScript' | 'audioScript';
 
@@ -47,25 +51,6 @@ const FORMATS: { id: FormatId; label: string; desc: string; icon: React.ReactNod
   { id: 'infographic', label: 'Infographic', desc: 'Scannable visual facts', icon: <ImageIcon className="w-4 h-4" /> },
   { id: 'videoScript', label: 'Video', desc: 'Playable video lesson', icon: <Video className="w-4 h-4" /> },
   { id: 'audioScript', label: 'Audio', desc: 'AI-voiced summary', icon: <Headphones className="w-4 h-4" /> },
-];
-
-const LEVELS = [
-  'IGCSE / GCSE / O-Levels',
-  'A Level / Pre-University',
-  'School / K-12',
-  'Foundation',
-  'LLB',
-  'Micro Degree',
-  'Diploma',
-  'Professional Certification',
-  'Independent Learning',
-];
-
-const CHAT_MODES: { id: 'k12' | 'college' | 'professional' | 'legal'; label: string; icon: React.ReactNode }[] = [
-  { id: 'k12', label: 'K-12', icon: <Baby className="w-3.5 h-3.5" /> },
-  { id: 'college', label: 'College', icon: <GraduationCap className="w-3.5 h-3.5" /> },
-  { id: 'professional', label: 'Professional', icon: <Building2 className="w-3.5 h-3.5" /> },
-  { id: 'legal', label: 'Legal', icon: <Scale className="w-3.5 h-3.5" /> },
 ];
 
 const SUGGESTIONS = [
@@ -155,7 +140,8 @@ function PocoWorking({ creating }: { creating: boolean }) {
   );
 }
 
-export default function AiStudio() {
+export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
+  const frame = embedded ? 'h-full min-h-0' : 'h-screen';
   const [user, setUser] = useState<User | null>(null);
   /** Undefined until Firebase reports the first auth state — prevents a
    * sign-in flash for users who are already logged in. */
@@ -173,8 +159,9 @@ export default function AiStudio() {
   const [skill, setSkill] = useState<FormatId | null>(null);
   const [skillsOpen, setSkillsOpen] = useState(false);
   const [subject, setSubject] = useState('');
-  const [level, setLevel] = useState(LEVELS[0]);
-  const [chatMode, setChatMode] = useState<'k12' | 'college' | 'professional' | 'legal'>('college');
+  const [level, setLevel] = useState<string>(PROGRAMMES[0]?.value ?? 'Primary');
+  const chatMode = studioModeForProgramme(level);
+  const subjectOptions = subjectsForProgramme(level);
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState<number | null>(null);
 
@@ -236,7 +223,7 @@ export default function AiStudio() {
   };
 
   /* ── Tutor turn ── */
-  const runTutor = async (chatId: number, message: string, history: Turn[]) => {
+  const runTutor = async (chatId: number, message: string, history: Turn[], bookContext?: string) => {
     const chatTurns = history
       .filter((t): t is Extract<Turn, { kind: 'user' | 'chat' }> => t.kind === 'user' || t.kind === 'chat')
       .map(t => ({ role: t.kind === 'user' ? 'user' : 'model', text: t.text }));
@@ -246,6 +233,7 @@ export default function AiStudio() {
       body: JSON.stringify({
         message, mode: chatMode, history: chatTurns,
         language: readLanguage(),
+        bookContext,
       }),
     });
     if (!res.ok) {
@@ -266,9 +254,17 @@ export default function AiStudio() {
     setBusy(true);
     setView('chat');
     pushTurns(chatId, { kind: 'user', text, skill: useSkill ?? undefined });
+    const command = parseBookCommand(text, BOOKS);
+    const attached = command?.matched ? bookById(command.bookId) : undefined;
+    if (command && !attached) {
+      pushTurns(chatId, { kind: 'chat', text: `I can't find a book called “${command.bookId}”. Try /book harbour-light.` });
+      setBusy(false);
+      return;
+    }
+    const prompt = attached ? bookSourcePrompt(attached, command?.rest ?? '') : text;
     try {
-      if (useSkill) await runGeneration(chatId, useSkill, text);
-      else await runTutor(chatId, text, historySnapshot);
+      if (useSkill) await runGeneration(chatId, useSkill, prompt);
+      else await runTutor(chatId, attached ? (command?.rest || `Teach ${attached.title}`) : text, historySnapshot, attached ? prompt : undefined);
     } catch (e: any) {
       pushTurns(chatId, { kind: 'chat', text: `Sorry — ${e?.message || 'something went wrong'}. Try again.` });
     } finally {
@@ -333,7 +329,7 @@ export default function AiStudio() {
   // ── Auth gate: AI Studio is a paid feature and must not run anonymously ──
   if (!authReady) {
     return (
-      <div className={`flex h-screen items-center justify-center ${C.bg}`} style={{ colorScheme: 'dark' }}>
+      <div className={`flex ${frame} items-center justify-center ${C.bg}`} style={{ colorScheme: 'dark' }}>
         <Loader2 className="w-6 h-6 animate-spin" style={{ color: C.accent }} />
       </div>
     );
@@ -341,7 +337,7 @@ export default function AiStudio() {
 
   if (!user) {
     return (
-      <div className={`flex h-screen items-center justify-center px-5 ${C.bg} ${C.text}`} style={{ colorScheme: 'dark' }}>
+      <div className={`flex ${frame} items-center justify-center px-5 ${C.bg} ${C.text}`} style={{ colorScheme: 'dark' }}>
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -396,7 +392,7 @@ export default function AiStudio() {
           </div>
 
           <Link href="/" className={`text-xs ${C.faint} hover:text-white transition-colors inline-flex items-center gap-1.5`}>
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Poket School
+            <ArrowLeft className="w-3.5 h-3.5 ps-dir-icon" /> Back to Poket School
           </Link>
         </motion.div>
       </div>
@@ -404,12 +400,12 @@ export default function AiStudio() {
   }
 
   return (
-    <div className={`flex h-screen ${C.bg} ${C.text} overflow-hidden`} style={{ colorScheme: 'dark' }}>
+    <div className={`relative flex ${frame} ${C.bg} ${C.text} overflow-hidden`} style={{ colorScheme: 'dark' }}>
 
       {/* ── Sidebar ── */}
-      <aside className={`${sidebarOpen ? 'flex' : 'hidden'} lg:flex w-[264px] shrink-0 flex-col border-r ${C.borderSoft} bg-[#1F1E1C] absolute lg:static inset-y-0 left-0 z-40`}>
+      <aside className={`${sidebarOpen ? 'flex' : 'hidden'} lg:flex w-[264px] shrink-0 flex-col border-e ${C.borderSoft} bg-[#1F1E1C] absolute lg:static inset-y-0 start-0 z-40`}>
         <div className="p-3">
-          <Link href="/" className="flex items-center gap-2.5 px-2 py-2 mb-1">
+          <Link href={embedded ? '/dashboard/studio' : '/'} className="flex items-center gap-2.5 px-2 py-2 mb-1">
             <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: C.accent }}>
               <Asterisk className="w-5 h-5 text-[#1A1918]" />
             </div>
@@ -418,6 +414,11 @@ export default function AiStudio() {
               <p className={`text-[10px] ${C.faint} tracking-[0.2em] uppercase leading-tight`}>AI Studio</p>
             </div>
           </Link>
+          {!embedded && (
+            <div className="flex justify-end px-2">
+              <LanguageSwitcher tone="onDark" />
+            </div>
+          )}
 
           <button
             onClick={newChat}
@@ -441,6 +442,16 @@ export default function AiStudio() {
             </button>
             <Link href="/ai-teachers" className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm ${C.dim} ${C.surfaceHover} transition-colors group`}>
               <span className="flex items-center gap-2.5"><UserIcon className="w-4 h-4" /> AI Teachers</span>
+              <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 transition-opacity" />
+            </Link>
+            <button
+              onClick={() => { setView('chat'); setSkill('problems'); setSubject('Mathematics'); setSidebarOpen(false); }}
+              className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${skill === 'problems' ? `${C.raised} ${C.text}` : `${C.dim} ${C.surfaceHover}`}`}
+            >
+              <Calculator className="w-4 h-4" /> ET Maths
+            </button>
+            <Link href="/dashboard/student/exams" className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm ${C.dim} ${C.surfaceHover} transition-colors group`}>
+              <span className="flex items-center gap-2.5"><ClipboardList className="w-4 h-4" /> Exam Prep</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 transition-opacity" />
             </Link>
           </nav>
@@ -476,8 +487,8 @@ export default function AiStudio() {
               <UserIcon className="w-3.5 h-3.5" /> Sign in to save
             </Link>
           )}
-          <Link href="/" className={`flex items-center gap-2 text-xs ${C.faint} hover:text-white px-2.5 py-1.5 transition-colors`}>
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Poket School
+          <Link href={embedded ? '/dashboard/studio' : '/'} className={`flex items-center gap-2 text-xs ${C.faint} hover:text-white px-2.5 py-1.5 transition-colors`}>
+            <ArrowLeft className="w-3.5 h-3.5" /> {embedded ? 'All AI Studio tools' : 'Back to Poket School'}
           </Link>
         </div>
       </aside>
@@ -687,25 +698,25 @@ export default function AiStudio() {
                       value={subject}
                       onChange={e => setSubject(e.target.value)}
                       placeholder="Subject"
-                      className={`w-24 sm:w-28 px-3 py-1.5 rounded-full text-xs border ${C.border} bg-transparent outline-none ${C.dim} placeholder:text-[#6E695F] focus:text-white transition-colors`}
+                      list="programme-subjects"
+                      className={`w-28 sm:w-36 px-3 py-1.5 rounded-full text-xs border ${C.border} bg-transparent outline-none ${C.dim} placeholder:text-[#6E695F] focus:text-white transition-colors`}
                     />
+                    <datalist id="programme-subjects">
+                      {subjectOptions.map((option) => <option key={option} value={option} />)}
+                    </datalist>
                     <select
                       value={level}
-                      onChange={e => setLevel(e.target.value)}
-                      className={`px-2.5 py-1.5 rounded-full text-xs border ${C.border} bg-[#242220] outline-none ${C.dim} cursor-pointer`}
+                      onChange={e => {
+                        const next = e.target.value;
+                        setLevel(next);
+                        const options = subjectsForProgramme(next);
+                        if (subject && options.length > 0 && !options.includes(subject)) setSubject('');
+                      }}
+                      className={`max-w-[11rem] px-2.5 py-1.5 rounded-full text-xs border ${C.border} bg-[#242220] outline-none ${C.dim} cursor-pointer`}
+                      aria-label="Programme"
                     >
-                      {LEVELS.map(l => <option key={l}>{l}</option>)}
+                      {PROGRAMMES.map(programme => <option key={programme.value} value={programme.value}>{programme.label}</option>)}
                     </select>
-                    {!skill && (
-                      <select
-                        value={chatMode}
-                        onChange={e => setChatMode(e.target.value as typeof chatMode)}
-                        className={`px-2.5 py-1.5 rounded-full text-xs border ${C.border} bg-[#242220] outline-none ${C.dim} cursor-pointer`}
-                        title="Tutor mode"
-                      >
-                        {CHAT_MODES.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
-                      </select>
-                    )}
 
                     <span className="flex-1" />
                     <button
@@ -720,7 +731,7 @@ export default function AiStudio() {
                   </div>
                 </div>
                 <p className={`text-center text-[10px] ${C.faint} mt-2`}>
-                  ET can make mistakes — double-check important answers. {activeFormat ? `Skill: ${activeFormat.label} · ` : ''}{level}
+                  ET can make mistakes — always double-check important answers.
                 </p>
               </div>
             </div>
@@ -908,4 +919,8 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
       <MathMarkdown>{text}</MathMarkdown>
     </div>
   );
+}
+
+export default function AiStudioPage() {
+  return <AiStudio />;
 }

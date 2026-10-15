@@ -4,21 +4,17 @@ import { useEffect, useState } from 'react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { getSparkTransactions, SparkTransaction } from '@/lib/db';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useTranslation } from 'react-i18next';
 import { Zap, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
-
-const TYPE_LABELS: Record<SparkTransaction['type'], string> = {
-  allowance: 'Monthly allowance',
-  unlock: 'Format unlocked',
-  earn: 'Earned',
-  admin_grant: 'Granted',
-  ai_studio: 'AI Studio',
-};
+import Link from 'next/link';
+import { formatAppDate, formatAppNumber } from '@/lib/i18n/detect';
 
 /**
  * Amber ⚡ wallet pill shown in the dashboard header for students.
  * Click opens the transaction ledger.
  */
 export function SparksChip() {
+  const { t, i18n } = useTranslation();
   const { user, profile } = useAuthSTORE();
   const [open, setOpen] = useState(false);
   const [transactions, setTransactions] = useState<SparkTransaction[]>([]);
@@ -42,10 +38,10 @@ export function SparksChip() {
       <button
         onClick={() => setOpen(true)}
         className="flex items-center gap-1.5 px-3 h-9 rounded-full bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 transition-colors"
-        title="Sparks balance"
+        title={t('sparks.title')}
       >
         <Zap className="w-4 h-4 fill-amber-400 text-amber-500" />
-        <span className="text-sm font-bold">{balance}</span>
+        <span className="text-sm font-bold">{formatAppNumber(balance, i18n.language)}</span>
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -53,22 +49,28 @@ export function SparksChip() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Zap className="w-5 h-5 fill-amber-400 text-amber-500" />
-              {balance} Sparks
+              {t('sparks.heading', { count: formatAppNumber(balance, i18n.language) })}
             </DialogTitle>
           </DialogHeader>
 
           <p className="text-xs text-muted-foreground -mt-2">
-            Spend Sparks to unlock lesson formats. Earn ⚡10 for each lesson you complete and ⚡50 for passing a module quiz.
+            {t('sparks.spend')}
           </p>
+          <div className="flex gap-3 text-xs font-semibold">
+            <Link href="/dashboard/student/sparks" className="text-amber-700" onClick={() => setOpen(false)}>What are Sparks?</Link>
+            <Link href="/dashboard/checkout?kind=sparks&sku=sparks_100" className="text-primary" onClick={() => setOpen(false)}>Get more Sparks</Link>
+          </div>
 
           <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
-            {loading && <p className="text-sm text-muted-foreground text-center py-6">Loading…</p>}
+            {loading && <p className="text-sm text-muted-foreground text-center py-6">{t('sparks.loading')}</p>}
             {!loading && transactions.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-6">
-                No transactions yet. Complete lessons to start earning Sparks!
+                {t('sparks.empty')}
               </p>
             )}
-            {transactions.map(tx => (
+            {transactions.map(tx => {
+              const when = tx.createdAt?.toDate?.();
+              return (
               <div key={tx.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                   tx.amount >= 0 ? 'bg-emerald-100' : 'bg-amber-100'
@@ -79,17 +81,20 @@ export function SparksChip() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-foreground truncate">
-                    {tx.note ?? TYPE_LABELS[tx.type] ?? tx.type}
+                    {tx.note ?? t(`sparks.types.${tx.type}`, { defaultValue: tx.type })}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {tx.format ? `${tx.format} · ` : ''}Balance: {tx.balanceAfter}
+                    {when ? `${formatAppDate(when, i18n.language)} · ` : ''}
+                    {tx.format ? `${tx.format} · ` : ''}
+                    {t('sparks.balance', { count: formatAppNumber(tx.balanceAfter, i18n.language) })}
                   </p>
                 </div>
                 <span className={`text-sm font-bold shrink-0 ${tx.amount >= 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                  {tx.amount >= 0 ? '+' : ''}{tx.amount}⚡
+                  {tx.amount >= 0 ? '+' : ''}{formatAppNumber(tx.amount, i18n.language)}⚡
                 </span>
               </div>
-            ))}
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>

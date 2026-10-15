@@ -22,6 +22,10 @@ import {
   Pencil, Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
+import { reorderById, sortByOrder, withSequentialOrder } from '@/lib/reorder';
+import { hasCmsAddon } from '@/lib/entitlements';
+import { stripUnitPrefix } from '@/lib/unit-title';
+import { ReorderControls, reorderKeyDown } from '@/components/reorder-controls';
 
 const STATUS_BADGE: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -43,7 +47,7 @@ interface OutlineLesson { title: string; objectives: string[]; durationWeeks: nu
 interface OutlineModule { title: string; description: string; lessons: OutlineLesson[] }
 
 export default function AdminCurriculumPage() {
-  const { user } = useAuthSTORE();
+  const { user, profile } = useAuthSTORE();
   const [programmes, setProgrammes] = useState<Programme[]>([]);
   const [modules, setModules] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -140,8 +144,8 @@ export default function AdminCurriculumPage() {
     setLoading(true);
     try {
       const [progs, mods] = await Promise.all([getProgrammes(), getAllCurriculumModules()]);
-      setProgrammes(progs);
-      setModules(mods);
+      setProgrammes(sortByOrder(progs));
+      setModules(sortByOrder(mods));
       if (progs.length > 0) setModProgrammeId(prev => prev || progs[0].id);
     } catch (e: any) {
       toast.error(e?.message || 'Failed to load curriculum data.');
@@ -151,6 +155,23 @@ export default function AdminCurriculumPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const persistOrder = async <T extends { id: string }>(
+    rows: T[],
+    write: (row: T & { order: number }) => Promise<void>,
+    apply: (rows: T[]) => void,
+    label: string,
+  ) => {
+    const next = withSequentialOrder(rows);
+    apply(next);
+    try {
+      await Promise.all(next.map(write));
+      toast.success(`${label} saved.`);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Could not save the new order.');
+      load();
+    }
+  };
 
   const handleSeed = async () => {
     if (!user) return;
@@ -247,7 +268,7 @@ export default function AdminCurriculumPage() {
 
       for (const [mi, m] of archOutline.entries()) {
         const moduleId = await createModule(courseId, {
-          title: m.title,
+          title: stripUnitPrefix(m.title, mi + 1),
           description: m.description,
           courseId,
           order: mi + 1,
@@ -375,6 +396,15 @@ export default function AdminCurriculumPage() {
       setCreatingModule(false);
     }
   };
+
+  if (!hasCmsAddon(profile)) {
+    return (
+      <div className="py-24 text-center space-y-3 max-w-md mx-auto">
+        <p className="font-semibold text-foreground">The CMS add-on is not on this account.</p>
+        <p className="text-sm text-muted-foreground">An admin can allocate it from Access allocation. Platform admins already have the course editor.</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -611,8 +641,29 @@ export default function AdminCurriculumPage() {
           <p className="text-sm text-muted-foreground">No programmes yet.</p>
         ) : (
           <div className="grid sm:grid-cols-2 gap-3">
-            {programmes.map(p => (
-              <div key={p.id} className="border border-border rounded-xl p-4">
+            {programmes.map((p, index) => (
+              <div
+                key={p.id}
+                className="border border-border rounded-xl p-4"
+                tabIndex={0}
+                onKeyDown={event => reorderKeyDown(event, index, programmes.length, to => {
+                  void persistOrder(reorderById(programmes, programmes[index].id, programmes[to].id), row => updateProgramme(row.id, { order: row.order }), setProgrammes, 'Programme order');
+                })}
+                onDragOver={event => event.preventDefault()}
+                onDrop={event => {
+                  const from = Number(event.dataTransfer.getData('text/plain'));
+                  if (!Number.isInteger(from) || !programmes[from]) return;
+                  void persistOrder(reorderById(programmes, programmes[from].id, p.id), row => updateProgramme(row.id, { order: row.order }), setProgrammes, 'Programme order');
+                }}
+              >
+                <ReorderControls
+                  index={index}
+                  count={programmes.length}
+                  label={p.name}
+                  onMove={to => {
+                    void persistOrder(reorderById(programmes, p.id, programmes[to].id), row => updateProgramme(row.id, { order: row.order }), setProgrammes, 'Programme order');
+                  }}
+                />
                 <div className="flex items-center justify-between mb-1">
                   <p className="font-bold text-foreground">{p.name}</p>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
@@ -704,7 +755,7 @@ export default function AdminCurriculumPage() {
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {modules.map(m => (
+            {modules.map((m, index) => (
               editingSubject === m.id ? (
                 <div key={m.id} className="py-3.5 -mx-2 px-2 rounded-lg bg-muted/40 space-y-3">
                   <div className="grid sm:grid-cols-3 gap-3">
@@ -735,7 +786,25 @@ export default function AdminCurriculumPage() {
                 <div
                   key={m.id}
                   className="flex items-center justify-between gap-4 py-3.5 hover:bg-muted/40 transition-colors -mx-2 px-2 rounded-lg"
+                  tabIndex={0}
+                  onKeyDown={event => reorderKeyDown(event, index, modules.length, to => {
+                    void persistOrder(reorderById(modules, modules[index].id, modules[to].id), row => updateCourse(row.id, { order: row.order }), setModules, 'Subject order');
+                  })}
+                  onDragOver={event => event.preventDefault()}
+                  onDrop={event => {
+                    const from = Number(event.dataTransfer.getData('text/plain'));
+                    if (!Number.isInteger(from) || !modules[from]) return;
+                    void persistOrder(reorderById(modules, modules[from].id, m.id), row => updateCourse(row.id, { order: row.order }), setModules, 'Subject order');
+                  }}
                 >
+                  <ReorderControls
+                    index={index}
+                    count={modules.length}
+                    label={m.title}
+                    onMove={to => {
+                      void persistOrder(reorderById(modules, m.id, modules[to].id), row => updateCourse(row.id, { order: row.order }), setModules, 'Subject order');
+                    }}
+                  />
                   <Link href={`/dashboard/admin/curriculum/${m.id}`} className="min-w-0 flex-1">
                     <p className="font-semibold text-foreground text-sm truncate">{m.title}</p>
                     <p className="text-xs text-muted-foreground">{m.subject} · {m.yearGroup ?? '—'}</p>

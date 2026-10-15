@@ -1,205 +1,573 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'motion/react';
-import { useAuthSTORE } from '@/hooks/use-auth';
-import { updateUser } from '@/lib/db';
-import { auth } from '@/lib/firebase';
-import { updatePassword, updateProfile, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  EmailAuthProvider,
+  GoogleAuthProvider,
+  linkWithCredential,
+  linkWithPopup,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
+  sendEmailVerification,
+  unlink,
+  updatePassword,
+  updateProfile,
+  verifyBeforeUpdateEmail,
+  signOut,
+} from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { User, Lock, Palette, Loader2, Save, ShieldCheck } from 'lucide-react';
+import { useAuthSTORE } from '@/hooks/use-auth';
+import { useAccountMode } from '@/hooks/use-account-mode';
+import { auth } from '@/lib/firebase';
+import { authedFetch } from '@/lib/api-client';
+import { applyAppLanguage } from '@/lib/i18n/apply';
+import { writeCurrencyChoice, enabledCurrencies, seedPricing } from '@/lib/pricing';
+import { usePricing } from '@/hooks/use-pricing';
+import { formatMoney } from '@/lib/money';
+import { defaultChildControls, strictestControls, type ChildControls, type PaymentMethod } from '@/lib/parent-controls';
+import { removeStoredMedia } from '@/components/media';
+import {
+  normalisePayout,
+  profilePatch,
+  scheduleDeletion,
+  type DeletionRequest,
+  type NotificationPrefs,
+  type PayoutDetails,
+  type PrivacySettings,
+  type ProfileDraft,
+} from '@/lib/account-settings';
+import {
+  acceptParentInvite,
+  clearUserFields,
+  createParentInvite,
+  decidePurchaseRequest,
+  deleteAllUserSessions,
+  deleteUserSession,
+  getChildControls,
+  getChildrenProfiles,
+  getInvoicesForStudent,
+  getParentsOfStudent,
+  getPaymentMethod,
+  getPayoutDetails,
+  getUserSessions,
+  linkChildToParent,
+  listOpenParentInvites,
+  listParentLinkRequests,
+  listPurchaseRequests,
+  respondToParentLink,
+  revokeParentInvite,
+  saveChildControls,
+  savePaymentMethod,
+  savePayoutDetails,
+  saveUnder13Profile,
+  unlinkChildFromParent,
+  updateUser,
+  type UserProfile,
+} from '@/lib/db';
+import {
+  EMPTY_PAYOUT,
+  SettingsPanel,
+  blankDraft,
+  type LinkedPerson,
+  type SettingsSession,
+  type SettingsView,
+} from '@/components/account/settings-panel';
 
-const fadeUp: Record<string, any> = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1], delay: i * 0.08 } }),
-};
+function providerLabel(id: string): string {
+  if (id === 'password') return 'Email and password';
+  if (id === 'google.com') return 'Google';
+  return id;
+}
 
-const AVATAR_PRESETS = [
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Luna',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Max',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Zoe',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Omar',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Sofia',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Liam',
-];
+function deviceLabel(): string {
+  if (typeof navigator === 'undefined') return 'this device';
+  return `${navigator.userAgent.slice(0, 80)}|${screen.width}x${screen.height}`;
+}
+
+function seenLabel(value: { toDate?: () => Date } | undefined): string {
+  const date = value?.toDate?.();
+  if (!date) return 'Recently';
+  return date.toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+async function reauthenticate(password: string) {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Sign in again to continue.');
+  const hasPassword = user.providerData.some(provider => provider.providerId === 'password');
+  if (hasPassword) {
+    if (!password || !user.email) throw new Error('Enter your current password.');
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
+    return;
+  }
+  await reauthenticateWithPopup(user, new GoogleAuthProvider());
+}
+
+function authMessage(error: unknown, fallback: string): string {
+  const code = typeof error === 'object' && error && 'code' in error ? String(error.code) : '';
+  if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') return 'Current password is incorrect.';
+  if (code === 'auth/requires-recent-login') return 'Sign in again, then retry.';
+  if (code === 'auth/email-already-in-use') return 'That email is already in use.';
+  if (code === 'auth/provider-already-linked') return 'That provider is already linked.';
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+}
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { user, profile, fetchProfile } = useAuthSTORE();
-  const [name, setName] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
-  const [level, setLevel] = useState('');
-  const [learningStyle, setLearningStyle] = useState('');
-  const [saving, setSaving] = useState(false);
+  const { mode, ready } = useAccountMode();
+  const { config } = usePricing();
+  const [view, setView] = useState<SettingsView | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  const [currentPw, setCurrentPw] = useState('');
-  const [newPw, setNewPw] = useState('');
-  const [confirmPw, setConfirmPw] = useState('');
-  const [changingPw, setChangingPw] = useState(false);
+  const sectionRole = mode ?? profile?.role ?? 'student';
 
   useEffect(() => {
-    if (profile) {
-      setName(profile.name ?? '');
-      setAvatarUrl(profile.avatarUrl ?? '');
-      setLevel((profile as any).level ?? '');
-      setLearningStyle((profile as any).learningStyle ?? '');
-    }
-  }, [profile]);
-
-  const handleSaveProfile = async () => {
-    if (!user || !name.trim()) { toast.error('Name is required.'); return; }
-    setSaving(true);
-    try {
-      await updateUser(user.uid, { name: name.trim(), avatarUrl, ...(level ? { level } : {}), ...(learningStyle ? { learningStyle } : {}) });
-      await updateProfile(user, { displayName: name.trim(), photoURL: avatarUrl || null });
-      await fetchProfile(user.uid);
-      toast.success('Profile updated!');
-    } catch { toast.error('Failed to update profile.'); }
-    finally { setSaving(false); }
-  };
-
-  const handleChangePassword = async () => {
-    if (!newPw || !confirmPw || !currentPw) { toast.error('Fill in all password fields.'); return; }
-    if (newPw !== confirmPw) { toast.error('New passwords do not match.'); return; }
-    if (newPw.length < 6) { toast.error('Password must be at least 6 characters.'); return; }
-    if (!user?.email) { toast.error('No email associated with this account.'); return; }
-    setChangingPw(true);
-    try {
-      const cred = EmailAuthProvider.credential(user.email, currentPw);
-      await reauthenticateWithCredential(user, cred);
-      await updatePassword(user, newPw);
-      toast.success('Password changed successfully!');
-      setCurrentPw(''); setNewPw(''); setConfirmPw('');
-    } catch (e: any) {
-      if (e?.code === 'auth/wrong-password' || e?.code === 'auth/invalid-credential') {
-        toast.error('Current password is incorrect.');
-      } else {
-        toast.error('Failed to change password.');
+    if (!user || !profile || !ready) return;
+    let cancelled = false;
+    const load = async () => {
+      if (user.email && user.emailVerified && profile.email && user.email.toLowerCase() !== profile.email.toLowerCase()) {
+        try {
+          await updateUser(user.uid, { email: user.email });
+          await fetchProfile(user.uid);
+          return;
+        } catch {
+          /* The token email is not writable yet. The form still shows the auth email. */
+        }
       }
-    } finally { setChangingPw(false); }
+      const here = deviceLabel();
+      const [sessions, children, parents, payout] = await Promise.all([
+        getUserSessions(user.uid).catch(() => []),
+        sectionRole === 'parent' ? getChildrenProfiles(user.uid).catch(() => []) : Promise.resolve([]),
+        sectionRole === 'student' ? getParentsOfStudent(user.uid).catch(() => []) : Promise.resolve([]),
+        sectionRole === 'teacher' ? getPayoutDetails(user.uid).catch(() => null) : Promise.resolve(null),
+      ]);
+      if (cancelled) return;
+      const people = (rows: { id: string; data: UserProfile }[]): LinkedPerson[] => rows.map(row => ({
+        id: row.id,
+        name: row.data.displayName || row.data.name,
+        email: row.data.email,
+      }));
+      let childRows = people(children);
+      let inviteCode = '';
+      let linkRequests: SettingsView['linkRequests'] = [];
+      let payment: PaymentMethod = { brand: '', last4: '', expiry: '', holder: '' };
+      let receipts: SettingsView['receipts'] = [];
+      let purchases: SettingsView['purchases'] = [];
+      let studentLimits: SettingsView['studentLimits'] = null;
+      if (sectionRole === 'parent') {
+        const [invites, requests, method, ownInvoices, purchaseRows, withControls] = await Promise.all([
+          listOpenParentInvites(user.uid).catch(() => []),
+          listParentLinkRequests('parentId', user.uid).catch(() => []),
+          getPaymentMethod(user.uid).catch(() => null),
+          getInvoicesForStudent(user.uid).catch(() => []),
+          listPurchaseRequests('parentId', user.uid).catch(() => []),
+          Promise.all(children.map(async row => {
+            const controls = await getChildControls(user.uid, row.id).catch(() => null);
+            return {
+              id: row.id,
+              name: row.data.displayName || row.data.name,
+              email: row.data.email,
+              ageTier: row.data.ageTier,
+              bio: row.data.bio,
+              avatarUrl: row.data.avatarUrl,
+              controls: controls ?? defaultChildControls(row.id),
+            };
+          })),
+        ]);
+        const childInvoices = await Promise.all(children.map(row => getInvoicesForStudent(row.id).catch(() => [])));
+        inviteCode = invites[0]?.code ?? '';
+        linkRequests = requests.filter(row => row.status === 'pending');
+        payment = method ?? payment;
+        receipts = [...ownInvoices, ...childInvoices.flat()].map(invoice => ({
+          id: invoice.id,
+          description: invoice.description,
+          amountLabel: formatMoney(invoice.amount, invoice.currency),
+          status: invoice.status,
+        }));
+        purchases = purchaseRows.filter(row => row.status === 'pending').map(row => ({
+          id: row.id,
+          title: row.title,
+          amountLabel: formatMoney(row.amount, row.currency),
+          status: row.status,
+        }));
+        childRows = withControls;
+      }
+      if (sectionRole === 'student') {
+        const requests = await listParentLinkRequests('studentId', user.uid).catch(() => []);
+        linkRequests = requests.filter(row => row.status === 'pending');
+        const controlRows: ChildControls[] = [];
+        for (const parentRow of parents) {
+          const controls = await getChildControls(parentRow.id, user.uid).catch(() => null);
+          if (controls) controlRows.push(controls);
+        }
+        const tight = strictestControls(controlRows);
+        studentLimits = tight
+          ? { screenTimeMinutes: tight.screenTimeMinutes, sparksDailyLimit: tight.sparksDailyLimit, purchaseApproval: tight.purchaseApproval }
+          : null;
+      }
+      const sessionRows: SettingsSession[] = sessions.map(session => ({
+        id: session.id ?? '',
+        deviceInfo: session.deviceInfo,
+        lastSeenLabel: seenLabel(session.lastSeen),
+        current: session.deviceInfo === here,
+      }));
+      setView({
+        role: sectionRole,
+        email: user.email ?? profile.email ?? '',
+        emailVerified: user.emailVerified,
+        providers: user.providerData.map(provider => ({ id: provider.providerId, label: providerLabel(provider.providerId) })),
+        hasPassword: user.providerData.some(provider => provider.providerId === 'password'),
+        draft: blankDraft({
+          name: profile.name ?? '',
+          displayName: profile.displayName ?? profile.name ?? '',
+          bio: profile.bio ?? '',
+          country: profile.country ?? '',
+          timezone: profile.timezone ?? 'Asia/Kuala_Lumpur',
+          phone: profile.phone ?? '',
+          language: profile.language ?? 'en',
+          currency: profile.currency ?? 'USD',
+          avatarUrl: profile.avatarUrl ?? '',
+          photoStoragePath: profile.photoStoragePath ?? '',
+          level: profile.level ?? '',
+          learningStyle: profile.learningStyle ?? '',
+          yearGroup: profile.yearGroup ?? '',
+          notificationPrefs: profile.notificationPrefs,
+          privacy: {
+            shareBoard: profile.privacy?.shareBoard ?? profile.shareBoard !== false,
+            profilePublic: profile.privacy?.profilePublic ?? false,
+            showEmail: profile.privacy?.showEmail ?? false,
+          },
+          twoFactorEnabled: profile.twoFactorEnabled === true,
+          instructor: profile.instructor ?? { headline: '', bio: '', public: false },
+        }),
+        sessions: sessionRows,
+        deletion: profile.deletionRequest ?? null,
+        children: childRows,
+        parents: people(parents),
+        payout: payout ?? EMPTY_PAYOUT,
+        institutionName: profile.institutionId ?? '',
+        ageTier: profile.ageTier ?? '',
+        hasDateOfBirth: Boolean(profile.dateOfBirth),
+        inviteCode,
+        linkRequests,
+        payment,
+        receipts,
+        purchases,
+        studentLimits,
+      });
+    };
+    void load();
+    return () => { cancelled = true; };
+  }, [user, profile, reloadKey, ready, mode, sectionRole]);
+
+  if (!user || !profile || !view) return null;
+
+  const refresh = async () => {
+    await fetchProfile(user.uid);
+    setReloadKey(key => key + 1);
   };
 
-  const initials = (name || profile?.name || 'U').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+  const saveProfile = async (draft: ProfileDraft) => {
+    try {
+      await updateUser(user.uid, profilePatch(draft, sectionRole) as Partial<UserProfile>);
+      applyAppLanguage(draft.language, { explicit: true });
+      writeCurrencyChoice(draft.currency, true);
+      await updateProfile(user, { displayName: draft.displayName.trim() || draft.name.trim(), photoURL: draft.avatarUrl || null });
+      await refresh();
+      toast.success('Profile saved.');
+    } catch (error) {
+      toast.error(authMessage(error, 'Could not save your profile.'));
+    }
+  };
+
+  const onPhoto = async (next: { avatarUrl: string; photoStoragePath: string }) => {
+    try {
+      if (!next.avatarUrl) {
+        if (profile.photoStoragePath) await removeStoredMedia(profile.photoStoragePath);
+        await clearUserFields(user.uid, ['avatarUrl', 'photoStoragePath']);
+        await updateProfile(user, { photoURL: null });
+      } else {
+        await updateUser(user.uid, { avatarUrl: next.avatarUrl, photoStoragePath: next.photoStoragePath || undefined });
+        await updateProfile(user, { photoURL: next.avatarUrl });
+      }
+      await refresh();
+    } catch (error) {
+      toast.error(authMessage(error, 'Could not update the photo.'));
+    }
+  };
+
+  const currencies = enabledCurrencies(config ?? seedPricing()).map(item => item.code);
 
   return (
-    <div className="max-w-3xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
-
-      {/* Header */}
-      <motion.header variants={fadeUp} initial="hidden" animate="visible" custom={0} className="pt-2">
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary flex items-center gap-2">
-          <span className="w-5 h-px bg-primary inline-block" /> Account settings
-        </p>
-        <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-3">
-          My <span className="gradient-text italic">profile</span>
-        </h1>
-        <p className="text-muted-foreground mt-2 text-[15px]">Manage your personal information and preferences.</p>
-      </motion.header>
-
-      {/* Profile Info */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
-        className="bg-card border border-border rounded-3xl p-6 sm:p-7 space-y-5 card-glow relative overflow-hidden"
-      >
-        <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-[#2786A4] opacity-80" />
-        <div className="flex items-center gap-2 mb-1">
-          <User className="w-4 h-4 text-primary" />
-          <h2 className="font-heading text-xl text-foreground">Personal Information</h2>
-        </div>
-
-        {/* Current avatar preview */}
-        <div className="flex items-center gap-4">
-          <Avatar className="w-16 h-16 border-2 border-border shadow-lg">
-            <AvatarImage src={avatarUrl} />
-            <AvatarFallback className="bg-gradient-to-br from-[#2786A4] to-[#1E6A83] text-white text-xl font-bold">{initials}</AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-bold text-foreground">{profile?.name}</p>
-            <p className="text-xs text-muted-foreground capitalize">{profile?.role}</p>
-            <p className="text-xs text-muted-foreground">{user?.email}</p>
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">Display Name</label>
-          <Input value={name} onChange={e => setName(e.target.value)} placeholder="Your full name" className="rounded-xl h-11 bg-muted/50" />
-        </div>
-
-        {/* Avatar presets */}
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5"><Palette className="w-3.5 h-3.5" /> Choose Avatar</label>
-          <div className="flex flex-wrap gap-2">
-            {AVATAR_PRESETS.map((url, i) => (
-              <button key={i} onClick={() => setAvatarUrl(url)}
-                className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-all ${avatarUrl === url ? 'border-primary scale-110 shadow-md' : 'border-transparent hover:border-primary/40'}`}
-              >
-                <img src={url} alt={`avatar ${i}`} className="w-full h-full object-cover bg-muted" />
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Student-specific fields */}
-        {profile?.role === 'student' && (
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Education Level</label>
-              <Select value={level} onValueChange={v => setLevel(v ?? '')}>
-                <SelectTrigger className="rounded-xl"><SelectValue placeholder="Select level…" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="primary">Primary School</SelectItem>
-                  <SelectItem value="middle">Middle School</SelectItem>
-                  <SelectItem value="secondary">Secondary / High School</SelectItem>
-                  <SelectItem value="igcse">IGCSE</SelectItem>
-                  <SelectItem value="alevels">A-Levels</SelectItem>
-                  <SelectItem value="undergraduate">Undergraduate</SelectItem>
-                  <SelectItem value="postgraduate">Postgraduate</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Learning Style</label>
-              <Select value={learningStyle} onValueChange={v => setLearningStyle(v ?? '')}>
-                <SelectTrigger className="rounded-xl"><SelectValue placeholder="Select style…" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="visual">Visual</SelectItem>
-                  <SelectItem value="audio">Audio</SelectItem>
-                  <SelectItem value="reading">Reading / Writing</SelectItem>
-                  <SelectItem value="kinesthetic">Kinesthetic</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        )}
-
-        <Button onClick={handleSaveProfile} disabled={saving} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white gap-2">
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          Save Changes
-        </Button>
-      </motion.div>
-
-      {/* Change Password */}
-      {user?.providerData?.some(p => p.providerId === 'password') && (
-        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}
-          className="bg-card border border-border rounded-3xl p-6 sm:p-7 space-y-4 card-glow relative overflow-hidden"
-        >
-          <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-amber-500 opacity-80" />
-          <div className="flex items-center gap-2 mb-1">
-            <Lock className="w-4 h-4 text-amber-500" />
-            <h2 className="font-heading text-xl text-foreground">Change Password</h2>
-          </div>
-          <Input type="password" value={currentPw} onChange={e => setCurrentPw(e.target.value)} placeholder="Current password" className="rounded-xl h-11 bg-muted/50" />
-          <Input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="New password (min 6 chars)" className="rounded-xl h-11 bg-muted/50" />
-          <Input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} placeholder="Confirm new password" className="rounded-xl h-11 bg-muted/50" />
-          <Button onClick={handleChangePassword} disabled={changingPw} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-amber-500 to-orange-600 text-white gap-2">
-            {changingPw ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-            Change Password
-          </Button>
-        </motion.div>
-      )}
-    </div>
+    <SettingsPanel
+      view={view}
+      currencies={currencies.length ? currencies : ['USD']}
+      scopeId={user.uid}
+      onSaveProfile={saveProfile}
+      onPhoto={onPhoto}
+      onChangeEmail={async (email, password) => {
+        try {
+          await reauthenticate(password);
+          await verifyBeforeUpdateEmail(user, email);
+          toast.success('Check the new inbox. The email changes after you open the link.');
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not change the email.'));
+        }
+      }}
+      onResendVerification={async () => {
+        try {
+          await sendEmailVerification(user);
+          toast.success('Verification email sent.');
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not send the verification email.'));
+        }
+      }}
+      onChangePassword={async (current, next) => {
+        try {
+          await reauthenticate(current);
+          await updatePassword(user, next);
+          toast.success('Password changed.');
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not change the password.'));
+        }
+      }}
+      onSetPassword={async next => {
+        try {
+          if (!user.email) throw new Error('Add an email before setting a password.');
+          await reauthenticate('');
+          await linkWithCredential(user, EmailAuthProvider.credential(user.email, next));
+          toast.success('Password added. You can sign in with email as well.');
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not set a password.'));
+        }
+      }}
+      onLinkGoogle={async () => {
+        try {
+          await linkWithPopup(user, new GoogleAuthProvider());
+          toast.success('Google is linked.');
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not link Google.'));
+        }
+      }}
+      onUnlink={async providerId => {
+        try {
+          await unlink(user, providerId);
+          toast.success('Provider unlinked.');
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not unlink that provider.'));
+        }
+      }}
+      onToggleTwoFactor={async enabled => {
+        try {
+          await updateUser(user.uid, { twoFactorEnabled: enabled });
+          await refresh();
+          toast.success(enabled ? 'Two-factor authentication is on.' : 'Two-factor authentication is off.');
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not update two-factor authentication.'));
+        }
+      }}
+      onSignOutSession={async sessionId => {
+        try {
+          const row = view.sessions.find(session => session.id === sessionId);
+          await deleteUserSession(sessionId);
+          if (row?.current) {
+            await signOut(auth);
+            router.push('/login');
+            return;
+          }
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not sign out that session.'));
+        }
+      }}
+      onSignOutEverywhere={async () => {
+        try {
+          await deleteAllUserSessions(user.uid);
+          await updateUser(user.uid, { sessionsRevokedAt: Date.now() });
+          await signOut(auth);
+          router.push('/login');
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not sign out everywhere.'));
+        }
+      }}
+      onSaveNotifications={async (prefs: NotificationPrefs) => {
+        await updateUser(user.uid, { notificationPrefs: prefs });
+        await refresh();
+        toast.success('Notification preferences saved.');
+      }}
+      onSavePrivacy={async (privacy: PrivacySettings) => {
+        await updateUser(user.uid, { privacy, shareBoard: privacy.shareBoard });
+        await refresh();
+        toast.success('Privacy settings saved.');
+      }}
+      onExport={async () => {
+        const body = {
+          exportedAt: new Date().toISOString(),
+          account: {
+            email: user.email,
+            name: profile.name,
+            displayName: profile.displayName,
+            bio: profile.bio,
+            country: profile.country,
+            timezone: profile.timezone,
+            phone: profile.phone,
+            language: profile.language,
+            currency: profile.currency,
+            role: profile.role,
+            notificationPrefs: profile.notificationPrefs,
+            privacy: profile.privacy,
+            instructor: profile.instructor,
+          },
+          sessions: view.sessions,
+          payout: view.payout,
+          children: view.children,
+          parents: view.parents,
+        };
+        const blob = new Blob([JSON.stringify(body, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'poket-school-account.json';
+        link.click();
+        URL.revokeObjectURL(url);
+      }}
+      onRequestDeletion={async () => {
+        try {
+          const request: DeletionRequest = scheduleDeletion(Date.now());
+          await updateUser(user.uid, { deletionRequest: request });
+          await refresh();
+          toast.success('Deletion scheduled. You can cancel it during the next 14 days.');
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not schedule deletion.'));
+        }
+      }}
+      onCancelDeletion={async () => {
+        try {
+          await clearUserFields(user.uid, ['deletionRequest']);
+          await refresh();
+          toast.success('Deletion cancelled.');
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not cancel deletion.'));
+        }
+      }}
+      onSavePayout={async (payout: PayoutDetails) => {
+        try {
+          await savePayoutDetails(user.uid, normalisePayout(payout));
+          toast.success('Payout details saved.');
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not save payout details.'));
+        }
+      }}
+      onLinkChild={async email => {
+        try {
+          const result = await linkChildToParent(user.uid, email.toLowerCase(), { name: profile.name, email: user.email ?? profile.email });
+          toast.success(result.message);
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not send that request.'));
+        }
+      }}
+      onUnlinkChild={async childId => {
+        try {
+          await unlinkChildFromParent(user.uid, childId);
+          toast.success('Child unlinked.');
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not unlink that child.'));
+        }
+      }}
+      onCreateInvite={async () => {
+        try {
+          const code = await createParentInvite(user.uid, profile.name || 'Parent');
+          toast.success(`Invite code ${code}. Your child enters it in their settings.`);
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not create an invite code.'));
+        }
+      }}
+      onRevokeInvite={async () => {
+        try {
+          if (view.inviteCode) await revokeParentInvite(user.uid, view.inviteCode);
+          toast.success('Invite code revoked.');
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not revoke that code.'));
+        }
+      }}
+      onSaveChild={async (childId, next) => {
+        try {
+          const child = view.children.find(row => row.id === childId);
+          if (child?.ageTier !== 'under13') {
+            toast.error('A parent can edit a profile only for an under-13 account.');
+            return;
+          }
+          await saveUnder13Profile(user.uid, childId, next);
+          toast.success('Child profile saved.');
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not save that child profile.'));
+        }
+      }}
+      onSaveControls={async (controls: ChildControls) => {
+        try {
+          await saveChildControls(user.uid, controls);
+          toast.success('Limits saved.');
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not save those limits.'));
+        }
+      }}
+      onSavePayment={async (method: PaymentMethod) => {
+        try {
+          await savePaymentMethod(user.uid, method);
+          toast.success('Payment method saved.');
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not save the payment method.'));
+        }
+      }}
+      onDecidePurchase={async (requestId, approve) => {
+        try {
+          await decidePurchaseRequest(requestId, approve);
+          toast.success(approve ? 'Purchase approved. Your child can buy it now.' : 'Purchase declined.');
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not update that purchase.'));
+        }
+      }}
+      onAcceptInvite={async code => {
+        try {
+          await acceptParentInvite(code, user.uid);
+          toast.success('Invite accepted. Your parent can see your progress.');
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not accept that invite.'));
+        }
+      }}
+      onRespondLink={async (linkId, approve) => {
+        try {
+          await respondToParentLink(linkId, user.uid, approve);
+          toast.success(approve ? 'Linked. They can see your progress now.' : 'Request declined.');
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not update that request.'));
+        }
+      }}
+      onSaveDob={async date => {
+        try {
+          const data = await authedFetch('/api/community/dob', { method: 'POST', body: JSON.stringify({ dateOfBirth: date }) });
+          toast.success(`Age tier set to ${String(data.ageTier ?? 'saved')}.`);
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not save the date of birth.'));
+        }
+      }}
+    />
   );
 }

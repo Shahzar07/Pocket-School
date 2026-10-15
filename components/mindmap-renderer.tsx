@@ -1,298 +1,133 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
-import { Share2 } from 'lucide-react';
-import { ContentExportToolbar } from '@/components/infographic-renderer';
-
-/* ─── Types ───────────────────────────────────────────────── */
-
-interface MindmapNode {
-  label: string;
-  children: MindmapNode[];
-}
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { layoutBuzan, parseBuzan } from '@/lib/mindmap';
 
 interface MindmapRendererProps {
   content: string;
   dark?: boolean;
 }
 
-/* ─── Branch colors ────────────────────────────────────────── */
-
-const BRANCH_COLORS = [
-  { bg: 'from-blue-500 to-indigo-600', border: 'border-blue-400', text: 'text-blue-50', line: 'bg-blue-400', lightBg: 'from-blue-50 to-indigo-50', lightBorder: 'border-blue-300', lightText: 'text-blue-900', lightLine: 'bg-blue-300' },
-  { bg: 'from-emerald-500 to-teal-600', border: 'border-emerald-400', text: 'text-emerald-50', line: 'bg-emerald-400', lightBg: 'from-emerald-50 to-teal-50', lightBorder: 'border-emerald-300', lightText: 'text-emerald-900', lightLine: 'bg-emerald-300' },
-  { bg: 'from-violet-500 to-purple-600', border: 'border-violet-400', text: 'text-violet-50', line: 'bg-violet-400', lightBg: 'from-violet-50 to-purple-50', lightBorder: 'border-violet-300', lightText: 'text-violet-900', lightLine: 'bg-violet-300' },
-  { bg: 'from-amber-500 to-orange-600', border: 'border-amber-400', text: 'text-amber-50', line: 'bg-amber-400', lightBg: 'from-amber-50 to-orange-50', lightBorder: 'border-amber-300', lightText: 'text-amber-900', lightLine: 'bg-amber-300' },
-  { bg: 'from-rose-500 to-pink-600', border: 'border-rose-400', text: 'text-rose-50', line: 'bg-rose-400', lightBg: 'from-rose-50 to-pink-50', lightBorder: 'border-rose-300', lightText: 'text-rose-900', lightLine: 'bg-rose-300' },
-  { bg: 'from-cyan-500 to-blue-600', border: 'border-cyan-400', text: 'text-cyan-50', line: 'bg-cyan-400', lightBg: 'from-cyan-50 to-blue-50', lightBorder: 'border-cyan-300', lightText: 'text-cyan-900', lightLine: 'bg-cyan-300' },
-  { bg: 'from-fuchsia-500 to-pink-600', border: 'border-fuchsia-400', text: 'text-fuchsia-50', line: 'bg-fuchsia-400', lightBg: 'from-fuchsia-50 to-pink-50', lightBorder: 'border-fuchsia-300', lightText: 'text-fuchsia-900', lightLine: 'bg-fuchsia-300' },
-  { bg: 'from-lime-500 to-green-600', border: 'border-lime-400', text: 'text-lime-50', line: 'bg-lime-400', lightBg: 'from-lime-50 to-green-50', lightBorder: 'border-lime-300', lightText: 'text-lime-900', lightLine: 'bg-lime-300' },
-];
-
-/* ─── Markdown parser ──────────────────────────────────────── */
-
-function parseMindmapMarkdown(md: string): MindmapNode {
-  const lines = md.split('\n').filter((l) => l.trim());
-
-  // Find the root: first heading or first non-empty line
-  let rootLabel = 'Mind Map';
-  let startIdx = 0;
-
-  for (let i = 0; i < lines.length; i++) {
-    const headingMatch = lines[i].match(/^#{1,6}\s+(.+)/);
-    if (headingMatch) {
-      rootLabel = headingMatch[1].replace(/\*\*/g, '').trim();
-      startIdx = i + 1;
-      break;
-    }
-  }
-
-  const root: MindmapNode = { label: rootLabel, children: [] };
-
-  // Parse remaining lines into tree structure
-  // Headings (##, ###, etc.) become branch nodes
-  // Bullets (-, *, •) become leaf nodes under the last heading
-  // Nested bullets become children of the parent bullet
-
-  interface StackItem {
-    node: MindmapNode;
-    level: number;
-  }
-
-  const stack: StackItem[] = [{ node: root, level: 0 }];
-
-  function getParentAtLevel(level: number): MindmapNode {
-    while (stack.length > 1 && stack[stack.length - 1].level >= level) {
-      stack.pop();
-    }
-    return stack[stack.length - 1].node;
-  }
-
-  for (let i = startIdx; i < lines.length; i++) {
-    const line = lines[i];
-
-    // Check for heading
-    const headingMatch = line.match(/^(#{2,6})\s+(.+)/);
-    if (headingMatch) {
-      const level = headingMatch[1].length; // 2-6
-      const label = headingMatch[2].replace(/\*\*/g, '').trim();
-      const parent = getParentAtLevel(level);
-      const node: MindmapNode = { label, children: [] };
-      parent.children.push(node);
-      stack.push({ node, level });
-      continue;
-    }
-
-    // Check for bullet items (-, *, •, numbered)
-    const bulletMatch = line.match(/^(\s*)([-*•]|\d+[.)]\s)\s*(.*)/);
-    if (bulletMatch) {
-      const indent = bulletMatch[1].length;
-      const label = bulletMatch[3].replace(/\*\*/g, '').replace(/\*/g, '').trim();
-      if (!label) continue;
-
-      // Determine nesting level based on indent (each 2 spaces = 1 level deeper)
-      const bulletLevel = 100 + Math.floor(indent / 2); // offset to avoid collision with heading levels
-
-      const parent = getParentAtLevel(bulletLevel);
-      const node: MindmapNode = { label, children: [] };
-      parent.children.push(node);
-      stack.push({ node, level: bulletLevel });
-      continue;
-    }
-
-    // Plain text line — treat as a leaf under current parent
-    const trimmed = line.replace(/\*\*/g, '').replace(/\*/g, '').trim();
-    if (trimmed && !trimmed.match(/^---+$/) && !trimmed.match(/^===+$/)) {
-      const parent = stack[stack.length - 1].node;
-      parent.children.push({ label: trimmed, children: [] });
-    }
-  }
-
-  return root;
+function clampScale(value: number): number {
+  return Math.min(2.5, Math.max(0.6, value));
 }
 
-/* ─── Leaf node component ──────────────────────────────────── */
-
-function LeafNode({ label, dark, colorIdx }: { label: string; dark: boolean; colorIdx: number }) {
-  const color = BRANCH_COLORS[colorIdx % BRANCH_COLORS.length];
-  return (
-    <div
-      className={`relative px-3 py-1.5 rounded-lg text-xs font-medium leading-snug max-w-[200px] border ${
-        dark
-          ? `bg-white/[0.04] ${color.border}/40 ${color.text}/90`
-          : `bg-gradient-to-r ${color.lightBg} ${color.lightBorder} ${color.lightText}`
-      }`}
-    >
-      {label}
-    </div>
-  );
-}
-
-/* ─── Branch node component ────────────────────────────────── */
-
-function BranchNode({
-  node,
-  dark,
-  colorIdx,
-  depth,
-}: {
-  node: MindmapNode;
-  dark: boolean;
-  colorIdx: number;
-  depth: number;
-}) {
-  const [collapsed, setCollapsed] = useState(false);
-  const color = BRANCH_COLORS[colorIdx % BRANCH_COLORS.length];
-  const hasChildren = node.children.length > 0;
-
-  return (
-    <div className="flex items-start gap-0">
-      {/* Horizontal connector line */}
-      <div className={`w-6 h-px mt-4 shrink-0 ${dark ? color.line : color.lightLine}`} />
-
-      <div className="flex items-start gap-0">
-        {/* The node itself */}
-        <button
-          onClick={() => hasChildren && setCollapsed(!collapsed)}
-          className={`relative shrink-0 px-3 py-1.5 rounded-xl text-sm font-semibold leading-snug border transition-all ${
-            hasChildren ? 'cursor-pointer hover:scale-105' : 'cursor-default'
-          } ${
-            depth === 1
-              ? dark
-                ? `bg-gradient-to-r ${color.bg} ${color.border} ${color.text} shadow-lg shadow-${color.border}/20`
-                : `bg-gradient-to-r ${color.bg} ${color.border} text-white shadow-md`
-              : dark
-                ? `bg-white/[0.06] ${color.border}/50 ${color.text}/90`
-                : `bg-gradient-to-r ${color.lightBg} ${color.lightBorder} ${color.lightText}`
-          }`}
-          style={{ maxWidth: depth === 1 ? 220 : 200 }}
-        >
-          {node.label}
-          {hasChildren && (
-            <span className={`ml-1.5 text-[10px] opacity-60`}>
-              {collapsed ? `+${node.children.length}` : ''}
-            </span>
-          )}
-        </button>
-
-        {/* Children with vertical connector */}
-        {hasChildren && !collapsed && (
-          <div className="flex items-start gap-0">
-            {/* Vertical connector */}
-            <div className="relative flex flex-col items-start">
-              <div
-                className={`absolute left-0 w-px ${dark ? color.line : color.lightLine}`}
-                style={{
-                  top: node.children.length > 1 ? '16px' : '0',
-                  height: node.children.length > 1 ? `calc(100% - 32px)` : '0',
-                }}
-              />
-              <div className="flex flex-col gap-1.5">
-                {node.children.map((child, i) => (
-                  <div key={i}>
-                    {child.children.length > 0 ? (
-                      <BranchNode
-                        node={child}
-                        dark={dark}
-                        colorIdx={colorIdx}
-                        depth={depth + 1}
-                      />
-                    ) : (
-                      <div className="flex items-center gap-0">
-                        <div className={`w-6 h-px ${dark ? color.line : color.lightLine}`} />
-                        <LeafNode label={child.label} dark={dark} colorIdx={colorIdx} />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ─── Main renderer ────────────────────────────────────────── */
-
+/**
+ * Radial Buzan map. Pinch, wheel, and drag move around the picture.
+ * A prose study note is not drawn.
+ */
 export function MindmapRenderer({ content, dark = false }: MindmapRendererProps) {
-  const tree = useMemo(() => parseMindmapMarkdown(content), [content]);
+  const map = useMemo(() => parseBuzan(content), [content]);
+  const layout = useMemo(() => (map ? layoutBuzan(map) : null), [map]);
+  const [scale, setScale] = useState(1);
+  const [origin, setOrigin] = useState({ x: 0, y: 0 });
+  const frame = useRef<HTMLDivElement>(null);
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ distance: number; scale: number } | null>(null);
 
-  if (!content.trim()) {
+  useEffect(() => {
+    const el = frame.current;
+    if (!el) return;
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      const delta = event.deltaY < 0 ? 1.08 : 0.92;
+      setScale(current => clampScale(current * delta));
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [layout]);
+
+  if (!map || !layout) {
     return (
-      <p className={`text-sm italic ${dark ? 'text-slate-500' : 'text-muted-foreground'}`}>
-        No mind map content available.
+      <p className={`text-sm ${dark ? 'text-slate-300' : 'text-muted-foreground'}`}>
+        This mind map needs regenerating.
       </p>
     );
   }
 
+  const movePointer = (event: React.PointerEvent<HTMLDivElement>) => {
+    const previous = pointers.current.get(event.pointerId);
+    pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    const active = [...pointers.current.values()];
+    if (active.length >= 2) {
+      const [a, b] = active;
+      const distance = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      if (!pinch.current) pinch.current = { distance, scale };
+      else setScale(clampScale(pinch.current.scale * (distance / pinch.current.distance)));
+      return;
+    }
+    if (previous && active.length === 1) {
+      const dx = event.clientX - previous.x;
+      const dy = event.clientY - previous.y;
+      setOrigin(current => ({ x: current.x + dx, y: current.y + dy }));
+    }
+  };
+
+  const endPointer = (event: React.PointerEvent<HTMLDivElement>) => {
+    pointers.current.delete(event.pointerId);
+    if (pointers.current.size < 2) pinch.current = null;
+  };
+
+  const panel = dark ? 'border-white/10 bg-[#1c1915]' : 'border-border bg-[#f7f4ee]';
+  const button = dark
+    ? 'border-white/15 text-slate-200 hover:bg-white/10'
+    : 'border-border bg-white/80 text-foreground hover:bg-white';
+
   return (
-    <div
-      className={`w-full overflow-x-auto rounded-2xl p-6 sm:p-8 ${
-        dark
-          ? 'bg-gradient-to-br from-[#0B0F1A] to-[#070A14] border border-white/10'
-          : 'bg-gradient-to-br from-slate-50 to-white border border-border'
-      }`}
-    >
-      {/* Title + export toolbar */}
-      <div className="flex items-center justify-between gap-3 mb-6">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-gradient-to-br from-fuchsia-500 to-pink-600 shrink-0">
-            <Share2 className="w-4 h-4 text-white" />
-          </div>
-          <h3 className={`font-bold text-lg truncate ${dark ? 'text-white' : 'text-foreground'}`}>
-            Mind Map
-          </h3>
+    <div className={`rounded-3xl border ${panel} overflow-hidden`}>
+      <div className="flex items-center justify-between gap-2 px-3 py-2">
+        <p className={`text-[11px] font-semibold uppercase tracking-widest ${dark ? 'text-slate-400' : 'text-muted-foreground'}`}>
+          Mind map
+        </p>
+        <div className="flex items-center gap-1">
+          <button type="button" className={`h-8 w-8 rounded-lg border text-sm ${button}`} onClick={() => setScale(current => clampScale(current * 1.12))} aria-label="Zoom in">+</button>
+          <button type="button" className={`h-8 w-8 rounded-lg border text-sm ${button}`} onClick={() => setScale(current => clampScale(current / 1.12))} aria-label="Zoom out">−</button>
+          <button type="button" className={`h-8 rounded-lg border px-2 text-[11px] font-medium ${button}`} onClick={() => { setScale(1); setOrigin({ x: 0, y: 0 }); }}>Reset</button>
         </div>
-        <ContentExportToolbar title={tree.label || 'Mind Map'} kind="Mind Map" markdown={content} dark={dark} />
       </div>
-
-      {/* Tree diagram */}
-      <div className="flex items-start gap-0 min-w-fit">
-        {/* Central root node */}
-        <div className={`shrink-0 px-5 py-3 rounded-2xl font-bold text-base border-2 shadow-xl ${
-          dark
-            ? 'bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 border-violet-400/50 text-white shadow-violet-500/20'
-            : 'bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 border-violet-300 text-white shadow-violet-200'
-        }`} style={{ maxWidth: 260 }}>
-          {tree.label}
-        </div>
-
-        {/* Branches */}
-        {tree.children.length > 0 && (
-          <div className="flex items-start gap-0">
-            {/* Vertical trunk line */}
-            <div className="relative flex flex-col items-start">
-              {tree.children.length > 1 && (
-                <div
-                  className={`absolute left-0 w-px ${dark ? 'bg-violet-400/50' : 'bg-violet-300/70'}`}
-                  style={{
-                    top: '16px',
-                    height: `calc(100% - 32px)`,
-                  }}
-                />
-              )}
-              <div className="flex flex-col gap-2">
-                {tree.children.map((child, i) => (
-                  <BranchNode
-                    key={i}
-                    node={child}
-                    dark={dark}
-                    colorIdx={i}
-                    depth={1}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+      <div
+        ref={frame}
+        className="h-[70vh] max-h-[820px] min-h-[320px] cursor-grab overflow-hidden touch-none"
+        onPointerDown={event => {
+          event.currentTarget.setPointerCapture(event.pointerId);
+          pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        }}
+        onPointerMove={movePointer}
+        onPointerUp={endPointer}
+        onPointerCancel={endPointer}
+      >
+        <svg
+          viewBox={`0 0 ${layout.width} ${layout.height}`}
+          role="img"
+          aria-label={`Mind map of ${layout.center}`}
+          className="h-full w-full"
+          style={{ transform: `translate(${origin.x}px, ${origin.y}px) scale(${scale})`, transformOrigin: 'center' }}
+        >
+          <rect width={layout.width} height={layout.height} fill="#f7f4ee" />
+          {layout.ribbons.map((ribbon, index) => (
+            <g key={`${index}-${ribbon.keyword}`}>
+              <path d={ribbon.path} fill={ribbon.color} />
+              <text x={ribbon.iconX} y={ribbon.iconY} fontSize="16" textAnchor="middle">{ribbon.icon}</text>
+              <text x={ribbon.labelX} y={ribbon.labelY} fontSize={ribbon.depth === 0 ? 16 : 13} fontFamily="sans-serif" fontWeight="700" textAnchor="middle" fill="#1f2933">{ribbon.keyword}</text>
+            </g>
+          ))}
+          <circle cx={layout.centerX} cy={layout.centerY} r="62" fill="#243037" />
+          <text x={layout.centerX} y={layout.centerY - 6} fontSize="20" textAnchor="middle">{layout.centerIcon}</text>
+          <text x={layout.centerX} y={layout.centerY + 18} fontSize="14" fontFamily="sans-serif" fontWeight="700" textAnchor="middle" fill="#ffffff">{layout.center}</text>
+        </svg>
       </div>
-
-      {/* Legend / instructions */}
-      <p className={`text-[10px] mt-6 ${dark ? 'text-slate-500' : 'text-muted-foreground'}`}>
-        Click any branch node to expand or collapse it.
-      </p>
+      <ul className="sr-only">
+        {map.branches.map(branch => (
+          <li key={branch.keyword}>
+            {branch.keyword}
+            {branch.children.length > 0 && (
+              <ul>
+                {branch.children.map(child => <li key={child.keyword}>{child.keyword}</li>)}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

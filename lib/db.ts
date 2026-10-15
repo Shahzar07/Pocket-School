@@ -1,11 +1,34 @@
 import {
   collection, doc, getDoc, getDocs, setDoc, updateDoc, addDoc,
   deleteDoc, query, where, orderBy, limit, serverTimestamp, onSnapshot,
-  increment, arrayUnion, arrayRemove, Timestamp, writeBatch, runTransaction,
+  increment, arrayUnion, arrayRemove, Timestamp, writeBatch, runTransaction, deleteField,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { ACADEMIC_MONTHLY_ALLOWANCE, UNIT_PASS_REWARD } from './sparks';
+import { computeGoalStreak as streakFromGoals } from './insights/goals';
 import type { Role } from './roles';
+import type { OemLicence } from './oem';
+import type { AccessPolicy } from './access-policy';
+import { coerceDailyGoal } from './goals';
+import { stripUnitPrefix } from './unit-title';
+import { omitUndefined } from './course-builder';
+import type { DeletionRequest, InstructorProfile, NotificationPrefs, PayoutDetails, PrivacySettings } from './account-settings';
+import {
+  NEUTRAL_LINK,
+  childPhotoPath,
+  defaultChildControls,
+  inviteCodeFromBytes,
+  normaliseChildControls,
+  normalisePaymentMethod,
+  parentLinkId,
+  pendingLink,
+  purchaseNeedsParent,
+  withinSparksLimit,
+  type ChildControls,
+  type PaymentMethod,
+} from './parent-controls';
+import { requestPush } from './push-client';
+import type { PushCategory } from './push';
 
 export type { Role };
 
@@ -14,10 +37,17 @@ export type { Role };
 export interface UserProfile {
   name: string;
   email: string;
+  /** Name shown in class lists when it differs from the legal name. */
+  displayName?: string;
+  bio?: string;
   role: Role;
+  /** Every role this login holds. The open dashboard is stored in the browser, not here. */
+  roles?: Role[];
   /** Set for institution_admin (and optionally members) — scopes what they see. */
   institutionId?: string;
   avatarUrl?: string;
+  /** Storage path for the profile photo, under media/{uid}/. */
+  photoStoragePath?: string;
   level?: string;
   learningStyle?: string;
   interests?: string[];
@@ -33,11 +63,41 @@ export interface UserProfile {
   permissions?: string[];
   /** Account lifecycle. Absent means active — existing accounts predate this
    * field and must not be treated as suspended. */
-  accountStatus?: 'active' | 'suspended' | 'pending' | 'inactive';
+  accountStatus?: 'active' | 'suspended' | 'pending' | 'inactive' | 'banned' | 'deleted';
+  /** Why an admin suspended, banned, or deleted the account. */
+  statusReason?: string;
+  /** Set when an admin soft-deletes the account. Cleared on restore. */
+  deletedAt?: number | null;
+  /** Staff console role. Custom claims mirror this field. */
+  adminRole?: 'super_admin' | 'admin' | 'content_editor' | 'support' | 'finance';
+  country?: string;
+  timezone?: string;
+  /** Display currency code from the pricing table, for example USD or MYR. */
+  currency?: string;
+  notificationPrefs?: NotificationPrefs;
+  privacy?: PrivacySettings;
+  /** Teacher public profile. Payout details live in users/{uid}/private/payout. */
+  instructor?: InstructorProfile;
+  /** Email code at sign-in. Admin MFA is separate and still required for staff. */
+  twoFactorEnabled?: boolean;
+  /** Milliseconds. Devices whose session started earlier must sign in again. */
+  sessionsRevokedAt?: number;
+  /** Set by the person. Removal waits until scheduledFor. */
+  deletionRequest?: DeletionRequest | null;
+  /** Server-set from dateOfBirth. Clients cannot write it. */
+  ageTier?: 'under13' | 'teen' | 'adult';
+  /** YYYY-MM-DD. Server-set. Clients cannot write it. */
+  dateOfBirth?: string;
   lastActiveAt?: Timestamp;
   sparksBalance?: number;
   sparksMonthlyAllowance?: number;
   sparksGrantedAt?: Timestamp;
+  /** Preferred UI and lesson language. A short code from `lib/languages.ts`. */
+  language?: string;
+  /** YYYY-MM-DD days a lesson was opened, used for the study streak. */
+  studyDates?: string[];
+  /** When false, the privacy-safe leaderboard omits this student. */
+  shareBoard?: boolean;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -47,6 +107,8 @@ export type CourseType = 'course' | 'ebook' | 'exam' | 'solutions' | 'paper' | '
 export interface Course {
   id: string;
   title: string;
+  /** Short line under the title on the course page. */
+  subtitle?: string;
   description: string;
   ownerId: string;
   ownerName?: string;
@@ -58,6 +120,8 @@ export interface Course {
   currency?: string;
   level?: string;
   category?: string;
+  /** Language code for the course, for example `en` or `ms`. */
+  language?: string;
   isPublic?: boolean;
   whatYouLearn?: string[];
   requirements?: string[];
@@ -72,7 +136,7 @@ export interface Course {
   minTier?: number;
   /** Entitlement gate 2 — how this course is paid for. Derived by
    * coursePriceType() when absent. */
-  priceType?: 'FREE' | 'FREE_PREVIEW' | 'SUBSCRIPTION_INCLUDED' | 'MARKETPLACE_PURCHASE' | 'INSTITUTION_ALLOCATED' | 'COUPON_SCHOLARSHIP';
+  priceType?: 'FREE' | 'FREE_PREVIEW' | 'SUBSCRIPTION_INCLUDED' | 'MARKETPLACE_PURCHASE' | 'INSTITUTION_ALLOCATED' | 'COUPON_SCHOLARSHIP' | 'SPARKS_UNLOCK';
   /** Opening lessons that are free to everyone. Defaults to 1 on paid courses. */
   freePreviewCount?: number;
   /** Content type used by checkEntitlement(). */
@@ -107,6 +171,25 @@ export interface Course {
   notifyOnPublish?: boolean;
   timedAssessmentMode?: boolean;
   accessOverride?: { pricePerInstitution?: number; expiryDate?: string; sparksOverride?: number };
+  /** Who may see this product. Absent means the older public/signed-in rules. */
+  audiences?: ('students' | 'teachers' | 'parents' | 'institutions' | 'all' | 'marketplace')[];
+  /** Richer include, exclude, schedule and quota. When set, it decides access. */
+  accessPolicy?: AccessPolicy;
+  /** Every chosen audience, person, class, parent, and institution. Any match can see this. */
+  targets?: string[];
+  /** Class ids copied from `class:` targets so security rules can match a cohort. */
+  classIds?: string[];
+  viewCount?: number;
+  completionCount?: number;
+  /** Sum of recorded purchase amounts, in the product currency. */
+  revenueTotal?: number;
+  /** Manual order in the CMS. Absent sorts after numbered rows. */
+  order?: number;
+  /**
+   * Download switch for this product.
+   * Absent follows tier and allocation. true forces downloads on. false forces them off.
+   */
+  downloadsEnabled?: boolean;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -124,6 +207,13 @@ export interface Module {
   masteryThreshold?: number;
   estimatedHours?: number;
   sparkBudget?: number;
+}
+
+/** A localized title and lesson body. English stays on `title` and `aiOutputs.text`. */
+export interface LessonLocalization {
+  title?: string;
+  text?: string;
+  source?: 'manual' | 'ai';
 }
 
 export interface Lesson {
@@ -184,6 +274,24 @@ export interface Lesson {
   tierOverridden?: boolean;
   /** Audit trail of builder actions, newest first (capped client-side). */
   history?: { label: string; actor: string; at: Timestamp; action?: string }[];
+  /** Localized copies of the lesson title and body, keyed by language code. */
+  localizations?: Record<string, LessonLocalization>;
+  /** Pictures staged on this lesson. Alt text is required before one is placed in the body. */
+  mediaLibrary?: LessonMediaAsset[];
+  /** Per-block generator state. A queued or generating job older than three minutes is shown as failed. */
+  generationJobs?: Record<string, { status: 'queued' | 'generating' | 'done' | 'failed'; error?: string; updatedAt: number }>;
+}
+
+/** A picture waiting in the lesson Image or Illustration block. */
+export interface LessonMediaAsset {
+  id: string;
+  src: string;
+  alt: string;
+  caption?: string;
+  width: number;
+  height: number;
+  fullBleed?: boolean;
+  storagePath?: string;
 }
 
 export interface AiOutputs {
@@ -212,6 +320,11 @@ export interface Enrollment {
   /** lessonId -> list of unlocked AiOutputs format keys (curriculum Sparks economy) */
   unlockedFormats?: Record<string, string[]>;
   enrolledAt?: Timestamp;
+  /** Set when this enrolment is a timed trial rather than a purchase. */
+  trial?: boolean;
+  /** Last lesson the learner opened, so My Courses can resume it. */
+  lastLessonId?: string;
+  bookmarkedLessons?: string[];
 }
 
 export interface Badge {
@@ -259,7 +372,13 @@ export interface Institution {
     tagline?: string;
     /** Hide "Powered by Poket School" for institutions on a plan that allows it. */
     hidePoweredBy?: boolean;
+    /** Name on invitation emails. Falls back to the academy name. */
+    emailFromName?: string;
+    /** Name printed on certificates. Falls back to the academy name. */
+    certificateIssuer?: string;
   };
+  /** A hostname the school owns, such as learn.kolej.example. */
+  customDomain?: string;
 }
 
 /** Reserved hosts that must never resolve to an institution. */
@@ -310,13 +429,15 @@ export interface Programme {
   subjects: string[];
   requiredTier: 'free' | 'academic';
   status: 'active' | 'draft';
+  /** Manual order in the CMS. Absent sorts after numbered rows. */
+  order?: number;
   createdAt?: Timestamp;
 }
 
 export interface SparkTransaction {
   id: string;
   amount: number;
-  type: 'allowance' | 'unlock' | 'earn' | 'admin_grant' | 'ai_studio';
+  type: 'allowance' | 'unlock' | 'earn' | 'admin_grant' | 'ai_studio' | 'study';
   format?: string;
   courseId?: string;
   lessonId?: string;
@@ -360,7 +481,34 @@ export async function getUser(uid: string): Promise<UserProfile | null> {
 }
 
 export async function updateUser(uid: string, data: Partial<UserProfile>) {
-  await updateDoc(doc(db, 'users', uid), { ...data, updatedAt: serverTimestamp() });
+  await updateDoc(doc(db, 'users', uid), { ...omitUndefined(data), updatedAt: serverTimestamp() });
+}
+
+const CLEARABLE_PROFILE_FIELDS = ['avatarUrl', 'photoStoragePath', 'deletionRequest'] as const;
+
+export async function clearUserFields(uid: string, fields: readonly (typeof CLEARABLE_PROFILE_FIELDS)[number][]) {
+  const patch: Record<string, ReturnType<typeof deleteField>> = {};
+  for (const field of fields) {
+    if (CLEARABLE_PROFILE_FIELDS.includes(field)) patch[field] = deleteField();
+  }
+  await updateDoc(doc(db, 'users', uid), { ...patch, updatedAt: serverTimestamp() });
+}
+
+export async function savePayoutDetails(uid: string, payout: PayoutDetails): Promise<void> {
+  await setDoc(doc(db, 'users', uid, 'private', 'payout'), { ...payout, updatedAt: serverTimestamp() });
+}
+
+export async function getPayoutDetails(uid: string): Promise<PayoutDetails | null> {
+  const snap = await getDoc(doc(db, 'users', uid, 'private', 'payout'));
+  if (!snap.exists()) return null;
+  const data = snap.data();
+  return {
+    method: data.method === 'paypal' || data.method === 'bank' ? data.method : 'none',
+    email: typeof data.email === 'string' ? data.email : '',
+    accountName: typeof data.accountName === 'string' ? data.accountName : '',
+    bankName: typeof data.bankName === 'string' ? data.bankName : '',
+    accountLast4: typeof data.accountLast4 === 'string' ? data.accountLast4 : '',
+  };
 }
 
 export async function getUserByEmail(email: string): Promise<{ id: string; data: UserProfile } | null> {
@@ -398,7 +546,7 @@ export async function getCourse(courseId: string): Promise<Course | null> {
 
 export async function createCourse(data: Omit<Course, 'id'>): Promise<string> {
   const ref = await addDoc(collection(db, 'courses'), {
-    ...data,
+    ...omitUndefined(data),
     enrollmentCount: data.enrollmentCount ?? 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -452,25 +600,59 @@ export async function saveAiOutputsToLesson(
 }
 
 export async function createModule(courseId: string, data: Omit<Module, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'courses', courseId, 'modules'), { ...data, createdAt: serverTimestamp() });
+  const title = stripUnitPrefix(data.title, data.unitNumber);
+  const ref = await addDoc(collection(db, 'courses', courseId, 'modules'), {
+    ...omitUndefined(data),
+    title,
+    createdAt: serverTimestamp(),
+  });
   return ref.id;
 }
 
 export async function createLesson(courseId: string, moduleId: string, data: Omit<Lesson, 'id'>): Promise<string> {
   const ref = await addDoc(collection(db, 'courses', courseId, 'modules', moduleId, 'lessons'), {
-    ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+    ...omitUndefined(data), createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
   });
   return ref.id;
 }
 
 export async function updateUnit(courseId: string, unitId: string, data: Partial<Module>): Promise<void> {
-  await updateDoc(doc(db, 'courses', courseId, 'modules', unitId), data as Record<string, unknown>);
+  await updateDoc(doc(db, 'courses', courseId, 'modules', unitId), omitUndefined(data) as Record<string, unknown>);
 }
 
 export async function updateLesson(courseId: string, moduleId: string, lessonId: string, data: Partial<Lesson>): Promise<void> {
   await updateDoc(doc(db, 'courses', courseId, 'modules', moduleId, 'lessons', lessonId), {
-    ...data, updatedAt: serverTimestamp(),
+    ...omitUndefined(data), updatedAt: serverTimestamp(),
   });
+}
+
+/**
+ * Move a lesson into another unit without changing its id, so progress and
+ * bookmarks that point at the lesson keep working.
+ */
+export async function moveLessonToUnit(
+  courseId: string,
+  fromUnitId: string,
+  toUnitId: string,
+  lessonId: string,
+  order: number,
+  lessonNumber: number,
+): Promise<void> {
+  if (fromUnitId === toUnitId) {
+    await updateLesson(courseId, fromUnitId, lessonId, { order, lessonNumber, moduleId: toUnitId });
+    return;
+  }
+  const fromRef = doc(db, 'courses', courseId, 'modules', fromUnitId, 'lessons', lessonId);
+  const snap = await getDoc(fromRef);
+  if (!snap.exists()) throw new Error('Lesson not found');
+  await setDoc(doc(db, 'courses', courseId, 'modules', toUnitId, 'lessons', lessonId), {
+    ...snap.data(),
+    moduleId: toUnitId,
+    order,
+    lessonNumber,
+    updatedAt: serverTimestamp(),
+  });
+  await deleteDoc(fromRef);
 }
 
 export async function deleteLesson(courseId: string, moduleId: string, lessonId: string): Promise<void> {
@@ -626,18 +808,29 @@ export async function getEnrolledCourses(studentId: string): Promise<{ course: C
   return results;
 }
 
-export async function enrollStudent(studentId: string, courseId: string) {
+export async function enrollStudent(studentId: string, courseId: string, opts?: { trial?: boolean }) {
   const ref = doc(db, 'courses', courseId, 'enrollments', studentId);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) {
-    await setDoc(ref, {
+  const courseRef = doc(db, 'courses', courseId);
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    if (snap.exists()) return;
+    const courseSnap = await tx.get(courseRef);
+    const policy = courseSnap.exists() ? courseSnap.data().accessPolicy as AccessPolicy | undefined : undefined;
+    const limit = policy?.seatLimit ?? 0;
+    const used = policy?.seatsUsed ?? 0;
+    if (limit > 0 && used >= limit) throw new Error('No seats left');
+    tx.set(ref, {
       studentId,
       courseId,
       progress: 0,
       completedLessons: [],
       enrolledAt: serverTimestamp(),
+      ...(opts?.trial ? { trial: true } : {}),
     });
-  }
+    if (limit > 0) {
+      tx.update(courseRef, { 'accessPolicy.seatsUsed': used + 1 });
+    }
+  });
 }
 
 /** Enrols a student in every published curriculum module for their year group. */
@@ -699,6 +892,7 @@ export async function markLessonComplete(
   }
 
   await batch.commit();
+  if (progress >= 100) await incrementCompletion(courseId);
 
   // Award badges based on XP milestones
   await checkAndAwardBadges(studentId, (enrollment as any).xp || 0, xpReward);
@@ -750,6 +944,7 @@ async function checkAndAwardBadges(studentId: string, currentXp: number, gained:
 export async function unlockLessonFormat(
   uid: string, courseId: string, lessonId: string, format: string, cost: number
 ): Promise<number> {
+  await assertDailySparksLimit(uid, cost);
   const userRef = doc(db, 'users', uid);
   const enrollRef = doc(db, 'courses', courseId, 'enrollments', uid);
   const txRef = doc(collection(db, 'users', uid, 'spark_transactions'));
@@ -1053,6 +1248,7 @@ export async function unlinkChildFromParent(parentId: string, childId: string) {
     childIds: arrayRemove(childId),
     updatedAt: serverTimestamp(),
   });
+  await deleteDoc(doc(db, 'users', parentId, 'child_controls', childId)).catch(() => undefined);
 }
 
 // ─── Messages ─────────────────────────────────────────────────
@@ -1215,6 +1411,167 @@ export async function getInstitutionBySubdomain(subdomain: string): Promise<Inst
   return d ? ({ id: d.id, ...d.data() } as Institution) : null;
 }
 
+/** A school that claimed this exact hostname. */
+export async function getInstitutionByDomain(hostname: string): Promise<Institution | null> {
+  const host = hostname.trim().toLowerCase();
+  if (!host) return null;
+  const snap = await getDocs(query(collection(db, 'institutions'), where('customDomain', '==', host), limit(1)));
+  const d = snap.docs[0];
+  return d ? ({ id: d.id, ...d.data() } as Institution) : null;
+}
+
+export async function listOemLicences(institutionId: string): Promise<OemLicence[]> {
+  const snap = await getDocs(collection(db, 'institutions', institutionId, 'licences'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as OemLicence));
+}
+
+export async function saveOemLicence(institutionId: string, licence: OemLicence): Promise<string> {
+  const { id, ...data } = licence;
+  if (id) {
+    await setDoc(doc(db, 'institutions', institutionId, 'licences', id), data, { merge: true });
+    return id;
+  }
+  const ref = await addDoc(collection(db, 'institutions', institutionId, 'licences'), data);
+  return ref.id;
+}
+
+export interface AcademyClass {
+  id: string;
+  name: string;
+  programmeIds: string[];
+  memberIds: string[];
+}
+
+export async function listAcademyClasses(institutionId: string): Promise<AcademyClass[]> {
+  const snap = await getDocs(collection(db, 'institutions', institutionId, 'classes'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as AcademyClass));
+}
+
+export async function saveAcademyClass(institutionId: string, klass: Omit<AcademyClass, 'id'> & { id?: string }): Promise<string> {
+  const { id, ...data } = klass;
+  if (id) {
+    await setDoc(doc(db, 'institutions', institutionId, 'classes', id), data, { merge: true });
+    return id;
+  }
+  const ref = await addDoc(collection(db, 'institutions', institutionId, 'classes'), data);
+  return ref.id;
+}
+
+export interface AcademyInvite {
+  email: string;
+  name: string;
+  role: 'student' | 'teacher';
+}
+
+export async function saveAcademyInvites(institutionId: string, rows: AcademyInvite[]): Promise<void> {
+  const batch = writeBatch(db);
+  for (const row of rows) {
+    batch.set(doc(db, 'institutions', institutionId, 'invites', row.email), row);
+  }
+  await batch.commit();
+}
+
+export async function listAcademyInvites(institutionId: string): Promise<AcademyInvite[]> {
+  const snap = await getDocs(collection(db, 'institutions', institutionId, 'invites'));
+  return snap.docs.map(d => d.data() as AcademyInvite);
+}
+
+export interface AcademyMember {
+  id: string;
+  email?: string;
+  name?: string;
+  role?: string;
+}
+
+export async function listAcademyMembers(institutionId: string): Promise<AcademyMember[]> {
+  const snap = await getDocs(collection(db, 'institutions', institutionId, 'members'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as AcademyMember));
+}
+
+export async function saveJoinCode(institutionId: string, code: string): Promise<void> {
+  await setDoc(doc(db, 'join_codes', code), { code, institutionId, active: true });
+}
+
+/** Remember where this learner stopped, when they are enrolled. */
+export async function rememberLesson(studentId: string, courseId: string, lessonId: string): Promise<void> {
+  const ref = doc(db, 'courses', courseId, 'enrollments', studentId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+  await updateDoc(ref, { lastLessonId: lessonId, lastOpenedAt: serverTimestamp() });
+}
+
+export async function setBookmarkedLessons(studentId: string, courseId: string, lessonIds: string[]): Promise<void> {
+  const ref = doc(db, 'courses', courseId, 'enrollments', studentId);
+  await updateDoc(ref, { bookmarkedLessons: lessonIds });
+}
+
+export interface CourseReview {
+  id: string;
+  userId: string;
+  userName: string;
+  rating: number;
+  text: string;
+}
+
+export async function listCourseReviews(courseId: string): Promise<CourseReview[]> {
+  const snap = await getDocs(query(collection(db, 'courses', courseId, 'reviews'), limit(40)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as CourseReview));
+}
+
+export async function saveCourseReview(
+  courseId: string,
+  review: { userId: string; userName: string; rating: number; text: string },
+): Promise<void> {
+  await setDoc(doc(db, 'courses', courseId, 'reviews', review.userId), {
+    ...review,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export interface CourseQuestion {
+  id: string;
+  courseId: string;
+  authorId: string;
+  authorName: string;
+  text: string;
+  reply?: string;
+  repliedBy?: string;
+}
+
+export async function listCourseQuestions(courseId: string): Promise<CourseQuestion[]> {
+  const snap = await getDocs(query(collection(db, 'courses', courseId, 'questions'), limit(40)));
+  return snap.docs.map(item => ({ id: item.id, courseId, ...item.data() } as CourseQuestion));
+}
+
+export async function askCourseQuestion(
+  courseId: string,
+  question: { authorId: string; authorName: string; text: string },
+): Promise<void> {
+  await addDoc(collection(db, 'courses', courseId, 'questions'), {
+    ...question,
+    text: question.text.trim(),
+    createdAt: serverTimestamp(),
+  });
+}
+
+export async function replyToCourseQuestion(courseId: string, questionId: string, reply: string, repliedBy: string): Promise<void> {
+  await updateDoc(doc(db, 'courses', courseId, 'questions', questionId), {
+    reply: reply.trim(),
+    repliedBy,
+    repliedAt: serverTimestamp(),
+  });
+}
+
+export async function listInstructorActivity(courseIds: readonly string[]): Promise<{ reviews: CourseReview[]; questions: CourseQuestion[] }> {
+  const reviews: CourseReview[] = [];
+  const questions: CourseQuestion[] = [];
+  for (const courseId of courseIds.slice(0, 12)) {
+    try { reviews.push(...await listCourseReviews(courseId)); } catch { /* Reviews stay empty when the course cannot be read. */ }
+    try { questions.push(...await listCourseQuestions(courseId)); } catch { /* Questions need the owner rules deployed. */ }
+  }
+  return { reviews, questions };
+}
+
 /**
  * Is a subdomain free? `exceptId` lets an institution keep its own value while
  * editing. Reserved labels are always taken.
@@ -1344,6 +1701,16 @@ export async function redeemCouponCode(userId: string, rawCode: string): Promise
         expiresAt: c.expiresAt, discountPct: c.discountPct,
         redeemedAt: serverTimestamp(),
       });
+      // Lesson rules can see one grant document. The same coupon checks apply.
+      tx.set(doc(db, 'courses', c.courseId, 'grants', userId), {
+        userId,
+        active: true,
+        kind: 'coupon',
+        code,
+        courseId: c.courseId,
+        expiresOn: c.expiresAt,
+        updatedAt: serverTimestamp(),
+      });
     }
     return {
       courseId: c.courseId, courseTitle: c.courseTitle,
@@ -1401,20 +1768,26 @@ export async function revokePermission(userId: string, permission: string): Prom
   await updateDoc(doc(db, 'users', userId), { permissions: arrayRemove(permission) });
 }
 
-export type AccountStatus = 'active' | 'suspended' | 'pending' | 'inactive';
+export type AccountStatus = 'active' | 'suspended' | 'pending' | 'inactive' | 'banned' | 'deleted';
 
 /** Absent status means active — accounts created before the field existed. */
 export function accountStatusOf(p: { accountStatus?: string } | null | undefined): AccountStatus {
   const s = p?.accountStatus;
-  return s === 'suspended' || s === 'pending' || s === 'inactive' ? s : 'active';
+  if (s === 'suspended' || s === 'pending' || s === 'inactive' || s === 'banned' || s === 'deleted') return s;
+  return 'active';
 }
 
 /**
  * Admin: change an account's status. Suspending blocks sign-in on the next
  * load — see the dashboard guard — rather than only greying out a row.
  */
-export async function setAccountStatus(userId: string, status: AccountStatus): Promise<void> {
-  await updateDoc(doc(db, 'users', userId), { accountStatus: status, updatedAt: serverTimestamp() });
+export async function setAccountStatus(userId: string, status: AccountStatus, reason?: string): Promise<void> {
+  await updateDoc(doc(db, 'users', userId), {
+    accountStatus: status,
+    ...(reason ? { statusReason: reason } : {}),
+    deletedAt: status === 'deleted' ? Date.now() : null,
+    updatedAt: serverTimestamp(),
+  });
 }
 
 export async function setAccountStatusBulk(userIds: string[], status: AccountStatus): Promise<void> {
@@ -1519,17 +1892,341 @@ export async function getPlatformStats(): Promise<{ students: number; teachers: 
   return { students: sSnap.size, teachers: tSnap.size, courses: cSnap.size };
 }
 
+/** Sum of course counters the admin home can show without inventing a ledger. */
+export async function getCourseRollup(): Promise<{ completions: number; revenue: number }> {
+  const snap = await getDocs(collection(db, 'courses'));
+  let completions = 0;
+  let revenue = 0;
+  snap.docs.forEach(item => {
+    const data = item.data();
+    completions += Number(data.completionCount ?? 0);
+    revenue += Number(data.revenueTotal ?? 0);
+  });
+  return { completions, revenue };
+}
+
+export async function getPlatformHealth(): Promise<{ quotaErrors: number; generationFailures: number; sparksSpent: number }> {
+  try {
+    const snap = await getDoc(doc(db, 'platform_signals', 'health'));
+    const data = snap.data() ?? {};
+    return {
+      quotaErrors: Number(data.quotaErrors ?? 0),
+      generationFailures: Number(data.generationFailures ?? 0),
+      sparksSpent: Number(data.sparksSpent ?? 0),
+    };
+  } catch {
+    return { quotaErrors: 0, generationFailures: 0, sparksSpent: 0 };
+  }
+}
+
+export interface AdminAuditRow {
+  id: string;
+  actorId: string;
+  actorEmail: string;
+  action: string;
+  targetId: string;
+  at: number;
+  before: Record<string, unknown>;
+  after: Record<string, unknown>;
+}
+
+export async function getAdminAudit(max = 200): Promise<AdminAuditRow[]> {
+  const snap = await getDocs(query(collection(db, 'admin_audit'), orderBy('at', 'desc'), limit(max)));
+  return snap.docs.map(item => {
+    const data = item.data();
+    return {
+      id: item.id,
+      actorId: String(data.actorId ?? ''),
+      actorEmail: String(data.actorEmail ?? ''),
+      action: String(data.action ?? ''),
+      targetId: String(data.targetId ?? ''),
+      at: Number(data.at ?? 0),
+      before: (data.before ?? {}) as Record<string, unknown>,
+      after: (data.after ?? {}) as Record<string, unknown>,
+    };
+  });
+}
+
 // ─── Parent / Child ───────────────────────────────────────────
 
-export async function linkChildToParent(parentId: string, childEmail: string): Promise<{ success: boolean; childName?: string; error?: string }> {
-  const child = await getUserByEmail(childEmail);
-  if (!child) return { success: false, error: 'No user found with that email address.' };
-  if (child.data.role !== 'student') return { success: false, error: 'That account is not a student account.' };
+export async function linkChildToParent(
+  parentId: string,
+  childEmail: string,
+  parent?: { name?: string; email?: string },
+): Promise<{ success: boolean; message: string; error?: string }> {
+  const email = childEmail.trim().toLowerCase();
+  const child = await getUserByEmail(email);
+  if (!child || child.data.role !== 'student') return { success: true, message: NEUTRAL_LINK };
+  const linkRef = doc(db, 'parent_links', parentLinkId(parentId, child.id));
+  const existing = await getDoc(linkRef);
+  if (existing.exists()) return { success: true, message: NEUTRAL_LINK };
+  const parentUser = parent ?? await getUser(parentId);
+  await setDoc(linkRef, {
+    ...pendingLink({
+      parentId,
+      parentName: parentUser?.name ?? 'Parent',
+      parentEmail: parent?.email ?? parentUser?.email ?? '',
+      studentId: child.id,
+      studentEmail: email,
+    }),
+    createdAt: serverTimestamp(),
+  });
+  await addDoc(collection(db, 'notifications'), {
+    userId: child.id,
+    title: 'A parent wants to link to your account',
+    message: 'A parent asked to follow your learning. Approve this in profile settings if you know them.',
+    type: 'general',
+    link: '/dashboard/profile',
+    read: false,
+    createdAt: serverTimestamp(),
+  });
+  return { success: true, message: NEUTRAL_LINK };
+}
+
+export async function createParentInvite(parentId: string, parentName: string): Promise<string> {
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  const code = inviteCodeFromBytes(bytes);
+  await setDoc(doc(db, 'parent_invites', code), {
+    parentId,
+    parentName: parentName.trim() || 'Parent',
+    code,
+    status: 'open',
+    createdAt: serverTimestamp(),
+  });
+  return code;
+}
+
+export async function listOpenParentInvites(parentId: string): Promise<{ code: string }[]> {
+  const snap = await getDocs(query(collection(db, 'parent_invites'), where('parentId', '==', parentId)));
+  return snap.docs
+    .filter(item => item.data().status === 'open')
+    .map(item => ({ code: String(item.data().code ?? item.id) }));
+}
+
+export async function revokeParentInvite(parentId: string, code: string): Promise<void> {
+  const ref = doc(db, 'parent_invites', code);
+  const snap = await getDoc(ref);
+  if (!snap.exists() || snap.data().parentId !== parentId) return;
+  await updateDoc(ref, { status: 'revoked' });
+}
+
+export async function acceptParentInvite(code: string, childId: string): Promise<void> {
+  const normalised = code.trim().toUpperCase();
+  const ref = doc(db, 'parent_invites', normalised);
+  const snap = await getDoc(ref);
+  if (!snap.exists() || snap.data().status !== 'open') throw new Error('That invite code is not open.');
+  const parentId = String(snap.data().parentId ?? '');
+  if (!parentId) throw new Error('That invite code is not open.');
+  await updateDoc(ref, { status: 'accepted', childId, acceptedAt: serverTimestamp() });
+  await setDoc(doc(db, 'parent_links', parentLinkId(parentId, childId)), {
+    parentId,
+    parentName: String(snap.data().parentName ?? 'Parent'),
+    studentId: childId,
+    status: 'approved',
+    inviteCode: normalised,
+    createdAt: serverTimestamp(),
+  });
   await updateDoc(doc(db, 'users', parentId), {
-    childIds: arrayUnion(child.id),
+    childIds: arrayUnion(childId),
     updatedAt: serverTimestamp(),
   });
-  return { success: true, childName: child.data.name };
+}
+
+export interface ParentLinkRecord {
+  id: string;
+  parentId: string;
+  parentName: string;
+  studentEmail: string;
+  studentId: string;
+  status: string;
+}
+
+export async function listParentLinkRequests(field: 'parentId' | 'studentId', id: string): Promise<ParentLinkRecord[]> {
+  const snap = await getDocs(query(collection(db, 'parent_links'), where(field, '==', id)));
+  return snap.docs.map(item => {
+    const data = item.data();
+    return {
+      id: item.id,
+      parentId: String(data.parentId ?? ''),
+      parentName: String(data.parentName ?? 'Parent'),
+      studentEmail: String(data.studentEmail ?? ''),
+      studentId: String(data.studentId ?? ''),
+      status: String(data.status ?? ''),
+    };
+  });
+}
+
+export async function respondToParentLink(linkId: string, studentId: string, approve: boolean): Promise<void> {
+  const ref = doc(db, 'parent_links', linkId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) throw new Error('That request was not found.');
+  const data = snap.data();
+  if (data.studentId !== studentId || data.status !== 'pending') throw new Error('That request is no longer open.');
+  await updateDoc(ref, approve
+    ? { status: 'approved', approvedAt: serverTimestamp() }
+    : { status: 'rejected' });
+  if (!approve) return;
+  await updateDoc(doc(db, 'users', String(data.parentId)), {
+    childIds: arrayUnion(studentId),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function getChildControls(parentId: string, childId: string): Promise<ChildControls | null> {
+  const snap = await getDoc(doc(db, 'users', parentId, 'child_controls', childId));
+  if (!snap.exists()) return null;
+  return normaliseChildControls({ childId, ...snap.data() } as Partial<ChildControls> & { childId: string });
+}
+
+export async function saveChildControls(parentId: string, controls: ChildControls): Promise<void> {
+  const next = normaliseChildControls(controls);
+  await setDoc(doc(db, 'users', parentId, 'child_controls', next.childId), {
+    ...next,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function saveUnder13Profile(
+  parentId: string,
+  childId: string,
+  input: { name: string; displayName: string; bio: string; avatarUrl?: string; photoStoragePath?: string },
+): Promise<void> {
+  const patch: Record<string, string> = {
+    name: input.name.trim(),
+    displayName: input.displayName.trim(),
+    bio: input.bio.trim(),
+  };
+  if (input.avatarUrl) patch.avatarUrl = input.avatarUrl;
+  if (input.photoStoragePath) patch.photoStoragePath = input.photoStoragePath || childPhotoPath(parentId, childId);
+  await updateDoc(doc(db, 'users', childId), { ...patch, updatedAt: serverTimestamp() });
+}
+
+export async function savePaymentMethod(uid: string, method: PaymentMethod): Promise<PaymentMethod> {
+  const next = normalisePaymentMethod(method);
+  if (next.last4.length !== 4) throw new Error('Enter the last four digits of the card.');
+  await setDoc(doc(db, 'users', uid, 'private', 'billing'), { ...next, updatedAt: serverTimestamp() });
+  return next;
+}
+
+export async function getPaymentMethod(uid: string): Promise<PaymentMethod | null> {
+  const snap = await getDoc(doc(db, 'users', uid, 'private', 'billing'));
+  if (!snap.exists()) return null;
+  const data = snap.data();
+  return normalisePaymentMethod({
+    brand: typeof data.brand === 'string' ? data.brand : '',
+    last4: typeof data.last4 === 'string' ? data.last4 : '',
+    expiry: typeof data.expiry === 'string' ? data.expiry : '',
+    holder: typeof data.holder === 'string' ? data.holder : '',
+  });
+}
+
+export interface PurchaseRequestRecord {
+  id: string;
+  studentId: string;
+  parentId: string;
+  title: string;
+  amount: number;
+  currency: string;
+  status: string;
+  kind: string;
+  itemId: string;
+}
+
+export async function listPurchaseRequests(field: 'parentId' | 'studentId', id: string): Promise<PurchaseRequestRecord[]> {
+  const snap = await getDocs(query(collection(db, 'purchase_requests'), where(field, '==', id)));
+  return snap.docs.map(item => {
+    const data = item.data();
+    return {
+      id: item.id,
+      studentId: String(data.studentId ?? ''),
+      parentId: String(data.parentId ?? ''),
+      title: String(data.title ?? 'Purchase'),
+      amount: Number(data.amount ?? 0),
+      currency: String(data.currency ?? 'USD'),
+      status: String(data.status ?? 'pending'),
+      kind: String(data.kind ?? ''),
+      itemId: String(data.itemId ?? ''),
+    };
+  });
+}
+
+export async function decidePurchaseRequest(requestId: string, approve: boolean): Promise<void> {
+  await updateDoc(doc(db, 'purchase_requests', requestId), {
+    status: approve ? 'approved' : 'rejected',
+    decidedAt: serverTimestamp(),
+  });
+}
+
+/** Returns clear when the child may buy. Otherwise a parent still has to approve. */
+export async function requestPurchaseApproval(
+  studentId: string,
+  item: { title: string; amount: number; currency: string; kind: string; itemId: string },
+): Promise<'clear' | 'asked' | 'waiting'> {
+  const parents = await getParentsOfStudent(studentId);
+  const blocking: string[] = [];
+  for (const parent of parents) {
+    const controls = await getChildControls(parent.id, studentId).catch(() => null);
+    if (purchaseNeedsParent(controls)) blocking.push(parent.id);
+  }
+  if (!blocking.length) return 'clear';
+  const existing = await listPurchaseRequests('studentId', studentId).catch(() => [] as PurchaseRequestRecord[]);
+  const sameItem = existing.filter(row => row.itemId === item.itemId);
+  const stillNeeded = blocking.filter(parentId => !sameItem.some(row => row.parentId === parentId && row.status === 'approved'));
+  if (!stillNeeded.length) return 'clear';
+  let created = false;
+  for (const parentId of stillNeeded) {
+    if (sameItem.some(row => row.parentId === parentId && row.status === 'pending')) continue;
+    created = true;
+    await addDoc(collection(db, 'purchase_requests'), {
+      studentId,
+      parentId,
+      title: item.title,
+      amount: item.amount,
+      currency: item.currency,
+      status: 'pending',
+      kind: item.kind,
+      itemId: item.itemId,
+      createdAt: serverTimestamp(),
+    });
+  }
+  return created ? 'asked' : 'waiting';
+}
+
+export async function assertDailySparksLimit(studentId: string, amount: number): Promise<void> {
+  if (amount <= 0) return;
+  const parents = await getParentsOfStudent(studentId).catch(() => []);
+  let limit = Number.POSITIVE_INFINITY;
+  for (const parent of parents) {
+    const controls = await getChildControls(parent.id, studentId).catch(() => null);
+    if (controls) limit = Math.min(limit, controls.sparksDailyLimit);
+  }
+  if (!Number.isFinite(limit)) return;
+  const spent = await sparksSpentToday(studentId).catch(() => 0);
+  if (!withinSparksLimit(spent, amount, limit)) {
+    throw new Error('A parent limit stops this Sparks spend for today.');
+  }
+}
+
+async function sparksSpentToday(studentId: string): Promise<number> {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const snap = await getDocs(query(
+    collection(db, 'users', studentId, 'spark_transactions'),
+    where('createdAt', '>=', Timestamp.fromDate(start)),
+    limit(100),
+  ));
+  return snap.docs.reduce((sum, item) => {
+    const amount = Number(item.data().amount ?? 0);
+    return amount < 0 ? sum + Math.abs(amount) : sum;
+  }, 0);
+}
+
+export { defaultChildControls };
+
+export async function getParentsOfStudent(studentId: string): Promise<{ id: string; data: UserProfile }[]> {
+  const snap = await getDocs(query(collection(db, 'users'), where('childIds', 'array-contains', studentId)));
+  return snap.docs.map(item => ({ id: item.id, data: item.data() as UserProfile }));
 }
 
 export async function getChildrenProfiles(parentId: string): Promise<{ id: string; data: UserProfile }[]> {
@@ -1875,6 +2572,8 @@ export interface CalendarEvent {
   type: 'assignment' | 'exam' | 'event' | 'holiday' | 'class' | 'payment';
   courseId?: string;
   audience: 'all' | 'students' | 'teachers' | 'parents';
+  /** Several audiences at once. `audience` is kept for older rows. */
+  targets?: string[];
   createdBy: string;
   createdAt?: Timestamp;
 }
@@ -1907,6 +2606,8 @@ export interface Announcement {
   content: string;
   priority: 'low' | 'normal' | 'high' | 'urgent';
   audience: 'all' | 'students' | 'teachers' | 'parents';
+  /** Several audiences at once. `audience` is kept for older rows. */
+  targets?: string[];
   courseId?: string;
   pinned: boolean;
   createdBy: string;
@@ -1920,7 +2621,14 @@ export async function getAnnouncements(audience: string, courseId?: string): Pro
   const snap = await getDocs(q);
   return snap.docs
     .map(d => ({ id: d.id, ...d.data() } as Announcement))
-    .filter(a => a.audience === 'all' || a.audience === audience || (courseId && a.courseId === courseId));
+    .filter(a => announcementVisible(a, audience) || (courseId && a.courseId === courseId));
+}
+
+function announcementVisible(item: { audience?: string; targets?: string[] }, audience: string): boolean {
+  if (audience === 'admin') return true;
+  const targets = item.targets?.length ? item.targets : [item.audience];
+  if (audience === 'all') return targets.includes('all') || targets.includes('marketplace');
+  return targets.includes('all') || targets.includes(audience) || targets.includes('marketplace');
 }
 
 export async function createAnnouncement(data: Omit<Announcement, 'id'>): Promise<string> {
@@ -1949,8 +2657,24 @@ export interface Notification {
   createdAt?: Timestamp;
 }
 
-export async function createNotification(data: Omit<Notification, 'id'>): Promise<void> {
-  await addDoc(collection(db, 'notifications'), { ...data, read: false, createdAt: serverTimestamp() });
+const PUSH_BY_TYPE: Partial<Record<Notification['type'], PushCategory>> = {
+  grade: 'grades',
+  assignment: 'assignments',
+};
+
+export async function createNotification(
+  data: Omit<Notification, 'id'> & { pushCategory?: PushCategory },
+): Promise<void> {
+  const { pushCategory, ...stored } = data;
+  await addDoc(collection(db, 'notifications'), { ...stored, read: false, createdAt: serverTimestamp() });
+  const category = pushCategory ?? PUSH_BY_TYPE[stored.type] ?? 'general';
+  await requestPush({
+    recipientUid: stored.userId,
+    category,
+    title: stored.title,
+    body: stored.message,
+    link: stored.link,
+  }).catch(() => {});
 }
 
 export async function getNotifications(userId: string): Promise<Notification[]> {
@@ -2027,6 +2751,18 @@ export interface IntegrityReport {
 
 export async function createIntegrityReport(data: Omit<IntegrityReport, 'id'>): Promise<string> {
   const ref = await addDoc(collection(db, 'integrity_reports'), { ...data, createdAt: serverTimestamp() });
+  if (data.flags.length > 0) {
+    const listed = data.flags.slice(0, 4).join(', ');
+    await createNotification({
+      userId: data.studentId,
+      title: 'Work flagged for review',
+      message: `${data.assignmentTitle ?? 'A submission'} was flagged: ${listed}.`,
+      type: 'integrity',
+      link: '/dashboard/student/assignments',
+      read: false,
+      pushCategory: 'flags',
+    }).catch(() => {});
+  }
   return ref.id;
 }
 
@@ -2113,6 +2849,8 @@ export interface Resource {
   uploadedByName: string;
   uploadedAt?: Timestamp;
   isPublic: boolean;
+  price?: number;
+  currency?: string;
 }
 
 export async function createResource(data: Omit<Resource, 'id'>): Promise<string> {
@@ -2269,6 +3007,35 @@ export interface DailyGoal {
   notifiedNotStarted?: boolean;
   notifiedMissed?: boolean;
   createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+  /**
+   * Richer plan. Optional on purpose: the mobile DailyGoal reader ignores
+   * fields it does not know, and the required fields above are unchanged.
+   */
+  targetKind?: 'free_text' | 'unit' | 'lessons';
+  unitId?: string;
+  unitTitle?: string;
+  lessonIds?: string[];
+  freeTextTarget?: string;
+  startDate?: string;
+  endDate?: string;
+  recurrence?: 'none' | 'daily' | 'weekdays' | 'weekly';
+  checklist?: { id: string; label: string; done: boolean }[];
+  reminderMinutes?: number;
+  reflection?: string;
+  sparksBonus?: number;
+  /** Set only by the server when the Sparks bonus is granted. */
+  sparksAwarded?: boolean;
+  progress?: number;
+  source?: 'student' | 'parent' | 'ai';
+  suggestedBy?: string;
+  suggestedByName?: string;
+  cosignedBy?: string;
+  cosignedAt?: string;
+  parentNote?: string;
+  focusMinutes?: number;
+  completedLessonIds?: string[];
+  quizScore?: number;
 }
 
 /** Local YYYY-MM-DD (not UTC) — goals are a "today" concept for the student. */
@@ -2277,15 +3044,28 @@ export function goalDateKey(d: Date = new Date()): string {
 }
 
 export async function createDailyGoal(data: Omit<DailyGoal, 'id' | 'createdAt'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'daily_goals'), { ...data, createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'daily_goals'), omitUndefined({
+    ...data,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  }));
   return ref.id;
+}
+
+function mapDailyGoal(id: string, data: Record<string, unknown>): DailyGoal | null {
+  const core = coerceDailyGoal(id, data);
+  if (!core) return null;
+  return { ...(data as unknown as DailyGoal), ...core };
 }
 
 export async function getDailyGoals(studentId: string, dateKey?: string): Promise<DailyGoal[]> {
   // Single-field equality queries only — avoids composite index requirements.
   const q = query(collection(db, 'daily_goals'), where('studentId', '==', studentId));
   const snap = await getDocs(q);
-  const all = snap.docs.map(d => ({ id: d.id, ...d.data() } as DailyGoal));
+  const all = snap.docs.flatMap(d => {
+    const goal = mapDailyGoal(d.id, d.data() as Record<string, unknown>);
+    return goal ? [goal] : [];
+  });
   const filtered = dateKey ? all.filter(g => g.dateKey === dateKey) : all;
   return filtered.sort((a, b) => (a.deadline || '').localeCompare(b.deadline || ''));
 }
@@ -2297,7 +3077,10 @@ export function subscribeDailyGoals(
   return onSnapshot(
     query(collection(db, 'daily_goals'), where('studentId', '==', studentId)),
     snap => {
-      const all = snap.docs.map(d => ({ id: d.id, ...d.data() } as DailyGoal));
+      const all = snap.docs.flatMap(d => {
+        const goal = mapDailyGoal(d.id, d.data() as Record<string, unknown>);
+        return goal ? [goal] : [];
+      });
       const filtered = dateKey ? all.filter(g => g.dateKey === dateKey) : all;
       cb(filtered.sort((a, b) => (a.deadline || '').localeCompare(b.deadline || '')));
     },
@@ -2305,8 +3088,8 @@ export function subscribeDailyGoals(
   );
 }
 
-export async function updateDailyGoal(id: string, data: Partial<DailyGoal>) {
-  await updateDoc(doc(db, 'daily_goals', id), data as Record<string, unknown>);
+export async function updateDailyGoal(id: string, data: Partial<DailyGoal> & Record<string, unknown>) {
+  await updateDoc(doc(db, 'daily_goals', id), omitUndefined({ ...data, updatedAt: serverTimestamp() }) as Record<string, unknown>);
 }
 
 export async function deleteDailyGoal(id: string) {
@@ -2314,7 +3097,7 @@ export async function deleteDailyGoal(id: string) {
 }
 
 export async function startDailyGoal(id: string) {
-  await updateDoc(doc(db, 'daily_goals', id), { status: 'in_progress', startedAt: serverTimestamp() });
+  await updateDailyGoal(id, { status: 'in_progress', startedAt: serverTimestamp() } as Partial<DailyGoal>);
 }
 
 /** Complete a goal, award XP (bonus on time) and notify the linked parents. */
@@ -2323,12 +3106,12 @@ export async function completeDailyGoal(
 ): Promise<{ xp: number }> {
   const xp = onTime ? 50 : 25;
   const started = goal.startedAt?.toMillis?.();
-  await updateDoc(doc(db, 'daily_goals', goal.id), {
+  await updateDailyGoal(goal.id, {
     status: 'completed',
     completedAt: serverTimestamp(),
     xpAwarded: xp,
     ...(started ? { actualMinutes: Math.max(1, Math.round((Date.now() - started) / 60000)) } : {}),
-  });
+  } as Partial<DailyGoal>);
   try {
     await updateDoc(doc(db, 'users', goal.studentId), { xp: increment(xp), updatedAt: serverTimestamp() });
   } catch { /* XP is best-effort */ }
@@ -2337,35 +3120,19 @@ export async function completeDailyGoal(
 
 /** Parent-side waiver: protects the streak and stops further alerts. */
 export async function excuseDailyGoal(id: string, reason: string, parentName: string) {
-  await updateDoc(doc(db, 'daily_goals', id), {
+  await updateDailyGoal(id, {
     status: 'excused', excuseReason: reason, excusedBy: parentName, notifiedMissed: true,
   });
 }
 
 /** Consecutive days where every goal set that day was completed or excused. */
 export function computeGoalStreak(goals: DailyGoal[]): number {
-  const byDay = new Map<string, DailyGoal[]>();
-  goals.forEach(g => {
-    if (!byDay.has(g.dateKey)) byDay.set(g.dateKey, []);
-    byDay.get(g.dateKey)!.push(g);
-  });
-  let streak = 0;
-  const cursor = new Date();
-  // Today only counts if already fully done; otherwise start counting from yesterday.
-  for (let i = 0; i < 400; i++) {
-    const key = goalDateKey(cursor);
-    const day = byDay.get(key);
-    const complete = !!day?.length && day.every(g => g.status === 'completed' || g.status === 'excused');
-    if (complete) streak++;
-    else if (i > 0 || day?.length) break;
-    cursor.setDate(cursor.getDate() - 1);
-  }
-  return streak;
+  return streakFromGoals(goals);
 }
 
 /** All of a parent's children's goals for a date — powers the parent feed. */
 export async function getChildrenDailyGoals(
-  parentId: string, dateKey: string
+  parentId: string, dateKey?: string
 ): Promise<{ childId: string; childName: string; goals: DailyGoal[] }[]> {
   const children = await getChildrenProfiles(parentId);
   return Promise.all(children.map(async c => ({
@@ -2405,7 +3172,7 @@ export async function checkGoalAlerts(studentId: string, studentName: string, go
 
     await Promise.all(parents.docs.map(p => createNotification({
       userId: p.id, title, message, type: 'general',
-      link: '/dashboard/parent', read: false,
+      link: '/dashboard/parent', read: false, pushCategory: 'goals',
     }).catch(() => {})));
     await updateDailyGoal(goal.id, { [flag]: true } as Partial<DailyGoal>);
   }
@@ -2418,6 +3185,9 @@ export interface AttendanceEntry {
   studentId: string;
   studentName: string;
   status: 'present' | 'absent' | 'late' | 'excused';
+  /** Why the student was absent or excused. Holidays are not stored as absences. */
+  note?: string;
+  source?: 'automatic' | 'manual';
 }
 
 export interface AttendanceRecord {
@@ -2433,7 +3203,51 @@ export interface AttendanceRecord {
 
 export async function createAttendanceRecord(data: Omit<AttendanceRecord, 'id'>): Promise<string> {
   const ref = await addDoc(collection(db, 'attendance_records'), { ...data, createdAt: serverTimestamp() });
+  await notifyAttendance(data).catch(() => {});
   return ref.id;
+}
+
+async function notifyAttendance(data: Omit<AttendanceRecord, 'id'>) {
+  const notable = data.records.filter(entry => entry.status === 'absent' || entry.status === 'late');
+  for (const entry of notable) {
+    const title = entry.status === 'absent' ? 'Marked absent' : 'Marked late';
+    const message = `${entry.studentName} was marked ${entry.status} for ${data.lessonTitle} (${data.courseTitle}).`;
+    await createNotification({
+      userId: entry.studentId,
+      title,
+      message,
+      type: 'general',
+      link: '/dashboard/student/attendance',
+      read: false,
+      pushCategory: 'attendance',
+    }).catch(() => {});
+    const parents = await getDocs(
+      query(collection(db, 'users'), where('childIds', 'array-contains', entry.studentId)),
+    ).catch(() => null);
+    if (!parents) continue;
+    await Promise.all(parents.docs.map(parent => createNotification({
+      userId: parent.id,
+      title,
+      message,
+      type: 'general',
+      link: '/dashboard/parent',
+      read: false,
+      pushCategory: 'attendance',
+    }).catch(() => {})));
+  }
+}
+
+/** Inbox row plus a digest push. A scheduler can call this for each recipient. */
+export async function sendDigest(recipientUid: string, title: string, message: string, link?: string) {
+  await createNotification({
+    userId: recipientUid,
+    title,
+    message,
+    type: 'general',
+    link,
+    read: false,
+    pushCategory: 'digests',
+  });
 }
 
 export async function getAttendanceForCourse(courseId: string): Promise<AttendanceRecord[]> {
@@ -2494,15 +3308,26 @@ export interface UserSession {
   createdAt: Timestamp;
 }
 
-export async function upsertUserSession(userId: string, deviceInfo: string): Promise<boolean> {
+export async function upsertUserSession(userId: string, deviceInfo: string): Promise<{ isNew: boolean; createdAtMs: number }> {
   const q = query(collection(db, 'user_sessions'), where('userId', '==', userId), where('deviceInfo', '==', deviceInfo));
   const snap = await getDocs(q);
   if (!snap.empty) {
     await updateDoc(snap.docs[0].ref, { lastSeen: serverTimestamp() });
-    return false;
+    const created = snap.docs[0].data().createdAt as Timestamp | undefined;
+    return { isNew: false, createdAtMs: created?.toMillis?.() ?? Date.now() };
   }
+  const createdAtMs = Date.now();
   await addDoc(collection(db, 'user_sessions'), { userId, deviceInfo, lastSeen: serverTimestamp(), createdAt: serverTimestamp() });
-  return true;
+  return { isNew: true, createdAtMs };
+}
+
+export async function deleteUserSession(sessionId: string): Promise<void> {
+  await deleteDoc(doc(db, 'user_sessions', sessionId));
+}
+
+export async function deleteAllUserSessions(userId: string): Promise<void> {
+  const sessions = await getUserSessions(userId);
+  await Promise.all(sessions.map(session => session.id ? deleteDoc(doc(db, 'user_sessions', session.id)) : Promise.resolve()));
 }
 
 export async function getUserSessions(userId: string): Promise<UserSession[]> {
@@ -2561,10 +3386,29 @@ export async function getUserPhone(uid: string): Promise<string | null> {
 // (createCourse already defined at line 191 — reused for marketplace product creation)
 
 export async function updateCourse(id: string, data: Partial<Course>): Promise<void> {
-  await updateDoc(doc(db, 'courses', id), {
-    ...data,
-    updatedAt: serverTimestamp(),
-  });
+  const ref = doc(db, 'courses', id);
+  const clean = omitUndefined(data);
+  if (clean.accessPolicy) {
+    const policy = { ...clean.accessPolicy };
+    delete policy.seatsUsed;
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      const current = snap.exists()
+        ? (snap.data().accessPolicy as AccessPolicy | undefined)?.seatsUsed
+        : undefined;
+      const accessPolicy = typeof current === 'number' ? { ...policy, seatsUsed: current } : policy;
+      tx.update(ref, { ...clean, accessPolicy, updatedAt: serverTimestamp() });
+    });
+    return;
+  }
+  await updateDoc(ref, { ...clean, updatedAt: serverTimestamp() });
+}
+
+/** Drop optional course fields so "derive this" can return to the default. */
+export async function clearCourseFields(id: string, fields: readonly ('minTier' | 'priceType' | 'downloadsEnabled')[]): Promise<void> {
+  const patch: Record<string, ReturnType<typeof deleteField>> = {};
+  for (const field of fields) patch[field] = deleteField();
+  await updateDoc(doc(db, 'courses', id), { ...patch, updatedAt: serverTimestamp() });
 }
 
 export async function deleteCourse(id: string): Promise<void> {
@@ -2598,6 +3442,14 @@ export async function getPublicCourseById(courseId: string): Promise<Course | nu
   return { id: snap.id, ...snap.data() } as Course;
 }
 
+async function bumpCourseCounter(courseId: string, field: 'viewCount' | 'enrollmentCount' | 'completionCount', amount = 1): Promise<void> {
+  try {
+    await updateDoc(doc(db, 'courses', courseId), { [field]: increment(amount) });
+  } catch (err) {
+    console.warn(`[${field}] counter not updated`, err);
+  }
+}
+
 export async function incrementEnrollment(courseId: string): Promise<void> {
   // increment() is atomic — the previous read-then-write lost enrolments when
   // two students enrolled at the same moment. Failures are swallowed on
@@ -2607,6 +3459,68 @@ export async function incrementEnrollment(courseId: string): Promise<void> {
   } catch (err) {
     console.warn('[incrementEnrollment] counter not updated', err);
   }
+}
+
+export async function recordProductView(courseId: string): Promise<void> {
+  await bumpCourseCounter(courseId, 'viewCount');
+}
+
+export async function incrementCompletion(courseId: string): Promise<void> {
+  await bumpCourseCounter(courseId, 'completionCount');
+}
+
+/** Records the price once for this buyer. A second call from the same person does not add again. */
+export async function recordProductRevenue(courseId: string, userId: string, amount: number): Promise<void> {
+  if (!(amount > 0)) return;
+  const purchaseRef = doc(db, 'courses', courseId, 'purchases', userId);
+  const courseRef = doc(db, 'courses', courseId);
+  try {
+    await runTransaction(db, async (tx) => {
+      const existing = await tx.get(purchaseRef);
+      if (existing.exists()) return;
+      tx.set(purchaseRef, { userId, amount, createdAt: serverTimestamp() });
+      tx.update(courseRef, { revenueTotal: increment(amount) });
+    });
+  } catch (err) {
+    console.warn('[revenueTotal] counter not updated', err);
+  }
+}
+
+export interface AccessGrant {
+  id: string;
+  active: boolean;
+  kind: 'user' | 'coupon';
+}
+
+export async function saveAccessGrants(courseId: string, rows: { id: string; active: boolean }[]): Promise<void> {
+  const batch = writeBatch(db);
+  for (const row of rows) {
+    batch.set(doc(db, 'courses', courseId, 'grants', row.id), {
+      active: row.active,
+      kind: 'user',
+      updatedAt: serverTimestamp(),
+    });
+  }
+  await batch.commit();
+}
+
+export interface AccessAuditEntry {
+  id: string;
+  actorId: string;
+  action: string;
+  detail: string;
+}
+
+export async function writeAccessAudit(courseId: string, entry: { actorId: string; action: string; detail: string }): Promise<void> {
+  await addDoc(collection(db, 'courses', courseId, 'access_audit'), {
+    ...entry,
+    at: serverTimestamp(),
+  });
+}
+
+export async function listAccessAudit(courseId: string): Promise<AccessAuditEntry[]> {
+  const snap = await getDocs(query(collection(db, 'courses', courseId, 'access_audit'), limit(20)));
+  return snap.docs.map(item => ({ id: item.id, ...(item.data() as Omit<AccessAuditEntry, 'id'>) }));
 }
 
 export async function getTeachers(): Promise<{ id: string; data: UserProfile }[]> {
@@ -2690,6 +3604,31 @@ export async function approveCourse(id: string): Promise<void> {
 export async function rejectCourse(id: string): Promise<void> {
   await updateDoc(doc(db, 'courses', id), {
     status: 'draft',
+    isPublic: false,
     updatedAt: serverTimestamp(),
+  });
+}
+
+/** Writes the existing course access log and the admin audit log for a review decision. */
+export async function recordMarketplaceReview(
+  courseId: string,
+  entry: { actorId: string; actorEmail: string; action: 'approve' | 'reject'; title: string },
+): Promise<void> {
+  const approved = entry.action === 'approve';
+  await writeAccessAudit(courseId, {
+    actorId: entry.actorId,
+    action: entry.action,
+    detail: approved
+      ? `Approved marketplace listing for ${entry.title}`
+      : `Rejected marketplace listing for ${entry.title}`,
+  });
+  await addDoc(collection(db, 'admin_audit'), {
+    actorId: entry.actorId,
+    actorEmail: entry.actorEmail,
+    action: `course.${entry.action}`,
+    targetId: courseId,
+    at: Date.now(),
+    before: { status: 'pending_approval' },
+    after: approved ? { status: 'published', isPublic: true } : { status: 'draft', isPublic: false },
   });
 }
