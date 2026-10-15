@@ -35,7 +35,7 @@ A fuller status list is in `docs/ROADMAP.md`.
 
 ## Accounts
 
-Shared password for the five QA accounts: `Poket-QA-Sunday-2026`
+The shared password for the five QA accounts is kept outside this repository. Ask the owner for it, and do not paste it into this file.
 
 | Role | Email | Sign-in | Lands on |
 |---|---|---|---|
