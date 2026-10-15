@@ -11,7 +11,7 @@ import {
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X, Bell,
-  Sparkles, Store, Layers, LogOut, Mail, UserCog,
+  Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -48,6 +48,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/ai-teachers', icon: Users, label: 'AI Teachers' },
       { href: '/dashboard/student/learning', icon: GraduationCap, label: 'My Learning' },
       { href: '/dashboard/marketplace', icon: Store, label: 'Marketplace' },
+      { href: '/reads', icon: BookMarked, label: 'Books' },
       { href: '/dashboard/student/sparks', icon: Sparkles, label: 'Sparks' },
       { href: '/dashboard/student/courses', icon: BookOpen, label: 'My Courses' },
       { href: '/dashboard/student/live', icon: Video, label: 'Live Classes' },
@@ -83,6 +84,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher/courses', icon: Presentation, label: 'Courses' },
       { href: '/dashboard/teacher/upload', icon: PenSquare, label: 'Lesson Studio' },
       { href: '/dashboard/marketplace', icon: Store, label: 'Marketplace' },
+      { href: '/reads', icon: BookMarked, label: 'Books' },
       { href: '/dashboard/teacher/earnings', icon: CreditCard, label: 'Earnings' },
       { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
       { href: '/dashboard/teacher/analytics', icon: Activity, label: 'Analytics' },
@@ -113,6 +115,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
       { href: '/dashboard/studio', icon: Sparkles, label: 'AI Studio' },
       { href: '/dashboard/marketplace', icon: Store, label: 'Marketplace' },
+      { href: '/reads', icon: BookMarked, label: 'Books' },
       { href: '/dashboard/parent/duedates', icon: Clock, label: 'Due Dates' },
       { href: '/dashboard/parent/billing', icon: CreditCard, label: 'Billing' },
       { href: '/dashboard/parent/notifications', icon: Bell, label: 'Notifications' },
@@ -133,6 +136,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/admin/courses', icon: Presentation, label: 'All Courses' },
       { href: '/dashboard/admin/curriculum', icon: Layers, label: 'Curriculum CMS' },
       { href: '/dashboard/marketplace', icon: Store, label: 'Marketplace' },
+      { href: '/reads', icon: BookMarked, label: 'Books' },
       { href: '/dashboard/admin/users', icon: UserCog, label: 'Users & Sparks' },
       { href: '/dashboard/admin/institutions', icon: Users, label: 'Institutions' },
       { href: '/dashboard/admin/access', icon: Shield, label: 'Access Config' },

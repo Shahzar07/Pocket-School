@@ -20,6 +20,7 @@ const HIDDEN_PREFIXES = [
   "/dashboard",
   "/onboarding",
   "/ai-studio",
+  "/reads",
 ];
 
 export function SiteHeader() {
@@ -96,6 +97,7 @@ export function SiteHeader() {
           <nav className={styles.desktopNav} aria-label="Main navigation">
             <Link href="/">Home</Link>
             <Link href="/courses">Courses</Link>
+            <Link href="/reads">Reads</Link>
             <Link href="/ai-studio">AI Studio</Link>
             <Link href="/ai-teachers">AI Teachers</Link>
             <Link href="/pricing">Pricing</Link>
@@ -124,6 +126,7 @@ export function SiteHeader() {
             onClick={() => setMobileOpen(false)}
           >
             <Link href="/courses">Courses</Link>
+            <Link href="/reads">Reads</Link>
             <Link href="/ai-studio">AI Studio</Link>
             <Link href="/ai-teachers">AI Teachers</Link>
             <Link href="/pricing">Pricing</Link>

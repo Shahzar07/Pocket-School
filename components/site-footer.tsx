@@ -41,6 +41,7 @@ const HIDDEN_PREFIXES = [
   "/signup",
   "/forgot-password",
   "/reset-password",
+  "/reads",
 ];
 
 const FOOTER_VIDEO =

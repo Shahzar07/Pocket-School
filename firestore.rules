@@ -517,5 +517,43 @@ service cloud.firestore {
       allow create: if isSignedIn() && incoming().userId == request.auth.uid;
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
+
+    // ── Poket Reads (Phase 1) ─────────────────────────────────
+    // ADDITIVE. Merge with PR #52 (cursor/clarity-security-sparks-f0ff),
+    // which owns the rules lockdown and a public-safe leaderboard subset.
+    // Do not replace existing matches. Client writes of ownership,
+    // Sparks, and leaderboard totals are denied. Admin SDK bypasses rules.
+    // Chapter bodies for published books are signed-in readable for now;
+    // move delivery behind the server once Admin SDK lands.
+    // Leaderboard docs are a public-safe shape (nickname, country, city,
+    // school, minutes, optIn). PR #52 should replace this read with its
+    // public subset. Hide and opt-out are server fields; clients cannot write.
+    match /books/{bookId} {
+      allow read: if resource.data.status == 'published' || isAdmin();
+      allow create, update, delete: if isAdmin();
+      match /chapters/{chapterId} {
+        allow read: if isAdmin()
+          || (isSignedIn() && get(/databases/$(database)/documents/books/$(bookId)).data.status == 'published')
+          || (resource.data.preview == true
+              && get(/databases/$(database)/documents/books/$(bookId)).data.status == 'published');
+        allow write: if isAdmin();
+      }
+      match /languageVersions/{lang} {
+        allow read: if isAdmin() || resource.data.status == 'approved';
+        allow write: if isAdmin();
+      }
+    }
+    match /library/{id} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+    match /readingSessions/{id} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+    match /leaderboards/{id} {
+      allow read: if isSignedIn() && resource.data.optIn == true && resource.data.hidden != true;
+      allow write: if false;
+    }
   }
 }

@@ -30,6 +30,7 @@ import {
 } from '@/lib/db';
 import { coursePriceType, freePreviewCount, isLessonFree, courseMinTier, tierDefinition } from '@/lib/entitlements';
 import { courseCover } from '@/lib/course-cover';
+import { RelatedReads } from '@/components/shelf/related-reads';
 import { toast } from 'sonner';
 import { authedFetch } from '@/lib/api-client';
 import { formatCoursePrice } from '@/lib/money';
@@ -428,6 +429,8 @@ export default function CourseDetailPage() {
                     </p>
                   </section>
                 )}
+
+                <RelatedReads subject={course.subject ?? ''} tags={course.tags ?? []} />
 
                 {/* Instructor */}
                 <section>
