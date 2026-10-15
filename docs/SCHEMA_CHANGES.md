@@ -341,7 +341,7 @@ Not a new collection. A parent report reads minutes already counted for a studen
 
 ### Discussion spaces
 
-Suggested, not stored. A book gets one space id `book:{bookId}`. Age rating `18+` is the adult room. Every younger rating is the minor room. The two rooms are not mixed. Finishing a book or a reading streak suggests a win post in that room. Nothing is published until a community collection exists.
+Stored in the community collections below. A book space id is `book:{bookId}`. Age rating `18+` uses `ageTier: adult`. A younger rating uses `teen` or `under13`, and those rooms are not mixed with adults. Finishing a book can suggest a win post in that room.
 
 ### Offline
 
@@ -354,3 +354,89 @@ Book Studio writes the shared `media_assets` documents from `components/media` w
 ### Push
 
 A reading notice uses the shared push body: `recipientUid`, `category` (`goals` for a reading goal), `title`, `body`, optional `link`. `POST /api/push` verifies the signed-in caller and sends through `deviceTokens` (Expo and Web Push). Clients cannot read those documents. A missing sender configuration returns an error with `{ sent: 0, pruned: [] }`.
+
+## Community feed
+
+Shared with the Expo app. The app reads these collections directly. Names are exact: `spaces`, `posts`, `comments`, `reactions`, `follows`, `reports`, `moderation_queue`, and `messages` (adult-only direct messages).
+
+`users.ageTier` is server-set from `users.dateOfBirth`. Clients cannot write either field. A missing tier fails closed as `under13`.
+
+| `ageTier` | Who | What they can open |
+| --- | --- | --- |
+| `under13` | under 13 | `class` and `school` spaces they are on. No Explore. No DMs. |
+| `teen` | 13 to 17 | Own `class` and `school` spaces, plus Explore of a `year` space matching `users.yearGroup` or a `subject` space listed in `users.subjects`. No DMs. |
+| `adult` | 18 and over | Open Explore (`visibility: tier`) and adult DMs in `messages`. |
+
+Adults and minors cannot see, search, follow, or message each other. `under13` and `teen` are separate bands. The only cross-band exception is a teacher or institution admin in `staffIds` on a **class** space. That does not cover search, follows, profiles, or direct messages.
+
+Parents get `parent_controls` only. They cannot read the wall, including their child's class. An adult parent can still direct-message a teacher.
+
+### users
+
+| Field | Who writes it | Notes |
+| --- | --- | --- |
+| `dateOfBirth` | server only | `YYYY-MM-DD` |
+| `ageTier` | server only | `under13`, `teen`, or `adult` |
+| `yearGroup` | the student, on their profile | Narrows teen year Explore. It does not change `ageTier` |
+| `subjects` | the student, on their profile | Narrows teen subject Explore |
+
+### community_profiles/{uid}
+
+`ageTier` (server), `displayName`, `bio`, `isPublic` (adults), `adultDmOptIn` (both adults must opt in for a student-to-student DM). Readable only inside the same tier. Parents cannot read profiles.
+
+### spaces/{spaceId}
+
+| Field | Notes |
+| --- | --- |
+| `kind` | `class`, `school`, `year`, `subject`, `adult` |
+| `ageTier` | `under13`, `teen`, or `adult` |
+| `visibility` | `members` for class and school. `tier` for year, subject, and adult Explore |
+| `year` | on `kind: year`. Must equal the viewer's `yearGroup` |
+| `subject` | on `kind: subject`. Must be in the viewer's `subjects` |
+| `memberIds`, `staffIds` | staff exception only when `kind == class` |
+| `title`, `institutionId`, `classId` | |
+
+Queries the rules allow as a list:
+
+- under-13: `ageTier == under13`, `kind in [class, school]`, `memberIds array-contains uid`
+- teen class or school: `ageTier == teen`, `kind in [class, school]`, `memberIds array-contains uid`
+- teen year: `ageTier == teen`, `kind == year`, `year == yearGroup`
+- teen subject: `ageTier == teen`, `kind == subject`, `subject == <one subject>`
+- adult Explore: `ageTier == adult`, `visibility == tier`
+- class staff: `kind == class`, `staffIds array-contains uid`
+
+A broader query fails, because Firestore rejects the whole list if one document is unreadable. Parents must not run these queries. Clients cannot create spaces.
+
+### posts/{postId}
+
+`spaceId`, `authorId`, `ageTier` (copied from the space), `kind` (`win` or `question`), `body`, `moderation` (`allow`, `hold`, `block`), `bestAnswerId`, `createdAtMs`.
+
+Feed query: `spaceId == <id>` and `moderation == allow`, ordered by `createdAtMs`. Held posts stay with the author and the moderation queue.
+
+### comments/{commentId}
+
+`postId`, `spaceId`, `authorId`, `ageTier`, `body`, `moderation`, `createdAtMs`. Query `postId` plus `moderation == allow`.
+
+### reactions/{postId}_{uid}
+
+`postId`, `userId`, `emoji` (`clap`, `thanks`, or `idea`), `ageTier`. Query `postId`. Readable when the viewer can see that post's space. Class staff can read reactions on their class.
+
+### follows/{followerId}_{targetId}
+
+`followerId`, `targetId`, `followerAgeTier`, `targetAgeTier`. Create requires the tiers to match the stored user tiers. Parents cannot follow. `under13` cannot follow a `teen` or an `adult`.
+
+### reports/{reportId}
+
+`reporterId`, `reporterAgeTier`, `targetType` (`post`, `comment`, `message`, `profile`), `targetId`, `reason`, `status` (`open`). The reporter and admins can read.
+
+### moderation_queue/{id}
+
+`surface`, `authorId`, `ageTier`, `text`, `decision`, `reasons`, `status` (`open`, `approved`, `rejected`), `subjectPath`, `createdAtMs`. Admin read only. Clients cannot write it.
+
+### parent_controls/{studentId}
+
+Written by a linked parent. This is the parent surface, not the wall. `communityEnabled`, `messagingEnabled`, `snapEnabled`, `quietStart`, `quietEnd` (`HH:MM`), `timeZone`. The child can read their own controls.
+
+### messages/{messageId}
+
+Adult-only direct messages. Both `fromId` and `toId` must have `ageTier: adult`. A minor cannot create or read a document here. `fromId` must be the signed-in user. The recipient may set `read` and nothing else. Adult students also need `adultDmOptIn` on both community profiles. Staff and parents do not. Teachers reach a class through the class space, not this collection.
