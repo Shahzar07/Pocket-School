@@ -1874,6 +1874,7 @@ service cloud.firestore {
         resource.data.scopeId == request.auth.uid
         || isAdmin()
         || linkedTo(resource.data.get('subjectStudentId', ''))
+        || resource.data.get('teacherIds', []).hasAny([request.auth.uid])
         || (isInstitutionAdmin() && resource.data.get('institutionId', '') == myInstitution())
       );
       allow write: if false;

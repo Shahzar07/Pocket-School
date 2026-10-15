@@ -53,6 +53,7 @@ import {
   type Institution,
   type Lesson,
 } from '@/lib/db';
+import { tagBloom } from '@/lib/insights/analytics';
 
 function lectureFromLesson(lesson: Lesson): StudioLecture {
   const kind: LectureKind = lesson.lessonType === 'assessment' || lesson.isUnitQuiz
@@ -262,10 +263,13 @@ export function TeacherCourseStudio({
                 question: question.question,
                 options: question.options,
                 answer: question.answer,
+                bloom: tagBloom(question.question),
               }))
               : undefined,
           },
-          assignmentConfig: row.kind === 'assignment' ? { title: row.title, brief: row.body } : undefined,
+          assignmentConfig: row.kind === 'assignment'
+            ? { title: row.title, brief: row.body, bloom: tagBloom(`${row.title} ${row.body}`) }
+            : undefined,
           contentSources: row.resourceUrl ? [{ type: 'url' as const, value: row.resourceUrl }] : undefined,
         };
         const existingLecture = !row.id.startsWith('new-') && !row.id.startsWith('demo-');

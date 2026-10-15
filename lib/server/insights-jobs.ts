@@ -10,6 +10,7 @@ import { adminDb } from '../firebase-admin';
 import { buildSnapshot } from '../insights/aggregate';
 import type { AttendanceMark } from '../insights/attendance';
 import type { QuizPoint, StudyEvent } from '../insights/analytics';
+import { digestHeadlines } from '../insights/analytics';
 import { formatProgressDigest, type GoalLike } from '../insights/goals';
 import { digestDue, type DigestCadence } from '../parent-controls';
 import { addDays, isoDateKey } from '../insights/dates';
@@ -88,6 +89,8 @@ export async function runWeeklyDigest(now = new Date()): Promise<{ parents: numb
       const lessons = slice.reduce((sum, goal) => sum + (Array.isArray(goal.completedLessonIds) ? goal.completedLessonIds.length : 0), 0);
       const quizScores = slice.flatMap(goal => typeof goal.quizScore === 'number' ? [goal.quizScore] : []);
       const goalsMet = slice.filter(goal => goal.status === 'completed').length;
+      const stored = await adminDb().doc(`analytics_snapshots/student_${studentId}`).get();
+      const headlines = digestHeadlines((stored.data()?.metrics ?? {}) as Record<string, number | null | undefined>);
       await notifyUser({
         userId: parent.id,
         title: cadence === 'daily' ? 'Daily learning digest' : 'Weekly learning digest',
@@ -98,7 +101,7 @@ export async function runWeeklyDigest(now = new Date()): Promise<{ parents: numb
           quizScores,
           goalsMet,
           goalsSet: slice.length,
-        }),
+        }) + headlines,
         type: 'general',
         link: '/dashboard/parent/goals',
         pref: 'digest',
@@ -112,6 +115,36 @@ export async function runWeeklyDigest(now = new Date()): Promise<{ parents: numb
 function millis(value: unknown): number | undefined {
   const ts = value as { toMillis?: () => number } | undefined;
   return ts?.toMillis?.();
+}
+
+async function sparksSpentFor(studentId: string): Promise<number> {
+  try {
+    const tx = await adminDb().collection(`users/${studentId}/spark_transactions`).limit(80).get();
+    return tx.docs.reduce((sum, row) => {
+      const amount = Number(row.data().amount) || 0;
+      return row.data().type === 'spend' || amount < 0 ? sum + Math.abs(amount) : sum;
+    }, 0);
+  } catch {
+    return 0;
+  }
+}
+
+async function teacherIdsFor(studentId: string): Promise<string[]> {
+  try {
+    const enrolled = await adminDb().collectionGroup('enrollments').where('studentId', '==', studentId).limit(20).get();
+    const ids = new Set<string>();
+    for (const row of enrolled.docs) {
+      const courseId = row.ref.parent.parent?.id;
+      if (!courseId) continue;
+      const course = await adminDb().doc(`courses/${courseId}`).get();
+      const owner = course.data()?.ownerId;
+      if (typeof owner === 'string' && owner) ids.add(owner);
+    }
+    return [...ids];
+  } catch (error) {
+    console.error('Teacher ids for analytics', error);
+    return [];
+  }
 }
 
 /** Store one student's aggregate. Screens read this and show computedAt. */
@@ -206,6 +239,7 @@ export async function writeStudentSnapshot(studentId: string, now = new Date()) 
     questions: quizzes.length,
     aiTurns: 0,
     sparksEarned,
+    sparksSpent: await sparksSpentFor(studentId),
     deadlinesMs: [],
     cohortScores: [],
     previousStudyMinutes: null,
@@ -213,9 +247,11 @@ export async function writeStudentSnapshot(studentId: string, now = new Date()) 
     streakBroken: false,
     now,
   });
+  const teacherIds = await teacherIdsFor(studentId);
   await db.collection('analytics_snapshots').doc(`student_${studentId}`).set({
     ...snapshot,
     subjectStudentId: studentId,
+    teacherIds,
     computedAt: now.toISOString(),
   });
   return snapshot;

@@ -2,15 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { getAttendanceForStudent, getGradesForStudent, subscribeDailyGoals, type DailyGoal } from '@/lib/db';
+import { createDailyGoal, getAttendanceForStudent, getGradesForStudent, goalDateKey, subscribeDailyGoals, type DailyGoal } from '@/lib/db';
 import { authedFetch } from '@/lib/api-client';
 import { DashHeader, DashPage, Panel, PanelHeader } from '@/components/dash-ui';
-import { AnalyticsBoard, BehaviourBoard, snapshotKpis } from '@/components/insights/boards';
+import { AnalyticsBoard, BehaviourBoard, ExportBar, snapshotKpis } from '@/components/insights/boards';
+import { LearningCharts } from '@/components/insights/learning-charts';
 import { buildSnapshot, type AnalyticsSnapshot } from '@/lib/insights/aggregate';
 import { readSnapshot, saveMood } from '@/lib/insights/client';
 import { isoDateKey, addDays } from '@/lib/insights/dates';
 import type { Mood } from '@/lib/insights/behaviour';
 import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 function liveSnapshot(studentId: string, goals: DailyGoal[], grades: { percentage?: number; score?: number; maxScore?: number; gradedAt?: { toDate?: () => Date } }[], attendance: { date?: { toDate?: () => Date }; records?: { studentId: string; status: 'present' | 'absent' | 'late' | 'excused' }[] }[]): AnalyticsSnapshot {
   const now = new Date();
@@ -50,7 +52,8 @@ function liveSnapshot(studentId: string, goals: DailyGoal[], grades: { percentag
 }
 
 export default function StudentAnalyticsPage() {
-  const { user } = useAuthSTORE();
+  const { user, profile } = useAuthSTORE();
+  const router = useRouter();
   const [snapshot, setSnapshot] = useState<AnalyticsSnapshot | null>(null);
   const [live, setLive] = useState(true);
   const [mood, setMood] = useState<Mood | null>(null);
@@ -103,8 +106,29 @@ export default function StudentAnalyticsPage() {
         <Button variant={tab === 'insights' ? 'default' : 'outline'} onClick={() => setTab('insights')}>Insights</Button>
         <Button variant={tab === 'behaviour' ? 'default' : 'outline'} onClick={() => setTab('behaviour')}>Behaviour</Button>
       </div>
+      {snapshot && <ExportBar kpis={snapshotKpis(snapshot)} />}
       {!snapshot ? <Panel><PanelHeader title="Loading" /></Panel> : tab === 'insights' ? (
-        <AnalyticsBoard snapshot={snapshot} live={live} />
+        <>
+          <LearningCharts
+            snapshot={snapshot}
+            onMakeGoal={(title, minutes) => {
+              if (!user) return;
+              createDailyGoal({
+                studentId: user.uid,
+                studentName: profile?.name ?? 'Student',
+                dateKey: goalDateKey(),
+                title,
+                category: 'study',
+                estimateMinutes: minutes,
+                deadline: '18:00',
+                status: 'not_started',
+                source: 'ai',
+                progress: 0,
+              }).then(() => router.push('/dashboard/student/goals')).catch(() => router.push(`/dashboard/student/goals?add=1&title=${encodeURIComponent(title)}`));
+            }}
+          />
+          <AnalyticsBoard snapshot={snapshot} live={live} />
+        </>
       ) : (
         <BehaviourBoard
           snapshot={snapshot}

@@ -246,6 +246,7 @@ export interface Lesson {
   assignmentConfig?: {
     title?: string; submissionType?: string; dueInDays?: number;
     totalMarks?: number; passMark?: number; latePolicy?: string; brief?: string;
+    bloom?: string;
     rubric?: { criterion: string; descriptor: string; marks: number; bloom?: string }[];
   };
   assessmentConfig?: {
@@ -296,10 +297,10 @@ export interface LessonMediaAsset {
 
 export interface AiOutputs {
   text?: string;
-  flashcards?: { question: string; answer: string }[];
+  flashcards?: { question: string; answer: string; bloom?: string }[];
   quiz?: {
     question: string; options: string[]; answer: string; explanation?: string;
-    objectiveCode?: string; sourceLessonId?: string;
+    objectiveCode?: string; sourceLessonId?: string; bloom?: string;
   }[];
   slides?: { title: string; bullets: string[] }[];
   notes?: string;
@@ -592,8 +593,9 @@ export async function getLessonByIds(courseId: string, lessonId: string): Promis
 export async function saveAiOutputsToLesson(
   courseId: string, moduleId: string, lessonId: string, aiOutputs: AiOutputs
 ) {
+  const { withBloomTags } = await import('./insights/analytics');
   await updateDoc(doc(db, 'courses', courseId, 'modules', moduleId, 'lessons', lessonId), {
-    aiOutputs,
+    aiOutputs: withBloomTags(aiOutputs),
     status: 'published',
     updatedAt: serverTimestamp(),
   });
@@ -2402,6 +2404,7 @@ export interface Assignment {
   status: 'draft' | 'published';
   allowLate: boolean;
   createdBy: string;
+  bloom?: string;
   createdAt?: Timestamp;
 }
 
@@ -2423,7 +2426,9 @@ export interface AssignmentSubmission {
 }
 
 export async function createAssignment(data: Omit<Assignment, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'assignments'), { ...data, createdAt: serverTimestamp() });
+  const { tagBloom } = await import('./insights/analytics');
+  const bloom = data.bloom || tagBloom(`${data.title} ${data.description}`);
+  const ref = await addDoc(collection(db, 'assignments'), { ...data, bloom, createdAt: serverTimestamp() });
   return ref.id;
 }
 

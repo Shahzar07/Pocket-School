@@ -686,6 +686,8 @@ Further optional fields: `priority` (`low|medium|high`), `reminderTime` (`HH:mm`
 
 `users/{parentId}/child_controls/{childId}` may include optional `goalPush` (bool) and `digestCadence` (`off|daily|weekly`). Older saves that omit them still pass the rules.
 
+`analytics_snapshots/student_{id}` may also store chart series (`studySeries`, `topics`, `bloomTopics`, `courseProgress`), `sparksSpent`, `summary`, `dropOffs`, and `teacherIds`. `assignments.bloom` and lesson `aiOutputs` flashcard, quiz, and assignment prompts may include a Bloom level. Older documents that omit these fields still read. The weekly parent digest appends headline metrics from the snapshot when one exists.
+
 ## New collections
 
 | Collection | Who writes | Notes |
@@ -694,7 +696,7 @@ Further optional fields: `priority` (`low|medium|high`), `reminderTime` (`HH:mm`
 | `study_events` | The student, create only | Minutes, weekday, hour, source |
 | `mood_checkins/{studentId_dateKey}` | The student | Mood 1–5 |
 | `goal_suggestions` | A linked parent creates `pending`. The student sets `accepted` or `declined` | |
-| `analytics_snapshots` | Admin SDK only | Client read is scoped. Document id `student_{id}` includes `subjectStudentId` |
+| `analytics_snapshots` | Admin SDK only | Client read is scoped. Document id `student_{id}` includes `subjectStudentId`. Optional `teacherIds` lets those teachers read the same aggregate. Clients still cannot write it. |
 | `integrity_cases` | A teacher, with `automaticPenalty == false` | Students may add only `appealNote`, `appealAt`, `appealStatus: submitted`. `audit` is append-only |
 | `academic_calendars`, `calendar_drafts` | Teachers | Drafts are reviewed before they become `calendar_events` |
 | `bloom_tags` | Teachers | Bloom level on a prompt or lesson |

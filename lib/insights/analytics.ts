@@ -54,6 +54,8 @@ export interface QuizPoint {
   prompt?: string;
   topic?: string;
   correct?: boolean;
+  attempts?: number;
+  seconds?: number;
 }
 
 export function tagBloom(text: string): BloomLevel {
@@ -337,6 +339,234 @@ export function weeklyInsights(input: {
     });
   }
   return cards.slice(0, 4);
+}
+
+export interface TopicMastery {
+  topic: string;
+  score: number;
+  confidence: number;
+  attempts: number;
+  weighted: number;
+}
+
+/** Latest scores count more when the student has tried the topic more than once. */
+export function confidenceMastery(points: QuizPoint[]): TopicMastery[] {
+  const groups = new Map<string, { scores: number[]; attempts: number }>();
+  for (const point of points) {
+    const topic = (point.topic || point.unitId || '').trim();
+    const score = percentOf(point.score, point.max);
+    if (!topic || score == null) continue;
+    const row = groups.get(topic) ?? { scores: [], attempts: 0 };
+    row.scores.push(score);
+    row.attempts += point.attempts && point.attempts > 0 ? point.attempts : 1;
+    groups.set(topic, row);
+  }
+  return [...groups.entries()].map(([topic, row]) => {
+    const score = clampPercent(row.scores.reduce((sum, value) => sum + value, 0) / row.scores.length);
+    const confidence = clampPercent((Math.min(row.attempts, 3) / 3) * 100);
+    return {
+      topic,
+      score,
+      confidence,
+      attempts: row.attempts,
+      weighted: clampPercent((score * confidence) / 100),
+    };
+  });
+}
+
+export function weightedMastery(rows: TopicMastery[]): number | null {
+  const weight = rows.reduce((sum, row) => sum + row.confidence, 0);
+  if (weight <= 0) return null;
+  return clampPercent(rows.reduce((sum, row) => sum + row.score * row.confidence, 0) / weight);
+}
+
+export function strengthsAndWeaknesses(rows: TopicMastery[]): { strengths: string[]; weaknesses: string[] } {
+  const ranked = [...rows].sort((a, b) => b.weighted - a.weighted);
+  return {
+    strengths: ranked.filter(row => row.score >= 70).slice(0, 3).map(row => row.topic),
+    weaknesses: [...ranked].reverse().filter(row => row.score < 70).slice(0, 3).map(row => row.topic),
+  };
+}
+
+export interface StudyBar {
+  label: string;
+  minutes: number;
+}
+
+export function studySeries(events: StudyEvent[], start: string, end: string): StudyBar[] {
+  const keys = dateKeysBetween(start, end);
+  const totals = new Map(keys.map(key => [key, 0]));
+  for (const event of events) {
+    const key = event.at?.slice(0, 10);
+    if (key && totals.has(key)) totals.set(key, (totals.get(key) ?? 0) + Math.max(0, event.minutes));
+  }
+  return keys.map(label => ({ label, minutes: totals.get(label) ?? 0 }));
+}
+
+export function weeklyStudySeries(series: StudyBar[]): StudyBar[] {
+  const buckets = new Map<string, number>();
+  for (const row of series) {
+    const week = row.label.slice(0, 8) + String(Math.ceil(Number(row.label.slice(8)) / 7)).padStart(2, '0');
+    buckets.set(week, (buckets.get(week) ?? 0) + row.minutes);
+  }
+  return [...buckets.entries()].map(([label, minutes]) => ({ label, minutes }));
+}
+
+export function bestStudySlot(grid: number[][]): { day: string; hour: number; minutes: number } | null {
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  let bestDay = '';
+  let bestHour = 0;
+  let bestMinutes = 0;
+  grid.forEach((row, day) => {
+    row.forEach((minutes, hour) => {
+      if (minutes > bestMinutes) {
+        bestDay = days[day] ?? 'Sunday';
+        bestHour = hour;
+        bestMinutes = minutes;
+      }
+    });
+  });
+  if (bestMinutes <= 0) return null;
+  return { day: bestDay, hour: bestHour, minutes: bestMinutes };
+}
+
+export function averageSession(events: StudyEvent[]): number | null {
+  const sessions = events.map(event => event.minutes).filter(minutes => minutes > 0);
+  if (!sessions.length) return null;
+  return Math.round(sessions.reduce((sum, minutes) => sum + minutes, 0) / sessions.length);
+}
+
+export function questionPace(points: QuizPoint[]): { attempts: number | null; seconds: number | null } {
+  const attempts = points.map(point => point.attempts).filter((value): value is number => typeof value === 'number' && value > 0);
+  const seconds = points.map(point => point.seconds).filter((value): value is number => typeof value === 'number' && value > 0);
+  return {
+    attempts: attempts.length ? Math.round((attempts.reduce((sum, value) => sum + value, 0) / attempts.length) * 10) / 10 : null,
+    seconds: seconds.length ? Math.round(seconds.reduce((sum, value) => sum + value, 0) / seconds.length) : null,
+  };
+}
+
+export function paceVersusPlan(studiedMinutes: number, plannedMinutes: number): number | null {
+  if (plannedMinutes <= 0) return null;
+  return clampPercent((studiedMinutes / plannedMinutes) * 100);
+}
+
+/** Courses that stall, and days where study time falls sharply. */
+export function dropOffPoints(courses: { label: string; progress: number }[], series: StudyBar[]): string[] {
+  const stalled = [...courses]
+    .filter(course => course.progress > 0 && course.progress < 100)
+    .sort((a, b) => a.progress - b.progress)
+    .slice(0, 3)
+    .map(course => `${course.label} stops at ${course.progress}%`);
+  const dips: string[] = [];
+  for (let i = 1; i < series.length; i++) {
+    const prev = series[i - 1]?.minutes ?? 0;
+    const cur = series[i]?.minutes ?? 0;
+    if (prev >= 20 && cur <= prev * 0.4) dips.push(`${series[i]?.label ?? ''} fell to ${cur} min`);
+  }
+  return [...stalled, ...dips].slice(0, 4);
+}
+
+export interface BloomTopicBar {
+  topic: string;
+  remember: number;
+  understand: number;
+  apply: number;
+  analyse: number;
+  evaluate: number;
+  create: number;
+}
+
+export function bloomByTopic(points: QuizPoint[]): BloomTopicBar[] {
+  const groups = new Map<string, QuizPoint[]>();
+  for (const point of points) {
+    const topic = (point.topic || point.unitId || 'General').trim();
+    const list = groups.get(topic) ?? [];
+    list.push(point);
+    groups.set(topic, list);
+  }
+  return [...groups.entries()].slice(0, 6).map(([topic, rows]) => {
+    const bar = { topic, remember: 0, understand: 0, apply: 0, analyse: 0, evaluate: 0, create: 0 };
+    for (const level of BLOOM_LEVELS) {
+      const score = quizAverage(rows.filter(point => (point.bloom ?? (point.prompt ? tagBloom(point.prompt) : undefined)) === level));
+      bar[level] = score ?? 0;
+    }
+    return bar;
+  });
+}
+
+const ACTION_FILLERS: InsightCard[] = [
+  {
+    id: 'fill-lesson',
+    title: 'Finish one lesson',
+    body: 'A single finished lesson keeps the week moving.',
+    metricId: 'study_time',
+    suggestedGoal: { title: 'Finish one lesson', category: 'study', estimateMinutes: 20 },
+  },
+  {
+    id: 'fill-notes',
+    title: 'Review yesterday’s notes',
+    body: 'A short look back is the spaced-repetition step.',
+    metricId: 'retention_forecast',
+    suggestedGoal: { title: 'Review yesterday’s notes for 15 minutes', category: 'revision', estimateMinutes: 15 },
+  },
+  {
+    id: 'fill-quiz',
+    title: 'Answer one quiz question',
+    body: 'One question shows whether the topic is still there.',
+    metricId: 'quiz_average',
+    suggestedGoal: { title: 'Answer one quiz question', category: 'practice', estimateMinutes: 10 },
+  },
+];
+
+export function threeActions(cards: InsightCard[]): InsightCard[] {
+  const actions = [...cards];
+  for (const filler of ACTION_FILLERS) {
+    if (actions.length >= 3) break;
+    if (!actions.some(card => card.id === filler.id)) actions.push(filler);
+  }
+  return actions.slice(0, 3);
+}
+
+export function weeklySummary(cards: InsightCard[], readiness: number | null): { text: string; actions: InsightCard[] } {
+  const actions = threeActions(cards);
+  const lead = readiness != null
+    ? `This week’s picture: exam readiness is ${readiness}%.`
+    : 'This week’s picture is still forming.';
+  const next = actions.map((action, index) => `${index + 1}. ${action.title}`).join(' ');
+  return { text: `${lead} ${next}`, actions };
+}
+
+export function digestHeadlines(metrics: Record<string, number | null | undefined>): string {
+  const bits: string[] = [];
+  if (typeof metrics.study_time === 'number') bits.push(`${metrics.study_time} min in the saved totals`);
+  if (typeof metrics.quiz_average === 'number') bits.push(`quiz average ${metrics.quiz_average}%`);
+  if (typeof metrics.mastery === 'number') bits.push(`mastery ${metrics.mastery}%`);
+  if (typeof metrics.exam_readiness === 'number') bits.push(`exam readiness ${metrics.exam_readiness}%`);
+  if (typeof metrics.streak === 'number') bits.push(`streak ${metrics.streak} days`);
+  if (typeof metrics.goal_completion === 'number') bits.push(`goals met ${metrics.goal_completion}%`);
+  if (typeof metrics.sparks_earned === 'number') bits.push(`${metrics.sparks_earned} Sparks earned`);
+  if (!bits.length) return '';
+  return ` Headlines: ${bits.join(', ')}.`;
+}
+
+export function withBloomTags<T extends {
+  flashcards?: { question: string; answer: string; bloom?: string }[];
+  quiz?: { question: string; bloom?: string; explanation?: string }[];
+}>(outputs: T): Omit<T, 'flashcards' | 'quiz'> & {
+  flashcards?: (NonNullable<T['flashcards']>[number] & { bloom: string })[];
+  quiz?: (NonNullable<T['quiz']>[number] & { bloom: string })[];
+} {
+  return {
+    ...outputs,
+    flashcards: outputs.flashcards?.map(card => ({
+      ...card,
+      bloom: card.bloom || tagBloom(`${card.question} ${card.answer}`),
+    })),
+    quiz: outputs.quiz?.map(item => ({
+      ...item,
+      bloom: item.bloom || tagBloom(`${item.question} ${item.explanation ?? ''}`),
+    })),
+  };
 }
 
 export function weakestBloom(radar: { level: BloomLevel; score: number | null }[]): BloomLevel | null {
