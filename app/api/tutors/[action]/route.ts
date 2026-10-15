@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { runGet, runPost } from '@/lib/server/http';
 import { ActionError } from '@/lib/server/actions';
-import { bookTutor, listTutors, reviewTutor, saveTutorProfile, verifyTutor } from '@/lib/server/scope-c';
+import { bookTutor, listMyBookings, listPendingTutors, listTutors, reviewTutor, saveTutorProfile, verifyTutor } from '@/lib/server/scope-c';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +16,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
       bio: str(body.bio),
       subjects: Array.isArray(body.subjects) ? body.subjects.filter((s): s is string => typeof s === 'string') : [],
       hourlyCents: Number(body.hourlyCents) || 0,
+      slots: body.slots,
     });
     if (action === 'verify') return verifyTutor(user.uid, str(body.tutorId), body.approve === true);
     if (action === 'book') return bookTutor(user.uid, {
@@ -29,8 +30,10 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
 
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ action: string }> }) {
   const { action } = await ctx.params;
-  return runGet(_req, async () => {
+  return runGet(_req, async (user) => {
     if (action === 'list') return listTutors();
+    if (action === 'mine') return listMyBookings(user.uid);
+    if (action === 'pending') return listPendingTutors(user.uid);
     throw new ActionError('NOT_FOUND', 'Unknown action.');
   });
 }

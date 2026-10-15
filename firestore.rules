@@ -158,32 +158,6 @@ service cloud.firestore {
             || incoming().xp is number);
     }
 
-    function callerIsSuper() {
-      return isSignedIn() && (
-        request.auth.token.adminRole == 'super_admin'
-        || request.auth.token.email == 'shahzarrayyan123@gmail.com'
-        || request.auth.token.email == 'harry.seggu@gmail.com'
-        || request.auth.token.email == 'harry@poketschool.ai'
-      );
-    }
-
-    function targetIsSuper() {
-      return resource.data.get('adminRole', '') == 'super_admin'
-        || resource.data.get('email', '') == 'shahzarrayyan123@gmail.com'
-        || resource.data.get('email', '') == 'harry.seggu@gmail.com'
-        || resource.data.get('email', '') == 'harry@poketschool.ai';
-    }
-
-    // A regular admin can change users. Promoting someone to super admin, or
-    // editing a super admin, requires the super admin claim or the owner email.
-    function staffWriteAllowed() {
-      return callerIsSuper()
-        || (
-          !targetIsSuper()
-          && incoming().get('adminRole', '') != 'super_admin'
-        );
-    }
-
     // Missing ageTier fails closed as under-13. The server is the only writer.
     function callerAgeTier() {
       return exists(/databases/$(database)/documents/users/$(request.auth.uid))
@@ -193,14 +167,14 @@ service cloud.firestore {
     function userAgeTier(uid) {
       return get(/databases/$(database)/documents/users/$(uid)).data.get('ageTier', 'under13');
     }
+    function userRoleOf(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.get('role', '');
+    }
     function callerYear() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('yearGroup', '');
     }
     function callerSubjects() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('subjects', []);
-    }
-    function userRoleOf(uid) {
-      return get(/databases/$(database)/documents/users/$(uid)).data.get('role', '');
     }
     function isStaffRole(r) {
       return r == 'teacher' || r == 'admin' || r == 'institution_admin';
@@ -209,18 +183,21 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/community_profiles/$(uid))
         && get(/databases/$(database)/documents/community_profiles/$(uid)).data.get('adultDmOptIn', false) == true;
     }
-    function sameTierPair(a, b) {
-      return userAgeTier(a) == userAgeTier(b);
+    function myChildIds() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('childIds', [])
+        : [];
     }
-    function bothAdults(a, b) {
-      return userAgeTier(a) == 'adult' && userAgeTier(b) == 'adult';
+    function linkedTo(studentId) {
+      return isSignedIn() && studentId is string && myChildIds().hasAny([studentId]);
     }
     function dmCreateOk() {
       return incoming().fromId == request.auth.uid
         && incoming().toId is string
         && incoming().toId != request.auth.uid
         && callerAgeTier() == 'adult'
-        && bothAdults(incoming().fromId, incoming().toId)
+        && userAgeTier(incoming().fromId) == 'adult'
+        && userAgeTier(incoming().toId) == 'adult'
         && (
           isStaffRole(userRoleOf(incoming().fromId))
           || isStaffRole(userRoleOf(incoming().toId))
@@ -235,6 +212,20 @@ service cloud.firestore {
     function onSpaceRoster(data) {
       return data.get('memberIds', []).hasAny([request.auth.uid])
         || data.get('staffIds', []).hasAny([request.auth.uid]);
+    }
+
+    function canReadChannelData(data) {
+      return (
+        data.kind == 'class'
+        && data.get('staffIds', []).hasAny([request.auth.uid])
+        && isTeacherOrAdmin()
+      ) || (
+        data.ageTier == callerAgeTier()
+        && (
+          data.get('memberIds', []).hasAny([request.auth.uid])
+          || data.get('staffIds', []).hasAny([request.auth.uid])
+        )
+      );
     }
     function canSeeSpaceData(data) {
       return (
@@ -266,27 +257,31 @@ service cloud.firestore {
         )
       );
     }
-    function canReadChannelData(data) {
-      return (
-        data.kind == 'class'
-        && data.get('staffIds', []).hasAny([request.auth.uid])
-        && isTeacherOrAdmin()
-      ) || (
-        data.ageTier == callerAgeTier()
-        && (
-          data.get('memberIds', []).hasAny([request.auth.uid])
-          || data.get('staffIds', []).hasAny([request.auth.uid])
-        )
+
+    function callerIsSuper() {
+      return isSignedIn() && (
+        request.auth.token.adminRole == 'super_admin'
+        || request.auth.token.email == 'shahzarrayyan123@gmail.com'
+        || request.auth.token.email == 'harry.seggu@gmail.com'
+        || request.auth.token.email == 'harry@poketschool.ai'
       );
     }
 
-    function myChildIds() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('childIds', [])
-        : [];
+    function targetIsSuper() {
+      return resource.data.get('adminRole', '') == 'super_admin'
+        || resource.data.get('email', '') == 'shahzarrayyan123@gmail.com'
+        || resource.data.get('email', '') == 'harry.seggu@gmail.com'
+        || resource.data.get('email', '') == 'harry@poketschool.ai';
     }
-    function linkedTo(studentId) {
-      return isSignedIn() && studentId is string && myChildIds().hasAny([studentId]);
+
+    // A regular admin can change users. Promoting someone to super admin, or
+    // editing a super admin, requires the super admin claim or the owner email.
+    function staffWriteAllowed() {
+      return callerIsSuper()
+        || (
+          !targetIsSuper()
+          && incoming().get('adminRole', '') != 'super_admin'
+        );
     }
 
     // A parent can drop a child from their own list. They cannot add one.
@@ -375,8 +370,9 @@ service cloud.firestore {
     // ── Users ─────────────────────────────────────────────────
     match /users/{userId} {
       allow read: if isSignedIn();
+      // Signup may store dateOfBirth. ageTier and Stripe ids are server-only, including on create.
       allow create: if isUser(userId)
-        && !incoming().keys().hasAny(['stripeAccountId', 'stripeCustomerId']);
+        && !incoming().keys().hasAny(['ageTier', 'stripeAccountId', 'stripeCustomerId']);
       allow update: if (isAdmin() && staffWriteAllowed())
         || (isUser(userId) && selfProfileUpdate())
         || (isUser(userId) && walletProgressUpdate())
@@ -1030,8 +1026,9 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // Adult-only direct messages. Minors never read or write this collection.
-    // fromId must be the signed-in user, so a message cannot be forged.
+    // Adult-only direct messages. The mobile app reads this collection.
+    // Minors use class channels, never this inbox. fromId must be the caller
+    // so a student cannot forge a teacher.
     match /messages/{messageId} {
       allow read: if isSignedIn() && (
         resource.data.fromId == request.auth.uid ||
@@ -1540,23 +1537,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Leaderboards and messaging labels. XP and ageTier are written only by the server.
-    match /public_profiles/{userId} {
-      allow read: if isSignedIn() && (
-        resource.data.get('ageTier', '') == ''
-        || resource.data.get('ageTier', '') == callerAgeTier()
-      );
-      allow create: if isUser(userId)
-        && incoming().get('xp', 0) == 0
-        && incoming().get('ageTier', '') == '';
-      allow update: if isAdmin()
-        || (isUser(userId)
-            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['xp', 'ageTier']));
-      allow delete: if isAdmin();
-    }
-
+    // ── Community feed (shared with the Expo app) ─────────────
+    // Collections: spaces, posts, comments, reactions, follows, reports,
+    // moderation_queue, and messages (adult DMs, above).
     match /community_profiles/{userId} {
-      allow read: if isSignedIn() && resource.data.ageTier == callerAgeTier();
+      allow read: if isSignedIn() && role() != 'parent' && resource.data.ageTier == callerAgeTier();
       allow create: if isUser(userId)
         && incoming().ageTier == callerAgeTier()
         && incoming().ageTier in ['under13', 'teen', 'adult'];
@@ -1634,6 +1619,23 @@ service cloud.firestore {
         && incoming().communityEnabled is bool
         && incoming().messagingEnabled is bool
         && incoming().snapEnabled is bool;
+      allow delete: if isAdmin();
+    }
+
+    // Same-tier public label. A profile with no ageTier stays readable so
+    // signup can create it before the server copies the tier across.
+    match /public_profiles/{userId} {
+      allow read: if isSignedIn() && (
+        isUser(userId)
+        || resource.data.get('ageTier', '') == ''
+        || resource.data.get('ageTier', '') == callerAgeTier()
+      );
+      allow create: if isUser(userId)
+        && incoming().get('xp', 0) == 0
+        && incoming().get('ageTier', '') == '';
+      allow update: if isAdmin()
+        || (isUser(userId)
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['xp', 'ageTier']));
       allow delete: if isAdmin();
     }
 

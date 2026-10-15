@@ -15,10 +15,10 @@ export default function SnapPage() {
       <SnapScreen
         result={result}
         blocked={blocked}
-        onSolve={(text, context) => {
+        onSolve={(text, context, imageBase64) => {
           setBlocked('');
           setResult(null);
-          authedFetch('/api/snap/solve', { method: 'POST', body: JSON.stringify({ text, context }) })
+          authedFetch('/api/snap/solve', { method: 'POST', body: JSON.stringify({ text, context, imageBase64 }) })
             .then((data) => setResult({
               answer: String(data.answer ?? ''),
               steps: Array.isArray(data.steps) ? data.steps as string[] : [],
