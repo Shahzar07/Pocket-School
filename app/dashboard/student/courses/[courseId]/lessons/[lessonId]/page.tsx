@@ -6,6 +6,7 @@ import { motion } from 'motion/react';
 import { MathMarkdown } from '@/components/math-markdown';
 import { LessonBody } from '@/components/lesson-body';
 import { readLessonBody } from '@/lib/lesson-body';
+import { LessonQa } from '@/components/scope-c/lesson-qa';
 import { Timestamp } from 'firebase/firestore';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { useTutorContext } from '@/hooks/use-tutor-context';
@@ -1249,6 +1250,7 @@ export default function LessonPage() {
           </TabsContent>
         </Tabs>
       )}
+      <LessonQa courseId={courseId} lessonId={lessonId} lessonTitle={lesson.title} inAssessment={activeTab === 'quiz'} />
     </div>
   );
 }

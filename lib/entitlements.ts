@@ -188,6 +188,8 @@ export const allocBook = (productId: string) => `alloc:book:${productId}`;
 export const allocCoupon = (courseId: string, expiry: string) => `alloc:coupon:${courseId}:${expiry}`;
 export const allocInstitution = (instId: string, courseId: string) =>
   `alloc:institution:${instId}:${courseId}`;
+/** Creator-store allocation. Same permission list as course allocations. */
+export const allocResource = (resourceId: string) => `alloc:resource:${resourceId}`;
 
 /* ── Add-ons ─────────────────────────────────────────────────── */
 

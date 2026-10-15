@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { updateUser } from '@/lib/db';
+import { authedFetch } from '@/lib/api-client';
 import { auth } from '@/lib/firebase';
 import { updatePassword, updateProfile, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
@@ -99,6 +100,27 @@ export default function ProfilePage() {
         </h1>
         <p className="text-muted-foreground mt-2 text-[15px]">Manage your personal information and preferences.</p>
       </motion.header>
+
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
+        className="bg-card border border-border rounded-3xl p-6 space-y-3 card-glow"
+      >
+        <h2 className="font-heading text-xl text-foreground">Age tier</h2>
+        <p className="text-sm text-muted-foreground">
+          {profile?.ageTier ? `Your account is ${profile.ageTier}. This is set from your date of birth and cannot be edited here.` : 'Add your date of birth. The server sets under13, teen, or adult. You cannot change the tier yourself.'}
+        </p>
+        {!profile?.dateOfBirth && (
+          <form className="flex flex-wrap gap-2" onSubmit={(event) => {
+            event.preventDefault();
+            const input = new FormData(event.currentTarget).get('dob');
+            authedFetch('/api/community/dob', { method: 'POST', body: JSON.stringify({ dateOfBirth: String(input ?? '') }) })
+              .then(async (data) => { toast.success(`Age tier set to ${String(data.ageTier)}`); if (user) await fetchProfile(user.uid); })
+              .catch((error: Error) => toast.error(error.message));
+          }}>
+            <Input name="dob" type="date" required className="rounded-xl max-w-[200px]" aria-label="Date of birth" />
+            <Button type="submit" className="rounded-xl">Save date of birth</Button>
+          </form>
+        )}
+      </motion.div>
 
       {/* Profile Info */}
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}

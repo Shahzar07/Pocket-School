@@ -11,7 +11,7 @@ import {
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
-  Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked,
+  Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked, Compass, Camera, MessagesSquare,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,8 @@ import dynamic from 'next/dynamic';
 import type { TourRole } from '@/lib/tour-steps';
 import { ROLE_LABELS } from '@/lib/roles';
 import { hasCmsAddon } from '@/lib/entitlements';
+import { isFeatureEnabled, type FeatureFlag } from '@/lib/feature-flags';
+import { useFeatureFlags } from '@/hooks/use-feature-flags';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
@@ -44,8 +46,8 @@ const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string }> = {
   institution_admin: { icon: 'text-sky-400', bar: 'bg-sky-400', chip: 'from-sky-500 to-cyan-600' },
 };
 
-interface NavEntry { href: string; icon: React.ElementType; labelKey: string }
-interface NavGroup { sectionKey?: string; items: NavEntry[] }
+interface NavEntry { href: string; icon: React.ElementType; labelKey: string; label?: string; flag?: FeatureFlag }
+interface NavGroup { sectionKey?: string; sectionLabel?: string; items: NavEntry[] }
 
 const NAV: Record<Role, NavGroup[]> = {
   student: [
@@ -71,6 +73,14 @@ const NAV: Record<Role, NavGroup[]> = {
     ]},
     { sectionKey: 'nav.section.finance', items: [
       { href: '/dashboard/student/billing', icon: CreditCard, labelKey: 'nav.billing' },
+    ]},
+    { sectionLabel: 'Community', items: [
+      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.dashboard', label: 'Community', flag: 'community' },
+      { href: '/dashboard/channels', icon: MessagesSquare, labelKey: 'nav.messages', label: 'Channels', flag: 'messagingHub' },
+      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.dashboard', label: 'Tutors', flag: 'tutorMarketplace' },
+      { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.exams', label: 'Exam centre', flag: 'examCentre' },
+      { href: '/dashboard/store', icon: Library, labelKey: 'nav.resources', label: 'Creator store', flag: 'creatorStore' },
+      { href: '/dashboard/snap', icon: Camera, labelKey: 'nav.dashboard', label: 'Snap & solve', flag: 'snapAndSolve' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
@@ -104,6 +114,13 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher/behaviour', icon: Star, labelKey: 'nav.behaviour' },
     ]},
     // Billing and Helpdesk are institution-admin responsibilities, not teachers'.
+    { sectionLabel: 'Community', items: [
+      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.dashboard', label: 'Community', flag: 'community' },
+      { href: '/dashboard/channels', icon: MessagesSquare, labelKey: 'nav.messages', label: 'Channels', flag: 'messagingHub' },
+      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.dashboard', label: 'Tutors', flag: 'tutorMarketplace' },
+      { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.exams', label: 'Exam centre', flag: 'examCentre' },
+      { href: '/dashboard/store', icon: Library, labelKey: 'nav.resources', label: 'Creator store', flag: 'creatorStore' },
+    ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
       { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
@@ -122,6 +139,10 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/parent/communications', icon: Mail, labelKey: 'nav.mailbox' },
       { href: '/dashboard/parent/duedates', icon: Clock, labelKey: 'nav.dueDates' },
+    ]},
+    { sectionLabel: 'Family', items: [
+      { href: '/dashboard/channels', icon: MessagesSquare, labelKey: 'nav.messages', label: 'Channels', flag: 'messagingHub' },
+      { href: '/dashboard/parent/controls', icon: Shield, labelKey: 'nav.dashboard', label: 'Controls', flag: 'community' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
@@ -147,6 +168,10 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
       { href: '/dashboard/admin/settings', icon: Settings, labelKey: 'nav.systemSettings' },
       { href: '/dashboard/admin/verifications', icon: ShieldCheck, labelKey: 'nav.verifications' },
+      { href: '/dashboard/admin/moderation', icon: Shield, labelKey: 'nav.dashboard', label: 'Moderation', flag: 'community' },
+      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.dashboard', label: 'Community', flag: 'community' },
+      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.dashboard', label: 'Tutors', flag: 'tutorMarketplace' },
+      { href: '/dashboard/store', icon: Library, labelKey: 'nav.resources', label: 'Creator store', flag: 'creatorStore' },
     ]},
     { sectionKey: 'nav.section.platform', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
@@ -205,13 +230,14 @@ const NavItem = ({ entry, role, pathname, onClick, router }: {
         <span data-nav-marker className="absolute -start-3 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full bg-primary" />
       )}
       <Icon className={`w-[17px] h-[17px] shrink-0 ${active ? 'text-primary' : ''}`} />
-      <span className="truncate">{t(entry.labelKey)}</span>
+      <span className="truncate">{entry.label ?? t(entry.labelKey)}</span>
     </button>
   );
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
+  const flags = useFeatureFlags();
   const { user, profile, loading } = useAuthSTORE();
   const router = useRouter();
   const pathname = usePathname();
@@ -290,16 +316,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const role = (profile.role ?? 'student') as Role;
   const nav = (NAV[role] ?? NAV.student).map((group, index) => {
-    if (index !== 0 || role === 'admin' || !hasCmsAddon(profile)) return group;
-    if (role !== 'teacher' && role !== 'institution_admin') return group;
+    const withCms = index !== 0 || role === 'admin' || !hasCmsAddon(profile) || (role !== 'teacher' && role !== 'institution_admin')
+      ? group
+      : {
+          ...group,
+          items: [
+            ...group.items,
+            { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' },
+          ],
+        };
     return {
-      ...group,
-      items: [
-        ...group.items,
-        { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' },
-      ],
+      ...withCms,
+      items: withCms.items.filter((item: NavEntry) => !item.flag || isFeatureEnabled(flags, item.flag)),
     };
-  });
+  }).filter(group => group.items.length > 0);
   const accent = ROLE_ACCENT[role];
 
   return (
@@ -336,9 +366,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <nav className="relative flex-1 overflow-y-auto px-3 pb-2 space-y-0.5 [scrollbar-width:thin]">
           {nav.map((group, gi) => (
             <div key={gi} className="space-y-0.5">
-              {group.sectionKey && (
+              {(group.sectionLabel || group.sectionKey) && (
                 <p className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-[0.14em] px-3 pt-5 pb-1.5">
-                  {t(group.sectionKey)}
+                  {group.sectionLabel ?? t(group.sectionKey!)}
                 </p>
               )}
               {group.items.map(entry => (
