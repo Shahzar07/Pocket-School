@@ -1,3 +1,4 @@
+import { enforceAiAccess } from '@/lib/api-guard';
 import { NextRequest, NextResponse } from 'next/server';
 import { callOpenRouter, CONTENT_MODEL } from '@/lib/openrouter';
 import { LANGUAGE_NAMES as LANG_NAMES } from '@/lib/languages';
@@ -13,6 +14,8 @@ export const maxDuration = 60;
  * → { result: string }
  */
 export async function POST(req: NextRequest) {
+  const denied = await enforceAiAccess(req);
+  if (denied) return denied;
   let text = '';
   let language = '';
   try {

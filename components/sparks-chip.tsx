@@ -5,6 +5,8 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { getSparkTransactions, SparkTransaction } from '@/lib/db';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Zap, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { SPARKS_EXPLAINER } from '@/lib/sparks';
+import Link from 'next/link';
 
 const TYPE_LABELS: Record<SparkTransaction['type'], string> = {
   allowance: 'Monthly allowance',
@@ -23,6 +25,12 @@ export function SparksChip() {
   const [open, setOpen] = useState(false);
   const [transactions, setTransactions] = useState<SparkTransaction[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showTip, setShowTip] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!localStorage.getItem('sparks-explainer-seen')) setShowTip(true);
+  }, []);
 
   const balance = profile?.sparksBalance ?? 0;
 
@@ -39,6 +47,18 @@ export function SparksChip() {
 
   return (
     <>
+      {showTip && (
+        <div className="absolute right-4 top-16 z-50 w-72 rounded-2xl border border-amber-200 bg-white p-4 shadow-xl text-left">
+          <p className="text-sm font-semibold text-foreground">{SPARKS_EXPLAINER.title}</p>
+          <p className="text-xs text-muted-foreground mt-1">{SPARKS_EXPLAINER.summary}</p>
+          <button
+            className="mt-3 text-xs font-bold text-amber-700"
+            onClick={() => { localStorage.setItem('sparks-explainer-seen', '1'); setShowTip(false); }}
+          >
+            Got it
+          </button>
+        </div>
+      )}
       <button
         onClick={() => setOpen(true)}
         className="flex items-center gap-1.5 px-3 h-9 rounded-full bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 transition-colors"
@@ -57,9 +77,11 @@ export function SparksChip() {
             </DialogTitle>
           </DialogHeader>
 
-          <p className="text-xs text-muted-foreground -mt-2">
-            Spend Sparks to unlock lesson formats. Earn ⚡10 for each lesson you complete and ⚡50 for passing a module quiz.
-          </p>
+          <p className="text-xs text-muted-foreground -mt-2">{SPARKS_EXPLAINER.summary}</p>
+          <div className="flex gap-3 text-xs font-semibold">
+            <Link href="/dashboard/student/sparks" className="text-amber-700" onClick={() => setOpen(false)}>What are Sparks?</Link>
+            <Link href="/pricing" className="text-primary" onClick={() => setOpen(false)}>Get more Sparks</Link>
+          </div>
 
           <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
             {loading && <p className="text-sm text-muted-foreground text-center py-6">Loading…</p>}

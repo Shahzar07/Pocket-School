@@ -19,7 +19,9 @@ import {
   TrendingUp,
   Zap,
 } from "lucide-react";
-import { TIERS, ANNUAL_DISCOUNT } from "@/lib/entitlements";
+import { TIERS } from "@/lib/entitlements";
+import { PROGRAMMES } from "@/lib/programmes";
+import { annualAmount, annualMonthlyEquivalent, annualSavingsLabel, formatMoney } from "@/lib/money";
 import { useAuthSTORE } from "@/hooks/use-auth";
 import { isAdmin } from "@/lib/roles";
 import s from "./home.module.css";
@@ -210,9 +212,9 @@ const features = [
   },
   {
     icon: Layers,
-    title: "9 academic pathways",
+    title: "Nine programmes",
     description:
-      "From primary school to IGCSE, A Levels, and professional learning. Keep growing.",
+      "Primary, Lower Secondary, IGCSE, A-Level, LLB Law, MBBS Medicine, and independent study.",
     href: "/courses",
     wide: true,
   },
@@ -256,6 +258,12 @@ export default function LandingPage() {
           <p>
             Personalized lessons. An AI tutor by your side.
             <br />A brighter learning journey, built around you.
+          </p>
+          <p>
+            Primary → Degree · All levels · 30+ ET AI teachers
+            <br />
+            Ideal for IGCSE, A-Level, LLB Law, MBBS Medicine, Micro Degrees,
+            Professional Certifications and independent learners.
           </p>
           <div className={s.actions}>
             <Link className={s.button} href={startHref}>
@@ -310,15 +318,11 @@ export default function LandingPage() {
         </div>
         <div className={s.heroMist} />
       </section>
+      <p className="bg-white text-center text-[13px] text-[#687678] px-6 pt-6">
+        We supplement Cambridge Assessment International Education, Pearson Edexcel, Oxford AQA, the University of London, and CEFR languages. Poket School certificates are not official qualifications.
+      </p>
       <nav className={s.pathwayStrip} aria-label="Learning pathways">
-        {[
-          "Primary",
-          "IGCSE",
-          "A Levels",
-          "Foundation",
-          "Diplomas",
-          "Professional",
-        ].map((label, i) => (
+        {PROGRAMMES.map((programme) => programme.label).map((label, i) => (
           <Link href="/courses" key={label}>
             {i % 2 ? <Layers /> : <GraduationCap />}
             {label}
@@ -558,69 +562,53 @@ export default function LandingPage() {
                 Monthly
               </button>
               <button aria-pressed={annual} onClick={() => setAnnual(true)}>
-                Yearly <span>(25% off)</span>
+                Yearly <span>({annualSavingsLabel()})</span>
               </button>
             </div>
           </div>
         </div>
         <div className={s.priceGrid}>
-          {[TIERS[0], TIERS[1], TIERS[2]].map((tier, i) => (
+          {[TIERS[0], TIERS[1], TIERS[2], TIERS[4], TIERS[3]].map((tier) => (
             <article
-              className={`${s.priceCard} ${i === 1 ? s.featuredPrice : ""}`}
-              key={tier.id}
+              className={`${s.priceCard} ${tier?.tier === 2 ? s.featuredPrice : ""}`}
+              key={tier?.id}
             >
               <div className={s.priceTop}>
                 <div>
-                  <small>
-                    {
-                      [
-                        "Explore",
-                        "Build your foundation",
-                        "Take the next step",
-                      ][i]
-                    }
-                  </small>
-                  <h3>{tier.name}</h3>
+                  <small>{tier?.usd ? "USD · one price worldwide" : "Explore"}</small>
+                  <h3>{tier?.name}</h3>
                 </div>
-                {i === 0 ? (
-                  <BookOpen />
-                ) : i === 1 ? (
-                  <GraduationCap />
-                ) : (
-                  <Sparkles />
-                )}
+                {tier?.tier === 0 ? <BookOpen /> : tier?.tier === 2 ? <GraduationCap /> : <Sparkles />}
               </div>
-              <p>{tier.blurb}</p>
+              <p>{tier?.blurb}</p>
               <div className={s.priceAction}>
                 <div>
                   <strong>
-                    $
-                    {annual
-                      ? ((tier.usd ?? 0) * (1 - ANNUAL_DISCOUNT)).toFixed(
-                          tier.usd ? 2 : 0,
-                        )
-                      : tier.usd}
+                    {tier?.usd
+                      ? formatMoney(annual ? annualMonthlyEquivalent(tier.usd) : tier.usd)
+                      : "Free"}
                   </strong>
-                  <small>/month</small>
+                  <small>{tier?.usd ? "/month" : ""}</small>
                 </div>
                 <Link
-                  href={i === 0 ? "/courses" : "/pricing"}
+                  href={tier?.tier === 0 ? "/courses" : "/pricing"}
                   className={s.button}
                 >
-                  {i === 0 ? "Explore free" : "View plan"}{" "}
+                  {tier?.tier === 0 ? "Explore free" : "View plan"}{" "}
                   <ArrowRight size={14} />
                 </Link>
               </div>
               <small className={s.billingNote}>
-                {annual && tier.usd
-                  ? `$${(tier.usd * (1 - ANNUAL_DISCOUNT) * 12).toFixed(0)} billed yearly · USD`
-                  : "USD · " +
-                    (tier.usd ? "Billed monthly" : "No subscription needed")}
+                {annual && tier?.usd
+                  ? `${formatMoney(annualAmount(tier.usd))} billed yearly · ${annualSavingsLabel()}`
+                  : tier?.usd
+                    ? "Billed monthly in USD"
+                    : "No subscription needed"}
               </small>
               <ul>
                 {[
-                  ...tier.programmes,
-                  ...(tier.sparks
+                  ...(tier?.programmes ?? []),
+                  ...(tier?.sparks
                     ? [
                         `${tier.sparks.toLocaleString()} Sparks per month`,
                         "AI-powered learning tools",
@@ -636,6 +624,9 @@ export default function LandingPage() {
             </article>
           ))}
         </div>
+        <p className="text-center text-sm text-[#687678] mt-6">
+          Institutions: Custom. Contact institutions@poketschool.ai for bulk licensing and white-label.
+        </p>
         <Link className={s.allPlans} href="/pricing">
           Compare all plans, degrees, and institution options{" "}
           <ArrowRight size={14} />

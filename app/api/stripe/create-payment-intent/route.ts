@@ -1,13 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isNextResponse, requireUser } from '@/lib/api-guard';
+import { adminDb } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  const user = await requireUser(req);
+  if (isNextResponse(user)) return user;
   if (!process.env.STRIPE_SECRET_KEY) {
     return NextResponse.json({ error: 'Stripe not configured. Add STRIPE_SECRET_KEY to environment variables.' }, { status: 503 });
   }
 
-  const { invoiceId, amount, currency } = await req.json();
+  const { invoiceId } = await req.json();
+  const invoice = invoiceId ? await adminDb().doc(`invoices/${invoiceId}`).get() : null;
+  const data = invoice?.data();
+  if (!data || (data.studentId !== user.uid && data.createdBy !== user.uid)) {
+    return NextResponse.json({ error: 'Invoice not found.' }, { status: 404 });
+  }
+  const amount = Number(data.amount ?? 0);
+  const currency = String(data.currency ?? 'myr').toLowerCase();
 
   try {
     const Stripe = (await import('stripe')).default;
@@ -15,8 +26,8 @@ export async function POST(req: NextRequest) {
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100),
-      currency: currency ?? 'usd',
-      metadata: { invoiceId },
+      currency,
+      metadata: { invoiceId, studentId: user.uid },
       automatic_payment_methods: { enabled: true },
     });
     return NextResponse.json({ clientSecret: paymentIntent.client_secret });

@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion, type Variants } from 'motion/react';
-import { ADDONS, TIERS } from '@/lib/entitlements';
+import { ADDONS, TIERS, tierDefinition } from '@/lib/entitlements';
+import { annualAmount, annualMonthlyEquivalent, annualSavingsLabel, formatMoney } from '@/lib/money';
 import {
   ArrowRight,
   Check,
@@ -44,9 +45,6 @@ interface Plan {
   tagline: string;
   monthly: number;
   annual: number;
-  /** International monthly rate in USD. */
-  usdMonthly: number;
-  /** Access tier from lib/entitlements.ts. */
   tier: number;
   popular?: boolean;
   cta: string;
@@ -54,92 +52,25 @@ interface Plan {
   sparks: string;
 }
 
-/**
- * The four plans from the Access Tiers brief (August 2026). Prices are the
- * Malaysian ringgit rates; `usd` carries the international rate shown on the
- * currency toggle. Tier numbers map to lib/entitlements.ts.
- */
-const PLANS: Plan[] = [
-  {
-    id: 'free',
-    name: 'Free Preview',
-    tier: 0,
-    tagline: 'Browse everything, and take the first lesson of any course. No card, no countdown.',
-    monthly: 0,
-    annual: 0,
-    usdMonthly: 0,
-    cta: 'Start free',
-    sparks: '50 welcome Sparks',
-    features: [
-      'Full course catalogue',
-      'First lesson of every course',
-      'ET AI tutor — 20 messages a day',
-      'ET generator — 3 items a day',
-      'Buy any marketplace course outright',
-    ],
-  },
-  {
-    id: 'primary_secondary',
-    name: 'Primary & Lower Secondary',
-    tier: 1,
-    tagline: 'Years 1–9. Every core subject, built to the curriculum.',
-    monthly: 49,
-    annual: 441,
-    usdMonthly: 19,
-    cta: 'Choose this plan',
-    sparks: '300 Sparks a month · 100 roll over',
-    features: [
-      'Primary Years 1–6, all subjects',
-      'Lower Secondary Years 7–9',
-      'Unlimited ET study materials',
-      'Progress tracking and streaks',
-      '300 Sparks a month',
-    ],
-  },
-  {
-    id: 'igcse_alevel',
-    name: 'IGCSE & A-Level',
-    tier: 2,
-    tagline: 'Years 10–13. The exam years, with everything below included.',
-    monthly: 352,
-    annual: 3168,
-    usdMonthly: 79,
-    popular: true,
-    cta: 'Choose this plan',
-    sparks: '800 Sparks a month · 300 roll over',
-    features: [
-      'IGCSE / GCSE — Cambridge & Edexcel',
-      'A-Level and AS-Level',
-      'Pre-University and Foundation',
-      'Everything in Primary & Lower Secondary',
-      'ET AI tutor, unlimited',
-      "Bloom's progress tracking",
-      'Parent dashboard',
-      'Completion certificates',
-      '800 Sparks a month',
-    ],
-  },
-  {
-    id: 'professional',
-    name: 'Professional & Degrees',
-    tier: 3,
-    tagline: 'Micro degrees, professional certifications and the UoL External LLB.',
-    monthly: 441,
-    annual: 3969,
-    usdMonthly: 99,
-    cta: 'Choose this plan',
-    sparks: '2,000 Sparks a month · 700 roll over',
-    features: [
-      'Micro Degrees and Diplomas',
-      'Professional Certifications',
-      'University of London External LLB — all 12 modules',
-      'Amara, the law specialist AI teacher',
-      'IRAC coaching and case law analysis',
-      'Everything in IGCSE & A-Level',
-      '2,000 Sparks a month',
-    ],
-  },
-];
+/** Sold online, in the master-brief order. Prices come from lib/entitlements.ts. */
+const PLANS: Plan[] = [0, 1, 2, 4, 3].map((tierNumber) => {
+  const tier = TIERS.find((item) => item.tier === tierNumber) ?? TIERS[0];
+  const monthly = tier?.usd ?? 0;
+  return {
+    id: tier?.id ?? 'preview',
+    name: tier?.name ?? 'Free Preview',
+    tier: tier?.tier ?? 0,
+    tagline: tier?.blurb ?? '',
+    monthly,
+    annual: monthly > 0 ? annualAmount(monthly) : 0,
+    popular: tier?.tier === 2,
+    cta: monthly > 0 ? 'Choose this plan' : 'Start free',
+    sparks: tier?.sparks
+      ? `${tier.sparks.toLocaleString()} Sparks a month · ${tier.sparksRollover.toLocaleString()} roll over`
+      : '50 welcome Sparks',
+    features: tier?.programmes ?? [],
+  };
+});
 
 const INSTITUTION_FEATURES = [
   { icon: <ShieldCheck className="w-4 h-4" />, label: 'White-label branding', desc: 'Your logo, your colours, your domain.' },
@@ -166,7 +97,7 @@ const FAQS = [
   },
   {
     q: 'Do you offer student discounts?',
-    a: 'The Free plan is genuinely free forever. Beyond that we run a verified-student rate of 40% off Academic for learners in full-time education, and hardship places for those who need them. Email students@poketschool.ai from your school or university address and we will sort it out.',
+    a: 'There is one price in US dollars for every country. The Free Preview stays free. Schools and colleges ask for a custom quote at institutions@poketschool.ai.',
   },
   {
     q: 'Is there a free trial?',
@@ -174,7 +105,7 @@ const FAQS = [
   },
   {
     q: 'What payment methods do you accept?',
-    a: 'Visa, Mastercard and American Express, plus FPX online banking, GrabPay, Touch ’n Go eWallet and Boost for Malaysian learners. Institutional customers can pay by invoice and bank transfer in MYR or USD. All payments are processed by Stripe — we never see or store your card details.',
+    a: 'Plan prices are charged in US dollars by card through Stripe. We never see or store your card details. Institutions can ask for an invoice at institutions@poketschool.ai.',
   },
 ];
 
@@ -254,16 +185,15 @@ export default function PricingPage() {
       {/* ── Plans ──────────────────────────────────────────────── */}
       <section className="bg-white pb-20 lg:pb-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-5 items-start">
+          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5 items-start">
             {PLANS.map((plan, i) => (
               <PlanCard key={plan.id} plan={plan} billing={billing} index={i} />
             ))}
           </div>
 
           <p className="mt-8 text-center text-xs text-slate-500">
-            All prices in Malaysian Ringgit (RM), inclusive of applicable taxes. Cancel anytime.
-            International pricing is billed in USD — {PLANS.filter(p => p.usdMonthly > 0).map(p => `${p.name} $${p.usdMonthly}/mo`).join(' · ')}.
-            Regional pricing is available for Nigeria, Pakistan, Bangladesh and Ghana — contact us.
+            One price worldwide, in US dollars. Cancel anytime.
+            Institutions: Custom — institutions@poketschool.ai.
           </p>
         </div>
       </section>
@@ -293,14 +223,14 @@ export default function PricingPage() {
                 <h3 className="font-bold text-lg text-slate-900">{a.name}</h3>
                 <p className="text-sm text-slate-600 mt-1 leading-relaxed">{a.blurb}</p>
                 <p className="text-xs text-slate-500 mt-2">
-                  Requires the {TIERS.find(t => t.tier === a.requiresTier)?.name} plan or above.
+                  Available with {tierDefinition(a.requiresTier).name}, and with LLB Law & MBBS Medicine.
                 </p>
               </div>
               <div className="text-center sm:text-right shrink-0">
                 <p className="text-2xl font-extrabold text-slate-900">
-                  RM{a.myrMonthly}<span className="text-sm font-medium text-slate-500">/mo</span>
+                  {formatMoney(a.usdMonthly)}<span className="text-sm font-medium text-slate-500">/mo</span>
                 </p>
-                <p className="text-[11px] text-slate-500">or ${a.usdMonthly}/mo</p>
+                <p className="text-[11px] text-slate-500">USD · one price worldwide</p>
                 <a
                   href="mailto:hello@poketschool.ai?subject=Lyra%20Live%20add-on"
                   className="mt-3 inline-flex items-center justify-center h-10 px-5 rounded-full bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 transition-colors"
@@ -516,8 +446,8 @@ export default function PricingPage() {
 
 function PlanCard({ plan, billing, index }: { plan: Plan; billing: Billing; index: number }) {
   const isFree = plan.monthly === 0;
-  const price = billing === 'monthly' ? plan.monthly : plan.annual;
-  const suffix = isFree ? 'forever' : billing === 'monthly' ? '/month' : '/year';
+  const price = billing === 'monthly' ? plan.monthly : annualMonthlyEquivalent(plan.monthly);
+  const suffix = isFree ? 'forever' : '/month';
   const saving = plan.monthly * 12 - plan.annual;
 
   return (
@@ -550,7 +480,7 @@ function PlanCard({ plan, billing, index }: { plan: Plan; billing: Billing; inde
         <p className="text-sm text-slate-600 leading-relaxed min-h-[3.25rem]">{plan.tagline}</p>
 
         <div className="mt-6 flex items-end gap-2">
-          <span className="text-lg font-bold text-slate-500 pb-2">RM</span>
+          <span className="text-lg font-bold text-slate-500 pb-2">$</span>
           <span className="font-heading text-6xl leading-none text-[#203337] tracking-tight tabular-nums">
             {price}
           </span>
@@ -560,12 +490,12 @@ function PlanCard({ plan, billing, index }: { plan: Plan; billing: Billing; inde
         <div className="mt-2 h-5">
           {!isFree && billing === 'annual' && (
             <p className="text-xs font-bold text-emerald-600">
-              Save RM {saving} — two months free
+              Save {formatMoney(saving)} — {formatMoney(plan.annual)} billed yearly · {annualSavingsLabel()}
             </p>
           )}
           {!isFree && billing === 'monthly' && (
             <p className="text-xs text-slate-500">
-              or RM {plan.annual}/year — two months free
+              or {formatMoney(plan.annual)}/year — {annualSavingsLabel()}
             </p>
           )}
           {isFree && <p className="text-xs text-slate-500">No card required</p>}

@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPublicCourseById } from '@/lib/db';
+import { isNextResponse, requireUser } from '@/lib/api-guard';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  const user = await requireUser(req);
+  if (isNextResponse(user)) return user;
   if (!process.env.STRIPE_SECRET_KEY) {
     return NextResponse.json(
       { error: 'Stripe not configured. Add STRIPE_SECRET_KEY to environment variables.' },
@@ -33,11 +36,12 @@ export async function POST(req: NextRequest) {
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(course.price * 100),
-      currency: (course.currency ?? 'GBP').toLowerCase(),
+      currency: (course.currency ?? 'USD').toLowerCase(),
       metadata: {
         courseId,
         courseTitle: course.title,
-        buyerEmail: email ?? 'guest',
+        buyerEmail: email ?? user.email ?? '',
+        studentId: user.uid,
       },
       automatic_payment_methods: { enabled: true },
     });
@@ -47,7 +51,7 @@ export async function POST(req: NextRequest) {
       courseId,
       title: course.title,
       amount: course.price,
-      currency: course.currency ?? 'GBP',
+      currency: course.currency ?? 'USD',
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Payment intent creation failed.';

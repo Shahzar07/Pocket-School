@@ -1,3 +1,4 @@
+import { enforceAiAccess } from '@/lib/api-guard';
 import { NextRequest, NextResponse } from 'next/server';
 import { callOpenRouter, LIVE_MODEL } from '@/lib/openrouter';
 import { languageInstruction } from '@/lib/languages';
@@ -5,7 +6,7 @@ import { languageInstruction } from '@/lib/languages';
 export const maxDuration = 60;
 
 const MODE_INSTRUCTIONS: Record<string, string> = {
-  k12: 'You are a friendly, encouraging AI tutor for school students (K-12). Use simple, clear language with relatable analogies and everyday examples. Be positive and supportive. Break down complex ideas step by step.',
+  k12: 'You are a friendly, encouraging AI tutor for Primary and Lower Secondary students. Use simple, clear language with relatable analogies and everyday examples. Be positive and supportive. Break down complex ideas step by step.',
   college: 'You are a rigorous academic AI tutor for university students. Use precise academic language, reference relevant theories and models, and encourage critical thinking. Structure your responses with logical flow.',
   professional: 'You are a concise, efficient AI tutor for professionals. Get straight to the point. Use industry-standard terminology. Focus on practical application and real-world relevance.',
   legal: 'You are a legal AI tutor. Use the IRAC method (Issue, Rule, Application, Conclusion) for problem questions. Reference relevant legislation and case law. Use OSCOLA citation format.',
@@ -34,6 +35,8 @@ Rules:
 - Keep the prose part conversational and brief — it is spoken aloud.`;
 
 export async function POST(req: NextRequest) {
+  const denied = await enforceAiAccess(req);
+  if (denied) return denied;
   try {
     const { message, mode, lessonContext, history, language, persona, workboard, stream } = await req.json();
     if (!message) return NextResponse.json({ error: 'message is required' }, { status: 400 });

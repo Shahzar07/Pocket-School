@@ -1,10 +1,12 @@
 import {
-  collection, doc, getDoc, getDocs, setDoc, updateDoc, addDoc,
+  collection, collectionGroup, doc, getDoc, getDocs, setDoc, updateDoc, addDoc,
   deleteDoc, query, where, orderBy, limit, serverTimestamp, onSnapshot,
-  increment, arrayUnion, arrayRemove, Timestamp, writeBatch, runTransaction,
+  increment, arrayUnion, arrayRemove, Timestamp, writeBatch, runTransaction, deleteField,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { ACADEMIC_MONTHLY_ALLOWANCE, UNIT_PASS_REWARD } from './sparks';
+import { authedFetch, ApiError } from './api-client';
+import { omitUndefined, makeJoinCode } from './firestore-sanitize';
+import { publicDisplayName } from './display-name';
 import type { Role } from './roles';
 
 export type { Role };
@@ -25,7 +27,20 @@ export interface UserProfile {
   childIds?: string[];
   phone?: string;
   phoneVerified?: boolean;
-  yearGroup?: 'Year 7' | 'Year 8' | 'Year 9';
+  yearGroup?: string;
+  /** Programme name from the master brief, e.g. Primary, IGCSE, LLB Law. */
+  pathway?: string;
+  subject?: string;
+  /** Older signups stored a list. New signups also set `subject`. */
+  subjects?: string[];
+  teachingLevel?: string;
+  institution?: string;
+  /** Older signups stored the school under this name. */
+  institutionName?: string;
+  bio?: string;
+  pendingChildEmail?: string;
+  emailVerified?: boolean;
+  emailVerificationRequired?: boolean;
   subscriptionTier?: 'free' | 'academic';
   /** Entitlement tier 0-6. Absent falls back to subscriptionTier via accessTierFor(). */
   accessTier?: number;
@@ -95,6 +110,8 @@ export interface Course {
    * Programme Module (one subject for one academic year), organised into Units (the
    * `modules` subcollection) and Lessons. */
   kind?: 'marketplace' | 'curriculum';
+  /** Short code students type to join a free class. */
+  joinCode?: string;
   programmeId?: string;
   yearGroup?: string;
   academicYear?: string;
@@ -372,9 +389,20 @@ export async function getUserByEmail(email: string): Promise<{ id: string; data:
 }
 
 export async function getTopStudentsByXp(count = 10): Promise<{ id: string; data: UserProfile }[]> {
-  const q = query(collection(db, 'users'), where('role', '==', 'student'), orderBy('xp', 'desc'), limit(count));
+  const q = query(collection(db, 'public_profiles'), where('role', '==', 'student'), orderBy('xp', 'desc'), limit(count));
   const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, data: d.data() as UserProfile }));
+  return snap.docs.map(d => {
+    const row = d.data();
+    return {
+      id: d.id,
+      data: {
+        name: (row.displayName as string) || 'Student',
+        email: '',
+        role: 'student',
+        xp: (row.xp as number) ?? 0,
+      },
+    };
+  });
 }
 
 // ─── Courses ──────────────────────────────────────────────────
@@ -397,31 +425,37 @@ export async function getCourse(courseId: string): Promise<Course | null> {
 }
 
 export async function createCourse(data: Omit<Course, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'courses'), {
+  const ref = await addDoc(collection(db, 'courses'), omitUndefined({
     ...data,
+    joinCode: data.joinCode || makeJoinCode(),
+    currency: data.currency || 'USD',
     enrollmentCount: data.enrollmentCount ?? 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-  });
+  }));
   return ref.id;
 }
 
 // ─── Modules & Lessons ────────────────────────────────────────
 
 export async function getModulesWithLessons(courseId: string): Promise<{ module: Module; lessons: Lesson[] }[]> {
-  const modSnap = await getDocs(
-    query(collection(db, 'courses', courseId, 'modules'), orderBy('order'))
-  );
-  const results: { module: Module; lessons: Lesson[] }[] = [];
-  for (const modDoc of modSnap.docs) {
-    const module = { id: modDoc.id, ...modDoc.data() } as Module;
-    const lesSnap = await getDocs(
-      query(collection(db, 'courses', courseId, 'modules', modDoc.id, 'lessons'), orderBy('order'))
+  try {
+    const modSnap = await getDocs(
+      query(collection(db, 'courses', courseId, 'modules'), orderBy('order'))
     );
-    const lessons = lesSnap.docs.map(d => ({ id: d.id, ...d.data() } as Lesson));
-    results.push({ module, lessons });
+    return await Promise.all(modSnap.docs.map(async (modDoc) => {
+      const module = { id: modDoc.id, ...modDoc.data() } as Module;
+      const lesSnap = await getDocs(
+        query(collection(db, 'courses', courseId, 'modules', modDoc.id, 'lessons'), orderBy('order'))
+      );
+      const lessons = lesSnap.docs.map(d => ({ id: d.id, ...d.data() } as Lesson));
+      return { module, lessons };
+    }));
+  } catch {
+    const data = await authedFetch(`/api/platform/course-outline?courseId=${encodeURIComponent(courseId)}`);
+    const modules = (data.modules as { module: Module; lessons: Lesson[] }[] | undefined) ?? [];
+    return modules;
   }
-  return results;
 }
 
 export async function getLesson(courseId: string, moduleId: string, lessonId: string): Promise<Lesson | null> {
@@ -444,8 +478,13 @@ export async function getLessonByIds(courseId: string, lessonId: string): Promis
 export async function saveAiOutputsToLesson(
   courseId: string, moduleId: string, lessonId: string, aiOutputs: AiOutputs
 ) {
-  await updateDoc(doc(db, 'courses', courseId, 'modules', moduleId, 'lessons', lessonId), {
+  const lessonRef = doc(db, 'courses', courseId, 'modules', moduleId, 'lessons', lessonId);
+  await setDoc(doc(db, 'courses', courseId, 'modules', moduleId, 'lessons', lessonId, 'protected', 'content'), {
     aiOutputs,
+    updatedAt: serverTimestamp(),
+  });
+  await updateDoc(lessonRef, {
+    aiOutputs: deleteField(),
     status: 'published',
     updatedAt: serverTimestamp(),
   });
@@ -615,28 +654,32 @@ export async function createCurriculumModule(data: Omit<Course, 'id' | 'kind'>):
 // ─── Enrollments ──────────────────────────────────────────────
 
 export async function getEnrolledCourses(studentId: string): Promise<{ course: Course; enrollment: Enrollment }[]> {
-  const allCourses = await getAllPublishedCourses();
-  const results: { course: Course; enrollment: Enrollment }[] = [];
-  for (const course of allCourses) {
-    const snap = await getDoc(doc(db, 'courses', course.id, 'enrollments', studentId));
-    if (snap.exists()) {
-      results.push({ course, enrollment: snap.data() as Enrollment });
-    }
-  }
-  return results;
+  const snap = await getDocs(query(collectionGroup(db, 'enrollments'), where('studentId', '==', studentId)));
+  const rows = await Promise.all(snap.docs.map(async (d) => {
+    const courseRef = d.ref.parent.parent;
+    if (!courseRef) return null;
+    const courseSnap = await getDoc(courseRef);
+    if (!courseSnap.exists()) return null;
+    return {
+      course: { id: courseSnap.id, ...courseSnap.data() } as Course,
+      enrollment: d.data() as Enrollment,
+    };
+  }));
+  return rows.filter((row): row is { course: Course; enrollment: Enrollment } => row != null);
 }
 
-export async function enrollStudent(studentId: string, courseId: string) {
+export async function enrollStudent(studentId: string, courseId: string, studentName?: string) {
   const ref = doc(db, 'courses', courseId, 'enrollments', studentId);
   const snap = await getDoc(ref);
   if (!snap.exists()) {
-    await setDoc(ref, {
+    await setDoc(ref, omitUndefined({
       studentId,
       courseId,
+      studentName: studentName || 'Student',
       progress: 0,
       completedLessons: [],
       enrolledAt: serverTimestamp(),
-    });
+    }));
   }
 }
 
@@ -654,89 +697,14 @@ export async function enrollInProgrammeModules(studentId: string, yearGroup: str
 }
 
 export async function markLessonComplete(
-  studentId: string, courseId: string, lessonId: string, xpReward = 50, sparksReward = 0
+  studentId: string, courseId: string, lessonId: string, xpReward = 50, _sparksReward = 0
 ): Promise<void> {
-  const batch = writeBatch(db);
-  const enrollRef = doc(db, 'courses', courseId, 'enrollments', studentId);
-  const snap = await getDoc(enrollRef);
-  if (!snap.exists()) return;
-  const enrollment = snap.data() as Enrollment;
-  if (enrollment.completedLessons?.includes(lessonId)) return;
-
-  // Count total lessons to compute progress
-  const modSnap = await getDocs(collection(db, 'courses', courseId, 'modules'));
-  let totalLessons = 0;
-  for (const m of modSnap.docs) {
-    const ls = await getDocs(collection(db, 'courses', courseId, 'modules', m.id, 'lessons'));
-    totalLessons += ls.size;
-  }
-  const completed = (enrollment.completedLessons?.length ?? 0) + 1;
-  const progress = totalLessons > 0 ? Math.round((completed / totalLessons) * 100) : 0;
-
-  batch.update(enrollRef, {
-    completedLessons: arrayUnion(lessonId),
-    progress,
+  void studentId;
+  void _sparksReward;
+  await authedFetch('/api/platform/progress-complete', {
+    method: 'POST',
+    body: JSON.stringify({ courseId, lessonId, xpReward }),
   });
-  const userUpdate: Record<string, unknown> = { xp: increment(xpReward), updatedAt: serverTimestamp() };
-  if (sparksReward > 0) userUpdate.sparksBalance = increment(sparksReward);
-  batch.update(doc(db, 'users', studentId), userUpdate);
-
-  // Lesson rewards used to bump sparksBalance without writing a ledger entry,
-  // so a student's transaction history never matched their balance. Recorded
-  // in the same batch so the balance and the ledger cannot diverge.
-  if (sparksReward > 0) {
-    const userSnap = await getDoc(doc(db, 'users', studentId));
-    const balanceAfter = ((userSnap.data()?.sparksBalance as number) ?? 0) + sparksReward;
-    batch.set(doc(collection(db, 'users', studentId, 'spark_transactions')), {
-      amount: sparksReward,
-      type: 'earn',
-      lessonId,
-      courseId,
-      balanceAfter,
-      note: 'Lesson completed',
-      createdAt: serverTimestamp(),
-    });
-  }
-
-  await batch.commit();
-
-  // Award badges based on XP milestones
-  await checkAndAwardBadges(studentId, (enrollment as any).xp || 0, xpReward);
-
-  if (sparksReward > 0) {
-    const profile = await getUser(studentId);
-    await addDoc(collection(db, 'users', studentId, 'spark_transactions'), {
-      amount: sparksReward,
-      type: 'earn',
-      courseId,
-      lessonId,
-      balanceAfter: (profile?.sparksBalance ?? 0) + sparksReward,
-      note: 'Lesson completed',
-      createdAt: serverTimestamp(),
-    });
-  }
-}
-
-async function checkAndAwardBadges(studentId: string, currentXp: number, gained: number) {
-  const newXp = currentXp + gained;
-  const milestones = [
-    { threshold: 100, type: 'first_steps', name: 'First Steps', description: 'Earn your first 100 XP', icon: '🌱' },
-    { threshold: 500, type: 'rising_star', name: 'Rising Star', description: 'Earn 500 XP', icon: '⭐' },
-    { threshold: 1000, type: 'knowledge_seeker', name: 'Knowledge Seeker', description: 'Earn 1000 XP', icon: '📚' },
-    { threshold: 5000, type: 'scholar', name: 'Scholar', description: 'Earn 5000 XP', icon: '🎓' },
-  ];
-  for (const m of milestones) {
-    if (currentXp < m.threshold && newXp >= m.threshold) {
-      const badgeRef = doc(db, 'badges', `${studentId}_${m.type}`);
-      const snap = await getDoc(badgeRef);
-      if (!snap.exists()) {
-        await setDoc(badgeRef, {
-          userId: studentId, type: m.type, name: m.name,
-          description: m.description, icon: m.icon, awardedAt: serverTimestamp(),
-        });
-      }
-    }
-  }
 }
 
 // ─── Sparks Wallet ────────────────────────────────────────────
@@ -747,63 +715,41 @@ async function checkAndAwardBadges(studentId: string, currentXp: number, gained:
  * Throws Error('INSUFFICIENT_SPARKS') when the balance can't cover the cost.
  * Returns the balance after the transaction.
  */
-export async function unlockLessonFormat(
-  uid: string, courseId: string, lessonId: string, format: string, cost: number
-): Promise<number> {
-  const userRef = doc(db, 'users', uid);
-  const enrollRef = doc(db, 'courses', courseId, 'enrollments', uid);
-  const txRef = doc(collection(db, 'users', uid, 'spark_transactions'));
-
-  return runTransaction(db, async (tx) => {
-    const [userSnap, enrollSnap] = await Promise.all([tx.get(userRef), tx.get(enrollRef)]);
-    if (!userSnap.exists()) throw new Error('USER_NOT_FOUND');
-    if (!enrollSnap.exists()) throw new Error('NOT_ENROLLED');
-
-    const balance = (userSnap.data().sparksBalance as number) ?? 0;
-    const unlocked = (enrollSnap.data().unlockedFormats as Record<string, string[]>) ?? {};
-    if (unlocked[lessonId]?.includes(format)) return balance;
-
-    if (balance < cost) throw new Error('INSUFFICIENT_SPARKS');
-    const balanceAfter = balance - cost;
-
-    tx.update(userRef, { sparksBalance: balanceAfter, updatedAt: serverTimestamp() });
-    tx.update(enrollRef, { [`unlockedFormats.${lessonId}`]: arrayUnion(format) });
-    tx.set(txRef, {
-      amount: -cost,
-      type: 'unlock',
-      format,
-      courseId,
-      lessonId,
-      balanceAfter,
-      createdAt: serverTimestamp(),
-    });
-    return balanceAfter;
-  });
+function rethrowWallet(err: unknown): never {
+  if (err instanceof ApiError && (err.code === 'INSUFFICIENT_SPARKS' || err.code === 'NOT_ENROLLED' || err.code === 'USER_NOT_FOUND')) {
+    throw new Error(err.code);
+  }
+  throw err;
 }
 
-/** Grant (or deduct, with negative amount) Sparks and record a ledger entry. */
+export async function unlockLessonFormat(
+  uid: string, courseId: string, lessonId: string, format: string, _cost: number
+): Promise<number> {
+  void uid;
+  void _cost;
+  try {
+    const data = await authedFetch('/api/platform/sparks-unlock', {
+      method: 'POST',
+      body: JSON.stringify({ courseId, lessonId, format }),
+    });
+    return (data.balance as number) ?? 0;
+  } catch (err) {
+    rethrowWallet(err);
+  }
+}
+
+/** Welcome grant. Other grants go through an admin action. */
 export async function awardSparks(
   uid: string,
   amount: number,
   type: SparkTransaction['type'],
   note?: string
 ): Promise<number> {
-  const userRef = doc(db, 'users', uid);
-  const txRef = doc(collection(db, 'users', uid, 'spark_transactions'));
-  return runTransaction(db, async (tx) => {
-    const snap = await tx.get(userRef);
-    if (!snap.exists()) throw new Error('USER_NOT_FOUND');
-    const balanceAfter = ((snap.data().sparksBalance as number) ?? 0) + amount;
-    tx.update(userRef, { sparksBalance: balanceAfter, updatedAt: serverTimestamp() });
-    tx.set(txRef, {
-      amount,
-      type,
-      balanceAfter,
-      ...(note ? { note } : {}),
-      createdAt: serverTimestamp(),
-    });
-    return balanceAfter;
-  });
+  void uid;
+  void amount;
+  void type;
+  void note;
+  throw new Error('Sparks are granted by the server. Use the welcome or admin grant.');
 }
 
 /** Everyone who has signed up, newest first — the admin user directory. */
@@ -827,31 +773,19 @@ export async function getAllUsers(max = 500): Promise<{ id: string; data: UserPr
  * student's allowance. Guarded on adminSparksGrantedAt so it tops up a new
  * admin but never re-grants on each sign-in.
  */
-export async function ensureAdminSparks(uid: string, amount: number): Promise<boolean> {
-  const snap = await getDoc(doc(db, 'users', uid));
-  if (!snap.exists()) return false;
-  const data = snap.data() as UserProfile & { adminSparksGrantedAt?: Timestamp };
-  if (data.adminSparksGrantedAt) return false;
-  await awardSparks(uid, amount, 'admin_grant', 'Administrator working balance');
-  await updateDoc(doc(db, 'users', uid), { adminSparksGrantedAt: serverTimestamp() });
-  return true;
+export async function ensureAdminSparks(uid: string, _amount: number): Promise<boolean> {
+  void uid;
+  void _amount;
+  const data = await authedFetch('/api/platform/sparks-bootstrap', { method: 'POST', body: '{}' });
+  return data.granted === true;
 }
 
-/** Top up the monthly allowance for Academic subscribers, at most once per 30 days. */
-export async function grantMonthlySparksIfDue(uid: string, profile: UserProfile): Promise<boolean> {
-  if (profile.subscriptionTier !== 'academic') return false;
-  const allowance = profile.sparksMonthlyAllowance ?? ACADEMIC_MONTHLY_ALLOWANCE;
-  if (allowance <= 0) return false;
-
-  const last = profile.sparksGrantedAt;
-  if (last) {
-    const elapsedDays = (Date.now() - last.toMillis()) / (1000 * 60 * 60 * 24);
-    if (elapsedDays < 30) return false;
-  }
-
-  await awardSparks(uid, allowance, 'allowance', 'Monthly Academic allowance');
-  await updateDoc(doc(db, 'users', uid), { sparksGrantedAt: serverTimestamp() });
-  return true;
+/** Top up the monthly allowance from the plan table, at most once per 30 days. */
+export async function grantMonthlySparksIfDue(uid: string, _profile: UserProfile): Promise<boolean> {
+  void uid;
+  void _profile;
+  const data = await authedFetch('/api/platform/sparks-monthly', { method: 'POST', body: '{}' });
+  return data.granted === true;
 }
 
 export async function getSparkTransactions(uid: string, count = 50): Promise<SparkTransaction[]> {
@@ -870,21 +804,10 @@ export async function getSparkTransactions(uid: string, count = 50): Promise<Spa
 
 /** Admin: switch a user's subscription tier. Granting 'academic' tops up immediately. */
 export async function setUserSubscription(uid: string, tier: 'free' | 'academic'): Promise<void> {
-  if (tier === 'academic') {
-    await updateDoc(doc(db, 'users', uid), {
-      subscriptionTier: 'academic',
-      sparksMonthlyAllowance: ACADEMIC_MONTHLY_ALLOWANCE,
-      sparksGrantedAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-    await awardSparks(uid, ACADEMIC_MONTHLY_ALLOWANCE, 'allowance', 'Academic subscription activated');
-  } else {
-    await updateDoc(doc(db, 'users', uid), {
-      subscriptionTier: 'free',
-      sparksMonthlyAllowance: 0,
-      updatedAt: serverTimestamp(),
-    });
-  }
+  await authedFetch('/api/platform/admin-subscription', {
+    method: 'POST',
+    body: JSON.stringify({ uid, accessTier: tier === 'academic' ? 2 : 0 }),
+  });
 }
 
 // ─── Unit Quiz Attempts (Mastery) ─────────────────────────────
@@ -897,55 +820,23 @@ export async function setUserSubscription(uid: string, tier: 'free' | 'academic'
 export async function saveUnitQuizAttempt(
   data: Omit<UnitQuizAttempt, 'id' | 'attemptNumber' | 'weakestObjective' | 'recommendedLessonIds' | 'completedAt'>
 ): Promise<UnitQuizAttempt> {
-  // attemptNumber = previous attempts on this quiz lesson + 1
-  let attemptNumber = 1;
-  try {
-    const prevQ = query(
-      collection(db, 'unit_quiz_attempts'),
-      where('studentId', '==', data.studentId),
-      where('lessonId', '==', data.lessonId)
-    );
-    const prev = await getDocs(prevQ);
-    attemptNumber = prev.size + 1;
-  } catch { /* first attempt */ }
-
-  // Tally wrong answers per objective, and collect source lessons to revisit
-  const wrongByObjective: Record<string, number> = {};
-  const reviewLessonIds = new Set<string>();
-  for (const r of data.responses) {
-    if (r.correct) continue;
-    if (r.objectiveCode) {
-      wrongByObjective[r.objectiveCode] = (wrongByObjective[r.objectiveCode] ?? 0) + 1;
-    }
-    if (r.sourceLessonId) reviewLessonIds.add(r.sourceLessonId);
-  }
-  let weakestObjective: string | undefined;
-  let maxWrong = 0;
-  for (const [code, wrong] of Object.entries(wrongByObjective)) {
-    if (wrong > maxWrong) { maxWrong = wrong; weakestObjective = code; }
-  }
-  const recommendedLessonIds = Array.from(reviewLessonIds);
-
-  const ref = await addDoc(collection(db, 'unit_quiz_attempts'), {
-    ...data,
-    attemptNumber,
-    ...(weakestObjective ? { weakestObjective } : {}),
-    recommendedLessonIds,
-    completedAt: serverTimestamp(),
+  const saved = await authedFetch('/api/platform/unit-quiz', {
+    method: 'POST',
+    body: JSON.stringify({
+      courseId: data.courseId,
+      unitId: data.unitId,
+      lessonId: data.lessonId,
+      timeTakenSeconds: data.timeTakenSeconds,
+      studentName: data.studentName,
+      responses: data.responses.map((r) => ({
+        question: r.question,
+        selected: r.selected,
+        objectiveCode: r.objectiveCode,
+        sourceLessonId: r.sourceLessonId,
+      })),
+    }),
   });
-
-  if (data.passed) {
-    await markLessonComplete(data.studentId, data.courseId, data.lessonId, 100);
-    await awardSparks(data.studentId, UNIT_PASS_REWARD, 'earn', 'Unit mastery quiz passed');
-  }
-
-  return {
-    ...data,
-    id: ref.id,
-    attemptNumber,
-    weakestObjective,
-    recommendedLessonIds,
-  } as UnitQuizAttempt;
+  return saved as unknown as UnitQuizAttempt;
 }
 
 export async function getUnitQuizAttempts(studentId: string, courseId?: string): Promise<UnitQuizAttempt[]> {
@@ -1148,41 +1039,14 @@ export async function sendDirectMessage(msg: {
 export async function getChatContacts(
   userId: string, role: string
 ): Promise<{ id: string; name: string; role: string }[]> {
-  const contacts = new Map<string, { id: string; name: string; role: string }>();
-
-  // Everyone can reach the admin team.
+  void userId;
+  void role;
   try {
-    const admins = await getDocs(query(collection(db, 'users'), where('role', '==', 'admin')));
-    admins.forEach(d => { if (d.id !== userId) contacts.set(d.id, { id: d.id, name: (d.data().name as string) || 'Admin', role: 'admin' }); });
-  } catch { /* ignore */ }
-
-  if (role === 'parent') {
-    try {
-      const children = await getChildrenProfiles(userId);
-      const enrollments = await Promise.all(children.map(c => getEnrolledCourses(c.id)));
-      enrollments.flat().forEach(({ course }) => {
-        if (course.ownerId && course.ownerId !== userId) {
-          contacts.set(course.ownerId, { id: course.ownerId, name: course.ownerName || 'Teacher', role: 'teacher' });
-        }
-      });
-    } catch { /* ignore */ }
-  } else if (role === 'student') {
-    try {
-      const enrollments = await getEnrolledCourses(userId);
-      enrollments.forEach(({ course }) => {
-        if (course.ownerId && course.ownerId !== userId) {
-          contacts.set(course.ownerId, { id: course.ownerId, name: course.ownerName || 'Teacher', role: 'teacher' });
-        }
-      });
-    } catch { /* ignore */ }
-  } else if (role === 'admin') {
-    try {
-      const teachers = await getDocs(query(collection(db, 'users'), where('role', '==', 'teacher')));
-      teachers.forEach(d => { if (d.id !== userId) contacts.set(d.id, { id: d.id, name: (d.data().name as string) || 'Teacher', role: 'teacher' }); });
-    } catch { /* ignore */ }
+    const data = await authedFetch('/api/platform/message-contacts');
+    return (data.contacts as { id: string; name: string; role: string }[]) ?? [];
+  } catch {
+    return [];
   }
-
-  return [...contacts.values()];
 }
 
 // ─── Institutions ─────────────────────────────────────────────
@@ -1521,15 +1385,13 @@ export async function getPlatformStats(): Promise<{ students: number; teachers: 
 
 // ─── Parent / Child ───────────────────────────────────────────
 
-export async function linkChildToParent(parentId: string, childEmail: string): Promise<{ success: boolean; childName?: string; error?: string }> {
-  const child = await getUserByEmail(childEmail);
-  if (!child) return { success: false, error: 'No user found with that email address.' };
-  if (child.data.role !== 'student') return { success: false, error: 'That account is not a student account.' };
-  await updateDoc(doc(db, 'users', parentId), {
-    childIds: arrayUnion(child.id),
-    updatedAt: serverTimestamp(),
+export async function linkChildToParent(parentId: string, childEmail: string, parentName = 'A parent'): Promise<{ success: boolean; message: string }> {
+  void parentId;
+  const data = await authedFetch('/api/platform/parent-request', {
+    method: 'POST',
+    body: JSON.stringify({ studentEmail: childEmail, parentName }),
   });
-  return { success: true, childName: child.data.name };
+  return { success: true, message: (data.message as string) ?? 'Request sent.' };
 }
 
 export async function getChildrenProfiles(parentId: string): Promise<{ id: string; data: UserProfile }[]> {
@@ -1605,26 +1467,36 @@ export async function getPublicCurriculum(courseId: string): Promise<{
   const modSnap = await getDocs(
     query(collection(db, 'courses', courseId, 'modules'), orderBy('order', 'asc')),
   );
-  const out: { module: Module; lessons: Lesson[]; lessonsHidden: boolean }[] = [];
-  for (const m of modSnap.docs) {
+  return Promise.all(modSnap.docs.map(async (m) => {
     const module = { id: m.id, ...m.data() } as Module;
     try {
       const les = await getDocs(
         query(collection(db, 'courses', courseId, 'modules', m.id, 'lessons'), orderBy('order', 'asc')),
       );
-      out.push({ module, lessons: les.docs.map(d => ({ id: d.id, ...d.data() } as Lesson)), lessonsHidden: false });
+      const lessons = les.docs.map(d => {
+        const data = d.data() as Lesson;
+        const { aiOutputs: _hidden, id: _ignored, ...rest } = data;
+        void _hidden;
+        void _ignored;
+        return { ...rest, id: d.id } as Lesson;
+      });
+      return { module, lessons, lessonsHidden: false };
     } catch {
-      out.push({ module, lessons: [], lessonsHidden: true });
+      return { module, lessons: [], lessonsHidden: true };
     }
-  }
-  return out;
+  }));
 }
 
-export async function getEnrollmentsForCourse(courseId: string): Promise<{ studentId: string; progress: number; completedLessons: string[] }[]> {
+export async function getEnrollmentsForCourse(courseId: string): Promise<{ studentId: string; studentName: string; progress: number; completedLessons: string[] }[]> {
   const snap = await getDocs(collection(db, 'courses', courseId, 'enrollments'));
   return snap.docs.map(d => {
     const data = d.data();
-    return { studentId: d.id, progress: data.progress ?? 0, completedLessons: data.completedLessons ?? [] };
+    return {
+      studentId: d.id,
+      studentName: (data.studentName as string) || 'Student',
+      progress: data.progress ?? 0,
+      completedLessons: data.completedLessons ?? [],
+    };
   });
 }
 
@@ -1726,7 +1598,7 @@ export interface AssignmentSubmission {
 }
 
 export async function createAssignment(data: Omit<Assignment, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'assignments'), { ...data, createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'assignments'), omitUndefined({ ...data, createdAt: serverTimestamp() }));
   return ref.id;
 }
 
@@ -1818,7 +1690,7 @@ export interface ExamSubmission {
 }
 
 export async function createExam(data: Omit<Exam, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'exams'), { ...data, createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'exams'), omitUndefined({ ...data, createdAt: serverTimestamp() }));
   return ref.id;
 }
 
@@ -1909,22 +1781,37 @@ export interface Announcement {
   audience: 'all' | 'students' | 'teachers' | 'parents';
   courseId?: string;
   pinned: boolean;
+  status?: 'draft' | 'published';
   createdBy: string;
   createdByName: string;
   createdAt?: Timestamp;
   expiresAt?: Timestamp;
 }
 
-export async function getAnnouncements(audience: string, courseId?: string): Promise<Announcement[]> {
-  const q = query(collection(db, 'announcements'), orderBy('createdAt', 'desc'), limit(50));
-  const snap = await getDocs(q);
-  return snap.docs
-    .map(d => ({ id: d.id, ...d.data() } as Announcement))
-    .filter(a => a.audience === 'all' || a.audience === audience || (courseId && a.courseId === courseId));
+export async function getAnnouncements(audience: string, courseId?: string, userId?: string): Promise<Announcement[]> {
+  // Published posts are readable by everyone signed in. Drafts are readable only
+  // by their author, so they are a second query — one mixed query fails the rules.
+  const publishedQ = query(
+    collection(db, 'announcements'),
+    where('status', '==', 'published'),
+    orderBy('createdAt', 'desc'),
+    limit(50),
+  );
+  const [publishedSnap, ownSnap] = await Promise.all([
+    getDocs(publishedQ),
+    userId
+      ? getDocs(query(collection(db, 'announcements'), where('createdBy', '==', userId), orderBy('createdAt', 'desc'), limit(50)))
+      : Promise.resolve(null),
+  ]);
+  const byId = new Map<string, Announcement>();
+  for (const snap of [publishedSnap, ownSnap]) {
+    snap?.docs.forEach((d) => byId.set(d.id, { id: d.id, ...d.data() } as Announcement));
+  }
+  return [...byId.values()].filter(a => a.audience === 'all' || a.audience === audience || a.createdBy === userId || (courseId && a.courseId === courseId));
 }
 
 export async function createAnnouncement(data: Omit<Announcement, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'announcements'), { ...data, createdAt: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'announcements'), omitUndefined({ ...data, status: data.status ?? 'published', createdAt: serverTimestamp() }));
   return ref.id;
 }
 
@@ -2432,7 +2319,8 @@ export interface AttendanceRecord {
 }
 
 export async function createAttendanceRecord(data: Omit<AttendanceRecord, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'attendance_records'), { ...data, createdAt: serverTimestamp() });
+  const studentIds = (data.records ?? []).map((r) => r.studentId).filter(Boolean);
+  const ref = await addDoc(collection(db, 'attendance_records'), omitUndefined({ ...data, studentIds, createdAt: serverTimestamp() }));
   return ref.id;
 }
 
@@ -2443,10 +2331,9 @@ export async function getAttendanceForCourse(courseId: string): Promise<Attendan
 }
 
 export async function getAttendanceForStudent(studentId: string): Promise<AttendanceRecord[]> {
-  const snap = await getDocs(collection(db, 'attendance_records'));
-  return snap.docs
-    .map(d => ({ id: d.id, ...d.data() } as AttendanceRecord))
-    .filter(r => r.records.some(e => e.studentId === studentId));
+  const q = query(collection(db, 'attendance_records'), where('studentIds', 'array-contains', studentId));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as AttendanceRecord));
 }
 
 export async function updateAttendanceRecord(id: string, data: Partial<AttendanceRecord>) {
@@ -2494,15 +2381,17 @@ export interface UserSession {
   createdAt: Timestamp;
 }
 
-export async function upsertUserSession(userId: string, deviceInfo: string): Promise<boolean> {
-  const q = query(collection(db, 'user_sessions'), where('userId', '==', userId), where('deviceInfo', '==', deviceInfo));
+export async function upsertUserSession(userId: string, deviceId: string, deviceInfo: string): Promise<boolean> {
+  const q = query(collection(db, 'user_sessions'), where('userId', '==', userId), where('deviceId', '==', deviceId));
   const snap = await getDocs(q);
   if (!snap.empty) {
-    await updateDoc(snap.docs[0].ref, { lastSeen: serverTimestamp() });
+    await updateDoc(snap.docs[0].ref, { lastSeen: serverTimestamp(), deviceInfo });
     return false;
   }
-  await addDoc(collection(db, 'user_sessions'), { userId, deviceInfo, lastSeen: serverTimestamp(), createdAt: serverTimestamp() });
-  return true;
+  const others = await getDocs(query(collection(db, 'user_sessions'), where('userId', '==', userId), limit(1)));
+  const isNewDevice = !others.empty;
+  await addDoc(collection(db, 'user_sessions'), { userId, deviceId, deviceInfo, lastSeen: serverTimestamp(), createdAt: serverTimestamp() });
+  return isNewDevice;
 }
 
 export async function getUserSessions(userId: string): Promise<UserSession[]> {
@@ -2561,10 +2450,10 @@ export async function getUserPhone(uid: string): Promise<string | null> {
 // (createCourse already defined at line 191 — reused for marketplace product creation)
 
 export async function updateCourse(id: string, data: Partial<Course>): Promise<void> {
-  await updateDoc(doc(db, 'courses', id), {
+  await updateDoc(doc(db, 'courses', id), omitUndefined({
     ...data,
     updatedAt: serverTimestamp(),
-  });
+  }));
 }
 
 export async function deleteCourse(id: string): Promise<void> {

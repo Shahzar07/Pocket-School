@@ -8,6 +8,7 @@ import { getEnrolledCourses, getUserBadges, Course, Enrollment, Badge } from '@/
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ArrowUpRight, BookOpen, Zap, Trophy, Target, TrendingUp, Sparkles, Users, GraduationCap, Play } from 'lucide-react';
 import Link from 'next/link';
+import { ParentLinkRequests } from '@/components/parent-link-requests';
 import {
   DashPage, DashHeader, Panel, PanelHeader, StatCard, ProgressBar,
   ListRow, Initials, EmptyState,
@@ -134,11 +135,12 @@ export default function StudentDashboard() {
             <Play className="w-3.5 h-3.5 fill-current" /> Resume learning
           </Button>
         ) : (
-          <Button onClick={() => router.push('/courses')} className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2">
+          <Button onClick={() => router.push('/dashboard/marketplace')} className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2">
             Browse courses <ArrowRight className="w-3.5 h-3.5" />
           </Button>
         )}
       />
+      <ParentLinkRequests />
 
       {/* ── Stat row ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

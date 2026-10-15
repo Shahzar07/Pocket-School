@@ -27,7 +27,7 @@ import {
   type UserProfile, type Course, type CouponCode,
 } from '@/lib/db';
 import {
-  TIERS, ADDONS, allocFree, allocPaid, allocMarketplace, accessTierFor, type AccessTier,
+  TIERS, ADDONS, allocFree, allocPaid, allocMarketplace, accessTierFor, tierCovers, type AccessTier,
 } from '@/lib/entitlements';
 
 const fadeUp: Record<string, any> = {
@@ -231,17 +231,17 @@ function PeoplePanel({ courses }: { courses: Course[] }) {
             <div className="space-y-2">
               {ADDONS.map(a => {
                 const held = permissions.includes(a.permission);
-                const eligible = currentTier >= a.requiresTier;
+                const eligible = tierCovers(currentTier, a.requiresTier);
                 return (
                   <div key={a.id} className="flex flex-wrap items-center gap-3 bg-muted/40 rounded-xl px-3 py-2.5">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground">
-                        {a.name} <span className="font-normal text-muted-foreground">· RM{a.myrMonthly}/mo</span>
+                        {a.name} <span className="font-normal text-muted-foreground">· ${a.usdMonthly}/mo</span>
                       </p>
                       <p className="text-[11px] text-muted-foreground">
                         {eligible
                           ? a.blurb
-                          : `Needs the ${TIERS.find(t => t.tier === a.requiresTier)?.name} plan or above — set the tier first.`}
+                          : `Needs the ${TIERS.find(t => t.tier === a.requiresTier)?.name} plan — set the tier first.`}
                       </p>
                     </div>
                     <Button

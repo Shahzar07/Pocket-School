@@ -31,11 +31,11 @@ import {
 import { coursePriceType, freePreviewCount, isLessonFree, courseMinTier, tierDefinition } from '@/lib/entitlements';
 import { courseCover } from '@/lib/course-cover';
 import { toast } from 'sonner';
+import { authedFetch } from '@/lib/api-client';
+import { formatCoursePrice } from '@/lib/money';
 
 function priceLabel(c: Course) {
-  if (!c.price || c.price === 0) return 'Free';
-  const symbol = c.currency === 'USD' ? '$' : c.currency === 'EUR' ? '€' : '£';
-  return `${symbol}${c.price.toFixed(2)}`;
+  return formatCoursePrice(c.price, c.currency);
 }
 
 export default function CourseDetailPage() {
@@ -179,35 +179,16 @@ export default function CourseDetailPage() {
     if (!course || !user) return;
     try {
       setEnrolling(true);
-      const prof = await getStudentProfile();
-      if (!prof) { setConfirmOpen(false); return; }
-      await enrollStudent(user.uid, course.id);
-      await incrementEnrollment(course.id);
-      // Best-effort invoice: security rules may reserve invoice creation for
-      // teachers/admins, in which case the school issues it instead.
-      let invoiced = false;
-      try {
-        await createInvoice({
-          studentId: user.uid,
-          studentName: prof.name ?? user.displayName ?? 'Student',
-          courseId: course.id,
-          description: `Course purchase: ${course.title}`,
-          amount: course.price ?? 0,
-          currency: course.currency ?? 'GBP',
-          status: 'sent',
-          dueDate: Timestamp.fromDate(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)),
-          createdBy: user.uid,
-        });
-        invoiced = true;
-      } catch { /* fall through to school-issued invoice message */ }
-      toast.success(invoiced
-        ? `Enrolled in ${course.title} — an invoice was added to your school account.`
-        : `Enrolled in ${course.title} — an invoice will be issued by the school.`);
-      setConfirmOpen(false);
-      router.push(`/dashboard/student/courses/${course.id}`);
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to enrol.');
-    } finally {
+      const data = await authedFetch('/api/stripe/checkout', {
+        method: 'POST',
+        body: JSON.stringify({ courseId: course.id }),
+      });
+      const url = data.url as string | undefined;
+      if (!url) throw new Error('Checkout did not start.');
+      window.location.href = url;
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Checkout is not available yet.';
+      toast.error(message);
       setEnrolling(false);
     }
   };

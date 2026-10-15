@@ -12,6 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { User, Lock, Palette, Loader2, Save, ShieldCheck } from 'lucide-react';
+import { LEVELS, canonicalLevel, levelLabel, yearLabel } from '@/lib/year-groups';
+import { yearsForProgramme } from '@/lib/programmes';
+import { Textarea } from '@/components/ui/textarea';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -34,7 +37,11 @@ export default function ProfilePage() {
   const [name, setName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [level, setLevel] = useState('');
+  const [yearGroup, setYearGroup] = useState('');
   const [learningStyle, setLearningStyle] = useState('');
+  const [subject, setSubject] = useState('');
+  const [institution, setInstitution] = useState('');
+  const [bio, setBio] = useState('');
   const [saving, setSaving] = useState(false);
 
   const [currentPw, setCurrentPw] = useState('');
@@ -46,8 +53,12 @@ export default function ProfilePage() {
     if (profile) {
       setName(profile.name ?? '');
       setAvatarUrl(profile.avatarUrl ?? '');
-      setLevel((profile as any).level ?? '');
-      setLearningStyle((profile as any).learningStyle ?? '');
+      setLevel(canonicalLevel(profile.level ?? profile.teachingLevel ?? ''));
+      setYearGroup(profile.yearGroup ?? '');
+      setLearningStyle(profile.learningStyle ?? '');
+      setSubject(profile.subject ?? profile.subjects?.[0] ?? '');
+      setInstitution(profile.institution ?? profile.institutionName ?? '');
+      setBio(profile.bio ?? '');
     }
   }, [profile]);
 
@@ -55,7 +66,14 @@ export default function ProfilePage() {
     if (!user || !name.trim()) { toast.error('Name is required.'); return; }
     setSaving(true);
     try {
-      await updateUser(user.uid, { name: name.trim(), avatarUrl, ...(level ? { level } : {}), ...(learningStyle ? { learningStyle } : {}) });
+      await updateUser(user.uid, {
+        name: name.trim(),
+        avatarUrl,
+        ...(level ? { level, ...(profile?.role === 'student' ? { pathway: level } : {}) } : {}),
+        ...(yearGroup ? { yearGroup } : {}),
+        ...(learningStyle ? { learningStyle } : {}),
+        ...(profile?.role === 'teacher' || profile?.role === 'admin' ? { subject, institution, bio } : {}),
+      });
       await updateProfile(user, { displayName: name.trim(), photoURL: avatarUrl || null });
       await fetchProfile(user.uid);
       toast.success('Profile updated!');
@@ -146,20 +164,36 @@ export default function ProfilePage() {
         {profile?.role === 'student' && (
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Education Level</label>
-              <Select value={level} onValueChange={v => setLevel(v ?? '')}>
-                <SelectTrigger className="rounded-xl"><SelectValue placeholder="Select level…" /></SelectTrigger>
+              <label className="text-xs font-medium text-muted-foreground">Programme</label>
+              <Select value={level} onValueChange={v => {
+                const next = v ?? '';
+                setLevel(next);
+                const years = yearsForProgramme(next);
+                if (yearGroup && !years.includes(yearGroup)) setYearGroup(years[0] ?? '');
+              }}>
+                <SelectTrigger className="rounded-xl"><SelectValue placeholder="Select programme…" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="primary">Primary School</SelectItem>
-                  <SelectItem value="middle">Middle School</SelectItem>
-                  <SelectItem value="secondary">Secondary / High School</SelectItem>
-                  <SelectItem value="igcse">IGCSE</SelectItem>
-                  <SelectItem value="alevels">A-Levels</SelectItem>
-                  <SelectItem value="undergraduate">Undergraduate</SelectItem>
-                  <SelectItem value="postgraduate">Postgraduate</SelectItem>
+                  {LEVELS.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              {level && <p className="text-[11px] text-muted-foreground">{levelLabel(level)}</p>}
             </div>
+            {yearsForProgramme(level).length > 0 && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Year / Level</label>
+              <Select value={yearGroup} onValueChange={v => setYearGroup(v ?? '')}>
+                <SelectTrigger className="rounded-xl"><SelectValue placeholder="Select year…" /></SelectTrigger>
+                <SelectContent>
+                  {yearsForProgramme(level).map((year) => (
+                    <SelectItem key={year} value={year}>{yearLabel(year)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground">Places you in the right lessons. Public pages show the programme name.</p>
+            </div>
+            )}
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Learning Style</label>
               <Select value={learningStyle} onValueChange={v => setLearningStyle(v ?? '')}>
@@ -171,6 +205,34 @@ export default function ProfilePage() {
                   <SelectItem value="kinesthetic">Kinesthetic</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+        )}
+
+        {(profile?.role === 'teacher' || profile?.role === 'admin') && (
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Subject</label>
+              <Input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Science" className="rounded-xl h-11 bg-muted/50" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Programme taught</label>
+              <Select value={level} onValueChange={v => setLevel(v ?? '')}>
+                <SelectTrigger className="rounded-xl"><SelectValue placeholder="Select level…" /></SelectTrigger>
+                <SelectContent>
+                  {LEVELS.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-xs font-medium text-muted-foreground">Institution</label>
+              <Input value={institution} onChange={e => setInstitution(e.target.value)} placeholder="School or centre" className="rounded-xl h-11 bg-muted/50" />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-xs font-medium text-muted-foreground">Bio</label>
+              <Textarea value={bio} onChange={e => setBio(e.target.value)} placeholder="A short introduction for students and parents." className="rounded-xl min-h-24 bg-muted/50" />
             </div>
           </div>
         )}

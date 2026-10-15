@@ -1,9 +1,12 @@
+import { enforceAiAccess } from '@/lib/api-guard';
 import { NextRequest, NextResponse } from 'next/server';
 import { saveAiGeneration } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  const denied = await enforceAiAccess(req);
+  if (denied) return denied;
   let body: { userId?: string; type?: string; prompt?: string; result?: string; subject?: string; level?: string };
   try {
     body = await req.json();

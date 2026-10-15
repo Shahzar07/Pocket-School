@@ -10,6 +10,9 @@ import {
   Course, Module, Lesson, Enrollment, UnitQuizAttempt, Programme,
 } from '@/lib/db';
 import { getUnitStatuses, getCurriculumLessonStatus, UnitStatus } from '@/lib/curriculum';
+import { accessTierFor, tierCovers } from '@/lib/entitlements';
+import { levelForYear, tierForYear } from '@/lib/year-groups';
+import { monthlySparksForProfile } from '@/lib/sparks';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -47,7 +50,6 @@ export default function MyLearningPage() {
   const [error, setError] = useState<string | null>(null);
 
   const yearGroup = profile?.yearGroup;
-  const tier = profile?.subscriptionTier ?? 'free';
 
   const load = async () => {
     if (!user || !profile) return;
@@ -140,14 +142,15 @@ export default function MyLearningPage() {
     </div>
   );
 
-  const requiresUpgrade = programme?.requiredTier === 'academic' && tier !== 'academic';
+  const requiresUpgrade = !!yearGroup && !tierCovers(accessTierFor(profile), tierForYear(yearGroup));
+  const planSparks = monthlySparksForProfile({ accessTier: yearGroup ? tierForYear(yearGroup) : 1 });
 
   return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
       {/* ── Page header ── */}
       <motion.header variants={fadeUp} initial="hidden" animate="visible" className="space-y-2 pt-2">
         <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">
-          {programme?.name ?? 'Curriculum'} {yearGroup && `· ${yearGroup}`}
+          {(programme?.name ?? levelForYear(yearGroup)) || 'Curriculum'} {yearGroup && `· ${yearGroup}`}
         </p>
         <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight">
           My <span className="gradient-text italic">Learning</span>
@@ -164,10 +167,10 @@ export default function MyLearningPage() {
             <Sparkles className="w-8 h-8 text-primary mb-3" />
             <h3 className="font-heading text-xl text-foreground mb-1">Academic subscription required</h3>
             <p className="text-sm text-muted-foreground mb-4 text-center max-w-sm px-4">
-              The {programme?.name} curriculum — with all 11 learning formats, mastery quizzes and a monthly ⚡400 Sparks allowance — is part of the Academic plan.
+              This year group includes a monthly ⚡{planSparks} Sparks allowance. Upgrade on the pricing page to unlock it.
             </p>
             <Button className="rounded-full h-11 px-5 font-bold bg-primary text-primary-foreground"
-              onClick={() => router.push('/dashboard/helpdesk')}>
+              onClick={() => router.push('/pricing')}>
               Contact us to upgrade
             </Button>
           </div>

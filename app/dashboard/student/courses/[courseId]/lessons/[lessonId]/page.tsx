@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'motion/react';
 import { MathMarkdown } from '@/components/math-markdown';
@@ -15,6 +15,8 @@ import {
 } from '@/lib/db';
 import { getUnitStatuses, getCurriculumLessonStatus } from '@/lib/curriculum';
 import { FORMAT_COSTS, FORMAT_LABELS, LESSON_COMPLETE_REWARD, UNIT_PASS_REWARD } from '@/lib/sparks';
+import { answersMatch, shuffleQuizOptions } from '@/lib/quiz';
+import { authedFetch } from '@/lib/api-client';
 import { SmartAudioPlayer } from '@/components/smart-audio-player';
 import { VideoPlayer } from '@/components/video-player';
 import { VideoStoryboard } from '@/components/video-storyboard';
@@ -37,18 +39,6 @@ const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
   visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1], delay: i * 0.08 } }),
 };
-
-/** Compares a selected quiz option to the stored answer, tolerating legacy
- * letter answers ("B") by mapping them to the option at that index. */
-function answersMatch(selected: string | undefined, answer: string | undefined, options: string[] = []): boolean {
-  const sel = (selected ?? '').trim().toLowerCase();
-  let ans = (answer ?? '').trim();
-  if (/^[A-D]$/i.test(ans)) {
-    const mapped = options[ans.toUpperCase().charCodeAt(0) - 65];
-    if (mapped != null) ans = mapped;
-  }
-  return sel !== '' && sel === ans.trim().toLowerCase();
-}
 
 // ─── Flashcard Component ─────────────────────────────────────
 function FlashcardViewer({ cards }: { cards: { question: string; answer: string }[] }) {
@@ -126,17 +116,22 @@ function FlashcardViewer({ cards }: { cards: { question: string; answer: string 
 // ─── Quiz Component ───────────────────────────────────────────
 function QuizViewer({
   questions,
+  courseId,
+  lessonId,
   onComplete,
 }: {
-  questions: { question: string; options: string[]; answer: string; explanation?: string }[];
+  questions: { question: string; options: string[]; answer?: string; explanation?: string }[];
+  courseId: string;
+  lessonId: string;
   onComplete: (score: number, total: number, answers: { question: string; answer: string; correct: boolean }[]) => void;
 }) {
+  const [shuffled] = useState(() => shuffleQuizOptions(questions));
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [graded, setGraded] = useState<Record<number, { correct: boolean; feedback: string }> | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
-    if (Object.keys(answers).length < questions.length) {
+    if (Object.keys(answers).length < shuffled.length) {
       toast.error('Please answer all questions before submitting.');
       return;
     }
@@ -144,36 +139,40 @@ function QuizViewer({
     const results: Record<number, { correct: boolean; feedback: string }> = {};
     let score = 0;
 
-    await Promise.all(questions.map(async (q, i) => {
-      try {
-        const res = await fetch('/api/ai/quiz-grade', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: q.question, correctAnswer: q.answer, studentAnswer: answers[i], explanation: q.explanation, options: q.options }),
-        });
-        if (!res.ok) throw new Error('grade failed');
-        const data = await res.json();
-        results[i] = { correct: data.correct, feedback: data.feedback };
-        if (data.correct) score++;
-      } catch {
+    try {
+      const data = await authedFetch('/api/platform/quiz-grade', {
+        method: 'POST',
+        body: JSON.stringify({
+          courseId,
+          lessonId,
+          answers: shuffled.map((q, i) => ({ question: q.question, selected: answers[i] ?? '' })),
+        }),
+      });
+      const gradedRows = (data.results as { correct: boolean; feedback: string }[]) ?? [];
+      gradedRows.forEach((row, i) => {
+        results[i] = row;
+        if (row.correct) score++;
+      });
+    } catch {
+      shuffled.forEach((q, i) => {
         const correct = answersMatch(answers[i], q.answer, q.options);
-        results[i] = { correct, feedback: correct ? 'Correct!' : `The answer is: ${q.answer}` };
+        results[i] = { correct, feedback: correct ? 'Correct! Well done.' : 'Not quite.' };
         if (correct) score++;
-      }
-    }));
+      });
+    }
 
     setGraded(results);
     setLoading(false);
 
-    const submissionAnswers = questions.map((q, i) => ({
+    const submissionAnswers = shuffled.map((q, i) => ({
       question: q.question,
       answer: answers[i] ?? '',
       correct: results[i]?.correct ?? false,
     }));
-    onComplete(score, questions.length, submissionAnswers);
+    onComplete(score, shuffled.length, submissionAnswers);
   };
 
-  const percentage = graded ? Math.round(Object.values(graded).filter(r => r.correct).length / questions.length * 100) : 0;
+  const percentage = graded ? Math.round(Object.values(graded).filter(r => r.correct).length / shuffled.length * 100) : 0;
 
   return (
     <div className="max-w-2xl mx-auto py-6 space-y-6">
@@ -181,13 +180,13 @@ function QuizViewer({
         <div className={`rounded-3xl p-5 text-center border ${percentage >= 70 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'}`}>
           <p className="text-3xl font-extrabold">{percentage}%</p>
           <p className={`text-sm font-semibold mt-1 ${percentage >= 70 ? 'text-emerald-600' : 'text-amber-600'}`}>
-            {Object.values(graded).filter(r => r.correct).length}/{questions.length} correct
+            {Object.values(graded).filter(r => r.correct).length}/{shuffled.length} correct
             {percentage >= 70 ? ' — Great work! 🎉' : ' — Keep studying! 📚'}
           </p>
         </div>
       )}
 
-      {questions.map((q, i) => (
+      {shuffled.map((q, i) => (
         <div key={i} className="bg-card border border-border rounded-3xl p-5">
           <p className="font-semibold text-foreground mb-4 text-sm leading-relaxed">
             <span className="text-primary font-bold">{i + 1}. </span>{q.question}
@@ -195,7 +194,7 @@ function QuizViewer({
           <div className="space-y-2">
             {q.options.map(opt => {
               const selected = answers[i] === opt;
-              const isCorrect = graded ? answersMatch(opt, q.answer, q.options) : null;
+              const isCorrect = graded && selected && graded[i]?.correct;
               const isWrong = graded && selected && !graded[i]?.correct;
               return (
                 <button
@@ -258,7 +257,8 @@ function UnitQuizMode({
 }) {
   const router = useRouter();
   const { user, profile, fetchProfile } = useAuthSTORE();
-  const questions = Array.isArray(lesson.aiOutputs?.quiz) ? lesson.aiOutputs.quiz : [];
+  const rawQuestions = Array.isArray(lesson.aiOutputs?.quiz) ? lesson.aiOutputs.quiz : [];
+  const questions = useMemo(() => shuffleQuizOptions(rawQuestions), [lesson.id]);
   const threshold = unit.masteryThreshold ?? 70;
 
   const [phase, setPhase] = useState<'intro' | 'active' | 'result'>('intro');
@@ -566,7 +566,10 @@ function FormatLockCard({
         </div>
         <div>
           <Button
-            onClick={onUnlock}
+            onClick={() => {
+          if (!window.confirm(`Spend ⚡${cost} Sparks on ${FORMAT_LABELS[format] ?? format}? You have ⚡${balance}.`)) return;
+          onUnlock();
+        }}
             disabled={!canAfford || unlocking}
             className="rounded-full h-11 px-6 font-bold gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white"
           >
@@ -606,6 +609,7 @@ export default function LessonPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [firstLessonFree, setFirstLessonFree] = useState(false);
 
   useEffect(() => {
     if (!user || !courseId || !lessonId) return;
@@ -613,12 +617,57 @@ export default function LessonPage() {
       setLoading(true);
       setLoadError(null);
       try {
-      const [result, savedNote, courseDoc] = await Promise.all([
-        getLessonByIds(courseId, lessonId),
-        getLessonNote(user.uid, lessonId),
-        getCourse(courseId),
+      const [savedNote, courseDoc] = await Promise.all([
+        getLessonNote(user.uid, lessonId).catch(() => ''),
+        getCourse(courseId).catch(() => null),
       ]);
-      if (!result) { setLoading(false); return; }
+      // Paid lesson documents hide aiOutputs from students, so the client read
+      // is denied. The content API is the source of truth in that case.
+      let located: { lesson: Lesson; moduleId: string } | null = null;
+      try {
+        located = await getLessonByIds(courseId, lessonId);
+      } catch {
+        located = null;
+      }
+      let content: { outputs?: AiOutputs; waived?: boolean; title?: string; status?: string } | null = null;
+      try {
+        content = await authedFetch(`/api/platform/lesson-content?courseId=${encodeURIComponent(courseId)}&lessonId=${encodeURIComponent(lessonId)}`);
+      } catch { /* course owners can still read the lesson document */ }
+      let moduleId = located?.moduleId ?? '';
+      let outlineLesson: Partial<Lesson> | null = null;
+      if (!located) {
+        try {
+          const outline = await authedFetch(`/api/platform/course-outline?courseId=${encodeURIComponent(courseId)}`);
+          const modules = (outline.modules ?? []) as { module: Module; lessons: Lesson[] }[];
+          for (const unitRow of modules) {
+            const found = unitRow.lessons.find((item) => item.id === lessonId);
+            if (found) {
+              moduleId = unitRow.module.id;
+              outlineLesson = found;
+              break;
+            }
+          }
+        } catch { /* outline is optional when the document itself loaded */ }
+      }
+      if (!located && !content && !outlineLesson) {
+        setLoadError('This lesson could not be opened.');
+        setLoading(false);
+        return;
+      }
+      const lessonDoc: Lesson = located?.lesson ?? {
+        id: lessonId,
+        title: content?.title || outlineLesson?.title || 'Lesson',
+        moduleId,
+        courseId,
+        order: outlineLesson?.order ?? 0,
+        status: (content?.status as Lesson['status']) || outlineLesson?.status || 'published',
+        isUnitQuiz: outlineLesson?.isUnitQuiz,
+      };
+      if (content?.outputs) {
+        lessonDoc.aiOutputs = { ...(lessonDoc.aiOutputs ?? {}), ...content.outputs };
+      }
+      const result = { lesson: lessonDoc, moduleId: moduleId || lessonDoc.moduleId };
+      setFirstLessonFree(content?.waived === true);
       setNote(savedNote);
       setCourse(courseDoc);
 
@@ -679,7 +728,7 @@ export default function LessonPage() {
   const balance = profile?.sparksBalance ?? 0;
 
   const isFormatLocked = (format?: string) =>
-    !!format && isCurriculum && FORMAT_COSTS[format] != null && !unlockedFormats.includes(format);
+    !!format && isCurriculum && !firstLessonFree && FORMAT_COSTS[format] != null && !unlockedFormats.includes(format);
 
   const handleUnlock = async (format: string) => {
     if (!user || unlockingFormat) return;
@@ -953,7 +1002,7 @@ export default function LessonPage() {
           <TabsContent value="quiz">
             {gate('quiz',
               quiz.length
-                ? <QuizViewer questions={quiz} onComplete={handleQuizComplete} />
+                ? <QuizViewer questions={quiz} courseId={courseId} lessonId={lessonId} onComplete={handleQuizComplete} />
                 : <p className="text-center py-8 text-muted-foreground">No quiz available.</p>
             )}
           </TabsContent>

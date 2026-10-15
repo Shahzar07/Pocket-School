@@ -10,7 +10,7 @@ import {
   ClipboardList, Presentation, Shield, BarChart, Settings, FileText, KeyRound, ChevronsUpDown,
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
-  GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
+  GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X, Bell,
   Sparkles, Store, Layers, LogOut, Mail, UserCog,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -20,7 +20,9 @@ import { NotificationsBell } from '@/components/notifications-bell';
 import { DashboardSearch } from '@/components/dashboard-search';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { SparksChip } from '@/components/sparks-chip';
-import { upsertUserSession, accountStatusOf } from '@/lib/db';
+import { upsertUserSession, accountStatusOf, grantMonthlySparksIfDue } from '@/lib/db';
+import { authedFetch } from '@/lib/api-client';
+import { homeForRole } from '@/lib/roles';
 import { PipGuide } from '@/components/pip-guide';
 import type { TourRole } from '@/lib/tour-steps';
 import { ROLE_LABELS } from '@/lib/roles';
@@ -42,10 +44,11 @@ const NAV: Record<Role, NavGroup[]> = {
   student: [
     { items: [
       { href: '/dashboard/student', icon: Home, label: 'Dashboard' },
-      { href: '/ai-studio', icon: Sparkles, label: 'AI Studio ↗' },
-      { href: '/ai-teachers', icon: Users, label: 'AI Teachers ↗' },
+      { href: '/dashboard/studio', icon: Sparkles, label: 'AI Studio' },
+      { href: '/ai-teachers', icon: Users, label: 'AI Teachers' },
       { href: '/dashboard/student/learning', icon: GraduationCap, label: 'My Learning' },
-      { href: '/courses', icon: Store, label: 'Marketplace' },
+      { href: '/dashboard/marketplace', icon: Store, label: 'Marketplace' },
+      { href: '/dashboard/student/sparks', icon: Sparkles, label: 'Sparks' },
       { href: '/dashboard/student/courses', icon: BookOpen, label: 'My Courses' },
       { href: '/dashboard/student/live', icon: Video, label: 'Live Classes' },
       { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
@@ -75,10 +78,12 @@ const NAV: Record<Role, NavGroup[]> = {
   teacher: [
     { items: [
       { href: '/dashboard/teacher', icon: Home, label: 'Overview' },
-      { href: '/ai-studio', icon: Sparkles, label: 'AI Studio ↗' },
+      { href: '/dashboard/studio', icon: Sparkles, label: 'AI Studio' },
       { href: '/dashboard/teacher/classes', icon: GraduationCap, label: 'My Classes' },
-      { href: '/dashboard/teacher/courses', icon: Presentation, label: 'Courses & Products' },
-      { href: '/courses', icon: Store, label: 'Marketplace' },
+      { href: '/dashboard/teacher/courses', icon: Presentation, label: 'Courses' },
+      { href: '/dashboard/teacher/upload', icon: PenSquare, label: 'Lesson Studio' },
+      { href: '/dashboard/marketplace', icon: Store, label: 'Marketplace' },
+      { href: '/dashboard/teacher/earnings', icon: CreditCard, label: 'Earnings' },
       { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
       { href: '/dashboard/teacher/analytics', icon: Activity, label: 'Analytics' },
     ]},
@@ -104,12 +109,13 @@ const NAV: Record<Role, NavGroup[]> = {
   ],
   parent: [
     { items: [
-      { href: '/dashboard/parent', icon: Home, label: 'Child Progress' },
+      { href: '/dashboard/parent', icon: Home, label: 'Home' },
       { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
-      { href: '/ai-studio', icon: Sparkles, label: 'AI Studio ↗' },
-      { href: '/courses', icon: Store, label: 'Marketplace' },
-      { href: '/dashboard/parent/communications', icon: Mail, label: 'Mailbox' },
+      { href: '/dashboard/studio', icon: Sparkles, label: 'AI Studio' },
+      { href: '/dashboard/marketplace', icon: Store, label: 'Marketplace' },
       { href: '/dashboard/parent/duedates', icon: Clock, label: 'Due Dates' },
+      { href: '/dashboard/parent/billing', icon: CreditCard, label: 'Billing' },
+      { href: '/dashboard/parent/notifications', icon: Bell, label: 'Notifications' },
     ]},
     { section: 'School', items: [
       { href: '/dashboard/announcements', icon: Megaphone, label: 'Announcements' },
@@ -123,10 +129,10 @@ const NAV: Record<Role, NavGroup[]> = {
   admin: [
     { items: [
       { href: '/dashboard/admin', icon: BarChart, label: 'Analytics' },
-      { href: '/ai-studio', icon: Sparkles, label: 'AI Studio ↗' },
+      { href: '/dashboard/studio', icon: Sparkles, label: 'AI Studio' },
       { href: '/dashboard/admin/courses', icon: Presentation, label: 'All Courses' },
       { href: '/dashboard/admin/curriculum', icon: Layers, label: 'Curriculum CMS' },
-      { href: '/courses', icon: Store, label: 'Marketplace' },
+      { href: '/dashboard/marketplace', icon: Store, label: 'Marketplace' },
       { href: '/dashboard/admin/users', icon: UserCog, label: 'Users & Sparks' },
       { href: '/dashboard/admin/institutions', icon: Users, label: 'Institutions' },
       { href: '/dashboard/admin/access', icon: Shield, label: 'Access Config' },
@@ -197,9 +203,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (!user) return;
+    let deviceId = localStorage.getItem('poket-device-id');
+    if (!deviceId) {
+      deviceId = crypto.randomUUID();
+      localStorage.setItem('poket-device-id', deviceId);
+    }
     const deviceInfo = `${navigator.userAgent.slice(0, 80)}|${screen.width}x${screen.height}`;
-    upsertUserSession(user.uid, deviceInfo).then(isNew => { if (isNew) setNewDevice(true); }).catch(() => {});
+    upsertUserSession(user.uid, deviceId, deviceInfo).then(isNew => { if (isNew) setNewDevice(true); }).catch(() => {});
+    authedFetch('/api/platform/sync-profile', { method: 'POST', body: '{}' }).catch(() => {});
   }, [user]);
+
+  useEffect(() => {
+    if (!user || !profile || !pathname) return;
+    const role = profile.role;
+    const home = homeForRole(profile);
+    const teacherOk = role === 'teacher' || role === 'admin' || role === 'institution_admin';
+    const adminOk = role === 'admin' || role === 'institution_admin';
+    if (pathname.startsWith('/dashboard/student') && role !== 'student' && role !== 'admin') router.replace(home);
+    else if (pathname.startsWith('/dashboard/teacher') && !teacherOk) router.replace(home);
+    else if (pathname.startsWith('/dashboard/parent') && role !== 'parent' && role !== 'admin') router.replace(home);
+    else if (pathname.startsWith('/dashboard/admin') && !adminOk) router.replace(home);
+  }, [user, profile, pathname, router]);
+
+  useEffect(() => {
+    if (!user || profile?.role !== 'student') return;
+    grantMonthlySparksIfDue(user.uid, profile).then((granted) => {
+      if (granted) useAuthSTORE.getState().fetchProfile(user.uid);
+    }).catch(() => {});
+  }, [user?.uid, profile?.role]);
 
   if (loading || !user || !profile) {
     return (
@@ -234,7 +265,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  const role = (profile.role ?? 'student') as Role;
+  const role = (profile.role === 'institution_admin' ? 'admin' : profile.role ?? 'student') as Role;
   const nav = NAV[role] ?? NAV.student;
   const accent = ROLE_ACCENT[role];
 
@@ -286,12 +317,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Footer actions */}
         <div className="px-3 py-3 shrink-0 border-t border-sidebar-border">
-          <Link
-            href="/dashboard/helpdesk"
-            className="flex items-center gap-3 px-3 h-9 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <HelpCircle className="w-[17px] h-[17px] shrink-0" /> Help Center
-          </Link>
           <button
             onClick={() => { signOut(auth).then(() => { useAuthSTORE.getState().setUser(null); router.push('/login'); }); }}
             className="w-full flex items-center gap-3 px-3 h-9 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
@@ -328,6 +353,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* New device warning banner */}
+        {user && !user.emailVerified && profile.emailVerificationRequired && (
+          <div className="bg-sky-500/10 border-b border-sky-500/20 px-4 py-2.5 text-sm text-sky-800 shrink-0">
+            Confirm your email to finish setting up your account. Check your inbox for a link from Poket School.
+          </div>
+        )}
+
         {newDevice && (
           <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 flex items-center justify-between gap-3 text-sm text-amber-700 dark:text-amber-400 shrink-0">
             <div className="flex items-center gap-2">

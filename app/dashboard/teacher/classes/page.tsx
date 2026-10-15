@@ -4,12 +4,12 @@ import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
-  getAllCurriculumModules, getModulesWithLessons, getEnrollmentsForCourse,
-  getAttemptsForCourse, getUser, Course, Module, Lesson, UnitQuizAttempt,
+  getTeacherCourses, getModulesWithLessons, getEnrollmentsForCourse,
+  getAttemptsForCourse, Course, Module, Lesson, UnitQuizAttempt,
 } from '@/lib/db';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Users, BookOpen } from 'lucide-react';
+import { Users, BookOpen, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -45,10 +45,9 @@ export default function TeacherClassesPage() {
     if (!user) return;
     setLoading(true);
     setLoadError(false);
-    getAllCurriculumModules().then(mods => {
-      const published = mods.filter(m => m.status === 'published');
-      setModules(published);
-      if (published.length > 0) setSelectedId(published[0].id);
+    getTeacherCourses(user.uid).then(mods => {
+      setModules(mods);
+      if (mods.length > 0) setSelectedId(mods[0].id);
     }).catch(() => setLoadError(true)).finally(() => setLoading(false));
   };
 
@@ -69,14 +68,11 @@ export default function TeacherClassesPage() {
       })).filter(u => u.lessons.length > 0));
       setAttempts(courseAttempts);
 
-      const rows: StudentRow[] = await Promise.all(enrollments.map(async e => {
-        const profile = await getUser(e.studentId);
-        return {
-          studentId: e.studentId,
-          name: profile?.name ?? 'Student',
-          completedLessons: e.completedLessons ?? [],
-          progress: e.progress ?? 0,
-        };
+      const rows: StudentRow[] = enrollments.map(e => ({
+        studentId: e.studentId,
+        name: e.studentName || 'Student',
+        completedLessons: e.completedLessons ?? [],
+        progress: e.progress ?? 0,
       }));
       setStudents(rows.sort((a, b) => a.name.localeCompare(b.name)));
     })()
@@ -130,18 +126,34 @@ export default function TeacherClassesPage() {
           </p>
         </div>
         {modules.length > 0 && (
-          <Select value={selectedId} onValueChange={(v) => setSelectedId(v ?? '')}>
+          <div className="flex flex-col items-stretch sm:items-end gap-2">
+            <Select value={selectedId} onValueChange={(v) => setSelectedId(v ?? '')}>
             <SelectTrigger className="w-64 rounded-full">
               <SelectValue placeholder="Select a subject" />
             </SelectTrigger>
             <SelectContent>
               {modules.map(m => (
                 <SelectItem key={m.id} value={m.id}>
-                  {m.title}{m.yearGroup ? ` · ${m.yearGroup}` : ''}
+                  {m.title || m.subject || 'Class'}{m.yearGroup ? ` · ${m.yearGroup}` : ''}
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+            </Select>
+            {selectedId && modules.find((m) => m.id === selectedId)?.joinCode && (
+              <Button
+                variant="outline"
+                className="rounded-full h-9 px-4 text-xs font-semibold gap-2"
+                onClick={() => {
+                  const code = modules.find((m) => m.id === selectedId)?.joinCode;
+                  if (!code) return;
+                  const link = `${window.location.origin}/join/${code}`;
+                  void navigator.clipboard.writeText(link).then(() => toast.success('Invite link copied.'));
+                }}
+              >
+                <Copy className="w-3.5 h-3.5" /> Copy invite link
+              </Button>
+            )}
+          </div>
         )}
       </motion.div>
 
@@ -178,8 +190,8 @@ export default function TeacherClassesPage() {
             <Users className="relative w-12 h-12 text-muted-foreground" />
           </div>
           <p className="font-heading text-2xl text-foreground">No students enrolled yet.</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            No students have enrolled in this subject yet.
+          <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
+            Share the invite link above. Students join with that code and appear on this roster.
           </p>
         </motion.div>
       ) : (

@@ -13,8 +13,9 @@ import { motion } from 'motion/react';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuthSTORE } from '@/hooks/use-auth';
+import { authedFetch } from '@/lib/api-client';
 import {
-  getAllUsers, awardSparks, ensureAdminSparks, accountStatusOf,
+  getAllUsers, ensureAdminSparks, accountStatusOf,
   setAccountStatus, setAccountStatusBulk, deleteUserProfile, deleteUserProfiles,
   type UserProfile, type AccountStatus,
 } from '@/lib/db';
@@ -180,8 +181,14 @@ export default function AdminUsersPage() {
     }
     setBusy(row.id);
     try {
-      await awardSparks(row.id, amount, 'admin_grant',
-        amount > 0 ? 'Granted by admin' : 'Deducted by admin');
+      await authedFetch('/api/platform/sparks-grant', {
+        method: 'POST',
+        body: JSON.stringify({
+          uid: row.id,
+          amount,
+          note: amount > 0 ? 'Granted by admin' : 'Deducted by admin',
+        }),
+      });
       patchRow(row.id, { sparksBalance: balance + amount });
       toast.success(`${amount > 0 ? '+' : ''}${amount} Sparks · ${row.data.name}`);
       setCustomFor(null); setCustomAmount('');

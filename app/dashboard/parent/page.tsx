@@ -4,23 +4,41 @@ import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
-  getChildrenProfiles, getEnrolledCourses, getUnitQuizAttempts, getModulesWithLessons,
   getChildrenDailyGoals, excuseDailyGoal, goalDateKey,
   UserProfile, Course, Enrollment, DailyGoal,
 } from '@/lib/db';
+import { authedFetch } from '@/lib/api-client';
 import { UnitReportCard, UnitReportData } from '@/components/unit-report-card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Zap, BookOpen, MessageSquare, Trophy, UserRound, FileBarChart, TrendingUp, Target, Clock, ShieldCheck, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { ParentLinkForm } from '@/components/parent-link-form';
 import { DashPage, DashHeader } from '@/components/dash-ui';
+
+interface SchoolSlice {
+  id: string;
+  title?: string;
+  subject?: string;
+  percentage?: number;
+  passed?: boolean;
+  score?: number;
+  maxScore?: number;
+  status?: string;
+  date?: string;
+  description?: string;
+}
 
 interface ChildData {
   id: string;
   profile: UserProfile;
   enrollments: { course: Course; enrollment: Enrollment }[];
   unitReports: UnitReportData[];
+  quizzes: SchoolSlice[];
+  grades: SchoolSlice[];
+  attendance: SchoolSlice[];
+  assignments: SchoolSlice[];
 }
 
 interface ChildGoals {
@@ -69,42 +87,21 @@ function formatCountdown(goal: DailyGoal, nowMs: number): string {
   return diff >= 0 ? `${label} left` : `${label} overdue`;
 }
 
-async function buildUnitReports(
-  childId: string,
-  enrollments: { course: Course; enrollment: Enrollment }[]
-): Promise<UnitReportData[]> {
-  const attempts = await getUnitQuizAttempts(childId);
-  if (attempts.length === 0) return [];
-
-  const reports: UnitReportData[] = [];
-  const courseIds = [...new Set(attempts.map(a => a.courseId))];
-  for (const courseId of courseIds) {
-    const course = enrollments.find(e => e.course.id === courseId)?.course;
-    const units = await getModulesWithLessons(courseId);
-    const courseAttempts = attempts.filter(a => a.courseId === courseId);
-    const unitIds = [...new Set(courseAttempts.map(a => a.unitId))];
-    for (const unitId of unitIds) {
-      const unit = units.find(u => u.module.id === unitId);
-      const unitAttempts = courseAttempts
-        .filter(a => a.unitId === unitId)
-        .sort((a, b) => (b.completedAt?.toMillis() ?? 0) - (a.completedAt?.toMillis() ?? 0));
-      const latest = unitAttempts[0];
-      const lessonById = new Map((unit?.lessons ?? []).map(l => [l.id, l]));
-      reports.push({
-        courseId,
-        courseTitle: course?.title ?? 'Course',
-        unitId,
-        unitTitle: unit?.module.title ?? 'Unit',
-        masteryThreshold: unit?.module.masteryThreshold ?? 70,
-        attempts: unitAttempts,
-        reviewLessons: (latest.recommendedLessonIds ?? [])
-          .map(id => lessonById.get(id))
-          .filter((l): l is NonNullable<typeof l> => !!l)
-          .map(l => ({ id: l.id, title: l.title, lessonNumber: l.lessonNumber })),
-      });
-    }
-  }
-  return reports;
+function RecordList({ title, rows, empty }: { title: string; rows: string[]; empty: string }) {
+  return (
+    <div className="rounded-xl border border-border bg-muted/30 p-4">
+      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground mb-2">{title}</p>
+      {rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{empty}</p>
+      ) : (
+        <ul className="space-y-1.5">
+          {rows.slice(0, 6).map((row, index) => (
+            <li key={`${title}-${index}`} className="text-sm text-foreground truncate">{row}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
 
 export default function ParentDashboard() {
@@ -163,18 +160,51 @@ export default function ParentDashboard() {
 
   useEffect(() => {
     if (!user) return;
-    getChildrenProfiles(user.uid).then(async (childProfiles) => {
-      const data: ChildData[] = await Promise.all(
-        childProfiles.map(async ({ id, data }) => {
-          const enrollments = await getEnrolledCourses(id);
-          const unitReports = await buildUnitReports(id, enrollments).catch(() => []);
-          return { id, profile: data, enrollments, unitReports };
-        })
-      );
-      setChildren(data);
+    const ids = profile?.childIds ?? [];
+    if (ids.length === 0) {
+      setChildren([]);
       setLoading(false);
-    });
-  }, [user]);
+      return;
+    }
+    (async () => {
+      const data: ChildData[] = await Promise.all(ids.map(async (id) => {
+        const overview = await authedFetch(`/api/platform/parent-overview?childId=${encodeURIComponent(id)}`);
+        const courses = (overview.courses ?? []) as { courseId: string; title: string; subject?: string; progress?: number; completedLessons?: number }[];
+        const asSlices = (value: unknown) => (Array.isArray(value) ? value as SchoolSlice[] : []);
+        return {
+          id,
+          profile: {
+            name: (overview.child as { name?: string } | undefined)?.name ?? 'Student',
+            email: '',
+            role: 'student',
+            xp: 0,
+          },
+          enrollments: courses.map((course) => ({
+            course: {
+              id: course.courseId,
+              title: course.title,
+              description: '',
+              ownerId: '',
+              status: 'published' as const,
+              subject: course.subject,
+            },
+            enrollment: {
+              studentId: id,
+              courseId: course.courseId,
+              progress: course.progress ?? 0,
+              completedLessons: Array.from({ length: course.completedLessons ?? 0 }, (_, index) => `done-${index}`),
+            },
+          })),
+          unitReports: [],
+          quizzes: asSlices(overview.quizzes),
+          grades: asSlices(overview.grades),
+          attendance: asSlices(overview.attendance),
+          assignments: asSlices(overview.assignments),
+        };
+      }));
+      setChildren(data);
+    })().catch(() => toast.error('Could not load your child\'s school record.')).finally(() => setLoading(false));
+  }, [user, profile]);
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -193,13 +223,14 @@ export default function ParentDashboard() {
         accent="progress"
         description="Every lesson, score and milestone, in one place."
         actions={
-          <Link href="/dashboard/parent/communications"
+          <Link href="/dashboard/messages"
             className={buttonVariants({ variant: 'outline' }) + ' h-10 px-4 rounded-xl gap-2 font-semibold text-[13px]'}
           >
             <MessageSquare className="w-3.5 h-3.5" /> Message teachers
           </Link>
         }
       />
+      <ParentLinkForm />
 
       {/* ── Today's Goals ── */}
       <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={0.5} className="space-y-4">
@@ -313,12 +344,12 @@ export default function ParentDashboard() {
           <UserRound className="w-12 h-12 mx-auto mb-5 text-amber-600/40" />
           <h3 className="font-heading text-2xl text-foreground mb-2">No linked children yet</h3>
           <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-            Link your child's account via profile settings or during onboarding to see their progress here.
+            Send a link request above. Your child approves it, and their name stays hidden until they say yes.
           </p>
         </motion.div>
       ) : (
         <div className="space-y-10">
-          {children.map(({ id, profile: childProfile, enrollments, unitReports }, ci) => {
+          {children.map(({ id, profile: childProfile, enrollments, unitReports, quizzes, grades, attendance, assignments }, ci) => {
             const xp = childProfile.xp ?? 0;
             const completed = enrollments.filter(e => e.enrollment.progress === 100);
             const inProgress = enrollments.filter(e => e.enrollment.progress > 0 && e.enrollment.progress < 100);
@@ -385,6 +416,13 @@ export default function ParentDashboard() {
                     </div>
                   </div>
                 )}
+
+                <div className="p-6 sm:p-7 border-b border-border grid sm:grid-cols-2 gap-4">
+                  <RecordList title="Quiz scores" empty="No quizzes yet." rows={quizzes.map((q) => q.title || (typeof q.percentage === 'number' ? `${q.percentage}%${q.passed ? ' · passed' : ''}` : 'Quiz'))} />
+                  <RecordList title="Report cards" empty="No grades yet." rows={grades.map((g) => `${g.title || g.subject || 'Grade'}${typeof g.score === 'number' ? ` · ${g.score}${g.maxScore ? `/${g.maxScore}` : ''}` : ''}`)} />
+                  <RecordList title="Assignments" empty="No assignments yet." rows={assignments.map((a) => `${a.title || 'Assignment'}${a.status ? ` · ${a.status}` : ''}${typeof a.score === 'number' ? ` · ${a.score}` : ''}`)} />
+                  <RecordList title="Attendance" empty="No attendance yet." rows={attendance.map((a) => `${a.date || 'Session'}${a.status ? ` · ${a.status}` : ''}`)} />
+                </div>
 
                 {/* Course progress */}
                 <div className="p-6 sm:p-7 space-y-5">

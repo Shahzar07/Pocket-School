@@ -42,7 +42,7 @@ export default function HelpdeskPage() {
   const [reply, setReply] = useState('');
   const [form, setForm] = useState<{ subject: string; description: string; priority: SupportTicket['priority'] }>({ subject: '', description: '', priority: 'normal' });
 
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'teacher';
+  const isAdmin = profile?.role === 'admin';
 
   const load = async () => {
     if (!user) return;

@@ -22,6 +22,7 @@ import {
   Pencil, Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
+import { YEAR_GROUPS } from '@/lib/year-groups';
 
 const STATUS_BADGE: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -29,11 +30,8 @@ const STATUS_BADGE: Record<string, string> = {
   published: 'bg-emerald-50 text-emerald-700',
 };
 
-/** Year/Level is free text — these are only suggestions, not a fixed list. */
-const YEAR_LEVEL_SUGGESTIONS = [
-  ...Array.from({ length: 13 }, (_, i) => `Year ${i + 1}`),
-  'Foundation', 'Advanced', 'Tertiary', 'K-12',
-];
+/** Year/Level is free text — these are the master-brief placement labels. */
+const YEAR_LEVEL_SUGGESTIONS = YEAR_GROUPS.map((year) => year.value);
 
 /** A teaching week is planned as 5 × 60-minute sessions. */
 const MINUTES_PER_WEEK = 300;
@@ -53,7 +51,7 @@ export default function AdminCurriculumPage() {
   const [showProgrammeForm, setShowProgrammeForm] = useState(false);
   const [progName, setProgName] = useState('');
   const [progSubjects, setProgSubjects] = useState('');
-  const [progYearGroups, setProgYearGroups] = useState('Year 7, Year 8, Year 9');
+  const [progYearGroups, setProgYearGroups] = useState('Year 6, Year 7, Year 8');
   const [progTier, setProgTier] = useState<'free' | 'academic'>('academic');
   const [creatingProgramme, setCreatingProgramme] = useState(false);
   /** Programme being edited; null means the form creates a new one. */
@@ -433,7 +431,7 @@ export default function AdminCurriculumPage() {
             <div className="space-y-1.5">
               <Label>Year / Level</Label>
               <Input value={archYear} onChange={e => setArchYear(e.target.value)}
-                list="year-level-suggestions" placeholder="e.g. Year 9, Foundation, Tertiary"
+                list="year-level-suggestions" placeholder="e.g. Year 9, Year 10, Year 11"
                 className="rounded-xl h-10" />
             </div>
             <div className="space-y-1.5">
@@ -668,13 +666,11 @@ export default function AdminCurriculumPage() {
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Year / Level</Label>
-                {/* Free text with suggestions — schools use Year 1…13, Advanced,
-                    Tertiary, K-12 and their own custom labels. */}
                 <Input
                   value={modYearGroup}
                   onChange={e => setModYearGroup(e.target.value)}
                   list="year-level-suggestions"
-                  placeholder="e.g. Year 7, Advanced, Tertiary"
+                  placeholder="e.g. Year 7"
                   className="rounded-xl h-10"
                 />
                 <datalist id="year-level-suggestions">

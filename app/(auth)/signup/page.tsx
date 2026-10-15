@@ -7,9 +7,9 @@
  * Terms and Privacy Policy, and asks role-specific questions.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -19,34 +19,14 @@ import { toast } from 'sonner';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 import { GraduationCap, Presentation, Users, ShieldCheck, Info } from 'lucide-react';
+import { PROGRAMMES, yearsForProgramme } from '@/lib/programmes';
+import { authedFetch } from '@/lib/api-client';
+import { publicDisplayName } from '@/lib/display-name';
 
 const ROLES = [
   { id: 'student', title: 'Student', icon: <GraduationCap className="w-5 h-5" /> },
   { id: 'teacher', title: 'Teacher', icon: <Presentation className="w-5 h-5" /> },
   { id: 'parent', title: 'Parent', icon: <Users className="w-5 h-5" /> },
-];
-
-const YEAR_GROUPS = [
-  'Year 7', 'Year 8', 'Year 9', 'Year 10', 'Year 11',
-  'Year 12', 'Year 13', 'Foundation', 'Undergraduate', 'Other',
-];
-
-/** The 9 academic pathways offered by Poket School. */
-const PATHWAYS = [
-  'IGCSE / GCSE / O-Levels',
-  'A Level / Pre-University',
-  'School / K-12',
-  'Foundation Programme',
-  'LLB (University of London)',
-  'Micro Degree',
-  'Diploma',
-  'Professional Certification',
-  'Independent Learning',
-];
-
-const TEACHING_LEVELS = [
-  'Primary / K-12', 'IGCSE / GCSE / O-Levels', 'A Level / Pre-University',
-  'Foundation', 'Undergraduate', 'Professional',
 ];
 
 const INPUT_CLASS =
@@ -76,16 +56,20 @@ export default function SignupPage() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('student');
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get('role');
+    if (requested === 'student' || requested === 'teacher' || requested === 'parent') setRole(requested);
+  }, []);
   const [dob, setDob] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
 
   // Role-specific
-  const [yearGroup, setYearGroup] = useState(YEAR_GROUPS[0]);
-  const [pathway, setPathway] = useState(PATHWAYS[0]);
+  const [pathway, setPathway] = useState(PROGRAMMES[0]?.value ?? 'Primary');
+  const [yearGroup, setYearGroup] = useState(PROGRAMMES[0]?.years[0] ?? '');
   const [subject, setSubject] = useState('');
-  const [teachingLevel, setTeachingLevel] = useState(TEACHING_LEVELS[1]);
+  const [teachingLevel, setTeachingLevel] = useState('IGCSE');
   const [institution, setInstitution] = useState('');
   const [childEmail, setChildEmail] = useState('');
 
@@ -111,12 +95,20 @@ export default function SignupPage() {
 
   /** Fields written to the user profile, shared by both signup paths. */
   const roleProfileFields = () => {
-    if (role === 'student') return { yearGroup, pathway };
-    if (role === 'teacher') return {
-      subjects: subject.split(',').map(s => s.trim()).filter(Boolean),
-      teachingLevel,
-      ...(institution.trim() ? { institutionName: institution.trim() } : {}),
-    };
+    if (role === 'student') {
+      const years = yearsForProgramme(pathway);
+      return { pathway, level: pathway, ...(years.length > 0 && yearGroup ? { yearGroup } : {}) };
+    }
+    if (role === 'teacher') {
+      const subjects = subject.split(',').map(s => s.trim()).filter(Boolean);
+      return {
+        subjects,
+        subject: subjects[0] ?? '',
+        teachingLevel,
+        level: teachingLevel,
+        ...(institution.trim() ? { institutionName: institution.trim(), institution: institution.trim() } : {}),
+      };
+    }
     if (role === 'parent') return childEmail.trim() ? { pendingChildEmail: childEmail.trim().toLowerCase() } : {};
     return {};
   };
@@ -136,7 +128,8 @@ export default function SignupPage() {
           avatarUrl: result.user.photoURL || '',
           role,
           xp: 0,
-          emailVerified: true,
+          emailVerified: false,
+          emailVerificationRequired: !result.user.emailVerified,
           consentAcceptedAt: serverTimestamp(),
           ...(dob ? { dateOfBirth: dob } : {}),
           ...roleProfileFields(),
@@ -198,7 +191,7 @@ export default function SignupPage() {
     return true;
   };
 
-  const createAccount = async (emailVerified: boolean) => {
+  const createAccount = async (verifiedByOtp: boolean) => {
     const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
     await setDoc(doc(db, 'users', result.user.uid), {
       email: result.user.email,
@@ -206,7 +199,8 @@ export default function SignupPage() {
       avatarUrl: '',
       role,
       xp: 0,
-      emailVerified,
+      emailVerified: false,
+      emailVerificationRequired: true,
       dateOfBirth: dob,
       consentAcceptedAt: serverTimestamp(),
       ...(isMinor ? {
@@ -220,6 +214,16 @@ export default function SignupPage() {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+    await setDoc(doc(db, 'public_profiles', result.user.uid), {
+      displayName: publicDisplayName(name.trim()),
+      role,
+    });
+    if (verifiedByOtp) {
+      await authedFetch('/api/platform/mark-verified', { method: 'POST', body: '{}' }).catch(() => {});
+    } else {
+      await sendEmailVerification(result.user).catch(() => {});
+      toast.message('We sent a confirmation link. You can keep going — we will remind you until your email is confirmed.');
+    }
     toast.success('Account created — welcome to Poket School!');
     routeAfterSignup(role);
   };
@@ -243,9 +247,7 @@ export default function SignupPage() {
       const data = await res.json();
       if (!res.ok) { toast.error(data.error || 'Could not reach the guardian’s email.'); return; }
       if (data.configured === false) {
-        // No mail service configured — record consent as declared rather than block signup.
-        setGuardianVerified(true);
-        await startAccountVerification(true);
+        toast.error('Parent consent email is not set up yet. An under-18 account cannot be created until email is configured.');
         return;
       }
       setGuardianToken(data.token);
@@ -442,21 +444,28 @@ export default function SignupPage() {
 
             {/* ── Role-specific fields ── */}
             {role === 'student' && (
-              <div className="grid sm:grid-cols-2 gap-3">
+              <div className={yearsForProgramme(pathway).length > 0 ? 'grid sm:grid-cols-2 gap-3' : ''}>
                 <div className="space-y-1.5">
-                  <Label htmlFor="yearGroup" className={LABEL_CLASS}>Year / Level</Label>
-                  <select id="yearGroup" className={SELECT_CLASS} value={yearGroup}
-                    onChange={e => setYearGroup(e.target.value)} disabled={loading}>
-                    {YEAR_GROUPS.map(y => <option key={y} value={y} className="bg-[#0B0F1A]">{y}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="pathway" className={LABEL_CLASS}>Programme of Interest</Label>
+                  <Label htmlFor="pathway" className={LABEL_CLASS}>Programme</Label>
                   <select id="pathway" className={SELECT_CLASS} value={pathway}
-                    onChange={e => setPathway(e.target.value)} disabled={loading}>
-                    {PATHWAYS.map(p => <option key={p} value={p} className="bg-[#0B0F1A]">{p}</option>)}
+                    onChange={e => {
+                      const next = e.target.value;
+                      setPathway(next);
+                      const years = yearsForProgramme(next);
+                      setYearGroup(years[0] ?? '');
+                    }} disabled={loading}>
+                    {PROGRAMMES.map(p => <option key={p.value} value={p.value} className="bg-[#0B0F1A]">{p.label}</option>)}
                   </select>
                 </div>
+                {yearsForProgramme(pathway).length > 0 && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="yearGroup" className={LABEL_CLASS}>Year / Level</Label>
+                    <select id="yearGroup" className={SELECT_CLASS} value={yearGroup}
+                      onChange={e => setYearGroup(e.target.value)} disabled={loading}>
+                      {yearsForProgramme(pathway).map(year => <option key={year} value={year} className="bg-[#0B0F1A]">{year}</option>)}
+                    </select>
+                  </div>
+                )}
               </div>
             )}
 
@@ -473,7 +482,7 @@ export default function SignupPage() {
                     <Label htmlFor="teachingLevel" className={LABEL_CLASS}>Level You Teach</Label>
                     <select id="teachingLevel" className={SELECT_CLASS} value={teachingLevel}
                       onChange={e => setTeachingLevel(e.target.value)} disabled={loading}>
-                      {TEACHING_LEVELS.map(l => <option key={l} value={l} className="bg-[#0B0F1A]">{l}</option>)}
+                      {PROGRAMMES.map(p => <option key={p.value} value={p.value} className="bg-[#0B0F1A]">{p.label}</option>)}
                     </select>
                   </div>
                   <div className="space-y-1.5">

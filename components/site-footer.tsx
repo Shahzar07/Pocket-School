@@ -151,14 +151,14 @@ export function SiteFooter() {
           <p>
             <strong>Independent platform.</strong> Poket School is not
             affiliated with, endorsed by, or accredited by Cambridge Assessment
-            International Education, Pearson Edexcel, AQA, the Malaysian
-            Ministry of Education, or any other examination board or government
-            body. Curriculum references are for alignment and preparation only.
-            Platform certificates are not official academic qualifications.
+            International Education, Pearson Edexcel, Oxford AQA, the University
+            of London, or any other examination board or university. Curriculum
+            references are for alignment and preparation only. Platform
+            certificates are not official academic qualifications.
           </p>
           <p>
-            © {new Date().getFullYear()} {LEGAL_ENTITY} ({LEGAL_COMPANY_NO})
-            trading as Poket School · Made in Malaysia
+            © {new Date().getFullYear()} {LEGAL_ENTITY} ({LEGAL_COMPANY_NO}).
+            Poket School and poketschool.ai are trademarks of {LEGAL_ENTITY} ({LEGAL_COMPANY_NO}). All rights reserved.
           </p>
         </div>
         <div className={styles.footerWordmark} aria-hidden="true">
@@ -253,11 +253,11 @@ export function SiteFooter() {
               Poket School is an independent learning and preparation platform.
               We are not affiliated with, endorsed by, or accredited by
               Cambridge Assessment International Education, Pearson Edexcel,
-              AQA, the Malaysian Ministry of Education, or any other examination
-              board or government body. All curriculum references are for
-              alignment and preparation purposes only. Certificates issued by
-              Poket School are platform-specific and do not constitute official
-              academic qualifications.
+              Oxford AQA, the University of London, or any other examination
+              board or university. All curriculum references are for alignment
+              and preparation purposes only. Certificates issued by Poket School
+              are platform-specific and do not constitute official academic
+              qualifications.
             </p>
           </div>
 
@@ -265,7 +265,7 @@ export function SiteFooter() {
           <div className="pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-4">
             <p className="text-[10px] uppercase tracking-widest opacity-50 text-center md:text-left">
               &copy; {new Date().getFullYear()} {LEGAL_ENTITY} (
-              {LEGAL_COMPANY_NO}) trading as Poket School · Made in Malaysia
+              {LEGAL_COMPANY_NO}). Poket School and poketschool.ai are trademarks of {LEGAL_ENTITY} ({LEGAL_COMPANY_NO}). All rights reserved.
             </p>
             <div className="flex items-center gap-4">
               <span className="text-[10px] uppercase tracking-widest opacity-50">
