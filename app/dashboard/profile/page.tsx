@@ -18,6 +18,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useAuthSTORE } from '@/hooks/use-auth';
+import { useAccountMode } from '@/hooks/use-account-mode';
 import { auth } from '@/lib/firebase';
 import { authedFetch } from '@/lib/api-client';
 import { applyAppLanguage } from '@/lib/i18n/apply';
@@ -115,12 +116,15 @@ function authMessage(error: unknown, fallback: string): string {
 export default function ProfilePage() {
   const router = useRouter();
   const { user, profile, fetchProfile } = useAuthSTORE();
+  const { mode, ready } = useAccountMode();
   const { config } = usePricing();
   const [view, setView] = useState<SettingsView | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
+  const sectionRole = mode ?? profile?.role ?? 'student';
+
   useEffect(() => {
-    if (!user || !profile) return;
+    if (!user || !profile || !ready) return;
     let cancelled = false;
     const load = async () => {
       if (user.email && user.emailVerified && profile.email && user.email.toLowerCase() !== profile.email.toLowerCase()) {
@@ -135,9 +139,9 @@ export default function ProfilePage() {
       const here = deviceLabel();
       const [sessions, children, parents, payout] = await Promise.all([
         getUserSessions(user.uid).catch(() => []),
-        profile.role === 'parent' ? getChildrenProfiles(user.uid).catch(() => []) : Promise.resolve([]),
-        profile.role === 'student' ? getParentsOfStudent(user.uid).catch(() => []) : Promise.resolve([]),
-        profile.role === 'teacher' ? getPayoutDetails(user.uid).catch(() => null) : Promise.resolve(null),
+        sectionRole === 'parent' ? getChildrenProfiles(user.uid).catch(() => []) : Promise.resolve([]),
+        sectionRole === 'student' ? getParentsOfStudent(user.uid).catch(() => []) : Promise.resolve([]),
+        sectionRole === 'teacher' ? getPayoutDetails(user.uid).catch(() => null) : Promise.resolve(null),
       ]);
       if (cancelled) return;
       const people = (rows: { id: string; data: UserProfile }[]): LinkedPerson[] => rows.map(row => ({
@@ -152,7 +156,7 @@ export default function ProfilePage() {
       let receipts: SettingsView['receipts'] = [];
       let purchases: SettingsView['purchases'] = [];
       let studentLimits: SettingsView['studentLimits'] = null;
-      if (profile.role === 'parent') {
+      if (sectionRole === 'parent') {
         const [invites, requests, method, ownInvoices, purchaseRows, withControls] = await Promise.all([
           listOpenParentInvites(user.uid).catch(() => []),
           listParentLinkRequests('parentId', user.uid).catch(() => []),
@@ -190,7 +194,7 @@ export default function ProfilePage() {
         }));
         childRows = withControls;
       }
-      if (profile.role === 'student') {
+      if (sectionRole === 'student') {
         const requests = await listParentLinkRequests('studentId', user.uid).catch(() => []);
         linkRequests = requests.filter(row => row.status === 'pending');
         const controlRows: ChildControls[] = [];
@@ -210,7 +214,7 @@ export default function ProfilePage() {
         current: session.deviceInfo === here,
       }));
       setView({
-        role: profile.role,
+        role: sectionRole,
         email: user.email ?? profile.email ?? '',
         emailVerified: user.emailVerified,
         providers: user.providerData.map(provider => ({ id: provider.providerId, label: providerLabel(provider.providerId) })),
@@ -256,7 +260,7 @@ export default function ProfilePage() {
     };
     void load();
     return () => { cancelled = true; };
-  }, [user, profile, reloadKey]);
+  }, [user, profile, reloadKey, ready, mode, sectionRole]);
 
   if (!user || !profile || !view) return null;
 
@@ -267,7 +271,7 @@ export default function ProfilePage() {
 
   const saveProfile = async (draft: ProfileDraft) => {
     try {
-      await updateUser(user.uid, profilePatch(draft, profile.role) as Partial<UserProfile>);
+      await updateUser(user.uid, profilePatch(draft, sectionRole) as Partial<UserProfile>);
       applyAppLanguage(draft.language, { explicit: true });
       writeCurrencyChoice(draft.currency, true);
       await updateProfile(user, { displayName: draft.displayName.trim() || draft.name.trim(), photoURL: draft.avatarUrl || null });

@@ -578,6 +578,18 @@ Always written, including blocked attempts. Blocked when the caller is in an ass
 | GET | `/api/moderation/queue` | community |
 | POST | `/api/moderation/resolve` | community |
 
+## Account modes
+
+`users/{uid}.roles` is the list of roles one login holds: `student`, `teacher`, and `parent`. `role` stays the original primary value so older readers keep working. A teacher or parent document also includes `student`, which is their personal learner space. Admin and `institution_admin` are not added to that list and are not offered in the switch.
+
+The open dashboard is `poket-active-mode` in the browser (`student`, `teacher`, or `parent`). Firestore rules do not read it. `hasRole(name)` is true when `role` is that name or `roles` contains it. `isAdmin()` still requires `role == 'admin'`, so the array cannot grant the admin console. Admin sign-in stays on `/admin/login` with the verification code.
+
+A teacher or parent may write `roles` to add `student`. A learner may add `teacher`. The write cannot add `admin` or `institution_admin`, and it cannot drop a role they already hold. Marketplace course publishing is unchanged: a teacher still cannot set a public marketplace listing.
+
+Learning mode reads that person's own enrolments, progress, certificates, and Sparks. It does not render classes they own or children they monitor. Those stay on the teaching and parent dashboards.
+
+Rules still need an owner deploy.
+
 ## Profile and settings
 
 `/dashboard/profile` is My profile & settings for every role. The account menu in each dashboard opens it.

@@ -24,6 +24,7 @@ import {
   unlockFormat,
 } from '@/lib/server/actions';
 import { adminDb } from '@/lib/firebase-admin';
+import { hasAccountRole } from '@/lib/account-modes';
 import type { AccessTier } from '@/lib/entitlements';
 
 export const dynamic = 'force-dynamic';
@@ -105,7 +106,14 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ action: str
         return courseOutlineFor(courseId);
       case 'message-contacts': {
         const profile = await adminDb().doc(`users/${user.uid}`).get();
-        return { contacts: await messageContacts(user.uid, (profile.data()?.role as string) ?? 'student') };
+        const data = profile.data() ?? {};
+        const requested = req.nextUrl.searchParams.get('view');
+        const primary = typeof data.role === 'string' ? data.role : 'student';
+        const asked = requested === 'student' || requested === 'teacher' || requested === 'parent' || requested === 'admin' || requested === 'institution_admin'
+          ? requested
+          : null;
+        const view = asked && hasAccountRole(data, asked) ? asked : primary;
+        return { contacts: await messageContacts(user.uid, view) };
       }
       case 'parent-overview':
         return parentOverview(user.uid, req.nextUrl.searchParams.get('childId') ?? '');

@@ -40,6 +40,8 @@ export interface UserProfile {
   displayName?: string;
   bio?: string;
   role: Role;
+  /** Every role this login holds. The open dashboard is stored in the browser, not here. */
+  roles?: Role[];
   /** Set for institution_admin (and optionally members) — scopes what they see. */
   institutionId?: string;
   avatarUrl?: string;

@@ -14,6 +14,7 @@ interface UserProfile {
   displayName?: string;
   bio?: string;
   role: Role;
+  roles?: Role[];
   /** Set for institution_admin — scopes what they can see and manage. */
   institutionId?: string;
   /** Account lifecycle. Absent means active. */

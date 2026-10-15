@@ -21,9 +21,12 @@ import { DashboardSearch } from '@/components/dashboard-search';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { CurrencySwitcher } from '@/components/currency-switcher';
 import { SparksChip } from '@/components/sparks-chip';
-import { upsertUserSession, accountStatusOf, clearUserFields } from '@/lib/db';
+import { upsertUserSession, accountStatusOf, clearUserFields, updateUser } from '@/lib/db';
 import { deletionClosed, formatDeletionDate, sessionRevoked } from '@/lib/account-settings';
 import { AccountMenu } from '@/components/account/account-menu';
+import { ModeSwitch } from '@/components/account/mode-switch';
+import { useAccountMode } from '@/hooks/use-account-mode';
+import { homeForMode, learnerSpaceRoles, modeRedirect, MODE_NAMES, type AccountMode } from '@/lib/account-modes';
 import { loginBlocked, resolveStaffRole } from '@/lib/admin-console';
 import { AdminViewAsBanner, clearViewAs, useAdminIdle, useViewAs } from '@/components/admin-session';
 import { PipGuide } from '@/components/pip-guide';
@@ -241,6 +244,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { t } = useTranslation();
   const flags = useFeatureFlags();
   const { user, profile, loading, fetchProfile } = useAuthSTORE();
+  const account = useAccountMode();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -286,7 +290,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [profile, router, pathname]);
 
-  if (loading || !user || !profile) {
+  useEffect(() => {
+    if (!user || !profile) return;
+    const next = learnerSpaceRoles(profile);
+    if (!next) return;
+    let cancelled = false;
+    updateUser(user.uid, { roles: next }).then(() => {
+      if (!cancelled) return fetchProfile(user.uid);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [user, profile, fetchProfile]);
+
+  useEffect(() => {
+    if (!account.ready || !account.mode) return;
+    const next = modeRedirect(pathname, account.mode);
+    if (next) router.replace(next);
+  }, [account.ready, account.mode, pathname, router]);
+
+  if (loading || !user || !profile || !account.ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -366,7 +387,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  const role = (profile.role ?? 'student') as Role;
+  const role = (account.mode ?? profile.role ?? 'student') as Role;
+  const roleLabel = account.mode
+    ? MODE_NAMES[account.mode]
+    : t(`roles.${profile.role}`, { defaultValue: ROLE_LABELS[profile.role] ?? profile.role });
+  const chooseMode = (next: AccountMode) => {
+    account.setMode(next);
+    router.push(homeForMode(next));
+  };
+  const showModes = account.modes.length > 1 || account.canBecome;
+  const become = account.canBecome ? () => router.push('/dashboard/student/become-instructor') : undefined;
+  if (account.mode && modeRedirect(pathname, account.mode)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
   const nav = (NAV[role] ?? NAV.student).map((group, index) => {
     const withCms = index !== 0 || role === 'admin' || !hasCmsAddon(profile) || (role !== 'teacher' && role !== 'institution_admin')
       ? group
@@ -395,8 +432,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <AccountMenu
             name={profile.displayName || profile.name || 'User'}
             email={user.email || profile.email || ''}
-            roleLabel={t(`roles.${profile.role}`, { defaultValue: ROLE_LABELS[profile.role] ?? profile.role })}
+            roleLabel={roleLabel}
             staffHome={Boolean(staffRole)}
+            modes={account.modes}
+            activeMode={account.mode}
+            onSwitchMode={showModes ? chooseMode : undefined}
+            onBecomeInstructor={become}
           >
             <span className="flex items-center gap-3 p-2 -m-2 rounded-2xl hover:bg-muted transition-colors">
               <Avatar className="w-10 h-10 border border-border shrink-0">
@@ -410,7 +451,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {profile.displayName || profile.name || 'User'}
                 </span>
                 <span className="block text-[11px] text-muted-foreground truncate mt-0.5">
-                  {t(`roles.${profile.role}`, { defaultValue: ROLE_LABELS[profile.role] ?? profile.role })}
+                  {roleLabel}
                 </span>
               </span>
               <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
@@ -470,6 +511,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span data-tour="search"><DashboardSearch /></span>
           </div>
           <div className="flex items-center gap-1.5">
+            {showModes && (
+              <ModeSwitch
+                modes={account.modes}
+                active={account.mode}
+                onSwitch={chooseMode}
+                onBecomeInstructor={become}
+              />
+            )}
             <span data-tour="sparks"><SparksChip /></span>
             <span data-tour="language"><LanguageSwitcher /></span>
             <CurrencySwitcher />
@@ -478,8 +527,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <AccountMenu
                 name={profile.displayName || profile.name || 'User'}
                 email={user.email || profile.email || ''}
-                roleLabel={t(`roles.${profile.role}`, { defaultValue: ROLE_LABELS[profile.role] ?? profile.role })}
+                roleLabel={roleLabel}
                 staffHome={Boolean(staffRole)}
+                modes={account.modes}
+                activeMode={account.mode}
+                onSwitchMode={showModes ? chooseMode : undefined}
+                onBecomeInstructor={become}
               >
                 <Avatar className="w-9 h-9 border-2 border-border cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all">
                   <AvatarImage src={profile.avatarUrl ?? user.photoURL ?? undefined} />

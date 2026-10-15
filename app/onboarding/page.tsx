@@ -13,6 +13,7 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 import { linkChildToParent, createParentVerification, enrollInProgrammeModules, awardSparks, getUser, updateUser, UserProfile } from '@/lib/db';
 import { NEUTRAL_LINK } from '@/lib/parent-controls';
+import { landingPath, readActiveMode } from '@/lib/account-modes';
 import { SIGNUP_GRANT } from '@/lib/sparks';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { Timestamp } from 'firebase/firestore';
@@ -40,7 +41,7 @@ export default function OnboardingPage() {
   const isStudent = profile.role === 'student';
 
   if (!isStudent && !isParent) {
-    if (typeof window !== 'undefined') router.push(`/dashboard/${profile.role}`);
+    if (typeof window !== 'undefined') router.push(landingPath(profile, readActiveMode()));
     return null;
   }
 

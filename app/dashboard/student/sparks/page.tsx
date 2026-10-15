@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { SPARKS_EXPLAINER, FORMAT_COSTS, FORMAT_LABELS, monthlySparksForProfile } from '@/lib/sparks';
 import { TIERS } from '@/lib/entitlements';
 import { useAuthSTORE } from '@/hooks/use-auth';
+import { hasAccountRole } from '@/lib/account-modes';
 import { getSparkTransactions, SparkTransaction } from '@/lib/db';
 import { useEffect, useState } from 'react';
 
@@ -22,7 +23,11 @@ export default function SparksPage() {
       <h1 className="font-heading text-4xl text-foreground">{SPARKS_EXPLAINER.title}</h1>
       <p className="text-muted-foreground">{SPARKS_EXPLAINER.summary}</p>
       <div className="rounded-3xl border border-border bg-card p-6">
-        <p className="text-sm text-muted-foreground">Your balance</p>
+        <p className="text-sm text-muted-foreground" data-learner-sparks>
+          {hasAccountRole(profile, 'teacher') || hasAccountRole(profile, 'parent')
+            ? 'Your learning balance. Class spending and a child\'s limit are separate.'
+            : 'Your balance'}
+        </p>
         <p className="text-4xl font-bold text-amber-600">⚡{profile?.sparksBalance ?? 0}</p>
         <p className="text-sm mt-2">This plan adds ⚡{allowance} each month.</p>
       </div>

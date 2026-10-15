@@ -10,6 +10,7 @@ import { ArrowRight, ArrowUpRight, BookOpen, Zap, Trophy, Target, TrendingUp, Sp
 import Link from 'next/link';
 import { StudyLaunchpad } from '@/components/study/study-launchpad';
 import { streakFromDates } from '@/lib/learning';
+import { canBecomeInstructor, forLearnerView, hasAccountRole } from '@/lib/account-modes';
 import {
   DashPage, DashHeader, Panel, PanelHeader, StatCard, ProgressBar,
   ListRow, Initials, EmptyState,
@@ -72,7 +73,12 @@ export default function StudentDashboard() {
         getEnrolledCourses(user.uid),
         getUserBadges(user.uid),
       ]);
-      setEnrolled(courses);
+      setEnrolled(forLearnerView(courses.map(row => ({
+        ...row,
+        id: row.course.id,
+        ownerId: row.course.ownerId,
+        studentId: row.enrollment.studentId,
+      })), user.uid));
       setBadges(bs);
     } catch (e: any) {
       setError(e?.message ?? 'Something went wrong.');
@@ -130,9 +136,11 @@ export default function StudentDashboard() {
         eyebrow={`${greeting()} · ${today}`}
         title="Welcome back,"
         accent={firstName}
-        description={studyStreak > 0
+        description={`${studyStreak > 0
           ? `Here's where your learning stands today. ${studyStreak}-day study streak.`
-          : "Here's where your learning stands today."}
+          : "Here's where your learning stands today."}${hasAccountRole(profile, 'teacher') || hasAccountRole(profile, 'parent')
+          ? ' Your courses, progress, certificates, and Sparks stay here. Classes you teach and children you monitor stay in the other views.'
+          : ''}`}
         actions={resumeCourse ? (
           <Button
             onClick={() => router.push(
@@ -143,6 +151,10 @@ export default function StudentDashboard() {
             className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2"
           >
             <Play className="w-3.5 h-3.5 fill-current" /> Resume learning
+          </Button>
+        ) : canBecomeInstructor(profile) ? (
+          <Button onClick={() => router.push('/dashboard/student/become-instructor')} className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2" data-become-instructor>
+            Become an instructor
           </Button>
         ) : (
           <Button onClick={() => router.push('/courses')} className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2">

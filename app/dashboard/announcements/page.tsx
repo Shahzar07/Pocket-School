@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
+import { useAccountMode } from '@/hooks/use-account-mode';
+import { hasAccountRole } from '@/lib/account-modes';
 import { getAnnouncements, createAnnouncement, deleteAnnouncement, updateAnnouncement, Announcement } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,20 +38,21 @@ const PRIORITY_BORDER: Record<string, string> = {
 
 export default function AnnouncementsPage() {
   const { user, profile } = useAuthSTORE();
+  const { mode, activeRole } = useAccountMode();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ title: '', content: '', priority: 'normal' as Announcement['priority'], targets: ['all'] as string[] });
 
-  const canCreate = profile?.role === 'teacher' || profile?.role === 'admin';
+  const canCreate = (mode === 'teacher' && hasAccountRole(profile, 'teacher')) || profile?.role === 'admin';
 
   const load = async () => {
     if (!profile) return;
-    const audience = profile.role === 'admin' ? 'admin'
-      : profile.role === 'student' ? 'students'
-      : profile.role === 'parent' ? 'parents'
-      : profile.role === 'teacher' ? 'teachers'
+    const audience = activeRole === 'admin' ? 'admin'
+      : activeRole === 'student' ? 'students'
+      : activeRole === 'parent' ? 'parents'
+      : activeRole === 'teacher' ? 'teachers'
       : 'all';
     const data = await getAnnouncements(audience);
     setAnnouncements(data.sort((a, b) => {
@@ -60,7 +63,7 @@ export default function AnnouncementsPage() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [profile]);
+  useEffect(() => { load(); }, [profile, activeRole]);
 
   const handleCreate = async () => {
     if (!user || !form.title.trim() || !form.content.trim()) {

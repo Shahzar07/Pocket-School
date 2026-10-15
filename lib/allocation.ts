@@ -17,6 +17,7 @@ import {
   type AccessTier,
   type PriceType,
 } from './entitlements';
+import { hasAccountRole } from './account-modes';
 import { evaluatePolicy, policyActive, priceDecision, type AccessPolicy } from './access-policy';
 import { anyTargetMatch, migrateAllocation, normaliseTargets } from './allocation-targets';
 
@@ -36,6 +37,8 @@ export type ViewerRole = 'guest' | 'student' | 'teacher' | 'parent' | 'instituti
 
 export interface AllocationViewer {
   role: ViewerRole;
+  /** Other roles on this login. Catalogue matching uses the list, not the open dashboard. */
+  roles?: readonly string[] | null;
   institutionId?: string | null;
   accessTier?: number | null;
   subscriptionTier?: string | null;
@@ -117,9 +120,9 @@ function audienceListed(product: AllocatableProduct, viewer: AllocationViewer, a
   if (audiences.includes('marketplace')) return true;
   if (viewer.role === 'guest') return false;
   if (audiences.includes('all')) return true;
-  if (viewer.role === 'student' && audiences.includes('students')) return true;
-  if (viewer.role === 'teacher' && audiences.includes('teachers')) return true;
-  if (viewer.role === 'parent' && audiences.includes('parents')) return true;
+  if (hasAccountRole(viewer, 'student') && audiences.includes('students')) return true;
+  if (hasAccountRole(viewer, 'teacher') && audiences.includes('teachers')) return true;
+  if (hasAccountRole(viewer, 'parent') && audiences.includes('parents')) return true;
   if (audiences.includes('institutions')) {
     const schools = product.allocatedInstitutionIds ?? [];
     return !!viewer.institutionId && schools.includes(viewer.institutionId);
@@ -271,6 +274,7 @@ export function viewerFromProfile(
     language?: string | null;
     programmeId?: string | null;
     cohortIds?: string[] | null;
+    roles?: readonly string[] | null;
   } | null | undefined,
   opts: { enrolled?: boolean; isOwner?: boolean; userId?: string | null } = {},
 ): AllocationViewer {
@@ -281,6 +285,7 @@ export function viewerFromProfile(
     : 'guest';
   return {
     role: known,
+    roles: profile?.roles,
     institutionId: profile?.institutionId ?? null,
     accessTier: profile?.accessTier,
     subscriptionTier: profile?.subscriptionTier,

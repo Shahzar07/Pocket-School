@@ -192,7 +192,7 @@ export default function ParentDashboard() {
         eyebrow={`Family overview · ${today}`}
         title="Your family's"
         accent="progress"
-        description="Every lesson, score and milestone, in one place."
+        description="Children you monitor. Your own courses, certificates, and Sparks stay in Learning."
         actions={
           <Link href="/dashboard/parent/communications"
             className={buttonVariants({ variant: 'outline' }) + ' h-10 px-4 rounded-xl gap-2 font-semibold text-[13px]'}

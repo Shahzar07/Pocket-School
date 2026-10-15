@@ -4,6 +4,7 @@
  * and the schedule, quota, and price gates below decide the rest.
  */
 
+import { hasAccountRole } from './account-modes';
 import type { AllocationViewer, AllocatableProduct } from './allocation';
 
 export const POLICY_AUDIENCES = [
@@ -161,9 +162,9 @@ function listHit(policy: AccessPolicy, viewer: AllocationViewer, exclude: boolea
   if (exclude && list.includes('marketplace') && viewer.role === 'guest') return true;
   if (viewer.role === 'guest') return false;
   if (list.includes('all')) return true;
-  if (list.includes('students') && viewer.role === 'student') return true;
-  if (list.includes('teachers') && viewer.role === 'teacher') return true;
-  if (list.includes('parents') && viewer.role === 'parent') return true;
+  if (list.includes('students') && hasAccountRole(viewer, 'student')) return true;
+  if (list.includes('teachers') && hasAccountRole(viewer, 'teacher')) return true;
+  if (list.includes('parents') && hasAccountRole(viewer, 'parent')) return true;
   if (list.includes('institutions') && institutionHit(policy, viewer, exclude)) return true;
   if (list.includes('users') && userHit(policy, viewer, exclude)) return true;
   if (list.includes('cohorts') && cohortHit(policy, viewer, exclude)) return true;

@@ -13,6 +13,17 @@ service cloud.firestore {
     function isUser(uid) { return isSignedIn() && request.auth.uid == uid; }
     function incoming() { return request.resource.data; }
     function role() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role; }
+    function userData() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    // Membership. The open dashboard is not stored here and is not read.
+    // Admin stays on the singular role so a roles array cannot grant it.
+    function hasRole(name) {
+      return isSignedIn() && (
+        role() == name
+        || (userData().keys().hasAny(['roles'])
+            && userData().roles is list
+            && userData().roles.hasAny([name]))
+      );
+    }
     function myInstitution() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.institutionId; }
 
     // Platform-wide administrator. Deliberately NOT widened to include
@@ -24,7 +35,7 @@ service cloud.firestore {
     // their school's courses, grades, attendance and reports.
     function isInstitutionAdmin() { return isSignedIn() && role() == 'institution_admin'; }
 
-    function isTeacherOrAdmin() { return isSignedIn() && role() in ['teacher', 'admin', 'institution_admin']; }
+    function isTeacherOrAdmin() { return isSignedIn() && (hasRole('teacher') || role() == 'admin' || role() == 'institution_admin'); }
 
     function audienceGated(data) {
       return data.keys().hasAny(['audiences'])
@@ -36,9 +47,9 @@ service cloud.firestore {
     // so a guest can read a sales page.
     function audienceHit(data) {
       return data.audiences.hasAny(['all'])
-        || (role() == 'student' && data.audiences.hasAny(['students']))
-        || (role() == 'teacher' && data.audiences.hasAny(['teachers']))
-        || (role() == 'parent' && data.audiences.hasAny(['parents']))
+        || (hasRole('student') && data.audiences.hasAny(['students']))
+        || (hasRole('teacher') && data.audiences.hasAny(['teachers']))
+        || (hasRole('parent') && data.audiences.hasAny(['parents']))
         || data.audiences.hasAny(['marketplace'])
         || (data.audiences.hasAny(['institutions'])
             && myInstitution() != null
@@ -63,9 +74,9 @@ service cloud.firestore {
       return data.targets.hasAny(['marketplace'])
         || (isSignedIn() && (
           data.targets.hasAny(['all'])
-          || (role() == 'student' && data.targets.hasAny(['students']))
-          || (role() == 'teacher' && data.targets.hasAny(['teachers']))
-          || (role() == 'parent' && data.targets.hasAny(['parents']))
+          || (hasRole('student') && data.targets.hasAny(['students']))
+          || (hasRole('teacher') && data.targets.hasAny(['teachers']))
+          || (hasRole('parent') && data.targets.hasAny(['parents']))
           || data.targets.hasAny(['user:' + request.auth.uid])
           || data.targets.hasAny(['parent:' + request.auth.uid])
           || (myInstitution() != null && data.targets.hasAny(['institution:' + myInstitution()]))
@@ -280,7 +291,7 @@ service cloud.firestore {
     // A parent can drop a child from their own list. They cannot add one.
     function parentUnlink(userId) {
       return isUser(userId)
-        && role() == 'parent'
+        && hasRole('parent')
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['childIds', 'updatedAt'])
         && resource.data.get('childIds', []) is list
         && incoming().childIds is list
@@ -305,10 +316,55 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/parent_links/$(userId + '_' + request.auth.uid)).data.parentId == userId;
     }
 
+    function switchableRoleList(list) {
+      return list is list
+        && list.size() >= 1
+        && list.size() <= 3
+        && list.hasOnly(['student', 'teacher', 'parent']);
+    }
+
+    function keptRoles() {
+      return !resource.data.keys().hasAny(['roles'])
+        || (resource.data.roles is list && incoming().roles.hasAll(resource.data.roles));
+    }
+
+    // roles is not a profile field. A teacher or parent may add student.
+    // A learner may add teacher. Admin cannot be written here.
+    function rolesOnly(userId) {
+      return isUser(userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['roles', 'updatedAt'])
+        && switchableRoleList(incoming().roles)
+        && keptRoles()
+        && resource.data.role in ['student', 'teacher', 'parent'];
+    }
+
+    function claimLearnerSpace(userId) {
+      return rolesOnly(userId)
+        && resource.data.role in ['teacher', 'parent']
+        && incoming().roles.hasAny(['student'])
+        && incoming().roles.hasAny([resource.data.role])
+        && (
+          resource.data.role == 'teacher'
+          || (resource.data.keys().hasAny(['roles']) && resource.data.roles.hasAny(['teacher']))
+          || !incoming().roles.hasAny(['teacher'])
+        );
+    }
+
+    function becomeInstructor(userId) {
+      return rolesOnly(userId)
+        && resource.data.role != 'teacher'
+        && !(resource.data.keys().hasAny(['roles']) && resource.data.roles.hasAny(['teacher']))
+        && (resource.data.role == 'student'
+            || resource.data.role == 'parent'
+            || (resource.data.keys().hasAny(['roles']) && resource.data.roles.hasAny(['student'])))
+        && incoming().roles.hasAll(['student', 'teacher'])
+        && (resource.data.role != 'parent' || incoming().roles.hasAny(['parent']));
+    }
+
     // A linked parent may edit name, bio, and photo only when ageTier is under13.
     function parentEditsUnder13(userId) {
       return isSignedIn()
-        && role() == 'parent'
+        && hasRole('parent')
         && linkedTo(userId)
         && resource.data.get('ageTier', '') == 'under13'
         && request.resource.data.diff(resource.data).affectedKeys()
@@ -325,6 +381,8 @@ service cloud.firestore {
         || parentUnlink(userId)
         || childJoinsParent(userId)
         || parentEditsUnder13(userId)
+        || claimLearnerSpace(userId)
+        || becomeInstructor(userId)
         // A person may join the one school that invited their email.
         || (isUser(userId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['institutionId'])
@@ -345,7 +403,7 @@ service cloud.firestore {
       match /child_controls/{childId} {
         allow read: if isUser(userId) || isUser(childId) || isAdmin();
         allow create, update: if isUser(userId)
-          && role() == 'parent'
+          && hasRole('parent')
           && myChildIds().hasAny([childId])
           && incoming().childId == childId
           && incoming().weeklyReportEmail is bool
@@ -357,7 +415,7 @@ service cloud.firestore {
           && incoming().sparksDailyLimit >= 0
           && incoming().purchaseApproval is bool
           && incoming().teacherMessages in ['all', 'digest', 'off'];
-        allow delete: if isUser(userId) && role() == 'parent';
+        allow delete: if isUser(userId) && hasRole('parent');
       }
 
       // Sparks wallet ledger
@@ -460,9 +518,9 @@ service cloud.firestore {
         || (targetsGated(data) && targetsHit(data))
         || (isSignedIn() && (
           data.accessPolicy.include.hasAny(['all'])
-          || (role() == 'student' && data.accessPolicy.include.hasAny(['students']))
-          || (role() == 'teacher' && data.accessPolicy.include.hasAny(['teachers']))
-          || (role() == 'parent' && data.accessPolicy.include.hasAny(['parents']))
+          || (hasRole('student') && data.accessPolicy.include.hasAny(['students']))
+          || (hasRole('teacher') && data.accessPolicy.include.hasAny(['teachers']))
+          || (hasRole('parent') && data.accessPolicy.include.hasAny(['parents']))
           || (data.accessPolicy.include.hasAny(['institutions']) && institutionIncluded(data))
           || (data.accessPolicy.include.hasAny(['users']) && data.accessPolicy.get('userIds', []).hasAny([request.auth.uid]))
           || (data.accessPolicy.include.hasAny(['cohorts']) && userDoc().get('cohortIds', []).hasAny(data.accessPolicy.get('cohortIds', [])))
@@ -477,9 +535,9 @@ service cloud.firestore {
           || data.accessPolicy.get('excludeUserIds', []).hasAny([request.auth.uid])
           || (myInstitution() != null && data.accessPolicy.get('excludeInstitutionIds', []).hasAny([myInstitution()]))
           || userDoc().get('cohortIds', []).hasAny(data.accessPolicy.get('excludeCohortIds', []))
-          || (role() == 'student' && data.accessPolicy.get('exclude', []).hasAny(['students']))
-          || (role() == 'teacher' && data.accessPolicy.get('exclude', []).hasAny(['teachers']))
-          || (role() == 'parent' && data.accessPolicy.get('exclude', []).hasAny(['parents']))
+          || (hasRole('student') && data.accessPolicy.get('exclude', []).hasAny(['students']))
+          || (hasRole('teacher') && data.accessPolicy.get('exclude', []).hasAny(['teachers']))
+          || (hasRole('parent') && data.accessPolicy.get('exclude', []).hasAny(['parents']))
           || (data.accessPolicy.get('exclude', []).hasAny(['institutions']) && myInstitution() != null
               && (data.accessPolicy.get('institutionMode', 'specific') == 'all'
                   || data.accessPolicy.get('institutionIds', []).hasAny([myInstitution()])))
@@ -810,7 +868,7 @@ service cloud.firestore {
                       && get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published'
                       && targetsHit(get(/databases/$(database)/documents/courses/$(courseId)).data)
                       && (
-                        role() in ['teacher', 'institution_admin', 'admin']
+                        isTeacherOrAdmin()
                         || resource.data.get('order', 999) <= get(/databases/$(database)/documents/courses/$(courseId)).data.get('freePreviewCount', 1)
                       ))
                   || (isSignedIn()
@@ -819,7 +877,7 @@ service cloud.firestore {
                       && get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published'
                       && scopeHit(get(/databases/$(database)/documents/courses/$(courseId)).data)
                       && (
-                        role() in ['teacher', 'institution_admin', 'admin']
+                        isTeacherOrAdmin()
                         || resource.data.get('order', 999) <= get(/databases/$(database)/documents/courses/$(courseId)).data.get('freePreviewCount', 1)
                       ))
                   || (isSignedIn()
@@ -827,7 +885,7 @@ service cloud.firestore {
                       && get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published'
                       && audienceHit(get(/databases/$(database)/documents/courses/$(courseId)).data)
                       && (
-                        role() in ['teacher', 'institution_admin', 'admin']
+                        isTeacherOrAdmin()
                         || resource.data.get('order', 999) <= get(/databases/$(database)/documents/courses/$(courseId)).data.get('freePreviewCount', 1)
                       ))
                 ))
@@ -835,7 +893,7 @@ service cloud.firestore {
                 && isSignedIn()
                 && !excludeHit(get(/databases/$(database)/documents/courses/$(courseId)).data)
                 && (
-                  (role() in ['teacher', 'institution_admin']
+                  ((hasRole('teacher') || isInstitutionAdmin())
                     && get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published'
                     && includeHit(get(/databases/$(database)/documents/courses/$(courseId)).data, courseId))
                   || (scheduleOpen(get(/databases/$(database)/documents/courses/$(courseId)).data, courseId, moduleId)
@@ -1276,7 +1334,7 @@ service cloud.firestore {
         || isAdmin()
       );
       allow create: if isSignedIn() && (
-        (role() == 'parent'
+        (hasRole('parent')
           && incoming().parentId == request.auth.uid
           && incoming().status == 'pending'
           && incoming().studentId is string
@@ -1311,7 +1369,7 @@ service cloud.firestore {
       allow get: if isSignedIn();
       allow list: if isSignedIn() && resource.data.parentId == request.auth.uid;
       allow create: if isSignedIn()
-        && role() == 'parent'
+        && hasRole('parent')
         && incoming().parentId == request.auth.uid
         && incoming().status == 'open'
         && incoming().code == code

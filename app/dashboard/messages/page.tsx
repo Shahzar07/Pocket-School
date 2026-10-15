@@ -10,6 +10,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
+import { useAccountMode } from '@/hooks/use-account-mode';
 import {
   subscribeUserMessages, sendDirectMessage, markMessageRead, getChatContacts,
   getUser, type Message,
@@ -49,6 +50,7 @@ function fmtTime(ts?: { toDate?: () => Date }) {
 
 export default function MessagesPage() {
   const { user, profile } = useAuthSTORE();
+  const { mode, ready } = useAccountMode();
   const [messages, setMessages] = useState<Message[]>([]);
   const [contacts, setContacts] = useState<{ id: string; name: string; role: string }[]>([]);
   const [activePartner, setActivePartner] = useState<string | null>(null);
@@ -69,9 +71,9 @@ export default function MessagesPage() {
 
   // Load who I can start new chats with
   useEffect(() => {
-    if (!user || !profile) return;
-    getChatContacts(user.uid, profile.role).then(setContacts).catch(() => setContacts([]));
-  }, [user, profile]);
+    if (!user || !profile || !ready) return;
+    getChatContacts(user.uid, mode ?? profile.role).then(setContacts).catch(() => setContacts([]));
+  }, [user, profile, ready, mode]);
 
   // Resolve names for partners we don't already know (from contacts or message fields)
   useEffect(() => {

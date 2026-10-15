@@ -6,6 +6,7 @@ import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { getEnrolledCourses, getAllPublishedCourses, enrollStudent, Course, Enrollment } from '@/lib/db';
 import { productAccess, viewerFromProfile } from '@/lib/allocation';
+import { forLearnerView } from '@/lib/account-modes';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -36,8 +37,14 @@ export default function CoursesPage() {
       const [ec, all] = await Promise.all([getEnrolledCourses(user.uid), getAllPublishedCourses()]);
       // Defensive client-side sort (alphabetical)
       ec.sort((a, b) => a.course.title.localeCompare(b.course.title));
-      setEnrolled(ec);
-      const enrolledIds = new Set(ec.map(e => e.course.id));
+      const mine = forLearnerView(ec.map(row => ({
+        ...row,
+        id: row.course.id,
+        ownerId: row.course.ownerId,
+        studentId: row.enrollment.studentId,
+      })), user.uid);
+      setEnrolled(mine);
+      const enrolledIds = new Set(mine.map(e => e.course.id));
       const viewer = viewerFromProfile(profile, { userId: user.uid });
       setAvailable(all.filter(c => !enrolledIds.has(c.id) && productAccess(c, viewer).listed).sort((a, b) => a.title.localeCompare(b.title)));
     } catch (e: any) {

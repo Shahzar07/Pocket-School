@@ -6,6 +6,7 @@
  * expanded into this list when it is still empty.
  */
 
+import { hasAccountRole } from './account-modes';
 import { normalisePolicy, type AccessPolicy, type PolicyAudience } from './access-policy';
 
 export const ROLE_TARGETS = ['students', 'teachers', 'parents', 'institutions', 'all', 'marketplace'] as const;
@@ -16,6 +17,8 @@ const SPECIFIC = /^(user|class|parent|institution):[^\s,]{1,128}$/;
 
 export interface TargetViewer {
   role: string;
+  /** Extra roles on the same login. Access uses these, not the open dashboard. */
+  roles?: readonly string[] | null;
   userId?: string | null;
   institutionId?: string | null;
   cohortIds?: readonly string[] | null;
@@ -239,9 +242,9 @@ function oneMatch(target: string, viewer: TargetViewer, schools: readonly string
   if (target === 'marketplace') return true;
   if (viewer.role === 'guest') return false;
   if (target === 'all') return true;
-  if (target === 'students') return viewer.role === 'student';
-  if (target === 'teachers') return viewer.role === 'teacher';
-  if (target === 'parents') return viewer.role === 'parent';
+  if (target === 'students') return hasAccountRole(viewer, 'student');
+  if (target === 'teachers') return hasAccountRole(viewer, 'teacher');
+  if (target === 'parents') return hasAccountRole(viewer, 'parent');
   if (target === 'institutions') {
     if (!viewer.institutionId) return false;
     return schools.length === 0 || schools.includes(viewer.institutionId);

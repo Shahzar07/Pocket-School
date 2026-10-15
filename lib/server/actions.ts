@@ -1,5 +1,6 @@
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import { adminDb } from '../firebase-admin';
+import { hasAccountRole } from '../account-modes';
 import { publicDisplayName } from '../display-name';
 import { canDirectMessage } from '../community/policy';
 import { asAgeTier, isAgeTier } from '../age-tier';
@@ -705,6 +706,7 @@ export async function messageContacts(uid: string, role: string) {
 
 export async function parentOverview(parentId: string, childId: string) {
   const parent = await db().doc(`users/${parentId}`).get();
+  if (!hasAccountRole(parent.data(), 'parent')) throw new ActionError('FORBIDDEN', 'Parent access is required.');
   const childIds: string[] = Array.isArray(parent.data()?.childIds) ? parent.data()!.childIds as string[] : [];
   if (!childIds.includes(childId)) throw new ActionError('FORBIDDEN', 'That student has not approved this link.');
   const child = await db().doc(`users/${childId}`).get();
@@ -744,6 +746,11 @@ export async function parentOverview(parentId: string, childId: string) {
 
 /** A teacher may see a student's first name only when that student is in one of their classes. */
 export async function lookupEnrolledStudent(teacherId: string, email: string) {
+  const teacher = await db().doc(`users/${teacherId}`).get();
+  const teacherRole = teacher.data()?.role;
+  if (!hasAccountRole(teacher.data(), 'teacher') && teacherRole !== 'admin' && teacherRole !== 'institution_admin') {
+    throw new ActionError('FORBIDDEN', 'Teaching access is required.');
+  }
   const needle = email.trim().toLowerCase();
   const courses = await db().collection('courses').where('ownerId', '==', teacherId).get();
   for (const course of courses.docs) {

@@ -1,3 +1,5 @@
+import { hasAccountRole } from './account-modes';
+
 /**
  * Roles and the permission questions the UI actually asks.
  *
@@ -43,6 +45,8 @@ export function isSuperAdminEmail(email: string | null | undefined): boolean {
 
 interface RoleContext {
   role?: string | null;
+  /** Other roles this login holds. The open dashboard is not one of these. */
+  roles?: readonly string[] | null;
   email?: string | null;
   institutionId?: string | null;
 }
@@ -64,7 +68,7 @@ export function isAdmin(ctx: RoleContext | null | undefined): boolean {
 }
 
 export function isTeacherOrAdmin(ctx: RoleContext | null | undefined): boolean {
-  return ctx?.role === 'teacher' || isAdmin(ctx);
+  return hasAccountRole(ctx, 'teacher') || isAdmin(ctx);
 }
 
 /**

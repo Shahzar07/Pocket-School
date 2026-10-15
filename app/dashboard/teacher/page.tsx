@@ -96,7 +96,7 @@ export default function TeacherDashboard() {
         eyebrow={`${greeting()} · ${today}`}
         title="Your classroom,"
         accent={firstName}
-        description="What needs your attention today."
+        description="Classes you teach. Your own courses, certificates, and Sparks stay in Learning."
         actions={
           <>
             <Button variant="outline" onClick={() => router.push('/dashboard/teacher/courses/build')}

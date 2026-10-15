@@ -18,6 +18,7 @@ import { motion } from 'motion/react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { loginBlocked, requiresAdminLogin } from '@/lib/admin-console';
+import { landingPath, readActiveMode } from '@/lib/account-modes';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -43,13 +44,13 @@ export default function LoginPage() {
       toast.error('This account is closed. Contact support@poketschool.ai.');
       return;
     }
-    const role = data.role;
-    if (role === 'student') router.push('/dashboard/student');
-    else if (role === 'teacher') router.push('/dashboard/teacher');
-    else if (role === 'parent') router.push('/dashboard/parent');
-    else if (role === 'institution_admin') router.push('/dashboard/institution');
-    else if (role === 'admin') router.push('/dashboard/admin');
-    else router.push('/onboarding');
+    const role = typeof data.role === 'string' ? data.role : '';
+    if (role !== 'student' && role !== 'teacher' && role !== 'parent' && role !== 'institution_admin' && role !== 'admin') {
+      router.push('/onboarding');
+      return;
+    }
+    const roles = Array.isArray(data.roles) ? data.roles.filter((item): item is string => typeof item === 'string') : [];
+    router.push(landingPath({ role, roles }, readActiveMode()));
   };
 
   const sendToAdminLogin = async (uid: string, address: string) => {

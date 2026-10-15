@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
+import { useAccountMode } from '@/hooks/use-account-mode';
+import { hasAccountRole } from '@/lib/account-modes';
 import { getCalendarEvents, createCalendarEvent, deleteCalendarEvent, CalendarEvent } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +44,7 @@ const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 export default function CalendarPage() {
   const { user, profile } = useAuthSTORE();
+  const { mode } = useAccountMode();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [today] = useState(new Date());
@@ -51,7 +54,8 @@ export default function CalendarPage() {
   const [form, setForm] = useState({ title: '', date: '', type: 'event' as CalendarEvent['type'], description: '', targets: ['all'] as string[] });
   const [selected, setSelected] = useState<CalendarEvent | null>(null);
 
-  const canCreate = profile?.role === 'teacher' || profile?.role === 'admin';
+  const teaching = mode === 'teacher' && hasAccountRole(profile, 'teacher');
+  const canCreate = teaching || profile?.role === 'admin' || profile?.role === 'institution_admin';
 
   const load = async () => {
     const data = await getCalendarEvents({});
@@ -99,11 +103,12 @@ export default function CalendarPage() {
   });
 
   const visibleEvents = events.filter(event => {
-    if (profile?.role === 'admin' || profile?.role === 'teacher' || profile?.role === 'institution_admin') return true;
+    if (profile?.role === 'admin' || profile?.role === 'institution_admin' || mode === 'teacher') return true;
     return recordVisible(event, {
-      role: profile?.role === 'parent' ? 'parent' : profile?.role === 'student' ? 'student' : 'guest',
+      role: mode === 'parent' ? 'parent' : 'student',
       userId: user?.uid,
       institutionId: profile?.institutionId,
+      roles: mode === 'parent' ? ['parent'] : ['student'],
     });
   });
 
