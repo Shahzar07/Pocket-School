@@ -1,4 +1,5 @@
 import { countCompleted, progressPercent } from './progress';
+import { QR_QUIET_ZONE, qrMatrix, qrSvg } from './certificate-qr';
 
 export const CERTIFICATE_ISSUER_ID = 'poket-school';
 export const CERTIFICATE_ISSUER_NAME = 'Poket School';
@@ -18,6 +19,8 @@ export interface CertificateAward {
   issuedByName: string;
 }
 
+export type CertificateStatus = 'valid' | 'revoked';
+
 export interface CertificateFace {
   id: string;
   studentName: string;
@@ -27,6 +30,12 @@ export interface CertificateFace {
   courseId?: string;
   issuedAt?: string | Date | { toDate?: () => Date } | null;
   issuedByName?: string;
+  /** Missing means valid. Older certificates were issued before status existed. */
+  status?: CertificateStatus | string | null;
+}
+
+export function certificateStatus(status: unknown): CertificateStatus {
+  return status === 'revoked' ? 'revoked' : 'valid';
 }
 
 /** Profile names are stored as written. Blank names stay a person, not an empty line. */
@@ -103,9 +112,36 @@ function pdfText(value: string): string {
   return out;
 }
 
+function pdfNum(value: number): string {
+  return value.toFixed(3);
+}
+
+/** Vector QR so a printed PDF scans without an embedded image decoder. */
+function pdfQrCommands(value: string, x: number, y: number, sizePt: number): string[] {
+  const matrix = qrMatrix(value);
+  const n = matrix.size + QR_QUIET_ZONE * 2;
+  const cell = sizePt / n;
+  const commands = [
+    '1 1 1 rg',
+    `${pdfNum(x)} ${pdfNum(y)} ${pdfNum(sizePt)} ${pdfNum(sizePt)} re f`,
+    '0 0 0 rg',
+  ];
+  for (let row = 0; row < matrix.size; row += 1) {
+    for (let col = 0; col < matrix.size; col += 1) {
+      if (!matrix.dark(row, col)) continue;
+      const cx = x + (col + QR_QUIET_ZONE) * cell;
+      const cy = y + sizePt - (row + QR_QUIET_ZONE + 1) * cell;
+      commands.push(`${pdfNum(cx)} ${pdfNum(cy)} ${pdfNum(cell)} ${pdfNum(cell)} re f`);
+    }
+  }
+  return commands;
+}
+
 /** One-page landscape PDF. Standard fonts, so the file opens without a viewer plugin. */
 export function buildCertificatePdf(face: CertificateFace, origin?: string): Uint8Array {
   const moduleTitle = face.moduleTitle?.trim() || face.courseTitle;
+  const verify = certificateVerifyUrl(face.id, origin);
+  const status = certificateStatus(face.status);
   const lines: { text: string; size: number; gap: number }[] = [
     { text: 'POKET SCHOOL', size: 12, gap: 28 },
     { text: 'Certificate of Achievement', size: 28, gap: 36 },
@@ -114,9 +150,11 @@ export function buildCertificatePdf(face: CertificateFace, origin?: string): Uin
     { text: 'has completed the module', size: 12, gap: 26 },
     { text: moduleTitle, size: 18, gap: 22 },
     { text: face.moduleTitle ? face.courseTitle : 'Poket School', size: 13, gap: 28 },
-    { text: formatCertificateDate(face.issuedAt), size: 12, gap: 26 },
-    { text: `Certificate ID  ${face.id}`, size: 10, gap: 16 },
-    { text: certificateVerifyUrl(face.id, origin), size: 10, gap: 22 },
+    { text: formatCertificateDate(face.issuedAt), size: 12, gap: 22 },
+    { text: `Status  ${status === 'revoked' ? 'Revoked' : 'Valid'}`, size: 12, gap: 22 },
+    { text: `Certificate ID  ${face.id}`, size: 11, gap: 16 },
+    { text: verify, size: 9, gap: 18 },
+    { text: 'Scan the QR code to open this verification page', size: 9, gap: 16 },
     { text: 'Not an official academic qualification', size: 9, gap: 12 },
   ];
   const commands = [
@@ -128,11 +166,13 @@ export function buildCertificatePdf(face: CertificateFace, origin?: string): Uin
     '40 40 712 532 re S',
     '0.12 0.14 0.16 rg',
   ];
-  let y = 500;
+  let y = 520;
   for (const line of lines) {
     commands.push('BT', `/F1 ${line.size} Tf`, `72 ${y} Td`, `(${pdfText(line.text)}) Tj`, 'ET');
     y -= line.gap;
   }
+  commands.push(...pdfQrCommands(verify, 620, 78, 132));
+  commands.push('0.12 0.14 0.16 rg', 'BT', '/F1 9 Tf', '620 64 Td', '(Scan to verify) Tj', 'ET');
   const stream = commands.join('\n');
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
@@ -161,6 +201,8 @@ export function certificateDocumentHtml(face: CertificateFace, origin?: string):
   const moduleTitle = face.moduleTitle?.trim() || '';
   const verify = certificateVerifyUrl(face.id, origin);
   const date = formatCertificateDate(face.issuedAt);
+  const status = certificateStatus(face.status);
+  const statusLabel = status === 'revoked' ? 'Revoked' : 'Valid';
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -177,6 +219,11 @@ export function certificateDocumentHtml(face: CertificateFace, origin?: string):
     .module { font-size: 26px; margin: 8px 0 4px; }
     .course { font-size: 16px; color: #526066; }
     .id { margin-top: 28px; font-family: "Courier New", monospace; font-size: 13px; word-break: break-all; }
+    .qr { width: 148px; height: 148px; margin: 18px auto 0; }
+    .qr svg { width: 148px; height: 148px; }
+    .status { display: inline-block; margin-top: 16px; padding: 4px 12px; border-radius: 999px; font-family: "Gill Sans", "Trebuchet MS", sans-serif; font-size: 12px; letter-spacing: 0.14em; }
+    .valid { color: #0F6E56; background: #E7F6F1; }
+    .revoked { color: #9B1C1C; background: #FDE8E8; }
     .disclaimer { margin-top: 22px; font-size: 12px; color: #6b7c82; }
     @media print { body { background: #fff; } .sheet { margin: 0; width: auto; } }
   </style>
@@ -191,7 +238,10 @@ export function certificateDocumentHtml(face: CertificateFace, origin?: string):
     <div class="module">${escapeHtml(moduleTitle || face.courseTitle)}</div>
     ${moduleTitle ? `<div class="course">${escapeHtml(face.courseTitle)}</div>` : ''}
     <p class="meta">${escapeHtml(date)} · ${escapeHtml(face.issuedByName || CERTIFICATE_ISSUER_NAME)}</p>
-    <div class="id">Certificate ID<br>${escapeHtml(face.id)}<br>${escapeHtml(verify)}</div>
+    <div class="status ${status}">${statusLabel}</div>
+    <div class="id">Certificate ID<br>${escapeHtml(face.id)}</div>
+    <div class="qr">${qrSvg(verify)}</div>
+    <p class="meta">Scan the QR code to open ${escapeHtml(verify)}</p>
     <p class="disclaimer">${escapeHtml(CERTIFICATE_DISCLAIMER)}</p>
   </div></div>
   <script>window.onload = function () { window.print(); }<\/script>

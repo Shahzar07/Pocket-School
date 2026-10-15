@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Zap, BookOpen, MessageSquare, Trophy, UserRound, FileBarChart, TrendingUp, Target, Clock, ShieldCheck, CheckCircle2, Loader2, Award } from 'lucide-react';
-import { formatCertificateDate, type CertificateFace } from '@/lib/certificates';
+import { certificateStatus, formatCertificateDate, type CertificateFace } from '@/lib/certificates';
 import Link from 'next/link';
 import { ChildExamPrep } from '@/components/study/child-exam-prep';
 import { DashPage, DashHeader } from '@/components/dash-ui';
@@ -444,6 +444,9 @@ export default function ParentDashboard() {
                               {cert.moduleTitle ? `${cert.courseTitle} · ` : ''}{formatCertificateDate(cert.issuedAt)}
                             </p>
                             <p className="font-mono text-[11px] text-muted-foreground break-all mt-1">{cert.id}</p>
+                            <p className={`text-[11px] font-bold uppercase tracking-wider mt-1 ${certificateStatus(cert.status) === 'revoked' ? 'text-[#9B1C1C]' : 'text-[#0F6E56]'}`}>
+                              {certificateStatus(cert.status) === 'revoked' ? 'Revoked' : 'Valid'}
+                            </p>
                           </div>
                           <Link href={`/verify/${cert.id}`} className="text-sm font-bold text-primary shrink-0">Verify</Link>
                         </li>

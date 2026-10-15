@@ -11,6 +11,7 @@ import {
   type CertificateFace,
   buildCertificatePdf,
   certificateDocumentHtml,
+  certificateStatus,
   certificateVerifyPath,
   certificateVerifyUrl,
   formatCertificateDate,
@@ -71,6 +72,7 @@ export function CertificateDocument({
 }) {
   const moduleTitle = certificate.moduleTitle?.trim();
   const path = certificateVerifyPath(certificate.id);
+  const status = certificateStatus(certificate.status);
   const [verify, setVerify] = useState(() => certificateVerifyUrl(certificate.id));
   useEffect(() => {
     setVerify(`${window.location.origin}${path}`);
@@ -84,6 +86,9 @@ export function CertificateDocument({
             <p className="text-[11px] font-bold tracking-[0.28em]">POKET SCHOOL</p>
           </div>
           <h2 className="font-heading text-3xl sm:text-4xl mt-3 text-[#1c2b30]">Certificate of Achievement</h2>
+          <p className={`inline-block mt-3 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-[0.16em] ${status === 'revoked' ? 'bg-[#FDE8E8] text-[#9B1C1C]' : 'bg-[#E7F6F1] text-[#0F6E56]'}`}>
+            {status === 'revoked' ? 'Revoked' : 'Valid'}
+          </p>
           <p className="text-sm text-[#526066] mt-4">This is to certify that</p>
           <p className="font-heading text-3xl italic text-[#1E6A83] mt-2">{certificate.studentName}</p>
           <p className="text-sm text-[#526066] mt-4">has completed the module</p>
@@ -92,11 +97,23 @@ export function CertificateDocument({
           <p className="text-sm text-[#526066] mt-4">
             {formatCertificateDate(certificate.issuedAt)} · {certificate.issuedByName || CERTIFICATE_ISSUER_NAME}
           </p>
-          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <QRCodeSVG value={verify} size={72} bgColor="#ffffff" fgColor="#1E6A83" />
-            <div className="text-left min-w-0">
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-5">
+            <div className="bg-white p-2 border border-[#DADCE0]">
+              <QRCodeSVG
+                value={verify}
+                size={168}
+                level="M"
+                marginSize={4}
+                bgColor="#ffffff"
+                fgColor="#111111"
+                title="Scan to open the public verification page for this certificate"
+              />
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#526066] mt-1">Scan to verify</p>
+            </div>
+            <div className="text-left min-w-0 max-w-sm">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#526066]">Certificate ID</p>
-              <p className="font-mono text-xs sm:text-sm break-all text-[#1c2b30]">{certificate.id}</p>
+              <p className="font-mono text-sm break-all text-[#1c2b30]">{certificate.id}</p>
+              <p className="text-[11px] text-[#526066] mt-2">Scanning the QR code opens</p>
               <p className="font-mono text-[11px] break-all text-[#1E6A83] mt-1">{verify}</p>
             </div>
           </div>
