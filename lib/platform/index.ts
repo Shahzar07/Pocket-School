@@ -23,7 +23,7 @@
  * | CMS order | cms.ts `moveItem` | Drag-and-drop curriculum CMS. Chapter reorder uses this, not a second helper. |
  * | Editor | `components/editor` | Shared source. `writeAutosave` matches the stack. API in `docs/EDITOR_MEDIA.md`. |
  * | Media | `components/media` | Shared source, including `media_assets` via `recordMediaAsset`. Book overlay stays in Book Studio. |
- * | Wallet | wallet.ts `quoteCheckout` | `POST /api/stripe/create-checkout` charges plans, add-ons, courses, books, and Reads. Touch 'n Go stays metadata until Stripe has a method type. |
+ * | Wallet | wallet.ts `quoteCheckout` | `POST /api/stripe/create-checkout` and `POST /api/payments/checkout` charge plans, add-ons, courses, books, and Reads. Touch 'n Go is the Malaysian gateway method `tng`. |
  * | Goals | `lib/goals.ts`, reading.ts `readingGoal` | Shared `daily_goals` contract. Category `reading`. Sessions return the document. The ledger write is still pending. |
  * | Roles | roles.ts `readAccountMode` | Local mode switch until `users.roles[]` exists. |
  * | Awards | gamification.ts `awardReading` | Local XP, `book-finished`, and `streak`. Replace with the shared XP service. |

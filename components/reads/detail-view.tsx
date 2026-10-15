@@ -65,7 +65,7 @@ export function BookDetail({ bookId }: { bookId: string }) {
     try {
       const data = await authedFetch('/api/reads/purchase', {
         method: 'POST',
-        body: JSON.stringify(body),
+        body: JSON.stringify({ ...body, currency }),
       });
       if (typeof data.url === 'string') window.location.assign(data.url);
     } catch (error) {

@@ -303,6 +303,31 @@ export async function applyStripeSubscription(uid: string, accessTier: AccessTie
   }
 }
 
+export async function grantPurchasedSparks(uid: string, amount: number, note: string) {
+  if (!Number.isInteger(amount) || amount === 0) {
+    throw new ActionError('INVALID_AMOUNT', 'Sparks amount must be a non-zero whole number.');
+  }
+  const snap = await db().doc(`users/${uid}`).get();
+  if (!snap.exists) throw new ActionError('USER_NOT_FOUND');
+  const current = (snap.data()?.sparksBalance as number) ?? 0;
+  const delta = amount < 0 ? Math.max(amount, -current) : amount;
+  if (delta === 0) return { balance: current };
+  const balance = await addSparks(uid, delta, amount > 0 ? 'purchase' : 'refund', note);
+  return { balance };
+}
+
+export async function sendNotification(userId: string, title: string, message: string, link = '/dashboard') {
+  await db().collection('notifications').add({
+    userId,
+    title,
+    message,
+    type: 'general',
+    link,
+    read: false,
+    createdAt: FieldValue.serverTimestamp(),
+  });
+}
+
 export async function enrollFromPayment(opts: {
   studentId: string;
   courseId: string;
@@ -310,6 +335,8 @@ export async function enrollFromPayment(opts: {
   currency?: string;
   paymentIntentId?: string;
   description?: string;
+  /** The unified checkout writes its own SST invoice. */
+  skipInvoice?: boolean;
 }) {
   const { studentId, courseId } = opts;
   const user = await db().doc(`users/${studentId}`).get();
@@ -332,19 +359,21 @@ export async function enrollFromPayment(opts: {
     }, { merge: true });
   }
   const ownerId = (course.ownerId as string) ?? 'platform';
-  await db().collection('invoices').add({
-    studentId,
-    studentName: name,
-    courseId,
-    description: opts.description ?? `Course purchase: ${(course.title as string) ?? 'Course'}`,
-    amount: opts.amount ?? (course.price as number) ?? 0,
-    currency: opts.currency ?? (course.currency as string) ?? 'USD',
-    status: 'paid',
-    paidAt: FieldValue.serverTimestamp(),
-    stripePaymentIntentId: opts.paymentIntentId ?? null,
-    createdBy: ownerId,
-    createdAt: FieldValue.serverTimestamp(),
-  });
+  if (!opts.skipInvoice) {
+    await db().collection('invoices').add({
+      studentId,
+      studentName: name,
+      courseId,
+      description: opts.description ?? `Course purchase: ${(course.title as string) ?? 'Course'}`,
+      amount: opts.amount ?? (course.price as number) ?? 0,
+      currency: opts.currency ?? (course.currency as string) ?? 'USD',
+      status: 'paid',
+      paidAt: FieldValue.serverTimestamp(),
+      stripePaymentIntentId: opts.paymentIntentId ?? null,
+      createdBy: ownerId,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+  }
   await db().doc(`users/${studentId}`).set({
     permissions: FieldValue.arrayUnion(`alloc:marketplace:${courseId}`),
     updatedAt: FieldValue.serverTimestamp(),

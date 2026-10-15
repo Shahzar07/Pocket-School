@@ -2848,6 +2848,8 @@ export interface Resource {
   uploadedByName: string;
   uploadedAt?: Timestamp;
   isPublic: boolean;
+  price?: number;
+  currency?: string;
 }
 
 export async function createResource(data: Omit<Resource, 'id'>): Promise<string> {

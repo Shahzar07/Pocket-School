@@ -10,7 +10,14 @@ export const dynamic = 'force-dynamic';
  * The webhook grants `alloc:marketplace:{bookId}` or `plan:reads` / `plan:reads-family`.
  */
 export async function POST(request: NextRequest) {
-  const body = await request.json().catch(() => null) as { bookId?: string; planId?: string; interval?: string } | null;
+  const body = await request.json().catch(() => null) as {
+    bookId?: string;
+    planId?: string;
+    interval?: string;
+    currency?: string;
+    methods?: string[];
+    method?: string;
+  } | null;
   const id = body?.bookId || body?.planId;
   const kind = body?.bookId ? 'book' : 'reads';
   if (!id) return NextResponse.json({ error: 'A book or a Reads plan is required.' }, { status: 400 });
@@ -25,7 +32,9 @@ export async function POST(request: NextRequest) {
       kind,
       id,
       interval: body?.interval === 'annual' ? 'annual' : 'monthly',
-      currency: 'USD',
+      currency: typeof body?.currency === 'string' && body.currency.trim() ? body.currency : 'USD',
+      methods: Array.isArray(body?.methods) ? body.methods : undefined,
+      method: typeof body?.method === 'string' ? body.method : undefined,
     }),
   });
   return startWalletCheckout(forwarded);

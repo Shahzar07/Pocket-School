@@ -15,9 +15,11 @@ import {
  * including its exchange rates. Book prices are stored in USD and converted
  * with that same table. Reads subscriptions stay in USD on card.
  *
- * Stripe can charge `card`, `fpx`, and `grabpay`. Touch 'n Go is recorded
- * on the session metadata until Stripe exposes a method type for it.
- * Subscriptions stay on card, because FPX and GrabPay are one-time methods.
+ * Stripe charges `card`, `fpx`, and `grabpay` together on a one-time MYR
+ * session. Touch 'n Go is charged by the Malaysian gateway when that method
+ * is selected (`tng`). `touchNGoRequested` stays true when the quote includes
+ * it, including the default MYR method list. Subscriptions stay on card,
+ * because FPX and GrabPay are one-time methods.
  */
 
 export const CHECKOUT_KINDS = ['plan', 'addon', 'course', 'book', 'reads'] as const;
@@ -44,7 +46,7 @@ export interface CheckoutQuote {
   mode: 'payment' | 'subscription';
   /** Methods Stripe Checkout can charge on this quote. */
   stripeMethods: Array<'card' | 'fpx' | 'grabpay'>;
-  /** Touch 'n Go was requested and is waiting on a gateway method type. */
+  /** Touch 'n Go was requested. The checkout charges it through the Malaysian gateway. */
   touchNGoRequested: boolean;
   recurring: 'month' | 'year' | null;
 }

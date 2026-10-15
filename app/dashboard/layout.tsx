@@ -12,6 +12,7 @@ import {
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
   Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked, Compass, Camera, MessagesSquare,
+  Wallet, Gift, Landmark, Plug, PieChart,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -29,12 +30,12 @@ import { useAccountMode } from '@/hooks/use-account-mode';
 import { homeForMode, learnerSpaceRoles, modeRedirect, MODE_NAMES, type AccountMode } from '@/lib/account-modes';
 import { loginBlocked, resolveStaffRole } from '@/lib/admin-console';
 import { AdminViewAsBanner, clearViewAs, useAdminIdle, useViewAs } from '@/components/admin-session';
+import { isSuperAdmin, ROLE_LABELS } from '@/lib/roles';
 import { PipGuide } from '@/components/pip-guide';
 import { OfflineBanner } from '@/components/offline-banner';
 import { RoleChecklist } from '@/components/role-checklist';
 import dynamic from 'next/dynamic';
 import type { TourRole } from '@/lib/tour-steps';
-import { ROLE_LABELS } from '@/lib/roles';
 import { hasCmsAddon } from '@/lib/entitlements';
 import { isFeatureEnabled, type FeatureFlag } from '@/lib/feature-flags';
 import { useFeatureFlags } from '@/hooks/use-feature-flags';
@@ -51,7 +52,7 @@ const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string }> = {
   institution_admin: { icon: 'text-sky-400', bar: 'bg-sky-400', chip: 'from-sky-500 to-cyan-600' },
 };
 
-interface NavEntry { href: string; icon: React.ElementType; labelKey: string; label?: string; flag?: FeatureFlag }
+interface NavEntry { href: string; icon: React.ElementType; labelKey: string; label?: string; flag?: FeatureFlag; superOnly?: boolean }
 interface NavGroup { sectionKey?: string; sectionLabel?: string; items: NavEntry[] }
 
 const NAV: Record<Role, NavGroup[]> = {
@@ -78,6 +79,8 @@ const NAV: Record<Role, NavGroup[]> = {
     ]},
     { sectionKey: 'nav.section.finance', items: [
       { href: '/dashboard/student/billing', icon: CreditCard, labelKey: 'nav.billing' },
+      { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
+      { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
     ]},
     { sectionLabel: 'Community', items: [
       { href: '/dashboard/community', icon: Compass, labelKey: 'nav.dashboard', label: 'Community', flag: 'community' },
@@ -105,6 +108,9 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher/courses', icon: Presentation, labelKey: 'nav.coursesProducts' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
+      { href: '/dashboard/teacher/earnings', icon: CreditCard, labelKey: 'nav.earnings' },
+      { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
+      { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
       { href: '/dashboard/teacher/analytics', icon: Activity, labelKey: 'nav.analytics' },
     ]},
@@ -144,6 +150,8 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/parent/communications', icon: Mail, labelKey: 'nav.mailbox' },
       { href: '/dashboard/parent/duedates', icon: Clock, labelKey: 'nav.dueDates' },
+      { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
+      { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
     ]},
     { sectionLabel: 'Family', items: [
       { href: '/dashboard/channels', icon: MessagesSquare, labelKey: 'nav.messages', label: 'Channels', flag: 'messagingHub' },
@@ -177,6 +185,13 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/community', icon: Compass, labelKey: 'nav.dashboard', label: 'Community', flag: 'community' },
       { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.dashboard', label: 'Tutors', flag: 'tutorMarketplace' },
       { href: '/dashboard/store', icon: Library, labelKey: 'nav.resources', label: 'Creator store', flag: 'creatorStore' },
+    ]},
+    { sectionKey: 'nav.section.money', items: [
+      { href: '/dashboard/admin/payments', icon: Landmark, labelKey: 'nav.payments', superOnly: true },
+      { href: '/dashboard/admin/integrations', icon: Plug, labelKey: 'nav.integrations', superOnly: true },
+      { href: '/dashboard/admin/finance', icon: PieChart, labelKey: 'nav.finance', superOnly: true },
+      { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
+      { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
     ]},
     { sectionKey: 'nav.section.platform', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
@@ -388,6 +403,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const role = (account.mode ?? profile.role ?? 'student') as Role;
+  const superAdmin = isSuperAdmin(profile);
   const roleLabel = account.mode
     ? MODE_NAMES[account.mode]
     : t(`roles.${profile.role}`, { defaultValue: ROLE_LABELS[profile.role] ?? profile.role });
@@ -405,18 +421,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
   const nav = (NAV[role] ?? NAV.student).map((group, index) => {
+    const cmsItem: NavEntry = { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' };
     const withCms = index !== 0 || role === 'admin' || !hasCmsAddon(profile) || (role !== 'teacher' && role !== 'institution_admin')
-      ? group
-      : {
-          ...group,
-          items: [
-            ...group.items,
-            { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' },
-          ],
-        };
+      ? group.items
+      : [...group.items, cmsItem];
     return {
-      ...withCms,
-      items: withCms.items.filter((item: NavEntry) => !item.flag || isFeatureEnabled(flags, item.flag)),
+      ...group,
+      items: withCms.filter((item) => (!item.superOnly || superAdmin) && (!item.flag || isFeatureEnabled(flags, item.flag))),
     };
   }).filter(group => group.items.length > 0);
   const accent = ROLE_ACCENT[role];

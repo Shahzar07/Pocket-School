@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { FieldValue } from 'firebase-admin/firestore';
-import { adminDb, isAdminConfigured } from '@/lib/firebase-admin';
+import { isAdminConfigured } from '@/lib/firebase-admin';
 import { applyStripeSubscription, enrollFromPayment, tierFromId } from '@/lib/server/actions';
 import type { AccessTier } from '@/lib/entitlements';
+import { parseStripeEvent } from '@/lib/payments/stripe-events';
+import { applyReversal, endSubscription, fulfillCheckout, grantLegacyBook, grantLegacyReads, recordDispute } from '@/lib/payments/server/engine';
+import { noteWebhook } from '@/lib/payments/server/settings';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,54 +29,51 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Webhook signature verification failed' }, { status: 400 });
     }
 
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data.object;
-      const meta = session.metadata ?? {};
-      if (meta.kind === 'course' && meta.studentId && meta.courseId) {
-        await enrollFromPayment({
-          studentId: meta.studentId,
-          courseId: meta.courseId,
-          amount: (session.amount_total ?? 0) / 100,
-          currency: (session.currency ?? 'myr').toUpperCase(),
-          paymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : undefined,
-          description: meta.courseTitle ? `Course purchase: ${meta.courseTitle}` : undefined,
-        });
-      }
-      if (meta.kind === 'subscription' && meta.uid) {
-        const tier = tierFromId(meta.tierId ?? '') ?? (Number(meta.accessTier) as AccessTier);
-        if (tier != null) await applyStripeSubscription(meta.uid, tier);
-      }
-      if (meta.kind === 'book' && meta.studentId && meta.bookId) {
-        await adminDb().doc(`users/${meta.studentId}`).set({
-          permissions: FieldValue.arrayUnion(`alloc:marketplace:${meta.bookId}`),
-          updatedAt: FieldValue.serverTimestamp(),
-        }, { merge: true });
-        await adminDb().doc(`library/${meta.studentId}/books/${meta.bookId}`).set({
-          bookId: meta.bookId,
-          source: 'purchase',
-          purchasedAt: FieldValue.serverTimestamp(),
-        }, { merge: true });
-      }
-      if (meta.kind === 'plan' && meta.uid && (meta.id === 'reads' || meta.id === 'reads-family')) {
-        await applyStripeSubscription(meta.uid, 1);
-        await adminDb().doc(`users/${meta.uid}`).set({
-          permissions: FieldValue.arrayUnion(meta.id === 'reads-family' ? 'plan:reads-family' : 'plan:reads'),
-          updatedAt: FieldValue.serverTimestamp(),
-        }, { merge: true });
-      }
+    const parsed = parseStripeEvent({
+      id: event.id,
+      type: event.type,
+      data: { object: event.data.object as unknown as Record<string, unknown> },
+    });
+
+    if (parsed.type === 'unified_paid') {
+      await fulfillCheckout(parsed.checkoutId, {
+        eventId: parsed.eventId,
+        provider: 'stripe',
+        providerRef: parsed.providerRef,
+        paymentIntentId: parsed.paymentIntentId,
+      });
+    } else if (parsed.type === 'legacy_course') {
+      await enrollFromPayment({
+        studentId: parsed.studentId,
+        courseId: parsed.courseId,
+        amount: parsed.amount,
+        currency: parsed.currency,
+        paymentIntentId: parsed.paymentIntentId,
+        description: parsed.title ? `Course purchase: ${parsed.title}` : undefined,
+      });
+    } else if (parsed.type === 'legacy_subscription') {
+      const tier = tierFromId(parsed.tierId) ?? (Number.isFinite(parsed.accessTier) ? parsed.accessTier as AccessTier : null);
+      if (tier != null) await applyStripeSubscription(parsed.uid, tier);
+    } else if (parsed.type === 'legacy_book') {
+      await grantLegacyBook(parsed);
+    } else if (parsed.type === 'legacy_reads') {
+      await grantLegacyReads(parsed);
+    } else if (parsed.type === 'legacy_invoice') {
+      const { adminDb } = await import('@/lib/firebase-admin');
+      await adminDb().doc(`invoices/${parsed.invoiceId}`).set({ status: 'paid', paidAt: new Date() }, { merge: true });
+    } else if (parsed.type === 'dispute') {
+      await recordDispute(parsed);
+    } else if (parsed.type === 'refund' && parsed.checkoutId) {
+      await applyReversal(parsed.checkoutId, parsed.eventId);
+    } else if (parsed.type === 'subscription_ended') {
+      await endSubscription(parsed.uid, parsed.subscriptionId);
     }
 
-    if (event.type === 'payment_intent.succeeded') {
-      const pi = event.data.object;
-      const invoiceId = pi.metadata?.invoiceId;
-      if (invoiceId) {
-        await adminDb().doc(`invoices/${invoiceId}`).set({ status: 'paid', paidAt: new Date() }, { merge: true });
-      }
-    }
-
+    await noteWebhook('stripe', true, event.type).catch(() => undefined);
     return NextResponse.json({ received: true });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Webhook processing failed';
+    await noteWebhook('stripe', false, message).catch(() => undefined);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

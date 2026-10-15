@@ -6,6 +6,7 @@ import { getSparkTransactions, SparkTransaction } from '@/lib/db';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useTranslation } from 'react-i18next';
 import { Zap, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import Link from 'next/link';
 import { formatAppDate, formatAppNumber } from '@/lib/i18n/detect';
 
 /**
@@ -55,6 +56,10 @@ export function SparksChip() {
           <p className="text-xs text-muted-foreground -mt-2">
             {t('sparks.spend')}
           </p>
+          <div className="flex gap-3 text-xs font-semibold">
+            <Link href="/dashboard/student/sparks" className="text-amber-700" onClick={() => setOpen(false)}>What are Sparks?</Link>
+            <Link href="/dashboard/checkout?kind=sparks&sku=sparks_100" className="text-primary" onClick={() => setOpen(false)}>Get more Sparks</Link>
+          </div>
 
           <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
             {loading && <p className="text-sm text-muted-foreground text-center py-6">{t('sparks.loading')}</p>}

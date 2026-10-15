@@ -5,7 +5,7 @@ import { ActionError } from './actions';
 function statusFor(code: string): number {
   if (code === 'FORBIDDEN') return 403;
   if (code === 'NOT_FOUND' || code === 'USER_NOT_FOUND') return 404;
-  if (code === 'INSUFFICIENT_SPARKS') return 402;
+  if (code === 'INSUFFICIENT_SPARKS' || code === 'INSUFFICIENT_WALLET') return 402;
   return 400;
 }
 
