@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import {
-  FIRST_SUPER_ADMIN,
+  initialSuperAdmin,
   loginBlocked,
   mfaRequired,
   resolveStaffRole,
@@ -58,10 +58,11 @@ function AdminLoginForm() {
       await refuse('This account is closed. Contact support@poketschool.ai.');
       return;
     }
-    if (lower === FIRST_SUPER_ADMIN.email) {
+    const seeded = initialSuperAdmin(lower);
+    if (seeded) {
       try {
         await setDoc(doc(db, 'users', uid), {
-          name: FIRST_SUPER_ADMIN.name,
+          name: seeded.name,
           email: lower,
           role: 'admin',
           adminRole: 'super_admin',

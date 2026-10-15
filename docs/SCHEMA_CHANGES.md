@@ -244,15 +244,28 @@ Staff stay on `users.role = admin` so the existing admin shell keeps working. Th
 
 Rules still need an owner deploy. Until that deploy, the API and the admin shell enforce the same role, suspension, ban, and soft-delete decisions. A blocked account is refused by `/api/admin/console` and `/api/export` when the service account can read the profile.
 
-### First super admin
+### Initial super admins
 
-Harry Seggu, `shahzarrayyan123@gmail.com`, is the Firebase owner account and the first super admin.
+Two accounts are seeded as super admins. Both display as Harry Seggu:
 
-1. Put the owner service-account JSON in `FIREBASE_SERVICE_ACCOUNT`. Do not commit it.
-2. Set `SMTP_HOST`, `SMTP_USER`, and `SMTP_PASS` so admin MFA can send a code. Admin and super admin sign-in refuses to continue when SMTP is missing.
-3. Sign in at `/admin/login` with that email. The page writes `users/{uid}.name = Harry Seggu`, `role = admin`, and `adminRole = super_admin` when the rules allow it.
-4. `sync-claims` sets the custom claim `{ adminRole: 'super_admin', role: 'admin' }` when the service account is present. Sign out and in again so the ID token picks up the claim.
-5. Until the service account exists, that email is still treated as super admin by `resolveStaffRole` and by `callerIsSuper()` in the rules. Other `role: admin` accounts resolve as regular admins unless `adminRole` is set.
+| Email | Why |
+|---|---|
+| `harry.seggu@gmail.com` | Harry Seggu |
+| `shahzarrayyan123@gmail.com` | Firebase owner account |
+
+`resolveStaffRole` treats both as `super_admin` before a custom claim exists. `callerIsSuper()` in `firestore.rules` allows both emails, plus `harry@poketschool.ai`.
+
+Set the claims with the bootstrap script. `ADMIN_BOOTSTRAP_EMAILS` is optional. When it is unset, the script still seeds both addresses. When it is set, those addresses are added as well, and the two above are kept.
+
+```bash
+export FIREBASE_SERVICE_ACCOUNT='{"type":"service_account",...}'
+export ADMIN_BOOTSTRAP_EMAILS='harry.seggu@gmail.com,shahzarrayyan123@gmail.com'
+npx tsx scripts/bootstrap-super-admins.ts
+```
+
+The script looks each email up in Firebase Auth, writes `users/{uid}.role = admin` and `adminRole = super_admin`, and sets the custom claim `{ adminRole: 'super_admin', role: 'admin' }`. Each person signs out and in again so the ID token picks up the claim. An email with no Auth user is reported and the script exits non-zero.
+
+Signing in at `/admin/login` also writes that profile when the rules allow it, then calls `sync-claims` if `FIREBASE_SERVICE_ACCOUNT` is on the server. Set `SMTP_HOST`, `SMTP_USER`, and `SMTP_PASS` so the admin code can be emailed. Other `role: admin` accounts resolve as regular admins unless `adminRole` is set.
 
 A super admin cannot remove the last super admin, and cannot demote or block their own super admin account. Another super admin has to do that.
 

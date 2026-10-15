@@ -3,10 +3,36 @@
  * so a role change, a suspension, and a Sparks grant follow one set of rules.
  */
 
+/** Firebase owner account. Kept as the named first super admin. */
 export const FIRST_SUPER_ADMIN = {
   name: 'Harry Seggu',
   email: 'shahzarrayyan123@gmail.com',
 } as const;
+
+/**
+ * Accounts seeded as super admins before any custom claim exists.
+ * `ADMIN_BOOTSTRAP_EMAILS` can add more for the claims script. These two always stay in that list.
+ */
+export const INITIAL_SUPER_ADMINS = [
+  { name: 'Harry Seggu', email: 'harry.seggu@gmail.com' },
+  FIRST_SUPER_ADMIN,
+] as const;
+
+export function initialSuperAdmin(email: string | null | undefined): { name: string; email: string } | null {
+  const lower = email?.trim().toLowerCase();
+  if (!lower) return null;
+  return INITIAL_SUPER_ADMINS.find(item => item.email === lower) ?? null;
+}
+
+/** Seed list for `scripts/bootstrap-super-admins.ts`. The two initial emails are always included. */
+export function parseBootstrapEmails(raw: string | null | undefined): string[] {
+  const seed = INITIAL_SUPER_ADMINS.map(item => item.email);
+  const extra = (raw ?? '')
+    .split(',')
+    .map(item => item.trim().toLowerCase())
+    .filter(Boolean);
+  return [...new Set([...seed, ...extra])];
+}
 
 export const STAFF_ROLES = ['super_admin', 'admin', 'content_editor', 'support', 'finance'] as const;
 export type StaffRole = (typeof STAFF_ROLES)[number];
@@ -68,11 +94,11 @@ export function isStaffRole(value: string | null | undefined): value is StaffRol
   return !!value && (STAFF_ROLES as readonly string[]).includes(value);
 }
 
-/** Owner emails stay super admins even before a custom claim is written. */
+/** The seeded owner emails stay super admins even before a custom claim is written. */
 export function resolveStaffRole(profile: StaffProfile | null | undefined): StaffRole | null {
   if (!profile) return null;
   const email = profile.email?.trim().toLowerCase();
-  if (email && email === FIRST_SUPER_ADMIN.email) return 'super_admin';
+  if (initialSuperAdmin(email)) return 'super_admin';
   if (isStaffRole(profile.adminRole)) return profile.adminRole;
   if (profile.role === 'admin') return 'admin';
   return null;

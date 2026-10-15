@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   FIRST_SUPER_ADMIN,
+  INITIAL_SUPER_ADMINS,
+  parseBootstrapEmails,
   auditEntry,
   customClaimsFor,
   decideModeration,
@@ -26,7 +28,14 @@ const editor = { id: 'ed', email: 'ed@poketschool.ai', role: 'admin', adminRole:
 
 test('the owner email is the first super admin and admin accounts need MFA', () => {
   assert.equal(FIRST_SUPER_ADMIN.name, 'Harry Seggu');
+  assert.equal(INITIAL_SUPER_ADMINS.map(item => item.email).join(','), 'harry.seggu@gmail.com,shahzarrayyan123@gmail.com');
   assert.equal(resolveStaffRole(owner), 'super_admin');
+  assert.equal(resolveStaffRole({ email: 'Harry.Seggu@gmail.com', role: 'student' }), 'super_admin');
+  assert.deepEqual(parseBootstrapEmails(undefined), ['harry.seggu@gmail.com', 'shahzarrayyan123@gmail.com']);
+  assert.deepEqual(
+    parseBootstrapEmails('harry.seggu@gmail.com, shahzarrayyan123@gmail.com'),
+    ['harry.seggu@gmail.com', 'shahzarrayyan123@gmail.com'],
+  );
   assert.equal(resolveStaffRole({ role: 'admin' }), 'admin');
   assert.equal(resolveStaffRole(editor), 'content_editor');
   assert.equal(mfaRequired('super_admin'), true);

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import firebaseConfig from '@/firebase-applet-config.json';
 import {
-  FIRST_SUPER_ADMIN,
+  initialSuperAdmin,
   auditEntry,
   customClaimsFor,
   decideModeration,
@@ -107,12 +107,13 @@ export async function POST(request: Request) {
   if (action === 'sync-claims') {
     const staff = resolveStaffRole(callerProfile);
     const platformRole = platformRoleFor(staff, callerProfile.role ?? 'admin');
+    const seeded = initialSuperAdmin(caller.email);
     if (db && staff) {
       await db.collection('users').doc(caller.uid).set({
         adminRole: staff,
         role: platformRole,
         email: caller.email || callerProfile.email,
-        ...(caller.email.trim().toLowerCase() === FIRST_SUPER_ADMIN.email ? { name: FIRST_SUPER_ADMIN.name } : {}),
+        ...(seeded ? { name: seeded.name } : {}),
       }, { merge: true });
       const { getAuth } = await import('firebase-admin/auth');
       await getAuth(app!).setCustomUserClaims(caller.uid, customClaimsFor(staff, platformRole));
