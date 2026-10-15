@@ -104,8 +104,6 @@ const SHOTS = [
   { id: 'payments', src: '/landing/payments.webp' },
 ] as const;
 
-const COMPARE = ['teachers', 'parent', 'reports', 'payments', 'academy'] as const;
-
 const FAQ = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7'] as const;
 
 function Shot({
@@ -378,46 +376,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-16 md:py-24" id="difference">
-        <p className="text-sm font-semibold text-primary">{t('landing.compare.eyebrow')}</p>
-        <h2 className="mt-2 max-w-3xl text-[clamp(32px,4vw,48px)] font-medium leading-tight">
-          {t('landing.compare.title')}
-        </h2>
-        <p className="mt-3 max-w-3xl text-muted-foreground">{t('landing.compare.lede')}</p>
-        <div className="mt-8 overflow-x-auto rounded-2xl border border-border">
-          <table className="w-full min-w-[720px] border-collapse text-left text-sm">
-            <caption className="sr-only">{t('landing.compare.title')}</caption>
-            <thead className="bg-muted text-foreground">
-              <tr>
-                <th scope="col" className="px-4 py-3 font-semibold">{t('landing.compare.feature')}</th>
-                <th scope="col" className="px-4 py-3 font-semibold">{t('landing.compare.poket')}</th>
-                <th scope="col" className="px-4 py-3 font-semibold">{t('landing.compare.udemy')}</th>
-                <th scope="col" className="px-4 py-3 font-semibold">{t('landing.compare.coursera')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {COMPARE.map((row) => (
-                <tr key={row} className="border-t border-border align-top">
-                  <th scope="row" className="px-4 py-4 font-semibold">{t(`landing.compare.${row}.label`)}</th>
-                  <td className="px-4 py-4">{t(`landing.compare.${row}.poket`)}</td>
-                  <td className="px-4 py-4">
-                    <span className="inline-flex rounded-full border border-dashed border-border px-2 py-1 text-xs font-semibold text-muted-foreground">
-                      {t('landing.compare.todo')}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4">
-                    <span className="inline-flex rounded-full border border-dashed border-border px-2 py-1 text-xs font-semibold text-muted-foreground">
-                      {t('landing.compare.todo')}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="bg-card py-16 md:py-24" id="addons">
+      <section className="py-16 md:py-24" id="addons">
         <div className="mx-auto max-w-6xl px-4">
           <p className="text-sm font-semibold text-primary">{t('landing.addons.eyebrow')}</p>
           <h2 className="mt-2 text-[clamp(32px,4vw,48px)] font-medium leading-tight">{t('landing.addons.title')}</h2>
@@ -447,7 +406,8 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-16 md:py-24" id="pricing">
+      <section className="bg-muted/60 py-16 md:py-24" id="pricing">
+        <div className="mx-auto max-w-6xl px-4">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <p className="text-sm font-semibold text-primary">{t('landing.pricing.eyebrow')}</p>
@@ -524,6 +484,7 @@ export function LandingPage() {
         <Link href="/pricing" className="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-primary">
           {t('landing.pricing.all')} <ArrowRight size={14} aria-hidden />
         </Link>
+        </div>
       </section>
 
       <section className="bg-card py-16 md:py-24" id="faq">

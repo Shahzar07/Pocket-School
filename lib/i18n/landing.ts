@@ -160,36 +160,6 @@ export const landingEn = {
     readsAlt: 'Poket Reads shelf.',
     paymentsAlt: 'Checkout preview showing Malaysian payment methods.',
   },
-  compare: {
-    eyebrow: 'Comparison',
-    title: 'Poket School, Udemy, and Coursera',
-    lede: 'The Poket School column describes this product. Udemy and Coursera stay marked until a public source is attached. This table does not guess what those products lack.',
-    feature: 'In the product',
-    poket: 'Poket School',
-    udemy: 'Udemy',
-    coursera: 'Coursera',
-    todo: 'TODO for Harry',
-    teachers: {
-      label: 'Named AI teachers',
-      poket: 'Yes. The ET roster, including ET Maths and ET Exam Coach.',
-    },
-    parent: {
-      label: 'Parent on the same login',
-      poket: 'Yes. The login switches between Learning, Teaching, and Parent.',
-    },
-    reports: {
-      label: 'Report card QR check',
-      poket: 'Yes. The QR opens the grade check.',
-    },
-    payments: {
-      label: 'FPX, GrabPay, and Touch ’n Go',
-      poket: 'Yes, on a one-time Malaysian ringgit checkout.',
-    },
-    academy: {
-      label: 'White-label academy',
-      poket: 'Yes. An institution can show its own name on its subdomain.',
-    },
-  },
   addons: {
     eyebrow: 'Add-ons',
     title: 'Lyra Live and CMS',
@@ -407,36 +377,6 @@ export const landingMs = {
     readsAlt: 'Rak Poket Reads.',
     paymentsAlt: 'Pratonton pembayaran yang menunjukkan kaedah pembayaran Malaysia.',
   },
-  compare: {
-    eyebrow: 'Perbandingan',
-    title: 'Poket School, Udemy, dan Coursera',
-    lede: 'Lajur Poket School menerangkan produk ini. Udemy dan Coursera ditanda sehingga ada sumber awam. Jadual ini tidak meneka apa yang produk itu tiada.',
-    feature: 'Dalam produk',
-    poket: 'Poket School',
-    udemy: 'Udemy',
-    coursera: 'Coursera',
-    todo: 'TODO for Harry',
-    teachers: {
-      label: 'Guru AI yang bernama',
-      poket: 'Ya. Senarai ET, termasuk ET Maths dan ET Exam Coach.',
-    },
-    parent: {
-      label: 'Parent pada log masuk yang sama',
-      poket: 'Ya. Log masuk bertukar antara Learning, Teaching, dan Parent.',
-    },
-    reports: {
-      label: 'Semakan QR kad laporan',
-      poket: 'Ya. QR membuka semakan gred.',
-    },
-    payments: {
-      label: 'FPX, GrabPay, dan Touch ’n Go',
-      poket: 'Ya, pada bayaran ringgit Malaysia sekali.',
-    },
-    academy: {
-      label: 'Akademi white-label',
-      poket: 'Ya. Institusi boleh menunjukkan namanya sendiri pada subdomainnya.',
-    },
-  },
   addons: {
     eyebrow: 'Add-on',
     title: 'Lyra Live dan CMS',
@@ -652,36 +592,6 @@ export const landingZh = {
     readsAlt: 'Poket Reads 书架。',
     paymentsAlt: '显示马来西亚支付方式的结账预览。',
   },
-  compare: {
-    eyebrow: '对照',
-    title: 'Poket School、Udemy 与 Coursera',
-    lede: 'Poket School 这一列描述的是本产品。Udemy 和 Coursera 在附上公开来源之前保持标记。本表不猜测那些产品缺少什么。',
-    feature: '产品里',
-    poket: 'Poket School',
-    udemy: 'Udemy',
-    coursera: 'Coursera',
-    todo: 'TODO for Harry',
-    teachers: {
-      label: '有名字的 AI 老师',
-      poket: '有。ET 名单，包括 ET Maths 和 ET Exam Coach。',
-    },
-    parent: {
-      label: '同一次登录里的 Parent',
-      poket: '有。登录可在 Learning、Teaching 和 Parent 之间切换。',
-    },
-    reports: {
-      label: '成绩单二维码核对',
-      poket: '有。二维码打开成绩核对。',
-    },
-    payments: {
-      label: 'FPX、GrabPay 和 Touch ’n Go',
-      poket: '有，用于一次性马来西亚令吉结账。',
-    },
-    academy: {
-      label: '白标学院',
-      poket: '有。机构可以在自己的子域名上显示自己的名称。',
-    },
-  },
   addons: {
     eyebrow: '附加项',
     title: 'Lyra Live 和 CMS',
@@ -896,36 +806,6 @@ export const landingTa = {
     modesAlt: 'Learning, Teaching, Parent இடையே கணக்கு முறை மாற்றம்.',
     readsAlt: 'Poket Reads அடுக்கு.',
     paymentsAlt: 'மலேசிய கட்டண முறைகளைக் காட்டும் செலுத்தல் முன்னோட்டம்.',
-  },
-  compare: {
-    eyebrow: 'ஒப்பீடு',
-    title: 'Poket School, Udemy, Coursera',
-    lede: 'Poket School நெடுவரிசை இந்தத் தயாரிப்பை விவரிக்கிறது. பொது மூலம் இணையும் வரை Udemy மற்றும் Coursera குறிக்கப்பட்டுள்ளன. அந்தத் தயாரிப்புகளில் எது இல்லை என்று இந்த அட்டவணை யூகிக்காது.',
-    feature: 'தயாரிப்பில்',
-    poket: 'Poket School',
-    udemy: 'Udemy',
-    coursera: 'Coursera',
-    todo: 'TODO for Harry',
-    teachers: {
-      label: 'பெயருள்ள AI ஆசிரியர்கள்',
-      poket: 'ஆம். ET பட்டியல், ET Maths மற்றும் ET Exam Coach உட்பட.',
-    },
-    parent: {
-      label: 'அதே உள்நுழைவில் Parent',
-      poket: 'ஆம். உள்நுழைவு Learning, Teaching, Parent இடையே மாறும்.',
-    },
-    reports: {
-      label: 'அறிக்கை அட்டை QR சரிபார்ப்பு',
-      poket: 'ஆம். QR தரச் சரிபார்ப்பைத் திறக்கும்.',
-    },
-    payments: {
-      label: 'FPX, GrabPay, Touch ’n Go',
-      poket: 'ஆம், ஒருமுறை மலேசிய ரிங்கிட் செலுத்துதலில்.',
-    },
-    academy: {
-      label: 'வெள்ளை-லேபிள் அகாடமி',
-      poket: 'ஆம். ஒரு நிறுவனம் தன் subdomain-இல் தன் பெயரைக் காட்டலாம்.',
-    },
   },
   addons: {
     eyebrow: 'கூடுதல்கள்',
