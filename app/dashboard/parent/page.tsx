@@ -16,7 +16,14 @@ import { Zap, BookOpen, MessageSquare, Trophy, UserRound, FileBarChart, Trending
 import Link from 'next/link';
 import { ChildExamPrep } from '@/components/study/child-exam-prep';
 import { DashPage, DashHeader } from '@/components/dash-ui';
-import { LearningCharts } from '@/components/insights/learning-charts';
+import dynamic from 'next/dynamic';
+import { SeeMore } from '@/components/shell/see-more';
+import { friendlyError } from '@/lib/design/system';
+
+const LearningCharts = dynamic(
+  () => import('@/components/insights/learning-charts').then(mod => mod.LearningCharts),
+  { ssr: false, loading: () => <div className="ps-skeleton h-48 rounded-2xl" aria-hidden="true" /> },
+);
 import { createSuggestion, readSnapshot } from '@/lib/insights/client';
 import type { AnalyticsSnapshot } from '@/lib/insights/aggregate';
 
@@ -131,7 +138,7 @@ export default function ParentDashboard() {
     try {
       setChildGoals(await getChildrenDailyGoals(user.uid, goalDateKey()));
     } catch (e: any) {
-      setGoalsError(e?.message ?? 'Could not load today’s goals.');
+      setGoalsError(friendlyError(e) || 'Could not load today’s goals.');
     } finally {
       setGoalsLoading(false);
     }
@@ -352,17 +359,17 @@ export default function ParentDashboard() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <h2 className="font-heading text-2xl sm:text-3xl leading-tight">{childProfile.name}</h2>
-                      <p className="text-slate-400 text-sm capitalize mt-1">
+                      <p className="text-muted-foreground text-sm capitalize mt-1">
                         {childProfile.level || 'Student'} · {childProfile.learningStyle || 'Visual'} learner
                       </p>
                     </div>
                     <div className="sm:text-right shrink-0">
-                      <div className="flex sm:justify-end items-center gap-2 text-amber-300">
-                        <Zap className="w-5 h-5 fill-amber-300" />
+                      <div className="flex sm:justify-end items-center gap-2 text-primary">
+                        <Zap className="w-5 h-5 fill-current" />
                         <span className="text-[26px] font-semibold tracking-[-0.03em] leading-none tabular-nums">{xp.toLocaleString()}</span>
-                        <span className="text-xs font-bold uppercase tracking-wider text-amber-300/70 mt-1">XP</span>
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground mt-1">XP</span>
                       </div>
-                      <p className="text-slate-500 text-xs mt-1.5">{enrollments.length} course{enrollments.length !== 1 ? 's' : ''} enrolled</p>
+                      <p className="text-muted-foreground text-xs mt-1.5">{enrollments.length} course{enrollments.length !== 1 ? 's' : ''} enrolled</p>
                     </div>
                   </div>
                 </div>
@@ -383,6 +390,7 @@ export default function ParentDashboard() {
                 </div>
 
                 {snapshots[id] && (
+                  <SeeMore label="Learning charts">
                   <div className="p-6 sm:p-7 border-b border-border space-y-3">
                     <div className="flex items-center justify-between gap-3">
                       <h3 className="font-heading text-xl text-foreground">Learning analytics</h3>
@@ -398,6 +406,7 @@ export default function ParentDashboard() {
                       }}
                     />
                   </div>
+                  </SeeMore>
                 )}
 
                 {/* Unit mastery report cards */}

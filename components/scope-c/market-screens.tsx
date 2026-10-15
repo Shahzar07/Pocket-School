@@ -6,8 +6,14 @@ import { DashHeader, DashPage, EmptyState, ListRow, Panel, PanelHeader } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ContentEditor } from '@/components/editor';
+import dynamic from 'next/dynamic';
+
 import { AllocationPicker } from '@/components/allocation-picker';
+
+const ContentEditor = dynamic(
+  () => import('@/components/editor/content-editor').then(mod => mod.ContentEditor),
+  { ssr: false, loading: () => <div className="ps-skeleton h-40 rounded-2xl" aria-hidden="true" /> },
+);
 
 export interface TutorSlotCard { startAtMs: number; minutes: number }
 export interface TutorCard { id: string; name: string; bio: string; subjects: string[]; hourlyCents: number; slots?: TutorSlotCard[] }
