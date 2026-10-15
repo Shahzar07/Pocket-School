@@ -27,6 +27,10 @@ interface UserProfile {
   sparksGrantedAt?: Timestamp;
   /** Preferred UI and lesson language. A short code from `lib/languages.ts`. */
   language?: string;
+  /** YYYY-MM-DD days a lesson was opened, used for the study streak. */
+  studyDates?: string[];
+  accessTier?: number;
+  permissions?: string[];
 }
 
 interface AuthState {

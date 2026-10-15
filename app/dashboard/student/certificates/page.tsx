@@ -8,6 +8,7 @@ import { Timestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Award, Printer, ExternalLink, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useWhiteLabel } from '@/components/white-label-provider';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -18,8 +19,15 @@ const fadeUp: Record<string, any> = {
   }),
 };
 
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, char => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char] ?? char
+  ));
+}
+
 export default function StudentCertificatesPage() {
   const { user, profile } = useAuthSTORE();
+  const { branding } = useWhiteLabel();
   const [certs, setCerts] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,6 +43,7 @@ export default function StudentCertificatesPage() {
 
     const win = window.open('', '_blank');
     if (!win) return;
+    const issuer = escapeHtml(branding.certificateIssuer || branding.displayName || 'Poket School');
     win.document.write(`
       <!DOCTYPE html>
       <html>
@@ -57,7 +66,7 @@ export default function StudentCertificatesPage() {
       <body>
         <div class="cert">
           <div class="seal">🎓</div>
-          <div class="logo">Poket School</div>
+          <div class="logo">${issuer}</div>
           <h1>Certificate of Achievement</h1>
           <div class="subtitle">This is to certify that</div>
           <div class="name">${cert.studentName}</div>

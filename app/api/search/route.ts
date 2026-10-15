@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllPublishedCourses, getAnnouncements, getResources } from '@/lib/db';
+import { filterCatalog } from '@/lib/learning';
 
 export async function GET(req: NextRequest) {
   const q = (req.nextUrl.searchParams.get('q') ?? '').trim().toLowerCase();
@@ -13,9 +14,15 @@ export async function GET(req: NextRequest) {
       getResources(),
     ]);
 
-    const matchCourses = courses.filter(c =>
-      c.title.toLowerCase().includes(q) || (c.description ?? '').toLowerCase().includes(q) || (c.subject ?? '').toLowerCase().includes(q)
-    ).slice(0, 5);
+    const subject = req.nextUrl.searchParams.get('subject') ?? '';
+    const level = req.nextUrl.searchParams.get('level') ?? '';
+    const maxPrice = req.nextUrl.searchParams.get('maxPrice');
+    const matchCourses = filterCatalog(courses, {
+      q,
+      subject,
+      level,
+      maxPrice: maxPrice ? Number(maxPrice) : null,
+    }).slice(0, 5);
 
     const matchAnnouncements = announcements.filter(a =>
       a.title.toLowerCase().includes(q) || a.content.toLowerCase().includes(q)

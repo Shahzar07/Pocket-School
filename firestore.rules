@@ -26,6 +26,25 @@ service cloud.firestore {
 
     function isTeacherOrAdmin() { return isSignedIn() && role() in ['teacher', 'admin', 'institution_admin']; }
 
+    function audienceGated(data) {
+      return data.keys().hasAny(['audiences'])
+        && data.audiences is list
+        && data.audiences.size() > 0;
+    }
+
+    // Signed-in audience match. Marketplace is public and is checked separately
+    // so a guest can read a sales page.
+    function audienceHit(data) {
+      return data.audiences.hasAny(['all'])
+        || (role() == 'student' && data.audiences.hasAny(['students']))
+        || (role() == 'teacher' && data.audiences.hasAny(['teachers']))
+        || (role() == 'parent' && data.audiences.hasAny(['parents']))
+        || data.audiences.hasAny(['marketplace'])
+        || (data.audiences.hasAny(['institutions'])
+            && myInstitution() != null
+            && data.get('allocatedInstitutionIds', []).hasAny([myInstitution()]));
+    }
+
     // Fields a user must never be able to set on their own profile. Writing
     // any of these is privilege escalation: role grants the admin console,
     // accessTier and subscriptionTier unlock paid content, permissions can
@@ -46,7 +65,12 @@ service cloud.firestore {
       allow update: if isAdmin()
         || (isUser(userId)
             && !request.resource.data.diff(resource.data).affectedKeys()
-                 .hasAny(privilegedUserFields()));
+                 .hasAny(privilegedUserFields()))
+        // A person may join the one school that invited their email.
+        || (isUser(userId)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['institutionId'])
+            && incoming().institutionId is string
+            && exists(/databases/$(database)/documents/institutions/$(incoming().institutionId)/invites/$(request.auth.token.email)));
       allow delete: if isAdmin();
 
       // Sparks wallet ledger
@@ -77,8 +101,21 @@ service cloud.firestore {
     match /courses/{courseId} {
       // Published marketplace courses are browsable without an account —
       // the marketplace advertises "browse and buy without an account".
-      allow read: if isSignedIn()
-        || (resource.data.status == 'published' && resource.data.isPublic == true);
+      // A course that sets `audiences` is listed only for those audiences.
+      // Courses without the field keep the older signed-in read.
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.ownerId == request.auth.uid)
+        || (isSignedIn() && exists(/databases/$(database)/documents/courses/$(courseId)/enrollments/$(request.auth.uid)))
+        || (!audienceGated(resource.data) && (
+             isSignedIn()
+             || (resource.data.status == 'published' && resource.data.isPublic == true)
+           ))
+        || (audienceGated(resource.data)
+            && resource.data.status == 'published'
+            && (
+              resource.data.audiences.hasAny(['marketplace'])
+              || (isSignedIn() && audienceHit(resource.data))
+            ));
       allow create: if isTeacherOrAdmin();
       // A student enrolling bumps enrollmentCount. Without this, enrolment
       // fails with a permissions error AFTER the enrollment doc is written,
@@ -97,6 +134,18 @@ service cloud.firestore {
         allow delete: if isUser(studentId) || isAdmin();
       }
 
+      match /reviews/{userId} {
+        allow read: if isSignedIn()
+          || get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published';
+        allow create, update: if isUser(userId)
+          && exists(/databases/$(database)/documents/courses/$(courseId)/enrollments/$(request.auth.uid))
+          && incoming().rating is int
+          && incoming().rating >= 1
+          && incoming().rating <= 5
+          && incoming().userId == request.auth.uid;
+        allow delete: if isUser(userId) || isAdmin();
+      }
+
       match /modules/{moduleId} {
         // Chapter titles are public so the marketplace can show a course's
         // curriculum before signup, the way every course marketplace does.
@@ -108,7 +157,19 @@ service cloud.firestore {
         match /lessons/{lessonId} {
           // Deliberately NOT public: lesson documents carry aiOutputs, the
           // full generated content the paywall exists to protect.
-          allow read: if isSignedIn();
+          // Audience-gated courses open the full lesson to enrolled learners
+          // and to staff in that audience. Everyone else gets the free preview.
+          allow read: if isAdmin()
+            || (isSignedIn() && exists(/databases/$(database)/documents/courses/$(courseId)/enrollments/$(request.auth.uid)))
+            || (!audienceGated(get(/databases/$(database)/documents/courses/$(courseId)).data) && isSignedIn())
+            || (isSignedIn()
+                && audienceGated(get(/databases/$(database)/documents/courses/$(courseId)).data)
+                && get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published'
+                && audienceHit(get(/databases/$(database)/documents/courses/$(courseId)).data)
+                && (
+                  role() in ['teacher', 'institution_admin', 'admin']
+                  || resource.data.get('order', 999) <= get(/databases/$(database)/documents/courses/$(courseId)).data.get('freePreviewCount', 1)
+                ));
           allow create, update: if isTeacherOrAdmin();
           allow delete: if isAdmin();
         }
@@ -165,6 +226,45 @@ service cloud.firestore {
       // subdomain — but not create or remove one, and not touch another's.
       allow update: if isAdmin()
         || (isInstitutionAdmin() && myInstitution() == institutionId);
+
+      match /licences/{licenceId} {
+        allow read: if isAdmin() || (isSignedIn() && myInstitution() == institutionId);
+        allow create, update, delete: if isAdmin();
+      }
+
+      match /classes/{classId} {
+        allow read: if isAdmin() || (isSignedIn() && myInstitution() == institutionId);
+        allow create, update, delete: if isAdmin()
+          || (isInstitutionAdmin() && myInstitution() == institutionId);
+      }
+
+      match /invites/{emailId} {
+        allow read: if isAdmin()
+          || (isInstitutionAdmin() && myInstitution() == institutionId)
+          || (isSignedIn() && request.auth.token.email == emailId);
+        allow create, update: if isAdmin()
+          || (isInstitutionAdmin() && myInstitution() == institutionId && incoming().email == emailId);
+        allow delete: if isAdmin() || (isInstitutionAdmin() && myInstitution() == institutionId);
+      }
+
+      match /members/{memberId} {
+        allow read: if isAdmin()
+          || isUser(memberId)
+          || (isSignedIn() && myInstitution() == institutionId);
+        allow create: if isAdmin()
+          || (isInstitutionAdmin() && myInstitution() == institutionId)
+          || (isUser(memberId)
+              && exists(/databases/$(database)/documents/institutions/$(institutionId)/invites/$(request.auth.token.email)));
+        allow update, delete: if isAdmin()
+          || (isInstitutionAdmin() && myInstitution() == institutionId);
+      }
+    }
+
+    match /join_codes/{code} {
+      allow read: if isSignedIn();
+      allow create, update: if isAdmin()
+        || (isInstitutionAdmin() && incoming().institutionId == myInstitution());
+      allow delete: if isAdmin();
     }
 
     // ── Badges ────────────────────────────────────────────────
@@ -192,7 +292,8 @@ service cloud.firestore {
 
     // ── Lesson Notes ─────────────────────────────────────────
     match /lesson_notes/{noteId} {
-      allow read, write: if isSignedIn();
+      allow read, update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
     }
 
     // ── Submissions ───────────────────────────────────────────

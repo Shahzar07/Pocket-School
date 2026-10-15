@@ -10,6 +10,7 @@ import {
   Course, Module, Lesson, Enrollment, UnitQuizAttempt, Programme,
 } from '@/lib/db';
 import { getUnitStatuses, getCurriculumLessonStatus, UnitStatus } from '@/lib/curriculum';
+import { productAccess, viewerFromProfile } from '@/lib/allocation';
 import { usePricing } from '@/hooks/use-pricing';
 import { formatMoney, planById, quotePlan } from '@/lib/pricing';
 import { TIERS } from '@/lib/entitlements';
@@ -67,13 +68,17 @@ export default function MyLearningPage() {
       setProgramme(programmes.find(p => p.status === 'active') ?? null);
 
       const result: ModuleTree[] = [];
+      const viewer = viewerFromProfile(profile);
       for (const course of courses) {
         let enrollment = await getEnrollment(user.uid, course.id);
-        if (!enrollment) {
-          // Auto-enroll into curriculum subjects for the student's year / level
+        const access = productAccess(course, { ...viewer, enrolled: !!enrollment });
+        if (!access.listed && !enrollment) continue;
+        if (!enrollment && access.open) {
+          // Auto-enroll into curriculum subjects this learner is allowed to open.
           await enrollStudent(user.uid, course.id);
           enrollment = await getEnrollment(user.uid, course.id);
         }
+        if (!enrollment) continue;
         const [allUnits, attempts] = await Promise.all([
           getModulesWithLessons(course.id),
           getUnitQuizAttempts(user.uid, course.id),

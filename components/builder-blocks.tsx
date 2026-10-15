@@ -96,7 +96,26 @@ export function BlockShell({
       }`}
     >
       <header className="flex items-center gap-2 px-4 py-2.5 border-b border-border/60">
-        <GripVertical className="w-4 h-4 text-muted-foreground/40 cursor-grab shrink-0" />
+        <button
+          type="button"
+          draggable
+          aria-label={`Reorder ${def.label}. Alt and the arrow keys move it.`}
+          title="Drag to reorder. Alt+Arrow also moves this block."
+          className="p-0.5 rounded cursor-grab text-muted-foreground/50 hover:text-foreground active:cursor-grabbing"
+          onClick={event => event.stopPropagation()}
+          onKeyDown={event => {
+            if (!event.altKey) return;
+            if (event.key === 'ArrowUp') { event.preventDefault(); onMoveUp?.(); }
+            if (event.key === 'ArrowDown') { event.preventDefault(); onMoveDown?.(); }
+          }}
+          onDragStart={event => {
+            event.stopPropagation();
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', `block:${def.id}`);
+          }}
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
         <span className="text-base leading-none">{def.icon}</span>
         <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{def.label}</span>
         {bloom && (

@@ -14,8 +14,9 @@ import { AnimatePresence, motion } from 'motion/react';
 import { toast } from 'sonner';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
-  getCourse, getModulesWithLessons, updateCourse, createModule, updateUnit,
+  getCourse, getModulesWithLessons, updateCourse, clearCourseFields, createModule, updateUnit,
   createLesson, updateLesson, deleteLesson, duplicateLesson, deleteUnit, getInstitutions,
+  moveLessonToUnit,
   Course, Module, Lesson, AiOutputs, Institution,
 } from '@/lib/db';
 import {
@@ -40,6 +41,8 @@ import { appendImageMarkdown, lessonBodyPatch, manuscriptToMarkdown, readLessonB
 import { filesToAssets, LessonIllustrationBlock, LessonImageBlock } from '@/components/lesson-pictures';
 import type { ImportResult } from '@/components/editor';
 import { LessonLanguagePanel } from '@/components/lesson-language-panel';
+import { AllocationPanel } from '@/components/allocation-panel';
+import { moveItem, popUndo, pushUndo, type UndoEntry } from '@/lib/reorder';
 import {
   ArrowLeft, AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Copy, CornerDownRight,
   Eye, GripVertical, Loader2, Pencil, Plus, RotateCcw, Send, Sparkles, Trash2, Archive, X,
@@ -105,6 +108,11 @@ const AI_SHORTCUTS: { id: keyof AiOutputs; label: string }[] = [
 ];
 
 interface UnitWithLessons { module: Module; lessons: Lesson[] }
+
+type CoursePatch = Omit<Partial<Course>, 'minTier' | 'priceType'> & {
+  minTier?: number | null;
+  priceType?: Course['priceType'] | null;
+};
 
 async function callGenerate(
   content: string, format: string, briefPrompt?: string, templateId?: string,
@@ -224,6 +232,7 @@ export default function ContentBuilderPage() {
   const [selLesson, setSelLesson] = useState<string | null>(null);
   const [draft, setDraft] = useState<Lesson | null>(null);
   const [saveState, setSaveState] = useState<'saved' | 'dirty' | 'saving'>('saved');
+  const [undoStack, setUndoStack] = useState<UndoEntry<UnitWithLessons[]>[]>([]);
   const [rightTab, setRightTab] = useState<'properties' | 'publish' | 'allocate' | 'history'>('properties');
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
   const [aiBusy, setAiBusy] = useState<string | null>(null);
@@ -669,6 +678,74 @@ export default function ContentBuilderPage() {
     }
   };
 
+  const rememberStructure = (label: string) => {
+    setUndoStack(stack => pushUndo(stack, { label, snapshot: units }));
+  };
+
+  const undoStructure = async () => {
+    const popped = popUndo(undoStack);
+    setUndoStack(popped.stack);
+    const previous = popped.entry?.snapshot;
+    if (!previous) return;
+    const current = new Map(units.flatMap(unit => unit.lessons.map(lesson => [lesson.id, unit.module.id] as const)));
+    setUnits(previous);
+    try {
+      for (const unit of previous) {
+        await updateUnit(courseId, unit.module.id, { order: unit.module.order, unitNumber: unit.module.unitNumber });
+        for (const lesson of unit.lessons) {
+          const from = current.get(lesson.id);
+          if (from && from !== unit.module.id) {
+            await moveLessonToUnit(courseId, from, unit.module.id, lesson.id, lesson.order, lesson.lessonNumber ?? lesson.order);
+          } else {
+            await updateLesson(courseId, unit.module.id, lesson.id, { order: lesson.order, lessonNumber: lesson.lessonNumber });
+          }
+        }
+      }
+      toast.success('Undone.');
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Could not undo that.');
+      load(true);
+    }
+  };
+
+  const reorderUnits = async (from: number, to: number) => {
+    rememberStructure('Reorder units');
+    const next = moveItem(units, from, to).map((unit, index) => ({
+      ...unit,
+      module: { ...unit.module, order: index + 1, unitNumber: index + 1 },
+    }));
+    setUnits(next);
+    try {
+      await Promise.all(next.map(unit => updateUnit(courseId, unit.module.id, { order: unit.module.order, unitNumber: unit.module.unitNumber })));
+      toast.success('Unit order saved.');
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Could not save the unit order.');
+      load(true);
+    }
+  };
+
+  const moveLessonAcross = async (fromUnitId: string, lessonId: string, toUnitId: string) => {
+    if (fromUnitId === toUnitId) return;
+    const fromUnit = units.find(unit => unit.module.id === fromUnitId);
+    const lesson = fromUnit?.lessons.find(item => item.id === lessonId);
+    const toUnit = units.find(unit => unit.module.id === toUnitId);
+    if (!lesson || !toUnit) return;
+    rememberStructure('Move lesson');
+    const order = toUnit.lessons.length + 1;
+    setUnits(prev => prev.map(unit => {
+      if (unit.module.id === fromUnitId) return { ...unit, lessons: unit.lessons.filter(item => item.id !== lessonId) };
+      if (unit.module.id === toUnitId) return { ...unit, lessons: [...unit.lessons, { ...lesson, moduleId: toUnitId, order, lessonNumber: order }] };
+      return unit;
+    }));
+    try {
+      await moveLessonToUnit(courseId, fromUnitId, toUnitId, lessonId, order, order);
+      toast.success('Lesson moved.');
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Could not move that lesson.');
+      load(true);
+    }
+  };
+
   const removeLesson = async (unitId: string, lesson: Lesson) => {
     if (!window.confirm(`Delete "${lesson.title}"? This cannot be undone.`)) return;
     try {
@@ -689,11 +766,26 @@ export default function ContentBuilderPage() {
 
   /* ── Course-level updates (publish scope, allocation) ── */
 
-  const patchCourse = async (patch: Partial<Course>, msg?: string) => {
+  const patchCourse = async (patch: CoursePatch, msg?: string) => {
     if (!course) return;
+    const clears: ('minTier' | 'priceType')[] = [];
+    const data: Partial<Course> = {};
+    for (const [key, value] of Object.entries(patch) as [keyof Course, unknown][]) {
+      if (value === null && (key === 'minTier' || key === 'priceType')) {
+        clears.push(key);
+        continue;
+      }
+      if (value !== undefined) (data as Record<string, unknown>)[key] = value;
+    }
     try {
-      await updateCourse(course.id, patch);
-      setCourse({ ...course, ...patch });
+      if (Object.keys(data).length) await updateCourse(course.id, data);
+      if (clears.length) await clearCourseFields(course.id, clears);
+      setCourse(current => {
+        if (!current) return current;
+        const next = { ...current, ...data };
+        for (const field of clears) delete next[field];
+        return next;
+      });
       if (msg) toast.success(msg);
     } catch (e: any) { toast.error(e?.message || 'Failed.'); }
   };
@@ -738,12 +830,15 @@ export default function ContentBuilderPage() {
         </nav>
         <span className="flex-1" />
         {/* Save status */}
-        <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+        <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground" role="status" aria-live="polite" data-save-state={saveState}>
           <span className={`w-2 h-2 rounded-full ${
             saveState === 'saved' ? 'bg-emerald-500' : saveState === 'saving' ? 'bg-amber-400 animate-pulse' : 'bg-amber-400 animate-pulse'
           }`} />
           {saveState === 'saved' ? 'All changes saved' : saveState === 'saving' ? 'Saving…' : 'Unsaved changes'}
         </span>
+        <Button size="sm" variant="outline" className="rounded-xl h-8 text-xs" onClick={() => void undoStructure()} disabled={undoStack.length === 0}>
+          Undo{undoStack[0] ? ` ${undoStack[0].label}` : ''}
+        </Button>
         <span className="hidden sm:inline-flex text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-violet-100 text-violet-700">
           {profile?.role ? ROLE_LABELS[profile.role] : 'Teacher'}
         </span>
@@ -779,11 +874,13 @@ export default function ContentBuilderPage() {
             </button>
           </div>
           <div className="p-2 space-y-1">
-            {units.map(u => (
+            {units.map((u, unitIndex) => (
               <TreeUnit
                 key={u.module.id}
                 unit={u.module}
                 lessons={u.lessons}
+                unitIndex={unitIndex}
+                unitCount={units.length}
                 activeLessonId={selLesson}
                 onSelect={(lid) => { setSelUnit(u.module.id); setSelLesson(lid); }}
                 onRename={() => renameUnit(u.module)}
@@ -793,7 +890,12 @@ export default function ContentBuilderPage() {
                 onDuplicateLesson={(l) => copyLesson(u.module.id, l)}
                 onRenameLesson={(l, title) => renameLesson(u.module.id, l, title)}
                 onAddSubLesson={(l) => addSubLesson(u.module.id, l, u.lessons)}
-                onReorder={(fromId, toId) => reorderLessons(u.module.id, fromId, toId)}
+                onReorder={(fromId, toId) => {
+                  rememberStructure('Reorder lessons');
+                  void reorderLessons(u.module.id, fromId, toId);
+                }}
+                onMoveUnit={to => { void reorderUnits(unitIndex, to); }}
+                onReceiveLesson={(fromUnitId, lessonId) => { void moveLessonAcross(fromUnitId, lessonId, u.module.id); }}
               />
             ))}
             {units.length === 0 && (
@@ -955,7 +1057,24 @@ export default function ContentBuilderPage() {
               {/* Blocks */}
               <AnimatePresence>
                 {blocksOrder.map((blockId, idx) => (
-                  <div key={blockId} className="space-y-5">
+                  <div
+                    key={blockId}
+                    className="space-y-5"
+                    onDragOver={event => event.preventDefault()}
+                    onDrop={event => {
+                      const token = event.dataTransfer.getData('text/plain');
+                      if (!token.startsWith('block:')) return;
+                      const id = token.slice('block:'.length);
+                      if (!blocksOrder.includes(id)) {
+                        const next = [...blocksOrder];
+                        next.splice(idx, 0, id);
+                        patchDraft({ blocksOrder: next });
+                      } else if (id !== blockId) {
+                        const from = blocksOrder.indexOf(id);
+                        patchDraft({ blocksOrder: moveItem(blocksOrder, from, idx) });
+                      }
+                    }}
+                  >
                     <BuilderBlock
                       blockId={blockId}
                       draft={draft}
@@ -988,7 +1107,16 @@ export default function ContentBuilderPage() {
               </AnimatePresence>
 
               {/* Add-block palette */}
-              <div className="rounded-2xl border border-dashed border-border p-4">
+              <div
+                className="rounded-2xl border border-dashed border-border p-4"
+                onDragOver={event => event.preventDefault()}
+                onDrop={event => {
+                  const token = event.dataTransfer.getData('text/plain');
+                  if (!token.startsWith('block:')) return;
+                  const id = token.slice('block:'.length);
+                  if (!blocksOrder.includes(id)) patchDraft({ blocksOrder: [...blocksOrder, id] });
+                }}
+              >
                 <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Add a block</p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {BLOCK_DEFS.map(def => {
@@ -997,6 +1125,11 @@ export default function ContentBuilderPage() {
                       <button
                         key={def.id}
                         disabled={added}
+                        draggable={!added}
+                        onDragStart={event => {
+                          event.dataTransfer.effectAllowed = 'copy';
+                          event.dataTransfer.setData('text/plain', `block:${def.id}`);
+                        }}
                         onClick={() => patchDraft({ blocksOrder: [...blocksOrder, def.id] })}
                         className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left text-xs font-semibold transition-all ${
                           added
@@ -1195,16 +1328,18 @@ function DurationPanel({ draft, patch }: { draft: Lesson; patch: (p: Partial<Les
 /* ── Tree unit ──────────────────────────────────────────────── */
 
 function TreeUnit({
-  unit, lessons, activeLessonId, onSelect, onRename, onAddLesson, onDeleteUnit, onDeleteLesson,
-  onDuplicateLesson, onRenameLesson, onAddSubLesson, onReorder,
+  unit, lessons, unitIndex, unitCount, activeLessonId, onSelect, onRename, onAddLesson, onDeleteUnit, onDeleteLesson,
+  onDuplicateLesson, onRenameLesson, onAddSubLesson, onReorder, onMoveUnit, onReceiveLesson,
 }: {
-  unit: Module; lessons: Lesson[]; activeLessonId: string | null;
+  unit: Module; lessons: Lesson[]; unitIndex: number; unitCount: number; activeLessonId: string | null;
   onSelect: (lessonId: string) => void; onRename: () => void; onAddLesson: () => void;
   onDeleteUnit: () => void;
   onDeleteLesson: (l: Lesson) => void; onDuplicateLesson: (l: Lesson) => void;
   onRenameLesson: (l: Lesson, title: string) => void;
   onAddSubLesson: (l: Lesson) => void;
   onReorder: (fromId: string, toId: string) => void;
+  onMoveUnit: (toIndex: number) => void;
+  onReceiveLesson: (fromUnitId: string, lessonId: string) => void;
 }) {
   const [open, setOpen] = useState<boolean>(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -1221,7 +1356,17 @@ function TreeUnit({
 
   return (
     <div>
-      <div className="group flex items-center gap-1 px-1.5 py-1.5 rounded-lg hover:bg-muted/60">
+      <div
+        className="group flex items-center gap-1 px-1.5 py-1.5 rounded-lg hover:bg-muted/60"
+        onDragOver={event => event.preventDefault()}
+        onDrop={event => {
+          const token = event.dataTransfer.getData('text/plain');
+          const [fromUnitId, lessonId] = token.split(':');
+          if (fromUnitId && lessonId && fromUnitId !== unit.id) onReceiveLesson(fromUnitId, lessonId);
+        }}
+      >
+        <button type="button" aria-label={`Move ${unit.title} up`} disabled={unitIndex === 0} className="p-0.5 disabled:opacity-30" onClick={() => onMoveUnit(unitIndex - 1)}>↑</button>
+        <button type="button" aria-label={`Move ${unit.title} down`} disabled={unitIndex >= unitCount - 1} className="p-0.5 disabled:opacity-30" onClick={() => onMoveUnit(unitIndex + 1)}>↓</button>
         <button onClick={() => setOpen(o => !o)} className="flex items-center gap-1.5 flex-1 min-w-0 text-left">
           {open ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
           <span className="text-xs font-bold text-foreground truncate">
@@ -1240,22 +1385,36 @@ function TreeUnit({
       </div>
       {open && (
         <div className="ml-4 border-l border-border/60 pl-2 space-y-0.5 py-0.5">
-          {lessons.map(l => {
+          {lessons.map((l, lessonIndex) => {
             const active = l.id === activeLessonId;
             const sub = isSubLesson(l);
             const editing = editingId === l.id;
             return (
               <div key={l.id}
                 draggable={!editing}
-                onDragStart={e => { setDragId(l.id); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', l.id); }}
+                tabIndex={0}
+                onKeyDown={event => {
+                  if (!event.altKey) return;
+                  if (event.key === 'ArrowUp' && lessonIndex > 0) {
+                    event.preventDefault();
+                    onReorder(l.id, lessons[lessonIndex - 1].id);
+                  }
+                  if (event.key === 'ArrowDown' && lessonIndex < lessons.length - 1) {
+                    event.preventDefault();
+                    onReorder(l.id, lessons[lessonIndex + 1].id);
+                  }
+                }}
+                onDragStart={e => { setDragId(l.id); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', `${unit.id}:${l.id}`); }}
                 onDragEnd={() => { setDragId(null); setDropId(null); }}
                 onDragOver={e => { if (dragId && dragId !== l.id) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDropId(l.id); } }}
                 onDragLeave={() => setDropId(d => (d === l.id ? null : d))}
                 onDrop={e => {
                   e.preventDefault();
-                  const from = dragId ?? e.dataTransfer.getData('text/plain');
+                  const token = e.dataTransfer.getData('text/plain');
+                  const [fromUnitId, fromLessonId] = token.split(':');
                   setDragId(null); setDropId(null);
-                  if (from) onReorder(from, l.id);
+                  if (fromUnitId && fromLessonId && fromUnitId !== unit.id) onReceiveLesson(fromUnitId, fromLessonId);
+                  else if (fromLessonId) onReorder(fromLessonId, l.id);
                 }}
                 className={`group flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer text-xs transition-colors ${
                   sub ? 'ml-4' : ''
@@ -1312,7 +1471,7 @@ function TreeUnit({
           })}
           {lessons.length === 0
             ? <p className="text-[10px] text-muted-foreground px-2 py-1">Empty — add a lesson.</p>
-            : <p className="text-[10px] text-muted-foreground/70 px-2 pt-1">Drag to reorder · ✎ rename · ↳ add sub-lesson</p>}
+            : <p className="text-[10px] text-muted-foreground/70 px-2 pt-1">Drag to reorder or into another unit. Alt+Arrow moves a focused lesson.</p>}
         </div>
       )}
     </div>
@@ -1745,22 +1904,13 @@ function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseI
 
 function AllocateTab({ course, institutions, patchCourse }: {
   course: Course; institutions: Institution[];
-  patchCourse: (p: Partial<Course>, msg?: string) => Promise<void>;
+  patchCourse: (p: CoursePatch, msg?: string) => Promise<void>;
 }) {
-  const allocated = course.allocatedInstitutionIds ?? [];
   const groups = course.allocatedGroups ?? [];
   const override = course.accessOverride ?? {};
   const [price, setPrice] = useState(override.pricePerInstitution?.toString() ?? '');
   const [expiry, setExpiry] = useState(override.expiryDate ?? '');
   const [sparks, setSparks] = useState(override.sparksOverride?.toString() ?? '');
-
-  const toggleInstitution = (inst: Institution, on: boolean) => {
-    const next = on ? [...allocated, inst.id] : allocated.filter(id => id !== inst.id);
-    patchCourse(
-      { allocatedInstitutionIds: next },
-      on ? `Access granted to ${inst.name}` : `Access removed from ${inst.name}`
-    );
-  };
 
   const toggleGroup = (g: string, on: boolean) => {
     const next = on ? [...groups, g] : groups.filter(x => x !== g);
@@ -1769,24 +1919,22 @@ function AllocateTab({ course, institutions, patchCourse }: {
 
   return (
     <>
-      <section className="space-y-1.5">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Institutions</p>
-        {institutions.length === 0 && (
-          <p className="text-[11px] text-muted-foreground">No institutions yet — add them in Admin → Institutions.</p>
-        )}
-        {institutions.map(inst => (
-          <label key={inst.id} className="flex items-center justify-between gap-2 text-xs py-1 cursor-pointer">
-            <span className="min-w-0">
-              <span className="font-semibold text-foreground block truncate">{inst.name}</span>
-              <span className="text-[10px] text-muted-foreground">{inst.studentCount} students</span>
-            </span>
-            <Switch checked={allocated.includes(inst.id)} onCheckedChange={v => toggleInstitution(inst, v)} />
-          </label>
-        ))}
-      </section>
+      <AllocationPanel
+        product={course}
+        institutions={institutions}
+        onChange={patch => {
+          void patchCourse({
+            ...(patch.audiences ? { audiences: [...patch.audiences] } : {}),
+            ...(patch.allocatedInstitutionIds ? { allocatedInstitutionIds: [...patch.allocatedInstitutionIds] } : {}),
+            ...('minTier' in patch ? { minTier: patch.minTier ?? null } : {}),
+            ...('priceType' in patch ? { priceType: (patch.priceType ?? null) as Course['priceType'] | null } : {}),
+          }, 'Allocation updated');
+        }}
+      />
 
       <section className="space-y-1.5">
         <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Student groups</p>
+        <p className="text-[10px] text-muted-foreground">Year groups, separate from the audience above.</p>
         {STUDENT_GROUPS.map(g => (
           <label key={g} className="flex items-center justify-between text-xs py-1 cursor-pointer">
             <span className="font-semibold text-foreground">{g}</span>
