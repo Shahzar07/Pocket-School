@@ -26,6 +26,7 @@ import { reorderById, sortByOrder, withSequentialOrder } from '@/lib/reorder';
 import { hasCmsAddon } from '@/lib/entitlements';
 import { stripUnitPrefix } from '@/lib/unit-title';
 import { ReorderControls, reorderKeyDown } from '@/components/reorder-controls';
+import { cmsSubjectYearOptions, cmsYearLevelSuggestions, levelsForProgramme } from '@/lib/programmes';
 
 const STATUS_BADGE: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -33,11 +34,14 @@ const STATUS_BADGE: Record<string, string> = {
   published: 'bg-emerald-50 text-emerald-700',
 };
 
-/** Year/Level is free text — these are only suggestions, not a fixed list. */
-const YEAR_LEVEL_SUGGESTIONS = [
-  ...Array.from({ length: 13 }, (_, i) => `Year ${i + 1}`),
-  'Foundation', 'Advanced', 'Tertiary', 'K-12',
-];
+/** Year / Level suggestions from the same taxonomy as sign-up. */
+const YEAR_LEVEL_SUGGESTIONS = cmsYearLevelSuggestions();
+
+function yearChoices(name: string | undefined, stored: readonly string[], current: string): readonly string[] {
+  const years = cmsSubjectYearOptions(name, stored);
+  if (current && !years.includes(current)) return [current, ...years];
+  return years;
+}
 
 /** A teaching week is planned as 5 × 60-minute sessions. */
 const MINUTES_PER_WEEK = 300;
@@ -57,7 +61,7 @@ export default function AdminCurriculumPage() {
   const [showProgrammeForm, setShowProgrammeForm] = useState(false);
   const [progName, setProgName] = useState('');
   const [progSubjects, setProgSubjects] = useState('');
-  const [progYearGroups, setProgYearGroups] = useState('Year 7, Year 8, Year 9');
+  const [progYearGroups, setProgYearGroups] = useState(levelsForProgramme('Lower Secondary').join(', '));
   const [progTier, setProgTier] = useState<'free' | 'academic'>('academic');
   const [creatingProgramme, setCreatingProgramme] = useState(false);
   /** Programme being edited; null means the form creates a new one. */
@@ -470,7 +474,7 @@ export default function AdminCurriculumPage() {
             <div className="space-y-1.5">
               <Label>Year / Level</Label>
               <Input value={archYear} onChange={e => setArchYear(e.target.value)}
-                list="year-level-suggestions" placeholder="e.g. Year 9, Foundation, Tertiary"
+                list="year-level-suggestions" placeholder="e.g. Year 9"
                 className="rounded-xl h-10" />
             </div>
             <div className="space-y-1.5">
@@ -736,22 +740,28 @@ export default function AdminCurriculumPage() {
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Year / Level</Label>
-                {/* Free text with suggestions — schools use Year 1…13, Advanced,
-                    Tertiary, K-12 and their own custom labels. */}
-                <Input
+                <select
+                  aria-label="Year / Level"
                   value={modYearGroup}
                   onChange={e => setModYearGroup(e.target.value)}
-                  list="year-level-suggestions"
-                  placeholder="e.g. Year 7, Advanced, Tertiary"
-                  className="rounded-xl h-10"
-                />
-                <datalist id="year-level-suggestions">
-                  {YEAR_LEVEL_SUGGESTIONS.map(yg => <option key={yg} value={yg} />)}
-                </datalist>
+                  className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm"
+                >
+                  {yearChoices(
+                    programmes.find(item => item.id === modProgrammeId)?.name,
+                    programmes.find(item => item.id === modProgrammeId)?.yearGroups ?? [],
+                    modYearGroup,
+                  ).map(yg => <option key={yg} value={yg}>{yg}</option>)}
+                </select>
               </div>
               <div className="space-y-1.5">
                 <Label>Programme</Label>
-                <Select value={modProgrammeId} onValueChange={(v) => setModProgrammeId(v ?? '')} disabled={programmes.length === 0}>
+                <Select value={modProgrammeId} onValueChange={(v) => {
+                  const next = v ?? '';
+                  setModProgrammeId(next);
+                  const chosen = programmes.find(item => item.id === next);
+                  const years = cmsSubjectYearOptions(chosen?.name, chosen?.yearGroups ?? []);
+                  if (years.length && !years.includes(modYearGroup)) setModYearGroup(years[0] ?? '');
+                }} disabled={programmes.length === 0}>
                   <SelectTrigger className="rounded-xl h-10"><SelectValue placeholder="None" /></SelectTrigger>
                   <SelectContent>
                     {programmes.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
@@ -786,12 +796,28 @@ export default function AdminCurriculumPage() {
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs">Year / Level</Label>
-                      <Input value={subjYear} onChange={e => setSubjYear(e.target.value)}
-                        list="year-level-suggestions" className="rounded-xl h-10" />
+                      <select
+                        aria-label="Year / Level"
+                        value={subjYear}
+                        onChange={e => setSubjYear(e.target.value)}
+                        className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm"
+                      >
+                        {yearChoices(
+                          programmes.find(item => item.id === subjProgrammeId)?.name,
+                          programmes.find(item => item.id === subjProgrammeId)?.yearGroups ?? [],
+                          subjYear,
+                        ).map(yg => <option key={yg} value={yg}>{yg}</option>)}
+                      </select>
                     </div>
                     <div className="space-y-1.5 sm:col-span-3">
                       <Label className="text-xs">Programme</Label>
-                      <Select value={subjProgrammeId} onValueChange={(v) => setSubjProgrammeId(v ?? '')}>
+                      <Select value={subjProgrammeId} onValueChange={(v) => {
+                        const next = v ?? '';
+                        setSubjProgrammeId(next);
+                        const chosen = programmes.find(item => item.id === next);
+                        const years = cmsSubjectYearOptions(chosen?.name, chosen?.yearGroups ?? []);
+                        if (years.length && !years.includes(subjYear)) setSubjYear(years[0] ?? '');
+                      }}>
                         <SelectTrigger className="rounded-xl h-10"><SelectValue placeholder="Choose a programme" /></SelectTrigger>
                         <SelectContent>
                           {programmes.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}

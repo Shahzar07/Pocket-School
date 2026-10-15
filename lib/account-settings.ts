@@ -4,6 +4,8 @@
  * Firestore rules repeat the same names in `selfServiceFields()`.
  */
 
+import { assertPlacement } from './programmes';
+
 export const DELETION_GRACE_MS = 14 * 24 * 60 * 60 * 1000;
 
 export const SELF_SERVICE_FIELDS = [
@@ -243,7 +245,11 @@ export function profilePatch(draft: ProfileDraft, role: string): Record<string, 
   };
   if (draft.avatarUrl) patch.avatarUrl = draft.avatarUrl;
   if (draft.photoStoragePath) patch.photoStoragePath = draft.photoStoragePath;
-  if (role === 'student' && draft.yearGroup) patch.yearGroup = draft.yearGroup;
+  if (role === 'student') {
+    const placement = assertPlacement(draft.level, draft.yearGroup);
+    patch.level = placement.level;
+    patch.yearGroup = placement.yearGroup;
+  }
   if (role === 'teacher') {
     patch.instructor = {
       headline: draft.instructor.headline.trim(),

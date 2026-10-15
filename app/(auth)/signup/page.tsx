@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 import { GraduationCap, Presentation, Users, ShieldCheck, Info } from 'lucide-react';
-import { PROGRAMMES, yearsForProgramme } from '@/lib/programmes';
+import { PROGRAMMES, assertPlacement, levelsForProgramme, suggestPlacementFromDob } from '@/lib/programmes';
 import { authedFetch } from '@/lib/api-client';
 import { publicDisplayName } from '@/lib/display-name';
 
@@ -67,7 +67,8 @@ export default function SignupPage() {
 
   // Role-specific
   const [pathway, setPathway] = useState(PROGRAMMES[0]?.value ?? 'Primary');
-  const [yearGroup, setYearGroup] = useState(PROGRAMMES[0]?.years[0] ?? '');
+  const [yearGroup, setYearGroup] = useState(levelsForProgramme(PROGRAMMES[0]?.value)[0] ?? '');
+  const [placementEdited, setPlacementEdited] = useState(false);
   const [subject, setSubject] = useState('');
   const [teachingLevel, setTeachingLevel] = useState('IGCSE');
   const [institution, setInstitution] = useState('');
@@ -87,6 +88,14 @@ export default function SignupPage() {
   const age = useMemo(() => ageFromDob(dob), [dob]);
   const isMinor = role === 'student' && age !== null && age < 18;
   const tooYoung = age !== null && age < 13;
+  const yearOptions = levelsForProgramme(pathway);
+  const suggestedPlacement = useMemo(() => (role === 'student' ? suggestPlacementFromDob(dob) : null), [dob, role]);
+
+  useEffect(() => {
+    if (role !== 'student' || placementEdited || !suggestedPlacement) return;
+    setPathway(suggestedPlacement.programme);
+    setYearGroup(suggestedPlacement.year);
+  }, [role, placementEdited, suggestedPlacement]);
 
   const routeAfterSignup = (r: string) => {
     if (r === 'teacher') router.push('/dashboard/teacher');
@@ -96,8 +105,12 @@ export default function SignupPage() {
   /** Fields written to the user profile, shared by both signup paths. */
   const roleProfileFields = () => {
     if (role === 'student') {
-      const years = yearsForProgramme(pathway);
-      return { pathway, level: pathway, ...(years.length > 0 && yearGroup ? { yearGroup } : {}) };
+      const placement = assertPlacement(pathway, yearGroup);
+      return {
+        pathway: placement.pathway,
+        level: placement.level,
+        ...(placement.yearGroup ? { yearGroup: placement.yearGroup } : {}),
+      };
     }
     if (role === 'teacher') {
       const subjects = subject.split(',').map(s => s.trim()).filter(Boolean);
@@ -136,6 +149,14 @@ export default function SignupPage() {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
+        if (role === 'student') {
+          await authedFetch('/api/account/placement', {
+            method: 'POST',
+            body: JSON.stringify({ programme: pathway, year: yearGroup }),
+          }).catch((error: unknown) => {
+            toast.error(error instanceof Error ? error.message : 'Could not confirm your programme.');
+          });
+        }
       }
       const existing = snap.exists() ? snap.data() : { role };
       routeAfterSignup(existing.role || role);
@@ -175,6 +196,14 @@ export default function SignupPage() {
     if (role === 'teacher' && !subject.trim()) {
       toast.error('Please tell us which subject(s) you teach.');
       return false;
+    }
+    if (role === 'student') {
+      try {
+        assertPlacement(pathway, yearGroup);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Choose a year for that programme.');
+        return false;
+      }
     }
     if (isMinor && (!guardianName.trim() || !guardianEmail.trim())) {
       toast.error('A parent or guardian’s name and email are required for under-18 accounts.');
@@ -223,6 +252,14 @@ export default function SignupPage() {
     } else {
       await sendEmailVerification(result.user).catch(() => {});
       toast.message('We sent a confirmation link. You can keep going — we will remind you until your email is confirmed.');
+    }
+    if (role === 'student') {
+      await authedFetch('/api/account/placement', {
+        method: 'POST',
+        body: JSON.stringify({ programme: pathway, year: yearGroup }),
+      }).catch((error: unknown) => {
+        toast.error(error instanceof Error ? error.message : 'Could not confirm your programme.');
+      });
     }
     toast.success('Account created — welcome to Poket School!');
     routeAfterSignup(role);
@@ -444,28 +481,29 @@ export default function SignupPage() {
 
             {/* ── Role-specific fields ── */}
             {role === 'student' && (
-              <div className={yearsForProgramme(pathway).length > 0 ? 'grid sm:grid-cols-2 gap-3' : ''}>
+              <div className="grid grid-cols-1 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="pathway" className={LABEL_CLASS}>Programme</Label>
                   <select id="pathway" className={SELECT_CLASS} value={pathway}
                     onChange={e => {
                       const next = e.target.value;
+                      setPlacementEdited(true);
                       setPathway(next);
-                      const years = yearsForProgramme(next);
-                      setYearGroup(years[0] ?? '');
+                      setYearGroup(levelsForProgramme(next)[0] ?? '');
                     }} disabled={loading}>
                     {PROGRAMMES.map(p => <option key={p.value} value={p.value} className="bg-[#0B0F1A]">{p.label}</option>)}
                   </select>
                 </div>
-                {yearsForProgramme(pathway).length > 0 && (
-                  <div className="space-y-1.5">
-                    <Label htmlFor="yearGroup" className={LABEL_CLASS}>Year / Level</Label>
-                    <select id="yearGroup" className={SELECT_CLASS} value={yearGroup}
-                      onChange={e => setYearGroup(e.target.value)} disabled={loading}>
-                      {yearsForProgramme(pathway).map(year => <option key={year} value={year} className="bg-[#0B0F1A]">{year}</option>)}
-                    </select>
-                  </div>
-                )}
+                <div className="space-y-1.5">
+                  <Label htmlFor="yearGroup" className={LABEL_CLASS}>Year / Level</Label>
+                  <select id="yearGroup" className={SELECT_CLASS} value={yearGroup}
+                    onChange={e => { setPlacementEdited(true); setYearGroup(e.target.value); }} disabled={loading}>
+                    {yearOptions.map(year => <option key={year} value={year} className="bg-[#0B0F1A]">{year}</option>)}
+                  </select>
+                  {suggestedPlacement && !placementEdited && (
+                    <p className="text-xs text-white/40">Suggested from your date of birth. Change it if this is not your year.</p>
+                  )}
+                </div>
               </div>
             )}
 

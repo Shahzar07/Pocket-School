@@ -9,7 +9,7 @@ import {
   saveAcademyClass, saveAcademyInvites, saveJoinCode, updateInstitution, type Institution,
 } from '@/lib/db';
 import { brandedInvite, licencePhase, makeJoinCode, parseInviteCsv, seatsRemaining, type OemLicence } from '@/lib/oem';
-import { PROGRAMMES } from '@/lib/programmes';
+import { PROGRAMMES, allocationYearsFor } from '@/lib/programmes';
 import { AllocationPicker } from '@/components/allocation-picker';
 import { describeTargets } from '@/lib/allocation-targets';
 import { institutionOrigin } from '@/lib/white-label';
@@ -169,6 +169,9 @@ export default function InstitutionAcademyPage() {
           onChange={tokens => setClassProgrammes(tokens.filter(token => token.startsWith('programme:')).map(token => token.slice('programme:'.length)))}
         />
         <p className="text-sm text-muted-foreground">{describeTargets(classProgrammes.map(id => `programme:${id}`), Object.fromEntries(classProgrammes.map(id => [`programme:${id}`, PROGRAMMES.find(programme => programme.value === id)?.label ?? id])))}</p>
+        {classProgrammes.length > 0 && (
+          <p className="text-sm text-muted-foreground">Year / Level: {allocationYearsFor(classProgrammes).join(', ') || 'Not applicable'}</p>
+        )}
         <Button onClick={() => void addClass()} className="rounded-full" disabled={!live.length}>Add class</Button>
       </section>
 

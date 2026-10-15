@@ -271,7 +271,14 @@ export default function ProfilePage() {
 
   const saveProfile = async (draft: ProfileDraft) => {
     try {
-      await updateUser(user.uid, profilePatch(draft, sectionRole) as Partial<UserProfile>);
+      const patch = profilePatch(draft, sectionRole);
+      if (sectionRole === 'student') {
+        await authedFetch('/api/account/placement', {
+          method: 'POST',
+          body: JSON.stringify({ programme: draft.level, year: draft.yearGroup }),
+        });
+      }
+      await updateUser(user.uid, patch as Partial<UserProfile>);
       applyAppLanguage(draft.language, { explicit: true });
       writeCurrencyChoice(draft.currency, true);
       await updateProfile(user, { displayName: draft.displayName.trim() || draft.name.trim(), photoURL: draft.avatarUrl || null });

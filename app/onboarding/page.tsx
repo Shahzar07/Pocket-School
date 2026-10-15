@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
@@ -17,20 +17,33 @@ import { landingPath, readActiveMode } from '@/lib/account-modes';
 import { SIGNUP_GRANT } from '@/lib/sparks';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { Timestamp } from 'firebase/firestore';
-
-const YEAR_GROUPS = ['Year 7', 'Year 8', 'Year 9'] as const;
+import { PROGRAMMES, NOT_APPLICABLE, assertPlacement, levelsForProgramme } from '@/lib/programmes';
+import { canonicalLevel } from '@/lib/year-groups';
+import { authedFetch } from '@/lib/api-client';
 
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, profile } = useAuthSTORE();
   const [step, setStep] = useState(1);
+  const [programme, setProgramme] = useState('');
   const [yearGroup, setYearGroup] = useState('');
-  const [level, setLevel] = useState('');
+  const [prefilled, setPrefilled] = useState(false);
   const [learningStyle, setLearningStyle] = useState('');
   const [childEmail, setChildEmail] = useState('');
   const [studentIdField, setStudentIdField] = useState('');
   const [linkLoading, setLinkLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!profile || prefilled) return;
+    const next = canonicalLevel(profile.level);
+    if (next) {
+      const years = levelsForProgramme(next);
+      setProgramme(next);
+      setYearGroup(years.includes(profile.yearGroup ?? '') ? (profile.yearGroup ?? '') : (years[0] ?? ''));
+    }
+    setPrefilled(true);
+  }, [profile, prefilled]);
 
   if (!user || !profile) {
     if (typeof window !== 'undefined') router.push('/login');
@@ -45,15 +58,26 @@ export default function OnboardingPage() {
     return null;
   }
 
-  const isYearGroup = (YEAR_GROUPS as readonly string[]).includes(yearGroup);
+  const yearChoices = levelsForProgramme(programme);
 
   const completeStudentOnboarding = async () => {
+    let placement;
+    try {
+      placement = assertPlacement(programme, yearGroup || yearChoices[0] || '');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Choose a programme and year.');
+      return;
+    }
     try {
       setLoading(true);
+      await authedFetch('/api/account/placement', {
+        method: 'POST',
+        body: JSON.stringify({ programme: placement.level, year: yearGroup || yearChoices[0] || '' }),
+      });
       await updateDoc(doc(db, 'users', user.uid), {
-        level: level || null,
+        level: placement.level,
         learningStyle: learningStyle || null,
-        ...(isYearGroup ? { yearGroup } : {}),
+        ...(placement.yearGroup ? { yearGroup: placement.yearGroup } : {}),
         updatedAt: serverTimestamp(),
       });
       // The welcome Sparks grant and module enrolment are one-time only:
@@ -62,8 +86,8 @@ export default function OnboardingPage() {
       const freshProfile = await getUser(user.uid);
       const alreadyOnboarded = !!(freshProfile as (UserProfile & { onboardedAt?: unknown }) | null)?.onboardedAt;
       if (!alreadyOnboarded) {
-        if (isYearGroup) {
-          await enrollInProgrammeModules(user.uid, yearGroup);
+        if (placement.yearGroup) {
+          await enrollInProgrammeModules(user.uid, placement.yearGroup);
         }
         // Every student gets the welcome grant. This used to sit inside the
         // year-group branch, so anyone on GCSE, A-Level or any other pathway
@@ -205,21 +229,25 @@ export default function OnboardingPage() {
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <GraduationCap className="w-8 h-8 text-white" />
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">Which year are you in?</h1>
-                <p className="text-muted-foreground mt-2 text-base">We'll set up your curriculum modules and unit quizzes for the right year group.</p>
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">Which programme are you on?</h1>
+                <p className="text-muted-foreground mt-2 text-base">Your year or level depends on the programme.</p>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {[...YEAR_GROUPS, 'Something else'].map(yg => (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {PROGRAMMES.map(item => (
                   <button
-                    key={yg}
-                    onClick={() => setYearGroup(yg === 'Something else' ? 'other' : yg)}
+                    key={item.value}
+                    onClick={() => {
+                      setProgramme(item.value);
+                      const years = levelsForProgramme(item.value);
+                      setYearGroup(years[0] ?? '');
+                    }}
                     className={`p-4 rounded-2xl border-2 cursor-pointer transition-all text-left font-semibold ${
-                      yearGroup === (yg === 'Something else' ? 'other' : yg)
+                      programme === item.value
                         ? 'border-primary bg-primary/10 text-primary shadow-sm'
                         : 'border-border hover:bg-muted text-foreground'
                     }`}
                   >
-                    {yg}
+                    {item.label}
                   </button>
                 ))}
               </div>
@@ -227,8 +255,8 @@ export default function OnboardingPage() {
                 <Button
                   size="lg"
                   className="rounded-full px-8 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
-                  disabled={!yearGroup}
-                  onClick={() => setStep(yearGroup === 'other' ? 2 : 3)}
+                  disabled={!programme}
+                  onClick={() => setStep(yearChoices.length === 1 && yearChoices[0] === NOT_APPLICABLE ? 3 : 2)}
                 >
                   Continue <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
@@ -242,27 +270,27 @@ export default function OnboardingPage() {
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <GraduationCap className="w-8 h-8 text-white" />
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">Your education level?</h1>
-                <p className="text-muted-foreground mt-2 text-base">We use this to tailor AI explanations and study materials to your level.</p>
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">Which year are you in?</h1>
+                <p className="text-muted-foreground mt-2 text-base">These years belong to {programme}.</p>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {['K1–K5', 'Middle School (6–8)', 'High School (9–12)', 'Undergraduate', 'Postgraduate', 'Professional'].map(l => (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {yearChoices.map(yg => (
                   <button
-                    key={l}
-                    onClick={() => setLevel(l)}
+                    key={yg}
+                    onClick={() => setYearGroup(yg)}
                     className={`p-4 rounded-2xl border-2 cursor-pointer transition-all text-left font-semibold ${
-                      level === l
+                      yearGroup === yg
                         ? 'border-primary bg-primary/10 text-primary shadow-sm'
                         : 'border-border hover:bg-muted text-foreground'
                     }`}
                   >
-                    {l}
+                    {yg}
                   </button>
                 ))}
               </div>
               <div className="mt-8 flex justify-between">
                 <Button variant="ghost" className="h-11 rounded-full px-6" onClick={() => setStep(1)}>Back</Button>
-                <Button size="lg" className="rounded-full px-8 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-white" disabled={!level} onClick={() => setStep(3)}>
+                <Button size="lg" className="rounded-full px-8 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-white" disabled={!yearGroup} onClick={() => setStep(3)}>
                   Continue <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </div>
@@ -301,7 +329,7 @@ export default function OnboardingPage() {
                 ))}
               </div>
               <div className="mt-8 flex justify-between">
-                <Button variant="ghost" className="h-11 rounded-full px-6" onClick={() => setStep(yearGroup === 'other' ? 2 : 1)}>Back</Button>
+                <Button variant="ghost" className="h-11 rounded-full px-6" onClick={() => setStep(yearChoices.length === 1 && yearChoices[0] === NOT_APPLICABLE ? 1 : 2)}>Back</Button>
                 <Button
                   size="lg"
                   className="rounded-full px-8 h-12 bg-gradient-to-r from-teal-500 to-emerald-600 text-white"

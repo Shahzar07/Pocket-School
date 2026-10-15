@@ -5,9 +5,23 @@
 
 import { normalisePolicy, type AccessPolicy, type PolicyAudience } from './access-policy';
 import { allocationFields, normaliseTargets, targetsFromPolicy } from './allocation-targets';
+import { PROGRAMMES } from './programmes';
 import { reorderById, withSequentialOrder } from './reorder';
 
-export const COURSE_LEVELS = ['All', 'Primary', 'Secondary', 'GCSE', 'A-Level', 'University'] as const;
+/** Course creator and content builder. "All" plus the CMS programme taxonomy. */
+export const COURSE_LEVELS: readonly string[] = ['All', ...PROGRAMMES.map((programme) => programme.value)];
+
+const LEGACY_COURSE_LEVELS: Record<string, string> = {
+  Secondary: 'Lower Secondary',
+  GCSE: 'IGCSE',
+};
+
+/** Map an older course level onto the CMS taxonomy. Unknown labels stay as stored. */
+export function canonicalCourseLevel(value: string | null | undefined): string {
+  if (!value) return 'All';
+  if (COURSE_LEVELS.includes(value)) return value;
+  return LEGACY_COURSE_LEVELS[value] ?? value;
+}
 
 export const COURSE_CATEGORIES = [
   'Mathematics', 'Science', 'English', 'History', 'Languages',

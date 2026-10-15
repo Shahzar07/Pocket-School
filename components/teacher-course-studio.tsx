@@ -17,6 +17,7 @@ import {
   COURSE_CATEGORIES,
   COURSE_LANGUAGES,
   COURSE_LEVELS,
+  canonicalCourseLevel,
   STUDIO_STEPS,
   applyAllocationPreset,
   blankPolicy,
@@ -159,7 +160,7 @@ export function TeacherCourseStudio({
   const [subtitle, setSubtitle] = useState(initial?.subtitle ?? (sample ? 'A short course on how pushes and pulls change motion' : ''));
   const [description, setDescription] = useState(initial?.description ?? (sample ? 'Students explain contact and non-contact forces, then check their understanding.' : ''));
   const [category, setCategory] = useState(initial?.category ?? 'Science');
-  const [level, setLevel] = useState(initial?.level ?? 'Secondary');
+  const [level, setLevel] = useState(canonicalCourseLevel(initial?.level ?? 'Lower Secondary'));
   const [language, setLanguage] = useState(initial?.language ?? 'en');
   const [thumbnailUrl, setThumbnailUrl] = useState(initial?.thumbnailUrl ?? '');
   const [previewUrl, setPreviewUrl] = useState(initial?.previewUrl ?? '');
@@ -458,7 +459,7 @@ export function TeacherCourseStudio({
                 </label>
                 <label className="text-sm font-semibold">Level
                   <select className="mt-1 h-10 w-full rounded-xl border border-border bg-background px-2" value={level} onChange={event => setLevel(event.target.value)}>
-                    {COURSE_LEVELS.map(item => <option key={item}>{item}</option>)}
+                    {(COURSE_LEVELS.includes(level) ? COURSE_LEVELS : [level, ...COURSE_LEVELS]).map(item => <option key={item}>{item}</option>)}
                   </select>
                 </label>
                 <label className="text-sm font-semibold">Language
