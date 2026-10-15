@@ -8,6 +8,7 @@ import { Globe, Menu, X, ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { isAdmin } from "@/lib/roles";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { CurrencySwitcher } from "@/components/currency-switcher";
 import styles from "./home-chrome.module.css";
 
@@ -24,6 +25,7 @@ const HIDDEN_PREFIXES = [
   "/onboarding",
   "/ai-studio",
   "/reads",
+  "/preview/design",
 ];
 
 export function SiteHeader() {
@@ -107,6 +109,7 @@ export function SiteHeader() {
             <Link href="/pricing">{t("header.pricing")}</Link>
             {!user && <Link href="/login">{t("header.signIn")}</Link>}
           </nav>
+          <ThemeToggle />
           <LanguageSwitcher tone={isLanding && !scrolled ? "onDark" : "default"} />
           <CurrencySwitcher tone={isLanding && !scrolled ? "onDark" : "default"} />
           <Link className={styles.headerCta} href={user ? dashPath : "/signup"}>

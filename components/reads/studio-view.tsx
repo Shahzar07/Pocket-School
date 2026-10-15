@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import dynamic from 'next/dynamic';
 import {
-  ContentEditor, ImportPanel, VersionHistory, imageMarkdown, pushRevision, readAutosave, useAutosave,
+  ImportPanel, VersionHistory, imageMarkdown, pushRevision, readAutosave, useAutosave,
 } from '@/components/editor';
+
 import type { ContentRevision, ImportResult } from '@/components/editor';
 import {
   CoverArtPicker, IllustrationPrompt, ImageLibrary, optimiseImage, storeMedia,
@@ -19,6 +21,11 @@ import { moveItem } from '@/lib/platform/cms';
 import { planLabel } from '@/lib/reads/access';
 import { AllocationPicker } from '@/components/allocation-picker';
 import { bookFlagsFromTargets, migrateAllocation } from '@/lib/allocation-targets';
+
+const ContentEditor = dynamic(
+  () => import('@/components/editor/content-editor').then(mod => mod.ContentEditor),
+  { ssr: false, loading: () => <div className="ps-skeleton h-40 rounded-2xl" aria-hidden="true" /> },
+);
 
 const AUTOSAVE_KEY = 'poket-studio-books';
 

@@ -8,8 +8,15 @@ import { createDailyGoal, getEnrolledCourses, getUserBadges, goalDateKey, subscr
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ArrowUpRight, BookOpen, Zap, Trophy, Target, TrendingUp, Sparkles, Users, GraduationCap, Play } from 'lucide-react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { StudyLaunchpad } from '@/components/study/study-launchpad';
-import { LearningCharts } from '@/components/insights/learning-charts';
+import { SeeMore } from '@/components/shell/see-more';
+import { friendlyError } from '@/lib/design/system';
+
+const LearningCharts = dynamic(
+  () => import('@/components/insights/learning-charts').then(mod => mod.LearningCharts),
+  { ssr: false, loading: () => <div className="ps-skeleton h-48 rounded-2xl" aria-hidden="true" /> },
+);
 import { readSnapshot } from '@/lib/insights/client';
 import type { AnalyticsSnapshot } from '@/lib/insights/aggregate';
 import { streakFromDates } from '@/lib/learning';
@@ -99,7 +106,7 @@ export default function StudentDashboard() {
       })), user.uid));
       setBadges(bs);
     } catch (e: any) {
-      setError(e?.message ?? 'Something went wrong.');
+      setError(friendlyError(e));
     } finally {
       setLoading(false);
     }
@@ -254,6 +261,7 @@ export default function StudentDashboard() {
         </Panel>
       )}
 
+      <SeeMore label="Courses, progress, and shortcuts">
       {/* ── Stat row ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
@@ -374,6 +382,7 @@ export default function StudentDashboard() {
           </Panel>
         </div>
       </div>
+      </SeeMore>
     </DashPage>
   );
 }

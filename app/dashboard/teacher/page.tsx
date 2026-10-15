@@ -13,6 +13,7 @@ import Link from 'next/link';
 import {
   DashPage, DashHeader, Panel, PanelHeader, StatCard, ListRow, Initials, EmptyState,
 } from '@/components/dash-ui';
+import { SeeMore } from '@/components/shell/see-more';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -98,22 +99,32 @@ export default function TeacherDashboard() {
         accent={firstName}
         description="Classes you teach. Your own courses, certificates, and Sparks stay in Learning."
         actions={
-          <>
-            <Button variant="outline" onClick={() => router.push('/dashboard/teacher/courses/build')}
-              className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2">
-              <BookOpen className="w-3.5 h-3.5" /> Course studio
-            </Button>
-            <Button variant="outline" onClick={() => router.push('/dashboard/teacher/upload')}
-              className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2">
-              <Upload className="w-3.5 h-3.5" /> New lesson
-            </Button>
-            <Button onClick={() => router.push('/dashboard/teacher/gradebook')}
-              className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2">
-              <ClipboardList className="w-3.5 h-3.5" /> Gradebook
-            </Button>
-          </>
+          <Button
+            onClick={() => router.push(ungraded.length ? '/dashboard/teacher/gradebook' : '/dashboard/teacher/courses/build')}
+            className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2"
+          >
+            <ClipboardList className="w-3.5 h-3.5" />
+            {ungraded.length ? `Mark ${ungraded.length} waiting` : 'Open course studio'}
+          </Button>
         }
       />
+
+      <Panel>
+        <PanelHeader title="Today" meta={<span className="text-[12px] text-muted-foreground">{today}</span>} />
+        <p className="text-sm text-muted-foreground">
+          {ungraded.length
+            ? `${ungraded.length} piece${ungraded.length === 1 ? '' : 's'} of work still need a mark. That is the one thing to do first.`
+            : 'Nothing is waiting to mark. Open the course studio when you want to add a lesson.'}
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button variant="ghost" onClick={() => router.push('/dashboard/teacher/upload')} className="h-9 px-3 text-[13px] font-semibold gap-2">
+            <Upload className="w-3.5 h-3.5" /> New lesson
+          </Button>
+          <Button variant="ghost" onClick={() => router.push('/dashboard/teacher/courses')} className="h-9 px-3 text-[13px] font-semibold gap-2">
+            <BookOpen className="w-3.5 h-3.5" /> Your courses
+          </Button>
+        </div>
+      </Panel>
 
       {/* ── Stat row ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -136,6 +147,7 @@ export default function TeacherDashboard() {
         />
       </div>
 
+      <SeeMore label="Enrolments, reviews, and questions">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard index={4} icon={GraduationCap} label="Enrolments" value={insight.enrollments} href="/dashboard/teacher/courses" hrefLabel="Courses" />
         <StatCard index={5} icon={Wallet} label="Recorded revenue" value={revenueLabel} href="/dashboard/teacher/courses" hrefLabel="Pricing" />
@@ -178,6 +190,7 @@ export default function TeacherDashboard() {
           </div>
         )}
       </Panel>
+      </SeeMore>
 
       {/* ── Marking queue + shortcuts ── */}
       <div className="grid lg:grid-cols-[1.6fr_1fr] gap-4 items-start">

@@ -43,6 +43,7 @@ const HIDDEN_PREFIXES = [
   "/forgot-password",
   "/reset-password",
   "/reads",
+  "/preview/design",
 ];
 
 const FOOTER_VIDEO =

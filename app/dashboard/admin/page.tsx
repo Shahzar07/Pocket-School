@@ -15,6 +15,8 @@ import Link from 'next/link';
 import {
   DashPage, DashHeader, Panel, PanelHeader, StatCard, ListRow, Initials, EmptyState,
 } from '@/components/dash-ui';
+import { SeeMore } from '@/components/shell/see-more';
+import { friendlyError } from '@/lib/design/system';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -79,7 +81,7 @@ export default function AdminDashboard() {
       const s = await getPlatformStats();
       setStats(s);
     } catch (e: any) {
-      toast.error('Seeding failed: ' + e.message);
+      toast.error(friendlyError(e));
     } finally {
       setSeeding(false);
     }
@@ -105,24 +107,23 @@ export default function AdminDashboard() {
         accent="centre"
         description="Everything across the platform, in one place."
         actions={
-          <>
-            <Link
-              href="/dashboard/admin/curriculum"
-              className={buttonVariants({ variant: 'outline' }) + ' h-10 px-4 rounded-xl font-semibold text-[13px] gap-2'}
-            >
-              <Layers className="w-3.5 h-3.5" /> Curriculum
-            </Link>
-            <Button
-              onClick={handleSeedData}
-              disabled={seeding || seeded}
-              className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2"
-            >
-              {seeded ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
-              {seeded ? 'Demo data added' : seeding ? 'Adding…' : 'Seed demo data'}
-            </Button>
-          </>
+          <Link
+            href="/dashboard/admin/users"
+            className={buttonVariants() + ' h-10 px-4 rounded-xl font-semibold text-[13px] gap-2'}
+          >
+            <Users className="w-3.5 h-3.5" /> Review accounts
+          </Link>
         }
       />
+
+      <Panel>
+        <PanelHeader title="Today" />
+        <p className="text-sm text-muted-foreground">
+          {kpis.openTickets
+            ? `${kpis.openTickets} support conversation${kpis.openTickets === 1 ? '' : 's'} still open. Review accounts first, then the course builder.`
+            : 'No support conversations are waiting. Review accounts if someone new has signed up.'}
+        </p>
+      </Panel>
 
       {/* ── Platform stats ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -246,6 +247,17 @@ export default function AdminDashboard() {
           </div>
         </Panel>
       </div>
+      <SeeMore label="Demo content and extra tools">
+        <Button
+          variant="outline"
+          onClick={handleSeedData}
+          disabled={seeding || seeded}
+          className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2"
+        >
+          {seeded ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
+          {seeded ? 'Demo data added' : seeding ? 'Adding…' : 'Add demo courses'}
+        </Button>
+      </SeeMore>
     </DashPage>
   );
 }

@@ -241,7 +241,7 @@
 .phoneWelcome small {
   display: block;
   font-size: 8px;
-  color: #80908b;
+  color: #3E5257;
 }
 .phoneWelcome strong {
   font-size: 14px;
@@ -329,7 +329,7 @@
 }
 .phoneLesson small {
   font-size: 8px;
-  color: #80938f;
+  color: #3E5257;
 }
 .phoneStats {
   display: flex;
@@ -533,7 +533,7 @@
   border-radius: 12px;
   margin: -7px -6px 20px;
   font-size: 9px;
-  color: #8b9796;
+  color: #3E5257;
   height: 135px;
   box-shadow: inset 0 0 10px #cad9d433;
 }
@@ -721,7 +721,7 @@
 .exampleLabel {
   display: block;
   font-size: 9px;
-  color: #879593;
+  color: #3E5257;
   text-align: right;
   margin-bottom: 12px;
 }
@@ -756,7 +756,7 @@
   display: block;
   font-size: 9px;
   margin-top: 9px;
-  color: #81908e;
+  color: #3E5257;
 }
 .progressTrack {
   height: 5px;
@@ -1432,7 +1432,7 @@
 .pathwayStrip a {
   flex: 0 0 auto;
   opacity: 1;
-  color: #697d80;
+  color: #3E5257;
 }
 .featureCard,
 .priceCard {
