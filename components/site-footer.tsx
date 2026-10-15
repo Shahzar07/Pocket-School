@@ -42,6 +42,7 @@ const HIDDEN_PREFIXES = [
   "/signup",
   "/forgot-password",
   "/reset-password",
+  "/reads",
 ];
 
 const FOOTER_VIDEO =
@@ -51,6 +52,7 @@ const PLATFORM_LINKS = [
   { labelKey: "footer.aiTeachers", href: "/ai-teachers" },
   { labelKey: "footer.aiStudio", href: "/ai-studio" },
   { labelKey: "footer.marketplace", href: "/courses" },
+  { labelKey: "nav.books", href: "/reads" },
   { labelKey: "footer.pricing", href: "/pricing" },
 ];
 

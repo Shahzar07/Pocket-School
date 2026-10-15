@@ -11,11 +11,11 @@ import {
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
-  Sparkles, Store, Layers, LogOut, Mail, UserCog,
+  Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { AITutor } from '@/components/ai-tutor';
+const AITutor = dynamic(() => import('@/components/ai-tutor').then(mod => mod.AITutor), { ssr: false });
 import { NotificationsBell } from '@/components/notifications-bell';
 import { DashboardSearch } from '@/components/dashboard-search';
 import { LanguageSwitcher } from '@/components/language-switcher';
@@ -24,6 +24,8 @@ import { SparksChip } from '@/components/sparks-chip';
 import { upsertUserSession, accountStatusOf } from '@/lib/db';
 import { PipGuide } from '@/components/pip-guide';
 import { OfflineBanner } from '@/components/offline-banner';
+import { RoleChecklist } from '@/components/role-checklist';
+import dynamic from 'next/dynamic';
 import type { TourRole } from '@/lib/tour-steps';
 import { ROLE_LABELS } from '@/lib/roles';
 import Link from 'next/link';
@@ -50,6 +52,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/ai-teachers', icon: Users, labelKey: 'nav.aiTeachers' },
       { href: '/dashboard/student/learning', icon: GraduationCap, labelKey: 'nav.myLearning' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
+      { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/student/courses', icon: BookOpen, labelKey: 'nav.myCourses' },
       { href: '/dashboard/student/live', icon: Video, labelKey: 'nav.liveClasses' },
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
@@ -83,6 +86,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher/classes', icon: GraduationCap, labelKey: 'nav.myClasses' },
       { href: '/dashboard/teacher/courses', icon: Presentation, labelKey: 'nav.coursesProducts' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
+      { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
       { href: '/dashboard/teacher/analytics', icon: Activity, labelKey: 'nav.analytics' },
     ]},
@@ -112,6 +116,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
+      { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/parent/communications', icon: Mail, labelKey: 'nav.mailbox' },
       { href: '/dashboard/parent/duedates', icon: Clock, labelKey: 'nav.dueDates' },
     ]},
@@ -131,6 +136,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/admin/courses', icon: Presentation, labelKey: 'nav.allCourses' },
       { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
+      { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/admin/users', icon: UserCog, labelKey: 'nav.usersSparks' },
       { href: '/dashboard/admin/institutions', icon: Users, labelKey: 'nav.institutions' },
       { href: '/dashboard/admin/access', icon: Shield, labelKey: 'nav.accessConfig' },
@@ -155,6 +161,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/institution', icon: GraduationCap, labelKey: 'nav.myClasses' },
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
+      { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
     ]},
     { sectionKey: 'nav.section.school', items: [
@@ -367,6 +374,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(39,134,164,0.06)_0%,transparent_100%)]" />
           <OfflineBanner />
           <div className="relative px-4 pb-6 pt-1 lg:px-6 lg:pb-10">
+            <RoleChecklist role={role} />
             {children}
           </div>
         </main>

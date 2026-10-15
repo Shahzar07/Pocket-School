@@ -26,6 +26,7 @@ export const kk = {
     aiTeachers: 'ЖИ мұғалімдер ↗',
     myLearning: 'Менің оқуым',
     marketplace: 'Дүкен',
+    books: 'Кітаптар',
     myCourses: 'Менің курстарым',
     liveClasses: 'Тікелей сабақтар',
     messages: 'Хабарламалар',

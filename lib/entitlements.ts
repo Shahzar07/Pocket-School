@@ -104,7 +104,8 @@ export type ContentType =
   | 'MARKETPLACE_PURCHASE' | 'MARKETPLACE_LIST'
   | 'GRADEBOOK' | 'ATTENDANCE' | 'EXAM_BUILDER' | 'REPORT_CARD' | 'LIVE_CLASS'
   | 'INTEGRITY_MONITOR' | 'BEHAVIOUR_LOG'
-  | 'INSTITUTION_ADMIN' | 'PLATFORM_ADMIN';
+  | 'INSTITUTION_ADMIN' | 'PLATFORM_ADMIN'
+  | 'BOOK';
 
 /** contentType → the permission string that satisfies it. */
 export const PLAN_MAP: Record<string, string> = {
@@ -151,6 +152,7 @@ export const CONTENT_MIN_TIER: Record<string, AccessTier> = {
   INTEGRITY_MONITOR: 5, BEHAVIOUR_LOG: 5, INSTITUTION_ADMIN: 5, MARKETPLACE_LIST: 5,
   MARKETPLACE_PURCHASE: 6,
   PLATFORM_ADMIN: 5,
+  BOOK: 0,
 };
 
 /* ── Price types ─────────────────────────────────────────────── */
@@ -182,6 +184,7 @@ export const DEFAULT_FREE_PREVIEW_COUNT = 1;
 export const allocFree = (courseId: string) => `alloc:free:${courseId}`;
 export const allocPaid = (courseId: string) => `alloc:paid:${courseId}`;
 export const allocMarketplace = (courseId: string) => `alloc:marketplace:${courseId}`;
+export const allocBook = (productId: string) => `alloc:book:${productId}`;
 export const allocCoupon = (courseId: string, expiry: string) => `alloc:coupon:${courseId}:${expiry}`;
 export const allocInstitution = (instId: string, courseId: string) =>
   `alloc:institution:${instId}:${courseId}`;
@@ -336,7 +339,7 @@ export function checkEntitlement(
   let paidAllocation = false;
   if (courseId) {
     if (perms.includes(allocFree(courseId))) return ALLOWED;
-    if (perms.includes(allocMarketplace(courseId))) return ALLOWED;
+    if (perms.includes(allocMarketplace(courseId)) || perms.includes(allocBook(courseId))) return ALLOWED;
     if (perms.some(p => p.startsWith(`alloc:coupon:${courseId}:`) && couponLive(p))) return ALLOWED;
 
     const institutionRe = new RegExp(`^alloc:institution:[^:]+:${courseId}$`);

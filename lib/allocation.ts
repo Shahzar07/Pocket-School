@@ -8,6 +8,7 @@
 
 import {
   accessTierFor,
+  allocBook,
   allocMarketplace,
   checkEntitlement,
   courseMinTier,
@@ -124,6 +125,7 @@ function audienceListed(product: AllocatableProduct, viewer: AllocationViewer, a
 }
 
 function contentTypeFor(product: AllocatableProduct): string {
+  if (product.kind === 'book') return 'BOOK';
   if (product.contentType) return product.contentType;
   if (coursePriceType(product) === 'MARKETPLACE_PURCHASE') return 'MARKETPLACE_PURCHASE';
   return 'COURSE_IGCSE';
@@ -178,7 +180,7 @@ export function productAccess(product: AllocatableProduct, viewer: AllocationVie
       subscriptionTier: viewer.subscriptionTier,
       permissions: viewer.permissions,
     });
-    return held.includes(allocMarketplace(product.id))
+    return held.includes(allocMarketplace(product.id)) || held.includes(allocBook(product.id))
       ? { listed: true, open: true, reason: 'Purchased' }
       : { listed: true, open: false, reason: 'Purchase required' };
   }

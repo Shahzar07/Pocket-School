@@ -29,7 +29,7 @@ const nextConfig: NextConfig = {
     ],
   },
   output: 'standalone',
-  serverExternalPackages: ['mammoth', 'unpdf'],
+  serverExternalPackages: ['mammoth', 'unpdf', 'firebase-admin', 'web-push'],
   transpilePackages: ['motion'],
   webpack: (config, { dev }) => {
     if (dev && process.env.DISABLE_HMR === 'true') {
