@@ -88,7 +88,7 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
   const { user, profile, loading } = useAuthSTORE();
   const teacher = AI_TEACHERS.find((t) => t.id === teacherId);
 
-  /** Lyra Live is sold as an add-on, so it is not implied by any plan. */
+  /** ET AI Live is sold as an add-on (stored id lyra_live), so it is not implied by any plan. */
   const lyraUnlocked = hasAddOn(permissionsFor(profile), 'lyra_live');
   const lyra = addOn('lyra_live');
   const { config, currency } = usePricing();
@@ -372,7 +372,7 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
                 style={{ background: teacher?.accentColor }}>
                 <Phone className="w-6 h-6 text-black" />
               </div>
-              <h3 className="text-white font-bold text-lg">{lyra?.name ?? 'Lyra Live'}</h3>
+              <h3 className="text-white font-bold text-lg">{lyra?.name ?? 'ET AI Live'}</h3>
               <p className="text-white/60 text-sm mt-2 leading-relaxed">
                 {lyra?.blurb}
               </p>
@@ -387,7 +387,7 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
                 className="mt-5 block w-full h-11 rounded-full font-bold text-black grid place-items-center"
                 style={{ background: teacher?.accentColor }}
               >
-                See Lyra Live
+                See ET AI Live
               </Link>
               <button
                 onClick={() => setLyraPrompt(false)}
@@ -450,7 +450,7 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
           {/* Hands-free voice call — talk out loud, teacher replies instantly. */}
           <button
             onClick={() => {
-              // Lyra Live is a paid add-on, not part of any base plan.
+              // ET AI Live is a paid add-on (id lyra_live), not part of any base plan.
               if (!lyraUnlocked) { setLyraPrompt(true); return; }
               abortRef.current?.abort();
               speakerRef.current?.stop();
@@ -460,7 +460,7 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
             style={{ background: teacher.accentColor }}
             title={lyraUnlocked
               ? `Talk out loud with ${teacher.name.split(' ')[0]}`
-              : 'Talk live is part of the Lyra Live add-on'}
+              : 'Talk live is part of the ET AI Live add-on'}
           >
             <Phone className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Talk live</span>

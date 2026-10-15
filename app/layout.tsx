@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 import { CookieConsent } from '@/components/cookie-consent';
+import { ThemeProvider } from '@/components/theme-provider';
 
 /** Body and UI. The homepage is built on this, so it stays the base face. */
 const plusJakarta = Plus_Jakarta_Sans({
@@ -65,17 +66,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={cn("font-sans antialiased", plusJakarta.variable, instrumentSans.variable)} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans text-foreground" suppressHydrationWarning>
+        <ThemeProvider>
         <AuthProvider>
           <I18nProvider>
           <WhiteLabelProvider>
             <SiteHeader />
-            {children}
+            <div id="content">{children}</div>
             <SiteFooter />
             <CookieConsent />
             <Toaster />
           </WhiteLabelProvider>
           </I18nProvider>
         </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

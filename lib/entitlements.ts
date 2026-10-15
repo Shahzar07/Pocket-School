@@ -210,7 +210,7 @@ export const ADDONS: AddOn[] = [
   {
     id: 'lyra_live',
     permission: 'addon:lyra_live',
-    name: 'Lyra Live',
+    name: 'ET AI Live',
     blurb: 'Real-time face-to-face sessions with an AI teacher who sees and hears you.',
     requiresTier: 2,
   },
