@@ -1,6 +1,7 @@
 'use client';
 
 import { MathMarkdown } from '@/components/math-markdown';
+import { repairLiteralEscapes } from '@/lib/cms-guards';
 import { AiOutputs } from '@/lib/db';
 import { MindmapRenderer } from '@/components/mindmap-renderer';
 import { InfographicRenderer } from '@/components/infographic-renderer';
@@ -24,10 +25,7 @@ const MARKDOWN_FORMATS = new Set([
  */
 export function normalizeMarkdown(input: string): string {
   if (!input) return '';
-  let md = String(input).replace(/\r\n/g, '\n');
-
-  // Providers sometimes JSON-escape the payload: "\n" and "\t" arrive literal.
-  if (!md.includes('\n') && /\\n/.test(md)) md = md.replace(/\\n/g, '\n').replace(/\\t/g, '  ');
+  let md = repairLiteralEscapes(String(input).replace(/\r\n/g, '\n'));
 
   md = md
     // Unescape markdown markers that were escaped by the model.

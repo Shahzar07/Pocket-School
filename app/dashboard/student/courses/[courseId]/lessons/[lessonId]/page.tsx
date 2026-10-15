@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'motion/react';
 import { MathMarkdown } from '@/components/math-markdown';
+import { LessonFigure } from '@/components/lesson-visual';
+import { normalizeMarkdown } from '@/components/lesson-format-views';
 import { Timestamp } from 'firebase/firestore';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { useTutorContext } from '@/hooks/use-tutor-context';
@@ -967,7 +969,11 @@ export default function LessonPage() {
           <TabsContent value="text">
             {gate('text',
               <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
+                {aiOutputs.image?.placement === 'before' && <LessonFigure visual={aiOutputs.image} />}
+                {aiOutputs.illustration?.placement === 'before' && <LessonFigure visual={aiOutputs.illustration} />}
                 <MathMarkdown>{aiOutputs.text ?? ''}</MathMarkdown>
+                {aiOutputs.image?.placement !== 'before' && <LessonFigure visual={aiOutputs.image} />}
+                {aiOutputs.illustration?.placement !== 'before' && <LessonFigure visual={aiOutputs.illustration} />}
               </motion.div>
             )}
           </TabsContent>
@@ -1075,7 +1081,9 @@ export default function LessonPage() {
                 <Headphones className="w-5 h-5 text-primary" />
                 <h3 className="font-heading text-2xl text-foreground">Quick Summary</h3>
               </div>
-              <p className="text-base text-foreground leading-relaxed">{aiOutputs.summary}</p>
+              <div className="prose prose-sm max-w-none text-foreground">
+                <MathMarkdown>{normalizeMarkdown(aiOutputs.summary ?? '')}</MathMarkdown>
+              </div>
             </motion.div>
           </TabsContent>
 

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, Headphones, Loader2, Mic, Pause, Play, RefreshCw } from 'lucide-react';
 import { AudioPlayer } from '@/components/audio-player';
+import { fetchWithBackoff } from '@/lib/net-retry';
 
 const VOICES = [
   { id: 'Kore', label: 'Kore · Warm' },
@@ -30,7 +31,9 @@ function fmtTime(s: number) {
  * the browser SpeechSynthesis player so audio always works.
  */
 export function SmartAudioPlayer({ script, title, dark }: { script: string; title?: string; dark?: boolean }) {
-  const [state, setState] = useState<'idle' | 'generating' | 'ready' | 'fallback'>('idle');
+  const [state, setState] = useState<'idle' | 'generating' | 'ready' | 'fallback' | 'error'>('idle');
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [voice, setVoice] = useState('Kore');
   const [playing, setPlaying] = useState(false);
@@ -52,9 +55,16 @@ export function SmartAudioPlayer({ script, title, dark }: { script: string; titl
 
   const generate = async (v = voice) => {
     setState('generating');
+    setProgress(8);
+    setError(null);
     setPlaying(false);
+    const started = Date.now();
+    const tick = window.setInterval(() => {
+      const elapsed = Date.now() - started;
+      setProgress(Math.min(90, 8 + Math.round(elapsed / 150)));
+    }, 200);
     try {
-      const res = await fetch('/api/ai/audio', {
+      const res = await fetchWithBackoff('/api/ai/audio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ script, voice: v }),
@@ -66,13 +76,17 @@ export function SmartAudioPlayer({ script, title, dark }: { script: string; titl
         const url = URL.createObjectURL(blob);
         urlRef.current = url;
         setAudioUrl(url);
+        setProgress(100);
         setState('ready');
         return;
       }
-      // JSON fallback response — degrade to browser speech.
-      setState('fallback');
-    } catch {
-      setState('fallback');
+      setError('The voice service did not return audio.');
+      setState('error');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'The voice connection closed. Try again.');
+      setState('error');
+    } finally {
+      window.clearInterval(tick);
     }
   };
 
@@ -138,9 +152,23 @@ export function SmartAudioPlayer({ script, title, dark }: { script: string; titl
         )}
 
         {state === 'generating' && (
-          <div className={`flex items-center gap-3 text-sm ${subtle}`}>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Generating AI narration… this takes a few seconds.
+          <div className="space-y-2">
+            <div className={`flex items-center gap-3 text-sm ${subtle}`}>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Voicing the audio… {progress}%
+            </div>
+            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+              <div className="h-full bg-violet-500 transition-all" style={{ width: `${progress}%` }} />
+            </div>
+          </div>
+        )}
+
+        {state === 'error' && (
+          <div className="space-y-2">
+            <p className="text-sm text-amber-700">{error || 'Audio generation failed.'}</p>
+            <Button onClick={() => generate()} variant="outline" className="rounded-xl gap-2">
+              <RefreshCw className="w-4 h-4" /> Retry audio
+            </Button>
           </div>
         )}
 

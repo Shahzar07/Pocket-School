@@ -16,6 +16,7 @@ import {
   Link2, Sigma, Eye, PenLine, Columns2,
 } from 'lucide-react';
 import { MathMarkdown } from '@/components/math-markdown';
+import { repairMojibake } from '@/lib/cms-guards';
 
 type Mode = 'write' | 'preview' | 'split';
 
@@ -179,6 +180,13 @@ export function RichTextEditor({
             ref={ref}
             value={value}
             onChange={e => onChange(e.target.value)}
+            onPaste={e => {
+              const pasted = e.clipboardData.getData('text');
+              const repaired = repairMojibake(pasted);
+              if (repaired === pasted) return;
+              e.preventDefault();
+              onChange(value.slice(0, e.currentTarget.selectionStart) + repaired + value.slice(e.currentTarget.selectionEnd));
+            }}
             onKeyDown={onKeyDown}
             placeholder={placeholder}
             spellCheck

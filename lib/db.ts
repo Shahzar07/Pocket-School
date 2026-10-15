@@ -5,6 +5,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { authedFetch, ApiError } from './api-client';
+import { isTransientError, sleep } from './net-retry';
 import { omitUndefined, makeJoinCode } from './firestore-sanitize';
 import { publicDisplayName } from './display-name';
 import type { Role } from './roles';
@@ -179,9 +180,18 @@ export interface Lesson {
     kind?: 'chapter_test' | 'unit_assessment' | 'mock_exam';
     title?: string; totalMarks?: number; timeAllowedMinutes?: number;
     passThreshold?: number; attempts?: number; certificateOnPass?: boolean;
-    sections?: { bloom: string; description: string; marks: number }[];
+    sections?: {
+      bloom: string; description: string; marks: number;
+      markScheme?: string; level3?: string; level2?: string; level1?: string;
+    }[];
   };
-  videoConfig?: { type?: 'ai' | 'voiceover' | 'embed'; embedUrl?: string; prompt?: string };
+  videoConfig?: {
+    type?: 'ai' | 'voiceover' | 'embed';
+    embedUrl?: string;
+    prompt?: string;
+    /** Download URLs for scene pictures, in scene order. Never data-URLs. */
+    sceneImages?: string[];
+  };
   visibility?: 'all' | 'teacher_only' | 'scheduled';
   releaseDate?: Timestamp;
   prerequisite?: 'none' | 'previous_lesson' | 'pass_chapter_quiz' | 'teacher_approval';
@@ -215,10 +225,23 @@ export interface AiOutputs {
   summary?: string;
   problems?: string;
   glossary?: { term: string; definition: string }[];
+  /** Hand-authored terms. Glossary generation must not replace these. */
+  vocabulary?: { term: string; definition: string }[];
   mindmap?: string;
   infographic?: string;
   videoScript?: string;
   audioScript?: string;
+  image?: LessonVisual;
+  illustration?: LessonVisual;
+}
+
+/** A picture placed with the lesson text. Stored on the lesson, shown to students with the text. */
+export interface LessonVisual {
+  url: string;
+  caption?: string;
+  alt?: string;
+  placement?: 'before' | 'after';
+  source?: 'upload' | 'ai';
 }
 
 export interface Enrollment {
@@ -438,24 +461,41 @@ export async function createCourse(data: Omit<Course, 'id'>): Promise<string> {
 
 // ─── Modules & Lessons ────────────────────────────────────────
 
-export async function getModulesWithLessons(courseId: string): Promise<{ module: Module; lessons: Lesson[] }[]> {
-  try {
-    const modSnap = await getDocs(
-      query(collection(db, 'courses', courseId, 'modules'), orderBy('order'))
+async function readModulesWithLessons(courseId: string): Promise<{ module: Module; lessons: Lesson[] }[]> {
+  const modSnap = await getDocs(
+    query(collection(db, 'courses', courseId, 'modules'), orderBy('order'))
+  );
+  return Promise.all(modSnap.docs.map(async (modDoc) => {
+    const module = { id: modDoc.id, ...modDoc.data() } as Module;
+    const lesSnap = await getDocs(
+      query(collection(db, 'courses', courseId, 'modules', modDoc.id, 'lessons'), orderBy('order'))
     );
-    return await Promise.all(modSnap.docs.map(async (modDoc) => {
-      const module = { id: modDoc.id, ...modDoc.data() } as Module;
-      const lesSnap = await getDocs(
-        query(collection(db, 'courses', courseId, 'modules', modDoc.id, 'lessons'), orderBy('order'))
-      );
-      const lessons = lesSnap.docs.map(d => ({ id: d.id, ...d.data() } as Lesson));
-      return { module, lessons };
-    }));
-  } catch {
-    const data = await authedFetch(`/api/platform/course-outline?courseId=${encodeURIComponent(courseId)}`);
-    const modules = (data.modules as { module: Module; lessons: Lesson[] }[] | undefined) ?? [];
-    return modules;
+    const lessons = lesSnap.docs.map(d => ({ id: d.id, ...d.data() } as Lesson));
+    return { module, lessons };
+  }));
+}
+
+export async function getModulesWithLessons(courseId: string): Promise<{ module: Module; lessons: Lesson[] }[]> {
+  let last: unknown;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await readModulesWithLessons(courseId);
+    } catch (error) {
+      last = error;
+      const code = String((error as { code?: string })?.code ?? '');
+      // A rules denial or a missing index is not a dropped connection.
+      // Students hit the denial whenever a lesson still stores aiOutputs.
+      const structural = code.includes('permission-denied') || code.includes('failed-precondition');
+      if (structural) break;
+      if (!isTransientError(error) || attempt === 2) break;
+      await sleep(400 * 2 ** attempt);
+    }
   }
+  const code = String((last as { code?: string })?.code ?? '');
+  const structural = code.includes('permission-denied') || code.includes('failed-precondition');
+  if (!structural) throw last;
+  const data = await authedFetch(`/api/platform/course-outline?courseId=${encodeURIComponent(courseId)}`);
+  return (data.modules as { module: Module; lessons: Lesson[] }[] | undefined) ?? [];
 }
 
 export async function getLesson(courseId: string, moduleId: string, lessonId: string): Promise<Lesson | null> {
@@ -621,14 +661,29 @@ export async function countProgrammeSubjects(programmeId: string): Promise<numbe
  * silently vanish from every year-group listing with no way to find them again.
  * Move or delete the subjects first.
  */
-export async function deleteProgramme(id: string): Promise<void> {
-  const subjects = await countProgrammeSubjects(id);
-  if (subjects > 0) {
-    throw new Error(
-      `This programme still has ${subjects} subject${subjects === 1 ? '' : 's'}. ` +
-      'Move or delete them first, otherwise they would be orphaned.',
+export class ProgrammeInUseError extends Error {
+  readonly subjects: { id: string; title: string }[];
+  constructor(subjects: { id: string; title: string }[]) {
+    const names = subjects.map((s) => s.title).join(', ');
+    super(
+      `This programme still has ${subjects.length} subject${subjects.length === 1 ? '' : 's'}: ${names}. Reassign them before deleting.`,
     );
+    this.name = 'ProgrammeInUseError';
+    this.subjects = subjects;
   }
+}
+
+export async function listProgrammeSubjects(programmeId: string): Promise<{ id: string; title: string }[]> {
+  const snap = await getDocs(query(collection(db, 'courses'), where('programmeId', '==', programmeId)));
+  return snap.docs.map((d) => ({
+    id: d.id,
+    title: (d.data().title as string) || (d.data().subject as string) || 'Untitled subject',
+  }));
+}
+
+export async function deleteProgramme(id: string): Promise<void> {
+  const subjects = await listProgrammeSubjects(id);
+  if (subjects.length > 0) throw new ProgrammeInUseError(subjects);
   await deleteDoc(doc(db, 'programmes', id));
 }
 

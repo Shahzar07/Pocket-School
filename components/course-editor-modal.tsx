@@ -126,9 +126,9 @@ export default function CourseEditorModal({
       setDurationHours(initial.durationHours ? String(initial.durationHours) : '');
       setIsPublic(initial.isPublic ?? true);
     } else {
-      setTitle(''); setDescription(''); setType('course'); setCategory('Mathematics');
+      setTitle(''); setDescription(''); setType('course'); setCategory('Other');
       setSubject(''); setThumbnailUrl(''); setThumbnailPreview(''); setThumbnailFile(null);
-      setLevel('All'); setPrice('0'); setCurrency('USD'); setWhatYouLearn(''); setCategory('Other');
+      setLevel('All'); setPrice('0'); setCurrency('USD'); setWhatYouLearn('');
       setRequirements(''); setTags(''); setWorkbookUrl(''); setWorkbookFile(null);
       setWorkbookFileName(''); setPreviewUrl(''); setDurationHours(''); setIsPublic(true);
     }

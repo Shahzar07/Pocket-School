@@ -7,7 +7,11 @@
  * owns loading state and Firestore writes.
  */
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { countQuizQuestions } from '@/lib/cms-guards';
+import { MathMarkdown } from '@/components/math-markdown';
+import { dataUrlToBlob, uploadLessonImage } from '@/lib/media-upload';
+import { toast } from 'sonner';
 import { motion } from 'motion/react';
 import { Lesson, AiOutputs } from '@/lib/db';
 import { Button } from '@/components/ui/button';
@@ -55,9 +59,20 @@ export const BLOCK_DEFS: BlockDef[] = [
   { id: 'notes', icon: '🗒️', label: 'Study Notes', sparks: 5 },
   { id: 'summary', icon: '⚡', label: 'Summary' },
   { id: 'problems', icon: '🧮', label: 'Problems', sparks: 5 },
+  { id: 'glossary', icon: '📚', label: 'Glossary', sparks: 5 },
+  { id: 'image', icon: '🖼️', label: 'Image', sparks: 10 },
+  { id: 'illustration', icon: '🎨', label: 'Illustration', sparks: 15 },
 ];
 
-export type AiRunner = (format: string, extraBrief?: string) => Promise<void>;
+export type AiRunOptions = {
+  extraBrief?: string;
+  quizCount?: number;
+  append?: boolean;
+  scaffold?: boolean;
+  confirmed?: boolean;
+};
+
+export type AiRunner = (format: string, extra?: string | AiRunOptions) => Promise<void>;
 
 export interface BlockShellProps {
   def: BlockDef;
@@ -213,7 +228,39 @@ export function VideoBlock({ lesson, videoConfig, onConfig, script, onScriptChan
 }) {
   const [prompt, setPrompt] = useState(videoConfig.prompt ?? '');
   const [editingScript, setEditingScript] = useState(false);
+  const [pending, setPending] = useState(false);
   const type = videoConfig.type ?? 'voiceover';
+
+  useEffect(() => {
+    setPrompt(videoConfig.prompt ?? '');
+    setPending(false);
+  }, [lesson.id, videoConfig.prompt]);
+
+  const configRef = useRef(videoConfig);
+  configRef.current = videoConfig;
+  const imagesRef = useRef<string[]>(videoConfig.sceneImages ?? []);
+  useEffect(() => { imagesRef.current = videoConfig.sceneImages ?? []; }, [lesson.id, videoConfig.sceneImages]);
+
+  const run = () => {
+    if (pending || generating) return;
+    setPending(true);
+    void ai('videoScript', prompt || undefined).finally(() => setPending(false));
+  };
+  const busy = generating || pending;
+  const storeScene = (index: number, dataUrl: string) => {
+    void (async () => {
+      try {
+        const blob = await dataUrlToBlob(dataUrl);
+        const url = await uploadLessonImage(lesson.courseId, lesson.id, `scene-${index}`, blob);
+        const images = [...imagesRef.current];
+        images[index] = url;
+        imagesRef.current = images;
+        onConfig({ ...configRef.current, sceneImages: images });
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Could not save that scene image.');
+      }
+    })();
+  };
 
   return (
     <div className="space-y-4">
@@ -254,12 +301,15 @@ export function VideoBlock({ lesson, videoConfig, onConfig, script, onScriptChan
         <>
           {script ? (
             <>
-              <VideoPlayer script={script} title={lesson.title} />
+              <VideoPlayer
+                key={lesson.id}
+                script={script}
+                title={lesson.title}
+                autoGenerate={false}
+                initialImages={lesson.videoConfig?.sceneImages}
+                onSceneImage={storeScene}
+              />
               <div className="flex flex-wrap items-center gap-2">
-                <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-8 text-xs" disabled={generating}
-                  onClick={() => ai('videoScript', prompt || undefined)}>
-                  {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} Regenerate
-                </Button>
                 <Button size="sm" variant="outline" className="rounded-xl h-8 text-xs" onClick={() => setEditingScript(s => !s)}>
                   {editingScript ? 'Close script' : 'Edit Script'}
                 </Button>
@@ -277,9 +327,10 @@ export function VideoBlock({ lesson, videoConfig, onConfig, script, onScriptChan
               placeholder='e.g. "Explain atomic structure with animated diagrams aimed at Year 10 students"'
               className="h-10 rounded-xl text-sm"
             />
-            <Button className="rounded-xl gap-1.5 shrink-0 bg-gradient-to-r from-red-500 to-rose-600 text-white" disabled={generating}
-              onClick={() => ai('videoScript', prompt || undefined)}>
-              {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Generate
+            <Button className="rounded-xl gap-1.5 shrink-0 bg-gradient-to-r from-red-500 to-rose-600 text-white" disabled={busy}
+              onClick={run}>
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {script ? 'Regenerate script' : 'Generate'}
             </Button>
           </div>
         </>
@@ -443,13 +494,22 @@ export function QuizBlock({ value, onChange, ai, generating, settings, onSetting
   settings: { passMark: number; attempts: number; randomise: boolean };
   onSettings: (s: { passMark: number; attempts: number; randomise: boolean }) => void;
 }) {
+  const [quizCount, setQuizCount] = useState(10);
+  const [append, setAppend] = useState(true);
+  const [pending, setPending] = useState(false);
   const update = (i: number, patch: Partial<QuizQ>) =>
     onChange(value.map((q, j) => (j === i ? { ...q, ...patch } : q)));
+  const busy = generating || pending;
+  const ask = () => {
+    if (busy) return;
+    setPending(true);
+    void ai('quiz', { quizCount, append }).finally(() => setPending(false));
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3 text-xs bg-muted/40 rounded-xl px-3 py-2">
-        <span className="font-semibold text-foreground">{value.length} questions</span>
+        <span className="font-semibold text-foreground">{countQuizQuestions(value)} questions</span>
         <label className="flex items-center gap-1.5">Pass mark
           <Input type="number" value={settings.passMark} onChange={e => onSettings({ ...settings, passMark: Number(e.target.value) || 0 })} className="h-7 w-16 rounded-lg text-xs" />%
         </label>
@@ -503,13 +563,21 @@ export function QuizBlock({ value, onChange, ai, generating, settings, onSetting
         </div>
       ))}
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2 items-center">
         <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-8 text-xs"
           onClick={() => onChange([...value, { question: '', options: ['', '', '', ''], answer: '' }])}>
           <Plus className="w-3 h-3" /> Add Question
         </Button>
-        <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-8 text-xs" disabled={generating} onClick={() => ai('quiz')}>
-          {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} AI Generate Questions
+        <label className="flex items-center gap-1 text-[11px] text-muted-foreground">How many
+          <Input type="number" min={1} max={20} value={quizCount} onChange={e => setQuizCount(Math.min(20, Math.max(1, Number(e.target.value) || 1)))} className="h-8 w-14 rounded-lg text-xs" />
+        </label>
+        <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer">
+          <input type="checkbox" checked={append} onChange={e => setAppend(e.target.checked)} className="accent-teal-500" />
+          Add to existing
+        </label>
+        <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-8 text-xs" disabled={busy} onClick={ask}>
+          {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+          {busy ? 'Generating…' : append ? 'Add questions' : 'Replace questions'}
         </Button>
       </div>
     </div>
@@ -633,6 +701,14 @@ export function AssessmentBlock({ value, onChange, ai, generating, onDraftSectio
             <button onClick={() => onChange({ ...value, sections: sections.filter((_, j) => j !== i) })} className="text-muted-foreground hover:text-red-600" title="Remove">
               <Trash2 className="w-3 h-3" />
             </button>
+            <Textarea value={s.markScheme ?? ''} onChange={e => onChange({ ...value, sections: sections.map((x, j) => j === i ? { ...x, markScheme: e.target.value } : x) })}
+              placeholder="Mark scheme" className="col-span-full min-h-16 rounded-lg text-xs" />
+            <Input value={s.level3 ?? ''} onChange={e => onChange({ ...value, sections: sections.map((x, j) => j === i ? { ...x, level3: e.target.value } : x) })}
+              placeholder="Level 3" className="h-8 rounded-lg text-[11px]" />
+            <Input value={s.level2 ?? ''} onChange={e => onChange({ ...value, sections: sections.map((x, j) => j === i ? { ...x, level2: e.target.value } : x) })}
+              placeholder="Level 2" className="h-8 rounded-lg text-[11px]" />
+            <Input value={s.level1 ?? ''} onChange={e => onChange({ ...value, sections: sections.map((x, j) => j === i ? { ...x, level1: e.target.value } : x) })}
+              placeholder="Level 1" className="h-8 rounded-lg text-[11px]" />
           </div>
         ))}
         <div className="flex flex-wrap gap-2">
@@ -659,12 +735,29 @@ export function AssessmentBlock({ value, onChange, ai, generating, onDraftSectio
 /* ── Audio (simple preview using SmartAudioPlayer) ─────────── */
 
 export function AudioBlock({ script, ai, generating }: { script?: string; ai: AiRunner; generating: boolean }) {
+  const [pending, setPending] = useState(false);
+  const busy = generating || pending;
+  const run = () => {
+    if (busy) return;
+    setPending(true);
+    void ai('audioScript').finally(() => setPending(false));
+  };
+  if (busy && !script) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="w-4 h-4 animate-spin" /> Writing the audio script…
+        </div>
+        <div className="h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full w-2/3 bg-violet-500 animate-pulse" /></div>
+      </div>
+    );
+  }
   if (!script) {
     return (
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">No audio summary yet.</p>
-        <Button size="sm" className="rounded-xl gap-1.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white" disabled={generating} onClick={() => ai('audioScript')}>
-          {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} Generate Audio Script
+        <Button size="sm" className="rounded-xl gap-1.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white" disabled={busy} onClick={run}>
+          {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} Generate Audio Script
         </Button>
       </div>
     );
@@ -672,9 +765,74 @@ export function AudioBlock({ script, ai, generating }: { script?: string; ai: Ai
   return (
     <div className="space-y-3">
       <SmartAudioPlayer script={script} title="Audio Summary" />
-      <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-8 text-xs" disabled={generating} onClick={() => ai('audioScript')}>
-        {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} Regenerate script
+      <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-8 text-xs" disabled={busy} onClick={run}>
+        {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} {busy ? 'Writing script…' : 'Regenerate script'}
       </Button>
+    </div>
+  );
+}
+
+export function ProblemsBlock({
+  value, onChange, ai, generating,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  ai: AiRunner;
+  generating: boolean;
+}) {
+  const [scaffold, setScaffold] = useState(false);
+  const [pending, setPending] = useState(false);
+  const busy = generating || pending;
+  return (
+    <div className="space-y-3">
+      <MarkdownEditBlock
+        value={value}
+        onChange={onChange}
+        placeholder="Practice problems. Generate them from the lesson text, or write them here."
+      />
+      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+        <input type="checkbox" checked={scaffold} onChange={e => setScaffold(e.target.checked)} className="accent-teal-500" />
+        Include an idea / worked-example scaffold
+      </label>
+      <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-8 text-xs" disabled={busy}
+        onClick={() => {
+          if (busy) return;
+          setPending(true);
+          void ai('problems', { scaffold }).finally(() => setPending(false));
+        }}>
+        {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+        {busy ? 'Generating…' : value.trim() ? 'Regenerate problems' : 'Generate problems'}
+      </Button>
+    </div>
+  );
+}
+
+/** Study notes, problems and other prose blocks the admin can edit by hand. */
+export function MarkdownEditBlock({
+  value, onChange, placeholder,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  placeholder?: string;
+}) {
+  const [preview, setPreview] = useState(false);
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-end">
+        <Button type="button" size="sm" variant="outline" className="rounded-lg h-7 text-[11px]" onClick={() => setPreview(p => !p)}>
+          {preview ? 'Edit' : 'Preview'}
+        </Button>
+      </div>
+      {preview ? (
+        <div className="prose prose-sm max-w-none"><MathMarkdown>{value}</MathMarkdown></div>
+      ) : (
+        <Textarea
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="min-h-48 rounded-xl text-sm leading-relaxed"
+        />
+      )}
     </div>
   );
 }

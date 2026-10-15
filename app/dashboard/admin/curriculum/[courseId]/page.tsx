@@ -9,20 +9,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Timestamp } from 'firebase/firestore';
+import { deleteField, Timestamp } from 'firebase/firestore';
 import { AnimatePresence, motion } from 'motion/react';
 import { toast } from 'sonner';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
   getCourse, getModulesWithLessons, updateCourse, createModule, updateUnit,
   createLesson, updateLesson, deleteLesson, duplicateLesson, deleteUnit, getInstitutions,
-  Course, Module, Lesson, AiOutputs, Institution,
+  Course, Module, Lesson, AiOutputs, Institution, LessonVisual,
 } from '@/lib/db';
 import {
   BLOCK_DEFS, BLOOMS, BlockShell, ObjectivesBlock, VideoBlock, LessonTextBlock,
   VocabularyBlock, ActivityBlock, QuizBlock, AssignmentBlock, AssessmentBlock,
-  AudioBlock, type BlockDef,
+  AudioBlock, MarkdownEditBlock, ProblemsBlock, type AiRunOptions, type BlockDef,
 } from '@/components/builder-blocks';
+import { VisualBlock } from '@/components/lesson-visual';
 import { FormatPreview } from '@/components/lesson-format-views';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +37,11 @@ import type {
   TierId, Tier2SubjectType, LawStage, Tier3Assessment,
 } from '@/lib/curriculum-tiers';
 import { getFormatCost } from '@/lib/sparks';
+import {
+  appendQuiz, applyGlossaryResult, BLOCK_OUTPUT_KEY, DEFAULT_LESSON_MARKS, describeFirestoreError,
+  displayUnitTitle, lessonFieldPatch,
+} from '@/lib/cms-guards';
+import { fetchWithBackoff, withBackoff } from '@/lib/net-retry';
 import {
   ArrowLeft, AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Copy, CornerDownRight,
   Eye, GripVertical, Loader2, Pencil, Plus, RotateCcw, Send, Sparkles, Trash2, Archive, X,
@@ -105,15 +111,19 @@ interface UnitWithLessons { module: Module; lessons: Lesson[] }
 async function callGenerate(
   content: string, format: string, briefPrompt?: string, templateId?: string,
   tier?: string, tierMeta?: Record<string, string | undefined>,
-): Promise<unknown> {
-  const res = await fetch('/api/ai/generate', {
+  options?: Pick<AiRunOptions, 'quizCount' | 'scaffold'>,
+): Promise<{ result: unknown; warning?: string }> {
+  const res = await fetchWithBackoff('/api/ai/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content, format, briefPrompt, templateId, tier, tierMeta }),
+    body: JSON.stringify({
+      content, format, briefPrompt, templateId, tier, tierMeta,
+      quizCount: options?.quizCount, scaffold: options?.scaffold,
+    }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Generation failed: ${format}`);
-  return data.result;
+  return { result: data.result, warning: data.warning };
 }
 
 /** ET — the CMS assistant (objectives, briefs, rewrites, assessments). */
@@ -220,6 +230,7 @@ export default function ContentBuilderPage() {
   const [selLesson, setSelLesson] = useState<string | null>(null);
   const [draft, setDraft] = useState<Lesson | null>(null);
   const [saveState, setSaveState] = useState<'saved' | 'dirty' | 'saving'>('saved');
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [rightTab, setRightTab] = useState<'properties' | 'publish' | 'allocate' | 'history'>('properties');
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
   const [aiBusy, setAiBusy] = useState<string | null>(null);
@@ -229,6 +240,14 @@ export default function ContentBuilderPage() {
   const [publishing, setPublishing] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const draftRef = useRef<Lesson | null>(null);
+  const selectionRef = useRef({ unit: null as string | null, lesson: null as string | null });
+  const saveStateRef = useRef(saveState);
+  const lastSavedRef = useRef(new Map<string, Lesson>());
+  const saveChain = useRef(Promise.resolve());
+  const inflightAi = useRef(new Set<string>());
+  const hydratedKey = useRef<string | null>(null);
+  selectionRef.current = { unit: selUnit, lesson: selLesson };
+  saveStateRef.current = saveState;
   draftRef.current = draft;
 
   const actorName = profile?.name ?? user?.email ?? 'Admin';
@@ -244,12 +263,21 @@ export default function ContentBuilderPage() {
       setCourse(c);
       setUnits(mods);
       setInstitutions(inst);
-      if (!keepSelection && mods.length && mods[0].lessons.length) {
-        setSelUnit(mods[0].module.id);
-        setSelLesson(mods[0].lessons[0].id);
+      if (!keepSelection && mods.length) {
+        const requested = typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search).get('lesson')
+          : null;
+        const owner = requested ? mods.find(u => u.lessons.some(l => l.id === requested)) : undefined;
+        if (owner && requested) {
+          setSelUnit(owner.module.id);
+          setSelLesson(requested);
+        } else if (mods[0].lessons.length) {
+          setSelUnit(mods[0].module.id);
+          setSelLesson(mods[0].lessons[0].id);
+        }
       }
     } catch (e: any) {
-      setLoadError(e?.message || 'Failed to load.');
+      setLoadError(describeFirestoreError(e));
     } finally {
       setLoading(false);
     }
@@ -257,104 +285,196 @@ export default function ContentBuilderPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Hydrate the editable draft when selection changes.
+  // Hydrate only when the open lesson changes. A save updates `units` too,
+  // and re-copying that into the editor was wiping text the admin had just typed.
   useEffect(() => {
-    if (!selUnit || !selLesson) { setDraft(null); return; }
+    const key = `${selUnit ?? ''}:${selLesson ?? ''}`;
+    if (!selUnit || !selLesson) {
+      setDraft(null);
+      draftRef.current = null;
+      hydratedKey.current = key;
+      return;
+    }
+    if (hydratedKey.current === key) return;
     const lesson = units.find(u => u.module.id === selUnit)?.lessons.find(l => l.id === selLesson) ?? null;
-    setDraft(lesson ? cloneDeep(lesson) : null);
+    if (!lesson) return;
+    hydratedKey.current = key;
+    const copy = cloneDeep(lesson);
+    draftRef.current = copy;
+    lastSavedRef.current.set(lesson.id, cloneDeep(lesson));
+    setDraft(copy);
     setSaveState('saved');
+    setSaveError(null);
   }, [selUnit, selLesson, units]);
 
-  /* ── Saving ── */
+  /* ── Saving — one changed field at a time, queued, retried ── */
 
-  const persistDraft = useCallback(async (d: Lesson, historyLabel?: string) => {
-    if (!selUnit) return;
-    setSaveState('saving');
-    try {
-      const history = [
-        ...(historyLabel ? [{ label: historyLabel, actor: actorName, at: Timestamp.now() }] : []),
-        ...(d.history ?? []),
-      ].slice(0, 30);
-      const { id: _id, ...fields } = d;
-      // Firestore rejects undefined values — strip them, but keep Timestamps
-      // as Timestamps so history dates and release dates survive the round-trip.
-      const clean = stripUndefined({ ...fields, ...(historyLabel ? { history } : {}) });
-      await updateLesson(courseId, selUnit, d.id, clean);
-      setSaveState('saved');
-      setUnits(prev => prev.map(u => u.module.id !== selUnit ? u : {
-        ...u, lessons: u.lessons.map(l => l.id === d.id ? { ...d, ...(historyLabel ? { history } : {}) } : l),
-      }));
-    } catch (e: any) {
-      setSaveState('dirty');
-      toast.error(e?.message || 'Save failed.');
-    }
-  }, [courseId, selUnit, actorName]);
+  const enqueueSave = useCallback((moduleId: string, snapshot: Lesson, historyLabel?: string) => {
+    const run = async () => {
+      const withHistory = historyLabel
+        ? {
+          ...snapshot,
+          history: [{ label: historyLabel, actor: actorName, at: Timestamp.now() }, ...(snapshot.history ?? [])].slice(0, 30),
+        }
+        : snapshot;
+      const previous = lastSavedRef.current.get(snapshot.id) ?? null;
+      const raw = lessonFieldPatch(
+        previous as unknown as Record<string, unknown> | null,
+        stripUndefined(withHistory) as unknown as Record<string, unknown>,
+      );
+      const fields: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(raw)) fields[key] = value === null ? deleteField() : value;
+      if (Object.keys(fields).length === 0) {
+        if (selectionRef.current.lesson === snapshot.id) { setSaveState('saved'); setSaveError(null); }
+        return;
+      }
+      if (selectionRef.current.lesson === snapshot.id) setSaveState('saving');
+      try {
+        await withBackoff(() => updateLesson(courseId, moduleId, snapshot.id, fields as Partial<Lesson>));
+        lastSavedRef.current.set(snapshot.id, cloneDeep(withHistory));
+        setUnits(prev => prev.map(u => u.module.id !== moduleId ? u : {
+          ...u, lessons: u.lessons.map(l => l.id === snapshot.id ? withHistory : l),
+        }));
+        if (selectionRef.current.lesson === snapshot.id) { setSaveState('saved'); setSaveError(null); }
+      } catch (e: unknown) {
+        const message = describeFirestoreError(e);
+        if (selectionRef.current.lesson === snapshot.id) { setSaveState('dirty'); setSaveError(message); }
+        toast.error(message, { duration: 12000 });
+        throw e;
+      }
+    };
+    const job = saveChain.current.then(run, run);
+    saveChain.current = job.then(() => undefined, () => undefined);
+    return job;
+  }, [actorName, courseId]);
+
+  const flushNow = useCallback((historyLabel?: string) => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    const current = draftRef.current;
+    const moduleId = selectionRef.current.unit;
+    if (!current || !moduleId) return Promise.resolve();
+    return enqueueSave(moduleId, cloneDeep(current), historyLabel);
+  }, [enqueueSave]);
 
   const patchDraft = useCallback((patch: Partial<Lesson>) => {
     setDraft(prev => {
       if (!prev) return prev;
       const next = { ...prev, ...patch };
+      draftRef.current = next;
       setSaveState('dirty');
+      setSaveError(null);
       if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => {
-        const cur = draftRef.current;
-        if (!cur) return;
-        // Log auto-saves in the audit trail, but collapse a burst of typing
-        // into a single "Content edited" entry per 10-minute window.
-        const last = cur.history?.[0];
-        const lastAt = last?.at instanceof Timestamp ? last.at.toMillis() : 0;
-        const recentEdit =
-          last?.label === 'Content edited' && Date.now() - lastAt < 10 * 60 * 1000;
-        persistDraft(cur, recentEdit ? undefined : 'Content edited');
-      }, 2000);
+      saveTimer.current = setTimeout(() => { void flushNow(); }, 4000);
       return next;
     });
-  }, [persistDraft]);
+  }, [flushNow]);
 
-  const saveNow = useCallback(() => {
+  const saveNow = useCallback(() => { void flushNow('Manual save'); }, [flushNow]);
+
+  const selectLesson = useCallback((unitId: string, lessonId: string) => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    if (draftRef.current) persistDraft(draftRef.current, 'Manual save');
-  }, [persistDraft]);
+    const current = draftRef.current;
+    const moduleId = selectionRef.current.unit;
+    if (current && moduleId && current.id !== lessonId && saveStateRef.current !== 'saved') {
+      void enqueueSave(moduleId, cloneDeep(current));
+    }
+    setSelUnit(unitId);
+    setSelLesson(lessonId);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('lesson', lessonId);
+      window.history.replaceState(null, '', `${url.pathname}${url.search}`);
+    }
+  }, [enqueueSave]);
+
+  useEffect(() => {
+    const onLeave = (event: BeforeUnloadEvent) => {
+      if (saveStateRef.current === 'saved') return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    const onHide = () => {
+      if (document.visibilityState !== 'hidden' || saveStateRef.current === 'saved') return;
+      const current = draftRef.current;
+      const moduleId = selectionRef.current.unit;
+      if (current && moduleId) void enqueueSave(moduleId, cloneDeep(current));
+    };
+    window.addEventListener('beforeunload', onLeave);
+    document.addEventListener('visibilitychange', onHide);
+    return () => {
+      window.removeEventListener('beforeunload', onLeave);
+      document.removeEventListener('visibilitychange', onHide);
+    };
+  }, [enqueueSave]);
 
   /* ── AI generation ── */
 
-  const runAi = useCallback(async (format: string, extraBrief?: string) => {
-    const d = draftRef.current;
-    if (!d || !selUnit) return;
+  const runAi = useCallback(async (format: string, extra?: string | AiRunOptions) => {
+    const opts: AiRunOptions = typeof extra === 'string' ? { extraBrief: extra } : (extra ?? {});
+    const started = draftRef.current;
+    const moduleId = selectionRef.current.unit;
+    if (!started || !moduleId) return;
+    const lessonId = started.id;
+    const lock = `${lessonId}:${format}`;
+    if (inflightAi.current.has(lock)) return;
+    inflightAi.current.add(lock);
+    const existing = (started.aiOutputs as Record<string, unknown> | undefined)?.[format];
+    const already = existing != null && existing !== '' && !(Array.isArray(existing) && existing.length === 0);
+    if (already && !opts.append && !opts.confirmed) {
+      const label = AI_SHORTCUTS.find(item => item.id === format)?.label ?? format;
+      const ok = window.confirm(
+        `${label} already exists on “${started.title}”. Generate again and replace it? Students unlock this format for ${getFormatCost(format)} Sparks.`,
+      );
+      if (!ok) { inflightAi.current.delete(lock); return; }
+    }
     setAiBusy(format);
     try {
       const content =
-        d.contentSources?.find(s => s.type === 'text')?.value?.trim() ||
-        (d.aiOutputs?.text ?? '') || d.title;
-      const brief = [d.briefPrompt, extraBrief].filter(Boolean).join('\n');
-      // Lesson override wins, else the course default, else the suggestion for
-      // the subject — so generation always has a shape to follow.
-      const templateId = d.contentTemplateId
+        started.contentSources?.find(s => s.type === 'text')?.value?.trim() ||
+        (started.aiOutputs?.text ?? '') || started.title;
+      const brief = [started.briefPrompt, opts.extraBrief].filter(Boolean).join('\n');
+      const templateId = started.contentTemplateId
         || course?.contentTemplateId
         || suggestTemplateId(course?.subject);
-      // Lesson override, else the course's tier, else auto-detect downstream.
-      const tier = d.curriculumTier || course?.curriculumTier;
-      const result = await callGenerate(content, format, brief || undefined, templateId, tier, {
+      const tier = started.curriculumTier || course?.curriculumTier;
+      const generated = await callGenerate(content, format, brief || undefined, templateId, tier, {
         subject: course?.subject,
         yearLevel: course?.yearGroup ?? course?.level,
         courseTitle: course?.title,
-        unit: units.find(u => u.module.id === selUnit)?.module.title,
-        topic: d.title,
-        subjectType: d.tierSubjectType || course?.tierSubjectType,
-        lawStage: d.tierLawStage || course?.tierLawStage,
-        assessmentStyle: d.tierAssessmentStyle || course?.tierAssessmentStyle,
-      });
-      const aiOutputs = { ...(d.aiOutputs ?? {}), [format]: result };
-      const next = { ...d, aiOutputs } as Lesson;
-      setDraft(next);
-      await persistDraft(next, `AI generated: ${format}`);
-      toast.success(`${format} generated.`);
+        unit: units.find(u => u.module.id === moduleId)?.module.title,
+        topic: started.title,
+        subjectType: started.tierSubjectType || course?.tierSubjectType,
+        lawStage: started.tierLawStage || course?.tierLawStage,
+        assessmentStyle: started.tierAssessmentStyle || course?.tierAssessmentStyle,
+      }, opts);
+      const live = draftRef.current?.id === lessonId ? draftRef.current : started;
+      const aiOutputs: AiOutputs = { ...(live.aiOutputs ?? {}) };
+      if (format === 'glossary' && Array.isArray(generated.result)) {
+        const frozen = applyGlossaryResult(aiOutputs, generated.result as { term: string; definition: string }[]);
+        aiOutputs.vocabulary = frozen.vocabulary;
+        aiOutputs.glossary = frozen.glossary;
+      } else if (format === 'quiz' && opts.append && Array.isArray(generated.result)) {
+        aiOutputs.quiz = appendQuiz(aiOutputs.quiz, generated.result as NonNullable<AiOutputs['quiz']>);
+      } else {
+        (aiOutputs as Record<string, unknown>)[format] = generated.result;
+      }
+      const blockId = format === 'videoScript' ? 'video' : format === 'audioScript' ? 'audio' : format;
+      const blocks = live.blocksOrder?.length ? [...live.blocksOrder] : [...DEFAULT_BLOCKS];
+      if (!blocks.includes(blockId) && BLOCK_DEFS.some(def => def.id === blockId)) blocks.push(blockId);
+      const next = { ...live, aiOutputs, blocksOrder: blocks } as Lesson;
+      if (draftRef.current?.id === lessonId) {
+        draftRef.current = next;
+        setDraft(next);
+      }
+      await enqueueSave(moduleId, next, `AI generated: ${format}`);
+      toast.success(generated.warning ? `${format} generated. ${generated.warning}` : `${format} generated.`);
     } catch (e: any) {
       toast.error(e?.message || `Failed to generate ${format}.`);
     } finally {
-      setAiBusy(null);
+      inflightAi.current.delete(lock);
+      setAiBusy(current => current === format ? null : current);
     }
-  }, [selUnit, persistDraft]);
+  }, [course, units, enqueueSave]);
 
   /* ── ET assistance ── */
 
@@ -368,22 +488,32 @@ export default function ContentBuilderPage() {
     historyLabel: string,
   ) => {
     const d = draftRef.current;
-    if (!d || !selUnit) return;
+    const moduleId = selectionRef.current.unit;
+    if (!d || !moduleId) return;
+    const lessonId = d.id;
+    if (inflightAi.current.has(`${lessonId}:${key}`)) return;
+    inflightAi.current.add(`${lessonId}:${key}`);
     setEtBusy(key);
     try {
       const data = await callEt<any>(task, buildContext(d));
-      const patch = apply(d, data);
+      const live = draftRef.current?.id === lessonId ? draftRef.current : d;
+      const patch = apply(live, data);
       if (!patch) { toast.error('ET returned nothing usable — try again.'); return; }
-      const next = { ...d, ...patch } as Lesson;
-      setDraft(next);
-      await persistDraft(next, historyLabel);
+      const next = { ...live, ...patch } as Lesson;
+      if (patch.aiOutputs) next.aiOutputs = { ...(live.aiOutputs ?? {}), ...patch.aiOutputs };
+      if (draftRef.current?.id === lessonId) {
+        draftRef.current = next;
+        setDraft(next);
+      }
+      await enqueueSave(moduleId, next, historyLabel);
       toast.success(historyLabel);
     } catch (e: any) {
       toast.error(e?.message || 'ET request failed.');
     } finally {
+      inflightAi.current.delete(`${lessonId}:${key}`);
       setEtBusy(null);
     }
-  }, [selUnit, persistDraft]);
+  }, [enqueueSave]);
 
   const suggestObjectives = useCallback(() => runEt(
     'objectives', 'objectives',
@@ -410,7 +540,17 @@ export default function ContentBuilderPage() {
     'ET suggested objectives',
   ), [runEt, course, units, selUnit]);
 
-  const writeBrief = useCallback(() => runEt(
+  const writeBrief = useCallback(() => {
+    const current = draftRef.current;
+    if (!current) return;
+    const replacing = Boolean(current.briefPrompt?.trim());
+    const ok = window.confirm(
+      replacing
+        ? `Replace the generation brief on “${current.title}”? ET will rewrite only this lesson.`
+        : `Ask ET to write a generation brief for “${current.title}”? You can also type one in the brief box without using ET.`,
+    );
+    if (!ok) return;
+    return runEt(
     'brief', 'brief',
     d => ({
       lessonTitle: d.title,
@@ -422,7 +562,8 @@ export default function ContentBuilderPage() {
     }),
     (_d, data) => (typeof data?.brief === 'string' && data.brief.trim() ? { briefPrompt: data.brief } : null),
     'ET wrote the generation brief',
-  ), [runEt, course, units, selUnit]);
+  );
+  }, [runEt, course, units, selUnit]);
 
   const improveText = useCallback((instruction: string) => runEt(
     'improve', 'improve',
@@ -472,8 +613,9 @@ export default function ContentBuilderPage() {
       ...d, status: next,
       ...(next === 'approved' ? { reviewedBy: actorName, reviewedAt: Timestamp.now() } : {}),
     };
+    draftRef.current = patched;
     setDraft(patched);
-    await persistDraft(patched, label);
+    await enqueueSave(selectionRef.current.unit ?? d.moduleId, patched, label);
     toast.success(label);
   };
 
@@ -535,11 +677,10 @@ export default function ContentBuilderPage() {
       const id = await createLesson(courseId, unitId, {
         title: title.trim(), moduleId: unitId, courseId,
         order: count + 1, lessonNumber: count + 1, status: 'draft',
-        lessonType: 'lesson', blocksOrder: DEFAULT_BLOCKS,
+        lessonType: 'lesson', blocksOrder: DEFAULT_BLOCKS, marks: DEFAULT_LESSON_MARKS,
       });
       await load(true);
-      setSelUnit(unitId);
-      setSelLesson(id);
+      selectLesson(unitId, id);
     } catch (e: any) { toast.error(e?.message || 'Failed.'); }
   };
 
@@ -569,11 +710,10 @@ export default function ContentBuilderPage() {
         title: title.trim(), moduleId: unitId, courseId,
         order: (parent.order ?? parentIdx + 1) + subIndex / 100,
         lessonNumber: Number((top + subIndex / (subIndex < 10 ? 10 : 100)).toFixed(2)),
-        status: 'draft', lessonType: 'lesson', blocksOrder: DEFAULT_BLOCKS,
+        status: 'draft', lessonType: 'lesson', blocksOrder: DEFAULT_BLOCKS, marks: DEFAULT_LESSON_MARKS,
       });
       await load(true);
-      setSelUnit(unitId);
-      setSelLesson(id);
+      selectLesson(unitId, id);
       toast.success('Sub-lesson created.');
     } catch (e: any) { toast.error(e?.message || 'Failed.'); }
   };
@@ -589,7 +729,7 @@ export default function ContentBuilderPage() {
 
     // Flush any pending edit first — re-hydrating the tree resets the draft.
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    if (draftRef.current && saveState !== 'saved') await persistDraft(draftRef.current);
+    if (draftRef.current && saveState !== 'saved') await flushNow();
 
     const list = [...unit.lessons];
     const [moved] = list.splice(from, 1);
@@ -676,11 +816,11 @@ export default function ContentBuilderPage() {
         </nav>
         <span className="flex-1" />
         {/* Save status */}
-        <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+        <span className={`flex items-center gap-1.5 text-[11px] font-medium ${saveError ? 'text-red-700' : 'text-muted-foreground'}`}>
           <span className={`w-2 h-2 rounded-full ${
             saveState === 'saved' ? 'bg-emerald-500' : saveState === 'saving' ? 'bg-amber-400 animate-pulse' : 'bg-amber-400 animate-pulse'
           }`} />
-          {saveState === 'saved' ? 'All changes saved' : saveState === 'saving' ? 'Saving…' : 'Unsaved changes'}
+          {saveError ?? (saveState === 'saved' ? 'All changes saved' : saveState === 'saving' ? 'Saving…' : 'Unsaved changes — don’t reload yet')}
         </span>
         <span className="hidden sm:inline-flex text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-violet-100 text-violet-700">
           {profile?.role ? ROLE_LABELS[profile.role] : 'Teacher'}
@@ -723,7 +863,7 @@ export default function ContentBuilderPage() {
                 unit={u.module}
                 lessons={u.lessons}
                 activeLessonId={selLesson}
-                onSelect={(lid) => { setSelUnit(u.module.id); setSelLesson(lid); }}
+                onSelect={(lid) => selectLesson(u.module.id, lid)}
                 onRename={() => renameUnit(u.module)}
                 onAddLesson={() => addLesson(u.module.id, u.lessons.length)}
                 onDeleteUnit={() => removeUnit(u.module, u.lessons.length)}
@@ -865,21 +1005,20 @@ export default function ContentBuilderPage() {
                   </p>
                 </div>
 
-                {draft.briefPrompt && (
-                  <details className="rounded-xl border border-border bg-card px-3 py-2">
-                    <summary className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground cursor-pointer">
-                      Generation brief
-                    </summary>
-                    <textarea
-                      value={draft.briefPrompt}
-                      onChange={e => patchDraft({ briefPrompt: e.target.value })}
-                      className="mt-2 w-full min-h-32 rounded-lg border border-border bg-background p-2 text-xs leading-relaxed outline-none"
-                    />
-                    <p className="text-[10px] text-muted-foreground mt-1">
-                      Every AI generation on this lesson follows this brief.
-                    </p>
-                  </details>
-                )}
+                <div className="rounded-xl border border-border bg-card px-3 py-2">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Generation brief
+                  </p>
+                  <textarea
+                    value={draft.briefPrompt ?? ''}
+                    onChange={e => patchDraft({ briefPrompt: e.target.value })}
+                    placeholder="Type the brief for this lesson. ET can draft one too — that button asks first."
+                    className="mt-2 w-full min-h-28 rounded-lg border border-border bg-background p-2 text-xs leading-relaxed outline-none"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Every AI generation on this lesson follows this brief. Typing here does not use Sparks.
+                  </p>
+                </div>
               </div>
 
               {/* Duration sits directly below Objectives; if the Objectives block
@@ -897,7 +1036,12 @@ export default function ContentBuilderPage() {
                       draft={draft}
                       selected={selectedBlock === blockId}
                       onSelect={() => setSelectedBlock(blockId)}
-                      onDelete={() => patchDraft({ blocksOrder: blocksOrder.filter(b => b !== blockId) })}
+                      onDelete={() => {
+                        const outputs = { ...(draft.aiOutputs ?? {}) };
+                        const outputKey = BLOCK_OUTPUT_KEY[blockId];
+                        if (outputKey) delete (outputs as Record<string, unknown>)[outputKey];
+                        patchDraft({ blocksOrder: blocksOrder.filter(b => b !== blockId), aiOutputs: outputs });
+                      }}
                       onMoveUp={idx > 0 ? () => {
                         const next = [...blocksOrder];
                         [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
@@ -1159,7 +1303,7 @@ function TreeUnit({
         <button onClick={() => setOpen(o => !o)} className="flex items-center gap-1.5 flex-1 min-w-0 text-left">
           {open ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
           <span className="text-xs font-bold text-foreground truncate">
-            {unit.unitNumber ? `Unit ${unit.unitNumber}: ` : ''}{unit.title}
+            {displayUnitTitle(unit.unitNumber, unit.title)}
           </span>
         </button>
         <button onClick={onRename} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-muted text-muted-foreground" title="Rename">
@@ -1263,7 +1407,7 @@ function BuilderBlock({
   onSelect: () => void; onDelete: () => void;
   onMoveUp?: () => void; onMoveDown?: () => void;
   patch: (p: Partial<Lesson>) => void;
-  ai: (format: string, extraBrief?: string) => Promise<void>;
+  ai: (format: string, extra?: string | AiRunOptions) => Promise<void>;
   aiBusy: string | null;
   etBusy: string | null;
   onSuggestObjectives: () => void;
@@ -1319,10 +1463,40 @@ function BuilderBlock({
     case 'vocabulary':
       return shell(
         <VocabularyBlock
+          value={Array.isArray(outputs.vocabulary)
+            ? outputs.vocabulary
+            : Array.isArray(outputs.glossary) ? outputs.glossary : []}
+          onChange={v => patch({ aiOutputs: { ...outputs, vocabulary: v } })}
+        />
+      );
+    case 'glossary':
+      return shell(
+        <VocabularyBlock
           value={Array.isArray(outputs.glossary) ? outputs.glossary : []}
           onChange={v => patch({ aiOutputs: { ...outputs, glossary: v } })}
         />,
         { regen: 'glossary' }
+      );
+    case 'image':
+    case 'illustration':
+      return shell(
+        <VisualBlock
+          kind={blockId}
+          value={outputs[blockId] as LessonVisual | undefined}
+          onChange={v => patch({ aiOutputs: { ...outputs, [blockId]: v } })}
+          lessonText={outputs.text ?? draft.contentSources?.find(s => s.type === 'text')?.value ?? draft.title}
+          courseId={draft.courseId}
+          lessonId={draft.id}
+        />
+      );
+    case 'problems':
+      return shell(
+        <ProblemsBlock
+          value={typeof outputs.problems === 'string' ? outputs.problems : ''}
+          onChange={v => patch({ aiOutputs: { ...outputs, problems: v } })}
+          ai={ai}
+          generating={aiBusy === 'problems'}
+        />
       );
     case 'activity':
       return shell(
@@ -1367,8 +1541,27 @@ function BuilderBlock({
     // Read-only AI format previews (flashcards, mindmap, infographic, slides, notes, summary, problems)
     default: {
       const formatKey = blockId as keyof AiOutputs;
-      const has = outputs[formatKey] != null &&
-        (!Array.isArray(outputs[formatKey]) || (outputs[formatKey] as unknown[]).length > 0);
+      const raw = outputs[formatKey];
+      const prose = ['notes', 'summary', 'infographic', 'mindmap'].includes(blockId);
+      const textValue = typeof raw === 'string' ? raw : '';
+      const has = raw != null && (!Array.isArray(raw) || raw.length > 0) && (typeof raw !== 'string' || raw.trim() !== '');
+      if (prose) {
+        return shell(
+          <div className="space-y-3">
+            <MarkdownEditBlock
+              value={textValue}
+              onChange={v => patch({ aiOutputs: { ...outputs, [formatKey]: v } })}
+              placeholder="Write this by hand, or generate it from the lesson."
+            />
+            <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-8 text-xs"
+              disabled={aiBusy === blockId} onClick={() => ai(blockId)}>
+              {aiBusy === blockId ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+              {aiBusy === blockId ? 'Generating…' : has ? 'Regenerate' : 'Generate'}
+            </Button>
+          </div>,
+          { regen: has ? blockId : undefined }
+        );
+      }
       return shell(
         has ? (
           <div className="max-h-96 overflow-y-auto">

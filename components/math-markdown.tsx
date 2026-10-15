@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
+import { escapeCurrencyDollars } from '@/lib/cms-guards';
 
 export function MathMarkdown({ children }: { children: string }) {
   return (
@@ -11,7 +12,7 @@ export function MathMarkdown({ children }: { children: string }) {
       remarkPlugins={[remarkMath]}
       rehypePlugins={[rehypeKatex]}
     >
-      {children}
+      {escapeCurrencyDollars(children)}
     </ReactMarkdown>
   );
 }
