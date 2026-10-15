@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { getUserBadges, getTopStudentsByXp, Badge, UserProfile } from '@/lib/db';
+import { getUserBadges, getTopStudentsByXp, updateUser, Badge, UserProfile } from '@/lib/db';
+import { privacyBoard } from '@/lib/platform/privacy-board';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge as BadgeUI } from '@/components/ui/badge';
 import { Trophy, Zap, Star, Crown } from 'lucide-react';
@@ -27,7 +28,7 @@ const ALL_BADGES = [
 ];
 
 export default function AchievementsPage() {
-  const { user, profile } = useAuthSTORE();
+  const { user, profile, setProfile } = useAuthSTORE();
   const [badges, setBadges] = useState<Badge[]>([]);
   const [leaderboard, setLeaderboard] = useState<{ id: string; data: UserProfile }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +46,17 @@ export default function AchievementsPage() {
   const earnedTypes = new Set(badges.map(b => b.type));
   const nextBadge = ALL_BADGES.find(b => !earnedTypes.has(b.type));
   const nextBadgeProgress = nextBadge ? Math.min((xp / nextBadge.threshold) * 100, 100) : 100;
-  const myRank = leaderboard.findIndex(u => u.id === user?.uid) + 1;
+  const board = privacyBoard(
+    leaderboard.map(({ id, data }) => ({
+      id,
+      name: data.name,
+      score: data.xp ?? 0,
+      shareBoard: data.shareBoard,
+    })),
+    user?.uid ?? null,
+  );
+  const myRank = board.findIndex(row => row.isYou) + 1;
+  const sharing = profile?.shareBoard !== false;
 
   if (loading) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
@@ -165,22 +176,35 @@ export default function AchievementsPage() {
             <h2 className="font-heading text-3xl text-foreground mt-1.5 mb-4">Top Learners</h2>
           </motion.div>
           <div className="space-y-2">
-            {leaderboard.length === 0 ? (
+            <label className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={sharing}
+                onChange={async event => {
+                  if (!user || !profile) return;
+                  const shareBoard = event.target.checked;
+                  setProfile({ ...profile, shareBoard });
+                  await updateUser(user.uid, { shareBoard });
+                }}
+              />
+              Show me on the leaderboard
+            </label>
+            {board.length === 0 ? (
               <div className="bg-card border border-border rounded-3xl p-10 text-center relative overflow-hidden">
                 <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-primary/8 blur-[80px]" />
                 <Trophy className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                 <p className="font-heading text-2xl text-foreground">No Rankings Yet</p>
                 <p className="text-sm text-muted-foreground mt-1">Leaderboard data will appear here soon.</p>
               </div>
-            ) : leaderboard.map(({ id, data }, i) => (
+            ) : board.map((row, i) => (
               <motion.div
-                key={id}
+                key={row.id}
                 variants={fadeUp}
                 initial="hidden"
                 animate="visible"
                 custom={6 + i}
                 className={`bg-card border rounded-2xl p-4 flex items-center gap-4 card-glow transition-colors ${
-                  id === user?.uid ? 'bg-primary/5 border-primary/20' : 'border-border'
+                  row.isYou ? 'bg-primary/5 border-primary/20' : 'border-border'
                 }`}
               >
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
@@ -193,16 +217,14 @@ export default function AchievementsPage() {
                 </div>
                 <Avatar className="w-8 h-8">
                   <AvatarFallback className="text-xs bg-gradient-to-br from-primary to-violet-500 text-white font-bold">
-                    {data.name?.charAt(0)?.toUpperCase()}
+                    {row.label.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">
-                    {id === user?.uid ? `${data.name} (You)` : data.name}
-                  </p>
+                  <p className="text-sm font-semibold text-foreground truncate">{row.label}</p>
                 </div>
                 <div className="flex items-center gap-1 text-primary text-sm font-bold shrink-0">
-                  <Zap className="w-3.5 h-3.5" />{(data.xp ?? 0).toLocaleString()}
+                  <Zap className="w-3.5 h-3.5" />{row.score.toLocaleString()}
                 </div>
               </motion.div>
             ))}
