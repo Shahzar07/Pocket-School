@@ -198,7 +198,7 @@ export default function LoginPage() {
         );
         return;
       }
-      toast.error(e?.message || 'Google sign-in failed.');
+      toast.error(e?.message || t('authForm.googleFailed'));
     } finally {
       setLoading(false);
     }
@@ -207,7 +207,7 @@ export default function LoginPage() {
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) {
-      toast.error('Please enter your email and password.');
+      toast.error(t('authForm.needCredentials'));
       return;
     }
     setLoading(true);

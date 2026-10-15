@@ -152,7 +152,7 @@ export function TeacherCourseStudio({
   initialPreview?: boolean;
   initialTarget?: AllocationTarget;
 }) {
-  const { courseLabel, currency } = usePricing();
+  const { courseLabel, currency, localMoney } = usePricing();
   const [step, setStep] = useState<StudioStep>(initialStep);
   const [preview, setPreview] = useState(initialPreview);
   const [savedId, setSavedId] = useState(courseId);
@@ -582,8 +582,10 @@ export function TeacherCourseStudio({
                 <Label htmlFor="usd-price">Price in USD</Label>
                 <Input id="usd-price" type="number" min={0} step="0.01" disabled={free} value={free ? '0' : price} onChange={event => setPrice(event.target.value)} />
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Charged in USD. Students currently see {localPrice}
-                  {currency !== 'USD' ? ` in ${currency}, using the admin pricing rates.` : '.'}
+                  Charged in USD.
+                  {currency === 'USD'
+                    ? localMoney(numericPrice) ? ` Optional conversion ≈ ${localMoney(numericPrice)}.` : ''
+                    : ` Students who chose ${currency} see ${localPrice}.`}
                 </p>
               </div>
               <div className="rounded-2xl border border-border p-4 space-y-3">

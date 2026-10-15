@@ -19,14 +19,15 @@ import { toast } from 'sonner';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 import { GraduationCap, Presentation, Users, ShieldCheck, Info } from 'lucide-react';
-import { PROGRAMMES, assertPlacement, levelsForProgramme, suggestPlacementFromDob } from '@/lib/programmes';
+import { useTranslation } from 'react-i18next';
+import { NOT_APPLICABLE, PROGRAMMES, assertPlacement, levelsForProgramme, suggestPlacementFromDob } from '@/lib/programmes';
 import { authedFetch } from '@/lib/api-client';
 import { publicDisplayName } from '@/lib/display-name';
 
 const ROLES = [
-  { id: 'student', title: 'Student', icon: <GraduationCap className="w-5 h-5" /> },
-  { id: 'teacher', title: 'Teacher', icon: <Presentation className="w-5 h-5" /> },
-  { id: 'parent', title: 'Parent', icon: <Users className="w-5 h-5" /> },
+  { id: 'student', titleKey: 'signup.student', icon: <GraduationCap className="w-5 h-5" /> },
+  { id: 'teacher', titleKey: 'signup.teacher', icon: <Presentation className="w-5 h-5" /> },
+  { id: 'parent', titleKey: 'signup.parent', icon: <Users className="w-5 h-5" /> },
 ];
 
 const INPUT_CLASS =
@@ -48,6 +49,7 @@ function ageFromDob(dob: string): number | null {
 
 export default function SignupPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   // 'form' → details, 'consent' → guardian consent code (minors), 'verify' → email code
   const [step, setStep] = useState<'form' | 'consent' | 'verify'>('form');
 
@@ -127,7 +129,7 @@ export default function SignupPage() {
   };
 
   const handleGoogleSignIn = async () => {
-    if (!agreed) { toast.error('Please accept the Terms of Service and Privacy Policy first.'); return; }
+    if (!agreed) { toast.error(t('signup.acceptFirst')); return; }
     try {
       setLoading(true);
       const provider = new GoogleAuthProvider();
@@ -154,7 +156,7 @@ export default function SignupPage() {
             method: 'POST',
             body: JSON.stringify({ programme: pathway, year: yearGroup }),
           }).catch((error: unknown) => {
-            toast.error(error instanceof Error ? error.message : 'Could not confirm your programme.');
+            toast.error(error instanceof Error ? error.message : t('signup.placementFailed'));
           });
         }
       }
@@ -162,7 +164,7 @@ export default function SignupPage() {
       routeAfterSignup(existing.role || role);
     } catch (e: any) {
       if (e?.code === 'auth/popup-closed-by-user' || e?.code === 'auth/cancelled-popup-request') return;
-      toast.error(e?.message || 'Failed to sign up via Google');
+      toast.error(e?.message || t('signup.googleFailed'));
     } finally {
       setLoading(false);
     }
@@ -170,51 +172,51 @@ export default function SignupPage() {
 
   const validateForm = (): boolean => {
     if (!name.trim() || !email.trim() || !password) {
-      toast.error('Please fill in your name, email and password.');
+      toast.error(t('signup.fillRequired'));
       return false;
     }
     if (password.length < 6) {
-      toast.error('Password must be at least 6 characters.');
+      toast.error(t('signup.passwordShort'));
       return false;
     }
     if (!dob) {
-      toast.error('Please enter your date of birth.');
+      toast.error(t('signup.needDob'));
       return false;
     }
     if (age === null) {
-      toast.error('That date of birth doesn’t look right.');
+      toast.error(t('signup.dobInvalid'));
       return false;
     }
     if (tooYoung) {
-      toast.error('You must be at least 13 years old to create an account.');
+      toast.error(t('signup.tooYoungError'));
       return false;
     }
     if (phone.trim() && !/^\+[1-9]\d{6,14}$/.test(phone.trim())) {
-      toast.error('Phone must be in international format, e.g. +60123456789 (or leave it blank).');
+      toast.error(t('signup.phoneFormat'));
       return false;
     }
     if (role === 'teacher' && !subject.trim()) {
-      toast.error('Please tell us which subject(s) you teach.');
+      toast.error(t('signup.needSubjects'));
       return false;
     }
     if (role === 'student') {
       try {
         assertPlacement(pathway, yearGroup);
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Choose a year for that programme.');
+        toast.error(error instanceof Error ? error.message : t('signup.yearForProgramme'));
         return false;
       }
     }
     if (isMinor && (!guardianName.trim() || !guardianEmail.trim())) {
-      toast.error('A parent or guardian’s name and email are required for under-18 accounts.');
+      toast.error(t('signup.needGuardian'));
       return false;
     }
     if (isMinor && guardianEmail.trim().toLowerCase() === email.trim().toLowerCase()) {
-      toast.error('The guardian email must be different from the student’s email.');
+      toast.error(t('signup.guardianSame'));
       return false;
     }
     if (!agreed) {
-      toast.error('Please accept the Terms of Service and Privacy Policy.');
+      toast.error(t('signup.acceptTerms'));
       return false;
     }
     return true;
@@ -251,25 +253,25 @@ export default function SignupPage() {
       await authedFetch('/api/platform/mark-verified', { method: 'POST', body: '{}' }).catch(() => {});
     } else {
       await sendEmailVerification(result.user).catch(() => {});
-      toast.message('We sent a confirmation link. You can keep going — we will remind you until your email is confirmed.');
+      toast.message(t('signup.confirmLink'));
     }
     if (role === 'student') {
       await authedFetch('/api/account/placement', {
         method: 'POST',
         body: JSON.stringify({ programme: pathway, year: yearGroup }),
       }).catch((error: unknown) => {
-        toast.error(error instanceof Error ? error.message : 'Could not confirm your programme.');
+        toast.error(error instanceof Error ? error.message : t('signup.placementFailed'));
       });
     }
-    toast.success('Account created — welcome to Poket School!');
+    toast.success(t('signup.welcome'));
     routeAfterSignup(role);
   };
 
   const handleAuthError = (e: any) => {
-    if (e?.code === 'auth/operation-not-allowed') toast.error('Enable Email/Password authentication in Firebase Console.');
-    else if (e?.code === 'auth/invalid-email') toast.error('Invalid email address format.');
-    else if (e?.code === 'auth/email-already-in-use') toast.error('An account with this email already exists.');
-    else toast.error(e?.message || 'Failed to create account');
+    if (e?.code === 'auth/operation-not-allowed') toast.error(t('signup.enableEmail'));
+    else if (e?.code === 'auth/invalid-email') toast.error(t('signup.invalidEmail'));
+    else if (e?.code === 'auth/email-already-in-use') toast.error(t('signup.emailInUse'));
+    else toast.error(e?.message || t('signup.createFailed'));
   };
 
   /** Send a consent code to the guardian's inbox (minors only). */
@@ -282,16 +284,16 @@ export default function SignupPage() {
         body: JSON.stringify({ email: guardianEmail.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) { toast.error(data.error || 'Could not reach the guardian’s email.'); return; }
+      if (!res.ok) { toast.error(data.error || t('signup.guardianUnreachable')); return; }
       if (data.configured === false) {
-        toast.error('Parent consent email is not set up yet. An under-18 account cannot be created until email is configured.');
+        toast.error(t('signup.guardianEmailMissing'));
         return;
       }
       setGuardianToken(data.token);
       setGuardianExpires(data.expiresAt);
       setCode('');
       setStep('consent');
-      toast.success(`Consent code sent to ${guardianEmail.trim()}.`);
+      toast.success(t('signup.consentSentToast', { email: guardianEmail.trim() }));
     } catch (e: any) {
       handleAuthError(e);
     } finally {
@@ -301,7 +303,7 @@ export default function SignupPage() {
 
   const verifyGuardianConsent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (code.trim().length !== 6) { toast.error('Enter the 6-digit consent code.'); return; }
+    if (code.trim().length !== 6) { toast.error(t('signup.enterConsentCode')); return; }
     try {
       setLoading(true);
       const res = await fetch('/api/auth/verify-otp', {
@@ -313,9 +315,9 @@ export default function SignupPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok || !data.valid) { toast.error(data.error || 'Invalid or expired consent code.'); return; }
+      if (!res.ok || !data.valid) { toast.error(data.error || t('signup.consentInvalid')); return; }
       setGuardianVerified(true);
-      toast.success('Parental consent confirmed.');
+      toast.success(t('signup.consentConfirmed'));
       await startAccountVerification(true);
     } catch (e: any) {
       handleAuthError(e);
@@ -335,12 +337,12 @@ export default function SignupPage() {
         body: JSON.stringify({ email: email.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) { toast.error(data.error || 'Failed to send verification code.'); return; }
+      if (!res.ok) { toast.error(data.error || t('signup.verifySendFailed')); return; }
       if (data.configured === false) { await createAccount(false); return; }
       setOtpToken(data.token);
       setOtpExpiresAt(data.expiresAt);
       setCode('');
-      toast.success('Verification code sent — check your inbox.');
+      toast.success(t('signup.verifySent'));
       setStep('verify');
     } catch (e: any) {
       handleAuthError(e);
@@ -358,7 +360,7 @@ export default function SignupPage() {
 
   const verifyAndCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (code.trim().length !== 6) { toast.error('Enter the 6-digit code.'); return; }
+    if (code.trim().length !== 6) { toast.error(t('signup.enterCode')); return; }
     try {
       setLoading(true);
       const verifyRes = await fetch('/api/auth/verify-otp', {
@@ -371,7 +373,7 @@ export default function SignupPage() {
       });
       const verifyData = await verifyRes.json();
       if (!verifyRes.ok || !verifyData.valid) {
-        toast.error(verifyData.error || 'Invalid or expired code.');
+        toast.error(verifyData.error || t('signup.codeInvalid'));
         return;
       }
       await createAccount(true);
@@ -383,13 +385,13 @@ export default function SignupPage() {
   };
 
   const heading =
-    step === 'form' ? 'Create your account'
-    : step === 'consent' ? 'Parent or guardian consent'
-    : 'Check your email';
+    step === 'form' ? t('signup.createTitle')
+    : step === 'consent' ? t('signup.consentTitle')
+    : t('signup.verifyTitle');
   const subheading =
-    step === 'form' ? 'Join Poket School and start learning smarter.'
-    : step === 'consent' ? `We sent a consent code to ${guardianEmail}. Ask your parent or guardian to share it with you.`
-    : `We sent a 6-digit code to ${email}.`;
+    step === 'form' ? t('signup.createSubtitle')
+    : step === 'consent' ? t('signup.consentSubtitle', { email: guardianEmail })
+    : t('signup.verifySubtitle', { email });
 
   return (
     <motion.div
@@ -406,7 +408,7 @@ export default function SignupPage() {
         <>
           {/* Role selector */}
           <div className="mb-6">
-            <Label className={`${LABEL_CLASS} mb-3 block`}>I am a...</Label>
+            <Label className={`${LABEL_CLASS} mb-3 block`}>{t('signup.iAm')}</Label>
             <div className="grid grid-cols-3 gap-2.5">
               {ROLES.map(r => (
                 <button
@@ -421,7 +423,7 @@ export default function SignupPage() {
                   }`}
                 >
                   {r.icon}
-                  <span>{r.title}</span>
+                  <span>{t(r.titleKey)}</span>
                 </button>
               ))}
             </div>
@@ -439,42 +441,42 @@ export default function SignupPage() {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            Continue with Google
+            {t('signup.google')}
           </button>
 
           <div className="flex items-center my-5">
             <div className="flex-1 border-t border-white/8" />
-            <span className="px-4 text-xs text-white/30 font-medium uppercase tracking-widest">or email</span>
+            <span className="px-4 text-xs text-white/30 font-medium uppercase tracking-widest">{t('signup.orEmail')}</span>
             <div className="flex-1 border-t border-white/8" />
           </div>
 
           <form onSubmit={(e) => { e.preventDefault(); submitForm(); }} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="name" className={LABEL_CLASS}>Full Name</Label>
-              <Input id="name" type="text" placeholder="Jane Doe" className={INPUT_CLASS}
+              <Label htmlFor="name" className={LABEL_CLASS}>{t('signup.fullName')}</Label>
+              <Input id="name" type="text" placeholder={t('signup.namePlaceholder')} className={INPUT_CLASS}
                 value={name} onChange={e => setName(e.target.value)} disabled={loading} />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="email" className={LABEL_CLASS}>Email Address</Label>
-              <Input id="email" type="email" placeholder="name@example.com" className={INPUT_CLASS}
+              <Label htmlFor="email" className={LABEL_CLASS}>{t('signup.email')}</Label>
+              <Input id="email" type="email" placeholder={t('signup.emailPlaceholder')} className={INPUT_CLASS}
                 value={email} onChange={e => setEmail(e.target.value)} disabled={loading} />
-              <p className="text-xs text-white/25">We&apos;ll send a verification code to this address.</p>
+              <p className="text-xs text-white/25">{t('signup.emailHint')}</p>
             </div>
 
             {/* Date of birth — drives the minor-consent flow */}
             <div className="space-y-1.5">
-              <Label htmlFor="dob" className={LABEL_CLASS}>Date of Birth</Label>
+              <Label htmlFor="dob" className={LABEL_CLASS}>{t('signup.dob')}</Label>
               <Input id="dob" type="date" className={INPUT_CLASS} value={dob}
                 max={new Date().toISOString().slice(0, 10)}
                 onChange={e => setDob(e.target.value)} disabled={loading} />
               {tooYoung && (
-                <p className="text-xs text-red-300">You must be at least 13 years old to use Poket School.</p>
+                <p className="text-xs text-red-300">{t('signup.tooYoung')}</p>
               )}
               {isMinor && !tooYoung && (
                 <p className="text-xs text-amber-300 flex items-start gap-1.5">
                   <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                  You&apos;re under 18, so we need a parent or guardian to approve this account.
+                  {t('signup.minorHint')}
                 </p>
               )}
             </div>
@@ -483,7 +485,7 @@ export default function SignupPage() {
             {role === 'student' && (
               <div className="grid grid-cols-1 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="pathway" className={LABEL_CLASS}>Programme</Label>
+                  <Label htmlFor="pathway" className={LABEL_CLASS}>{t('signup.programme')}</Label>
                   <select id="pathway" className={SELECT_CLASS} value={pathway}
                     onChange={e => {
                       const next = e.target.value;
@@ -495,13 +497,17 @@ export default function SignupPage() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="yearGroup" className={LABEL_CLASS}>Year / Level</Label>
+                  <Label htmlFor="yearGroup" className={LABEL_CLASS}>{t('signup.yearLevel')}</Label>
                   <select id="yearGroup" className={SELECT_CLASS} value={yearGroup}
                     onChange={e => { setPlacementEdited(true); setYearGroup(e.target.value); }} disabled={loading}>
-                    {yearOptions.map(year => <option key={year} value={year} className="bg-[#0B0F1A]">{year}</option>)}
+                    {yearOptions.map(year => (
+                      <option key={year} value={year} className="bg-[#0B0F1A]">
+                        {year === NOT_APPLICABLE ? t('signup.notApplicable') : year}
+                      </option>
+                    ))}
                   </select>
                   {suggestedPlacement && !placementEdited && (
-                    <p className="text-xs text-white/40">Suggested from your date of birth. Change it if this is not your year.</p>
+                    <p className="text-xs text-white/40">{t('signup.suggested')}</p>
                   )}
                 </div>
               </div>
@@ -510,14 +516,14 @@ export default function SignupPage() {
             {role === 'teacher' && (
               <>
                 <div className="space-y-1.5">
-                  <Label htmlFor="subject" className={LABEL_CLASS}>Subject(s) You Teach</Label>
-                  <Input id="subject" type="text" placeholder="Biology, Chemistry" className={INPUT_CLASS}
+                  <Label htmlFor="subject" className={LABEL_CLASS}>{t('signup.subjects')}</Label>
+                  <Input id="subject" type="text" placeholder={t('signup.subjectsPlaceholder')} className={INPUT_CLASS}
                     value={subject} onChange={e => setSubject(e.target.value)} disabled={loading} />
-                  <p className="text-xs text-white/25">Separate multiple subjects with commas.</p>
+                  <p className="text-xs text-white/25">{t('signup.subjectsHint')}</p>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="teachingLevel" className={LABEL_CLASS}>Level You Teach</Label>
+                    <Label htmlFor="teachingLevel" className={LABEL_CLASS}>{t('signup.levelTeach')}</Label>
                     <select id="teachingLevel" className={SELECT_CLASS} value={teachingLevel}
                       onChange={e => setTeachingLevel(e.target.value)} disabled={loading}>
                       {PROGRAMMES.map(p => <option key={p.value} value={p.value} className="bg-[#0B0F1A]">{p.label}</option>)}
@@ -525,9 +531,9 @@ export default function SignupPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="institution" className={LABEL_CLASS}>
-                      Institution <span className="text-white/30 normal-case font-normal">(optional)</span>
+                      {t('signup.institution')} <span className="text-white/30 normal-case font-normal">{t('signup.optional')}</span>
                     </Label>
-                    <Input id="institution" type="text" placeholder="Sunway College" className={INPUT_CLASS}
+                    <Input id="institution" type="text" placeholder={t('signup.institutionPlaceholder')} className={INPUT_CLASS}
                       value={institution} onChange={e => setInstitution(e.target.value)} disabled={loading} />
                   </div>
                 </div>
@@ -537,12 +543,12 @@ export default function SignupPage() {
             {role === 'parent' && (
               <div className="space-y-1.5">
                 <Label htmlFor="childEmail" className={LABEL_CLASS}>
-                  Link to Your Child&apos;s Account <span className="text-white/30 normal-case font-normal">(optional)</span>
+                  {t('signup.childLink')} <span className="text-white/30 normal-case font-normal">{t('signup.optional')}</span>
                 </Label>
-                <Input id="childEmail" type="email" placeholder="child@example.com" className={INPUT_CLASS}
+                <Input id="childEmail" type="email" placeholder={t('signup.childPlaceholder')} className={INPUT_CLASS}
                   value={childEmail} onChange={e => setChildEmail(e.target.value)} disabled={loading} />
                 <p className="text-xs text-white/25">
-                  Enter the email your child signed up with. You can also link accounts later from your dashboard.
+                  {t('signup.childHint')}
                 </p>
               </div>
             )}
@@ -551,20 +557,19 @@ export default function SignupPage() {
             {isMinor && !tooYoung && (
               <div className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.07] p-4 space-y-3">
                 <p className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5" /> Parent / Guardian Consent
+                  <ShieldCheck className="w-3.5 h-3.5" /> {t('signup.guardianTitle')}
                 </p>
                 <p className="text-xs text-white/50 leading-relaxed">
-                  We&apos;ll email your parent or guardian a 6-digit code. Your account is only created once
-                  they approve it, as required by the Malaysian PDPA.
+                  {t('signup.guardianBody')}
                 </p>
                 <div className="space-y-1.5">
-                  <Label htmlFor="guardianName" className={LABEL_CLASS}>Guardian&apos;s Full Name</Label>
-                  <Input id="guardianName" type="text" placeholder="Parent or guardian name" className={INPUT_CLASS}
+                  <Label htmlFor="guardianName" className={LABEL_CLASS}>{t('signup.guardianName')}</Label>
+                  <Input id="guardianName" type="text" placeholder={t('signup.guardianNamePlaceholder')} className={INPUT_CLASS}
                     value={guardianName} onChange={e => setGuardianName(e.target.value)} disabled={loading} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="guardianEmail" className={LABEL_CLASS}>Guardian&apos;s Email</Label>
-                  <Input id="guardianEmail" type="email" placeholder="parent@example.com" className={INPUT_CLASS}
+                  <Label htmlFor="guardianEmail" className={LABEL_CLASS}>{t('signup.guardianEmail')}</Label>
+                  <Input id="guardianEmail" type="email" placeholder={t('signup.guardianEmailPlaceholder')} className={INPUT_CLASS}
                     value={guardianEmail} onChange={e => setGuardianEmail(e.target.value)} disabled={loading} />
                 </div>
               </div>
@@ -572,17 +577,17 @@ export default function SignupPage() {
 
             <div className="space-y-1.5">
               <Label htmlFor="phone" className={LABEL_CLASS}>
-                Phone <span className="text-white/30 normal-case font-normal">(optional)</span>
+                {t('signup.phone')} <span className="text-white/30 normal-case font-normal">{t('signup.optional')}</span>
               </Label>
               <Input id="phone" type="tel" placeholder="+60123456789" className={INPUT_CLASS}
                 value={phone} onChange={e => setPhone(e.target.value)} disabled={loading} />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="password" className={LABEL_CLASS}>Password</Label>
+              <Label htmlFor="password" className={LABEL_CLASS}>{t('signup.password')}</Label>
               <Input id="password" type="password" placeholder="••••••••" className={INPUT_CLASS}
                 value={password} onChange={e => setPassword(e.target.value)} disabled={loading} />
-              <p className="text-xs text-white/25">At least 6 characters.</p>
+              <p className="text-xs text-white/25">{t('signup.passwordHint')}</p>
             </div>
 
             {/* ── Consent checkbox (PDPA requirement) ── */}
@@ -595,12 +600,12 @@ export default function SignupPage() {
                 className="mt-0.5 w-4 h-4 shrink-0 accent-[#2786A4]"
               />
               <span className="text-xs text-white/60 leading-relaxed">
-                I agree to the{' '}
-                <Link href="/legal?doc=terms" target="_blank" className="text-[#6FBBCE] hover:underline font-medium">Terms of Service</Link>
-                {' '}and{' '}
-                <Link href="/legal?doc=privacy" target="_blank" className="text-[#6FBBCE] hover:underline font-medium">Privacy Policy</Link>
-                , and I consent to Poket School processing my personal data as described.
-                {isMinor && ' My parent or guardian consents on my behalf.'}
+                {t('signup.agree')}{' '}
+                <Link href="/legal?doc=terms" target="_blank" className="text-[#6FBBCE] hover:underline font-medium">{t('signup.terms')}</Link>
+                {' '}{t('signup.and')}{' '}
+                <Link href="/legal?doc=privacy" target="_blank" className="text-[#6FBBCE] hover:underline font-medium">{t('signup.privacy')}</Link>
+                {t('signup.consentData')}
+                {isMinor && t('signup.minorConsent')}
               </span>
             </label>
 
@@ -609,7 +614,7 @@ export default function SignupPage() {
               className="w-full h-12 rounded-2xl bg-[#2786A4] hover:bg-[#1E6A83] text-white font-semibold text-base shadow-lg shadow-blue-900/30 transition-all mt-1"
               disabled={loading || tooYoung}
             >
-              {loading ? 'Working…' : isMinor ? 'Request Guardian Approval' : 'Create Account'}
+              {loading ? t('signup.working') : isMinor ? t('signup.requestGuardian') : t('signup.createAccount')}
             </Button>
           </form>
         </>
@@ -619,13 +624,11 @@ export default function SignupPage() {
         <form onSubmit={verifyGuardianConsent} className="space-y-4">
           <div className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.07] p-4">
             <p className="text-xs text-white/60 leading-relaxed">
-              <strong className="text-amber-300">{guardianName}</strong> has been emailed a consent code at{' '}
-              <strong className="text-white/80">{guardianEmail}</strong>. Enter it below to confirm they approve
-              this account.
+              {t('signup.consentSent', { name: guardianName, email: guardianEmail })}
             </p>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="consentCode" className={LABEL_CLASS}>6-Digit Consent Code</Label>
+            <Label htmlFor="consentCode" className={LABEL_CLASS}>{t('signup.consentCode')}</Label>
             <Input
               id="consentCode" type="text" inputMode="numeric" maxLength={6} placeholder="123456"
               className="h-14 rounded-2xl bg-white/5 border-white/10 text-white text-center text-2xl tracking-[0.5em] font-bold placeholder:text-white/20 focus:border-[#2786A4]"
@@ -634,11 +637,11 @@ export default function SignupPage() {
           </div>
           <Button type="submit" disabled={loading}
             className="w-full h-12 rounded-2xl bg-[#2786A4] hover:bg-[#1E6A83] text-white font-semibold text-base transition-all">
-            {loading ? 'Verifying…' : 'Confirm Consent'}
+            {loading ? t('signup.verifying') : t('signup.confirmConsent')}
           </Button>
           <button type="button" onClick={() => setStep('form')} disabled={loading}
             className="w-full text-xs text-white/40 hover:text-white/70 transition-colors">
-            ← Back to details
+            ← {t('signup.back')}
           </button>
         </form>
       )}
@@ -648,11 +651,11 @@ export default function SignupPage() {
           {guardianVerified && (
             <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.07] p-3 flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-              <p className="text-xs text-emerald-200">Guardian consent confirmed.</p>
+              <p className="text-xs text-emerald-200">{t('signup.guardianConfirmed')}</p>
             </div>
           )}
           <div className="space-y-1.5">
-            <Label htmlFor="code" className={LABEL_CLASS}>6-Digit Code</Label>
+            <Label htmlFor="code" className={LABEL_CLASS}>{t('signup.code')}</Label>
             <Input
               id="code" type="text" inputMode="numeric" maxLength={6} placeholder="123456"
               className="h-14 rounded-2xl bg-white/5 border-white/10 text-white text-center text-2xl tracking-[0.5em] font-bold placeholder:text-white/20 focus:border-[#2786A4]"
@@ -661,18 +664,18 @@ export default function SignupPage() {
           </div>
           <Button type="submit" disabled={loading}
             className="w-full h-12 rounded-2xl bg-[#2786A4] hover:bg-[#1E6A83] text-white font-semibold text-base transition-all">
-            {loading ? 'Creating account…' : 'Verify & Create Account'}
+            {loading ? t('signup.creating') : t('signup.verifyCreate')}
           </Button>
           <button type="button" onClick={() => setStep('form')} disabled={loading}
             className="w-full text-xs text-white/40 hover:text-white/70 transition-colors">
-            ← Back to details
+            ← {t('signup.back')}
           </button>
         </form>
       )}
 
       <p className="text-center text-sm text-white/40 mt-6">
-        Already have an account?{' '}
-        <Link href="/login" className="text-[#6FBBCE] hover:underline font-medium">Sign in</Link>
+        {t('signup.haveAccount')}{' '}
+        <Link href="/login" className="text-[#6FBBCE] hover:underline font-medium">{t('signup.signIn')}</Link>
       </p>
     </motion.div>
   );

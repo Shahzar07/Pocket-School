@@ -10,9 +10,10 @@
  *
  * Human catalogs: English, Bahasa Melayu, Chinese (Simplified) and Tamil.
  * Every other code has an AI-assisted catalog marked for review in
- * `lib/i18n/catalog.ts`. A saved choice (localStorage source `user`, or
- * `users/{uid}.language`) wins over the Vercel country cookie, which wins
- * over the browser language.
+ * `lib/i18n/catalog.ts`. The interface stays English until the reader
+ * chooses a language. That choice is stored in the `poket-lang` cookie,
+ * in localStorage (source `user`), and on `users/{uid}.language`.
+ * Geolocation never changes the language; it can only suggest one.
  */
 
 export interface AppLanguage {
@@ -66,6 +67,9 @@ export const LANGUAGE_STORAGE_KEY = 'pocket-school-lang';
  * next visit may detect again.
  */
 export const LANGUAGE_SOURCE_KEY = 'pocket-school-lang-source';
+
+/** Explicit language choice. Set only when the reader picks a language. */
+export const LANGUAGE_COOKIE = 'poket-lang';
 
 /** Country and region cookies set from Vercel's geo headers. */
 export const GEO_COUNTRY_COOKIE = 'poket-geo-country';

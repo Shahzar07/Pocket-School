@@ -1,11 +1,10 @@
 'use client';
 
 import i18n from './index';
-import { detectLanguage } from './detect';
+import { initialLanguage } from './detect';
 import {
   DEFAULT_LANGUAGE,
-  GEO_COUNTRY_COOKIE,
-  GEO_REGION_COOKIE,
+  LANGUAGE_COOKIE,
   LANGUAGE_SOURCE_KEY,
   LANGUAGE_STORAGE_KEY,
   getLanguage,
@@ -25,15 +24,20 @@ function readCookie(name: string): string | null {
   }
 }
 
+const LANGUAGE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
 /** Persist a language, point i18next at it, and set lang/dir on the document. */
 export function applyAppLanguage(code: string, opts?: { explicit?: boolean }) {
   const next = isSupportedLanguage(code) ? code : DEFAULT_LANGUAGE;
-  const source = opts?.explicit ? 'user' : 'auto';
+  const explicit = opts?.explicit === true;
   try {
     localStorage.setItem(LANGUAGE_STORAGE_KEY, next);
-    localStorage.setItem(LANGUAGE_SOURCE_KEY, source);
+    localStorage.setItem(LANGUAGE_SOURCE_KEY, explicit ? 'user' : 'auto');
   } catch {
     /* private mode */
+  }
+  if (explicit) {
+    document.cookie = `${LANGUAGE_COOKIE}=${encodeURIComponent(next)}; Path=/; Max-Age=${LANGUAGE_COOKIE_MAX_AGE}; SameSite=Lax`;
   }
   const lang = getLanguage(next);
   document.documentElement.lang = lang.bcp47;
@@ -54,9 +58,9 @@ export function readLanguageSource(): 'user' | 'auto' | null {
 }
 
 /**
- * An explicit choice is reused. Anything else is detected again from the
- * Vercel country cookie, then the browser language, and stored as `auto`
- * so a later visit can still follow location.
+ * Reuse an explicit choice from localStorage or the language cookie.
+ * Anything else stays English. A previous automatic detection is cleared
+ * so geolocation cannot switch the interface on the next visit.
  */
 export function detectAndStoreLanguage(): string {
   let stored: string | null = null;
@@ -65,15 +69,24 @@ export function detectAndStoreLanguage(): string {
   } catch {
     stored = null;
   }
-  if (readLanguageSource() === 'user' && stored && isSupportedLanguage(stored)) {
-    applyAppLanguage(stored, { explicit: true });
-    return stored;
+  const source = readLanguageSource();
+  const cookie = readCookie(LANGUAGE_COOKIE);
+  const next = initialLanguage({ stored, source, cookie });
+  const explicit = (source === 'user' && isSupportedLanguage(stored)) || isSupportedLanguage(cookie);
+  if (explicit) {
+    applyAppLanguage(next, { explicit: true });
+    return next;
   }
-  const detected = detectLanguage({
-    country: readCookie(GEO_COUNTRY_COOKIE),
-    region: readCookie(GEO_REGION_COOKIE),
-    navigatorLanguages: typeof navigator !== 'undefined' ? navigator.languages : undefined,
-  });
-  applyAppLanguage(detected, { explicit: false });
-  return detected;
+  try {
+    localStorage.removeItem(LANGUAGE_STORAGE_KEY);
+    localStorage.removeItem(LANGUAGE_SOURCE_KEY);
+  } catch {
+    /* private mode */
+  }
+  const lang = getLanguage(DEFAULT_LANGUAGE);
+  document.documentElement.lang = lang.bcp47;
+  document.documentElement.dir = textDirection(DEFAULT_LANGUAGE);
+  void i18n.changeLanguage(DEFAULT_LANGUAGE);
+  window.dispatchEvent(new CustomEvent('pocket-school-lang-change', { detail: DEFAULT_LANGUAGE }));
+  return DEFAULT_LANGUAGE;
 }

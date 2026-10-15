@@ -7,7 +7,9 @@ import {
   CURRENCY_EVENT,
   formatCoursePrice,
   formatMoney,
+  optionalLocalAmount,
   quoteAddon,
+  quoteCourse,
   quotePlan,
   readCurrencyChoice,
   resolveDisplayCurrency,
@@ -32,6 +34,7 @@ function readCookie(name: string): string | null {
 export function usePricing() {
   const [config, setConfig] = useState<PricingConfig>(seedPricing());
   const [currency, setCurrencyState] = useState('USD');
+  const [country, setCountry] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const configRef = useRef(config);
   configRef.current = config;
@@ -43,10 +46,12 @@ export function usePricing() {
       configRef.current = next;
       setConfig(next);
       const choice = readCurrencyChoice();
+      const geo = readCookie(GEO_COUNTRY_COOKIE);
+      setCountry(geo);
       setCurrencyState(resolveDisplayCurrency(next, {
         stored: choice.code,
         source: choice.source,
-        country: readCookie(GEO_COUNTRY_COOKIE),
+        country: geo,
       }));
       setReady(true);
     };
@@ -77,5 +82,16 @@ export function usePricing() {
     addonQuote: (id: string, code = currency) => quoteAddon(config, id, code),
     courseLabel: (price: number | null | undefined, courseCurrency?: string | null) =>
       formatCoursePrice(config, price, courseCurrency, currency),
+    /** Formatted local-currency equivalent, or null when there is nothing extra to show. */
+    localMoney: (usd: number) => {
+      const quote = optionalLocalAmount(config, usd, currency, country);
+      return quote ? formatMoney(quote.amount, quote.currency) : null;
+    },
+    courseConversion: (price: number | null | undefined, courseCurrency?: string | null) => {
+      if (!price || price <= 0) return null;
+      const usd = quoteCourse(config, price, courseCurrency, currency).usd;
+      const quote = optionalLocalAmount(config, usd, currency, country);
+      return quote ? formatMoney(quote.amount, quote.currency) : null;
+    },
   };
 }

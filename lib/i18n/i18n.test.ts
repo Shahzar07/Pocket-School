@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { LANGUAGES } from '../languages';
 import { CATALOG_REVIEW, catalogs, hasUiCatalog, UI_LANGUAGE_CODES } from './catalog';
-import { detectLanguage, formatAppDate, formatAppNumber, languageShortcut, resolveLessonCopy } from './detect';
+import { detectLanguage, formatAppDate, formatAppNumber, initialLanguage, languageShortcut, resolveLessonCopy, suggestedLanguage } from './detect';
 
 function catalogFor(code: string) {
   assert.ok(Object.prototype.hasOwnProperty.call(catalogs, code), code);
@@ -43,7 +43,28 @@ test('every supported language has a complete interface catalog', () => {
   }
 });
 
-test('a known country wins over the browser language', () => {
+test('a known country is only a suggestion and never the default language', () => {
+  assert.equal(initialLanguage({ source: 'auto', stored: 'ms' }), 'en');
+  assert.equal(initialLanguage({ source: null, stored: 'ms' }), 'en');
+  assert.equal(initialLanguage({ source: 'user', stored: 'ms' }), 'ms');
+  assert.equal(initialLanguage({ source: 'user', stored: 'en', cookie: 'ms' }), 'en');
+  assert.equal(initialLanguage({ cookie: 'fr' }), 'fr');
+  assert.equal(initialLanguage({}), 'en');
+  assert.equal(suggestedLanguage({ country: 'MY', current: 'en' }), 'ms');
+  assert.equal(suggestedLanguage({ country: 'MY', current: 'en', source: 'user' }), null);
+  assert.equal(suggestedLanguage({ country: 'MY', current: 'en', dismissed: 'ms' }), null);
+  assert.equal(suggestedLanguage({ country: 'MY', current: 'ms' }), null);
+  assert.equal(suggestedLanguage({ country: null, current: 'en' }), null);
+  assert.equal(catalogs.en.suggest.malay, 'Tukar ke Bahasa Melayu?');
+  assert.equal(catalogs.ms.suggest.malay, 'Tukar ke Bahasa Melayu?');
+  assert.notEqual(catalogs.ms.market.search, catalogs.en.market.search);
+  assert.notEqual(catalogs.ms.signup.createTitle, catalogs.en.signup.createTitle);
+  assert.notEqual(catalogs.ms.signup.programme, catalogs.en.signup.programme);
+  assert.notEqual(catalogs.zh.market.badge, catalogs.en.market.badge);
+  assert.notEqual(catalogs.ta.signup.yearLevel, catalogs.en.signup.yearLevel);
+});
+
+test('a known country is the suggested language ahead of the browser', () => {
   assert.equal(detectLanguage({ country: 'MY', navigatorLanguages: ['en-US'] }), 'ms');
   assert.equal(detectLanguage({ country: 'US', navigatorLanguages: ['fr-FR'] }), 'en');
   assert.equal(detectLanguage({ country: 'TW', navigatorLanguages: ['zh-CN'] }), 'zh-Hant');
@@ -129,6 +150,16 @@ test('interpolation tokens survive every catalog', () => {
     'sparks.heading': ['{{count}}'],
     'sparks.balance': ['{{count}}'],
     'authForm.inboxBody': ['{{email}}'],
+    'suggest.switch': ['{{language}}'],
+    'footer.rights': ['{{year}}'],
+    'market.related': ['{{title}}'],
+    'market.freeLessons': ['{{count}}'],
+    'market.hours': ['{{count}}'],
+    'market.approx': ['{{amount}}'],
+    'signup.consentSubtitle': ['{{email}}'],
+    'signup.verifySubtitle': ['{{email}}'],
+    'signup.consentSent': ['{{name}}', '{{email}}'],
+    'signup.consentSentToast': ['{{email}}'],
   };
   const read = (value: unknown, path: string): unknown =>
     path.split('.').reduce<unknown>((current, key) => {

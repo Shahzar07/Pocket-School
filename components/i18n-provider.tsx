@@ -7,19 +7,20 @@ import { isSupportedLanguage, readLanguage } from '@/lib/languages';
 import { applyAppLanguage, detectAndStoreLanguage, readLanguageSource } from '@/lib/i18n/apply';
 
 /**
- * Applies the saved or detected language once, then lets a signed-in profile
- * win on the first load for that account. A later click is not overwritten
- * by a profile snapshot that has not caught up yet.
+ * Applies a saved language once, then lets a signed-in profile win on the
+ * first load for that account. Geolocation is not applied. A later click is
+ * not overwritten by a profile snapshot that has not caught up yet.
  */
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const { user, profile, setProfile } = useAuthSTORE();
   const hydratedFor = useRef<string | null>(null);
   const profileRef = useRef(profile);
   profileRef.current = profile;
-
-  useEffect(() => {
+  const booted = useRef(false);
+  if (typeof window !== 'undefined' && !booted.current) {
+    booted.current = true;
     detectAndStoreLanguage();
-  }, []);
+  }
 
   useEffect(() => {
     if (!user) {
@@ -33,8 +34,8 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
       applyAppLanguage(saved, { explicit: true });
       return;
     }
-    // Only an explicit choice is written onto the account. An auto
-    // detection stays local so the next visit can follow geolocation.
+    // Only an explicit choice is written onto the account. English, and a
+    // dismissed geolocation suggestion, stay off the profile.
     if (readLanguageSource() !== 'user') return;
     const code = readLanguage();
     if (!isSupportedLanguage(code)) return;

@@ -9,6 +9,7 @@
  * 3. Set its review status in CATALOG_REVIEW
  */
 import { aiDrafts } from './ai-drafts';
+import { pageNamespaces } from './page-copy';
 
 const en = {
   header: {
@@ -986,13 +987,40 @@ function catalogsOf<T extends Record<string, typeof en>>(value: T): T {
   return value;
 }
 
-export const catalogs = catalogsOf({
+function isPlain(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function mergeCatalog(base: Record<string, unknown>, extra: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...base };
+  for (const [key, value] of Object.entries(extra)) {
+    const current = out[key];
+    out[key] = isPlain(value) && isPlain(current)
+      ? mergeCatalog(current, value)
+      : value;
+  }
+  return out;
+}
+
+const rawCatalogs = catalogsOf({
   en,
   ms,
   zh,
   ta,
   ...aiDrafts,
 });
+
+export const catalogs = Object.fromEntries(
+  Object.entries(rawCatalogs).map(([code, catalog]) => [
+    code,
+    mergeCatalog(
+      catalog as unknown as Record<string, unknown>,
+      (pageNamespaces[code] ?? pageNamespaces.en) as unknown as Record<string, unknown>,
+    ),
+  ]),
+) as {
+  [K in keyof typeof rawCatalogs]: (typeof rawCatalogs)[K] & (typeof pageNamespaces)['en'];
+};
 
 const HUMAN_CATALOGS = new Set(['en', 'ms', 'zh', 'ta']);
 
