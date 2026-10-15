@@ -183,3 +183,36 @@ export function stripeMethodTypes(methodId: string): string[] | 'dynamic' {
   if (!method || method.provider !== 'stripe') return 'dynamic';
   return [...method.stripeTypes];
 }
+
+/**
+ * One-time ringgit charges keep FPX and GrabPay on the card sheet.
+ * A caller who picked only FPX or only GrabPay stays on that type.
+ * Subscriptions, including Poket Reads, stay on the method's own types.
+ */
+export function stripeTypesForCharge(methodId: string, currency: string, kind: string): string[] | 'dynamic' {
+  const types = stripeMethodTypes(methodId);
+  const subscription = kind === 'subscription' || kind === 'reads';
+  const myr = currency.toUpperCase() === 'MYR';
+  const cardSheet = methodId === 'card' || methodId === 'apple_pay' || methodId === 'google_pay' || methodId === 'dynamic';
+  if (!subscription && myr && cardSheet) return ['card', 'fpx', 'grabpay'];
+  return types;
+}
+
+/**
+ * Method charged for a book or Reads request.
+ * Reads is always a card. Touch 'n Go is the gateway only when it is the
+ * chosen method, or the only method in the list. A mixed list that still
+ * includes a card stays on the card sheet, which also offers FPX and GrabPay.
+ */
+export function walletChargeMethod(kind: string, methods: readonly string[] | undefined, method?: string): string {
+  if (kind === 'reads') return 'card';
+  if (method && method.trim()) {
+    const chosen = canonicalMethod(method);
+    if (chosen === 'tng' || chosen === 'fpx' || chosen === 'grabpay' || chosen === 'card') return chosen;
+  }
+  const set = new Set((methods ?? []).map((item) => canonicalMethod(item)));
+  if (set.has('tng') && !set.has('card') && !set.has('fpx') && !set.has('grabpay')) return 'tng';
+  if (set.has('fpx') && !set.has('card')) return 'fpx';
+  if (set.has('grabpay') && !set.has('card') && !set.has('fpx')) return 'grabpay';
+  return 'card';
+}

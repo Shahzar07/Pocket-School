@@ -20,8 +20,12 @@ export function ParentLinkForm() {
         if (!user || !email.trim()) return;
         setBusy(true);
         try {
-          const result = await linkChildToParent(user.uid, email.trim(), profile?.name ?? 'A parent');
-          toast.success(result.message);
+          const result = await linkChildToParent(user.uid, email.trim());
+          if (!result.success) {
+            toast.error(result.error ?? 'Could not send that request.');
+            return;
+          }
+          toast.success(result.childName ? `Asked ${result.childName} to approve the link.` : 'Request sent.');
           setEmail('');
         } catch (err) {
           toast.error(err instanceof Error ? err.message : 'Could not send that request.');

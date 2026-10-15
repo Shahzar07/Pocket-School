@@ -1,41 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isNextResponse, requireUser } from '@/lib/api-guard';
-import { adminDb } from '@/lib/firebase-admin';
-
-export const dynamic = 'force-dynamic';
+import { getAllPublishedCourses, getAnnouncements, getResources } from '@/lib/db';
+import { filterCatalog } from '@/lib/learning';
+import { searchBooks as searchShelf } from '@/lib/platform/search';
 
 export async function GET(req: NextRequest) {
-  const user = await requireUser(req);
-  if (isNextResponse(user)) return user;
   const q = (req.nextUrl.searchParams.get('q') ?? '').trim().toLowerCase();
   if (q.length < 2) {
-    return NextResponse.json({ courses: [], announcements: [], resources: [] });
+    return NextResponse.json({ courses: [], announcements: [], resources: [], books: [] });
   }
   try {
-    const db = adminDb();
     const [courses, announcements, resources] = await Promise.all([
-      db.collection('courses').where('status', '==', 'published').limit(40).get(),
-      db.collection('announcements').orderBy('createdAt', 'desc').limit(30).get(),
-      db.collection('resources').limit(30).get(),
+      getAllPublishedCourses(),
+      getAnnouncements('all'),
+      getResources(),
     ]);
-    const matchCourses = courses.docs
-      .map((d) => ({ id: d.id, ...d.data() }) as { id: string; title?: string; description?: string; subject?: string })
-      .filter((c) =>
-        (c.title ?? '').toLowerCase().includes(q)
-        || (c.description ?? '').toLowerCase().includes(q)
-        || (c.subject ?? '').toLowerCase().includes(q))
-      .slice(0, 5);
-    const matchAnnouncements = announcements.docs
-      .map((d) => ({ id: d.id, ...d.data() }) as { id: string; title?: string; content?: string; status?: string })
-      .filter((a) => (a.status ?? 'published') === 'published')
-      .filter((a) => (a.title ?? '').toLowerCase().includes(q) || (a.content ?? '').toLowerCase().includes(q))
-      .slice(0, 3);
-    const matchResources = resources.docs
-      .map((d) => ({ id: d.id, ...d.data() }) as { id: string; title?: string; description?: string })
-      .filter((r) => (r.title ?? '').toLowerCase().includes(q) || (r.description ?? '').toLowerCase().includes(q))
-      .slice(0, 3);
-    return NextResponse.json({ courses: matchCourses, announcements: matchAnnouncements, resources: matchResources });
+
+    const subject = req.nextUrl.searchParams.get('subject') ?? '';
+    const level = req.nextUrl.searchParams.get('level') ?? '';
+    const maxPrice = req.nextUrl.searchParams.get('maxPrice');
+    const matchCourses = filterCatalog(courses, {
+      q,
+      subject,
+      level,
+      maxPrice: maxPrice ? Number(maxPrice) : null,
+    }).slice(0, 5);
+
+    const matchAnnouncements = announcements.filter(a =>
+      a.title.toLowerCase().includes(q) || a.content.toLowerCase().includes(q)
+    ).slice(0, 3);
+
+    const matchResources = resources.filter(r =>
+      r.title.toLowerCase().includes(q) || (r.description ?? '').toLowerCase().includes(q)
+    ).slice(0, 3);
+
+    return NextResponse.json({
+      courses: matchCourses,
+      announcements: matchAnnouncements,
+      resources: matchResources,
+      books: searchShelf(q),
+    });
   } catch {
-    return NextResponse.json({ courses: [], announcements: [], resources: [] });
+    return NextResponse.json({ courses: [], announcements: [], resources: [], books: [] });
   }
 }

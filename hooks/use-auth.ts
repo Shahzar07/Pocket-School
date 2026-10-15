@@ -3,9 +3,45 @@ import { User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { handleFirestoreError, OperationType } from '@/lib/firebase-errors';
-import type { UserProfile } from '@/lib/db';
+import type { Role } from '@/lib/roles';
 
-export type { UserProfile };
+import type { Timestamp } from 'firebase/firestore';
+
+interface UserProfile {
+  name: string;
+  email?: string;
+  role: Role;
+  /** Set for institution_admin — scopes what they can see and manage. */
+  institutionId?: string;
+  /** Account lifecycle. Absent means active. */
+  accountStatus?: 'active' | 'suspended' | 'pending' | 'inactive' | 'banned' | 'deleted';
+  statusReason?: string;
+  adminRole?: 'super_admin' | 'admin' | 'content_editor' | 'support' | 'finance';
+  avatarUrl?: string;
+  level?: string;
+  learningStyle?: string;
+  interests?: string[];
+  xp?: number;
+  yearGroup?: 'Year 7' | 'Year 8' | 'Year 9';
+  subscriptionTier?: 'free' | 'academic';
+  sparksBalance?: number;
+  sparksMonthlyAllowance?: number;
+  sparksGrantedAt?: Timestamp;
+  /** Preferred UI and lesson language. A short code from `lib/languages.ts`. */
+  language?: string;
+  /** YYYY-MM-DD days a lesson was opened, used for the study streak. */
+  studyDates?: string[];
+  /** When false, the privacy-safe leaderboard omits this student. */
+  shareBoard?: boolean;
+  accessTier?: number;
+  permissions?: string[];
+  country?: string;
+  region?: string;
+  programmeId?: string;
+  cohortIds?: string[];
+  /** Children who approved a parent link. */
+  childIds?: string[];
+}
 
 interface AuthState {
   user: User | null;

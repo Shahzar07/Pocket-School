@@ -19,7 +19,12 @@ import {
 import Link from 'next/link';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
-import { RichTextEditor } from '@/components/rich-text-editor';
+import { LessonManuscript } from '@/components/lesson-manuscript';
+import { filesToAssets, LessonIllustrationBlock, LessonImageBlock } from '@/components/lesson-pictures';
+import { appendImageMarkdown } from '@/lib/lesson-body';
+import { problemsAreWorked } from '@/lib/generation-quality';
+import { hasCmsAddon } from '@/lib/entitlements';
+import type { LessonMediaAsset } from '@/lib/db';
 
 import { YEAR_GROUPS } from '@/lib/year-groups';
 
@@ -67,6 +72,7 @@ export default function UploadPage() {
 
   const [lessonTitle, setLessonTitle] = useState('');
   const [content, setContent] = useState('');
+  const [pictures, setPictures] = useState<LessonMediaAsset[]>([]);
   const [generatedOutputs, setGeneratedOutputs] = useState<AiOutputs>({});
   const [progress, setProgress] = useState<Record<string, 'pending' | 'done' | 'error'>>({});
   const [generating, setGenerating] = useState(false);
@@ -128,8 +134,11 @@ export default function UploadPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content, format }),
     });
-    if (!res.ok) throw new Error(`Failed: ${format}`);
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `Failed: ${format}`);
+    if (format === 'problems' && (typeof data.result !== 'string' || !problemsAreWorked(data.result))) {
+      throw new Error('Problems must be practice problems with a worked solution, not study notes.');
+    }
     setProgress(p => ({ ...p, [format]: 'done' }));
     return data.result;
   };
@@ -282,10 +291,21 @@ export default function UploadPage() {
         courseId,
         order: 1,
         contentSources: [{ type: 'text', value: content }],
+        aiOutputs: { text: content },
+        mediaLibrary: pictures,
         status: 'published',
       });
 
-      await saveAiOutputsToLesson(courseId, moduleId, lessonId, generatedOutputs);
+      const placed = content
+        .split(/\n{2,}/)
+        .map(block => block.trim())
+        .filter(block => /^(!full|!)\[/.test(block))
+        .join('\n\n');
+      const generatedText = typeof generatedOutputs.text === 'string' ? generatedOutputs.text : content;
+      const text = placed && !generatedText.includes(placed)
+        ? `${generatedText.trim()}\n\n${placed}`
+        : generatedText;
+      await saveAiOutputsToLesson(courseId, moduleId, lessonId, { ...generatedOutputs, text });
 
       setSessionLessons(prev => [{
         title: lessonTitle.trim(),
@@ -299,6 +319,7 @@ export default function UploadPage() {
       // Reset lesson form only — keep course/module selection
       setLessonTitle('');
       setContent('');
+      setPictures([]);
       setGeneratedOutputs({});
       setProgress({});
 
@@ -556,13 +577,58 @@ export default function UploadPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Lesson Content *</Label>
-              <RichTextEditor
-                value={content}
-                onChange={setContent}
-                minHeight={208}
-                placeholder={"Paste or write your source material here — notes, a lecture transcript, a chapter outline…\n\nTip: start with one line stating the learning objective, then the material in a few paragraphs, including key terms you want students to master."}
-              />
+              {hasCmsAddon(profile) ? (
+                <>
+                  <LessonManuscript
+                    key={user?.uid ?? 'teacher-draft'}
+                    value={content}
+                    onChange={setContent}
+                    storageKey={`poket-teacher-lesson:${user?.uid ?? 'draft'}`}
+                    placeholder="Paste or write your source material — notes, a lecture transcript, a chapter outline."
+                    onPasteImages={files => {
+                      void filesToAssets(user?.uid ?? 'teacher-draft', files)
+                        .then(added => setPictures(prev => [...prev, ...added]))
+                        .catch(err => toast.error(err instanceof Error ? err.message : 'That image could not be added.'));
+                    }}
+                  />
+                  <p className="text-[11px] text-muted-foreground">Start with the learning objective, then the material and the key terms students should master. Paste an image and it waits in the Image block until it has alt text.</p>
+                </>
+              ) : (
+                <>
+                  <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Write the lesson source. The editor, imports, and image library are on the CMS add-on." className="rounded-xl min-h-40" />
+                  <p className="text-[11px] text-muted-foreground">An admin can allocate the CMS add-on to this account for the shared editor, imports, image library, and illustrations.</p>
+                </>
+              )}
             </div>
+            {hasCmsAddon(profile) && (
+              <>
+                <div className="space-y-4 rounded-2xl border border-border p-4">
+                  <div>
+                    <p className="text-sm font-semibold">Image</p>
+                    <p className="text-[11px] text-muted-foreground">Drop, paste, or choose a picture. Alt text is required before it can be placed in the lesson.</p>
+                  </div>
+                  <LessonImageBlock
+                    scopeId={user?.uid ?? 'teacher-draft'}
+                    images={pictures}
+                    onChange={setPictures}
+                    onInsert={image => setContent(prev => appendImageMarkdown(prev, image))}
+                  />
+                </div>
+                <div className="space-y-4 rounded-2xl border border-border p-4">
+                  <div>
+                    <p className="text-sm font-semibold">Illustration</p>
+                    <p className="text-[11px] text-muted-foreground">Generating spends 15 Sparks after you confirm. The picture still needs alt text before it is placed.</p>
+                  </div>
+                  <LessonIllustrationBlock
+                    scopeId={user?.uid ?? 'teacher-draft'}
+                    images={pictures}
+                    onChange={setPictures}
+                    onInsert={image => setContent(prev => appendImageMarkdown(prev, image))}
+                    showLibrary={false}
+                  />
+                </div>
+              </>
+            )}
           </div>
 
           {/* Live quality checklist */}

@@ -5,6 +5,7 @@ const BASE_URL = 'https://poketschool.ai';
 const ROUTES: { path: string; changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency']; priority: number }[] = [
   { path: '/', changeFrequency: 'weekly', priority: 1 },
   { path: '/courses', changeFrequency: 'daily', priority: 0.9 },
+  { path: '/reads', changeFrequency: 'weekly', priority: 0.7 },
   { path: '/ai-studio', changeFrequency: 'weekly', priority: 0.9 },
   { path: '/ai-teachers', changeFrequency: 'weekly', priority: 0.8 },
   { path: '/pricing', changeFrequency: 'monthly', priority: 0.8 },

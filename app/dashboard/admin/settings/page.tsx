@@ -8,6 +8,7 @@ import { Globe, Database, Mail, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { useEffect, useState } from 'react';
 import { getPlatformSettings, savePlatformSettings } from '@/lib/db';
+import { AdminPricingPanel } from '@/components/admin-pricing-panel';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -118,6 +119,8 @@ export default function AdminSystemSettings() {
         </h1>
         <p className="text-muted-foreground mt-2 text-[15px]">Configure global platform settings, integrations, and preferences.</p>
       </motion.header>
+
+      <AdminPricingPanel />
 
       <div className="space-y-5">
         {/* General */}

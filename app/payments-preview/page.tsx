@@ -5,11 +5,13 @@ import { CheckoutPanel } from '@/components/payments/checkout-panel';
 import { DashHeader, DashPage, DataTable, Panel, PanelHeader, StatCard } from '@/components/dash-ui';
 import { FEATURE_FLAGS } from '@/lib/feature-flags';
 import { formatMoney } from '@/lib/money';
+import { quoteCheckout } from '@/lib/platform/wallet';
+import { seedPricing } from '@/lib/pricing';
 import { fixedPriceItem, subscriptionItem } from '@/lib/payments/catalog';
 import { summariseFinance } from '@/lib/payments/finance';
 import { methodsFor } from '@/lib/payments/methods';
 import { buildQuote } from '@/lib/payments/quote';
-import { readsBookItem, readsPlanItem } from '@/lib/payments/reads';
+import { readsPlanItem } from '@/lib/payments/reads';
 import { SECRET_SLOTS, describeSecret } from '@/lib/payments/secrets';
 import { DEFAULT_TAX } from '@/lib/payments/tax';
 import { Landmark, Plug, Wallet } from 'lucide-react';
@@ -23,10 +25,15 @@ export default function PaymentsPreviewPage() {
 
   const quote = useMemo(() => {
     if (scene === 'myr') {
-      const item = readsBookItem('harbour-light', 'MYR') ?? fixedPriceItem({
-        kind: 'book', sku: 'harbour-light', title: 'The Harbour Light', amount: 24, currency: 'MYR',
+      const quoted = quoteCheckout({ kind: 'book', id: 'harbour-light', currency: 'MYR' }, seedPricing());
+      const item = fixedPriceItem({
+        kind: 'book',
+        sku: 'harbour-light',
+        title: quoted?.name ?? 'The Harbour Light',
+        amount: quoted?.amount ?? 23.99,
+        currency: 'MYR',
       });
-      return buildQuote({ item: item!, country, tax: DEFAULT_TAX });
+      return buildQuote({ item: { ...item!, shelf: true }, country, tax: DEFAULT_TAX });
     }
     if (scene === 'reads') {
       const item = readsPlanItem('reads-family', 'month');

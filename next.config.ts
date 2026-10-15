@@ -1,6 +1,10 @@
 import type {NextConfig} from 'next';
+import { studioRedirects } from './lib/studio-paths';
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [...studioRedirects];
+  },
   reactStrictMode: true,
   eslint: {
     ignoreDuringBuilds: true,
@@ -25,7 +29,7 @@ const nextConfig: NextConfig = {
     ],
   },
   output: 'standalone',
-  serverExternalPackages: ['firebase-admin'],
+  serverExternalPackages: ['mammoth', 'unpdf', 'firebase-admin', 'web-push', 'sharp'],
   transpilePackages: ['motion'],
   webpack: (config, { dev }) => {
     if (dev && process.env.DISABLE_HMR === 'true') {

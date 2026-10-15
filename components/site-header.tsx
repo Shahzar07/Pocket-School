@@ -5,7 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthSTORE } from "@/hooks/use-auth";
 import { Globe, Menu, X, ArrowRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { isAdmin } from "@/lib/roles";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { CurrencySwitcher } from "@/components/currency-switcher";
 import styles from "./home-chrome.module.css";
 
 const NAV_LINKS = [
@@ -20,10 +23,12 @@ const HIDDEN_PREFIXES = [
   "/dashboard",
   "/onboarding",
   "/ai-studio",
+  "/reads",
 ];
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const { t } = useTranslation();
   const { user, profile } = useAuthSTORE();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -93,22 +98,25 @@ export function SiteHeader() {
               Poket School <small>/ AI</small>
             </span>
           </Link>
-          <nav className={styles.desktopNav} aria-label="Main navigation">
-            <Link href="/">Home</Link>
-            <Link href="/courses">Courses</Link>
-            <Link href="/ai-studio">AI Studio</Link>
-            <Link href="/ai-teachers">AI Teachers</Link>
-            <Link href="/pricing">Pricing</Link>
-            {!user && <Link href="/login">Sign in</Link>}
+          <nav className={styles.desktopNav} aria-label={t("header.mainNav")}>
+            <Link href="/">{t("header.home")}</Link>
+            <Link href="/courses">{t("header.courses")}</Link>
+            <Link href="/ai-studio">{t("header.aiStudio")}</Link>
+            <Link href="/ai-teachers">{t("header.aiTeachers")}</Link>
+            <Link href="/reads">{t("nav.books")}</Link>
+            <Link href="/pricing">{t("header.pricing")}</Link>
+            {!user && <Link href="/login">{t("header.signIn")}</Link>}
           </nav>
+          <LanguageSwitcher tone={isLanding && !scrolled ? "onDark" : "default"} />
+          <CurrencySwitcher tone={isLanding && !scrolled ? "onDark" : "default"} />
           <Link className={styles.headerCta} href={user ? dashPath : "/signup"}>
-            {user ? "Dashboard" : "Start for free"} <ArrowRight size={14} />
+            {user ? t("header.dashboard") : t("header.startFree")} <ArrowRight size={14} className="ps-dir-icon" />
           </Link>
           <button
             className={styles.menuButton}
             ref={menuButtonRef}
             type="button"
-            aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
+            aria-label={mobileOpen ? t("header.closeNav") : t("header.openNav")}
             aria-expanded={mobileOpen}
             aria-controls="site-navigation"
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -120,15 +128,16 @@ export function SiteHeader() {
           <nav
             className={styles.mobileNav}
             id="site-navigation"
-            aria-label="Mobile navigation"
+            aria-label={t("header.mobileNav")}
             onClick={() => setMobileOpen(false)}
           >
-            <Link href="/courses">Courses</Link>
-            <Link href="/ai-studio">AI Studio</Link>
-            <Link href="/ai-teachers">AI Teachers</Link>
-            <Link href="/pricing">Pricing</Link>
+            <Link href="/courses">{t("header.courses")}</Link>
+            <Link href="/ai-studio">{t("header.aiStudio")}</Link>
+            <Link href="/ai-teachers">{t("header.aiTeachers")}</Link>
+            <Link href="/reads">{t("nav.books")}</Link>
+            <Link href="/pricing">{t("header.pricing")}</Link>
             <Link href={user ? dashPath : "/login"}>
-              {user ? "Dashboard" : "Sign in"}
+              {user ? t("header.dashboard") : t("header.signIn")}
             </Link>
           </nav>
         )}

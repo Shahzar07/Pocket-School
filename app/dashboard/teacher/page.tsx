@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { getTeacherCourses, getSubmissionsForTeacher, Course, Submission } from '@/lib/db';
+import { getTeacherCourses, getSubmissionsForTeacher, listInstructorActivity, Course, Submission, CourseQuestion, CourseReview } from '@/lib/db';
+import { instructorSnapshot } from '@/lib/course-builder';
+import { formatMoney } from '@/lib/pricing';
 import { Button } from '@/components/ui/button';
-import { BookOpen, ClipboardList, ArrowRight, ArrowUpRight, Upload, BarChart3, CheckCircle2, Sparkles, GraduationCap } from 'lucide-react';
+import { BookOpen, ClipboardList, ArrowRight, ArrowUpRight, Upload, BarChart3, CheckCircle2, Sparkles, GraduationCap, Star, MessageSquare, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import {
   DashPage, DashHeader, Panel, PanelHeader, StatCard, ListRow, Initials, EmptyState,
@@ -36,6 +38,8 @@ export default function TeacherDashboard() {
   const { user, profile } = useAuthSTORE();
   const [courses, setCourses] = useState<Course[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [reviews, setReviews] = useState<CourseReview[]>([]);
+  const [questions, setQuestions] = useState<CourseQuestion[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [loadError, setLoadError] = useState(false);
@@ -44,9 +48,12 @@ export default function TeacherDashboard() {
     if (!user) return;
     setLoading(true);
     setLoadError(false);
-    Promise.all([getTeacherCourses(user.uid), getSubmissionsForTeacher(user.uid)]).then(([cs, ss]) => {
+    Promise.all([getTeacherCourses(user.uid), getSubmissionsForTeacher(user.uid)]).then(async ([cs, ss]) => {
       setCourses(cs);
       setSubmissions(ss);
+      const activity = await listInstructorActivity(cs.map(course => course.id));
+      setReviews(activity.reviews);
+      setQuestions(activity.questions);
     }).catch(() => setLoadError(true)).finally(() => setLoading(false));
   };
 
@@ -54,6 +61,11 @@ export default function TeacherDashboard() {
 
   const ungraded = submissions.filter(s => s.score === undefined);
   const published = courses.filter(c => c.status === 'published');
+  const insight = instructorSnapshot({ courses, reviews, questions });
+  const currencies = new Set(courses.map(course => (course.currency || 'USD').toUpperCase()));
+  const revenueLabel = currencies.size <= 1
+    ? formatMoney(insight.revenue, [...currencies][0] || 'USD')
+    : `${insight.revenue.toFixed(2)} across currencies`;
   const firstName = profile?.name?.split(' ')[0] ?? 'Teacher';
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -87,6 +99,10 @@ export default function TeacherDashboard() {
         description="What needs your attention today."
         actions={
           <>
+            <Button variant="outline" onClick={() => router.push('/dashboard/teacher/courses/build')}
+              className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2">
+              <BookOpen className="w-3.5 h-3.5" /> Course studio
+            </Button>
             <Button variant="outline" onClick={() => router.push('/dashboard/teacher/upload')}
               className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2">
               <Upload className="w-3.5 h-3.5" /> New lesson
@@ -119,6 +135,49 @@ export default function TeacherDashboard() {
           href="/dashboard/teacher/analytics" hrefLabel="Analytics"
         />
       </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard index={4} icon={GraduationCap} label="Enrolments" value={insight.enrollments} href="/dashboard/teacher/courses" hrefLabel="Courses" />
+        <StatCard index={5} icon={Wallet} label="Recorded revenue" value={revenueLabel} href="/dashboard/teacher/courses" hrefLabel="Pricing" />
+        <StatCard index={6} icon={Star} label="Rating" value={insight.average ?? '—'} badge={insight.reviewCount ? `${insight.reviewCount} reviews` : undefined} />
+        <StatCard index={7} icon={MessageSquare} label="Open questions" value={insight.openQuestions} href="/dashboard/teacher/courses" hrefLabel="Studio" />
+      </div>
+
+      {reviews.length > 0 && (
+        <Panel>
+          <PanelHeader title="Reviews" meta={<span className="text-[11px] text-muted-foreground">{insight.reviewCount} ratings</span>} />
+          <div className="space-y-2">
+            {reviews.slice(0, 4).map(review => (
+              <ListRow
+                key={review.id}
+                leading={<Initials name={review.userName || 'Student'} />}
+                title={review.userName || 'Student'}
+                subtitle={review.text || 'Rating only'}
+                trailing={<span className="text-[12px] font-semibold tabular-nums">{review.rating}/5</span>}
+              />
+            ))}
+          </div>
+        </Panel>
+      )}
+
+      <Panel>
+        <PanelHeader title="Questions" meta={<span className="text-[11px] text-muted-foreground">{insight.openQuestions} waiting</span>} />
+        {questions.length === 0 ? (
+          <EmptyState icon={MessageSquare} title="No questions yet" body="Student questions on your courses appear here." />
+        ) : (
+          <div className="space-y-2">
+            {questions.slice(0, 6).map(question => (
+              <ListRow
+                key={question.id}
+                href={`/dashboard/teacher/courses/${question.courseId}`}
+                leading={<Initials name={question.authorName || 'Student'} />}
+                title={question.text}
+                subtitle={question.reply ? 'Replied' : 'Waiting for a reply'}
+              />
+            ))}
+          </div>
+        )}
+      </Panel>
 
       {/* ── Marking queue + shortcuts ── */}
       <div className="grid lg:grid-cols-[1.6fr_1fr] gap-4 items-start">
@@ -202,7 +261,7 @@ export default function TeacherDashboard() {
             <PanelHeader title="Jump to" />
             <div className="space-y-2">
               {[
-                { href: '/ai-studio', icon: Sparkles, title: 'AI Studio', sub: 'Build study material from anything' },
+                { href: '/dashboard/studio', icon: Sparkles, title: 'AI Studio', sub: 'ET, Maths, and Exam Prep' },
                 { href: '/dashboard/teacher/attendance', icon: CheckCircle2, title: 'Attendance', sub: 'Mark a register' },
                 { href: '/dashboard/teacher/analytics', icon: BarChart3, title: 'Analytics', sub: 'How your class is doing' },
               ].map(x => (

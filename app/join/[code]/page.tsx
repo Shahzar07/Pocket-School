@@ -29,7 +29,7 @@ export default function JoinClassPage() {
 
   const join = async () => {
     if (!user || !courseId) { router.push(`/login?next=/join/${code}`); return; }
-    await enrollStudent(user.uid, courseId, profile?.name || 'Student');
+    await enrollStudent(user.uid, courseId);
     await incrementEnrollment(courseId);
     router.push(`/dashboard/student/courses/${courseId}`);
   };

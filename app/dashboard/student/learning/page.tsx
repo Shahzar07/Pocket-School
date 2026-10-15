@@ -10,9 +10,10 @@ import {
   Course, Module, Lesson, Enrollment, UnitQuizAttempt, Programme,
 } from '@/lib/db';
 import { getUnitStatuses, getCurriculumLessonStatus, UnitStatus } from '@/lib/curriculum';
-import { accessTierFor, tierCovers } from '@/lib/entitlements';
-import { levelForYear, tierForYear } from '@/lib/year-groups';
-import { monthlySparksForProfile } from '@/lib/sparks';
+import { productAccess, viewerFromProfile } from '@/lib/allocation';
+import { usePricing } from '@/hooks/use-pricing';
+import { formatMoney, planById, quotePlan } from '@/lib/pricing';
+import { TIERS } from '@/lib/entitlements';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -43,6 +44,7 @@ const fadeUp: Record<string, any> = {
 export default function MyLearningPage() {
   const router = useRouter();
   const { user, profile } = useAuthSTORE();
+  const { config, currency } = usePricing();
   const [trees, setTrees] = useState<ModuleTree[]>([]);
   const [programme, setProgramme] = useState<Programme | null>(null);
   const [expandedUnits, setExpandedUnits] = useState<string[]>([]);
@@ -50,6 +52,7 @@ export default function MyLearningPage() {
   const [error, setError] = useState<string | null>(null);
 
   const yearGroup = profile?.yearGroup;
+  const tier = profile?.subscriptionTier ?? 'free';
 
   const load = async () => {
     if (!user || !profile) return;
@@ -65,13 +68,17 @@ export default function MyLearningPage() {
       setProgramme(programmes.find(p => p.status === 'active') ?? null);
 
       const result: ModuleTree[] = [];
+      const viewer = viewerFromProfile(profile, { userId: user.uid });
       for (const course of courses) {
         let enrollment = await getEnrollment(user.uid, course.id);
-        if (!enrollment) {
-          // Auto-enroll into curriculum subjects for the student's year / level
+        const access = productAccess(course, { ...viewer, enrolled: !!enrollment });
+        if (!access.listed && !enrollment) continue;
+        if (!enrollment && access.open) {
+          // Auto-enroll into curriculum subjects this learner is allowed to open.
           await enrollStudent(user.uid, course.id);
           enrollment = await getEnrollment(user.uid, course.id);
         }
+        if (!enrollment) continue;
         const [allUnits, attempts] = await Promise.all([
           getModulesWithLessons(course.id),
           getUnitQuizAttempts(user.uid, course.id),
@@ -142,15 +149,14 @@ export default function MyLearningPage() {
     </div>
   );
 
-  const requiresUpgrade = !!yearGroup && !tierCovers(accessTierFor(profile), tierForYear(yearGroup));
-  const planSparks = monthlySparksForProfile({ accessTier: yearGroup ? tierForYear(yearGroup) : 1 });
+  const requiresUpgrade = programme?.requiredTier === 'academic' && tier !== 'academic';
 
   return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
       {/* ── Page header ── */}
       <motion.header variants={fadeUp} initial="hidden" animate="visible" className="space-y-2 pt-2">
         <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">
-          {(programme?.name ?? levelForYear(yearGroup)) || 'Curriculum'} {yearGroup && `· ${yearGroup}`}
+          {programme?.name ?? 'Curriculum'} {yearGroup && `· ${yearGroup}`}
         </p>
         <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight">
           My <span className="gradient-text italic">Learning</span>
@@ -167,11 +173,17 @@ export default function MyLearningPage() {
             <Sparkles className="w-8 h-8 text-primary mb-3" />
             <h3 className="font-heading text-xl text-foreground mb-1">Academic subscription required</h3>
             <p className="text-sm text-muted-foreground mb-4 text-center max-w-sm px-4">
-              This year group includes a monthly ⚡{planSparks} Sparks allowance. Upgrade on the pricing page to unlock it.
+              The {programme?.name} curriculum — with all 11 learning formats and mastery quizzes — is part of the {TIERS.find(tier => tier.id === 'igcse_alevel')?.name} plan
+              {(() => {
+                const quote = quotePlan(config, 'igcse_alevel', 'monthly', currency);
+                const sparks = planById(config, 'igcse_alevel')?.sparks ?? 0;
+                if (!quote) return '.';
+                return ` at ${formatMoney(quote.amount, quote.currency)}/month, with ${sparks.toLocaleString('en')} Sparks a month.`;
+              })()}
             </p>
             <Button className="rounded-full h-11 px-5 font-bold bg-primary text-primary-foreground"
               onClick={() => router.push('/pricing')}>
-              Contact us to upgrade
+              View plans
             </Button>
           </div>
           <div className="space-y-4 opacity-60 pointer-events-none" aria-hidden>

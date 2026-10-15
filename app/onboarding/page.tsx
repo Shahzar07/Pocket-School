@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
@@ -11,32 +11,24 @@ import { db } from '@/lib/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { toast } from 'sonner';
-import { linkChildToParent, enrollInProgrammeModules, getUser, updateUser, UserProfile } from '@/lib/db';
-import { authedFetch } from '@/lib/api-client';
-import { levelForYear } from '@/lib/year-groups';
-import { PROGRAMMES, yearsForProgramme } from '@/lib/programmes';
+import { linkChildToParent, createParentVerification, enrollInProgrammeModules, awardSparks, getUser, updateUser, UserProfile } from '@/lib/db';
+import { SIGNUP_GRANT } from '@/lib/sparks';
+import { LanguageSwitcher } from '@/components/language-switcher';
 import { Timestamp } from 'firebase/firestore';
+
+const YEAR_GROUPS = ['Year 7', 'Year 8', 'Year 9'] as const;
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user, profile, fetchProfile } = useAuthSTORE();
+  const { user, profile } = useAuthSTORE();
   const [step, setStep] = useState(1);
-  const [pathway, setPathway] = useState(PROGRAMMES[0]?.value ?? 'Primary');
   const [yearGroup, setYearGroup] = useState('');
+  const [level, setLevel] = useState('');
   const [learningStyle, setLearningStyle] = useState('');
   const [childEmail, setChildEmail] = useState('');
   const [studentIdField, setStudentIdField] = useState('');
   const [linkLoading, setLinkLoading] = useState(false);
   const [loading, setLoading] = useState(false);
-  useEffect(() => {
-    const pending = (profile as (UserProfile & { pendingChildEmail?: string; pathway?: string }) | null)?.pendingChildEmail;
-    if (pending) setChildEmail(pending);
-    const storedPathway = (profile as (UserProfile & { pathway?: string }) | null)?.pathway;
-    if (storedPathway && PROGRAMMES.some((programme) => programme.value === storedPathway)) {
-      setPathway(storedPathway);
-    }
-    if (profile?.yearGroup) setYearGroup(profile.yearGroup);
-  }, [profile]);
 
   if (!user || !profile) {
     if (typeof window !== 'undefined') router.push('/login');
@@ -51,17 +43,15 @@ export default function OnboardingPage() {
     return null;
   }
 
-  const placementYears = yearsForProgramme(pathway);
-  const isYearGroup = placementYears.includes(yearGroup);
+  const isYearGroup = (YEAR_GROUPS as readonly string[]).includes(yearGroup);
 
   const completeStudentOnboarding = async () => {
     try {
       setLoading(true);
       await updateDoc(doc(db, 'users', user.uid), {
-        level: pathway || levelForYear(yearGroup) || null,
-        pathway,
+        level: level || null,
         learningStyle: learningStyle || null,
-        ...(isYearGroup ? { yearGroup } : { yearGroup: null }),
+        ...(isYearGroup ? { yearGroup } : {}),
         updatedAt: serverTimestamp(),
       });
       // The welcome Sparks grant and module enrolment are one-time only:
@@ -76,11 +66,10 @@ export default function OnboardingPage() {
         // Every student gets the welcome grant. This used to sit inside the
         // year-group branch, so anyone on GCSE, A-Level or any other pathway
         // started with a zero balance and could not open a single paid format.
-        await authedFetch('/api/platform/sparks-welcome', { method: 'POST', body: '{}' });
+        await awardSparks(user.uid, SIGNUP_GRANT, 'admin_grant', 'Welcome bonus');
         const onboardedStamp: Partial<UserProfile> & { onboardedAt: Timestamp } = { onboardedAt: Timestamp.now() };
         await updateUser(user.uid, onboardedStamp);
       }
-      await fetchProfile(user.uid);
       toast.success('Welcome to Poket School! 🎉');
       router.push('/dashboard/student');
     } catch {
@@ -94,9 +83,28 @@ export default function OnboardingPage() {
     if (!childEmail.trim()) { toast.error("Enter your child's email address"); return; }
     setLinkLoading(true);
     try {
-      const result = await linkChildToParent(user.uid, childEmail.trim().toLowerCase(), profile.name ?? 'A parent');
-      toast.success(result.message);
-      setChildEmail('');
+      const result = await linkChildToParent(user.uid, childEmail.trim().toLowerCase());
+      if (result.success) {
+        // Also create a verification request for admin approval
+        try {
+          await createParentVerification({
+            parentId: user.uid,
+            parentName: profile.name ?? 'Parent',
+            parentEmail: user.email ?? '',
+            studentEmail: childEmail.trim().toLowerCase(),
+            studentId: studentIdField.trim(),
+            status: 'pending',
+            createdAt: Timestamp.now(),
+          });
+          toast.success(`Linked to ${result.childName}'s account! Verification request sent.`);
+          setChildEmail('');
+          setStudentIdField('');
+        } catch {
+          toast.error('Verification request could not be submitted — please try again');
+        }
+      } else {
+        toast.error(result.error || 'Could not link account');
+      }
     } catch {
       toast.error('Could not link account — please try again');
     } finally {
@@ -112,7 +120,8 @@ export default function OnboardingPage() {
   // ── Parent onboarding ──────────────────────────────────────
   if (isParent) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      <div className="relative min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <div className="absolute top-4 end-4 z-20"><LanguageSwitcher /></div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -136,10 +145,22 @@ export default function OnboardingPage() {
               className="h-11 rounded-xl"
               disabled={linkLoading}
             />
-            <Button onClick={handleLinkChild} disabled={linkLoading} className="rounded-xl h-11 px-5">
-              {linkLoading ? 'Sending…' : 'Ask my child to approve'}
-            </Button>
-            <p className="text-xs text-muted-foreground">Your child approves the link from their own dashboard. Their name stays hidden until they say yes.</p>
+            <Label className="font-semibold text-foreground">Child's Student ID <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                placeholder="e.g. STU-2024-001"
+                value={studentIdField}
+                onChange={e => setStudentIdField(e.target.value)}
+                className="h-11 rounded-xl flex-1"
+                disabled={linkLoading}
+                onKeyDown={e => e.key === 'Enter' && handleLinkChild()}
+              />
+              <Button onClick={handleLinkChild} disabled={linkLoading} className="rounded-xl h-11 px-5">
+                {linkLoading ? '…' : 'Link'}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">Your child must already have a student account. You can link multiple children. A verification request will be sent to the admin.</p>
           </div>
 
           <div className="flex gap-3">
@@ -164,7 +185,8 @@ export default function OnboardingPage() {
 
   // ── Student onboarding ─────────────────────────────────────
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+    <div className="relative min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      <div className="absolute top-4 end-4 z-20"><LanguageSwitcher /></div>
       <div className="w-full max-w-3xl">
         {/* Progress */}
         <div className="flex items-center justify-center gap-2 mb-10">
@@ -183,25 +205,21 @@ export default function OnboardingPage() {
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <GraduationCap className="w-8 h-8 text-white" />
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">Which programme are you in?</h1>
-                <p className="text-muted-foreground mt-2 text-base">We&apos;ll match lessons, quizzes and ET to that programme.</p>
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">Which year are you in?</h1>
+                <p className="text-muted-foreground mt-2 text-base">We'll set up your curriculum modules and unit quizzes for the right year group.</p>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {PROGRAMMES.map(programme => (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[...YEAR_GROUPS, 'Something else'].map(yg => (
                   <button
-                    key={programme.value}
-                    onClick={() => {
-                      setPathway(programme.value);
-                      const years = yearsForProgramme(programme.value);
-                      setYearGroup(years.includes(yearGroup) ? yearGroup : (years[0] ?? ''));
-                    }}
+                    key={yg}
+                    onClick={() => setYearGroup(yg === 'Something else' ? 'other' : yg)}
                     className={`p-4 rounded-2xl border-2 cursor-pointer transition-all text-left font-semibold ${
-                      pathway === programme.value
+                      yearGroup === (yg === 'Something else' ? 'other' : yg)
                         ? 'border-primary bg-primary/10 text-primary shadow-sm'
                         : 'border-border hover:bg-muted text-foreground'
                     }`}
                   >
-                    {programme.label}
+                    {yg}
                   </button>
                 ))}
               </div>
@@ -209,8 +227,8 @@ export default function OnboardingPage() {
                 <Button
                   size="lg"
                   className="rounded-full px-8 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
-                  disabled={!pathway}
-                  onClick={() => setStep(yearsForProgramme(pathway).length > 0 ? 2 : 3)}
+                  disabled={!yearGroup}
+                  onClick={() => setStep(yearGroup === 'other' ? 2 : 3)}
                 >
                   Continue <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
@@ -224,27 +242,27 @@ export default function OnboardingPage() {
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <GraduationCap className="w-8 h-8 text-white" />
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">Which year are you in?</h1>
-                <p className="text-muted-foreground mt-2 text-base">This places you in the right lessons for {pathway}. It stays on your profile.</p>
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">Your education level?</h1>
+                <p className="text-muted-foreground mt-2 text-base">We use this to tailor AI explanations and study materials to your level.</p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {placementYears.map(year => (
+                {['K1–K5', 'Middle School (6–8)', 'High School (9–12)', 'Undergraduate', 'Postgraduate', 'Professional'].map(l => (
                   <button
-                    key={year}
-                    onClick={() => setYearGroup(year)}
+                    key={l}
+                    onClick={() => setLevel(l)}
                     className={`p-4 rounded-2xl border-2 cursor-pointer transition-all text-left font-semibold ${
-                      yearGroup === year
+                      level === l
                         ? 'border-primary bg-primary/10 text-primary shadow-sm'
                         : 'border-border hover:bg-muted text-foreground'
                     }`}
                   >
-                    {year}
+                    {l}
                   </button>
                 ))}
               </div>
               <div className="mt-8 flex justify-between">
                 <Button variant="ghost" className="h-11 rounded-full px-6" onClick={() => setStep(1)}>Back</Button>
-                <Button size="lg" className="rounded-full px-8 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-white" disabled={!yearGroup} onClick={() => setStep(3)}>
+                <Button size="lg" className="rounded-full px-8 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-white" disabled={!level} onClick={() => setStep(3)}>
                   Continue <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </div>
@@ -283,7 +301,7 @@ export default function OnboardingPage() {
                 ))}
               </div>
               <div className="mt-8 flex justify-between">
-                <Button variant="ghost" className="h-11 rounded-full px-6" onClick={() => setStep(placementYears.length > 0 ? 2 : 1)}>Back</Button>
+                <Button variant="ghost" className="h-11 rounded-full px-6" onClick={() => setStep(yearGroup === 'other' ? 2 : 1)}>Back</Button>
                 <Button
                   size="lg"
                   className="rounded-full px-8 h-12 bg-gradient-to-r from-teal-500 to-emerald-600 text-white"

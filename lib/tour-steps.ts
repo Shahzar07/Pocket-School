@@ -62,7 +62,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'language',
     target: 'language',
     title: 'Learn in your language',
-    body: 'Switch between 17 languages, including Bahasa Malaysia and Bahasa Indonesia. Lessons, the AI tutor and generated audio all follow your choice.',
+    body: 'The site starts in the language of your location, then your browser. Your choice stays on this device and on your account. Lessons fall back to English when a translation is missing, and ET still replies in the language you pick.',
     roles: ['student', 'teacher', 'parent', 'admin', 'institution_admin'],
     keywords: ['language', 'translate', 'malay', 'bahasa', 'indonesian', 'multilingual'],
   },
@@ -117,6 +117,24 @@ export const TOUR_STEPS: TourStep[] = [
     keywords: ['ai teacher', 'tutor', 'ayla', 'talk', 'voice', 'speak', 'ask'],
   },
   {
+    id: 'student-exam-prep',
+    target: 'study-exam-prep',
+    route: '/dashboard/student',
+    title: 'Exam Prep',
+    body: 'Upload your notes, slides or past papers and set your exam date. ET builds a day-by-day plan — lessons, quizzes, flashcards, podcasts — and a full mock before the real thing.',
+    roles: ['student'],
+    keywords: ['exam', 'prep', 'revise', 'revision', 'study plan', 'notes', 'upload', 'pdf', 'mock', 'test', 'oral'],
+  },
+  {
+    id: 'student-maths',
+    target: 'study-maths',
+    route: '/dashboard/student',
+    title: 'ET Maths',
+    body: 'Snap a photo of any maths problem. ET guides you one step at a time, or shows a full worked solution — and there are SPM, IGCSE, A Level and IB practice packs.',
+    roles: ['student'],
+    keywords: ['maths', 'math', 'problem', 'scan', 'photo', 'homework', 'solve', 'equation', 'spm', 'igcse', 'graph', 'calculator'],
+  },
+  {
     id: 'student-goals',
     route: '/dashboard/student/tasks',
     title: 'Daily goals',
@@ -134,7 +152,7 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     id: 'ai-studio',
-    route: '/ai-studio',
+    route: '/dashboard/studio',
     title: 'Turn anything into study material',
     body: 'Drop in notes, a PDF or a transcript and get flashcards, quizzes, mind maps, audio and video back.',
     roles: ['student', 'teacher'],
@@ -281,7 +299,7 @@ export function getStep(id: string): TourStep | undefined {
  * matter most for that role. Deliberately short — a 20-step tour gets skipped.
  */
 const DEFAULT_ORDER: Record<TourRole, string[]> = {
-  student: ['welcome', 'sidebar', 'sparks', 'student-home', 'student-courses', 'student-ai-teachers', 'ai-studio', 'student-goals'],
+  student: ['welcome', 'sidebar', 'sparks', 'student-home', 'student-exam-prep', 'student-maths', 'student-courses', 'student-ai-teachers', 'ai-studio', 'student-goals'],
   teacher: ['welcome', 'sidebar', 'teacher-home', 'teacher-courses', 'ai-studio', 'teacher-gradebook', 'teacher-reports'],
   parent: ['welcome', 'sidebar', 'parent-home', 'parent-duedates', 'parent-messages'],
   admin: ['welcome', 'sidebar', 'admin-home', 'admin-curriculum', 'admin-format', 'admin-users', 'admin-allocations'],

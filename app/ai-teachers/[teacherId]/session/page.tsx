@@ -15,14 +15,20 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeft, X, Send, Loader2, Volume2, VolumeX, Globe, Sparkles,
   MessageSquare, ClipboardList, StickyNote, CheckCircle2, XCircle,
-  Lightbulb, PenSquare, BookOpen, Wand2, Phone, Lock,
+  Lightbulb, PenSquare, BookOpen, Wand2, Phone, Lock, RotateCcw,
 } from 'lucide-react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { AI_TEACHERS } from '@/lib/ai-teachers';
 import { MathMarkdown } from '@/components/math-markdown';
 import { LiveVoiceSession } from '@/components/live-voice-session';
-import { LANGUAGES, LANGUAGE_STORAGE_KEY } from '@/lib/languages';
+import { LANGUAGES, LANGUAGE_STORAGE_KEY, RECOGNITION_LANG } from '@/lib/languages';
+import { Speaker, SentenceStream } from '@/lib/speech';
+import { tutorModeFor } from '@/lib/learner-level';
+import { correctIndex } from '@/lib/quiz-answer';
+import { parseLatexJson } from '@/lib/latex-json';
 import { permissionsFor, hasAddOn, addOn } from '@/lib/entitlements';
+import { usePricing } from '@/hooks/use-pricing';
+import { formatMoney, quoteAddon } from '@/lib/pricing';
 
 type Msg = { role: 'user' | 'model'; text: string };
 
@@ -52,9 +58,11 @@ function extractBoardItems(text: string, nextId: () => number): { prose: string;
   const items: BoardItem[] = [];
   const prose = text.replace(/```(QUIZ|PROBLEM)\s*\n?([\s\S]*?)```/g, (full, kind: string, body: string) => {
     try {
-      const data = JSON.parse(body.trim());
+      const data = parseLatexJson<any>(body.trim());
       if (kind === 'QUIZ' && data.question && Array.isArray(data.options)) {
-        items.push({ kind: 'quiz', id: nextId(), question: data.question, options: data.options.map(String), answer: String(data.answer ?? ''), explanation: data.explanation });
+        const options: string[] = data.options.map(String);
+        const idx = correctIndex(options, String(data.answer ?? ''));
+        items.push({ kind: 'quiz', id: nextId(), question: data.question, options, answer: idx >= 0 ? options[idx] : String(data.answer ?? ''), explanation: data.explanation });
         return '';
       }
       if (kind === 'PROBLEM' && data.prompt) {
@@ -83,6 +91,8 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
   /** Lyra Live is sold as an add-on, so it is not implied by any plan. */
   const lyraUnlocked = hasAddOn(permissionsFor(profile), 'lyra_live');
   const lyra = addOn('lyra_live');
+  const { config, currency } = usePricing();
+  const lyraQuote = quoteAddon(config, 'lyra_live', currency);
 
   const [messages, setMessages] = useState<Msg[]>([]);
   const [board, setBoard] = useState<BoardItem[]>([]);
@@ -101,7 +111,24 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
   const [score, setScore] = useState({ right: 0, total: 0 });
 
   const endRef = useRef<HTMLDivElement>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  /** Speaks replies sentence by sentence while they stream. */
+  const speakerRef = useRef<Speaker | null>(null);
+  if (!speakerRef.current) speakerRef.current = new Speaker({ onSpeakingChange: setSpeaking });
+  const abortRef = useRef<AbortController | null>(null);
+  const busyRef = useRef(false);
+  /* Latest values for code that runs outside React's render (the voice
+   * loop, stream callbacks) — reading state there gave stale answers. */
+  const langRef = useRef(lang);
+  const tabRef = useRef(tab);
+  const voiceOnRef = useRef(voiceOn);
+  useEffect(() => { langRef.current = lang; }, [lang]);
+  useEffect(() => { tabRef.current = tab; }, [tab]);
+  useEffect(() => { voiceOnRef.current = voiceOn; }, [voiceOn]);
+  useEffect(() => {
+    speakerRef.current?.setOptions({ voice: teacher?.voice, style: teacher?.voiceStyle, lang: RECOGNITION_LANG[lang] ?? 'en-GB' });
+  }, [teacher?.voice, teacher?.voiceStyle, lang]);
+  const transcriptKey = `ps-session-${teacherId}`;
+  const mode = tutorModeFor(profile?.level);
   const greeted = useRef(false);
   const idCounter = useRef(0);
   /** Latest transcript, readable from the voice loop without stale closures. */
@@ -120,15 +147,36 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
     if (stored) setLang(stored);
     const savedNotes = typeof window !== 'undefined' ? localStorage.getItem(`ps-notes-${teacherId}`) : null;
     if (savedNotes) setNotes(savedNotes);
+    // Pick up where the student left off — a refresh used to wipe the lesson.
+    try {
+      const saved = JSON.parse(localStorage.getItem(`ps-session-${teacherId}`) ?? 'null');
+      if (saved && Array.isArray(saved.messages) && saved.messages.length) {
+        setMessages(saved.messages);
+        if (Array.isArray(saved.board)) {
+          setBoard(saved.board);
+          idCounter.current = saved.board.reduce((m: number, b: BoardItem) => Math.max(m, b.id), 0);
+        }
+        greeted.current = true;
+      }
+    } catch { /* corrupt or unavailable storage — start fresh */ }
   }, [teacherId]);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; if (audioRef.current) audioRef.current.pause(); };
+    const speaker = speakerRef.current;
+    return () => { document.body.style.overflow = prev; abortRef.current?.abort(); speaker?.stop(); };
   }, []);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, streamingText, thinking]);
+  // Smooth-scrolling on every streamed token queued dozens of competing
+  // animations and made the chat judder; follow the stream instantly.
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [messages, thinking]);
+  useEffect(() => { if (streamingText) endRef.current?.scrollIntoView({ block: 'end' }); }, [streamingText]);
+
+  useEffect(() => {
+    if (!messages.length) return;
+    try { localStorage.setItem(transcriptKey, JSON.stringify({ messages: messages.slice(-60), board: board.slice(-30) })); } catch { /* full */ }
+  }, [messages, board, transcriptKey]);
 
   // Keep the ref in step so the voice loop always sends the full history.
   useEffect(() => { messagesRef.current = messages; }, [messages]);
@@ -137,56 +185,37 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
     if (typeof window !== 'undefined') localStorage.setItem(`ps-notes-${teacherId}`, notes);
   }, [notes, teacherId]);
 
-  /* ── voice ── */
-  const speak = async (text: string) => {
-    if (!voiceOn || !text.trim()) return;
-    const clean = text.replace(/\$\$?[^$]*\$\$?/g, ' ').replace(/[*#`_>|]/g, '').slice(0, 1200);
-    try {
-      setSpeaking(true);
-      const res = await fetch('/api/ai/audio', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          script: clean,
-          voice: teacher?.voice ?? 'Kore',
-          style: teacher?.voiceStyle,
-        }),
-      });
-      const type = res.headers.get('content-type') ?? '';
-      if (res.ok && type.includes('audio')) {
-        const url = URL.createObjectURL(await res.blob());
-        if (audioRef.current) audioRef.current.pause();
-        const audio = new Audio(url);
-        audioRef.current = audio;
-        audio.onended = () => { setSpeaking(false); URL.revokeObjectURL(url); };
-        audio.onerror = () => setSpeaking(false);
-        audio.play().catch(() => setSpeaking(false));
-        return;
-      }
-    } catch { /* fall through */ }
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      const u = new SpeechSynthesisUtterance(clean);
-      u.onend = () => setSpeaking(false);
-      u.onerror = () => setSpeaking(false);
-      window.speechSynthesis.speak(u);
-    } else setSpeaking(false);
-  };
-
   /* ── streaming ask ──
-   * Returns the spoken-safe prose so live voice mode can say it itself.
-   * `silent` suppresses the built-in playback (voice mode owns the audio). */
-  const ask = async (text: string, history: Msg[], silent = false): Promise<string> => {
+   * Speech starts with the first finished sentence instead of after the whole
+   * reply. In a voice call the call owns the audio and passes `say`; in the
+   * chat the page speaker is used when voice is on. */
+  const ask = async (
+    text: string,
+    history: Msg[],
+    opts: { say?: (sentence: string) => void; signal?: AbortSignal } = {},
+  ): Promise<string> => {
+    busyRef.current = true;
     setThinking(true);
     setStreamingText('');
+    const speaker = speakerRef.current!;
+    const ownVoice = !opts.say && voiceOnRef.current;
+    const turn = ownVoice ? speaker.begin() : -1;
+    const say = opts.say ?? (ownVoice ? (x: string) => speaker.enqueue(x, turn) : null);
+    const sentences = say ? new SentenceStream(say) : null;
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    opts.signal?.addEventListener('abort', () => ctrl.abort());
     let full = '';
     try {
       const res = await fetch('/api/ai/tutor', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
+        signal: ctrl.signal,
         body: JSON.stringify({
           message: text,
-          mode: 'college',
+          mode,
           persona: teacher ? `${teacher.name}, ${teacher.title}` : undefined,
           lessonContext: teacher ? `Subjects: ${teacher.subjects.join(', ')}` : undefined,
-          language: lang,
+          language: langRef.current,
           workboard: true,
           stream: true,
           history: history.map(m => ({ role: m.role, text: m.text })),
@@ -201,37 +230,61 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        full += decoder.decode(value, { stream: true });
+        const delta = decoder.decode(value, { stream: true });
+        full += delta;
+        sentences?.push(delta);
         // Hide raw board blocks from the live stream view.
         setStreamingText(full.replace(/```(QUIZ|PROBLEM)[\s\S]*?(```|$)/g, '\n📋 *adding to your board…*\n'));
       }
+      sentences?.flush();
 
       const { prose, items } = extractBoardItems(full, nextId);
       if (items.length) {
         setBoard(prev => [...prev, ...items]);
-        if (tab !== 'board') { boardBadge.current += items.length; setUnseenBoard(boardBadge.current); }
+        if (tabRef.current !== 'board') { boardBadge.current += items.length; setUnseenBoard(boardBadge.current); }
       }
       const finalText = prose || (items.length ? 'I put something on your board — take a look! 📋' : '…');
       setMessages(prev => [...prev, { role: 'model', text: finalText }]);
-      if (!silent) speak(prose);
       return prose || finalText;
     } catch (e: any) {
+      if (e?.name === 'AbortError') {
+        // Interrupted: keep what was said so far rather than losing it.
+        const { prose } = extractBoardItems(full, nextId);
+        if (prose.trim()) setMessages(prev => [...prev, { role: 'model', text: `${prose.trim()} …` }]);
+        return prose;
+      }
       const msg = `Sorry — ${e?.message || 'connection error'}. Try again.`;
       setMessages(prev => [...prev, { role: 'model', text: msg }]);
       return msg;
     } finally {
+      if (abortRef.current === ctrl) abortRef.current = null;
+      busyRef.current = false;
       setThinking(false);
       setStreamingText(null);
     }
   };
+  const askRef = useRef(ask);
+  askRef.current = ask;
 
   /* ── live voice: one turn, driven by the voice overlay ── */
-  const askByVoice = useCallback(async (spoken: string): Promise<string> => {
+  const askByVoice = useCallback(async (spoken: string, say: (s: string) => void, signal: AbortSignal): Promise<string> => {
     const next: Msg[] = [...messagesRef.current, { role: 'user', text: spoken }];
     setMessages(next);
+    messagesRef.current = next;
     // Voice replies stay conversational — no markdown or board blocks to read aloud.
-    return ask(`${spoken}\n\n(Reply conversationally in 2-4 sentences — this is spoken aloud.)`, next, true);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    return askRef.current(`${spoken}\n\n(Reply conversationally in 2-4 sentences — this is spoken aloud.)`, next, { say, signal });
+  }, []);
+
+  /** Wipe the transcript and start the lesson again. */
+  const newSession = () => {
+    abortRef.current?.abort();
+    speakerRef.current?.stop();
+    try { localStorage.removeItem(transcriptKey); } catch { /* noop */ }
+    setMessages([]); setBoard([]); setScore({ right: 0, total: 0 });
+    messagesRef.current = [];
+    idCounter.current = 0;
+    if (teacher) ask(`Greet me warmly as ${teacher.name} in 2 short sentences, then ask what I'd like to learn today. Do not add a quiz yet.`, []);
+  };
 
   /* greet */
   useEffect(() => {
@@ -242,7 +295,7 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
 
   const send = (text?: string) => {
     const t = (text ?? input).trim();
-    if (!t || thinking) return;
+    if (!t || busyRef.current) return;
     const next = [...messages, { role: 'user' as const, text: t }];
     setMessages(next);
     setInput('');
@@ -255,9 +308,11 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
     setBoard(prev => prev.map(b => (b.kind === 'quiz' && b.id === id && !b.chosen) ? { ...b, chosen: option } : b));
     const item = board.find(b => b.id === id) as QuizItem | undefined;
     if (item && !item.chosen) {
-      const correct = option.trim().toLowerCase() === item.answer.trim().toLowerCase();
+      const correct = correctIndex(item.options, option) === correctIndex(item.options, item.answer);
       setScore(s => ({ right: s.right + (correct ? 1 : 0), total: s.total + 1 }));
-      if (!correct) {
+      // Mark it either way; only ask for a re-teach if the teacher is free,
+      // so two replies never stream over each other.
+      if (!correct && !busyRef.current) {
         // Ask the teacher to re-teach the missed concept, in real time.
         const followUp = `On the quiz "${item.question}" I chose "${option}" but the correct answer was "${item.answer}". Briefly explain why my choice is wrong and how to think about it correctly.`;
         const next = [...messages, { role: 'user' as const, text: followUp }];
@@ -269,7 +324,7 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
 
   const checkProblem = (id: number, answer: string) => {
     const item = board.find(b => b.id === id) as ProblemItem | undefined;
-    if (!item || !answer.trim()) return;
+    if (!item || !answer.trim() || busyRef.current) return;
     setBoard(prev => prev.map(b => b.id === id ? { ...b, submitted: true } : b));
     const msg = `Please check my answer.\nProblem: "${item.prompt}"\nMy answer / working: "${answer}"\nMark it, show exactly where I went wrong if incorrect, re-teach that step, and give me one similar follow-up problem.`;
     const next = [...messages, { role: 'user' as const, text: msg }];
@@ -322,7 +377,7 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
                 {lyra?.blurb}
               </p>
               <p className="text-white text-2xl font-extrabold mt-5">
-                ${lyra?.usdMonthly}<span className="text-sm font-medium text-white/50">/month</span>
+                {lyraQuote ? formatMoney(lyraQuote.amount, lyraQuote.currency) : ''}<span className="text-sm font-medium text-white/50">/month</span>
               </p>
               <p className="text-white/40 text-[11px] mt-1">
                 Added on top of your plan. Chat with {teacher?.name.split(' ')[0]} stays free.
@@ -353,9 +408,6 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
               teacher={teacher}
               lang={lang}
               onAsk={askByVoice}
-              // askByVoice already writes both sides into the transcript, so
-              // this hook stays a no-op to avoid duplicate bubbles.
-              onTurn={() => {}}
               onClose={() => setLiveVoice(false)}
             />
           </motion.div>
@@ -400,7 +452,8 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
             onClick={() => {
               // Lyra Live is a paid add-on, not part of any base plan.
               if (!lyraUnlocked) { setLyraPrompt(true); return; }
-              if (audioRef.current) audioRef.current.pause();
+              abortRef.current?.abort();
+              speakerRef.current?.stop();
               setLiveVoice(true);
             }}
             className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full text-black transition-transform hover:scale-105"
@@ -413,7 +466,11 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
             <span className="hidden sm:inline">Talk live</span>
             {!lyraUnlocked && <Lock className="w-3 h-3" />}
           </button>
-          <button onClick={() => { setVoiceOn(v => !v); if (voiceOn && audioRef.current) audioRef.current.pause(); }}
+          <button onClick={newSession} disabled={thinking}
+            className="text-white/70 hover:text-white p-1.5 rounded-lg hover:bg-white/5 disabled:opacity-40" title="Start a new session">
+            <RotateCcw className="w-4 h-4" />
+          </button>
+          <button onClick={() => { setVoiceOn(v => !v); if (voiceOn) speakerRef.current?.stop(); }}
             className="text-white/70 hover:text-white p-1.5 rounded-lg hover:bg-white/5" title={voiceOn ? 'Mute voice' : 'Unmute voice'}>
             {voiceOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </button>
@@ -605,7 +662,8 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
 
 function QuizCard({ item, accent, onAnswer }: { item: QuizItem; accent: string; onAnswer: (id: number, option: string) => void }) {
   const answered = !!item.chosen;
-  const isCorrect = (o: string) => o.trim().toLowerCase() === item.answer.trim().toLowerCase();
+  const answerIdx = correctIndex(item.options, item.answer);
+  const isCorrect = (o: string) => item.options.indexOf(o) === answerIdx;
   return (
     <div className="p-4">
       <div className="flex items-center gap-2 mb-2.5">

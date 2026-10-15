@@ -1,55 +1,85 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isNextResponse, requireUser } from '@/lib/api-guard';
-import { ActionError } from '@/lib/server/actions';
-import { canonicalMethod } from '@/lib/payments/methods';
+import { getPublicCourseById } from '@/lib/db';
+import { ADDONS, TIERS } from '@/lib/entitlements';
+import { loadPricingConfig } from '@/lib/pricing-store';
+import {
+  quoteAddon,
+  quoteCourse,
+  quotePlan,
+  stripeUnitAmount,
+  type BillingInterval,
+} from '@/lib/pricing';
+import { isCheckoutKind, type CheckoutKind } from '@/lib/platform/wallet';
+import { walletChargeMethod } from '@/lib/payments/methods';
 import { startCheckout } from '@/lib/payments/server/engine';
+import { ActionError } from '@/lib/server/actions';
 
 export const dynamic = 'force-dynamic';
 
+interface CheckoutBody {
+  kind?: string;
+  id?: string;
+  interval?: BillingInterval;
+  currency?: string;
+  methods?: string[];
+  method?: string;
+}
+
 /**
- * The Reads client calls this with `{ kind, id, interval, currency, methods }`.
- * It uses the same checkout as `/api/payments/checkout`. Touch 'n Go is a
- * Malaysian-gateway charge, not metadata on a Stripe session.
- * Course purchases stay on `/api/stripe/checkout`.
+ * One checkout for school plans, add-ons, courses, books, and Reads.
+ * Book and Reads purchases share the unified wallet. School plans, add-ons,
+ * and courses keep the catalogue Stripe session.
  */
 export async function POST(req: NextRequest) {
+  let body: CheckoutBody;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
+  }
+
+  const kind = body.kind ?? '';
+  if (!isCheckoutKind(kind)) {
+    return NextResponse.json({ error: 'kind must be plan, addon, course, book, or reads.' }, { status: 400 });
+  }
+  if (kind === 'book' || kind === 'reads') return startWalletCheckout(req, body);
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json(
+      { error: 'Stripe not configured. Add STRIPE_SECRET_KEY to environment variables.' },
+      { status: 503 },
+    );
+  }
+  return catalogCheckout(req, body, kind);
+}
+
+/** Book purchase and Reads subscription. Called by `POST /api/reads/purchase`. */
+export async function startWalletCheckout(req: NextRequest, parsed?: CheckoutBody) {
   const user = await requireUser(req);
   if (isNextResponse(user)) return user;
 
-  const body = await req.json().catch(() => null) as {
-    kind?: string;
-    id?: string;
-    interval?: string;
-    currency?: string;
-    method?: string;
-    methods?: string[];
-    country?: string;
-  } | null;
+  let incoming = parsed;
+  if (!incoming) {
+    try {
+      incoming = (await req.json()) as CheckoutBody;
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
+    }
+  }
+  if (!incoming) return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
+  const body = incoming;
 
-  const rawKind = body?.kind ?? '';
-  const id = typeof body?.id === 'string' ? body.id.trim() : '';
+  const kind = body.kind ?? '';
+  const id = typeof body.id === 'string' ? body.id.trim() : '';
+  if (kind !== 'book' && kind !== 'reads') {
+    return NextResponse.json({ error: 'kind must be book or reads.' }, { status: 400 });
+  }
   if (!id) return NextResponse.json({ error: 'id is required.' }, { status: 400 });
-  if (rawKind === 'course') {
-    return NextResponse.json({ error: 'Course checkout stays on /api/stripe/checkout.', code: 'USE_COURSE_CHECKOUT' }, { status: 400 });
-  }
-  if (rawKind === 'addon') {
-    return NextResponse.json({ error: 'Add-on checkout is not available yet.', code: 'ADDON_PENDING' }, { status: 501 });
-  }
 
-  const readsPlan = id === 'reads' || id === 'reads-family';
-  const kind = rawKind === 'reads' || (rawKind === 'plan' && readsPlan) ? 'reads' : rawKind === 'book' ? 'book' : '';
-  if (!kind) {
-    return NextResponse.json({ error: 'kind must be book or reads.', code: 'INVALID' }, { status: 400 });
-  }
-
-  const interval = body?.interval === 'annual' || body?.interval === 'year' ? 'year' : 'month';
-  const currency = kind === 'reads' ? 'USD' : (body?.currency || 'USD').toUpperCase();
-  const method = pickMethod(body?.method, body?.methods, kind);
+  const interval = body.interval === 'annual' ? 'annual' : 'monthly';
+  const currency = (typeof body.currency === 'string' && body.currency.trim() ? body.currency : 'USD').toUpperCase();
+  const method = walletChargeMethod(kind, body.methods, body.method);
   const origin = req.nextUrl.origin;
-  const successPath = kind === 'book'
-    ? `/reads/book/${encodeURIComponent(id)}?paid=1`
-    : '/reads?checkout=success';
-  const cancelPath = kind === 'book' ? `/reads/book/${encodeURIComponent(id)}` : '/reads';
 
   try {
     const result = await startCheckout({
@@ -57,44 +87,143 @@ export async function POST(req: NextRequest) {
       email: user.email,
       kind,
       sku: id,
-      country: typeof body?.country === 'string' ? body.country : 'MY',
+      country: currency === 'MYR' ? 'MY' : 'US',
       currency,
-      interval,
+      interval: interval === 'annual' ? 'year' : 'month',
       method,
-      origin,
-      successPath,
-      cancelPath,
       idempotencyKey: `reads:${kind}:${id}:${interval}:${currency}:${method}`,
+      origin,
+      successPath: kind === 'book' ? `/reads/book/${encodeURIComponent(id)}?paid=1` : '/reads?checkout=success',
+      cancelPath: kind === 'book' ? `/reads/book/${encodeURIComponent(id)}` : '/reads',
     });
     return NextResponse.json({
       url: result.url ?? null,
-      postUrl: result.postUrl ?? null,
-      fields: result.fields ?? null,
+      postUrl: 'postUrl' in result ? result.postUrl ?? null : null,
+      fields: 'fields' in result ? result.fields ?? null : null,
       amount: result.amount,
       currency: result.currency,
       checkoutId: result.checkoutId,
       sandbox: result.sandbox,
-      alreadyPaid: result.alreadyPaid,
+      alreadyPaid: result.alreadyPaid === true,
       method,
     });
   } catch (error) {
     if (error instanceof ActionError) {
-      const status = error.code === 'FORBIDDEN' ? 403 : error.code === 'NOT_FOUND' ? 404 : 400;
+      const status = error.code === 'FORBIDDEN' ? 403 : error.code === 'NOT_FOUND' || error.code === 'USER_NOT_FOUND' ? 404 : error.code === 'INSUFFICIENT_WALLET' ? 402 : 400;
       return NextResponse.json({ error: error.message, code: error.code }, { status });
     }
-    console.error(error);
-    return NextResponse.json({ error: 'Something went wrong. Please try again.', code: 'INTERNAL' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Checkout could not be started.';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
-function pickMethod(method: string | undefined, methods: string[] | undefined, kind: string): string {
-  if (kind === 'reads') return 'card';
-  if (method) return canonicalMethod(method);
-  const requested = (methods ?? []).map((item) => canonicalMethod(item));
-  if (requested.length === 1) return requested[0];
-  const stripe = requested.filter((item) => item === 'card' || item === 'fpx' || item === 'grabpay' || item === 'apple_pay' || item === 'google_pay');
-  if (requested.includes('tng') && stripe.length === 0) return 'tng';
-  if (requested.includes('fpx') && !requested.includes('card')) return 'fpx';
-  if (requested.includes('grabpay') && !requested.includes('card') && !requested.includes('fpx')) return 'grabpay';
-  return 'card';
+async function catalogCheckout(req: NextRequest, body: CheckoutBody, kind: Exclude<CheckoutKind, 'book' | 'reads'>) {
+  const id = typeof body.id === 'string' ? body.id.trim() : '';
+  const interval: BillingInterval = body.interval === 'annual' ? 'annual' : 'monthly';
+  const requested = typeof body.currency === 'string' ? body.currency : 'USD';
+  if (!id) return NextResponse.json({ error: 'id is required.' }, { status: 400 });
+
+  const config = await loadPricingConfig();
+  let amount = 0;
+  let currency = 'USD';
+  let name = id;
+  let mode: 'subscription' | 'payment' = 'subscription';
+  let recurring: 'month' | 'year' | null = interval === 'annual' ? 'year' : 'month';
+
+  if (kind === 'plan') {
+    const quote = quotePlan(config, id, interval, requested);
+    const tier = TIERS.find(item => item.id === id);
+    if (!quote || !tier) return NextResponse.json({ error: 'Unknown plan.' }, { status: 400 });
+    amount = quote.amount;
+    currency = quote.currency;
+    name = tier.name;
+  } else if (kind === 'addon') {
+    const quote = quoteAddon(config, id, requested);
+    const addon = ADDONS.find(item => item.id === id);
+    if (!quote || !addon) return NextResponse.json({ error: 'Unknown add-on.' }, { status: 400 });
+    amount = quote.amount;
+    currency = quote.currency;
+    name = addon.name;
+    recurring = 'month';
+  } else {
+    const course = await getPublicCourseById(id);
+    if (!course) return NextResponse.json({ error: 'Course not found.' }, { status: 404 });
+    if (!course.price || course.price <= 0) {
+      return NextResponse.json({ error: 'Course is free — no payment needed.' }, { status: 400 });
+    }
+    const quote = quoteCourse(config, course.price, course.currency, requested);
+    amount = quote.amount;
+    currency = quote.currency;
+    name = course.title;
+    mode = 'payment';
+    recurring = null;
+  }
+
+  const origin = req.nextUrl.origin;
+  const session = await openSession({
+    name,
+    amount,
+    currency,
+    mode,
+    recurring,
+    metadata: { kind, id, interval, currency },
+    successUrl: `${origin}/pricing?checkout=success`,
+    cancelUrl: `${origin}/pricing?checkout=cancel`,
+  });
+  if (session instanceof NextResponse) return session;
+  return NextResponse.json({ url: session.url, amount, currency });
+}
+
+async function openSession(input: {
+  name: string;
+  amount: number;
+  currency: string;
+  mode: 'subscription' | 'payment';
+  recurring: 'month' | 'year' | null;
+  metadata: Record<string, string>;
+  successUrl: string;
+  cancelUrl: string;
+  paymentMethodTypes?: Array<'card' | 'fpx' | 'grabpay'>;
+  customerEmail?: string;
+}) {
+  if (!(input.amount > 0)) {
+    return NextResponse.json({ error: 'This plan is free.' }, { status: 400 });
+  }
+  const unitAmount = stripeUnitAmount(input.amount, input.currency);
+  if (!(unitAmount > 0)) {
+    return NextResponse.json({ error: 'Price is too small to charge.' }, { status: 400 });
+  }
+
+  try {
+    const Stripe = (await import('stripe')).default;
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-04-22.dahlia' as any });
+    const priceData: {
+      currency: string;
+      unit_amount: number;
+      product_data: { name: string };
+      recurring?: { interval: 'month' | 'year' };
+    } = {
+      currency: input.currency.toLowerCase(),
+      unit_amount: unitAmount,
+      product_data: { name: input.name },
+    };
+    if (input.recurring) priceData.recurring = { interval: input.recurring };
+
+    const session = await stripe.checkout.sessions.create({
+      mode: input.mode,
+      line_items: [{ quantity: 1, price_data: priceData }],
+      success_url: input.successUrl,
+      cancel_url: input.cancelUrl,
+      metadata: input.metadata,
+      ...(input.customerEmail ? { customer_email: input.customerEmail } : {}),
+      ...(input.paymentMethodTypes ? { payment_method_types: input.paymentMethodTypes } : {}),
+    });
+    if (!session.url) {
+      return NextResponse.json({ error: 'Stripe did not return a checkout URL.' }, { status: 502 });
+    }
+    return session;
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Checkout could not be started.';
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
 }

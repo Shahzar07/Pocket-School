@@ -92,7 +92,8 @@ export function institutionScope(ctx: RoleContext | null | undefined): string | 
 
 /** Where a role lands after signing in. */
 export function homeForRole(ctx: RoleContext | null | undefined): string {
-  if (isAdmin(ctx)) return '/dashboard/admin';
+  if (ctx?.role === 'institution_admin') return '/dashboard/institution';
+  if (isSuperAdmin(ctx)) return '/dashboard/admin';
   if (ctx?.role === 'teacher') return '/dashboard/teacher';
   if (ctx?.role === 'parent') return '/dashboard/parent';
   return '/dashboard/student';

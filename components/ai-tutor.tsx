@@ -2,7 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Bot, X, Send, Sparkles, AlertCircle } from 'lucide-react';
+import { Bot, X, Send, Sparkles, AlertCircle, Camera } from 'lucide-react';
+import Link from 'next/link';
+import { useAuthSTORE } from '@/hooks/use-auth';
+import { tutorModeFor } from '@/lib/learner-level';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -19,14 +22,21 @@ interface Message {
 
 export function AITutor() {
   const { lessonTitle, lessonContext } = useTutorContext();
+  const { profile } = useAuthSTORE();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'model', text: "Hi! I'm your AI Tutor. Ask me anything — I'm here to help you learn!" },
+    { role: 'model', text: "Hi! I'm ET, your tutor. Ask me anything — or snap a maths problem and I'll walk you through it." },
   ]);
   const [input, setInput] = useState('');
-  const [mode, setMode] = useState('k12');
+  const [mode, setMode] = useState<string>(() => tutorModeFor(profile?.level));
   const [isTyping, setIsTyping] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [streaming, setStreaming] = useState<string | null>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+  const modeTouched = useRef(false);
+  // Default the register to the student's level once their profile loads.
+  useEffect(() => {
+    if (!modeTouched.current && profile?.level) setMode(tutorModeFor(profile.level));
+  }, [profile?.level]);
   const prevLessonTitle = useRef<string | null>(null);
 
   useEffect(() => {
@@ -34,27 +44,28 @@ export function AITutor() {
       prevLessonTitle.current = lessonTitle;
       setMessages([{
         role: 'model',
-        text: `Hi! I'm your AI Tutor. I can see you're studying **${lessonTitle}**. What would you like to explore or clarify?`,
+        text: `Hi! I'm ET. I can see you're studying **${lessonTitle}**. What would you like to explore or clarify?`,
       }]);
     }
   }, [lessonTitle]);
 
+  // The ref used to sit on the ScrollArea root, which never scrolls — its
+  // viewport child does — so the chat stopped following new replies.
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, isTyping]);
+    endRef.current?.scrollIntoView({ block: 'end' });
+  }, [messages, isTyping, streaming]);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isTyping) return;
     const userMsg = input.trim();
     setInput('');
+    const history = messages.map(m => ({ role: m.role, text: m.text }));
     setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
     setIsTyping(true);
 
     try {
-      const history = messages.map(m => ({ role: m.role, text: m.text }));
-
+      // Stream the reply so the first words appear at once instead of after
+      // the whole answer has been written.
       const res = await fetch('/api/ai/tutor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -64,10 +75,11 @@ export function AITutor() {
           lessonContext: lessonContext ?? '',
           language: readLanguage(),
           history,
+          stream: true,
         }),
       });
 
-      if (!res.ok) {
+      if (!res.ok || !res.body) {
         const err = await res.json().catch(() => ({} as { error?: string }));
         setMessages(prev => [...prev, {
           role: 'model',
@@ -76,11 +88,21 @@ export function AITutor() {
         return;
       }
 
-      const data = await res.json();
-      setMessages(prev => [...prev, { role: 'model', text: data.reply ?? 'I did not understand that.' }]);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let full = '';
+      setStreaming('');
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        full += decoder.decode(value, { stream: true });
+        setStreaming(full);
+      }
+      setMessages(prev => [...prev, { role: 'model', text: full.trim() || 'I did not catch that — could you rephrase?' }]);
     } catch {
       setMessages(prev => [...prev, { role: 'model', text: 'Oops, something went wrong. Please try again.' }]);
     } finally {
+      setStreaming(null);
       setIsTyping(false);
     }
   };
@@ -116,18 +138,23 @@ export function AITutor() {
             <div className="bg-primary text-primary-foreground p-4 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <Bot className="w-6 h-6" />
-                <span className="font-bold text-lg">AI Tutor</span>
+                <span className="font-bold text-lg">ET</span>
               </div>
               <div className="flex items-center gap-1">
-                <a
-                  href="/ai-studio"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-                  title="Open in AI Studio"
+                <Link
+                  href="/dashboard/studio/maths"
+                  className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors inline-flex items-center gap-1"
+                  title="Scan a maths problem"
                 >
-                  AI Studio ↗
-                </a>
+                  <Camera className="w-3 h-3" /> Maths
+                </Link>
+                <Link
+                  href="/dashboard/studio"
+                  className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                  title="Open AI Studio"
+                >
+                  AI Studio
+                </Link>
                 <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/20 rounded-full" onClick={() => setIsOpen(false)}>
                   <X className="w-5 h-5" />
                 </Button>
@@ -137,7 +164,7 @@ export function AITutor() {
             {/* Mode Selector */}
             <div className="p-3 border-b border-border bg-muted/50 flex items-center gap-2 shrink-0">
               <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Tutor Mode:</span>
-              <Select value={mode} onValueChange={val => setMode(val ?? 'k12')}>
+              <Select value={mode} onValueChange={val => { modeTouched.current = true; setMode(val ?? 'k12'); }}>
                 <SelectTrigger className="h-8 text-xs rounded-full border-border bg-card">
                   <SelectValue placeholder="Select mode" />
                 </SelectTrigger>
@@ -159,7 +186,7 @@ export function AITutor() {
             )}
 
             {/* Chat */}
-            <ScrollArea className="flex-1 p-4 bg-background" ref={scrollRef}>
+            <ScrollArea className="flex-1 min-h-0 p-4 bg-background">
               <div className="space-y-4 pb-4">
                 {messages.map((m, i) => (
                   <div key={i} className={`flex gap-3 ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -177,7 +204,18 @@ export function AITutor() {
                     </div>
                   </div>
                 ))}
-                {isTyping && (
+                {streaming ? (
+                  <div className="flex gap-3">
+                    <Avatar className="w-8 h-8 shrink-0">
+                      <AvatarFallback className="bg-primary text-primary-foreground"><Bot className="w-4 h-4" /></AvatarFallback>
+                    </Avatar>
+                    <div className="p-3 rounded-2xl max-w-[80%] text-sm bg-primary/10 text-foreground rounded-tl-sm">
+                      <div className="prose prose-sm prose-p:my-1 max-w-none text-sm">
+                        <MathMarkdown>{streaming}</MathMarkdown>
+                      </div>
+                    </div>
+                  </div>
+                ) : isTyping && (
                   <div className="flex gap-3">
                     <Avatar className="w-8 h-8 shrink-0">
                       <AvatarFallback className="bg-primary text-primary-foreground"><Bot className="w-4 h-4" /></AvatarFallback>
@@ -189,6 +227,7 @@ export function AITutor() {
                     </div>
                   </div>
                 )}
+                <div ref={endRef} />
               </div>
             </ScrollArea>
 

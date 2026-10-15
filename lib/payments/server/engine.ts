@@ -15,8 +15,11 @@ import { summariseFinance, reconcile } from '../finance';
 import { planGrants, planReversal, type FulfillmentInput, type PlannedGrant } from '../fulfillment';
 import { eventDocId, claimDecision } from '../idempotency';
 import { toMinor } from '../minor';
-import { canonicalMethod, methodsFor, stripeMethodTypes, type MethodId } from '../methods';
+import { canonicalMethod, methodsFor, stripeTypesForCharge, type MethodId } from '../methods';
 import { buildQuote, type CheckoutKind, type PricedItem, type Quote } from '../quote';
+import { quoteCourse } from '../../pricing';
+import { loadPricingConfig } from '../../pricing-store';
+import { quoteCheckout } from '../../platform/wallet';
 import { readsBookItem, readsPlanItem } from '../reads';
 import { buildMyInvois } from '../tax';
 import { gatewayMode, providerForMethod, stripeMode, type GatewayVendor, type ProviderMode } from '../providers';
@@ -110,20 +113,38 @@ function safeReturn(origin: string, path: string | undefined, fallback: string):
   return `${origin}${candidate}`;
 }
 
+function shelfPriced(sku: string, title: string, amount: number, currency: string): PricedItem | null {
+  const item = fixedPriceItem({ kind: 'book', sku, title, amount, currency, ownerId: 'platform' });
+  if (!item) return null;
+  return { ...item, shelf: true };
+}
+
 async function readsShelfItem(sku: string, currency: string): Promise<PricedItem | null> {
   const snap = await db().doc(`books/${sku}`).get();
-  if (snap.exists) {
-    const data = snap.data() ?? {};
-    if (data.status && data.status !== 'published') {
-      throw new ActionError('INVALID', 'That book is not on the shelf yet.');
+  const data = snap.exists ? (snap.data() ?? {}) : null;
+  if (data && data.status && data.status !== 'published') {
+    throw new ActionError('INVALID', 'That book is not on the shelf yet.');
+  }
+  const code = currency.toUpperCase() === 'MYR' ? 'MYR' : 'USD';
+  const config = await loadPricingConfig();
+  const quoted = quoteCheckout({ kind: 'book', id: sku, currency: code }, config);
+  if (quoted) {
+    const item = shelfPriced(sku, data ? str(data.title) || quoted.name : quoted.name, quoted.amount, quoted.currency);
+    if (item) return item;
+  }
+  if (data) {
+    const shelfMyr = Number(data.priceRM ?? data.priceMyr ?? 0);
+    const shelfUsd = Number(data.priceUsd ?? data.price ?? 0);
+    if (code === 'MYR' && shelfMyr > 0) {
+      const item = shelfPriced(sku, str(data.title) || 'Book', shelfMyr, 'MYR');
+      if (item) return item;
     }
-    const code = currency.toUpperCase() === 'MYR' ? 'MYR' : 'USD';
-    const amount = code === 'MYR' ? Number(data.priceRM ?? data.priceMyr ?? 0) : Number(data.priceUsd ?? data.price ?? 0);
-    const item = fixedPriceItem({
-      kind: 'book', sku, title: str(data.title) || 'Book', amount, currency: code, ownerId: 'platform',
-    });
-    if (!item) throw new ActionError('INVALID', 'That book is included with Reads. Open it from the shelf.');
-    return { ...item, shelf: true };
+    if (shelfUsd > 0) {
+      const money = quoteCourse(config, shelfUsd, 'USD', code);
+      const item = shelfPriced(sku, str(data.title) || 'Book', money.amount, money.currency);
+      if (item) return item;
+    }
+    throw new ActionError('INVALID', 'That book is included with Reads. Open it from the shelf.');
   }
   return readsBookItem(sku, currency);
 }
@@ -356,7 +377,7 @@ export async function startCheckout(input: CheckoutInput) {
   }
 
   if (!url && mode === 'mock' && provider !== 'wallet') {
-    url = done.includes('?') ? `${done}&sandbox=1` : `${done}?sandbox=1`;
+    url = `${input.origin}/dashboard/checkout?paid=${id}&sandbox=1`;
   }
 
   await db().doc(`checkouts/${id}`).set({
@@ -392,8 +413,8 @@ async function stripeSession(input: {
 }): Promise<string> {
   const Stripe = (await import('stripe')).default;
   const stripe = new Stripe(input.secret);
-  const types = stripeMethodTypes(input.method);
   const subscription = input.quote.kind === 'subscription' || input.quote.kind === 'reads';
+  const types = stripeTypesForCharge(input.method, input.quote.currency, input.quote.kind);
   const session = await stripe.checkout.sessions.create({
     mode: subscription ? 'subscription' : 'payment',
     customer_email: input.email,

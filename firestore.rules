@@ -3,45 +3,90 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ── Default deny ─────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
     }
 
+    // ── Helpers ───────────────────────────────────────────────
     function isSignedIn() { return request.auth != null; }
     function isUser(uid) { return isSignedIn() && request.auth.uid == uid; }
     function incoming() { return request.resource.data; }
-    function role() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '')
-        : '';
-    }
+    function role() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role; }
     function myInstitution() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.institutionId; }
 
+    // Platform-wide administrator. Deliberately NOT widened to include
+    // institution admins: this gates platform switches (settings, deleting
+    // users and institutions) that a single school must not control.
     function isAdmin() { return isSignedIn() && role() == 'admin'; }
+
+    // Scoped to one institution. Gets teacher-grade capability so they can run
+    // their school's courses, grades, attendance and reports.
     function isInstitutionAdmin() { return isSignedIn() && role() == 'institution_admin'; }
+
     function isTeacherOrAdmin() { return isSignedIn() && role() in ['teacher', 'admin', 'institution_admin']; }
 
-    function isBootstrapAdmin() {
-      return isSignedIn()
-        && request.auth.token.keys().hasAll(['email'])
-        && request.auth.token.email is string
-        && (
-          request.auth.token.email.lower() == 'harry@poketschool.ai'
-          || request.auth.token.email.lower() == 'harry.seggu@gmail.com'
-          || request.auth.token.email.lower() == 'shahzarrayyan123@gmail.com'
-        );
+    function audienceGated(data) {
+      return data.keys().hasAny(['audiences'])
+        && data.audiences is list
+        && data.audiences.size() > 0;
     }
 
-    // Client writes must never change money, progress, role, or family links.
-    // The Admin SDK (API routes) bypasses these rules.
+    // Signed-in audience match. Marketplace is public and is checked separately
+    // so a guest can read a sales page.
+    function audienceHit(data) {
+      return data.audiences.hasAny(['all'])
+        || (role() == 'student' && data.audiences.hasAny(['students']))
+        || (role() == 'teacher' && data.audiences.hasAny(['teachers']))
+        || (role() == 'parent' && data.audiences.hasAny(['parents']))
+        || data.audiences.hasAny(['marketplace'])
+        || (data.audiences.hasAny(['institutions'])
+            && myInstitution() != null
+            && data.get('allocatedInstitutionIds', []).hasAny([myInstitution()]));
+    }
+
+    // Fields a user must never be able to set on their own profile. Writing
+    // any of these is privilege escalation: role grants the admin console,
+    // accessTier and subscriptionTier unlock paid content, permissions can
+    // carry alloc:free:* for any course, and institutionId joins someone
+    // else's school. Only an admin may change them.
     function privilegedUserFields() {
+      // childIds is deliberately NOT here: a parent adds their own children
+      // during onboarding, and that link is guarded by parent_verifications
+      // rather than by this rule.
       return ['role', 'accessTier', 'subscriptionTier', 'permissions',
               'institutionId', 'adminSparksGrantedAt', 'accountStatus',
               'sparksBalance', 'xp', 'sparksMonthlyAllowance', 'sparksGrantedAt',
-              'sparksWelcomeGrantedAt', 'childIds', 'emailVerified', 'stripeCustomerId',
-              'stripeAccountId'];
+              'sparksWelcomeGrantedAt', 'emailVerified', 'stripeCustomerId',
+              'stripeAccountId', 'adminRole', 'statusReason', 'deletedAt', 'cohortIds',
+              'ageTier', 'dateOfBirth'];
     }
 
+    // Missing ageTier fails closed as under-13. The server is the only writer.
+    function callerAgeTier() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('ageTier', 'under13')
+        : 'under13';
+    }
+    function userAgeTier(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.get('ageTier', 'under13');
+    }
+    function userRoleOf(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.get('role', '');
+    }
+    function callerYear() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('yearGroup', '');
+    }
+    function callerSubjects() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('subjects', []);
+    }
+    function isStaffRole(r) {
+      return r == 'teacher' || r == 'admin' || r == 'institution_admin';
+    }
+    function adultOptIn(uid) {
+      return exists(/databases/$(database)/documents/community_profiles/$(uid))
+        && get(/databases/$(database)/documents/community_profiles/$(uid)).data.get('adultDmOptIn', false) == true;
+    }
     function myChildIds() {
       return exists(/databases/$(database)/documents/users/$(request.auth.uid))
         ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('childIds', [])
@@ -50,157 +95,608 @@ service cloud.firestore {
     function linkedTo(studentId) {
       return isSignedIn() && studentId is string && myChildIds().hasAny([studentId]);
     }
-    function ownsCourse(courseId) {
-      return isSignedIn()
-        && exists(/databases/$(database)/documents/courses/$(courseId))
-        && get(/databases/$(database)/documents/courses/$(courseId)).data.ownerId == request.auth.uid;
+    function dmCreateOk() {
+      return incoming().fromId == request.auth.uid
+        && incoming().toId is string
+        && incoming().toId != request.auth.uid
+        && callerAgeTier() == 'adult'
+        && userAgeTier(incoming().fromId) == 'adult'
+        && userAgeTier(incoming().toId) == 'adult'
+        && (
+          isStaffRole(userRoleOf(incoming().fromId))
+          || isStaffRole(userRoleOf(incoming().toId))
+          || userRoleOf(incoming().fromId) == 'parent'
+          || userRoleOf(incoming().toId) == 'parent'
+          || (adultOptIn(incoming().fromId) && adultOptIn(incoming().toId))
+        );
     }
-    function enrolledIn(courseId) {
-      return isSignedIn()
-        && exists(/databases/$(database)/documents/courses/$(courseId)/enrollments/$(request.auth.uid));
+    function spaceDoc(spaceId) {
+      return get(/databases/$(database)/documents/spaces/$(spaceId)).data;
     }
-    function courseData(courseId) {
-      return get(/databases/$(database)/documents/courses/$(courseId)).data;
+    function onSpaceRoster(data) {
+      return data.get('memberIds', []).hasAny([request.auth.uid])
+        || data.get('staffIds', []).hasAny([request.auth.uid]);
     }
-    function isSelfServe(courseId) {
-      return courseData(courseId).kind == 'curriculum'
-        || courseData(courseId).get('priceType', '') in ['FREE', 'FREE_PREVIEW', 'SUBSCRIPTION_INCLUDED']
-        || courseData(courseId).get('price', 0) == 0;
-    }
-
-    function profileCreateFieldsOk() {
-      return incoming().keys().hasAll(['role'])
-        && incoming().role is string
-        && incoming().get('xp', 0) == 0
-        && incoming().get('sparksBalance', 0) == 0
-        && incoming().get('emailVerified', false) == false
-        && !incoming().keys().hasAny([
-          'accessTier', 'subscriptionTier', 'permissions', 'institutionId',
-          'adminSparksGrantedAt', 'accountStatus', 'sparksMonthlyAllowance',
-          'sparksGrantedAt', 'sparksWelcomeGrantedAt', 'childIds', 'stripeCustomerId',
-          'stripeAccountId'
-        ]);
-    }
-
-    match /users/{userId} {
-      allow read: if isUser(userId) || isAdmin() || linkedTo(userId);
-      allow create: if isUser(userId)
-        && profileCreateFieldsOk()
-        && (incoming().role == 'student' || incoming().role == 'teacher' || incoming().role == 'parent');
-      allow create: if isUser(userId)
-        && profileCreateFieldsOk()
-        && incoming().role == 'admin'
-        && isBootstrapAdmin();
-      allow update: if exists(/databases/$(database)/documents/users/$(userId)) && (
-        isAdmin()
-        || (isBootstrapAdmin()
-            && request.resource.data.role == 'admin'
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'updatedAt', 'email', 'name', 'avatarUrl']))
-        || (isUser(userId)
-            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(privilegedUserFields()))
+    function canSeeSpaceData(data) {
+      return (
+        data.kind == 'class'
+        && data.get('staffIds', []).hasAny([request.auth.uid])
+        && isTeacherOrAdmin()
+      ) || (
+        role() != 'parent'
+        && data.ageTier == callerAgeTier()
+        && (
+          (
+            callerAgeTier() == 'under13'
+            && data.kind in ['class', 'school']
+            && onSpaceRoster(data)
+          ) || (
+            callerAgeTier() == 'teen'
+            && (
+              (data.kind in ['class', 'school'] && onSpaceRoster(data))
+              || (data.kind == 'year' && data.get('year', '') != '' && data.year == callerYear())
+              || (data.kind == 'subject' && data.get('subject', '') != '' && callerSubjects().hasAny([data.subject]))
+            )
+          ) || (
+            callerAgeTier() == 'adult'
+            && (
+              data.get('visibility', 'members') == 'tier'
+              || onSpaceRoster(data)
+            )
+          )
+        )
       );
-      allow delete: if isAdmin();
-
-      match /spark_transactions/{txId} {
-        allow read: if isUser(userId) || isAdmin();
-        allow write: if false;
-      }
-
-      match /ai_generations/{genId} {
-        allow read, create: if isUser(userId);
-        allow delete: if isUser(userId) || isAdmin();
-      }
     }
 
-    // Leaderboards and messaging labels. XP is written only by the server.
-    match /public_profiles/{userId} {
+    function callerIsSuper() {
+      return isSignedIn() && (
+        request.auth.token.adminRole == 'super_admin'
+        || request.auth.token.email == 'shahzarrayyan123@gmail.com'
+        || request.auth.token.email == 'harry.seggu@gmail.com'
+        || request.auth.token.email == 'harry@poketschool.ai'
+      );
+    }
+
+    function targetIsSuper() {
+      return resource.data.get('adminRole', '') == 'super_admin'
+        || resource.data.get('email', '') == 'shahzarrayyan123@gmail.com'
+        || resource.data.get('email', '') == 'harry.seggu@gmail.com'
+        || resource.data.get('email', '') == 'harry@poketschool.ai';
+    }
+
+    // A regular admin can change users. Promoting someone to super admin, or
+    // editing a super admin, requires the super admin claim or the owner email.
+    function staffWriteAllowed() {
+      return callerIsSuper()
+        || (
+          !targetIsSuper()
+          && incoming().get('adminRole', '') != 'super_admin'
+        );
+    }
+
+    // ── Users ─────────────────────────────────────────────────
+    match /users/{userId} {
       allow read: if isSignedIn();
-      allow create: if isUser(userId) && incoming().get('xp', 0) == 0;
-      allow update: if isAdmin()
+      allow create: if isUser(userId)
+        && !incoming().keys().hasAny(['stripeAccountId', 'stripeCustomerId']);
+      allow update: if (isAdmin() && staffWriteAllowed())
         || (isUser(userId)
-            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['xp']));
+            && !request.resource.data.diff(resource.data).affectedKeys()
+                 .hasAny(privilegedUserFields()))
+        // A person may join the one school that invited their email.
+        || (isUser(userId)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['institutionId'])
+            && incoming().institutionId is string
+            && exists(/databases/$(database)/documents/institutions/$(incoming().institutionId)/invites/$(request.auth.token.email)));
       allow delete: if isAdmin();
+
+      // Sparks wallet ledger
+      match /spark_transactions/{txId} {
+        allow read, create: if isUser(userId) || isAdmin();
+        allow update, delete: if isAdmin();
+      }
+
+      // Per-user push tokens written by the Poketschool app.
+      // The path owner is the signed-in user, so a missing userId field is still theirs.
+      match /deviceTokens/{tokenId} {
+        allow read: if false;
+        allow create, update, delete: if isUser(userId);
+      }
     }
 
+    // ── Programmes (curriculum) ───────────────────────────────
     match /programmes/{programmeId} {
       allow read: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
 
+    // ── Unit mastery quiz attempts ────────────────────────────
     match /unit_quiz_attempts/{attemptId} {
       allow read: if isSignedIn() && (
         resource.data.studentId == request.auth.uid
-        || isAdmin()
-        || linkedTo(resource.data.studentId)
-        || (isTeacherOrAdmin() && ownsCourse(resource.data.courseId))
+        || isTeacherOrAdmin()
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.childIds.hasAny([resource.data.studentId])
       );
-      allow create, update, delete: if false;
+      allow create: if isSignedIn() && incoming().studentId == request.auth.uid;
+      allow update, delete: if isAdmin();
     }
 
+    // ── Product access policy ────────────────────────────────
+    // A policy is active when include is a non-empty list. Courses without
+    // one keep the audience rules above. Country and region stay writable by
+    // the user, so a region gate can be self-reported. Seat and analytics
+    // counters move by a fixed step; a client can still repeat that step.
+    function policyOn(data) {
+      return data.keys().hasAny(['accessPolicy'])
+        && data.accessPolicy is map
+        && data.accessPolicy.keys().hasAny(['include'])
+        && data.accessPolicy.include is list
+        && data.accessPolicy.include.size() > 0;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasItems(data, key) {
+      return data.accessPolicy.keys().hasAny([key])
+        && data.accessPolicy[key] is list
+        && data.accessPolicy[key].size() > 0;
+    }
+
+    function targetingEmpty(data) {
+      return !hasItems(data, 'programmeIds')
+        && !hasItems(data, 'yearGroups')
+        && !hasItems(data, 'levels')
+        && !hasItems(data, 'countries')
+        && !hasItems(data, 'regions')
+        && !hasItems(data, 'languages');
+    }
+
+    function targeted(data) {
+      return (!hasItems(data, 'programmeIds') || data.accessPolicy.programmeIds.hasAny([userDoc().get('programmeId', '')]))
+        && (!hasItems(data, 'yearGroups') || data.accessPolicy.yearGroups.hasAny([userDoc().get('yearGroup', '')]))
+        && (!hasItems(data, 'levels') || data.accessPolicy.levels.hasAny([userDoc().get('level', '')]))
+        && (!hasItems(data, 'countries') || data.accessPolicy.countries.hasAny([userDoc().get('country', '').upper()]))
+        && (!hasItems(data, 'regions') || data.accessPolicy.regions.hasAny([userDoc().get('region', '')]))
+        && (!hasItems(data, 'languages') || data.accessPolicy.languages.hasAny([userDoc().get('language', 'en')]));
+    }
+
+    function uidGrant(courseId) {
+      return exists(/databases/$(database)/documents/courses/$(courseId)/grants/$(request.auth.uid))
+        && get(/databases/$(database)/documents/courses/$(courseId)/grants/$(request.auth.uid)).data.get('active', true) != false;
+    }
+
+    function emailGrant(courseId) {
+      return request.auth.token.email is string
+        && exists(/databases/$(database)/documents/courses/$(courseId)/grants/$(request.auth.token.email.lower()))
+        && get(/databases/$(database)/documents/courses/$(courseId)/grants/$(request.auth.token.email.lower())).data.get('active', true) != false;
+    }
+
+    function grantActive(courseId) {
+      return isSignedIn() && (uidGrant(courseId) || emailGrant(courseId));
+    }
+
+    function institutionIncluded(data) {
+      return myInstitution() != null
+        && !data.accessPolicy.get('excludeInstitutionIds', []).hasAny([myInstitution()])
+        && (data.accessPolicy.get('institutionMode', 'specific') == 'all'
+            || data.accessPolicy.get('institutionIds', []).hasAny([myInstitution()])
+            || data.get('allocatedInstitutionIds', []).hasAny([myInstitution()]));
+    }
+
+    function includeHit(data, courseId) {
+      return data.accessPolicy.include.hasAny(['marketplace'])
+        || (isSignedIn() && (
+          data.accessPolicy.include.hasAny(['all'])
+          || (role() == 'student' && data.accessPolicy.include.hasAny(['students']))
+          || (role() == 'teacher' && data.accessPolicy.include.hasAny(['teachers']))
+          || (role() == 'parent' && data.accessPolicy.include.hasAny(['parents']))
+          || (data.accessPolicy.include.hasAny(['institutions']) && institutionIncluded(data))
+          || (data.accessPolicy.include.hasAny(['users']) && data.accessPolicy.get('userIds', []).hasAny([request.auth.uid]))
+          || (data.accessPolicy.include.hasAny(['cohorts']) && userDoc().get('cohortIds', []).hasAny(data.accessPolicy.get('cohortIds', [])))
+          || grantActive(courseId)
+        ));
+    }
+
+    function excludeHit(data) {
+      return (!isSignedIn() && data.accessPolicy.get('exclude', []).hasAny(['marketplace']))
+        || (isSignedIn() && (
+          data.accessPolicy.get('exclude', []).hasAny(['all'])
+          || data.accessPolicy.get('excludeUserIds', []).hasAny([request.auth.uid])
+          || (myInstitution() != null && data.accessPolicy.get('excludeInstitutionIds', []).hasAny([myInstitution()]))
+          || userDoc().get('cohortIds', []).hasAny(data.accessPolicy.get('excludeCohortIds', []))
+          || (role() == 'student' && data.accessPolicy.get('exclude', []).hasAny(['students']))
+          || (role() == 'teacher' && data.accessPolicy.get('exclude', []).hasAny(['teachers']))
+          || (role() == 'parent' && data.accessPolicy.get('exclude', []).hasAny(['parents']))
+          || (data.accessPolicy.get('exclude', []).hasAny(['institutions']) && myInstitution() != null
+              && (data.accessPolicy.get('institutionMode', 'specific') == 'all'
+                  || data.accessPolicy.get('institutionIds', []).hasAny([myInstitution()])))
+        ));
+    }
+
+    function enrolledHere(courseId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/courses/$(courseId)/enrollments/$(request.auth.uid));
+    }
+
+    function enrollmentStart(courseId) {
+      let enrolledAt = get(/databases/$(database)/documents/courses/$(courseId)/enrollments/$(request.auth.uid)).data.enrolledAt;
+      return timestamp.date(enrolledAt.year(), enrolledAt.month(), enrolledAt.day());
+    }
+
+    function isoReady(value) {
+      return value is string && value.size() >= 10;
+    }
+
+    function released(data) {
+      return !data.accessPolicy.keys().hasAny(['releaseOn'])
+        || !isoReady(data.accessPolicy.releaseOn)
+        || request.time >= timestamp.date(
+             int(data.accessPolicy.releaseOn[0:4]),
+             int(data.accessPolicy.releaseOn[5:7]),
+             int(data.accessPolicy.releaseOn[8:10]));
+    }
+
+    function beforeExpiry(data) {
+      return !data.accessPolicy.keys().hasAny(['expiresOn'])
+        || !isoReady(data.accessPolicy.expiresOn)
+        || request.time < timestamp.date(
+             int(data.accessPolicy.expiresOn[0:4]),
+             int(data.accessPolicy.expiresOn[5:7]),
+             int(data.accessPolicy.expiresOn[8:10])) + duration.value(1, 'd');
+    }
+
+    function withinAccessDays(data, courseId) {
+      return !data.accessPolicy.keys().hasAny(['accessDays'])
+        || !(data.accessPolicy.accessDays is int)
+        || data.accessPolicy.accessDays <= 0
+        || !enrolledHere(courseId)
+        || request.time < enrollmentStart(courseId) + duration.value(data.accessPolicy.accessDays + 1, 'd');
+    }
+
+    function trialOpen(data, courseId) {
+      return !data.accessPolicy.keys().hasAny(['trialDays'])
+        || !(data.accessPolicy.trialDays is int)
+        || data.accessPolicy.trialDays <= 0
+        || !enrolledHere(courseId)
+        || get(/databases/$(database)/documents/courses/$(courseId)/enrollments/$(request.auth.uid)).data.get('trial', false) != true
+        || request.time < enrollmentStart(courseId) + duration.value(data.accessPolicy.trialDays + 1, 'd');
+    }
+
+    function nonNegative(n) {
+      return n > 0 ? n : 0;
+    }
+
+    function dripSteps(data, courseId, moduleId) {
+      return data.accessPolicy.dripMode == 'unit'
+        ? nonNegative(get(/databases/$(database)/documents/courses/$(courseId)/modules/$(moduleId)).data.get('order', 1) - 1)
+        : nonNegative(resource.data.get('order', 1) - 1);
+    }
+
+    function dripOpen(data, courseId, moduleId) {
+      return !data.accessPolicy.keys().hasAny(['dripMode'])
+        || data.accessPolicy.dripMode == 'none'
+        || !(data.accessPolicy.get('dripEveryDays', 0) is int)
+        || data.accessPolicy.dripEveryDays <= 0
+        || !enrolledHere(courseId)
+        || request.time >= enrollmentStart(courseId) + duration.value(dripSteps(data, courseId, moduleId) * data.accessPolicy.dripEveryDays, 'd');
+    }
+
+    function scheduleOpen(data, courseId, moduleId) {
+      return released(data) && beforeExpiry(data) && withinAccessDays(data, courseId) && trialOpen(data, courseId) && dripOpen(data, courseId, moduleId);
+    }
+
+    function seatsOpen(courseId) {
+      let data = get(/databases/$(database)/documents/courses/$(courseId)).data;
+      return !policyOn(data)
+        || !data.accessPolicy.keys().hasAny(['seatLimit'])
+        || !(data.accessPolicy.seatLimit is int)
+        || data.accessPolicy.seatLimit <= 0
+        || data.accessPolicy.get('seatsUsed', 0) < data.accessPolicy.seatLimit;
+    }
+
+    function seatsUnchanged() {
+      return isAdmin()
+        || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['accessPolicy'])
+        || !resource.data.keys().hasAny(['accessPolicy'])
+        || !(resource.data.accessPolicy is map)
+        || !resource.data.accessPolicy.keys().hasAny(['seatsUsed'])
+        || (request.resource.data.keys().hasAny(['accessPolicy'])
+            && request.resource.data.accessPolicy is map
+            && request.resource.data.accessPolicy.keys().hasAny(['seatsUsed'])
+            && request.resource.data.accessPolicy.seatsUsed == resource.data.accessPolicy.seatsUsed);
+    }
+
+    function seatIncrement(courseId) {
+      return isSignedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['accessPolicy'])
+        && resource.data.keys().hasAny(['accessPolicy'])
+        && resource.data.accessPolicy is map
+        && request.resource.data.accessPolicy is map
+        && request.resource.data.accessPolicy.diff(resource.data.accessPolicy).affectedKeys().hasOnly(['seatsUsed'])
+        && request.resource.data.accessPolicy.seatsUsed == resource.data.accessPolicy.get('seatsUsed', 0) + 1
+        && (isTeacherOrAdmin()
+            || (!exists(/databases/$(database)/documents/courses/$(courseId)/enrollments/$(request.auth.uid))
+                && existsAfter(/databases/$(database)/documents/courses/$(courseId)/enrollments/$(request.auth.uid))));
+    }
+
+    function plusOne(field) {
+      return isSignedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([field])
+        && request.resource.data[field] is number
+        && request.resource.data[field] == resource.data.get(field, 0) + 1;
+    }
+
+    function revenueIncrement(courseId) {
+      return isSignedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['revenueTotal'])
+        && request.resource.data.revenueTotal is number
+        && !exists(/databases/$(database)/documents/courses/$(courseId)/purchases/$(request.auth.uid))
+        && existsAfter(/databases/$(database)/documents/courses/$(courseId)/purchases/$(request.auth.uid))
+        && getAfter(/databases/$(database)/documents/courses/$(courseId)/purchases/$(request.auth.uid)).data.userId == request.auth.uid
+        && getAfter(/databases/$(database)/documents/courses/$(courseId)/purchases/$(request.auth.uid)).data.amount is number
+        && getAfter(/databases/$(database)/documents/courses/$(courseId)/purchases/$(request.auth.uid)).data.amount > 0
+        && request.resource.data.revenueTotal == resource.data.get('revenueTotal', 0) + getAfter(/databases/$(database)/documents/courses/$(courseId)/purchases/$(request.auth.uid)).data.amount;
+    }
+
+    function ownsCourse(courseId) {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/courses/$(courseId)).data.ownerId == request.auth.uid;
+    }
+
+    // A public marketplace listing. Teachers may prepare one, but only an
+    // admin may set the published public state. Editing a listing an admin
+    // already approved is allowed when that state does not change.
+    function marketplaceListing(data) {
+      return data.status == 'published'
+        && (
+          data.get('isPublic', false) == true
+          || (data.keys().hasAny(['accessPolicy'])
+              && data.accessPolicy is map
+              && data.accessPolicy.keys().hasAny(['include'])
+              && data.accessPolicy.include is list
+              && data.accessPolicy.include.hasAny(['marketplace']))
+          || (data.keys().hasAny(['audiences'])
+              && data.audiences is list
+              && data.audiences.hasAny(['marketplace']))
+        );
+    }
+
+    function teacherCourseUpdate() {
+      return isTeacherOrAdmin()
+        && resource.data.ownerId == request.auth.uid
+        && incoming().ownerId == resource.data.ownerId
+        && seatsUnchanged()
+        && (
+          !marketplaceListing(incoming())
+          || marketplaceListing(resource.data)
+        );
+    }
+
+    function couponGrantCreate(courseId) {
+      return isSignedIn()
+        && incoming().kind == 'coupon'
+        && incoming().active == true
+        && incoming().userId == request.auth.uid
+        && incoming().courseId == courseId
+        && incoming().code is string
+        && exists(/databases/$(database)/documents/coupon_codes/$(incoming().code))
+        && get(/databases/$(database)/documents/coupon_codes/$(incoming().code)).data.active == true
+        && get(/databases/$(database)/documents/coupon_codes/$(incoming().code)).data.discountPct >= 100
+        && get(/databases/$(database)/documents/coupon_codes/$(incoming().code)).data.courseId == courseId
+        && get(/databases/$(database)/documents/coupon_codes/$(incoming().code)).data.expiresAt == incoming().expiresOn
+        && request.time < timestamp.date(
+             int(incoming().expiresOn[0:4]),
+             int(incoming().expiresOn[5:7]),
+             int(incoming().expiresOn[8:10])) + duration.value(1, 'd');
+    }
+
+    // ── Courses ───────────────────────────────────────────────
     match /courses/{courseId} {
-      allow read: if isSignedIn()
-        || (resource.data.status == 'published' && resource.data.isPublic == true);
+      // Published marketplace courses are browsable without an account —
+      // the marketplace advertises "browse and buy without an account".
+      // A course that sets `audiences` is listed only for those audiences.
+      // Courses without the field keep the older signed-in read.
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.ownerId == request.auth.uid)
+        || (enrolledHere(courseId) && (!policyOn(resource.data) || !excludeHit(resource.data)))
+        || (!policyOn(resource.data) && !audienceGated(resource.data) && (
+             isSignedIn()
+             || (resource.data.status == 'published' && resource.data.isPublic == true)
+           ))
+        || (!policyOn(resource.data) && audienceGated(resource.data)
+            && resource.data.status == 'published'
+            && (
+              resource.data.audiences.hasAny(['marketplace'])
+              || (isSignedIn() && audienceHit(resource.data))
+            ))
+        || (policyOn(resource.data)
+            && resource.data.status == 'published'
+            && !excludeHit(resource.data)
+            && includeHit(resource.data, courseId)
+            && (
+              (isSignedIn() && (enrolledHere(courseId) || targeted(resource.data)))
+              || (!isSignedIn() && targetingEmpty(resource.data) && resource.data.accessPolicy.include.hasAny(['marketplace']))
+            ));
       allow create: if isAdmin()
-        || (isTeacherOrAdmin() && incoming().ownerId == request.auth.uid);
-      allow update: if isAdmin()
-        || (isTeacherOrAdmin() && resource.data.ownerId == request.auth.uid)
-        || (isSignedIn()
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['enrollmentCount'])
-            && request.resource.data.enrollmentCount == resource.data.get('enrollmentCount', 0) + 1);
-      allow delete: if isAdmin();
+        || (isTeacherOrAdmin()
+            && incoming().ownerId == request.auth.uid
+            && !marketplaceListing(incoming()));
+      // The owner may edit their course. Counters still move by one for
+      // enrolment, views, completion, and revenue. An admin may edit any course.
+      allow update: if (isAdmin() && seatsUnchanged())
+        || teacherCourseUpdate()
+        || seatIncrement(courseId)
+        || plusOne('enrollmentCount')
+        || plusOne('viewCount')
+        || plusOne('completionCount')
+        || revenueIncrement(courseId);
+      allow delete: if isAdmin()
+        || (isTeacherOrAdmin() && resource.data.ownerId == request.auth.uid);
 
       match /enrollments/{studentId} {
-        allow read: if isUser(studentId)
-          || isAdmin()
-          || isInstitutionAdmin()
-          || ownsCourse(courseId)
-          || linkedTo(resource.data.studentId);
-        allow create: if (
-            isUser(studentId)
-            && incoming().studentId == studentId
-            && incoming().get('progress', 0) == 0
-            && incoming().get('completedLessons', []).size() == 0
-            && !incoming().keys().hasAny(['unlockedFormats'])
-            && isSelfServe(courseId)
-          ) || (
-            ownsCourse(courseId) && incoming().studentId == studentId
-          ) || isAdmin();
-        allow update: if isAdmin() || ownsCourse(courseId);
-        allow delete: if isUser(studentId) || isAdmin() || ownsCourse(courseId);
+        allow read: if isSignedIn();
+        // Enrol yourself, or be enrolled by a teacher/admin. A seat limit
+        // refuses a new self-enrolment once seatsUsed has reached it.
+        allow create: if isAdmin()
+          || (isTeacherOrAdmin() && ownsCourse(courseId))
+          || (isUser(studentId) && seatsOpen(courseId));
+        allow update: if isUser(studentId) || isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId));
+        allow delete: if isUser(studentId) || isAdmin();
+      }
+
+      match /grants/{grantId} {
+        allow read: if isTeacherOrAdmin()
+          || isUser(grantId)
+          || (isSignedIn() && request.auth.token.email is string && request.auth.token.email.lower() == grantId);
+        allow create: if ((isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId)))
+              && incoming().kind == 'user'
+              && incoming().active is bool)
+          || (grantId == request.auth.uid && couponGrantCreate(courseId));
+        allow update: if (isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId)))
+          && incoming().kind == 'user'
+          && incoming().active is bool;
+        allow delete: if isAdmin();
+      }
+
+      match /access_audit/{entryId} {
+        allow read: if isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId));
+        allow create: if (isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId)))
+          && incoming().actorId == request.auth.uid
+          && incoming().action is string
+          && incoming().detail is string;
+        allow update, delete: if false;
+      }
+
+      match /purchases/{userId} {
+        allow read: if isAdmin() || isUser(userId);
+        allow create: if isUser(userId)
+          && incoming().userId == userId
+          && incoming().amount is number
+          && incoming().amount > 0;
+        allow update, delete: if false;
+      }
+
+      match /reviews/{userId} {
+        allow read: if isSignedIn()
+          || get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published';
+        allow create, update: if isUser(userId)
+          && exists(/databases/$(database)/documents/courses/$(courseId)/enrollments/$(request.auth.uid))
+          && incoming().rating is int
+          && incoming().rating >= 1
+          && incoming().rating <= 5
+          && incoming().userId == request.auth.uid;
+        allow delete: if isUser(userId) || isAdmin();
+      }
+
+      match /questions/{questionId} {
+        allow read: if isAdmin()
+          || (isTeacherOrAdmin() && ownsCourse(courseId))
+          || enrolledHere(courseId);
+        allow create: if isSignedIn()
+          && incoming().authorId == request.auth.uid
+          && incoming().text is string
+          && incoming().text.size() > 0
+          && incoming().text.size() < 2000
+          && (enrolledHere(courseId) || ownsCourse(courseId));
+        allow update: if isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId));
+        allow delete: if isAdmin()
+          || (isTeacherOrAdmin() && ownsCourse(courseId))
+          || (isSignedIn() && resource.data.authorId == request.auth.uid);
       }
 
       match /modules/{moduleId} {
+        // Chapter titles are public so the marketplace can show a course's
+        // curriculum before signup, the way every course marketplace does.
+        // Module documents hold titles and ordering only — no lesson content.
         allow read: if true;
-        allow create, update: if isAdmin() || isInstitutionAdmin() || ownsCourse(courseId);
-        allow delete: if isAdmin();
+        allow create, update: if isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId));
+        allow delete: if isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId));
 
         match /lessons/{lessonId} {
+          // Deliberately NOT public: lesson documents carry aiOutputs, the
+          // full generated content the paywall exists to protect.
+          // Audience-gated courses open the full lesson to enrolled learners
+          // and to staff in that audience. Everyone else gets the free preview.
           allow read: if isAdmin()
-            || isInstitutionAdmin()
-            || ownsCourse(courseId)
-            || (enrolledIn(courseId) && !resource.data.keys().hasAny(['aiOutputs']));
-          allow create, update: if isAdmin() || isInstitutionAdmin() || ownsCourse(courseId);
-          allow delete: if isAdmin();
-
-          match /protected/{docId} {
-            allow read, write: if isAdmin() || isInstitutionAdmin() || ownsCourse(courseId);
-          }
+            || (isSignedIn() && get(/databases/$(database)/documents/courses/$(courseId)).data.ownerId == request.auth.uid)
+            || (!policyOn(get(/databases/$(database)/documents/courses/$(courseId)).data)
+                && (
+                  enrolledHere(courseId)
+                  || (!audienceGated(get(/databases/$(database)/documents/courses/$(courseId)).data) && isSignedIn())
+                  || (isSignedIn()
+                      && audienceGated(get(/databases/$(database)/documents/courses/$(courseId)).data)
+                      && get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published'
+                      && audienceHit(get(/databases/$(database)/documents/courses/$(courseId)).data)
+                      && (
+                        role() in ['teacher', 'institution_admin', 'admin']
+                        || resource.data.get('order', 999) <= get(/databases/$(database)/documents/courses/$(courseId)).data.get('freePreviewCount', 1)
+                      ))
+                ))
+            || (policyOn(get(/databases/$(database)/documents/courses/$(courseId)).data)
+                && isSignedIn()
+                && !excludeHit(get(/databases/$(database)/documents/courses/$(courseId)).data)
+                && (
+                  (role() in ['teacher', 'institution_admin']
+                    && get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published'
+                    && includeHit(get(/databases/$(database)/documents/courses/$(courseId)).data, courseId))
+                  || (scheduleOpen(get(/databases/$(database)/documents/courses/$(courseId)).data, courseId, moduleId)
+                      && (
+                        enrolledHere(courseId)
+                        || grantActive(courseId)
+                        || (get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published'
+                            && includeHit(get(/databases/$(database)/documents/courses/$(courseId)).data, courseId)
+                            && get(/databases/$(database)/documents/courses/$(courseId)).data.accessPolicy.get('freePreviewCount', 0) is int
+                            && resource.data.get('order', 999) <= get(/databases/$(database)/documents/courses/$(courseId)).data.accessPolicy.get('freePreviewCount', 0))
+                      ))
+                ));
+          allow create, update: if isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId));
+          allow delete: if isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId));
         }
       }
     }
 
+    // ── Coupon codes ──────────────────────────────────────────
     match /coupon_codes/{code} {
+      // Readable so a student can validate a code they were given.
       allow read: if isSignedIn();
-      allow create, delete: if isAdmin();
+      allow create: if isAdmin()
+        || (isTeacherOrAdmin()
+            && incoming().createdBy == request.auth.uid
+            && incoming().courseId is string
+            && ownsCourse(incoming().courseId)
+            && incoming().code is string
+            && incoming().code == code
+            && incoming().discountPct is number
+            && incoming().discountPct >= 1
+            && incoming().discountPct <= 100);
+      allow delete: if isAdmin()
+        || (isSignedIn()
+            && resource.data.createdBy == request.auth.uid
+            && ownsCourse(resource.data.courseId));
+      // A redeemer may only bump the counter by one and add themselves to the
+      // redeemed list. The course owner may turn their own code on or off.
       allow update: if isAdmin()
         || (isSignedIn()
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['usedCount', 'redeemedBy'])
             && request.resource.data.usedCount == resource.data.usedCount + 1
             && request.resource.data.redeemedBy.hasAll(resource.data.redeemedBy)
-            && request.auth.uid in request.resource.data.redeemedBy);
+            && request.auth.uid in request.resource.data.redeemedBy)
+        || (isSignedIn()
+            && resource.data.createdBy == request.auth.uid
+            && ownsCourse(resource.data.courseId)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active'])
+            && incoming().active is bool);
     }
 
+    // ── Coupon redemptions ────────────────────────────────────
+    // A redemption is the record of a coupon grant. It lives here rather than
+    // as a permission string on the profile because users cannot be trusted to
+    // write their own permissions — the rule below re-reads the real coupon and
+    // refuses anything that does not match it, so a forged redemption is
+    // impossible even though the write comes from the client.
     match /coupon_redemptions/{redemptionId} {
       allow read: if isSignedIn()
         && (resource.data.userId == request.auth.uid || isTeacherOrAdmin());
@@ -219,305 +715,563 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ── Institutions ──────────────────────────────────────────
     match /institutions/{institutionId} {
+      // Readable while signed out so a white-label subdomain can resolve its
+      // branding before anyone logs in.
       allow read: if true;
       allow create, delete: if isAdmin();
+      // An institution admin may edit their own institution — branding,
+      // subdomain — but not create or remove one, and not touch another's.
       allow update: if isAdmin()
         || (isInstitutionAdmin() && myInstitution() == institutionId);
+
+      match /licences/{licenceId} {
+        allow read: if isAdmin() || (isSignedIn() && myInstitution() == institutionId);
+        allow create, update, delete: if isAdmin();
+      }
+
+      match /classes/{classId} {
+        allow read: if isAdmin() || (isSignedIn() && myInstitution() == institutionId);
+        allow create, update, delete: if isAdmin()
+          || (isInstitutionAdmin() && myInstitution() == institutionId);
+      }
+
+      match /invites/{emailId} {
+        allow read: if isAdmin()
+          || (isInstitutionAdmin() && myInstitution() == institutionId)
+          || (isSignedIn() && request.auth.token.email == emailId);
+        allow create, update: if isAdmin()
+          || (isInstitutionAdmin() && myInstitution() == institutionId && incoming().email == emailId);
+        allow delete: if isAdmin() || (isInstitutionAdmin() && myInstitution() == institutionId);
+      }
+
+      match /members/{memberId} {
+        allow read: if isAdmin()
+          || isUser(memberId)
+          || (isSignedIn() && myInstitution() == institutionId);
+        allow create: if isAdmin()
+          || (isInstitutionAdmin() && myInstitution() == institutionId)
+          || (isUser(memberId)
+              && exists(/databases/$(database)/documents/institutions/$(institutionId)/invites/$(request.auth.token.email)));
+        allow update, delete: if isAdmin()
+          || (isInstitutionAdmin() && myInstitution() == institutionId);
+      }
     }
 
+    match /join_codes/{code} {
+      allow read: if isSignedIn();
+      allow create, update: if isAdmin()
+        || (isInstitutionAdmin() && incoming().institutionId == myInstitution());
+      allow delete: if isAdmin();
+    }
+
+    // ── Badges ────────────────────────────────────────────────
     match /badges/{badgeId} {
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if false;
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
 
+    // Adult-only direct messages. The mobile app reads this collection.
+    // Minors use class channels, never this inbox. fromId must be the caller
+    // so a student cannot forge a teacher.
     match /messages/{messageId} {
       allow read: if isSignedIn() && (
         resource.data.fromId == request.auth.uid ||
         resource.data.toId == request.auth.uid
-      );
-      allow create: if isSignedIn() && incoming().fromId == request.auth.uid;
+      ) && callerAgeTier() == 'adult'
+        && userAgeTier(resource.data.fromId) == 'adult'
+        && userAgeTier(resource.data.toId) == 'adult';
+      allow create: if isSignedIn() && dmCreateOk();
       allow update: if isSignedIn()
         && resource.data.toId == request.auth.uid
+        && callerAgeTier() == 'adult'
+        && userAgeTier(resource.data.fromId) == 'adult'
+        && userAgeTier(resource.data.toId) == 'adult'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
       allow delete: if isAdmin();
     }
 
+    // ── Lesson Notes ─────────────────────────────────────────
     match /lesson_notes/{noteId} {
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create, update: if isSignedIn() && incoming().userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow read, update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
     }
 
+    // ── Submissions ───────────────────────────────────────────
     match /submissions/{submissionId} {
       allow read: if isSignedIn() && (
-        resource.data.studentId == request.auth.uid
-        || isAdmin()
-        || linkedTo(resource.data.studentId)
-        || (isTeacherOrAdmin() && ownsCourse(resource.data.courseId))
+        resource.data.studentId == request.auth.uid || isTeacherOrAdmin()
       );
-      allow create: if isSignedIn() && incoming().studentId == request.auth.uid;
-      allow update: if isTeacherOrAdmin() && (isAdmin() || ownsCourse(resource.data.courseId));
+      allow create: if isSignedIn();
+      allow update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
     }
 
+    // ── Live Classes ──────────────────────────────────────────
     match /live_classes/{classId} {
       allow read: if isSignedIn();
       allow create, update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
     }
 
+    // ── Exams ─────────────────────────────────────────────────
     match /exams/{examId} {
       allow read: if isSignedIn();
-      allow create: if isTeacherOrAdmin() && incoming().createdBy == request.auth.uid;
-      allow update, delete: if isAdmin() || (isTeacherOrAdmin() && resource.data.createdBy == request.auth.uid);
+      allow create, update: if isTeacherOrAdmin();
+      allow delete: if isAdmin();
     }
 
+    // ── Exam Submissions ──────────────────────────────────────
     match /exam_submissions/{submissionId} {
       allow read: if isSignedIn() && (
-        resource.data.studentId == request.auth.uid
-        || isAdmin()
-        || linkedTo(resource.data.studentId)
-        || isTeacherOrAdmin()
+        resource.data.studentId == request.auth.uid || isTeacherOrAdmin()
       );
-      allow create: if isSignedIn() && incoming().studentId == request.auth.uid;
+      allow create: if isSignedIn();
       allow update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
     }
 
+    // ── Assignments ───────────────────────────────────────────
     match /assignments/{assignmentId} {
       allow read: if isSignedIn();
-      allow create: if isTeacherOrAdmin() && incoming().createdBy == request.auth.uid;
-      allow update, delete: if isAdmin() || (isTeacherOrAdmin() && resource.data.createdBy == request.auth.uid);
+      allow create, update: if isTeacherOrAdmin();
+      allow delete: if isAdmin();
     }
 
+    // ── Announcements ─────────────────────────────────────────
     match /announcements/{announcementId} {
-      allow read: if isSignedIn() && (
-        resource.data.get('status', 'published') == 'published'
-        || resource.data.createdBy == request.auth.uid
-        || isAdmin()
-      );
-      allow create: if isTeacherOrAdmin() && incoming().createdBy == request.auth.uid;
-      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.createdBy == request.auth.uid);
+      allow read: if isSignedIn();
+      allow create, update: if isTeacherOrAdmin() || isAdmin();
+      allow delete: if isAdmin();
     }
 
+    // ── Calendar Events ───────────────────────────────────────
     match /calendar_events/{eventId} {
       allow read: if isSignedIn();
-      allow create, update, delete: if isTeacherOrAdmin();
+      allow create, update: if isTeacherOrAdmin();
+      allow delete: if isTeacherOrAdmin();
     }
 
+    // ── Resources ─────────────────────────────────────────────
     match /resources/{resourceId} {
       allow read: if isSignedIn();
-      allow create, update, delete: if isTeacherOrAdmin();
+      allow create, update: if isTeacherOrAdmin();
+      allow delete: if isTeacherOrAdmin();
     }
 
+    // ── Support Tickets ───────────────────────────────────────
     match /support_tickets/{ticketId} {
       allow read: if isSignedIn() && (
-        resource.data.userId == request.auth.uid || isAdmin()
+        resource.data.userId == request.auth.uid || isTeacherOrAdmin()
       );
-      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow create: if isSignedIn();
       allow update: if isSignedIn() && (
-        resource.data.userId == request.auth.uid || isAdmin()
+        resource.data.userId == request.auth.uid || isTeacherOrAdmin()
       );
       allow delete: if isAdmin();
     }
 
+    // ── AI Generations (user library) ─────────────────────────
+    match /users/{userId}/ai_generations/{genId} {
+      allow read, create: if isUser(userId);
+      allow delete: if isUser(userId) || isAdmin();
+    }
+
+    // ── Study tools: exam preps, maths sessions, exam packs ────
+    // Private to the student. A linked parent can read progress (never
+    // write it); nobody else can see it.
+    function isParentOf(uid) {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('childIds', []).hasAny([uid]);
+    }
+
+    match /users/{userId}/exam_preps/{prepId} {
+      allow read: if isUser(userId) || isParentOf(userId) || isAdmin();
+      allow create: if isUser(userId) && incoming().ownerId == userId;
+      allow update: if isUser(userId) && incoming().ownerId == userId;
+      allow delete: if isUser(userId);
+
+      // Material, cached lessons and quizzes, exam attempts.
+      match /{sub=**} {
+        allow read: if isUser(userId) || isParentOf(userId) || isAdmin();
+        allow write: if isUser(userId);
+      }
+    }
+
+    match /users/{userId}/math_sessions/{sessionId} {
+      allow read: if isUser(userId) || isParentOf(userId) || isAdmin();
+      allow write: if isUser(userId);
+    }
+
+    match /users/{userId}/pack_progress/{packId} {
+      allow read: if isUser(userId) || isParentOf(userId) || isAdmin();
+      allow write: if isUser(userId);
+
+      // Cached question sets for each topic.
+      match /{sub=**} {
+        allow read: if isUser(userId) || isParentOf(userId) || isAdmin();
+        allow write: if isUser(userId);
+      }
+    }
+
+    // A classmate can read a shared plan's content to start their own copy;
+    // only the person who shared it can change or withdraw it.
+    match /shared_preps/{shareId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
+      allow update, delete: if isSignedIn()
+        && (resource.data.ownerId == request.auth.uid || isAdmin());
+    }
+
+    // "Something's wrong with this answer" reports, reviewed by admins.
+    match /ai_reports/{reportId} {
+      allow create: if isSignedIn() && incoming().uid == request.auth.uid;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // ── Behaviour Records ─────────────────────────────────────
     match /behaviour_records/{recordId} {
-      allow read: if isSignedIn() && (
-        isAdmin()
-        || resource.data.studentId == request.auth.uid
-        || resource.data.recordedBy == request.auth.uid
-        || linkedTo(resource.data.studentId)
-      );
-      allow create: if isTeacherOrAdmin() && incoming().recordedBy == request.auth.uid;
-      allow update: if isAdmin() || resource.data.recordedBy == request.auth.uid;
-      allow delete: if isAdmin();
-    }
-
-    match /attendance/{recordId} {
-      allow read: if isSignedIn() && (
-        isAdmin()
-        || resource.data.get('teacherId', '') == request.auth.uid
-        || resource.data.get('studentId', '') == request.auth.uid
-        || linkedTo(resource.data.get('studentId', ''))
-      );
+      allow read: if isSignedIn();
       allow create, update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
     }
 
+    // ── Attendance Records ────────────────────────────────────
+    match /attendance/{recordId} {
+      allow read: if isSignedIn();
+      allow create, update: if isTeacherOrAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Invoices / Billing ────────────────────────────────────
     match /invoices/{invoiceId} {
       allow read: if isSignedIn() && (
-        resource.data.studentId == request.auth.uid
-        || resource.data.createdBy == request.auth.uid
-        || isAdmin()
-        || linkedTo(resource.data.studentId)
+        resource.data.studentId == request.auth.uid || isTeacherOrAdmin()
       );
-      allow create: if isTeacherOrAdmin() && incoming().createdBy == request.auth.uid;
-      allow update: if isAdmin() || resource.data.createdBy == request.auth.uid;
+      // A student buying a course raises their own invoice. Without this the
+      // purchase completed with no billing record at all, because the client
+      // swallowed the permission error. They may only raise an unpaid invoice
+      // for themselves — marking one paid stays with teachers and admins.
+      allow create: if isTeacherOrAdmin()
+        || (isSignedIn()
+            && incoming().studentId == request.auth.uid
+            && incoming().status in ['sent', 'draft']);
+      allow update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
     }
 
+    // ── Report Cards ──────────────────────────────────────────
     match /report_cards/{cardId} {
-      allow read: if isSignedIn() && (
-        isAdmin()
-        || resource.data.studentId == request.auth.uid
-        || resource.data.get('teacherId', '') == request.auth.uid
-        || linkedTo(resource.data.studentId)
-      );
+      allow read: if isSignedIn();
       allow create, update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
     }
 
+    // ── Integrity Reports ─────────────────────────────────────
     match /integrity_reports/{reportId} {
-      allow read: if isTeacherOrAdmin();
+      allow read: if isSignedIn();
       allow create, update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
     }
 
+    // ── Certificates ──────────────────────────────────────────
     match /certificates/{certId} {
-      allow get: if true;
-      allow list: if isSignedIn() && (
-        resource.data.studentId == request.auth.uid
-        || isTeacherOrAdmin()
-        || linkedTo(resource.data.studentId)
-      );
+      allow read: if isSignedIn();
       allow create: if isTeacherOrAdmin();
       allow delete: if isAdmin();
     }
 
+    // ── Tasks ─────────────────────────────────────────────────
     match /tasks/{taskId} {
       allow read: if isSignedIn() && (
         resource.data.userId == request.auth.uid ||
         resource.data.assignedTo == request.auth.uid ||
         resource.data.createdBy == request.auth.uid ||
-        isAdmin()
+        isTeacherOrAdmin()
       );
-      allow create: if isSignedIn() && (
-        incoming().userId == request.auth.uid || incoming().createdBy == request.auth.uid
-      );
-      allow update: if isSignedIn() && (
-        resource.data.userId == request.auth.uid
-        || resource.data.assignedTo == request.auth.uid
-        || resource.data.createdBy == request.auth.uid
-        || isAdmin()
-      );
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
       allow delete: if isSignedIn() && (
-        resource.data.userId == request.auth.uid || isAdmin()
+        resource.data.userId == request.auth.uid || isTeacherOrAdmin()
       );
     }
 
+    // ── Daily Goals (student accountability) ──────────────────
     match /daily_goals/{goalId} {
       allow read: if isSignedIn() && (
         resource.data.studentId == request.auth.uid
-        || isAdmin()
-        || linkedTo(resource.data.studentId)
+        || isTeacherOrAdmin()
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.childIds.hasAny([resource.data.studentId])
       );
       allow create: if isSignedIn() && incoming().studentId == request.auth.uid;
       allow update: if isSignedIn() && (
         resource.data.studentId == request.auth.uid
-        || isAdmin()
-        || linkedTo(resource.data.studentId)
+        || isTeacherOrAdmin()
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.childIds.hasAny([resource.data.studentId])
       );
       allow delete: if isSignedIn() && (
         resource.data.studentId == request.auth.uid || isAdmin()
       );
     }
 
+    // ── Grades ────────────────────────────────────────────────
     match /grades/{gradeId} {
       allow read: if isSignedIn() && (
-        resource.data.studentId == request.auth.uid
-        || isAdmin()
-        || linkedTo(resource.data.studentId)
-        || (isTeacherOrAdmin() && ownsCourse(resource.data.courseId))
+        resource.data.studentId == request.auth.uid || isTeacherOrAdmin()
       );
-      allow create: if isAdmin() || isInstitutionAdmin() || (isTeacherOrAdmin() && ownsCourse(incoming().courseId));
-      allow update: if isAdmin() || isInstitutionAdmin() || (isTeacherOrAdmin() && ownsCourse(resource.data.courseId));
+      allow create, update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
     }
 
+    // ── Grade weights (doc id = courseId) ─────────────────────
     match /grade_weights/{courseId} {
       allow read: if isSignedIn();
-      allow write: if isAdmin() || ownsCourse(courseId);
+      allow write: if isTeacherOrAdmin();
     }
 
+    // ── Assignment Submissions ────────────────────────────────
     match /assignment_submissions/{submissionId} {
       allow read: if isSignedIn() && (
-        resource.data.studentId == request.auth.uid
-        || isAdmin()
-        || linkedTo(resource.data.studentId)
-        || (isTeacherOrAdmin() && ownsCourse(resource.data.courseId))
+        resource.data.studentId == request.auth.uid || isTeacherOrAdmin()
       );
       allow create: if isSignedIn() && incoming().studentId == request.auth.uid;
-      allow update: if isTeacherOrAdmin() && (isAdmin() || ownsCourse(resource.data.courseId));
+      allow update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
     }
 
+    // ── Attendance Records ────────────────────────────────────
     match /attendance_records/{recordId} {
-      allow read: if isSignedIn() && (
-        isAdmin()
-        || resource.data.teacherId == request.auth.uid
-        || ownsCourse(resource.data.courseId)
-        || resource.data.get('studentIds', []).hasAny([request.auth.uid])
-        || resource.data.get('studentIds', []).hasAny(myChildIds())
-      );
-      allow create: if isTeacherOrAdmin() && (isAdmin() || incoming().teacherId == request.auth.uid);
-      allow update: if isTeacherOrAdmin() && (isAdmin() || resource.data.teacherId == request.auth.uid);
+      allow read: if isSignedIn();
+      allow create, update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
     }
 
+    // ── Notifications ─────────────────────────────────────────
     match /notifications/{notificationId} {
       allow read, update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && (
-        incoming().userId == request.auth.uid || isTeacherOrAdmin()
-      );
+      allow create: if isSignedIn();
     }
 
+    // ── Chat Messages (live class rooms) ──────────────────────
     match /chat_messages/{messageId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && incoming().senderId == request.auth.uid;
+      allow create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
 
+    // ── Teacher notification signups (emails subcollection) ───
     match /teacher_notifications/{teacherId}/emails/{emailId} {
       allow create: if isSignedIn();
       allow read: if isTeacherOrAdmin();
       allow update, delete: if isAdmin();
     }
 
+    // ── Parent verification requests ──────────────────────────
     match /parent_verifications/{verificationId} {
-      allow create: if isSignedIn() && incoming().parentId == request.auth.uid;
+      allow create: if isSignedIn();
       allow read, update: if isAdmin();
       allow delete: if isAdmin();
     }
 
-    match /parent_links/{linkId} {
-      allow create: if isSignedIn()
-        && incoming().parentId == request.auth.uid
-        && incoming().status == 'pending'
-        && !incoming().keys().hasAny(['studentName']);
-      allow read: if isSignedIn() && (
-        resource.data.parentId == request.auth.uid
-        || resource.data.studentId == request.auth.uid
-        || isAdmin()
-      );
-      allow update: if isSignedIn()
-        && resource.data.studentId == request.auth.uid
-        && resource.data.status == 'pending'
-        && request.resource.data.status == 'rejected'
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
-      allow delete: if isAdmin();
-    }
-
+    // ── Platform settings (admin console) ─────────────────────
     match /platform_settings/{docId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
 
+    // ── Public pricing (admin-managed). Deploy with the rest of these rules.
+    match /pricing_config/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Who changed a price. Clients may append a row for themselves; nobody edits history.
+    match /pricing_audit/{auditId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && incoming().actorId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // ── User sessions (device history) ────────────────────────
     match /user_sessions/{sessionId} {
       allow read, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn() && incoming().userId == request.auth.uid;
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Shared image library. Storage holds the bytes at media/{scopeId}/{name}.
+    // This document is the metadata a course or a book can list again.
+    match /media_assets/{assetId} {
+      allow read: if isSignedIn() && (
+        resource.data.ownerId == request.auth.uid || isTeacherOrAdmin()
+      );
+      allow create: if isSignedIn()
+        && incoming().ownerId == request.auth.uid
+        && incoming().scopeId is string
+        && incoming().src is string
+        && incoming().alt is string;
+      allow update: if isSignedIn()
+        && resource.data.ownerId == request.auth.uid
+        && incoming().ownerId == request.auth.uid;
+      allow delete: if isSignedIn() && (
+        resource.data.ownerId == request.auth.uid || isAdmin()
+      );
+    }
+
+    // Admin action history. Super admins read it. Any platform admin can append.
+    match /admin_audit/{entryId} {
+      allow read: if callerIsSuper();
+      allow create: if isAdmin() && incoming().actorId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /admin_invites/{emailId} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && callerIsSuper()
+        || (isAdmin() && incoming().staffRole != 'super_admin');
+      allow delete: if callerIsSuper();
+    }
+
+    match /platform_signals/{signalId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ── Device push tokens (Poketschool app + web) ───────────
+    // Clients may register and remove their own device. They may not read
+    // or list the collection; the Admin SDK delivers pushes.
+    // Delete has no new document, so the new userId is checked only when
+    // request.resource exists.
+    match /deviceTokens/{deviceId} {
+      allow read: if false;
+
+      allow create: if isSignedIn()
+        && incoming().userId == request.auth.uid;
+
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && incoming().userId == request.auth.uid;
+
+      allow delete: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && (request.resource == null || request.resource.data.userId == request.auth.uid);
+    }
+
+    // Poket Reads. Client writes of ownership, Sparks, and leaderboard
+    // totals stay denied. The Admin SDK bypasses these rules.
+    match /books/{bookId} {
+      allow read: if resource.data.status == 'published' || isAdmin();
+      allow create, update, delete: if isAdmin();
+      match /chapters/{chapterId} {
+        allow read: if isAdmin()
+          || (isSignedIn() && get(/databases/$(database)/documents/books/$(bookId)).data.status == 'published')
+          || (resource.data.preview == true
+              && get(/databases/$(database)/documents/books/$(bookId)).data.status == 'published');
+        allow write: if isAdmin();
+      }
+      match /languageVersions/{lang} {
+        allow read: if isAdmin() || resource.data.status == 'approved';
+        allow write: if isAdmin();
+      }
+    }
+    match /library/{id} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+    match /readingSessions/{id} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+    match /leaderboards/{id} {
+      allow read: if isSignedIn() && resource.data.optIn == true && resource.data.hidden != true;
+      allow write: if false;
+    }
+
+    // ── Community feed (shared with the Expo app) ─────────────
+    // Collections: spaces, posts, comments, reactions, follows, reports,
+    // moderation_queue, and messages (adult DMs, above).
+    match /community_profiles/{userId} {
+      allow read: if isSignedIn() && role() != 'parent' && resource.data.ageTier == callerAgeTier();
+      allow create: if isUser(userId)
+        && incoming().ageTier == callerAgeTier()
+        && incoming().ageTier in ['under13', 'teen', 'adult'];
+      allow update: if isUser(userId)
+        && request.resource.data.ageTier == resource.data.ageTier
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['displayName', 'bio', 'isPublic', 'adultDmOptIn', 'updatedAt']);
+      allow delete: if isAdmin();
+    }
+
+    match /spaces/{spaceId} {
+      allow read: if isSignedIn() && canSeeSpaceData(resource.data);
+      allow create, update, delete: if false;
+    }
+
+    match /posts/{postId} {
+      allow read: if isSignedIn() && (
+        resource.data.authorId == request.auth.uid
+        || (resource.data.moderation == 'allow' && canSeeSpaceData(spaceDoc(resource.data.spaceId)))
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /comments/{commentId} {
+      allow read: if isSignedIn() && (
+        resource.data.authorId == request.auth.uid
+        || (resource.data.moderation == 'allow' && canSeeSpaceData(spaceDoc(resource.data.spaceId)))
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /reactions/{reactionId} {
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid
+        || canSeeSpaceData(spaceDoc(get(/databases/$(database)/documents/posts/$(resource.data.postId)).data.spaceId))
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /follows/{followId} {
+      allow read: if isSignedIn()
+        && role() != 'parent'
+        && (resource.data.followerId == request.auth.uid || resource.data.targetId == request.auth.uid)
+        && resource.data.followerAgeTier == resource.data.targetAgeTier
+        && resource.data.followerAgeTier == callerAgeTier();
+      allow create: if isSignedIn()
+        && role() != 'parent'
+        && incoming().followerId == request.auth.uid
+        && incoming().followerAgeTier == callerAgeTier()
+        && incoming().targetAgeTier == userAgeTier(incoming().targetId)
+        && incoming().followerAgeTier == incoming().targetAgeTier
+        && incoming().targetId != request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.followerId == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /reports/{reportId} {
+      allow read: if isSignedIn() && (resource.data.reporterId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn()
+        && incoming().reporterId == request.auth.uid
+        && incoming().reporterAgeTier == callerAgeTier()
+        && incoming().status == 'open';
+      allow update, delete: if isAdmin();
+    }
+
+    match /moderation_queue/{itemId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /parent_controls/{studentId} {
+      allow read: if isUser(studentId) || linkedTo(studentId) || isAdmin();
+      allow create, update: if linkedTo(studentId)
+        && incoming().studentId == studentId
+        && incoming().communityEnabled is bool
+        && incoming().messagingEnabled is bool
+        && incoming().snapEnabled is bool;
+      allow delete: if isAdmin();
     }
 
     // Money, secrets and webhook claims are server-only. The Admin SDK bypasses these rules.

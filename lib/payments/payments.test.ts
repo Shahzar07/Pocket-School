@@ -6,7 +6,7 @@ import { summariseFinance, reconcile } from './finance';
 import { planGrants, planReversal, teacherPayoutMajor } from './fulfillment';
 import { verifyGatewayNotice } from './gateway-notice';
 import { claimDecision } from './idempotency';
-import { canonicalMethod, methodsFor } from './methods';
+import { canonicalMethod, methodsFor, stripeTypesForCharge, walletChargeMethod } from './methods';
 import { buildQuote, QuoteError } from './quote';
 import { harrySetup, isPlaceholder, maskSecret, missingRequired, describeSecret, SECRET_SLOTS } from './secrets';
 import { billplzSignature, ipay88Amount, ipay88Signature, rmsSignature } from './signatures';
@@ -40,6 +40,14 @@ describe('payment methods follow country, currency and flags', () => {
     expect(ids).toEqual(expect.arrayContaining(['card', 'fpx', 'grabpay', 'tng', 'boost', 'shopeepay', 'duitnow_qr']));
     expect(canonicalMethod("Touch 'n Go")).toBe('tng');
     expect(canonicalMethod('touchngo')).toBe('tng');
+    expect(stripeTypesForCharge('card', 'MYR', 'book')).toEqual(['card', 'fpx', 'grabpay']);
+    expect(stripeTypesForCharge('fpx', 'MYR', 'book')).toEqual(['fpx']);
+    expect(stripeTypesForCharge('card', 'MYR', 'reads')).toEqual(['card']);
+    expect(stripeTypesForCharge('card', 'USD', 'book')).toEqual(['card']);
+    expect(walletChargeMethod('book', ['card', 'fpx', 'grabpay', 'touchngo'])).toBe('card');
+    expect(walletChargeMethod('book', ['touchngo'])).toBe('tng');
+    expect(walletChargeMethod('book', undefined, 'touchngo')).toBe('tng');
+    expect(walletChargeMethod('reads', ['touchngo'])).toBe('card');
   });
 
   it('hides the Malaysian gateway when its flag is off', () => {
@@ -72,11 +80,11 @@ describe('quotes, family seats, SST and affiliates', () => {
   it('adds 8% SST for a Malaysian buyer and pays the affiliate on the pre-tax amount', () => {
     const item = subscriptionItem('professional', 'month');
     const quote = buildQuote({ item: item!, country: 'MY', coupon });
-    expect(quote.discount).toBe(1.9);
+    expect(quote.discount).toBe(9.9);
     expect(quote.taxRate).toBe(0.08);
-    expect(quote.tax).toBe(1.37);
-    expect(quote.total).toBe(18.47);
-    expect(quote.commission).toBe(1.71);
+    expect(quote.tax).toBe(7.13);
+    expect(quote.total).toBe(96.23);
+    expect(quote.commission).toBe(8.91);
     expect(quote.taxLabel).toBe('SST');
   });
 

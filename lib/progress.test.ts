@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
 import { countCompleted, isPublishedLesson, progressPercent, splitLessons } from './progress';
 
 describe('progress', () => {
@@ -9,23 +10,23 @@ describe('progress', () => {
   ];
 
   it('treats a missing status as published', () => {
-    expect(isPublishedLesson({ id: 'c' })).toBe(true);
-    expect(isPublishedLesson({ id: 'b', status: 'draft' })).toBe(false);
+    assert.equal(isPublishedLesson({ id: 'c' }), true);
+    assert.equal(isPublishedLesson({ id: 'b', status: 'draft' }), false);
   });
 
   it('uses the same published list for the catalogue and the percentage', () => {
     const split = splitLessons(lessons, 'curriculum');
-    expect(split.published.map((l) => l.id)).toEqual(['a', 'c']);
-    expect(split.upcoming.map((l) => l.id)).toEqual(['b']);
-    expect(progressPercent(countCompleted(['a'], split.published), split.published.length)).toBe(50);
+    assert.deepEqual(split.published.map((l) => l.id), ['a', 'c']);
+    assert.deepEqual(split.upcoming.map((l) => l.id), ['b']);
+    assert.equal(progressPercent(countCompleted(['a'], split.published), split.published.length), 50);
   });
 
   it('does not count a draft toward the percentage', () => {
     const split = splitLessons(lessons, 'curriculum');
-    expect(progressPercent(countCompleted(['b'], split.published), split.published.length)).toBe(0);
+    assert.equal(progressPercent(countCompleted(['b'], split.published), split.published.length), 0);
   });
 
   it('is zero for an empty course', () => {
-    expect(progressPercent(3, 0)).toBe(0);
+    assert.equal(progressPercent(3, 0), 0);
   });
 });

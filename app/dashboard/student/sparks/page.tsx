@@ -45,7 +45,7 @@ export default function SparksPage() {
         <h2 className="font-semibold mb-2">Monthly allowance by plan</h2>
         <ul className="space-y-1 text-sm">
           {TIERS.filter((t) => t.sparks > 0).map((t) => (
-            <li key={t.id}>{t.name}{t.usd ? ` · ${t.usd === 0 ? 'Free' : `$${t.usd}/mo`}` : ''}: ⚡{t.sparks.toLocaleString()} a month, ⚡{t.sparksRollover.toLocaleString()} can roll over</li>
+            <li key={t.id}>{t.name}: ⚡{t.sparks.toLocaleString()} a month, ⚡{t.sparksRollover.toLocaleString()} can roll over</li>
           ))}
         </ul>
       </div>

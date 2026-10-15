@@ -108,3 +108,32 @@ export function availableFormats(outputs?: AiOutputs): string[] {
     return true;
   });
 }
+
+/**
+ * Sparks for the study tools. Charged only after the AI succeeds, so a failed
+ * generation never costs anything, and generated material is cached so the
+ * student pays once per item, not per view.
+ */
+export const STUDY_COSTS = {
+  examPrep: 20,
+  lesson: 5,
+  flashcards: 3,
+  quiz: 3,
+  truefalse: 2,
+  exercises: 4,
+  podcast: 8,
+  mock: 15,
+  oral: 15,
+  mathSolve: 1,
+  packSet: 4,
+  topicChat: 0,
+} as const;
+
+/**
+ * Sparks to AI-translate one lesson into another language.
+ * Charged only after the model returns a translation, and only after the
+ * editor confirms. Typing a translation by hand is free.
+ */
+export const LESSON_TRANSLATION_COST = 8;
+
+export type StudyCostKey = keyof typeof STUDY_COSTS;

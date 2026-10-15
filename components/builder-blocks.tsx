@@ -15,7 +15,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { VideoPlayer } from '@/components/video-player';
 import { SmartAudioPlayer } from '@/components/smart-audio-player';
-import { RichTextEditor } from '@/components/rich-text-editor';
+import { LessonManuscript } from '@/components/lesson-manuscript';
+import type { ImportResult } from '@/components/editor';
 import {
   AlertTriangle, Check, Copy, GripVertical, Loader2, Plus, Sparkles, Trash2, X,
 } from 'lucide-react';
@@ -42,6 +43,8 @@ export const BLOCK_DEFS: BlockDef[] = [
   { id: 'objectives', icon: '🎯', label: 'Objectives' },
   { id: 'video', icon: '🎬', label: 'Video', sparks: 15 },
   { id: 'text', icon: '📝', label: 'Lesson Text' },
+  { id: 'image', icon: '🏞️', label: 'Image' },
+  { id: 'illustration', icon: '🎨', label: 'Illustration', sparks: 15 },
   { id: 'vocabulary', icon: '📖', label: 'Vocabulary', sparks: 5 },
   { id: 'activity', icon: '✏️', label: 'Activity' },
   { id: 'quiz', icon: '✅', label: 'Quiz', sparks: 5 },
@@ -93,7 +96,26 @@ export function BlockShell({
       }`}
     >
       <header className="flex items-center gap-2 px-4 py-2.5 border-b border-border/60">
-        <GripVertical className="w-4 h-4 text-muted-foreground/40 cursor-grab shrink-0" />
+        <button
+          type="button"
+          draggable
+          aria-label={`Reorder ${def.label}. Alt and the arrow keys move it.`}
+          title="Drag to reorder. Alt+Arrow also moves this block."
+          className="p-0.5 rounded cursor-grab text-muted-foreground/50 hover:text-foreground active:cursor-grabbing"
+          onClick={event => event.stopPropagation()}
+          onKeyDown={event => {
+            if (!event.altKey) return;
+            if (event.key === 'ArrowUp') { event.preventDefault(); onMoveUp?.(); }
+            if (event.key === 'ArrowDown') { event.preventDefault(); onMoveDown?.(); }
+          }}
+          onDragStart={event => {
+            event.stopPropagation();
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', `block:${def.id}`);
+          }}
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
         <span className="text-base leading-none">{def.icon}</span>
         <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{def.label}</span>
         {bloom && (
@@ -315,7 +337,7 @@ function VideoEmbed({ url }: { url: string }) {
 
 /* ── Lesson text ────────────────────────────────────────────── */
 
-export function LessonTextBlock({ value, onChange, ai, generating, onImprove, improving }: {
+export function LessonTextBlock({ value, onChange, ai, generating, onImprove, improving, storageKey, onImport, onPasteImages }: {
   value: string;
   onChange: (v: string) => void;
   ai: AiRunner;
@@ -323,6 +345,9 @@ export function LessonTextBlock({ value, onChange, ai, generating, onImprove, im
   /** ET: rewrites the existing text in place (expand / simplify / tighten). */
   onImprove?: (instruction: string) => void;
   improving?: boolean;
+  storageKey: string;
+  onImport?: (result: ImportResult) => void;
+  onPasteImages?: (files: File[]) => void;
 }) {
   const words = value.trim() ? value.trim().split(/\s+/).length : 0;
   return (
@@ -331,11 +356,14 @@ export function LessonTextBlock({ value, onChange, ai, generating, onImprove, im
         <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
         Don’t paste copyrighted textbook content. Write original material or use licensed sources — AI checks flag verbatim textbook passages.
       </div>
-      <RichTextEditor
+      <LessonManuscript
+        key={storageKey}
         value={value}
         onChange={onChange}
-        minHeight={176}
+        storageKey={storageKey}
         placeholder="Write or generate the core lesson text…"
+        onImport={onImport}
+        onPasteImages={onPasteImages}
       />
       <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
         <span>~{Math.max(1, Math.round(words / 200))} min read</span>
@@ -658,13 +686,24 @@ export function AssessmentBlock({ value, onChange, ai, generating, onDraftSectio
 
 /* ── Audio (simple preview using SmartAudioPlayer) ─────────── */
 
-export function AudioBlock({ script, ai, generating }: { script?: string; ai: AiRunner; generating: boolean }) {
-  if (!script) {
+export function AudioBlock({
+  script, ai, generating, scriptStatus,
+}: {
+  script?: string;
+  ai: AiRunner;
+  generating: boolean;
+  scriptStatus?: 'queued' | 'generating' | 'done' | 'failed' | null;
+}) {
+  const writing = generating || scriptStatus === 'queued' || scriptStatus === 'generating';
+  if (!script?.trim()) {
     return (
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">No audio summary yet.</p>
+        <p className="text-sm text-muted-foreground">
+          {writing ? 'The audio script is being written.' : scriptStatus === 'failed' ? 'The audio script failed. Try again.' : 'No audio summary yet.'}
+        </p>
         <Button size="sm" className="rounded-xl gap-1.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white" disabled={generating} onClick={() => ai('audioScript')}>
-          {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} Generate Audio Script
+          {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+          {writing ? 'Writing the audio script…' : 'Generate Audio Script'}
         </Button>
       </div>
     );

@@ -66,9 +66,22 @@ export async function POST(req: NextRequest) {
   let script = '';
   let voice: string = 'Kore';
   let style = '';
+  /** Two-voice podcast: lines tagged A/B, each read by its own voice. */
+  let dialogue: { speaker: 'A' | 'B'; text: string }[] | null = null;
+  let voices: { A: string; B: string } = { A: 'Kore', B: 'Puck' };
   try {
     const body = await req.json();
-    script = (body.script ?? '').toString();
+    if (Array.isArray(body.dialogue) && body.dialogue.length) {
+      dialogue = body.dialogue
+        .slice(0, 40)
+        .map((l: { speaker?: string; text?: string }) => ({ speaker: l.speaker === 'B' ? 'B' : 'A', text: String(l.text ?? '').slice(0, 800) }))
+        .filter((l: { text: string }) => l.text.trim());
+      const pick = (v: unknown, d: string) => (typeof v === 'string' && (VOICES as readonly string[]).includes(v) ? v : d);
+      voices = { A: pick(body.voices?.A, 'Kore'), B: pick(body.voices?.B, 'Puck') };
+      script = dialogue!.map(l => l.text).join(' ');
+    } else {
+      script = (body.script ?? '').toString();
+    }
     if (body.voice && (VOICES as readonly string[]).includes(body.voice)) voice = body.voice;
     style = (body.style ?? '').toString().slice(0, 300);
   } catch {
@@ -84,7 +97,12 @@ export async function POST(req: NextRequest) {
   const spoken = cleanForSpeech(script).slice(0, 6000);
   // Style direction goes in as an instruction prefix, which the TTS model
   // interprets as delivery guidance rather than content to read out.
-  const text = style ? `${style}\n\nSay this:\n${spoken}` : spoken;
+  const twoVoices = !!dialogue && dialogue.some(l => l.speaker === 'B');
+  const text = twoVoices
+    ? `Read this revision podcast as a natural, warm conversation between Host and Guest:\n${dialogue!
+        .map(l => `${l.speaker === 'B' ? 'Guest' : 'Host'}: ${cleanForSpeech(l.text)}`)
+        .join('\n')}`.slice(0, 7000)
+    : style ? `${style}\n\nSay this:\n${spoken}` : spoken;
 
   try {
     const ai = new GoogleGenAI({ apiKey });
@@ -93,9 +111,16 @@ export async function POST(req: NextRequest) {
       contents: [{ role: 'user', parts: [{ text }] }],
       config: {
         responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } },
-        },
+        speechConfig: twoVoices
+          ? {
+              multiSpeakerVoiceConfig: {
+                speakerVoiceConfigs: [
+                  { speaker: 'Host', voiceConfig: { prebuiltVoiceConfig: { voiceName: voices.A } } },
+                  { speaker: 'Guest', voiceConfig: { prebuiltVoiceConfig: { voiceName: voices.B } } },
+                ],
+              },
+            }
+          : { voiceConfig: { prebuiltVoiceConfig: { voiceName: dialogue ? voices.A : voice } } },
       },
     });
 

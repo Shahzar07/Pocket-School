@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { getAnnouncements, createAnnouncement, deleteAnnouncement, updateAnnouncement, getTeacherCourses, Announcement, Course } from '@/lib/db';
+import { getAnnouncements, createAnnouncement, deleteAnnouncement, updateAnnouncement, Announcement } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -38,23 +38,14 @@ export default function AnnouncementsPage() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [preview, setPreview] = useState(false);
-  const [form, setForm] = useState({
-    title: '',
-    content: '',
-    priority: 'normal' as Announcement['priority'],
-    audience: 'all' as string,
-    courseId: 'all',
-    status: 'published' as 'draft' | 'published',
-  });
+  const [form, setForm] = useState({ title: '', content: '', priority: 'normal' as Announcement['priority'], audience: 'all' as string });
 
   const canCreate = profile?.role === 'teacher' || profile?.role === 'admin';
 
   const load = async () => {
     if (!profile) return;
     const audience = profile.role === 'student' ? 'students' : profile.role === 'parent' ? 'parents' : 'all';
-    const data = await getAnnouncements(audience as 'all' | 'students' | 'parents' | 'teachers', undefined, user?.uid);
+    const data = await getAnnouncements(audience as 'all' | 'students' | 'parents' | 'teachers');
     setAnnouncements(data.sort((a, b) => {
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;
@@ -64,10 +55,6 @@ export default function AnnouncementsPage() {
   };
 
   useEffect(() => { load(); }, [profile]);
-  useEffect(() => {
-    if (!user || (profile?.role !== 'teacher' && profile?.role !== 'admin' && profile?.role !== 'institution_admin')) return;
-    getTeacherCourses(user.uid).then(setCourses).catch(() => setCourses([]));
-  }, [user, profile?.role]);
 
   const handleCreate = async () => {
     if (!user || !form.title.trim() || !form.content.trim()) {
@@ -81,16 +68,13 @@ export default function AnnouncementsPage() {
         content: form.content.trim(),
         priority: form.priority,
         audience: form.audience as Announcement['audience'],
-        courseId: form.courseId === 'all' ? undefined : form.courseId,
-        status: form.status,
         pinned: false,
         createdBy: user.uid,
         createdByName: profile?.name ?? 'Staff',
         createdAt: Timestamp.now(),
       });
-      toast.success(form.status === 'draft' ? 'Draft saved.' : 'Announcement published.');
-      setForm({ title: '', content: '', priority: 'normal', audience: 'all', courseId: 'all', status: 'published' });
-      setPreview(false);
+      toast.success('Announcement created!');
+      setForm({ title: '', content: '', priority: 'normal', audience: 'all' });
       setShowCreate(false);
       await load();
     } catch { toast.error('Failed to create announcement.'); }
@@ -153,16 +137,6 @@ export default function AnnouncementsPage() {
           </div>
           <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Title *" className="rounded-xl h-11 bg-muted/50" />
           <Textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} placeholder="Message *" className="rounded-xl min-h-24 text-sm resize-none bg-muted/50" />
-          {preview && (
-            <div className="rounded-2xl border border-dashed border-primary/40 bg-primary/5 p-4">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary mb-1">Preview · {form.status}</p>
-              <p className="font-heading text-xl">{form.title || 'Untitled'}</p>
-              <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{form.content || 'Your message will appear here.'}</p>
-              <p className="text-xs text-muted-foreground mt-2">
-                {form.courseId === 'all' ? 'Whole school' : (courses.find((c) => c.id === form.courseId)?.title || 'One class')} · {form.audience}
-              </p>
-            </div>
-          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Priority</label>
@@ -189,39 +163,10 @@ export default function AnnouncementsPage() {
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Class</label>
-              <Select value={form.courseId} onValueChange={v => setForm(f => ({ ...f, courseId: v ?? 'all' }))}>
-                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Whole school</SelectItem>
-                  {courses.map((course) => (
-                    <SelectItem key={course.id} value={course.id}>{course.title || course.subject || 'Class'}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Status</label>
-              <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: (v ?? 'published') as 'draft' | 'published' }))}>
-                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="published">Publish now</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" onClick={() => setPreview((value) => !value)} className="rounded-full h-11 px-5 font-bold">
-              {preview ? 'Hide preview' : 'Preview'}
-            </Button>
-            <Button onClick={handleCreate} disabled={saving} className="flex-1 rounded-full h-11 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white gap-2">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Megaphone className="w-4 h-4" />}
-              {form.status === 'draft' ? 'Save draft' : 'Post announcement'}
-            </Button>
-          </div>
+          <Button onClick={handleCreate} disabled={saving} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white gap-2">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Megaphone className="w-4 h-4" />}
+            Post Announcement
+          </Button>
         </motion.div>
       )}
 
@@ -247,8 +192,6 @@ export default function AnnouncementsPage() {
                     {ann.pinned && <Pin className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
                     <h3 className="font-bold text-foreground">{ann.title}</h3>
                     <Badge className={`rounded-full text-[10px] ${PRIORITY_STYLES[ann.priority]}`}>{ann.priority}</Badge>
-                    {ann.status === 'draft' && <Badge className="rounded-full text-[10px] bg-muted text-muted-foreground">Draft</Badge>}
-                    {ann.courseId && <Badge className="rounded-full text-[10px] bg-emerald-500/10 text-emerald-700">One class</Badge>}
                     <Badge className="rounded-full text-[10px] bg-muted text-muted-foreground">{ann.audience}</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">{ann.content}</p>

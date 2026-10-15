@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isNextResponse, requireUser } from '@/lib/api-guard';
 import { tierDefinition, type AccessTier } from '@/lib/entitlements';
 import { tierFromId } from '@/lib/server/actions';
-import { annualAmount, PLATFORM_CURRENCY } from '@/lib/money';
+import { PLATFORM_CURRENCY } from '@/lib/money';
+import { planById, seedPricing } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +19,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'That plan is not sold online.' }, { status: 400 });
   }
   const def = tierDefinition(tier as AccessTier);
-  const monthly = def.usd ?? 0;
+  const pricing = seedPricing();
+  const monthly = planById(pricing, def.id)?.monthlyUsd ?? 0;
   if (monthly <= 0) return NextResponse.json({ error: 'That plan has no price.' }, { status: 400 });
   const origin = req.nextUrl.origin;
   const Stripe = (await import('stripe')).default;
@@ -30,7 +32,9 @@ export async function POST(req: NextRequest) {
       quantity: 1,
       price_data: {
         currency: PLATFORM_CURRENCY.toLowerCase(),
-        unit_amount: body.annual ? Math.round(annualAmount(monthly) * 100) : Math.round(monthly * 100),
+        unit_amount: body.annual
+          ? Math.round(monthly * 12 * (1 - pricing.annualDiscount) * 100)
+          : Math.round(monthly * 100),
         recurring: { interval: body.annual ? 'year' : 'month' },
         product_data: { name: `Poket School — ${def.name}` },
       },

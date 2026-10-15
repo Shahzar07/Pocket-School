@@ -10,30 +10,37 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import Link from 'next/link';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { authedFetch } from '@/lib/api-client';
 import {
   getAllUsers, ensureAdminSparks, accountStatusOf,
-  setAccountStatus, setAccountStatusBulk, deleteUserProfile, deleteUserProfiles,
   type UserProfile, type AccountStatus,
 } from '@/lib/db';
 import { ADMIN_SPARKS_GRANT } from '@/lib/sparks';
 import { ROLE_LABELS, isSuperAdmin, type Role } from '@/lib/roles';
+import {
+  STAFF_LABELS, STAFF_ROLES, can, filterDirectory, resolveStaffRole,
+  type DirectoryUser, type StaffRole,
+} from '@/lib/admin-console';
+import {
+  adjustSparks, changeAccountState, inviteStaff, resetStaffPassword, revokeStaffSessions,
+  type ConsoleProfile,
+} from '@/lib/admin-actions';
+import { writeViewAs, useViewAs } from '@/components/admin-session';
+import { AdminAccountPanel } from '@/components/admin-account-panel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   Loader2, Search, Sparkles, Users as UsersIcon, Download, Plus, Minus,
-  MoreVertical, ShieldOff, ShieldCheck, KeyRound, Trash2, ChevronLeft, ChevronRight, Info,
+  MoreVertical, ShieldOff, ShieldCheck, KeyRound, ChevronLeft, ChevronRight, Info, Eye,
 } from 'lucide-react';
 
 interface Row { id: string; data: UserProfile }
 
 const ROLE_FILTERS: (Role | 'all')[] = ['all', 'student', 'teacher', 'parent', 'institution_admin', 'admin'];
-const STATUS_FILTERS: (AccountStatus | 'all')[] = ['all', 'active', 'suspended', 'pending', 'inactive'];
+const STATUS_FILTERS: (AccountStatus | 'all')[] = ['all', 'active', 'suspended', 'pending', 'inactive', 'banned', 'deleted'];
 
 const ROLE_BADGE: Record<string, string> = {
   admin: 'bg-violet-500/10 text-violet-600 border-violet-500/20',
@@ -48,6 +55,8 @@ const STATUS_BADGE: Record<AccountStatus, string> = {
   suspended: 'bg-red-500/10 text-red-600 border-red-500/20',
   pending: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
   inactive: 'bg-muted text-muted-foreground border-border',
+  banned: 'bg-red-500/10 text-red-700 border-red-500/20',
+  deleted: 'bg-muted text-muted-foreground border-border',
 };
 
 /** Preset grants — the amounts an admin actually reaches for. */
@@ -80,11 +89,22 @@ export default function AdminUsersPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(1);
 
+  const [staffFilter, setStaffFilter] = useState<StaffRole | 'all'>('all');
+  const [tierFilter, setTierFilter] = useState('all');
+  const [institutionFilter, setInstitutionFilter] = useState('all');
+  const [countryFilter, setCountryFilter] = useState('all');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState<string | null>(null);
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [customFor, setCustomFor] = useState<string | null>(null);
   const [customAmount, setCustomAmount] = useState('');
+  const [sparkReason, setSparkReason] = useState('');
+  const [bulkReason, setBulkReason] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<StaffRole>('admin');
+  const [profileFor, setProfileFor] = useState<Row | null>(null);
+  const viewAs = useViewAs();
+  const actor = resolveStaffRole(profile ? { id: user?.uid, email: profile.email, role: profile.role, adminRole: profile.adminRole } : null);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -115,19 +135,36 @@ export default function AdminUsersPage() {
     return Array.from(set).sort();
   }, [rows]);
 
+  const institutions = useMemo(() => Array.from(new Set(rows.map(r => r.data.institutionId).filter(Boolean) as string[])).sort(), [rows]);
+  const countries = useMemo(() => Array.from(new Set(rows.map(r => r.data.country).filter(Boolean) as string[])).sort(), [rows]);
+
+  const asDirectory = (row: Row): DirectoryUser => ({
+    id: row.id,
+    name: row.data.name ?? '',
+    email: row.data.email ?? '',
+    role: row.data.role ?? '',
+    staffRole: resolveStaffRole({ ...row.data, id: row.id }),
+    tier: row.data.accessTier ?? null,
+    institutionId: row.data.institutionId ?? '',
+    status: accountStatusOf(row.data),
+    country: row.data.country ?? '',
+  });
+
+  const consoleDirectory = useMemo<ConsoleProfile[]>(() => rows.map(row => ({
+    id: row.id,
+    email: row.data.email,
+    role: row.data.role,
+    adminRole: row.data.adminRole ?? '',
+    accountStatus: accountStatusOf(row.data),
+  })), [rows]);
+
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return rows.filter(r => {
-      if (roleFilter !== 'all' && r.data.role !== roleFilter) return false;
-      if (statusFilter !== 'all' && accountStatusOf(r.data) !== statusFilter) return false;
-      if (programmeFilter !== 'all' && (r.data.yearGroup ?? '') !== programmeFilter) return false;
-      if (q) {
-        const hay = `${r.data.name ?? ''} ${r.data.email ?? ''}`.toLowerCase();
-        if (!hay.includes(q)) return false;
-      }
-      return true;
-    });
-  }, [rows, query, roleFilter, statusFilter, programmeFilter]);
+    const allowed = new Set(filterDirectory(rows.map(asDirectory), {
+      query, role: roleFilter, staffRole: staffFilter, tier: tierFilter,
+      institutionId: institutionFilter, status: statusFilter, country: countryFilter,
+    }).map(user => user.id));
+    return rows.filter(row => allowed.has(row.id) && (programmeFilter === 'all' || (row.data.yearGroup ?? '') === programmeFilter));
+  }, [rows, query, roleFilter, statusFilter, programmeFilter, staffFilter, tierFilter, institutionFilter, countryFilter]);
 
   const sorted = useMemo(() => {
     const dir = sortDir === 'asc' ? 1 : -1;
@@ -151,7 +188,7 @@ export default function AdminUsersPage() {
   const pageRows = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   // Any filter change invalidates the current page number.
-  useEffect(() => { setPage(1); }, [query, roleFilter, statusFilter, programmeFilter]);
+  useEffect(() => { setPage(1); }, [query, roleFilter, statusFilter, programmeFilter, staffFilter, tierFilter, institutionFilter, countryFilter]);
 
   const stats = useMemo(() => {
     const total = rows.length;
@@ -172,120 +209,78 @@ export default function AdminUsersPage() {
   const patchRow = (id: string, patch: Partial<UserProfile>) =>
     setRows(list => list.map(r => (r.id === id ? { ...r, data: { ...r.data, ...patch } } : r)));
 
-  /* ── Sparks ── */
+  const actorId = user?.uid ?? '';
+  const actorEmail = profile?.email ?? user?.email ?? '';
+
   const grant = async (row: Row, amount: number) => {
-    const balance = row.data.sparksBalance ?? 0;
-    if (amount < 0 && balance + amount < 0) {
-      toast.error(`${row.data.name} only has ${balance} Sparks.`);
-      return;
-    }
+    if (viewAs) { toast.error('View-as is read-only.'); return; }
     setBusy(row.id);
     try {
-      await authedFetch('/api/platform/sparks-grant', {
-        method: 'POST',
-        body: JSON.stringify({
-          uid: row.id,
-          amount,
-          note: amount > 0 ? 'Granted by admin' : 'Deducted by admin',
-        }),
+      const result = await adjustSparks({
+        actorId, actorEmail, actor, directory: consoleDirectory,
+        target: { id: row.id, email: row.data.email, role: row.data.role, adminRole: row.data.adminRole ?? '', accountStatus: accountStatusOf(row.data) },
+        amount, balance: row.data.sparksBalance ?? 0, reason: sparkReason,
       });
-      patchRow(row.id, { sparksBalance: balance + amount });
-      toast.success(`${amount > 0 ? '+' : ''}${amount} Sparks · ${row.data.name}`);
+      patchRow(row.id, { sparksBalance: (row.data.sparksBalance ?? 0) + amount });
+      toast.success(result.note || `${amount > 0 ? '+' : ''}${amount} Sparks · ${row.data.name}`);
       setCustomFor(null); setCustomAmount('');
     } catch (e: any) {
       toast.error(e?.message || 'Could not update Sparks.');
     } finally { setBusy(null); }
   };
 
-  /* ── Status ── */
-  const changeStatus = async (row: Row, status: AccountStatus) => {
-    if (row.id === user?.uid && status === 'suspended') {
-      toast.error('You cannot suspend your own account.');
-      return;
-    }
-    setBusy(row.id);
-    try {
-      await setAccountStatus(row.id, status);
-      patchRow(row.id, { accountStatus: status });
-      toast.success(`${row.data.name} is now ${status}.`);
-    } catch (e: any) {
-      toast.error(e?.message || 'Could not change that status.');
-    } finally { setBusy(null); }
-  };
-
-  const resetPassword = async (row: Row) => {
-    const email = row.data.email;
-    if (!email) { toast.error('That account has no email address on file.'); return; }
-    setBusy(row.id);
-    try {
-      await sendPasswordResetEmail(auth, email);
-      toast.success(`Reset link sent to ${email}.`);
-    } catch (e: any) {
-      toast.error(e?.message || 'Could not send that reset email.');
-    } finally { setBusy(null); }
-  };
-
-  const removeUser = async (row: Row) => {
-    if (row.id === user?.uid) { toast.error('You cannot delete your own account.'); return; }
-    if (!confirm(
-      `Delete ${row.data.name}?\n\nThis removes their profile, progress and Sparks. Their sign-in `
-      + 'record stays in Firebase Authentication and must be removed there separately.\n\nThis cannot be undone.',
-    )) return;
-    setBusy(row.id);
-    try {
-      await deleteUserProfile(row.id);
-      setRows(list => list.filter(r => r.id !== row.id));
-      toast.success(`${row.data.name} deleted.`);
-    } catch (e: any) {
-      toast.error(e?.message || 'Could not delete that user.');
-    } finally { setBusy(null); }
-  };
-
-  /* ── Bulk ── */
   const selectedRows = rows.filter(r => selected.has(r.id));
 
   const bulkStatus = async (status: AccountStatus) => {
-    const ids = selectedRows.map(r => r.id).filter(id => !(status === 'suspended' && id === user?.uid));
-    if (!ids.length) return;
+    if (!bulkReason.trim()) { toast.error('A reason is required.'); return; }
     setBusy('bulk');
-    try {
-      await setAccountStatusBulk(ids, status);
-      setRows(list => list.map(r => (ids.includes(r.id) ? { ...r, data: { ...r.data, accountStatus: status } } : r)));
-      toast.success(`${ids.length} account${ids.length === 1 ? '' : 's'} ${status}.`);
-      setSelected(new Set());
-    } catch (e: any) {
-      toast.error(e?.message || 'Bulk update failed.');
-    } finally { setBusy(null); }
+    let done = 0;
+    let failed = '';
+    for (const row of selectedRows) {
+      try {
+        await changeAccountState({
+          actorId, actorEmail, actor, directory: consoleDirectory,
+          target: { id: row.id, email: row.data.email, role: row.data.role, adminRole: row.data.adminRole ?? '', accountStatus: accountStatusOf(row.data) },
+          next: status, reason: bulkReason,
+        });
+        patchRow(row.id, { accountStatus: status, statusReason: bulkReason.trim() });
+        done += 1;
+      } catch (e: any) {
+        failed = e?.message || 'Bulk update failed.';
+      }
+    }
+    if (done) toast.success(`${done} account${done === 1 ? '' : 's'} ${status}.`);
+    if (failed) toast.error(failed);
+    if (done) setSelected(new Set());
+    setBusy(null);
   };
 
-  const bulkDelete = async () => {
-    const ids = selectedRows.map(r => r.id).filter(id => id !== user?.uid);
-    if (!ids.length) return;
-    if (!confirm(`Delete ${ids.length} account${ids.length === 1 ? '' : 's'}? This cannot be undone.`)) return;
-    setBusy('bulk');
+  const sendInvite = async () => {
+    setBusy('invite');
     try {
-      await deleteUserProfiles(ids);
-      setRows(list => list.filter(r => !ids.includes(r.id)));
-      toast.success(`${ids.length} deleted.`);
-      setSelected(new Set());
+      await inviteStaff({ actorId, actorEmail, actor, directory: consoleDirectory, email: inviteEmail, staffRole: inviteRole });
+      toast.success(`Invited ${inviteEmail.trim()} as ${STAFF_LABELS[inviteRole]}.`);
+      setInviteEmail('');
+      await load();
     } catch (e: any) {
-      toast.error(e?.message || 'Bulk delete failed.');
+      toast.error(e?.message || 'Could not send that invite.');
     } finally { setBusy(null); }
   };
 
   const exportCsv = () => {
     const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const csv = [
-      ['Name', 'Email', 'Role', 'Status', 'Year group', 'Sparks', 'Tier', 'Joined'],
+      ['Name', 'Email', 'Role', 'Staff role', 'Status', 'Year group', 'Sparks', 'Tier', 'Institution', 'Country', 'Joined'],
       ...sorted.map(r => [
         r.data.name, r.data.email, ROLE_LABELS[(r.data.role ?? 'student') as Role],
+        resolveStaffRole({ ...r.data, id: r.id }) ?? '',
         accountStatusOf(r.data), r.data.yearGroup ?? '',
-        r.data.sparksBalance ?? 0, r.data.subscriptionTier ?? 'free',
+        r.data.sparksBalance ?? 0, r.data.accessTier ?? r.data.subscriptionTier ?? '',
+        r.data.institutionId ?? '', r.data.country ?? '',
         fmtDate(r.data.createdAt),
       ]),
     ].map(line => line.map(esc).join(',')).join('\n');
-    // BOM so Excel reads UTF-8 names correctly.
-    const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' }));
+    const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' }));
     const a = document.createElement('a');
     a.href = url; a.download = `poket-users-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
     URL.revokeObjectURL(url);
@@ -323,10 +318,17 @@ export default function AdminUsersPage() {
             Every registered account, their access, and their Sparks.
           </p>
         </div>
-        <Button onClick={exportCsv} variant="outline" disabled={sorted.length === 0}
-          className="rounded-full h-11 px-5 font-semibold gap-2">
-          <Download className="w-4 h-4" /> Export CSV
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {can(actor, 'audit') && (
+            <Link href="/dashboard/admin/audit" className="inline-flex items-center h-11 px-5 rounded-full border border-border text-sm font-semibold">
+              Audit
+            </Link>
+          )}
+          <Button onClick={exportCsv} variant="outline" disabled={sorted.length === 0}
+            className="rounded-full h-11 px-5 font-semibold gap-2">
+            <Download className="w-4 h-4" /> Export CSV
+          </Button>
+        </div>
       </motion.header>
 
       {/* Stats */}
@@ -346,22 +348,44 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Bulk bar */}
-      {selected.size > 0 && (
+      {can(actor, 'invite') && (
+        <div className="bg-card border border-border rounded-3xl p-4 flex flex-wrap items-center gap-3">
+          <Input value={inviteEmail} onChange={event => setInviteEmail(event.target.value)}
+            placeholder="Invite by email" aria-label="Invite email" className="rounded-full h-11 max-w-xs" />
+          <select aria-label="Invite role" value={inviteRole} onChange={event => setInviteRole(event.target.value as StaffRole)}
+            className="h-11 rounded-full border border-border bg-card px-4 text-sm font-medium">
+            {STAFF_ROLES.filter(role => role !== 'super_admin' || can(actor, 'manage_super')).map(role => (
+              <option key={role} value={role}>{STAFF_LABELS[role]}</option>
+            ))}
+          </select>
+          <Button onClick={sendInvite} disabled={busy === 'invite' || !inviteEmail.trim()} className="rounded-full h-11 px-5">
+            Invite
+          </Button>
+        </div>
+      )}
+
+      {selected.size > 0 && can(actor, 'moderate') && (
         <div className="flex flex-wrap items-center gap-2 bg-violet-50 border border-violet-200 rounded-2xl px-4 py-3">
           <span className="text-sm font-bold text-violet-700">{selected.size} selected</span>
+          <Input value={bulkReason} onChange={event => setBulkReason(event.target.value)}
+            placeholder="Reason" aria-label="Bulk reason" className="rounded-full h-9 max-w-[220px]" />
           <span className="flex-1" />
           <Button size="sm" variant="outline" disabled={busy === 'bulk'}
             onClick={() => bulkStatus('active')} className="rounded-full h-9 px-4 font-semibold">
-            Activate
+            Restore
           </Button>
           <Button size="sm" variant="outline" disabled={busy === 'bulk'}
             onClick={() => bulkStatus('suspended')} className="rounded-full h-9 px-4 font-semibold">
             Suspend
           </Button>
           <Button size="sm" variant="outline" disabled={busy === 'bulk'}
-            onClick={bulkDelete}
+            onClick={() => bulkStatus('banned')} className="rounded-full h-9 px-4 font-semibold">
+            Ban
+          </Button>
+          <Button size="sm" variant="outline" disabled={busy === 'bulk'}
+            onClick={() => bulkStatus('deleted')}
             className="rounded-full h-9 px-4 font-semibold text-destructive hover:bg-destructive/10">
-            Delete
+            Soft-delete
           </Button>
           <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}
             className="rounded-full h-9 px-4 font-semibold">
@@ -392,6 +416,31 @@ export default function AdminUsersPage() {
             <option key={s} value={s}>{s === 'all' ? 'All statuses' : s}</option>
           ))}
         </select>
+        <select aria-label="Filter by staff role" value={staffFilter}
+          onChange={e => setStaffFilter(e.target.value as StaffRole | 'all')}
+          className="h-11 rounded-full border border-border bg-card px-4 text-sm font-medium">
+          <option value="all">All staff roles</option>
+          {STAFF_ROLES.map(role => <option key={role} value={role}>{STAFF_LABELS[role]}</option>)}
+        </select>
+        <select aria-label="Filter by tier" value={tierFilter} onChange={e => setTierFilter(e.target.value)}
+          className="h-11 rounded-full border border-border bg-card px-4 text-sm font-medium">
+          <option value="all">All tiers</option>
+          {['0', '1', '2', '3', '4', '5', '6'].map(tier => <option key={tier} value={tier}>Tier {tier}</option>)}
+        </select>
+        {institutions.length > 0 && (
+          <select aria-label="Filter by institution" value={institutionFilter} onChange={e => setInstitutionFilter(e.target.value)}
+            className="h-11 rounded-full border border-border bg-card px-4 text-sm font-medium">
+            <option value="all">All institutions</option>
+            {institutions.map(id => <option key={id} value={id}>{id}</option>)}
+          </select>
+        )}
+        {countries.length > 0 && (
+          <select aria-label="Filter by country" value={countryFilter} onChange={e => setCountryFilter(e.target.value)}
+            className="h-11 rounded-full border border-border bg-card px-4 text-sm font-medium">
+            <option value="all">All countries</option>
+            {countries.map(country => <option key={country} value={country}>{country}</option>)}
+          </select>
+        )}
         {programmes.length > 0 && (
           <select aria-label="Filter by year group" value={programmeFilter}
             onChange={e => setProgrammeFilter(e.target.value)}
@@ -488,36 +537,39 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        {PRESETS.map(p => (
-                          <button key={p} disabled={busy === r.id} onClick={() => grant(r, p)}
+                        {can(actor, 'sparks') && PRESETS.map(p => (
+                          <button key={p} disabled={busy === r.id || !!viewAs} onClick={() => { setCustomFor(r.id); setCustomAmount(String(p)); }}
                             title={`Grant ${p} Sparks`}
                             className="text-[11px] font-bold px-2 h-7 rounded-lg border border-border hover:bg-muted disabled:opacity-40">
                             +{p}
                           </button>
                         ))}
-                        {customFor === r.id ? (
+                        {can(actor, 'sparks') && customFor === r.id ? (
                           <span className="flex items-center gap-1">
                             <input type="number" value={customAmount} autoFocus
                               onChange={e => setCustomAmount(e.target.value)}
                               aria-label="Custom Sparks amount"
-                              className="w-20 h-7 rounded-lg border border-border bg-background px-2 text-xs" />
-                            <button disabled={busy === r.id} title="Add"
+                              className="w-16 h-7 rounded-lg border border-border bg-background px-2 text-xs" />
+                            <input value={sparkReason} onChange={e => setSparkReason(e.target.value)}
+                              aria-label="Sparks reason" placeholder="Reason"
+                              className="w-24 h-7 rounded-lg border border-border bg-background px-2 text-xs" />
+                            <button disabled={busy === r.id || !!viewAs} title="Add"
                               onClick={() => grant(r, Math.abs(Number(customAmount) || 0))}
                               className="w-7 h-7 grid place-items-center rounded-lg border border-border hover:bg-muted disabled:opacity-40">
                               <Plus className="w-3.5 h-3.5" />
                             </button>
-                            <button disabled={busy === r.id} title="Deduct"
+                            <button disabled={busy === r.id || !!viewAs} title="Deduct"
                               onClick={() => grant(r, -Math.abs(Number(customAmount) || 0))}
                               className="w-7 h-7 grid place-items-center rounded-lg border border-border hover:bg-muted disabled:opacity-40">
                               <Minus className="w-3.5 h-3.5" />
                             </button>
                           </span>
-                        ) : (
+                        ) : can(actor, 'sparks') ? (
                           <button onClick={() => { setCustomFor(r.id); setCustomAmount(''); }}
                             className="text-[11px] font-bold px-2 h-7 rounded-lg border border-border hover:bg-muted">
                             Custom
                           </button>
-                        )}
+                        ) : null}
                       </div>
                     </td>
                     <td className="px-4 py-3 relative">
@@ -530,26 +582,40 @@ export default function AdminUsersPage() {
                       {menuFor === r.id && (
                         <div onClick={e => e.stopPropagation()}
                           className="absolute right-4 top-full z-30 mt-1 w-56 bg-card border border-border rounded-2xl shadow-xl p-1.5">
-                          <button onClick={() => { setMenuFor(null); resetPassword(r); }}
+                          <button onClick={() => { setMenuFor(null); setProfileFor(r); }}
                             className="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-muted flex items-center gap-2.5">
-                            <KeyRound className="w-4 h-4 text-muted-foreground" /> Send password reset
+                            <Eye className="w-4 h-4 text-muted-foreground" /> Profile and activity
                           </button>
-                          {status === 'suspended' ? (
-                            <button onClick={() => { setMenuFor(null); changeStatus(r, 'active'); }}
+                          {can(actor, 'view_as') && (
+                            <button onClick={() => { setMenuFor(null); writeViewAs({ id: r.id, name: r.data.name ?? 'User', email: r.data.email ?? '' }); toast.success('Viewing as this user. Actions are read-only.'); }}
                               className="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-muted flex items-center gap-2.5">
-                              <ShieldCheck className="w-4 h-4 text-emerald-600" /> Reactivate account
-                            </button>
-                          ) : (
-                            <button onClick={() => { setMenuFor(null); changeStatus(r, 'suspended'); }}
-                              className="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-muted flex items-center gap-2.5">
-                              <ShieldOff className="w-4 h-4 text-amber-600" /> Suspend account
+                              <Eye className="w-4 h-4 text-muted-foreground" /> View as read-only
                             </button>
                           )}
-                          <div className="h-px bg-border my-1.5" />
-                          <button onClick={() => { setMenuFor(null); removeUser(r); }}
-                            className="w-full text-left px-3 py-2 rounded-xl text-sm text-destructive hover:bg-destructive/10 flex items-center gap-2.5">
-                            <Trash2 className="w-4 h-4" /> Delete user
-                          </button>
+                          {can(actor, 'sessions') && (
+                            <>
+                              <button onClick={() => { setMenuFor(null); setBusy(r.id); resetStaffPassword({
+                                actorId, actorEmail, actor, directory: consoleDirectory,
+                                target: { id: r.id, email: r.data.email, role: r.data.role, adminRole: r.data.adminRole ?? '' },
+                              }).then(result => toast.success(result.resetLink ? 'Reset link ready' : `Reset link sent to ${r.data.email}.`, result.resetLink ? { description: result.resetLink } : undefined))
+                                .catch((e: any) => toast.error(e?.message || 'Could not reset that password.'))
+                                .finally(() => setBusy(null)); }}
+                                className="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-muted flex items-center gap-2.5">
+                                <KeyRound className="w-4 h-4 text-muted-foreground" /> Send password reset
+                              </button>
+                              <button onClick={() => { setMenuFor(null); setProfileFor(r); }}
+                                className="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-muted flex items-center gap-2.5">
+                                <ShieldOff className="w-4 h-4 text-amber-600" /> Sign out sessions
+                              </button>
+                            </>
+                          )}
+                          {can(actor, 'moderate') && (
+                            <button onClick={() => { setMenuFor(null); setProfileFor(r); }}
+                              className="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-muted flex items-center gap-2.5">
+                              {status === 'suspended' ? <ShieldCheck className="w-4 h-4 text-emerald-600" /> : <ShieldOff className="w-4 h-4 text-amber-600" />}
+                              Suspend, ban, or restore
+                            </button>
+                          )}
                         </div>
                       )}
                     </td>
@@ -587,11 +653,21 @@ export default function AdminUsersPage() {
       <p className="flex items-start gap-2 text-xs text-muted-foreground">
         <Info className="w-4 h-4 shrink-0 mt-0.5" />
         <span>
-          Accounts are created by people signing up, or by an admin in the Firebase console — a browser
-          cannot create one without signing you out of your own session. Deleting here removes the
-          profile and its data; the sign-in record must be removed in Firebase Authentication.
+          Soft-delete keeps the profile so it can be restored. Ban and delete also disable the Firebase
+          sign-in when the service account is configured. Sparks changes need a reason and are written to the ledger.
         </span>
       </p>
+      {profileFor && (
+        <AdminAccountPanel
+          row={profileFor}
+          actorId={actorId}
+          actorEmail={actorEmail}
+          actor={actor}
+          directory={consoleDirectory}
+          onClose={() => setProfileFor(null)}
+          onUpdated={patch => { patchRow(profileFor.id, patch); setProfileFor(current => current ? { ...current, data: { ...current.data, ...patch } } : current); }}
+        />
+      )}
     </div>
   );
 }

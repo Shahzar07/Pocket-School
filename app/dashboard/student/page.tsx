@@ -8,7 +8,8 @@ import { getEnrolledCourses, getUserBadges, Course, Enrollment, Badge } from '@/
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ArrowUpRight, BookOpen, Zap, Trophy, Target, TrendingUp, Sparkles, Users, GraduationCap, Play } from 'lucide-react';
 import Link from 'next/link';
-import { ParentLinkRequests } from '@/components/parent-link-requests';
+import { StudyLaunchpad } from '@/components/study/study-launchpad';
+import { streakFromDates } from '@/lib/learning';
 import {
   DashPage, DashHeader, Panel, PanelHeader, StatCard, ProgressBar,
   ListRow, Initials, EmptyState,
@@ -89,7 +90,10 @@ export default function StudentDashboard() {
   const inProgress = enrolled.filter(e => e.enrollment.progress > 0 && e.enrollment.progress < 100);
   const notStarted = enrolled.filter(e => e.enrollment.progress === 0);
   const completed = enrolled.filter(e => e.enrollment.progress === 100);
-  const resumeCourse = inProgress[0] ?? notStarted[0];
+  const resumeCourse = enrolled.find(item => item.enrollment.lastLessonId && item.enrollment.progress < 100)
+    ?? inProgress[0]
+    ?? notStarted[0];
+  const studyStreak = streakFromDates(profile?.studyDates ?? [], new Date().toISOString().slice(0, 10)).current;
   const firstName = profile?.name?.split(' ')[0] ?? 'Student';
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -126,21 +130,28 @@ export default function StudentDashboard() {
         eyebrow={`${greeting()} · ${today}`}
         title="Welcome back,"
         accent={firstName}
-        description="Here's where your learning stands today."
+        description={studyStreak > 0
+          ? `Here's where your learning stands today. ${studyStreak}-day study streak.`
+          : "Here's where your learning stands today."}
         actions={resumeCourse ? (
           <Button
-            onClick={() => router.push(`/dashboard/student/courses/${resumeCourse.course.id}`)}
+            onClick={() => router.push(
+              resumeCourse.enrollment.lastLessonId
+                ? `/dashboard/student/courses/${resumeCourse.course.id}/lessons/${resumeCourse.enrollment.lastLessonId}`
+                : `/dashboard/student/courses/${resumeCourse.course.id}`,
+            )}
             className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2"
           >
             <Play className="w-3.5 h-3.5 fill-current" /> Resume learning
           </Button>
         ) : (
-          <Button onClick={() => router.push('/dashboard/marketplace')} className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2">
+          <Button onClick={() => router.push('/courses')} className="h-10 px-4 rounded-xl font-semibold text-[13px] gap-2">
             Browse courses <ArrowRight className="w-3.5 h-3.5" />
           </Button>
         )}
       />
-      <ParentLinkRequests />
+
+      <StudyLaunchpad />
 
       {/* ── Stat row ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -217,11 +228,11 @@ export default function StudentDashboard() {
             <PanelHeader title="Jump back in" />
             <div className="space-y-2">
               <ListRow
-                href="/ai-studio"
+                href="/dashboard/studio"
                 leading={<span className="w-9 h-9 rounded-xl bg-secondary grid place-items-center shrink-0"><Sparkles className="w-4 h-4 text-primary" /></span>}
                 title="AI Studio"
-                subtitle="Turn notes into study material"
-                trailing={<ArrowUpRight className="w-4 h-4 text-muted-foreground" />}
+                subtitle="ET, Maths, and Exam Prep"
+                trailing={<ArrowRight className="w-4 h-4 text-muted-foreground" />}
               />
               <ListRow
                 href="/ai-teachers"

@@ -10,7 +10,8 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { ArrowLeft, Printer, ShieldCheck } from 'lucide-react';
-import { LEGAL_DOCS, LEGAL_ENTITY, LEGAL_COMPANY_NO, type LegalBlock } from '@/lib/legal-content';
+import { LEGAL_DOCS, type LegalBlock } from '@/lib/legal-content';
+import { copyrightNotice } from '@/lib/export/notice';
 
 function Block({ block }: { block: LegalBlock }) {
   switch (block.type) {
@@ -168,7 +169,7 @@ function LegalInner() {
           ))}
 
           <footer className="pt-6 mt-8 border-t border-border text-xs text-muted-foreground">
-            © {new Date().getFullYear()} {LEGAL_ENTITY} ({LEGAL_COMPANY_NO}) trading as Poket School. All rights reserved.
+            {copyrightNotice()}
           </footer>
         </motion.main>
       </div>

@@ -1,4 +1,5 @@
-import { ANNUAL_DISCOUNT } from './entitlements';
+/** Yearly billing is three months free: 25% off twelve monthly charges. */
+export const ANNUAL_DISCOUNT = 0.25;
 
 /** One flat price, in US dollars, for every country. */
 export const PLATFORM_CURRENCY = 'USD';

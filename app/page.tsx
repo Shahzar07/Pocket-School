@@ -20,8 +20,8 @@ import {
   Zap,
 } from "lucide-react";
 import { TIERS } from "@/lib/entitlements";
-import { PROGRAMMES } from "@/lib/programmes";
-import { annualAmount, annualMonthlyEquivalent, annualSavingsLabel, formatMoney } from "@/lib/money";
+import { discountLabel, formatMoney, quotePlan } from "@/lib/pricing";
+import { usePricing } from "@/hooks/use-pricing";
 import { useAuthSTORE } from "@/hooks/use-auth";
 import { isAdmin } from "@/lib/roles";
 import s from "./home.module.css";
@@ -212,9 +212,9 @@ const features = [
   },
   {
     icon: Layers,
-    title: "Nine programmes",
+    title: "9 academic pathways",
     description:
-      "Primary, Lower Secondary, IGCSE, A-Level, LLB Law, MBBS Medicine, and independent study.",
+      "From primary school to IGCSE, A Levels, and professional learning. Keep growing.",
     href: "/courses",
     wide: true,
   },
@@ -230,6 +230,7 @@ const comparison = [
 
 export default function LandingPage() {
   const [annual, setAnnual] = useState(false);
+  const { config, currency } = usePricing();
   const rootRef = useRef<HTMLElement>(null);
   useHomeMotion(rootRef);
   const { user, profile } = useAuthSTORE();
@@ -258,12 +259,6 @@ export default function LandingPage() {
           <p>
             Personalized lessons. An AI tutor by your side.
             <br />A brighter learning journey, built around you.
-          </p>
-          <p>
-            Primary → Degree · All levels · 30+ ET AI teachers
-            <br />
-            Ideal for IGCSE, A-Level, LLB Law, MBBS Medicine, Micro Degrees,
-            Professional Certifications and independent learners.
           </p>
           <div className={s.actions}>
             <Link className={s.button} href={startHref}>
@@ -318,11 +313,15 @@ export default function LandingPage() {
         </div>
         <div className={s.heroMist} />
       </section>
-      <p className="bg-white text-center text-[13px] text-[#687678] px-6 pt-6">
-        We supplement Cambridge Assessment International Education, Pearson Edexcel, Oxford AQA, the University of London, and CEFR languages. Poket School certificates are not official qualifications.
-      </p>
       <nav className={s.pathwayStrip} aria-label="Learning pathways">
-        {PROGRAMMES.map((programme) => programme.label).map((label, i) => (
+        {[
+          "Primary",
+          "IGCSE",
+          "A Levels",
+          "Foundation",
+          "Diplomas",
+          "Professional",
+        ].map((label, i) => (
           <Link href="/courses" key={label}>
             {i % 2 ? <Layers /> : <GraduationCap />}
             {label}
@@ -562,55 +561,71 @@ export default function LandingPage() {
                 Monthly
               </button>
               <button aria-pressed={annual} onClick={() => setAnnual(true)}>
-                Yearly <span>({annualSavingsLabel()})</span>
+                Yearly <span>({discountLabel(config)} off)</span>
               </button>
             </div>
           </div>
         </div>
         <div className={s.priceGrid}>
-          {[TIERS[0], TIERS[1], TIERS[2], TIERS[4], TIERS[3]].map((tier) => (
+          {[TIERS[0], TIERS[1], TIERS[2]].map((tier, i) => {
+            const monthlyQuote = quotePlan(config, tier.id, "monthly", currency);
+            const annualQuote = quotePlan(config, tier.id, "annual", currency);
+            const code = monthlyQuote?.currency ?? currency;
+            const perMonth = annual ? (annualQuote?.amount ?? 0) / 12 : (monthlyQuote?.amount ?? 0);
+            const sparks = config.plans.find(plan => plan.id === tier.id)?.sparks ?? 0;
+            return (
             <article
-              className={`${s.priceCard} ${tier?.tier === 2 ? s.featuredPrice : ""}`}
-              key={tier?.id}
+              className={`${s.priceCard} ${i === 1 ? s.featuredPrice : ""}`}
+              key={tier.id}
             >
               <div className={s.priceTop}>
                 <div>
-                  <small>{tier?.usd ? "USD · one price worldwide" : "Explore"}</small>
-                  <h3>{tier?.name}</h3>
+                  <small>
+                    {
+                      [
+                        "Explore",
+                        "Build your foundation",
+                        "Take the next step",
+                      ][i]
+                    }
+                  </small>
+                  <h3>{tier.name}</h3>
                 </div>
-                {tier?.tier === 0 ? <BookOpen /> : tier?.tier === 2 ? <GraduationCap /> : <Sparkles />}
+                {i === 0 ? (
+                  <BookOpen />
+                ) : i === 1 ? (
+                  <GraduationCap />
+                ) : (
+                  <Sparkles />
+                )}
               </div>
-              <p>{tier?.blurb}</p>
+              <p>{tier.blurb}</p>
               <div className={s.priceAction}>
                 <div>
-                  <strong>
-                    {tier?.usd
-                      ? formatMoney(annual ? annualMonthlyEquivalent(tier.usd) : tier.usd)
-                      : "Free"}
-                  </strong>
-                  <small>{tier?.usd ? "/month" : ""}</small>
+                  <strong>{formatMoney(perMonth, code)}</strong>
+                  <small>/month</small>
                 </div>
                 <Link
-                  href={tier?.tier === 0 ? "/courses" : "/pricing"}
+                  href={i === 0 ? "/courses" : "/pricing"}
                   className={s.button}
                 >
-                  {tier?.tier === 0 ? "Explore free" : "View plan"}{" "}
+                  {i === 0 ? "Explore free" : "View plan"}{" "}
                   <ArrowRight size={14} />
                 </Link>
               </div>
               <small className={s.billingNote}>
-                {annual && tier?.usd
-                  ? `${formatMoney(annualAmount(tier.usd))} billed yearly · ${annualSavingsLabel()}`
-                  : tier?.usd
-                    ? "Billed monthly in USD"
+                {annual && (annualQuote?.amount ?? 0) > 0
+                  ? `${formatMoney(annualQuote?.amount ?? 0, code)} billed yearly`
+                  : (monthlyQuote?.amount ?? 0) > 0
+                    ? "Billed monthly"
                     : "No subscription needed"}
               </small>
               <ul>
                 {[
-                  ...(tier?.programmes ?? []),
-                  ...(tier?.sparks
+                  ...tier.programmes,
+                  ...(sparks > 0
                     ? [
-                        `${tier.sparks.toLocaleString()} Sparks per month`,
+                        `${sparks.toLocaleString()} Sparks per month`,
                         "AI-powered learning tools",
                       ]
                     : []),
@@ -622,11 +637,9 @@ export default function LandingPage() {
                 ))}
               </ul>
             </article>
-          ))}
+            );
+          })}
         </div>
-        <p className="text-center text-sm text-[#687678] mt-6">
-          Institutions: Custom. Contact institutions@poketschool.ai for bulk licensing and white-label.
-        </p>
         <Link className={s.allPlans} href="/pricing">
           Compare all plans, degrees, and institution options{" "}
           <ArrowRight size={14} />

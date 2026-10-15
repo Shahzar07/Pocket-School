@@ -1,4 +1,447 @@
-# Schema changes — payments
+# Schema changes
+
+Shared Firestore contract for the Poket School web app and the Poketschool app. Rules in `firestore.rules` still need an owner deploy before production enforces them.
+
+Database: `ai-studio-5cdc1a69-b213-49e8-8c41-756df00d9e15` in project `ringed-sentinel-436615-c2`.
+
+## deviceTokens (new)
+
+The app writes one document per device.
+
+| | |
+|---|---|
+| Path | `deviceTokens/{deviceId}` |
+| Doc id | The device id. The `deviceId` field should match it. |
+
+Fields the app writes:
+
+| Field | Type | Notes |
+|---|---|---|
+| `userId` | string | Firebase Auth uid of the signed-in person. |
+| `token` | string | Expo push token, or the Web Push endpoint URL when `provider` is `webpush`. |
+| `platform` | string | Device platform, for example `ios`, `android`, or `web`. |
+| `provider` | string | `expo` or `webpush`. |
+| `deviceId` | string | Same id as the document id. |
+| `keys` | map | Web Push subscription keys: `p256dh`, `auth`. Omit for Expo. |
+| `prefs` | map | Optional booleans. A missing key stays on. `false` opts that device out. Keys: `goals`, `flags`, `attendance`, `digests`, `grades`, `assignments`, `general`. |
+| `app` | string | Which client registered the device. |
+| `updatedAt` | timestamp | Last registration write. |
+
+Rules:
+
+- Create: signed in, and `request.resource.data.userId == request.auth.uid`.
+- Update: signed in, and both the existing document and the new document have `userId == request.auth.uid`. A token cannot be moved to another account.
+- Delete: signed in, and the existing `userId == request.auth.uid`. Firestore does not provide a new document on delete, so the new-data check applies only when `request.resource` exists (updates).
+- Get and list: denied for every client. The server reads and deletes with the Admin SDK.
+
+Query the senders use:
+
+```
+deviceTokens where userId == recipientUid
+```
+
+That is a single-field equality. Firestore maintains that index automatically.
+
+Senders (goals parent alerts, integrity flags, attendance, digests, and the inbox categories grades, assignments, and general) all load that query, skip a device whose `prefs[category] === false`, and post to Expo (`https://exp.host/--/api/v2/push/send`) or Web Push from `provider`. Web Push needs `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT`. The Admin SDK needs `FIREBASE_SERVICE_ACCOUNT` (JSON) or Application Default Credentials.
+
+Invalid tokens are deleted by the server:
+
+- Expo ticket `details.error` of `DeviceNotRegistered`, `InvalidCredentials`, or `MismatchSenderId`.
+- Web Push HTTP 404 or 410.
+
+`POST /api/push` is the browser entry. It requires a Firebase ID token. The body is `{ recipientUid, category, title, body, link? }`.
+
+## daily_goals (goals)
+
+Collection: `daily_goals`. The shared type is `DailyGoal` in `lib/db.ts`, normalised by `coerceDailyGoal` in `lib/goals.ts`.
+
+Canonical document:
+
+| Field | Type | Required on write | Notes |
+|---|---|---|---|
+| `studentId` | string | yes | Auth uid of the student. Rules compare this to `request.auth.uid` on create. |
+| `studentName` | string | no | Display name copied at create time. |
+| `dateKey` | string | yes | Local `YYYY-MM-DD`. |
+| `title` | string | yes | |
+| `category` | string | yes | `study`, `revision`, `practice`, `reading`, `other`. |
+| `estimateMinutes` | number | yes | |
+| `deadline` | string | yes | Local `HH:mm`. |
+| `courseId` | string | no | |
+| `courseLabel` | string | no | |
+| `status` | string | yes | `not_started`, `in_progress`, `completed`, `overdue`, `excused`. |
+| `startedAt` | timestamp | no | Set when the student starts. |
+| `completedAt` | timestamp | no | Set when the student finishes. |
+| `actualMinutes` | number | no | |
+| `xpAwarded` | number | no | |
+| `excuseReason` | string | no | Parent waiver. |
+| `excusedBy` | string | no | |
+| `notifiedNotStarted` | boolean | no | Stops a second “not started” parent alert. |
+| `notifiedMissed` | boolean | no | Stops a second “missed” parent alert. |
+| `createdAt` | timestamp | server | |
+| `updatedAt` | timestamp | server | Set on create and on every update so the app can sort. |
+
+Read aliases, used only when the canonical field is missing:
+
+| Alias | Canonical |
+|---|---|
+| `userId` | `studentId` |
+| `date` | `dateKey` |
+| `due` | `deadline` |
+| `minutes` | `estimateMinutes` |
+| `completed: true` | `status: completed` |
+
+Web writes always use the canonical names. New app writes should too. The live query is `where('studentId', '==', uid)` and the date is filtered in the client, so no composite index is required.
+
+Rules (unchanged): the student creates their own goals; the student, a linked parent (`users.childIds`), or a teacher or admin can read and update; the student or an admin can delete.
+
+Parent alerts from `checkGoalAlerts` write an in-app `notifications` row and send a push with category `goals` to each linked parent.
+
+## users (field)
+
+`users.shareBoard` is an optional boolean. Missing means the student still appears on the leaderboard. `false` removes them from the privacy-safe board. The board shows a short name (`Ada L.`) or `You` for the viewer, and never an email.
+
+Signed-in clients can still read user documents under the existing rules. The short name is a display rule in `privacyBoard`. It is not a security rule. Hiding the full profile from other students needs a rules change.
+
+## notifications (unchanged)
+
+`notifications` stays the in-app inbox: `userId`, `title`, `message`, `type`, `link`, `read`, `createdAt`. Push category is not stored on the document. Creating a notification also asks `/api/push` to deliver it. `type: grade` maps to prefs `grades`, `type: assignment` maps to `assignments`, and other types map to `general` unless the caller sets a category (`goals`, `flags`, `attendance`, `digests`).
+
+## Other senders
+
+| Sender | Who is notified | Category |
+|---|---|---|
+| Goal parent alert | Each parent whose `childIds` contains the student | `goals` |
+| Integrity flag | The student, when `integrity_reports.flags` is non-empty | `flags` |
+| Attendance | The student, and each linked parent, when a mark is `absent` or `late` | `attendance` |
+| Digest | The recipient passed to `sendDigest` | `digests` |
+| Assignment graded | The student | `grades` |
+| Parent due-date reminder | The signed-in parent | `assignments` |
+
+Email digests are not sent from this change. The push digest sender is the hook a later scheduler can call.
+
+## users/{userId}/deviceTokens (app subcollection)
+
+The Poketschool app may also store a token under the signed-in user. Both stores are delivered.
+
+| | |
+|---|---|
+| Path | `users/{userId}/deviceTokens/{tokenId}` |
+| Doc id | A device or token id chosen by the app. |
+
+Fields match the top-level `deviceTokens` document. `userId` may be omitted, because the path already names the owner. The server fills `userId` from the path when the field is missing.
+
+Rules:
+
+- Create, update, and delete: `isUser(userId)`. The signed-in user is the path owner. A `userId` field is not required.
+- Get and list: denied for every client.
+
+The senders read both stores:
+
+```
+deviceTokens where userId == recipientUid
+users/{recipientUid}/deviceTokens
+```
+
+The same device id in both stores is sent once. The per-user document wins. A pruned token is deleted from both places. Rules still need an owner deploy.
+
+## lessons.generationJobs
+
+Optional map on a lesson. Keys are AI format ids (`problems`, `mindmap`, `audioScript`, and the other generator formats).
+
+| Field | Type | Notes |
+|---|---|---|
+| `status` | string | `queued`, `generating`, `done`, or `failed`. |
+| `error` | string | Present when `status` is `failed`. |
+| `updatedAt` | number | Client timestamp in milliseconds. |
+
+The editor shows queued and generating while the request is in flight, and writes `done` or `failed` with the lesson. A queued or generating job older than three minutes is shown as failed, so a reload does not spin forever.
+
+`aiOutputs.mindmap` is a JSON string:
+
+```
+{ "center": "Topic", "centerIcon": "💡", "branches": [{ "keyword": "Branch", "icon": "📌", "children": [] }] }
+```
+
+One keyword per branch. The student view lays that JSON out as an SVG. Study-note prose is rejected and is not stored.
+
+`aiOutputs.problems` is Markdown. Each item starts with `## Problem N` and includes `### Worked solution`. Study-note headings are rejected with HTTP 422 and are not stored.
+
+`aiOutputs.infographic` keeps only figures that appear in the lesson text, with the label words taken from the sentence around that figure.
+
+## courses.downloadsEnabled
+
+Optional boolean on a course.
+
+| Value | Who can download |
+|---|---|
+| absent | A student with tier 1 or higher, or an allocation for that course. Teachers, institution admins, and admins can download. |
+| `true` | Downloads are on for every signed-in role, including tier 0. |
+| `false` | Downloads are off, except for an admin. |
+
+## POST /api/export
+
+Server-side file export. Requires `Authorization: Bearer <Firebase ID token>`.
+
+```
+{
+  "asset": "notes | glossary | flashcards | quiz | problems | slides | infographic | mindmap | image",
+  "format": "pdf | docx | jpg | png | pptx",
+  "title": "Lesson title",
+  "content": "markdown, JSON, or { url } for an image",
+  "answerKey": true,
+  "courseId": "course id",
+  "viewer": { "role": "student", "tier": 1, "permissions": [], "downloadsEnabled": null }
+}
+```
+
+`pptx` is for slides. `jpg` and `png` are for images, infographics, and mind maps. `pdf` and `docx` are for the written assets and for slides. `answerKey: false` omits quiz answers and `### Worked solution` sections.
+
+Every file includes `© {current year} PoketSchool.Ai. All rights reserved.` The year is `new Date().getFullYear()` at generation time. The file also carries the Poket School wordmark. The legal entity name stays in the terms, privacy policy, and creator agreement.
+
+When `FIREBASE_SERVICE_ACCOUNT` is set, the route replaces `viewer` with the Firestore user and `courses.downloadsEnabled`. Without that credential, the route checks the ID token and applies `canDownload` to the posted viewer. That fallback is a limitation of this environment.
+
+## media_assets (new)
+
+Reusable picture metadata. The file itself is in Firebase Storage at `media/{scopeId}/{name}`, or a data URL when Storage rejects the upload.
+
+| Field | Type | Notes |
+|---|---|---|
+| `scopeId` | string | Course id or book id. Pictures in one scope can be reused. |
+| `ownerId` | string | Firebase uid of the uploader. |
+| `src` | string | Download URL or data URL. |
+| `alt` | string | Required before the picture is placed. May be empty in the library. |
+| `caption` | string | Optional. |
+| `width`, `height` | number | After resize. The long edge is at most 1600. |
+| `storagePath` | string | Present when Storage accepted the file. |
+| `fullBleed` | boolean | Optional. |
+| `updatedAt` | number | Client timestamp in milliseconds. |
+
+A signed-in user can create and update their own documents. Teachers and admins can read the library. Rules need an owner deploy.
+
+## addon:cms
+
+Permission string `addon:cms`. Priced in `seedPricing()` at 29 USD per month. `normalizePricing` merges that row into an existing pricing document, so the admin pricing screen shows it on the next load. Saving pricing writes it to `pricing_config/current`.
+
+| Who | CMS editor, import, image library, illustrations, covers |
+|---|---|
+| `role == admin` | Always. |
+| Teacher or institution admin | When `users.permissions` contains `addon:cms`. |
+| Everyone else | The allocation screen can grant it. The Institution tier is the listed requirement. |
+
+Grant and revoke use the existing add-on controls on Access allocation.
+
+## Admin console
+
+Staff stay on `users.role = admin` so the existing admin shell keeps working. The new field `users.adminRole` is the staff role: `super_admin`, `admin`, `content_editor`, `support`, or `finance`. Custom claims mirror it: `{ adminRole, role }`. Claims are written only when `FIREBASE_SERVICE_ACCOUNT` is set, by `POST /api/admin/console` with action `sync-claims`. The person signs out and back in before rules see the new claim.
+
+`accountStatus` now also allows `banned` and `deleted`. `statusReason` stores the reason. `deletedAt` is a millisecond timestamp on soft-delete and `null` after restore. `country` is an optional profile string used by the directory filter.
+
+| Collection | Who can read | Who can write |
+|---|---|---|
+| `admin_audit/{id}` | Super admin claim, or one of the owner emails | Create by a platform admin, `actorId` must be their uid. No update or delete. |
+| `admin_invites/{email}` | Platform admins | Create or update a non-super invite as an admin. Super invites and deletes need the super claim or an owner email. |
+| `platform_signals/{id}` | Platform admins | Nobody from the client. The Admin SDK records `health.generationFailures`, `health.quotaErrors`, and `health.sparksSpent`. |
+
+Rules still need an owner deploy. Until that deploy, the API and the admin shell enforce the same role, suspension, ban, and soft-delete decisions. A blocked account is refused by `/api/admin/console` and `/api/export` when the service account can read the profile.
+
+### Initial super admins
+
+Three accounts are seeded as super admins. Each displays as Harry Seggu:
+
+| Email | Why |
+|---|---|
+| `harry.seggu@gmail.com` | Harry Seggu |
+| `shahzarrayyan123@gmail.com` | Firebase owner account |
+| `harry@poketschool.ai` | Poket School address |
+
+`resolveStaffRole` treats all three as `super_admin` before a custom claim exists. `callerIsSuper()` in `firestore.rules` allows the same three emails.
+
+Set the claims with the bootstrap script. `ADMIN_BOOTSTRAP_EMAILS` is optional. When it is unset, the script still seeds these three addresses. When it is set, those addresses are added as well, and the three above are kept.
+
+```bash
+export FIREBASE_SERVICE_ACCOUNT='{"type":"service_account",...}'
+export ADMIN_BOOTSTRAP_EMAILS='harry.seggu@gmail.com,shahzarrayyan123@gmail.com,harry@poketschool.ai'
+npx tsx scripts/bootstrap-super-admins.ts
+```
+
+The script looks each email up in Firebase Auth, writes `users/{uid}.role = admin` and `adminRole = super_admin`, and sets the custom claim `{ adminRole: 'super_admin', role: 'admin' }`. Each person signs out and in again so the ID token picks up the claim. An email with no Auth user is reported and the script exits non-zero.
+
+Signing in at `/admin/login` also writes that profile when the rules allow it, then calls `sync-claims` if `FIREBASE_SERVICE_ACCOUNT` is on the server. Set `SMTP_HOST`, `SMTP_USER`, and `SMTP_PASS` so the admin code can be emailed. Other `role: admin` accounts resolve as regular admins unless `adminRole` is set.
+
+A super admin cannot remove the last super admin, and cannot demote or block their own super admin account. Another super admin has to do that.
+
+## Teacher course studio
+
+Teachers build a course in the studio at `/dashboard/teacher/courses/build`. The course document gains two optional fields:
+
+| Field | Type | Notes |
+|---|---|---|
+| `subtitle` | string | Short line under the title. Omitted when blank. |
+| `language` | string | Language code such as `en` or `ms`. |
+
+`currency` on a studio course is `USD`. The price the student is charged is that USD amount. Local currency on the pricing step uses the existing admin pricing rates.
+
+Allocation reuses `accessPolicy`. `users` plus `userIds` is a named student. `cohorts` is a class. `parents` is linked parents. `institutions` is a school. `all` is every signed-in person. `marketplace` is the public catalogue. A teacher publish that includes `marketplace` is stored as `pending_approval` with `isPublic: false`. An admin approval sets `published` and `isPublic: true`, and writes `courses/{id}/access_audit` plus `admin_audit` with action `course.approve`. A private allocation can be `published` without `isPublic`.
+
+`createCourse` and `updateCourse` omit `undefined` before the write. Firestore rejects a document that still contains `undefined`.
+
+### Ownership
+
+A teacher or institution admin may create a course only when `ownerId` is their uid, and may update or delete it only while `ownerId` stays theirs. They cannot set a marketplace listing to `published`. An admin can edit any course. Enrolment, view, completion, and revenue counters still move by one without being the owner. Modules, lessons, grants, and the access audit on that course follow the same owner check.
+
+### Questions
+
+`courses/{courseId}/questions/{questionId}` holds a student question and the instructor reply.
+
+| Field | Type | Notes |
+|---|---|---|
+| `authorId` | string | Must be the signed-in uid on create. |
+| `authorName` | string | Display name. |
+| `text` | string | The question. |
+| `reply` | string | Written by the course owner. |
+| `repliedBy` | string | Owner uid. |
+
+An enrolled student can create a question. The course owner can read and reply. Rules need an owner deploy.
+
+### Coupons
+
+`coupon_codes/{code}` can be created by the course owner as well as an admin. `createdBy` must be the owner's uid, `code` must match the document id, and `discountPct` is from 1 to 100. The owner can set `active` or delete their own code. Redemption still only bumps `usedCount` and `redeemedBy`.
+
+## modules.title
+
+`createModule` strips a leading `Unit N:`, `Module N:`, or `Chapter N:` when `N` is that module's `unitNumber`, including a repeated prefix. The course tree still prints `Unit N:` once. Opening a course repairs stored titles that still have the duplicate.
+
+## Poket Reads
+
+Books are products on the same allocator as courses. A purchase writes the existing `alloc:marketplace:{bookId}` permission. A Reads plan writes `plan:reads` or `plan:reads-family` and sets the subscription through the existing Stripe apply path.
+
+### library/{uid}/books/{bookId}
+
+Written by the Stripe webhook when `checkout.session.completed` has `metadata.kind = book`.
+
+| Field | Type | Notes |
+|---|---|---|
+| `bookId` | string | Same id as the document id. |
+| `source` | string | `purchase` for a wallet checkout. |
+| `purchasedAt` | timestamp | Server time of the grant. |
+
+The parent path `library/{uid}` is the signed-in student. Clients do not write this collection. The Admin SDK does, from the webhook.
+
+### Book targets
+
+A book document (seeded in the app today, stored with the catalogue when that collection lands) may include `targets`, an array of `students`, `teachers`, `parents`, `institutions`, `all`, `marketplace`. That is the multi-select the allocator already uses for audiences. An empty list falls back to students and parents, plus institutions when the book is on the subscription shelf, plus marketplace when it is sold.
+
+### daily_goals (reading)
+
+Reading uses the shared `daily_goals` contract. `category` is `reading`. The focus timer in the reader is the source of `estimateMinutes` progress. Canonical fields stay `studentId`, `dateKey`, `title`, `category`, `estimateMinutes`, `deadline`, `status`. PR #55 returns that shape from `POST /api/reads/sessions`. It does not write the collection until the Admin SDK ledger is on.
+
+### Parent reading report
+
+Not a new collection. A parent report reads minutes already counted for a student and books whose stored progress is 100. The shape is `{ studentId, period, readingMinutes, booksFinished }`. Quiet hours stay out of `readingMinutes`, which is the existing session rule.
+
+### Discussion spaces
+
+Stored in the community collections below. A book space id is `book:{bookId}`. Age rating `18+` uses `ageTier: adult`. A younger rating uses `teen` or `under13`, and those rooms are not mixed with adults. Finishing a book can suggest a win post in that room.
+
+### Offline
+
+The PWA cache name is `poket-reads-v1`. It stores the book page and the reader page in the Cache API on this device. There is no Firestore download record.
+
+### media_assets
+
+Book Studio writes the shared `media_assets` documents from `components/media` when a signed-in author adds a picture. `scopeId` is the book id. See the media section above for the fields.
+
+### Push
+
+A reading notice uses the shared push body: `recipientUid`, `category` (`goals` for a reading goal), `title`, `body`, optional `link`. `POST /api/push` verifies the signed-in caller and sends through `deviceTokens` (Expo and Web Push). Clients cannot read those documents. A missing sender configuration returns an error with `{ sent: 0, pruned: [] }`.
+
+## Community feed
+
+Shared with the Expo app. The app reads these collections directly. Names are exact: `spaces`, `posts`, `comments`, `reactions`, `follows`, `reports`, `moderation_queue`, and `messages` (adult-only direct messages).
+
+`users.ageTier` is server-set from `users.dateOfBirth`. Clients cannot write either field. A missing tier fails closed as `under13`.
+
+| `ageTier` | Who | What they can open |
+| --- | --- | --- |
+| `under13` | under 13 | `class` and `school` spaces they are on. No Explore. No DMs. |
+| `teen` | 13 to 17 | Own `class` and `school` spaces, plus Explore of a `year` space matching `users.yearGroup` or a `subject` space listed in `users.subjects`. No DMs. |
+| `adult` | 18 and over | Open Explore (`visibility: tier`) and adult DMs in `messages`. |
+
+Adults and minors cannot see, search, follow, or message each other. `under13` and `teen` are separate bands. The only cross-band exception is a teacher or institution admin in `staffIds` on a **class** space. That does not cover search, follows, profiles, or direct messages.
+
+Parents get `parent_controls` only. They cannot read the wall, including their child's class. An adult parent can still direct-message a teacher.
+
+### users
+
+| Field | Who writes it | Notes |
+| --- | --- | --- |
+| `dateOfBirth` | server only | `YYYY-MM-DD` |
+| `ageTier` | server only | `under13`, `teen`, or `adult` |
+| `yearGroup` | the student, on their profile | Narrows teen year Explore. It does not change `ageTier` |
+| `subjects` | the student, on their profile | Narrows teen subject Explore |
+
+### community_profiles/{uid}
+
+`ageTier` (server), `displayName`, `bio`, `isPublic` (adults), `adultDmOptIn` (both adults must opt in for a student-to-student DM). Readable only inside the same tier. Parents cannot read profiles.
+
+### spaces/{spaceId}
+
+| Field | Notes |
+| --- | --- |
+| `kind` | `class`, `school`, `year`, `subject`, `adult` |
+| `ageTier` | `under13`, `teen`, or `adult` |
+| `visibility` | `members` for class and school. `tier` for year, subject, and adult Explore |
+| `year` | on `kind: year`. Must equal the viewer's `yearGroup` |
+| `subject` | on `kind: subject`. Must be in the viewer's `subjects` |
+| `memberIds`, `staffIds` | staff exception only when `kind == class` |
+| `title`, `institutionId`, `classId` | |
+
+Queries the rules allow as a list:
+
+- under-13: `ageTier == under13`, `kind in [class, school]`, `memberIds array-contains uid`
+- teen class or school: `ageTier == teen`, `kind in [class, school]`, `memberIds array-contains uid`
+- teen year: `ageTier == teen`, `kind == year`, `year == yearGroup`
+- teen subject: `ageTier == teen`, `kind == subject`, `subject == <one subject>`
+- adult Explore: `ageTier == adult`, `visibility == tier`
+- class staff: `kind == class`, `staffIds array-contains uid`
+
+A broader query fails, because Firestore rejects the whole list if one document is unreadable. Parents must not run these queries. Clients cannot create spaces.
+
+### posts/{postId}
+
+`spaceId`, `authorId`, `ageTier` (copied from the space), `kind` (`win` or `question`), `body`, `moderation` (`allow`, `hold`, `block`), `bestAnswerId`, `createdAtMs`.
+
+Feed query: `spaceId == <id>` and `moderation == allow`, ordered by `createdAtMs`. Held posts stay with the author and the moderation queue.
+
+### comments/{commentId}
+
+`postId`, `spaceId`, `authorId`, `ageTier`, `body`, `moderation`, `createdAtMs`. Query `postId` plus `moderation == allow`.
+
+### reactions/{postId}_{uid}
+
+`postId`, `userId`, `emoji` (`clap`, `thanks`, or `idea`), `ageTier`. Query `postId`. Readable when the viewer can see that post's space. Class staff can read reactions on their class.
+
+### follows/{followerId}_{targetId}
+
+`followerId`, `targetId`, `followerAgeTier`, `targetAgeTier`. Create requires the tiers to match the stored user tiers. Parents cannot follow. `under13` cannot follow a `teen` or an `adult`.
+
+### reports/{reportId}
+
+`reporterId`, `reporterAgeTier`, `targetType` (`post`, `comment`, `message`, `profile`), `targetId`, `reason`, `status` (`open`). The reporter and admins can read.
+
+### moderation_queue/{id}
+
+`surface`, `authorId`, `ageTier`, `text`, `decision`, `reasons`, `status` (`open`, `approved`, `rejected`), `subjectPath`, `createdAtMs`. Admin read only. Clients cannot write it.
+
+### parent_controls/{studentId}
+
+Written by a linked parent. This is the parent surface, not the wall. `communityEnabled`, `messagingEnabled`, `snapEnabled`, `quietStart`, `quietEnd` (`HH:MM`), `timeZone`. The child can read their own controls.
+
+### messages/{messageId}
+
+Adult-only direct messages. Both `fromId` and `toId` must have `ageTier: adult`. A minor cannot create or read a document here. `fromId` must be the signed-in user. The recipient may set `read` and nothing else. Adult students also need `adultDmOptIn` on both community profiles. Staff and parents do not. Teachers reach a class through the class space, not this collection.
+
+## Payments
 
 Collections written by the unified checkout. Clients cannot read or write the money collections. The Admin SDK bypasses the rules.
 
@@ -29,4 +472,5 @@ Collections written by the unified checkout. Clients cannot read or write the mo
 
 User fields written by the server: `permissions` (`alloc:marketplace:{id}`, `plan:reads`, `plan:reads-family`) and `stripeAccountId` (Connect). Both are privileged and rejected on client writes.
 
-Reads plans are `reads` at $9 a month and `reads-family` at $15. Annual is ten times the monthly price and is billed in USD on a card. A ringgit book uses the shelf RM price so FPX, GrabPay, and Touch ’n Go can clear. Touch ’n Go is gateway method `tng`, not a Stripe metadata flag.
+Reads plans are `reads` at $9 a month and `reads-family` at $15. Annual is ten times the monthly price and is billed in USD on a card. Ringgit books use the admin FX quote (`quoteCheckout`) when present, otherwise the shelf RM price. Touch 'n Go is gateway method `tng`, not a Stripe metadata flag. Book and Reads purchases share `POST /api/stripe/create-checkout` and `POST /api/payments/checkout`. FPX and GrabPay stay on the one-time MYR Stripe session.
+

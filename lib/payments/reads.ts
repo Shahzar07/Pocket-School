@@ -2,8 +2,8 @@ import type { PricedItem } from './quote';
 
 /**
  * Poket Reads prices from the published shelf (PR #55).
- * Annual Reads is ten times the monthly price. Books charged in ringgit use
- * the shelf's RM price so FPX, GrabPay and Touch 'n Go can clear.
+ * Annual Reads is ten times the monthly price. The checkout prefers the admin
+ * FX quote for a ringgit book. This list is the fallback shelf price.
  * A Firestore `books/{id}` document overrides this list when Book Studio has saved one.
  */
 

@@ -1,37 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { getPublicCourses, Course } from '@/lib/db';
-import { formatCoursePrice } from '@/lib/money';
+import { MarketHome } from '@/components/shelf/market-view';
 
+/** Same shelf as /courses. The thin course list used to live here on its own. */
 export default function DashboardMarketplace() {
-  const [courses, setCourses] = useState<Course[]>([]);
-  useEffect(() => {
-    getPublicCourses().then(setCourses).catch(() => setCourses([]));
-  }, []);
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-12">
-      <h1 className="font-heading text-4xl">Marketplace</h1>
-      <p className="text-sm text-muted-foreground">Courses you can browse without leaving your dashboard.</p>
-      {courses.length === 0 && <p className="text-sm text-muted-foreground">No public courses yet.</p>}
-      <ul className="grid sm:grid-cols-2 gap-3">
-        {courses.map((c) => (
-          <li key={c.id}>
-            <div className="rounded-2xl border border-border p-4">
-              <Link href={`/courses/${c.id}`} className="block hover:underline">
-                <p className="font-semibold">{c.title}</p>
-                <p className="text-sm text-muted-foreground mt-1">{formatCoursePrice(c.price, c.currency)}</p>
-              </Link>
-              {(c.price ?? 0) > 0 && (
-                <Link href={`/dashboard/checkout?kind=${c.type === 'ebook' ? 'book' : 'course'}&sku=${c.id}`} className="inline-flex mt-3 text-sm font-semibold text-primary">
-                  Buy
-                </Link>
-              )}
-            </div>
-          </li>
-        ))}
-      </ul>
+    <div className="pb-12">
+      <MarketHome />
     </div>
   );
 }

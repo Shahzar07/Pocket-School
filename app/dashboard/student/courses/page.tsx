@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { getEnrolledCourses, getAllPublishedCourses, enrollStudent, Course, Enrollment } from '@/lib/db';
+import { productAccess, viewerFromProfile } from '@/lib/allocation';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Plus, CheckCircle2 } from 'lucide-react';
+import { BookOpen, Plus, CheckCircle2, Play } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface CE { course: Course; enrollment: Enrollment }
@@ -20,7 +21,7 @@ const fadeUp: Record<string, any> = {
 
 export default function CoursesPage() {
   const router = useRouter();
-  const { user } = useAuthSTORE();
+  const { user, profile } = useAuthSTORE();
   const [enrolled, setEnrolled] = useState<CE[]>([]);
   const [available, setAvailable] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +38,8 @@ export default function CoursesPage() {
       ec.sort((a, b) => a.course.title.localeCompare(b.course.title));
       setEnrolled(ec);
       const enrolledIds = new Set(ec.map(e => e.course.id));
-      setAvailable(all.filter(c => !enrolledIds.has(c.id)).sort((a, b) => a.title.localeCompare(b.title)));
+      const viewer = viewerFromProfile(profile, { userId: user.uid });
+      setAvailable(all.filter(c => !enrolledIds.has(c.id) && productAccess(c, viewer).listed).sort((a, b) => a.title.localeCompare(b.title)));
     } catch (e: any) {
       setError(e?.message ?? 'Something went wrong.');
     } finally {
@@ -45,7 +47,7 @@ export default function CoursesPage() {
     }
   };
 
-  useEffect(() => { load(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [user, profile]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleEnroll = async (courseId: string) => {
     if (!user) return;
@@ -156,6 +158,18 @@ export default function CoursesPage() {
                     </span>
                   </div>
                 </div>
+                {enrollment.lastLessonId && enrollment.progress < 100 && (
+                  <Button
+                    size="sm"
+                    className="rounded-full h-9 px-4 font-bold shrink-0"
+                    onClick={event => {
+                      event.stopPropagation();
+                      router.push(`/dashboard/student/courses/${course.id}/lessons/${enrollment.lastLessonId}`);
+                    }}
+                  >
+                    <Play className="w-3.5 h-3.5 mr-1.5" /> Resume
+                  </Button>
+                )}
                 {enrollment.progress === 100 && (
                   <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
                 )}

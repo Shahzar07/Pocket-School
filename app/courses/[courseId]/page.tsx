@@ -25,20 +25,18 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import { Timestamp } from 'firebase/firestore';
 import {
   getPublicCourseById, enrollStudent, incrementEnrollment, createInvoice, getUser,
-  getPublicCurriculum, redeemCouponCode, getCouponPermissions,
+  recordProductView, recordProductRevenue,
+  getPublicCurriculum, redeemCouponCode, getCouponPermissions, getEnrollment,
   type Course, type UserProfile, type Module, type Lesson,
 } from '@/lib/db';
 import { coursePriceType, freePreviewCount, isLessonFree, courseMinTier, tierDefinition } from '@/lib/entitlements';
+import { usePricing } from '@/hooks/use-pricing';
 import { courseCover } from '@/lib/course-cover';
+import { CourseReviews } from '@/components/course-reviews';
 import { toast } from 'sonner';
-import { authedFetch } from '@/lib/api-client';
-import { formatCoursePrice } from '@/lib/money';
-
-function priceLabel(c: Course) {
-  return formatCoursePrice(c.price, c.currency);
-}
 
 export default function CourseDetailPage() {
+  const { courseLabel } = usePricing();
   const params = useParams<{ courseId: string }>();
   const courseId = params?.courseId;
   const router = useRouter();
@@ -55,6 +53,7 @@ export default function CourseDetailPage() {
   const [redeeming, setRedeeming] = useState(false);
   /** Coupon grants held by the signed-in user, for this course. */
   const [couponGranted, setCouponGranted] = useState(false);
+  const [enrolledHere, setEnrolledHere] = useState(false);
 
   const load = async () => {
     if (!courseId) return;
@@ -79,6 +78,23 @@ export default function CourseDetailPage() {
   };
 
   useEffect(() => { load(); }, [courseId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!courseId || !course) return;
+    const key = `poket-view-${courseId}`;
+    if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, '1');
+    void recordProductView(courseId);
+  }, [courseId, course]);
+
+  useEffect(() => {
+    if (!user || !courseId) { setEnrolledHere(false); return; }
+    let cancelled = false;
+    getEnrollment(user.uid, courseId)
+      .then(enrollment => { if (!cancelled) setEnrolledHere(!!enrollment); })
+      .catch(() => { if (!cancelled) setEnrolledHere(false); });
+    return () => { cancelled = true; };
+  }, [user, courseId]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setUser(u));
@@ -166,6 +182,27 @@ export default function CourseDetailPage() {
     }
   };
 
+  const startTrial = async () => {
+    if (!course) return;
+    if (!user) {
+      router.push(`/login?next=/courses/${course.id}`);
+      return;
+    }
+    try {
+      setEnrolling(true);
+      const prof = await getStudentProfile();
+      if (!prof) return;
+      await enrollStudent(user.uid, course.id, { trial: true });
+      await incrementEnrollment(course.id);
+      toast.success(`${course.accessPolicy?.trialDays ?? ''}-day trial started.`);
+      router.push(`/dashboard/student/courses/${course.id}`);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Could not start the trial.');
+    } finally {
+      setEnrolling(false);
+    }
+  };
+
   const buyPaid = () => {
     if (!course) return;
     if (!user) {
@@ -179,16 +216,36 @@ export default function CourseDetailPage() {
     if (!course || !user) return;
     try {
       setEnrolling(true);
-      const data = await authedFetch('/api/stripe/checkout', {
-        method: 'POST',
-        body: JSON.stringify({ courseId: course.id }),
-      });
-      const url = data.url as string | undefined;
-      if (!url) throw new Error('Checkout did not start.');
-      window.location.href = url;
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Checkout is not available yet.';
-      toast.error(message);
+      const prof = await getStudentProfile();
+      if (!prof) { setConfirmOpen(false); return; }
+      await enrollStudent(user.uid, course.id);
+      await incrementEnrollment(course.id);
+      if ((course.price ?? 0) > 0) await recordProductRevenue(course.id, user.uid, course.price ?? 0);
+      // Best-effort invoice: security rules may reserve invoice creation for
+      // teachers/admins, in which case the school issues it instead.
+      let invoiced = false;
+      try {
+        await createInvoice({
+          studentId: user.uid,
+          studentName: prof.name ?? user.displayName ?? 'Student',
+          courseId: course.id,
+          description: `Course purchase: ${course.title}`,
+          amount: course.price ?? 0,
+          currency: course.currency ?? 'GBP',
+          status: 'sent',
+          dueDate: Timestamp.fromDate(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)),
+          createdBy: user.uid,
+        });
+        invoiced = true;
+      } catch { /* fall through to school-issued invoice message */ }
+      toast.success(invoiced
+        ? `Enrolled in ${course.title} — an invoice was added to your school account.`
+        : `Enrolled in ${course.title} — an invoice will be issued by the school.`);
+      setConfirmOpen(false);
+      router.push(`/dashboard/student/courses/${course.id}`);
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to enrol.');
+    } finally {
       setEnrolling(false);
     }
   };
@@ -429,6 +486,13 @@ export default function CourseDetailPage() {
                   </section>
                 )}
 
+                <CourseReviews
+                  courseId={course.id}
+                  userId={user?.uid}
+                  userName={user?.displayName}
+                  canReview={enrolledHere}
+                />
+
                 {/* Instructor */}
                 <section>
                   <h2 className="text-xl font-bold mb-4">Instructor</h2>
@@ -463,7 +527,7 @@ export default function CourseDetailPage() {
                   </div>
 
                   <div className="p-6">
-                    <p className="text-3xl font-extrabold tracking-tight mb-1">{priceLabel(course)}</p>
+                    <p className="text-3xl font-extrabold tracking-tight mb-1">{courseLabel(course.price, course.currency)}</p>
                     <p className="text-xs text-muted-foreground mb-5">
                       {priceType === 'SUBSCRIPTION_INCLUDED'
                         ? 'Included in your subscription'
@@ -481,13 +545,25 @@ export default function CourseDetailPage() {
                         {enrolling ? 'Enrolling…' : user ? 'Enrol for free' : 'Sign in to enrol'}
                       </Button>
                     ) : (
-                      <Button
-                        onClick={buyPaid}
-                        disabled={enrolling}
-                        className="w-full h-12 rounded-lg font-bold"
-                      >
-                        {enrolling ? 'Processing…' : user ? 'Buy this course' : 'Sign in to buy'}
-                      </Button>
+                      <div className="space-y-2">
+                        <Button
+                          onClick={buyPaid}
+                          disabled={enrolling || enrolledHere}
+                          className="w-full h-12 rounded-lg font-bold"
+                        >
+                          {enrolling ? 'Processing…' : enrolledHere ? 'Enrolled' : user ? 'Buy this course' : 'Sign in to buy'}
+                        </Button>
+                        {!enrolledHere && (course.accessPolicy?.trialDays ?? 0) > 0 && (
+                          <Button
+                            variant="outline"
+                            onClick={startTrial}
+                            disabled={enrolling}
+                            className="w-full h-10 rounded-lg font-semibold"
+                          >
+                            Start a {course.accessPolicy?.trialDays}-day trial
+                          </Button>
+                        )}
+                      </div>
                     )}
 
                     <p className="text-[11px] text-center text-muted-foreground mt-3">
@@ -585,13 +661,13 @@ export default function CourseDetailPage() {
               <DialogHeader>
                 <DialogTitle>Confirm enrolment</DialogTitle>
                 <DialogDescription>
-                  This is a paid course ({priceLabel(course)}). Your school account
+                  This is a paid course ({courseLabel(course.price, course.currency)}). Your school account
                   will be invoiced — no card payment is taken now.
                 </DialogDescription>
               </DialogHeader>
               <div className="bg-muted/50 border border-border rounded-xl p-4 text-sm space-y-1">
                 <p className="font-semibold text-foreground">{course.title}</p>
-                <p className="text-muted-foreground">Price: {priceLabel(course)}</p>
+                <p className="text-muted-foreground">Price: {courseLabel(course.price, course.currency)}</p>
               </div>
               <DialogFooter>
                 <Button variant="outline" className="rounded-full h-11 px-5" disabled={enrolling} onClick={() => setConfirmOpen(false)}>

@@ -11,7 +11,10 @@ import { Card } from '@/components/ui/card';
 import { BookOpen, Search, Filter, ArrowRight, Loader2, Sparkles, Mail, ShieldCheck, Star } from 'lucide-react';
 import { getPublicCourses, type Course, type CourseType } from '@/lib/db';
 import { courseCover } from '@/lib/course-cover';
+import { filterCatalog, recommend } from '@/lib/learning';
+import { productAccess, previewViewer } from '@/lib/allocation';
 import { coursePriceType, freePreviewCount, courseMinTier, tierDefinition } from '@/lib/entitlements';
+import { usePricing } from '@/hooks/use-pricing';
 
 const TYPE_FILTERS: { id: CourseType | 'all'; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -40,18 +43,15 @@ function tierBadge(c: Course): string {
   return t > 0 ? tierDefinition(t).name : '';
 }
 
-function priceLabel(c: Course) {
-  if (!c.price || c.price === 0) return 'Free';
-  const symbol = c.currency === 'USD' ? '$' : c.currency === 'EUR' ? '€' : '£';
-  return `${symbol}${c.price.toFixed(2)}`;
-}
 
 export default function MarketplacePage() {
   const router = useRouter();
+  const { courseLabel } = usePricing();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<CourseType | 'all'>('all');
   const [levelFilter, setLevelFilter] = useState('All');
+  const [subjectFilter, setSubjectFilter] = useState('All');
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -69,18 +69,27 @@ export default function MarketplacePage() {
     return () => { cancelled = true; };
   }, []);
 
+  const visible = useMemo(
+    () => courses.filter(course => productAccess(course, previewViewer('guest')).listed),
+    [courses],
+  );
+  const subjects = useMemo(() => {
+    const names = visible.map(course => course.subject).filter((name): name is string => !!name);
+    return [...new Set(names)].sort((a, b) => a.localeCompare(b));
+  }, [visible]);
   const filtered = useMemo(() => {
-    return courses.filter(c => {
-      if (typeFilter !== 'all' && c.type !== typeFilter) return false;
-      if (levelFilter !== 'All' && c.level !== levelFilter) return false;
-      if (search.trim()) {
-        const q = search.trim().toLowerCase();
-        const hay = `${c.title} ${c.description} ${c.subject ?? ''} ${(c.tags ?? []).join(' ')}`.toLowerCase();
-        if (!hay.includes(q)) return false;
-      }
-      return true;
+    const matched = filterCatalog(visible, {
+      q: search,
+      level: levelFilter === 'All' ? '' : levelFilter,
+      subject: subjectFilter === 'All' ? '' : subjectFilter,
     });
-  }, [courses, typeFilter, levelFilter, search]);
+    return matched.filter(course => typeFilter === 'all' || course.type === typeFilter);
+  }, [visible, typeFilter, levelFilter, subjectFilter, search]);
+  const narrowed = search.trim() !== '' || typeFilter !== 'all' || levelFilter !== 'All' || subjectFilter !== 'All';
+  const suggested = useMemo(
+    () => (narrowed && filtered[0] ? recommend(visible, filtered[0]) : []),
+    [visible, filtered, narrowed],
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -140,6 +149,21 @@ export default function MarketplacePage() {
               </button>
             ))}
           </div>
+          {subjects.length > 0 && (
+            <div className="flex gap-1.5 flex-wrap basis-full">
+              {['All', ...subjects].map(subject => (
+                <button
+                  key={subject}
+                  onClick={() => setSubjectFilter(subject)}
+                  className={`text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
+                    subjectFilter === subject ? 'bg-foreground text-background' : 'bg-transparent text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  {subject === 'All' ? 'All subjects' : subject}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -229,6 +253,26 @@ export default function MarketplacePage() {
             </motion.div>
           )}
 
+          {!loading && suggested.length > 0 && filtered[0] && (
+            <div className="mb-8">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-3">
+                Related to {filtered[0].title}
+              </h2>
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {suggested.map(course => (
+                  <Link
+                    key={course.id}
+                    href={`/courses/${course.id}`}
+                    className="min-w-[220px] max-w-[260px] shrink-0 rounded-xl border border-border bg-card p-4 hover:border-foreground/25"
+                  >
+                    <p className="text-sm font-bold line-clamp-2">{course.title}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{course.subject || course.level || 'Course'}</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
           {!loading && filtered.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {filtered.map((c, i) => (
@@ -283,7 +327,7 @@ export default function MarketplacePage() {
 
                         <div className="mt-auto flex items-baseline gap-2">
                           <span className={`text-lg font-extrabold ${c.price ? 'text-foreground' : 'text-emerald-600'}`}>
-                            {priceLabel(c)}
+                            {courseLabel(c.price, c.currency)}
                           </span>
                           {tierBadge(c) && (
                             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">

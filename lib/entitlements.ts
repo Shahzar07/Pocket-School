@@ -5,7 +5,7 @@
  * Pricing Addendum (August 2026). Two gates run in sequence for every piece of
  * content:
  *
- *   Gate 1 — access tier:  tierCovers(userTier, content.minTier)
+ *   Gate 1 — access tier:  userAccessTier >= content.minTier
  *   Gate 2 — price type:   is it included, purchased, allocated, or free?
  *
  * Both must pass. Manual allocations (scholarships, institution contracts,
@@ -27,11 +27,10 @@ export interface TierDefinition {
   id: string;
   name: string;
   blurb: string;
-  /** Monthly price in USD. 0 = free, null = not sold directly (institution/marketplace). */
-  usd: number | null;
-  /** Monthly price in MYR. */
-  myr: number | null;
-  /** Monthly Sparks allowance. */
+  /**
+   * Monthly Sparks allowance and rollover are product constants for gates and
+   * copy. Charged prices and the displayed allowance live in lib/pricing.ts.
+   */
   sparks: number;
   /** Sparks that roll over into the next month. */
   sparksRollover: number;
@@ -39,54 +38,49 @@ export interface TierDefinition {
 }
 
 /**
- * Commercial plans from the October 2026 master brief. One USD price worldwide.
- * `myr` stays on the type for older documents and is not shown.
- *
- * Sparks allowances stay on the access-tier table (300 / 800 / 2,000 / 2,000 /
- * 10,000). The $19 plan is tier 3 and still receives 2,000 Sparks — see
- * docs/SPARKS.md. It does not unlock tier 1 or tier 2 courses. Tier 4 ($99)
- * includes tiers 0–4. Ids `professional` and `llb` are kept so existing Stripe
- * metadata still maps.
+ * The seven tiers. Tier 3 and 4 are the same commercial plan — "Professional &
+ * Degrees" — because LLB unlocks inside it; the brief keeps them as separate
+ * minTier values so law content can be gated independently.
  */
 export const TIERS: TierDefinition[] = [
   {
-    tier: 0, id: 'preview', name: 'Free Preview', usd: 0, myr: null,
-    blurb: 'Browse the catalogue and open the first lesson of any course.',
+    tier: 0, id: 'preview', name: 'Free Preview',
+    blurb: 'Public access, no account required.',
     sparks: 0, sparksRollover: 0,
     programmes: ['Course catalogue', 'First lesson of any course', 'Certificate verification'],
   },
   {
-    tier: 1, id: 'primary_secondary', name: 'Primary & Lower Secondary', usd: 49, myr: null,
-    blurb: 'Primary and Lower Secondary on one plan.',
+    tier: 1, id: 'primary_secondary', name: 'Primary & Lower Secondary',
+    blurb: 'Years 1–9, entry-level individual subscription.',
     sparks: 300, sparksRollover: 100,
-    programmes: ['Primary', 'Lower Secondary', 'ET AI teachers', 'ET AI Studio'],
+    programmes: ['Primary Years 1–6', 'Lower Secondary Years 7–9', 'All core subjects'],
   },
   {
-    tier: 2, id: 'igcse_alevel', name: 'IGCSE & A-Level', usd: 79, myr: null,
-    blurb: 'IGCSE and A-Level. Primary and Lower Secondary are included.',
+    tier: 2, id: 'igcse_alevel', name: 'IGCSE & A-Level',
+    blurb: 'Years 10–13, the core academic subscription.',
     sparks: 800, sparksRollover: 300,
-    programmes: ['IGCSE', 'A-Level', 'Primary and Lower Secondary included', 'ET Maths and Exam Prep', 'Parent dashboard'],
+    programmes: ['IGCSE / GCSE Years 10–11', 'A-Level Years 12–13', 'Pre-University & Foundation', 'Everything in Tier 1'],
   },
   {
-    tier: 3, id: 'professional', name: 'Micro Degree & Professional', usd: 19, myr: null,
-    blurb: 'Short courses and independent study. IGCSE and A-Level are a separate plan.',
+    tier: 3, id: 'professional', name: 'Professional & Degrees',
+    blurb: 'Micro degrees, professional certifications and the LLB.',
     sparks: 2000, sparksRollover: 700,
-    programmes: ['Micro Degree', 'Professional Certification', 'Independent Learning', 'Self-paced'],
+    programmes: ['Micro Degrees & Diplomas', 'Professional Certifications', 'Independent Learning', 'Everything in Tier 2'],
   },
   {
-    tier: 4, id: 'llb', name: 'LLB Law & MBBS Medicine', usd: 99, myr: null,
-    blurb: 'Degree programmes. The IGCSE and A-Level plan is included.',
+    tier: 4, id: 'llb', name: 'Law & LLB',
+    blurb: 'University of London External LLB. Unlocks within Professional & Degrees.',
     sparks: 2000, sparksRollover: 700,
-    programmes: ['LLB Law — 12 modules', 'MBBS Medicine', 'ET Law and ET Medicine', 'IGCSE and A-Level included'],
+    programmes: ['UoL External LLB — all 12 modules', 'A-Level Law', 'Pre-University Law', 'Everything in Tier 3'],
   },
   {
-    tier: 5, id: 'institution', name: 'Institution', usd: null, myr: null,
-    blurb: 'Custom pricing for schools, colleges and training centres.',
+    tier: 5, id: 'institution', name: 'Institution',
+    blurb: 'Annual contract for schools, learning centres and exam centres.',
     sparks: 10000, sparksRollover: 0,
-    programmes: ['All programmes', 'Teacher tools', 'Institution admin', 'Shared Sparks pool', 'White-label'],
+    programmes: ['Everything in Tiers 0–4', 'Teacher CMS', 'Institution admin dashboard', 'Shared Sparks pool', 'White-label'],
   },
   {
-    tier: 6, id: 'marketplace', name: 'Marketplace', usd: null, myr: null,
+    tier: 6, id: 'marketplace', name: 'Marketplace',
     blurb: 'Buy a single course outright. No subscription required.',
     sparks: 0, sparksRollover: 0,
     programmes: ['Any individual course', 'Permanent access after purchase'],
@@ -96,27 +90,6 @@ export const TIERS: TierDefinition[] = [
 export function tierDefinition(tier: AccessTier): TierDefinition {
   return TIERS.find(t => t.tier === tier) ?? TIERS[0];
 }
-
-/**
- * Whether a subscriber's plan includes content tagged with `contentTier`.
- *
- * Tier 3 is the $19 short-course plan and covers only tier 3 content.
- * A numeric `userTier >= contentTier` check would let that plan open IGCSE.
- * Tier 4 ($99) covers tiers 0–4. Tier 5 covers every tier. Tier 6 is a
- * single-course purchase and does not include a subscription library.
- */
-export function tierCovers(userTier: number, contentTier: number): boolean {
-  if (contentTier <= 0) return true;
-  if (userTier === 5) return true;
-  if (userTier === 4) return contentTier <= 4;
-  if (userTier === 3) return contentTier === 3;
-  if (userTier === 2) return contentTier === 1 || contentTier === 2;
-  if (userTier === 1) return contentTier === 1;
-  return false;
-}
-
-/** Annual billing discount from the brief. */
-export const ANNUAL_DISCOUNT = 0.25;
 
 /* ── Content types ───────────────────────────────────────────── */
 
@@ -131,7 +104,8 @@ export type ContentType =
   | 'MARKETPLACE_PURCHASE' | 'MARKETPLACE_LIST'
   | 'GRADEBOOK' | 'ATTENDANCE' | 'EXAM_BUILDER' | 'REPORT_CARD' | 'LIVE_CLASS'
   | 'INTEGRITY_MONITOR' | 'BEHAVIOUR_LOG'
-  | 'INSTITUTION_ADMIN' | 'PLATFORM_ADMIN';
+  | 'INSTITUTION_ADMIN' | 'PLATFORM_ADMIN'
+  | 'BOOK';
 
 /** contentType → the permission string that satisfies it. */
 export const PLAN_MAP: Record<string, string> = {
@@ -169,7 +143,7 @@ export const PLAN_MAP: Record<string, string> = {
 export const CONTENT_MIN_TIER: Record<string, AccessTier> = {
   FREE_PREVIEW: 0, MARKETPLACE_BROWSE: 0,
   COURSE_PRIMARY: 1, COURSE_SECONDARY: 1,
-  COURSE_IGCSE: 2, COURSE_ALEVEL: 2, COURSE_PRE_UNIVERSITY: 2, COURSE_INDEPENDENT: 3,
+  COURSE_IGCSE: 2, COURSE_ALEVEL: 2, COURSE_PRE_UNIVERSITY: 2, COURSE_INDEPENDENT: 2,
   ET_AI_STUDIO: 1, AI_TUTOR_SESSION: 2, BLOOM_TRACKING: 2, GOALS_LINKED: 2,
   PARENT_DASHBOARD: 2, CERTIFICATE: 2, LYRA_LIVE: 2,
   COURSE_MICRO_DEGREE: 3, COURSE_PROFESSIONAL_CERT: 3,
@@ -178,6 +152,7 @@ export const CONTENT_MIN_TIER: Record<string, AccessTier> = {
   INTEGRITY_MONITOR: 5, BEHAVIOUR_LOG: 5, INSTITUTION_ADMIN: 5, MARKETPLACE_LIST: 5,
   MARKETPLACE_PURCHASE: 6,
   PLATFORM_ADMIN: 5,
+  BOOK: 0,
 };
 
 /* ── Price types ─────────────────────────────────────────────── */
@@ -188,15 +163,17 @@ export type PriceType =
   | 'SUBSCRIPTION_INCLUDED'
   | 'MARKETPLACE_PURCHASE'
   | 'INSTITUTION_ALLOCATED'
-  | 'COUPON_SCHOLARSHIP';
+  | 'COUPON_SCHOLARSHIP'
+  | 'SPARKS_UNLOCK';
 
 export const PRICE_TYPE_LABELS: Record<PriceType, string> = {
   FREE: 'Free',
   FREE_PREVIEW: 'Free preview, then paid',
-  SUBSCRIPTION_INCLUDED: 'Included in subscription',
+  SUBSCRIPTION_INCLUDED: 'Included in a plan',
   MARKETPLACE_PURCHASE: 'One-time purchase',
-  INSTITUTION_ALLOCATED: 'Allocated by institution',
-  COUPON_SCHOLARSHIP: 'Coupon / scholarship',
+  INSTITUTION_ALLOCATED: 'Allocated',
+  COUPON_SCHOLARSHIP: 'Coupon or scholarship',
+  SPARKS_UNLOCK: 'Sparks unlock',
 };
 
 /** Default number of free lessons at the start of a paid course. */
@@ -207,6 +184,7 @@ export const DEFAULT_FREE_PREVIEW_COUNT = 1;
 export const allocFree = (courseId: string) => `alloc:free:${courseId}`;
 export const allocPaid = (courseId: string) => `alloc:paid:${courseId}`;
 export const allocMarketplace = (courseId: string) => `alloc:marketplace:${courseId}`;
+export const allocBook = (productId: string) => `alloc:book:${productId}`;
 export const allocCoupon = (courseId: string, expiry: string) => `alloc:coupon:${courseId}:${expiry}`;
 export const allocInstitution = (instId: string, courseId: string) =>
   `alloc:institution:${instId}:${courseId}`;
@@ -218,8 +196,6 @@ export interface AddOn {
   permission: string;
   name: string;
   blurb: string;
-  usdMonthly: number;
-  myrMonthly: number;
   /** Base tier required before the add-on can be bought. */
   requiresTier: AccessTier;
 }
@@ -234,9 +210,14 @@ export const ADDONS: AddOn[] = [
     permission: 'addon:lyra_live',
     name: 'Lyra Live',
     blurb: 'Real-time face-to-face sessions with an AI teacher who sees and hears you.',
-    usdMonthly: 49,
-    myrMonthly: 219,
     requiresTier: 2,
+  },
+  {
+    id: 'cms',
+    permission: 'addon:cms',
+    name: 'CMS',
+    blurb: 'Shared editor, document import, image library, illustrations, and course or book covers.',
+    requiresTier: 5,
   },
 ];
 
@@ -252,24 +233,35 @@ export function hasAddOn(permissions: string[], id: string): boolean {
 }
 
 /**
- * Permissions implied by an access tier.
- * Tier 3 does not inherit school or exam plans. Tier 4 includes those plans.
- * Tier 6 is marketplace only.
+ * The shared editor and media tools.
+ * A platform admin always has them. A teacher or institution admin has them
+ * when `addon:cms` is on their account.
  */
+export function hasCmsAddon(
+  profile: {
+    role?: string | null;
+    permissions?: string[] | null;
+    accessTier?: number | null;
+    subscriptionTier?: string | null;
+  } | null | undefined,
+): boolean {
+  if (!profile) return false;
+  if (profile.role === 'admin') return true;
+  return hasAddOn(permissionsFor(profile), 'cms');
+}
+
+/** Permissions implied by an access tier. Cumulative — each tier includes those below. */
 export function permissionsForTier(tier: AccessTier): string[] {
-  const base = ['free:preview', 'plan:marketplace_purchase'];
-  const studio = ['et_ai:studio', 'plan:ai_tutor'];
-  const school = ['plan:primary', 'plan:secondary'];
-  const exam = [
-    'plan:igcse', 'plan:alevel', 'plan:pre_university',
-    'plan:bloom_tracking', 'plan:goals_linked', 'plan:parent_dashboard', 'plan:certificate',
-  ];
-  const shortForm = ['plan:micro_degree', 'plan:professional_cert', 'plan:independent'];
-  if (tier === 1) return [...base, ...studio, ...school];
-  if (tier === 2) return [...base, ...studio, ...school, ...exam];
-  if (tier === 3) return [...base, ...studio, ...shortForm];
-  if (tier === 4 || tier === 5) return [...base, ...studio, ...school, ...exam, ...shortForm, 'plan:llb'];
-  return base;
+  const p = ['free:preview', 'plan:marketplace_purchase'];
+  if (tier >= 1) p.push('et_ai:studio', 'plan:primary', 'plan:secondary');
+  if (tier >= 2) {
+    p.push('plan:igcse', 'plan:alevel', 'plan:pre_university', 'plan:independent',
+      'plan:ai_tutor', 'plan:bloom_tracking', 'plan:goals_linked',
+      'plan:parent_dashboard', 'plan:certificate');
+  }
+  if (tier >= 3) p.push('plan:micro_degree', 'plan:professional_cert');
+  if (tier >= 4) p.push('plan:llb');
+  return p;
 }
 
 /** Permissions implied by a role. */
@@ -301,9 +293,7 @@ export function accessTierFor(
   if (profile.role === 'institution_admin' || profile.role === 'teacher') return 5;
   const explicit = profile.accessTier;
   if (typeof explicit === 'number' && explicit >= 0 && explicit <= 6) return explicit as AccessTier;
-  // Older accounts stored a binary plan. 'academic' was the exam-years plan.
-  // Anyone else is on the free preview until a plan is set.
-  return profile.subscriptionTier === 'academic' ? 2 : 0;
+  return profile.subscriptionTier === 'academic' ? 2 : 6;
 }
 
 /** Everything a user is entitled to, derived from tier + role + stored allocations. */
@@ -374,7 +364,7 @@ export function checkEntitlement(
   let paidAllocation = false;
   if (courseId) {
     if (perms.includes(allocFree(courseId))) return ALLOWED;
-    if (perms.includes(allocMarketplace(courseId))) return ALLOWED;
+    if (perms.includes(allocMarketplace(courseId)) || perms.includes(allocBook(courseId))) return ALLOWED;
     if (perms.some(p => p.startsWith(`alloc:coupon:${courseId}:`) && couponLive(p))) return ALLOWED;
 
     const institutionRe = new RegExp(`^alloc:institution:[^:]+:${courseId}$`);
@@ -384,11 +374,8 @@ export function checkEntitlement(
     paidAllocation = perms.includes(allocPaid(courseId));
   }
 
-  // Gate 1 — access tier. Studio tools are open to every paid plan, including
-  // the $19 short-course plan, which does not include school curricula.
-  const studioTool = contentType === 'ET_AI_STUDIO' || contentType === 'AI_TUTOR_SESSION';
-  const tierOk = studioTool ? userTier >= 1 : tierCovers(userTier, minTier);
-  if (!tierOk) {
+  // Gate 1 — access tier.
+  if (userTier < minTier) {
     return { allowed: false, reason: 'UPGRADE_REQUIRED', requiredTier: minTier };
   }
 
@@ -421,10 +408,11 @@ interface CourseLike {
 export function courseMinTier(course: CourseLike): AccessTier {
   if (typeof course.minTier === 'number') return Math.min(6, Math.max(0, course.minTier)) as AccessTier;
   const level = (course.level ?? '').toLowerCase();
-  if (level.includes('micro') || level.includes('professional') || level.includes('independent')) return 3;
-  if (level.includes('llb') || level.includes('mbbs') || level.includes('medicine')) return 4;
-  if (level.includes('igcse') || level.includes('a-level') || level.includes('a level')) return 2;
-  if (level.includes('primary') || level.includes('secondary')) return 1;
+  if (level.includes('primary')) return 1;
+  if (level.includes('secondary')) return 1;
+  if (level.includes('gcse') || level.includes('a-level') || level.includes('a level')) return 2;
+  if (level.includes('university') || level.includes('degree')) return 3;
+  // Marketplace courses only require an account.
   return course.kind === 'curriculum' ? 2 : 6;
 }
 

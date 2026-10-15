@@ -1,12 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
 import { answersMatch, shuffle, shuffleQuizOptions } from './quiz';
 
 describe('shuffle', () => {
   it('returns every item and does not edit the original', () => {
     const original = ['A', 'B', 'C', 'D'];
     const result = shuffle(original, () => 0);
-    expect(result).toEqual(['B', 'C', 'D', 'A']);
-    expect(original).toEqual(['A', 'B', 'C', 'D']);
+    assert.deepEqual(result, ['B', 'C', 'D', 'A']);
+    assert.deepEqual(original, ['A', 'B', 'C', 'D']);
   });
 
   it('is not stuck on the first option', () => {
@@ -19,21 +20,21 @@ describe('shuffle', () => {
       [{ question: 'Q', options: ['one', 'two', 'three', 'four'] }],
       rng,
     );
-    expect(result[0]?.options[0]).not.toBe('one');
-    expect(result[0]?.options.slice().sort()).toEqual(['four', 'one', 'three', 'two']);
+    assert.notEqual(result[0]?.options[0], 'one');
+    assert.deepEqual(result[0]?.options.slice().sort(), ['four', 'one', 'three', 'two']);
   });
 });
 
 describe('answersMatch', () => {
   it('grades the option text after a shuffle', () => {
     const options = ['plants digest food', 'plants photosynthesize', 'animals photosynthesize', 'both the same'];
-    expect(answersMatch('plants photosynthesize', 'plants photosynthesize', options)).toBe(true);
-    expect(answersMatch('plants digest food', 'plants photosynthesize', options)).toBe(false);
+    assert.equal(answersMatch('plants photosynthesize', 'plants photosynthesize', options), true);
+    assert.equal(answersMatch('plants digest food', 'plants photosynthesize', options), false);
   });
 
   it('still accepts a legacy letter answer against the original order', () => {
     const options = ['wrong', 'right', 'also wrong', 'nope'];
-    expect(answersMatch('right', 'B', options)).toBe(true);
-    expect(answersMatch('wrong', 'B', options)).toBe(false);
+    assert.equal(answersMatch('right', 'B', options), true);
+    assert.equal(answersMatch('wrong', 'B', options), false);
   });
 });
