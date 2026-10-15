@@ -11,11 +11,12 @@ export const FIRST_SUPER_ADMIN = {
 
 /**
  * Accounts seeded as super admins before any custom claim exists.
- * `ADMIN_BOOTSTRAP_EMAILS` can add more for the claims script. These two always stay in that list.
+ * `ADMIN_BOOTSTRAP_EMAILS` can add more for the claims script. These three always stay in that list.
  */
 export const INITIAL_SUPER_ADMINS = [
   { name: 'Harry Seggu', email: 'harry.seggu@gmail.com' },
   FIRST_SUPER_ADMIN,
+  { name: 'Harry Seggu', email: 'harry@poketschool.ai' },
 ] as const;
 
 export function initialSuperAdmin(email: string | null | undefined): { name: string; email: string } | null {

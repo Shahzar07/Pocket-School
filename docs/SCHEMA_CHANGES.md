@@ -246,20 +246,21 @@ Rules still need an owner deploy. Until that deploy, the API and the admin shell
 
 ### Initial super admins
 
-Two accounts are seeded as super admins. Both display as Harry Seggu:
+Three accounts are seeded as super admins. Each displays as Harry Seggu:
 
 | Email | Why |
 |---|---|
 | `harry.seggu@gmail.com` | Harry Seggu |
 | `shahzarrayyan123@gmail.com` | Firebase owner account |
+| `harry@poketschool.ai` | Poket School address |
 
-`resolveStaffRole` treats both as `super_admin` before a custom claim exists. `callerIsSuper()` in `firestore.rules` allows both emails, plus `harry@poketschool.ai`.
+`resolveStaffRole` treats all three as `super_admin` before a custom claim exists. `callerIsSuper()` in `firestore.rules` allows the same three emails.
 
-Set the claims with the bootstrap script. `ADMIN_BOOTSTRAP_EMAILS` is optional. When it is unset, the script still seeds both addresses. When it is set, those addresses are added as well, and the two above are kept.
+Set the claims with the bootstrap script. `ADMIN_BOOTSTRAP_EMAILS` is optional. When it is unset, the script still seeds these three addresses. When it is set, those addresses are added as well, and the three above are kept.
 
 ```bash
 export FIREBASE_SERVICE_ACCOUNT='{"type":"service_account",...}'
-export ADMIN_BOOTSTRAP_EMAILS='harry.seggu@gmail.com,shahzarrayyan123@gmail.com'
+export ADMIN_BOOTSTRAP_EMAILS='harry.seggu@gmail.com,shahzarrayyan123@gmail.com,harry@poketschool.ai'
 npx tsx scripts/bootstrap-super-admins.ts
 ```
 

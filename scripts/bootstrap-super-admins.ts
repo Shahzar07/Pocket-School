@@ -2,10 +2,10 @@
  * Seed the initial super admins.
  *
  *   export FIREBASE_SERVICE_ACCOUNT='{"type":"service_account",...}'
- *   export ADMIN_BOOTSTRAP_EMAILS='harry.seggu@gmail.com,shahzarrayyan123@gmail.com'
+ *   export ADMIN_BOOTSTRAP_EMAILS='harry.seggu@gmail.com,shahzarrayyan123@gmail.com,harry@poketschool.ai'
  *   npx tsx scripts/bootstrap-super-admins.ts
  *
- * ADMIN_BOOTSTRAP_EMAILS is optional. The two owner emails are always included.
+ * ADMIN_BOOTSTRAP_EMAILS is optional. The three owner emails are always included.
  * Each person signs out and back in after this so the ID token picks up the claim.
  */
 import { cert, initializeApp } from 'firebase-admin/app';
