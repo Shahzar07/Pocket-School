@@ -3,6 +3,7 @@ import firebaseConfig from '@/firebase-applet-config.json';
 import { canDownload, type DownloadViewer } from '@/lib/export/allow';
 import { buildExport } from '@/lib/export/files';
 import { formatsFor, type ExportAsset, type ExportFormat } from '@/lib/export/payload';
+import { accountIsBlocked } from '@/lib/admin-signals';
 
 export const runtime = 'nodejs';
 
@@ -59,6 +60,9 @@ async function viewerFromStore(caller: string, posted: DownloadViewer, courseId:
 export async function POST(request: Request) {
   const caller = await callerUid(request);
   if (!caller) return NextResponse.json({ error: 'Sign in to download this file.' }, { status: 401 });
+  if (await accountIsBlocked(caller)) {
+    return NextResponse.json({ error: 'This account cannot download files.' }, { status: 403 });
+  }
 
   const body = await request.json().catch(() => null) as {
     asset?: string;

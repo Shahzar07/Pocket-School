@@ -230,6 +230,32 @@ Permission string `addon:cms`. Priced in `seedPricing()` at 29 USD per month. `n
 
 Grant and revoke use the existing add-on controls on Access allocation.
 
+## Admin console
+
+Staff stay on `users.role = admin` so the existing admin shell keeps working. The new field `users.adminRole` is the staff role: `super_admin`, `admin`, `content_editor`, `support`, or `finance`. Custom claims mirror it: `{ adminRole, role }`. Claims are written only when `FIREBASE_SERVICE_ACCOUNT` is set, by `POST /api/admin/console` with action `sync-claims`. The person signs out and back in before rules see the new claim.
+
+`accountStatus` now also allows `banned` and `deleted`. `statusReason` stores the reason. `deletedAt` is a millisecond timestamp on soft-delete and `null` after restore. `country` is an optional profile string used by the directory filter.
+
+| Collection | Who can read | Who can write |
+|---|---|---|
+| `admin_audit/{id}` | Super admin claim, or one of the owner emails | Create by a platform admin, `actorId` must be their uid. No update or delete. |
+| `admin_invites/{email}` | Platform admins | Create or update a non-super invite as an admin. Super invites and deletes need the super claim or an owner email. |
+| `platform_signals/{id}` | Platform admins | Nobody from the client. The Admin SDK records `health.generationFailures`, `health.quotaErrors`, and `health.sparksSpent`. |
+
+Rules still need an owner deploy. Until that deploy, the API and the admin shell enforce the same role, suspension, ban, and soft-delete decisions. A blocked account is refused by `/api/admin/console` and `/api/export` when the service account can read the profile.
+
+### First super admin
+
+Harry Seggu, `shahzarrayyan123@gmail.com`, is the Firebase owner account and the first super admin.
+
+1. Put the owner service-account JSON in `FIREBASE_SERVICE_ACCOUNT`. Do not commit it.
+2. Set `SMTP_HOST`, `SMTP_USER`, and `SMTP_PASS` so admin MFA can send a code. Admin and super admin sign-in refuses to continue when SMTP is missing.
+3. Sign in at `/admin/login` with that email. The page writes `users/{uid}.name = Harry Seggu`, `role = admin`, and `adminRole = super_admin` when the rules allow it.
+4. `sync-claims` sets the custom claim `{ adminRole: 'super_admin', role: 'admin' }` when the service account is present. Sign out and in again so the ID token picks up the claim.
+5. Until the service account exists, that email is still treated as super admin by `resolveStaffRole` and by `callerIsSuper()` in the rules. Other `role: admin` accounts resolve as regular admins unless `adminRole` is set.
+
+A super admin cannot remove the last super admin, and cannot demote or block their own super admin account. Another super admin has to do that.
+
 ## modules.title
 
 `createModule` strips a leading `Unit N:`, `Module N:`, or `Chapter N:` when `N` is that module's `unitNumber`, including a repeated prefix. The course tree still prints `Unit N:` once. Opening a course repairs stored titles that still have the duplicate.

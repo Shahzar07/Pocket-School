@@ -8,6 +8,7 @@ import {
   type LawStage, type Tier3Assessment,
 } from '@/lib/curriculum-tiers';
 import { groundInfographic, mindmapIsBuzan, problemsAreWorked } from '@/lib/generation-quality';
+import { noteGenerationFailure } from '@/lib/admin-signals';
 
 /** Video and audio scripts use the dedicated narrative model; everything
  * else uses the ultra-cheap content model. */
@@ -301,6 +302,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ result: text });
   } catch (err: any) {
     console.error('[generate]', err);
+    await noteGenerationFailure();
     return NextResponse.json({ error: err.message || 'AI generation failed' }, { status: 500 });
   }
 }

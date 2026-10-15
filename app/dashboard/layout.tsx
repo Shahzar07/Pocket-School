@@ -22,6 +22,8 @@ import { LanguageSwitcher } from '@/components/language-switcher';
 import { CurrencySwitcher } from '@/components/currency-switcher';
 import { SparksChip } from '@/components/sparks-chip';
 import { upsertUserSession, accountStatusOf } from '@/lib/db';
+import { loginBlocked, resolveStaffRole } from '@/lib/admin-console';
+import { AdminViewAsBanner, clearViewAs, useAdminIdle, useViewAs } from '@/components/admin-session';
 import { PipGuide } from '@/components/pip-guide';
 import { OfflineBanner } from '@/components/offline-banner';
 import { RoleChecklist } from '@/components/role-checklist';
@@ -221,8 +223,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   useEffect(() => {
-    if (!loading && !user) router.push('/login');
-  }, [user, loading, router]);
+    if (!loading && !user) {
+      router.push(pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login');
+    }
+  }, [user, loading, router, pathname]);
+
+  const staffRole = resolveStaffRole(profile ? {
+    id: user?.uid,
+    email: profile.email,
+    role: profile.role,
+    adminRole: profile.adminRole,
+  } : null);
+  useAdminIdle(Boolean(staffRole));
+  const viewAs = useViewAs();
 
   useEffect(() => {
     if (!user) return;
@@ -240,16 +253,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // A suspended account keeps its Firebase session, so without this check a
   // suspended user would carry on using the dashboard until their token expired.
-  if (accountStatusOf(profile) === 'suspended') {
+  if (loginBlocked(accountStatusOf(profile))) {
+    const closed = accountStatusOf(profile) !== 'suspended';
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
         <div className="max-w-md w-full bg-card border border-border rounded-3xl p-8 text-center card-glow">
           <div className="w-12 h-12 rounded-2xl bg-destructive/10 grid place-items-center mx-auto mb-4">
             <ShieldCheck className="w-6 h-6 text-destructive" />
           </div>
-          <h1 className="font-heading text-2xl text-foreground">{t('account.suspendedTitle')}</h1>
+          <h1 className="font-heading text-2xl text-foreground">
+            {closed ? 'This account is closed' : t('account.suspendedTitle')}
+          </h1>
           <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-            {t('account.suspendedBody')}
+            {closed
+              ? 'An administrator closed this account. Contact support if that is a mistake.'
+              : t('account.suspendedBody')}
+            {profile.statusReason ? ` ${profile.statusReason}` : ''}
           </p>
           <a
             href="mailto:support@poketschool.ai"
@@ -257,6 +276,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           >
             {t('account.contactSupport')}
           </a>
+          <button
+            type="button"
+            onClick={() => { signOut(auth).then(() => { useAuthSTORE.getState().setUser(null); router.push('/login'); }); }}
+            className="mt-3 text-sm font-semibold text-muted-foreground"
+          >
+            {t('nav.signOut')}
+          </button>
         </div>
       </div>
     );
@@ -331,7 +357,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <HelpCircle className="w-[17px] h-[17px] shrink-0" /> {t('nav.helpCenter')}
           </Link>
           <button
-            onClick={() => { signOut(auth).then(() => { useAuthSTORE.getState().setUser(null); router.push('/login'); }); }}
+            onClick={() => {
+              clearViewAs();
+              signOut(auth).then(() => {
+                useAuthSTORE.getState().setUser(null);
+                router.push(staffRole ? '/admin/login' : '/login');
+              });
+            }}
             className="w-full flex items-center gap-3 px-3 h-9 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
           >
             <LogOut className="w-[17px] h-[17px] shrink-0" /> {t('nav.signOut')}
@@ -341,6 +373,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* ── Main Content ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <AdminViewAsBanner />
         {/* Header */}
         <header className="h-[72px] bg-background/80 backdrop-blur-xl flex items-center justify-between gap-4 px-4 lg:px-6 shrink-0 z-10">
           <div className="flex items-center gap-3">
@@ -391,7 +424,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
       </div>
 
-      <AITutor />
+      {viewAs ? null : <AITutor />}
     </div>
   );
 }

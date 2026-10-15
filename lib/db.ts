@@ -39,7 +39,14 @@ export interface UserProfile {
   permissions?: string[];
   /** Account lifecycle. Absent means active — existing accounts predate this
    * field and must not be treated as suspended. */
-  accountStatus?: 'active' | 'suspended' | 'pending' | 'inactive';
+  accountStatus?: 'active' | 'suspended' | 'pending' | 'inactive' | 'banned' | 'deleted';
+  /** Why an admin suspended, banned, or deleted the account. */
+  statusReason?: string;
+  /** Set when an admin soft-deletes the account. Cleared on restore. */
+  deletedAt?: number | null;
+  /** Staff console role. Custom claims mirror this field. */
+  adminRole?: 'super_admin' | 'admin' | 'content_editor' | 'support' | 'finance';
+  country?: string;
   lastActiveAt?: Timestamp;
   sparksBalance?: number;
   sparksMonthlyAllowance?: number;
@@ -1639,20 +1646,26 @@ export async function revokePermission(userId: string, permission: string): Prom
   await updateDoc(doc(db, 'users', userId), { permissions: arrayRemove(permission) });
 }
 
-export type AccountStatus = 'active' | 'suspended' | 'pending' | 'inactive';
+export type AccountStatus = 'active' | 'suspended' | 'pending' | 'inactive' | 'banned' | 'deleted';
 
 /** Absent status means active — accounts created before the field existed. */
 export function accountStatusOf(p: { accountStatus?: string } | null | undefined): AccountStatus {
   const s = p?.accountStatus;
-  return s === 'suspended' || s === 'pending' || s === 'inactive' ? s : 'active';
+  if (s === 'suspended' || s === 'pending' || s === 'inactive' || s === 'banned' || s === 'deleted') return s;
+  return 'active';
 }
 
 /**
  * Admin: change an account's status. Suspending blocks sign-in on the next
  * load — see the dashboard guard — rather than only greying out a row.
  */
-export async function setAccountStatus(userId: string, status: AccountStatus): Promise<void> {
-  await updateDoc(doc(db, 'users', userId), { accountStatus: status, updatedAt: serverTimestamp() });
+export async function setAccountStatus(userId: string, status: AccountStatus, reason?: string): Promise<void> {
+  await updateDoc(doc(db, 'users', userId), {
+    accountStatus: status,
+    ...(reason ? { statusReason: reason } : {}),
+    deletedAt: status === 'deleted' ? Date.now() : null,
+    updatedAt: serverTimestamp(),
+  });
 }
 
 export async function setAccountStatusBulk(userIds: string[], status: AccountStatus): Promise<void> {
@@ -1755,6 +1768,61 @@ export async function getPlatformStats(): Promise<{ students: number; teachers: 
     getDocs(collection(db, 'courses')),
   ]);
   return { students: sSnap.size, teachers: tSnap.size, courses: cSnap.size };
+}
+
+/** Sum of course counters the admin home can show without inventing a ledger. */
+export async function getCourseRollup(): Promise<{ completions: number; revenue: number }> {
+  const snap = await getDocs(collection(db, 'courses'));
+  let completions = 0;
+  let revenue = 0;
+  snap.docs.forEach(item => {
+    const data = item.data();
+    completions += Number(data.completionCount ?? 0);
+    revenue += Number(data.revenueTotal ?? 0);
+  });
+  return { completions, revenue };
+}
+
+export async function getPlatformHealth(): Promise<{ quotaErrors: number; generationFailures: number; sparksSpent: number }> {
+  try {
+    const snap = await getDoc(doc(db, 'platform_signals', 'health'));
+    const data = snap.data() ?? {};
+    return {
+      quotaErrors: Number(data.quotaErrors ?? 0),
+      generationFailures: Number(data.generationFailures ?? 0),
+      sparksSpent: Number(data.sparksSpent ?? 0),
+    };
+  } catch {
+    return { quotaErrors: 0, generationFailures: 0, sparksSpent: 0 };
+  }
+}
+
+export interface AdminAuditRow {
+  id: string;
+  actorId: string;
+  actorEmail: string;
+  action: string;
+  targetId: string;
+  at: number;
+  before: Record<string, unknown>;
+  after: Record<string, unknown>;
+}
+
+export async function getAdminAudit(max = 200): Promise<AdminAuditRow[]> {
+  const snap = await getDocs(query(collection(db, 'admin_audit'), orderBy('at', 'desc'), limit(max)));
+  return snap.docs.map(item => {
+    const data = item.data();
+    return {
+      id: item.id,
+      actorId: String(data.actorId ?? ''),
+      actorEmail: String(data.actorEmail ?? ''),
+      action: String(data.action ?? ''),
+      targetId: String(data.targetId ?? ''),
+      at: Number(data.at ?? 0),
+      before: (data.before ?? {}) as Record<string, unknown>,
+      after: (data.after ?? {}) as Record<string, unknown>,
+    };
+  });
 }
 
 // ─── Parent / Child ───────────────────────────────────────────
