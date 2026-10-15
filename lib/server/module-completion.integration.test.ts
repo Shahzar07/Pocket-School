@@ -1,11 +1,12 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import assert from 'node:assert/strict';
+import { after, before, describe, it } from 'node:test';
 
 const EMULATOR = process.env.FIRESTORE_EMULATOR_HOST ?? '';
 const DATABASE_ID = 'ai-studio-5cdc1a69-b213-49e8-8c41-756df00d9e15';
 
-describe.skipIf(!EMULATOR.startsWith('127.0.0.1') && !EMULATOR.startsWith('localhost'))(
-  'completing a module as a test student',
-  () => {
+const emulatorReady = EMULATOR.startsWith('127.0.0.1') || EMULATOR.startsWith('localhost');
+
+describe('completing a module as a test student', { skip: !emulatorReady }, () => {
     const studentId = 'student-cert';
     const courseId = 'course-cert';
     const moduleId = 'module-cells';
@@ -14,7 +15,7 @@ describe.skipIf(!EMULATOR.startsWith('127.0.0.1') && !EMULATOR.startsWith('local
     let syncModuleCertificates: typeof import('./actions').syncModuleCertificates;
     let firestore: import('firebase-admin/firestore').Firestore;
 
-    beforeAll(async () => {
+    before(async () => {
       process.env.FIREBASE_PROJECT_ID = process.env.GCLOUD_PROJECT || 'demo-poket';
       const { getApps, initializeApp } = await import('firebase-admin/app');
       const { getFirestore } = await import('firebase-admin/firestore');
@@ -54,9 +55,9 @@ describe.skipIf(!EMULATOR.startsWith('127.0.0.1') && !EMULATOR.startsWith('local
         progress: 0,
         completedLessons: ['draft-b', 'ghost-lesson'],
       });
-    }, 30000);
+    });
 
-    afterAll(async () => {
+    after(async () => {
       if (!firestore) return;
       const certs = await firestore.collection('certificates').where('studentId', '==', studentId).get();
       await Promise.all(certs.docs.map((doc) => doc.ref.delete()));
@@ -66,57 +67,62 @@ describe.skipIf(!EMULATOR.startsWith('127.0.0.1') && !EMULATOR.startsWith('local
 
     it('awards one verifiable certificate when the last published lesson is finished', async () => {
       const draft = await completeLesson(studentId, courseId, 'draft-b', 50, true);
-      expect(draft.accepted).toBe(false);
-      expect(draft.certificate).toBeNull();
+      assert.equal(draft.accepted, false);
+      assert.equal(draft.certificate, null);
 
       const missing = completeLesson(studentId, courseId, 'does-not-exist');
-      await expect(missing).rejects.toMatchObject({ code: 'NOT_FOUND' });
+      await assert.rejects(missing, (err: unknown) => {
+        assert.equal((err as { code?: string }).code, 'NOT_FOUND');
+        return true;
+      });
 
       const first = await completeLesson(studentId, courseId, 'pub-a', 50, true);
-      expect(first.accepted).toBe(true);
-      expect(first.progress).toBe(50);
-      expect(first.certificate).toBeNull();
-      expect(first.balance).toBe(10);
+      assert.equal(first.accepted, true);
+      assert.equal(first.progress, 50);
+      assert.equal(first.certificate, null);
+      assert.equal(first.balance, 10);
 
       const repeat = await completeLesson(studentId, courseId, 'pub-a', 50, true);
-      expect(repeat.already).toBe(true);
-      expect(repeat.balance).toBe(10);
+      assert.equal(repeat.already, true);
+      assert.equal(repeat.balance, 10);
 
       const done = await completeLesson(studentId, courseId, 'pub-c', 50, true);
-      expect(done.progress).toBe(100);
-      expect(done.certificate?.fresh).toBe(true);
-      expect(done.certificate?.studentName).toBe('Aisha Rahman');
-      expect(done.certificate?.moduleTitle).toBe('Cells and organisation');
-      expect(done.certificate?.courseTitle).toBe('Biology');
-      expect(done.certificate?.issuedByName).toBe('Poket School');
-      expect(done.certificate?.id).toMatch(/^[0-9a-f-]{36}$/);
+      assert.equal(done.progress, 100);
+      assert.equal(done.certificate?.fresh, true);
+      assert.equal(done.certificate?.studentName, 'Aisha Rahman');
+      assert.equal(done.certificate?.moduleTitle, 'Cells and organisation');
+      assert.equal(done.certificate?.courseTitle, 'Biology');
+      assert.equal(done.certificate?.issuedByName, 'Poket School');
+      assert.match(done.certificate?.id ?? '', /^[0-9a-f-]{36}$/);
 
       const saved = await firestore.doc(`certificates/${done.certificate?.id}`).get();
-      expect(saved.exists).toBe(true);
-      expect(saved.data()?.studentId).toBe(studentId);
-      expect(saved.data()?.moduleId).toBe(moduleId);
-      expect(saved.data()?.brand).toBe('Poket School');
-      expect(saved.data()?.status).toBe('valid');
-      expect(saved.data()?.issuedBy).toBe('poket-school');
-      expect(typeof saved.data()?.disclaimer).toBe('string');
+      assert.equal(saved.exists, true);
+      assert.equal(saved.data()?.studentId, studentId);
+      assert.equal(saved.data()?.moduleId, moduleId);
+      assert.equal(saved.data()?.brand, 'Poket School');
+      assert.equal(saved.data()?.status, 'valid');
+      assert.equal(saved.data()?.issuedBy, 'poket-school');
+      assert.equal(typeof saved.data()?.disclaimer, 'string');
 
       const again = await completeLesson(studentId, courseId, 'pub-c', 50, true);
-      expect(again.certificate).toBeNull();
+      assert.equal(again.certificate, null);
       const all = await firestore.collection('certificates').where('studentId', '==', studentId).get();
-      expect(all.size).toBe(1);
+      assert.equal(all.size, 1);
 
       const enrollment = await firestore.doc(`courses/${courseId}/enrollments/${studentId}`).get();
-      expect(enrollment.data()?.progress).toBe(100);
-      expect(enrollment.data()?.completedLessons).toEqual(expect.arrayContaining(['pub-a', 'pub-c', 'draft-b', 'ghost-lesson']));
-      expect(enrollment.data()?.completedLessons).not.toContain('only-draft');
+      assert.equal(enrollment.data()?.progress, 100);
+      const completed = enrollment.data()?.completedLessons as string[];
+      for (const lessonId of ['pub-a', 'pub-c', 'draft-b', 'ghost-lesson']) {
+        assert.equal(completed.includes(lessonId), true);
+      }
+      assert.equal(completed.includes('only-draft'), false);
 
       const draftOnly = await completeLesson(studentId, courseId, 'only-draft');
-      expect(draftOnly.accepted).toBe(false);
+      assert.equal(draftOnly.accepted, false);
 
       const synced = await syncModuleCertificates(studentId, studentId, courseId);
-      expect(synced.issued).toEqual([]);
+      assert.deepEqual(synced.issued, []);
       const stillOne = await firestore.collection('certificates').where('studentId', '==', studentId).get();
-      expect(stillOne.size).toBe(1);
-    }, 30000);
-  },
-);
+      assert.equal(stillOne.size, 1);
+    });
+});

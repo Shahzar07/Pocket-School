@@ -46,6 +46,7 @@ function certificateFace(cert: Certificate): CertificateFace {
     courseId: cert.courseId,
     issuedAt: cert.issuedAt,
     issuedByName: cert.issuedByName,
+    status: cert.status,
   };
 }
 

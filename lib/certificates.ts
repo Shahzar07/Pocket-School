@@ -1,5 +1,6 @@
 import { countCompleted, progressPercent } from './progress';
 import { QR_QUIET_ZONE, qrMatrix, qrSvg } from './certificate-qr';
+import { copyrightLine } from './insights/copyright';
 
 export const CERTIFICATE_ISSUER_ID = 'poket-school';
 export const CERTIFICATE_ISSUER_NAME = 'Poket School';
@@ -89,6 +90,24 @@ export function certificateVerifyUrl(id: string, origin = 'https://poketschool.a
   return `${origin.replace(/\/$/, '')}${certificateVerifyPath(id)}`;
 }
 
+/** Issue year from the certificate date, so a download keeps the year it was awarded. */
+export function certificateCopyright(issuedAt: CertificateFace['issuedAt']): string {
+  let year = new Date().getUTCFullYear();
+  try {
+    const date = issuedAt instanceof Date
+      ? issuedAt
+      : issuedAt && typeof issuedAt === 'object' && typeof issuedAt.toDate === 'function'
+        ? issuedAt.toDate()
+        : typeof issuedAt === 'string' || typeof issuedAt === 'number'
+          ? new Date(issuedAt)
+          : null;
+    if (date && !Number.isNaN(date.getTime())) year = date.getUTCFullYear();
+  } catch {
+    year = new Date().getUTCFullYear();
+  }
+  return copyrightLine(year);
+}
+
 export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -155,7 +174,8 @@ export function buildCertificatePdf(face: CertificateFace, origin?: string): Uin
     { text: `Certificate ID  ${face.id}`, size: 11, gap: 16 },
     { text: verify, size: 9, gap: 18 },
     { text: 'Scan the QR code to open this verification page', size: 9, gap: 16 },
-    { text: 'Not an official academic qualification', size: 9, gap: 12 },
+    { text: 'Not an official academic qualification', size: 9, gap: 14 },
+    { text: certificateCopyright(face.issuedAt), size: 9, gap: 12 },
   ];
   const commands = [
     '0.12 0.35 0.42 RG',
@@ -224,7 +244,8 @@ export function certificateDocumentHtml(face: CertificateFace, origin?: string):
     .status { display: inline-block; margin-top: 16px; padding: 4px 12px; border-radius: 999px; font-family: "Gill Sans", "Trebuchet MS", sans-serif; font-size: 12px; letter-spacing: 0.14em; }
     .valid { color: #0F6E56; background: #E7F6F1; }
     .revoked { color: #9B1C1C; background: #FDE8E8; }
-    .disclaimer { margin-top: 22px; font-size: 12px; color: #6b7c82; }
+    .disclaimer, .copyright { margin-top: 22px; font-size: 12px; color: #6b7c82; }
+    .copyright { margin-top: 10px; }
     @media print { body { background: #fff; } .sheet { margin: 0; width: auto; } }
   </style>
 </head>
@@ -243,6 +264,7 @@ export function certificateDocumentHtml(face: CertificateFace, origin?: string):
     <div class="qr">${qrSvg(verify)}</div>
     <p class="meta">Scan the QR code to open ${escapeHtml(verify)}</p>
     <p class="disclaimer">${escapeHtml(CERTIFICATE_DISCLAIMER)}</p>
+    <p class="copyright">${escapeHtml(certificateCopyright(face.issuedAt))}</p>
   </div></div>
   <script>window.onload = function () { window.print(); }<\/script>
 </body>

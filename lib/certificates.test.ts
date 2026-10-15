@@ -2,8 +2,10 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import jsQR from 'jsqr';
 import { QRCodeSVG } from 'qrcode.react';
-import { describe, expect, it } from 'vitest';
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
 import { qrMatrix } from './certificate-qr';
+import { copyrightLine } from './insights/copyright';
 import {
   buildCertificatePdf,
   certificateDocumentHtml,
@@ -14,6 +16,22 @@ import {
   moduleIsComplete,
   publishedProgress,
 } from './certificates';
+
+function expect(actual: unknown) {
+  return {
+    toBe(expected: unknown) {
+      assert.equal(actual, expected);
+    },
+    toContain(expected: string) {
+      assert.equal(String(actual).includes(expected), true, `expected to contain ${expected}`);
+    },
+    not: {
+      toContain(expected: string) {
+        assert.equal(String(actual).includes(expected), false, `expected not to contain ${expected}`);
+      },
+    },
+  };
+}
 
 function paintRect(
   data: Uint8ClampedArray,
@@ -151,6 +169,7 @@ describe('certificate document', () => {
     expect(text).toContain(verify);
     expect(text).toContain('Status  Valid');
     expect(text).toContain('Scan to verify');
+    expect(text).toContain(copyrightLine(2026).replace('©', '\\251'));
     expect(text).not.toContain('Pocket');
     // One white plate plus one filled square per dark module.
     expect(text.split(' re f').length - 1).toBe(dark + 1);
@@ -184,6 +203,7 @@ describe('certificate document', () => {
     expect(html).toContain('<svg');
     expect(html).toContain(certificateVerifyUrl(face.id));
     expect(html).toContain('not official academic qualifications');
+    expect(html).toContain(copyrightLine(2026));
     expect(certificateStatus('revoked')).toBe('revoked');
     expect(certificateStatus(undefined)).toBe('valid');
     const revokedPdf = new TextDecoder().decode(buildCertificatePdf({ ...face, status: 'revoked' }));

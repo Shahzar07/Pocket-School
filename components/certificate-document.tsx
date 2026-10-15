@@ -10,6 +10,7 @@ import {
   CERTIFICATE_ISSUER_NAME,
   type CertificateFace,
   buildCertificatePdf,
+  certificateCopyright,
   certificateDocumentHtml,
   certificateStatus,
   certificateVerifyPath,
@@ -118,6 +119,7 @@ export function CertificateDocument({
             </div>
           </div>
           <p className="text-[11px] text-[#6b7c82] mt-6 max-w-md mx-auto leading-relaxed">{CERTIFICATE_DISCLAIMER}</p>
+          <p className="text-[11px] text-[#6b7c82] mt-3">{certificateCopyright(certificate.issuedAt)}</p>
         </div>
       </div>
       {actions ? (

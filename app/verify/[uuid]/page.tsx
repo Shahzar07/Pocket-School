@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CertificateDocument } from '@/components/certificate-document';
 import { CERTIFICATE_DISCLAIMER, certificateStatus, formatCertificateDate, type CertificateFace } from '@/lib/certificates';
+import { copyrightLine } from '@/lib/insights/copyright';
 
 function toFace(cert: Certificate): CertificateFace {
   const issued = cert.issuedAt instanceof Timestamp ? cert.issuedAt.toDate() : cert.issuedAt;
@@ -118,6 +119,7 @@ export default function VerifyCertificate({ params }: { params: Promise<{ uuid: 
         )}
 
         <p className="text-center text-xs text-[#6b7c82] mt-8 max-w-lg mx-auto">{CERTIFICATE_DISCLAIMER}</p>
+        <p className="text-center text-xs text-[#6b7c82] mt-3">{copyrightLine(new Date().getFullYear())}</p>
       </div>
     </div>
   );

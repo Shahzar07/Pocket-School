@@ -27,7 +27,6 @@ import { rememberOfflineLesson } from '@/components/offline-banner';
 import { FORMAT_COSTS, FORMAT_LABELS, LESSON_COMPLETE_REWARD, UNIT_PASS_REWARD } from '@/lib/sparks';
 import type { CertificateAward } from '@/lib/certificates';
 import { CertificateCelebration } from '@/components/certificate-celebration';
-import { authedFetch } from '@/lib/api-client';
 import { SmartAudioPlayer } from '@/components/smart-audio-player';
 import { VideoPlayer } from '@/components/video-player';
 import { VideoStoryboard } from '@/components/video-storyboard';
