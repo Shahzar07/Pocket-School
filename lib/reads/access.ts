@@ -23,6 +23,7 @@
  */
 
 import { tierDefinition, type AccessTier } from '@/lib/entitlements';
+import { anyTargetMatch, normaliseTargets } from '@/lib/allocation-targets';
 import type { Book, BookChapter } from './types';
 
 export interface ReadsProfile {
@@ -31,6 +32,8 @@ export interface ReadsProfile {
   subscriptionTier?: string | null;
   permissions?: string[] | null;
   institutionId?: string | null;
+  userId?: string | null;
+  cohortIds?: string[] | null;
 }
 
 export type AccessSource = 'preview' | 'owned' | 'subscription' | 'staff' | 'institution' | 'sparks';
@@ -62,8 +65,17 @@ export function ownsBook(bookId: string, profile: ReadsProfile | null | undefine
 }
 
 export function subscriptionIncludes(book: Book, profile: ReadsProfile | null | undefined): boolean {
-  if (book.status !== 'published' || !book.allocateLibrary) return false;
-  if (book.accessMode === 'purchase') return false;
+  if (book.status !== 'published' || book.accessMode === 'purchase') return false;
+  const targets = book.targets?.length ? normaliseTargets(book.targets).filter(target => target !== 'marketplace') : [];
+  if (targets.length) {
+    const match = anyTargetMatch(targets, {
+      role: profile?.role || 'guest',
+      userId: profile?.userId,
+      institutionId: profile?.institutionId,
+      cohortIds: profile?.cohortIds,
+    });
+    if (!match.hit) return false;
+  } else if (!book.allocateLibrary) return false;
   return readsTier(profile) >= book.minTier;
 }
 

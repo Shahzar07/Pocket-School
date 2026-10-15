@@ -42,6 +42,49 @@ service cloud.firestore {
         || data.audiences.hasAny(['marketplace'])
         || (data.audiences.hasAny(['institutions'])
             && myInstitution() != null
+            && data.get('allocatedInstitutionIds', []).hasAny([myInstitution()]))
+        || (targetsGated(data) && targetsHit(data));
+    }
+
+    function targetsGated(data) {
+      return data.keys().hasAny(['targets'])
+        && data.targets is list
+        && data.targets.size() > 0;
+    }
+
+    function scopeGated(data) {
+      return data.keys().hasAny(['publishScope'])
+        && data.publishScope in ['institution', 'public', 'marketplace'];
+    }
+
+    // Any target is enough: a role, a named person, a class, a parent, a
+    // school, or the marketplace. Class ids are also stored on classIds.
+    function targetsHit(data) {
+      return data.targets.hasAny(['marketplace'])
+        || (isSignedIn() && (
+          data.targets.hasAny(['all'])
+          || (role() == 'student' && data.targets.hasAny(['students']))
+          || (role() == 'teacher' && data.targets.hasAny(['teachers']))
+          || (role() == 'parent' && data.targets.hasAny(['parents']))
+          || data.targets.hasAny(['user:' + request.auth.uid])
+          || data.targets.hasAny(['parent:' + request.auth.uid])
+          || (myInstitution() != null && data.targets.hasAny(['institution:' + myInstitution()]))
+          || (myInstitution() != null
+              && data.targets.hasAny(['institutions'])
+              && data.get('allocatedInstitutionIds', []).size() == 0)
+          || (myInstitution() != null
+              && data.get('allocatedInstitutionIds', []).hasAny([myInstitution()]))
+          || (data.get('classIds', []).size() > 0
+              && userDoc().get('cohortIds', []).hasAny(data.get('classIds', [])))
+        ));
+    }
+
+    function scopeHit(data) {
+      return data.publishScope == 'public'
+        || data.publishScope == 'marketplace'
+        || (isSignedIn()
+            && data.publishScope == 'institution'
+            && myInstitution() != null
             && data.get('allocatedInstitutionIds', []).hasAny([myInstitution()]));
     }
 
@@ -306,6 +349,7 @@ service cloud.firestore {
 
     function includeHit(data, courseId) {
       return data.accessPolicy.include.hasAny(['marketplace'])
+        || (targetsGated(data) && targetsHit(data))
         || (isSignedIn() && (
           data.accessPolicy.include.hasAny(['all'])
           || (role() == 'student' && data.accessPolicy.include.hasAny(['students']))
@@ -520,10 +564,16 @@ service cloud.firestore {
       allow read: if isAdmin()
         || (isSignedIn() && resource.data.ownerId == request.auth.uid)
         || (enrolledHere(courseId) && (!policyOn(resource.data) || !excludeHit(resource.data)))
-        || (!policyOn(resource.data) && !audienceGated(resource.data) && (
+        || (!policyOn(resource.data) && !audienceGated(resource.data) && !targetsGated(resource.data) && !scopeGated(resource.data) && (
              isSignedIn()
              || (resource.data.status == 'published' && resource.data.isPublic == true)
            ))
+        || (!policyOn(resource.data) && !audienceGated(resource.data) && targetsGated(resource.data)
+            && resource.data.status == 'published'
+            && targetsHit(resource.data))
+        || (!policyOn(resource.data) && !audienceGated(resource.data) && !targetsGated(resource.data) && scopeGated(resource.data)
+            && resource.data.status == 'published'
+            && scopeHit(resource.data))
         || (!policyOn(resource.data) && audienceGated(resource.data)
             && resource.data.status == 'published'
             && (
@@ -643,7 +693,27 @@ service cloud.firestore {
             || (!policyOn(get(/databases/$(database)/documents/courses/$(courseId)).data)
                 && (
                   enrolledHere(courseId)
-                  || (!audienceGated(get(/databases/$(database)/documents/courses/$(courseId)).data) && isSignedIn())
+                  || (!audienceGated(get(/databases/$(database)/documents/courses/$(courseId)).data)
+                      && !targetsGated(get(/databases/$(database)/documents/courses/$(courseId)).data)
+                      && !scopeGated(get(/databases/$(database)/documents/courses/$(courseId)).data)
+                      && isSignedIn())
+                  || (isSignedIn()
+                      && targetsGated(get(/databases/$(database)/documents/courses/$(courseId)).data)
+                      && get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published'
+                      && targetsHit(get(/databases/$(database)/documents/courses/$(courseId)).data)
+                      && (
+                        role() in ['teacher', 'institution_admin', 'admin']
+                        || resource.data.get('order', 999) <= get(/databases/$(database)/documents/courses/$(courseId)).data.get('freePreviewCount', 1)
+                      ))
+                  || (isSignedIn()
+                      && !targetsGated(get(/databases/$(database)/documents/courses/$(courseId)).data)
+                      && scopeGated(get(/databases/$(database)/documents/courses/$(courseId)).data)
+                      && get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published'
+                      && scopeHit(get(/databases/$(database)/documents/courses/$(courseId)).data)
+                      && (
+                        role() in ['teacher', 'institution_admin', 'admin']
+                        || resource.data.get('order', 999) <= get(/databases/$(database)/documents/courses/$(courseId)).data.get('freePreviewCount', 1)
+                      ))
                   || (isSignedIn()
                       && audienceGated(get(/databases/$(database)/documents/courses/$(courseId)).data)
                       && get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published'
@@ -1180,7 +1250,14 @@ service cloud.firestore {
     // Poket Reads. Client writes of ownership, Sparks, and leaderboard
     // totals stay denied. The Admin SDK bypasses these rules.
     match /books/{bookId} {
-      allow read: if resource.data.status == 'published' || isAdmin();
+      allow read: if isAdmin()
+        || (resource.data.status == 'published' && (
+          (targetsGated(resource.data) && targetsHit(resource.data))
+          || (!targetsGated(resource.data) && (
+            resource.data.get('allocateMarketplace', false) == true
+            || resource.data.get('allocateLibrary', false) == true
+          ))
+        ));
       allow create, update, delete: if isAdmin();
       match /chapters/{chapterId} {
         allow read: if isAdmin()

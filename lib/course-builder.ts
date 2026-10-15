@@ -4,6 +4,7 @@
  */
 
 import { normalisePolicy, type AccessPolicy, type PolicyAudience } from './access-policy';
+import { allocationFields, normaliseTargets, targetsFromPolicy } from './allocation-targets';
 import { reorderById, withSequentialOrder } from './reorder';
 
 export const COURSE_LEVELS = ['All', 'Primary', 'Secondary', 'GCSE', 'A-Level', 'University'] as const;
@@ -145,6 +146,8 @@ export interface CourseWriteInput {
   price?: number;
   free?: boolean;
   policy: AccessPolicy;
+  /** Chosen targets. When omitted, they are derived from the policy. */
+  targets?: readonly string[];
   intent: 'draft' | 'publish';
   role: StudioRole;
 }
@@ -152,6 +155,8 @@ export interface CourseWriteInput {
 /** The document createCourse and updateCourse should persist. No undefined values. */
 export function courseWrite(input: CourseWriteInput): Record<string, unknown> {
   const policy = normalisePolicy(input.policy);
+  const targets = input.targets?.length ? normaliseTargets(input.targets) : targetsFromPolicy(policy);
+  const fields = allocationFields(targets, policy);
   const decision = publishDecision({ intent: input.intent, policy, role: input.role });
   const free = !!input.free || !(input.price && input.price > 0);
   const price = free ? 0 : Math.round(Number(input.price) * 100) / 100;
@@ -174,6 +179,10 @@ export function courseWrite(input: CourseWriteInput): Record<string, unknown> {
     kind: 'marketplace' as const,
     type: 'course' as const,
     accessPolicy: policy,
+    targets: fields.targets.length ? fields.targets : undefined,
+    classIds: fields.classIds.length ? fields.classIds : undefined,
+    allocatedInstitutionIds: fields.allocatedInstitutionIds.length ? fields.allocatedInstitutionIds : undefined,
+    publishScope: fields.targets.length ? fields.publishScope : undefined,
     audiences: policy.include.filter(item =>
       ['students', 'teachers', 'parents', 'institutions', 'all', 'marketplace'].includes(item),
     ),

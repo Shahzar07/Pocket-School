@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AllocationPicker } from '@/components/allocation-picker';
+import { describeTargets } from '@/lib/allocation-targets';
 import { toast } from 'sonner';
 import { Megaphone, Plus, Pin, Trash2, X, Loader2, Bell } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
@@ -38,14 +40,18 @@ export default function AnnouncementsPage() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ title: '', content: '', priority: 'normal' as Announcement['priority'], audience: 'all' as string });
+  const [form, setForm] = useState({ title: '', content: '', priority: 'normal' as Announcement['priority'], targets: ['all'] as string[] });
 
   const canCreate = profile?.role === 'teacher' || profile?.role === 'admin';
 
   const load = async () => {
     if (!profile) return;
-    const audience = profile.role === 'student' ? 'students' : profile.role === 'parent' ? 'parents' : 'all';
-    const data = await getAnnouncements(audience as 'all' | 'students' | 'parents' | 'teachers');
+    const audience = profile.role === 'admin' ? 'admin'
+      : profile.role === 'student' ? 'students'
+      : profile.role === 'parent' ? 'parents'
+      : profile.role === 'teacher' ? 'teachers'
+      : 'all';
+    const data = await getAnnouncements(audience);
     setAnnouncements(data.sort((a, b) => {
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;
@@ -67,14 +73,15 @@ export default function AnnouncementsPage() {
         title: form.title.trim(),
         content: form.content.trim(),
         priority: form.priority,
-        audience: form.audience as Announcement['audience'],
+        audience: (form.targets.find(target => target === 'all' || target === 'students' || target === 'teachers' || target === 'parents') ?? 'all') as Announcement['audience'],
+        targets: form.targets,
         pinned: false,
         createdBy: user.uid,
         createdByName: profile?.name ?? 'Staff',
         createdAt: Timestamp.now(),
       });
       toast.success('Announcement created!');
-      setForm({ title: '', content: '', priority: 'normal', audience: 'all' });
+      setForm({ title: '', content: '', priority: 'normal', targets: ['all'] });
       setShowCreate(false);
       await load();
     } catch { toast.error('Failed to create announcement.'); }
@@ -150,17 +157,18 @@ export default function AnnouncementsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Audience</label>
-              <Select value={form.audience} onValueChange={v => setForm(f => ({ ...f, audience: v ?? 'all' }))}>
-                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Everyone</SelectItem>
-                  <SelectItem value="students">Students</SelectItem>
-                  <SelectItem value="teachers">Teachers</SelectItem>
-                  <SelectItem value="parents">Parents</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="col-span-2 space-y-1.5">
+              <AllocationPicker
+                label="Who can see this"
+                chips={[
+                  { token: 'all', label: 'Everyone' },
+                  { token: 'students', label: 'Students' },
+                  { token: 'teachers', label: 'Teachers' },
+                  { token: 'parents', label: 'Parents' },
+                ]}
+                value={form.targets}
+                onChange={targets => setForm(current => ({ ...current, targets }))}
+              />
             </div>
           </div>
           <Button onClick={handleCreate} disabled={saving} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white gap-2">
@@ -192,7 +200,7 @@ export default function AnnouncementsPage() {
                     {ann.pinned && <Pin className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
                     <h3 className="font-bold text-foreground">{ann.title}</h3>
                     <Badge className={`rounded-full text-[10px] ${PRIORITY_STYLES[ann.priority]}`}>{ann.priority}</Badge>
-                    <Badge className="rounded-full text-[10px] bg-muted text-muted-foreground">{ann.audience}</Badge>
+                    <Badge className="rounded-full text-[10px] bg-muted text-muted-foreground">{describeTargets(ann.targets?.length ? ann.targets : [ann.audience])}</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">{ann.content}</p>
                   {ann.createdAt && (

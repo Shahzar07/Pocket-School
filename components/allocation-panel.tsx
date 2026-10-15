@@ -6,9 +6,11 @@ import {
   type AllocatableProduct, type Audience, type ViewerRole,
 } from '@/lib/allocation';
 import {
-  POLICY_AUDIENCES, POLICY_AUDIENCE_LABELS, describeAccess, lessonWindow, normalisePolicy, parseAllocationCsv,
+  POLICY_AUDIENCES, POLICY_AUDIENCE_LABELS, lessonWindow, parseAllocationCsv,
   type AccessPolicy, type PolicyAudience,
 } from '@/lib/access-policy';
+import { allocationFields, describeTargets, migrateAllocation } from '@/lib/allocation-targets';
+import { AllocationPicker, type AllocationOption } from '@/components/allocation-picker';
 import { TIERS, PRICE_TYPE_LABELS, type PriceType } from '@/lib/entitlements';
 import { listAccessAudit, saveAccessGrants, writeAccessAudit, type Institution } from '@/lib/db';
 import { useAuthSTORE } from '@/hooks/use-auth';
@@ -22,6 +24,9 @@ type Patch = {
   audiences?: Audience[];
   allocatedInstitutionIds?: string[];
   accessPolicy?: AccessPolicy;
+  targets?: string[];
+  classIds?: string[];
+  publishScope?: 'institution' | 'public' | 'marketplace';
   minTier?: number | null;
   priceType?: PriceType | null;
   freePreviewCount?: number | null;
@@ -121,22 +126,39 @@ export function AllocationPanel({
   }), [product, previewViewerValue, userId, country, language]);
   const firstLesson = lessonWindow(product.accessPolicy, { ...previewViewerValue, enrolled, language }, 0, 0);
 
-  const commit = (next: AccessPolicy, extra: Partial<Patch> = {}) => {
-    const saved = normalisePolicy(next);
-    const audiences = saved.include.filter((item): item is Audience => (CLASSIC as readonly string[]).includes(item));
+  const selectedTargets = product.targets?.length
+    ? [...product.targets]
+    : migrateAllocation({
+      accessPolicy: policy.include.length || policy.exclude.length ? policy : null,
+      audiences: product.audiences,
+      publishScope: product.publishScope,
+      allocatedInstitutionIds: product.allocatedInstitutionIds,
+    });
+  const optionLabels: Record<string, string> = {};
+  const allocationOptions: AllocationOption[] = institutions.map(inst => {
+    const token = `institution:${inst.id}`;
+    optionLabels[token] = inst.name;
+    return { token, label: inst.name, group: 'Institutions' };
+  });
+
+  const commit = (next: AccessPolicy, targets: readonly string[] = selectedTargets, extra: Partial<Patch> = {}) => {
+    const fields = allocationFields(targets, next);
     onChange({
-      accessPolicy: saved,
-      audiences,
-      allocatedInstitutionIds: saved.institutionIds ?? [],
-      freePreviewCount: saved.freePreviewCount ?? 0,
+      accessPolicy: fields.accessPolicy,
+      audiences: fields.audiences.filter((item): item is Audience => (CLASSIC as readonly string[]).includes(item)),
+      allocatedInstitutionIds: fields.allocatedInstitutionIds,
+      targets: fields.targets,
+      classIds: fields.classIds,
+      publishScope: fields.targets.length ? fields.publishScope : undefined,
+      freePreviewCount: fields.accessPolicy.freePreviewCount ?? 0,
       ...extra,
     });
   };
 
-  const toggle = (list: 'include' | 'exclude', audience: PolicyAudience) => {
-    const current = policy[list];
+  const toggle = (audience: PolicyAudience) => {
+    const current = policy.exclude;
     const next = current.includes(audience) ? current.filter(item => item !== audience) : [...current, audience];
-    commit({ ...policy, [list]: next });
+    commit({ ...policy, exclude: next });
   };
 
   const applyCsv = async () => {
@@ -162,64 +184,31 @@ export function AllocationPanel({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs leading-relaxed text-foreground" data-access-summary>{describeAccess({ ...product, accessPolicy: policy.include.length || policy.exclude.length ? policy : product.accessPolicy })}</p>
+      <p className="text-xs leading-relaxed text-foreground" data-access-summary>
+        {describeTargets(selectedTargets, optionLabels)}
+        {policy.exclude.length ? ` Hidden from ${policy.exclude.map(item => POLICY_AUDIENCE_LABELS[item]).join(', ')}.` : ''}
+      </p>
 
-      <section className="space-y-1">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Include</p>
-        {POLICY_AUDIENCES.map(audience => (
-          <label key={audience} className="flex items-center justify-between gap-2 text-xs py-0.5 cursor-pointer">
-            <span className="font-semibold">{POLICY_AUDIENCE_LABELS[audience]}</span>
-            <input type="checkbox" checked={policy.include.includes(audience)} onChange={() => toggle('include', audience)} />
-          </label>
-        ))}
-      </section>
+      <AllocationPicker
+        label="Who can see this"
+        value={selectedTargets}
+        options={allocationOptions}
+        onChange={targets => commit(policy, targets)}
+      />
 
       <section className="space-y-1">
         <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Exclude</p>
         {POLICY_AUDIENCES.map(audience => (
           <label key={audience} className="flex items-center justify-between gap-2 text-xs py-0.5 cursor-pointer">
             <span>{POLICY_AUDIENCE_LABELS[audience]}</span>
-            <input type="checkbox" checked={policy.exclude.includes(audience)} onChange={() => toggle('exclude', audience)} />
+            <input type="checkbox" checked={policy.exclude.includes(audience)} onChange={() => toggle(audience)} />
           </label>
         ))}
       </section>
 
-      {policy.include.includes('institutions') && (
-        <section className="space-y-1">
-          <label className="flex items-center justify-between text-xs font-semibold">
-            Every institution
-            <input
-              type="checkbox"
-              checked={policy.institutionMode === 'all'}
-              onChange={event => commit({ ...policy, institutionMode: event.target.checked ? 'all' : 'specific' })}
-            />
-          </label>
-          {policy.institutionMode !== 'all' && institutions.map(inst => (
-            <label key={inst.id} className="flex items-center justify-between gap-2 text-xs py-0.5">
-              <span className="truncate">{inst.name}</span>
-              <input
-                type="checkbox"
-                checked={(policy.institutionIds ?? []).includes(inst.id)}
-                onChange={() => {
-                  const ids = policy.institutionIds ?? [];
-                  const next = ids.includes(inst.id) ? ids.filter(id => id !== inst.id) : [...ids, inst.id];
-                  commit({ ...policy, institutionIds: next });
-                }}
-              />
-            </label>
-          ))}
-        </section>
-      )}
-
       <Drawer title="People and classes">
-        <label className="block text-xs font-semibold">User ids or emails to include
-          <textarea className="mt-1 w-full min-h-16 rounded-xl border border-border p-2 font-normal" value={csv(policy.userIds)} onChange={event => commit({ ...policy, userIds: split(event.target.value) })} />
-        </label>
         <label className="block text-xs font-semibold">User ids or emails to exclude
           <textarea className="mt-1 w-full min-h-16 rounded-xl border border-border p-2 font-normal" value={csv(policy.excludeUserIds)} onChange={event => commit({ ...policy, excludeUserIds: split(event.target.value) })} />
-        </label>
-        <label className="block text-xs font-semibold">Cohort or class ids
-          <input className="mt-1 w-full h-9 rounded-xl border border-border px-2 font-normal" value={csv(policy.cohortIds)} onChange={event => commit({ ...policy, cohortIds: split(event.target.value) })} />
         </label>
         <label className="block text-xs font-semibold">CSV grant or revoke
           <textarea className="mt-1 w-full min-h-20 rounded-xl border border-border p-2 font-normal" value={csvText} onChange={event => setCsvText(event.target.value)} />

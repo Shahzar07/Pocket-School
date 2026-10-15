@@ -18,7 +18,7 @@ import { getLanguage } from '@/lib/languages';
 import { moveItem } from '@/lib/platform/cms';
 import { planLabel } from '@/lib/reads/access';
 import { AllocationPicker } from '@/components/allocation-picker';
-import { defaultBookTargets } from '@/lib/platform/allocation';
+import { bookFlagsFromTargets, migrateAllocation } from '@/lib/allocation-targets';
 
 const AUTOSAVE_KEY = 'poket-studio-books';
 
@@ -242,14 +242,14 @@ export function StudioView() {
                   <span className="mt-1 block font-normal text-muted-foreground">{planLabel(book.minTier)}</span>
                 </label>
               </div>
-              <div className="flex flex-wrap gap-4 text-sm font-semibold">
-                <label className="flex items-center gap-2"><input type="checkbox" checked={book.allocateLibrary} onChange={e => update({ allocateLibrary: e.target.checked })} />{t('reads.studio.library')}</label>
-                <label className="flex items-center gap-2"><input type="checkbox" checked={book.allocateMarketplace} onChange={e => update({ allocateMarketplace: e.target.checked })} />{t('reads.studio.market')}</label>
-              </div>
               <AllocationPicker
                 label={t('reads.studio.targets')}
-                value={book.targets?.length ? book.targets : defaultBookTargets(book)}
-                onChange={targets => update({ targets })}
+                value={migrateAllocation({
+                  targets: book.targets,
+                  allocateLibrary: book.allocateLibrary,
+                  allocateMarketplace: book.allocateMarketplace,
+                })}
+                onChange={targets => update({ targets, ...bookFlagsFromTargets(targets) })}
               />
               <div className="flex flex-wrap gap-2">
                 <button type="button" onClick={() => void generate()} className="h-10 rounded-full bg-secondary px-4 text-sm font-bold text-secondary-foreground">{t('reads.studio.generate')}</button>
