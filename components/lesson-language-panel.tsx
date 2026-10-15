@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Languages, Loader2, Sparkles } from 'lucide-react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { awardSparks, type Lesson } from '@/lib/db';
+import { readLessonBody } from '@/lib/lesson-body';
 import { LANGUAGES, getLanguage } from '@/lib/languages';
 import { LESSON_TRANSLATION_COST } from '@/lib/sparks';
 import { formatAppNumber } from '@/lib/i18n/detect';
@@ -67,7 +68,7 @@ export function LessonLanguagePanel({
 
   const translate = async () => {
     const englishTitle = draft.title?.trim() ?? '';
-    const englishBody = draft.aiOutputs?.text?.trim() ?? '';
+    const englishBody = readLessonBody(draft).trim();
     if (!englishTitle && !englishBody) {
       toast.error(t('cms.empty'));
       return;

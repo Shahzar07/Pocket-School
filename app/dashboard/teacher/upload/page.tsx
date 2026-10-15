@@ -19,7 +19,10 @@ import {
 import Link from 'next/link';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
-import { RichTextEditor } from '@/components/rich-text-editor';
+import { LessonManuscript } from '@/components/lesson-manuscript';
+import { filesToAssets, LessonIllustrationBlock, LessonImageBlock } from '@/components/lesson-pictures';
+import { appendImageMarkdown } from '@/lib/lesson-body';
+import type { LessonMediaAsset } from '@/lib/db';
 
 const YEAR_GROUPS = ['Year 7', 'Year 8', 'Year 9'];
 
@@ -67,6 +70,7 @@ export default function UploadPage() {
 
   const [lessonTitle, setLessonTitle] = useState('');
   const [content, setContent] = useState('');
+  const [pictures, setPictures] = useState<LessonMediaAsset[]>([]);
   const [generatedOutputs, setGeneratedOutputs] = useState<AiOutputs>({});
   const [progress, setProgress] = useState<Record<string, 'pending' | 'done' | 'error'>>({});
   const [generating, setGenerating] = useState(false);
@@ -207,10 +211,21 @@ export default function UploadPage() {
         courseId,
         order: 1,
         contentSources: [{ type: 'text', value: content }],
+        aiOutputs: { text: content },
+        mediaLibrary: pictures,
         status: 'published',
       });
 
-      await saveAiOutputsToLesson(courseId, moduleId, lessonId, generatedOutputs);
+      const placed = content
+        .split(/\n{2,}/)
+        .map(block => block.trim())
+        .filter(block => /^(!full|!)\[/.test(block))
+        .join('\n\n');
+      const generatedText = typeof generatedOutputs.text === 'string' ? generatedOutputs.text : content;
+      const text = placed && !generatedText.includes(placed)
+        ? `${generatedText.trim()}\n\n${placed}`
+        : generatedText;
+      await saveAiOutputsToLesson(courseId, moduleId, lessonId, { ...generatedOutputs, text });
 
       setSessionLessons(prev => [{
         title: lessonTitle.trim(),
@@ -224,6 +239,7 @@ export default function UploadPage() {
       // Reset lesson form only — keep course/module selection
       setLessonTitle('');
       setContent('');
+      setPictures([]);
       setGeneratedOutputs({});
       setProgress({});
 
@@ -481,11 +497,43 @@ export default function UploadPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Lesson Content *</Label>
-              <RichTextEditor
+              <LessonManuscript
+                key={user?.uid ?? 'teacher-draft'}
                 value={content}
                 onChange={setContent}
-                minHeight={208}
-                placeholder={"Paste or write your source material here — notes, a lecture transcript, a chapter outline…\n\nTip: start with one line stating the learning objective, then the material in a few paragraphs, including key terms you want students to master."}
+                storageKey={`poket-teacher-lesson:${user?.uid ?? 'draft'}`}
+                placeholder="Paste or write your source material — notes, a lecture transcript, a chapter outline."
+                onPasteImages={files => {
+                  void filesToAssets(user?.uid ?? 'teacher-draft', files)
+                    .then(added => setPictures(prev => [...prev, ...added]))
+                    .catch(err => toast.error(err instanceof Error ? err.message : 'That image could not be added.'));
+                }}
+              />
+              <p className="text-[11px] text-muted-foreground">Start with the learning objective, then the material and the key terms students should master. Paste an image and it waits in the Image block until it has alt text.</p>
+            </div>
+            <div className="space-y-4 rounded-2xl border border-border p-4">
+              <div>
+                <p className="text-sm font-semibold">Image</p>
+                <p className="text-[11px] text-muted-foreground">Drop, paste, or choose a picture. Alt text is required before it can be placed in the lesson.</p>
+              </div>
+              <LessonImageBlock
+                scopeId={user?.uid ?? 'teacher-draft'}
+                images={pictures}
+                onChange={setPictures}
+                onInsert={image => setContent(prev => appendImageMarkdown(prev, image))}
+              />
+            </div>
+            <div className="space-y-4 rounded-2xl border border-border p-4">
+              <div>
+                <p className="text-sm font-semibold">Illustration</p>
+                <p className="text-[11px] text-muted-foreground">Generating spends 15 Sparks after you confirm. The picture still needs alt text before it is placed.</p>
+              </div>
+              <LessonIllustrationBlock
+                scopeId={user?.uid ?? 'teacher-draft'}
+                images={pictures}
+                onChange={setPictures}
+                onInsert={image => setContent(prev => appendImageMarkdown(prev, image))}
+                showLibrary={false}
               />
             </div>
           </div>
