@@ -161,15 +161,17 @@ export type PriceType =
   | 'SUBSCRIPTION_INCLUDED'
   | 'MARKETPLACE_PURCHASE'
   | 'INSTITUTION_ALLOCATED'
-  | 'COUPON_SCHOLARSHIP';
+  | 'COUPON_SCHOLARSHIP'
+  | 'SPARKS_UNLOCK';
 
 export const PRICE_TYPE_LABELS: Record<PriceType, string> = {
   FREE: 'Free',
   FREE_PREVIEW: 'Free preview, then paid',
-  SUBSCRIPTION_INCLUDED: 'Included in subscription',
+  SUBSCRIPTION_INCLUDED: 'Included in a plan',
   MARKETPLACE_PURCHASE: 'One-time purchase',
-  INSTITUTION_ALLOCATED: 'Allocated by institution',
-  COUPON_SCHOLARSHIP: 'Coupon / scholarship',
+  INSTITUTION_ALLOCATED: 'Allocated',
+  COUPON_SCHOLARSHIP: 'Coupon or scholarship',
+  SPARKS_UNLOCK: 'Sparks unlock',
 };
 
 /** Default number of free lessons at the start of a paid course. */

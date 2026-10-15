@@ -783,6 +783,9 @@ export default function ContentBuilderPage() {
       setCourse(current => {
         if (!current) return current;
         const next = { ...current, ...data };
+        if (data.accessPolicy && typeof current.accessPolicy?.seatsUsed === 'number') {
+          next.accessPolicy = { ...data.accessPolicy, seatsUsed: current.accessPolicy.seatsUsed };
+        }
         for (const field of clears) delete next[field];
         return next;
       });
@@ -1926,6 +1929,8 @@ function AllocateTab({ course, institutions, patchCourse }: {
           void patchCourse({
             ...(patch.audiences ? { audiences: [...patch.audiences] } : {}),
             ...(patch.allocatedInstitutionIds ? { allocatedInstitutionIds: [...patch.allocatedInstitutionIds] } : {}),
+            ...(patch.accessPolicy ? { accessPolicy: patch.accessPolicy } : {}),
+            ...('freePreviewCount' in patch && patch.freePreviewCount != null ? { freePreviewCount: patch.freePreviewCount } : {}),
             ...('minTier' in patch ? { minTier: patch.minTier ?? null } : {}),
             ...('priceType' in patch ? { priceType: (patch.priceType ?? null) as Course['priceType'] | null } : {}),
           }, 'Allocation updated');

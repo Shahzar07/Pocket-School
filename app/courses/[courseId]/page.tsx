@@ -25,6 +25,7 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import { Timestamp } from 'firebase/firestore';
 import {
   getPublicCourseById, enrollStudent, incrementEnrollment, createInvoice, getUser,
+  recordProductView, recordProductRevenue,
   getPublicCurriculum, redeemCouponCode, getCouponPermissions, getEnrollment,
   type Course, type UserProfile, type Module, type Lesson,
 } from '@/lib/db';
@@ -77,6 +78,14 @@ export default function CourseDetailPage() {
   };
 
   useEffect(() => { load(); }, [courseId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!courseId || !course) return;
+    const key = `poket-view-${courseId}`;
+    if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, '1');
+    void recordProductView(courseId);
+  }, [courseId, course]);
 
   useEffect(() => {
     if (!user || !courseId) { setEnrolledHere(false); return; }
@@ -173,6 +182,27 @@ export default function CourseDetailPage() {
     }
   };
 
+  const startTrial = async () => {
+    if (!course) return;
+    if (!user) {
+      router.push(`/login?next=/courses/${course.id}`);
+      return;
+    }
+    try {
+      setEnrolling(true);
+      const prof = await getStudentProfile();
+      if (!prof) return;
+      await enrollStudent(user.uid, course.id, { trial: true });
+      await incrementEnrollment(course.id);
+      toast.success(`${course.accessPolicy?.trialDays ?? ''}-day trial started.`);
+      router.push(`/dashboard/student/courses/${course.id}`);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Could not start the trial.');
+    } finally {
+      setEnrolling(false);
+    }
+  };
+
   const buyPaid = () => {
     if (!course) return;
     if (!user) {
@@ -190,6 +220,7 @@ export default function CourseDetailPage() {
       if (!prof) { setConfirmOpen(false); return; }
       await enrollStudent(user.uid, course.id);
       await incrementEnrollment(course.id);
+      if ((course.price ?? 0) > 0) await recordProductRevenue(course.id, user.uid, course.price ?? 0);
       // Best-effort invoice: security rules may reserve invoice creation for
       // teachers/admins, in which case the school issues it instead.
       let invoiced = false;
@@ -514,13 +545,25 @@ export default function CourseDetailPage() {
                         {enrolling ? 'Enrolling…' : user ? 'Enrol for free' : 'Sign in to enrol'}
                       </Button>
                     ) : (
-                      <Button
-                        onClick={buyPaid}
-                        disabled={enrolling}
-                        className="w-full h-12 rounded-lg font-bold"
-                      >
-                        {enrolling ? 'Processing…' : user ? 'Buy this course' : 'Sign in to buy'}
-                      </Button>
+                      <div className="space-y-2">
+                        <Button
+                          onClick={buyPaid}
+                          disabled={enrolling || enrolledHere}
+                          className="w-full h-12 rounded-lg font-bold"
+                        >
+                          {enrolling ? 'Processing…' : enrolledHere ? 'Enrolled' : user ? 'Buy this course' : 'Sign in to buy'}
+                        </Button>
+                        {!enrolledHere && (course.accessPolicy?.trialDays ?? 0) > 0 && (
+                          <Button
+                            variant="outline"
+                            onClick={startTrial}
+                            disabled={enrolling}
+                            className="w-full h-10 rounded-lg font-semibold"
+                          >
+                            Start a {course.accessPolicy?.trialDays}-day trial
+                          </Button>
+                        )}
+                      </div>
                     )}
 
                     <p className="text-[11px] text-center text-muted-foreground mt-3">

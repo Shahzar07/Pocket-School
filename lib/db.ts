@@ -7,6 +7,7 @@ import { db } from './firebase';
 import { ACADEMIC_MONTHLY_ALLOWANCE, UNIT_PASS_REWARD } from './sparks';
 import type { Role } from './roles';
 import type { OemLicence } from './oem';
+import type { AccessPolicy } from './access-policy';
 
 export type { Role };
 
@@ -77,7 +78,7 @@ export interface Course {
   minTier?: number;
   /** Entitlement gate 2 — how this course is paid for. Derived by
    * coursePriceType() when absent. */
-  priceType?: 'FREE' | 'FREE_PREVIEW' | 'SUBSCRIPTION_INCLUDED' | 'MARKETPLACE_PURCHASE' | 'INSTITUTION_ALLOCATED' | 'COUPON_SCHOLARSHIP';
+  priceType?: 'FREE' | 'FREE_PREVIEW' | 'SUBSCRIPTION_INCLUDED' | 'MARKETPLACE_PURCHASE' | 'INSTITUTION_ALLOCATED' | 'COUPON_SCHOLARSHIP' | 'SPARKS_UNLOCK';
   /** Opening lessons that are free to everyone. Defaults to 1 on paid courses. */
   freePreviewCount?: number;
   /** Content type used by checkEntitlement(). */
@@ -114,6 +115,12 @@ export interface Course {
   accessOverride?: { pricePerInstitution?: number; expiryDate?: string; sparksOverride?: number };
   /** Who may see this product. Absent means the older public/signed-in rules. */
   audiences?: ('students' | 'teachers' | 'parents' | 'institutions' | 'all' | 'marketplace')[];
+  /** Richer include, exclude, schedule and quota. When set, it decides access. */
+  accessPolicy?: AccessPolicy;
+  viewCount?: number;
+  completionCount?: number;
+  /** Sum of recorded purchase amounts, in the product currency. */
+  revenueTotal?: number;
   /** Manual order in the CMS. Absent sorts after numbered rows. */
   order?: number;
   createdAt?: Timestamp;
@@ -244,6 +251,8 @@ export interface Enrollment {
   /** lessonId -> list of unlocked AiOutputs format keys (curriculum Sparks economy) */
   unlockedFormats?: Record<string, string[]>;
   enrolledAt?: Timestamp;
+  /** Set when this enrolment is a timed trial rather than a purchase. */
+  trial?: boolean;
   /** Last lesson the learner opened, so My Courses can resume it. */
   lastLessonId?: string;
   bookmarkedLessons?: string[];
@@ -698,18 +707,29 @@ export async function getEnrolledCourses(studentId: string): Promise<{ course: C
   return results;
 }
 
-export async function enrollStudent(studentId: string, courseId: string) {
+export async function enrollStudent(studentId: string, courseId: string, opts?: { trial?: boolean }) {
   const ref = doc(db, 'courses', courseId, 'enrollments', studentId);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) {
-    await setDoc(ref, {
+  const courseRef = doc(db, 'courses', courseId);
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    if (snap.exists()) return;
+    const courseSnap = await tx.get(courseRef);
+    const policy = courseSnap.exists() ? courseSnap.data().accessPolicy as AccessPolicy | undefined : undefined;
+    const limit = policy?.seatLimit ?? 0;
+    const used = policy?.seatsUsed ?? 0;
+    if (limit > 0 && used >= limit) throw new Error('No seats left');
+    tx.set(ref, {
       studentId,
       courseId,
       progress: 0,
       completedLessons: [],
       enrolledAt: serverTimestamp(),
+      ...(opts?.trial ? { trial: true } : {}),
     });
-  }
+    if (limit > 0) {
+      tx.update(courseRef, { 'accessPolicy.seatsUsed': used + 1 });
+    }
+  });
 }
 
 /** Enrols a student in every published curriculum module for their year group. */
@@ -771,6 +791,7 @@ export async function markLessonComplete(
   }
 
   await batch.commit();
+  if (progress >= 100) await incrementCompletion(courseId);
 
   // Award badges based on XP milestones
   await checkAndAwardBadges(studentId, (enrollment as any).xp || 0, xpReward);
@@ -1532,6 +1553,16 @@ export async function redeemCouponCode(userId: string, rawCode: string): Promise
         userId, code, courseId: c.courseId, courseTitle: c.courseTitle ?? '',
         expiresAt: c.expiresAt, discountPct: c.discountPct,
         redeemedAt: serverTimestamp(),
+      });
+      // Lesson rules can see one grant document. The same coupon checks apply.
+      tx.set(doc(db, 'courses', c.courseId, 'grants', userId), {
+        userId,
+        active: true,
+        kind: 'coupon',
+        code,
+        courseId: c.courseId,
+        expiresOn: c.expiresAt,
+        updatedAt: serverTimestamp(),
       });
     }
     return {
@@ -2750,10 +2781,21 @@ export async function getUserPhone(uid: string): Promise<string | null> {
 // (createCourse already defined at line 191 — reused for marketplace product creation)
 
 export async function updateCourse(id: string, data: Partial<Course>): Promise<void> {
-  await updateDoc(doc(db, 'courses', id), {
-    ...data,
-    updatedAt: serverTimestamp(),
-  });
+  const ref = doc(db, 'courses', id);
+  if (data.accessPolicy) {
+    const policy = { ...data.accessPolicy };
+    delete policy.seatsUsed;
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      const current = snap.exists()
+        ? (snap.data().accessPolicy as AccessPolicy | undefined)?.seatsUsed
+        : undefined;
+      const accessPolicy = typeof current === 'number' ? { ...policy, seatsUsed: current } : policy;
+      tx.update(ref, { ...data, accessPolicy, updatedAt: serverTimestamp() });
+    });
+    return;
+  }
+  await updateDoc(ref, { ...data, updatedAt: serverTimestamp() });
 }
 
 /** Drop optional course fields so "derive this" can return to the default. */
@@ -2794,6 +2836,14 @@ export async function getPublicCourseById(courseId: string): Promise<Course | nu
   return { id: snap.id, ...snap.data() } as Course;
 }
 
+async function bumpCourseCounter(courseId: string, field: 'viewCount' | 'enrollmentCount' | 'completionCount', amount = 1): Promise<void> {
+  try {
+    await updateDoc(doc(db, 'courses', courseId), { [field]: increment(amount) });
+  } catch (err) {
+    console.warn(`[${field}] counter not updated`, err);
+  }
+}
+
 export async function incrementEnrollment(courseId: string): Promise<void> {
   // increment() is atomic — the previous read-then-write lost enrolments when
   // two students enrolled at the same moment. Failures are swallowed on
@@ -2803,6 +2853,68 @@ export async function incrementEnrollment(courseId: string): Promise<void> {
   } catch (err) {
     console.warn('[incrementEnrollment] counter not updated', err);
   }
+}
+
+export async function recordProductView(courseId: string): Promise<void> {
+  await bumpCourseCounter(courseId, 'viewCount');
+}
+
+export async function incrementCompletion(courseId: string): Promise<void> {
+  await bumpCourseCounter(courseId, 'completionCount');
+}
+
+/** Records the price once for this buyer. A second call from the same person does not add again. */
+export async function recordProductRevenue(courseId: string, userId: string, amount: number): Promise<void> {
+  if (!(amount > 0)) return;
+  const purchaseRef = doc(db, 'courses', courseId, 'purchases', userId);
+  const courseRef = doc(db, 'courses', courseId);
+  try {
+    await runTransaction(db, async (tx) => {
+      const existing = await tx.get(purchaseRef);
+      if (existing.exists()) return;
+      tx.set(purchaseRef, { userId, amount, createdAt: serverTimestamp() });
+      tx.update(courseRef, { revenueTotal: increment(amount) });
+    });
+  } catch (err) {
+    console.warn('[revenueTotal] counter not updated', err);
+  }
+}
+
+export interface AccessGrant {
+  id: string;
+  active: boolean;
+  kind: 'user' | 'coupon';
+}
+
+export async function saveAccessGrants(courseId: string, rows: { id: string; active: boolean }[]): Promise<void> {
+  const batch = writeBatch(db);
+  for (const row of rows) {
+    batch.set(doc(db, 'courses', courseId, 'grants', row.id), {
+      active: row.active,
+      kind: 'user',
+      updatedAt: serverTimestamp(),
+    });
+  }
+  await batch.commit();
+}
+
+export interface AccessAuditEntry {
+  id: string;
+  actorId: string;
+  action: string;
+  detail: string;
+}
+
+export async function writeAccessAudit(courseId: string, entry: { actorId: string; action: string; detail: string }): Promise<void> {
+  await addDoc(collection(db, 'courses', courseId, 'access_audit'), {
+    ...entry,
+    at: serverTimestamp(),
+  });
+}
+
+export async function listAccessAudit(courseId: string): Promise<AccessAuditEntry[]> {
+  const snap = await getDocs(query(collection(db, 'courses', courseId, 'access_audit'), limit(20)));
+  return snap.docs.map(item => ({ id: item.id, ...(item.data() as Omit<AccessAuditEntry, 'id'>) }));
 }
 
 export async function getTeachers(): Promise<{ id: string; data: UserProfile }[]> {
