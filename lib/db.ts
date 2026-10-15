@@ -31,6 +31,7 @@ import {
 } from './parent-controls';
 import { requestPush } from './push-client';
 import type { PushCategory } from './push';
+import type { CertificateAward } from './certificates';
 
 export type { Role };
 
@@ -344,6 +345,8 @@ export interface Enrollment {
   courseId: string;
   progress: number;
   completedLessons: string[];
+  /** Published lessons in the course. Set on the parent overview, not stored on the enrollment. */
+  publishedLessons?: number;
   /** lessonId -> list of unlocked AiOutputs format keys (curriculum Sparks economy) */
   unlockedFormats?: Record<string, string[]>;
   enrolledAt?: Timestamp;
@@ -498,6 +501,9 @@ export interface UnitQuizAttempt {
   recommendedLessonIds?: string[];
   startedAt?: Timestamp;
   completedAt?: Timestamp;
+  /** Present when the server counted this pass toward the module. */
+  counted?: boolean;
+  certificate?: CertificateAward | null;
 }
 
 // ─── User ─────────────────────────────────────────────────────
@@ -911,90 +917,15 @@ export async function enrollInProgrammeModules(studentId: string, yearGroup: str
 }
 
 export async function markLessonComplete(
-  studentId: string, courseId: string, lessonId: string, xpReward = 50, sparksReward = 0
-): Promise<void> {
-  const batch = writeBatch(db);
-  const enrollRef = doc(db, 'courses', courseId, 'enrollments', studentId);
-  const snap = await getDoc(enrollRef);
-  if (!snap.exists()) return;
-  const enrollment = snap.data() as Enrollment;
-  if (enrollment.completedLessons?.includes(lessonId)) return;
-
-  // Count total lessons to compute progress
-  const modSnap = await getDocs(collection(db, 'courses', courseId, 'modules'));
-  let totalLessons = 0;
-  for (const m of modSnap.docs) {
-    const ls = await getDocs(collection(db, 'courses', courseId, 'modules', m.id, 'lessons'));
-    totalLessons += ls.size;
-  }
-  const completed = (enrollment.completedLessons?.length ?? 0) + 1;
-  const progress = totalLessons > 0 ? Math.round((completed / totalLessons) * 100) : 0;
-
-  batch.update(enrollRef, {
-    completedLessons: arrayUnion(lessonId),
-    progress,
+  studentId: string, courseId: string, lessonId: string, xpReward = 50, _sparksReward = 0
+): Promise<{ accepted?: boolean; already?: boolean; certificate?: CertificateAward | null }> {
+  void studentId;
+  void _sparksReward;
+  const data = await authedFetch('/api/platform/progress-complete', {
+    method: 'POST',
+    body: JSON.stringify({ courseId, lessonId, xpReward }),
   });
-  const userUpdate: Record<string, unknown> = { xp: increment(xpReward), updatedAt: serverTimestamp() };
-  if (sparksReward > 0) userUpdate.sparksBalance = increment(sparksReward);
-  batch.update(doc(db, 'users', studentId), userUpdate);
-
-  // Lesson rewards used to bump sparksBalance without writing a ledger entry,
-  // so a student's transaction history never matched their balance. Recorded
-  // in the same batch so the balance and the ledger cannot diverge.
-  if (sparksReward > 0) {
-    const userSnap = await getDoc(doc(db, 'users', studentId));
-    const balanceAfter = ((userSnap.data()?.sparksBalance as number) ?? 0) + sparksReward;
-    batch.set(doc(collection(db, 'users', studentId, 'spark_transactions')), {
-      amount: sparksReward,
-      type: 'earn',
-      lessonId,
-      courseId,
-      balanceAfter,
-      note: 'Lesson completed',
-      createdAt: serverTimestamp(),
-    });
-  }
-
-  await batch.commit();
-  if (progress >= 100) await incrementCompletion(courseId);
-
-  // Award badges based on XP milestones
-  await checkAndAwardBadges(studentId, (enrollment as any).xp || 0, xpReward);
-
-  if (sparksReward > 0) {
-    const profile = await getUser(studentId);
-    await addDoc(collection(db, 'users', studentId, 'spark_transactions'), {
-      amount: sparksReward,
-      type: 'earn',
-      courseId,
-      lessonId,
-      balanceAfter: (profile?.sparksBalance ?? 0) + sparksReward,
-      note: 'Lesson completed',
-      createdAt: serverTimestamp(),
-    });
-  }
-}
-
-async function checkAndAwardBadges(studentId: string, currentXp: number, gained: number) {
-  const newXp = currentXp + gained;
-  const milestones = [
-    { threshold: 100, type: 'first_steps', name: 'First Steps', description: 'Earn your first 100 XP', icon: '🌱' },
-    { threshold: 500, type: 'rising_star', name: 'Rising Star', description: 'Earn 500 XP', icon: '⭐' },
-    { threshold: 1000, type: 'knowledge_seeker', name: 'Knowledge Seeker', description: 'Earn 1000 XP', icon: '📚' },
-    { threshold: 5000, type: 'scholar', name: 'Scholar', description: 'Earn 5000 XP', icon: '🎓' },
-  ];
-  for (const m of milestones) {
-    if (currentXp < m.threshold && newXp >= m.threshold) {
-      const badgeRef = doc(db, 'badges', `${studentId}_${m.type}`);
-      const snap = await getDoc(badgeRef);
-      if (!snap.exists()) {
-        await setDoc(badgeRef, {
-          userId: studentId, type: m.type, name: m.name,
-          description: m.description, icon: m.icon, awardedAt: serverTimestamp(),
-        });
-      }
-    }
-  }
+  return data as { accepted?: boolean; already?: boolean; certificate?: CertificateAward | null };
 }
 
 // ─── Sparks Wallet ────────────────────────────────────────────
@@ -3397,15 +3328,14 @@ export interface Certificate {
   studentName: string;
   courseId: string;
   courseTitle: string;
+  moduleId?: string;
+  moduleTitle?: string;
   issuedAt: Timestamp;
   issuedBy: string;
   issuedByName: string;
-}
-
-export async function issueCertificate(data: Omit<Certificate, 'id'>): Promise<string> {
-  const uuid = crypto.randomUUID();
-  await setDoc(doc(db, 'certificates', uuid), { ...data, createdAt: serverTimestamp() });
-  return uuid;
+  kind?: 'module';
+  status?: 'valid' | 'revoked';
+  revokedAt?: Timestamp;
 }
 
 export async function getCertificatesForStudent(studentId: string): Promise<Certificate[]> {

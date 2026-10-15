@@ -1,4 +1,5 @@
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
+import { callerIsAdmin } from '../api-guard';
 import { adminDb } from '../firebase-admin';
 import { hasAccountRole } from '../account-modes';
 import { publicDisplayName } from '../display-name';
@@ -6,7 +7,9 @@ import { canDirectMessage } from '../community/policy';
 import { asAgeTier, isAgeTier } from '../age-tier';
 import { accessTierFor, freePreviewCount, tierDefinition, type AccessTier } from '../entitlements';
 import { answersMatch } from '../quiz';
-import { isPublishedLesson, progressPercent } from '../progress';
+import { countCompleted, isPublishedLesson, progressPercent } from '../progress';
+import { certificateKey, certificateStatus, certificateStudentName, moduleIsComplete } from '../certificates';
+import { issueInTransaction } from './module-certificates';
 import {
   ADMIN_SPARKS_GRANT,
   FORMAT_COSTS,
@@ -78,8 +81,9 @@ async function writePublicXp(uid: string, name: string, xp: number, role: string
   }, { merge: true });
 }
 
-function publishedFlat(course: FirebaseFirestore.DocumentData, lessons: LessonHit[]): LessonHit[] {
-  if (course.kind === 'curriculum') return lessons.filter((l) => l.data.status === 'published');
+function publishedFlat(_course: FirebaseFirestore.DocumentData, lessons: LessonHit[]): LessonHit[] {
+  // Same rule as the catalogue: a missing status is the older published default.
+  // Explicit drafts, reviews and archives stay out of progress and certificates.
   return lessons.filter((l) => isPublishedLesson({ status: l.data.status as string | undefined }));
 }
 
@@ -134,47 +138,84 @@ export async function completeLesson(
   grantLessonSparks = true,
 ) {
   const course = await loadCourse(courseId);
-  const lessons = publishedFlat(course, await listLessons(courseId));
+  const allLessons = await listLessons(courseId);
+  const hit = allLessons.find((lesson) => lesson.id === lessonId);
+  if (!hit) throw new ActionError('NOT_FOUND', 'Lesson not found');
+  if (!isPublishedLesson({ status: hit.data.status as string | undefined })) {
+    return { accepted: false, reason: 'unpublished', already: false, certificate: null, progress: 0, balance: 0, xp: 0 };
+  }
+  const lessons = publishedFlat(course, allLessons);
+  const publishedIds = lessons.map((lesson) => lesson.id);
+  const modulePublishedIds = lessons.filter((lesson) => lesson.moduleId === hit.moduleId).map((lesson) => lesson.id);
+  const mod = await db().doc(`courses/${courseId}/modules/${hit.moduleId}`).get();
+  const moduleTitle = ((mod.data()?.title as string) || '').trim() || 'Module';
+  const courseTitle = ((course.title as string) || '').trim() || 'Course';
   // A passed unit quiz pays UNIT_PASS_REWARD on its own. Completing that quiz
   // lesson must not also pay the ordinary lesson reward.
   const sparksReward = grantLessonSparks && course.kind === 'curriculum' ? LESSON_COMPLETE_REWARD : 0;
   const userRef = db().doc(`users/${uid}`);
   const enrollRef = db().doc(`courses/${courseId}/enrollments/${uid}`);
+  const keyRef = db().doc(`certificate_keys/${certificateKey(uid, courseId, hit.moduleId)}`);
 
   const result = await db().runTransaction(async (tx) => {
-    const [userSnap, enrollSnap] = await Promise.all([tx.get(userRef), tx.get(enrollRef)]);
+    const [userSnap, enrollSnap, keySnap] = await Promise.all([tx.get(userRef), tx.get(enrollRef), tx.get(keyRef)]);
     if (!userSnap.exists) throw new ActionError('USER_NOT_FOUND');
     if (!enrollSnap.exists) throw new ActionError('NOT_ENROLLED');
     const enrollment = enrollSnap.data() ?? {};
     const completed: string[] = Array.isArray(enrollment.completedLessons) ? enrollment.completedLessons : [];
-    if (completed.includes(lessonId)) {
-      return { already: true, balance: (userSnap.data()?.sparksBalance as number) ?? 0, xp: (userSnap.data()?.xp as number) ?? 0 };
-    }
-    const done = completed.length + 1;
-    const progress = progressPercent(done, lessons.length || 1);
-    const balance = ((userSnap.data()?.sparksBalance as number) ?? 0) + sparksReward;
-    const xp = ((userSnap.data()?.xp as number) ?? 0) + xpReward;
-    tx.update(enrollRef, {
-      completedLessons: FieldValue.arrayUnion(lessonId),
-      progress,
-    });
-    tx.update(userRef, {
-      xp,
-      ...(sparksReward > 0 ? { sparksBalance: balance } : {}),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
-    if (sparksReward > 0) {
-      tx.set(userRef.collection('spark_transactions').doc(), {
-        amount: sparksReward,
-        type: 'earn',
-        courseId,
-        lessonId,
-        balanceAfter: balance,
-        note: 'Lesson completed',
-        createdAt: FieldValue.serverTimestamp(),
+    const already = completed.includes(lessonId);
+    const next = already ? completed : [...completed, lessonId];
+    const progress = progressPercent(countCompleted(next, publishedIds.map((id) => ({ id }))), publishedIds.length);
+    const balanceBefore = (userSnap.data()?.sparksBalance as number) ?? 0;
+    const xpBefore = (userSnap.data()?.xp as number) ?? 0;
+    const balance = already ? balanceBefore : balanceBefore + sparksReward;
+    const xp = already ? xpBefore : xpBefore + xpReward;
+    if (!already) {
+      tx.update(enrollRef, {
+        completedLessons: FieldValue.arrayUnion(lessonId),
+        progress,
       });
+      tx.update(userRef, {
+        xp,
+        ...(sparksReward > 0 ? { sparksBalance: balance } : {}),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      if (sparksReward > 0) {
+        tx.set(userRef.collection('spark_transactions').doc(), {
+          amount: sparksReward,
+          type: 'earn',
+          courseId,
+          lessonId,
+          balanceAfter: balance,
+          note: 'Lesson completed',
+          createdAt: FieldValue.serverTimestamp(),
+        });
+      }
+    } else if ((enrollment.progress as number | undefined) !== progress) {
+      tx.update(enrollRef, { progress });
     }
-    return { already: false, balance, xp, name: (userSnap.data()?.name as string) ?? '', role: (userSnap.data()?.role as string) ?? 'student' };
+    const studentName = certificateStudentName(userSnap.data()?.name);
+    const certificate = issueInTransaction(tx, db(), keySnap.exists, {
+      studentId: uid,
+      studentName,
+      courseId,
+      courseTitle,
+      moduleId: hit.moduleId,
+      moduleTitle,
+      publishedIds: modulePublishedIds,
+      completedIds: next,
+      fresh: !already && moduleIsComplete(modulePublishedIds, next),
+    });
+    return {
+      accepted: true,
+      already,
+      balance,
+      xp,
+      progress,
+      name: studentName,
+      role: (userSnap.data()?.role as string) ?? 'student',
+      certificate,
+    };
   });
 
   if (!result.already) {
@@ -494,9 +535,16 @@ export async function recordUnitQuiz(uid: string, body: {
     recommendedLessonIds: [...review],
     completedAt: FieldValue.serverTimestamp(),
   });
+  let counted = false;
+  let certificate = null;
   if (passed && course.kind === 'curriculum') {
-    await completeLesson(uid, body.courseId, body.lessonId, 100, false);
-    await addSparks(uid, UNIT_PASS_REWARD, 'earn', 'Unit mastery quiz passed');
+    const completion = await completeLesson(uid, body.courseId, body.lessonId, 100, false);
+    counted = completion.accepted !== false;
+    certificate = completion.certificate ?? null;
+    // A retake of a quiz that already counted must not pay the unit reward again.
+    if (counted && !completion.already) {
+      await addSparks(uid, UNIT_PASS_REWARD, 'earn', 'Unit mastery quiz passed');
+    }
   }
   return {
     id: ref.id,
@@ -509,6 +557,8 @@ export async function recordUnitQuiz(uid: string, body: {
     total,
     percentage,
     passed,
+    counted,
+    certificate,
     weakestObjective,
     recommendedLessonIds: [...review],
     responses,
@@ -768,6 +818,108 @@ export async function messageContacts(uid: string, role: string) {
   return allowed;
 }
 
+async function assertCanAward(callerId: string, studentId: string, courseId?: string) {
+  if (callerId === studentId) return;
+  const caller = await db().doc(`users/${callerId}`).get();
+  const role = caller.data()?.role as string | undefined;
+  if (role === 'admin' || role === 'institution_admin') return;
+  if (role === 'parent') {
+    const ids = caller.data()?.childIds;
+    if (Array.isArray(ids) && ids.includes(studentId)) return;
+    throw new ActionError('FORBIDDEN', 'That student has not approved this link.');
+  }
+  if (role === 'teacher') {
+    if (!courseId) throw new ActionError('FORBIDDEN', 'Choose a class before awarding certificates.');
+    const course = await loadCourse(courseId);
+    if (course.ownerId !== callerId) throw new ActionError('FORBIDDEN', 'You can only award certificates in your own class.');
+    return;
+  }
+  throw new ActionError('FORBIDDEN', 'You cannot award certificates.');
+}
+
+/** Issues any module certificates the student has already earned. Never trusts a client name or a client "complete" flag. */
+export async function syncModuleCertificates(callerId: string, studentId: string, courseId?: string) {
+  const target = studentId || callerId;
+  await assertCanAward(callerId, target, courseId);
+  const user = await db().doc(`users/${target}`).get();
+  if (!user.exists) throw new ActionError('USER_NOT_FOUND');
+  const studentName = certificateStudentName(user.data()?.name);
+  const enrollSnaps = courseId
+    ? [await db().doc(`courses/${courseId}/enrollments/${target}`).get()].filter((snap) => snap.exists)
+    : (await db().collectionGroup('enrollments').where('studentId', '==', target).get()).docs;
+  const issued = [];
+  for (const enrollSnap of enrollSnaps) {
+    const courseRef = enrollSnap.ref.parent.parent;
+    const thisCourseId = courseRef?.id ?? (enrollSnap.data()?.courseId as string | undefined);
+    if (!thisCourseId || (courseId && thisCourseId !== courseId)) continue;
+    let course: FirebaseFirestore.DocumentData;
+    try {
+      course = await loadCourse(thisCourseId);
+    } catch {
+      continue;
+    }
+    if (callerId !== target) {
+      const caller = await db().doc(`users/${callerId}`).get();
+      if (caller.data()?.role === 'teacher' && course.ownerId !== callerId) continue;
+    }
+    const lessons = await listLessons(thisCourseId);
+    const published = publishedFlat(course, lessons);
+    const completed: string[] = Array.isArray(enrollSnap.data()?.completedLessons) ? enrollSnap.data()!.completedLessons : [];
+    const progress = progressPercent(countCompleted(completed, published), published.length);
+    if ((enrollSnap.data()?.progress as number | undefined) !== progress) {
+      await enrollSnap.ref.update({ progress });
+    }
+    const byModule = new Map<string, string[]>();
+    for (const lesson of published) {
+      const ids = byModule.get(lesson.moduleId) ?? [];
+      ids.push(lesson.id);
+      byModule.set(lesson.moduleId, ids);
+    }
+    for (const [moduleId, publishedIds] of byModule) {
+      if (!moduleIsComplete(publishedIds, completed)) continue;
+      const mod = await db().doc(`courses/${thisCourseId}/modules/${moduleId}`).get();
+      const keyRef = db().doc(`certificate_keys/${certificateKey(target, thisCourseId, moduleId)}`);
+      const award = await db().runTransaction(async (tx) => {
+        const [keySnap, freshEnroll] = await Promise.all([tx.get(keyRef), tx.get(enrollSnap.ref)]);
+        const done: string[] = Array.isArray(freshEnroll.data()?.completedLessons) ? freshEnroll.data()!.completedLessons : completed;
+        return issueInTransaction(tx, db(), keySnap.exists, {
+          studentId: target,
+          studentName,
+          courseId: thisCourseId,
+          courseTitle: ((course.title as string) || '').trim() || 'Course',
+          moduleId,
+          moduleTitle: ((mod.data()?.title as string) || '').trim() || 'Module',
+          publishedIds,
+          completedIds: done,
+          fresh: true,
+        });
+      });
+      if (award) issued.push(award);
+    }
+  }
+  return { issued };
+}
+
+/** Marks a certificate revoked. Clients cannot write certificates; only this admin path can. */
+export async function revokeCertificate(callerId: string, callerEmail: string | undefined, certificateId: string) {
+  if (!(await callerIsAdmin(callerId, callerEmail))) {
+    throw new ActionError('FORBIDDEN', 'Only an admin can revoke a certificate.');
+  }
+  const id = certificateId.trim();
+  if (!id) throw new ActionError('NOT_FOUND', 'Certificate not found');
+  const ref = db().doc(`certificates/${id}`);
+  const snap = await ref.get();
+  if (!snap.exists) throw new ActionError('NOT_FOUND', 'Certificate not found');
+  if (snap.data()?.status !== 'revoked') {
+    await ref.update({
+      status: 'revoked',
+      revokedAt: FieldValue.serverTimestamp(),
+      revokedBy: callerId,
+    });
+  }
+  return { id, status: 'revoked' as const };
+}
+
 export async function parentOverview(parentId: string, childId: string) {
   const parent = await db().doc(`users/${parentId}`).get();
   if (!hasAccountRole(parent.data(), 'parent')) throw new ActionError('FORBIDDEN', 'Parent access is required.');
@@ -779,12 +931,17 @@ export async function parentOverview(parentId: string, childId: string) {
     const courseRef = e.ref.parent.parent;
     const course = courseRef ? await courseRef.get() : null;
     const data = e.data();
+    const courseData = course?.data() ?? {};
+    const published = courseRef ? publishedFlat(courseData, await listLessons(courseRef.id)) : [];
+    const completedIds = Array.isArray(data.completedLessons) ? data.completedLessons as string[] : [];
+    const completedLessons = countCompleted(completedIds, published);
     return {
       courseId: courseRef?.id ?? data.courseId,
-      title: (course?.data()?.title as string) ?? 'Course',
-      subject: (course?.data()?.subject as string) ?? '',
-      progress: (data.progress as number) ?? 0,
-      completedLessons: Array.isArray(data.completedLessons) ? data.completedLessons.length : 0,
+      title: (courseData.title as string) ?? 'Course',
+      subject: (courseData.subject as string) ?? '',
+      progress: progressPercent(completedLessons, published.length),
+      completedLessons,
+      publishedLessons: published.length,
     };
   }));
   const [quizzes, grades, attendance, behaviour, assignments, invoices] = await Promise.all([
@@ -795,10 +952,27 @@ export async function parentOverview(parentId: string, childId: string) {
     db().collection('assignment_submissions').where('studentId', '==', childId).limit(20).get(),
     db().collection('invoices').where('studentId', '==', childId).limit(30).get(),
   ]);
+  const certificates = await db().collection('certificates').where('studentId', '==', childId).limit(50).get();
   const slim = (docs: FirebaseFirestore.QueryDocumentSnapshot[]) => docs.map((d) => ({ id: d.id, ...d.data() }));
+  const certificateRows = certificates.docs.map((d) => {
+    const data = d.data();
+    const issued = data.issuedAt as { toDate?: () => Date } | undefined;
+    return {
+      id: d.id,
+      studentName: (data.studentName as string) ?? 'Student',
+      courseId: (data.courseId as string) ?? '',
+      courseTitle: (data.courseTitle as string) ?? 'Course',
+      moduleId: (data.moduleId as string) ?? '',
+      moduleTitle: (data.moduleTitle as string) ?? '',
+      issuedAt: issued?.toDate ? issued.toDate().toISOString() : '',
+      issuedByName: (data.issuedByName as string) ?? 'Poket School',
+      status: certificateStatus(data.status),
+    };
+  }).sort((a, b) => (a.issuedAt < b.issuedAt ? 1 : -1));
   return {
     child: { id: childId, name: (child.data()?.name as string) ?? 'Student' },
     courses,
+    certificates: certificateRows,
     quizzes: slim(quizzes.docs),
     grades: slim(grades.docs),
     attendance: slim(attendance.docs),

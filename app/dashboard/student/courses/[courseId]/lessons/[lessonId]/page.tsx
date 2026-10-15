@@ -25,6 +25,8 @@ import { lessonWindow } from '@/lib/access-policy';
 import { recordStudyDay, streakFromDates, toggleBookmark } from '@/lib/learning';
 import { rememberOfflineLesson } from '@/components/offline-banner';
 import { FORMAT_COSTS, FORMAT_LABELS, LESSON_COMPLETE_REWARD, UNIT_PASS_REWARD } from '@/lib/sparks';
+import type { CertificateAward } from '@/lib/certificates';
+import { CertificateCelebration } from '@/components/certificate-celebration';
 import { SmartAudioPlayer } from '@/components/smart-audio-player';
 import { VideoPlayer } from '@/components/video-player';
 import { VideoStoryboard } from '@/components/video-storyboard';
@@ -263,7 +265,7 @@ function formatTime(seconds: number) {
 }
 
 function UnitQuizMode({
-  courseId, lesson, unit, unitLessons, attempts, onAttemptSaved,
+  courseId, lesson, unit, unitLessons, attempts, onAttemptSaved, onCertificate,
 }: {
   courseId: string;
   lesson: Lesson;
@@ -271,6 +273,7 @@ function UnitQuizMode({
   unitLessons: Lesson[];
   attempts: UnitQuizAttempt[];
   onAttemptSaved: (attempt: UnitQuizAttempt) => void;
+  onCertificate: (award: CertificateAward) => void;
 }) {
   const router = useRouter();
   const { user, profile, fetchProfile } = useAuthSTORE();
@@ -343,7 +346,10 @@ function UnitQuizMode({
       setResult(saved);
       setPhase('result');
       onAttemptSaved(saved);
-      if (passed) {
+      if (saved.certificate?.fresh) {
+        await fetchProfile(user.uid);
+        onCertificate(saved.certificate);
+      } else if (passed && saved.counted !== false) {
         await fetchProfile(user.uid);
         toast.success(`Module passed! +${UNIT_PASS_REWARD}⚡ earned 🏆`, { duration: 5000 });
       }
@@ -615,6 +621,7 @@ export default function LessonPage() {
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [attempts, setAttempts] = useState<UnitQuizAttempt[]>([]);
   const [completed, setCompleted] = useState(false);
+  const [celebration, setCelebration] = useState<CertificateAward | null>(null);
   const [completing, setCompleting] = useState(false);
   const [note, setNote] = useState('');
   const [noteSaving, setNoteSaving] = useState(false);
@@ -765,15 +772,23 @@ export default function LessonPage() {
     if (!user || completed) return;
     setCompleting(true);
     try {
-      await markLessonComplete(user.uid, courseId, lessonId, 50, isCurriculum ? LESSON_COMPLETE_REWARD : 0);
-      await fetchProfile(user.uid);
-      setCompleted(true);
-      toast.success(
-        isCurriculum
-          ? `Lesson complete! +50 XP · +${LESSON_COMPLETE_REWARD}⚡ earned 🎉`
-          : 'Lesson complete! +50 XP earned 🎉',
-        { duration: 4000 }
-      );
+      const result = await markLessonComplete(user.uid, courseId, lessonId, 50, isCurriculum ? LESSON_COMPLETE_REWARD : 0);
+      if (result.accepted === false) {
+        toast.error('This lesson is still a draft, so it does not count toward the module.');
+      } else {
+        await fetchProfile(user.uid);
+        setCompleted(true);
+        if (result.certificate?.fresh) {
+          setCelebration(result.certificate);
+        } else {
+          toast.success(
+            isCurriculum
+              ? `Lesson complete! +50 XP · +${LESSON_COMPLETE_REWARD}⚡ earned 🎉`
+              : 'Lesson complete! +50 XP earned 🎉',
+            { duration: 4000 }
+          );
+        }
+      }
     } catch (err: any) {
       console.error('Failed to mark lesson complete:', err);
       toast.error(err?.message || 'Could not mark the lesson complete. Please try again.');
@@ -912,6 +927,7 @@ export default function LessonPage() {
   if (isUnitQuiz && unit) {
     return (
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+        <CertificateCelebration award={celebration} onClose={() => setCelebration(null)} />
         <div className="flex items-center gap-3 mb-2">
           <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/student/courses/${courseId}`)} className="shrink-0">
             <ArrowLeft className="w-4 h-4" />
@@ -936,8 +952,9 @@ export default function LessonPage() {
             attempts={attempts}
             onAttemptSaved={(a) => {
               setAttempts(prev => [a, ...prev]);
-              if (a.passed) setCompleted(true);
+              if (a.passed && a.counted !== false) setCompleted(true);
             }}
+            onCertificate={setCelebration}
           />
         ) : (
           <div className="text-center py-20 text-muted-foreground bg-muted/30 rounded-3xl border border-dashed border-border">
@@ -978,6 +995,7 @@ export default function LessonPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+      <CertificateCelebration award={celebration} onClose={() => setCelebration(null)} />
       {/* Header */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp} className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3 min-w-0">

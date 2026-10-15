@@ -5,14 +5,15 @@ import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
   getChildrenProfiles, getEnrolledCourses, getUnitQuizAttempts, getModulesWithLessons,
-  getChildrenDailyGoals, excuseDailyGoal, goalDateKey,
-  UserProfile, Course, Enrollment, DailyGoal,
+  getChildrenDailyGoals, excuseDailyGoal, goalDateKey, getCertificatesForStudent,
+  UserProfile, Course, Enrollment, DailyGoal, Certificate,
 } from '@/lib/db';
 import { UnitReportCard, UnitReportData } from '@/components/unit-report-card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Zap, BookOpen, MessageSquare, Trophy, UserRound, FileBarChart, TrendingUp, Target, Clock, ShieldCheck, CheckCircle2, Loader2 } from 'lucide-react';
+import { Zap, BookOpen, MessageSquare, Trophy, UserRound, FileBarChart, TrendingUp, Target, Clock, ShieldCheck, CheckCircle2, Loader2, Award } from 'lucide-react';
+import { certificateStatus, formatCertificateDate, type CertificateFace } from '@/lib/certificates';
 import Link from 'next/link';
 import { ChildExamPrep } from '@/components/study/child-exam-prep';
 import { DashPage, DashHeader } from '@/components/dash-ui';
@@ -32,6 +33,21 @@ interface ChildData {
   profile: UserProfile;
   enrollments: { course: Course; enrollment: Enrollment }[];
   unitReports: UnitReportData[];
+  certificates: CertificateFace[];
+}
+
+function certificateFace(cert: Certificate): CertificateFace {
+  return {
+    id: cert.id ?? '',
+    studentName: cert.studentName,
+    courseTitle: cert.courseTitle,
+    moduleTitle: cert.moduleTitle,
+    moduleId: cert.moduleId,
+    courseId: cert.courseId,
+    issuedAt: cert.issuedAt,
+    issuedByName: cert.issuedByName,
+    status: cert.status,
+  };
 }
 
 interface ChildGoals {
@@ -179,8 +195,11 @@ export default function ParentDashboard() {
       const data: ChildData[] = await Promise.all(
         childProfiles.map(async ({ id, data }) => {
           const enrollments = await getEnrolledCourses(id);
-          const unitReports = await buildUnitReports(id, enrollments).catch(() => []);
-          return { id, profile: data, enrollments, unitReports };
+          const [unitReports, certificateRows] = await Promise.all([
+            buildUnitReports(id, enrollments).catch(() => [] as UnitReportData[]),
+            getCertificatesForStudent(id).catch(() => [] as Certificate[]),
+          ]);
+          return { id, profile: data, enrollments, unitReports, certificates: certificateRows.map(certificateFace) };
         })
       );
       setChildren(data);
@@ -336,7 +355,7 @@ export default function ParentDashboard() {
         </motion.div>
       ) : (
         <div className="space-y-10">
-          {children.map(({ id, profile: childProfile, enrollments, unitReports }, ci) => {
+          {children.map(({ id, profile: childProfile, enrollments, unitReports, certificates }, ci) => {
             const xp = childProfile.xp ?? 0;
             const completed = enrollments.filter(e => e.enrollment.progress === 100);
             const inProgress = enrollments.filter(e => e.enrollment.progress > 0 && e.enrollment.progress < 100);
@@ -409,6 +428,34 @@ export default function ParentDashboard() {
                   </SeeMore>
                 )}
 
+                <div id={ci === 0 ? 'certificates' : undefined} className="p-6 sm:p-7 border-b border-border space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Award className="w-4 h-4 text-primary" />
+                    <h3 className="font-heading text-xl text-foreground">Module certificates</h3>
+                  </div>
+                  {certificates.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No module certificates yet. One is awarded when every published lesson in a module is complete.</p>
+                  ) : (
+                    <ul className="space-y-3">
+                      {certificates.map((cert) => (
+                        <li key={cert.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-foreground truncate">{cert.moduleTitle || cert.courseTitle}</p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {cert.moduleTitle ? `${cert.courseTitle} · ` : ''}{formatCertificateDate(cert.issuedAt)}
+                            </p>
+                            <p className="font-mono text-[11px] text-muted-foreground break-all mt-1">{cert.id}</p>
+                            <p className={`text-[11px] font-bold uppercase tracking-wider mt-1 ${certificateStatus(cert.status) === 'revoked' ? 'text-[#9B1C1C]' : 'text-[#0F6E56]'}`}>
+                              {certificateStatus(cert.status) === 'revoked' ? 'Revoked' : 'Valid'}
+                            </p>
+                          </div>
+                          <Link href={`/verify/${cert.id}`} className="text-sm font-bold text-primary shrink-0">Verify</Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
                 {/* Unit mastery report cards */}
                 {unitReports.length > 0 && (
                   <div className="p-6 sm:p-7 border-b border-border space-y-4">
@@ -434,11 +481,12 @@ export default function ParentDashboard() {
                       {enrollments.map(({ course, enrollment }, i) => {
                         const pct = enrollment.progress ?? 0;
                         const done = enrollment.completedLessons?.length ?? 0;
+                        const total = enrollment.publishedLessons ?? 0;
                         return (
                           <div key={course.id}>
                             <div className="flex items-center justify-between mb-2">
                               <p className="text-sm font-semibold text-foreground truncate max-w-[60%]">{course.title}</p>
-                              <span className="text-xs text-muted-foreground font-medium">{done} lesson{done !== 1 ? 's' : ''} done · <span className="font-heading text-base text-foreground">{pct}%</span></span>
+                              <span className="text-xs text-muted-foreground font-medium">{done} of {total} published · <span className="font-heading text-base text-foreground">{pct}%</span></span>
                             </div>
                             <div className="h-2.5 bg-muted rounded-full overflow-hidden">
                               <motion.div
