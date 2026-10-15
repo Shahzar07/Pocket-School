@@ -124,6 +124,48 @@ export const METRICS: readonly MetricDefinition[] = [
     summary: 'Sparks the server granted for finishing goals. This is the same Sparks balance as the header, not a second currency.',
     formula: 'Sum of goal bonuses granted in the range. See lib/sparks.ts.',
   },
+  {
+    id: 'sparks_spent',
+    label: 'Sparks spent',
+    unit: 'Sparks',
+    summary: 'Sparks used on hints, illustrations, and other charges in the saved totals.',
+    formula: 'Sum of spend transactions, or the absolute value of negative amounts.',
+  },
+  {
+    id: 'confidence_mastery',
+    label: 'Confidence-weighted mastery',
+    unit: 'percent',
+    summary: 'Topic scores weighted by how many times the student has tried them. One lucky attempt counts less than three.',
+    formula: 'Mean of topic scores, weighted by min(attempts, 3) ÷ 3.',
+  },
+  {
+    id: 'lessons_completed',
+    label: 'Lessons completed',
+    unit: 'lessons',
+    summary: 'Lessons marked done inside goals in the range.',
+    formula: 'Count of completedLessonIds on goals in the range.',
+  },
+  {
+    id: 'pace',
+    label: 'Pace versus plan',
+    unit: 'percent',
+    summary: 'Study minutes compared with the minutes the goals planned.',
+    formula: 'Study minutes ÷ planned goal minutes, capped at 100%.',
+  },
+  {
+    id: 'attempts_per_question',
+    label: 'Attempts per question',
+    unit: 'attempts',
+    summary: 'How many tries a question took, averaged across quizzes that recorded attempts.',
+    formula: 'Mean of recorded attempts.',
+  },
+  {
+    id: 'seconds_per_question',
+    label: 'Time per question',
+    unit: 'seconds',
+    summary: 'Average seconds spent on a question when the quiz recorded time.',
+    formula: 'Mean of recorded seconds.',
+  },
 ];
 
 const BY_ID = new Map(METRICS.map(m => [m.id, m]));

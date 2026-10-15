@@ -520,6 +520,22 @@ describe('goals, snapshots, integrity, and published reports', () => {
     await assertSucceeds(getDoc(doc(own, 'analytics_snapshots/student_student1')));
     const school = env.authenticatedContext('instadmin1').firestore();
     await assertSucceeds(getDoc(doc(school, 'analytics_snapshots/student_student1')));
+    const teacher = env.authenticatedContext('teacher1').firestore();
+    await assertFails(getDoc(doc(teacher, 'analytics_snapshots/student_student1')));
+  });
+
+  it('lets a listed teacher read a snapshot and blocks an unlisted teacher', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'analytics_snapshots/student_shared'), {
+        scopeId: 'student1', subjectStudentId: 'student1', teacherIds: ['teacher1'],
+      });
+    });
+    const teacher = env.authenticatedContext('teacher1').firestore();
+    await assertSucceeds(getDoc(doc(teacher, 'analytics_snapshots/student_shared')));
+    const otherTeacher = env.authenticatedContext('teacher2').firestore();
+    await assertFails(getDoc(doc(otherTeacher, 'analytics_snapshots/student_shared')));
+    const stranger = env.authenticatedContext('student2').firestore();
+    await assertFails(getDoc(doc(stranger, 'analytics_snapshots/student_shared')));
   });
 
   it('lets a student appeal an integrity case and blocks a decision or an automatic penalty', async () => {

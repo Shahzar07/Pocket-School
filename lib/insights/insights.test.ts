@@ -10,6 +10,7 @@ function expect(actual: unknown) {
     toBeLessThan(n: number) { assert.ok(typeof actual === 'number' && actual < n); },
     toMatch(pattern: RegExp) { assert.match(String(actual), pattern); },
     toContain(part: string) { assert.ok(String(actual).includes(part)); },
+    toHaveLength(n: number) { assert.equal((actual as { length: number }).length, n); },
     toMatchObject(partial: Record<string, unknown>) {
       assert.equal(typeof actual, 'object');
       assert.ok(actual);
@@ -31,8 +32,9 @@ import {
   resolvePomodoro, sparksForGoal, spawnNextGoal, startedLate, suggestGoalsFromSignals,
 } from './goals';
 import {
-  cohortBenchmark, examReadiness, hourHeatmap, masteryRadar, quizAverage, retentionForecast,
-  tagBloom, understandingScore, weeklyInsights,
+  bloomByTopic, cohortBenchmark, confidenceMastery, digestHeadlines, dropOffPoints, examReadiness,
+  hourHeatmap, masteryRadar, quizAverage, retentionForecast, strengthsAndWeaknesses, tagBloom,
+  threeActions, understandingScore, weeklyInsights, weeklySummary, withBloomTags,
 } from './analytics';
 import { attendanceRate, automaticStatus } from './attendance';
 import { buildSnapshot } from './aggregate';
@@ -242,6 +244,48 @@ describe('snapshot', () => {
     expect(snap.misconceptions[0]?.topic).toBe('fractions');
     expect(snap.behaviour.anomalies.some(a => a.id === 'study-drop')).toBe(true);
     expect(snap.cohort?.size).toBe(8);
+    expect(snap.insights).toHaveLength(3);
+    expect(snap.summary).toMatch(/exam readiness/);
+    expect(snap.metrics.confidence_mastery).not.toBeNull();
+    expect(snap.topics[0]?.topic).toBe('fractions');
+  });
+
+  it('weights mastery by how often a topic was tried', () => {
+    const rows = confidenceMastery([
+      { at: '2026-10-01', score: 9, max: 10, topic: 'fractions', attempts: 3, seconds: 40 },
+      { at: '2026-10-02', score: 4, max: 10, topic: 'decimals', attempts: 1, seconds: 90 },
+    ]);
+    expect(rows.find(row => row.topic === 'fractions')?.confidence).toBe(100);
+    expect(rows.find(row => row.topic === 'decimals')?.confidence).toBe(33);
+    expect(strengthsAndWeaknesses(rows).strengths).toContain('fractions');
+    expect(strengthsAndWeaknesses(rows).weaknesses).toContain('decimals');
+  });
+
+  it('keeps three next actions and writes digest headlines', () => {
+    const summary = weeklySummary([], 72);
+    expect(summary.actions).toHaveLength(3);
+    expect(threeActions([{ id: 'only', title: 'One', body: 'One', metricId: 'streak', suggestedGoal: { title: 'One', category: 'study', estimateMinutes: 10 } }])).toHaveLength(3);
+    expect(digestHeadlines({ study_time: 60, quiz_average: 80, exam_readiness: 72, streak: 4 })).toMatch(/Headlines: 60 min/);
+    expect(digestHeadlines({})).toBe('');
+  });
+
+  it('tags AI flashcards, quizzes, and stalled courses', () => {
+    const tagged = withBloomTags({
+      flashcards: [{ question: 'Define a fraction', answer: 'A part of a whole' }],
+      quiz: [{ question: 'Design a new fraction model', explanation: 'Create a picture' }],
+    });
+    expect(tagged.flashcards?.[0]?.bloom).toBe('remember');
+    expect(tagged.quiz?.[0]?.bloom).toBe('create');
+    const bars = bloomByTopic([
+      { at: '2026-10-01', score: 8, max: 10, topic: 'fractions', bloom: 'apply' },
+      { at: '2026-10-02', score: 5, max: 10, topic: 'fractions', prompt: 'Compare two fractions' },
+    ]);
+    expect(bars[0]?.topic).toBe('fractions');
+    expect(bars[0]?.apply).toBe(80);
+    expect(dropOffPoints(
+      [{ label: 'Fractions', progress: 40 }, { label: 'Done', progress: 100 }],
+      [{ label: '2026-10-12', minutes: 40 }, { label: '2026-10-13', minutes: 10 }],
+    ).join(' ')).toMatch(/Fractions stops at 40%/);
   });
 });
 

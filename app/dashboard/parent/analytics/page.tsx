@@ -5,13 +5,16 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { getChildrenProfiles } from '@/lib/db';
 import { authedFetch } from '@/lib/api-client';
 import { DashHeader, DashPage } from '@/components/dash-ui';
-import { AnalyticsBoard } from '@/components/insights/boards';
+import { AnalyticsBoard, ExportBar, snapshotKpis } from '@/components/insights/boards';
+import { LearningCharts } from '@/components/insights/learning-charts';
+import { createSuggestion } from '@/lib/insights/client';
+import { toast } from 'sonner';
 import { readSnapshot } from '@/lib/insights/client';
 import type { AnalyticsSnapshot } from '@/lib/insights/aggregate';
 import { Button } from '@/components/ui/button';
 
 export default function ParentAnalyticsPage() {
-  const { user } = useAuthSTORE();
+  const { user, profile } = useAuthSTORE();
   const [children, setChildren] = useState<{ id: string; name: string }[]>([]);
   const [childId, setChildId] = useState('');
   const [snapshot, setSnapshot] = useState<AnalyticsSnapshot | null>(null);
@@ -52,7 +55,20 @@ export default function ParentAnalyticsPage() {
           <Button key={child.id} variant={child.id === childId ? 'default' : 'outline'} onClick={() => setChildId(child.id)}>{child.name}</Button>
         ))}
       </div>
-      {snapshot ? <AnalyticsBoard snapshot={snapshot} /> : <p className="text-sm text-muted-foreground">No saved totals yet. Refresh, or wait for the nightly job after a day with goals.</p>}
+      {snapshot ? (
+        <>
+          <ExportBar kpis={snapshotKpis(snapshot)} />
+          <LearningCharts
+            snapshot={snapshot}
+            onMakeGoal={async (title) => {
+              if (!user || !childId) return;
+              await createSuggestion({ studentId: childId, parentId: user.uid, title, parentName: profile?.name });
+              toast.success('Suggested. Your child can accept it as a goal.');
+            }}
+          />
+          <AnalyticsBoard snapshot={snapshot} />
+        </>
+      ) : <p className="text-sm text-muted-foreground">No saved totals yet. Refresh, or wait for the nightly job after a day with goals.</p>}
     </DashPage>
   );
 }
