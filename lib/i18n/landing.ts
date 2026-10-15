@@ -4,7 +4,7 @@
  * language falls back to English until it is reviewed.
  *
  * Product names stay as they appear in the product: ET, ET Maths, Exam Prep,
- * Lyra Live, CMS, Sparks, Poket Reads, Bloom’s mastery, and the rest.
+ * ET AI Live, CMS, Sparks, Poket Reads, Bloom’s mastery, and the rest.
  */
 export const landingEn = {
   skip: 'Skip to content',
@@ -53,7 +53,7 @@ export const landingEn = {
       body: 'Institution is the annual contract for schools, learning centres, and exam centres.',
       a: 'A white-label academy can use its own subdomain, name, logo, and accent colour.',
       b: 'The academic calendar holds exams, holidays, classes, and assignments.',
-      c: 'CMS is the add-on for the shared editor. Lyra Live is the add-on for a face-to-face AI teacher.',
+      c: 'CMS is the add-on for the shared editor. ET AI Live is the add-on for a face-to-face AI teacher.',
     },
   },
   features: {
@@ -162,7 +162,7 @@ export const landingEn = {
   },
   addons: {
     eyebrow: 'Add-ons',
-    title: 'Lyra Live and CMS',
+    title: 'ET AI Live and CMS',
     lede: 'An add-on is bought on top of a qualifying plan. Cancelling the add-on leaves the plan, and cancelling the plan leaves the add-on.',
     lyra_live: 'Real-time face-to-face sessions with an AI teacher who sees and hears you.',
     cms: 'Shared editor, document import, image library, illustrations, and course or book covers.',
@@ -196,7 +196,7 @@ export const landingEn = {
     q3: 'Can one person be a learner and a parent?',
     a3: 'Yes. The same login switches between Learning, Teaching, and Parent. Admin and institution admin still sign in through the admin page.',
     q4: 'What are the add-ons?',
-    a4: 'Two are named: Lyra Live and CMS. Each one needs a qualifying plan before it can be bought.',
+    a4: 'Two are named: ET AI Live and CMS. Each one needs a qualifying plan before it can be bought.',
     q5: 'How many languages are in the product?',
     a5: 'The language list has {{count}} languages. English is the source. Menus for a language still marked for review stay in English, and ET can still reply in that language.',
     q6: 'Which local payments are wired up?',
@@ -270,7 +270,7 @@ export const landingMs = {
       body: 'Institution ialah kontrak tahunan untuk sekolah, pusat pembelajaran, dan pusat peperiksaan.',
       a: 'Akademi white-label boleh guna subdomain, nama, logo, dan warna aksentnya sendiri.',
       b: 'Kalendar akademik menyimpan peperiksaan, cuti, kelas, dan tugasan.',
-      c: 'CMS ialah add-on untuk editor kongsi. Lyra Live ialah add-on untuk guru AI bersemuka.',
+      c: 'CMS ialah add-on untuk editor kongsi. ET AI Live ialah add-on untuk guru AI bersemuka.',
     },
   },
   features: {
@@ -379,7 +379,7 @@ export const landingMs = {
   },
   addons: {
     eyebrow: 'Add-on',
-    title: 'Lyra Live dan CMS',
+    title: 'ET AI Live dan CMS',
     lede: 'Add-on dibeli di atas pelan yang layak. Membatalkan add-on meninggalkan pelan, dan membatalkan pelan meninggalkan add-on.',
     lyra_live: 'Sesi bersemuka masa nyata dengan guru AI yang melihat dan mendengar anda.',
     cms: 'Editor kongsi, import dokumen, pustaka imej, ilustrasi, dan kulit kursus atau buku.',
@@ -413,7 +413,7 @@ export const landingMs = {
     q3: 'Bolehkah seorang menjadi pelajar dan ibu bapa?',
     a3: 'Ya. Log masuk yang sama bertukar antara Learning, Teaching, dan Parent. Admin dan institution admin masih log masuk melalui halaman admin.',
     q4: 'Apakah add-on itu?',
-    a4: 'Dua yang dinamakan: Lyra Live dan CMS. Setiap satu memerlukan pelan yang layak sebelum boleh dibeli.',
+    a4: 'Dua yang dinamakan: ET AI Live dan CMS. Setiap satu memerlukan pelan yang layak sebelum boleh dibeli.',
     q5: 'Berapa bahasa dalam produk?',
     a5: 'Senarai bahasa ada {{count}} bahasa. Bahasa Inggeris ialah sumber. Menu untuk bahasa yang masih perlu semakan kekal dalam bahasa Inggeris, dan ET masih boleh membalas dalam bahasa itu.',
     q6: 'Pembayaran tempatan mana yang disambungkan?',
@@ -485,7 +485,7 @@ export const landingZh = {
       body: 'Institution 是面向学校、学习中心和考试中心的年度合同。',
       a: '白标学院可以使用自己的子域名、名称、标志和强调色。',
       b: '学术日历放考试、假期、课和作业。',
-      c: 'CMS 是共享编辑器的附加项。Lyra Live 是面对面 AI 老师的附加项。',
+      c: 'CMS 是共享编辑器的附加项。ET AI Live 是面对面 AI 老师的附加项。',
     },
   },
   features: {
@@ -594,7 +594,7 @@ export const landingZh = {
   },
   addons: {
     eyebrow: '附加项',
-    title: 'Lyra Live 和 CMS',
+    title: 'ET AI Live 和 CMS',
     lede: '附加项买在符合条件的计划之上。取消附加项会留下计划，取消计划会留下附加项。',
     lyra_live: '与能看见你、听见你的 AI 老师进行实时面对面会话。',
     cms: '共享编辑器、文档导入、图片库、插图，以及课程或书籍封面。',
@@ -628,7 +628,7 @@ export const landingZh = {
     q3: '同一个人可以既是学生又是家长吗？',
     a3: '可以。同一次登录在 Learning、Teaching 和 Parent 之间切换。Admin 和 institution admin 仍从管理页登录。',
     q4: '附加项有哪些？',
-    a4: '有名字的是两个：Lyra Live 和 CMS。购买前各自需要符合条件的计划。',
+    a4: '有名字的是两个：ET AI Live 和 CMS。购买前各自需要符合条件的计划。',
     q5: '产品里有多少种语言？',
     a5: '语言列表有 {{count}} 种。英文是源语言。仍待审阅的语言，菜单保持英文，ET 仍可以用那种语言回答。',
     q6: '接了哪些本地支付？',
@@ -700,7 +700,7 @@ export const landingTa = {
       body: 'Institution என்பது பள்ளிகள், கற்றல் மையங்கள், தேர்வு மையங்களுக்கான ஆண்டு ஒப்பந்தம்.',
       a: 'வெள்ளை-லேபிள் அகாடமி தன் subdomain, பெயர், சின்னம், வண்ணத்தைப் பயன்படுத்தலாம்.',
       b: 'கல்வி நாள்காட்டியில் தேர்வுகள், விடுமுறைகள், வகுப்புகள், பணிகள் இருக்கும்.',
-      c: 'CMS பகிர்ந்த திருத்திக்கான கூடுதல். Lyra Live நேருக்கு நேர் AI ஆசிரியருக்கான கூடுதல்.',
+      c: 'CMS பகிர்ந்த திருத்திக்கான கூடுதல். ET AI Live நேருக்கு நேர் AI ஆசிரியருக்கான கூடுதல்.',
     },
   },
   features: {
@@ -809,7 +809,7 @@ export const landingTa = {
   },
   addons: {
     eyebrow: 'கூடுதல்கள்',
-    title: 'Lyra Live மற்றும் CMS',
+    title: 'ET AI Live மற்றும் CMS',
     lede: 'தகுதியான திட்டத்தின் மேல் கூடுதல் வாங்கப்படும். கூடுதலை ரத்து செய்தால் திட்டம் இருக்கும். திட்டத்தை ரத்து செய்தால் கூடுதல் இருக்கும்.',
     lyra_live: 'உங்களைப் பார்க்கும், கேட்கும் AI ஆசிரியருடன் நேரடி நேருக்கு நேர் அமர்வுகள்.',
     cms: 'பகிர்ந்த திருத்தி, ஆவண இறக்குமதி, பட நூலகம், விளக்கப்படங்கள், பாட அல்லது புத்தக அட்டைகள்.',
@@ -843,7 +843,7 @@ export const landingTa = {
     q3: 'ஒருவர் மாணவராகவும் பெற்றோராகவும் இருக்க முடியுமா?',
     a3: 'ஆம். அதே உள்நுழைவு Learning, Teaching, Parent இடையே மாறும். Admin மற்றும் institution admin இன்னும் நிர்வாகப் பக்கத்தில் உள்நுழைவர்.',
     q4: 'கூடுதல்கள் என்ன?',
-    a4: 'பெயரிடப்பட்டவை இரண்டு: Lyra Live மற்றும் CMS. வாங்குவதற்கு முன் ஒவ்வொன்றுக்கும் தகுதியான திட்டம் வேண்டும்.',
+    a4: 'பெயரிடப்பட்டவை இரண்டு: ET AI Live மற்றும் CMS. வாங்குவதற்கு முன் ஒவ்வொன்றுக்கும் தகுதியான திட்டம் வேண்டும்.',
     q5: 'தயாரிப்பில் எத்தனை மொழிகள்?',
     a5: 'மொழிப் பட்டியலில் {{count}} மொழிகள். ஆங்கிலம் மூலம். இன்னும் மதிப்பாய்வு குறியிடப்பட்ட மொழியின் மெனுக்கள் ஆங்கிலத்திலேயே இருக்கும். ET அந்த மொழியில் பதிலளிக்கலாம்.',
     q6: 'எந்த உள்ளூர் கட்டணங்கள் இணைக்கப்பட்டுள்ளன?',
