@@ -380,8 +380,14 @@ service cloud.firestore {
         || isTeacherOrAdmin()
         || linkedTo(resource.data.studentId)
       );
-      allow create: if isTeacherOrAdmin();
+      // The Admin SDK writes these after it has checked published-lesson completion.
+      // A signed-in teacher or student must not be able to mint one from the browser.
+      allow create, update: if false;
       allow delete: if isAdmin();
+    }
+
+    match /certificate_keys/{keyId} {
+      allow read, write: if false;
     }
 
     match /tasks/{taskId} {
