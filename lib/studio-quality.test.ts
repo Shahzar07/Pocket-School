@@ -84,9 +84,9 @@ test('a generator that stalls is shown as failed', () => {
   assert.match(job?.error ?? '', /stopped/);
 });
 
-test('the copyright notice names poketschool.ai and the current year', () => {
+test('the copyright notice uses PoketSchool.Ai and the current year', () => {
   const year = new Date().getFullYear();
-  assert.equal(copyrightNotice(), `© ${year} poketschool.ai. All rights reserved.`);
+  assert.equal(copyrightNotice(), `© ${year} PoketSchool.Ai. All rights reserved.`);
 });
 
 test('an export hides the worked solution and carries the notice', async () => {
@@ -102,7 +102,7 @@ test('an export hides the worked solution and carries the notice', async () => {
     answerKey: true,
   });
   const year = new Date().getFullYear();
-  assert.match(pdf.bytes.toString('latin1'), new RegExp(`\\\\251 ${year} poketschool.ai`));
+  assert.match(pdf.bytes.toString('latin1'), new RegExp(`\\\\251 ${year} PoketSchool\\.Ai`));
   assert.doesNotMatch(pdf.bytes.toString('latin1'), /Poket Media/);
 
   const docx = await buildExport({
@@ -115,7 +115,7 @@ test('an export hides the worked solution and carries the notice', async () => {
   const zip = await JSZip.loadAsync(docx.bytes);
   const footer = await zip.file('word/footer1.xml')?.async('string');
   const document = await zip.file('word/document.xml')?.async('string');
-  assert.match(footer ?? '', new RegExp(`© ${new Date().getFullYear()} poketschool.ai`));
+  assert.match(footer ?? '', new RegExp(`© ${new Date().getFullYear()} PoketSchool\\.Ai`));
   assert.match(footer ?? '', /Poket School/);
   assert.doesNotMatch(footer ?? '', /Poket Media/);
   assert.doesNotMatch(document ?? '', /Worked solution/);

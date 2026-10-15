@@ -1,6 +1,6 @@
 /**
  * Server-side lesson exports. Every file carries the Poket School wordmark
- * and the poketschool.ai copyright notice.
+ * and the PoketSchool.Ai copyright notice.
  */
 import JSZip from 'jszip';
 import { mindmapSvg, parseBuzan } from '../mindmap';

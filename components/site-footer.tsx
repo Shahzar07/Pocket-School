@@ -5,7 +5,7 @@
  *
  * This is the original liquid-glass footer design, with the legal content it
  * was missing folded in: working links to the legal documents (they used to
- * be href="#"), the poketschool.ai copyright line, and the mandatory
+ * be href="#"), the PoketSchool.Ai copyright line, and the mandatory
  * examination-board non-affiliation disclaimer.
  *
  * Placement rules live here rather than in each page, so there is exactly one
