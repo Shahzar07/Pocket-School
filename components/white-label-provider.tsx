@@ -11,7 +11,7 @@
  */
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { getInstitutionBySubdomain, type Institution } from '@/lib/db';
+import { getInstitutionByDomain, getInstitutionBySubdomain, type Institution } from '@/lib/db';
 import { subdomainFromHost, brandingFor, DEFAULT_BRANDING, type Branding } from '@/lib/white-label';
 
 interface WhiteLabelValue {
@@ -37,12 +37,12 @@ export function WhiteLabelProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     let cancelled = false;
-    const label = subdomainFromHost(window.location.hostname);
-    if (!label) {
-      setResolving(false);
-      return;
-    }
-    getInstitutionBySubdomain(label)
+    const hostname = window.location.hostname;
+    const label = subdomainFromHost(hostname);
+    const lookup = label
+      ? getInstitutionBySubdomain(label).then(found => found ?? getInstitutionByDomain(hostname))
+      : getInstitutionByDomain(hostname);
+    lookup
       .then(found => { if (!cancelled) setInstitution(found); })
       // An unresolvable tenant falls back to platform branding rather than
       // erroring — a branding lookup must never take the app down.

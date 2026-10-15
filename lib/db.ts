@@ -1,11 +1,12 @@
 import {
   collection, doc, getDoc, getDocs, setDoc, updateDoc, addDoc,
   deleteDoc, query, where, orderBy, limit, serverTimestamp, onSnapshot,
-  increment, arrayUnion, arrayRemove, Timestamp, writeBatch, runTransaction,
+  increment, arrayUnion, arrayRemove, Timestamp, writeBatch, runTransaction, deleteField,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { ACADEMIC_MONTHLY_ALLOWANCE, UNIT_PASS_REWARD } from './sparks';
 import type { Role } from './roles';
+import type { OemLicence } from './oem';
 
 export type { Role };
 
@@ -40,6 +41,8 @@ export interface UserProfile {
   sparksGrantedAt?: Timestamp;
   /** Preferred UI and lesson language. A short code from `lib/languages.ts`. */
   language?: string;
+  /** YYYY-MM-DD days a lesson was opened, used for the study streak. */
+  studyDates?: string[];
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -109,6 +112,10 @@ export interface Course {
   notifyOnPublish?: boolean;
   timedAssessmentMode?: boolean;
   accessOverride?: { pricePerInstitution?: number; expiryDate?: string; sparksOverride?: number };
+  /** Who may see this product. Absent means the older public/signed-in rules. */
+  audiences?: ('students' | 'teachers' | 'parents' | 'institutions' | 'all' | 'marketplace')[];
+  /** Manual order in the CMS. Absent sorts after numbered rows. */
+  order?: number;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -237,6 +244,9 @@ export interface Enrollment {
   /** lessonId -> list of unlocked AiOutputs format keys (curriculum Sparks economy) */
   unlockedFormats?: Record<string, string[]>;
   enrolledAt?: Timestamp;
+  /** Last lesson the learner opened, so My Courses can resume it. */
+  lastLessonId?: string;
+  bookmarkedLessons?: string[];
 }
 
 export interface Badge {
@@ -284,7 +294,13 @@ export interface Institution {
     tagline?: string;
     /** Hide "Powered by Poket School" for institutions on a plan that allows it. */
     hidePoweredBy?: boolean;
+    /** Name on invitation emails. Falls back to the academy name. */
+    emailFromName?: string;
+    /** Name printed on certificates. Falls back to the academy name. */
+    certificateIssuer?: string;
   };
+  /** A hostname the school owns, such as learn.kolej.example. */
+  customDomain?: string;
 }
 
 /** Reserved hosts that must never resolve to an institution. */
@@ -335,6 +351,8 @@ export interface Programme {
   subjects: string[];
   requiredTier: 'free' | 'academic';
   status: 'active' | 'draft';
+  /** Manual order in the CMS. Absent sorts after numbered rows. */
+  order?: number;
   createdAt?: Timestamp;
 }
 
@@ -496,6 +514,35 @@ export async function updateLesson(courseId: string, moduleId: string, lessonId:
   await updateDoc(doc(db, 'courses', courseId, 'modules', moduleId, 'lessons', lessonId), {
     ...data, updatedAt: serverTimestamp(),
   });
+}
+
+/**
+ * Move a lesson into another unit without changing its id, so progress and
+ * bookmarks that point at the lesson keep working.
+ */
+export async function moveLessonToUnit(
+  courseId: string,
+  fromUnitId: string,
+  toUnitId: string,
+  lessonId: string,
+  order: number,
+  lessonNumber: number,
+): Promise<void> {
+  if (fromUnitId === toUnitId) {
+    await updateLesson(courseId, fromUnitId, lessonId, { order, lessonNumber, moduleId: toUnitId });
+    return;
+  }
+  const fromRef = doc(db, 'courses', courseId, 'modules', fromUnitId, 'lessons', lessonId);
+  const snap = await getDoc(fromRef);
+  if (!snap.exists()) throw new Error('Lesson not found');
+  await setDoc(doc(db, 'courses', courseId, 'modules', toUnitId, 'lessons', lessonId), {
+    ...snap.data(),
+    moduleId: toUnitId,
+    order,
+    lessonNumber,
+    updatedAt: serverTimestamp(),
+  });
+  await deleteDoc(fromRef);
 }
 
 export async function deleteLesson(courseId: string, moduleId: string, lessonId: string): Promise<void> {
@@ -1238,6 +1285,123 @@ export async function getInstitutionBySubdomain(subdomain: string): Promise<Inst
   const snap = await getDocs(query(collection(db, 'institutions'), where('subdomain', '==', s), limit(1)));
   const d = snap.docs[0];
   return d ? ({ id: d.id, ...d.data() } as Institution) : null;
+}
+
+/** A school that claimed this exact hostname. */
+export async function getInstitutionByDomain(hostname: string): Promise<Institution | null> {
+  const host = hostname.trim().toLowerCase();
+  if (!host) return null;
+  const snap = await getDocs(query(collection(db, 'institutions'), where('customDomain', '==', host), limit(1)));
+  const d = snap.docs[0];
+  return d ? ({ id: d.id, ...d.data() } as Institution) : null;
+}
+
+export async function listOemLicences(institutionId: string): Promise<OemLicence[]> {
+  const snap = await getDocs(collection(db, 'institutions', institutionId, 'licences'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as OemLicence));
+}
+
+export async function saveOemLicence(institutionId: string, licence: OemLicence): Promise<string> {
+  const { id, ...data } = licence;
+  if (id) {
+    await setDoc(doc(db, 'institutions', institutionId, 'licences', id), data, { merge: true });
+    return id;
+  }
+  const ref = await addDoc(collection(db, 'institutions', institutionId, 'licences'), data);
+  return ref.id;
+}
+
+export interface AcademyClass {
+  id: string;
+  name: string;
+  programmeIds: string[];
+  memberIds: string[];
+}
+
+export async function listAcademyClasses(institutionId: string): Promise<AcademyClass[]> {
+  const snap = await getDocs(collection(db, 'institutions', institutionId, 'classes'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as AcademyClass));
+}
+
+export async function saveAcademyClass(institutionId: string, klass: Omit<AcademyClass, 'id'> & { id?: string }): Promise<string> {
+  const { id, ...data } = klass;
+  if (id) {
+    await setDoc(doc(db, 'institutions', institutionId, 'classes', id), data, { merge: true });
+    return id;
+  }
+  const ref = await addDoc(collection(db, 'institutions', institutionId, 'classes'), data);
+  return ref.id;
+}
+
+export interface AcademyInvite {
+  email: string;
+  name: string;
+  role: 'student' | 'teacher';
+}
+
+export async function saveAcademyInvites(institutionId: string, rows: AcademyInvite[]): Promise<void> {
+  const batch = writeBatch(db);
+  for (const row of rows) {
+    batch.set(doc(db, 'institutions', institutionId, 'invites', row.email), row);
+  }
+  await batch.commit();
+}
+
+export async function listAcademyInvites(institutionId: string): Promise<AcademyInvite[]> {
+  const snap = await getDocs(collection(db, 'institutions', institutionId, 'invites'));
+  return snap.docs.map(d => d.data() as AcademyInvite);
+}
+
+export interface AcademyMember {
+  id: string;
+  email?: string;
+  name?: string;
+  role?: string;
+}
+
+export async function listAcademyMembers(institutionId: string): Promise<AcademyMember[]> {
+  const snap = await getDocs(collection(db, 'institutions', institutionId, 'members'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as AcademyMember));
+}
+
+export async function saveJoinCode(institutionId: string, code: string): Promise<void> {
+  await setDoc(doc(db, 'join_codes', code), { code, institutionId, active: true });
+}
+
+/** Remember where this learner stopped, when they are enrolled. */
+export async function rememberLesson(studentId: string, courseId: string, lessonId: string): Promise<void> {
+  const ref = doc(db, 'courses', courseId, 'enrollments', studentId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+  await updateDoc(ref, { lastLessonId: lessonId, lastOpenedAt: serverTimestamp() });
+}
+
+export async function setBookmarkedLessons(studentId: string, courseId: string, lessonIds: string[]): Promise<void> {
+  const ref = doc(db, 'courses', courseId, 'enrollments', studentId);
+  await updateDoc(ref, { bookmarkedLessons: lessonIds });
+}
+
+export interface CourseReview {
+  id: string;
+  userId: string;
+  userName: string;
+  rating: number;
+  text: string;
+}
+
+export async function listCourseReviews(courseId: string): Promise<CourseReview[]> {
+  const snap = await getDocs(query(collection(db, 'courses', courseId, 'reviews'), limit(40)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as CourseReview));
+}
+
+export async function saveCourseReview(
+  courseId: string,
+  review: { userId: string; userName: string; rating: number; text: string },
+): Promise<void> {
+  await setDoc(doc(db, 'courses', courseId, 'reviews', review.userId), {
+    ...review,
+    updatedAt: serverTimestamp(),
+  });
 }
 
 /**
@@ -2590,6 +2754,13 @@ export async function updateCourse(id: string, data: Partial<Course>): Promise<v
     ...data,
     updatedAt: serverTimestamp(),
   });
+}
+
+/** Drop optional course fields so "derive this" can return to the default. */
+export async function clearCourseFields(id: string, fields: readonly ('minTier' | 'priceType')[]): Promise<void> {
+  const patch: Record<string, ReturnType<typeof deleteField>> = {};
+  for (const field of fields) patch[field] = deleteField();
+  await updateDoc(doc(db, 'courses', id), { ...patch, updatedAt: serverTimestamp() });
 }
 
 export async function deleteCourse(id: string): Promise<void> {

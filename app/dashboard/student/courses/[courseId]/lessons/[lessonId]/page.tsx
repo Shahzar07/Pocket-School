@@ -12,10 +12,13 @@ import { useTutorContext } from '@/hooks/use-tutor-context';
 import {
   getLessonByIds, getCourse, getEnrollment, getModulesWithLessons,
   getUnitQuizAttempts, markLessonComplete, getLessonNote, saveLessonNote,
-  saveSubmission, unlockLessonFormat, saveUnitQuizAttempt,
+  saveSubmission, unlockLessonFormat, saveUnitQuizAttempt, rememberLesson,
+  setBookmarkedLessons, updateUser,
   AiOutputs, Course, Module, Lesson, Enrollment, UnitQuizAttempt,
 } from '@/lib/db';
 import { getUnitStatuses, getCurriculumLessonStatus } from '@/lib/curriculum';
+import { recordStudyDay, streakFromDates, toggleBookmark } from '@/lib/learning';
+import { rememberOfflineLesson } from '@/components/offline-banner';
 import { FORMAT_COSTS, FORMAT_LABELS, LESSON_COMPLETE_REWARD, UNIT_PASS_REWARD } from '@/lib/sparks';
 import { SmartAudioPlayer } from '@/components/smart-audio-player';
 import { VideoPlayer } from '@/components/video-player';
@@ -35,7 +38,7 @@ import {
   ArrowLeft, CheckCircle2, FileText, Headphones, FlipHorizontal,
   ClipboardList, Presentation, BookMarked, BookOpen, Network,
   Zap, ChevronLeft, ChevronRight, RotateCcw, Check, X, Lock,
-  Video, Trophy, Timer, AlertTriangle, ArrowRight, ImageIcon, Calculator,
+  Video, Trophy, Timer, AlertTriangle, ArrowRight, ImageIcon, Calculator, Bookmark,
 } from 'lucide-react';
 
 const fadeUp: Record<string, any> = {
@@ -669,6 +672,12 @@ export default function LessonPage() {
         result.lesson.title,
         result.lesson.aiOutputs?.summary ?? result.lesson.aiOutputs?.text ?? ''
       );
+      rememberOfflineLesson(result.lesson.title);
+      void rememberLesson(user.uid, courseId, lessonId).catch(() => {});
+      const today = new Date().toISOString().slice(0, 10);
+      if (!(profile?.studyDates ?? []).includes(today)) {
+        void updateUser(user.uid, { studyDates: recordStudyDay(profile?.studyDates ?? [], today) }).catch(() => {});
+      }
       setLoading(false);
       } catch (err: any) {
         console.error('Failed to load lesson:', err);
@@ -732,6 +741,27 @@ export default function LessonPage() {
       toast.error(err?.message || 'Could not mark the lesson complete. Please try again.');
     }
     setCompleting(false);
+  };
+
+  const bookmarked = (enrollment?.bookmarkedLessons ?? []).includes(lessonId);
+  const studyStreak = streakFromDates(
+    recordStudyDay(profile?.studyDates ?? [], new Date().toISOString().slice(0, 10)),
+    new Date().toISOString().slice(0, 10),
+  ).current;
+
+  const handleBookmark = async () => {
+    if (!user || !enrollment) {
+      toast.error('Enrol in this course to bookmark a lesson.');
+      return;
+    }
+    const next = toggleBookmark(enrollment.bookmarkedLessons ?? [], lessonId);
+    setEnrollment({ ...enrollment, bookmarkedLessons: next });
+    try {
+      await setBookmarkedLessons(user.uid, courseId, next);
+    } catch (err) {
+      setEnrollment(enrollment);
+      toast.error(err instanceof Error ? err.message : 'That bookmark could not be saved.');
+    }
   };
 
   const handleSaveNote = useCallback(async () => {
@@ -890,6 +920,19 @@ export default function LessonPage() {
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {studyStreak > 0 && (
+            <span className="hidden sm:inline text-xs font-semibold text-amber-700">{studyStreak}-day streak</span>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            className="rounded-full h-11 px-4 font-bold"
+            onClick={() => { void handleBookmark(); }}
+            aria-pressed={bookmarked}
+          >
+            <Bookmark className={`w-3.5 h-3.5 mr-1.5 ${bookmarked ? 'fill-current' : ''}`} />
+            {bookmarked ? 'Saved' : 'Bookmark'}
+          </Button>
           {completed ? (
             <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 rounded-full gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5" /> Completed

@@ -23,18 +23,20 @@ import { CurrencySwitcher } from '@/components/currency-switcher';
 import { SparksChip } from '@/components/sparks-chip';
 import { upsertUserSession, accountStatusOf } from '@/lib/db';
 import { PipGuide } from '@/components/pip-guide';
+import { OfflineBanner } from '@/components/offline-banner';
 import type { TourRole } from '@/lib/tour-steps';
 import { ROLE_LABELS } from '@/lib/roles';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
-type Role = 'student' | 'teacher' | 'parent' | 'admin';
+type Role = 'student' | 'teacher' | 'parent' | 'admin' | 'institution_admin';
 
 const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string }> = {
   student: { icon: 'text-[#6FBBCE]', bar: 'bg-[#6FBBCE]', chip: 'from-[#2786A4] to-[#1E6A83]' },
   teacher: { icon: 'text-emerald-400', bar: 'bg-emerald-400', chip: 'from-emerald-500 to-teal-600' },
   parent:  { icon: 'text-amber-400',  bar: 'bg-amber-400',  chip: 'from-amber-500 to-orange-600' },
   admin:   { icon: 'text-violet-400', bar: 'bg-violet-400', chip: 'from-violet-500 to-fuchsia-600' },
+  institution_admin: { icon: 'text-sky-400', bar: 'bg-sky-400', chip: 'from-sky-500 to-cyan-600' },
 };
 
 interface NavEntry { href: string; icon: React.ElementType; labelKey: string }
@@ -148,10 +150,25 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
+  institution_admin: [
+    { items: [
+      { href: '/dashboard/institution', icon: GraduationCap, labelKey: 'nav.myClasses' },
+      { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
+      { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
+      { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
+    ]},
+    { sectionKey: 'nav.section.school', items: [
+      { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
+      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
+    ]},
+    { sectionKey: 'nav.section.account', items: [
+      { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
+    ]},
+  ],
 };
 
 function isNavActive(href: string, pathname: string): boolean {
-  const roots = ['/dashboard/student', '/dashboard/teacher', '/dashboard/parent', '/dashboard/admin'];
+  const roots = ['/dashboard/student', '/dashboard/teacher', '/dashboard/parent', '/dashboard/admin', '/dashboard/institution'];
   if (roots.includes(href)) return pathname === href;
   return pathname === href || pathname.startsWith(href + '/');
 }
@@ -348,6 +365,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1 overflow-y-auto relative">
           {/* A faint teal wash at the top, echoing the homepage sky. */}
           <div className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(39,134,164,0.06)_0%,transparent_100%)]" />
+          <OfflineBanner />
           <div className="relative px-4 pb-6 pt-1 lg:px-6 lg:pb-10">
             {children}
           </div>

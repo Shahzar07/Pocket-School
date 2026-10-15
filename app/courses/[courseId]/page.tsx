@@ -25,12 +25,13 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import { Timestamp } from 'firebase/firestore';
 import {
   getPublicCourseById, enrollStudent, incrementEnrollment, createInvoice, getUser,
-  getPublicCurriculum, redeemCouponCode, getCouponPermissions,
+  getPublicCurriculum, redeemCouponCode, getCouponPermissions, getEnrollment,
   type Course, type UserProfile, type Module, type Lesson,
 } from '@/lib/db';
 import { coursePriceType, freePreviewCount, isLessonFree, courseMinTier, tierDefinition } from '@/lib/entitlements';
 import { usePricing } from '@/hooks/use-pricing';
 import { courseCover } from '@/lib/course-cover';
+import { CourseReviews } from '@/components/course-reviews';
 import { toast } from 'sonner';
 
 export default function CourseDetailPage() {
@@ -51,6 +52,7 @@ export default function CourseDetailPage() {
   const [redeeming, setRedeeming] = useState(false);
   /** Coupon grants held by the signed-in user, for this course. */
   const [couponGranted, setCouponGranted] = useState(false);
+  const [enrolledHere, setEnrolledHere] = useState(false);
 
   const load = async () => {
     if (!courseId) return;
@@ -75,6 +77,15 @@ export default function CourseDetailPage() {
   };
 
   useEffect(() => { load(); }, [courseId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!user || !courseId) { setEnrolledHere(false); return; }
+    let cancelled = false;
+    getEnrollment(user.uid, courseId)
+      .then(enrollment => { if (!cancelled) setEnrolledHere(!!enrollment); })
+      .catch(() => { if (!cancelled) setEnrolledHere(false); });
+    return () => { cancelled = true; };
+  }, [user, courseId]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setUser(u));
@@ -443,6 +454,13 @@ export default function CourseDetailPage() {
                     </p>
                   </section>
                 )}
+
+                <CourseReviews
+                  courseId={course.id}
+                  userId={user?.uid}
+                  userName={user?.displayName}
+                  canReview={enrolledHere}
+                />
 
                 {/* Instructor */}
                 <section>
