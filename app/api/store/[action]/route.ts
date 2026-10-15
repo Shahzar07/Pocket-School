@@ -14,6 +14,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
   return runPost(req, async (user, body) => {
     if (action === 'resources') return createResource(user.uid, {
       kind: str(body.kind), title: str(body.title), body: str(body.body), priceCents: Number(body.priceCents) || 0,
+      audiences: body.audiences,
     });
     if (action === 'submit') return submitResource(user.uid, str(body.resourceId));
     if (action === 'moderate') return moderateResource(user.uid, str(body.resourceId), body.approve === true);

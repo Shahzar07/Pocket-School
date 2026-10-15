@@ -17,6 +17,11 @@ import { DEFAULT_COMMISSION_BPS, getWallet, quoteSession } from '../wallet';
 import { allocResource } from '../entitlements';
 import { callOpenRouter, FAST_MODEL } from '../openrouter';
 import { isSupportedLanguage, LANGUAGE_NAMES } from '../languages';
+import { bookingFitsSlot, normaliseSlots } from '../community/availability';
+import { canSeeResource, normaliseAudiences } from '../community/store-access';
+import { sendPush } from '../push';
+import { adminPushStore } from '../push-store';
+import { sendToDevice } from '../push-transport';
 
 function db(): Firestore {
   return adminDb();
@@ -119,6 +124,14 @@ async function notifyUser(userId: string, title: string, message: string, link: 
     push: !tokens.empty,
     createdAt: FieldValue.serverTimestamp(),
   });
+  try {
+    await sendPush(
+      { recipientUid: userId, category: 'general', title, body: message, link },
+      { store: adminPushStore(), send: sendToDevice },
+    );
+  } catch (error) {
+    console.error('push skipped', error);
+  }
 }
 
 async function moderate(surface: string, author: Member, text: string, subjectPath: string): Promise<ModerationResult & { queueId?: string }> {
@@ -624,23 +637,26 @@ export async function announce(uid: string, input: { channelId: string; body: st
   return sendChannelMessage(uid, input);
 }
 
-export async function saveTutorProfile(uid: string, input: { bio: string; subjects: string[]; hourlyCents: number }) {
+export async function saveTutorProfile(uid: string, input: { bio: string; subjects: string[]; hourlyCents: number; slots?: unknown }) {
   await requireFlag('tutorMarketplace');
   const person = await loadMember(uid);
   if (person.ageTier !== 'adult') throw new ActionError('FORBIDDEN', 'Tutor profiles are for adults.');
+  const existing = await db().doc(`tutor_profiles/${uid}`).get();
+  const verificationStatus = existing.data()?.verificationStatus === 'verified' ? 'verified' : 'pending';
   const hourly = Math.max(0, Math.round(input.hourlyCents || 0));
   await db().doc(`tutor_profiles/${uid}`).set({
     ageTier: 'adult',
-    verificationStatus: 'pending',
+    verificationStatus,
     bio: input.bio.slice(0, 1000),
     subjects: input.subjects.map((s) => s.slice(0, 40)).slice(0, 8),
     hourlyCents: hourly,
     currency: 'USD',
     commissionBps: DEFAULT_COMMISSION_BPS,
     name: person.name,
+    slots: normaliseSlots(input.slots),
     updatedAtMs: Date.now(),
   }, { merge: true });
-  return { verificationStatus: 'pending' };
+  return { verificationStatus };
 }
 
 export async function verifyTutor(actorId: string, tutorId: string, approve: boolean) {
@@ -668,7 +684,40 @@ export async function listTutors() {
         subjects: strList(doc.data().subjects),
         hourlyCents: num(doc.data().hourlyCents),
         currency: 'USD',
+        slots: normaliseSlots(doc.data().slots),
       })),
+  };
+}
+
+export async function listPendingTutors(uid: string) {
+  await requireFlag('tutorMarketplace');
+  const actor = await loadMember(uid);
+  if (actor.role !== 'admin') throw new ActionError('FORBIDDEN', 'Only an admin can review tutors.');
+  const snap = await db().collection('tutor_profiles').where('verificationStatus', '==', 'pending').limit(40).get();
+  return {
+    tutors: snap.docs.filter((doc) => doc.data().ageTier === 'adult').map((doc) => ({
+      id: doc.id,
+      name: str(doc.data().name),
+      bio: str(doc.data().bio),
+      subjects: strList(doc.data().subjects),
+      hourlyCents: num(doc.data().hourlyCents),
+    })),
+  };
+}
+
+export async function listMyBookings(uid: string) {
+  await requireFlag('tutorMarketplace');
+  const snap = await db().collection('tutor_bookings').where('studentId', '==', uid).limit(40).get();
+  return {
+    bookings: snap.docs.map((doc) => ({
+      id: doc.id,
+      tutorId: str(doc.data().tutorId),
+      kind: str(doc.data().kind),
+      startAtMs: num(doc.data().startAtMs),
+      minutes: num(doc.data().minutes, 60),
+      status: str(doc.data().status),
+      amountCents: num(doc.data().amountCents),
+    })).sort((a, b) => b.startAtMs - a.startAtMs),
   };
 }
 
@@ -677,14 +726,25 @@ export async function bookTutor(uid: string, input: {
 }) {
   await requireFlag('tutorMarketplace');
   const student = await loadMember(uid);
+  if (student.ageTier !== 'adult') throw new ActionError('FORBIDDEN', 'Marketplace tutors are booked by adults.');
   const tutorSnap = await db().doc(`tutor_profiles/${input.tutorId}`).get();
   if (!tutorSnap.exists || tutorSnap.data()?.verificationStatus !== 'verified') {
     throw new ActionError('NOT_FOUND', 'That tutor is not available.');
   }
+  const slots = normaliseSlots(tutorSnap.data()?.slots);
+  const startAtMs = Math.round(num(input.startAtMs));
+  if (!bookingFitsSlot(slots, startAtMs)) {
+    throw new ActionError('VALIDATION', 'Choose one of the tutor’s open times.');
+  }
+  const taken = await db().collection('tutor_bookings').where('tutorId', '==', input.tutorId).limit(40).get();
+  const clash = taken.docs.some((doc) => doc.data().status !== 'cancelled' && num(doc.data().startAtMs) === startAtMs);
+  if (clash) throw new ActionError('FORBIDDEN', 'That time is already booked.');
+  const slot = slots.find((item) => item.startAtMs === startAtMs);
+  const minutes = slot ? slot.minutes : Math.max(15, Math.round(input.minutes || 60));
   const kind = input.kind === 'group' ? 'group' : 'one_to_one';
   const quote = quoteSession(
     num(tutorSnap.data()?.hourlyCents),
-    num(input.minutes, 60),
+    minutes,
     kind === 'group' ? num(input.seats, 2) : 1,
     num(tutorSnap.data()?.commissionBps, DEFAULT_COMMISSION_BPS),
   );
@@ -704,7 +764,7 @@ export async function bookTutor(uid: string, input: {
       teacherId: input.tutorId,
       teacherName: str(tutorSnap.data()?.name),
       courseId: 'tutor-marketplace',
-      scheduledAt: new Date(num(input.startAtMs, Date.now())),
+      scheduledAt: new Date(startAtMs),
       status: 'scheduled',
       joinUrl: '',
     });
@@ -716,8 +776,8 @@ export async function bookTutor(uid: string, input: {
     studentLabel: isMinorTier(student.ageTier) ? 'Student' : student.name,
     kind,
     seats: quote.seats,
-    startAtMs: num(input.startAtMs, Date.now()),
-    minutes: Math.max(15, Math.round(input.minutes || 60)),
+    startAtMs,
+    minutes,
     status: 'booked',
     paymentStatus: payment.status,
     paymentId: payment.paymentId,
@@ -835,7 +895,12 @@ export async function startMock(uid: string, paperId: string) {
     maxScore: 0,
     predictedGrade: '',
   });
-  return { id: ref.id, endsAtMs: startedAtMs + minutes * 60_000 };
+  return {
+    id: ref.id,
+    paperId,
+    endsAtMs: startedAtMs + minutes * 60_000,
+    questions: questionsOf(paper.data()?.questions).map(({ id, prompt, marks }) => ({ id, prompt, marks })),
+  };
 }
 
 export async function submitMock(uid: string, attemptId: string, answers: Record<string, string>) {
@@ -886,11 +951,17 @@ export async function listResources(uid: string) {
   const user = await db().doc(`users/${uid}`).get();
   const permissions = strList(user.data()?.permissions);
   const snap = await db().collection('creator_resources').limit(60).get();
-  const resources = snap.docs.map((doc) => pack(doc.id, doc.data())).filter((resource) => {
-    if (resource.status === 'approved') return true;
-    if (resource.authorId === uid || person.role === 'admin') return true;
-    return permissions.includes(allocResource(resource.id));
-  }).map((resource) => ({
+  const resources = snap.docs.map((doc) => pack(doc.id, doc.data())).filter((resource) => canSeeResource({
+    status: str(resource.status),
+    authorId: str(resource.authorId),
+    viewerId: uid,
+    viewerRole: person.role,
+    audiences: strList(resource.audiences),
+    permissions,
+    resourceId: resource.id,
+    institutionId: str(user.data()?.institutionId) || null,
+    cohortIds: strList(user.data()?.cohortIds),
+  })).map((resource) => ({
     id: resource.id,
     kind: str(resource.kind),
     title: str(resource.title),
@@ -898,12 +969,13 @@ export async function listResources(uid: string) {
     authorId: str(resource.authorId),
     status: str(resource.status),
     priceCents: num(resource.priceCents),
+    audiences: normaliseAudiences(resource.audiences),
     allocated: permissions.includes(allocResource(resource.id)),
   }));
   return { resources };
 }
 
-export async function createResource(uid: string, input: { kind: string; title: string; body: string; priceCents?: number }) {
+export async function createResource(uid: string, input: { kind: string; title: string; body: string; priceCents?: number; audiences?: unknown }) {
   await requireFlag('creatorStore');
   const person = await loadMember(uid);
   if (!isStaffRole(person.role)) throw new ActionError('FORBIDDEN', 'Only a teacher can add a resource.');
@@ -916,6 +988,7 @@ export async function createResource(uid: string, input: { kind: string; title: 
     authorId: uid,
     status: 'draft',
     priceCents: Math.max(0, Math.round(input.priceCents || 0)),
+    audiences: normaliseAudiences(input.audiences),
     createdAtMs: Date.now(),
   });
   return { id: ref.id };
@@ -1065,6 +1138,16 @@ export async function askLesson(uid: string, input: { courseId: string; lessonId
     status: 'open',
     createdAtMs: Date.now(),
   });
+  const course = input.courseId ? await db().doc(`courses/${input.courseId}`).get() : null;
+  const ownerId = str(course?.data()?.ownerId);
+  if (ownerId && ownerId !== uid) {
+    await notifyUser(
+      ownerId,
+      'New lesson question',
+      input.body.slice(0, 140),
+      `/dashboard/teacher/courses/${input.courseId}`,
+    );
+  }
   return { id: ref.id, aiSuggestedReply, moderation: mod.decision };
 }
 

@@ -22,8 +22,8 @@ export default function StorePage() {
     <FeatureGate flag="creatorStore">
       <StoreScreen
         resources={resources}
-        onCreate={(title, body, kind) => {
-          authedFetch('/api/store/resources', { method: 'POST', body: JSON.stringify({ title, body, kind, priceCents: 0 }) })
+        onCreate={(title, body, kind, audiences) => {
+          authedFetch('/api/store/resources', { method: 'POST', body: JSON.stringify({ title, body, kind, priceCents: 0, audiences }) })
             .then(() => { toast.success('Draft saved.'); load(); })
             .catch((error: Error) => toast.error(error.message));
         }}
@@ -35,6 +35,11 @@ export default function StorePage() {
         onApprove={admin ? (id) => {
           authedFetch('/api/store/moderate', { method: 'POST', body: JSON.stringify({ resourceId: id, approve: true }) })
             .then(() => load())
+            .catch((error: Error) => toast.error(error.message));
+        } : undefined}
+        onAllocate={admin ? (id, studentId) => {
+          authedFetch('/api/store/allocate', { method: 'POST', body: JSON.stringify({ resourceId: id, studentId }) })
+            .then(() => toast.success('Resource allocated.'))
             .catch((error: Error) => toast.error(error.message));
         } : undefined}
       />

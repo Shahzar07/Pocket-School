@@ -497,7 +497,7 @@ Adult-only direct messages. The Expo app reads this collection. Both `fromId` an
 
 ## tutor_profiles/{uid}
 
-Adults only. `verificationStatus` (`pending`, `verified`, `rejected`), `bio`, `subjects`, `hourlyCents`, `currency`, `commissionBps` (default 2000), `ageTier`.
+Adults only. `verificationStatus` (`pending`, `verified`, `rejected`), `bio`, `subjects`, `hourlyCents`, `currency`, `commissionBps` (default 2000), `ageTier`, `slots` (`{ startAtMs, minutes }`, up to 14 future times). Editing a verified profile keeps `verified`. Bookings from minors are refused. When slots exist, the start time must match one and must not clash with another open booking.
 
 ## tutor_bookings/{id}
 
@@ -525,9 +525,9 @@ Clients may upload `teacher_upload` only. Licensed papers are inserted by the se
 
 ## creator_resources/{id}
 
-`kind` (`note`, `worksheet`, `template`), `title`, `body` (markdown from the shared editor), `authorId`, `status` (`draft`, `pending`, `approved`, `rejected`), `priceCents`.
+`kind` (`note`, `worksheet`, `template`), `title`, `body` (markdown from the shared editor), `authorId`, `status` (`draft`, `pending`, `approved`, `rejected`), `priceCents`, `audiences`.
 
-Allocation reuses the entitlement strings: `alloc:resource:{id}` via `allocResource()` in `lib/entitlements.ts`. Approved resources are readable by signed-in users; drafts are author and admin only. Marketplace listing requires `approved`.
+`audiences` stores the shared allocation targets: role chips (`students`, `teachers`, `parents`, `institutions`, `all`, `marketplace`) and specific tokens (`user:{id}`, `class:{id}`, `parent:{id}`, `institution:{id}`). An empty list leaves an approved resource visible. A named student still gets `alloc:resource:{id}` via `allocResource()` in `lib/entitlements.ts`. Drafts stay with the author and admins. Marketplace listing requires `approved`.
 
 ## snap_sessions/{id}
 
@@ -563,6 +563,8 @@ Always written, including blocked attempts. Blocked when the caller is in an ass
 | GET/POST | `/api/tutors/profile` | tutorMarketplace |
 | POST | `/api/tutors/verify` | tutorMarketplace |
 | GET | `/api/tutors/list` | tutorMarketplace |
+| GET | `/api/tutors/mine` | tutorMarketplace |
+| GET | `/api/tutors/pending` | tutorMarketplace |
 | POST | `/api/tutors/book` | tutorMarketplace |
 | POST | `/api/tutors/review` | tutorMarketplace |
 | GET/POST | `/api/exam-centre/papers` | examCentre |
