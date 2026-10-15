@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { enabledCurrencies, seedPricing } from '@/lib/pricing';
 import { scheduleDeletion, type PayoutDetails, type ProfileDraft } from '@/lib/account-settings';
+import { defaultChildControls, type ChildControls, type PaymentMethod } from '@/lib/parent-controls';
 import {
   EMPTY_PAYOUT,
   SettingsPanel,
@@ -42,12 +43,39 @@ function viewFor(role: string): SettingsView {
       { id: 'phone', deviceInfo: 'iPhone', lastSeenLabel: 'Yesterday', current: false },
     ],
     deletion: role === 'admin' ? scheduleDeletion(Date.UTC(2026, 9, 1)) : null,
-    children: role === 'parent' ? [{ id: 'child-1', name: 'Amina Yusuf', email: 'student@poketschool.ai' }] : [],
+    children: role === 'parent' ? [
+      {
+        id: 'child-1',
+        name: 'Amina Yusuf',
+        email: 'student@poketschool.ai',
+        ageTier: 'teen',
+        controls: defaultChildControls('child-1'),
+      },
+      {
+        id: 'child-2',
+        name: 'Adam Rahman',
+        email: 'adam@poketschool.ai',
+        ageTier: 'under13',
+        bio: 'Year 4 science',
+        avatarUrl: '',
+        controls: { ...defaultChildControls('child-2'), screenTimeMinutes: 60, sparksDailyLimit: 20, teacherMessages: 'digest' },
+      },
+    ] : [],
     parents: role === 'student' ? [{ id: 'parent-1', name: 'Sara Rahman', email: 'parent@poketschool.ai' }] : [],
     payout: role === 'teacher' ? { method: 'bank', email: 'lee@poketschool.ai', accountName: 'Lee Wei', bankName: 'Maybank', accountLast4: '4242' } : EMPTY_PAYOUT,
     institutionName: role === 'institution_admin' ? 'Poket Academy' : '',
     ageTier: role === 'student' ? 'teen' : 'adult',
     hasDateOfBirth: true,
+    inviteCode: role === 'parent' ? 'POKET7K2' : '',
+    linkRequests: role === 'parent'
+      ? [{ id: 'req-1', parentId: 'parent-1', parentName: 'Sara Rahman', studentEmail: 'new.student@poketschool.ai', status: 'pending' }]
+      : role === 'student'
+        ? [{ id: 'req-2', parentId: 'parent-1', parentName: 'Sara Rahman', studentEmail: 'student@poketschool.ai', status: 'pending' }]
+        : [],
+    payment: role === 'parent' ? { brand: 'Visa', last4: '4242', expiry: '12/28', holder: 'Sara Rahman' } : { brand: '', last4: '', expiry: '', holder: '' },
+    receipts: role === 'parent' ? [{ id: 'inv-1', description: 'Year 8 science pack', amountLabel: 'RM 89', status: 'paid' }] : [],
+    purchases: role === 'parent' ? [{ id: 'buy-1', title: 'Year 8 science pack', amountLabel: 'RM 89', status: 'pending' }] : [],
+    studentLimits: role === 'student' ? { screenTimeMinutes: 120, sparksDailyLimit: 50, purchaseApproval: true } : null,
   };
 }
 
@@ -116,8 +144,31 @@ export default function AccountPreviewPage() {
         onRequestDeletion={async () => setView(current => ({ ...current, deletion: scheduleDeletion(Date.now()) }))}
         onCancelDeletion={async () => setView(current => ({ ...current, deletion: null }))}
         onSavePayout={async (payout: PayoutDetails) => { setView(current => ({ ...current, payout })); note(); }}
-        onLinkChild={async email => setView(current => ({ ...current, children: [...current.children, { id: email, name: email, email }] }))}
+        onLinkChild={async email => setView(current => ({
+          ...current,
+          linkRequests: [...current.linkRequests, { id: email, parentId: 'parent', parentName: 'Sara Rahman', studentEmail: email, status: 'pending' }],
+        }))}
         onUnlinkChild={async id => setView(current => ({ ...current, children: current.children.filter(child => child.id !== id) }))}
+        onCreateInvite={async () => { setView(current => ({ ...current, inviteCode: 'POKET7K2' })); note(); }}
+        onRevokeInvite={async () => setView(current => ({ ...current, inviteCode: '' }))}
+        onSaveChild={async (childId, next) => setView(current => ({
+          ...current,
+          children: current.children.map(child => child.id === childId ? { ...child, name: next.name, bio: next.bio, avatarUrl: next.avatarUrl } : child),
+        }))}
+        onSaveControls={async (controls: ChildControls) => setView(current => ({
+          ...current,
+          children: current.children.map(child => child.id === controls.childId ? { ...child, controls } : child),
+        }))}
+        onSavePayment={async (method: PaymentMethod) => { setView(current => ({ ...current, payment: method })); note(); }}
+        onDecidePurchase={async (id, approve) => setView(current => ({
+          ...current,
+          purchases: current.purchases.map(row => row.id === id ? { ...row, status: approve ? 'approved' : 'rejected' } : row),
+        }))}
+        onAcceptInvite={async () => note()}
+        onRespondLink={async (id, approve) => setView(current => ({
+          ...current,
+          linkRequests: current.linkRequests.filter(row => approve ? row.id !== id : row.id !== id),
+        }))}
       />
     </main>
   );

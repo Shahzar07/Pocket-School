@@ -25,7 +25,7 @@ export function ParentLinkForm() {
             toast.error(result.error ?? 'Could not send that request.');
             return;
           }
-          toast.success(result.childName ? `Asked ${result.childName} to approve the link.` : 'Request sent.');
+          toast.success(result.message);
           setEmail('');
         } catch (err) {
           toast.error(err instanceof Error ? err.message : 'Could not send that request.');

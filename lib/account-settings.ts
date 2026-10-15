@@ -32,7 +32,6 @@ export const SELF_SERVICE_FIELDS = [
   'updatedAt',
   'onboardedAt',
   'studyDates',
-  'childIds',
   'lastActiveAt',
   'region',
   'parentContacts',

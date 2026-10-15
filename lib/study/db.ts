@@ -10,6 +10,7 @@ import {
   serverTimestamp, setDoc, updateDoc, increment, runTransaction,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { assertDailySparksLimit } from '@/lib/db';
 import { STUDY_COSTS, type StudyCostKey } from '@/lib/sparks';
 import type { ExamAttempt, ExamPrep, MathSession, StudyAsset } from './types';
 import { isoDay, nextStreak } from './schedule';
@@ -35,6 +36,7 @@ export class InsufficientSparks extends Error {
 export async function assertSparks(uid: string, key: StudyCostKey, multiplier = 1): Promise<number> {
   const cost = STUDY_COSTS[key] * multiplier;
   if (cost <= 0) return 0;
+  await assertDailySparksLimit(uid, cost);
   const snap = await getDoc(doc(db, 'users', uid));
   const balance = (snap.data()?.sparksBalance as number) ?? 0;
   if (balance < cost) throw new InsufficientSparks(cost, balance);
@@ -45,6 +47,7 @@ export async function assertSparks(uid: string, key: StudyCostKey, multiplier = 
 export async function chargeSparks(uid: string, key: StudyCostKey, note: string, multiplier = 1): Promise<number | null> {
   const cost = STUDY_COSTS[key] * multiplier;
   if (cost <= 0) return null;
+  await assertDailySparksLimit(uid, cost);
   const userRef = doc(db, 'users', uid);
   const txRef = doc(collection(db, 'users', uid, 'spark_transactions'));
   const after = await runTransaction(db, async tx => {

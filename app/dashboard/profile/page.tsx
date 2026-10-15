@@ -23,6 +23,8 @@ import { authedFetch } from '@/lib/api-client';
 import { applyAppLanguage } from '@/lib/i18n/apply';
 import { writeCurrencyChoice, enabledCurrencies, seedPricing } from '@/lib/pricing';
 import { usePricing } from '@/hooks/use-pricing';
+import { formatMoney } from '@/lib/money';
+import { defaultChildControls, strictestControls, type ChildControls, type PaymentMethod } from '@/lib/parent-controls';
 import { removeStoredMedia } from '@/components/media';
 import {
   normalisePayout,
@@ -35,15 +37,29 @@ import {
   type ProfileDraft,
 } from '@/lib/account-settings';
 import {
+  acceptParentInvite,
   clearUserFields,
+  createParentInvite,
+  decidePurchaseRequest,
   deleteAllUserSessions,
   deleteUserSession,
+  getChildControls,
   getChildrenProfiles,
+  getInvoicesForStudent,
   getParentsOfStudent,
+  getPaymentMethod,
   getPayoutDetails,
   getUserSessions,
   linkChildToParent,
+  listOpenParentInvites,
+  listParentLinkRequests,
+  listPurchaseRequests,
+  respondToParentLink,
+  revokeParentInvite,
+  saveChildControls,
+  savePaymentMethod,
   savePayoutDetails,
+  saveUnder13Profile,
   unlinkChildFromParent,
   updateUser,
   type UserProfile,
@@ -101,6 +117,7 @@ export default function ProfilePage() {
   const { user, profile, fetchProfile } = useAuthSTORE();
   const { config } = usePricing();
   const [view, setView] = useState<SettingsView | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!user || !profile) return;
@@ -128,6 +145,64 @@ export default function ProfilePage() {
         name: row.data.displayName || row.data.name,
         email: row.data.email,
       }));
+      let childRows = people(children);
+      let inviteCode = '';
+      let linkRequests: SettingsView['linkRequests'] = [];
+      let payment: PaymentMethod = { brand: '', last4: '', expiry: '', holder: '' };
+      let receipts: SettingsView['receipts'] = [];
+      let purchases: SettingsView['purchases'] = [];
+      let studentLimits: SettingsView['studentLimits'] = null;
+      if (profile.role === 'parent') {
+        const [invites, requests, method, ownInvoices, purchaseRows, withControls] = await Promise.all([
+          listOpenParentInvites(user.uid).catch(() => []),
+          listParentLinkRequests('parentId', user.uid).catch(() => []),
+          getPaymentMethod(user.uid).catch(() => null),
+          getInvoicesForStudent(user.uid).catch(() => []),
+          listPurchaseRequests('parentId', user.uid).catch(() => []),
+          Promise.all(children.map(async row => {
+            const controls = await getChildControls(user.uid, row.id).catch(() => null);
+            return {
+              id: row.id,
+              name: row.data.displayName || row.data.name,
+              email: row.data.email,
+              ageTier: row.data.ageTier,
+              bio: row.data.bio,
+              avatarUrl: row.data.avatarUrl,
+              controls: controls ?? defaultChildControls(row.id),
+            };
+          })),
+        ]);
+        const childInvoices = await Promise.all(children.map(row => getInvoicesForStudent(row.id).catch(() => [])));
+        inviteCode = invites[0]?.code ?? '';
+        linkRequests = requests.filter(row => row.status === 'pending');
+        payment = method ?? payment;
+        receipts = [...ownInvoices, ...childInvoices.flat()].map(invoice => ({
+          id: invoice.id,
+          description: invoice.description,
+          amountLabel: formatMoney(invoice.amount, invoice.currency),
+          status: invoice.status,
+        }));
+        purchases = purchaseRows.filter(row => row.status === 'pending').map(row => ({
+          id: row.id,
+          title: row.title,
+          amountLabel: formatMoney(row.amount, row.currency),
+          status: row.status,
+        }));
+        childRows = withControls;
+      }
+      if (profile.role === 'student') {
+        const requests = await listParentLinkRequests('studentId', user.uid).catch(() => []);
+        linkRequests = requests.filter(row => row.status === 'pending');
+        const controlRows: ChildControls[] = [];
+        for (const parentRow of parents) {
+          const controls = await getChildControls(parentRow.id, user.uid).catch(() => null);
+          if (controls) controlRows.push(controls);
+        }
+        const tight = strictestControls(controlRows);
+        studentLimits = tight
+          ? { screenTimeMinutes: tight.screenTimeMinutes, sparksDailyLimit: tight.sparksDailyLimit, purchaseApproval: tight.purchaseApproval }
+          : null;
+      }
       const sessionRows: SettingsSession[] = sessions.map(session => ({
         id: session.id ?? '',
         deviceInfo: session.deviceInfo,
@@ -165,21 +240,30 @@ export default function ProfilePage() {
         }),
         sessions: sessionRows,
         deletion: profile.deletionRequest ?? null,
-        children: people(children),
+        children: childRows,
         parents: people(parents),
         payout: payout ?? EMPTY_PAYOUT,
         institutionName: profile.institutionId ?? '',
         ageTier: profile.ageTier ?? '',
         hasDateOfBirth: Boolean(profile.dateOfBirth),
+        inviteCode,
+        linkRequests,
+        payment,
+        receipts,
+        purchases,
+        studentLimits,
       });
     };
     void load();
     return () => { cancelled = true; };
-  }, [user, profile]);
+  }, [user, profile, reloadKey]);
 
   if (!user || !profile || !view) return null;
 
-  const refresh = async () => { await fetchProfile(user.uid); };
+  const refresh = async () => {
+    await fetchProfile(user.uid);
+    setReloadKey(key => key + 1);
+  };
 
   const saveProfile = async (draft: ProfileDraft) => {
     try {
@@ -378,15 +462,11 @@ export default function ProfilePage() {
       }}
       onLinkChild={async email => {
         try {
-          const result = await linkChildToParent(user.uid, email.toLowerCase());
-          if (!result.success) {
-            toast.error(result.error ?? 'Could not link that child.');
-            return;
-          }
-          toast.success(`Linked ${result.childName ?? 'the student'}.`);
+          const result = await linkChildToParent(user.uid, email.toLowerCase(), { name: profile.name, email: user.email ?? profile.email });
+          toast.success(result.message);
           await refresh();
         } catch (error) {
-          toast.error(authMessage(error, 'Could not link that child.'));
+          toast.error(authMessage(error, 'Could not send that request.'));
         }
       }}
       onUnlinkChild={async childId => {
@@ -396,6 +476,83 @@ export default function ProfilePage() {
           await refresh();
         } catch (error) {
           toast.error(authMessage(error, 'Could not unlink that child.'));
+        }
+      }}
+      onCreateInvite={async () => {
+        try {
+          const code = await createParentInvite(user.uid, profile.name || 'Parent');
+          toast.success(`Invite code ${code}. Your child enters it in their settings.`);
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not create an invite code.'));
+        }
+      }}
+      onRevokeInvite={async () => {
+        try {
+          if (view.inviteCode) await revokeParentInvite(user.uid, view.inviteCode);
+          toast.success('Invite code revoked.');
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not revoke that code.'));
+        }
+      }}
+      onSaveChild={async (childId, next) => {
+        try {
+          const child = view.children.find(row => row.id === childId);
+          if (child?.ageTier !== 'under13') {
+            toast.error('A parent can edit a profile only for an under-13 account.');
+            return;
+          }
+          await saveUnder13Profile(user.uid, childId, next);
+          toast.success('Child profile saved.');
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not save that child profile.'));
+        }
+      }}
+      onSaveControls={async (controls: ChildControls) => {
+        try {
+          await saveChildControls(user.uid, controls);
+          toast.success('Limits saved.');
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not save those limits.'));
+        }
+      }}
+      onSavePayment={async (method: PaymentMethod) => {
+        try {
+          await savePaymentMethod(user.uid, method);
+          toast.success('Payment method saved.');
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not save the payment method.'));
+        }
+      }}
+      onDecidePurchase={async (requestId, approve) => {
+        try {
+          await decidePurchaseRequest(requestId, approve);
+          toast.success(approve ? 'Purchase approved. Your child can buy it now.' : 'Purchase declined.');
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not update that purchase.'));
+        }
+      }}
+      onAcceptInvite={async code => {
+        try {
+          await acceptParentInvite(code, user.uid);
+          toast.success('Invite accepted. Your parent can see your progress.');
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not accept that invite.'));
+        }
+      }}
+      onRespondLink={async (linkId, approve) => {
+        try {
+          await respondToParentLink(linkId, user.uid, approve);
+          toast.success(approve ? 'Linked. They can see your progress now.' : 'Request declined.');
+          await refresh();
+        } catch (error) {
+          toast.error(authMessage(error, 'Could not update that request.'));
         }
       }}
       onSaveDob={async date => {

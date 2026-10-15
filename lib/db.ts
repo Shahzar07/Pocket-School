@@ -12,6 +12,20 @@ import { coerceDailyGoal } from './goals';
 import { stripUnitPrefix } from './unit-title';
 import { omitUndefined } from './course-builder';
 import type { DeletionRequest, InstructorProfile, NotificationPrefs, PayoutDetails, PrivacySettings } from './account-settings';
+import {
+  NEUTRAL_LINK,
+  childPhotoPath,
+  defaultChildControls,
+  inviteCodeFromBytes,
+  normaliseChildControls,
+  normalisePaymentMethod,
+  parentLinkId,
+  pendingLink,
+  purchaseNeedsParent,
+  withinSparksLimit,
+  type ChildControls,
+  type PaymentMethod,
+} from './parent-controls';
 import { requestPush } from './push-client';
 import type { PushCategory } from './push';
 
@@ -927,6 +941,7 @@ async function checkAndAwardBadges(studentId: string, currentXp: number, gained:
 export async function unlockLessonFormat(
   uid: string, courseId: string, lessonId: string, format: string, cost: number
 ): Promise<number> {
+  await assertDailySparksLimit(uid, cost);
   const userRef = doc(db, 'users', uid);
   const enrollRef = doc(db, 'courses', courseId, 'enrollments', uid);
   const txRef = doc(collection(db, 'users', uid, 'spark_transactions'));
@@ -1230,6 +1245,7 @@ export async function unlinkChildFromParent(parentId: string, childId: string) {
     childIds: arrayRemove(childId),
     updatedAt: serverTimestamp(),
   });
+  await deleteDoc(doc(db, 'users', parentId, 'child_controls', childId)).catch(() => undefined);
 }
 
 // ─── Messages ─────────────────────────────────────────────────
@@ -1930,16 +1946,280 @@ export async function getAdminAudit(max = 200): Promise<AdminAuditRow[]> {
 
 // ─── Parent / Child ───────────────────────────────────────────
 
-export async function linkChildToParent(parentId: string, childEmail: string): Promise<{ success: boolean; childName?: string; error?: string }> {
-  const child = await getUserByEmail(childEmail);
-  if (!child) return { success: false, error: 'No user found with that email address.' };
-  if (child.data.role !== 'student') return { success: false, error: 'That account is not a student account.' };
+export async function linkChildToParent(
+  parentId: string,
+  childEmail: string,
+  parent?: { name?: string; email?: string },
+): Promise<{ success: boolean; message: string; error?: string }> {
+  const email = childEmail.trim().toLowerCase();
+  const child = await getUserByEmail(email);
+  if (!child || child.data.role !== 'student') return { success: true, message: NEUTRAL_LINK };
+  const linkRef = doc(db, 'parent_links', parentLinkId(parentId, child.id));
+  const existing = await getDoc(linkRef);
+  if (existing.exists()) return { success: true, message: NEUTRAL_LINK };
+  const parentUser = parent ?? await getUser(parentId);
+  await setDoc(linkRef, {
+    ...pendingLink({
+      parentId,
+      parentName: parentUser?.name ?? 'Parent',
+      parentEmail: parent?.email ?? parentUser?.email ?? '',
+      studentId: child.id,
+      studentEmail: email,
+    }),
+    createdAt: serverTimestamp(),
+  });
+  await addDoc(collection(db, 'notifications'), {
+    userId: child.id,
+    title: 'A parent wants to link to your account',
+    message: 'A parent asked to follow your learning. Approve this in profile settings if you know them.',
+    type: 'general',
+    link: '/dashboard/profile',
+    read: false,
+    createdAt: serverTimestamp(),
+  });
+  return { success: true, message: NEUTRAL_LINK };
+}
+
+export async function createParentInvite(parentId: string, parentName: string): Promise<string> {
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  const code = inviteCodeFromBytes(bytes);
+  await setDoc(doc(db, 'parent_invites', code), {
+    parentId,
+    parentName: parentName.trim() || 'Parent',
+    code,
+    status: 'open',
+    createdAt: serverTimestamp(),
+  });
+  return code;
+}
+
+export async function listOpenParentInvites(parentId: string): Promise<{ code: string }[]> {
+  const snap = await getDocs(query(collection(db, 'parent_invites'), where('parentId', '==', parentId)));
+  return snap.docs
+    .filter(item => item.data().status === 'open')
+    .map(item => ({ code: String(item.data().code ?? item.id) }));
+}
+
+export async function revokeParentInvite(parentId: string, code: string): Promise<void> {
+  const ref = doc(db, 'parent_invites', code);
+  const snap = await getDoc(ref);
+  if (!snap.exists() || snap.data().parentId !== parentId) return;
+  await updateDoc(ref, { status: 'revoked' });
+}
+
+export async function acceptParentInvite(code: string, childId: string): Promise<void> {
+  const normalised = code.trim().toUpperCase();
+  const ref = doc(db, 'parent_invites', normalised);
+  const snap = await getDoc(ref);
+  if (!snap.exists() || snap.data().status !== 'open') throw new Error('That invite code is not open.');
+  const parentId = String(snap.data().parentId ?? '');
+  if (!parentId) throw new Error('That invite code is not open.');
+  await updateDoc(ref, { status: 'accepted', childId, acceptedAt: serverTimestamp() });
+  await setDoc(doc(db, 'parent_links', parentLinkId(parentId, childId)), {
+    parentId,
+    parentName: String(snap.data().parentName ?? 'Parent'),
+    studentId: childId,
+    status: 'approved',
+    inviteCode: normalised,
+    createdAt: serverTimestamp(),
+  });
   await updateDoc(doc(db, 'users', parentId), {
-    childIds: arrayUnion(child.id),
+    childIds: arrayUnion(childId),
     updatedAt: serverTimestamp(),
   });
-  return { success: true, childName: child.data.name };
 }
+
+export interface ParentLinkRecord {
+  id: string;
+  parentId: string;
+  parentName: string;
+  studentEmail: string;
+  studentId: string;
+  status: string;
+}
+
+export async function listParentLinkRequests(field: 'parentId' | 'studentId', id: string): Promise<ParentLinkRecord[]> {
+  const snap = await getDocs(query(collection(db, 'parent_links'), where(field, '==', id)));
+  return snap.docs.map(item => {
+    const data = item.data();
+    return {
+      id: item.id,
+      parentId: String(data.parentId ?? ''),
+      parentName: String(data.parentName ?? 'Parent'),
+      studentEmail: String(data.studentEmail ?? ''),
+      studentId: String(data.studentId ?? ''),
+      status: String(data.status ?? ''),
+    };
+  });
+}
+
+export async function respondToParentLink(linkId: string, studentId: string, approve: boolean): Promise<void> {
+  const ref = doc(db, 'parent_links', linkId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) throw new Error('That request was not found.');
+  const data = snap.data();
+  if (data.studentId !== studentId || data.status !== 'pending') throw new Error('That request is no longer open.');
+  await updateDoc(ref, approve
+    ? { status: 'approved', approvedAt: serverTimestamp() }
+    : { status: 'rejected' });
+  if (!approve) return;
+  await updateDoc(doc(db, 'users', String(data.parentId)), {
+    childIds: arrayUnion(studentId),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function getChildControls(parentId: string, childId: string): Promise<ChildControls | null> {
+  const snap = await getDoc(doc(db, 'users', parentId, 'child_controls', childId));
+  if (!snap.exists()) return null;
+  return normaliseChildControls({ childId, ...snap.data() } as Partial<ChildControls> & { childId: string });
+}
+
+export async function saveChildControls(parentId: string, controls: ChildControls): Promise<void> {
+  const next = normaliseChildControls(controls);
+  await setDoc(doc(db, 'users', parentId, 'child_controls', next.childId), {
+    ...next,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function saveUnder13Profile(
+  parentId: string,
+  childId: string,
+  input: { name: string; displayName: string; bio: string; avatarUrl?: string; photoStoragePath?: string },
+): Promise<void> {
+  const patch: Record<string, string> = {
+    name: input.name.trim(),
+    displayName: input.displayName.trim(),
+    bio: input.bio.trim(),
+  };
+  if (input.avatarUrl) patch.avatarUrl = input.avatarUrl;
+  if (input.photoStoragePath) patch.photoStoragePath = input.photoStoragePath || childPhotoPath(parentId, childId);
+  await updateDoc(doc(db, 'users', childId), { ...patch, updatedAt: serverTimestamp() });
+}
+
+export async function savePaymentMethod(uid: string, method: PaymentMethod): Promise<PaymentMethod> {
+  const next = normalisePaymentMethod(method);
+  if (next.last4.length !== 4) throw new Error('Enter the last four digits of the card.');
+  await setDoc(doc(db, 'users', uid, 'private', 'billing'), { ...next, updatedAt: serverTimestamp() });
+  return next;
+}
+
+export async function getPaymentMethod(uid: string): Promise<PaymentMethod | null> {
+  const snap = await getDoc(doc(db, 'users', uid, 'private', 'billing'));
+  if (!snap.exists()) return null;
+  const data = snap.data();
+  return normalisePaymentMethod({
+    brand: typeof data.brand === 'string' ? data.brand : '',
+    last4: typeof data.last4 === 'string' ? data.last4 : '',
+    expiry: typeof data.expiry === 'string' ? data.expiry : '',
+    holder: typeof data.holder === 'string' ? data.holder : '',
+  });
+}
+
+export interface PurchaseRequestRecord {
+  id: string;
+  studentId: string;
+  parentId: string;
+  title: string;
+  amount: number;
+  currency: string;
+  status: string;
+  kind: string;
+  itemId: string;
+}
+
+export async function listPurchaseRequests(field: 'parentId' | 'studentId', id: string): Promise<PurchaseRequestRecord[]> {
+  const snap = await getDocs(query(collection(db, 'purchase_requests'), where(field, '==', id)));
+  return snap.docs.map(item => {
+    const data = item.data();
+    return {
+      id: item.id,
+      studentId: String(data.studentId ?? ''),
+      parentId: String(data.parentId ?? ''),
+      title: String(data.title ?? 'Purchase'),
+      amount: Number(data.amount ?? 0),
+      currency: String(data.currency ?? 'USD'),
+      status: String(data.status ?? 'pending'),
+      kind: String(data.kind ?? ''),
+      itemId: String(data.itemId ?? ''),
+    };
+  });
+}
+
+export async function decidePurchaseRequest(requestId: string, approve: boolean): Promise<void> {
+  await updateDoc(doc(db, 'purchase_requests', requestId), {
+    status: approve ? 'approved' : 'rejected',
+    decidedAt: serverTimestamp(),
+  });
+}
+
+/** Returns clear when the child may buy. Otherwise a parent still has to approve. */
+export async function requestPurchaseApproval(
+  studentId: string,
+  item: { title: string; amount: number; currency: string; kind: string; itemId: string },
+): Promise<'clear' | 'asked' | 'waiting'> {
+  const parents = await getParentsOfStudent(studentId);
+  const blocking: string[] = [];
+  for (const parent of parents) {
+    const controls = await getChildControls(parent.id, studentId).catch(() => null);
+    if (purchaseNeedsParent(controls)) blocking.push(parent.id);
+  }
+  if (!blocking.length) return 'clear';
+  const existing = await listPurchaseRequests('studentId', studentId).catch(() => [] as PurchaseRequestRecord[]);
+  const sameItem = existing.filter(row => row.itemId === item.itemId);
+  const stillNeeded = blocking.filter(parentId => !sameItem.some(row => row.parentId === parentId && row.status === 'approved'));
+  if (!stillNeeded.length) return 'clear';
+  let created = false;
+  for (const parentId of stillNeeded) {
+    if (sameItem.some(row => row.parentId === parentId && row.status === 'pending')) continue;
+    created = true;
+    await addDoc(collection(db, 'purchase_requests'), {
+      studentId,
+      parentId,
+      title: item.title,
+      amount: item.amount,
+      currency: item.currency,
+      status: 'pending',
+      kind: item.kind,
+      itemId: item.itemId,
+      createdAt: serverTimestamp(),
+    });
+  }
+  return created ? 'asked' : 'waiting';
+}
+
+export async function assertDailySparksLimit(studentId: string, amount: number): Promise<void> {
+  if (amount <= 0) return;
+  const parents = await getParentsOfStudent(studentId).catch(() => []);
+  let limit = Number.POSITIVE_INFINITY;
+  for (const parent of parents) {
+    const controls = await getChildControls(parent.id, studentId).catch(() => null);
+    if (controls) limit = Math.min(limit, controls.sparksDailyLimit);
+  }
+  if (!Number.isFinite(limit)) return;
+  const spent = await sparksSpentToday(studentId).catch(() => 0);
+  if (!withinSparksLimit(spent, amount, limit)) {
+    throw new Error('A parent limit stops this Sparks spend for today.');
+  }
+}
+
+async function sparksSpentToday(studentId: string): Promise<number> {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const snap = await getDocs(query(
+    collection(db, 'users', studentId, 'spark_transactions'),
+    where('createdAt', '>=', Timestamp.fromDate(start)),
+    limit(100),
+  ));
+  return snap.docs.reduce((sum, item) => {
+    const amount = Number(item.data().amount ?? 0);
+    return amount < 0 ? sum + Math.abs(amount) : sum;
+  }, 0);
+}
+
+export { defaultChildControls };
 
 export async function getParentsOfStudent(studentId: string): Promise<{ id: string; data: UserProfile }[]> {
   const snap = await getDocs(query(collection(db, 'users'), where('childIds', 'array-contains', studentId)));

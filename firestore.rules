@@ -94,9 +94,8 @@ service cloud.firestore {
     // carry alloc:free:* for any course, and institutionId joins someone
     // else's school. Only an admin may change them.
     function privilegedUserFields() {
-      // childIds is deliberately NOT here: a parent adds their own children
-      // during onboarding, and that link is guarded by parent_verifications
-      // rather than by this rule.
+      // childIds is not a profile field. A parent may only remove a linked
+      // child. A student may add only their own id after they approve a link.
       // Wallet and XP stay off the profile form. Lesson rewards still write
       // them through walletProgressUpdate(), not through a profile save.
       return ['role', 'accessTier', 'subscriptionTier', 'permissions',
@@ -115,7 +114,7 @@ service cloud.firestore {
               'level', 'learningStyle', 'yearGroup', 'interests', 'shareBoard',
               'notificationPrefs', 'privacy', 'instructor',
               'twoFactorEnabled', 'sessionsRevokedAt', 'deletionRequest',
-              'email', 'updatedAt', 'onboardedAt', 'studyDates', 'childIds',
+              'email', 'updatedAt', 'onboardedAt', 'studyDates',
               'lastActiveAt', 'region', 'parentContacts'];
     }
 
@@ -278,6 +277,44 @@ service cloud.firestore {
       return isSignedIn() && studentId is string && myChildIds().hasAny([studentId]);
     }
 
+    // A parent can drop a child from their own list. They cannot add one.
+    function parentUnlink(userId) {
+      return isUser(userId)
+        && role() == 'parent'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['childIds', 'updatedAt'])
+        && resource.data.get('childIds', []) is list
+        && incoming().childIds is list
+        && resource.data.get('childIds', []).hasAll(incoming().childIds)
+        && incoming().childIds.size() < resource.data.get('childIds', []).size();
+    }
+
+    // After the link document is approved, the student adds only their own id.
+    function childJoinsParent(userId) {
+      return isSignedIn()
+        && request.auth.uid != userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['childIds', 'updatedAt'])
+        && resource.data.get('childIds', []) is list
+        && incoming().childIds is list
+        && incoming().childIds.hasAll(resource.data.get('childIds', []))
+        && incoming().childIds.size() == resource.data.get('childIds', []).size() + 1
+        && incoming().childIds.hasAny([request.auth.uid])
+        && !resource.data.get('childIds', []).hasAny([request.auth.uid])
+        && exists(/databases/$(database)/documents/parent_links/$(userId + '_' + request.auth.uid))
+        && get(/databases/$(database)/documents/parent_links/$(userId + '_' + request.auth.uid)).data.status == 'approved'
+        && get(/databases/$(database)/documents/parent_links/$(userId + '_' + request.auth.uid)).data.studentId == request.auth.uid
+        && get(/databases/$(database)/documents/parent_links/$(userId + '_' + request.auth.uid)).data.parentId == userId;
+    }
+
+    // A linked parent may edit name, bio, and photo only when ageTier is under13.
+    function parentEditsUnder13(userId) {
+      return isSignedIn()
+        && role() == 'parent'
+        && linkedTo(userId)
+        && resource.data.get('ageTier', '') == 'under13'
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['name', 'displayName', 'bio', 'avatarUrl', 'photoStoragePath', 'updatedAt']);
+    }
+
     // ── Users ─────────────────────────────────────────────────
     match /users/{userId} {
       allow read: if isSignedIn();
@@ -285,6 +322,9 @@ service cloud.firestore {
       allow update: if (isAdmin() && staffWriteAllowed())
         || (isUser(userId) && selfProfileUpdate())
         || (isUser(userId) && walletProgressUpdate())
+        || parentUnlink(userId)
+        || childJoinsParent(userId)
+        || parentEditsUnder13(userId)
         // A person may join the one school that invited their email.
         || (isUser(userId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['institutionId'])
@@ -292,10 +332,32 @@ service cloud.firestore {
             && exists(/databases/$(database)/documents/institutions/$(incoming().institutionId)/invites/$(request.auth.token.email)));
       allow delete: if isAdmin();
 
-      // Payout details. The user document itself is readable by any signed-in
-      // person so class screens can show a name. Bank details are not.
+      // Payout details and the payment method. The user document itself is
+      // readable by any signed-in person so class screens can show a name.
+      // Card numbers and bank details are not. Billing stores brand, last4,
+      // expiry, and the name on the card.
       match /private/{docId} {
         allow read, write: if isUser(userId);
+      }
+
+      // Limits for one linked child. The child can read them. Only the parent
+      // who already has that child in childIds can write them.
+      match /child_controls/{childId} {
+        allow read: if isUser(userId) || isUser(childId) || isAdmin();
+        allow create, update: if isUser(userId)
+          && role() == 'parent'
+          && myChildIds().hasAny([childId])
+          && incoming().childId == childId
+          && incoming().weeklyReportEmail is bool
+          && incoming().weeklyReportInApp is bool
+          && incoming().screenTimeMinutes is number
+          && incoming().screenTimeMinutes >= 0
+          && incoming().screenTimeMinutes <= 1440
+          && incoming().sparksDailyLimit is number
+          && incoming().sparksDailyLimit >= 0
+          && incoming().purchaseApproval is bool
+          && incoming().teacherMessages in ['all', 'digest', 'off'];
+        allow delete: if isUser(userId) && role() == 'parent';
       }
 
       // Sparks wallet ledger
@@ -1082,7 +1144,9 @@ service cloud.firestore {
     // ── Invoices / Billing ────────────────────────────────────
     match /invoices/{invoiceId} {
       allow read: if isSignedIn() && (
-        resource.data.studentId == request.auth.uid || isTeacherOrAdmin()
+        resource.data.studentId == request.auth.uid
+        || isTeacherOrAdmin()
+        || isParentOf(resource.data.studentId)
       );
       // A student buying a course raises their own invoice. Without this the
       // purchase completed with no billing record at all, because the client
@@ -1200,6 +1264,92 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow read: if isTeacherOrAdmin();
       allow update, delete: if isAdmin();
+    }
+
+    // ── Parent links and invites ──────────────────────────────
+    // Email requests stay pending until the student approves. An invite is
+    // accepted by the student, who then writes the approved link document.
+    match /parent_links/{linkId} {
+      allow read: if isSignedIn() && (
+        resource.data.parentId == request.auth.uid
+        || resource.data.studentId == request.auth.uid
+        || isAdmin()
+      );
+      allow create: if isSignedIn() && (
+        (role() == 'parent'
+          && incoming().parentId == request.auth.uid
+          && incoming().status == 'pending'
+          && incoming().studentId is string
+          && incoming().studentId != request.auth.uid
+          && linkId == incoming().parentId + '_' + incoming().studentId
+          && incoming().studentEmail is string
+          && incoming().keys().hasOnly(['parentId', 'parentName', 'parentEmail', 'studentId', 'studentEmail', 'status', 'createdAt'])
+          && get(/databases/$(database)/documents/users/$(incoming().studentId)).data.role == 'student')
+        || (incoming().status == 'approved'
+          && incoming().studentId == request.auth.uid
+          && incoming().parentId is string
+          && linkId == incoming().parentId + '_' + request.auth.uid
+          && incoming().inviteCode is string
+          && exists(/databases/$(database)/documents/parent_invites/$(incoming().inviteCode))
+          && get(/databases/$(database)/documents/parent_invites/$(incoming().inviteCode)).data.parentId == incoming().parentId
+          && get(/databases/$(database)/documents/parent_invites/$(incoming().inviteCode)).data.status == 'accepted'
+          && get(/databases/$(database)/documents/parent_invites/$(incoming().inviteCode)).data.childId == request.auth.uid
+          && incoming().keys().hasOnly(['parentId', 'parentName', 'studentId', 'status', 'inviteCode', 'createdAt']))
+      );
+      allow update: if isSignedIn()
+        && resource.data.studentId == request.auth.uid
+        && resource.data.status == 'pending'
+        && incoming().status in ['approved', 'rejected']
+        && incoming().studentId == resource.data.studentId
+        && incoming().parentId == resource.data.parentId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'approvedAt']);
+      allow delete: if isAdmin()
+        || (isSignedIn() && resource.data.parentId == request.auth.uid && resource.data.status == 'pending');
+    }
+
+    match /parent_invites/{code} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && resource.data.parentId == request.auth.uid;
+      allow create: if isSignedIn()
+        && role() == 'parent'
+        && incoming().parentId == request.auth.uid
+        && incoming().status == 'open'
+        && incoming().code == code
+        && code.size() >= 8
+        && incoming().keys().hasOnly(['parentId', 'parentName', 'code', 'status', 'createdAt']);
+      allow update: if isSignedIn() && (
+        (resource.data.parentId == request.auth.uid
+          && resource.data.status == 'open'
+          && incoming().status == 'revoked'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
+        || (resource.data.status == 'open'
+          && incoming().status == 'accepted'
+          && incoming().childId == request.auth.uid
+          && incoming().parentId == resource.data.parentId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'childId', 'acceptedAt']))
+      );
+      allow delete: if isAdmin();
+    }
+
+    // A child asks, and the linked parent approves, before the purchase.
+    match /purchase_requests/{requestId} {
+      allow read: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid
+        || resource.data.parentId == request.auth.uid
+        || isAdmin()
+      );
+      allow create: if isSignedIn()
+        && incoming().studentId == request.auth.uid
+        && incoming().status == 'pending'
+        && incoming().parentId is string
+        && get(/databases/$(database)/documents/users/$(incoming().parentId)).data.get('childIds', []).hasAny([request.auth.uid])
+        && incoming().keys().hasOnly(['studentId', 'parentId', 'title', 'amount', 'currency', 'status', 'createdAt', 'kind', 'itemId']);
+      allow update: if isSignedIn()
+        && resource.data.parentId == request.auth.uid
+        && resource.data.status == 'pending'
+        && incoming().status in ['approved', 'rejected']
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'decidedAt']);
+      allow delete: if false;
     }
 
     // ── Parent verification requests ──────────────────────────

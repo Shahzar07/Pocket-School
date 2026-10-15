@@ -9,7 +9,7 @@ Status as of 15 Oct 2026. The canonical base for every stacked agent is `cursor/
 | Admin-managed USD pricing | Merged from draft PR #58. Charged prices live in `lib/pricing.ts` |
 | Dual-currency display (USD plus local, daily rates) | Not in this branch. Stash `wip dual price and daily rates` on `cursor/dynamic-pricing-f0ff` is unfinished and must be kept |
 | Allocation, OEM academies | Multi-select target list on courses, books, academies, announcements, and the calendar. Any matching target can see the item. |
-| Profile and settings | My profile & settings is in the account menu for every role. Photo, account security, language, currency, notifications, privacy, export, and a 14-day deletion grace period. Teacher payouts are private. Firestore rules for the new fields still need an owner deploy |
+| Profile and settings | My profile & settings is in the account menu for every role, including parents. Photo, password, language, currency, notifications, privacy, export, and a 14-day deletion grace period stay on that page. Parents also link children by invite code or the child's approval, edit under-13 profiles, and set weekly reports, screen time, Sparks limits, purchase approval, teacher-message preferences, and a payment method (last four digits). Firestore rules for these fields still need an owner deploy |
 | Product access audiences | Merged from draft PR #60 |
 | Device tokens, goals hooks, Books hooks | Merged from draft PR #61 |
 | Buzan maps, downloads, shared editor and media | Merged from draft PR #62 |

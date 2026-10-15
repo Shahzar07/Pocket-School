@@ -574,6 +574,9 @@ Always written, including blocked attempts. Blocked when the caller is in an ass
 | POST | `/api/store/moderate` | creatorStore |
 | POST | `/api/store/allocate` | creatorStore |
 | POST | `/api/snap/solve` | snapAndSolve |
+| GET/POST | `/api/lessons/qa` | lessonQa |
+| GET | `/api/moderation/queue` | community |
+| POST | `/api/moderation/resolve` | community |
 
 ## Profile and settings
 
@@ -588,6 +591,21 @@ A person may update only the fields in `selfServiceFields()` in `firestore.rules
 Profile photos use the shared media helpers and Firebase Storage at `media/{uid}/{fileName}`. `storage.rules` allows that user to write an image under 5 MB. Rules still need an owner deploy.
 
 Lesson rewards still update `sparksBalance` and `xp` through `walletProgressUpdate()`. A profile save cannot change those fields in the same write.
-| GET/POST | `/api/lessons/qa` | lessonQa |
-| GET | `/api/moderation/queue` | community |
-| POST | `/api/moderation/resolve` | community |
+
+`childIds` is not in `selfServiceFields()`. A parent can only remove ids from their own list. A student can add only their own id, and only after `parent_links/{parentId}_{studentId}` is `approved`.
+
+## Parent links and child controls
+
+| Path | Who can write |
+|---|---|
+| `parent_links/{parentId}_{studentId}` | The parent creates `pending` (email request). The student sets `approved` or `rejected`. An accepted invite lets the student create the row already `approved`. |
+| `parent_invites/{code}` | The parent creates `open`. Any signed-in person can get one code. Only the parent can list their codes. The student sets `accepted` and their own id. The parent can set `revoked`. |
+| `users/{parentId}/child_controls/{childId}` | The linked parent writes weekly report email, weekly in-app alert, screen-time minutes (0–1440), Sparks daily limit, purchase approval, and teacher messages (`all`, `digest`, `off`). The child can read. |
+| `users/{parentId}/private/billing` | The parent only. Brand, last four digits, expiry, and the name on the card. A full card number is never stored. |
+| `purchase_requests/{id}` | A linked child creates `pending`. That parent sets `approved` or `rejected`. |
+
+A parent may update a child's user document only when `ageTier` is exactly `under13` and the child is already in `childIds`. The allowed fields are name, display name, bio, avatar, and photo path. A missing age tier is not editable. The photo file is stored at `media/{parentUid}/…`, because storage rules follow the signed-in user.
+
+Invoice reads include a parent whose `childIds` contain `studentId`. Other students' invoices stay closed.
+
+Rules still need an owner deploy.

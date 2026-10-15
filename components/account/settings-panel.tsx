@@ -18,6 +18,15 @@ import {
   type ProfileDraft,
 } from '@/lib/account-settings';
 import { ProfilePhoto } from '@/components/account/profile-photo';
+import {
+  FamilySettings,
+  StudentFamily,
+  type LinkRequestRow,
+  type PurchaseRow,
+  type ReceiptRow,
+  type StudentLimits,
+} from '@/components/account/family-settings';
+import type { ChildControls, PaymentMethod } from '@/lib/parent-controls';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -32,6 +41,10 @@ export interface LinkedPerson {
   id: string;
   name: string;
   email: string;
+  ageTier?: string;
+  bio?: string;
+  avatarUrl?: string;
+  controls?: ChildControls;
 }
 
 export interface SettingsView {
@@ -49,6 +62,12 @@ export interface SettingsView {
   institutionName: string;
   ageTier: string;
   hasDateOfBirth: boolean;
+  inviteCode: string;
+  linkRequests: LinkRequestRow[];
+  payment: PaymentMethod;
+  receipts: ReceiptRow[];
+  purchases: PurchaseRow[];
+  studentLimits: StudentLimits | null;
 }
 
 const EMPTY_PAYOUT: PayoutDetails = { method: 'none', email: '', accountName: '', bankName: '', accountLast4: '' };
@@ -102,6 +121,14 @@ export function SettingsPanel({
   onLinkChild,
   onUnlinkChild,
   onSaveDob,
+  onCreateInvite,
+  onRevokeInvite,
+  onSaveChild,
+  onSaveControls,
+  onSavePayment,
+  onDecidePurchase,
+  onAcceptInvite,
+  onRespondLink,
 }: {
   view: SettingsView;
   currencies: string[];
@@ -127,6 +154,14 @@ export function SettingsPanel({
   onLinkChild: (email: string) => Promise<void> | void;
   onUnlinkChild: (childId: string) => Promise<void> | void;
   onSaveDob?: (date: string) => Promise<void> | void;
+  onCreateInvite: () => Promise<void> | void;
+  onRevokeInvite: () => Promise<void> | void;
+  onSaveChild: (childId: string, next: { name: string; displayName: string; bio: string; avatarUrl: string; photoStoragePath: string }) => Promise<void> | void;
+  onSaveControls: (controls: ChildControls) => Promise<void> | void;
+  onSavePayment: (method: PaymentMethod) => Promise<void> | void;
+  onDecidePurchase: (requestId: string, approve: boolean) => Promise<void> | void;
+  onAcceptInvite: (code: string) => Promise<void> | void;
+  onRespondLink: (linkId: string, approve: boolean) => Promise<void> | void;
 }) {
   const [draft, setDraft] = useState(view.draft);
   const [zoneQuery, setZoneQuery] = useState('');
@@ -136,7 +171,6 @@ export function SettingsPanel({
   const [nextPassword, setNextPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState('');
-  const [childEmail, setChildEmail] = useState('');
   const [payout, setPayout] = useState(view.payout);
   const [notes, setNotes] = useState(view.draft.notificationPrefs);
   const [privacy, setPrivacy] = useState(view.draft.privacy);
@@ -160,7 +194,7 @@ export function SettingsPanel({
         <h1 className="mt-3 font-heading text-4xl tracking-tight sm:text-5xl">My profile & settings</h1>
         <p className="mt-2 text-[15px] text-muted-foreground">
           {view.role === 'teacher' && 'Your account, your public instructor profile, and payout details.'}
-          {view.role === 'parent' && 'Your account and the children linked to you.'}
+          {view.role === 'parent' && 'Your account, your linked children, and the limits you set for them.'}
           {view.role === 'student' && 'Your account, your grade, and your linked parent.'}
           {view.role === 'institution_admin' && 'Your account. Academy branding stays on the academy page.'}
           {view.role === 'admin' && 'Your personal account. Platform settings stay in System settings.'}
@@ -442,21 +476,24 @@ export function SettingsPanel({
       )}
 
       {view.role === 'parent' && (
-        <Section title="Linked children">
-          <ul className="space-y-2">
-            {view.children.length === 0 && <li className="text-sm text-muted-foreground">No children are linked yet.</li>}
-            {view.children.map(child => (
-              <li key={child.id} className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2">
-                <span className="text-sm"><span className="font-semibold">{child.name}</span> · {child.email}</span>
-                <Button type="button" variant="outline" className="h-8 rounded-full" onClick={() => void onUnlinkChild(child.id)}>Unlink</Button>
-              </li>
-            ))}
-          </ul>
-          <div className="flex flex-wrap gap-2">
-            <Input value={childEmail} onChange={event => setChildEmail(event.target.value)} placeholder="Child's email" aria-label="Child email" className="h-11 max-w-sm rounded-xl" />
-            <Button type="button" className="rounded-full" onClick={() => void onLinkChild(childEmail.trim())}>Link child</Button>
-          </div>
-        </Section>
+        <FamilySettings
+          children={view.children}
+          inviteCode={view.inviteCode}
+          linkRequests={view.linkRequests}
+          payment={view.payment}
+          receipts={view.receipts}
+          purchases={view.purchases}
+          scopeId={scopeId}
+          preview={preview}
+          onAskChild={onLinkChild}
+          onUnlinkChild={onUnlinkChild}
+          onCreateInvite={onCreateInvite}
+          onRevokeInvite={onRevokeInvite}
+          onSaveChild={onSaveChild}
+          onSaveControls={onSaveControls}
+          onSavePayment={onSavePayment}
+          onDecidePurchase={onDecidePurchase}
+        />
       )}
 
       {view.role === 'student' && (
@@ -483,13 +520,19 @@ export function SettingsPanel({
           </div>
           <p className="text-sm font-semibold">Linked parent</p>
           <ul className="space-y-2">
-            {view.parents.length === 0 && <li className="text-sm text-muted-foreground">No parent is linked yet. A parent links you from their settings.</li>}
+            {view.parents.length === 0 && <li className="text-sm text-muted-foreground">No parent is linked yet. Accept an invite code or a request below.</li>}
             {view.parents.map(parent => (
               <li key={parent.id} className="rounded-xl border border-border px-3 py-2 text-sm">
                 <span className="font-semibold">{parent.name}</span> · {parent.email}
               </li>
             ))}
           </ul>
+          <StudentFamily
+            pending={view.linkRequests}
+            limits={view.studentLimits}
+            onAcceptInvite={onAcceptInvite}
+            onRespond={onRespondLink}
+          />
           <Button type="button" className="rounded-full" onClick={() => void onSaveProfile(draft)}>Save grade</Button>
         </Section>
       )}

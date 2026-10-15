@@ -24,7 +24,7 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { Timestamp } from 'firebase/firestore';
 import {
-  getPublicCourseById, enrollStudent, incrementEnrollment, createInvoice, getUser,
+  getPublicCourseById, enrollStudent, incrementEnrollment, createInvoice, getUser, requestPurchaseApproval,
   recordProductView, recordProductRevenue,
   getPublicCurriculum, redeemCouponCode, getCouponPermissions, getEnrollment,
   type Course, type UserProfile, type Module, type Lesson,
@@ -218,6 +218,25 @@ export default function CourseDetailPage() {
       setEnrolling(true);
       const prof = await getStudentProfile();
       if (!prof) { setConfirmOpen(false); return; }
+      let gate: 'clear' | 'asked' | 'waiting' = 'clear';
+      try {
+        gate = await requestPurchaseApproval(user.uid, {
+          title: course.title,
+          amount: course.price ?? 0,
+          currency: course.currency ?? 'USD',
+          kind: 'course',
+          itemId: course.id,
+        });
+      } catch {
+        gate = 'clear';
+      }
+      if (gate !== 'clear') {
+        toast.success(gate === 'waiting'
+          ? 'This purchase is already waiting for a parent to approve.'
+          : 'A linked parent has to approve this purchase before it goes through.');
+        setConfirmOpen(false);
+        return;
+      }
       await enrollStudent(user.uid, course.id);
       await incrementEnrollment(course.id);
       if ((course.price ?? 0) > 0) await recordProductRevenue(course.id, user.uid, course.price ?? 0);
