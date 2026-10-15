@@ -40,6 +40,7 @@ export const LANGUAGES: AppLanguage[] = [
   { code: 'bn', label: 'বাংলা',             englishName: 'Bengali',                flag: '🇧🇩', bcp47: 'bn-BD' },
   { code: 'pt', label: 'Português',         englishName: 'Portuguese',             flag: '🇧🇷', bcp47: 'pt-BR' },
   { code: 'ru', label: 'Русский',           englishName: 'Russian',                flag: '🇷🇺', bcp47: 'ru-RU' },
+  { code: 'kk', label: 'Қазақша',           englishName: 'Kazakh',                 flag: '🇰🇿', bcp47: 'kk-KZ' },
   { code: 'ur', label: 'اردو',              englishName: 'Urdu',                   flag: '🇵🇰', bcp47: 'ur-PK', rtl: true },
   { code: 'id', label: 'Bahasa Indonesia',  englishName: 'Indonesian',             flag: '🇮🇩', bcp47: 'id-ID' },
   { code: 'ms', label: 'Bahasa Melayu',     englishName: 'Malay',                  flag: '🇲🇾', bcp47: 'ms-MY' },

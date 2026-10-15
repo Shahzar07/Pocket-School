@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { LANGUAGES } from '../languages';
 import { CATALOG_REVIEW, catalogs, hasUiCatalog, UI_LANGUAGE_CODES } from './catalog';
-import { detectLanguage, formatAppDate, formatAppNumber, resolveLessonCopy } from './detect';
+import { detectLanguage, formatAppDate, formatAppNumber, languageShortcut, resolveLessonCopy } from './detect';
 
 function catalogFor(code: string) {
   assert.ok(Object.prototype.hasOwnProperty.call(catalogs, code), code);
@@ -20,7 +20,7 @@ function flatKeys(value: unknown, prefix = ''): string[] {
 
 const REQUIRED = [
   'en', 'zh', 'zh-Hant', 'hi', 'es', 'fr', 'ar', 'bn', 'pt', 'ru', 'ur', 'id',
-  'ms', 'de', 'ja', 'ko', 'tr', 'vi', 'ta', 'th', 'it',
+  'ms', 'de', 'ja', 'ko', 'tr', 'vi', 'ta', 'th', 'it', 'kk',
 ];
 
 test('every supported language has a complete interface catalog', () => {
@@ -59,7 +59,13 @@ test('a known country wins over the browser language', () => {
   assert.equal(detectLanguage({ country: 'PK' }), 'ur');
   assert.equal(detectLanguage({ country: 'BD' }), 'bn');
   assert.equal(detectLanguage({ country: 'BR' }), 'pt');
-  assert.equal(detectLanguage({ country: 'RU' }), 'ru');
+  assert.equal(detectLanguage({ country: 'RU', navigatorLanguages: ['kk-KZ'] }), 'ru');
+  assert.equal(detectLanguage({ country: 'KZ', navigatorLanguages: ['ru-RU', 'en-US'] }), 'kk');
+  assert.equal(detectLanguage({ country: 'BY' }), 'ru');
+  assert.equal(languageShortcut('KZ', 'kk'), 'ru');
+  assert.equal(languageShortcut('kz', 'ru'), 'kk');
+  assert.equal(languageShortcut('RU', 'ru'), null);
+  assert.equal(languageShortcut('KZ', 'en'), null);
   assert.equal(detectLanguage({ country: 'DE' }), 'de');
   assert.equal(detectLanguage({ country: 'JP' }), 'ja');
   assert.equal(detectLanguage({ country: 'KR' }), 'ko');

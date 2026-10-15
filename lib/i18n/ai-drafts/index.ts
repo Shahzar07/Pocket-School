@@ -3,6 +3,7 @@
  * Draft interface catalogs. Human catalogs stay in catalog.ts.
  */
 import { de, ru, tr } from './europe';
+import { kk } from './kazakh';
 import { ja, ko, th, vi, zhHant } from './east-asia';
 import { ar, id, sw } from './more';
 import { fr, es, it, pt } from './romance';
@@ -17,6 +18,7 @@ export const aiDrafts = {
   bn,
   pt,
   ru,
+  kk,
   ur,
   id,
   de,

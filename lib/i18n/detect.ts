@@ -27,7 +27,8 @@ const COUNTRY_LANGUAGE: Record<string, string> = {
   SD: 'ar', PS: 'ar', MR: 'ar',
   BD: 'bn',
   BR: 'pt', PT: 'pt', AO: 'pt', MZ: 'pt',
-  RU: 'ru', BY: 'ru', KZ: 'ru', KG: 'ru',
+  RU: 'ru', BY: 'ru', KG: 'ru',
+  KZ: 'kk',
   PK: 'ur',
   DE: 'de', AT: 'de', LI: 'de', CH: 'de',
   JP: 'ja',
@@ -86,6 +87,19 @@ export function detectLanguage(input: {
     if (code) return code;
   }
   return DEFAULT_LANGUAGE;
+}
+
+/**
+ * A one-click alternate for a country whose default is not the only language
+ * people there read. Kazakhstan opens in Kazakh and offers Russian beside
+ * the picker; once Russian is active, Kazakh is the one-click way back.
+ */
+export function languageShortcut(country: string | null | undefined, current: string): string | null {
+  const code = country?.trim().toUpperCase() ?? '';
+  if (code !== 'KZ') return null;
+  if (current === 'kk') return 'ru';
+  if (current === 'ru') return 'kk';
+  return null;
 }
 
 export interface LessonCopySource {

@@ -5,19 +5,35 @@ import { Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { updateUser } from '@/lib/db';
-import { LANGUAGES, readLanguage, getLanguage } from '@/lib/languages';
+import { GEO_COUNTRY_COOKIE, LANGUAGES, readLanguage, getLanguage } from '@/lib/languages';
 import { applyAppLanguage } from '@/lib/i18n/apply';
 import { hasUiCatalog } from '@/lib/i18n/catalog';
+import { languageShortcut } from '@/lib/i18n/detect';
+
+function readCookie(name: string): string | null {
+  const prefix = `${name}=`;
+  const row = document.cookie.split('; ').find(part => part.startsWith(prefix));
+  if (!row) return null;
+  try {
+    return decodeURIComponent(row.slice(prefix.length));
+  } catch {
+    return row.slice(prefix.length);
+  }
+}
 
 export function LanguageSwitcher({ tone = 'default' }: { tone?: 'default' | 'onDark' }) {
   const { t } = useTranslation();
   const { user, profile, setProfile } = useAuthSTORE();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState('en');
+  const [country, setCountry] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const sync = () => setSelected(readLanguage());
+    const sync = () => {
+      setSelected(readLanguage());
+      setCountry(readCookie(GEO_COUNTRY_COOKIE));
+    };
     sync();
     const onCustom = () => sync();
     window.addEventListener('pocket-school-lang-change', onCustom);
@@ -46,9 +62,25 @@ export function LanguageSwitcher({ tone = 'default' }: { tone?: 'default' | 'onD
 
   const current = LANGUAGES.find(l => l.code === selected) ?? LANGUAGES[0];
   const showFallback = !hasUiCatalog(selected);
+  const shortcutCode = languageShortcut(country, selected);
+  const shortcut = shortcutCode ? getLanguage(shortcutCode) : null;
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative flex items-center gap-1">
+      {shortcut && (
+        <button
+          type="button"
+          data-lang-shortcut={shortcut.code}
+          onClick={() => select(shortcut.code)}
+          className={`px-2.5 py-1.5 rounded-xl text-sm font-medium transition-colors ${
+            tone === 'onDark'
+              ? 'text-white/90 hover:bg-white/10'
+              : 'text-muted-foreground hover:bg-muted'
+          }`}
+        >
+          {shortcut.label}
+        </button>
+      )}
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
