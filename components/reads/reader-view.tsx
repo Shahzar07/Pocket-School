@@ -26,11 +26,29 @@ import { readAutosave } from '@/components/editor/use-autosave';
 import type { Book, BookChapter, LanguageVersion } from '@/lib/reads/types';
 import { ContentLanguageBar } from '@/components/content-language-bar';
 import { useContentTranslation } from '@/hooks/use-content-translation';
+import { contentCacheKey } from '@/lib/i18n/content-translation';
 import { LANGUAGES, getLanguage, readLanguage, textDirection } from '@/lib/languages';
 import {
   addNote, addSessionSeconds, bookmarks, notesFor, progressMap, readerPrefs, saveProgress,
   saveReaderPrefs, toggleBookmark, type ReaderPrefs,
 } from '@/lib/shelf/storage';
+
+/** Page counts for a closed chapter use a translation already saved on this device. */
+function cachedChapterMarkdown(
+  id: string,
+  language: string,
+  fields: { title: string; markdown: string },
+): string | undefined {
+  if (typeof window === 'undefined' || !language || language === 'en') return undefined;
+  try {
+    const raw = window.localStorage.getItem(contentCacheKey(id, language, fields));
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw) as { markdown?: unknown };
+    return typeof parsed.markdown === 'string' && parsed.markdown.trim() ? parsed.markdown : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 const THEMES = {
   light: { bg: '#F7F6F3', fg: '#1C2422', muted: '#5E6B68', paper: '#FFFFFF' },
@@ -124,34 +142,9 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
     lang,
     Boolean(machine && chapter),
   );
-  const prevChapter = chapterIndex > 0 ? chapters[chapterIndex - 1] : undefined;
-  const nextChapter = chapterIndex + 1 < chapters.length ? chapters[chapterIndex + 1] : undefined;
-  const prevTranslation = useContentTranslation(
-    `book:${book?.id ?? bookId}:${prevChapter?.id ?? 'prev'}`,
-    { title: prevChapter?.title ?? '', markdown: prevChapter?.markdown ?? '' },
-    lang,
-    Boolean(machine && prevChapter),
-  );
-  const nextTranslation = useContentTranslation(
-    `book:${book?.id ?? bookId}:${nextChapter?.id ?? 'next'}`,
-    { title: nextChapter?.title ?? '', markdown: nextChapter?.markdown ?? '' },
-    lang,
-    Boolean(machine && nextChapter),
-  );
   const readingTitle = machine ? (chapterTranslation.values.title || chapter?.title || '') : (chapter?.title ?? '');
   const readingMarkdown = machine ? (chapterTranslation.values.markdown || chapter?.markdown || '') : (chapter?.markdown ?? '');
-  const translatedAt = (index: number): string | undefined => {
-    if (index === chapterIndex) return chapterTranslation.values.markdown;
-    if (index === chapterIndex - 1) return prevTranslation.values.markdown;
-    if (index === chapterIndex + 1) return nextTranslation.values.markdown;
-    return undefined;
-  };
-  const showingOriginal = (index: number) => {
-    if (index === chapterIndex) return chapterTranslation.showOriginal;
-    if (index === chapterIndex - 1) return prevTranslation.showOriginal;
-    if (index === chapterIndex + 1) return nextTranslation.showOriginal;
-    return true;
-  };
+  const endOnArrival = useRef(false);
   const scriptDir = textDirection(chapterTranslation.showOriginal || !machine ? 'en' : lang);
   const picture = isPictureBook(book);
   const spreads = useMemo(() => pictureSpreads(readingMarkdown), [readingMarkdown]);
@@ -162,9 +155,13 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
   const page = pages[Math.min(pageIndex, Math.max(0, pages.length - 1))] ?? '';
   const spread = picture ? spreads[Math.min(pageIndex, Math.max(0, spreads.length - 1))] : null;
   const pageCountOf = (index: number) => {
-    const source = chapters[index]?.markdown ?? '';
-    const useTranslation = machine && !showingOriginal(index);
-    const markdown = markdownForPageCount(source, translatedAt(index), useTranslation);
+    const chapterAt = chapters[index];
+    const source = chapterAt?.markdown ?? '';
+    const fields = { title: chapterAt?.title ?? '', markdown: source };
+    const translated = index === chapterIndex
+      ? (chapterTranslation.showOriginal ? undefined : chapterTranslation.values.markdown)
+      : cachedChapterMarkdown(`book:${book?.id ?? bookId}:${chapterAt?.id ?? 'chapter'}`, lang, fields);
+    const markdown = markdownForPageCount(source, translated, machine);
     return picture ? pictureSpreads(markdown).length : paginateChapter(markdown).length;
   };
   const access = book && chapter ? decideBook(book, SAMPLE_READER, { ownedIds: SAMPLE_OWNED, chapter }) : null;
@@ -186,15 +183,22 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
     const nextPercent = chapterProgress(c, p, chapters.length, pageCountOf(c));
     saveProgress(profile.id, book.id, { chapterIndex: c, pageIndex: p, percent: nextPercent, updatedAt: Date.now() });
   }, [
-    book, chapters, chapterIndex, machine, picture, profile.id, ready, placed,
+    book, chapters, chapterIndex, machine, picture, profile.id, ready, placed, lang,
     chapterTranslation.showOriginal, chapterTranslation.values.markdown,
-    prevTranslation.showOriginal, prevTranslation.values.markdown,
-    nextTranslation.showOriginal, nextTranslation.values.markdown,
   ]);
 
   useEffect(() => {
+    if (endOnArrival.current) {
+      if (pages.length === 0) return;
+      if (machine && (chapterTranslation.status === 'loading' || chapterTranslation.status === 'source')) return;
+      endOnArrival.current = false;
+      const last = pages.length - 1;
+      setPageIndex(last);
+      persist(chapterIndex, last);
+      return;
+    }
     if (pages.length > 0 && pageIndex >= pages.length) setPageIndex(pages.length - 1);
-  }, [pageIndex, pages.length]);
+  }, [chapterIndex, chapterTranslation.status, machine, pageIndex, pages.length, persist]);
 
   const go = (c: number, p: number, direction: 1 | -1) => {
     setDir(direction);
@@ -213,8 +217,9 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
   const prev = () => {
     if (pageIndex > 0) go(chapterIndex, pageIndex - 1, -1);
     else if (chapterIndex > 0) {
-      const prevPages = pageCountOf(chapterIndex - 1);
-      go(chapterIndex - 1, Math.max(0, prevPages - 1), -1);
+      endOnArrival.current = true;
+      const cachedPages = pageCountOf(chapterIndex - 1);
+      go(chapterIndex - 1, Math.max(0, cachedPages - 1), -1);
     }
   };
 
@@ -401,19 +406,21 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
   return (
     <div className="min-h-screen" dir={scriptDir} style={{ background: theme.bg, color: theme.fg }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500&display=swap" />
-      <header className="sticky top-0 z-20 flex items-center gap-2 px-3 py-3 sm:px-6" style={{ background: theme.bg }}>
-        <button type="button" onClick={() => router.push(`/reads/book/${book.id}`)} className="grid h-11 w-11 place-items-center rounded-full" aria-label={t('reads.nav.home')}>
+      <header className="sticky top-0 z-20 flex flex-wrap items-center gap-1 px-2 py-2 sm:gap-2 sm:px-6 sm:py-3" style={{ background: theme.bg }}>
+        <button type="button" onClick={() => router.push(`/reads/book/${book.id}`)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full" aria-label={t('reads.nav.home')}>
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 basis-40">
           <p className="truncate text-[13px] font-semibold">{version?.title ?? book.title}</p>
           <p className="truncate text-[11px]" style={{ color: theme.muted }}>{readingTitle}</p>
         </div>
         <span className="hidden text-[12px] font-semibold sm:inline" aria-live="polite">{timerLabel} · {formatClock(seconds)}{goalStatus ? ` · ${t('reads.reader.goal', { status: goalStatus })}` : ''}</span>
-        <Tool label={t('reads.reader.contents')} onClick={() => setPanel(panel === 'contents' ? 'none' : 'contents')}><List className="h-5 w-5" /></Tool>
-        <Tool label={t('reads.reader.font')} onClick={() => setPanel(panel === 'type' ? 'none' : 'type')}><Type className="h-5 w-5" /></Tool>
-        <Tool label={listening ? t('reads.reader.stop') : t('reads.reader.listen')} onClick={listen}><Headphones className="h-5 w-5" /></Tool>
-        <Tool label={t('reads.reader.ask')} onClick={() => setPanel(panel === 'ask' ? 'none' : 'ask')}><MessageCircle className="h-5 w-5" /></Tool>
+        <div className="ml-auto flex shrink-0 items-center">
+          <Tool label={t('reads.reader.contents')} onClick={() => setPanel(panel === 'contents' ? 'none' : 'contents')}><List className="h-5 w-5" /></Tool>
+          <Tool label={t('reads.reader.font')} onClick={() => setPanel(panel === 'type' ? 'none' : 'type')}><Type className="h-5 w-5" /></Tool>
+          <Tool label={listening ? t('reads.reader.stop') : t('reads.reader.listen')} onClick={listen}><Headphones className="h-5 w-5" /></Tool>
+          <Tool label={t('reads.reader.ask')} onClick={() => setPanel(panel === 'ask' ? 'none' : 'ask')}><MessageCircle className="h-5 w-5" /></Tool>
+        </div>
       </header>
       <div className="h-1 bg-black/5" aria-hidden>
         <div className="h-full bg-[#E7C27D]" style={{ width: `${Math.min(100, percent)}%` }} />
