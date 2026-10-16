@@ -80,8 +80,11 @@ test('an unlisted institution falls back to independent online payment', () => {
 test('institution students are not charged for the seat and marketplace stays individual', () => {
   assert.equal(chargeFor({ membership: 'institution', product: 'seat' }), 'waived');
   assert.equal(chargeFor({ membership: 'institution', product: 'marketplace' }), 'individual');
+  assert.equal(chargeFor({ membership: 'institution', product: 'marketplace', marketplacePayer: 'institution' }), 'institution');
   assert.equal(chargeFor({ membership: 'institution', product: 'topup' }), 'institution');
   assert.equal(chargeFor({ membership: 'independent', product: 'seat' }), 'individual');
+  assert.equal(chargeFor({ membership: 'independent', product: 'seat', role: 'parent' }), 'waived');
+  assert.equal(chargeFor({ membership: 'institution', product: 'seat', role: 'teacher' }), 'waived');
 });
 
 test('approval assigns a level and rejection does not', () => {
@@ -183,12 +186,14 @@ test('students see core programmes for their level, teachers see their classes, 
   assert.equal(canSeeCourse(student, { id: 'i', visibility: 'core', level: 'igcse_alevel' }), true);
   assert.equal(canSeeCourse(student, { id: 'p', visibility: 'core', level: 'primary_secondary' }), false);
   assert.equal(canSeeCourse(student, { id: 'own', visibility: 'institution', institutionId: 'north', classIds: ['c1'] }), true);
+  assert.equal(canSeeCourse(student, { id: 'draft', visibility: 'institution', institutionId: 'north', classIds: ['c1'], libraryApproved: false }), false);
   assert.equal(canSeeCourse(student, { id: 'secret', visibility: 'institution', institutionId: 'south' }), false);
   assert.equal(canSeeCourse(student, { id: 'market', visibility: 'marketplace', institutionId: 'north', marketplaceApproved: false }), false);
   assert.equal(canSeeCourse(student, { id: 'market', visibility: 'marketplace', institutionId: 'north', marketplaceApproved: true }), true);
   const teacher: AccessViewer = { ...student, userId: 't', role: 'teacher', classIds: ['c2'] };
   assert.equal(canSeeCourse(teacher, { id: 'own', visibility: 'institution', institutionId: 'north', classIds: ['c1'] }), false);
   assert.equal(canSeeCourse(teacher, { id: 'mine', visibility: 'institution', institutionId: 'north', classIds: ['c2'], ownerId: 'other' }), true);
+  assert.equal(canSeeCourse(teacher, { id: 'draft', visibility: 'institution', institutionId: 'north', ownerId: 't', libraryApproved: false }), true);
   const parent: AccessViewer = { ...student, userId: 'p', role: 'parent', childIds: ['s'] };
   assert.equal(canSeeStudent(parent, { id: 's', institutionId: 'north', classIds: ['c1'] }), true);
   assert.equal(canSeeStudent(parent, { id: 'other', institutionId: 'north', classIds: ['c1'] }), false);
