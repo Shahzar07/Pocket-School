@@ -33,10 +33,27 @@ export interface CertificateFace {
   issuedByName?: string;
   /** Missing means valid. Older certificates were issued before status existed. */
   status?: CertificateStatus | string | null;
+  /** Hex accent from the institution brand. Invalid values are ignored. */
+  accent?: string | null;
+  /** When false, a white-label certificate omits the Poket School line. */
+  showPoweredBy?: boolean | null;
 }
 
 export function certificateStatus(status: unknown): CertificateStatus {
   return status === 'revoked' ? 'revoked' : 'valid';
+}
+
+export function certificateAccent(value: string | null | undefined): string | null {
+  return value && /^#[0-9a-fA-F]{6}$/.test(value) ? value : null;
+}
+
+export function certificateHeader(face: Pick<CertificateFace, 'issuedByName' | 'showPoweredBy'>): { brand: string; poweredBy: boolean } {
+  const name = (face.issuedByName || CERTIFICATE_ISSUER_NAME).trim() || CERTIFICATE_ISSUER_NAME;
+  const own = name.toLowerCase() === 'poket school';
+  return {
+    brand: name.toUpperCase(),
+    poweredBy: !own && face.showPoweredBy !== false,
+  };
 }
 
 /** Profile names are stored as written. Blank names stay a person, not an empty line. */
@@ -161,8 +178,9 @@ export function buildCertificatePdf(face: CertificateFace, origin?: string): Uin
   const moduleTitle = face.moduleTitle?.trim() || face.courseTitle;
   const verify = certificateVerifyUrl(face.id, origin);
   const status = certificateStatus(face.status);
+  const header = certificateHeader(face);
   const lines: { text: string; size: number; gap: number }[] = [
-    { text: 'POKET SCHOOL', size: 12, gap: 28 },
+    { text: header.brand, size: 12, gap: 28 },
     { text: 'Certificate of Achievement', size: 28, gap: 36 },
     { text: 'This is to certify that', size: 12, gap: 28 },
     { text: face.studentName, size: 24, gap: 32 },
@@ -176,6 +194,7 @@ export function buildCertificatePdf(face: CertificateFace, origin?: string): Uin
     { text: 'Scan the QR code to open this verification page', size: 9, gap: 16 },
     { text: 'Not an official academic qualification', size: 9, gap: 14 },
     { text: certificateCopyright(face.issuedAt), size: 9, gap: 12 },
+    ...(header.poweredBy ? [{ text: 'Powered by Poket School', size: 9, gap: 12 }] : []),
   ];
   const commands = [
     '0.12 0.35 0.42 RG',
@@ -223,6 +242,8 @@ export function certificateDocumentHtml(face: CertificateFace, origin?: string):
   const date = formatCertificateDate(face.issuedAt);
   const status = certificateStatus(face.status);
   const statusLabel = status === 'revoked' ? 'Revoked' : 'Valid';
+  const header = certificateHeader(face);
+  const accent = certificateAccent(face.accent) ?? '#1E6A83';
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -230,8 +251,8 @@ export function certificateDocumentHtml(face: CertificateFace, origin?: string):
   <title>Poket School certificate — ${escapeHtml(face.studentName)}</title>
   <style>
     body { margin: 0; background: #f4f7f8; font-family: Georgia, "Times New Roman", serif; color: #1c2b30; }
-    .sheet { width: 900px; margin: 32px auto; background: #fff; border: 10px solid #1E6A83; padding: 18px; }
-    .inner { border: 2px solid #2786A4; padding: 48px 56px 36px; text-align: center; }
+    .sheet { width: 900px; margin: 32px auto; background: #fff; border: 10px solid ${accent}; padding: 18px; }
+    .inner { border: 2px solid #1E6A83; padding: 48px 56px 36px; text-align: center; }
     .brand { letter-spacing: 0.32em; font-size: 13px; color: #1E6A83; font-family: "Gill Sans", "Trebuchet MS", sans-serif; }
     h1 { font-weight: normal; font-size: 40px; margin: 18px 0 8px; }
     .lead, .meta { color: #526066; font-size: 16px; }
@@ -251,7 +272,7 @@ export function certificateDocumentHtml(face: CertificateFace, origin?: string):
 </head>
 <body>
   <div class="sheet"><div class="inner">
-    <div class="brand">POKET SCHOOL</div>
+    <div class="brand">${escapeHtml(header.brand)}</div>
     <h1>Certificate of Achievement</h1>
     <p class="lead">This is to certify that</p>
     <div class="name">${escapeHtml(face.studentName)}</div>
@@ -265,6 +286,7 @@ export function certificateDocumentHtml(face: CertificateFace, origin?: string):
     <p class="meta">Scan the QR code to open ${escapeHtml(verify)}</p>
     <p class="disclaimer">${escapeHtml(CERTIFICATE_DISCLAIMER)}</p>
     <p class="copyright">${escapeHtml(certificateCopyright(face.issuedAt))}</p>
+    ${header.poweredBy ? '<p class="copyright">Powered by Poket School</p>' : ''}
   </div></div>
   <script>window.onload = function () { window.print(); }<\/script>
 </body>

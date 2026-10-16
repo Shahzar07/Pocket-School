@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { TIERS } from './entitlements';
 import {
   annualFromMonthly,
   currencyForCountry,
@@ -29,7 +31,9 @@ test('USD quotes use the stored monthly and annual amounts', () => {
   const annual = quotePlan(config, 'igcse_alevel', 'annual', 'USD');
   assert.equal(monthly?.currency, 'USD');
   assert.equal(monthly?.amount, 79);
-  assert.equal(annual?.amount, 711);
+  assert.equal(annual?.amount, 708);
+  assert.equal(quotePlan(config, 'professional', 'monthly', 'USD')?.amount, 99);
+  assert.equal(quotePlan(config, 'professional', 'annual', 'USD')?.amount, 888);
   assert.equal(annualFromMonthly(19, 0.25), 171);
   assert.equal(quotePlan(config, 'primary_secondary', 'annual', 'usd')?.amount, 171);
 });
@@ -145,4 +149,38 @@ test('the audit diff names the fields that changed', () => {
   assert.ok(lines.some(line => line.includes('primary_secondary monthly USD 19 → 29')));
   assert.ok(lines.some(line => line.includes('MYR rate 4.7 → 4.8')));
   assert.ok(lines.some(line => line.includes('primary_secondary monthly fixed')));
+});
+
+test('plan copy uses levels and keeps the $19 and $99 prices', () => {
+  const config = seedPricing();
+  assert.equal(config.plans.find(plan => plan.id === 'primary_secondary')?.monthlyUsd, 19);
+  assert.equal(config.plans.find(plan => plan.id === 'professional')?.monthlyUsd, 99);
+  const page = readFileSync(new URL('../app/pricing/page.tsx', import.meta.url), 'utf8');
+  const plans = TIERS.flatMap(tier => [tier.name, tier.blurb, ...tier.programmes]).join('\n');
+  const copy = `${plans}\n${page}`;
+  assert.match(copy, /Primary & Lower Secondary/);
+  assert.doesNotMatch(copy, /Primary & Secondary/);
+  assert.doesNotMatch(copy, /Years?\s+\d/);
+  assert.doesNotMatch(plans, /\bTiers?\b/);
+  assert.doesNotMatch(copy, /Everything in Tiers?/);
+  const professional = TIERS.find(tier => tier.id === 'professional');
+  const lines = (professional?.programmes ?? []).join('\n');
+  assert.match(lines, /MBBS Medicine/);
+  assert.match(lines, /University of London \(UoL\) and other universities/);
+  assert.match(lines, /Engineering — ET Engineering/);
+  assert.match(lines, /Nursing — ET Nursing/);
+  assert.equal(TIERS.find(tier => tier.id === 'primary_secondary')?.name, 'Primary & Lower Secondary');
+  const primary = TIERS.find(tier => tier.id === 'primary_secondary');
+  const igcse = TIERS.find(tier => tier.id === 'igcse_alevel');
+  assert.match((primary?.programmes ?? []).join('\n'), /Poket Reads books and audiobooks/);
+  assert.match((primary?.programmes ?? []).join('\n'), /ET AI Studio and ET Maths/);
+  assert.match((igcse?.programmes ?? []).join('\n'), /ET AI Essay Writer — AI-graded 9-1 \/ A\*-U/);
+  assert.match((igcse?.programmes ?? []).join('\n'), /Open Badges 3.0 certificates with LinkedIn sharing/);
+  assert.match((igcse?.programmes ?? []).join('\n'), /Downloadable transcripts/);
+  assert.match((igcse?.programmes ?? []).join('\n'), /Parent dashboard and reports/);
+  assert.match((igcse?.programmes ?? []).join('\n'), /Attendance and daily goals/);
+  assert.match((igcse?.programmes ?? []).join('\n'), /ET AI Live add-on/);
+  assert.match((igcse?.programmes ?? []).join('\n'), /ET AI Studio, ET Maths and ET Exams/);
+  assert.match(lines, /ET AI Live add-on/);
+  assert.match(plans, /53 languages/);
 });

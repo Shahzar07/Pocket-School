@@ -423,7 +423,7 @@ export function TeacherCourseStudio({
           ))}
           {savedId && !demo && (
             <Link href={`/dashboard/teacher/courses/${savedId}/preview`} className="block px-3 text-sm font-semibold text-primary underline">
-              Open student preview
+              Preview course
             </Link>
           )}
         </nav>

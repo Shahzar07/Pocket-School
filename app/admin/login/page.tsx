@@ -36,6 +36,7 @@ import { clearAdminMfaPending, markAdminMfaPending } from '@/lib/admin-mfa-pendi
 import { clearFallbackSession, readFallbackSession, saveFallbackSession } from '@/lib/admin-mfa-fallback-session';
 import { syncStaffClaims } from '@/lib/admin-actions';
 import { touchAdminActivity } from '@/lib/view-as';
+import { reportActivity, reportFailedLogin } from '@/lib/audit/report';
 import { ShieldCheck } from 'lucide-react';
 
 type Step = 'credentials' | 'twofa' | 'fallback' | 'totp-enroll' | 'totp-challenge';
@@ -174,6 +175,7 @@ function AdminLoginForm() {
     }
     await withTimeout(syncStaffClaims([profile]).catch(() => undefined), 8000).catch(() => undefined);
     touchAdminActivity();
+    void reportActivity({ action: 'auth.login', targetType: 'session', targetId: uid, targetLabel: address });
     router.push('/dashboard/admin');
   };
 
@@ -272,6 +274,7 @@ function AdminLoginForm() {
           idToken = '';
         }
         const sent = await sendCode(address, idToken);
+        void reportActivity({ action: 'auth.two_factor_challenge', targetType: 'session', targetId: result.user.uid });
         if (sent === 'fallback') {
           advanced = true;
           setPendingUid(result.user.uid);
@@ -318,6 +321,7 @@ function AdminLoginForm() {
       }
       const codeName = authCode(err);
       if (codeName === 'auth/invalid-credential' || codeName === 'auth/wrong-password' || codeName === 'auth/user-not-found' || codeName === 'auth/invalid-email') {
+        void reportFailedLogin(email);
         setFormError('That email or password is not right.');
       } else if (codeName === 'auth/too-many-requests') {
         setFormError('Too many attempts. Wait a moment and try again.');
@@ -353,10 +357,12 @@ function AdminLoginForm() {
       });
       const data = await res.json().catch(() => ({})) as { error?: string; valid?: boolean };
       if (!res.ok || !data.valid) {
+        void reportFailedLogin(email, 'auth.two_factor_failed');
         setFormError(typeof data.error === 'string' ? data.error : 'That code is not valid.');
         return;
       }
       await signInWithEmailAndPassword(auth, email.trim(), password);
+      void reportActivity({ action: 'auth.two_factor_success', targetType: 'session', targetId: pendingUid });
       await finish(pendingUid, email.trim());
     } catch {
       setFormError('Could not finish signing in.');
@@ -388,6 +394,7 @@ function AdminLoginForm() {
         setFormError('Google must be the same email as this admin account. The second factor is still required.');
         return;
       }
+      void reportActivity({ action: 'auth.two_factor_success', targetType: 'session', targetId: result.user.uid });
       await finish(result.user.uid, expected);
     } catch (err) {
       if (isTimeout(err)) {
@@ -414,6 +421,7 @@ function AdminLoginForm() {
             return;
           }
           await withTimeout(linkWithCredential(signed.user, cred), 12000);
+          void reportActivity({ action: 'auth.two_factor_success', targetType: 'session', targetId: signed.user.uid });
           await finish(signed.user.uid, expected);
         } catch {
           try { await signOut(auth); } catch { /* already signed out */ }
@@ -513,10 +521,12 @@ function AdminLoginForm() {
       const credential = await resolver.resolveSignIn(assertion);
       const address = credential.user.email || email.trim();
       setEmail(address);
+      void reportActivity({ action: 'auth.two_factor_success', targetType: 'session', targetId: credential.user.uid });
       await finish(credential.user.uid, address);
     } catch (err) {
       const codeName = authCode(err);
       if (codeName === 'auth/invalid-verification-code' || codeName === 'auth/invalid-verification-id') {
+        void reportFailedLogin(email, 'auth.two_factor_failed');
         setFormError('That authenticator code is not valid.');
       } else if (codeName === 'auth/code-expired') {
         setFormError('That code expired. Enter the next code from the authenticator app.');

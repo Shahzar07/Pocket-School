@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
   getAttendanceForCourse, getAttendanceForStudent, getCertificatesForStudent, getChildrenProfiles,
@@ -20,6 +21,7 @@ import { logReportExport, listReportCards, readSnapshot, saveSchedule, submitAbs
 import type { GoalLike } from '@/lib/insights/goals';
 import type { QuizPoint } from '@/lib/insights/analytics';
 import { toast } from 'sonner';
+import { reportLinks } from '@/lib/report-links';
 
 function reportRole(role: string | undefined): ReportRole {
   if (role === 'parent' || role === 'teacher' || role === 'admin' || role === 'institution_admin') return role;
@@ -247,6 +249,16 @@ export default function ReportsPage() {
         accent="with its records"
         description="The same definitions as the analytics charts. A click opens the lessons, quizzes, or attendance rows behind the figure. Exports carry the Poket School copyright line."
       />
+      <Panel>
+        <PanelHeader title="Attendance, analytics, and behaviour" />
+        <ul className="flex flex-wrap gap-2">
+          {reportLinks(profile?.role).map((link) => (
+            <li key={link.href}>
+              <Link href={link.href} className="inline-flex h-10 items-center rounded-full border border-border px-4 text-sm font-semibold">{link.label}</Link>
+            </li>
+          ))}
+        </ul>
+      </Panel>
       {hub && (
         <DocumentDelivery
           documents={[textDocument({

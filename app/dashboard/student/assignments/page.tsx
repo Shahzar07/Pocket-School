@@ -150,6 +150,7 @@ export default function StudentAssignmentsPage() {
         <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1.5">
           <span className="gradient-text italic">Assignments</span>
         </h1>
+        <p className="text-sm text-muted-foreground mt-2 max-w-2xl">A teacher can send work to this class, to you alone, or to the whole institution. Essay tasks open in ET AI Essay Writer.</p>
       </motion.div>
 
       {/* Empty state */}
@@ -235,7 +236,7 @@ export default function StudentAssignmentsPage() {
                   <Button
                     onClick={() => handleSubmit(item.assignment)}
                     disabled={submitting === item.assignment.id}
-                    className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white gap-2"
+                    className="rounded-full h-11 px-5 font-bold bg-primary text-primary-foreground gap-2"
                   >
                     {submitting === item.assignment.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                     Submit Assignment

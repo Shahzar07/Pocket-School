@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { LandingPage } from '@/components/landing/landing-page';
+import { SiteHome } from '@/components/site-home';
 
 export const metadata: Metadata = {
   title: {
@@ -10,5 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <LandingPage />;
+  return <SiteHome />;
 }

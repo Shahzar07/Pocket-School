@@ -18,6 +18,7 @@ import {
   type CourseView,
 } from '@/lib/shelf/catalogue';
 import { viewerCurrency } from '@/lib/platform/pricing';
+import { usePublishedStudioBooks } from '@/components/reads/use-studio-shelf';
 import { myList, progressMap, toggleList } from '@/lib/shelf/storage';
 import { recommend } from '@/lib/shelf/recommend';
 import type { ShelfItem } from '@/lib/shelf/types';
@@ -47,13 +48,14 @@ export function MarketHome() {
     setCurrency(viewerCurrency());
   }, [ready, profile.id]);
 
+  const studioBooks = usePublishedStudioBooks();
   const courseItems = useMemo(
     () => courses.map(course => courseToShelf(course, progress[course.id]?.percent, currency)),
     [courses, progress, currency],
   );
   const bookItems = useMemo(
-    () => visibleBooks(profile.maxAge).map(book => bookToShelf(book, SAMPLE_READER, SAMPLE_OWNED, progress[book.id]?.percent, currency)),
-    [profile.maxAge, progress, currency],
+    () => visibleBooks(profile.maxAge, studioBooks).map(book => bookToShelf(book, SAMPLE_READER, SAMPLE_OWNED, progress[book.id]?.percent, currency)),
+    [profile.maxAge, progress, currency, studioBooks],
   );
 
   const continueItems = courseItems

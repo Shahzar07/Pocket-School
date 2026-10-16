@@ -15,6 +15,7 @@ import { readSnapshot, saveMood } from '@/lib/insights/client';
 import { isoDateKey, addDays } from '@/lib/insights/dates';
 import type { Mood } from '@/lib/insights/behaviour';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 function liveSnapshot(studentId: string, goals: DailyGoal[], grades: { percentage?: number; score?: number; maxScore?: number; gradedAt?: { toDate?: () => Date } }[], attendance: { date?: { toDate?: () => Date }; records?: { studentId: string; status: 'present' | 'absent' | 'late' | 'excused' }[] }[]): AnalyticsSnapshot {
@@ -102,9 +103,14 @@ export default function StudentAnalyticsPage() {
         eyebrow="Insights"
         title="How your learning"
         accent="is going"
-        description="Study time, quizzes, mastery, goals, and Sparks use the same definitions as your parents and teachers see."
+        description="Study time, quizzes, mastery, goals, and Sparks use the same definitions parents, teachers, and admin see on reports."
         actions={<Button variant="outline" onClick={refresh}>Refresh saved totals</Button>}
       />
+      <div className="flex flex-wrap gap-2 text-sm">
+        <Link href="/dashboard/student/attendance" className="underline">Attendance</Link>
+        <Link href="/dashboard/reports" className="underline">Reports</Link>
+        <Link href="/dashboard/behaviour" className="underline">Behaviour</Link>
+      </div>
       {user && (
         <DocumentDelivery
           documents={[textDocument({

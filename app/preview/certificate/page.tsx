@@ -1,4 +1,5 @@
 import { CertificateDocument } from '@/components/certificate-document';
+import { CredentialPanel } from '@/components/credentials/credential-panel';
 import type { CertificateFace } from '@/lib/certificates';
 
 const sample: CertificateFace = {
@@ -21,6 +22,7 @@ export default function PreviewCertificatePage() {
         <p className="text-center text-[11px] font-bold uppercase tracking-[0.22em] text-[#1E6A83]">Preview</p>
         <h1 className="text-center font-heading text-3xl text-[#1c2b30]">Module certificate</h1>
         <CertificateDocument certificate={sample} />
+        <CredentialPanel id={sample.id} />
       </div>
     </main>
   );

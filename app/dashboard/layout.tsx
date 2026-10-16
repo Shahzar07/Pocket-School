@@ -10,8 +10,8 @@ import {
   ClipboardList, Presentation, Shield, BarChart, Settings, FileText, KeyRound, ChevronsUpDown, Target,
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
-  GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X, CalendarDays,
-  Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked, Compass, Camera, MessagesSquare,
+  GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
+  Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked, Compass, Camera,
   Wallet, Gift, Landmark, Plug, PieChart, Search,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -32,12 +32,14 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { useAccountMode } from '@/hooks/use-account-mode';
 import { homeForMode, learnerSpaceRoles, modeRedirect, MODE_NAMES, type AccountMode } from '@/lib/account-modes';
 import { loginBlocked, resolveStaffRole } from '@/lib/admin-console';
+import { reportActivity } from '@/lib/audit/report';
 import { adminMfaPending } from '@/lib/admin-mfa-pending';
 import { AdminViewAsBanner, clearViewAs, useAdminIdle, useViewAs } from '@/components/admin-session';
 import { isSuperAdmin, ROLE_LABELS } from '@/lib/roles';
 import { PipGuide } from '@/components/pip-guide';
 import { OfflineBanner } from '@/components/offline-banner';
 import { RoleChecklist } from '@/components/role-checklist';
+import { PagePurpose } from '@/components/page-purpose';
 import dynamic from 'next/dynamic';
 import type { TourRole } from '@/lib/tour-steps';
 import { hasCmsAddon } from '@/lib/entitlements';
@@ -45,11 +47,12 @@ import { isFeatureEnabled, type FeatureFlag } from '@/lib/feature-flags';
 import { useFeatureFlags } from '@/hooks/use-feature-flags';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
+import { AcademySession } from '@/components/academy-session';
 
 type Role = 'student' | 'teacher' | 'parent' | 'admin' | 'institution_admin';
 
 const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string }> = {
-  student: { icon: 'text-[#6FBBCE]', bar: 'bg-[#6FBBCE]', chip: 'from-[#2786A4] to-[#1E6A83]' },
+  student: { icon: 'text-primary', bar: 'bg-primary', chip: 'from-primary to-primary' },
   teacher: { icon: 'text-emerald-400', bar: 'bg-emerald-400', chip: 'from-emerald-500 to-teal-600' },
   parent:  { icon: 'text-amber-400',  bar: 'bg-amber-400',  chip: 'from-amber-500 to-orange-600' },
   admin:   { icon: 'text-violet-400', bar: 'bg-violet-400', chip: 'from-violet-500 to-fuchsia-600' },
@@ -80,7 +83,6 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/student/attendance', icon: ClipboardCheck, labelKey: 'nav.attendance' },
       { href: '/dashboard/student/certificates', icon: Award, labelKey: 'nav.certificates' },
       { href: '/dashboard/student/tasks', icon: ListTodo, labelKey: 'nav.dailyGoals' },
-      { href: '/dashboard/student/goals', icon: Target, labelKey: 'nav.goals' },
       { href: '/dashboard/student/analytics', icon: Activity, labelKey: 'nav.insights' },
       { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
       { href: '/dashboard/student/integrity', icon: Shield, labelKey: 'nav.integrity' },
@@ -91,18 +93,16 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
     ]},
-    { sectionLabel: 'Community', items: [
-      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.dashboard', label: 'Community', flag: 'community' },
-      { href: '/dashboard/channels', icon: MessagesSquare, labelKey: 'nav.messages', label: 'Channels', flag: 'messagingHub' },
-      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.dashboard', label: 'Tutors', flag: 'tutorMarketplace' },
-      { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.exams', label: 'Exam centre', flag: 'examCentre' },
-      { href: '/dashboard/store', icon: Library, labelKey: 'nav.resources', label: 'Creator store', flag: 'creatorStore' },
-      { href: '/dashboard/snap', icon: Camera, labelKey: 'nav.dashboard', label: 'Snap & solve', flag: 'snapAndSolve' },
+    { sectionKey: 'nav.section.community', items: [
+      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
+      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
+      { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.examCentre', flag: 'examCentre' },
+      { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
+      { href: '/dashboard/studio/maths', icon: Camera, labelKey: 'nav.snapSolve', label: 'ET Maths', flag: 'snapAndSolve' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
-      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
-      { href: '/dashboard/planner', icon: CalendarDays, labelKey: 'nav.planner' },
+      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
       { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
@@ -138,20 +138,18 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher/integrity/cases', icon: Shield, labelKey: 'nav.integrityCases' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
       { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
-      { href: '/dashboard/teacher/behaviour', icon: Star, labelKey: 'nav.behaviour', label: 'Merits' },
+      { href: '/dashboard/teacher/behaviour', icon: Star, labelKey: 'nav.merits' },
     ]},
     // Billing and Helpdesk are institution-admin responsibilities, not teachers'.
-    { sectionLabel: 'Community', items: [
-      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.dashboard', label: 'Community', flag: 'community' },
-      { href: '/dashboard/channels', icon: MessagesSquare, labelKey: 'nav.messages', label: 'Channels', flag: 'messagingHub' },
-      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.dashboard', label: 'Tutors', flag: 'tutorMarketplace' },
-      { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.exams', label: 'Exam centre', flag: 'examCentre' },
-      { href: '/dashboard/store', icon: Library, labelKey: 'nav.resources', label: 'Creator store', flag: 'creatorStore' },
+    { sectionKey: 'nav.section.community', items: [
+      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
+      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
+      { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.examCentre', flag: 'examCentre' },
+      { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
-      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
-      { href: '/dashboard/planner', icon: CalendarDays, labelKey: 'nav.planner' },
+      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
       { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
     ]},
     { sectionKey: 'nav.section.account', items: [
@@ -177,14 +175,12 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/parent/reports', icon: FileBarChart, labelKey: 'nav.reportCards' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
     ]},
-    { sectionLabel: 'Family', items: [
-      { href: '/dashboard/channels', icon: MessagesSquare, labelKey: 'nav.messages', label: 'Channels', flag: 'messagingHub' },
-      { href: '/dashboard/parent/controls', icon: Shield, labelKey: 'nav.dashboard', label: 'Controls', flag: 'community' },
+    { sectionKey: 'nav.section.family', items: [
+      { href: '/dashboard/parent/controls', icon: Shield, labelKey: 'nav.controls', flag: 'community' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
-      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
-      { href: '/dashboard/planner', icon: CalendarDays, labelKey: 'nav.planner' },
+      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
     { sectionKey: 'nav.section.account', items: [
@@ -197,6 +193,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/dashboard/admin/courses', icon: Presentation, labelKey: 'nav.allCourses' },
       { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' },
+      { href: '/dashboard/admin/books', icon: BookOpen, labelKey: 'nav.books', label: 'Book Studio' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/admin/users', icon: UserCog, labelKey: 'nav.usersSparks' },
@@ -206,11 +203,13 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
       { href: '/dashboard/admin/settings', icon: Settings, labelKey: 'nav.systemSettings' },
       { href: '/dashboard/admin/verifications', icon: ShieldCheck, labelKey: 'nav.verifications' },
+      { href: '/dashboard/admin/activity', icon: ClipboardList, labelKey: 'nav.dashboard', label: 'Activity log', superOnly: true },
+      { href: '/dashboard/admin/certificates', icon: Award, labelKey: 'nav.certificates', label: 'Certificates' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
-      { href: '/dashboard/admin/moderation', icon: Shield, labelKey: 'nav.dashboard', label: 'Moderation', flag: 'community' },
-      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.dashboard', label: 'Community', flag: 'community' },
-      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.dashboard', label: 'Tutors', flag: 'tutorMarketplace' },
-      { href: '/dashboard/store', icon: Library, labelKey: 'nav.resources', label: 'Creator store', flag: 'creatorStore' },
+      { href: '/dashboard/admin/moderation', icon: Shield, labelKey: 'nav.moderation', flag: 'community' },
+      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
+      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
+      { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
     ]},
     { sectionKey: 'nav.section.money', items: [
       { href: '/dashboard/admin/payments', icon: Landmark, labelKey: 'nav.payments', superOnly: true },
@@ -221,8 +220,7 @@ const NAV: Record<Role, NavGroup[]> = {
     ]},
     { sectionKey: 'nav.section.platform', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
-      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
-      { href: '/dashboard/planner', icon: CalendarDays, labelKey: 'nav.planner' },
+      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
       { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
       { href: '/dashboard/teacher/billing', icon: CreditCard, labelKey: 'nav.billing' },
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
@@ -234,6 +232,7 @@ const NAV: Record<Role, NavGroup[]> = {
   institution_admin: [
     { items: [
       { href: '/dashboard/institution', icon: GraduationCap, labelKey: 'nav.myClasses' },
+      { href: '/dashboard/admin/institutions', icon: Users, labelKey: 'nav.institutions' },
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
@@ -241,11 +240,11 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
       { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
       { href: '/dashboard/institution/templates', icon: FileText, labelKey: 'nav.reportStudio' },
+      { href: '/dashboard/institution/certificates', icon: Award, labelKey: 'nav.certificates', label: 'Certificates' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
-      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
-      { href: '/dashboard/planner', icon: CalendarDays, labelKey: 'nav.planner' },
+      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
     ]},
     { sectionKey: 'nav.section.account', items: [
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
@@ -341,16 +340,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if (result.isNew) setNewDevice(true);
       const revokedAt = useAuthSTORE.getState().profile?.sessionsRevokedAt;
       if (sessionRevoked(revokedAt, result.createdAtMs)) {
-        void signOut(auth).then(() => router.push(pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login'));
+        void reportActivity({ action: 'auth.logout', targetType: 'session', targetId: user.uid }).finally(() => {
+          void signOut(auth).then(() => router.push(pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login'));
+        });
       }
     }).catch(() => {});
   }, [user, router, pathname]);
 
   useEffect(() => {
-    if (!profile || (user && adminMfaPending(user.uid))) return;
+    if (!profile || !user || adminMfaPending(user.uid)) return;
     const started = Number(sessionStorage.getItem('poket-session-at') || '0');
     if (sessionRevoked(profile.sessionsRevokedAt, started)) {
-      void signOut(auth).then(() => router.push(pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login'));
+      void reportActivity({ action: 'auth.logout', targetType: 'session', targetId: user.uid }).finally(() => {
+        void signOut(auth).then(() => router.push(pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login'));
+      });
     }
   }, [profile, user, router, pathname]);
 
@@ -416,7 +419,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               className="h-10 rounded-full border border-border px-4 text-sm font-semibold"
               onClick={() => {
                 clearViewAs();
-                void signOut(auth).then(() => router.push(staffRole ? '/admin/login' : '/login'));
+                void reportActivity({ action: 'auth.logout', targetType: 'session', targetId: user.uid }).finally(() => {
+                  void signOut(auth).then(() => router.push(staffRole ? '/admin/login' : '/login'));
+                });
               }}
             >
               Sign out
@@ -454,7 +459,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </a>
           <button
             type="button"
-            onClick={() => { signOut(auth).then(() => { useAuthSTORE.getState().setUser(null); router.push('/login'); }); }}
+            onClick={() => {
+              void reportActivity({ action: 'auth.logout', targetType: 'session', targetId: user.uid }).finally(() => {
+                void signOut(auth).then(() => { useAuthSTORE.getState().setUser(null); router.push('/login'); });
+              });
+            }}
             className="mt-3 text-sm font-semibold text-muted-foreground"
           >
             {t('nav.signOut')}
@@ -484,9 +493,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
   const nav = (NAV[role] ?? NAV.student).map((group, index) => {
     const cmsItem: NavEntry = { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' };
+    const bookItem: NavEntry = { href: '/dashboard/admin/books', icon: BookOpen, labelKey: 'nav.books', label: 'Book Studio' };
     const withCms = index !== 0 || role === 'admin' || !hasCmsAddon(profile) || (role !== 'teacher' && role !== 'institution_admin')
       ? group.items
-      : [...group.items, cmsItem];
+      : [...group.items, cmsItem, bookItem];
     return {
       ...group,
       items: withCms.filter((item) => (!item.superOnly || superAdmin) && (!item.flag || isFeatureEnabled(flags, item.flag))),
@@ -496,6 +506,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
+      <AcademySession />
       <a href="#dashboard-main" className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-xl focus:bg-card focus:px-3 focus:py-2">
         Skip to content
       </a>
@@ -562,9 +573,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button
             onClick={() => {
               clearViewAs();
-              signOut(auth).then(() => {
-                useAuthSTORE.getState().setUser(null);
-                router.push(staffRole ? '/admin/login' : '/login');
+              void reportActivity({ action: 'auth.logout', targetType: 'session', targetId: user.uid }).finally(() => {
+                void signOut(auth).then(() => {
+                  useAuthSTORE.getState().setUser(null);
+                  router.push(staffRole ? '/admin/login' : '/login');
+                });
               });
             }}
             className="w-full flex items-center gap-3 px-3 h-9 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
@@ -621,7 +634,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               >
                 <Avatar className="w-9 h-9 border-2 border-border cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all">
                   <AvatarImage src={profile.avatarUrl ?? user.photoURL ?? undefined} />
-                  <AvatarFallback className="bg-gradient-to-br from-[#2786A4] to-[#1E6A83] text-white text-sm font-bold">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-sm font-bold">
                     {profile.name?.charAt(0)?.toUpperCase() ?? 'U'}
                   </AvatarFallback>
                 </Avatar>
@@ -649,10 +662,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         <main id="dashboard-main" className="flex-1 overflow-y-auto relative pb-20 lg:pb-0">
           {/* A faint teal wash at the top, echoing the homepage sky. */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(39,134,164,0.06)_0%,transparent_100%)]" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(30,106,131,0.06)_0%,transparent_100%)]" />
           <OfflineBanner />
           <div className="relative px-4 pb-6 pt-1 lg:px-6 lg:pb-10">
             <RoleChecklist role={role} />
+            <PagePurpose pathname={pathname} />
             {children}
           </div>
         </main>

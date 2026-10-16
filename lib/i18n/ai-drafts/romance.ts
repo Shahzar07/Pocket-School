@@ -1,7 +1,7 @@
 /**
  * AI-ASSISTED — NEEDS HUMAN REVIEW
  * Interface drafts for Spanish, French, Portuguese and Italian.
- * Proper nouns stay official: Poket School, ET, Sparks, AI Studio,
+ * Proper nouns stay official: Poket School, ET AI, Sparks, AI Studio,
  * Cambridge Assessment International Education, Pearson Edexcel, AQA,
  * Malaysian Ministry of Education.
  */
@@ -149,13 +149,13 @@ export const es = {
     analytics: 'Analítica',
     analyticsDesc: 'Datos de uso anonimizados para mejorar la experiencia de aprendizaje.',
     aiPerformance: 'Rendimiento de la IA',
-    aiPerformanceDesc: 'Nos ayuda a mejorar la calidad y la personalización de las respuestas de ET.',
+    aiPerformanceDesc: 'Nos ayuda a mejorar la calidad y la personalización de las respuestas de ET AI.',
   },
   auth: {
     line1: 'Tu aula más lista',
     line2: 'en el bolsillo',
     subtitle: 'Aprendizaje con IA para IGCSE, A-Levels, grados y más.',
-    f1title: 'ET, tu tutor de IA',
+    f1title: 'ET AI, tu tutor de IA',
     f1desc: 'Se adapta a cómo piensas, las 24 horas',
     f2title: 'IGCSE · A-Levels · Grados',
     f2desc: 'Rutas académicas completas, a tu ritmo',
@@ -166,7 +166,7 @@ export const es = {
   },
   switcher: {
     change: 'Cambiar idioma',
-    uiFallback: 'Los menús de este idioma siguen en inglés. ET responde en {{language}}.',
+    uiFallback: 'Los menús de este idioma siguen en inglés. ET AI responde en {{language}}.',
   },
   lesson: {
     unit: 'Lección (unidad)',
@@ -182,8 +182,8 @@ export const es = {
     localizedBody: 'Lección traducida',
     save: 'Guardar traducción',
     clear: 'Borrar este idioma',
-    translate: 'Traducir con ET',
-    confirmBody: 'ET traducirá la lección en inglés a {{language}}. Esto usa {{cost}} Sparks.',
+    translate: 'Traducir con ET AI',
+    confirmBody: 'ET AI traducirá la lección en inglés a {{language}}. Esto usa {{cost}} Sparks.',
     confirm: 'Traducir y gastar Sparks',
     cancel: 'Cancelar',
     working: 'Traduciendo…',
@@ -193,7 +193,7 @@ export const es = {
     empty: 'Añade un título o un cuerpo en inglés antes de traducir.',
     failed: 'La traducción falló. No se gastaron Sparks.',
     sourceManual: 'Escrita',
-    sourceAi: 'Traducción de ET',
+    sourceAi: 'Traducción de ET AI',
   },
   sparks: {
     title: 'Saldo de Sparks',
@@ -393,13 +393,13 @@ export const fr = {
     analytics: 'Mesure d’audience',
     analyticsDesc: 'Données d’usage anonymisées pour améliorer l’apprentissage.',
     aiPerformance: 'Performance de l’IA',
-    aiPerformanceDesc: 'Nous aide à améliorer la qualité des réponses d’ET et la personnalisation.',
+    aiPerformanceDesc: 'Nous aide à améliorer la qualité des réponses d’ET AI et la personnalisation.',
   },
   auth: {
     line1: 'La classe la plus vive',
     line2: 'dans votre poche',
     subtitle: 'Apprentissage par IA pour l’IGCSE, les A-Levels, les diplômes et au-delà.',
-    f1title: 'ET, votre tuteur IA',
+    f1title: 'ET AI, votre tuteur IA',
     f1desc: 'S’adapte à votre façon de penser, 24 h/24',
     f2title: 'IGCSE · A-Levels · Diplômes',
     f2desc: 'Parcours complets, à votre rythme',
@@ -410,7 +410,7 @@ export const fr = {
   },
   switcher: {
     change: 'Changer de langue',
-    uiFallback: 'Les menus de cette langue restent en anglais. ET répond en {{language}}.',
+    uiFallback: 'Les menus de cette langue restent en anglais. ET AI répond en {{language}}.',
   },
   lesson: {
     unit: 'Leçon (unité)',
@@ -426,8 +426,8 @@ export const fr = {
     localizedBody: 'Leçon traduite',
     save: 'Enregistrer la traduction',
     clear: 'Effacer cette langue',
-    translate: 'Traduire avec ET',
-    confirmBody: 'ET traduira la leçon anglaise en {{language}}. Cela utilise {{cost}} Sparks.',
+    translate: 'Traduire avec ET AI',
+    confirmBody: 'ET AI traduira la leçon anglaise en {{language}}. Cela utilise {{cost}} Sparks.',
     confirm: 'Traduire et dépenser des Sparks',
     cancel: 'Annuler',
     working: 'Traduction…',
@@ -437,7 +437,7 @@ export const fr = {
     empty: 'Ajoutez un titre ou un texte anglais avant de traduire.',
     failed: 'La traduction a échoué. Aucun Spark n’a été dépensé.',
     sourceManual: 'Saisie',
-    sourceAi: 'Traduction ET',
+    sourceAi: 'Traduction ET AI',
   },
   sparks: {
     title: 'Solde de Sparks',
@@ -637,13 +637,13 @@ export const pt = {
     analytics: 'Análise',
     analyticsDesc: 'Dados de uso anonimizados para melhorar a experiência de aprendizagem.',
     aiPerformance: 'Desempenho da IA',
-    aiPerformanceDesc: 'Ajuda a melhorar a qualidade das respostas do ET e a personalização.',
+    aiPerformanceDesc: 'Ajuda a melhorar a qualidade das respostas do ET AI e a personalização.',
   },
   auth: {
     line1: 'A sala mais esperta',
     line2: 'no seu bolso',
     subtitle: 'Aprendizagem com IA para IGCSE, A-Levels, graduações e além.',
-    f1title: 'ET, seu tutor de IA',
+    f1title: 'ET AI, seu tutor de IA',
     f1desc: 'Adapta-se a como você pensa, 24 horas',
     f2title: 'IGCSE · A-Levels · Graduações',
     f2desc: 'Percursos completos, no seu ritmo',
@@ -654,7 +654,7 @@ export const pt = {
   },
   switcher: {
     change: 'Mudar idioma',
-    uiFallback: 'Os menus deste idioma continuam em inglês. O ET responde em {{language}}.',
+    uiFallback: 'Os menus deste idioma continuam em inglês. O ET AI responde em {{language}}.',
   },
   lesson: {
     unit: 'Aula (unidade)',
@@ -670,8 +670,8 @@ export const pt = {
     localizedBody: 'Aula traduzida',
     save: 'Salvar tradução',
     clear: 'Limpar este idioma',
-    translate: 'Traduzir com o ET',
-    confirmBody: 'O ET vai traduzir a aula em inglês para {{language}}. Isso usa {{cost}} Sparks.',
+    translate: 'Traduzir com o ET AI',
+    confirmBody: 'O ET AI vai traduzir a aula em inglês para {{language}}. Isso usa {{cost}} Sparks.',
     confirm: 'Traduzir e gastar Sparks',
     cancel: 'Cancelar',
     working: 'Traduzindo…',
@@ -681,7 +681,7 @@ export const pt = {
     empty: 'Adicione um título ou um texto em inglês antes de traduzir.',
     failed: 'A tradução falhou. Nenhum Spark foi gasto.',
     sourceManual: 'Digitada',
-    sourceAi: 'Tradução do ET',
+    sourceAi: 'Tradução do ET AI',
   },
   sparks: {
     title: 'Saldo de Sparks',
@@ -881,13 +881,13 @@ export const it = {
     analytics: 'Analisi',
     analyticsDesc: 'Dati d’uso anonimi per migliorare l’esperienza di apprendimento.',
     aiPerformance: 'Prestazioni dell’IA',
-    aiPerformanceDesc: 'Ci aiuta a migliorare la qualità delle risposte di ET e la personalizzazione.',
+    aiPerformanceDesc: 'Ci aiuta a migliorare la qualità delle risposte di ET AI e la personalizzazione.',
   },
   auth: {
     line1: 'L’aula più sveglia',
     line2: 'nella tua tasca',
     subtitle: 'Apprendimento con IA per IGCSE, A-Levels, lauree e oltre.',
-    f1title: 'ET, il tuo tutor IA',
+    f1title: 'ET AI, il tuo tutor IA',
     f1desc: 'Si adatta a come pensi, 24 ore su 24',
     f2title: 'IGCSE · A-Levels · Lauree',
     f2desc: 'Percorsi completi, al tuo ritmo',
@@ -898,7 +898,7 @@ export const it = {
   },
   switcher: {
     change: 'Cambia lingua',
-    uiFallback: 'I menu di questa lingua restano in inglese. ET risponde in {{language}}.',
+    uiFallback: 'I menu di questa lingua restano in inglese. ET AI risponde in {{language}}.',
   },
   lesson: {
     unit: 'Lezione (unità)',
@@ -914,8 +914,8 @@ export const it = {
     localizedBody: 'Lezione tradotta',
     save: 'Salva traduzione',
     clear: 'Cancella questa lingua',
-    translate: 'Traduci con ET',
-    confirmBody: 'ET tradurrà la lezione inglese in {{language}}. Questo usa {{cost}} Sparks.',
+    translate: 'Traduci con ET AI',
+    confirmBody: 'ET AI tradurrà la lezione inglese in {{language}}. Questo usa {{cost}} Sparks.',
     confirm: 'Traduci e spendi Sparks',
     cancel: 'Annulla',
     working: 'Traduzione…',
@@ -925,7 +925,7 @@ export const it = {
     empty: 'Aggiungi un titolo o un testo inglese prima di tradurre.',
     failed: 'Traduzione non riuscita. Nessuno Spark è stato speso.',
     sourceManual: 'Digitata',
-    sourceAi: 'Traduzione ET',
+    sourceAi: 'Traduzione ET AI',
   },
   sparks: {
     title: 'Saldo Sparks',

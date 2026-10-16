@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { LogOut, UserCircle } from 'lucide-react';
 import { auth } from '@/lib/firebase';
+import { reportActivity } from '@/lib/audit/report';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { clearViewAs } from '@/components/admin-session';
 import { ModeSwitch } from '@/components/account/mode-switch';
@@ -51,9 +52,12 @@ export function AccountMenu({
 
   const leave = () => {
     clearViewAs();
-    void signOut(auth).then(() => {
-      useAuthSTORE.getState().setUser(null);
-      router.push(staffHome ? '/admin/login' : '/login');
+    const uid = useAuthSTORE.getState().user?.uid || '';
+    void reportActivity({ action: 'auth.logout', targetType: 'session', targetId: uid }).finally(() => {
+      void signOut(auth).then(() => {
+        useAuthSTORE.getState().setUser(null);
+        router.push(staffHome ? '/admin/login' : '/login');
+      });
     });
   };
 

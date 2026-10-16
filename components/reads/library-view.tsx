@@ -10,6 +10,7 @@ import { viewerCurrency } from '@/lib/platform/pricing';
 import { downloadBookOffline } from '@/lib/platform/offline';
 import { booksFinishedFromProgress, parentReadingReport } from '@/lib/platform/reports';
 import { childHidden, minutesToday, myList, progressMap, setChildHidden } from '@/lib/shelf/storage';
+import { usePublishedStudioBooks } from '@/components/reads/use-studio-shelf';
 
 export function LibraryView() {
   const t = useReadsT();
@@ -28,7 +29,8 @@ export function LibraryView() {
     setCurrency(viewerCurrency());
   }, [ready, profile.id]);
 
-  const books = visibleBooks(profile.maxAge);
+  const studioBooks = usePublishedStudioBooks();
+  const books = visibleBooks(profile.maxAge, studioBooks);
   const items = books.map(b => bookToShelf(b, SAMPLE_READER, SAMPLE_OWNED, progress[b.id]?.percent, currency));
   const owned = items.filter(i => ownsBook(i.id, SAMPLE_READER, SAMPLE_OWNED));
   const plan = items.filter(i => {

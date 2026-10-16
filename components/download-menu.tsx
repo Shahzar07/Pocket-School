@@ -94,7 +94,7 @@ export function DownloadMenu({
           type="button"
           disabled={busy !== null}
           onClick={() => save(format)}
-          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-semibold text-foreground hover:border-[#2786A4] disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-semibold text-foreground hover:border-primary disabled:opacity-60"
         >
           {busy === format ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
           {LABELS[format]}

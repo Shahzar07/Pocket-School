@@ -15,6 +15,7 @@ import { Timestamp } from 'firebase/firestore';
 import { formatMoney } from '@/lib/pricing';
 import { DocumentDelivery } from '@/components/document-delivery';
 import { billingDocument } from '@/lib/documents/packet';
+import { PAYER_NOTE } from '@/lib/billing-model';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -179,7 +180,7 @@ export default function TeacherBillingPage() {
             Billing &amp; <span className="gradient-text italic">Invoices</span>
           </h1>
           <p className="text-sm text-muted-foreground mt-2">
-            Create and track student invoices and payments
+            {PAYER_NOTE} Issued copies also appear in admin finance.
           </p>
           {invoices.length > 0 && (
             <div className="mt-4">

@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { formatMoney } from '@/lib/pricing';
 import { DocumentDelivery } from '@/components/document-delivery';
 import { billingDocument } from '@/lib/documents/packet';
+import { PAYER_NOTE } from '@/lib/billing-model';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -108,6 +109,7 @@ export default function StudentBillingPage() {
         <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1.5">
           <span className="gradient-text italic">Billing</span>
         </h1>
+        <p className="text-sm text-muted-foreground mt-2 max-w-2xl">{PAYER_NOTE}</p>
         {user && invoices.length > 0 && (
           <div className="mt-4">
             <DocumentDelivery
@@ -230,7 +232,7 @@ export default function StudentBillingPage() {
                   </div>
                   <Button
                     onClick={() => handlePay(inv)}
-                    className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white border-0 gap-2"
+                    className="rounded-full h-11 px-5 font-bold bg-primary text-primary-foreground border-0 gap-2"
                   >
                     <CreditCard className="w-4 h-4" /> Pay
                   </Button>

@@ -5,9 +5,17 @@ import { deliveryAllowed, holderAddress, parseAddresses, recipientList, smtpConf
 test('mail addresses and role limits', () => {
   assert.equal(smtpConfigured({ host: 'smtp.resend.com', user: 'resend', pass: 'secret' }), true);
   assert.equal(smtpConfigured({ host: 'smtp.resend.com' }), false);
-  const parsed = parseAddresses('Parent@school.test, parent@school.test');
+  assert.equal(smtpConfigured({ host: 'smtp.gmail.com', user: 'a', pass: 'b' }), true);
+  assert.equal(smtpConfigured({ host: 'smtp.gmail.com', user: 'a' }), false);
+  const parsed = parseAddresses('Amina@school.test, amina@school.test; finance@school.test');
   assert.equal(parsed.ok, true);
-  if (parsed.ok) assert.deepEqual(parsed.emails, ['parent@school.test']);
+  if (parsed.ok) assert.deepEqual(parsed.emails, ['amina@school.test', 'finance@school.test']);
+  const parent = parseAddresses('Parent@school.test, parent@school.test');
+  assert.equal(parent.ok, true);
+  if (parent.ok) assert.deepEqual(parent.emails, ['parent@school.test']);
+  assert.equal(parseAddresses('not-an-email').ok, false);
+  assert.deepEqual(recipientList(['Holder@school.test', ''], true, ['finance@school.test']), ['holder@school.test', 'finance@school.test']);
+  assert.deepEqual(recipientList(['holder@school.test'], false, []), []);
   assert.deepEqual(recipientList(['Holder@school.test'], true, ['office@school.test']), ['holder@school.test', 'office@school.test']);
   assert.equal(deliveryAllowed({ role: 'parent', actorId: 'p', childIds: ['c1'], studentIds: ['c1'] }).ok, true);
   assert.equal(deliveryAllowed({ role: 'parent', actorId: 'p', childIds: ['c1'], studentIds: ['other'] }).ok, false);

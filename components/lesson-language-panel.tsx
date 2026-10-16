@@ -13,7 +13,7 @@ import { formatAppNumber } from '@/lib/i18n/detect';
 import { Button } from '@/components/ui/button';
 
 /**
- * Editors add a localized title and body, or ask ET to translate the English
+ * Editors add a localized title and body, or ask ET AI to translate the English
  * source. AI translation confirms the Sparks cost first and charges only
  * after a translation comes back.
  */
@@ -86,7 +86,11 @@ export function LessonLanguagePanel({
           targetLanguage: code,
         }),
       });
-      const data = await res.json() as { title?: string; text?: string; error?: string };
+      const data = await res.json() as { title?: string; text?: string; error?: string; unavailable?: boolean };
+      if (data.unavailable) {
+        toast.error(t('lesson.unavailable'));
+        return;
+      }
       if (!res.ok || !data.text) {
         throw new Error(data.error || t('cms.failed'));
       }

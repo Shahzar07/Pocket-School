@@ -12,7 +12,7 @@ export interface ShelfProfile {
 }
 
 export const SHELF_PROFILES: ShelfProfile[] = [
-  { id: 'aisha', name: 'Aisha', kind: 'reader', maxAge: null, tint: '#2786A4' },
+  { id: 'aisha', name: 'Aisha', kind: 'reader', maxAge: null, tint: 'var(--primary)' },
   { id: 'imran', name: 'Imran', kind: 'child', maxAge: 8, tint: '#E2AF4D' },
   { id: 'family', name: 'Family', kind: 'parent', maxAge: null, tint: '#3E555C' },
 ];
@@ -77,6 +77,10 @@ export interface ReaderPrefs {
   font: number;
   spacing: number;
   dyslexia: boolean;
+  /** Serif, sans, or the dyslexia-friendly face. Applies to every book. */
+  typeface?: 'serif' | 'sans' | 'dyslexia';
+  /** Browser speech voice. Empty uses the device default. No speech key. */
+  voiceURI?: string;
   lang?: string;
 }
 

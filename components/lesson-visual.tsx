@@ -166,7 +166,7 @@ export function VisualBlock({
         {!confirming ? (
           <Button type="button" size="sm" className="rounded-xl gap-1.5 h-8 text-xs bg-gradient-to-r from-violet-600 to-purple-600 text-white" disabled={busy} onClick={() => setConfirming(true)}>
             {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-            Generate with ET
+            Generate with ET AI
             <span className="text-amber-200 font-bold">{cost} ⚡</span>
           </Button>
         ) : (
