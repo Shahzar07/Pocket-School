@@ -292,6 +292,12 @@ app/dashboard/admin/integrations/page.tsx	Monthly cap in dollars
 app/dashboard/admin/integrations/page.tsx	OpenRouter spend cap
 app/dashboard/admin/integrations/page.tsx	Payment providers
 app/dashboard/admin/integrations/page.tsx	Turn methods on from
+app/dashboard/admin/moderation/page.tsx	ET AI drafts a note. You still allow or reject the item.
+app/dashboard/admin/moderation/page.tsx	ET AI note
+app/dashboard/admin/moderation/page.tsx	First item in the queue
+app/dashboard/admin/moderation/page.tsx	Item to review
+app/dashboard/admin/moderation/page.tsx	Moderation note
+app/dashboard/admin/moderation/page.tsx	The note stays here until you confirm it.
 app/dashboard/admin/page.tsx	AI generation failures:
 app/dashboard/admin/page.tsx	Add an institution
 app/dashboard/admin/page.tsx	Firestore quota and errors:
@@ -556,6 +562,7 @@ app/dashboard/referrals/page.tsx	Referral codes are switched off.
 app/dashboard/referrals/page.tsx	Share Poket School
 app/dashboard/reports/page.tsx	A daily, weekly, or termly schedule sends a notification when it is due. Nothing is emailed unless the school already sends mail.
 app/dashboard/reports/page.tsx	Absence note sent
+app/dashboard/reports/page.tsx	Attendance, analytics, and behaviour
 app/dashboard/reports/page.tsx	Could not schedule that report
 app/dashboard/reports/page.tsx	Could not send the absence note
 app/dashboard/reports/page.tsx	Every number,
