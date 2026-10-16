@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { LANGUAGES } from '../languages';
+import { LANGUAGES, isRtl } from '../languages';
 import { CATALOG_REVIEW, catalogs, hasUiCatalog, UI_LANGUAGE_CODES } from './catalog';
 import { detectLanguage, formatAppDate, formatAppNumber, initialLanguage, languageShortcut, resolveLessonCopy, suggestedLanguage } from './detect';
 
@@ -96,6 +96,21 @@ test('a known country is the suggested language ahead of the browser', () => {
   assert.equal(detectLanguage({ country: 'TH' }), 'th');
   assert.equal(detectLanguage({ country: 'IT' }), 'it');
   assert.equal(detectLanguage({ country: 'my' }), 'ms');
+  assert.equal(detectLanguage({ country: 'PT' }), 'pt-PT');
+  assert.equal(detectLanguage({ country: 'IL' }), 'he');
+  assert.equal(detectLanguage({ country: 'PH' }), 'fil');
+  assert.equal(detectLanguage({ navigatorLanguages: ['pt-PT'] }), 'pt-PT');
+});
+
+test('the language list covers the major world languages and rtl scripts', () => {
+  assert.ok(LANGUAGES.length >= 40, `expected at least 40 languages, got ${LANGUAGES.length}`);
+  for (const code of ['ar', 'he', 'ur', 'fa', 'ps']) {
+    assert.equal(isRtl(code), true, code);
+  }
+  assert.equal(catalogs.en.landing.hero.title, 'Learn your way. Go further with AI.');
+  assert.equal(catalogs.ms.landing.hero.title, 'Belajar dengan cara anda. Pergi lebih jauh dengan AI.');
+  assert.equal(catalogs.ar.landing.hero.title, 'تعلّم بطريقتك. امضِ أبعد مع الذكاء الاصطناعي.');
+  assert.equal(catalogs.en.auth.line2.includes('Pocket'), false);
 });
 
 test('browser language is used when the country is unknown', () => {

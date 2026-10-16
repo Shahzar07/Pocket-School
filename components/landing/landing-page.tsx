@@ -28,7 +28,7 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react';
-import { AI_TEACHERS } from '@/lib/ai-teachers';
+import { AI_TEACHERS, CEFR_LEVELS, TEACHER_CATEGORIES } from '@/lib/ai-teachers';
 import { ADDONS, TIERS, tierDefinition } from '@/lib/entitlements';
 import { LANGUAGES } from '@/lib/languages';
 import { PROGRAMMES } from '@/lib/programmes';
@@ -177,9 +177,12 @@ export function LandingPage() {
               {t('landing.hero.title')}
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-white/90">{t('landing.hero.lede')}</p>
+            <p className="mt-4 text-sm font-semibold text-white">{t('landing.hero.stat')}</p>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/90">{t('landing.hero.credibility')}</p>
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/80">{t('landing.hero.ideal')}</p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link className={s.primary} href={startHref}>
-                {t('landing.hero.start')} <ArrowRight size={16} aria-hidden />
+                {t('landing.hero.start')} <ArrowRight size={16} aria-hidden className="ps-dir-icon" />
               </Link>
               <Link className={s.secondary} href="#schools">
                 {t('landing.hero.schools')}
@@ -192,6 +195,21 @@ export function LandingPage() {
           <div data-home-reveal="card">
             <Shot src="/landing/goals.webp" alt={t('landing.shots.goalsAlt')} priority caption={t('landing.shots.caption')} onDark />
           </div>
+        </div>
+      </section>
+
+      <section className="border-b border-border bg-card" aria-label={t('landing.exam.label')}>
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between">
+          <p className="text-sm font-semibold text-foreground">{t('landing.exam.label')}</p>
+          <ul className="flex flex-wrap gap-2">
+            {(['caie', 'edexcel', 'oxford', 'uol', 'cefr'] as const).map((id) => (
+              <li key={id}>
+                <span className="inline-flex h-8 items-center rounded-full border border-border bg-background px-3 text-xs font-semibold">
+                  {t(`landing.exam.${id}`)}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -346,19 +364,121 @@ export function LandingPage() {
           </Link>
         </div>
         <p className="mt-3 max-w-2xl text-muted-foreground">{t('landing.teachers.lede')}</p>
-        <ul className="mt-6 flex flex-wrap gap-2">
-          {AI_TEACHERS.map((teacher) => (
-            <li key={teacher.id}>
-              <Link
-                href="/ai-teachers"
-                className="inline-flex h-9 items-center rounded-full border border-border bg-card px-3 text-sm font-medium hover:border-primary"
-                title={teacher.title}
-              >
-                {teacher.name}
-              </Link>
+        <div className="mt-8 space-y-8">
+          {TEACHER_CATEGORIES.map((category) => {
+            const teachers = AI_TEACHERS.filter((teacher) => teacher.category === category);
+            if (teachers.length === 0) return null;
+            return (
+              <div key={category}>
+                <h3 className="text-sm font-semibold text-muted-foreground">{category}</h3>
+                <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {teachers.map((teacher) => (
+                    <li key={teacher.id}>
+                      <Link href="/ai-teachers" className="block h-full rounded-2xl border border-border bg-card p-4 hover:border-primary">
+                        <p className="font-semibold">{teacher.name}</p>
+                        <p className="mt-1 text-xs font-medium text-primary">{teacher.title}</p>
+                        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{teacher.tagline}</p>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                {category === 'Languages' ? (
+                  <div className="mt-4 rounded-2xl border border-border bg-muted/50 p-4">
+                    <p className="text-sm leading-relaxed">{t('landing.cefr.banner')}</p>
+                    <ul className="mt-3 flex flex-wrap gap-2">
+                      {CEFR_LEVELS.map((level) => (
+                        <li key={level.code}>
+                          <span className="inline-flex h-8 items-center rounded-full bg-primary px-3 text-xs font-semibold text-primary-foreground">
+                            {level.code} {level.label}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="bg-card py-16 md:py-24" id="degrees">
+        <div className="mx-auto max-w-6xl px-4">
+          <p className="text-sm font-semibold text-primary">{t('landing.degrees.eyebrow')}</p>
+          <h2 className="mt-2 text-[clamp(32px,4vw,48px)] font-medium leading-tight">{t('landing.degrees.title')}</h2>
+          <p className="mt-3 max-w-2xl text-muted-foreground">{t('landing.degrees.lede')}</p>
+          <ul className="mt-8 grid gap-4 md:grid-cols-2">
+            {(['llb', 'mbbs', 'engineering', 'nursing'] as const).map((id) => (
+              <li key={id} className="rounded-2xl border border-border bg-background p-6 shadow-[var(--shadow-card)]">
+                <h3 className="text-xl font-semibold">{t(`landing.degrees.${id}Title`)}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{t(`landing.degrees.${id}Body`)}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-16 md:py-24" id="supplement">
+        <p className="text-sm font-semibold text-primary">{t('landing.supplement.eyebrow')}</p>
+        <h2 className="mt-2 text-[clamp(32px,4vw,48px)] font-medium leading-tight">{t('landing.supplement.title')}</h2>
+        <p className="mt-3 max-w-2xl text-muted-foreground">{t('landing.supplement.body')}</p>
+        <ul className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {(['caie', 'edexcel', 'oxford', 'uol'] as const).map((id) => (
+            <li key={id} className="rounded-2xl border border-border bg-card p-5">
+              <h3 className="font-semibold">{t(`landing.supplement.${id}Title`)}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t(`landing.supplement.${id}Body`)}</p>
             </li>
           ))}
         </ul>
+        <p className="mt-8 text-sm font-semibold">{t('landing.supplement.learners')}</p>
+        <ul className="mt-3 flex flex-wrap gap-2">
+          {(['igcse', 'alevel', 'llb', 'mbbs', 'engineering', 'nursing', 'independent'] as const).map((id) => (
+            <li key={id}>
+              <span className="inline-flex h-8 items-center rounded-full border border-border bg-background px-3 text-xs font-semibold">
+                {t(`landing.supplement.${id}`)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-16 md:py-24" id="intelligences">
+        <p className="text-sm font-semibold text-primary">{t('landing.mi.eyebrow')}</p>
+        <h2 className="mt-2 max-w-xl text-[clamp(32px,4vw,48px)] font-medium leading-tight">{t('landing.mi.title')}</h2>
+        <p className="mt-3 max-w-2xl text-muted-foreground">{t('landing.mi.lede')}</p>
+        <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {(['linguistic', 'logical', 'spatial', 'bodily', 'musical', 'interpersonal', 'intrapersonal', 'naturalist'] as const).map((id) => (
+            <li key={id} className="rounded-2xl border border-border bg-card p-5">
+              <h3 className="font-semibold">{t(`landing.mi.${id}Title`)}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t(`landing.mi.${id}Body`)}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="bg-muted/60 py-16 md:py-24" id="compare">
+        <div className="mx-auto max-w-6xl px-4">
+          <p className="text-sm font-semibold text-primary">{t('landing.oldWay.eyebrow')}</p>
+          <h2 className="mt-2 text-[clamp(32px,4vw,48px)] font-medium leading-tight">{t('landing.oldWay.title')}</h2>
+          <div className="mt-8 overflow-x-auto rounded-2xl border border-border bg-card">
+            <table className="w-full min-w-[36rem] text-start text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="px-4 py-3 text-start font-semibold">{t('landing.oldWay.old')}</th>
+                  <th className="px-4 py-3 text-start font-semibold">{t('landing.oldWay.poket')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(['1', '2', '3', '4', '5'] as const).map((id) => (
+                  <tr key={id} className="border-b border-border last:border-0">
+                    <td className="px-4 py-3 text-muted-foreground">{t(`landing.oldWay.old${id}`)}</td>
+                    <td className="px-4 py-3">{t(`landing.oldWay.new${id}`)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
       <section className="bg-muted/60 py-16 md:py-24" id="screens">
@@ -373,6 +493,20 @@ export function LandingPage() {
               </li>
             ))}
           </ul>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-16 md:py-24" id="reach">
+        <p className="text-sm font-semibold text-primary">{t('landing.reach.eyebrow')}</p>
+        <h2 className="mt-2 text-[clamp(32px,4vw,48px)] font-medium leading-tight">{t('landing.reach.title')}</h2>
+        <p className="mt-3 max-w-2xl leading-relaxed text-muted-foreground">{t('landing.reach.body')}</p>
+      </section>
+
+      <section className="bg-card py-16 md:py-24" id="rochford">
+        <div className="mx-auto max-w-6xl px-4">
+          <p className="text-sm font-semibold text-primary">{t('landing.rochford.eyebrow')}</p>
+          <h2 className="mt-2 max-w-xl text-[clamp(32px,4vw,48px)] font-medium leading-tight">{t('landing.rochford.title')}</h2>
+          <p className="mt-4 max-w-2xl leading-relaxed text-muted-foreground">{t('landing.rochford.body')}</p>
         </div>
       </section>
 
@@ -434,8 +568,8 @@ export function LandingPage() {
             </button>
           </div>
         </div>
-        <ul className="mt-8 grid gap-4 lg:grid-cols-3">
-          {[TIERS[0], TIERS[1], TIERS[2]].map((tier) => {
+        <ul className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {[TIERS[0], TIERS[1], TIERS[2], TIERS[3]].map((tier) => {
             const monthlyQuote = quotePlan(config, tier.id, 'monthly', currency);
             const annualQuote = quotePlan(config, tier.id, 'annual', currency);
             const code = monthlyQuote?.currency ?? currency;

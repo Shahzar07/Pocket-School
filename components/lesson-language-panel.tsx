@@ -86,7 +86,11 @@ export function LessonLanguagePanel({
           targetLanguage: code,
         }),
       });
-      const data = await res.json() as { title?: string; text?: string; error?: string };
+      const data = await res.json() as { title?: string; text?: string; error?: string; unavailable?: boolean };
+      if (data.unavailable) {
+        toast.error(t('lesson.unavailable'));
+        return;
+      }
       if (!res.ok || !data.text) {
         throw new Error(data.error || t('cms.failed'));
       }

@@ -10,6 +10,7 @@ export type TeacherCategory =
   | 'Business'
   | 'Computer Science'
   | 'Law'
+  | 'Engineering'
   | 'Arts'
   | 'Study Support';
 
@@ -139,7 +140,7 @@ export const AI_TEACHERS: AiTeacher[] = [
   et({
     id: 'et-medicine', name: 'ET Medicine', title: 'MBBS · Pre-Med · Medical Sciences · Degree level',
     subjects: ['Anatomy', 'Physiology', 'Pharmacology', 'Pathology'], category: 'Medicine', iconKey: 'heart',
-    tagline: 'Anatomy, physiology, pharmacology, biochemistry, pathology and clinical reasoning — built to medical degree standards. For MBBS students and pre-med independent learners.',
+    tagline: 'Anatomy, physiology, pharmacology, biochemistry, pathology and clinical reasoning — built to medical degree standards. For MBBS students and pre-med independent learners worldwide.',
     sampleQuestions: ['Outline the cardiac cycle.', 'What does the liver do with drugs?', 'How do I structure a clinical reasoning answer?'],
   }),
   et({
@@ -193,37 +194,37 @@ export const AI_TEACHERS: AiTeacher[] = [
   et({
     id: 'et-mandarin', name: 'ET Mandarin', title: 'Secondary · IGCSE · A-Level · Independent · CEFR A1–C2',
     subjects: ['Mandarin'], category: 'Languages', iconKey: 'languages',
-    tagline: 'Mandarin Chinese for all levels — from beginner conversational to advanced. Not limited to school examinations. Aligned to CEFR A1–C2.',
+    tagline: 'Mandarin Chinese for all levels — from beginner conversational to advanced. Not limited to school examinations.',
     sampleQuestions: ['Teach me a greeting.', 'How do tones change the meaning?', 'Help me read this short sentence.'],
   }),
   et({
     id: 'et-french', name: 'ET French', title: 'Secondary · IGCSE · A-Level · Independent · CEFR A1–C2',
     subjects: ['French'], category: 'Languages', iconKey: 'languages',
-    tagline: 'French for school syllabuses and independent learners — grammar, conversation, writing and reading from beginner through advanced. Aligned to CEFR A1–C2.',
+    tagline: 'French for school syllabuses and independent learners — grammar, conversation, writing and reading from beginner through advanced.',
     sampleQuestions: ['Correct this paragraph.', 'How do I introduce myself?', 'Explain the passé composé.'],
   }),
   et({
     id: 'et-german', name: 'ET German', title: 'Secondary · IGCSE · A-Level · Independent · CEFR A1–C2',
     subjects: ['German'], category: 'Languages', iconKey: 'languages',
-    tagline: 'German for all levels — vocabulary, grammar, reading and writing for school programmes and independent learners. Aligned to CEFR A1–C2.',
+    tagline: 'German for all levels — vocabulary, grammar, reading and writing for school programmes and independent learners.',
     sampleQuestions: ['How do cases work?', 'Teach me ten useful verbs.', 'Correct this sentence.'],
   }),
   et({
     id: 'et-russian', name: 'ET Russian', title: 'Independent · CEFR A1–C2',
     subjects: ['Russian'], category: 'Languages', iconKey: 'languages',
-    tagline: 'Russian language for independent learners — Cyrillic script, grammar, conversation and reading from beginner through advanced. Aligned to CEFR A1–C2.',
+    tagline: 'Russian language for independent learners — Cyrillic script, grammar, conversation and reading from beginner through advanced.',
     sampleQuestions: ['Teach me the Cyrillic alphabet.', 'How do I say hello?', 'What is a case in Russian?'],
   }),
   et({
     id: 'et-languages', name: 'ET Languages', title: 'Any language · Independent · CEFR A1–C2',
     subjects: ['Languages'], category: 'Languages', iconKey: 'languages',
-    tagline: 'Any other language for independent learning — conversational coaching, grammar and reading in any language. Aligned to CEFR A1–C2.',
+    tagline: 'Any other language for independent learning — conversational coaching, grammar and reading in any language.',
     sampleQuestions: ['I want to start a new language. Where do I begin?', 'Help me practise a short conversation.', 'Explain this grammar point.'],
   }),
   et({
-    id: 'et-law', name: 'ET Law', title: 'Secondary · IGCSE · A-Level · LLB Degree',
+    id: 'et-law', name: 'ET Law', title: 'Secondary · IGCSE · A-Level · Pre-University Law · LLB Degree',
     subjects: ['Law', 'Contract Law', 'Tort Law', 'Criminal Law'], category: 'Law', iconKey: 'scale',
-    tagline: 'IRAC coaching, case citations, ratio decidendi, problem-question marking and essay structure — from secondary law through degree level.',
+    tagline: 'IRAC coaching, real case citations, ratio decidendi, problem question marking and essay structure — from secondary law through university degree level.',
     sampleQuestions: ['What is the IRAC structure?', 'How do I spot a contract issue?', 'Explain ratio decidendi.'],
   }),
   et({
@@ -283,7 +284,7 @@ export const AI_TEACHERS: AiTeacher[] = [
   et({
     id: 'et-art', name: 'ET Art & Design', title: 'Secondary · IGCSE · A-Level · Independent',
     subjects: ['Art and Design'], category: 'Arts', iconKey: 'palette',
-    tagline: 'Visual analysis, composition, design theory and portfolio planning — from secondary through advanced level.',
+    tagline: 'Visual analysis, composition, design theory and portfolio planning — from IGCSE through advanced level.',
     sampleQuestions: ['How do I analyse a painting?', 'What belongs in a portfolio?', 'Explain composition.'],
   }),
   et({
@@ -291,6 +292,18 @@ export const AI_TEACHERS: AiTeacher[] = [
     subjects: ['Music'], category: 'Arts', iconKey: 'palette',
     tagline: 'Composition, theory, listening analysis and performance coaching — all levels.',
     sampleQuestions: ['What is a ii–V–I progression?', 'How do I describe a melody?', 'Help me plan a composition.'],
+  }),
+  et({
+    id: 'et-engineering', name: 'ET Engineering', title: 'Degree · Independent',
+    subjects: ['Engineering'], category: 'Engineering', iconKey: 'atom',
+    tagline: 'Mechanics, materials, circuits, structures and design — degree-level engineering coaching for students and independent learners.',
+    sampleQuestions: ['Explain stress and strain.', 'How do I start a beam calculation?', 'What does a circuit diagram show?'],
+  }),
+  et({
+    id: 'et-nursing', name: 'ET Nursing', title: 'Degree · Independent',
+    subjects: ['Nursing'], category: 'Medicine', iconKey: 'heart',
+    tagline: 'Patient care, anatomy, pharmacology and clinical practice — nursing degree support for students and independent learners worldwide.',
+    sampleQuestions: ['How do I take a patient history?', 'What is the nursing process?', 'Explain a safe medicine round.'],
   }),
   et({
     id: 'et-exam-coach', name: 'ET Exam Coach', title: 'All levels · All subjects',
@@ -316,6 +329,7 @@ export const TEACHER_CATEGORIES: TeacherCategory[] = [
   'Business',
   'Computer Science',
   'Law',
+  'Engineering',
   'Arts',
   'Study Support',
 ];

@@ -23,6 +23,10 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
+    detectAndStoreLanguage();
+  }, []);
+
+  useEffect(() => {
     if (!user) {
       hydratedFor.current = null;
       return;

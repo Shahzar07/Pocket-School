@@ -16,7 +16,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const lastSentAt = new Map<string, number>();
 
 export async function POST(req: NextRequest) {
-  let body: { email?: string };
+  let body: { email?: string; language?: string };
   try {
     body = await req.json();
   } catch {
@@ -47,7 +47,8 @@ export async function POST(req: NextRequest) {
   const token = signOtp(email, code, expiresAt);
 
   try {
-    await sendOtpEmail(email, code);
+    const headerLanguage = req.headers.get('accept-language')?.split(',')[0]?.split('-')[0] ?? 'en';
+    await sendOtpEmail(email, code, body.language || headerLanguage);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to send verification email.';
     return NextResponse.json({ error: message }, { status: 502 });

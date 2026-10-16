@@ -9,7 +9,10 @@
  * 3. Set its review status in CATALOG_REVIEW
  */
 import { aiDrafts } from './ai-drafts';
+import { chromeEn, chromeLocale } from './chrome';
 import { pageNamespaces } from './page-copy';
+import { LANGUAGES } from '../languages';
+import { reviewPatch } from './review-patches';
 import { landingEn, landingMs, landingTa, landingZh, type LandingCopy } from './landing';
 
 const enCore = {
@@ -990,8 +993,14 @@ const ta = {
 
 const en = { ...enCore, landing: landingEn };
 
-function withLanding<T extends typeof enCore>(catalog: T, landing: LandingCopy = landingEn): typeof en {
-  return { ...catalog, landing };
+function withLanding<T extends typeof enCore>(catalog: T, landing: Record<string, unknown> = {}): typeof en {
+  return {
+    ...catalog,
+    landing: mergeCatalog(
+      landingEn as unknown as Record<string, unknown>,
+      landing,
+    ) as LandingCopy,
+  };
 }
 
 function catalogsOf<T extends Record<string, typeof en>>(value: T): T {
@@ -1023,7 +1032,7 @@ const rawCatalogs = catalogsOf({
   ),
 });
 
-export const catalogs = Object.fromEntries(
+const seeded = Object.fromEntries(
   Object.entries(rawCatalogs).map(([code, catalog]) => [
     code,
     mergeCatalog(
@@ -1034,6 +1043,23 @@ export const catalogs = Object.fromEntries(
 ) as {
   [K in keyof typeof rawCatalogs]: (typeof rawCatalogs)[K] & (typeof pageNamespaces)['en'];
 };
+
+const englishCatalog = mergeCatalog(
+  seeded.en as unknown as Record<string, unknown>,
+  chromeEn as unknown as Record<string, unknown>,
+);
+
+export const catalogs = Object.fromEntries(
+  LANGUAGES.map((language) => {
+    const seededCatalog = (seeded as unknown as Record<string, Record<string, unknown>>)[language.code];
+    let merged = seededCatalog ? mergeCatalog(englishCatalog, seededCatalog) : englishCatalog;
+    const human = language.code === 'en' ? chromeEn : chromeLocale(language.code);
+    if (human) merged = mergeCatalog(merged, human as Record<string, unknown>);
+    const reviewed = reviewPatch(language.code);
+    if (reviewed) merged = mergeCatalog(merged, reviewed);
+    return [language.code, merged];
+  }),
+) as typeof seeded & Record<string, (typeof seeded)['en']>;
 
 const HUMAN_CATALOGS = new Set(['en', 'ms', 'zh', 'ta']);
 

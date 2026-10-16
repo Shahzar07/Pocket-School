@@ -361,10 +361,28 @@ h1.font-heading, .font-heading.text-4xl, .font-heading.text-5xl {
   position: relative;
   overflow: hidden;
 }
-/* Directional icons (arrows that mean "forward") mirror in Arabic and Urdu. */
+/* Directional icons (arrows that mean "forward") mirror in right-to-left languages. */
 [dir='rtl'] .ps-dir-icon {
   transform: scaleX(-1);
 }
+
+/* Arabic-script and Hebrew faces. The document direction is set with the language. */
+html[dir='rtl'] {
+  font-family: var(--font-arabic), var(--font-sans), sans-serif;
+}
+html[dir='rtl'][lang='he'] {
+  font-family: var(--font-hebrew), var(--font-sans), sans-serif;
+}
+html[dir='rtl'] .text-left { text-align: right; }
+html[dir='rtl'] .text-right { text-align: left; }
+html[dir='rtl'] .left-0 { left: auto; right: 0; }
+html[dir='rtl'] .right-0 { right: auto; left: 0; }
+html[dir='rtl'] .ml-auto { margin-left: 0; margin-right: auto; }
+html[dir='rtl'] .mr-auto { margin-right: 0; margin-left: auto; }
+html[dir='rtl'] .ml-1 { margin-left: 0; margin-right: 0.25rem; }
+html[dir='rtl'] .mr-1 { margin-right: 0; margin-left: 0.25rem; }
+html[dir='rtl'] .pl-4 { padding-left: 0; padding-right: 1rem; }
+html[dir='rtl'] .pr-4 { padding-right: 0; padding-left: 1rem; }
 
 .liquid-glass::before {
   content: '';

@@ -1,0 +1,190 @@
+/**
+ * AI-ASSISTED — NEEDS HUMAN REVIEW
+ * Machine translations of the strings a reader sees first: the landing hero
+ * and the language picker. The rest of a non-human catalog is the English
+ * source, filled in by the catalog merge, and the whole catalog stays
+ * `needs-review` until a person checks it.
+ */
+const HERO: Record<string, { title: string; stat: string; credibility: string }> = {
+  ar: {
+    title: 'تعلّم بطريقتك. امضِ أبعد مع الذكاء الاصطناعي.',
+    stat: 'أكثر من 30 معلّم ET AI متاحون على مدار الساعة',
+    credibility: "بُني مع Rochford's International School, Ipoh.",
+  },
+  he: {
+    title: 'למדו בדרך שלכם. המשיכו הלאה עם AI.',
+    stat: 'יותר מ-30 מורי ET AI זמינים 24/7',
+    credibility: "נבנה עם Rochford's International School, Ipoh.",
+  },
+  fa: {
+    title: 'به شیوه خود بیاموزید. با هوش مصنوعی جلوتر بروید.',
+    stat: 'بیش از ۳۰ معلم ET AI، شبانه‌روزی',
+    credibility: "ساخته‌شده با Rochford's International School, Ipoh.",
+  },
+  ur: {
+    title: 'اپنے انداز میں سیکھیں۔ AI کے ساتھ آگے بڑھیں۔',
+    stat: '30+ ET AI اساتذہ، دن رات دستیاب',
+    credibility: "Rochford's International School, Ipoh کے ساتھ بنایا گیا۔",
+  },
+  ps: {
+    title: 'په خپله لاره زده کړه وکړئ. له AI سره نور هم مخکې لاړ شئ.',
+    stat: '۳۰+ ET AI ښوونکي، ۲۴/۷',
+    credibility: "د Rochford's International School, Ipoh سره جوړ شوی.",
+  },
+  hi: { title: 'अपने तरीके से सीखें। AI के साथ आगे बढ़ें।', stat: '30+ ET AI शिक्षक, 24/7', credibility: "Rochford's International School, Ipoh के साथ बनाया गया।" },
+  bn: { title: 'আপনার মতো করে শিখুন। AI-এর সাথে আরও এগিয়ে যান।', stat: '৩০+ ET AI শিক্ষক, ২৪/৭', credibility: "Rochford's International School, Ipoh-এর সাথে তৈরি।" },
+  pa: { title: 'ਆਪਣੇ ਢੰਗ ਨਾਲ ਸਿੱਖੋ। AI ਨਾਲ ਅੱਗੇ ਵਧੋ।', stat: '30+ ET AI ਅਧਿਆਪਕ, 24/7', credibility: "Rochford's International School, Ipoh ਨਾਲ ਬਣਾਇਆ ਗਿਆ।" },
+  te: { title: 'మీ మార్గంలో నేర్చుకోండి. AIతో ముందుకు వెళ్లండి.', stat: '30+ ET AI ఉపాధ్యాయులు, 24/7', credibility: "Rochford's International School, Ipoh తో నిర్మించబడింది." },
+  mr: { title: 'तुमच्या पद्धतीने शिका. AI सोबत पुढे जा.', stat: '30+ ET AI शिक्षक, 24/7', credibility: "Rochford's International School, Ipoh सोबत बांधले." },
+  gu: { title: 'તમારી રીતે શીખો. AI સાથે આગળ વધો.', stat: '30+ ET AI શિક્ષકો, 24/7', credibility: "Rochford's International School, Ipoh સાથે બનાવેલ." },
+  kn: { title: 'ನಿಮ್ಮ ರೀತಿಯಲ್ಲಿ ಕಲಿಯಿರಿ. AI ಜೊತೆ ಮುಂದೆ ಹೋಗಿ.', stat: '30+ ET AI ಶಿಕ್ಷಕರು, 24/7', credibility: "Rochford's International School, Ipoh ಜೊತೆ ನಿರ್ಮಿಸಲಾಗಿದೆ." },
+  ml: { title: 'നിങ്ങളുടെ രീതിയിൽ പഠിക്കുക. AI-യോടൊപ്പം മുന്നോട്ട്.', stat: '30+ ET AI അധ്യാപകർ, 24/7', credibility: "Rochford's International School, Ipoh-നൊപ്പം നിർമ്മിച്ചത്." },
+  ne: { title: 'आफ्नै तरिकाले सिक्नुहोस्। AI सँग अझ अघि।', stat: '30+ ET AI शिक्षक, 24/7', credibility: "Rochford's International School, Ipoh सँग बनेको।" },
+  or: { title: 'ଆପଣଙ୍କ ଢଙ୍ଗରେ ଶିଖନ୍ତୁ। AI ସହ ଆଗକୁ।', stat: '30+ ET AI ଶିକ୍ଷକ, 24/7', credibility: "Rochford's International School, Ipoh ସହିତ ନିର୍ମିତ।" },
+  si: { title: 'ඔබේ ආකාරයට ඉගෙන ගන්න. AI සමඟ තව ඉදිරියට.', stat: 'ET AI ගුරුවරු 30+, 24/7', credibility: "Rochford's International School, Ipoh සමඟ ගොඩනගා ඇත." },
+  id: { title: 'Belajar dengan cara Anda. Melangkah lebih jauh dengan AI.', stat: '30+ guru ET AI, 24/7', credibility: "Dibangun bersama Rochford's International School, Ipoh." },
+  jv: { title: 'Sinau kanthi caramu. Maju luwih adoh karo AI.', stat: '30+ guru ET AI, 24/7', credibility: "Digawe karo Rochford's International School, Ipoh." },
+  vi: { title: 'Học theo cách của bạn. Đi xa hơn cùng AI.', stat: '30+ giáo viên ET AI, 24/7', credibility: "Xây dựng cùng Rochford's International School, Ipoh." },
+  th: { title: 'เรียนในแบบของคุณ ก้าวต่อไปกับ AI', stat: 'ครู ET AI 30+ คน พร้อม 24/7', credibility: "สร้างร่วมกับ Rochford's International School, Ipoh" },
+  fil: { title: 'Matuto sa iyong paraan. Lumayo pa kasama ang AI.', stat: '30+ guro ng ET AI, 24/7', credibility: "Itinayo kasama ang Rochford's International School, Ipoh." },
+  my: { title: 'သင့်နည်းလမ်းဖြင့် လေ့လာပါ။ AI နှင့် ပိုဝေးရာသို့။', stat: 'ET AI ဆရာ 30+၊ 24/7', credibility: "Rochford's International School, Ipoh နှင့် တည်ဆောက်ထားသည်။" },
+  km: { title: 'រៀនតាមវិធីរបស់អ្នក។ ទៅមុខបន្ថែមជាមួយ AI។', stat: 'គ្រូ ET AI 30+ នាក់, 24/7', credibility: "សាងសង់ជាមួយ Rochford's International School, Ipoh." },
+  tr: { title: 'Kendi yolunla öğren. Yapay zekâ ile daha ileri git.', stat: '30+ ET AI öğretmeni, 7/24', credibility: "Rochford's International School, Ipoh ile birlikte kuruldu." },
+  ru: { title: 'Учитесь по-своему. Идите дальше с ИИ.', stat: '30+ преподавателей ET AI, круглосуточно', credibility: "Создано вместе с Rochford's International School, Ipoh." },
+  de: { title: 'Lerne auf deine Weise. Komm mit KI weiter.', stat: '30+ ET-AI-Lehrkräfte, rund um die Uhr', credibility: "Entwickelt mit Rochford's International School, Ipoh." },
+  fr: { title: 'Apprenez à votre façon. Allez plus loin avec l’IA.', stat: 'Plus de 30 enseignants ET AI, 24 h/24', credibility: "Conçu avec Rochford's International School, Ipoh." },
+  it: { title: 'Impara a modo tuo. Vai più lontano con l’IA.', stat: 'Oltre 30 insegnanti ET AI, 24 ore su 24', credibility: "Realizzato con Rochford's International School, Ipoh." },
+  pt: { title: 'Aprenda do seu jeito. Vá mais longe com IA.', stat: 'Mais de 30 professores ET AI, 24 horas', credibility: "Feito com a Rochford's International School, Ipoh." },
+  'pt-PT': { title: 'Aprenda à sua maneira. Vá mais longe com IA.', stat: 'Mais de 30 professores ET AI, 24 horas', credibility: "Feito com a Rochford's International School, Ipoh." },
+  nl: { title: 'Leer op jouw manier. Ga verder met AI.', stat: '30+ ET AI-docenten, 24/7', credibility: "Gebouwd met Rochford's International School, Ipoh." },
+  pl: { title: 'Ucz się po swojemu. Idź dalej z AI.', stat: 'Ponad 30 nauczycieli ET AI, 24/7', credibility: "Stworzone z Rochford's International School, Ipoh." },
+  uk: { title: 'Вчіться по-своєму. Ідіть далі з ШІ.', stat: '30+ викладачів ET AI, цілодобово', credibility: "Створено з Rochford's International School, Ipoh." },
+  ro: { title: 'Învață în felul tău. Mergi mai departe cu IA.', stat: 'Peste 30 de profesori ET AI, non-stop', credibility: "Construit cu Rochford's International School, Ipoh." },
+  el: { title: 'Μάθε με τον τρόπο σου. Προχώρα πιο μακριά με την ΤΝ.', stat: '30+ δάσκαλοι ET AI, όλο το 24ωρο', credibility: "Χτίστηκε με το Rochford's International School, Ipoh." },
+  cs: { title: 'Učte se po svém. Jděte dál s AI.', stat: 'Více než 30 učitelů ET AI, nonstop', credibility: "Vytvořeno s Rochford's International School, Ipoh." },
+  hu: { title: 'Tanulj a magad módján. Juss tovább az MI-vel.', stat: '30+ ET AI tanár, a nap 24 órájában', credibility: "A Rochford's International School, Ipoh közreműködésével." },
+  sv: { title: 'Lär dig på ditt sätt. Gå längre med AI.', stat: '30+ ET AI-lärare, dygnet runt', credibility: "Byggd med Rochford's International School, Ipoh." },
+  ja: { title: '自分のやり方で学ぶ。AIと、もっと先へ。', stat: 'ET AIの先生が30人以上、24時間', credibility: "Rochford's International School, Ipoh と共に築かれました。" },
+  ko: { title: '당신만의 방식으로 배우세요. AI와 함께 더 멀리.', stat: 'ET AI 교사 30명 이상, 24시간', credibility: "Rochford's International School, Ipoh와 함께 만들었습니다." },
+  kk: { title: 'Өз жолыңмен үйрен. ЖИ-мен ары қарай бар.', stat: '30+ ET AI мұғалімі, тәулік бойы', credibility: "Rochford's International School, Ipoh-пен бірге жасалған." },
+  uz: { title: 'O‘z uslubingizda o‘rganing. AI bilan yanada olg‘a.', stat: '30+ ET AI o‘qituvchisi, 24/7', credibility: "Rochford's International School, Ipoh bilan qurilgan." },
+  sw: { title: 'Jifunze kwa njia yako. Nenda mbali zaidi na AI.', stat: 'Walimu 30+ wa ET AI, saa 24', credibility: "Imejengwa na Rochford's International School, Ipoh." },
+  ha: { title: 'Koyi ta hanyarka. Ci gaba da AI.', stat: 'Malaman ET AI 30+, 24/7', credibility: "An gina shi tare da Rochford's International School, Ipoh." },
+  yo: { title: 'Kọ́ ní ọ̀nà tirẹ. Lọ síwájú pẹ̀lú AI.', stat: 'Olùkọ́ ET AI 30+, 24/7', credibility: "A kọ́ ọ pẹ̀lú Rochford's International School, Ipoh." },
+  am: { title: 'በራስህ መንገድ ተማር። ከ AI ጋር የበለጠ ሂድ።', stat: '30+ የ ET AI መምህራን፣ 24/7', credibility: "ከ Rochford's International School, Ipoh ጋር ተገንብቷል።" },
+  es: { title: 'Aprende a tu manera. Llega más lejos con la IA.', stat: 'Más de 30 profesores ET AI, las 24 horas', credibility: "Creado con Rochford's International School, Ipoh." },
+  'zh-Hant': { title: '用你的方式學習。與 AI 一起走得更遠。', stat: '30+ 位 ET AI 老師，全天可用', credibility: "與 Rochford's International School, Ipoh 共同打造。" },
+  yue: { title: '用你嘅方式學。同 AI 一齊行遠啲。', stat: '30+ 位 ET AI 老師，24/7', credibility: "同 Rochford's International School, Ipoh 一齊起。" },
+};
+
+const SEARCH: Record<string, { search: string; none: string }> = {
+  ar: { search: 'ابحث عن لغة', none: 'لا توجد لغة مطابقة.' },
+  he: { search: 'חיפוש שפה', none: 'אין שפה תואמת.' },
+  fa: { search: 'جستجوی زبان', none: 'زبانی پیدا نشد.' },
+  ur: { search: 'زبان تلاش کریں', none: 'کوئی زبان نہیں ملی۔' },
+  ps: { search: 'ژبه ولټوه', none: 'هیڅ ژبه ونه موندل شوه.' },
+  hi: { search: 'भाषा खोजें', none: 'कोई भाषा नहीं मिली।' },
+  bn: { search: 'ভাষা খুঁজুন', none: 'কোনো ভাষা মেলেনি।' },
+  id: { search: 'Cari bahasa', none: 'Tidak ada bahasa yang cocok.' },
+  vi: { search: 'Tìm ngôn ngữ', none: 'Không có ngôn ngữ phù hợp.' },
+  th: { search: 'ค้นหาภาษา', none: 'ไม่พบภาษาที่ตรงกัน' },
+  fil: { search: 'Maghanap ng wika', none: 'Walang tumugmang wika.' },
+  tr: { search: 'Dil ara', none: 'Eşleşen dil yok.' },
+  ru: { search: 'Поиск языка', none: 'Нет подходящего языка.' },
+  de: { search: 'Sprache suchen', none: 'Keine passende Sprache.' },
+  fr: { search: 'Rechercher une langue', none: 'Aucune langue ne correspond.' },
+  it: { search: 'Cerca una lingua', none: 'Nessuna lingua corrisponde.' },
+  pt: { search: 'Buscar idioma', none: 'Nenhum idioma encontrado.' },
+  'pt-PT': { search: 'Procurar idioma', none: 'Nenhum idioma corresponde.' },
+  nl: { search: 'Taal zoeken', none: 'Geen taal gevonden.' },
+  pl: { search: 'Szukaj języka', none: 'Brak pasującego języka.' },
+  uk: { search: 'Пошук мови', none: 'Немає відповідної мови.' },
+  ja: { search: '言語を検索', none: '一致する言語がありません。' },
+  ko: { search: '언어 검색', none: '일치하는 언어가 없습니다.' },
+  es: { search: 'Buscar idioma', none: 'Ningún idioma coincide.' },
+  sw: { search: 'Tafuta lugha', none: 'Hakuna lugha inayolingana.' },
+  kk: { search: 'Тілді іздеу', none: 'Сәйкес тіл жоқ.' },
+};
+
+const MALAY_SECTIONS = {
+  exam: { label: 'Kami menyediakan pelajar di samping' },
+  degrees: {
+    eyebrow: 'Program ijazah',
+    title: 'LLB, MBBS, Engineering dan Nursing',
+    lede: 'Termasuk dalam Professional & Degrees.',
+    llbBody: 'LLB Law merangkumi University of London (UoL) dan universiti lain. ET Law mengajar ijazah itu.',
+    mbbsBody: 'Ijazah perubatan penuh. ET Medicine termasuk dalam Professional & Degrees.',
+    engineeringBody: 'Program ijazah. ET Engineering termasuk dalam Professional & Degrees.',
+    nursingBody: 'Program ijazah. ET Nursing termasuk dalam Professional & Degrees.',
+  },
+  supplement: {
+    eyebrow: 'Kami melengkapi',
+    title: 'Persediaan di sisi sukatan',
+    body: 'Poket School menyediakan pelajar untuk program yang mereka sudah ikuti. Ia tidak menggantikan badan peperiksaan, universiti, atau sekolah perubatan.',
+    learners: 'Untuk siapa',
+    igcse: 'Pelajar IGCSE',
+    alevel: 'Pelajar A-Level',
+    llb: 'Calon LLB',
+    mbbs: 'Pelajar MBBS',
+    engineering: 'Pelajar Engineering',
+    nursing: 'Pelajar Nursing',
+    independent: 'Pelajar bebas',
+  },
+  reach: {
+    eyebrow: 'Jangkauan global',
+    title: 'Dari Kuala Lumpur ke Beijing',
+    body: "Poket School dibina di Malaysia bersama Rochford's International School, Ipoh, untuk pelajar dan sekolah di serantau dan seterusnya.",
+  },
+  rochford: {
+    eyebrow: "Rochford's International School, Ipoh",
+    title: 'Dibina bersama sebuah sekolah',
+    body: "Kewibawaan Poket School bermula dengan Rochford's International School, Ipoh. ET AI ada di sisi bilik darjah itu, dan di sisi bilik darjah yang menerimanya.",
+  },
+  schools: {
+    body: 'Institution merangkumi alat guru, papan pemuka institusi, kumpulan Sparks bersama, dan white-label untuk sekolah, kolej perubatan, sekolah undang-undang, dan pusat tuisyen. Beritahu kami tentang institusi itu dan kami akan membalas dari institutions@poketschool.ai.',
+  },
+};
+
+const ARABIC_SECTIONS = {
+  exam: { label: 'نُعِدّ المتعلمين إلى جانب' },
+  degrees: {
+    eyebrow: 'برامج الدرجات',
+    title: 'LLB وMBBS والهندسة والتمريض',
+    lede: 'مشمولة في Professional & Degrees.',
+    llbTitle: 'LLB Law',
+    llbBody: 'يغطي LLB Law جامعة لندن (UoL) وجامعات أخرى. يدرّس ET Law الدرجة.',
+    mbbsTitle: 'MBBS Medicine',
+    mbbsBody: 'درجة طبية كاملة. ET Medicine مشمول في Professional & Degrees.',
+    engineeringTitle: 'Engineering',
+    engineeringBody: 'برنامج درجة. ET Engineering مشمول في Professional & Degrees.',
+    nursingTitle: 'Nursing',
+    nursingBody: 'برنامج درجة. ET Nursing مشمول في Professional & Degrees.',
+  },
+  reach: {
+    eyebrow: 'انتشار عالمي',
+    title: 'من كوالالمبور إلى بكين',
+    body: "بُني Poket School في ماليزيا مع Rochford's International School, Ipoh، للمتعلمين والمدارس في المنطقة وخارجها.",
+  },
+  rochford: {
+    eyebrow: "Rochford's International School, Ipoh",
+    title: 'بُني مع مدرسة',
+    body: "مصداقية Poket School تبدأ مع Rochford's International School, Ipoh. يجلس ET AI إلى جانب ذلك الصف، وإلى جانب الصفوف التي تعتمده.",
+  },
+};
+
+export function reviewPatch(code: string): Record<string, unknown> | undefined {
+  const hero = HERO[code];
+  const search = SEARCH[code];
+  const landing = code === 'ms'
+    ? MALAY_SECTIONS
+    : code === 'ar'
+      ? { ...ARABIC_SECTIONS, hero: hero ?? undefined }
+      : hero
+        ? { hero }
+        : undefined;
+  if (!landing && !search) return undefined;
+  return {
+    ...(landing ? { landing } : {}),
+    ...(search ? { switcher: search } : {}),
+  };
+}

@@ -110,6 +110,8 @@ export function SiteHeader() {
             <Link href="/">{t("header.home")}</Link>
             <Link href="/courses">{t("header.courses")}</Link>
             <Link href="/ai-studio">{t("header.aiStudio")}</Link>
+            <Link href="/dashboard/studio/maths">{t("header.etMaths")}</Link>
+            <Link href="/dashboard/studio/exam-prep">{t("header.examPrep")}</Link>
             <Link href="/ai-teachers">{t("header.aiTeachers")}</Link>
             <Link href="/reads">{t("nav.books")}</Link>
             <Link href="/pricing">{t("header.pricing")}</Link>
@@ -144,6 +146,8 @@ export function SiteHeader() {
           >
             <Link href="/courses">{t("header.courses")}</Link>
             <Link href="/ai-studio">{t("header.aiStudio")}</Link>
+            <Link href="/dashboard/studio/maths">{t("header.etMaths")}</Link>
+            <Link href="/dashboard/studio/exam-prep">{t("header.examPrep")}</Link>
             <Link href="/ai-teachers">{t("header.aiTeachers")}</Link>
             <Link href="/reads">{t("nav.books")}</Link>
             <Link href="/pricing">{t("header.pricing")}</Link>

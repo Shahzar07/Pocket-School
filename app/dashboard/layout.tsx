@@ -90,13 +90,13 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
     ]},
-    { sectionLabel: 'Community', items: [
-      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.dashboard', label: 'Community', flag: 'community' },
-      { href: '/dashboard/channels', icon: MessagesSquare, labelKey: 'nav.messages', label: 'Channels', flag: 'messagingHub' },
-      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.dashboard', label: 'Tutors', flag: 'tutorMarketplace' },
-      { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.exams', label: 'Exam centre', flag: 'examCentre' },
-      { href: '/dashboard/store', icon: Library, labelKey: 'nav.resources', label: 'Creator store', flag: 'creatorStore' },
-      { href: '/dashboard/snap', icon: Camera, labelKey: 'nav.dashboard', label: 'Snap & solve', flag: 'snapAndSolve' },
+    { sectionKey: 'nav.section.community', items: [
+      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
+      { href: '/dashboard/channels', icon: MessagesSquare, labelKey: 'nav.channels', flag: 'messagingHub' },
+      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
+      { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.examCentre', flag: 'examCentre' },
+      { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
+      { href: '/dashboard/snap', icon: Camera, labelKey: 'nav.snapSolve', flag: 'snapAndSolve' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
@@ -137,15 +137,15 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher/integrity/cases', icon: Shield, labelKey: 'nav.integrityCases' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
       { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
-      { href: '/dashboard/teacher/behaviour', icon: Star, labelKey: 'nav.behaviour', label: 'Merits' },
+      { href: '/dashboard/teacher/behaviour', icon: Star, labelKey: 'nav.merits' },
     ]},
     // Billing and Helpdesk are institution-admin responsibilities, not teachers'.
-    { sectionLabel: 'Community', items: [
-      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.dashboard', label: 'Community', flag: 'community' },
-      { href: '/dashboard/channels', icon: MessagesSquare, labelKey: 'nav.messages', label: 'Channels', flag: 'messagingHub' },
-      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.dashboard', label: 'Tutors', flag: 'tutorMarketplace' },
-      { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.exams', label: 'Exam centre', flag: 'examCentre' },
-      { href: '/dashboard/store', icon: Library, labelKey: 'nav.resources', label: 'Creator store', flag: 'creatorStore' },
+    { sectionKey: 'nav.section.community', items: [
+      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
+      { href: '/dashboard/channels', icon: MessagesSquare, labelKey: 'nav.channels', flag: 'messagingHub' },
+      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
+      { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.examCentre', flag: 'examCentre' },
+      { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
@@ -176,9 +176,9 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/parent/reports', icon: FileBarChart, labelKey: 'nav.reportCards' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
     ]},
-    { sectionLabel: 'Family', items: [
-      { href: '/dashboard/channels', icon: MessagesSquare, labelKey: 'nav.messages', label: 'Channels', flag: 'messagingHub' },
-      { href: '/dashboard/parent/controls', icon: Shield, labelKey: 'nav.dashboard', label: 'Controls', flag: 'community' },
+    { sectionKey: 'nav.section.family', items: [
+      { href: '/dashboard/channels', icon: MessagesSquare, labelKey: 'nav.channels', flag: 'messagingHub' },
+      { href: '/dashboard/parent/controls', icon: Shield, labelKey: 'nav.controls', flag: 'community' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
@@ -206,10 +206,10 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/admin/settings', icon: Settings, labelKey: 'nav.systemSettings' },
       { href: '/dashboard/admin/verifications', icon: ShieldCheck, labelKey: 'nav.verifications' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
-      { href: '/dashboard/admin/moderation', icon: Shield, labelKey: 'nav.dashboard', label: 'Moderation', flag: 'community' },
-      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.dashboard', label: 'Community', flag: 'community' },
-      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.dashboard', label: 'Tutors', flag: 'tutorMarketplace' },
-      { href: '/dashboard/store', icon: Library, labelKey: 'nav.resources', label: 'Creator store', flag: 'creatorStore' },
+      { href: '/dashboard/admin/moderation', icon: Shield, labelKey: 'nav.moderation', flag: 'community' },
+      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
+      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
+      { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
     ]},
     { sectionKey: 'nav.section.money', items: [
       { href: '/dashboard/admin/payments', icon: Landmark, labelKey: 'nav.payments', superOnly: true },

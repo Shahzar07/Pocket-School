@@ -1,3 +1,5 @@
+import { canonicalProgramme, programmeByValue } from './programmes';
+
 /**
  * Access tiers, content types and entitlement checking.
  *
@@ -50,28 +52,37 @@ export const TIERS: TierDefinition[] = [
     programmes: ['Course catalogue', 'First lesson of any course', 'Certificate verification'],
   },
   {
-    tier: 1, id: 'primary_secondary', name: 'Primary & Lower Secondary',
-    blurb: 'Years 1–9, entry-level individual subscription.',
+    tier: 1, id: 'primary_secondary', name: 'Primary & Secondary',
+    blurb: 'Primary and Secondary, entry-level individual subscription.',
     sparks: 300, sparksRollover: 100,
-    programmes: ['Primary Years 1–6', 'Lower Secondary Years 7–9', 'All core subjects'],
+    programmes: ['Primary', 'Secondary', 'All core subjects'],
   },
   {
     tier: 2, id: 'igcse_alevel', name: 'IGCSE & A-Level',
-    blurb: 'Years 10–13, the core academic subscription.',
+    blurb: 'IGCSE and A-Level, the core academic subscription.',
     sparks: 800, sparksRollover: 300,
-    programmes: ['IGCSE / GCSE Years 10–11', 'A-Level Years 12–13', 'Pre-University & Foundation', 'Everything in Tier 1'],
+    programmes: ['IGCSE', 'A-Level', 'Pre-University', 'Everything in Primary & Secondary'],
   },
   {
     tier: 3, id: 'professional', name: 'Professional & Degrees',
-    blurb: 'Micro degrees, professional certifications and the LLB.',
+    blurb: 'Micro Degrees, professional certifications, LLB Law, MBBS Medicine, Engineering and Nursing. USD 99/month.',
     sparks: 2000, sparksRollover: 700,
-    programmes: ['Micro Degrees & Diplomas', 'Professional Certifications', 'Independent Learning', 'Everything in Tier 2'],
+    programmes: [
+      'LLB Law — University of London (UoL) and other universities',
+      'MBBS Medicine — ET Medicine',
+      'Engineering — ET Engineering',
+      'Nursing — ET Nursing',
+      'Micro Degrees',
+      'Professional certifications',
+      'Independent learning',
+      'Everything in IGCSE & A-Level',
+    ],
   },
   {
     tier: 4, id: 'llb', name: 'Law & LLB',
-    blurb: 'University of London External LLB. Unlocks within Professional & Degrees.',
+    blurb: 'LLB Law covers the University of London (UoL) and other universities. Unlocks within Professional & Degrees.',
     sparks: 2000, sparksRollover: 700,
-    programmes: ['UoL External LLB — all 12 modules', 'A-Level Law', 'Pre-University Law', 'Everything in Tier 3'],
+    programmes: ['LLB Law — University of London (UoL) and other universities', 'A-Level Law', 'Pre-University Law', 'Everything in Professional & Degrees'],
   },
   {
     tier: 5, id: 'institution', name: 'Institution',
@@ -97,7 +108,8 @@ export type ContentType =
   | 'FREE_PREVIEW' | 'MARKETPLACE_BROWSE'
   | 'ET_AI_STUDIO'
   | 'COURSE_PRIMARY' | 'COURSE_SECONDARY' | 'COURSE_IGCSE' | 'COURSE_ALEVEL'
-  | 'COURSE_PRE_UNIVERSITY' | 'COURSE_LLB' | 'COURSE_MICRO_DEGREE'
+  | 'COURSE_PRE_UNIVERSITY' | 'COURSE_LLB' | 'COURSE_MBBS' | 'COURSE_ENGINEERING' | 'COURSE_NURSING'
+  | 'COURSE_MICRO_DEGREE'
   | 'COURSE_PROFESSIONAL_CERT' | 'COURSE_INDEPENDENT'
   | 'AI_TUTOR_SESSION' | 'AI_TUTOR_LAW' | 'LYRA_LIVE'
   | 'BLOOM_TRACKING' | 'GOALS_LINKED' | 'PARENT_DASHBOARD' | 'CERTIFICATE'
@@ -115,6 +127,9 @@ export const PLAN_MAP: Record<string, string> = {
   COURSE_ALEVEL: 'plan:alevel',
   COURSE_PRE_UNIVERSITY: 'plan:pre_university',
   COURSE_LLB: 'plan:llb',
+  COURSE_MBBS: 'plan:mbbs',
+  COURSE_ENGINEERING: 'plan:engineering',
+  COURSE_NURSING: 'plan:nursing',
   COURSE_MICRO_DEGREE: 'plan:micro_degree',
   COURSE_PROFESSIONAL_CERT: 'plan:professional_cert',
   COURSE_INDEPENDENT: 'plan:independent',
@@ -147,7 +162,7 @@ export const CONTENT_MIN_TIER: Record<string, AccessTier> = {
   ET_AI_STUDIO: 1, AI_TUTOR_SESSION: 2, BLOOM_TRACKING: 2, GOALS_LINKED: 2,
   PARENT_DASHBOARD: 2, CERTIFICATE: 2, LYRA_LIVE: 2,
   COURSE_MICRO_DEGREE: 3, COURSE_PROFESSIONAL_CERT: 3,
-  COURSE_LLB: 4, AI_TUTOR_LAW: 4,
+  COURSE_LLB: 3, COURSE_MBBS: 3, COURSE_ENGINEERING: 3, COURSE_NURSING: 3, AI_TUTOR_LAW: 3,
   GRADEBOOK: 5, ATTENDANCE: 5, EXAM_BUILDER: 5, REPORT_CARD: 5, LIVE_CLASS: 5,
   INTEGRITY_MONITOR: 5, BEHAVIOUR_LOG: 5, INSTITUTION_ADMIN: 5, MARKETPLACE_LIST: 5,
   MARKETPLACE_PURCHASE: 6,
@@ -262,7 +277,7 @@ export function permissionsForTier(tier: AccessTier): string[] {
       'plan:parent_dashboard', 'plan:certificate');
   }
   if (tier >= 3) p.push('plan:micro_degree', 'plan:professional_cert');
-  if (tier >= 4) p.push('plan:llb');
+  if (tier >= 3) p.push('plan:llb', 'plan:mbbs', 'plan:engineering', 'plan:nursing');
   return p;
 }
 
@@ -409,6 +424,10 @@ interface CourseLike {
 /** A course's minTier, derived from its level when not explicitly set. */
 export function courseMinTier(course: CourseLike): AccessTier {
   if (typeof course.minTier === 'number') return Math.min(6, Math.max(0, course.minTier)) as AccessTier;
+  const named = programmeByValue(canonicalProgramme(course.level));
+  // Degree programmes are tier 4 in the taxonomy and sold inside Professional
+  // & Degrees, which grants access tier 3.
+  if (named) return (named.tier >= 4 ? 3 : named.tier) as AccessTier;
   const level = (course.level ?? '').toLowerCase();
   if (level.includes('primary')) return 1;
   if (level.includes('secondary')) return 1;
