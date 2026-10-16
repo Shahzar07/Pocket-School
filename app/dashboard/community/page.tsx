@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { ClassChannels } from '@/components/class-channels';
 import { toast } from 'sonner';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { authedFetch } from '@/lib/api-client';
@@ -8,8 +10,10 @@ import { FeatureGate } from '@/components/scope-c/feature-gate';
 import { CommunityScreen, type PostCard, type SpaceCard } from '@/components/scope-c/community-screen';
 import { asAgeTier } from '@/lib/age-tier';
 
-export default function CommunityPage() {
+function CommunityPageInner() {
   const { profile } = useAuthSTORE();
+  const params = useSearchParams();
+  const tab = params.get('tab') === 'channels' ? 'channels' : 'spaces';
   const [spaces, setSpaces] = useState<SpaceCard[]>([]);
   const [posts, setPosts] = useState<PostCard[]>([]);
   const [spaceId, setSpaceId] = useState('');
@@ -40,7 +44,11 @@ export default function CommunityPage() {
 
   return (
     <FeatureGate flag="community">
-      <CommunityScreen
+      <div className="flex gap-2 mb-4">
+        <a href="/dashboard/community" className={`h-9 px-4 rounded-full text-xs font-semibold inline-flex items-center ${tab === 'spaces' ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'}`}>Spaces</a>
+        <a href="/dashboard/community?tab=channels" className={`h-9 px-4 rounded-full text-xs font-semibold inline-flex items-center ${tab === 'channels' ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'}`}>Channels</a>
+      </div>
+      {tab === 'channels' ? <ClassChannels /> : <CommunityScreen
         ageTier={ageTier}
         explore={explore}
         dateOfBirth={dobSaved ? (profile?.dateOfBirth || 'set') : undefined}
@@ -66,7 +74,15 @@ export default function CommunityPage() {
             setSpaceTitle('Search');
           }).catch((error: Error) => toast.error(error.message));
         }}
-      />
+      />}
     </FeatureGate>
+  );
+}
+
+export default function CommunityPage() {
+  return (
+    <Suspense fallback={<p className="p-6 text-sm text-muted-foreground">Loading community…</p>}>
+      <CommunityPageInner />
+    </Suspense>
   );
 }
