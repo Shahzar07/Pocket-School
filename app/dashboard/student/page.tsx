@@ -339,8 +339,8 @@ export default function StudentDashboard() {
               <ListRow
                 href="/dashboard/studio"
                 leading={<span className="w-9 h-9 rounded-xl bg-secondary grid place-items-center shrink-0"><Sparkles className="w-4 h-4 text-primary" /></span>}
-                title="AI Studio"
-                subtitle="ET, Maths, and Exam Prep"
+                title="ET AI Studio"
+                subtitle="ET AI, ET Maths, ET Exams, and ET Essay Writer"
                 trailing={<ArrowRight className="w-4 h-4 text-muted-foreground" />}
               />
               <ListRow
@@ -348,6 +348,13 @@ export default function StudentDashboard() {
                 leading={<span className="w-9 h-9 rounded-xl bg-secondary grid place-items-center shrink-0"><Users className="w-4 h-4 text-primary" /></span>}
                 title="AI Teachers"
                 subtitle="Chat or talk live with a tutor"
+                trailing={<ArrowUpRight className="w-4 h-4 text-muted-foreground" />}
+              />
+              <ListRow
+                href="/dashboard/student/essay"
+                leading={<span className="w-9 h-9 rounded-xl bg-secondary grid place-items-center shrink-0"><Sparkles className="w-4 h-4 text-primary" /></span>}
+                title="ET Essay Writer"
+                subtitle="ET AI grades on the 9–1 scale"
                 trailing={<ArrowUpRight className="w-4 h-4 text-muted-foreground" />}
               />
               <ListRow
@@ -365,6 +372,7 @@ export default function StudentDashboard() {
               title="Achievements"
               meta={<span className="text-[11px] text-muted-foreground">{badges.length} earned</span>}
             />
+            <p className="text-[12px] text-muted-foreground mb-2">Earned badges stay on this dashboard.</p>
             {badges.length === 0 ? (
               <p className="text-[12px] text-muted-foreground leading-relaxed">
                 Finish a lesson or a daily goal to earn your first badge.

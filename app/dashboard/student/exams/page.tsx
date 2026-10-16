@@ -293,6 +293,7 @@ export default function StudentExamsPage() {
         <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1.5">
           <span className="gradient-text italic">Exams</span>
         </h1>
+        <p className="text-sm text-muted-foreground mt-2 max-w-2xl">Teachers send an exam to a class, to one student, or to the institution. ET Exams is the full-page practice studio.</p>
       </motion.div>
 
       {/* Empty State */}

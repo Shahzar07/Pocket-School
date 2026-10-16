@@ -154,10 +154,10 @@ export default function TranscriptPage() {
           <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight">
             Academic <span className="gradient-text italic">Transcript</span>
           </h1>
-          <p className="text-muted-foreground text-sm">Official record of your academic performance.</p>
+          <p className="text-muted-foreground text-sm">Grades and completed courses for this level. Print, or choose Save as PDF in the print dialog.</p>
         </div>
         <Button onClick={() => window.print()} variant="outline" className="rounded-full h-11 px-5 font-bold gap-2">
-          <Printer className="w-4 h-4" /> Print report card
+          <Printer className="w-4 h-4" /> Print or save PDF
         </Button>
       </motion.div>
 

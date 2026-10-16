@@ -232,7 +232,7 @@ function TeacherCard({
       className="group text-left bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-[#2786A4]/40 hover:shadow-[0_20px_50px_-20px_rgba(39,134,164,0.25)] transition-all flex flex-col"
     >
       {/* Portrait pane — a full-bleed illustration rather than a small tile */}
-      <div className="relative h-44 overflow-hidden">
+      <div className="relative h-64 overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={teacherPortrait(teacher)}

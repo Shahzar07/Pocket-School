@@ -150,6 +150,7 @@ export default function StudentAssignmentsPage() {
         <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1.5">
           <span className="gradient-text italic">Assignments</span>
         </h1>
+        <p className="text-sm text-muted-foreground mt-2 max-w-2xl">A teacher can send work to this class, to you alone, or to the whole institution. Essay tasks open in ET Essay Writer.</p>
       </motion.div>
 
       {/* Empty state */}

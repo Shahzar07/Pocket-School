@@ -47,6 +47,9 @@ export default function TeacherAssignmentsPage() {
     submissionType: 'text' as 'text' | 'link' | 'any',
     status: 'draft' as 'draft' | 'published', allowLate: false,
   });
+  const [sendTo, setSendTo] = useState<'class' | 'student' | 'institution'>('class');
+  const [studentId, setStudentId] = useState('');
+  const [essayTask, setEssayTask] = useState(false);
 
   const [loadError, setLoadError] = useState(false);
 
@@ -78,14 +81,19 @@ export default function TeacherAssignmentsPage() {
       await createAssignment({
         courseId: selectedCourse,
         title: form.title,
-        description: form.description,
+        description: essayTask
+          ? `${form.description}\n\nWrite this in ET Essay Writer. ET AI grades on the 9–1 scale.`
+          : form.description,
         dueDate: Timestamp.fromDate(new Date(form.dueDate)),
         maxScore: Number(form.maxScore),
-        submissionType: form.submissionType,
+        submissionType: essayTask ? 'text' : form.submissionType,
         status: form.status,
         allowLate: form.allowLate,
         createdBy: user.uid,
-      });
+        sendTo,
+        studentId: sendTo === 'student' ? studentId : '',
+        essay: essayTask,
+      } as Omit<Assignment, 'id'>);
       toast.success('Assignment created!');
       setForm({ title: '', description: '', dueDate: '', maxScore: '100', submissionType: 'text', status: 'draft', allowLate: false });
       setView('list');
@@ -264,6 +272,25 @@ export default function TeacherAssignmentsPage() {
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Title *</label>
               <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Assignment title" className="rounded-xl" />
             </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Send to</label>
+              <Select value={sendTo} onValueChange={v => setSendTo(v as 'class' | 'student' | 'institution')}>
+                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="class">This class</SelectItem>
+                  <SelectItem value="student">One student</SelectItem>
+                  <SelectItem value="institution">Whole institution</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Student id</label>
+              <Input value={studentId} onChange={e => setStudentId(e.target.value)} placeholder="Only for one student" className="rounded-xl" />
+            </div>
+            <label className="md:col-span-2 flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={essayTask} onChange={e => setEssayTask(e.target.checked)} />
+              ET Essay Writer task. ET AI grades it from 9 to 1.
+            </label>
             <div className="md:col-span-2">
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Description / Instructions</label>
               <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={4} placeholder="Describe the assignment…" className="rounded-xl" />

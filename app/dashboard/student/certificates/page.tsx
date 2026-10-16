@@ -87,7 +87,7 @@ export default function StudentCertificatesPage() {
           My <span className="gradient-text italic">Certificates</span>
         </h1>
         <p className="text-sm text-muted-foreground mt-2 max-w-xl">
-          Poket School awards one certificate for each module once every published lesson in it is complete.
+          Poket School awards one certificate for each completed course module. A super admin can edit the certificate template. Issuing stays automatic when the module is complete.
         </p>
       </motion.div>
 

@@ -84,7 +84,7 @@ export function teacherPortrait(
   const longHair = ((h >> 7) & 1) === 1;
   const glasses = ((h >> 9) & 1) === 1;
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="440" height="220" viewBox="0 0 440 220" role="img" aria-label="${esc(teacher.name)}">
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="280" height="320" viewBox="70 0 220 210" role="img" aria-label="${esc(teacher.name)}">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="${accent}"/>
