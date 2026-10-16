@@ -1,10 +1,12 @@
 /**
  * AI-ASSISTED — NEEDS HUMAN REVIEW
- * Machine translations of the strings a reader sees first: the landing hero
- * and the language picker. The rest of a non-human catalog is the English
- * source, filled in by the catalog merge, and the whole catalog stays
+ * Machine translations of the strings a reader sees first: the landing hero,
+ * the FAQ, and the language picker. The rest of a non-human catalog is the
+ * English source, filled in by the catalog merge, and the whole catalog stays
  * `needs-review` until a person checks it.
  */
+import { FAQ_DRAFTS } from './faq-drafts';
+
 const HERO: Record<string, { title: string; stat: string; credibility: string }> = {
   ar: {
     title: 'تعلّم بطريقتك. امضِ أبعد مع الذكاء الاصطناعي.',
@@ -109,9 +111,14 @@ const SEARCH: Record<string, { search: string; none: string }> = {
 export function reviewPatch(code: string): Record<string, unknown> | undefined {
   const hero = HERO[code];
   const search = SEARCH[code];
-  if (!hero && !search) return undefined;
+  const faq = FAQ_DRAFTS[code];
+  if (!hero && !search && !faq) return undefined;
+  const landing = {
+    ...(hero ? { hero } : {}),
+    ...(faq ? { faq } : {}),
+  };
   return {
-    ...(hero ? { landing: { hero } } : {}),
+    ...(Object.keys(landing).length > 0 ? { landing } : {}),
     ...(search ? { switcher: search } : {}),
   };
 }

@@ -66,7 +66,7 @@ const SHOTS = [
   { id: 'payments', src: '/landing/payments.webp' },
 ] as const;
 
-const FAQ = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7'] as const;
+const FAQ = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9'] as const;
 const AUDIENCES = ['students', 'parents', 'teachers', 'schools'] as const;
 type Audience = (typeof AUDIENCES)[number];
 
