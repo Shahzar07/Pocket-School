@@ -4,8 +4,11 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { authedFetch } from '@/lib/api-client';
 import { FeatureGate } from '@/components/scope-c/feature-gate';
+import Link from 'next/link';
 import { TutorsScreen, type BookingCard, type PendingTutor, type TutorCard, type TutorSlotCard } from '@/components/scope-c/market-screens';
+import { Panel } from '@/components/dash-ui';
 import { useAuthSTORE } from '@/hooks/use-auth';
+import { filterTutors } from '@/lib/market-filters';
 
 export default function TutorsPage() {
   const { profile } = useAuthSTORE();
@@ -13,7 +16,9 @@ export default function TutorsPage() {
   const [bookings, setBookings] = useState<BookingCard[]>([]);
   const [pending, setPending] = useState<PendingTutor[]>([]);
   const [note, setNote] = useState('');
+  const [query, setQuery] = useState('');
   const admin = profile?.role === 'admin';
+  const visible = filterTutors(tutors, query);
 
   const load = () => {
     authedFetch('/api/tutors/list').then((data) => {
@@ -32,8 +37,16 @@ export default function TutorsPage() {
 
   return (
     <FeatureGate flag="tutorMarketplace">
+      <Panel className="space-y-2">
+        <p className="text-sm text-muted-foreground">These tutors are people you can book. Subject tutors such as ET Maths live with the AI teachers.</p>
+        <div className="flex flex-wrap gap-2 text-sm">
+          <Link href="/ai-teachers" className="underline">AI teachers</Link>
+          <Link href="/dashboard/store" className="underline">Creator store</Link>
+        </div>
+        <input aria-label="Search tutors" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search name or subject" className="h-10 w-full max-w-sm rounded-xl border border-border px-3 text-sm" />
+      </Panel>
       <TutorsScreen
-        tutors={tutors}
+        tutors={visible}
         bookings={bookings}
         pending={admin ? pending : undefined}
         note={note}
