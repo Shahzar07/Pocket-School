@@ -542,6 +542,16 @@ app/dashboard/profile/page.tsx	Privacy settings saved.
 app/dashboard/profile/page.tsx	Profile saved.
 app/dashboard/profile/page.tsx	Provider unlinked.
 app/dashboard/profile/page.tsx	Verification email sent.
+app/dashboard/referrals/page.tsx	A live promo shows on the public site until the quantity runs out or the countdown ends.
+app/dashboard/referrals/page.tsx	Affiliate commission
+app/dashboard/referrals/page.tsx	Affiliate commission percent
+app/dashboard/referrals/page.tsx	Course, programme, or book
+app/dashboard/referrals/page.tsx	Open payouts
+app/dashboard/referrals/page.tsx	Percent off
+app/dashboard/referrals/page.tsx	Promo end date
+app/dashboard/referrals/page.tsx	Promo item
+app/dashboard/referrals/page.tsx	Promo kind
+app/dashboard/referrals/page.tsx	Quantity limit
 app/dashboard/referrals/page.tsx	Referral codes are switched off.
 app/dashboard/referrals/page.tsx	Share Poket School
 app/dashboard/reports/page.tsx	A daily, weekly, or termly schedule sends a notification when it is due. Nothing is emailed unless the school already sends mail.
@@ -1275,6 +1285,7 @@ app/pricing/page.tsx	No card required
 app/pricing/page.tsx	PLANS &amp; PRICING
 app/pricing/page.tsx	Sparks are spent on
 app/pricing/page.tsx	THE SPARKS SYSTEM
+app/r/[code]/page.tsx	Opening Poket School…
 app/verify/[uuid]/page.tsx	Anyone can check a certificate ID. The record is issued by Poket School.
 app/verify/[uuid]/page.tsx	Certificate ID
 app/verify/[uuid]/page.tsx	Certificate revoked.
