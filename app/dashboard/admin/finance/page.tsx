@@ -7,10 +7,12 @@ import { formatMoney } from '@/lib/money';
 import { isSuperAdmin } from '@/lib/roles';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { filterFinanceRows, invoiceLabel } from '@/lib/billing-model';
+import { InvoiceDelivery } from '@/components/invoice-delivery';
+import type { InvoiceFace } from '@/lib/documents/invoice-pdf';
 import { Landmark } from 'lucide-react';
 
 interface Summary { mrr: number; arr: number; arpu: number; activeSubscribers: number }
-interface Tx { id: string; title?: string; total?: number; currency?: string; status?: string; invoiceId?: string }
+interface Tx { id: string; title?: string; total?: number; currency?: string; status?: string; invoiceId?: string; email?: string; buyerName?: string }
 
 export default function FinancePage() {
   const { profile } = useAuthSTORE();
@@ -20,6 +22,9 @@ export default function FinancePage() {
   const [notice, setNotice] = useState('');
   const [refundId, setRefundId] = useState('');
   const [query, setQuery] = useState('');
+  const [selected, setSelected] = useState<string[]>([]);
+  const [openId, setOpenId] = useState('');
+  const [smtpConfigured, setSmtpConfigured] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!isSuperAdmin(profile)) return;
@@ -33,33 +38,20 @@ export default function FinancePage() {
         total: Number(recon?.total ?? 0),
       });
     }).catch((error: unknown) => setNotice(error instanceof ApiError ? error.message : 'Finance is unavailable.'));
+    authedFetch('/api/documents/send').then((data) => {
+      setSmtpConfigured(data.configured === true);
+    }).catch(() => setSmtpConfigured(false));
   }, [profile]);
 
   const visible = filterFinanceRows(rows, query);
-
-  function printInvoice(row: Tx) {
-    const label = invoiceLabel(row);
-    const title = (row.title || 'Poket School checkout').replace(/&/g, '&amp;').replace(/</g, '&lt;');
-    const total = formatMoney(Number(row.total ?? 0), row.currency || 'USD');
-    const html = `<!doctype html><html><head><title>${label}</title>
-      <style>body{font-family:system-ui,sans-serif;max-width:640px;margin:40px auto;padding:0 24px;color:#111}
-      h1{font-size:22px}table{width:100%;border-collapse:collapse;margin-top:16px}
-      td{padding:8px 0;border-bottom:1px solid #e5e5e5}td:last-child{text-align:right;font-weight:600}</style></head>
-      <body><h1>Poket School — Invoice</h1><p>${label}</p>
-      <table>
-        <tr><td>Checkout</td><td>${title}</td></tr>
-        <tr><td>Status</td><td>${row.status || 'open'}</td></tr>
-        <tr><td>Total</td><td>${total}</td></tr>
-      </table>
-      <p>The payer can be a parent, an institution, or an adult learner.</p>
-      </body></html>`;
-    const win = window.open('', '_blank', 'width=720,height=800');
-    if (!win) { setNotice('Allow pop-ups to print the invoice.'); return; }
-    win.document.write(html);
-    win.document.close();
-    win.focus();
-    win.print();
-  }
+  const face = (row: Tx): InvoiceFace => ({
+    ...row,
+    totalLabel: formatMoney(Number(row.total ?? 0), row.currency || 'USD'),
+    holderEmail: row.email,
+    holderName: row.buyerName,
+  });
+  const chosen = visible.filter((row) => selected.includes(row.id)).map(face);
+  const detail = visible.find((row) => row.id === openId);
 
   if (!isSuperAdmin(profile)) {
     return <DashPage><DashHeader title="Finance" description="This console is for a Poket School super admin." /></DashPage>;
@@ -77,18 +69,43 @@ export default function FinancePage() {
       <Panel>
         <PanelHeader title="Invoices" meta={<span className="text-xs text-muted-foreground">{reconciliation.matched} matched · {reconciliation.unmatched} open</span>} />
         <input aria-label="Search invoices" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search name, invoice, or status" className="h-10 w-full max-w-sm rounded-xl border border-border px-3 text-sm mb-3" />
-        <DataTable minWidth={720} head={<><th className="py-2 pr-4">Invoice</th><th className="py-2 pr-4">Checkout</th><th className="py-2 pr-4">Status</th><th className="py-2 pr-4">Total</th><th className="py-2">Print</th></>}>
+        <div className="mb-3">
+          {chosen.length > 0 ? (
+            <InvoiceDelivery invoices={chosen} smtpConfigured={smtpConfigured} bulk onDone={setNotice} />
+          ) : (
+            <p className="text-sm text-muted-foreground">Select invoices to email them together. Each row can also download or email on its own.</p>
+          )}
+        </div>
+        <DataTable minWidth={860} head={<><th className="py-2 pr-4">Select</th><th className="py-2 pr-4">Invoice</th><th className="py-2 pr-4">Checkout</th><th className="py-2 pr-4">Status</th><th className="py-2 pr-4">Total</th><th className="py-2">Send</th></>}>
           {visible.map((row) => (
             <tr key={row.id}>
-              <td className="py-3 pr-4 text-sm font-medium">{invoiceLabel(row)}</td>
+              <td className="py-3 pr-4">
+                <input
+                  aria-label={`Select ${invoiceLabel(row)}`}
+                  type="checkbox"
+                  checked={selected.includes(row.id)}
+                  onChange={(event) => setSelected((current) => event.target.checked ? [...current, row.id] : current.filter((id) => id !== row.id))}
+                />
+              </td>
+              <td className="py-3 pr-4 text-sm font-medium">
+                <button type="button" className="underline" onClick={() => setOpenId(row.id)}>{invoiceLabel(row)}</button>
+              </td>
               <td className="py-3 pr-4 text-sm">{row.title || row.id}</td>
               <td className="py-3 pr-4 text-sm">{row.status}</td>
               <td className="py-3 pr-4 text-sm">{formatMoney(Number(row.total ?? 0), row.currency || 'USD')}</td>
-              <td className="py-3 text-sm"><button type="button" className="underline" onClick={() => printInvoice(row)}>PDF</button></td>
+              <td className="py-3 text-sm"><InvoiceDelivery invoices={[face(row)]} smtpConfigured={smtpConfigured} onDone={setNotice} /></td>
             </tr>
           ))}
         </DataTable>
         {visible.length === 0 && <p className="text-sm text-muted-foreground mt-3">No matching invoices.</p>}
+        {detail && (
+          <div className="mt-4 rounded-2xl border border-border p-4 space-y-2">
+            <p className="font-semibold">{invoiceLabel(detail)}</p>
+            <p className="text-sm text-muted-foreground">{detail.title || detail.id} · {detail.status} · {formatMoney(Number(detail.total ?? 0), detail.currency || 'USD')}</p>
+            <p className="text-sm text-muted-foreground">The payer can be a parent, an institution, or an adult learner.</p>
+            <InvoiceDelivery invoices={[face(detail)]} smtpConfigured={smtpConfigured} onDone={setNotice} />
+          </div>
+        )}
       </Panel>
       <Panel className="flex flex-wrap gap-2 items-center">
         <input aria-label="Checkout to refund" value={refundId} onChange={(event) => setRefundId(event.target.value)} placeholder="chk_…" className="h-10 rounded-xl border border-border px-3 text-sm" />
