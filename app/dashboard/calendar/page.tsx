@@ -15,6 +15,8 @@ import { Plus, ChevronLeft, ChevronRight, X, Calendar, Trash2, Loader2 } from 'l
 import { CalendarTools } from '@/components/calendar/calendar-tools';
 import type { CalendarItem } from '@/lib/insights/calendar';
 import { Timestamp } from 'firebase/firestore';
+import { YearPlanner, type PlannerRole } from '@/components/planner/year-planner';
+import { isoDateKey } from '@/lib/insights/dates';
 import { AllocationPicker } from '@/components/allocation-picker';
 import { describeTargets, recordVisible } from '@/lib/allocation-targets';
 
@@ -24,7 +26,7 @@ const fadeUp: Record<string, any> = {
 };
 
 const TYPE_COLORS: Record<string, string> = {
-  assignment: 'bg-[#2786A4]',
+  assignment: 'bg-primary',
   exam: 'bg-violet-500',
   event: 'bg-emerald-500',
   holiday: 'bg-amber-500',
@@ -55,6 +57,10 @@ export default function CalendarPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ title: '', date: '', type: 'event' as CalendarEvent['type'], description: '', targets: ['all'] as string[] });
   const [selected, setSelected] = useState<CalendarEvent | null>(null);
+  const [view, setView] = useState<'month' | 'terms'>('month');
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('view') === 'terms') setView('terms');
+  }, []);
 
   const teaching = mode === 'teacher' && hasAccountRole(profile, 'teacher');
   const canCreate = teaching || profile?.role === 'admin' || profile?.role === 'institution_admin';
@@ -146,18 +152,34 @@ export default function CalendarPage() {
           <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-3">
             School <span className="gradient-text italic">calendar</span>
           </h1>
-          <p className="text-muted-foreground mt-2 text-[15px]">Stay on top of deadlines and school events.</p>
+          <p className="text-muted-foreground mt-2 text-[15px]">Month events and school terms live on this page.</p>
+          <div className="flex gap-2 mt-3">
+            <button type="button" onClick={() => setView('month')} className={`h-8 px-3 rounded-full text-xs font-semibold ${view === 'month' ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'}`}>Month</button>
+            <button type="button" onClick={() => setView('terms')} className={`h-8 px-3 rounded-full text-xs font-semibold ${view === 'terms' ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'}`}>Terms</button>
+          </div>
         </div>
         {canCreate && (
           <Button onClick={() => setShowCreate(true)}
-            className="rounded-full h-11 px-5 gap-2 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] hover:opacity-90 text-white shrink-0"
+            className="rounded-full h-11 px-5 gap-2 font-bold bg-primary hover:opacity-90 text-primary-foreground shrink-0"
           >
             <Plus className="w-4 h-4" /> Add Event
           </Button>
         )}
       </motion.header>
 
-      {canCreate && user && (
+      {view === 'terms' && user && profile ? (
+        <YearPlanner
+          role={(profile.role ?? 'student') as PlannerRole}
+          canEdit={profile.role === 'teacher' || profile.role === 'admin' || profile.role === 'institution_admin'}
+          persist
+          today={isoDateKey()}
+          ownerId={user.uid}
+          institutionId={profile.institutionId || 'school'}
+          brand="Poket School"
+        />
+      ) : null}
+
+      {view === 'month' && canCreate && user && (
         <CalendarTools onPublish={async (items: CalendarItem[]) => {
           for (const item of items) {
             await createCalendarEvent({
@@ -176,7 +198,7 @@ export default function CalendarPage() {
       )}
 
       {/* Create form */}
-      {showCreate && canCreate && (
+      {view === 'month' && showCreate && canCreate && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
           className="bg-card border border-border rounded-3xl p-6 sm:p-7 space-y-4"
         >
@@ -213,14 +235,14 @@ export default function CalendarPage() {
             value={form.targets}
             onChange={targets => setForm(current => ({ ...current, targets }))}
           />
-          <Button onClick={handleCreate} disabled={saving} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white gap-2">
+          <Button onClick={handleCreate} disabled={saving} className="w-full rounded-full h-11 font-bold bg-primary text-primary-foreground gap-2">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
             Create Event
           </Button>
         </motion.div>
       )}
 
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
+      {view === 'month' && <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
         className="grid lg:grid-cols-3 gap-6"
       >
         {/* Calendar grid */}
@@ -245,7 +267,7 @@ export default function CalendarPage() {
                 <div key={i} className={`min-h-[80px] border-t border-r border-border p-1.5 ${!day ? 'bg-muted/10' : 'hover:bg-muted/20 cursor-pointer transition-colors'}`}>
                   {day && (
                     <>
-                      <p className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full mb-1 ${isToday ? 'bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white' : 'text-foreground'}`}>
+                      <p className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full mb-1 ${isToday ? 'bg-primary text-primary-foreground' : 'text-foreground'}`}>
                         {day}
                       </p>
                       {dayEvents.slice(0, 2).map(e => (
@@ -288,7 +310,7 @@ export default function CalendarPage() {
             ))
           )}
         </div>
-      </motion.div>
+      </motion.div>}
 
       {/* Event detail modal */}
       {selected && (

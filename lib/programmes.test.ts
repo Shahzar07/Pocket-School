@@ -9,6 +9,7 @@ import {
   assertPlacement,
   cmsSubjectYearOptions,
   cmsYearLevelSuggestions,
+  displayLevels,
   levelsForProgramme,
   signupProgrammeOptions,
   suggestPlacementFromDob,
@@ -47,6 +48,19 @@ test('school programmes use the year bands from the master brief', () => {
   assert.deepEqual([...levelsForProgramme('Micro Degree')], [NOT_APPLICABLE]);
   assert.deepEqual([...levelsForProgramme('Professional Certification')], [NOT_APPLICABLE]);
   assert.deepEqual([...levelsForProgramme('Independent Learning')], [NOT_APPLICABLE]);
+  assert.deepEqual([...levelsForProgramme('Engineering')], ['Foundation', 'Degree']);
+  assert.deepEqual([...levelsForProgramme('Nursing')], ['Foundation', 'Degree']);
+  assert.equal(PROGRAMMES.find((item) => item.value === 'LLB Law')?.summary?.includes('University of London (UoL)'), true);
+});
+
+test('CMS cards show levels instead of year numbers', () => {
+  assert.equal(displayLevels(['Year 9', 'Year 10', 'Year 11']), 'Secondary · IGCSE');
+  assert.equal(displayLevels(['IGCSE – Year 9', 'Year 10', 'Year 11']), 'Secondary · IGCSE');
+  assert.equal(displayLevels(['Year 1', 'Year 6']), 'Primary');
+  assert.equal(displayLevels(['Year 1 (LLB)', 'Year 2 (LLB)', 'Year 3 (LLB)']), 'LLB Law');
+  assert.equal(displayLevels(['Year 1 (MBBS)', 'Year 5 (MBBS)']), 'MBBS Medicine');
+  assert.equal(displayLevels(['Foundation', 'Degree']), 'Foundation · Degree');
+  assert.equal(displayLevels(null), '');
 });
 
 test('the server rejects a year that belongs to a different programme', () => {

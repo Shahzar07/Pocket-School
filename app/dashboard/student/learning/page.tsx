@@ -139,9 +139,9 @@ export default function MyLearningPage() {
           <div className="w-72 h-72 rounded-full bg-primary/10 blur-[100px]" />
         </div>
         <GraduationCap className="w-12 h-12 mb-5 text-muted-foreground opacity-40 relative" />
-        <h2 className="font-heading text-2xl text-foreground mb-2 relative">Set your Year / Level</h2>
+        <h2 className="font-heading text-2xl text-foreground mb-2 relative">Set your level</h2>
         <p className="text-sm text-muted-foreground mb-8 max-w-sm relative">
-          Tell us which year you&apos;re in to see your curriculum — modules, lessons and mastery quizzes for your level.
+          Choose your level to see courses grouped into modules, lessons, and mastery quizzes.
         </p>
         <Button onClick={() => router.push('/dashboard/profile')} className="rounded-full h-11 px-5 font-bold relative">
           Go to My Profile
@@ -163,7 +163,7 @@ export default function MyLearningPage() {
           My <span className="gradient-text italic">Learning</span>
         </h1>
         <p className="text-muted-foreground text-sm max-w-xl">
-          Work through each module, then pass the mastery quiz (70%+) to unlock the next one.
+          Courses for this level sit in modules. Finish a module, then pass the mastery quiz (70%+) to unlock the next one.
         </p>
       </motion.header>
 

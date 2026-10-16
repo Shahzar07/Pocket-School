@@ -13,7 +13,7 @@ import type { Exercise } from '@/lib/study/types';
 export function ExercisesView({ exercises, onComplete, extraAction }: {
   exercises: Exercise[];
   onComplete: (score: number) => void;
-  /** Optional per-exercise action, e.g. "work through it with ET". */
+  /** Optional per-exercise action, e.g. "work through it with ET AI". */
   extraAction?: (ex: Exercise, index: number) => React.ReactNode;
 }) {
   const [state, setState] = useState<Record<number, { hint?: boolean; open?: boolean; self?: number; work?: string }>>({});

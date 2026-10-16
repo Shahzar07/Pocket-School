@@ -272,7 +272,7 @@ export default function StudentExamsPage() {
           <Button
             onClick={handleSubmit}
             disabled={submitting}
-            className="rounded-full h-12 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white w-full gap-2 hover:opacity-90 transition-opacity"
+            className="rounded-full h-12 font-bold bg-primary text-primary-foreground w-full gap-2 hover:opacity-90 transition-opacity"
           >
             {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
             {submitting ? 'Grading...' : 'Submit Exam'}
@@ -293,6 +293,7 @@ export default function StudentExamsPage() {
         <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1.5">
           <span className="gradient-text italic">Exams</span>
         </h1>
+        <p className="text-sm text-muted-foreground mt-2 max-w-2xl">Teachers send an exam to a class, to one student, or to the institution. ET Exams is the full-page practice studio.</p>
       </motion.div>
 
       {/* Empty State */}
@@ -331,8 +332,8 @@ export default function StudentExamsPage() {
                 className="bg-card border border-border rounded-2xl p-4 flex items-center justify-between gap-4 card-glow"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#2786A4] to-[#1E6A83] flex items-center justify-center shrink-0">
-                    <PenSquare className="w-5 h-5 text-white" />
+                  <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shrink-0">
+                    <PenSquare className="w-5 h-5 text-primary-foreground" />
                   </div>
                   <div>
                     <p className="font-bold text-foreground">{item.exam.title}</p>
@@ -351,7 +352,7 @@ export default function StudentExamsPage() {
                 {availability.available ? (
                   <Button
                     onClick={() => startExam(item.exam)}
-                    className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white hover:opacity-90 transition-opacity gap-2 shrink-0"
+                    className="rounded-full h-11 px-5 font-bold bg-primary text-primary-foreground hover:opacity-90 transition-opacity gap-2 shrink-0"
                   >
                     Start <ChevronRight className="w-4 h-4" />
                   </Button>

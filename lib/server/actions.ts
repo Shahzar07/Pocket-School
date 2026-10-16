@@ -9,7 +9,9 @@ import { accessTierFor, freePreviewCount, tierDefinition, type AccessTier } from
 import { answersMatch } from '../quiz';
 import { countCompleted, isPublishedLesson, progressPercent } from '../progress';
 import { certificateKey, certificateStatus, certificateStudentName, moduleIsComplete } from '../certificates';
-import { issueInTransaction } from './module-certificates';
+import { issueInTransaction, issuerFromInstitution } from './module-certificates';
+import { attachOpenBadge } from './badge-issue';
+import { recordActivity } from '@/lib/audit/server';
 import {
   ADMIN_SPARKS_GRANT,
   FORMAT_COSTS,
@@ -170,6 +172,9 @@ export async function completeLesson(
     const xpBefore = (userSnap.data()?.xp as number) ?? 0;
     const balance = already ? balanceBefore : balanceBefore + sparksReward;
     const xp = already ? xpBefore : xpBefore + xpReward;
+    const institutionId = typeof userSnap.data()?.institutionId === 'string' ? userSnap.data()?.institutionId as string : '';
+    const instSnap = institutionId ? await tx.get(db().doc(`institutions/${institutionId}`)) : null;
+    const issuer = issuerFromInstitution(instSnap?.data() as Record<string, unknown> | undefined);
     if (!already) {
       tx.update(enrollRef, {
         completedLessons: FieldValue.arrayUnion(lessonId),
@@ -205,6 +210,9 @@ export async function completeLesson(
       publishedIds: modulePublishedIds,
       completedIds: next,
       fresh: !already && moduleIsComplete(modulePublishedIds, next),
+      issuerName: issuer.issuerName,
+      showPoweredBy: issuer.showPoweredBy,
+      accent: issuer.accent,
     });
     return {
       accepted: true,
@@ -218,6 +226,9 @@ export async function completeLesson(
     };
   });
 
+  if (result.certificate) {
+    await attachOpenBadge(result.certificate, { id: uid, role: result.role ?? 'student' });
+  }
   if (!result.already) {
     await writePublicXp(uid, result.name ?? '', result.xp, result.role ?? 'student');
     await awardBadges(uid, result.xp);
@@ -844,6 +855,9 @@ export async function syncModuleCertificates(callerId: string, studentId: string
   const user = await db().doc(`users/${target}`).get();
   if (!user.exists) throw new ActionError('USER_NOT_FOUND');
   const studentName = certificateStudentName(user.data()?.name);
+  const institutionId = typeof user.data()?.institutionId === 'string' ? user.data()?.institutionId as string : '';
+  const instSnap = institutionId ? await db().doc(`institutions/${institutionId}`).get() : null;
+  const issuer = issuerFromInstitution(instSnap?.data() as Record<string, unknown> | undefined);
   const enrollSnaps = courseId
     ? [await db().doc(`courses/${courseId}/enrollments/${target}`).get()].filter((snap) => snap.exists)
     : (await db().collectionGroup('enrollments').where('studentId', '==', target).get()).docs;
@@ -892,16 +906,27 @@ export async function syncModuleCertificates(callerId: string, studentId: string
           publishedIds,
           completedIds: done,
           fresh: true,
+          issuerName: issuer.issuerName,
+          showPoweredBy: issuer.showPoweredBy,
+          accent: issuer.accent,
         });
       });
-      if (award) issued.push(award);
+      if (award) {
+        await attachOpenBadge(award, { id: callerId, role: callerId === target ? 'student' : 'teacher' });
+        issued.push(award);
+      }
     }
   }
   return { issued };
 }
 
 /** Marks a certificate revoked. Clients cannot write certificates; only this admin path can. */
-export async function revokeCertificate(callerId: string, callerEmail: string | undefined, certificateId: string) {
+export async function revokeCertificate(
+  callerId: string,
+  callerEmail: string | undefined,
+  certificateId: string,
+  reason = 'Revoked by an admin',
+) {
   if (!(await callerIsAdmin(callerId, callerEmail))) {
     throw new ActionError('FORBIDDEN', 'Only an admin can revoke a certificate.');
   }
@@ -910,11 +935,25 @@ export async function revokeCertificate(callerId: string, callerEmail: string | 
   const ref = db().doc(`certificates/${id}`);
   const snap = await ref.get();
   if (!snap.exists) throw new ActionError('NOT_FOUND', 'Certificate not found');
+  const note = reason.trim().slice(0, 240) || 'Revoked by an admin';
   if (snap.data()?.status !== 'revoked') {
     await ref.update({
       status: 'revoked',
       revokedAt: FieldValue.serverTimestamp(),
       revokedBy: callerId,
+      revocationReason: note,
+    });
+    await recordActivity({
+      action: 'certificate.revoke',
+      actorId: callerId,
+      actorEmail: callerEmail || '',
+      actorRole: 'admin',
+      device: 'server',
+      targetType: 'certificate',
+      targetId: id,
+      targetLabel: String(snap.data()?.moduleTitle ?? ''),
+      before: { status: certificateStatus(snap.data()?.status) },
+      after: { status: 'revoked', reason: note },
     });
   }
   return { id, status: 'revoked' as const };

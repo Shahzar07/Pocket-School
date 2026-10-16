@@ -5,7 +5,9 @@ import { DashHeader, DashPage, Panel, StatCard } from '@/components/dash-ui';
 import { authedFetch, ApiError } from '@/lib/api-client';
 import { isSuperAdmin } from '@/lib/roles';
 import { useAuthSTORE } from '@/hooks/use-auth';
+import Link from 'next/link';
 import { Landmark } from 'lucide-react';
+import { PAYMENT_PROVIDERS } from '@/lib/payment-providers';
 
 interface SecretRow { id: string; label: string; envVar: string; state: string; masked: string | null; why: string }
 
@@ -13,8 +15,6 @@ export default function PaymentsAdminPage() {
   const { profile } = useAuthSTORE();
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [notice, setNotice] = useState('');
-  const [slot, setSlot] = useState('stripe_secret');
-  const [secret, setSecret] = useState('');
 
   const load = () => {
     authedFetch('/api/payments/admin-payments').then(setData).catch((error: unknown) => {
@@ -29,15 +29,10 @@ export default function PaymentsAdminPage() {
 
   const methods = data?.methods as { myMyr?: string[]; myUsd?: string[] } | undefined;
   const secrets = Array.isArray(data?.secrets) ? data.secrets as SecretRow[] : [];
-  const save = async (body: Record<string, unknown>) => {
-    await authedFetch('/api/payments/admin-payments', { method: 'POST', body: JSON.stringify(body) });
-    setSecret('');
-    load();
-  };
 
   return (
     <DashPage>
-      <DashHeader eyebrow="Super admin" title="Payments" description="Keys stay on the server. This page shows the masked value only." />
+      <DashHeader eyebrow="Super admin" title="Payments" description="Which checkouts are on. API keys are saved only in Integrations." />
       {notice && <p className="text-sm text-muted-foreground">{notice}</p>}
       <div className="grid sm:grid-cols-3 gap-4">
         <StatCard icon={Landmark} label="Stripe" value={String(data?.stripeMode ?? '…')} index={0} />
@@ -50,14 +45,16 @@ export default function PaymentsAdminPage() {
         <p className="text-muted-foreground">Stripe {String((data?.endpoints as { stripe?: string } | undefined)?.stripe ?? '')} · Gateway {String((data?.endpoints as { gateway?: string } | undefined)?.gateway ?? '')}</p>
       </Panel>
       <Panel className="space-y-3">
-        <h2 className="text-[15px] font-semibold">Store a key</h2>
-        <div className="flex flex-wrap gap-2">
-          <select aria-label="Secret slot" value={slot} onChange={(event) => setSlot(event.target.value)} className="h-10 rounded-xl border border-border bg-background px-3 text-sm">
-            {secrets.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-          </select>
-          <input aria-label="Secret value" type="password" value={secret} onChange={(event) => setSecret(event.target.value)} className="h-10 rounded-xl border border-border bg-background px-3 text-sm" placeholder="Paste the key" />
-          <button type="button" className="h-10 px-4 rounded-full bg-primary text-primary-foreground text-sm font-bold" onClick={() => void save({ action: 'secret', slot, value: secret })}>Save</button>
-        </div>
+        <h2 className="text-[15px] font-semibold">Providers</h2>
+        <p className="text-sm text-muted-foreground">Stripe, Billplz, iPay88, RMS, PayPal, and Xendit. A super admin sets each key in <Link href="/dashboard/admin/integrations" className="text-primary font-semibold">Integrations</Link>. This page does not store a second copy.</p>
+        <ul className="grid sm:grid-cols-2 gap-2">
+          {PAYMENT_PROVIDERS.map((provider) => (
+            <li key={provider.id} className="rounded-xl border border-border px-3 py-2 text-sm">
+              <span className="font-semibold">{provider.name}</span>
+              <span className="block text-xs text-muted-foreground">{provider.region}</span>
+            </li>
+          ))}
+        </ul>
         <ul className="space-y-2">
           {secrets.map((item) => (
             <li key={item.id} className="flex justify-between gap-3 text-sm">

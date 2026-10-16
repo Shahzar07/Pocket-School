@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, BookOpen, CheckCircle2, Lock, PlayCircle, ChevronDown, ChevronRight, Trophy } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useContentTranslation } from '@/hooks/use-content-translation';
 
 interface ModuleWithLessons { module: Module; lessons: Lesson[] }
 
@@ -32,6 +34,13 @@ export default function CourseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<CourseQuestion[]>([]);
+  const { t, i18n } = useTranslation();
+  const courseCopy = useContentTranslation(
+    `course:${courseId ?? 'pending'}`,
+    { title: course?.title ?? '', description: course?.description ?? '' },
+    i18n.language,
+    Boolean(course) && i18n.language !== 'en',
+  );
 
   const load = async () => {
     if (!user || !courseId) return;
@@ -130,30 +139,38 @@ export default function CourseDetailPage() {
     <div className="max-w-5xl mx-auto px-0 sm:px-2 pb-12 space-y-8">
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="pt-2">
         <Button variant="ghost" size="sm" className="text-muted-foreground rounded-full -ml-2" onClick={() => router.back()}>
-          <ArrowLeft className="w-4 h-4 mr-1" /> Back
+          <ArrowLeft className="w-4 h-4 mr-1" /> {t('courseUi.back')}
         </Button>
       </motion.div>
 
       {/* Course header hero */}
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
-        className="relative overflow-hidden bg-gradient-to-br from-[#2786A4] to-[#1E6A83] rounded-[2rem] p-7 sm:p-9 text-white"
+        className="relative overflow-hidden bg-primary rounded-[2rem] p-7 sm:p-9 text-primary-foreground"
       >
         <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-[60px]" />
         <div className="pointer-events-none absolute -bottom-20 -left-12 w-72 h-72 rounded-full bg-white/10 blur-[70px]" />
         <div className="relative z-10">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/70 mb-3">
-            {course.subject ?? 'Course'}
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary-foreground/70 mb-3">
+            {course.subject ?? t('courseUi.subjectFallback')}
           </p>
-          <h1 className="font-heading text-3xl sm:text-4xl font-extrabold tracking-tight mb-3">{course.title}</h1>
-          <p className="text-white/80 text-sm leading-relaxed mb-6 max-w-2xl">{course.description}</p>
+          <h1 className="font-heading text-3xl sm:text-4xl font-extrabold tracking-tight mb-3">{courseCopy.values.title || course.title}</h1>
+          <p className="text-primary-foreground/80 text-sm leading-relaxed mb-3 max-w-2xl">{courseCopy.values.description || course.description}</p>
+          {courseCopy.autoTranslated && (
+            <p className="mb-4 flex flex-wrap items-center gap-2 text-xs text-primary-foreground/80">
+              <span className="rounded-full bg-primary-foreground/15 px-2 py-0.5 font-semibold">{t('lesson.autoTranslated')}</span>
+              <button type="button" className="underline" onClick={courseCopy.toggle}>
+                {courseCopy.showOriginal ? t('lesson.showTranslation') : t('lesson.showOriginal')}
+              </button>
+            </p>
+          )}
           {enrollment && (
             <div>
-              <div className="flex justify-between text-xs text-white/80 mb-2">
-                <span>{completedIds.size} / {totalLessons} lessons complete</span>
+              <div className="flex justify-between text-xs text-primary-foreground/80 mb-2">
+                <span>{t('courseUi.lessonsComplete', { done: completedIds.size, total: totalLessons })}</span>
                 <span className="font-bold">{enrollment.progress}%</span>
               </div>
-              <div className="h-2 bg-white/20 rounded-full overflow-hidden">
-                <div className="h-full bg-white rounded-full transition-all" style={{ width: `${enrollment.progress}%` }} />
+              <div className="h-2 bg-primary-foreground/20 rounded-full overflow-hidden">
+                <div className="h-full bg-primary-foreground rounded-full transition-all" style={{ width: `${enrollment.progress}%` }} />
               </div>
             </div>
           )}

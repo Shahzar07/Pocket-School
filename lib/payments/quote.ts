@@ -36,6 +36,8 @@ export interface PricedItem {
   shelf?: boolean;
   /** Permission written for a Reads plan, such as plan:reads-family. */
   permission?: string;
+  /** Plan bullets shown beside the checkout title. */
+  highlights?: string[];
 }
 
 export interface QuoteLine {
@@ -67,6 +69,7 @@ export interface Quote {
   recurringMonthly?: number;
   shelf?: boolean;
   permission?: string;
+  highlights?: string[];
 }
 
 export class QuoteError extends Error {
@@ -141,6 +144,7 @@ export function buildQuote(input: {
     teacherShareBps: input.item.teacherShareBps,
     shelf: input.item.shelf,
     permission: input.item.permission,
+    highlights: input.item.highlights,
     recurringMonthly: input.item.kind === 'subscription'
       ? fromMinor(input.item.interval === 'year' ? Math.round(baseMinor / 12) : baseMinor)
       : input.item.kind === 'reads'

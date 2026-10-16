@@ -121,12 +121,12 @@ export function ReviewScreen({
             Shared preview. This link stops working {new Date(expiresAt).toLocaleString('en-GB')}.
           </p>
         )}
-        <header className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#2786A4] to-[#1E6A83] p-7 text-white sm:p-9">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/70">
+        <header className="overflow-hidden rounded-[2rem] bg-primary p-7 text-primary-foreground sm:p-9">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary-foreground/70">
             {[course.subject, course.level, course.language].filter(Boolean).join(' · ') || 'Poket School'}
           </p>
           <h1 className="mt-3 font-heading text-3xl font-extrabold tracking-tight sm:text-4xl">{course.title}</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/80">{course.description}</p>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-primary-foreground/80">{course.description}</p>
         </header>
         {course.modules.map((module, moduleIndex) => {
           const certificate = certificatePreviewCopy(course.title, module.title);

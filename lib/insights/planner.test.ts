@@ -24,10 +24,10 @@ import {
 } from './planner-import';
 
 describe('planner navigation', () => {
-  it('links /dashboard/planner for every role', () => {
+  it('points every role at Calendar & terms instead of a second planner link', () => {
     const layout = readFileSync(new URL('../../app/dashboard/layout.tsx', import.meta.url), 'utf8');
-    assert.equal(layout.split("'/dashboard/planner'").length - 1, 5);
-    assert.match(layout, /labelKey: 'nav.planner'/);
+    assert.equal(layout.split("'/dashboard/planner'").length - 1, 0);
+    assert.equal(layout.split("label: 'Calendar & terms'").length - 1, 5);
   });
 });
 

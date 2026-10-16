@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isNextResponse, requireUser } from '@/lib/api-guard';
 import { getPublicCourseById } from '@/lib/db';
-import { ADDONS, TIERS } from '@/lib/entitlements';
+import { ADDONS, TIERS, planProgrammes } from '@/lib/entitlements';
 import { loadPricingConfig } from '@/lib/pricing-store';
 import {
   quoteAddon,
@@ -127,6 +127,7 @@ async function catalogCheckout(req: NextRequest, body: CheckoutBody, kind: Exclu
   let amount = 0;
   let currency = 'USD';
   let name = id;
+  let description = '';
   let mode: 'subscription' | 'payment' = 'subscription';
   let recurring: 'month' | 'year' | null = interval === 'annual' ? 'year' : 'month';
 
@@ -137,6 +138,7 @@ async function catalogCheckout(req: NextRequest, body: CheckoutBody, kind: Exclu
     amount = quote.amount;
     currency = quote.currency;
     name = tier.name;
+    description = planProgrammes(id).join(' · ');
   } else if (kind === 'addon') {
     const quote = quoteAddon(config, id, requested);
     const addon = ADDONS.find(item => item.id === id);
@@ -162,6 +164,7 @@ async function catalogCheckout(req: NextRequest, body: CheckoutBody, kind: Exclu
   const origin = req.nextUrl.origin;
   const session = await openSession({
     name,
+    description,
     amount,
     currency,
     mode,
@@ -176,6 +179,7 @@ async function catalogCheckout(req: NextRequest, body: CheckoutBody, kind: Exclu
 
 async function openSession(input: {
   name: string;
+  description?: string;
   amount: number;
   currency: string;
   mode: 'subscription' | 'payment';
@@ -200,12 +204,15 @@ async function openSession(input: {
     const priceData: {
       currency: string;
       unit_amount: number;
-      product_data: { name: string };
+      product_data: { name: string; description?: string };
       recurring?: { interval: 'month' | 'year' };
     } = {
       currency: input.currency.toLowerCase(),
       unit_amount: unitAmount,
-      product_data: { name: input.name },
+      product_data: {
+        name: input.name,
+        ...(input.description ? { description: input.description } : {}),
+      },
     };
     if (input.recurring) priceData.recurring = { interval: input.recurring };
 

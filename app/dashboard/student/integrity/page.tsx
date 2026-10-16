@@ -25,7 +25,7 @@ export default function StudentIntegrityPage() {
       <DashHeader
         eyebrow="Integrity"
         title="What we checked"
-        description="You can see the summary, the evidence, and the teacher’s decision. A mark is never changed from this page. You can appeal."
+        description="This page stays. It shows the check, the evidence, and the teacher’s decision for you, your teacher, and an admin. A mark is never changed from here. You can appeal."
       />
       <IntegrityNotice />
       {cases.length === 0 && <p className="text-sm text-muted-foreground">No open reviews.</p>}

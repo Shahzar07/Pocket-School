@@ -87,7 +87,7 @@ export default function StudentCertificatesPage() {
           My <span className="gradient-text italic">Certificates</span>
         </h1>
         <p className="text-sm text-muted-foreground mt-2 max-w-xl">
-          Poket School awards one certificate for each module once every published lesson in it is complete.
+          Poket School awards one certificate for each completed course module. A super admin can edit the certificate template. Issuing stays automatic when the module is complete.
         </p>
       </motion.div>
 
@@ -106,7 +106,7 @@ export default function StudentCertificatesPage() {
             Finish every published lesson in a module. Draft lessons do not count, and they do not hold the certificate back.
           </p>
           <Link href="/dashboard/student/courses">
-            <Button className="mt-6 rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white border-0 hover:opacity-90 transition-opacity">
+            <Button className="mt-6 rounded-full h-11 px-5 font-bold bg-primary text-primary-foreground border-0 hover:opacity-90 transition-opacity">
               Browse Courses
             </Button>
           </Link>

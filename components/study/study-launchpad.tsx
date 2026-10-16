@@ -60,7 +60,7 @@ export function StudyLaunchpad() {
           <div className="relative">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/60">Exam Prep</p>
             <p className="font-heading text-[26px] leading-tight mt-1.5">Your notes in.<br />Your study plan out.</p>
-            <p className="text-[13px] text-white/70 mt-2 max-w-md">Upload notes, slides or past papers and set your exam date — ET builds a day-by-day plan with lessons, quizzes, podcasts and a mock.</p>
+            <p className="text-[13px] text-white/70 mt-2 max-w-md">Upload notes, slides or past papers and set your exam date — ET AI builds a day-by-day plan with lessons, quizzes, podcasts and a mock.</p>
             <Link href="/dashboard/studio/exam-prep/new" className="mt-4 inline-flex h-10 px-4 rounded-full bg-white text-[#0f2f3a] text-[13px] font-semibold items-center gap-1.5 hover:bg-white/90">
               <Sparkles className="w-4 h-4" /> Create my plan
             </Link>
@@ -72,7 +72,7 @@ export function StudyLaunchpad() {
         className="rounded-2xl p-5 sm:p-6 bg-card border border-border shadow-[var(--shadow-card)] flex flex-col">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">ET Maths</p>
         <p className="font-heading text-[24px] leading-tight mt-1.5">Stuck on a problem?</p>
-        <p className="text-[13px] text-muted-foreground mt-1">Snap it. ET walks you through it, one step at a time.</p>
+        <p className="text-[13px] text-muted-foreground mt-1">Snap it. ET AI walks you through it, one step at a time.</p>
         <Link href="/dashboard/studio/maths" className="mt-4 inline-flex h-10 px-4 rounded-full bg-primary text-primary-foreground text-[13px] font-semibold items-center gap-1.5 w-fit hover:opacity-90">
           <Camera className="w-4 h-4" /> Scan a problem
         </Link>

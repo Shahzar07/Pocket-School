@@ -44,7 +44,7 @@ export function PipCharacter({
       <defs>
         <linearGradient id="pip-body" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#5B8DEF" />
-          <stop offset="55%" stopColor="#2786A4" />
+          <stop offset="55%" stopColor="var(--primary)" />
           <stop offset="100%" stopColor="#1E6A83" />
         </linearGradient>
         <radialGradient id="pip-glow" cx="50%" cy="45%" r="55%">
@@ -95,7 +95,7 @@ export function PipCharacter({
       <circle cx="84" cy="66" r="4" fill="#EC4899" opacity="0.5" />
 
       {/* arms */}
-      <rect x="6" y="52" width="12" height="26" rx="6" fill="#2786A4" />
+      <rect x="6" y="52" width="12" height="26" rx="6" fill="var(--primary)" />
       {mood === 'waving' ? (
         <g style={{ transformOrigin: '108px 58px' }}>
           <rect x="102" y="40" width="12" height="26" rx="6" fill="#1E6A83">
@@ -391,7 +391,7 @@ export function PipGuide({ role }: { role: TourRole }) {
                     width: rect.width, height: rect.height,
                   }}
                   transition={SPOTLIGHT_SPRING}
-                  style={{ boxShadow: '0 0 0 4px rgba(39,134,164,0.18)' }}
+                  style={{ boxShadow: '0 0 0 4px rgba(30,106,131,0.18)' }}
                 />
               </>
             ) : (
@@ -408,7 +408,7 @@ export function PipGuide({ role }: { role: TourRole }) {
               style={cardStyle}
             >
               {/* header */}
-              <div className="flex items-start gap-3 p-5 pb-3 bg-gradient-to-br from-[#2786A4]/8 to-[#1E6A83]/8">
+              <div className="flex items-start gap-3 p-5 pb-3 bg-gradient-to-br from-primary/8 to-[#1E6A83]/8">
                 <div className="shrink-0 -mt-1">
                   <PipCharacter size={56} mood={moving || asking ? 'thinking' : 'happy'} />
                 </div>
@@ -448,7 +448,7 @@ export function PipGuide({ role }: { role: TourRole }) {
                   <button
                     onClick={ask} disabled={asking || !question.trim()}
                     aria-label="Build my walkthrough"
-                    className="shrink-0 w-9 h-9 grid place-items-center rounded-full bg-gradient-to-br from-[#2786A4] to-[#1E6A83] text-white disabled:opacity-40"
+                    className="shrink-0 w-9 h-9 grid place-items-center rounded-full bg-primary text-primary-foreground disabled:opacity-40"
                   >
                     {asking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                   </button>
@@ -481,7 +481,7 @@ export function PipGuide({ role }: { role: TourRole }) {
                   </button>
                 ) : (
                   <button onClick={() => setIndex(i => i + 1)} disabled={moving}
-                    className="h-9 px-4 rounded-full text-xs font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white flex items-center gap-1.5 disabled:opacity-60">
+                    className="h-9 px-4 rounded-full text-xs font-bold bg-primary text-primary-foreground flex items-center gap-1.5 disabled:opacity-60">
                     {moving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>Next <ArrowRight className="w-3.5 h-3.5" /></>}
                   </button>
                 )}

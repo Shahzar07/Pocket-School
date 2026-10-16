@@ -27,6 +27,7 @@ import { moveItem } from '@/lib/platform/cms';
 import { planLabel } from '@/lib/reads/access';
 import { AllocationPicker } from '@/components/allocation-picker';
 import { bookFlagsFromTargets, migrateAllocation } from '@/lib/allocation-targets';
+import { reportContentChange } from '@/lib/audit/report';
 
 const ContentEditor = dynamic(
   () => import('@/components/editor/content-editor').then(mod => mod.ContentEditor),
@@ -79,7 +80,16 @@ export function StudioView() {
         return;
       }
     }
+    const previous = book.status;
     update({ status, version: status === 'published' ? book.version + 1 : book.version });
+    reportContentChange({
+      action: status === 'published' ? 'content.publish' : 'content.edit',
+      targetType: 'book',
+      targetId: book.id,
+      targetLabel: book.title,
+      before: { status: previous },
+      after: { status },
+    });
     toast.success(t('reads.studio.savedLocal'));
   };
 

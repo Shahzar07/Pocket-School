@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { HelpCircle, Plus, MessageSquare, CheckCircle2, X, Loader2 } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
+import { canonicalStatus, slaDue, statusLabel, ticketNumber, TICKET_STATUSES } from '@/lib/tickets';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -20,7 +21,10 @@ const fadeUp: Record<string, any> = {
 
 const STATUS_STYLES: Record<string, string> = {
   open: 'bg-amber-500/10 text-amber-600 border border-amber-500/20',
+  pending: 'bg-primary/10 text-primary border border-primary/20',
   in_progress: 'bg-primary/10 text-primary border border-primary/20',
+  kiv: 'bg-violet-500/10 text-violet-700 border border-violet-500/20',
+  solved: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20',
   resolved: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20',
   closed: 'bg-muted text-muted-foreground',
 };
@@ -40,6 +44,8 @@ export default function HelpdeskPage() {
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<SupportTicket | null>(null);
   const [reply, setReply] = useState('');
+  const [note, setNote] = useState('');
+  const [assignee, setAssignee] = useState('');
   const [form, setForm] = useState<{ subject: string; description: string; priority: SupportTicket['priority'] }>({ subject: '', description: '', priority: 'normal' });
 
   const isAdmin = profile?.role === 'admin';
@@ -83,7 +89,12 @@ export default function HelpdeskPage() {
 
   const handleReply = async () => {
     if (!selected || !reply.trim()) return;
-    await updateSupportTicket(selected.id!, { response: reply.trim(), status: 'in_progress' });
+    await updateSupportTicket(selected.id!, {
+      response: reply.trim(),
+      status: 'pending' as SupportTicket['status'],
+      assignedTo: assignee.trim() || selected.assignedTo,
+      ...(note.trim() ? { notes: note.trim() } : {}),
+    } as Partial<SupportTicket>);
     toast.success('Reply sent.');
     setReply('');
     setSelected(null);
@@ -91,9 +102,9 @@ export default function HelpdeskPage() {
   };
 
   const handleResolve = async (id: string) => {
-    await updateSupportTicket(id, { status: 'resolved' });
-    setTickets(prev => prev.map(t => t.id === id ? { ...t, status: 'resolved' } : t));
-    toast.success('Marked as resolved.');
+    await updateSupportTicket(id, { status: 'solved' as SupportTicket['status'] });
+    setTickets(prev => prev.map(t => t.id === id ? { ...t, status: 'solved' as SupportTicket['status'] } : t));
+    toast.success('Marked as solved.');
   };
 
   if (loading) return (
@@ -123,7 +134,7 @@ export default function HelpdeskPage() {
         </div>
         {!isAdmin && (
           <Button onClick={() => setShowCreate(true)}
-            className="rounded-full h-11 px-5 gap-2 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] hover:opacity-90 text-white shrink-0"
+            className="rounded-full h-11 px-5 gap-2 font-bold bg-primary hover:opacity-90 text-primary-foreground shrink-0"
           >
             <Plus className="w-4 h-4" /> New Ticket
           </Button>
@@ -155,7 +166,7 @@ export default function HelpdeskPage() {
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={handleCreate} disabled={saving} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white gap-2">
+          <Button onClick={handleCreate} disabled={saving} className="w-full rounded-full h-11 font-bold bg-primary text-primary-foreground gap-2">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageSquare className="w-4 h-4" />}
             Submit Ticket
           </Button>
@@ -184,10 +195,14 @@ export default function HelpdeskPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <h3 className="font-bold text-foreground">{ticket.subject}</h3>
-                    <Badge className={`rounded-full text-[10px] ${STATUS_STYLES[ticket.status]}`}>{ticket.status.replace('_', ' ')}</Badge>
+                    <Badge className="rounded-full text-[10px] bg-muted text-muted-foreground">{ticket.id ? ticketNumber(ticket.id) : 'PS'}</Badge>
+                    <Badge className={`rounded-full text-[10px] ${STATUS_STYLES[canonicalStatus(ticket.status)]}`}>{statusLabel(ticket.status)}</Badge>
                     <Badge className={`rounded-full text-[10px] ${PRIORITY_STYLES[ticket.priority]}`}>{ticket.priority}</Badge>
                   </div>
-                  {isAdmin && <p className="text-xs text-muted-foreground">From: {ticket.userName}</p>}
+                  {isAdmin && <p className="text-xs text-muted-foreground">From: {ticket.userName}{ticket.assignedTo ? ` · ${ticket.assignedTo}` : ''}</p>}
+                  {ticket.createdAt && (
+                    <p className="text-xs text-muted-foreground">SLA {new Date(slaDue(ticket.createdAt.toDate().getTime(), ticket.priority)).toLocaleString()}</p>
+                  )}
                   <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{ticket.description}</p>
                   {ticket.response && (
                     <div className="mt-3 bg-primary/5 border border-primary/20 rounded-2xl p-3">
@@ -197,7 +212,7 @@ export default function HelpdeskPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  {ticket.status !== 'resolved' && (
+                  {canonicalStatus(ticket.status) !== 'solved' && canonicalStatus(ticket.status) !== 'closed' && (
                     <>
                       {isAdmin && (
                         <Button size="sm" variant="ghost" onClick={() => setSelected(ticket)} className="rounded-xl text-xs gap-1">
@@ -206,9 +221,15 @@ export default function HelpdeskPage() {
                       )}
                       {(isAdmin || ticket.userId === user?.uid) && (
                         <Button size="sm" variant="ghost" onClick={() => handleResolve(ticket.id!)} className="rounded-xl text-xs gap-1 text-emerald-600 hover:text-emerald-700">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Resolve
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Solved
                         </Button>
                       )}
+                      {isAdmin && TICKET_STATUSES.map((status) => (
+                        <button key={status} type="button" className="text-[10px] uppercase font-semibold text-muted-foreground hover:text-foreground" onClick={async () => {
+                          await updateSupportTicket(ticket.id!, { status: status as SupportTicket['status'] });
+                          setTickets((prev) => prev.map((item) => item.id === ticket.id ? { ...item, status: status as SupportTicket['status'] } : item));
+                        }}>{statusLabel(status)}</button>
+                      ))}
                     </>
                   )}
                 </div>
@@ -235,13 +256,15 @@ export default function HelpdeskPage() {
               <p className="text-xs font-semibold text-muted-foreground mb-1">{selected.subject}</p>
               <p className="text-sm text-foreground">{selected.description}</p>
             </div>
+            <Input value={assignee} onChange={(e) => setAssignee(e.target.value)} placeholder="Assignee" className="rounded-xl h-11" />
             <Textarea
               value={reply}
               onChange={e => setReply(e.target.value)}
               placeholder="Write your reply…"
               className="rounded-xl text-sm resize-none min-h-24 bg-muted/50"
             />
-            <Button onClick={handleReply} disabled={!reply.trim()} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white gap-2">
+            <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Internal note" className="rounded-xl text-sm min-h-16 bg-muted/50" />
+            <Button onClick={handleReply} disabled={!reply.trim()} className="w-full rounded-full h-11 font-bold bg-primary text-primary-foreground gap-2">
               <MessageSquare className="w-4 h-4" /> Send Reply
             </Button>
           </motion.div>

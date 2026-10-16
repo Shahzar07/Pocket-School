@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { LANGUAGES } from '../languages';
+import { LANGUAGES, isRtl } from '../languages';
 import { CATALOG_REVIEW, catalogs, hasUiCatalog, UI_LANGUAGE_CODES } from './catalog';
 import { detectLanguage, formatAppDate, formatAppNumber, initialLanguage, languageShortcut, resolveLessonCopy, suggestedLanguage } from './detect';
 
@@ -96,6 +96,33 @@ test('a known country is the suggested language ahead of the browser', () => {
   assert.equal(detectLanguage({ country: 'TH' }), 'th');
   assert.equal(detectLanguage({ country: 'IT' }), 'it');
   assert.equal(detectLanguage({ country: 'my' }), 'ms');
+  assert.equal(detectLanguage({ country: 'PT' }), 'pt-PT');
+  assert.equal(detectLanguage({ country: 'IL' }), 'he');
+  assert.equal(detectLanguage({ country: 'PH' }), 'fil');
+  assert.equal(detectLanguage({ navigatorLanguages: ['pt-PT'] }), 'pt-PT');
+});
+
+test('the language list covers the major world languages and rtl scripts', () => {
+  assert.ok(LANGUAGES.length >= 40, `expected at least 40 languages, got ${LANGUAGES.length}`);
+  for (const code of ['ar', 'he', 'ur', 'fa', 'ps']) {
+    assert.equal(isRtl(code), true, code);
+  }
+  assert.equal(catalogs.en.landing.hero.title, 'Learn your way. Go further with AI.');
+  assert.equal(catalogs.ms.landing.hero.title, 'Belajar dengan cara anda. Pergi lebih jauh dengan AI.');
+  assert.equal(catalogs.ar.landing.hero.title, 'تعلّم بطريقتك. امضِ أبعد مع الذكاء الاصطناعي.');
+  assert.equal(catalogs.en.landing.degrees.title, 'Beyond A-Level.');
+  assert.equal(catalogs.en.landing.newFeatures.label, 'New features');
+  assert.equal(catalogs.en.landing.pricing.igcse7, 'ET AI Essay Writer — AI-graded 9-1 / A*-U');
+  assert.equal(catalogs.en.landing.pricing.professional9, 'ET AI Live add-on');
+  assert.equal(catalogs.en.landing.degrees.lineup, 'LLB Law, MBBS Medicine, Engineering and Nursing');
+  assert.equal(catalogs.en.landing.supplement.title, 'We supplement. We do not replace.');
+  assert.equal(
+    catalogs.en.footer.disclaimer,
+    'Poket School is not affiliated with, endorsed by, or accredited by Cambridge Assessment International Education (CAIE), Pearson Edexcel, Oxford AQA, the University of London, or any other examination board or government body. Curriculum references are for alignment and supplementary learning purposes only. Platform certificates are not official academic qualifications.',
+  );
+  assert.equal(catalogs.en.footer.rights, '© {{year}} Poket Media Sdn Bhd (1332289-X) · Made in Malaysia');
+  assert.equal(catalogs.ar.footer.rights, catalogs.en.footer.rights);
+  assert.equal(catalogs.en.auth.line2.includes('Pocket'), false);
 });
 
 test('browser language is used when the country is unknown', () => {
@@ -153,6 +180,7 @@ test('interpolation tokens survive every catalog', () => {
     'suggest.switch': ['{{language}}'],
     'footer.rights': ['{{year}}'],
     'market.related': ['{{title}}'],
+    'landing.faq.a4': ['{{count}}'],
     'market.freeLessons': ['{{count}}'],
     'market.hours': ['{{count}}'],
     'market.approx': ['{{amount}}'],
@@ -174,6 +202,36 @@ test('interpolation tokens survive every catalog', () => {
         assert.ok(String(value).includes(token), `${code} ${path} missing ${token}`);
       }
     }
+  }
+});
+
+test('faq catalogs match current plans and stay translated', () => {
+  const en = catalogFor('en').landing.faq;
+  assert.match(en.a1, /\$19/);
+  assert.match(en.a1, /\$79/);
+  assert.match(en.a1, /\$99/);
+  assert.match(en.a1, /\$171/);
+  assert.match(en.a1, /\$708/);
+  assert.match(en.a1, /\$888/);
+  assert.match(en.a2, /University of London/);
+  assert.match(en.a2, /MBBS/);
+  assert.match(en.a2, /Engineering/);
+  assert.match(en.a2, /Nursing/);
+  assert.match(en.a4, /ET AI Essay Writer/);
+  assert.match(en.a4, /\{\{count\}\}/);
+  const banned = /Lyra|Udemy|Coursera|\bPocket\b|Years?\s+\d/i;
+  for (const code of Object.keys(catalogs)) {
+    const faq = catalogFor(code).landing.faq;
+    const blob = Object.values(faq).join('\n');
+    assert.equal(banned.test(blob), false, `${code} ${blob.match(banned)?.[0] ?? ''}`);
+    assert.match(faq.a1, /\$19/, code);
+    assert.match(faq.a1, /\$708/, code);
+    assert.match(faq.a1, /\$888/, code);
+    assert.ok(faq.a4.includes('{{count}}'), code);
+    assert.ok(faq.a4.includes('ET AI Essay Writer'), code);
+    assert.ok(faq.a4.includes('ET AI Live'), code);
+    assert.ok(faq.a4.includes('Poket Reads'), code);
+    if (code !== 'en') assert.notEqual(faq.q1, en.q1, code);
   }
 });
 

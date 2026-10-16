@@ -22,7 +22,7 @@ const fadeUp: Record<string, any> = {
 
 const COURSE_GRADIENTS = [
   'from-emerald-500 to-teal-600',
-  'from-[#2786A4] to-[#1E6A83]',
+  'from-primary to-primary',
   'from-amber-500 to-orange-600',
   'from-rose-500 to-pink-600',
 ];
@@ -274,7 +274,7 @@ export default function TeacherDashboard() {
             <PanelHeader title="Jump to" />
             <div className="space-y-2">
               {[
-                { href: '/dashboard/studio', icon: Sparkles, title: 'AI Studio', sub: 'ET, Maths, and Exam Prep' },
+                { href: '/dashboard/studio', icon: Sparkles, title: 'AI Studio', sub: 'ET AI, Maths, and Exam Prep' },
                 { href: '/dashboard/teacher/attendance', icon: CheckCircle2, title: 'Attendance', sub: 'Mark a register' },
                 { href: '/dashboard/teacher/analytics', icon: BarChart3, title: 'Analytics', sub: 'How your class is doing' },
               ].map(x => (

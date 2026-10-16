@@ -44,6 +44,7 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { resolveLessonCopy } from '@/lib/i18n/detect';
+import { useContentTranslation } from '@/hooks/use-content-translation';
 import { getLanguage } from '@/lib/languages';
 import {
   ArrowLeft, CheckCircle2, FileText, Headphones, FlipHorizontal,
@@ -249,7 +250,7 @@ function QuizViewer({
 
       {!graded && (
         <Button onClick={handleSubmit} disabled={loading || Object.keys(answers).length < questions.length}
-          className="w-full h-11 rounded-full font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white"
+          className="w-full h-11 rounded-full font-bold bg-primary text-primary-foreground"
         >
           {loading ? 'Grading with AI…' : `Submit Quiz (${Object.keys(answers).length}/${questions.length})`}
         </Button>
@@ -364,14 +365,14 @@ function UnitQuizMode({
   if (phase === 'intro') {
     return (
       <motion.div initial="hidden" animate="visible" variants={fadeUp} className="max-w-2xl mx-auto py-8">
-        <div className="relative overflow-hidden bg-gradient-to-br from-[#2786A4] to-[#1E6A83] rounded-3xl p-8 text-white text-center mb-6">
+        <div className="relative overflow-hidden bg-primary rounded-3xl p-8 text-primary-foreground text-center mb-6">
           <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-white/10 blur-2xl" />
           <div className="absolute -bottom-20 -left-10 w-56 h-56 rounded-full bg-white/5 blur-3xl" />
           <div className="relative">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/70 mb-3">Mastery Challenge</p>
-            <Trophy className="w-10 h-10 mx-auto mb-3 text-amber-300" />
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary-foreground/70 mb-3">Mastery Challenge</p>
+            <Trophy className="w-10 h-10 mx-auto mb-3 text-primary-foreground" />
             <h2 className="font-heading text-3xl mb-2">{unit.title} — Mastery Quiz</h2>
-            <p className="text-white/80 text-sm max-w-md mx-auto">
+            <p className="text-primary-foreground/80 text-sm max-w-md mx-auto">
               {questions.length} questions covering every lesson in this module.
               Score {threshold}% or higher to pass and unlock the next module.
             </p>
@@ -393,7 +394,7 @@ function UnitQuizMode({
           </div>
         </div>
 
-        <Button onClick={startQuiz} className="w-full h-12 rounded-full font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white text-base gap-2">
+        <Button onClick={startQuiz} className="w-full h-12 rounded-full font-bold bg-primary text-primary-foreground text-base gap-2">
           <Timer className="w-4 h-4" />
           {attempts.length ? 'Retake quiz' : 'Start quiz'} — your time will be recorded
         </Button>
@@ -497,7 +498,7 @@ function UnitQuizMode({
           )}
           <Button
             onClick={() => router.push(`/dashboard/student/courses/${courseId}`)}
-            className={`flex-1 h-11 rounded-full font-bold ${result.passed ? 'bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white' : ''}`}
+            className={`flex-1 h-11 rounded-full font-bold ${result.passed ? 'bg-primary text-primary-foreground' : ''}`}
             variant={result.passed ? 'default' : 'outline'}
           >
             Back to course
@@ -550,7 +551,7 @@ function UnitQuizMode({
       <Button
         onClick={handleSubmit}
         disabled={submitting || Object.keys(answers).length < questions.length}
-        className="w-full h-12 rounded-full font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white"
+        className="w-full h-12 rounded-full font-bold bg-primary text-primary-foreground"
       >
         {submitting ? 'Saving attempt…' : `Submit Mastery Quiz (${Object.keys(answers).length}/${questions.length})`}
       </Button>
@@ -632,6 +633,15 @@ export default function LessonPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [closedReason, setClosedReason] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const sourceCopy = lesson
+    ? resolveLessonCopy(lesson, i18n.language)
+    : { title: '', text: '', language: 'en', fellBack: false };
+  const translation = useContentTranslation(
+    `lesson:${lessonId ?? 'pending'}`,
+    { title: sourceCopy.title, text: sourceCopy.text },
+    i18n.language,
+    Boolean(lesson) && sourceCopy.fellBack,
+  );
 
   useEffect(() => {
     if (!user || !courseId || !lessonId) return;
@@ -677,7 +687,7 @@ export default function LessonPage() {
             result.lesson, units[unitIndex].lessons, statuses[unitIndex].state, completedIds
           );
           if (lessonStatus === 'locked') {
-            toast.error('This lesson is locked. Complete the previous lessons first.');
+            toast.error(t('lesson.locked'));
             router.replace(`/dashboard/student/courses/${courseId}`);
             return;
           }
@@ -901,16 +911,16 @@ export default function LessonPage() {
   if (loadError) return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-24 text-center">
       <AlertTriangle className="w-10 h-10 mx-auto mb-4 text-amber-500" />
-      <p className="font-semibold text-foreground mb-1">Couldn&apos;t load this lesson</p>
+      <p className="font-semibold text-foreground mb-1">{t('lesson.loadFailed')}</p>
       <p className="text-sm text-muted-foreground mb-6">{loadError}</p>
       <Button onClick={() => setReloadKey(k => k + 1)} className="rounded-full px-6 font-bold gap-2">
-        <RotateCcw className="w-4 h-4" /> Retry
+        <RotateCcw className="w-4 h-4" /> {t('lesson.retry')}
       </Button>
     </div>
   );
 
   if (!lesson) return (
-    <div className="text-center py-16 text-muted-foreground">Lesson not found.</div>
+    <div className="text-center py-16 text-muted-foreground">{t('lesson.notFound')}</div>
   );
 
   if (closedReason) return (
@@ -919,15 +929,27 @@ export default function LessonPage() {
       <h1 className="font-heading text-xl text-foreground mb-2">{lesson.title}</h1>
       <p className="text-sm text-muted-foreground mb-6">{closedReason}</p>
       <Button onClick={() => router.push(`/dashboard/student/courses/${courseId}`)} className="rounded-full px-6 font-bold gap-2">
-        <ArrowLeft className="w-4 h-4" /> Back to the course
+        <ArrowLeft className="w-4 h-4" /> {t('lesson.backToCourse')}
       </Button>
     </div>
   );
 
-  const copy = resolveLessonCopy(lesson, i18n.language);
-  const languageNotice = copy.fellBack ? (
+  const copy = {
+    title: translation.values.title || sourceCopy.title,
+    text: translation.values.text || sourceCopy.text,
+  };
+  const languageNotice = translation.autoTranslated ? (
+    <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-primary">
+      <span className="rounded-full bg-primary/10 px-2 py-0.5 font-semibold">{t('lesson.autoTranslated')}</span>
+      <button type="button" className="underline" onClick={translation.toggle}>
+        {translation.showOriginal ? t('lesson.showTranslation') : t('lesson.showOriginal')}
+      </button>
+    </p>
+  ) : sourceCopy.fellBack ? (
     <p className="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-      {t('lesson.fallback', { language: getLanguage(i18n.language).label })}
+      {translation.status === 'unavailable'
+        ? t('lesson.unavailable')
+        : t('lesson.fallback', { language: getLanguage(i18n.language).label })}
     </p>
   ) : null;
 
@@ -947,7 +969,7 @@ export default function LessonPage() {
           </div>
           {completed && (
             <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 rounded-full gap-1.5 shrink-0">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Passed
+              <CheckCircle2 className="w-3.5 h-3.5" /> {t('lesson.passed')}
             </Badge>
           )}
         </div>
@@ -967,8 +989,8 @@ export default function LessonPage() {
         ) : (
           <div className="text-center py-20 text-muted-foreground bg-muted/30 rounded-3xl border border-dashed border-border">
             <Trophy className="w-12 h-12 mx-auto mb-4 opacity-30" />
-            <p className="font-semibold">Quiz not yet published</p>
-            <p className="text-sm mt-1">Your school is preparing this module mastery quiz. Check back soon.</p>
+            <p className="font-semibold">{t('lesson.quizUnpublished')}</p>
+            <p className="text-sm mt-1">{t('lesson.quizUnpublishedBody')}</p>
           </div>
         )}
       </div>
@@ -1014,7 +1036,7 @@ export default function LessonPage() {
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">{isCurriculum ? t('lesson.unit') : t('lesson.course')}</p>
             <h1 className="font-heading text-foreground text-2xl truncate">{copy.title}</h1>
             {languageNotice}
-            {!aiOutputs && !copy.text.trim() && <p className="text-xs text-muted-foreground">No content generated yet</p>}
+            {!aiOutputs && !copy.text.trim() && <p className="text-xs text-muted-foreground">{t('lesson.empty')}</p>}
             {isCurriculum && lesson.objectiveCodes && lesson.objectiveCodes.length > 0 && (
               <p className="text-xs text-muted-foreground font-mono truncate">{lesson.objectiveCodes.join(' · ')}</p>
             )}
@@ -1041,7 +1063,7 @@ export default function LessonPage() {
           ) : (
             <Button
               size="sm"
-              className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white gap-1.5"
+              className="rounded-full h-11 px-5 font-bold bg-primary text-primary-foreground gap-1.5"
               onClick={handleComplete}
               disabled={completing}
             >
@@ -1072,7 +1094,7 @@ export default function LessonPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="flex-wrap h-auto gap-1.5 bg-muted/50 p-1.5 rounded-2xl mb-6">
             {TABS.map(t => (
-              <TabsTrigger key={t.id} value={t.id} className="rounded-full h-8 px-3.5 text-xs font-semibold gap-1.5 text-muted-foreground hover:text-foreground data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#2786A4] data-[state=active]:to-[#1E6A83] data-[state=active]:text-white data-[state=active]:shadow-sm">
+              <TabsTrigger key={t.id} value={t.id} className="rounded-full h-8 px-3.5 text-xs font-semibold gap-1.5 text-muted-foreground hover:text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
                 {t.icon}{t.label}
                 {isFormatLocked(t.format) && (
                   <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-600">
@@ -1165,7 +1187,7 @@ export default function LessonPage() {
                   {slides.map((slide, i) => (
                     <motion.div key={i} initial="hidden" animate="visible" variants={fadeUp} custom={i} className="bg-card border border-border rounded-3xl p-6 card-glow">
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#2786A4] to-[#1E6A83] flex items-center justify-center text-white font-bold text-sm shrink-0">{i + 1}</div>
+                        <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">{i + 1}</div>
                         <h3 className="font-bold text-foreground">{slide.title}</h3>
                       </div>
                       <ul className="space-y-2">
