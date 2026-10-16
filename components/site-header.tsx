@@ -31,6 +31,15 @@ const HIDDEN_PREFIXES = [
   "/account-preview",
 ];
 
+/** /offer is a standalone landing page with its own header. */
+function hidesSiteChrome(pathname: string): boolean {
+  return (
+    HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix)) ||
+    pathname === "/offer" ||
+    pathname.startsWith("/offer/")
+  );
+}
+
 export function SiteHeader() {
   const pathname = usePathname();
   const { t } = useTranslation();
@@ -72,9 +81,7 @@ export function SiteHeader() {
     };
   }, [mobileOpen, pathname]);
 
-  const isHidden =
-    HIDDEN_PREFIXES.some((p) => pathname.startsWith(p)) ||
-    pathname.includes("/session");
+  const isHidden = hidesSiteChrome(pathname) || pathname.includes("/session");
 
   if (isHidden) return null;
 

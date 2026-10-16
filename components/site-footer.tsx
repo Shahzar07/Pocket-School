@@ -45,6 +45,15 @@ const HIDDEN_PREFIXES = [
   "/preview/design",
 ];
 
+/** /offer ships its own footer, including the operating-company line. */
+function hidesSiteFooter(pathname: string): boolean {
+  return (
+    HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix)) ||
+    pathname === "/offer" ||
+    pathname.startsWith("/offer/")
+  );
+}
+
 const FOOTER_VIDEO =
   "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260429_114316_1c7889ad-2885-410e-b493-98119fee0ddb.mp4";
 
@@ -103,7 +112,7 @@ function FooterLink({ href, label }: { href: string; label: string }) {
 export function SiteFooter() {
   const { t } = useTranslation();
   const pathname = usePathname() || "";
-  if (HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))) return null;
+  if (hidesSiteFooter(pathname)) return null;
 
   if (pathname === "/")
     return (
