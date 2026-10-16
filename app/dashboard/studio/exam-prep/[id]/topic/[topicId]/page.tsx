@@ -18,13 +18,15 @@ import { assertSparks, assetId, chargeSparks, completeItem, getAsset, saveAsset,
 import { STUDY_COSTS } from '@/lib/sparks';
 import type { AssetType, Difficulty, ExamPrep, Exercise, Flashcard, LessonAsset, PodcastAsset, PodcastStyle, QuizQuestion, StudyTopic, TrueFalseItem } from '@/lib/study/types';
 
-const tabLoad = { loading: () => <div className="h-48 animate-pulse rounded-2xl bg-muted" role="status" aria-label="Loading this study tool" /> };
-const LessonView = dynamic(() => import('@/components/study/lesson-view').then(mod => mod.LessonView), tabLoad);
-const FlashcardsView = dynamic(() => import('@/components/study/flashcards-view').then(mod => mod.FlashcardsView), tabLoad);
-const QuizView = dynamic(() => import('@/components/study/quiz-view').then(mod => mod.QuizView), tabLoad);
-const TrueFalseView = dynamic(() => import('@/components/study/quiz-view').then(mod => mod.TrueFalseView), tabLoad);
-const ExercisesView = dynamic(() => import('@/components/study/exercises-view').then(mod => mod.ExercisesView), tabLoad);
-const PodcastPlayer = dynamic(() => import('@/components/study/podcast-player').then(mod => mod.PodcastPlayer), tabLoad);
+function TabLoading() {
+  return <div className="h-48 animate-pulse rounded-2xl bg-muted" role="status" aria-label="Loading this study tool" />;
+}
+const LessonView = dynamic(() => import('@/components/study/lesson-view').then(mod => mod.LessonView), { loading: TabLoading });
+const FlashcardsView = dynamic(() => import('@/components/study/flashcards-view').then(mod => mod.FlashcardsView), { loading: TabLoading });
+const QuizView = dynamic(() => import('@/components/study/quiz-view').then(mod => mod.QuizView), { loading: TabLoading });
+const TrueFalseView = dynamic(() => import('@/components/study/quiz-view').then(mod => mod.TrueFalseView), { loading: TabLoading });
+const ExercisesView = dynamic(() => import('@/components/study/exercises-view').then(mod => mod.ExercisesView), { loading: TabLoading });
+const PodcastPlayer = dynamic(() => import('@/components/study/podcast-player').then(mod => mod.PodcastPlayer), { loading: TabLoading });
 
 type Tab = AssetType | 'chat';
 

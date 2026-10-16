@@ -16,6 +16,7 @@ import { MathMarkdown } from '@/components/math-markdown';
 import { readLanguage } from '@/lib/languages';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { DeskFrame } from '@/components/studio/desk-frame';
+import { ToolLoading } from '@/components/studio/boot';
 import {
   Sparkles, ArrowUp, ArrowLeft, Library, MessageSquare, PenLine, BookOpen,
   FileText, ClipboardList, Network, BookMarked,
@@ -35,17 +36,34 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { BOOKS, bookById } from '@/lib/reads/seed';
 import { canUseDeskTool, type DeskToolId } from '@/lib/studio/desk';
 
-const piece = { loading: () => <div className="h-40 animate-pulse rounded-2xl bg-muted" role="status" aria-label="Loading this ET AI tool" /> };
-const MindmapRenderer = dynamic(() => import('@/components/mindmap-renderer').then(mod => mod.MindmapRenderer), piece);
-const InfographicRenderer = dynamic(() => import('@/components/infographic-renderer').then(mod => mod.InfographicRenderer), piece);
-const VideoStoryboard = dynamic(() => import('@/components/video-storyboard').then(mod => mod.VideoStoryboard), piece);
-const VideoPlayer = dynamic(() => import('@/components/video-player').then(mod => mod.VideoPlayer), piece);
-const SmartAudioPlayer = dynamic(() => import('@/components/smart-audio-player').then(mod => mod.SmartAudioPlayer), piece);
-const EssaysDesk = dynamic(() => import('@/components/essays/essays-desk').then(mod => mod.EssaysDesk), piece);
+const MindmapRenderer = dynamic(() => import('@/components/mindmap-renderer').then(mod => mod.MindmapRenderer), {
+  loading: () => <ToolLoading label="Loading this ET AI tool" />,
+});
+const InfographicRenderer = dynamic(() => import('@/components/infographic-renderer').then(mod => mod.InfographicRenderer), {
+  loading: () => <ToolLoading label="Loading this ET AI tool" />,
+});
+const VideoStoryboard = dynamic(() => import('@/components/video-storyboard').then(mod => mod.VideoStoryboard), {
+  loading: () => <ToolLoading label="Loading this ET AI tool" />,
+});
+const VideoPlayer = dynamic(() => import('@/components/video-player').then(mod => mod.VideoPlayer), {
+  loading: () => <ToolLoading label="Loading this ET AI tool" />,
+});
+const SmartAudioPlayer = dynamic(() => import('@/components/smart-audio-player').then(mod => mod.SmartAudioPlayer), {
+  loading: () => <ToolLoading label="Loading this ET AI tool" />,
+});
+const EssaysDesk = dynamic(() => import('@/components/essays/essays-desk').then(mod => mod.EssaysDesk), {
+  loading: () => <ToolLoading label="Loading ET Essays" tall />,
+});
 const HandwritingCapture = dynamic(() => import('@/components/handwriting-capture').then(mod => mod.HandwritingCapture), { ssr: false });
-const TeacherToolkitPanel = dynamic(() => import('@/components/studio/desk-panels').then(mod => mod.TeacherToolkitPanel), piece);
-const ParentExplainerPanel = dynamic(() => import('@/components/studio/desk-panels').then(mod => mod.ParentExplainerPanel), piece);
-const ResearchHelperPanel = dynamic(() => import('@/components/studio/desk-panels').then(mod => mod.ResearchHelperPanel), piece);
+const TeacherToolkitPanel = dynamic(() => import('@/components/studio/desk-panels').then(mod => mod.TeacherToolkitPanel), {
+  loading: () => <ToolLoading label="Loading Teacher Toolkit" tall />,
+});
+const ParentExplainerPanel = dynamic(() => import('@/components/studio/desk-panels').then(mod => mod.ParentExplainerPanel), {
+  loading: () => <ToolLoading label="Loading Parent Explainer" tall />,
+});
+const ResearchHelperPanel = dynamic(() => import('@/components/studio/desk-panels').then(mod => mod.ResearchHelperPanel), {
+  loading: () => <ToolLoading label="Loading Research Helper" tall />,
+});
 
 type FormatId = 'text' | 'flashcards' | 'quiz' | 'slides' | 'notes' | 'summary' | 'problems' | 'glossary' | 'mindmap' | 'infographic' | 'videoScript' | 'audioScript';
 
