@@ -753,6 +753,7 @@ describe('certificates', () => {
     await assertFails(setDoc(doc(student, 'certificate_keys/student1__free1__mod1'), {
       certificateId: 'cert-1',
     }));
+    await assertFails(deleteDoc(doc(student, 'certificates/cert-1')));
 
     await env.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), 'users/parent1'), {
@@ -763,5 +764,72 @@ describe('certificates', () => {
     await assertSucceeds(getDocs(query(collection(parent, 'certificates'), where('studentId', '==', 'student1'))));
     const stranger = env.authenticatedContext('student2').firestore();
     await assertFails(getDocs(query(collection(stranger, 'certificates'), where('studentId', '==', 'student1'))));
+  });
+});
+
+describe('activity log and credential records', () => {
+  it('keeps the activity log server-written and hides the signing key', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'users/student1'), {
+        role: 'student', name: 'Harry Student', email: 'student@example.com', xp: 0, sparksBalance: 0,
+      });
+      await setDoc(doc(db, 'users/teacher1'), {
+        role: 'teacher', name: 'Ada Teacher', email: 'teacher@example.com', xp: 0, sparksBalance: 0,
+      });
+      await setDoc(doc(db, 'users/admin1'), {
+        role: 'admin', name: 'Admin', email: 'admin@example.com', xp: 0, sparksBalance: 0,
+      });
+      await setDoc(doc(db, 'users/instadmin1'), {
+        role: 'institution_admin', name: 'Inst Admin', email: 'inst@example.com', institutionId: 'school-a', xp: 0, sparksBalance: 0,
+      });
+      await setDoc(doc(db, 'activity_log/own-auth'), {
+        actorId: 'student1', category: 'auth', action: 'auth.login', at: 1,
+      });
+      await setDoc(doc(db, 'activity_log/own-content'), {
+        actorId: 'student1', category: 'content', action: 'content.edit', at: 2,
+      });
+      await setDoc(doc(db, 'activity_log/other-auth'), {
+        actorId: 'student2', category: 'auth', action: 'auth.login', at: 3,
+      });
+      await setDoc(doc(db, 'users/student1/auth_activity/row'), {
+        actorId: 'student1', category: 'auth', action: 'auth.login', at: 1,
+      });
+      await setDoc(doc(db, 'audit_settings/retention'), { days: 730 });
+      await setDoc(doc(db, 'credential_keys/poket-school'), { publicKeyMultibase: 'zsecret' });
+      await setDoc(doc(db, 'certificate_templates/default'), { headline: 'Award' });
+    });
+
+    const student = env.authenticatedContext('student1').firestore();
+    await assertSucceeds(getDoc(doc(student, 'activity_log/own-auth')));
+    await assertSucceeds(getDoc(doc(student, 'users/student1/auth_activity/row')));
+    await assertFails(getDoc(doc(student, 'activity_log/own-content')));
+    await assertFails(getDoc(doc(student, 'activity_log/other-auth')));
+    await assertFails(setDoc(doc(student, 'activity_log/forged'), { actorId: 'student1', category: 'auth' }));
+    await assertFails(updateDoc(doc(student, 'activity_log/own-auth'), { action: 'changed' }));
+    await assertFails(deleteDoc(doc(student, 'activity_log/own-auth')));
+
+    const anon = env.unauthenticatedContext().firestore();
+    await assertFails(getDoc(doc(anon, 'activity_log/own-auth')));
+
+    const teacher = env.authenticatedContext('teacher1').firestore();
+    await assertFails(getDoc(doc(teacher, 'users/student1/auth_activity/row')));
+    await assertFails(getDoc(doc(teacher, 'activity_log/own-auth')));
+
+    const superAdmin = env.authenticatedContext('super1', { adminRole: 'super_admin' }).firestore();
+    await assertSucceeds(getDoc(doc(superAdmin, 'activity_log/own-content')));
+    await assertFails(setDoc(doc(superAdmin, 'activity_log/from-super'), { actorId: 'super1', category: 'admin' }));
+    await assertSucceeds(getDoc(doc(superAdmin, 'audit_settings/retention')));
+    await assertFails(getDoc(doc(student, 'audit_settings/retention')));
+    await assertFails(setDoc(doc(superAdmin, 'audit_settings/retention'), { days: 90 }));
+    await assertFails(getDoc(doc(superAdmin, 'credential_keys/poket-school')));
+    await assertFails(setDoc(doc(superAdmin, 'credential_keys/poket-school'), { publicKeyMultibase: 'z' }));
+
+    const admin = env.authenticatedContext('admin1').firestore();
+    const school = env.authenticatedContext('instadmin1').firestore();
+    await assertSucceeds(getDoc(doc(admin, 'certificate_templates/default')));
+    await assertSucceeds(getDoc(doc(school, 'certificate_templates/default')));
+    await assertFails(getDoc(doc(student, 'certificate_templates/default')));
+    await assertFails(setDoc(doc(admin, 'certificate_templates/default'), { headline: 'Nope' }));
   });
 });

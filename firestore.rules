@@ -449,6 +449,12 @@ service cloud.firestore {
         allow read: if false;
         allow create, update, delete: if isUser(userId);
       }
+
+      // Login rows copied for My login activity. The Admin SDK writes them.
+      match /auth_activity/{eventId} {
+        allow read: if isUser(userId) || callerIsSuper();
+        allow create, update, delete: if false;
+      }
     }
 
     // ── Programmes (curriculum) ───────────────────────────────
@@ -1300,8 +1306,7 @@ service cloud.firestore {
         || isTeacherOrAdmin()
         || linkedTo(resource.data.studentId)
       );
-      allow create, update: if false;
-      allow delete: if isAdmin();
+      allow create, update, delete: if false;
     }
 
     match /certificate_keys/{keyId} {
@@ -2058,6 +2063,32 @@ service cloud.firestore {
       allow create, update: if isInstitutionAdmin() && incoming().institutionId == myInstitution()
         || (isAdmin() && incoming().institutionId is string);
       allow delete: if isAdmin();
+    }
+
+    // Activity log. In the repo only — deploy these rules with the owner toolchain.
+    // Clients cannot create, edit, or delete a row. Super admins read the log.
+    // A person can read their own sign-in rows.
+    match /activity_log/{eventId} {
+      allow read: if callerIsSuper()
+        || (isSignedIn()
+            && resource.data.actorId == request.auth.uid
+            && resource.data.category == 'auth');
+      allow create, update, delete: if false;
+    }
+
+    match /audit_settings/{docId} {
+      allow read: if callerIsSuper();
+      allow create, update, delete: if false;
+    }
+
+    // Signing key. Never readable from a client.
+    match /credential_keys/{keyId} {
+      allow read, write: if false;
+    }
+
+    match /certificate_templates/{templateId} {
+      allow read: if isAdmin() || isInstitutionAdmin();
+      allow create, update, delete: if false;
     }
 
     // Public lookup by id for the QR. Listing every card is refused.

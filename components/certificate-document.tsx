@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Award, Download, Printer, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   CERTIFICATE_DISCLAIMER,
   CERTIFICATE_ISSUER_NAME,
@@ -17,10 +18,27 @@ import {
   certificateVerifyUrl,
   formatCertificateDate,
 } from '@/lib/certificates';
+import { linkedInCertificationUrl } from '@/lib/credentials/badge-model';
 
 function origin(): string | undefined {
   if (typeof window === 'undefined') return undefined;
   return window.location.origin;
+}
+
+function issuedIso(value: CertificateFace['issuedAt']): string {
+  try {
+    const date = value instanceof Date
+      ? value
+      : value && typeof value === 'object' && typeof value.toDate === 'function'
+        ? value.toDate()
+        : typeof value === 'string' || typeof value === 'number'
+          ? new Date(value)
+          : null;
+    if (!date || Number.isNaN(date.getTime())) return new Date().toISOString();
+    return date.toISOString();
+  } catch {
+    return new Date().toISOString();
+  }
 }
 
 export function downloadCertificate(face: CertificateFace) {
@@ -133,6 +151,22 @@ export function CertificateDocument({
           <Button type="button" size="sm" variant="outline" className="rounded-full font-bold gap-2" onClick={() => shareCertificate(certificate).catch(() => toast.error('Could not share this certificate.'))}>
             <Share2 className="w-3.5 h-3.5" /> Share
           </Button>
+          <a
+            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'rounded-full font-bold')}
+            href={linkedInCertificationUrl({
+              name: moduleTitle || certificate.courseTitle,
+              issuedAt: issuedIso(certificate.issuedAt),
+              certUrl: verify,
+              certId: certificate.id,
+            })}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Add to LinkedIn
+          </a>
+          <a className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'rounded-full font-bold')} href={`/api/credentials/${encodeURIComponent(certificate.id)}/image`}>
+            Download badge
+          </a>
         </div>
       ) : null}
     </div>

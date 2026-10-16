@@ -32,6 +32,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { useAccountMode } from '@/hooks/use-account-mode';
 import { homeForMode, learnerSpaceRoles, modeRedirect, MODE_NAMES, type AccountMode } from '@/lib/account-modes';
 import { loginBlocked, resolveStaffRole } from '@/lib/admin-console';
+import { reportActivity } from '@/lib/audit/report';
 import { AdminViewAsBanner, clearViewAs, useAdminIdle, useViewAs } from '@/components/admin-session';
 import { isSuperAdmin, ROLE_LABELS } from '@/lib/roles';
 import { PipGuide } from '@/components/pip-guide';
@@ -205,6 +206,8 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
       { href: '/dashboard/admin/settings', icon: Settings, labelKey: 'nav.systemSettings' },
       { href: '/dashboard/admin/verifications', icon: ShieldCheck, labelKey: 'nav.verifications' },
+      { href: '/dashboard/admin/activity', icon: ClipboardList, labelKey: 'nav.dashboard', label: 'Activity log', superOnly: true },
+      { href: '/dashboard/admin/certificates', icon: Award, labelKey: 'nav.certificates', label: 'Certificates' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
       { href: '/dashboard/admin/moderation', icon: Shield, labelKey: 'nav.dashboard', label: 'Moderation', flag: 'community' },
       { href: '/dashboard/community', icon: Compass, labelKey: 'nav.dashboard', label: 'Community', flag: 'community' },
@@ -240,6 +243,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
       { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
       { href: '/dashboard/institution/templates', icon: FileText, labelKey: 'nav.reportStudio' },
+      { href: '/dashboard/institution/certificates', icon: Award, labelKey: 'nav.certificates', label: 'Certificates' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
@@ -329,18 +333,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if (result.isNew) setNewDevice(true);
       const revokedAt = useAuthSTORE.getState().profile?.sessionsRevokedAt;
       if (sessionRevoked(revokedAt, result.createdAtMs)) {
-        void signOut(auth).then(() => router.push(pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login'));
+        void reportActivity({ action: 'auth.logout', targetType: 'session', targetId: user.uid }).finally(() => {
+          void signOut(auth).then(() => router.push(pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login'));
+        });
       }
     }).catch(() => {});
   }, [user, router, pathname]);
 
   useEffect(() => {
-    if (!profile) return;
+    if (!profile || !user) return;
     const started = Number(sessionStorage.getItem('poket-session-at') || '0');
     if (sessionRevoked(profile.sessionsRevokedAt, started)) {
-      void signOut(auth).then(() => router.push(pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login'));
+      void reportActivity({ action: 'auth.logout', targetType: 'session', targetId: user.uid }).finally(() => {
+        void signOut(auth).then(() => router.push(pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login'));
+      });
     }
-  }, [profile, router, pathname]);
+  }, [profile, user, router, pathname]);
 
   useEffect(() => {
     if (!user || !profile) return;
@@ -391,7 +399,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               className="h-10 rounded-full border border-border px-4 text-sm font-semibold"
               onClick={() => {
                 clearViewAs();
-                void signOut(auth).then(() => router.push(staffRole ? '/admin/login' : '/login'));
+                void reportActivity({ action: 'auth.logout', targetType: 'session', targetId: user.uid }).finally(() => {
+                  void signOut(auth).then(() => router.push(staffRole ? '/admin/login' : '/login'));
+                });
               }}
             >
               Sign out
@@ -429,7 +439,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </a>
           <button
             type="button"
-            onClick={() => { signOut(auth).then(() => { useAuthSTORE.getState().setUser(null); router.push('/login'); }); }}
+            onClick={() => {
+              void reportActivity({ action: 'auth.logout', targetType: 'session', targetId: user.uid }).finally(() => {
+                void signOut(auth).then(() => { useAuthSTORE.getState().setUser(null); router.push('/login'); });
+              });
+            }}
             className="mt-3 text-sm font-semibold text-muted-foreground"
           >
             {t('nav.signOut')}
@@ -537,9 +551,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button
             onClick={() => {
               clearViewAs();
-              signOut(auth).then(() => {
-                useAuthSTORE.getState().setUser(null);
-                router.push(staffRole ? '/admin/login' : '/login');
+              void reportActivity({ action: 'auth.logout', targetType: 'session', targetId: user.uid }).finally(() => {
+                void signOut(auth).then(() => {
+                  useAuthSTORE.getState().setUser(null);
+                  router.push(staffRole ? '/admin/login' : '/login');
+                });
               });
             }}
             className="w-full flex items-center gap-3 px-3 h-9 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"

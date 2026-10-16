@@ -18,6 +18,7 @@ import {
 } from '@/lib/admin-console';
 import { syncStaffClaims } from '@/lib/admin-actions';
 import { touchAdminActivity } from '@/lib/view-as';
+import { reportActivity, reportFailedLogin } from '@/lib/audit/report';
 import { ShieldCheck } from 'lucide-react';
 
 function AdminLoginForm() {
@@ -75,6 +76,7 @@ function AdminLoginForm() {
     }
     await syncStaffClaims([profile]).catch(() => undefined);
     touchAdminActivity();
+    void reportActivity({ action: 'auth.login', targetType: 'session', targetId: uid, targetLabel: address });
     router.push('/dashboard/admin');
   };
 
@@ -124,6 +126,7 @@ function AdminLoginForm() {
       }
       if (mfaRequired(staff)) {
         const sent = await sendCode(address);
+        void reportActivity({ action: 'auth.two_factor_challenge', targetType: 'session', targetId: result.user.uid });
         await signOut(auth);
         if (sent === 'blocked') {
           toast.error('Admin sign-in needs the email verification service. Ask the owner to set SMTP.');
@@ -139,6 +142,7 @@ function AdminLoginForm() {
     } catch (err) {
       const codeName = (err as { code?: string }).code ?? '';
       if (codeName === 'auth/invalid-credential' || codeName === 'auth/wrong-password' || codeName === 'auth/user-not-found') {
+        void reportFailedLogin(email);
         toast.error('That email or password is not right.');
       } else if (codeName === 'auth/too-many-requests') {
         toast.error('Too many attempts. Wait a moment and try again.');
@@ -170,10 +174,12 @@ function AdminLoginForm() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.valid) {
+        void reportFailedLogin(email, 'auth.two_factor_failed');
         toast.error(data.error || 'That code is not valid.');
         return;
       }
       await signInWithEmailAndPassword(auth, email.trim(), password);
+      void reportActivity({ action: 'auth.two_factor_success', targetType: 'session', targetId: pendingUid });
       await finish(pendingUid, email.trim());
     } catch {
       toast.error('Could not finish signing in.');
