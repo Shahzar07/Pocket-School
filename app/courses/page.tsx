@@ -16,6 +16,10 @@ import { productAccess, previewViewer } from '@/lib/allocation';
 import { coursePriceType, freePreviewCount, courseMinTier, tierDefinition } from '@/lib/entitlements';
 import { useTranslation } from 'react-i18next';
 import { usePricing } from '@/hooks/use-pricing';
+import { useWhiteLabel } from '@/components/white-label-provider';
+import { filterTenantCatalogue } from '@/lib/tenant-host';
+import { listCatalogue } from '@/lib/institution-store';
+import { useAuthSTORE } from '@/hooks/use-auth';
 
 const TYPE_FILTERS: { id: CourseType | 'all'; labelKey: string }[] = [
   { id: 'all', labelKey: 'market.all' },
@@ -64,6 +68,9 @@ function tierBadge(c: Course): string {
 export default function MarketplacePage() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { institution } = useWhiteLabel();
+  const account = useAuthSTORE((state) => state.profile);
+  const [memberCourseIds, setMemberCourseIds] = useState<string[]>([]);
   const { courseLabel, courseConversion } = usePricing();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,9 +94,27 @@ export default function MarketplacePage() {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    if (!institution || account?.institutionId !== institution.id) {
+      setMemberCourseIds([]);
+      return;
+    }
+    let cancelled = false;
+    listCatalogue(institution.id)
+      .then((items) => {
+        if (!cancelled) setMemberCourseIds(items.filter((item) => item.kind === 'course').map((item) => item.refId));
+      })
+      .catch(() => { if (!cancelled) setMemberCourseIds([]); });
+    return () => { cancelled = true; };
+  }, [account?.institutionId, institution]);
+
   const visible = useMemo(
-    () => courses.filter(course => productAccess(course, previewViewer('guest')).listed),
-    [courses],
+    () => filterTenantCatalogue(
+      courses.filter(course => productAccess(course, previewViewer('guest')).listed),
+      institution,
+      memberCourseIds,
+    ),
+    [courses, institution, memberCourseIds],
   );
   const subjects = useMemo(() => {
     const names = visible.map(course => course.subject).filter((name): name is string => !!name);

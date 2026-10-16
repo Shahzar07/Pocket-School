@@ -14,6 +14,7 @@ import { usePricing } from '@/hooks/use-pricing';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { isAdmin } from '@/lib/roles';
 import { useHomeMotion } from '@/hooks/use-home-motion';
+import { DemoLeadForm } from '@/components/demo-lead-form';
 import s from '@/app/home.module.css';
 
 const DEMO = 'mailto:institutions@poketschool.ai';
@@ -186,7 +187,7 @@ export function LandingPage() {
               <Link className={s.secondary} href="#schools">
                 {t('landing.hero.schools')}
               </Link>
-              <a className={s.quiet} href={DEMO}>
+              <a className={s.quiet} href="#demo">
                 {t('landing.hero.demo')}
               </a>
             </div>
@@ -552,11 +553,14 @@ export function LandingPage() {
           <div className="mt-6 flex flex-wrap items-center gap-4">
             <a className="text-sm font-semibold text-primary" href={DEMO}>{t('landing.schools.email')}</a>
             <a
-              href={DEMO}
+              href="#demo"
               className="inline-flex h-11 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
             >
-              {t('landing.schools.contact')}
+              {t('landing.schools.demo')}
             </a>
+          </div>
+          <div id="demo" className="mt-8 max-w-3xl">
+            <DemoLeadForm />
           </div>
         </div>
       </section>
@@ -710,6 +714,9 @@ export function LandingPage() {
             <Link className={s.secondary} href="/courses">
               {t('landing.cta.courses')}
             </Link>
+            <a className={s.quiet} href="#demo">
+              {t('landing.cta.demo')}
+            </a>
           </div>
         </div>
       </section>

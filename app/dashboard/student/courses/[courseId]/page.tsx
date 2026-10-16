@@ -141,19 +141,19 @@ export default function CourseDetailPage() {
 
       {/* Course header hero */}
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
-        className="relative overflow-hidden bg-gradient-to-br from-[#2786A4] to-[#1E6A83] rounded-[2rem] p-7 sm:p-9 text-white"
+        className="relative overflow-hidden bg-primary rounded-[2rem] p-7 sm:p-9 text-primary-foreground"
       >
         <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-[60px]" />
         <div className="pointer-events-none absolute -bottom-20 -left-12 w-72 h-72 rounded-full bg-white/10 blur-[70px]" />
         <div className="relative z-10">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/70 mb-3">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary-foreground/70 mb-3">
             {course.subject ?? t('courseUi.subjectFallback')}
           </p>
           <h1 className="font-heading text-3xl sm:text-4xl font-extrabold tracking-tight mb-3">{courseCopy.values.title || course.title}</h1>
-          <p className="text-white/80 text-sm leading-relaxed mb-3 max-w-2xl">{courseCopy.values.description || course.description}</p>
+          <p className="text-primary-foreground/80 text-sm leading-relaxed mb-3 max-w-2xl">{courseCopy.values.description || course.description}</p>
           {courseCopy.autoTranslated && (
-            <p className="mb-4 flex flex-wrap items-center gap-2 text-xs text-white/80">
-              <span className="rounded-full bg-white/15 px-2 py-0.5 font-semibold">{t('lesson.autoTranslated')}</span>
+            <p className="mb-4 flex flex-wrap items-center gap-2 text-xs text-primary-foreground/80">
+              <span className="rounded-full bg-primary-foreground/15 px-2 py-0.5 font-semibold">{t('lesson.autoTranslated')}</span>
               <button type="button" className="underline" onClick={courseCopy.toggle}>
                 {courseCopy.showOriginal ? t('lesson.showTranslation') : t('lesson.showOriginal')}
               </button>
@@ -161,12 +161,12 @@ export default function CourseDetailPage() {
           )}
           {enrollment && (
             <div>
-              <div className="flex justify-between text-xs text-white/80 mb-2">
+              <div className="flex justify-between text-xs text-primary-foreground/80 mb-2">
                 <span>{t('courseUi.lessonsComplete', { done: completedIds.size, total: totalLessons })}</span>
                 <span className="font-bold">{enrollment.progress}%</span>
               </div>
-              <div className="h-2 bg-white/20 rounded-full overflow-hidden">
-                <div className="h-full bg-white rounded-full transition-all" style={{ width: `${enrollment.progress}%` }} />
+              <div className="h-2 bg-primary-foreground/20 rounded-full overflow-hidden">
+                <div className="h-full bg-primary-foreground rounded-full transition-all" style={{ width: `${enrollment.progress}%` }} />
               </div>
             </div>
           )}

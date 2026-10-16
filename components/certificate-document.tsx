@@ -5,7 +5,8 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Award, Download, Printer, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import i18n from '@/lib/i18n';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   CERTIFICATE_DISCLAIMER,
   CERTIFICATE_ISSUER_NAME,
@@ -18,10 +19,27 @@ import {
   certificateVerifyUrl,
   formatCertificateDate,
 } from '@/lib/certificates';
+import { linkedInCertificationUrl } from '@/lib/credentials/badge-model';
 
 function origin(): string | undefined {
   if (typeof window === 'undefined') return undefined;
   return window.location.origin;
+}
+
+function issuedIso(value: CertificateFace['issuedAt']): string {
+  try {
+    const date = value instanceof Date
+      ? value
+      : value && typeof value === 'object' && typeof value.toDate === 'function'
+        ? value.toDate()
+        : typeof value === 'string' || typeof value === 'number'
+          ? new Date(value)
+          : null;
+    if (!date || Number.isNaN(date.getTime())) return new Date().toISOString();
+    return date.toISOString();
+  } catch {
+    return new Date().toISOString();
+  }
 }
 
 export function downloadCertificate(face: CertificateFace) {
@@ -82,7 +100,7 @@ export function CertificateDocument({
   return (
     <div className={compact ? '' : 'bg-card border border-border rounded-3xl overflow-hidden card-glow'}>
       <div className="bg-white text-[#1c2b30] border-[10px] border-[#1E6A83] m-3 sm:m-4 rounded-sm">
-        <div className="border-2 border-[#2786A4] px-6 py-8 sm:px-10 sm:py-10 text-center">
+        <div className="border-2 border-primary px-6 py-8 sm:px-10 sm:py-10 text-center">
           <div className="flex items-center justify-center gap-2 text-[#1E6A83]">
             <Award className="w-4 h-4" />
             <p className="text-[11px] font-bold tracking-[0.28em]">POKET SCHOOL</p>
@@ -134,6 +152,22 @@ export function CertificateDocument({
           <Button type="button" size="sm" variant="outline" className="rounded-full font-bold gap-2" onClick={() => shareCertificate(certificate).catch(() => toast.error(i18n.t('certificate.shareFailed')))}>
             <Share2 className="w-3.5 h-3.5" /> Share
           </Button>
+          <a
+            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'rounded-full font-bold')}
+            href={linkedInCertificationUrl({
+              name: moduleTitle || certificate.courseTitle,
+              issuedAt: issuedIso(certificate.issuedAt),
+              certUrl: verify,
+              certId: certificate.id,
+            })}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Add to LinkedIn
+          </a>
+          <a className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'rounded-full font-bold')} href={`/api/credentials/${encodeURIComponent(certificate.id)}/image`}>
+            Download badge
+          </a>
         </div>
       ) : null}
     </div>

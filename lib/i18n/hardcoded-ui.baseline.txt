@@ -1,25 +1,31 @@
 app/(auth)/forgot-password/page.tsx	name@example.com
 app/(auth)/layout.tsx	Poket School
+app/(auth)/layout.tsx	Powered by Poket School
 app/(auth)/login/page.tsx	Admin accounts sign in at the admin page, with a verification code.
 app/(auth)/login/page.tsx	Enter the 6-digit code.
 app/(auth)/login/page.tsx	Google sign-in is blocked. Go to Firebase Console → Authentication → Settings → Authorized Domains and add your deployment URL.
+app/(auth)/login/page.tsx	New accounts use an email on an allowed academy domain.
 app/(auth)/login/page.tsx	New code sent.
 app/(auth)/login/page.tsx	Session expired. Please sign in again.
+app/(auth)/login/page.tsx	This academy adds people by invitation.
+app/(auth)/login/page.tsx	This academy requires an email code at sign-in.
 app/(auth)/login/page.tsx	This account is closed. Contact support@poketschool.ai.
 app/(auth)/login/page.tsx	We emailed you a 6-digit code.
 app/(auth)/login/page.tsx	name@example.com
+app/academy/leaderboard/page.tsx	Loading the academy…
+app/academy/leaderboard/page.tsx	No scores have been published yet.
+app/academy/leaderboard/page.tsx	Open this page from an academy address.
+app/academy/page/[pageSlug]/page.tsx	Loading the academy…
+app/academy/page/[pageSlug]/page.tsx	Open this page from an academy address.
 app/account-preview/page.tsx	My profile & settings
 app/account-preview/page.tsx	Saved on this preview.
 app/account-preview/page.tsx	Sign out
+app/admin/login/page.tsx	(work: Promise
+app/admin/login/page.tsx	, ms: number): Promise
 app/admin/login/page.tsx	Admin sign-in
-app/admin/login/page.tsx	Admin sign-in needs the email verification service. Ask the owner to set SMTP.
-app/admin/login/page.tsx	Could not finish signing in.
-app/admin/login/page.tsx	Could not sign in.
-app/admin/login/page.tsx	Enter the 6-digit code.
-app/admin/login/page.tsx	Enter your email and password.
+app/admin/login/page.tsx	Authenticator code
+app/admin/login/page.tsx	Or enter this key manually:
 app/admin/login/page.tsx	Poket School
-app/admin/login/page.tsx	That email or password is not right.
-app/admin/login/page.tsx	Too many attempts. Wait a moment and try again.
 app/admin/login/page.tsx	Verification code
 app/admin/login/page.tsx	We emailed you a 6-digit code.
 app/ai-studio/page.tsx	AI Studio
@@ -93,6 +99,20 @@ app/dashboard/admin/access/page.tsx	Subscription & Sparks
 app/dashboard/admin/access/page.tsx	User management
 app/dashboard/admin/access/page.tsx	firestore.rules
 app/dashboard/admin/access/page.tsx	student@example.com
+app/dashboard/admin/activity/page.tsx	Activity log
+app/dashboard/admin/activity/page.tsx	Certificate template
+app/dashboard/admin/activity/page.tsx	Could not export the activity log.
+app/dashboard/admin/activity/page.tsx	Filter by action
+app/dashboard/admin/activity/page.tsx	Filter by actor
+app/dashboard/admin/activity/page.tsx	Filter by target
+app/dashboard/admin/activity/page.tsx	IP / device
+app/dashboard/admin/activity/page.tsx	No activity matches these filters.
+app/dashboard/admin/activity/page.tsx	Older admin-action log
+app/dashboard/admin/activity/page.tsx	Retention days
+app/dashboard/admin/activity/page.tsx	Search activity
+app/dashboard/admin/activity/page.tsx	Super admin
+app/dashboard/admin/activity/page.tsx	Super admins can read the activity log.
+app/dashboard/admin/activity/page.tsx	The shortest window is 90 days. A purge is itself written to the log.
 app/dashboard/admin/allocations/page.tsx	Access control
 app/dashboard/admin/allocations/page.tsx	Access tier
 app/dashboard/admin/allocations/page.tsx	Add-on activated.
@@ -159,8 +179,8 @@ app/dashboard/admin/curriculum/[courseId]/page.tsx	Download allowance for this c
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Downloads off
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Downloads on
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Drag to reorder or into another unit. Alt+Arrow moves a focused lesson.
-app/dashboard/admin/curriculum/[courseId]/page.tsx	ET drafts — always review before publishing.
-app/dashboard/admin/curriculum/[courseId]/page.tsx	ET returned nothing usable — try again.
+app/dashboard/admin/curriculum/[courseId]/page.tsx	ET AI drafts — always review before publishing.
+app/dashboard/admin/curriculum/[courseId]/page.tsx	ET AI returned nothing usable — try again.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Empty — add a lesson.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Follow tier and allocation
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Images are in the Image block. Add alt text, then place them.
@@ -174,7 +194,7 @@ app/dashboard/admin/curriculum/[courseId]/page.tsx	Lesson title
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Module created.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Must complete previous lesson
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Must pass chapter quiz
-app/dashboard/admin/curriculum/[courseId]/page.tsx	No history yet — edits, saves, ET assists and publish actions will appear here with the name of whoever made them.
+app/dashboard/admin/curriculum/[courseId]/page.tsx	No history yet — edits, saves, ET AI assists and publish actions will appear here with the name of whoever made them.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	No modules yet.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	No prerequisite
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Not generated yet.
@@ -190,7 +210,7 @@ app/dashboard/admin/curriculum/[courseId]/page.tsx	Sub-lesson created.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Teacher approval
 app/dashboard/admin/curriculum/[courseId]/page.tsx	The CMS add-on is not on this account.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	These are study notes. Use Regenerate on this block to replace them with worked problems.
-app/dashboard/admin/curriculum/[courseId]/page.tsx	Type the brief for this lesson. ET can draft one too — that button asks first.
+app/dashboard/admin/curriculum/[courseId]/page.tsx	Type the brief for this lesson. ET AI can draft one too — that button asks first.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Undone.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Unit order saved.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Write this by hand, or generate it from the lesson.
@@ -204,7 +224,7 @@ app/dashboard/admin/curriculum/page.tsx	Delete subject
 app/dashboard/admin/curriculum/page.tsx	Duration (weeks)
 app/dashboard/admin/curriculum/page.tsx	Edit subject
 app/dashboard/admin/curriculum/page.tsx	Enter a programme name.
-app/dashboard/admin/curriculum/page.tsx	Enter a subject for ET to design.
+app/dashboard/admin/curriculum/page.tsx	Enter a subject for ET AI to design.
 app/dashboard/admin/curriculum/page.tsx	Enter a subject title.
 app/dashboard/admin/curriculum/page.tsx	Enter a subject.
 app/dashboard/admin/curriculum/page.tsx	Enter a title.
@@ -235,40 +255,25 @@ app/dashboard/admin/curriculum/page.tsx	e.g. iLowerSecondary
 app/dashboard/admin/finance/page.tsx	Checkout to refund
 app/dashboard/admin/finance/page.tsx	No transactions yet.
 app/dashboard/admin/finance/page.tsx	chk_…
-app/dashboard/admin/institutions/[institutionId]/page.tsx	Choose at least one programme.
-app/dashboard/admin/institutions/[institutionId]/page.tsx	Choose programmes, seats and a term. The price is stored from the pricing config so a later rate change does not rewrite this contract.
+app/dashboard/admin/institutions/[institutionId]/page.tsx	Academy price saved.
+app/dashboard/admin/institutions/[institutionId]/page.tsx	Academy settings saved.
+app/dashboard/admin/institutions/[institutionId]/page.tsx	Automatic SSL is waiting for the Vercel token. The DNS instructions on this page still apply.
+app/dashboard/admin/institutions/[institutionId]/page.tsx	Catalogue updated.
 app/dashboard/admin/institutions/[institutionId]/page.tsx	Could not load this institution.
-app/dashboard/admin/institutions/[institutionId]/page.tsx	Create a programme in the curriculum CMS first.
-app/dashboard/admin/institutions/[institutionId]/page.tsx	Current licences
-app/dashboard/admin/institutions/[institutionId]/page.tsx	Enter the licence price.
+app/dashboard/admin/institutions/[institutionId]/page.tsx	Group saved.
+app/dashboard/admin/institutions/[institutionId]/page.tsx	Institution deleted.
 app/dashboard/admin/institutions/[institutionId]/page.tsx	Licence saved.
-app/dashboard/admin/institutions/[institutionId]/page.tsx	None yet.
-app/dashboard/admin/institutions/page.tsx	#f5c451
-app/dashboard/admin/institutions/page.tsx	.poketschool.ai
-app/dashboard/admin/institutions/page.tsx	Accent colour
-app/dashboard/admin/institutions/page.tsx	Add Institution
-app/dashboard/admin/institutions/page.tsx	Add one using the button above to get started.
-app/dashboard/admin/institutions/page.tsx	All organizations
-app/dashboard/admin/institutions/page.tsx	Certificate name
-app/dashboard/admin/institutions/page.tsx	Could not save that branding.
-app/dashboard/admin/institutions/page.tsx	Custom domain
-app/dashboard/admin/institutions/page.tsx	Display name
-app/dashboard/admin/institutions/page.tsx	Domain (optional)
-app/dashboard/admin/institutions/page.tsx	Email from name
-app/dashboard/admin/institutions/page.tsx	Failed:
-app/dashboard/admin/institutions/page.tsx	Institution Name *
-app/dashboard/admin/institutions/page.tsx	Institution name is required.
-app/dashboard/admin/institutions/page.tsx	Learning, personalised.
-app/dashboard/admin/institutions/page.tsx	Logo URL
-app/dashboard/admin/institutions/page.tsx	Manage schools and organisations on the platform.
-app/dashboard/admin/institutions/page.tsx	No institutions yet
-app/dashboard/admin/institutions/page.tsx	That subdomain is reserved or invalid. Use 3–63 letters, numbers or hyphens.
-app/dashboard/admin/institutions/page.tsx	Use a hostname the school owns, such as learn.school.example.
-app/dashboard/admin/institutions/page.tsx	e.g. Lincoln High School
-app/dashboard/admin/institutions/page.tsx	e.g. lincoln.edu
-app/dashboard/admin/institutions/page.tsx	https://…/logo.svg
-app/dashboard/admin/institutions/page.tsx	learn.school.example
-app/dashboard/admin/institutions/page.tsx	value !== '')) as NonNullable
+app/dashboard/admin/institutions/[institutionId]/page.tsx	Path saved.
+app/dashboard/admin/institutions/[institutionId]/page.tsx	Personal data for this academy was erased.
+app/dashboard/admin/institutions/[institutionId]/page.tsx	Profile saved.
+app/dashboard/admin/institutions/[institutionId]/page.tsx	Requirement added.
+app/dashboard/admin/institutions/[institutionId]/page.tsx	Skills framework added.
+app/dashboard/admin/institutions/[institutionId]/page.tsx	Status updated.
+app/dashboard/admin/institutions/[institutionId]/page.tsx	That institution was not found.
+app/dashboard/admin/institutions/[institutionId]/page.tsx	This academy is outside your account.
+app/dashboard/admin/institutions/[institutionId]/page.tsx	Weekly report scheduled.
+app/dashboard/admin/institutions/page.tsx	Could not load institutions.
+app/dashboard/admin/institutions/page.tsx	This console is for academy administrators.
 app/dashboard/admin/integrations/page.tsx	Every required key is present.
 app/dashboard/admin/integrations/page.tsx	Missing required keys
 app/dashboard/admin/integrations/page.tsx	Monthly cap in dollars
@@ -387,6 +392,7 @@ app/dashboard/helpdesk/page.tsx	Subject *
 app/dashboard/helpdesk/page.tsx	Support Reply:
 app/dashboard/helpdesk/page.tsx	Ticket submitted! We\
 app/dashboard/helpdesk/page.tsx	Write your reply…
+app/dashboard/institution/certificates/page.tsx	Class certificates
 app/dashboard/institution/page.tsx	. Sending the mail through a provider is still done by copying this message.
 app/dashboard/institution/page.tsx	A platform admin still needs to attach this account to an institution before the academy tools open.
 app/dashboard/institution/page.tsx	Academy name saved.
@@ -629,7 +635,7 @@ app/dashboard/student/page.tsx	Chat or talk live with a tutor
 app/dashboard/student/page.tsx	Continue learning
 app/dashboard/student/page.tsx	Couldn&apos;t load this page.
 app/dashboard/student/page.tsx	Daily goals
-app/dashboard/student/page.tsx	ET, Maths, and Exam Prep
+app/dashboard/student/page.tsx	ET AI, Maths, and Exam Prep
 app/dashboard/student/page.tsx	Explore marketplace
 app/dashboard/student/page.tsx	Full charts
 app/dashboard/student/page.tsx	Jump back in
@@ -651,7 +657,7 @@ app/dashboard/student/tasks/page.tsx	Could not remove that goal.
 app/dashboard/student/tasks/page.tsx	Could not start that goal.
 app/dashboard/student/tasks/page.tsx	Couldn&apos;t load this page.
 app/dashboard/student/tasks/page.tsx	Delete goal
-app/dashboard/student/tasks/page.tsx	ET · AI Tutor
+app/dashboard/student/tasks/page.tsx	ET AI
 app/dashboard/student/tasks/page.tsx	Goal added.
 app/dashboard/student/tasks/page.tsx	Goal removed.
 app/dashboard/student/tasks/page.tsx	Goal started — your courses are unlocked.
@@ -664,7 +670,7 @@ app/dashboard/student/tasks/page.tsx	No goals set for today
 app/dashboard/student/tasks/page.tsx	No history yet
 app/dashboard/student/tasks/page.tsx	Not enough data yet
 app/dashboard/student/tasks/page.tsx	Once you finish a day of goals it&apos;ll show up here.
-app/dashboard/student/tasks/page.tsx	Set and complete a few goals and ET will spot your patterns.
+app/dashboard/student/tasks/page.tsx	Set and complete a few goals and ET AI will spot your patterns.
 app/dashboard/student/tasks/page.tsx	Start a goal to unlock your courses
 app/dashboard/student/tasks/page.tsx	Time estimate
 app/dashboard/student/tasks/page.tsx	e.g. Revise photosynthesis for the unit quiz
@@ -717,13 +723,13 @@ app/dashboard/studio/exam-prep/[id]/oral/page.tsx	: speaking ?
 app/dashboard/studio/exam-prep/[id]/oral/page.tsx	= 2 && answered
 app/dashboard/studio/exam-prep/[id]/oral/page.tsx	Back to my plan
 app/dashboard/studio/exam-prep/[id]/oral/page.tsx	Begin the exam
-app/dashboard/studio/exam-prep/[id]/oral/page.tsx	ET asks questions out loud, probes when an answer is thin, and grades how well you know it and how clearly you explain it. The best practice there is for explaining under pressure.
+app/dashboard/studio/exam-prep/[id]/oral/page.tsx	ET AI
 app/dashboard/studio/exam-prep/[id]/oral/page.tsx	Grading your oral exam…
 app/dashboard/studio/exam-prep/[id]/oral/page.tsx	I&apos;ve finished my answer
 app/dashboard/studio/exam-prep/[id]/oral/page.tsx	Knowledge, reasoning, terminology and clarity.
 app/dashboard/studio/exam-prep/[id]/oral/page.tsx	Microphone blocked — you can type your answers instead.
 app/dashboard/studio/exam-prep/[id]/oral/page.tsx	Number of questions
-app/dashboard/studio/exam-prep/[id]/oral/page.tsx	Oral exam with ET
+app/dashboard/studio/exam-prep/[id]/oral/page.tsx	Oral exam with ET AI
 app/dashboard/studio/exam-prep/[id]/oral/page.tsx	Speak instead
 app/dashboard/studio/exam-prep/[id]/oral/page.tsx	Submit answer
 app/dashboard/studio/exam-prep/[id]/oral/page.tsx	This browser can&apos;t transcribe speech — you&apos;ll type your answers. Chrome, Edge or Safari support speaking.
@@ -733,8 +739,8 @@ app/dashboard/studio/exam-prep/[id]/oral/page.tsx	Work on
 app/dashboard/studio/exam-prep/[id]/page.tsx	: stats.left === 0 ?
 app/dashboard/studio/exam-prep/[id]/page.tsx	A full paper in the style of the real thing, marked against a mark scheme, with your gaps.
 app/dashboard/studio/exam-prep/[id]/page.tsx	All exam preps
-app/dashboard/studio/exam-prep/[id]/page.tsx	Answer out loud. ET examines, probes and grades how well you explain.
-app/dashboard/studio/exam-prep/[id]/page.tsx	Ask ET about your notes
+app/dashboard/studio/exam-prep/[id]/page.tsx	Answer out loud. ET AI examines, probes and grades how well you explain.
+app/dashboard/studio/exam-prep/[id]/page.tsx	Ask ET AI about your notes
 app/dashboard/studio/exam-prep/[id]/page.tsx	Back to Exam Prep
 app/dashboard/studio/exam-prep/[id]/page.tsx	Could not create a share link.
 app/dashboard/studio/exam-prep/[id]/page.tsx	Exam day — you&apos;ve got this.
@@ -743,7 +749,7 @@ app/dashboard/studio/exam-prep/[id]/page.tsx	Exam prep deleted.
 app/dashboard/studio/exam-prep/[id]/page.tsx	Latest gaps
 app/dashboard/studio/exam-prep/[id]/page.tsx	Mastery by topic
 app/dashboard/studio/exam-prep/[id]/page.tsx	Move the exam date
-app/dashboard/studio/exam-prep/[id]/page.tsx	Oral exam with ET
+app/dashboard/studio/exam-prep/[id]/page.tsx	Oral exam with ET AI
 app/dashboard/studio/exam-prep/[id]/page.tsx	Past attempts
 app/dashboard/studio/exam-prep/[id]/page.tsx	Pick a date after today.
 app/dashboard/studio/exam-prep/[id]/page.tsx	Plan rescheduled — your progress is kept.
@@ -753,7 +759,8 @@ app/dashboard/studio/exam-prep/[id]/page.tsx	Study days
 app/dashboard/studio/exam-prep/[id]/page.tsx	This exam prep wasn&apos;t found.
 app/dashboard/studio/exam-prep/[id]/page.tsx	Timed mock exam
 app/dashboard/studio/exam-prep/[id]/page.tsx	Your mock and oral results will appear here.
-app/dashboard/studio/exam-prep/[id]/topic/[topicId]/page.tsx	ET answers from your own material first, and tells you when it doesn&apos;t cover something.
+app/dashboard/studio/exam-prep/[id]/topic/[topicId]/page.tsx	ET AI
+app/dashboard/studio/exam-prep/[id]/topic/[topicId]/page.tsx	ET AI answers from your own material first, and tells you when it doesn&apos;t cover something.
 app/dashboard/studio/exam-prep/[id]/topic/[topicId]/page.tsx	Made once from your notes, then saved here.
 app/dashboard/studio/exam-prep/[id]/topic/[topicId]/page.tsx	Talk to your notes
 app/dashboard/studio/exam-prep/[id]/topic/[topicId]/page.tsx	Topic not found.
@@ -767,8 +774,8 @@ app/dashboard/studio/exam-prep/new/page.tsx	: f.status === 'ready' ?
 app/dashboard/studio/exam-prep/new/page.tsx	: i === stage ?
 app/dashboard/studio/exam-prep/new/page.tsx	Add a topic
 app/dashboard/studio/exam-prep/new/page.tsx	Drop your notes, slides, PDFs, past papers or photos
-app/dashboard/studio/exam-prep/new/page.tsx	ET is reading everything
-app/dashboard/studio/exam-prep/new/page.tsx	ET will work it out
+app/dashboard/studio/exam-prep/new/page.tsx	ET AI is reading everything
+app/dashboard/studio/exam-prep/new/page.tsx	ET AI will work it out
 app/dashboard/studio/exam-prep/new/page.tsx	Exam name
 app/dashboard/studio/exam-prep/new/page.tsx	Move up
 app/dashboard/studio/exam-prep/new/page.tsx	Or paste notes
@@ -821,14 +828,14 @@ app/dashboard/studio/maths/lab/page.tsx	|x - 2|
 app/dashboard/studio/maths/packs/[packId]/page.tsx	(progress.mastery[tp.id] ?? 0)
 app/dashboard/studio/maths/packs/[packId]/page.tsx	All exam packs
 app/dashboard/studio/maths/packs/[packId]/page.tsx	Each one is solved and checked before you see it.
-app/dashboard/studio/maths/packs/[packId]/page.tsx	Five exam-style questions per set, each with a full worked solution. Stuck? Work through any question with ET.
+app/dashboard/studio/maths/packs/[packId]/page.tsx	Five exam-style questions per set, each with a full worked solution. Stuck? Work through any question with ET AI.
 app/dashboard/studio/maths/packs/[packId]/page.tsx	New set of questions
 app/dashboard/studio/maths/packs/[packId]/page.tsx	Open a random topic
 app/dashboard/studio/maths/packs/[packId]/page.tsx	Pick a topic to practise
 app/dashboard/studio/maths/packs/[packId]/page.tsx	Picks one you haven&apos;t mastered yet
 app/dashboard/studio/maths/packs/[packId]/page.tsx	This topic is free
 app/dashboard/studio/maths/packs/[packId]/page.tsx	Unknown exam pack.
-app/dashboard/studio/maths/packs/[packId]/page.tsx	Work through it with ET
+app/dashboard/studio/maths/packs/[packId]/page.tsx	Work through it with ET AI
 app/dashboard/studio/maths/packs/page.tsx	1st topic free
 app/dashboard/studio/maths/packs/page.tsx	Your exam
 app/dashboard/studio/maths/page.tsx	+5 stars · keep your streak going
@@ -837,14 +844,15 @@ app/dashboard/studio/maths/page.tsx	: i === stage ?
 app/dashboard/studio/maths/page.tsx	AI Studio
 app/dashboard/studio/maths/page.tsx	Check this as my final answer
 app/dashboard/studio/maths/page.tsx	Could not send the report.
-app/dashboard/studio/maths/page.tsx	ET is working it out
+app/dashboard/studio/maths/page.tsx	ET AI
+app/dashboard/studio/maths/page.tsx	ET AI is working it out
 app/dashboard/studio/maths/page.tsx	Each step you get right is written up here, like a clean copy of your working.
 app/dashboard/studio/maths/page.tsx	Final answer
 app/dashboard/studio/maths/page.tsx	Frame the problem
 app/dashboard/studio/maths/page.tsx	From a worksheet, PDF or past paper.
 app/dashboard/studio/maths/page.tsx	Got it — check the problem, then start.
 app/dashboard/studio/maths/page.tsx	Graphing calculator &amp; Maths Lab
-app/dashboard/studio/maths/page.tsx	How ET teaches
+app/dashboard/studio/maths/page.tsx	How ET AI teaches
 app/dashboard/studio/maths/page.tsx	I found several problems — which one?
 app/dashboard/studio/maths/page.tsx	Math.abs(a - b)
 app/dashboard/studio/maths/page.tsx	Method:
@@ -868,6 +876,7 @@ app/dashboard/studio/maths/page.tsx	Your working
 app/dashboard/studio/maths/page.tsx	e.g. Solve 3x² − 12 = 0, or paste a word problem…
 app/dashboard/studio/maths/page.tsx	or type it
 app/dashboard/studio/maths/page.tsx	· ET Maths
+app/dashboard/studio/page.tsx	ET AI
 app/dashboard/teacher/analytics/page.tsx	Course Performance
 app/dashboard/teacher/analytics/page.tsx	Create and publish courses to start seeing student data here.
 app/dashboard/teacher/analytics/page.tsx	Needs grading
@@ -1157,6 +1166,12 @@ app/dashboard/wallet/page.tsx	Malaysian ringgit
 app/dashboard/wallet/page.tsx	No wallet movements yet.
 app/dashboard/wallet/page.tsx	Poket wallet
 app/dashboard/wallet/page.tsx	US dollars
+app/issuers/[issuerId]/page.tsx	Issuer JSON-LD
+app/issuers/[issuerId]/page.tsx	Open Badges 3.0
+app/issuers/[issuerId]/page.tsx	Poket School
+app/issuers/[issuerId]/page.tsx	Public key
+app/issuers/[issuerId]/page.tsx	Verify a certificate
+app/issuers/[issuerId]/page.tsx	hello@poketschool.ai
 app/join/[code]/page.tsx	Join a class
 app/join/[code]/page.tsx	Join class
 app/mode-preview/preview.tsx	24 students
@@ -1220,7 +1235,6 @@ app/pricing/page.tsx	FOR INSTITUTIONS
 app/pricing/page.tsx	Never expire mid-cycle.
 app/pricing/page.tsx	No card required
 app/pricing/page.tsx	PLANS &amp; PRICING
-app/pricing/page.tsx	PRICING QUESTIONS
 app/pricing/page.tsx	Sparks are spent on
 app/pricing/page.tsx	THE SPARKS SYSTEM
 app/verify/[uuid]/page.tsx	Anyone can check a certificate ID. The record is issued by Poket School.
@@ -1234,6 +1248,11 @@ app/verify/report/[token]/page.tsx	Poket School
 app/verify/report/[token]/page.tsx	Report verification
 app/verify/report/[token]/page.tsx	This link does not match a published report.
 app/verify/report/[token]/page.tsx	setCard(data as Record
+components/academy-session.tsx	Ask an academy administrator to add this address, then sign in again.
+components/academy-session.tsx	This network is outside the academy allowlist
+components/academy-welcome.tsx	Powered by Poket School
+components/academy-welcome.tsx	Sign in
+components/academy-welcome.tsx	This academy has not published catalogue items for visitors yet.
 components/account/account-menu.tsx	Account menu
 components/account/family-settings.tsx	8 character code
 components/account/family-settings.tsx	A daily digest
@@ -1284,6 +1303,7 @@ components/account/settings-panel.tsx	Language and currency
 components/account/settings-panel.tsx	Language uses the same choice as the header. Currency uses the admin pricing table.
 components/account/settings-panel.tsx	Linked parent
 components/account/settings-panel.tsx	Linked sign-in providers
+components/account/settings-panel.tsx	My login activity
 components/account/settings-panel.tsx	My profile & settings
 components/account/settings-panel.tsx	No other sessions are recorded yet.
 components/account/settings-panel.tsx	No parent is linked yet. Accept an invite code or a request below.
@@ -1297,6 +1317,7 @@ components/account/settings-panel.tsx	Profile photo
 components/account/settings-panel.tsx	Programme and linked parent
 components/account/settings-panel.tsx	Save date of birth
 components/account/settings-panel.tsx	Search timezones
+components/account/settings-panel.tsx	Sign-ins recorded by the server will show here.
 components/account/settings-panel.tsx	The sign-in email changes after you open the link. Google-only accounts confirm with Google first.
 components/account/settings-panel.tsx	This account has no password yet. Set one to also sign in with email, or link another provider.
 components/account/settings-panel.tsx	Two-factor authentication
@@ -1345,6 +1366,7 @@ components/ai-teacher-modal.tsx	Trained on
 components/ai-teacher-modal.tsx	your@email.com
 components/ai-tutor.tsx	Ask me anything…
 components/ai-tutor.tsx	Context:
+components/ai-tutor.tsx	ET AI
 components/ai-tutor.tsx	IGCSE & A-Level
 components/ai-tutor.tsx	Law & Medicine
 components/ai-tutor.tsx	Open AI Studio
@@ -1433,6 +1455,9 @@ components/copyright-disclaimer-modal.tsx	Poket School reserves the right to rem
 components/copyright-disclaimer-modal.tsx	Repeated violations may result in account suspension.
 components/copyright-disclaimer-modal.tsx	You are solely responsible for ensuring uploaded materials do not infringe any third-party copyright, trademark, or intellectual property rights.
 components/copyright-disclaimer-modal.tsx	You confirm you hold the legal right to upload, share, and use all content you submit.
+components/country-select.tsx	National number
+components/country-select.tsx	No country matches that search.
+components/country-select.tsx	Search by name, code, or dial code
 components/course-curriculum.tsx	No lessons in this chapter yet.
 components/course-editor-modal.tsx	(workbook included)
 components/course-editor-modal.tsx	0 && thumbUploadPct
@@ -1488,14 +1513,33 @@ components/course-questions.tsx	Reply saved.
 components/course-questions.tsx	Write a reply
 components/course-reviews.tsx	Review saved.
 components/course-student-preview.tsx	No sections yet.
+components/credentials/credential-panel.tsx	Add to LinkedIn
+components/credentials/credential-panel.tsx	Download badge
+components/credentials/credential-panel.tsx	Open Badge
+components/credentials/credential-panel.tsx	Share on LinkedIn
+components/credentials/credential-panel.tsx	Signed JSON-LD
+components/credentials/credential-panel.tsx	The signed credential is published when the server account is configured.
+components/credentials/credential-panel.tsx	Verification link copied.
+components/credentials/issuance-desk.tsx	Accent colour
+components/credentials/issuance-desk.tsx	Blank means no expiry
+components/credentials/issuance-desk.tsx	Certificate template saved. New badges use it.
+components/credentials/issuance-desk.tsx	Course id
+components/credentials/issuance-desk.tsx	Expiry months
+components/credentials/issuance-desk.tsx	Issue to a class
+components/credentials/issuance-desk.tsx	Issuer name
+components/credentials/issuance-desk.tsx	Module id
+components/credentials/issuance-desk.tsx	student@school.edu
 components/daily-goals-modal.tsx	Could not save your goals. Please try again.
-components/daily-goals-modal.tsx	ET · AI Tutor
+components/daily-goals-modal.tsx	ET AI
 components/daily-goals-modal.tsx	Remove goal
 components/daily-goals-modal.tsx	Set your daily goals
 components/daily-goals-modal.tsx	Today&apos;s goals
 components/daily-goals-modal.tsx	e.g. Finish algebra worksheet
 components/dashboard-search.tsx	Search courses, books, and school updates
 components/dashboard-search.tsx	Search courses, books, announcements
+components/demo-lead-form.tsx	Could not send that request. Email institutions@poketschool.ai.
+components/demo-lead-form.tsx	Organisation type
+components/demo-lead-form.tsx	Request received. Someone from Poket School will be in touch.
 components/download-menu.tsx	Sign in to download this file.
 components/editor/content-editor.tsx	wrap('
 components/editor/import-panel.tsx	Headings become chapters. You can tidy the split before anything is kept. Bold, italic, lists, tables, and inline images are kept.
@@ -1604,6 +1648,200 @@ components/insights/reports-hub.tsx	All students
 components/insights/reports-hub.tsx	No records for this figure in the filter.
 components/insights/reports-hub.tsx	Send an absence note
 components/insights/reports-hub.tsx	Submit note
+components/institutions/directory.tsx	Add an academy or clear the filters.
+components/institutions/directory.tsx	Add institution
+components/institutions/directory.tsx	Demo requests
+components/institutions/directory.tsx	Name, domain, country, contact
+components/institutions/directory.tsx	No institutions match
+components/institutions/directory.tsx	Organisation management
+components/institutions/directory.tsx	Requests from the public site land here. Move a lead along, then open an academy when it is won.
+components/institutions/directory.tsx	Search institutions
+components/institutions/directory.tsx	Select all institutions
+components/institutions/preview.tsx	Request a demo
+components/institutions/preview.tsx	Tell Poket School about the academy. This preview does not send the form.
+components/institutions/settings-panel.tsx	About the academy
+components/institutions/settings-panel.tsx	Academy email domain
+components/institutions/settings-panel.tsx	Add endpoints from the Integrations tab. The signing secret is shown once.
+components/institutions/settings-panel.tsx	Add page
+components/institutions/settings-panel.tsx	Add score
+components/institutions/settings-panel.tsx	Admin actions on this academy will appear here.
+components/institutions/settings-panel.tsx	Allocate courses, books, and paths from the Content tab. Visitors on this academy only see the visibility you choose here.
+components/institutions/settings-panel.tsx	An empty list allows every network. A trailing * matches a prefix.
+components/institutions/settings-panel.tsx	Android package
+components/institutions/settings-panel.tsx	App name
+components/institutions/settings-panel.tsx	Audit log
+components/institutions/settings-panel.tsx	Billing and seats
+components/institutions/settings-panel.tsx	Catalogue visibility mode
+components/institutions/settings-panel.tsx	Certificate body
+components/institutions/settings-panel.tsx	Certificate email subject
+components/institutions/settings-panel.tsx	Certificate template
+components/institutions/settings-panel.tsx	Check DNS and SSL
+components/institutions/settings-panel.tsx	Compliance reminders
+components/institutions/settings-panel.tsx	Content and catalogue
+components/institutions/settings-panel.tsx	Create a key from the Integrations tab. Only the prefix is stored.
+components/institutions/settings-panel.tsx	Curated public catalogue
+components/institutions/settings-panel.tsx	Currency and tax
+components/institutions/settings-panel.tsx	Custom domains open on the enterprise and OEM plans.
+components/institutions/settings-panel.tsx	Custom pages
+components/institutions/settings-panel.tsx	Custom rate
+components/institutions/settings-panel.tsx	Daily digest
+components/institutions/settings-panel.tsx	Data retention and privacy
+components/institutions/settings-panel.tsx	Default locale
+components/institutions/settings-panel.tsx	Display name
+components/institutions/settings-panel.tsx	Erase personal data
+components/institutions/settings-panel.tsx	Export or erase personal data held for this academy under PDPA and GDPR.
+components/institutions/settings-panel.tsx	Favicon URL
+components/institutions/settings-panel.tsx	Feature toggles
+components/institutions/settings-panel.tsx	IP allowlist
+components/institutions/settings-panel.tsx	Icon URL
+components/institutions/settings-panel.tsx	Institution admins keep every capability. Other roles use the grants below.
+components/institutions/settings-panel.tsx	Integrations and API keys
+components/institutions/settings-panel.tsx	Invite only
+components/institutions/settings-panel.tsx	Leaderboard visibility
+components/institutions/settings-panel.tsx	Learner name
+components/institutions/settings-panel.tsx	Legal name
+components/institutions/settings-panel.tsx	Login and SSO
+components/institutions/settings-panel.tsx	Login headline
+components/institutions/settings-panel.tsx	Login note
+components/institutions/settings-panel.tsx	Logo URL
+components/institutions/settings-panel.tsx	Mobile app branding
+components/institutions/settings-panel.tsx	No digest
+components/institutions/settings-panel.tsx	Notifications and email
+components/institutions/settings-panel.tsx	Open signup
+components/institutions/settings-panel.tsx	Page body
+components/institutions/settings-panel.tsx	Page title
+components/institutions/settings-panel.tsx	Platform tax for this country
+components/institutions/settings-panel.tsx	Powered by Poket School
+components/institutions/settings-panel.tsx	Privacy contact
+components/institutions/settings-panel.tsx	Private — members only
+components/institutions/settings-panel.tsx	Reminder subject
+components/institutions/settings-panel.tsx	Require a symbol
+components/institutions/settings-panel.tsx	Require email 2FA for academy sign-in
+components/institutions/settings-panel.tsx	Reserved names such as www, api, login, and courses stay with Poket School. Renaming keeps the previous address as a redirect, so the old slug stays taken.
+components/institutions/settings-panel.tsx	Roles and permissions
+components/institutions/settings-panel.tsx	Save academy settings
+components/institutions/settings-panel.tsx	Save address
+components/institutions/settings-panel.tsx	Save branding and domain
+components/institutions/settings-panel.tsx	Save login
+components/institutions/settings-panel.tsx	Second colour
+components/institutions/settings-panel.tsx	Settings accent
+components/institutions/settings-panel.tsx	Settings font
+components/institutions/settings-panel.tsx	Settings second colour
+components/institutions/settings-panel.tsx	Signup policy
+components/institutions/settings-panel.tsx	Splash colour
+components/institutions/settings-panel.tsx	Support email
+components/institutions/settings-panel.tsx	Tax exempt
+components/institutions/settings-panel.tsx	Tax label
+components/institutions/settings-panel.tsx	Tax mode
+components/institutions/settings-panel.tsx	Time zone
+components/institutions/settings-panel.tsx	User signup
+components/institutions/settings-panel.tsx	Visible inside groups
+components/institutions/settings-panel.tsx	Visible to the academy
+components/institutions/settings-panel.tsx	Weekly digest
+components/institutions/settings-panel.tsx	Welcome body
+components/institutions/settings-panel.tsx	Welcome subject
+components/institutions/settings-panel.tsx	Whole Poket School catalogue
+components/institutions/settings-panel.tsx	Write the page. It is published on the academy site.
+components/institutions/settings-panel.tsx	ai.poketschool.north
+components/institutions/settings-panel.tsx	iOS bundle id
+components/institutions/settings-panel.tsx	learn.school.example
+components/institutions/settings-panel.tsx	school.example, campus.edu
+components/institutions/volume-pricing-editor.tsx	Add tier
+components/institutions/volume-pricing-editor.tsx	Institution volume pricing
+components/institutions/volume-pricing-editor.tsx	Institution volume pricing saved.
+components/institutions/volume-pricing-editor.tsx	Per student / month
+components/institutions/volume-pricing-editor.tsx	Per student / year
+components/institutions/volume-pricing-editor.tsx	Plan level
+components/institutions/volume-pricing-editor.tsx	Platform fee / month
+components/institutions/volume-pricing-editor.tsx	Platform fee / year
+components/institutions/volume-pricing-editor.tsx	Sign in as a platform admin to save institution pricing.
+components/institutions/volume-quote.tsx	Custom per student
+components/institutions/volume-quote.tsx	Discount percent
+components/institutions/volume-quote.tsx	Download invoice PDF
+components/institutions/volume-quote.tsx	Download quote PDF
+components/institutions/volume-quote.tsx	Per month
+components/institutions/volume-quote.tsx	Per student
+components/institutions/volume-quote.tsx	Per year
+components/institutions/volume-quote.tsx	Platform fee
+components/institutions/volume-quote.tsx	Quote interval
+components/institutions/volume-quote.tsx	Quote plan
+components/institutions/volume-quote.tsx	Record invoice
+components/institutions/volume-quote.tsx	Schedule price
+components/institutions/volume-quote.tsx	Student total
+components/institutions/volume-quote.tsx	Students to quote
+components/institutions/volume-quote.tsx	Volume quote
+components/institutions/workspace.tsx	.poketschool.ai
+components/institutions/workspace.tsx	API key name
+components/institutions/workspace.tsx	API keys and webhooks
+components/institutions/workspace.tsx	Academy analytics
+components/institutions/workspace.tsx	Accent colour
+components/institutions/workspace.tsx	Add group
+components/institutions/workspace.tsx	Add people
+components/institutions/workspace.tsx	Add requirement
+components/institutions/workspace.tsx	Add the Poket skills framework
+components/institutions/workspace.tsx	Add webhook
+components/institutions/workspace.tsx	App icon URL
+components/institutions/workspace.tsx	App name
+components/institutions/workspace.tsx	Brand font
+components/institutions/workspace.tsx	Campuses, departments, classes, and groups. Allocate programmes with the same picker used everywhere else.
+components/institutions/workspace.tsx	Catalogue visibility
+components/institutions/workspace.tsx	Certificate footer
+components/institutions/workspace.tsx	Certificate name
+components/institutions/workspace.tsx	Certificate of Achievement
+components/institutions/workspace.tsx	Contact email
+components/institutions/workspace.tsx	Contact name
+components/institutions/workspace.tsx	Create key
+components/institutions/workspace.tsx	Curated public catalogue
+components/institutions/workspace.tsx	Custom domains open on the enterprise and OEM plans. This academy keeps its Poket School subdomain.
+components/institutions/workspace.tsx	Display name
+components/institutions/workspace.tsx	Due date
+components/institutions/workspace.tsx	Email from name
+components/institutions/workspace.tsx	Export CSV
+components/institutions/workspace.tsx	Export XLSX
+components/institutions/workspace.tsx	Favicon URL
+components/institutions/workspace.tsx	Group kind
+components/institutions/workspace.tsx	Group name
+components/institutions/workspace.tsx	Institution type
+components/institutions/workspace.tsx	Invite CSV
+components/institutions/workspace.tsx	Invite body
+components/institutions/workspace.tsx	Invite subject
+components/institutions/workspace.tsx	Invoice kind
+components/institutions/workspace.tsx	Invoices, quotes, and purchase orders
+components/institutions/workspace.tsx	Learning paths and skills
+components/institutions/workspace.tsx	Login headline
+components/institutions/workspace.tsx	Login note
+components/institutions/workspace.tsx	Logo URL
+components/institutions/workspace.tsx	Mandatory training
+components/institutions/workspace.tsx	Mobile app name, icon, and splash are stored for the branded app build. The store listing is not published from this screen.
+components/institutions/workspace.tsx	New teacher path
+components/institutions/workspace.tsx	No admin actions recorded yet.
+components/institutions/workspace.tsx	North campus
+components/institutions/workspace.tsx	PO or quote reference
+components/institutions/workspace.tsx	Path name
+components/institutions/workspace.tsx	Person email
+components/institutions/workspace.tsx	Person name
+components/institutions/workspace.tsx	Person role
+components/institutions/workspace.tsx	Powered by Poket School
+components/institutions/workspace.tsx	Private catalogue
+components/institutions/workspace.tsx	Private items stay inside this academy. Public items are the curated catalogue.
+components/institutions/workspace.tsx	Remind days before
+components/institutions/workspace.tsx	Safety induction
+components/institutions/workspace.tsx	Save invites and copy the email
+components/institutions/workspace.tsx	Save licence
+components/institutions/workspace.tsx	Save path from the selection above
+components/institutions/workspace.tsx	Save profile
+components/institutions/workspace.tsx	Save white-label
+components/institutions/workspace.tsx	Schedule weekly report
+components/institutions/workspace.tsx	Seats and term
+components/institutions/workspace.tsx	Second colour
+components/institutions/workspace.tsx	The full key is shown once and only its hash is stored.
+components/institutions/workspace.tsx	This plan keeps “Powered by Poket School”. Enterprise and OEM can turn it off.
+components/institutions/workspace.tsx	Training title
+components/institutions/workspace.tsx	Upload the academy’s own content
+components/institutions/workspace.tsx	Webhook URL
+components/institutions/workspace.tsx	https://example.edu/hooks/poket
+components/institutions/workspace.tsx	learn.school.example
+components/institutions/workspace.tsx	name@school.example
 components/lesson-format-views.tsx	Audio Summary
 components/lesson-format-views.tsx	Not generated yet.
 components/lesson-manuscript.tsx	An unsaved copy of this lesson is on this device.
@@ -1731,7 +1969,7 @@ components/shell/design-desk.tsx	Sparkles and studio stay one tap away.
 components/shell/design-desk.tsx	⌘K
 components/shell/sparks-note.tsx	0 && balance
 components/site-footer.tsx	/ AI
-components/site-footer.tsx	Poket School
+components/site-footer.tsx	Powered by Poket School
 components/site-footer.tsx	hello@poketschool.ai ↗
 components/site-header.tsx	/ AI
 components/site-header.tsx	Poket School
@@ -1769,10 +2007,10 @@ components/study/scan-cropper.tsx	Your photo
 components/study/study-launchpad.tsx	ET Maths
 components/study/study-launchpad.tsx	Exam Prep
 components/study/study-launchpad.tsx	SPM · IGCSE · A Level packs
-components/study/study-launchpad.tsx	Snap it. ET walks you through it, one step at a time.
+components/study/study-launchpad.tsx	Snap it. ET AI walks you through it, one step at a time.
 components/study/study-launchpad.tsx	Stuck on a problem?
 components/study/study-launchpad.tsx	Today&apos;s puzzle
-components/study/study-launchpad.tsx	Upload notes, slides or past papers and set your exam date — ET builds a day-by-day plan with lessons, quizzes, podcasts and a mock.
+components/study/study-launchpad.tsx	Upload notes, slides or past papers and set your exam date — ET AI builds a day-by-day plan with lessons, quizzes, podcasts and a mock.
 components/study/study-launchpad.tsx	Your notes in.
 components/study/study-launchpad.tsx	Your study plan out.
 components/teacher-course-studio.tsx	Add a title and a description.
@@ -1792,6 +2030,9 @@ components/teacher-course-studio.tsx	Save the course before adding a coupon.
 components/teacher-course-studio.tsx	Section title
 components/teacher-course-studio.tsx	https://
 components/teacher-studio-demo.tsx	Loading the course studio…
+components/tenant-chrome.tsx	Powered by Poket School
+components/tenant-chrome.tsx	Sign in
+components/tenant-chrome.tsx	This academy is suspended.
 components/tier-selector.tsx	Subject Type
 components/tier-selector.tsx	Which field set and output format the AI generation uses
 components/ui/badge.tsx	& VariantProps

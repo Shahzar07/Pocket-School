@@ -31,7 +31,7 @@ const TABS: { id: Tab; label: string; icon: typeof BookOpen; blurb: string }[] =
   { id: 'truefalse', label: 'True or false', icon: CheckCircle2, blurb: 'Ten quick statements — the false ones are wrong the way students get it wrong.' },
   { id: 'exercises', label: 'Exercises', icon: PenLine, blurb: 'Exam-style questions with full worked solutions. Mark yourself honestly.' },
   { id: 'podcast', label: 'Podcast', icon: Headphones, blurb: 'Revise on the go with a two-voice episode about this topic.' },
-  { id: 'chat', label: 'Ask ET', icon: MessageCircle, blurb: 'Ask anything — ET answers from your own material first.' },
+  { id: 'chat', label: 'Ask ET AI', icon: MessageCircle, blurb: 'Ask anything — ET AI answers from your own material first.' },
 ];
 
 /** How much each activity moves mastery, and from what score. */
@@ -139,7 +139,7 @@ function TopicInner({ params }: { params: Promise<{ id: string; topicId: string 
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">{allTopics ? 'All topics' : `Topic ${(topic?.order ?? 0) + 1} of ${prep.topics.length}`}</p>
-            <h1 className="font-heading text-[28px] leading-tight tracking-[-0.03em] text-foreground mt-1">{allTopics ? 'Ask ET about your notes' : topic!.title}</h1>
+            <h1 className="font-heading text-[28px] leading-tight tracking-[-0.03em] text-foreground mt-1">{allTopics ? 'Ask ET AI about your notes' : topic!.title}</h1>
             {topic && <p className="text-[14px] text-muted-foreground mt-1 max-w-2xl">{topic.summary}</p>}
           </div>
           {mastery !== null && (
@@ -208,7 +208,7 @@ function TopicInner({ params }: { params: Promise<{ id: string; topicId: string 
               <div className="max-w-md mx-auto text-center py-12">
                 <motion.span className="w-14 h-14 rounded-2xl bg-primary/10 text-primary grid place-items-center mx-auto mb-4"
                   animate={{ scale: [1, 1.08, 1] }} transition={{ repeat: Infinity, duration: 1.4 }}><Sparkles className="w-6 h-6" /></motion.span>
-                <p className="font-semibold text-foreground">ET is writing your {meta.label.toLowerCase()}…</p>
+                <p className="font-semibold text-foreground">ET AI is writing your {meta.label.toLowerCase()}…</p>
                 <p className="text-[13px] text-muted-foreground mt-1">Using your notes for {topic?.title}.</p>
               </div>
             )}
@@ -256,7 +256,7 @@ function TopicChat({ prep, topic, loadMaterial }: { prep: ExamPrep; topic: Study
       }, setStreaming);
       setMessages(m => [...m, { role: 'tutor', text: full }]);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'ET is unavailable.');
+      toast.error(e instanceof Error ? e.message : 'ET AI is unavailable.');
     } finally { setStreaming(null); }
   };
 
@@ -270,7 +270,7 @@ function TopicChat({ prep, topic, loadMaterial }: { prep: ExamPrep; topic: Study
         {messages.length === 0 && streaming === null && (
           <div className="text-center py-8">
             <p className="font-heading text-xl text-foreground">Talk to your notes</p>
-            <p className="text-[13px] text-muted-foreground mt-1">ET answers from your own material first, and tells you when it doesn&apos;t cover something.</p>
+            <p className="text-[13px] text-muted-foreground mt-1">ET AI answers from your own material first, and tells you when it doesn&apos;t cover something.</p>
             <div className="mt-4 flex flex-wrap justify-center gap-1.5">
               {starters.map(s => <button key={s} onClick={() => send(s)} className="text-[13px] px-3 py-1.5 rounded-full border border-border hover:border-primary/50 hover:bg-primary/5">{s}</button>)}
             </div>
@@ -278,7 +278,7 @@ function TopicChat({ prep, topic, loadMaterial }: { prep: ExamPrep; topic: Study
         )}
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'student' ? 'justify-end' : 'gap-2.5'}`}>
-            {m.role === 'tutor' && <span className="w-7 h-7 rounded-full bg-primary text-primary-foreground text-[11px] font-bold grid place-items-center shrink-0">ET</span>}
+            {m.role === 'tutor' && <span className="h-7 px-1.5 rounded-full bg-primary text-primary-foreground text-[9px] font-bold inline-flex items-center justify-center shrink-0 tracking-tight">ET AI</span>}
             <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[14px] ${m.role === 'student' ? 'bg-foreground text-background rounded-tr-md whitespace-pre-wrap' : 'bg-primary/[0.06] border border-primary/15 rounded-tl-md'}`}>
               {m.role === 'tutor' ? <div className="prose prose-sm max-w-none [&_p]:my-1"><MathMarkdown>{m.text}</MathMarkdown></div> : m.text}
             </div>
@@ -286,7 +286,7 @@ function TopicChat({ prep, topic, loadMaterial }: { prep: ExamPrep; topic: Study
         ))}
         {streaming !== null && (
           <div className="flex gap-2.5">
-            <span className="w-7 h-7 rounded-full bg-primary text-primary-foreground text-[11px] font-bold grid place-items-center shrink-0">ET</span>
+            <span className="h-7 px-1.5 rounded-full bg-primary text-primary-foreground text-[9px] font-bold inline-flex items-center justify-center shrink-0 tracking-tight">ET AI</span>
             <div className="max-w-[85%] rounded-2xl rounded-tl-md bg-primary/[0.06] border border-primary/15 px-4 py-2.5 text-[14px]">
               {streaming ? <div className="prose prose-sm max-w-none [&_p]:my-1"><MathMarkdown>{streaming}</MathMarkdown></div> : <Loader2 className="w-4 h-4 animate-spin text-primary" />}
             </div>

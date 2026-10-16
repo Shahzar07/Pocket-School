@@ -162,7 +162,7 @@ const enCore = {
   },
   auth: {
     line1: 'Your Smartest',
-    line2: 'Classroom in Your Pocket',
+    line2: 'Classroom in Your Poket',
     subtitle: 'AI-powered learning for IGCSE, A-Levels, degrees & beyond.',
     f1title: 'ET AI — Your AI Tutor',
     f1desc: 'Adapts to how you think, 24 / 7',
