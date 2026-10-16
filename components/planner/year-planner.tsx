@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarRange, Download, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { bearerHeaders } from '@/lib/api-client';
 import { Input } from '@/components/ui/input';
 import { DashHeader, DashPage, Panel, PanelHeader } from '@/components/dash-ui';
 import { buildXlsx } from '@/lib/insights/xlsx';
@@ -191,7 +192,7 @@ export function YearPlanner({
     try {
       const body = new FormData();
       body.set('file', file);
-      const response = await fetch('/api/planner/import', { method: 'POST', body });
+      const response = await fetch('/api/planner/import', { method: 'POST', headers: await bearerHeaders(), body });
       const payload = await response.json() as { events?: PlannerEvent[]; notice?: string };
       applyDraft({
         events: payload.events ?? [],
@@ -215,7 +216,7 @@ export function YearPlanner({
     try {
       const response = await fetch('/api/planner/import', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await bearerHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ url: checked.url }),
       });
       const payload = await response.json() as { events?: PlannerEvent[]; notice?: string };

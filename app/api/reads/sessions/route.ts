@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { enforceAiAccess } from '@/lib/api-guard';
 import { isQuietHour } from '@/lib/reads/quiet';
 import { localDateKey, readingGoal } from '@/lib/platform/reading';
 
@@ -10,7 +11,9 @@ export const runtime = 'nodejs';
  * the reader can say the minutes will not count. The ledger waits for
  * the Admin SDK.
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const denied = await enforceAiAccess(request);
+  if (denied) return denied;
   const body = await request.json().catch(() => null) as {
     bookId?: string;
     activeSeconds?: number;

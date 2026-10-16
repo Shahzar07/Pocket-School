@@ -7,6 +7,7 @@ import {
   ArrowLeft, Bookmark, Headphones, Highlighter, Languages, List, MessageCircle, Pause, Type,
 } from 'lucide-react';
 import { useShelfProfile } from '@/components/shelf/profile-bar';
+import { bearerHeaders } from '@/lib/api-client';
 import { SAMPLE_OWNED, SAMPLE_READER } from '@/lib/reads/access';
 import { decideBook } from '@/lib/platform/allocation';
 import { awardReading } from '@/lib/platform/gamification';
@@ -174,9 +175,9 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
     if (!ready || seconds === 0 || seconds % 30 !== 0) return;
     const counted = timer === 'counting';
     addSessionSeconds(profile.id, bookId, 30, counted);
-    void fetch('/api/reads/sessions', {
+    void bearerHeaders({ 'Content-Type': 'application/json' }).then(headers => fetch('/api/reads/sessions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         bookId,
         activeSeconds: 30,
@@ -185,7 +186,7 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
         studentId: profile.id,
         dateKey: localDateKey(),
       }),
-    }).then(async res => {
+    })).then(async res => {
       const data = await res.json().catch(() => null) as { goal?: { status?: string; category?: string } } | null;
       if (data?.goal?.category === 'reading' && data.goal.status) setGoalStatus(data.goal.status);
     }).catch(() => {});
@@ -236,7 +237,7 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
     if (!word) return;
     setDefinition('…');
     try {
-      const res = await fetch(`/api/reads/define?word=${encodeURIComponent(word)}`);
+      const res = await fetch(`/api/reads/define?word=${encodeURIComponent(word)}`, { headers: await bearerHeaders() });
       const data = await res.json();
       setDefinition(data.definition || t('reads.reader.noDefine'));
     } catch {
@@ -263,7 +264,7 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
     try {
       const res = await fetch('/api/reads/ask', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await bearerHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           title: book.title,
           fiction: book.form === 'fiction',

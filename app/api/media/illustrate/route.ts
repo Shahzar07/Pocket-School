@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { enforceAiAccess } from '@/lib/api-guard';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -10,7 +11,9 @@ const IMAGE_MODELS = ['google/gemini-2.5-flash-image', 'google/gemini-2.5-flash-
  * One illustration with no lettering. The client confirms a Sparks spend first.
  * No key, or no picture, returns `{ fallback: true }` so the caller can draw a stand-in.
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const denied = await enforceAiAccess(request);
+  if (denied) return denied;
   const body = await request.json().catch(() => null) as { prompt?: string; style?: string } | null;
   const prompt = (body?.prompt ?? '').toString().slice(0, 500).trim();
   const style = (body?.style ?? 'illustrated').toString().slice(0, 40);

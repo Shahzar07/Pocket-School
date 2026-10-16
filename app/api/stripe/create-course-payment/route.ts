@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isNextResponse, requireUser } from '@/lib/api-guard';
 import { getPublicCourseById } from '@/lib/db';
 import { loadPricingConfig } from '@/lib/pricing-store';
 import { quoteCourse, stripeUnitAmount } from '@/lib/pricing';
@@ -6,6 +7,8 @@ import { quoteCourse, stripeUnitAmount } from '@/lib/pricing';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  const user = await requireUser(req);
+  if (isNextResponse(user)) return user;
   if (!process.env.STRIPE_SECRET_KEY) {
     return NextResponse.json(
       { error: 'Payments are coming soon.', code: 'COMING_SOON' },
@@ -13,14 +16,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { courseId?: string; email?: string; currency?: string };
+  let body: { courseId?: string; currency?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
   }
 
-  const { courseId, email } = body;
+  const { courseId } = body;
   if (!courseId) return NextResponse.json({ error: 'courseId required.' }, { status: 400 });
 
   const course = await getPublicCourseById(courseId);
@@ -41,7 +44,8 @@ export async function POST(req: NextRequest) {
       metadata: {
         courseId,
         courseTitle: course.title,
-        buyerEmail: email ?? 'guest',
+        buyerEmail: user.email ?? user.uid,
+        buyerId: user.uid,
       },
       automatic_payment_methods: { enabled: true },
     });

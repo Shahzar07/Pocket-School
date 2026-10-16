@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Languages, Loader2, Sparkles } from 'lucide-react';
 import { useAuthSTORE } from '@/hooks/use-auth';
+import { bearerHeaders } from '@/lib/api-client';
 import { awardSparks, type Lesson } from '@/lib/db';
 import { readLessonBody } from '@/lib/lesson-body';
 import { LANGUAGES, getLanguage } from '@/lib/languages';
@@ -79,7 +80,7 @@ export function LessonLanguagePanel({
     try {
       const res = await fetch('/api/ai/translate-lesson', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await bearerHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           title: englishTitle,
           text: englishBody,

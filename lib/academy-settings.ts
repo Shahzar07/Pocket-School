@@ -372,6 +372,25 @@ export function publicTenantPatch(settings: AcademySettings) {
   };
 }
 
+/** Production cannot skip the allowlist when the Admin SDK cannot verify it. */
+export function academyAccessWithoutSdk(nodeEnv: string | undefined): {
+  status: 200 | 503;
+  body: { enforced: boolean; allowed: boolean; error?: string; code?: 'ADMIN_NOT_CONFIGURED' };
+} {
+  if (nodeEnv === 'production') {
+    return {
+      status: 503,
+      body: {
+        enforced: true,
+        allowed: false,
+        error: 'Academy access cannot be verified.',
+        code: 'ADMIN_NOT_CONFIGURED',
+      },
+    };
+  }
+  return { status: 200, body: { enforced: false, allowed: true } };
+}
+
 export function privacyExport(input: {
   exportedAt: string;
   institutionName: string;

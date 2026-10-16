@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { authedFetch } from '@/lib/api-client';
+import { ApiError, authedFetch } from '@/lib/api-client';
 import { getInstitution, type Institution } from '@/lib/db';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { useWhiteLabel } from '@/components/white-label-provider';
@@ -57,7 +57,11 @@ export function AcademySession() {
       .then((data) => {
         if (!cancelled && data && typeof data === 'object' && data.allowed === false) setBlocked(true);
       })
-      .catch(() => { if (!cancelled) setBlocked(false); });
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        const missingSdk = error instanceof ApiError && (error.status === 503 || error.code === 'ADMIN_NOT_CONFIGURED');
+        setBlocked(missingSdk);
+      });
     return () => { cancelled = true; };
   }, [academy?.id, user]);
 

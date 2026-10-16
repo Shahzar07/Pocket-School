@@ -1,9 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { enforceAiAccess } from '@/lib/api-guard';
 
 export const runtime = 'nodejs';
 
 /** Dictionary lookup for a highlighted word. No model call. */
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const denied = await enforceAiAccess(request);
+  if (denied) return denied;
   const word = new URL(request.url).searchParams.get('word')?.trim().toLowerCase() ?? '';
   if (!/^[a-z][a-z'-]{0,40}$/.test(word)) {
     return NextResponse.json({ definition: '' }, { status: 400 });

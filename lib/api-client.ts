@@ -10,6 +10,15 @@ export class ApiError extends Error {
   }
 }
 
+/** Authorization header for the signed-in user. Does not set Content-Type, so FormData still works. */
+export async function bearerHeaders(extra?: HeadersInit): Promise<Headers> {
+  const token = await auth.currentUser?.getIdToken();
+  if (!token) throw new ApiError('Sign in required.', 'UNAUTHENTICATED', 401);
+  const headers = new Headers(extra);
+  headers.set('Authorization', `Bearer ${token}`);
+  return headers;
+}
+
 /** Fetch with the signed-in user's Firebase ID token. */
 export async function authedFetch(path: string, init: RequestInit = {}): Promise<Record<string, unknown>> {
   const token = await auth.currentUser?.getIdToken();

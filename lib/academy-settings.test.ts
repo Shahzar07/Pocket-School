@@ -12,6 +12,7 @@ import {
   roleCan,
   sanitiseAcademySettings,
   signupDecision,
+  academyAccessWithoutSdk,
 } from './academy-settings';
 
 describe('academy policy', () => {
@@ -78,5 +79,16 @@ describe('academy policy', () => {
     });
     assert.equal(bundle.institution, 'North Academy');
     assert.equal('secret' in bundle, false);
+  });
+
+  it('fails closed in production when the Admin SDK is missing', () => {
+    const production = academyAccessWithoutSdk('production');
+    assert.equal(production.status, 503);
+    assert.equal(production.body.allowed, false);
+    assert.equal(production.body.enforced, true);
+    const local = academyAccessWithoutSdk('development');
+    assert.equal(local.status, 200);
+    assert.equal(local.body.allowed, true);
+    assert.equal(local.body.enforced, false);
   });
 });
