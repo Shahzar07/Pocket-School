@@ -6,6 +6,8 @@ import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { getEnrolledCourses, getAllPublishedCourses, enrollStudent, Course, Enrollment } from '@/lib/db';
 import { productAccess, viewerFromProfile } from '@/lib/allocation';
+import { canSeeCourse, type AccessViewer } from '@/lib/institution-membership';
+import type { VolumePlanId } from '@/lib/institution-pricing';
 import { forLearnerView } from '@/lib/account-modes';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +16,41 @@ import { BookOpen, Plus, CheckCircle2, Play } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface CE { course: Course; enrollment: Enrollment }
+
+function asLevel(value: unknown): VolumePlanId | '' {
+  return value === 'primary_secondary' || value === 'igcse_alevel' || value === 'professional' ? value : '';
+}
+
+function memberCanSee(course: Course, profile: { role?: string | null; institutionId?: string | null; level?: string | null; cohortIds?: string[] | null; childIds?: string[] | null } | null | undefined, userId: string): boolean {
+  const gated = Boolean(course.visibility) || course.publishScope === 'institution' || course.libraryApproved === false;
+  if (!gated) return true;
+  const role = profile?.role === 'parent' || profile?.role === 'teacher' || profile?.role === 'institution_admin' || profile?.role === 'admin'
+    ? profile.role
+    : 'student';
+  const level = asLevel(profile?.level);
+  const viewer: AccessViewer = {
+    userId,
+    role,
+    institutionId: profile?.institutionId ?? '',
+    level,
+    classIds: profile?.cohortIds ?? [],
+    childIds: profile?.childIds ?? [],
+    purchasedCourseIds: [],
+    entitledLevels: level ? [level] : [],
+  };
+  const visibility = course.visibility
+    || (course.publishScope === 'marketplace' ? 'marketplace' : course.publishScope === 'institution' ? 'institution' : 'legacy');
+  return canSeeCourse(viewer, {
+    id: course.id,
+    institutionId: course.institutionId,
+    visibility,
+    level: asLevel(course.level),
+    marketplaceApproved: course.marketplaceApproved,
+    libraryApproved: course.libraryApproved,
+    classIds: course.classIds,
+    ownerId: course.ownerId,
+  });
+}
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -46,7 +83,7 @@ export default function CoursesPage() {
       setEnrolled(mine);
       const enrolledIds = new Set(mine.map(e => e.course.id));
       const viewer = viewerFromProfile(profile, { userId: user.uid });
-      setAvailable(all.filter(c => !enrolledIds.has(c.id) && productAccess(c, viewer).listed).sort((a, b) => a.title.localeCompare(b.title)));
+      setAvailable(all.filter(c => !enrolledIds.has(c.id) && productAccess(c, viewer).listed && memberCanSee(c, profile, user.uid)).sort((a, b) => a.title.localeCompare(b.title)));
     } catch (e: any) {
       setError(e?.message ?? 'Something went wrong.');
     } finally {

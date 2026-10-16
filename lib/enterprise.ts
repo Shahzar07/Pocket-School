@@ -75,6 +75,10 @@ export interface InstitutionContact {
 export interface InstitutionProfile {
   type: InstitutionType;
   country: string;
+  /** Subdivision shown in the self-join dropdown. */
+  state: string;
+  /** Super admin turns this on before the academy appears in signup. */
+  listedForSelfJoin: boolean;
   plan: InstitutionPlan;
   address: InstitutionAddress;
   contacts: InstitutionContact[];
@@ -95,6 +99,8 @@ export function blankProfile(partial: Partial<InstitutionProfile> = {}): Institu
   return {
     type: 'school',
     country: '',
+    state: '',
+    listedForSelfJoin: false,
     plan: 'team',
     billingEmail: '',
     poNumber: '',
@@ -149,7 +155,7 @@ export function filterDirectory(rows: readonly DirectoryRow[], filter: Directory
 }
 
 export function institutionsToCsv(rows: readonly DirectoryRow[]): string {
-  const header = ['name', 'type', 'country', 'plan', 'status', 'seats', 'seatsUsed', 'domain', 'subdomain', 'customDomain', 'renewal'];
+  const header = ['name', 'type', 'country', 'plan', 'status', 'seats', 'seatsUsed', 'domain', 'subdomain', 'customDomain', 'renewal', 'state', 'listed'];
   const lines = rows.map((row) => [
     row.name,
     row.profile.type,
@@ -162,6 +168,8 @@ export function institutionsToCsv(rows: readonly DirectoryRow[]): string {
     row.subdomain,
     row.customDomain,
     row.profile.renewalOn,
+    row.profile.state,
+    row.profile.listedForSelfJoin ? 'yes' : 'no',
   ].map(csvCell).join(','));
   return [header.join(','), ...lines].join('\n');
 }

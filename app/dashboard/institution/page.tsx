@@ -131,6 +131,15 @@ export default function InstitutionAcademyPage() {
       />
       <Panel>
         <p className="text-sm text-muted-foreground">Invite teachers and students first. The name on certificates and emails is the academy name saved below.</p>
+        <div className="mt-3 flex flex-wrap gap-2 text-sm">
+          <Link className="underline font-semibold" href="/dashboard/institution/approvals">Approvals</Link>
+          <Link className="underline font-semibold" href="/dashboard/institution/publishing">Course library</Link>
+          <Link className="underline font-semibold" href="/dashboard/institution/sparks">Sparks</Link>
+          <Link className="underline font-semibold" href="/dashboard/institution/billing">Billing</Link>
+          <Link className="underline font-semibold" href="/dashboard/institution/usage">Usage</Link>
+          <Link className="underline font-semibold" href="/dashboard/reports">Reports</Link>
+          <Link className="underline font-semibold" href="/dashboard/behaviour">Behaviour</Link>
+        </div>
       </Panel>
 
       <section className="grid sm:grid-cols-3 gap-3">
@@ -166,7 +175,7 @@ export default function InstitutionAcademyPage() {
       <section className="rounded-3xl border border-border p-5 space-y-3">
         <h2 className="font-semibold">Classes</h2>
         <p className="text-xs text-muted-foreground">{classCount} classes. Choose the programmes this class can open.</p>
-        <Input value={className} onChange={event => setClassName(event.target.value)} placeholder="Year 8 Science" className="rounded-xl h-11" />
+        <Input value={className} onChange={event => setClassName(event.target.value)} placeholder="IGCSE Science" className="rounded-xl h-11" />
         <AllocationPicker
           label="Programmes"
           chips={[]}

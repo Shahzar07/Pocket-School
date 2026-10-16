@@ -107,7 +107,7 @@ test('a teacher course needs the institution admin, then Poket School, before th
   const core = platformPlaces(blankPublication('platform'), {
     marketplace: 'hidden', featured: false, core: true, levels: ['primary_secondary'], institutionIds: [],
   });
-  assert.equal(core.library, 'approved');
+  assert.ok(!('error' in core) && core.library === 'approved');
 });
 
 test('seats scale with a pro-rated charge, and usage reports a cost per student', () => {

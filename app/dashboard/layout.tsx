@@ -232,6 +232,12 @@ const NAV: Record<Role, NavGroup[]> = {
   institution_admin: [
     { items: [
       { href: '/dashboard/institution', icon: GraduationCap, labelKey: 'nav.myClasses' },
+      { href: '/dashboard/institution/approvals', icon: ShieldCheck, labelKey: 'nav.approvals', label: 'Approvals' },
+      { href: '/dashboard/institution/publishing', icon: Library, labelKey: 'nav.library', label: 'Course library' },
+      { href: '/dashboard/institution/sparks', icon: Sparkles, labelKey: 'nav.sparks', label: 'Sparks pool' },
+      { href: '/dashboard/institution/billing', icon: CreditCard, labelKey: 'nav.billing', label: 'Billing' },
+      { href: '/dashboard/institution/usage', icon: PieChart, labelKey: 'nav.usage', label: 'Usage' },
+      { href: '/dashboard/institution/onboarding', icon: ClipboardList, labelKey: 'nav.onboarding', label: 'Onboarding' },
       { href: '/dashboard/admin/institutions', icon: Users, labelKey: 'nav.institutions' },
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },

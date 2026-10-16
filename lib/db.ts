@@ -180,6 +180,12 @@ export interface Course {
   academicYear?: string;
   // ── Content Builder publish & allocation controls ──
   publishScope?: 'institution' | 'public' | 'marketplace';
+  institutionId?: string;
+  marketplaceApproved?: boolean;
+  libraryApproved?: boolean;
+  /** subscription, a_la_carte, or both. Absent keeps the older catalogue rules. */
+  accessMode?: 'subscription' | 'a_la_carte' | 'both';
+  visibility?: 'core' | 'institution' | 'marketplace' | 'legacy' | '';
   allocatedInstitutionIds?: string[];
   allocatedGroups?: string[];
   allowComments?: boolean;
@@ -403,6 +409,10 @@ export interface Institution {
   type?: 'school' | 'university' | 'corporate' | 'government';
   /** ISO 3166-1 alpha-2. */
   country?: string;
+  /** Subdivision used by the self-join dropdown. */
+  state?: string;
+  /** Super admin lists the academy for Independent vs institution signup. */
+  listedForSelfJoin?: boolean;
   plan?: 'starter' | 'team' | 'enterprise' | 'oem';
   /** Set on a sub-academy. Data stays in this institution's own subcollections. */
   parentInstitutionId?: string;
