@@ -36,9 +36,10 @@ const TOOLS = [
     href: '/dashboard/studio/essays',
     icon: PenLine,
     name: 'ET Essays',
-    blurb: 'ET AI drafts an essay, or marks one you paste or upload, with a percentage, a 9–1 grade, and an A*–U grade.',
+    blurb: 'ET AI sets a question and helps you plan. You write the essay. A mark shows a 9–1 grade, a letter from A* to U, and a percentage.',
     links: [
       { href: '/studio/essays', label: 'Full page' },
+      { href: '/dashboard/studio/essays/review', label: 'Teacher review' },
     ],
   },
 ];

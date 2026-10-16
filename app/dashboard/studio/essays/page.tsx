@@ -10,7 +10,7 @@ export default function StudioEssaysPage() {
         eyebrow="AI Studio"
         title="ET Essays"
         accent="with ET AI."
-        description="Draft an essay, or paste and upload one for marking. ET AI uses the same method as ET English."
+        description="ET AI sets a question and helps you plan. You write the essay. A mark shows a 9–1 grade, a letter from A* to U, and a percentage."
       />
       <EssaysDesk />
     </DashPage>

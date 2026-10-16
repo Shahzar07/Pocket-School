@@ -1,5 +1,5 @@
 /**
- * Draft and mark an essay with the same method ET English teaches.
+ * Mark an essay the student wrote. ET AI does not draft that essay.
  * Grades reuse the school scales: 9–1 and A*–U, each with a percentage.
  */
 
@@ -32,11 +32,6 @@ export interface EssayMark {
   inline: InlineNote[];
   fixNext: string[];
   summary: string;
-}
-
-export interface EssayDraft {
-  title: string;
-  body: string;
 }
 
 const CRITERION_LABEL: Record<RubricCriterion, string> = {
@@ -199,20 +194,6 @@ export function markEssay(input: { body: string; prompt: string; level: EssayLev
   };
 }
 
-export function draftEssay(input: { idea: string; prompt: string; level: EssayLevel }): EssayDraft {
-  const idea = input.idea.trim() || 'the subject of the question';
-  const question = input.prompt.trim() || `Explain ${idea}.`;
-  const level = essayLevelLabel(input.level);
-  const title = question.replace(/\s+/g, ' ').slice(0, 90);
-  const body = [
-    `${question.replace(/[?.!]+$/, '')}. At ${level}, the direct answer is that ${idea} changes the conclusion, and the essay should say so in the first lines.`,
-    `The first point is the one a reader can check. ${idea} is clearest in one concrete example, and the topic sentence should name that example before the comment on it.`,
-    `There is another side. Although ${idea} holds in that example, it fails when the example is too narrow, so the paragraph has to say where the claim stops.`,
-    `Overall, ${idea} stands when the example is specific and the reason is stated. The judgement stays with that limit.`,
-  ].join('\n\n');
-  return { title, body };
-}
-
 export function placeNotes(body: string, notes: InlineNote[]): Array<{ text: string; suggestion?: string }> {
   const placed: Array<{ text: string; suggestion?: string }> = [];
   let cursor = 0;
@@ -231,7 +212,7 @@ export function placeNotes(body: string, notes: InlineNote[]): Array<{ text: str
   return placed.length ? placed : [{ text: body }];
 }
 
-export function essayPdfLines(input: { title: string; level: EssayLevel; body: string; mark: EssayMark | null }): string[] {
+export function essayPdfLines(input: { title: string; level: EssayLevel; body: string; mark: EssayMark | null; guidance?: string }): string[] {
   const lines = [
     'ET Essays',
     `Level: ${essayLevelLabel(input.level)}`,
@@ -239,12 +220,13 @@ export function essayPdfLines(input: { title: string; level: EssayLevel; body: s
     '',
     input.body,
   ];
+  if (input.guidance) lines.push('', input.guidance);
   if (!input.mark) return lines;
   lines.push(
     '',
     `Percentage: ${input.mark.percent}%`,
     `9–1: ${input.mark.grade91}`,
-    `A*–U: ${input.mark.gradeAU}`,
+    `Letter (A*/A/B/C/D/E/U): ${input.mark.gradeAU}`,
     '',
     'Rubric',
     ...input.mark.rubric.map(item => `${item.label}: ${item.score}/25. ${item.note}`),

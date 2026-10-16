@@ -36,6 +36,8 @@ export const ENGLISH_ESSAY_COACHING = [
   '- Close with a judgement that follows the paragraphs. Do not start a new topic.',
   '- Mark on four criteria only: content, structure, language, and accuracy.',
   '- Point at the sentence to change, then say what to fix next.',
+  '- Never write the student\'s essay. Planning is a brainstorm, an outline, and one thesis sentence.',
+  '- A model paragraph must answer a different question, and it stays one short paragraph.',
 ].join('\n');
 
 export function isEssayLevel(value: string): value is EssayLevel {
