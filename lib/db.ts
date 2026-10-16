@@ -123,6 +123,13 @@ export interface Course {
   ownerName?: string;
   thumbnailUrl?: string;
   status: 'draft' | 'pending_approval' | 'published';
+  /** CMS review. Students only see the course once this is published. */
+  reviewStatus?: 'draft' | 'in_review' | 'approved' | 'published';
+  /** Compact copy of lessons at the last publish, used for the review diff. */
+  publishedSnapshot?: {
+    at: number;
+    lessons: { id: string; moduleTitle: string; title: string; body: string; quizCount: number; imageCount: number }[];
+  };
   subject?: string;
   type?: CourseType;
   price?: number;

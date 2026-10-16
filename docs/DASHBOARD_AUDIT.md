@@ -744,6 +744,24 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Keep.
 - **Owner keys:** OPENROUTER_API_KEY.
 
+### Course preview
+
+- **Route:** `/dashboard/admin/curriculum/[courseId]/preview`
+- **Audience:** admin
+- **Purpose:** Review the whole course as a student sees it, leave comments, and publish from the checklist.
+- **Overlaps:** The public preview link and the teacher preview.
+- **Decision:** Keep. Reviewers use this page. Students never see the review link.
+- **Owner keys:** None.
+
+### Book Studio
+
+- **Route:** `/dashboard/admin/books`
+- **Audience:** admin
+- **Purpose:** The same Book Studio as Poket Reads, opened from the CMS, including children's stories.
+- **Overlaps:** Poket Reads studio.
+- **Decision:** Keep. Books are written here and read in Poket Reads.
+- **Owner keys:** None for the shelf. Picture generation uses the existing AI key.
+
 ### Audit log
 
 - **Route:** `/dashboard/admin/audit`

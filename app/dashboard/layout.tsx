@@ -193,6 +193,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/dashboard/admin/courses', icon: Presentation, labelKey: 'nav.allCourses' },
       { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' },
+      { href: '/dashboard/admin/books', icon: BookOpen, labelKey: 'nav.books', label: 'Book Studio' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/admin/users', icon: UserCog, labelKey: 'nav.usersSparks' },
@@ -492,9 +493,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
   const nav = (NAV[role] ?? NAV.student).map((group, index) => {
     const cmsItem: NavEntry = { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' };
+    const bookItem: NavEntry = { href: '/dashboard/admin/books', icon: BookOpen, labelKey: 'nav.books', label: 'Book Studio' };
     const withCms = index !== 0 || role === 'admin' || !hasCmsAddon(profile) || (role !== 'teacher' && role !== 'institution_admin')
       ? group.items
-      : [...group.items, cmsItem];
+      : [...group.items, cmsItem, bookItem];
     return {
       ...group,
       items: withCms.filter((item) => (!item.superOnly || superAdmin) && (!item.flag || isFeatureEnabled(flags, item.flag))),

@@ -20,6 +20,7 @@ import {
   AiOutputs, Course, Module, Lesson, Enrollment, UnitQuizAttempt,
 } from '@/lib/db';
 import { getUnitStatuses, getCurriculumLessonStatus } from '@/lib/curriculum';
+import { lessonVisibleToStudent } from '@/lib/course-review';
 import { productAccess, viewerFromProfile } from '@/lib/allocation';
 import { lessonWindow } from '@/lib/access-policy';
 import { recordStudyDay, streakFromDates, toggleBookmark } from '@/lib/learning';
@@ -654,6 +655,13 @@ export default function LessonPage() {
         getCourse(courseId),
       ]);
       if (!result) { setLoading(false); return; }
+      if (courseDoc && !lessonVisibleToStudent(result.lesson, courseDoc)) {
+        setCourse(courseDoc);
+        setLesson(result.lesson);
+        setClosedReason('This lesson is not published.');
+        setLoading(false);
+        return;
+      }
       setNote(savedNote);
       setCourse(courseDoc);
       let lessonIndex = Math.max(0, (result.lesson.order ?? 1) - 1);

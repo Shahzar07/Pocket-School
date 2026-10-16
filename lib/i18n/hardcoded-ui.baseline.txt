@@ -207,8 +207,10 @@ app/dashboard/admin/curriculum/[courseId]/page.tsx	Not generated yet.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Open the student view of this lesson in a new tab
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Prerequisite gate
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Preview as Student
+app/dashboard/admin/curriculum/[courseId]/page.tsx	Preview course
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Price per institution (£)
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Rename lesson
+app/dashboard/admin/curriculum/[courseId]/page.tsx	Review the whole course as a student sees it
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Select a lesson first.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Sparks cost override (⚡)
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Student groups
@@ -222,6 +224,9 @@ app/dashboard/admin/curriculum/[courseId]/page.tsx	Unit order saved.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Write this by hand, or generate it from the lesson.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Year groups, separate from the audience above.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	updateLesson(courseId, moduleId, snapshot.id, fields as Partial
+app/dashboard/admin/curriculum/[courseId]/preview/page.tsx	/ Preview course
+app/dashboard/admin/curriculum/[courseId]/preview/page.tsx	Content Builder
+app/dashboard/admin/curriculum/[courseId]/preview/page.tsx	Course CMS
 app/dashboard/admin/curriculum/page.tsx	AI Course Architect
 app/dashboard/admin/curriculum/page.tsx	An admin can allocate it from Access allocation. Platform admins already have the course editor.
 app/dashboard/admin/curriculum/page.tsx	Choose a programme
@@ -1309,6 +1314,9 @@ app/payments-preview/page.tsx	SST 8% when the buyer is in Malaysia. Supplier TIN
 app/preview/analytics/page.tsx	Loading analytics preview…
 app/preview/behaviour/page.tsx	Loading behaviour
 app/preview/certificate/page.tsx	Module certificate
+app/preview/course/[token]/page.tsx	/ Preview course
+app/preview/course/[token]/page.tsx	Course CMS
+app/preview/course/[token]/page.tsx	This preview link has expired or was not found.
 app/preview/goals/page.tsx	Loading goals preview…
 app/preview/integrity/page.tsx	Loading the desk…
 app/preview/planner/page.tsx	Preview of /dashboard/planner. The same page is linked as Year planner for every role.
@@ -1605,6 +1613,16 @@ components/course-questions.tsx	No questions yet.
 components/course-questions.tsx	Question sent to your instructor.
 components/course-questions.tsx	Reply saved.
 components/course-questions.tsx	Write a reply
+components/course-review/review-screen.tsx	A reviewer can open the whole course for 7 days. The link does not appear on student pages.
+components/course-review/review-screen.tsx	Add a comment
+components/course-review/review-screen.tsx	No comments on this lesson yet.
+components/course-review/review-screen.tsx	Nothing has changed.
+components/course-review/review-screen.tsx	Preview link
+components/course-review/review-screen.tsx	Publish checklist
+components/course-review/review-screen.tsx	Ready to publish.
+components/course-review/review-screen.tsx	Since last publish
+components/course-review/review-screen.tsx	This lesson is empty.
+components/course-review/review-screen.tsx	What should change before this lesson is approved?
 components/course-reviews.tsx	Review saved.
 components/course-student-preview.tsx	No sections yet.
 components/credentials/credential-panel.tsx	Add to LinkedIn
@@ -2011,9 +2029,18 @@ components/planner/year-planner.tsx	Year planner
 components/planner/year-planner.tsx	https://calendar.google.com/...ics
 components/reads/detail-view.tsx	This book is not on the shelf.
 components/reads/home-view.tsx	(b.age ?? 18)
+components/reads/reader-view.tsx	Read-aloud uses the browser. No speech key is required.
 components/reads/reader-view.tsx	This book is not on the shelf.
+components/reads/reader-view.tsx	This browser’s voice
 components/reads/studio-view.tsx	Added to the picture library. Write the alt text before placing it.
+components/reads/studio-view.tsx	Children&apos;s story
+components/reads/studio-view.tsx	ET AI keeps the same child, clothes, and colours. The style stays with this book. Without an image key, each page is drawn here and costs nothing.
+components/reads/studio-view.tsx	ET AI writes for the age band. School years are not used. One illustration belongs on every page, in the same style.
+components/reads/studio-view.tsx	One illustration per page
+components/reads/studio-view.tsx	Preview as a reader
+components/reads/studio-view.tsx	Read this chapter aloud
 components/reads/studio-view.tsx	The author line is always ET AI. The picture itself has no lettering; the title is drawn on top.
+components/reads/studio-view.tsx	This browser’s voice. No speech key, and nothing is charged.
 components/reads/studio-view.tsx	Version history
 components/rich-composer.tsx	Ask ET AI to draft this
 components/rich-composer.tsx	Draft prompt

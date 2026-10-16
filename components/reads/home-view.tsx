@@ -10,6 +10,7 @@ import { seedCourseViews, courseToShelf, relatedCoursesForBook } from '@/lib/she
 import { SAMPLE_OWNED, SAMPLE_READER, ownsBook, subscriptionIncludes } from '@/lib/reads/access';
 import { useReadsT } from '@/lib/reads/i18n';
 import { bookById } from '@/lib/reads/seed';
+import { usePublishedStudioBooks } from '@/components/reads/use-studio-shelf';
 import { viewerCurrency } from '@/lib/platform/pricing';
 import { recommend } from '@/lib/shelf/recommend';
 import { minutesToday, myList, progressMap, streakDays, toggleList } from '@/lib/shelf/storage';
@@ -38,16 +39,19 @@ export function ReadsHome() {
     setCurrency(viewerCurrency());
   }, [ready, profile.id]);
 
-  const books = useMemo(() => visibleBooks(profile.maxAge).map(book => {
+  const studioBooks = usePublishedStudioBooks();
+  const books = useMemo(() => visibleBooks(profile.maxAge, studioBooks).map(book => {
     const item = bookToShelf(book, SAMPLE_READER, SAMPLE_OWNED, progress[book.id]?.percent, currency);
     return item;
-  }), [profile.maxAge, progress, currency]);
+  }), [profile.maxAge, progress, currency, studioBooks]);
 
   const courses = useMemo(() => seedCourseViews().map(c => courseToShelf(c, progress[c.id]?.percent, currency)), [progress, currency]);
 
   const continueItems = books.filter(b => (b.progress ?? 0) > 0).sort((a, b) => (b.progress ?? 0) - (a.progress ?? 0));
   const becauseOf = continueItems[0];
-  const becauseBook = becauseOf ? bookById(becauseOf.id) : undefined;
+  const becauseBook = becauseOf
+    ? bookById(becauseOf.id) ?? studioBooks.find(item => item.id === becauseOf.id)
+    : undefined;
   const because = becauseOf ? recommend(books, becauseOf, 8) : [];
   const biology = books.filter(b => b.subject?.toLowerCase().includes('biology') || b.tags.includes('biology'));
   const kids = books.filter(b => (b.age ?? 18) <= 8);
@@ -61,6 +65,7 @@ export function ReadsHome() {
   const filtered = books.filter(item => {
     if (filter === 'academic' && item.category !== 'academic') return false;
     if (filter === 'general' && item.category !== 'general') return false;
+    if (filter === 'childrens' && item.category !== 'childrens_stories') return false;
     if (filter === 'fiction' && item.form !== 'fiction') return false;
     if (filter === 'nonfiction' && item.form !== 'non-fiction') return false;
     if (filter === 'included' && item.badge.tone !== 'included' && item.badge.tone !== 'owned') return false;
@@ -72,7 +77,8 @@ export function ReadsHome() {
     return true;
   });
 
-  const heroBook = bookById(continueItems[0]?.id ?? books[0]?.id ?? '');
+  const heroId = continueItems[0]?.id ?? books[0]?.id ?? '';
+  const heroBook = bookById(heroId) ?? studioBooks.find(item => item.id === heroId);
   const heroItem = books.find(b => b.id === heroBook?.id) ?? books[0];
 
   if (!heroItem || !heroBook) return null;
@@ -123,6 +129,7 @@ export function ReadsHome() {
             ['nonfiction', t('reads.filter.nonfiction')],
             ['academic', t('reads.filter.academic')],
             ['general', t('reads.filter.general')],
+            ['childrens', t('reads.filter.childrens')],
             ['included', t('reads.filter.included')],
             ['buy', t('reads.filter.buy')],
           ] as const).map(([id, label]) => (

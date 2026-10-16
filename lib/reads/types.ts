@@ -8,7 +8,7 @@ import type { CoverStyle } from '@/lib/shelf/types';
 export const BOOK_TARGETS = ['students', 'teachers', 'parents', 'institutions', 'all', 'marketplace'] as const;
 export type BookTarget = (typeof BOOK_TARGETS)[number];
 
-export type BookCategory = 'academic' | 'general';
+export type BookCategory = 'academic' | 'general' | 'childrens_stories';
 export type BookForm = 'fiction' | 'non-fiction';
 export type BookStatus = 'draft' | 'review' | 'published';
 export type AccessMode = 'subscription' | 'purchase' | 'both';
@@ -86,6 +86,10 @@ export interface Book {
   genre: string;
   ageRating: AgeRating;
   readingLevel: ReadingLevel;
+  /** Children's picture books. The reader opens one illustration per page. */
+  pictureBook?: boolean;
+  /** Age band id such as `5-7`. Used instead of a school year. */
+  ageBand?: string;
   curriculumTags: CurriculumTag[];
   status: BookStatus;
   version: number;
