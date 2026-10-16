@@ -47,6 +47,9 @@ service cloud.firestore {
     function sameNumber(field) {
       return incoming().get(field, 0) == resource.data.get(field, 0);
     }
+    function sameBool(field) {
+      return incoming().get(field, false) == resource.data.get(field, false);
+    }
     function planAllowsWhiteLabel() {
       return resource.data.get('plan', '') == 'enterprise' || resource.data.get('plan', '') == 'oem';
     }
@@ -423,6 +426,16 @@ service cloud.firestore {
         || parentEditsUnder13(userId)
         || claimLearnerSpace(userId)
         || becomeInstructor(userId)
+        // The institution admin attaches a person only after approving their join request.
+        || (isInstitutionAdmin()
+            && myInstitution() is string
+            && myInstitution() != ''
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['institutionId', 'level', 'cohortIds', 'updatedAt'])
+            && incoming().institutionId == myInstitution()
+            && resource.data.get('institutionId', '') == ''
+            && exists(/databases/$(database)/documents/institutions/$(myInstitution())/join_requests/$(userId))
+            && get(/databases/$(database)/documents/institutions/$(myInstitution())/join_requests/$(userId)).data.status == 'approved'
+            && get(/databases/$(database)/documents/institutions/$(myInstitution())/join_requests/$(userId)).data.userId == userId)
         // A person may join the one school that invited their email.
         || (isUser(userId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['institutionId'])
@@ -748,6 +761,35 @@ service cloud.firestore {
         && (
           !marketplaceListing(incoming())
           || marketplaceListing(resource.data)
+        )
+        && institutionCourseUpdateOk();
+    }
+
+    // An institution course stays private until a platform admin approves the marketplace
+    // and any co-brand. Poket School remains the owner of the programme.
+    function institutionCourseCreateOk() {
+      return incoming().get('institutionId', '') == ''
+        || (
+          incoming().get('marketplaceApproved', false) == false
+          && incoming().get('publishScope', 'institution') == 'institution'
+          && incoming().get('isPublic', false) == false
+          && incoming().get('cobrand', {}).get('enabled', false) == false
+        );
+    }
+    function institutionCourseUpdateOk() {
+      return isAdmin()
+        || incoming().get('institutionId', '') == ''
+        || (
+          incoming().get('marketplaceApproved', false) == resource.data.get('marketplaceApproved', false)
+          && incoming().get('cobrand', {}).get('enabled', false) == resource.data.get('cobrand', {}).get('enabled', false)
+          && incoming().get('cobrand', {}).get('partnerId', '') == resource.data.get('cobrand', {}).get('partnerId', '')
+          && (
+            resource.data.get('marketplaceApproved', false) == true
+            || (
+              incoming().get('publishScope', 'institution') == 'institution'
+              && incoming().get('isPublic', false) == false
+            )
+          )
         );
     }
 
@@ -805,7 +847,8 @@ service cloud.firestore {
       allow create: if isAdmin()
         || (isTeacherOrAdmin()
             && incoming().ownerId == request.auth.uid
-            && !marketplaceListing(incoming()));
+            && !marketplaceListing(incoming())
+            && institutionCourseCreateOk());
       // The owner may edit their course. Counters still move by one for
       // enrolment, views, completion, and revenue. An admin may edit any course.
       allow update: if (isAdmin() && seatsUnchanged())
@@ -1062,6 +1105,8 @@ service cloud.firestore {
         || (tenantStaff(institutionId)
             && sameText('status')
             && sameText('plan')
+            && sameText('state')
+            && sameBool('listedForSelfJoin')
             && sameText('parentInstitutionId')
             && incoming().get('isolateData', false) == resource.data.get('isolateData', false)
             && (planAllowsWhiteLabel() || (hidePoweredUnchanged() && customDomainUnchanged())));
@@ -1171,6 +1216,80 @@ service cloud.firestore {
         allow read: if isAdmin() || (isSignedIn() && myInstitution() == institutionId);
         allow write: if isAdmin();
       }
+
+      // A person asks to join. Only an activated, listed academy accepts the request.
+      // The institution admin decides it. The requester cannot approve themselves.
+      match /join_requests/{requestId} {
+        allow read: if isAdmin()
+          || (isInstitutionAdmin() && myInstitution() == institutionId)
+          || (isSignedIn() && resource.data.userId == request.auth.uid);
+        allow create: if isSignedIn()
+          && requestId == request.auth.uid
+          && incoming().userId == request.auth.uid
+          && incoming().status == 'pending'
+          && incoming().role in ['student', 'teacher', 'parent']
+          && incoming().email is string
+          && incoming().name is string
+          && incoming().name.size() > 0
+          && incoming().name.size() < 200
+          && incoming().childEmails is list
+          && incoming().childEmails.size() <= 10
+          && incoming().createdAt is string
+          && incoming().keys().hasOnly(['userId', 'role', 'email', 'name', 'status', 'childEmails', 'createdAt'])
+          && exists(/databases/$(database)/documents/institutions/$(institutionId))
+          && get(/databases/$(database)/documents/institutions/$(institutionId)).data.status == 'active'
+          && get(/databases/$(database)/documents/institutions/$(institutionId)).data.listedForSelfJoin == true;
+        allow update: if isAdmin()
+          || (isInstitutionAdmin()
+              && myInstitution() == institutionId
+              && resource.data.status == 'pending'
+              && incoming().status in ['approved', 'rejected']
+              && incoming().userId == resource.data.userId
+              && incoming().role == resource.data.role
+              && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['status', 'level', 'classIds', 'courseIds', 'decidedBy', 'decidedAt']));
+        allow delete: if isAdmin();
+      }
+
+      match /sparks_pool/{docId} {
+        allow read: if tenantReader(institutionId);
+        allow write: if isAdmin();
+      }
+
+      match /sparks_allocations/{allocationId} {
+        allow read: if isAdmin()
+          || (isInstitutionAdmin() && myInstitution() == institutionId)
+          || (isSignedIn() && resource.data.subjectId == request.auth.uid)
+          || (hasRole('teacher')
+              && myInstitution() == institutionId
+              && resource.data.get('classId', '') != ''
+              && userData().get('cohortIds', []).hasAny([resource.data.classId]))
+          || linkedTo(resource.data.subjectId);
+        allow create, update: if isAdmin()
+          || (isInstitutionAdmin()
+              && myInstitution() == institutionId
+              && incoming().subjectId is string
+              && incoming().amount is int
+              && incoming().amount >= 0
+              && incoming().amount <= 20000
+              && incoming().keys().hasOnly(['subjectId', 'amount', 'classId', 'note', 'at']));
+        allow delete: if isAdmin() || (isInstitutionAdmin() && myInstitution() == institutionId);
+      }
+
+      match /billing/{docId} {
+        allow read: if tenantReader(institutionId);
+        allow write: if isAdmin();
+      }
+
+      match /notifications/{noticeId} {
+        allow read: if tenantReader(institutionId);
+        allow create: if tenantStaff(institutionId)
+          && incoming().keys().hasOnly(['kind', 'title', 'body', 'audience', 'at'])
+          && incoming().kind is string
+          && incoming().title is string
+          && incoming().body is string;
+        allow update, delete: if isAdmin();
+      }
     }
 
     match /subdomain_redirects/{slug} {
@@ -1218,6 +1337,36 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow create: if isAdmin() && incoming().actorId == request.auth.uid;
       allow update, delete: if false;
+    }
+
+    match /sparks_config/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /core_programmes/{programmeId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /partner_orgs/{orgId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /partner_revenue/{entryId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && incoming().partnerId is string
+        && incoming().amount is number
+        && incoming().amount >= 0
+        && incoming().channel in ['enterprise_invoice', 'individual'];
+      allow update, delete: if false;
+    }
+
+    match /subscriber_billing/{userId} {
+      allow read: if isAdmin() || isUser(userId);
+      allow write: if isAdmin();
     }
 
     // ── Badges ────────────────────────────────────────────────
@@ -1438,7 +1587,8 @@ service cloud.firestore {
       allow create: if isTeacherOrAdmin()
         || (isSignedIn()
             && incoming().studentId == request.auth.uid
-            && incoming().status in ['sent', 'draft']);
+            && incoming().status in ['sent', 'draft']
+            && userData().get('institutionId', '') == '');
       allow update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
     }
@@ -1446,10 +1596,17 @@ service cloud.firestore {
     // ── Report Cards ──────────────────────────────────────────
     match /report_cards/{cardId} {
       allow read: if isSignedIn() && (
-        isTeacherOrAdmin()
+        isAdmin()
         || resource.data.studentId == request.auth.uid
         || resource.data.get('teacherId', '') == request.auth.uid
+        || resource.data.get('teacherIds', []).hasAny([request.auth.uid])
         || linkedTo(resource.data.studentId)
+        || (hasRole('teacher')
+            && resource.data.get('classId', '') != ''
+            && userData().get('cohortIds', []).hasAny([resource.data.classId]))
+        || (isInstitutionAdmin()
+            && resource.data.get('institutionId', '') != ''
+            && resource.data.get('institutionId', '') == myInstitution())
       );
       allow create: if isTeacherOrAdmin();
       allow update: if isTeacherOrAdmin()
