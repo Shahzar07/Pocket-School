@@ -14,7 +14,7 @@ import styles from "./home-chrome.module.css";
 
 const NAV_LINKS = [
   { label: "Marketplace", href: "/courses" },
-  { label: "AI Studio", href: "/ai-studio" },
+  { label: "ET AI Studio", href: "/ai-studio" },
   { label: "AI Teachers", href: "/ai-teachers" },
 ];
 

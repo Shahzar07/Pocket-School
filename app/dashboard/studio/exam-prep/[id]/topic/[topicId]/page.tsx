@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, use, useCallback, useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'motion/react';
@@ -11,16 +12,19 @@ import {
 import { useExamPrep } from '@/hooks/use-exam-prep';
 import { DashPage, Panel, Segmented } from '@/components/dash-ui';
 import { MathMarkdown } from '@/components/math-markdown';
-import { LessonView } from '@/components/study/lesson-view';
-import { FlashcardsView } from '@/components/study/flashcards-view';
-import { QuizView, TrueFalseView } from '@/components/study/quiz-view';
-import { ExercisesView } from '@/components/study/exercises-view';
-import { PodcastPlayer } from '@/components/study/podcast-player';
 import { postJSON } from '@/lib/authed-fetch';
 import { streamText } from '@/lib/study/client';
 import { assertSparks, assetId, chargeSparks, completeItem, getAsset, saveAsset, InsufficientSparks } from '@/lib/study/db';
 import { STUDY_COSTS } from '@/lib/sparks';
 import type { AssetType, Difficulty, ExamPrep, Exercise, Flashcard, LessonAsset, PodcastAsset, PodcastStyle, QuizQuestion, StudyTopic, TrueFalseItem } from '@/lib/study/types';
+
+const tabLoad = { loading: () => <div className="h-48 animate-pulse rounded-2xl bg-muted" role="status" aria-label="Loading this study tool" /> };
+const LessonView = dynamic(() => import('@/components/study/lesson-view').then(mod => mod.LessonView), tabLoad);
+const FlashcardsView = dynamic(() => import('@/components/study/flashcards-view').then(mod => mod.FlashcardsView), tabLoad);
+const QuizView = dynamic(() => import('@/components/study/quiz-view').then(mod => mod.QuizView), tabLoad);
+const TrueFalseView = dynamic(() => import('@/components/study/quiz-view').then(mod => mod.TrueFalseView), tabLoad);
+const ExercisesView = dynamic(() => import('@/components/study/exercises-view').then(mod => mod.ExercisesView), tabLoad);
+const PodcastPlayer = dynamic(() => import('@/components/study/podcast-player').then(mod => mod.PodcastPlayer), tabLoad);
 
 type Tab = AssetType | 'chat';
 
@@ -265,7 +269,7 @@ function TopicChat({ prep, topic, loadMaterial }: { prep: ExamPrep; topic: Study
     : ['Summarise everything I need to know', 'Which topics are hardest?', 'Make me a one-page cheat sheet', 'What should I revise tonight?'];
 
   return (
-    <div className="flex flex-col h-[560px]">
+    <div className="flex flex-col h-[min(560px,70dvh)]">
       <div className="flex-1 overflow-y-auto space-y-3 pr-1">
         {messages.length === 0 && streaming === null && (
           <div className="text-center py-8">

@@ -34,17 +34,17 @@ export const EXAM_PACKS: ExamPack[] = [
     id: 'spm-math',
     name: 'SPM Mathematics',
     board: 'KPM · KSSM',
-    level: 'Form 4–5',
+    level: 'SPM',
     scale: 'spm',
-    blurb: 'The full KSSM Mathematics syllabus for Forms 4 and 5, with Paper 1 and Paper 2 style questions.',
+    blurb: 'The full KSSM Mathematics syllabus, with Paper 1 and Paper 2 style questions.',
     accent: '#2786A4',
     units: [
-      { id: 'f4', title: 'Form 4', topics: t('f4', [
+      { id: 'f4', title: 'Core', topics: t('f4', [
         ['Quadratic functions and equations in one variable', 5], 'Number bases', 'Logical reasoning', 'Operations on sets',
         'Network in graph theory', ['Linear inequalities in two variables', 4], ['Graphs of motion', 4],
         'Measures of dispersion for ungrouped data', ['Probability of combined events', 4], 'Consumer mathematics: financial management',
       ]) },
-      { id: 'f5', title: 'Form 5', topics: t('f5', [
+      { id: 'f5', title: 'Extension', topics: t('f5', [
         ['Variation', 4], ['Matrices', 4], 'Consumer mathematics: insurance', 'Consumer mathematics: taxation',
         ['Congruency, enlargement and combined transformations', 4], ['Ratios and graphs of trigonometric functions', 4],
         'Measures of dispersion for grouped data', 'Mathematical modelling',
@@ -55,16 +55,16 @@ export const EXAM_PACKS: ExamPack[] = [
     id: 'spm-addmath',
     name: 'SPM Additional Mathematics',
     board: 'KPM · KSSM',
-    level: 'Form 4–5',
+    level: 'SPM',
     scale: 'spm',
     blurb: 'Every Add Maths chapter from functions to kinematics, with exam-style working and mark schemes.',
     accent: '#8B5CF6',
     units: [
-      { id: 'f4', title: 'Form 4', topics: t('f4', [
+      { id: 'f4', title: 'Core', topics: t('f4', [
         ['Functions', 5], ['Quadratic functions', 5], 'Systems of equations', ['Indices, surds and logarithms', 5],
         ['Progressions', 4], 'Linear law', ['Coordinate geometry', 4], 'Vectors', ['Solution of triangles', 4], 'Index numbers',
       ]) },
-      { id: 'f5', title: 'Form 5', topics: t('f5', [
+      { id: 'f5', title: 'Extension', topics: t('f5', [
         'Circular measure', ['Differentiation', 5], ['Integration', 5], 'Permutation and combination',
         ['Probability distribution', 4], ['Trigonometric functions', 5], 'Linear programming', ['Kinematics of linear motion', 4],
       ]) },

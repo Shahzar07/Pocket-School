@@ -33,10 +33,10 @@ export default function ExamPrepListPage() {
   return (
     <DashPage>
       <DashHeader
-        eyebrow={<><Link href="/dashboard/studio" className="hover:underline">AI Studio</Link> · Exam Prep</>}
+        eyebrow={<><Link href="/dashboard/studio" className="hover:underline">ET AI Studio</Link> · ET Exams</>}
         title="Walk into every exam"
         accent="ready."
-        description="Add your notes, slides and past papers. ET turns them into a day-by-day plan that ends on your exam date — lessons, quizzes, flashcards, podcasts and a full mock."
+        description="Add your notes, slides and past papers. ET AI turns them into a day-by-day plan that ends on your exam date: lessons, quizzes, flashcards, podcasts and a full mock."
         actions={
           <Link href="/dashboard/studio/exam-prep/new" className="h-10 px-4 rounded-full bg-primary text-primary-foreground text-sm font-semibold inline-flex items-center gap-1.5 hover:opacity-90">
             <Plus className="w-4 h-4" /> New exam prep

@@ -324,7 +324,7 @@ export default function MathsTutorPage() {
   return (
     <DashPage>
       <DashHeader
-        eyebrow={<><Link href="/dashboard/studio" className="hover:underline">AI Studio</Link> · ET Maths</>}
+        eyebrow={<><Link href="/dashboard/studio" className="hover:underline">ET AI Studio</Link> · ET Maths</>}
         title="Stuck on a problem?"
         accent="Snap it."
         description="Scan or type any maths problem. ET guides you one step at a time — you do the thinking — or shows a full worked solution."

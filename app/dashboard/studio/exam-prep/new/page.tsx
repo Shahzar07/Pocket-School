@@ -240,7 +240,7 @@ export default function NewExamPrepPage() {
             <Panel>
               <div className="grid sm:grid-cols-2 gap-4">
                 <Field label="Exam name (optional)">
-                  <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Form 4 Add Maths — Final" className="input-ps" />
+                  <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. SPM Additional Mathematics — final paper" className="input-ps" />
                 </Field>
                 <Field label="Subject (optional)">
                   <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="ET will work it out" className="input-ps" />

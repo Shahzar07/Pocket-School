@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState } from 'react';
+import { DeskFrame } from '@/components/studio/desk-frame';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
@@ -47,31 +48,7 @@ function failure(error: unknown, fallback: string) {
   toast.error(error instanceof ApiError ? error.message : fallback);
 }
 
-export function DeskFrame({
-  kicker,
-  title,
-  blurb,
-  testId,
-  children,
-}: {
-  kicker: string;
-  title: string;
-  blurb: string;
-  testId: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="flex-1 overflow-auto bg-background text-foreground" data-testid={testId}>
-      <div className="mx-auto max-w-[1100px] px-4 py-6 sm:px-6">
-        <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-muted-foreground">ET AI · Poket School</p>
-        <h1 className="mt-1 font-heading text-3xl tracking-[-0.04em] text-foreground">{title}</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">{blurb}</p>
-        <p className="mt-1 text-[12px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{kicker}</p>
-        <div className="mt-5">{children}</div>
-      </div>
-    </div>
-  );
-}
+export { DeskFrame };
 
 function Locked({ tool }: { tool: DeskToolId }) {
   const copy = tool === 'teacher-toolkit'
@@ -392,7 +369,6 @@ export function ParentExplainerPanel({ sample = false }: { sample?: boolean }) {
 export function ResearchPackView({ pack }: { pack: ResearchPack }) {
   return (
     <div className="space-y-4" data-testid="research-pack">
-      <p className="rounded-2xl border border-[#2457A6]/30 bg-[#EAF0FA] p-4 text-sm leading-relaxed text-[#152033] dark:bg-[#152033] dark:text-[#C5D4F0]">{pack.integrity}</p>
       {pack.refusedWriting && (
         <p className="text-sm font-semibold text-foreground">That asked ET AI to write the work. The sources below are for your question. The assignment is still yours to write.</p>
       )}
