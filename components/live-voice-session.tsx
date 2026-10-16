@@ -63,6 +63,8 @@ export interface LiveVoiceSessionProps {
    */
   onAsk: (text: string, say: (sentence: string) => void, signal: AbortSignal) => Promise<string>;
   onClose: () => void;
+  /** Show the student's camera beside the teacher during a video session. */
+  camera?: boolean;
 }
 
 /** Loudness that counts as the student speaking, and for how long. Tuned so
@@ -71,7 +73,7 @@ const BARGE_RMS = 0.16;
 const BARGE_FRAMES = 14; // ~230ms of sustained speech at 60fps
 const BARGE_GRACE_MS = 450; // ignore the first moment of each clip
 
-export function LiveVoiceSession({ teacher, lang, onAsk, onClose }: LiveVoiceSessionProps) {
+export function LiveVoiceSession({ teacher, lang, onAsk, onClose, camera = false }: LiveVoiceSessionProps) {
   const [state, setState] = useState<VoiceState>('idle');
   const [interim, setInterim] = useState('');
   const [lastReply, setLastReply] = useState('');
@@ -81,6 +83,7 @@ export function LiveVoiceSession({ teacher, lang, onAsk, onClose }: LiveVoiceSes
 
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const cameraRef = useRef<HTMLVideoElement | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const rafRef = useRef<number>(0);
   const activeRef = useRef(true);      // session still open
@@ -131,8 +134,13 @@ export function LiveVoiceSession({ teacher, lang, onAsk, onClose }: LiveVoiceSes
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        video: camera ? { facingMode: 'user' } : false,
       });
       streamRef.current = stream;
+      if (camera && cameraRef.current) {
+        cameraRef.current.srcObject = stream;
+        await cameraRef.current.play().catch(() => undefined);
+      }
       const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       const ctx = new Ctx();
       audioCtxRef.current = ctx;
@@ -173,7 +181,7 @@ export function LiveVoiceSession({ teacher, lang, onAsk, onClose }: LiveVoiceSes
       setError('Microphone access was blocked. Allow it in your browser to talk to your teacher.');
       return false;
     }
-  }, [interrupt]);
+  }, [camera, interrupt]);
 
   /* ── One conversational turn ── */
   const handleUtterance = useCallback(async (text: string) => {
@@ -288,8 +296,8 @@ export function LiveVoiceSession({ teacher, lang, onAsk, onClose }: LiveVoiceSes
     error ? 'Connection issue'
     : muted ? 'Muted — tap the mic to talk'
     : state === 'listening' ? 'Listening…'
-    : state === 'thinking' ? `${teacher.name.split(' ')[0]} is thinking…`
-    : state === 'speaking' ? `${teacher.name.split(' ')[0]} is speaking…`
+    : state === 'thinking' ? `${teacher.name} is thinking…`
+    : state === 'speaking' ? `${teacher.name} is speaking…`
     : 'Starting…';
 
   return (
@@ -313,6 +321,14 @@ export function LiveVoiceSession({ teacher, lang, onAsk, onClose }: LiveVoiceSes
               : { type: 'spring', damping: 18, stiffness: 220 }}
           />
         ))}
+        {camera && (
+          <video
+            ref={cameraRef}
+            muted
+            playsInline
+            className="absolute -right-16 top-2 z-10 w-24 h-32 rounded-2xl object-cover border border-white/20 bg-black"
+          />
+        )}
         <motion.div
           className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-full overflow-hidden ring-2 shadow-2xl"
           style={{ boxShadow: `0 0 90px -10px ${accent}`, borderColor: accent }}

@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * AI Studio — ET.
- * A Claude-style conversational studio: one thread where ET both tutors
+ * AI Studio — ET AI.
+ * A conversational studio: one thread where ET AI both tutors
  * (Socratic chat) and generates any of the 12 study formats as rich turns.
  * Warm charcoal palette, skills composer, session recents, persistent library.
  */
@@ -82,7 +82,7 @@ const C = {
   accentInk: '#1A1918',
 };
 
-/* Rotating status lines ET shows while working. */
+/* Rotating status lines ET AI shows while working. */
 const THINKING_PHRASES = [
   'Searching and thinking the best solutions for you…',
   'Good question — connecting the dots…',
@@ -90,7 +90,7 @@ const THINKING_PHRASES = [
   'Almost there — sharpening the answer…',
 ];
 const CREATING_PHRASES = [
-  'Welcome, future champ — ET is on it ✨',
+  'Welcome, future champ — ET AI is on it ✨',
   'Searching and thinking the best solutions for you…',
   'Good idea — there you got! Drafting it now…',
   'Sketching the big picture…',
@@ -238,7 +238,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || `ET hit an error (${res.status})`);
+      throw new Error(err.error || `ET AI hit an error (${res.status})`);
     }
     const data = await res.json();
     pushTurns(chatId, { kind: 'chat', text: data.reply || '…' });
@@ -355,10 +355,10 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
           </motion.div>
 
           <h1 className="font-heading text-3xl sm:text-4xl leading-tight mb-3">
-            Sign in to meet <span style={{ color: C.accent }}>ET</span>
+            Sign in to meet <span style={{ color: C.accent }}>ET AI</span>
           </h1>
           <p className={`${C.dim} text-[15px] leading-relaxed mb-7`}>
-            ET turns any topic into lessons, quizzes, flashcards, mind maps, narrated video and
+            ET AI turns any topic into lessons, quizzes, flashcards, mind maps, narrated video and
             audio — and saves everything to your personal library. Create a free account to start.
           </p>
 
@@ -410,7 +410,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
               <Asterisk className="w-5 h-5 text-[#1A1918]" />
             </div>
             <div>
-              <p className="text-[15px] font-bold leading-tight">ET</p>
+              <p className="text-[15px] font-bold leading-tight">ET AI</p>
               <p className={`text-[10px] ${C.faint} tracking-[0.2em] uppercase leading-tight`}>AI Studio</p>
             </div>
           </Link>
@@ -440,7 +440,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
             >
               <Library className="w-4 h-4" /> Library
             </button>
-            <Link href="/ai-teachers" className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm ${C.dim} ${C.surfaceHover} transition-colors group`}>
+            <Link href={embedded ? '/dashboard/studio/teachers' : '/ai-teachers'} className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm ${C.dim} ${C.surfaceHover} transition-colors group`}>
               <span className="flex items-center gap-2.5"><UserIcon className="w-4 h-4" /> AI Teachers</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 transition-opacity" />
             </Link>
@@ -504,7 +504,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
           <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: C.accent }}>
             <Asterisk className="w-4 h-4 text-[#1A1918]" />
           </div>
-          <span className="text-sm font-bold">ET</span>
+          <span className="text-sm font-bold">ET AI</span>
         </div>
 
         {view === 'library' ? (
@@ -529,7 +529,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                       <Asterisk className="w-8 h-8 text-[#1A1918]" />
                     </motion.div>
                     <h1 className="font-heading text-3xl sm:text-[2.6rem] leading-tight tracking-tight mb-3">
-                      Hi, I&apos;m <span style={{ color: C.accent }}>ET</span>.
+                      Hi, I&apos;m <span style={{ color: C.accent }}>ET AI</span>.
                     </h1>
                     <p className={`${C.dim} text-base sm:text-lg max-w-md`}>
                       Ask me anything, or pick a skill and I&apos;ll turn any topic into a lesson, quiz, video, audio and more.
@@ -639,7 +639,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                     onKeyDown={e => {
                       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
                     }}
-                    placeholder={activeFormat ? `What topic should the ${activeFormat.label.toLowerCase()} cover?` : 'Ask ET anything…'}
+                    placeholder={activeFormat ? `What topic should the ${activeFormat.label.toLowerCase()} cover?` : 'Ask ET AI anything…'}
                     rows={2}
                     disabled={busy}
                     className={`w-full bg-transparent outline-none resize-none px-4 pt-3 pb-1 text-[15px] ${C.text} placeholder:text-[#6E695F]`}
@@ -662,7 +662,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                             transition={{ duration: 0.12 }}
                             className={`absolute bottom-full mb-2 left-0 w-[290px] sm:w-[330px] rounded-2xl border ${C.border} bg-[#242220] shadow-2xl p-2 z-30`}
                           >
-                            <p className={`px-2 pt-1 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] ${C.faint}`}>ET&apos;s skills</p>
+                            <p className={`px-2 pt-1 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] ${C.faint}`}>ET AI skills</p>
                             <div className="grid grid-cols-2 gap-1 max-h-72 overflow-y-auto">
                               <button
                                 onClick={() => { setSkill(null); setSkillsOpen(false); inputRef.current?.focus(); }}
@@ -731,7 +731,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                   </div>
                 </div>
                 <p className={`text-center text-[10px] ${C.faint} mt-2`}>
-                  ET can make mistakes — always double-check important answers.
+                  ET AI can make mistakes — always double-check important answers.
                 </p>
               </div>
             </div>
@@ -782,7 +782,7 @@ function LibraryView({ user, library, loading, onDelete, onNew }: {
         {user && !loading && library.length === 0 && (
           <div className="text-center py-24">
             <Sparkles className={`w-8 h-8 mx-auto mb-4 ${C.faint}`} />
-            <p className={`text-sm ${C.dim}`}>Nothing saved yet — generate something with ET and hit &ldquo;Save to library&rdquo;.</p>
+            <p className={`text-sm ${C.dim}`}>Nothing saved yet — generate something with ET AI and hit &ldquo;Save to library&rdquo;.</p>
           </div>
         )}
 

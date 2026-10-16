@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Calculator, ClipboardList, PenLine, Sparkles } from 'lucide-react';
+import { ArrowRight, Calculator, ClipboardList, PenLine, Sparkles, Users } from 'lucide-react';
 import { DashPage, DashHeader } from '@/components/dash-ui';
 import { STUDIO_ET, STUDIO_EXAM_PREP, STUDIO_MATHS } from '@/lib/studio-paths';
 
@@ -41,6 +41,13 @@ const TOOLS = [
       { href: '/dashboard/student/essay', label: 'Student page' },
     ],
   },
+  {
+    href: '/dashboard/studio/teachers',
+    icon: Users,
+    name: 'AI Teachers',
+    blurb: 'Talk with ET Maths, ET Science, and the rest. Type, send voice notes, or open a live voice and video session.',
+    links: [],
+  },
 ];
 
 export default function StudioHub() {
@@ -50,9 +57,9 @@ export default function StudioHub() {
         eyebrow="AI Studio"
         title="ET AI's tools,"
         accent="full page."
-        description="ET AI, ET Maths, ET Exams, and ET AI Essay Writer open as their own page. Snap a maths problem from ET Maths."
+        description="ET AI, ET Maths, ET Exams, ET AI Essay Writer, and AI Teachers each open as their own page."
       />
-      <ul className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <ul className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
         {TOOLS.map((tool) => {
           const Icon = tool.icon;
           return (
