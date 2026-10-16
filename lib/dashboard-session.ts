@@ -1,4 +1,5 @@
-import { SignJWT, jwtVerify } from 'jose';
+import { SignJWT } from 'jose/jwt/sign';
+import { jwtVerify } from 'jose/jwt/verify';
 import type { DashboardActor } from './dashboard-access';
 
 export const DASHBOARD_COOKIE = 'poket_dash';
