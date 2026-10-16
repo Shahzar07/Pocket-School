@@ -394,8 +394,10 @@ app/dashboard/calendar/page.tsx	New Event
 app/dashboard/calendar/page.tsx	No upcoming events.
 app/dashboard/calendar/page.tsx	Stay on top of deadlines and school events.
 app/dashboard/channels/page.tsx	Open a channel first.
+app/dashboard/channels/page.tsx	Opening channels in Community…
 app/dashboard/checkout/page.tsx	Choose a plan or a book first.
 app/dashboard/checkout/page.tsx	Loading checkout…
+app/dashboard/community/page.tsx	Loading community…
 app/dashboard/community/page.tsx	Open a space first.
 app/dashboard/community/page.tsx	Sent for moderation.
 app/dashboard/exam-centre/page.tsx	Paper published.
@@ -1467,6 +1469,9 @@ components/certificate-document.tsx	Scan to verify
 components/certificate-document.tsx	Scanning the QR code opens
 components/certificate-document.tsx	This is to certify that
 components/certificate-document.tsx	has completed the module
+components/class-channels.tsx	Class channels live here, beside community spaces.
+components/class-channels.tsx	Open a channel first.
+components/class-channels.tsx	Open a channel that has messages first.
 components/copyright-disclaimer-modal.tsx	Before uploading any content to Poket School, please read and agree to the following:
 components/copyright-disclaimer-modal.tsx	By accepting, you acknowledge your responsibility as the uploader and agree to Poket School&apos;s content policy.
 components/copyright-disclaimer-modal.tsx	Copyright & Upload Policy
