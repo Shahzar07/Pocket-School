@@ -139,7 +139,7 @@ export default function AdminCurriculumPage() {
   const [modProgrammeId, setModProgrammeId] = useState<string>('');
   const [creatingModule, setCreatingModule] = useState(false);
 
-  // AI Course Architect (ET)
+  // AI Course Architect (ET AI)
   const [archSubject, setArchSubject] = useState('');
   const [archYear, setArchYear] = useState('Year 7');
   const [archWeeks, setArchWeeks] = useState('12');
@@ -209,7 +209,7 @@ export default function AdminCurriculumPage() {
 
   const designWithEt = async () => {
     const subject = archSubject.trim();
-    if (!subject) { toast.error('Enter a subject for ET to design.'); return; }
+    if (!subject) { toast.error('Enter a subject for ET AI to design.'); return; }
     const weeks = Math.min(52, Math.max(1, Number(archWeeks) || 12));
 
     // Designing a second copy of a subject that already exists is almost always
@@ -233,21 +233,21 @@ export default function AdminCurriculumPage() {
           task: 'outline',
           context: {
             subject, yearLevel: year, weeks,
-            // Lets ET continue from what a matching subject already teaches
+            // Lets ET AI continue from what a matching subject already teaches
             // rather than proposing the same ground again.
             existingUnits: clash ? [clash.title] : [],
           },
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'ET could not design that course.');
+      if (!res.ok) throw new Error(data.error || 'ET AI could not design that course.');
       const modules: OutlineModule[] = Array.isArray(data.modules) ? data.modules : [];
-      if (!modules.length) throw new Error('ET returned an empty outline — try again.');
+      if (!modules.length) throw new Error('ET AI returned an empty outline — try again.');
       setArchOutline(modules);
       setArchTitle(prev => prev.trim() || `${subject}${archYear.trim() ? ` — ${archYear.trim()}` : ''}`);
-      toast.success(`ET designed ${modules.length} modules.`);
+      toast.success(`ET AI designed ${modules.length} modules.`);
     } catch (e: any) {
-      toast.error(e?.message || 'ET request failed.');
+      toast.error(e?.message || 'ET AI request failed.');
     } finally {
       setArchDesigning(false);
     }
@@ -265,7 +265,7 @@ export default function AdminCurriculumPage() {
     try {
       const courseId = await createCurriculumModule({
         title,
-        description: `${archSubject.trim()} — ${archYear.trim() || 'all levels'} · designed with ET`,
+        description: `${archSubject.trim()} — ${archYear.trim() || 'all levels'} · designed with ET AI`,
         subject: archSubject.trim(),
         ownerId: user.uid,
         status: 'draft',
@@ -457,7 +457,7 @@ export default function AdminCurriculumPage() {
             <div className="min-w-0">
               <h2 className="font-bold text-lg leading-tight">AI Course Architect</h2>
               <p className="text-sm text-white/85">
-                Tell ET the subject, level and length — it designs the whole scheme of work,
+                Tell ET AI the subject, level and length — it designs the whole scheme of work,
                 module by module, lesson by lesson. Review it, then build it in one click.
               </p>
             </div>
@@ -488,7 +488,7 @@ export default function AdminCurriculumPage() {
               className="rounded-xl h-10 gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white"
             >
               {archDesigning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {archDesigning ? 'Designing…' : 'Design with ET'}
+              {archDesigning ? 'Designing…' : 'Design with ET AI'}
             </Button>
           </div>
 
@@ -496,7 +496,7 @@ export default function AdminCurriculumPage() {
             <div className="rounded-xl border border-dashed border-violet-200 bg-violet-50/50 px-4 py-6 text-center">
               <Loader2 className="w-5 h-5 animate-spin mx-auto text-violet-600" />
               <p className="text-sm text-violet-700 font-medium mt-2">
-                ET is planning {archWeeks || '—'} weeks of {archSubject || 'your subject'}…
+                ET AI is planning {archWeeks || '—'} weeks of {archSubject || 'your subject'}…
               </p>
               <p className="text-xs text-muted-foreground mt-1">This usually takes 10-30 seconds.</p>
             </div>
@@ -580,7 +580,7 @@ export default function AdminCurriculumPage() {
 
                 <p className="text-[11px] text-muted-foreground">
                   Everything is created as a draft — nothing goes live until you publish it in the Content Builder.
-                  ET drafts still need a human review.
+                  ET AI drafts still need a human review.
                 </p>
               </motion.div>
             )}

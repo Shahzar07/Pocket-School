@@ -25,7 +25,7 @@ export function AITutor() {
   const { profile } = useAuthSTORE();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'model', text: "Hi! I'm ET, your tutor. Ask me anything — or snap a maths problem and I'll walk you through it." },
+    { role: 'model', text: "Hi! I'm ET AI, your tutor. Ask me anything — or snap a maths problem and I'll walk you through it." },
   ]);
   const [input, setInput] = useState('');
   const [mode, setMode] = useState<string>(() => tutorModeFor(profile?.level));
@@ -44,7 +44,7 @@ export function AITutor() {
       prevLessonTitle.current = lessonTitle;
       setMessages([{
         role: 'model',
-        text: `Hi! I'm ET. I can see you're studying **${lessonTitle}**. What would you like to explore or clarify?`,
+        text: `Hi! I'm ET AI. I can see you're studying **${lessonTitle}**. What would you like to explore or clarify?`,
       }]);
     }
   }, [lessonTitle]);
@@ -138,7 +138,7 @@ export function AITutor() {
             <div className="bg-primary text-primary-foreground p-4 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <Bot className="w-6 h-6" />
-                <span className="font-bold text-lg">ET</span>
+                <span className="font-bold text-lg">ET AI</span>
               </div>
               <div className="flex items-center gap-1">
                 <Link

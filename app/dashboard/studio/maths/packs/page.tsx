@@ -24,7 +24,7 @@ export default function PacksPage() {
         eyebrow="ET Maths · Official exams"
         title="Your exam's syllabus,"
         accent="topic by topic."
-        description="Exam-style questions for every topic on the real syllabus, with worked solutions marked the way examiners mark them. Work through any question with ET, step by step. The first topic of every pack is free."
+        description="Exam-style questions for every topic on the real syllabus, with worked solutions marked the way examiners mark them. Work through any question with ET AI, step by step. The first topic of every pack is free."
       />
       <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {EXAM_PACKS.map((p, i) => {
