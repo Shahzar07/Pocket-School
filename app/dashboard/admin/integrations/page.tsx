@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import { DashHeader, DashPage, Panel } from '@/components/dash-ui';
 import { ApiError, authedFetch } from '@/lib/api-client';
+import Link from 'next/link';
 import { isSuperAdmin } from '@/lib/roles';
+import { PAYMENT_PROVIDERS } from '@/lib/payment-providers';
 import { useAuthSTORE } from '@/hooks/use-auth';
 
 interface SecretRow { id: string; label: string; envVar: string; state: string; masked: string | null; group: string; required: boolean }
@@ -38,7 +40,14 @@ export default function IntegrationsPage() {
 
   return (
     <DashPage>
-      <DashHeader eyebrow="Super admin" title="Integrations" description="Missing keys stay in sandbox. Spend caps are numbers, not secrets." />
+      <DashHeader eyebrow="Super admin" title="Integrations" description="The only place API keys are saved. Values stay masked. Payments does not keep a second copy." />
+      <Panel>
+        <h2 className="text-[15px] font-semibold mb-2">Payment providers</h2>
+        <ul className="grid sm:grid-cols-3 gap-2 text-sm">
+          {PAYMENT_PROVIDERS.map((provider) => <li key={provider.id}>{provider.name}</li>)}
+        </ul>
+        <p className="text-xs text-muted-foreground mt-2">Turn methods on from <Link href="/dashboard/admin/payments" className="text-primary font-semibold">Payments</Link>. Paste keys only here.</p>
+      </Panel>
       {notice && <p className="text-sm">{notice}</p>}
       <Panel>
         <h2 className="text-[15px] font-semibold mb-2">Missing required keys</h2>
