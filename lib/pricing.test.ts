@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { TIERS } from './entitlements';
 import {
   annualFromMonthly,
   currencyForCountry,
@@ -147,4 +149,25 @@ test('the audit diff names the fields that changed', () => {
   assert.ok(lines.some(line => line.includes('primary_secondary monthly USD 19 → 29')));
   assert.ok(lines.some(line => line.includes('MYR rate 4.7 → 4.8')));
   assert.ok(lines.some(line => line.includes('primary_secondary monthly fixed')));
+});
+
+test('plan copy uses levels and keeps the $19 and $99 prices', () => {
+  const config = seedPricing();
+  assert.equal(config.plans.find(plan => plan.id === 'primary_secondary')?.monthlyUsd, 19);
+  assert.equal(config.plans.find(plan => plan.id === 'professional')?.monthlyUsd, 99);
+  const page = readFileSync(new URL('../app/pricing/page.tsx', import.meta.url), 'utf8');
+  const plans = TIERS.flatMap(tier => [tier.name, tier.blurb, ...tier.programmes]).join('\n');
+  const copy = `${plans}\n${page}`;
+  assert.match(copy, /Primary & Lower Secondary/);
+  assert.doesNotMatch(copy, /Primary & Secondary/);
+  assert.doesNotMatch(copy, /Years?\s+\d/);
+  assert.doesNotMatch(plans, /\bTiers?\b/);
+  assert.doesNotMatch(copy, /Everything in Tiers?/);
+  const professional = TIERS.find(tier => tier.id === 'professional');
+  const lines = (professional?.programmes ?? []).join('\n');
+  assert.match(lines, /MBBS Medicine/);
+  assert.match(lines, /University of London \(UoL\) and other universities/);
+  assert.match(lines, /Engineering — ET Engineering/);
+  assert.match(lines, /Nursing — ET Nursing/);
+  assert.equal(TIERS.find(tier => tier.id === 'primary_secondary')?.name, 'Primary & Lower Secondary');
 });
