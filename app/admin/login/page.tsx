@@ -47,6 +47,28 @@ function authCode(err: unknown): string {
   return typeof err === 'object' && err !== null && 'code' in err && typeof err.code === 'string' ? err.code : '';
 }
 
+function isTimeout(err: unknown): boolean {
+  return err instanceof Error && err.message === 'timeout';
+}
+
+function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error('timeout')), ms);
+    work.then(
+      value => { window.clearTimeout(timer); resolve(value); },
+      error => { window.clearTimeout(timer); reject(error); },
+    );
+  });
+}
+
+/** Drop the password session without blocking the second-factor buttons. */
+async function endPasswordSession(): Promise<void> {
+  try {
+    await withTimeout(signOut(auth), 4000);
+  } catch { /* the Google and authenticator actions stay available */ }
+  clearAdminMfaPending();
+}
+
 function isMultiFactorError(err: unknown): err is MultiFactorError {
   return authCode(err) === 'auth/multi-factor-auth-required';
 }
@@ -87,6 +109,7 @@ function AdminLoginForm() {
   const [enrollmentId, setEnrollmentId] = useState('');
   const [formError, setFormError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [factorBusy, setFactorBusy] = useState<'google' | 'totp' | null>(null);
 
   useEffect(() => {
     const saved = readFallbackSession();
@@ -106,8 +129,17 @@ function AdminLoginForm() {
   const finish = async (uid: string, address: string) => {
     clearAdminMfaPending();
     clearFallbackSession();
-    const snap = await getDoc(doc(db, 'users', uid));
-    const data = snap.exists() ? snap.data() : {};
+    let snapExists = false;
+    let data: Record<string, unknown> = {};
+    try {
+      const snap = await withTimeout(getDoc(doc(db, 'users', uid)), 8000);
+      if (snap.exists()) {
+        snapExists = true;
+        data = snap.data();
+      }
+    } catch {
+      data = {};
+    }
     const lower = address.trim().toLowerCase();
     const profile = {
       id: uid,
@@ -128,26 +160,26 @@ function AdminLoginForm() {
     const seeded = initialSuperAdmin(lower);
     if (seeded) {
       try {
-        await setDoc(doc(db, 'users', uid), {
+        await withTimeout(setDoc(doc(db, 'users', uid), {
           name: seeded.name,
           email: lower,
           role: 'admin',
           adminRole: 'super_admin',
-          ...(snap.exists() ? {} : { xp: 0, createdAt: serverTimestamp() }),
+          ...(snapExists ? {} : { xp: 0, createdAt: serverTimestamp() }),
           updatedAt: serverTimestamp(),
-        }, { merge: true });
+        }, { merge: true }), 8000);
       } catch {
         // The service account path below still writes the claim when it is configured.
       }
     }
-    await syncStaffClaims([profile]).catch(() => undefined);
+    await withTimeout(syncStaffClaims([profile]).catch(() => undefined), 8000).catch(() => undefined);
     touchAdminActivity();
     router.push('/dashboard/admin');
   };
 
   const sendCode = useCallback(async (address: string, idToken: string): Promise<SendResult> => {
     const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), 15000);
+    const timer = window.setTimeout(() => controller.abort(), 8000);
     try {
       const res = await fetch('/api/auth/send-otp', {
         method: 'POST',
@@ -202,12 +234,22 @@ function AdminLoginForm() {
       return;
     }
     setLoading(true);
+    let advanced = false;
+    const watchdog = window.setTimeout(() => {
+      setLoading(false);
+      if (!advanced) setFormError('Sign-in did not finish. Press Continue again.');
+    }, 20000);
     try {
-      const result = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const result = await withTimeout(signInWithEmailAndPassword(auth, email.trim(), password), 12000);
       markAdminMfaPending(result.user.uid);
       const address = result.user.email || email.trim();
-      const snap = await getDoc(doc(db, 'users', result.user.uid));
-      const data = snap.exists() ? snap.data() : {};
+      let data: Record<string, unknown> = {};
+      try {
+        const snap = await withTimeout(getDoc(doc(db, 'users', result.user.uid)), 8000);
+        data = snap.exists() ? snap.data() : {};
+      } catch {
+        data = {};
+      }
       const staff = resolveStaffRole({
         id: result.user.uid,
         email: address,
@@ -223,20 +265,26 @@ function AdminLoginForm() {
         return;
       }
       if (mfaRequired(staff)) {
-        const idToken = await result.user.getIdToken();
+        let idToken = '';
+        try {
+          idToken = await withTimeout(result.user.getIdToken(), 8000);
+        } catch {
+          idToken = '';
+        }
         const sent = await sendCode(address, idToken);
         if (sent === 'fallback') {
+          advanced = true;
           setPendingUid(result.user.uid);
           setEmail(address);
           saveFallbackSession({ uid: result.user.uid, email: address });
+          setLoading(false);
           setStep('fallback');
-          await signOut(auth);
-          clearAdminMfaPending();
+          void endPasswordSession();
           return;
         }
-        await signOut(auth);
-        clearAdminMfaPending();
+        await endPasswordSession();
         if (sent === 'sent') {
+          advanced = true;
           setPendingUid(result.user.uid);
           setEmail(address);
           setStep('twofa');
@@ -262,8 +310,12 @@ function AdminLoginForm() {
         setFormError('');
         return;
       }
-      try { await signOut(auth); } catch { /* already signed out */ }
+      try { await withTimeout(signOut(auth), 4000); } catch { /* already signed out */ }
       clearAdminMfaPending();
+      if (isTimeout(err)) {
+        setFormError('Sign-in did not finish. Press Continue again.');
+        return;
+      }
       const codeName = authCode(err);
       if (codeName === 'auth/invalid-credential' || codeName === 'auth/wrong-password' || codeName === 'auth/user-not-found' || codeName === 'auth/invalid-email') {
         setFormError('That email or password is not right.');
@@ -275,6 +327,7 @@ function AdminLoginForm() {
         setFormError('Could not sign in.');
       }
     } finally {
+      window.clearTimeout(watchdog);
       setLoading(false);
     }
   };
@@ -327,9 +380,9 @@ function AdminLoginForm() {
     }
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ login_hint: expected, prompt: 'select_account' });
-    setLoading(true);
+    setFactorBusy('google');
     try {
-      const result = await signInWithPopup(auth, provider);
+      const result = await withTimeout(signInWithPopup(auth, provider), 45000);
       if (!sameAccount(result.user, expected)) {
         await signOut(auth);
         setFormError('Google must be the same email as this admin account. The second factor is still required.');
@@ -337,6 +390,10 @@ function AdminLoginForm() {
       }
       await finish(result.user.uid, expected);
     } catch (err) {
+      if (isTimeout(err)) {
+        setFormError('The Google window did not finish. Allow popups for this site, then press Confirm with Google again.');
+        return;
+      }
       if (authCode(err) === 'auth/account-exists-with-different-credential' && err instanceof FirebaseError) {
         const cred = GoogleAuthProvider.credentialFromError(err);
         const googleEmail = (err.customData as { email?: string } | undefined)?.email?.trim().toLowerCase() ?? '';
@@ -350,13 +407,13 @@ function AdminLoginForm() {
           return;
         }
         try {
-          const signed = await signInWithEmailAndPassword(auth, expected, password);
+          const signed = await withTimeout(signInWithEmailAndPassword(auth, expected, password), 12000);
           if (signed.user.uid !== pendingUid) {
             await signOut(auth);
             setFormError('Google must be the same email as this admin account. The second factor is still required.');
             return;
           }
-          await linkWithCredential(signed.user, cred);
+          await withTimeout(linkWithCredential(signed.user, cred), 12000);
           await finish(signed.user.uid, expected);
         } catch {
           try { await signOut(auth); } catch { /* already signed out */ }
@@ -367,7 +424,7 @@ function AdminLoginForm() {
       try { await signOut(auth); } catch { /* already signed out */ }
       setFormError(googleProblem(authCode(err)));
     } finally {
-      setLoading(false);
+      setFactorBusy(null);
     }
   };
 
@@ -378,24 +435,28 @@ function AdminLoginForm() {
       setStep('credentials');
       return;
     }
-    setLoading(true);
+    setFactorBusy('totp');
     try {
-      const signed = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const signed = await withTimeout(signInWithEmailAndPassword(auth, email.trim(), password), 12000);
       if (signed.user.uid !== pendingUid) {
-        await signOut(auth);
+        await endPasswordSession();
         setFormError('Sign in with your password again before enrolling an authenticator.');
         return;
       }
       markAdminMfaPending(signed.user.uid);
-      const session = await multiFactor(signed.user).getSession();
-      const secret = await TotpMultiFactorGenerator.generateSecret(session);
+      const session = await withTimeout(multiFactor(signed.user).getSession(), 12000);
+      const secret = await withTimeout(TotpMultiFactorGenerator.generateSecret(session), 12000);
       setTotpSecret(secret);
       setTotpUrl(secret.generateQrCodeUrl(signed.user.email || email.trim(), 'Poket School'));
       setCode('');
       setStep('totp-enroll');
     } catch (err) {
-      try { await signOut(auth); } catch { /* already signed out */ }
+      try { await withTimeout(signOut(auth), 4000); } catch { /* already signed out */ }
       clearAdminMfaPending();
+      if (isTimeout(err)) {
+        setFormError('Authenticator enrolment did not start. Press Enrol an authenticator app again, or confirm with Google.');
+        return;
+      }
       const codeName = authCode(err);
       if (codeName === 'auth/operation-not-allowed') {
         setFormError('Authenticator enrolment is not enabled on this Firebase project. In Firebase Console → Authentication → Sign-in method, turn on TOTP multi-factor authentication. Until then, confirm with Google.');
@@ -408,7 +469,7 @@ function AdminLoginForm() {
         setFormError('Could not start authenticator enrolment. Confirm with Google, or try again.');
       }
     } finally {
-      setLoading(false);
+      setFactorBusy(null);
     }
   };
 
@@ -543,21 +604,21 @@ function AdminLoginForm() {
               </p>
               <button
                 type="button"
-                disabled={loading}
+                disabled={factorBusy !== null}
                 onClick={() => void confirmWithGoogle()}
                 className="w-full h-11 rounded-xl font-semibold text-white disabled:opacity-60"
                 style={{ backgroundColor: '#2786A4' }}
               >
-                {loading ? 'Checking…' : 'Confirm with Google'}
+                {factorBusy === 'google' ? 'Opening Google…' : 'Confirm with Google'}
               </button>
               <button
                 type="button"
-                disabled={loading}
+                disabled={factorBusy !== null}
                 onClick={() => void startTotp()}
                 className="w-full h-11 rounded-xl font-semibold disabled:opacity-60"
                 style={{ backgroundColor: '#ffffff', color: '#2786A4', border: '2px solid #2786A4' }}
               >
-                Enrol an authenticator app
+                {factorBusy === 'totp' ? 'Starting authenticator…' : 'Enrol an authenticator app'}
               </button>
               <button type="button" className="text-sm font-semibold text-[#2786A4]" onClick={() => void resetToCredentials()}>
                 Sign out

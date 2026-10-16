@@ -13,9 +13,21 @@ export interface VerifiedIdentity {
  * API key — accounts:lookup fails when the client key is referrer-locked.
  */
 const PROJECT_ID = firebaseConfig.projectId;
+const VERIFY_TIMEOUT_MS = 8000;
 const JWKS = createRemoteJWKSet(
   new URL('https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'),
+  { timeoutDuration: 5000 },
 );
+
+function withDeadline<T>(work: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), ms);
+    work.then(
+      value => { clearTimeout(timer); resolve(value); },
+      error => { clearTimeout(timer); reject(error); },
+    );
+  });
+}
 
 export function identityFromPayload(payload: JWTPayload): VerifiedIdentity | null {
   const uid = typeof payload.sub === 'string' ? payload.sub.trim() : '';
@@ -31,12 +43,12 @@ export async function lookupIdToken(idToken: string): Promise<VerifiedIdentity |
   const token = idToken.trim();
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, JWKS, {
+    const { payload } = await withDeadline(jwtVerify(token, JWKS, {
       issuer: `https://securetoken.google.com/${PROJECT_ID}`,
       audience: PROJECT_ID,
       algorithms: ['RS256'],
       clockTolerance: 30,
-    });
+    }), VERIFY_TIMEOUT_MS);
     return identityFromPayload(payload);
   } catch {
     return null;
