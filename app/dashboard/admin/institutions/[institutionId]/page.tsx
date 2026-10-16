@@ -79,6 +79,13 @@ import {
 } from '@/lib/institution-store';
 import { brandedInvite, makeJoinCode, normaliseCustomDomain, type OemLicence } from '@/lib/oem';
 import { blankAcademySettings, type AcademySettings } from '@/lib/academy-settings';
+import {
+  blankPriceOverride,
+  type InstitutionPriceOverride,
+  type InstitutionVolumeSchedule,
+  seedInstitutionPricing,
+} from '@/lib/institution-pricing';
+import { loadPriceOverride, loadVolumeSchedule, savePriceOverride } from '@/lib/institution-pricing-store';
 import { publishedBooks } from '@/lib/reads/seed';
 import { canManageInstitution, isSuperAdmin } from '@/lib/roles';
 import { institutionOrigin } from '@/lib/white-label';
@@ -110,6 +117,8 @@ export default function InstitutionConsolePage() {
   const [contentOptions, setContentOptions] = useState<AllocationOption[]>([]);
   const [identity, setIdentity] = useState<IdentityMode>(identityMode({}));
   const [settings, setSettings] = useState<AcademySettings>(blankAcademySettings());
+  const [volumeSchedule, setVolumeSchedule] = useState<InstitutionVolumeSchedule>(seedInstitutionPricing());
+  const [priceOverride, setPriceOverride] = useState<InstitutionPriceOverride>(blankPriceOverride());
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const allowed = canManageInstitution(account, institutionId);
@@ -127,7 +136,7 @@ export default function InstitutionConsolePage() {
     }
     const stored = await loadProfile(institutionId);
     const row = directoryRow(found, stored);
-    const [licenceRows, programmeRows, people, catalogueRows, complianceRows, invoiceRows, webhookRows, keyRows, pathRows, skillRows, auditRows, courses, academySettings] = await Promise.all([
+    const [licenceRows, programmeRows, people, catalogueRows, complianceRows, invoiceRows, webhookRows, keyRows, pathRows, skillRows, auditRows, courses, academySettings, schedule, override] = await Promise.all([
       listOemLicences(institutionId),
       getProgrammes().catch(() => []),
       loadPeople(institutionId),
@@ -141,6 +150,8 @@ export default function InstitutionConsolePage() {
       listAudit(institutionId).catch(() => []),
       getAllCourses().catch(() => []),
       loadAcademySettings(institutionId).catch(() => blankAcademySettings()),
+      loadVolumeSchedule(),
+      loadPriceOverride(institutionId),
     ]);
     setInstitution(found);
     setProfile(row.profile);
@@ -158,6 +169,8 @@ export default function InstitutionConsolePage() {
     setSkills(skillRows);
     setAudit(auditRows);
     setSettings(academySettings);
+    setVolumeSchedule(schedule);
+    setPriceOverride(override);
     setContentOptions([
       ...courses.map((course) => ({ token: `course:${course.id}`, label: course.title, group: 'Courses' })),
       ...publishedBooks().map((book) => ({ token: `book:${book.id}`, label: book.title, group: 'Books' })),
@@ -355,14 +368,20 @@ export default function InstitutionConsolePage() {
         await saveInvoice(institutionId, {
           number: `PS-${Date.now().toString().slice(-6)}`,
           amount: action.amount,
-          currency: profile.currency || currency,
+          currency: action.currency || profile.currency || currency,
           seats: action.seats,
           status,
           poNumber: action.poNumber,
           issuedOn: new Date().toISOString().slice(0, 10),
+          description: action.description ?? '',
         });
         await note('invoice', status);
         toast.success(status === 'requested' ? 'Upgrade requested.' : 'Invoice recorded.');
+      } else if (action.type === 'pricing-override') {
+        if (!platform) throw new Error('Only a platform administrator can change an academy price.');
+        await savePriceOverride(institutionId, action.override);
+        await note('pricing-override', action.override.planId);
+        toast.success('Academy price saved.');
       } else if (action.type === 'licence') {
         if (!platform) throw new Error('Only a platform administrator can write a licence.');
         if (!action.programmeIds.length) throw new Error('Choose at least one programme.');
@@ -481,6 +500,8 @@ export default function InstitutionConsolePage() {
         previousSubdomains={institution.previousSubdomains ?? []}
         superAdmin={isSuperAdmin(account)}
         currency={profile.currency || currency}
+        volumeSchedule={volumeSchedule}
+        priceOverride={priceOverride}
         busy={busy}
         onAction={onAction}
       />

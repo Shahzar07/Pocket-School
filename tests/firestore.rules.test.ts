@@ -804,6 +804,22 @@ describe('institution console', () => {
     }));
   });
 
+  it('lets a platform admin edit institution volume prices and keeps an academy from writing them', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'users/admin1'), { role: 'admin', name: 'Admin' });
+      await setDoc(doc(db, 'users/instA'), { role: 'institution_admin', institutionId: 'school-a', name: 'A' });
+      await setDoc(doc(db, 'institutions/school-a'), { name: 'A', status: 'active', plan: 'team' });
+    });
+    const admin = env.authenticatedContext('admin1').firestore();
+    await assertSucceeds(setDoc(doc(admin, 'institution_pricing/current'), { currency: 'USD', tiers: [] }));
+    await assertSucceeds(setDoc(doc(admin, 'institutions/school-a/pricing/current'), { discountPercent: 10 }));
+    const academy = env.authenticatedContext('instA').firestore();
+    await assertSucceeds(getDoc(doc(academy, 'institution_pricing/current')));
+    await assertFails(setDoc(doc(academy, 'institution_pricing/current'), { currency: 'USD' }));
+    await assertFails(setDoc(doc(academy, 'institutions/school-a/pricing/current'), { discountPercent: 50 }));
+  });
+
   it('publishes a subdomain redirect the public site can follow', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
       const db = ctx.firestore();

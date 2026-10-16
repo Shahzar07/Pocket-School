@@ -24,8 +24,15 @@ import type {
 } from '@/lib/institution-store';
 import type { AcademyClass, AcademyInvite, AcademyMember, Programme } from '@/lib/db';
 import { InstitutionSettings } from '@/components/institutions/settings-panel';
+import { VolumeQuote } from '@/components/institutions/volume-quote';
 import type { AcademySettings } from '@/lib/academy-settings';
 import { blankAcademySettings } from '@/lib/academy-settings';
+import {
+  blankPriceOverride,
+  seedInstitutionPricing,
+  type InstitutionPriceOverride,
+  type InstitutionVolumeSchedule,
+} from '@/lib/institution-pricing';
 
 const TABS = ['profile', 'people', 'white-label', 'settings', 'content', 'analytics', 'integrations', 'billing', 'audit'] as const;
 type Tab = (typeof TABS)[number];
@@ -42,7 +49,8 @@ export type WorkspaceAction =
   | { type: 'group'; name: string; kind: GroupKind; programmeIds: string[] }
   | { type: 'catalogue'; tokens: string[]; visibility: 'private' | 'public' }
   | { type: 'compliance'; title: string; dueOn: string; remindDays: number }
-  | { type: 'invoice'; amount: number; seats: number; status: InvoiceItem['status']; poNumber: string }
+  | { type: 'invoice'; amount: number; seats: number; status: InvoiceItem['status']; poNumber: string; description?: string; currency?: string }
+  | { type: 'pricing-override'; override: InstitutionPriceOverride }
   | { type: 'webhook'; url: string }
   | { type: 'api-key'; name: string }
   | { type: 'path'; name: string; tokens: string[] }
@@ -91,6 +99,8 @@ export function InstitutionWorkspace({
   superAdmin,
   currency,
   busy,
+  volumeSchedule,
+  priceOverride,
   onAction,
 }: {
   name: string;
@@ -123,6 +133,8 @@ export function InstitutionWorkspace({
   currency: string;
   busy?: boolean;
   initialTab?: Tab;
+  volumeSchedule?: InstitutionVolumeSchedule;
+  priceOverride?: InstitutionPriceOverride;
   onAction: (action: WorkspaceAction) => Promise<void>;
 }) {
   const [tab, setTab] = useState<Tab>(initialTab);
@@ -210,7 +222,20 @@ export function InstitutionWorkspace({
       {tab === 'analytics' && <AnalyticsTab name={name} rollup={rollup} onAction={onAction} busy={busy} />}
       {tab === 'integrations' && <IntegrationsTab identity={identity} webhooks={webhooks} apiKeys={apiKeys} busy={busy} onAction={onAction} />}
       {tab === 'billing' && (
-        <BillingTab profile={profile} licences={licences} invoices={invoices} programmes={programmes} currency={currency} today={today} superAdmin={superAdmin} busy={busy} onAction={onAction} />
+        <BillingTab
+          name={name}
+          profile={profile}
+          licences={licences}
+          invoices={invoices}
+          programmes={programmes}
+          currency={currency}
+          today={today}
+          superAdmin={superAdmin}
+          busy={busy}
+          schedule={volumeSchedule ?? seedInstitutionPricing()}
+          override={priceOverride ?? blankPriceOverride()}
+          onAction={onAction}
+        />
       )}
       {tab === 'audit' && <AuditTab audit={audit} />}
     </div>
@@ -675,8 +700,9 @@ function IntegrationsTab({
 }
 
 function BillingTab({
-  profile, licences, invoices, programmes, currency, today, superAdmin, busy, onAction,
+  name, profile, licences, invoices, programmes, currency, today, superAdmin, busy, schedule, override, onAction,
 }: {
+  name: string;
   profile: InstitutionProfile;
   licences: OemLicence[];
   invoices: InvoiceItem[];
@@ -685,6 +711,8 @@ function BillingTab({
   today: string;
   superAdmin: boolean;
   busy?: boolean;
+  schedule: InstitutionVolumeSchedule;
+  override: InstitutionPriceOverride;
   onAction: (action: WorkspaceAction) => Promise<void>;
 }) {
   const [seats, setSeats] = useState(String(profile.seatCount || 30));
@@ -697,6 +725,27 @@ function BillingTab({
   const [invoiceStatus, setInvoiceStatus] = useState<InvoiceItem['status']>(superAdmin ? 'quote' : 'requested');
   return (
     <div className="space-y-4">
+      <VolumeQuote
+        name={name}
+        schedule={schedule}
+        override={override}
+        seatsPurchased={profile.seatCount}
+        seatsUsed={profile.seatsUsed}
+        renewalOn={profile.renewalOn}
+        today={today}
+        superAdmin={superAdmin}
+        busy={busy}
+        onSaveOverride={(next) => onAction({ type: 'pricing-override', override: next })}
+        onRecord={(record) => onAction({
+          type: 'invoice',
+          amount: record.amount,
+          seats: record.seats,
+          status: superAdmin ? (record.kind === 'invoice' ? 'open' : 'quote') : 'requested',
+          poNumber: profile.poNumber,
+          description: record.description,
+          currency: schedule.currency,
+        })}
+      />
       <section className="rounded-3xl border border-border p-5 space-y-3">
         <h2 className="font-semibold">Seats and term</h2>
         <p className="text-sm text-muted-foreground">

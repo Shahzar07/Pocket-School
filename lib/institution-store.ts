@@ -316,6 +316,7 @@ export interface InvoiceItem {
   status: 'quote' | 'po' | 'open' | 'paid' | 'requested';
   poNumber: string;
   issuedOn: string;
+  description?: string;
 }
 
 export async function listInvoices(institutionId: string): Promise<InvoiceItem[]> {

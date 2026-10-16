@@ -416,7 +416,7 @@ export function InstitutionSettings({
           <h2 className="font-semibold">Billing and seats</h2>
           <p className="text-sm">{profile.seatsUsed} of {profile.seatCount} seats · {profile.currency} {profile.amount} · plan {profile.plan}</p>
           <p className="text-sm">Term {profile.licenceStartsOn || '—'} to {profile.licenceEndsOn || '—'} · renewal {profile.renewalOn || '—'} · PO {profile.poNumber || '—'}</p>
-          <p className="text-xs text-muted-foreground">{superAdmin ? 'Change seats, price, and the licence from the Billing tab.' : 'Seat count and price are managed by Poket School. Request a change from Billing.'}</p>
+          <p className="text-xs text-muted-foreground">{superAdmin ? 'Seat count picks a volume tier. The live quote, discount, and quote PDF are on the Billing tab. Tier prices are edited in System settings.' : 'Seat count and price are managed by Poket School. Request a change from Billing.'}</p>
         </section>
 
         <section id="settings-audit" className="rounded-3xl border border-border p-5 space-y-2">

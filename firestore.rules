@@ -1128,6 +1128,11 @@ service cloud.firestore {
           || (tenantStaff(institutionId) && incoming().status == 'requested');
         allow update, delete: if isAdmin();
       }
+
+      match /pricing/{docId} {
+        allow read: if isAdmin() || (isSignedIn() && myInstitution() == institutionId);
+        allow write: if isAdmin();
+      }
     }
 
     match /subdomain_redirects/{slug} {
@@ -1673,6 +1678,18 @@ service cloud.firestore {
 
     // Who changed a price. Clients may append a row for themselves; nobody edits history.
     match /pricing_audit/{auditId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && incoming().actorId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // Super-admin institution volume tiers. Signed-in academy staff can read the list.
+    match /institution_pricing/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /institution_pricing_audit/{auditId} {
       allow read: if isAdmin();
       allow create: if isAdmin() && incoming().actorId == request.auth.uid;
       allow update, delete: if false;
