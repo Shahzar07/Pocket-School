@@ -1867,6 +1867,7 @@ components/mindmap-renderer.tsx	Zoom in
 components/mindmap-renderer.tsx	Zoom out
 components/notifications-bell.tsx	Mark all read
 components/notifications-bell.tsx	No notifications yet
+components/page-purpose.tsx	What this page is for
 components/parent-link-form.tsx	Ask them to approve
 components/parent-link-form.tsx	Your child
 components/parent-link-requests.tsx	A parent wants to follow your learning
