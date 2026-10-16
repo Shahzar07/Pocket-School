@@ -17,6 +17,8 @@ import {
 } from '@/lib/db';
 import { toast } from 'sonner';
 import { Search, Send, ArrowLeft, MessageSquare, Check, CheckCheck, Plus, X } from 'lucide-react';
+import { wrapSelection } from '@/lib/compose';
+import { authedFetch } from '@/lib/api-client';
 
 interface Thread {
   partnerId: string;
@@ -55,6 +57,8 @@ export default function MessagesPage() {
   const [contacts, setContacts] = useState<{ id: string; name: string; role: string }[]>([]);
   const [activePartner, setActivePartner] = useState<string | null>(null);
   const [input, setInput] = useState('');
+  const [draftPrompt, setDraftPrompt] = useState('');
+  const [drafting, setDrafting] = useState(false);
   const [sending, setSending] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [search, setSearch] = useState('');
@@ -287,7 +291,19 @@ export default function MessagesPage() {
             </div>
 
             {/* Composer */}
-            <div className="p-3 border-t border-border bg-card shrink-0">
+            <div className="p-3 border-t border-border bg-card shrink-0 space-y-2">
+              <div className="flex flex-wrap gap-2">
+                <button type="button" className="h-7 px-2 rounded-full border border-border text-xs font-bold" onClick={() => setInput((current) => wrapSelection(current, 0, current.length, '**', '**').text)}>B</button>
+                <button type="button" className="h-7 px-2 rounded-full border border-border text-xs italic" onClick={() => setInput((current) => wrapSelection(current, 0, current.length, '*', '*').text)}>I</button>
+                <input value={draftPrompt} onChange={(e) => setDraftPrompt(e.target.value)} placeholder="ET AI draft" aria-label="Draft a message" className="h-7 rounded-full border border-border bg-muted/40 px-3 text-xs" />
+                <button type="button" disabled={drafting || !draftPrompt.trim()} className="h-7 px-3 rounded-full border border-border text-xs font-semibold disabled:opacity-40" onClick={() => {
+                  setDrafting(true);
+                  authedFetch('/api/ai/draft', { method: 'POST', body: JSON.stringify({ prompt: draftPrompt }) })
+                    .then((data) => { if (typeof data.text === 'string') setInput(data.text); })
+                    .catch((error: Error) => toast.error(error.message))
+                    .finally(() => setDrafting(false));
+                }}>{drafting ? '…' : 'Draft'}</button>
+              </div>
               <div className="flex items-end gap-2">
                 <textarea
                   value={input}
