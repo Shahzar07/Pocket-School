@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import firebaseConfig from '@/firebase-applet-config.json';
 import { canDownload, type DownloadViewer } from '@/lib/export/allow';
+import { bearerToken, lookupIdToken } from '@/lib/identity-token';
 import { buildExport } from '@/lib/export/files';
 import { formatsFor, type ExportAsset, type ExportFormat } from '@/lib/export/payload';
 import { accountIsBlocked } from '@/lib/admin-signals';
@@ -11,25 +12,16 @@ const ASSETS = new Set<ExportAsset>([
   'notes', 'glossary', 'flashcards', 'quiz', 'problems', 'slides', 'infographic', 'mindmap', 'image',
 ]);
 
-async function callerUid(request: Request): Promise<string | null> {
-  const header = request.headers.get('authorization') ?? '';
-  const idToken = header.startsWith('Bearer ') ? header.slice(7) : '';
-  if (!idToken) return null;
-  const response = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${firebaseConfig.apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken }),
-    },
-  );
-  if (!response.ok) return null;
-  const body = await response.json() as { users?: Array<{ localId?: string }> };
-  return body.users?.[0]?.localId ?? null;
+async function callerIdentity(request: Request): Promise<{ uid: string; role: string } | null> {
+  const identity = await lookupIdToken(bearerToken(request.headers.get('authorization')));
+  if (!identity) return null;
+  const role = typeof identity.customAttributes.role === 'string' ? identity.customAttributes.role : '';
+  return { uid: identity.uid, role };
 }
 
-async function viewerFromStore(caller: string, posted: DownloadViewer, courseId: string): Promise<DownloadViewer> {
-  if (!process.env.FIREBASE_SERVICE_ACCOUNT) return { ...posted, courseId };
+async function viewerFromStore(caller: string, tokenRole: string, posted: DownloadViewer, courseId: string): Promise<DownloadViewer> {
+  const claimed = tokenRole || 'student';
+  if (!process.env.FIREBASE_SERVICE_ACCOUNT) return { ...posted, role: claimed, courseId };
   try {
     const { cert, getApps, initializeApp } = await import('firebase-admin/app');
     const { getFirestore } = await import('firebase-admin/firestore');
@@ -46,21 +38,21 @@ async function viewerFromStore(caller: string, posted: DownloadViewer, courseId:
       ? user.permissions.filter((item): item is string => typeof item === 'string')
       : posted.permissions;
     return {
-      role: typeof user.role === 'string' ? user.role : posted.role,
+      role: tokenRole || (typeof user.role === 'string' ? user.role : 'student'),
       tier: typeof user.accessTier === 'number' ? user.accessTier : posted.tier,
       permissions,
       courseId,
       downloadsEnabled: typeof course.downloadsEnabled === 'boolean' ? course.downloadsEnabled : posted.downloadsEnabled,
     };
   } catch {
-    return { ...posted, courseId };
+    return { ...posted, role: tokenRole || 'student', courseId };
   }
 }
 
 export async function POST(request: Request) {
-  const caller = await callerUid(request);
+  const caller = await callerIdentity(request);
   if (!caller) return NextResponse.json({ error: 'Sign in to download this file.' }, { status: 401 });
-  if (await accountIsBlocked(caller)) {
+  if (await accountIsBlocked(caller.uid)) {
     return NextResponse.json({ error: 'This account cannot download files.' }, { status: 403 });
   }
 
@@ -81,7 +73,7 @@ export async function POST(request: Request) {
   }
 
   const courseId = typeof body?.courseId === 'string' ? body.courseId : '';
-  const viewer = await viewerFromStore(caller, body?.viewer ?? {}, courseId);
+  const viewer = await viewerFromStore(caller.uid, caller.role, body?.viewer ?? {}, courseId);
   const decision = canDownload(viewer);
   if (!decision.allowed) return NextResponse.json({ error: decision.reason }, { status: 403 });
 

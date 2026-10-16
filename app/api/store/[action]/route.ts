@@ -1,4 +1,6 @@
 import { NextRequest } from 'next/server';
+import { callerIsAdmin } from '@/lib/api-guard';
+import { roleForServerCheck } from '@/lib/admin-access';
 import { runGet, runPost } from '@/lib/server/http';
 import { ActionError } from '@/lib/server/actions';
 import { allocateResource, createResource, listResources, moderateResource, submitResource } from '@/lib/server/scope-c';
@@ -17,8 +19,17 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
       audiences: body.audiences,
     });
     if (action === 'submit') return submitResource(user.uid, str(body.resourceId));
-    if (action === 'moderate') return moderateResource(user.uid, str(body.resourceId), body.approve === true);
-    if (action === 'allocate') return allocateResource(user.uid, str(body.resourceId), str(body.studentId));
+    if (action === 'moderate') {
+      if (!(await callerIsAdmin(user.uid, user.email, user))) throw new ActionError('FORBIDDEN', 'Only an admin can approve a resource.');
+      return moderateResource(user.uid, str(body.resourceId), body.approve === true);
+    }
+    if (action === 'allocate') {
+      const role = roleForServerCheck(user, '');
+      if (role && role !== 'admin' && role !== 'institution_admin') {
+        throw new ActionError('FORBIDDEN', 'Only an admin can allocate a resource.');
+      }
+      return allocateResource(user.uid, str(body.resourceId), str(body.studentId));
+    }
     throw new ActionError('NOT_FOUND', 'Unknown action.');
   });
 }

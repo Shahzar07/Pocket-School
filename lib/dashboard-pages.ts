@@ -989,6 +989,15 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     decision: 'Keep as the academy issuance desk. It does not change the platform template.',
     ownerKeys: 'None.',
   },
+  {
+    path: '/dashboard/session',
+    title: 'Dashboard session',
+    purpose: 'Exchanges a verified Firebase ID token for the signed dashboard cookie, then continues to the requested page.',
+    audience: ['everyone'],
+    overlaps: 'None. It is not a product page.',
+    decision: 'Keep. Middleware sends role-restricted URLs here when the cookie is missing. It does not render admin tools.',
+    ownerKeys: 'DASHBOARD_SESSION_SECRET, or OTP_SECRET when that is already set.',
+  },
 ];
 
 const byPath = new Map(DASHBOARD_PAGES.map((page) => [page.path, page]));

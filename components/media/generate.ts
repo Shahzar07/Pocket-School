@@ -1,3 +1,4 @@
+import { bearerHeaders } from '@/lib/api-client';
 import { proceduralArt } from './fallback-art';
 import type { CoverArtOption } from './types';
 
@@ -6,7 +7,7 @@ export async function generateIllustration(prompt: string, style?: string): Prom
   try {
     const res = await fetch('/api/media/illustrate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await bearerHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ prompt, style }),
     });
     const data = await res.json().catch(() => ({})) as { image?: string };
@@ -31,7 +32,7 @@ export async function generateCoverArt(brief: string, styleId: string, refine?: 
   try {
     const res = await fetch('/api/media/cover', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await bearerHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ brief, styleId, refine }),
     });
     const data = await res.json().catch(() => ({})) as { image?: string };

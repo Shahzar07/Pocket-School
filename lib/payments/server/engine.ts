@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { FieldValue, type DocumentData } from 'firebase-admin/firestore';
+import { roleForServerCheck } from '../../admin-access';
 import { adminDb } from '../../firebase-admin';
 import type { AccessTier } from '../../entitlements';
 import {
@@ -912,9 +913,15 @@ export async function applyReversal(checkoutId: string, eventId: string) {
   return { duplicate: false };
 }
 
-export async function refundCheckout(actorUid: string, checkoutId: string) {
+export async function refundCheckout(
+  actorUid: string,
+  checkoutId: string,
+  claims?: { email?: string | null; role?: string | null; adminRole?: string | null },
+) {
   const actor = await profileOf(actorUid);
-  if (actor.role !== 'admin') throw new ActionError('FORBIDDEN', 'Only a super admin can refund.');
+  if (roleForServerCheck(claims ?? {}, actor.role as string | undefined) !== 'admin') {
+    throw new ActionError('FORBIDDEN', 'Only a super admin can refund.');
+  }
   const snap = await db().doc(`checkouts/${checkoutId}`).get();
   if (!snap.exists) throw new ActionError('NOT_FOUND', 'Checkout not found.');
   const checkout = asCheckout(checkoutId, snap.data() ?? {});

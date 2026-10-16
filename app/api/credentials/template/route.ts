@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   }
   const user = await requireUser(req);
   if (isNextResponse(user)) return user;
-  const access = await issuerAccess(user.uid, user.email);
+  const access = await issuerAccess(user.uid, user.email, user);
   if (!access) return NextResponse.json({ error: 'School or platform admins can read the template.', code: 'FORBIDDEN' }, { status: 403 });
   return NextResponse.json({ template: await loadTemplate() });
 }
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   }
   const user = await requireUser(req);
   if (isNextResponse(user)) return user;
-  const access = await issuerAccess(user.uid, user.email);
+  const access = await issuerAccess(user.uid, user.email, user);
   if (!access?.admin) return NextResponse.json({ error: 'Platform admins design the certificate.', code: 'FORBIDDEN' }, { status: 403 });
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
   const template = await saveTemplate({

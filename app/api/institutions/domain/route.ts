@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { roleForServerCheck } from '@/lib/admin-access';
 import { canUseCustomDomain } from '@/lib/enterprise';
 import { callerIsAdmin, isNextResponse, loadUser, requireUser } from '@/lib/api-guard';
 import { adminDb, isAdminConfigured } from '@/lib/firebase-admin';
@@ -18,8 +19,10 @@ export async function POST(req: NextRequest) {
   }
 
   const profile = await loadUser(user.uid);
-  const admin = await callerIsAdmin(user.uid, user.email);
-  const owns = profile?.role === 'institution_admin' && profile.institutionId === institutionId;
+  const admin = await callerIsAdmin(user.uid, user.email, user);
+  const claimed = roleForServerCheck(user, '');
+  const profileRole = claimed || (typeof profile?.role === 'string' ? profile.role : '');
+  const owns = profileRole === 'institution_admin' && profile?.institutionId === institutionId;
   if (!admin && !owns) {
     return NextResponse.json({ error: 'This academy is outside your account.' }, { status: 403 });
   }

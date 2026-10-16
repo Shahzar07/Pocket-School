@@ -6,6 +6,7 @@ import {
   displayedFields,
   type TranslationFields,
 } from '@/lib/i18n/content-translation';
+import { bearerHeaders } from '@/lib/api-client';
 import { DEFAULT_LANGUAGE } from '@/lib/languages';
 
 const memory = new Map<string, TranslationFields>();
@@ -65,12 +66,13 @@ export function useContentTranslation(
     const controller = new AbortController();
     setStatus('loading');
     setTranslated(null);
-    fetch('/api/ai/translate-lesson', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...source, targetLanguage: language, viewer: true }),
-      signal: controller.signal,
-    })
+    bearerHeaders({ 'Content-Type': 'application/json' })
+      .then(headers => fetch('/api/ai/translate-lesson', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ ...source, targetLanguage: language, viewer: true }),
+        signal: controller.signal,
+      }))
       .then(async (res) => {
         const data = await res.json() as TranslationFields & { unavailable?: boolean; error?: string };
         if (data.unavailable || !res.ok) {

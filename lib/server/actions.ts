@@ -1,4 +1,5 @@
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
+import { roleForServerCheck } from '../admin-access';
 import { callerIsAdmin } from '../api-guard';
 import { adminDb } from '../firebase-admin';
 import { hasAccountRole } from '../account-modes';
@@ -338,28 +339,47 @@ export async function grantMonthly(uid: string) {
   return { granted: true, balance, allowance };
 }
 
-export async function adminGrant(actorUid: string, targetUid: string, amount: number, note: string) {
+export async function adminGrant(
+  actorUid: string,
+  targetUid: string,
+  amount: number,
+  note: string,
+  claims?: { email?: string | null; role?: string | null; adminRole?: string | null },
+) {
   if (!Number.isFinite(amount) || amount === 0) throw new ActionError('INVALID_AMOUNT', 'Enter a non-zero amount.');
   const actor = await db().doc(`users/${actorUid}`).get();
-  if (actor.data()?.role !== 'admin') throw new ActionError('FORBIDDEN', 'Only an admin can grant Sparks.');
+  if (roleForServerCheck(claims ?? {}, actor.data()?.role as string | undefined) !== 'admin') {
+    throw new ActionError('FORBIDDEN', 'Only an admin can grant Sparks.');
+  }
   const balance = await addSparks(targetUid, amount, 'admin_grant', note || 'Granted by an admin');
   return { balance };
 }
 
-export async function ensureAdminBootstrap(uid: string) {
+export async function ensureAdminBootstrap(
+  uid: string,
+  claims?: { email?: string | null; role?: string | null; adminRole?: string | null },
+) {
   const snap = await db().doc(`users/${uid}`).get();
   if (!snap.exists) return { granted: false };
   const data = snap.data() ?? {};
-  if (data.role !== 'admin' || data.adminSparksGrantedAt) return { granted: false, balance: (data.sparksBalance as number) ?? 0 };
+  const role = roleForServerCheck(claims ?? {}, data.role as string | undefined);
+  if (role !== 'admin' || data.adminSparksGrantedAt) return { granted: false, balance: (data.sparksBalance as number) ?? 0 };
   const balance = await addSparks(uid, ADMIN_SPARKS_GRANT, 'admin_grant', 'Administrator working balance', {
     adminSparksGrantedAt: FieldValue.serverTimestamp(),
   });
   return { granted: true, balance };
 }
 
-export async function setSubscription(actorUid: string, targetUid: string, accessTier: AccessTier) {
+export async function setSubscription(
+  actorUid: string,
+  targetUid: string,
+  accessTier: AccessTier,
+  claims?: { email?: string | null; role?: string | null; adminRole?: string | null },
+) {
   const actor = await db().doc(`users/${actorUid}`).get();
-  if (actor.data()?.role !== 'admin') throw new ActionError('FORBIDDEN');
+  if (roleForServerCheck(claims ?? {}, actor.data()?.role as string | undefined) !== 'admin') {
+    throw new ActionError('FORBIDDEN');
+  }
   const def = tierDefinition(accessTier);
   await db().doc(`users/${targetUid}`).set({
     accessTier,
@@ -926,8 +946,9 @@ export async function revokeCertificate(
   callerEmail: string | undefined,
   certificateId: string,
   reason = 'Revoked by an admin',
+  claims?: { role?: string | null; adminRole?: string | null },
 ) {
-  if (!(await callerIsAdmin(callerId, callerEmail))) {
+  if (!(await callerIsAdmin(callerId, callerEmail, claims))) {
     throw new ActionError('FORBIDDEN', 'Only an admin can revoke a certificate.');
   }
   const id = certificateId.trim();

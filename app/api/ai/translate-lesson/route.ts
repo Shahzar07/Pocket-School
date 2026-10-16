@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { enforceAiAccess } from '@/lib/api-guard';
 import { callOpenRouter, CONTENT_MODEL, isOpenRouterConfigured } from '@/lib/openrouter';
 import { DEFAULT_LANGUAGE, LANGUAGE_NAMES, isSupportedLanguage } from '@/lib/languages';
 
@@ -22,6 +23,8 @@ function parseTranslation(raw: string): { title: string; text: string } | null {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await enforceAiAccess(req);
+  if (denied) return denied;
   try {
     const body = await req.json() as Record<string, unknown>;
     const targetLanguage = typeof body.targetLanguage === 'string' ? body.targetLanguage : '';

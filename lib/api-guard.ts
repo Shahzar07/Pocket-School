@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { adminFromVerifiedIdentity } from './admin-access';
 import { adminAuth, adminDb, isAdminConfigured } from './firebase-admin';
-import { isSuperAdminEmail } from './roles';
 
 const buckets = new Map<string, { n: number; reset: number }>();
 
@@ -21,6 +21,9 @@ export interface AuthedUser {
   uid: string;
   email?: string;
   emailVerified: boolean;
+  /** Custom claims on the verified ID token. Absent when the claim was never set. */
+  role?: string;
+  adminRole?: string;
 }
 
 export function isNextResponse(value: unknown): value is NextResponse {
@@ -55,10 +58,13 @@ export async function requireUser(
         { status: 429 },
       );
     }
+    const claims = decoded as { role?: unknown; adminRole?: unknown };
     return {
       uid: decoded.uid,
       email: decoded.email,
       emailVerified: decoded.email_verified === true,
+      role: typeof claims.role === 'string' ? claims.role : undefined,
+      adminRole: typeof claims.adminRole === 'string' ? claims.adminRole : undefined,
     };
   } catch {
     return NextResponse.json({ error: 'Sign in required.', code: 'UNAUTHENTICATED' }, { status: 401 });
@@ -76,8 +82,30 @@ export async function loadUser(uid: string): Promise<Record<string, unknown> | n
   return snap.exists ? (snap.data() as Record<string, unknown>) : null;
 }
 
-export async function callerIsAdmin(uid: string, email?: string): Promise<boolean> {
-  if (isSuperAdminEmail(email)) return true;
-  const profile = await loadUser(uid);
-  return profile?.role === 'admin';
+export async function callerIsAdmin(
+  uid: string,
+  email?: string,
+  claims?: { role?: string | null; adminRole?: string | null },
+): Promise<boolean> {
+  let profileRole: string | undefined;
+  if (isAdminConfigured()) {
+    const profile = await loadUser(uid);
+    profileRole = typeof profile?.role === 'string' ? profile.role : '';
+  }
+  return adminFromVerifiedIdentity({
+    email,
+    role: claims?.role,
+    adminRole: claims?.adminRole,
+    profileRole,
+  });
+}
+
+/** Admin gate. The role is the verified token claim, not a field from the body. */
+export async function requirePlatformAdmin(req: NextRequest): Promise<AuthedUser | NextResponse> {
+  const user = await requireUser(req);
+  if (isNextResponse(user)) return user;
+  if (!(await callerIsAdmin(user.uid, user.email, user))) {
+    return NextResponse.json({ error: 'Admin access required.', code: 'FORBIDDEN' }, { status: 403 });
+  }
+  return user;
 }

@@ -13,7 +13,8 @@ export async function importFile(file: File): Promise<ImportResult> {
   }
   const body = new FormData();
   body.append('file', file);
-  const res = await fetch('/api/content/import', { method: 'POST', body });
+  const { bearerHeaders } = await import('@/lib/api-client');
+  const res = await fetch('/api/content/import', { method: 'POST', headers: await bearerHeaders(), body });
   const data = await res.json().catch(() => ({})) as Partial<ImportResult> & { error?: string };
   if (!res.ok) throw new Error(data.error || 'That file could not be read.');
   return {

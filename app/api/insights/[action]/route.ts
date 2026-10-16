@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server';
+import { roleForServerCheck } from '@/lib/admin-access';
 import { adminDb } from '@/lib/firebase-admin';
 import { runPost } from '@/lib/server/http';
+import type { AuthedUser } from '@/lib/api-guard';
 import { ActionError, grantGoalSparks } from '@/lib/server/actions';
 import { notifyParents, notifyUser, parentIdsFor } from '@/lib/server/device-push';
 import { writeStudentSnapshot } from '@/lib/server/insights-jobs';
@@ -32,10 +34,11 @@ async function quietNow(userId: string): Promise<boolean> {
   return inQuietHours(new Date(), start, end);
 }
 
-async function assertCanSeeStudent(actorId: string, studentId: string) {
-  if (actorId === studentId) return;
-  const actor = await adminDb().doc(`users/${actorId}`).get();
-  const role = actor.data()?.role as string | undefined;
+async function assertCanSeeStudent(user: AuthedUser, studentId: string) {
+  if (user.uid === studentId) return;
+  const actor = await adminDb().doc(`users/${user.uid}`).get();
+  const stored = actor.data()?.role as string | undefined;
+  const role = roleForServerCheck(user, stored);
   const children = (actor.data()?.childIds as string[] | undefined) ?? [];
   if (role === 'admin' || role === 'institution_admin') return;
   if (role === 'parent' && children.includes(studentId)) return;
@@ -92,7 +95,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
 
     if (action === 'refresh-snapshot') {
       const studentId = str(body.studentId) || user.uid;
-      await assertCanSeeStudent(user.uid, studentId);
+      await assertCanSeeStudent(user, studentId);
       const snapshot = await writeStudentSnapshot(studentId);
       return { snapshot };
     }
@@ -127,7 +130,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
       const data = snap.data() ?? {};
       if (data.teacherId !== user.uid) {
         const actor = await adminDb().doc(`users/${user.uid}`).get();
-        const role = actor.data()?.role as string | undefined;
+        const role = roleForServerCheck(user, actor.data()?.role as string | undefined);
         if (role !== 'admin' && role !== 'institution_admin') {
           throw new ActionError('FORBIDDEN', 'Only the teacher on the case can notify.');
         }
@@ -160,7 +163,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
       const studentId = str(body.studentId) || user.uid;
       if (studentId !== user.uid) {
         const actor = await adminDb().doc(`users/${user.uid}`).get();
-        const role = actor.data()?.role as string | undefined;
+        const role = roleForServerCheck(user, actor.data()?.role as string | undefined);
         if (role !== 'teacher' && role !== 'admin' && role !== 'institution_admin') {
           throw new ActionError('FORBIDDEN', 'You cannot open a flag for that student.');
         }
@@ -239,9 +242,9 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
 
     if (action === 'concern-notify') {
       const studentId = str(body.studentId);
-      await assertCanSeeStudent(user.uid, studentId);
+      await assertCanSeeStudent(user, studentId);
       const actor = await adminDb().doc(`users/${user.uid}`).get();
-      const role = actor.data()?.role as string | undefined;
+      const role = roleForServerCheck(user, actor.data()?.role as string | undefined);
       if (role !== 'teacher' && role !== 'admin' && role !== 'institution_admin') {
         throw new ActionError('FORBIDDEN', 'Only staff can send a concern flag.');
       }
@@ -295,7 +298,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
     if (action === 'report-notify') {
       const studentId = str(body.studentId);
       const actor = await adminDb().doc(`users/${user.uid}`).get();
-      const role = actor.data()?.role as string | undefined;
+      const role = roleForServerCheck(user, actor.data()?.role as string | undefined);
       if (role !== 'teacher' && role !== 'admin' && role !== 'institution_admin') {
         throw new ActionError('FORBIDDEN', 'Only staff can publish a report card.');
       }

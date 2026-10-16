@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { enforceAiAccess } from '@/lib/api-guard';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -15,7 +16,9 @@ const STYLE: Record<string, string> = {
 };
 
 /** Cover or thumbnail art. Lettering is forbidden so the host can draw crisp text later. */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const denied = await enforceAiAccess(request);
+  if (denied) return denied;
   const body = await request.json().catch(() => null) as { brief?: string; styleId?: string; refine?: string } | null;
   const brief = (body?.brief ?? '').toString().slice(0, 600).trim();
   const styleId = (body?.styleId ?? 'novel').toString().slice(0, 40);

@@ -1,10 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { enforceAiAccess } from '@/lib/api-guard';
 import { callOpenRouter, LIVE_MODEL } from '@/lib/openrouter';
 
 export const runtime = 'nodejs';
 
 /** Ask ET about the chapter currently open. Fiction answers stay inside that chapter. */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const denied = await enforceAiAccess(request);
+  if (denied) return denied;
   if (!process.env.OPENROUTER_API_KEY) {
     return NextResponse.json({ error: 'Ask ET needs the AI key. The chapter guide still works offline.' }, { status: 503 });
   }

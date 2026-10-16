@@ -34,9 +34,12 @@ async function actorRole(uid: string, email?: string): Promise<string> {
   return staff || role || 'student';
 }
 
-async function superAdmin(uid: string, email?: string): Promise<boolean> {
-  if (isSuperAdminEmail(email)) return true;
-  return (await actorRole(uid, email)) === 'super_admin';
+async function superAdmin(user: { uid: string; email?: string; role?: string; adminRole?: string }): Promise<boolean> {
+  if (isSuperAdminEmail(user.email)) return true;
+  if (user.adminRole === 'super_admin') return true;
+  if (user.role && user.role !== 'admin') return false;
+  if (user.adminRole && user.adminRole !== 'super_admin') return false;
+  return (await actorRole(user.uid, user.email)) === 'super_admin';
 }
 
 export async function GET(req: NextRequest) {
@@ -50,7 +53,7 @@ export async function GET(req: NextRequest) {
     const events = await listOwnAuth(user.uid);
     return NextResponse.json({ events });
   }
-  if (!(await superAdmin(user.uid, user.email))) {
+  if (!(await superAdmin(user))) {
     return NextResponse.json({ error: 'Super admins can read the activity log.', code: 'FORBIDDEN' }, { status: 403 });
   }
   const events = filterActivity(await listActivity(), {
@@ -105,7 +108,7 @@ export async function POST(req: NextRequest) {
   const role = await actorRole(user.uid, user.email);
 
   if (action === 'retention.set' || action === 'retention.purge') {
-    if (!(await superAdmin(user.uid, user.email))) {
+    if (!(await superAdmin(user))) {
       return NextResponse.json({ error: 'Super admins set the retention window.', code: 'FORBIDDEN' }, { status: 403 });
     }
     const actor = {

@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { enforceAiAccess } from '@/lib/api-guard';
 import {
   AI_CALENDAR_UNAVAILABLE,
   aiKeyPresent,
@@ -23,7 +24,9 @@ function json(draft: ImportDraft, status = 200) {
   }, { status });
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const denied = await enforceAiAccess(request);
+  if (denied) return denied;
   const contentType = request.headers.get('content-type') ?? '';
   try {
     if (contentType.includes('application/json')) {

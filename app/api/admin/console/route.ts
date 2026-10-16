@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import firebaseConfig from '@/firebase-applet-config.json';
+import { adminFromVerifiedIdentity } from '@/lib/admin-access';
+import { bearerToken, lookupIdToken } from '@/lib/identity-token';
 import { activityDocument, requestClient } from '@/lib/audit/model';
 import {
   initialSuperAdmin,
@@ -21,24 +23,21 @@ export const runtime = 'nodejs';
 
 type AdminApp = import('firebase-admin/app').App;
 
-async function callerFromToken(request: Request): Promise<{ uid: string; email: string } | null> {
-  const header = request.headers.get('authorization') ?? '';
-  const idToken = header.startsWith('Bearer ') ? header.slice(7) : '';
-  if (!idToken) return null;
+async function callerFromToken(request: Request): Promise<{
+  uid: string;
+  email: string;
+  role: string;
+  adminRole: string;
+} | null> {
   if (request.headers.get('x-poket-view-as') === '1') return null;
-  const response = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${firebaseConfig.apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken }),
-    },
-  );
-  if (!response.ok) return null;
-  const body = await response.json() as { users?: Array<{ localId?: string; email?: string }> };
-  const user = body.users?.[0];
-  if (!user?.localId) return null;
-  return { uid: user.localId, email: user.email ?? '' };
+  const identity = await lookupIdToken(bearerToken(request.headers.get('authorization')));
+  if (!identity) return null;
+  return {
+    uid: identity.uid,
+    email: identity.email,
+    role: typeof identity.customAttributes.role === 'string' ? identity.customAttributes.role : '',
+    adminRole: typeof identity.customAttributes.adminRole === 'string' ? identity.customAttributes.adminRole : '',
+  };
 }
 
 async function adminApp(): Promise<AdminApp | null> {
@@ -83,15 +82,28 @@ export async function POST(request: Request) {
   const app = await adminApp();
   const db = app ? await namedDb(app) : null;
   let directory = postedDirectory;
-  let callerProfile = postedDirectory.find(item => item.id === caller.uid) ?? { id: caller.uid, email: caller.email, role: '' };
+  let callerProfile: StaffProfile = {
+    id: caller.uid,
+    email: caller.email,
+    role: caller.role,
+    adminRole: caller.adminRole,
+  };
   if (db) {
     const snap = await db.collection('users').limit(500).get();
     directory = snap.docs.map(item => asProfile(item.id, item.data()));
     status.clear();
     snap.docs.forEach(item => status.set(item.id, statusOf(item.data())));
-    callerProfile = directory.find(item => item.id === caller.uid) ?? { ...callerProfile, email: caller.email };
+    const self = directory.find(item => item.id === caller.uid);
+    if (self) callerProfile = { ...self, email: self.email || caller.email };
   }
   if (!callerProfile.email) callerProfile = { ...callerProfile, email: caller.email };
+  const allowed = adminFromVerifiedIdentity({
+    email: caller.email,
+    role: caller.role,
+    adminRole: caller.adminRole,
+    profileRole: db ? callerProfile.role : undefined,
+  });
+  if (!allowed) return NextResponse.json({ error: 'This account is not an admin.' }, { status: 403 });
   const actor = resolveStaffRole(callerProfile);
   if (!actor) return NextResponse.json({ error: 'This account is not an admin.' }, { status: 403 });
   if (loginBlocked(status.get(caller.uid))) {

@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { enforceAiAccess } from '@/lib/api-guard';
 import { parseHTML } from 'linkedom';
 import { htmlToMarkdown } from '@/components/editor/markdown';
 import { resultFromMarkdown } from '@/components/editor/import-file';
@@ -12,7 +13,9 @@ const MAX_BYTES = 8_000_000;
  * .md and .txt are handled in the client. This route accepts .docx, .pdf, and .epub.
  * Nothing is stored.
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const denied = await enforceAiAccess(request);
+  if (denied) return denied;
   const form = await request.formData().catch(() => null);
   const file = form?.get('file');
   if (!(file instanceof File)) return NextResponse.json({ error: 'Choose a file.' }, { status: 400 });

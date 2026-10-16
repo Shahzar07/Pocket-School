@@ -88,7 +88,7 @@ function split(value: string): string[] {
 /**
  * Who can see one product. The first section is the audience. Schedule, quotas
  * and targeting stay closed until someone needs them. Preview uses the same
- * decision as POST /api/access/visible.
+ * decision as POST /api/access/visible. That route uses the signed-in role.
  */
 export function AllocationPanel({
   product,
