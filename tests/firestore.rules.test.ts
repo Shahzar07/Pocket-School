@@ -803,4 +803,17 @@ describe('institution console', () => {
       name: 'leaked', prefix: 'pk_abcd', hash: 'abc', secret: 'nope',
     }));
   });
+
+  it('publishes a subdomain redirect the public site can follow', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'users/instA'), { role: 'institution_admin', institutionId: 'school-a', name: 'A' });
+      await setDoc(doc(db, 'institutions/school-a'), { name: 'A', status: 'active', plan: 'enterprise', subdomain: 'north' });
+    });
+    const academy = env.authenticatedContext('instA').firestore();
+    await assertSucceeds(setDoc(doc(academy, 'subdomain_redirects/old-north'), { institutionId: 'school-a', subdomain: 'north' }));
+    await assertFails(setDoc(doc(academy, 'subdomain_redirects/stolen'), { institutionId: 'school-b', subdomain: 'north' }));
+    const anon = env.unauthenticatedContext().firestore();
+    await assertSucceeds(getDoc(doc(anon, 'subdomain_redirects/old-north')));
+  });
 });

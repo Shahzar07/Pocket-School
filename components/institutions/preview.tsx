@@ -6,6 +6,9 @@ import { InstitutionDirectory } from '@/components/institutions/directory';
 import { InstitutionWorkspace, type WorkspaceAction } from '@/components/institutions/workspace';
 import { blankProfile, identityMode, type DirectoryRow } from '@/lib/enterprise';
 import type { Institution } from '@/lib/db';
+import { AcademyWelcome } from '@/components/academy-welcome';
+import { blankAcademySettings } from '@/lib/academy-settings';
+import { brandingFor } from '@/lib/white-label';
 
 const profile = blankProfile({
   type: 'university',
@@ -63,7 +66,30 @@ const branding: NonNullable<Institution['branding']> = {
   splashColor: '#1E6A83',
 };
 
-const VIEWS = ['directory', 'profile', 'people', 'white-label', 'content', 'analytics', 'integrations', 'billing', 'audit', 'demo'] as const;
+const academySettings = blankAcademySettings({
+  legalName: 'North Academy Sdn Bhd',
+  supportEmail: 'hello@north.example',
+  signupPolicy: 'domain',
+  allowedEmailDomains: ['north.example'],
+  require2fa: true,
+  passwordRequireSymbol: true,
+  sessionTimeoutMinutes: 480,
+  ipAllowlist: ['203.0.113.*'],
+  taxMode: 'custom',
+  taxRate: 0.08,
+  taxLabel: 'SST',
+  catalogueVisibility: 'curated',
+  certificateSignatory: 'Amina Yusuf, Registrar',
+  mobileAppName: 'North Academy',
+  mobileSubtitle: 'Campus in your pocket',
+  splashColor: '#1E6A83',
+  iosBundleId: 'ai.poketschool.north',
+  androidPackage: 'ai.poketschool.north',
+  leaderboard: [{ name: 'Amina Yusuf', points: 120 }, { name: 'Mr Lee', points: 80 }],
+  pages: [{ slug: 'about', title: 'About the academy', body: 'A campus that learns together.', published: true }],
+});
+
+const VIEWS = ['directory', 'profile', 'people', 'white-label', 'settings', 'content', 'analytics', 'integrations', 'billing', 'audit', 'academy', 'demo'] as const;
 type View = (typeof VIEWS)[number];
 
 /** Fixture console for screenshots. It does not write to Firestore. */
@@ -117,7 +143,21 @@ export function InstitutionPreview({ initialView = 'directory' }: { initialView?
           </div>
         </section>
       )}
-      {view !== 'directory' && view !== 'demo' && (
+      {view === 'academy' && (
+        <AcademyWelcome
+          branding={brandingFor({ name: 'North Academy', branding })}
+          catalogueTitles={['Biology foundations']}
+          pages={academySettings.pages}
+          leaderboard={[{ rank: 1, name: 'Amina Yusuf', points: 120 }, { rank: 2, name: 'Mr Lee', points: 80 }]}
+          signupNote="New accounts need an email on an allowed academy domain."
+          loginHref="#login"
+          coursesHref="#catalogue"
+          leaderboardHref="#leaderboard"
+          pageHref={() => '#about'}
+          address="north.poketschool.ai · /a/north"
+        />
+      )}
+      {view !== 'directory' && view !== 'demo' && view !== 'academy' && (
         <InstitutionWorkspace
           key={view}
           initialTab={view}
@@ -158,6 +198,10 @@ export function InstitutionPreview({ initialView = 'directory' }: { initialView?
             { token: 'book:monsoon', label: 'Monsoon Market', group: 'Books' },
           ]}
           identity={identityMode({})}
+          settings={academySettings}
+          domainStatus="manual"
+          domainMessage="Add the CNAME, then check DNS. SSL attaches when the Vercel token is set."
+          previousSubdomains={['old-north']}
           superAdmin
           currency="USD"
           onAction={async (action: WorkspaceAction) => {

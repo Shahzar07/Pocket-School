@@ -5,7 +5,7 @@
  * the masked form only.
  */
 
-export type SecretGroup = 'payments' | 'meetings' | 'messaging' | 'identity' | 'notifications' | 'ai' | 'tax';
+export type SecretGroup = 'payments' | 'meetings' | 'messaging' | 'identity' | 'notifications' | 'ai' | 'tax' | 'hosting';
 
 export interface SecretSlot {
   id: string;
@@ -54,6 +54,7 @@ export const SECRET_SLOTS: readonly SecretSlot[] = [
   { id: 'lti_client', label: 'LTI client ID', envVar: 'LTI_CLIENT_ID', group: 'identity', flag: 'integrations.lti', required: false, why: 'LTI 1.3 tool client ID.' },
   { id: 'lti_deployment', label: 'LTI deployment ID', envVar: 'LTI_DEPLOYMENT_ID', group: 'identity', flag: 'integrations.lti', required: false, why: 'LTI deployment ID.' },
   { id: 'lti_key', label: 'LTI private key', envVar: 'LTI_PRIVATE_KEY', group: 'identity', flag: 'integrations.lti', required: false, why: 'Signs LTI launches.' },
+  { id: 'vercel_token', label: 'Vercel token', envVar: 'VERCEL_TOKEN', group: 'hosting', flag: 'integrations.domains', required: false, why: 'Adds an academy custom domain to the Vercel project so SSL is issued. DNS instructions still work when this is empty.' },
   { id: 'fcm', label: 'FCM service account', envVar: 'FCM_SERVICE_ACCOUNT', group: 'notifications', flag: 'integrations.fcm', required: false, why: 'Firebase Cloud Messaging for web and Android push.' },
   { id: 'expo', label: 'Expo access token', envVar: 'EXPO_ACCESS_TOKEN', group: 'notifications', flag: 'integrations.expo', required: false, why: 'Expo push notifications.' },
   { id: 'openrouter', label: 'OpenRouter API key', envVar: 'OPENROUTER_API_KEY', group: 'ai', flag: 'integrations.openrouter', required: true, why: 'AI Studio and lesson generation.' },
@@ -132,6 +133,20 @@ export function harrySetup(): SetupAccount[] {
         'Without these keys, academies stay on email and join links.',
       ],
       keys: [...slots('integrations.saml'), ...slots('integrations.lti')].map(brief),
+    },
+    {
+      account: 'Vercel project for poketschool.ai',
+      where: 'Vercel → Project → Settings → Domains, and a token with domain write access',
+      tasks: [
+        'Add poketschool.ai and *.poketschool.ai on the project. Wildcard DNS is a CNAME or ALIAS for * to cname.vercel-dns.com.',
+        'Set VERCEL_TOKEN and VERCEL_PROJECT_ID so an academy custom domain is attached and SSL is issued. Leave them empty to keep manual DNS instructions.',
+        'VERCEL_TEAM_ID is only needed when the project lives on a team.',
+      ],
+      keys: [
+        { envVar: 'VERCEL_TOKEN', required: false, why: 'Writes the academy hostname onto the Vercel project.' },
+        { envVar: 'VERCEL_PROJECT_ID', required: false, why: 'Project that should receive the domain and certificate.' },
+        { envVar: 'VERCEL_TEAM_ID', required: false, why: 'Team id when the project is not on a personal account.' },
+      ],
     },
     {
       account: 'FCM and Expo',

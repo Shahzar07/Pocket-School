@@ -23,13 +23,19 @@ import type {
   ApiKeyItem, CatalogueItem, ComplianceItem, InvoiceItem, LearningPathItem, SkillItem, WebhookItem,
 } from '@/lib/institution-store';
 import type { AcademyClass, AcademyInvite, AcademyMember, Programme } from '@/lib/db';
+import { InstitutionSettings } from '@/components/institutions/settings-panel';
+import type { AcademySettings } from '@/lib/academy-settings';
+import { blankAcademySettings } from '@/lib/academy-settings';
 
-const TABS = ['profile', 'people', 'white-label', 'content', 'analytics', 'integrations', 'billing', 'audit'] as const;
+const TABS = ['profile', 'people', 'white-label', 'settings', 'content', 'analytics', 'integrations', 'billing', 'audit'] as const;
 type Tab = (typeof TABS)[number];
 
 export type WorkspaceAction =
   | { type: 'save-profile'; name: string; profile: InstitutionProfile }
   | { type: 'save-brand'; subdomain: string; customDomain: string; branding: NonNullable<Institution['branding']> }
+  | { type: 'save-settings'; settings: AcademySettings }
+  | { type: 'verify-domain' }
+  | { type: 'privacy-erase' }
   | { type: 'status'; status: InstitutionStatus }
   | { type: 'delete' }
   | { type: 'invite'; csv: string }
@@ -78,6 +84,10 @@ export function InstitutionWorkspace({
   audit,
   contentOptions,
   identity,
+  settings,
+  domainStatus = '',
+  domainMessage = '',
+  previousSubdomains = [],
   superAdmin,
   currency,
   busy,
@@ -105,6 +115,10 @@ export function InstitutionWorkspace({
   audit: AuditEvent[];
   contentOptions: AllocationOption[];
   identity: IdentityMode;
+  settings?: AcademySettings;
+  domainStatus?: string;
+  domainMessage?: string;
+  previousSubdomains?: string[];
   superAdmin: boolean;
   currency: string;
   busy?: boolean;
@@ -167,6 +181,28 @@ export function InstitutionWorkspace({
       )}
       {tab === 'white-label' && (
         <BrandTab name={name} plan={profile.plan} subdomain={subdomain} customDomain={customDomain} domain={domain} branding={branding} busy={busy} superAdmin={superAdmin} onAction={onAction} />
+      )}
+      {tab === 'settings' && (
+        <InstitutionSettings
+          name={name}
+          profile={profile}
+          branding={branding}
+          subdomain={subdomain}
+          customDomain={customDomain}
+          domainStatus={domainStatus}
+          domainMessage={domainMessage}
+          previousSubdomains={previousSubdomains}
+          settings={settings ?? blankAcademySettings()}
+          identity={identity}
+          audit={audit}
+          paths={paths}
+          skills={skills}
+          webhooks={webhooks}
+          apiKeys={apiKeys}
+          superAdmin={superAdmin}
+          busy={busy}
+          onAction={onAction}
+        />
       )}
       {tab === 'content' && (
         <ContentTab catalogue={catalogue} compliance={compliance} paths={paths} skills={skills} contentOptions={contentOptions} today={today} busy={busy} onAction={onAction} />
@@ -404,6 +440,7 @@ function BrandTab({
             <span className="text-xs text-muted-foreground">.poketschool.ai</span>
           </span>
         </label>
+        <p className="text-xs text-muted-foreground">Until poketschool.ai wildcard DNS is live, this academy is also at /a/{draft.subdomain || 'slug'}. Renaming keeps the previous address as a redirect.</p>
         <label className="text-sm">Custom domain
           <Input value={draft.customDomain} disabled={!domainAllowed && !superAdmin} onChange={(event) => setDraft({ ...draft, customDomain: event.target.value })} className="mt-1 h-11 rounded-xl" placeholder="learn.school.example" />
         </label>

@@ -7,7 +7,7 @@ import type { AllocationOption } from '@/components/allocation-picker';
 import { InstitutionWorkspace, type WorkspaceAction } from '@/components/institutions/workspace';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { usePricing } from '@/hooks/use-pricing';
-import { authedFetch } from '@/lib/api-client';
+import { ApiError, authedFetch } from '@/lib/api-client';
 import {
   getAllCourses,
   getInstitution,
@@ -47,14 +47,19 @@ import {
   listPaths,
   listSkills,
   listWebhooks,
+  loadAcademySettings,
   loadPeople,
   loadProfile,
+  publishCatalogueSnapshot,
   recordAudit,
+  recordSubdomainRename,
+  redactInstitutionPersonalData,
   removeInstitution,
   saveApiKey,
   saveCatalogueItem,
   saveCompliance,
   saveGroup,
+  saveAcademySettings,
   saveInstitutionProfile,
   saveInstitutionPublic,
   saveInvoice,
@@ -73,6 +78,7 @@ import {
   type WebhookItem,
 } from '@/lib/institution-store';
 import { brandedInvite, makeJoinCode, normaliseCustomDomain, type OemLicence } from '@/lib/oem';
+import { blankAcademySettings, type AcademySettings } from '@/lib/academy-settings';
 import { publishedBooks } from '@/lib/reads/seed';
 import { canManageInstitution, isSuperAdmin } from '@/lib/roles';
 import { institutionOrigin } from '@/lib/white-label';
@@ -103,6 +109,7 @@ export default function InstitutionConsolePage() {
   const [audit, setAudit] = useState<AuditEvent[]>([]);
   const [contentOptions, setContentOptions] = useState<AllocationOption[]>([]);
   const [identity, setIdentity] = useState<IdentityMode>(identityMode({}));
+  const [settings, setSettings] = useState<AcademySettings>(blankAcademySettings());
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const allowed = canManageInstitution(account, institutionId);
@@ -120,7 +127,7 @@ export default function InstitutionConsolePage() {
     }
     const stored = await loadProfile(institutionId);
     const row = directoryRow(found, stored);
-    const [licenceRows, programmeRows, people, catalogueRows, complianceRows, invoiceRows, webhookRows, keyRows, pathRows, skillRows, auditRows, courses] = await Promise.all([
+    const [licenceRows, programmeRows, people, catalogueRows, complianceRows, invoiceRows, webhookRows, keyRows, pathRows, skillRows, auditRows, courses, academySettings] = await Promise.all([
       listOemLicences(institutionId),
       getProgrammes().catch(() => []),
       loadPeople(institutionId),
@@ -133,6 +140,7 @@ export default function InstitutionConsolePage() {
       listSkills(institutionId).catch(() => []),
       listAudit(institutionId).catch(() => []),
       getAllCourses().catch(() => []),
+      loadAcademySettings(institutionId).catch(() => blankAcademySettings()),
     ]);
     setInstitution(found);
     setProfile(row.profile);
@@ -149,6 +157,7 @@ export default function InstitutionConsolePage() {
     setPaths(pathRows);
     setSkills(skillRows);
     setAudit(auditRows);
+    setSettings(academySettings);
     setContentOptions([
       ...courses.map((course) => ({ token: `course:${course.id}`, label: course.title, group: 'Courses' })),
       ...publishedBooks().map((book) => ({ token: `book:${book.id}`, label: book.title, group: 'Books' })),
@@ -241,9 +250,19 @@ export default function InstitutionConsolePage() {
         if (branding.hidePoweredBy && !canHidePoweredBy(profile.plan)) {
           throw new Error('Hiding “Powered by Poket School” is available on Enterprise and OEM plans.');
         }
-        await saveInstitutionPublic(institutionId, { subdomain, customDomain, branding });
+        let previousSubdomains = institution.previousSubdomains ?? [];
+        if (subdomain && institution.subdomain && subdomain !== institution.subdomain) {
+          previousSubdomains = await recordSubdomainRename(institutionId, previousSubdomains, institution.subdomain, subdomain);
+        }
+        await saveInstitutionPublic(institutionId, {
+          subdomain,
+          customDomain,
+          branding,
+          previousSubdomains,
+          ...(customDomain !== (institution.customDomain ?? '') ? { customDomainStatus: 'pending', customDomainMessage: '' } : {}),
+        });
         await note('save-brand', subdomain || customDomain || branding.displayName);
-        toast.success(subdomain ? `Live at ${institutionOrigin(subdomain)}` : 'Branding saved.');
+        toast.success(subdomain ? `Live at ${institutionOrigin(subdomain)} and /a/${subdomain}` : 'Branding saved.');
       } else if (action.type === 'status' || action.type === 'delete') {
         if (!platform) throw new Error('Only a platform administrator can change academy status.');
         if (action.type === 'delete') {
@@ -284,6 +303,7 @@ export default function InstitutionConsolePage() {
           const storedKind = kind === 'book' || kind === 'path' ? kind : 'course';
           await saveCatalogueItem(institutionId, { kind: storedKind, refId, title, visibility: action.visibility });
         }
+        await publishCatalogueSnapshot(institutionId);
         await note('catalogue', action.visibility);
         toast.success('Catalogue updated.');
       } else if (action.type === 'compliance') {
@@ -369,6 +389,48 @@ export default function InstitutionConsolePage() {
         });
         await note('licence', String(action.seats));
         toast.success('Licence saved.');
+      } else if (action.type === 'save-settings') {
+        const saved = await saveAcademySettings(institutionId, action.settings);
+        await saveInstitutionPublic(institutionId, {
+          branding: {
+            ...institution.branding,
+            mobileAppName: saved.mobileAppName || institution.branding?.mobileAppName,
+            mobileIconUrl: saved.mobileIconUrl || institution.branding?.mobileIconUrl,
+            splashColor: saved.splashColor || institution.branding?.splashColor,
+          },
+        });
+        await note('save-settings', saved.signupPolicy);
+        toast.success('Academy settings saved.');
+      } else if (action.type === 'verify-domain') {
+        const host = normaliseCustomDomain(institution.customDomain ?? '');
+        if (!host) throw new Error('Save a custom domain first.');
+        if (!canUseCustomDomain(profile.plan)) throw new Error('A custom domain is available on Enterprise and OEM plans.');
+        try {
+          const result = await authedFetch('/api/institutions/domain', {
+            method: 'POST',
+            body: JSON.stringify({ institutionId, domain: host }),
+          });
+          const status = result && typeof result === 'object' && typeof result.status === 'string' ? result.status : 'manual';
+          const message = result && typeof result === 'object' && typeof result.message === 'string' ? result.message : '';
+          await saveInstitutionPublic(institutionId, {
+            customDomainStatus: status === 'manual' || status === 'pending' || status === 'verified' || status === 'active' || status === 'error' ? status : 'manual',
+            customDomainMessage: message,
+          });
+          await note('verify-domain', status);
+          toast.success(message || 'Domain check finished.');
+        } catch (error) {
+          if (error instanceof ApiError && (error.status === 400 || error.status === 403)) throw error;
+          await saveInstitutionPublic(institutionId, {
+            customDomainStatus: 'manual',
+            customDomainMessage: 'Automatic SSL is waiting for VERCEL_TOKEN and VERCEL_PROJECT_ID. Use the DNS instructions.',
+          });
+          await note('verify-domain', 'manual');
+          toast.message('Automatic SSL is waiting for the Vercel token. The DNS instructions on this page still apply.');
+        }
+      } else if (action.type === 'privacy-erase') {
+        await redactInstitutionPersonalData(institutionId);
+        await note('privacy-erase');
+        toast.success('Personal data for this academy was erased.');
       }
       await reload();
     } catch (error) {
@@ -413,6 +475,10 @@ export default function InstitutionConsolePage() {
         audit={audit}
         contentOptions={contentOptions}
         identity={identity}
+        settings={settings}
+        domainStatus={institution.customDomainStatus ?? ''}
+        domainMessage={institution.customDomainMessage ?? ''}
+        previousSubdomains={institution.previousSubdomains ?? []}
         superAdmin={isSuperAdmin(account)}
         currency={profile.currency || currency}
         busy={busy}

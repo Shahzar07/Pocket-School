@@ -18,6 +18,7 @@ import {
   type InstitutionProfile, type InstitutionStatus, type LeadDraft, type LeadStatus,
 } from './enterprise';
 import { saveSchedule } from './insights/client';
+import { publicTenantPatch, sanitiseAcademySettings, type AcademySettings } from './academy-settings';
 
 export interface DemoLead extends LeadDraft {
   id: string;
@@ -191,6 +192,56 @@ export async function updateDemoLead(id: string, status: LeadStatus): Promise<vo
 
 export async function recordPlatformAudit(event: Omit<AuditEvent, 'at'>): Promise<void> {
   await addDoc(collection(db, 'admin_audit'), { ...omitUndefined(event), at: new Date().toISOString() });
+}
+
+export async function loadAcademySettings(institutionId: string): Promise<AcademySettings> {
+  const snap = await getDoc(doc(db, 'institutions', institutionId, 'settings', 'academy'));
+  return sanitiseAcademySettings(snap.exists() ? snap.data() : {});
+}
+
+export async function saveAcademySettings(institutionId: string, settings: AcademySettings): Promise<AcademySettings> {
+  const clean = sanitiseAcademySettings(settings);
+  await setDoc(doc(db, 'institutions', institutionId, 'settings', 'academy'), clean, { merge: true });
+  await updateInstitution(institutionId, publicTenantPatch(clean));
+  return clean;
+}
+
+/** Point every previous host label at the current slug. Old labels stay reserved. */
+export async function recordSubdomainRename(
+  institutionId: string,
+  previous: readonly string[],
+  from: string,
+  to: string,
+): Promise<string[]> {
+  const prior = [...new Set([...previous, from].map((slug) => slug.trim().toLowerCase()).filter((slug) => slug && slug !== to))];
+  for (const slug of prior) {
+    await setDoc(doc(db, 'subdomain_redirects', slug), { institutionId, subdomain: to });
+  }
+  return prior;
+}
+
+export async function publishCatalogueSnapshot(institutionId: string): Promise<void> {
+  const items = await listCatalogue(institutionId);
+  const publicCatalogueIds = items
+    .filter((item) => item.visibility === 'public' && item.kind === 'course')
+    .map((item) => item.refId);
+  await updateInstitution(institutionId, { publicCatalogueIds });
+}
+
+/** Clear contact and member identifiers after a privacy erasure request. */
+export async function redactInstitutionPersonalData(institutionId: string): Promise<void> {
+  const [members, profile] = await Promise.all([
+    listAcademyMembers(institutionId),
+    loadProfile(institutionId),
+  ]);
+  for (const member of members) {
+    await setDoc(doc(db, 'institutions', institutionId, 'members', member.id), { name: 'Erased', email: '' }, { merge: true });
+  }
+  await saveInstitutionProfile(institutionId, {
+    ...profile,
+    billingEmail: '',
+    contacts: profile.contacts.map((contact) => ({ ...contact, name: 'Erased', email: '', phone: '' })),
+  });
 }
 
 export interface CatalogueItem {

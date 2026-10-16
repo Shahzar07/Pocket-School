@@ -18,13 +18,14 @@ import { motion } from 'motion/react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { loginBlocked, requiresAdminLogin } from '@/lib/admin-console';
+import { getInstitution } from '@/lib/db';
 import { landingPath, readActiveMode } from '@/lib/account-modes';
 import { friendlyError } from '@/lib/design/system';
 import { useWhiteLabel } from '@/components/white-label-provider';
 
 export default function LoginPage() {
   const { t } = useTranslation();
-  const { branding } = useWhiteLabel();
+  const { branding, institution } = useWhiteLabel();
   const router = useRouter();
   const [step, setStep] = useState<'credentials' | 'twofa'>('credentials');
   const [email, setEmail] = useState('');
@@ -96,7 +97,12 @@ export default function LoginPage() {
     // Super admin and unverified accounts go straight in; verified accounts
     // get an email 2FA code — unless the email service isn't configured, in
     // which case we never lock anyone out.
-    const wants2fa = data?.twoFactorEnabled === true || !!(data?.emailVerified || data?.phoneVerified);
+    let academyRequires = institution?.require2fa === true;
+    if (!academyRequires && typeof data?.institutionId === 'string') {
+      const academy = await getInstitution(data.institutionId).catch(() => null);
+      academyRequires = academy?.require2fa === true;
+    }
+    const wants2fa = data?.twoFactorEnabled === true || academyRequires || !!(data?.emailVerified || data?.phoneVerified);
 
     if (!wants2fa) {
       await routeUser(uid);
@@ -241,6 +247,15 @@ export default function LoginPage() {
           <div className="mb-9">
             <h2 className="text-3xl font-bold text-white mb-2">{branding.loginHeadline || t('authForm.welcome')}</h2>
             <p className="text-white/45 text-sm">{branding.loginBody || branding.tagline || t('authForm.details')}</p>
+            {institution?.signupPolicy === 'invite' && (
+              <p className="mt-3 text-sm text-white/60">This academy adds people by invitation.</p>
+            )}
+            {institution?.signupPolicy === 'domain' && (
+              <p className="mt-3 text-sm text-white/60">New accounts use an email on an allowed academy domain.</p>
+            )}
+            {institution?.require2fa && (
+              <p className="mt-3 text-sm text-white/60">This academy requires an email code at sign-in.</p>
+            )}
           </div>
 
           <button

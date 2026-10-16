@@ -1130,6 +1130,17 @@ service cloud.firestore {
       }
     }
 
+    match /subdomain_redirects/{slug} {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        || (isInstitutionAdmin()
+            && incoming().institutionId == myInstitution()
+            && incoming().subdomain is string
+            && incoming().institutionId is string);
+      allow delete: if isAdmin()
+        || (isInstitutionAdmin() && resource.data.institutionId == myInstitution());
+    }
+
     match /join_codes/{code} {
       allow read: if isSignedIn();
       allow create, update: if isAdmin()

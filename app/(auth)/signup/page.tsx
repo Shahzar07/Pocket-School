@@ -25,6 +25,8 @@ import { authedFetch } from '@/lib/api-client';
 import { publicDisplayName } from '@/lib/display-name';
 import { CountrySelect, PhoneField } from '@/components/country-select';
 import { readGeoCountry } from '@/lib/countries';
+import { useWhiteLabel } from '@/components/white-label-provider';
+import { passwordAccepts, signupDecision } from '@/lib/academy-settings';
 
 const ROLES = [
   { id: 'student', titleKey: 'signup.student', icon: <GraduationCap className="w-5 h-5" /> },
@@ -52,6 +54,7 @@ function ageFromDob(dob: string): number | null {
 export default function SignupPage() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
+  const { institution: academy } = useWhiteLabel();
   // 'form' → details, 'consent' → guardian consent code (minors), 'verify' → email code
   const [step, setStep] = useState<'form' | 'consent' | 'verify'>('form');
 
@@ -181,6 +184,22 @@ export default function SignupPage() {
   const validateForm = (): boolean => {
     if (!name.trim() || !email.trim() || !password) {
       toast.error(t('signup.fillRequired'));
+      return false;
+    }
+    const academySignup = signupDecision({
+      policy: academy?.signupPolicy,
+      domains: academy?.allowedEmailDomains,
+      email,
+    });
+    if (academy && !academySignup.ok) {
+      toast.error(academySignup.reason);
+      return false;
+    }
+    const academyPassword = academy
+      ? passwordAccepts(password, { minLength: academy.passwordMinLength, requireSymbol: academy.passwordRequireSymbol })
+      : null;
+    if (academyPassword) {
+      toast.error(academyPassword);
       return false;
     }
     if (password.length < 6) {

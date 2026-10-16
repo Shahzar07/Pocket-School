@@ -44,6 +44,7 @@ import { isFeatureEnabled, type FeatureFlag } from '@/lib/feature-flags';
 import { useFeatureFlags } from '@/hooks/use-feature-flags';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
+import { AcademySession } from '@/components/academy-session';
 
 type Role = 'student' | 'teacher' | 'parent' | 'admin' | 'institution_admin';
 
@@ -472,6 +473,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
+      <AcademySession />
       <a href="#dashboard-main" className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-xl focus:bg-card focus:px-3 focus:py-2">
         Skip to content
       </a>
