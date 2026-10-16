@@ -66,6 +66,8 @@ const SHOTS = [
 ] as const;
 
 const FAQ = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7'] as const;
+const AUDIENCES = ['students', 'parents', 'teachers', 'schools'] as const;
+type Audience = (typeof AUDIENCES)[number];
 
 function landingMoney(amount: number, currency: string): string {
   if (Number.isInteger(amount)) {
@@ -137,6 +139,8 @@ export function LandingPage() {
   const rootRef = useRef<HTMLElement>(null);
   useHomeMotion(rootRef);
   const [annual, setAnnual] = useState(false);
+  const [audience, setAudience] = useState<Audience>('students');
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const { config, currency } = usePricing();
   const { user, profile } = useAuthSTORE();
   const languageCount = LANGUAGES.length;
@@ -149,6 +153,11 @@ export function LandingPage() {
           ? '/dashboard/parent'
           : '/dashboard/student';
   const startHref = user ? dashboard : '/signup';
+  const moveTab = (index: number) => {
+    const next = AUDIENCES[(index + AUDIENCES.length) % AUDIENCES.length];
+    setAudience(next);
+    tabRefs.current[AUDIENCES.indexOf(next)]?.focus();
+  };
 
   return (
     <main className={`${s.home} bg-background text-foreground`} ref={rootRef}>
@@ -216,6 +225,80 @@ export function LandingPage() {
           ))}
         </ul>
       </nav>
+
+      <section className="mx-auto max-w-6xl px-4 py-16 md:py-24" id="audiences">
+        <h2 className="text-[clamp(32px,4vw,48px)] font-medium leading-tight">{t('landing.audiences.label')}</h2>
+        <div
+          className="mt-6 flex gap-2 overflow-x-auto"
+          role="tablist"
+          aria-label={t('landing.audiences.label')}
+          onKeyDown={(event) => {
+            const index = AUDIENCES.indexOf(audience);
+            if (event.key === 'ArrowRight') {
+              event.preventDefault();
+              moveTab(index + 1);
+            }
+            if (event.key === 'ArrowLeft') {
+              event.preventDefault();
+              moveTab(index - 1);
+            }
+            if (event.key === 'Home') {
+              event.preventDefault();
+              moveTab(0);
+            }
+            if (event.key === 'End') {
+              event.preventDefault();
+              moveTab(AUDIENCES.length - 1);
+            }
+          }}
+        >
+          {AUDIENCES.map((id, index) => {
+            const selected = audience === id;
+            return (
+              <button
+                key={id}
+                ref={(node) => {
+                  tabRefs.current[index] = node;
+                }}
+                type="button"
+                role="tab"
+                id={`audience-${id}`}
+                aria-selected={selected}
+                aria-controls={`audience-panel-${id}`}
+                tabIndex={selected ? 0 : -1}
+                className={`h-11 shrink-0 rounded-full px-4 text-sm font-semibold ${
+                  selected
+                    ? 'bg-primary text-primary-foreground'
+                    : 'border border-border bg-card text-foreground'
+                }`}
+                onClick={() => setAudience(id)}
+              >
+                {t(`landing.audiences.${id}.tab`)}
+              </button>
+            );
+          })}
+        </div>
+        <div
+          role="tabpanel"
+          id={`audience-panel-${audience}`}
+          aria-labelledby={`audience-${audience}`}
+          className="mt-6 rounded-3xl border border-border bg-card p-6 shadow-[var(--shadow-card)] md:p-8"
+          data-home-reveal="card"
+        >
+          <h3 className="text-2xl font-medium md:text-3xl">{t(`landing.audiences.${audience}.title`)}</h3>
+          <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground">
+            {t(`landing.audiences.${audience}.body`)}
+          </p>
+          <ul className="mt-6 grid gap-3 md:grid-cols-3">
+            {(['a', 'b', 'c'] as const).map((point) => (
+              <li key={point} className="flex gap-2 text-sm leading-relaxed">
+                <CheckCircle2 className="mt-0.5 shrink-0 text-primary" size={18} aria-hidden />
+                <span>{t(`landing.audiences.${audience}.${point}`)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
       <section className="mx-auto max-w-6xl px-4 py-16 md:py-24" id="teachers">
         <p className="text-sm font-semibold text-primary">{t('landing.teachers.eyebrow')}</p>

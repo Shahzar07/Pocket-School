@@ -3,7 +3,7 @@
  * (Simplified) and Tamil are human translations. Every other interface
  * language falls back to English until it is reviewed.
  *
- * Product names stay as they appear in the product: ET, ET Maths, Exam Prep,
+ * Product names stay as they appear in the product: ET AI, ET Maths, Exam Prep,
  * ET AI Live, CMS, Sparks, Poket Reads, Bloom’s mastery, and the rest.
  */
 export const landingEn = {
@@ -40,7 +40,7 @@ export const landingEn = {
     more: 'And many more worldwide',
   },
   cefr: {
-    banner: 'All ET language teachers are aligned to the Common European Framework of Reference for Languages (CEFR). A1 Beginner / A2 Elementary / B1 Intermediate / B2 Upper Intermediate / C1 Advanced / C2 Mastery — whether learning for school, an exam, travel, work, or pure curiosity.',
+    banner: 'All ET AI language teachers are aligned to the Common European Framework of Reference for Languages (CEFR). A1 Beginner / A2 Elementary / B1 Intermediate / B2 Upper Intermediate / C1 Advanced / C2 Mastery — whether learning for school, an exam, travel, work, or pure curiosity.',
   },
   pathwaysLabel: 'Programmes',
   audiences: {
@@ -48,7 +48,7 @@ export const landingEn = {
     students: {
       tab: 'Students',
       title: 'A subject teacher that stays with the question',
-      body: 'Open an ET teacher, work a problem in ET Maths, or turn a topic into study material in AI Studio.',
+      body: 'Open an ET AI teacher, work a problem in ET Maths, or turn a topic into study material in AI Studio.',
       a: 'ET Maths takes a problem you snap or type and walks it through.',
       b: 'Exam Prep turns notes you add into a plan that ends on the exam date.',
       c: 'A focus timer sits on the goal. Sparks are the balance those tools spend.',
@@ -84,7 +84,7 @@ export const landingEn = {
     lede: 'Short lines for each part of Poket School. The names are the ones in the product.',
     studio: {
       title: 'AI Studio',
-      body: 'ET writes Flashcards, a Mind Map, an Infographic, or Study Notes. ET Maths and Exam Prep sit beside it.',
+      body: 'ET AI writes Flashcards, a Mind Map, an Infographic, or Study Notes. ET Maths and Exam Prep sit beside it.',
     },
     goals: {
       title: 'Goals',
@@ -268,13 +268,13 @@ export const landingEn = {
     teachersBody: 'Every subject has a specialist. Ask anything, any time. ET AI never sleeps.',
     studioTitle: 'ET AI Studio',
     studioMeta: '11 formats',
-    studioBody: 'Upload notes or a photo. ET turns it into lessons, quizzes, mind maps, audio, and more.',
+    studioBody: 'Upload notes or a photo. ET AI turns it into lessons, quizzes, mind maps, audio, and more.',
     examTitle: 'Exam Prep',
     examMeta: 'your material',
     examBody: 'Your notes become a day-by-day plan ending on exam day — lessons, quizzes, and a full mock.',
     mathsTitle: 'ET Maths',
     mathsMeta: 'snap and solve',
-    mathsBody: 'Snap any maths problem. ET walks you through it step by step or shows the full solution.',
+    mathsBody: 'Snap any maths problem. ET AI walks you through it step by step or shows the full solution.',
     bloomTitle: "Bloom's mastery tracker",
     bloomBody: 'See exactly how deeply you understand every subject — six cognitive levels, every topic.',
     certificatesTitle: 'Certificates on completion',
@@ -370,7 +370,7 @@ export const landingEn = {
     body: "Poket School was built alongside Rochford's International School — tested and used by real students preparing for real examinations. Not theory. Real results.",
     card: "Rochford's International School — Ipoh, Malaysia. MOE-licensed private education provider. 20 years of experience with families, children, and schools. The live student base where Poket School content was first tested and used.",
   },
-  formatsLabel: 'Formats ET can write',
+  formatsLabel: 'Formats ET AI can write',
   shots: {
     eyebrow: 'The interface',
     title: 'Screens from the product',
@@ -449,7 +449,7 @@ export const landingEn = {
     q4: 'What are the add-ons?',
     a4: 'Two are named: ET AI Live and CMS. Each one needs a qualifying plan before it can be bought.',
     q5: 'How many languages are in the product?',
-    a5: 'The language list has {{count}} languages. English is the source. Menus for a language still marked for review stay in English, and ET can still reply in that language.',
+    a5: 'The language list has {{count}} languages. English is the source. Menus for a language still marked for review stay in English, and ET AI can still reply in that language.',
     q6: 'Which local payments are wired up?',
     a6: 'On a one-time ringgit checkout, FPX and GrabPay can sit with the card. Touch ’n Go, Boost, ShopeePay, and DuitNow QR go through the Malaysian gateway.',
     q7: 'Are official past papers copied into the product?',
@@ -507,7 +507,7 @@ export const landingMs = {
     students: {
       tab: 'Pelajar',
       title: 'Guru subjek yang kekal dengan soalan',
-      body: 'Buka guru ET, selesaikan soalan dalam ET Maths, atau jadikan topik bahan belajar dalam AI Studio.',
+      body: 'Buka guru ET AI, selesaikan soalan dalam ET Maths, atau jadikan topik bahan belajar dalam AI Studio.',
       a: 'ET Maths menerima soalan yang anda snap atau taip, lalu membimbingnya.',
       b: 'Exam Prep menukar nota yang anda tambah menjadi pelan yang tamat pada tarikh peperiksaan.',
       c: 'Pemasa fokus ada pada matlamat. Sparks ialah baki yang alat itu gunakan.',
@@ -543,7 +543,7 @@ export const landingMs = {
     lede: 'Satu baris untuk setiap bahagian Poket School. Nama ialah nama dalam produk.',
     studio: {
       title: 'AI Studio',
-      body: 'ET menulis Flashcards, Mind Map, Infographic, atau Study Notes. ET Maths dan Exam Prep ada di sebelahnya.',
+      body: 'ET AI menulis Flashcards, Mind Map, Infographic, atau Study Notes. ET Maths dan Exam Prep ada di sebelahnya.',
     },
     goals: {
       title: 'Goals',
@@ -620,11 +620,11 @@ export const landingMs = {
   },
   teachers: {
     eyebrow: 'AI Teachers',
-    title: 'Guru ET',
+    title: 'Guru ET AI',
     lede: 'Setiap nama ialah guru dalam produk.',
     open: 'Lihat AI Teachers',
   },
-  formatsLabel: 'Format yang ET boleh tulis',
+  formatsLabel: 'Format yang ET AI boleh tulis',
   shots: {
     eyebrow: 'Antara muka',
     title: 'Skrin dari produk',
@@ -679,7 +679,7 @@ export const landingMs = {
     q4: 'Apakah add-on itu?',
     a4: 'Dua yang dinamakan: ET AI Live dan CMS. Setiap satu memerlukan pelan yang layak sebelum boleh dibeli.',
     q5: 'Berapa bahasa dalam produk?',
-    a5: 'Senarai bahasa ada {{count}} bahasa. Bahasa Inggeris ialah sumber. Menu untuk bahasa yang masih perlu semakan kekal dalam bahasa Inggeris, dan ET masih boleh membalas dalam bahasa itu.',
+    a5: 'Senarai bahasa ada {{count}} bahasa. Bahasa Inggeris ialah sumber. Menu untuk bahasa yang masih perlu semakan kekal dalam bahasa Inggeris, dan ET AI masih boleh membalas dalam bahasa itu.',
     q6: 'Pembayaran tempatan mana yang disambungkan?',
     a6: 'Pada bayaran ringgit sekali, FPX dan GrabPay boleh ada bersama kad. Touch ’n Go, Boost, ShopeePay, dan DuitNow QR melalui gerbang Malaysia.',
     q7: 'Adakah kertas lepas rasmi disalin ke dalam produk?',
@@ -721,7 +721,7 @@ export const landingZh = {
     students: {
       tab: '学生',
       title: '一个跟着问题走的学科老师',
-      body: '打开一位 ET 老师，在 ET Maths 里做题，或在 AI Studio 里把题目变成学习材料。',
+      body: '打开一位 ET AI 老师，在 ET Maths 里做题，或在 AI Studio 里把题目变成学习材料。',
       a: 'ET Maths 接受你拍下或输入的题目，并一步步带你做。',
       b: 'Exam Prep 把你加入的笔记变成一份停在考试日的计划。',
       c: '专注计时器放在目标上。Sparks 是这些工具花费的余额。',
@@ -757,7 +757,7 @@ export const landingZh = {
     lede: 'Poket School 每一块用一句话说明。名字就是产品里的名字。',
     studio: {
       title: 'AI Studio',
-      body: 'ET 可以写出 Flashcards、Mind Map、Infographic 或 Study Notes。旁边是 ET Maths 和 Exam Prep。',
+      body: 'ET AI 可以写出 Flashcards、Mind Map、Infographic 或 Study Notes。旁边是 ET Maths 和 Exam Prep。',
     },
     goals: {
       title: 'Goals',
@@ -834,11 +834,11 @@ export const landingZh = {
   },
   teachers: {
     eyebrow: 'AI Teachers',
-    title: 'ET 老师',
+    title: 'ET AI 老师',
     lede: '每个名字都是产品里的一位老师。',
     open: '查看 AI Teachers',
   },
-  formatsLabel: 'ET 可以写的格式',
+  formatsLabel: 'ET AI 可以写的格式',
   shots: {
     eyebrow: '界面',
     title: '产品里的屏幕',
@@ -893,7 +893,7 @@ export const landingZh = {
     q4: '附加项有哪些？',
     a4: '有名字的是两个：ET AI Live 和 CMS。购买前各自需要符合条件的计划。',
     q5: '产品里有多少种语言？',
-    a5: '语言列表有 {{count}} 种。英文是源语言。仍待审阅的语言，菜单保持英文，ET 仍可以用那种语言回答。',
+    a5: '语言列表有 {{count}} 种。英文是源语言。仍待审阅的语言，菜单保持英文，ET AI 仍可以用那种语言回答。',
     q6: '接了哪些本地支付？',
     a6: '一次性令吉结账时，FPX 和 GrabPay 可以和银行卡一起出现。Touch ’n Go、Boost、ShopeePay 和 DuitNow QR 走马来西亚网关。',
     q7: '官方往年试卷会不会被复制进产品？',
@@ -935,7 +935,7 @@ export const landingTa = {
     students: {
       tab: 'மாணவர்கள்',
       title: 'கேள்வியுடன் இருக்கும் பாட ஆசிரியர்',
-      body: 'ஒரு ET ஆசிரியரைத் திற, ET Maths-இல் ஒரு கணக்கைச் செய், அல்லது AI Studio-வில் தலைப்பைப் படிப்புப் பொருளாக மாற்று.',
+      body: 'ஒரு ET AI ஆசிரியரைத் திற, ET Maths-இல் ஒரு கணக்கைச் செய், அல்லது AI Studio-வில் தலைப்பைப் படிப்புப் பொருளாக மாற்று.',
       a: 'நீங்கள் புகைப்படம் எடுத்த அல்லது தட்டச்சு செய்த கணக்கை ET Maths அடுக்குகளாக நடத்துகிறது.',
       b: 'நீங்கள் சேர்க்கும் குறிப்புகளை Exam Prep தேர்வு நாளில் முடியும் திட்டமாக மாற்றுகிறது.',
       c: 'கவன நேரங்காட்டி இலக்கில் இருக்கும். Sparks என்பது அந்தக் கருவிகள் செலவிடும் இருப்பு.',
@@ -1048,11 +1048,11 @@ export const landingTa = {
   },
   teachers: {
     eyebrow: 'AI Teachers',
-    title: 'ET ஆசிரியர்கள்',
+    title: 'ET AI ஆசிரியர்கள்',
     lede: 'ஒவ்வொரு பெயரும் தயாரிப்பில் உள்ள ஆசிரியர்.',
     open: 'AI Teachers-ஐப் பார்',
   },
-  formatsLabel: 'ET எழுதும் வடிவங்கள்',
+  formatsLabel: 'ET AI எழுதும் வடிவங்கள்',
   shots: {
     eyebrow: 'இடைமுகம்',
     title: 'தயாரிப்பின் திரைகள்',
@@ -1107,7 +1107,7 @@ export const landingTa = {
     q4: 'கூடுதல்கள் என்ன?',
     a4: 'பெயரிடப்பட்டவை இரண்டு: ET AI Live மற்றும் CMS. வாங்குவதற்கு முன் ஒவ்வொன்றுக்கும் தகுதியான திட்டம் வேண்டும்.',
     q5: 'தயாரிப்பில் எத்தனை மொழிகள்?',
-    a5: 'மொழிப் பட்டியலில் {{count}} மொழிகள். ஆங்கிலம் மூலம். இன்னும் மதிப்பாய்வு குறியிடப்பட்ட மொழியின் மெனுக்கள் ஆங்கிலத்திலேயே இருக்கும். ET அந்த மொழியில் பதிலளிக்கலாம்.',
+    a5: 'மொழிப் பட்டியலில் {{count}} மொழிகள். ஆங்கிலம் மூலம். இன்னும் மதிப்பாய்வு குறியிடப்பட்ட மொழியின் மெனுக்கள் ஆங்கிலத்திலேயே இருக்கும். ET AI அந்த மொழியில் பதிலளிக்கலாம்.',
     q6: 'எந்த உள்ளூர் கட்டணங்கள் இணைக்கப்பட்டுள்ளன?',
     a6: 'ஒருமுறை ரிங்கிட் செலுத்துதலில் FPX மற்றும் GrabPay அட்டையுடன் இருக்கலாம். Touch ’n Go, Boost, ShopeePay, DuitNow QR மலேசிய நுழைவாயில் வழியாகச் செல்லும்.',
     q7: 'அதிகாரப்பூர்வ கடந்த தாள்கள் தயாரிப்பில் நகலெடுக்கப்படுமா?',

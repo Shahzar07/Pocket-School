@@ -1,7 +1,7 @@
 /**
  * AI-ASSISTED — NEEDS HUMAN REVIEW
  * Interface drafts for German, Russian and Turkish.
- * Proper nouns stay official: Poket School, ET, Sparks, AI Studio,
+ * Proper nouns stay official: Poket School, ET AI, Sparks, AI Studio,
  * Cambridge Assessment International Education, Pearson Edexcel, AQA,
  * Malaysian Ministry of Education.
  */
@@ -149,13 +149,13 @@ export const de = {
     analytics: 'Auswertung',
     analyticsDesc: 'Anonymisierte Nutzungsdaten, damit wir das Lernen verbessern können.',
     aiPerformance: 'KI-Leistung',
-    aiPerformanceDesc: 'Hilft uns, Antwortqualität und Personalisierung von ET zu verbessern.',
+    aiPerformanceDesc: 'Hilft uns, Antwortqualität und Personalisierung von ET AI zu verbessern.',
   },
   auth: {
     line1: 'Dein klügster',
     line2: 'Unterricht in der Tasche',
     subtitle: 'Lernen mit KI für IGCSE, A-Levels, Abschlüsse und darüber hinaus.',
-    f1title: 'ET — dein KI-Tutor',
+    f1title: 'ET AI — dein KI-Tutor',
     f1desc: 'Passt sich deiner Denkweise an, rund um die Uhr',
     f2title: 'IGCSE · A-Levels · Abschlüsse',
     f2desc: 'Volle Lernwege, in deinem Tempo',
@@ -166,7 +166,7 @@ export const de = {
   },
   switcher: {
     change: 'Sprache ändern',
-    uiFallback: 'Die Menüs dieser Sprache bleiben auf Englisch. ET antwortet auf {{language}}.',
+    uiFallback: 'Die Menüs dieser Sprache bleiben auf Englisch. ET AI antwortet auf {{language}}.',
   },
   lesson: {
     unit: 'Lektion (Einheit)',
@@ -182,8 +182,8 @@ export const de = {
     localizedBody: 'Übersetzte Lektion',
     save: 'Übersetzung speichern',
     clear: 'Diese Sprache löschen',
-    translate: 'Mit ET übersetzen',
-    confirmBody: 'ET übersetzt die englische Lektion nach {{language}}. Das verbraucht {{cost}} Sparks.',
+    translate: 'Mit ET AI übersetzen',
+    confirmBody: 'ET AI übersetzt die englische Lektion nach {{language}}. Das verbraucht {{cost}} Sparks.',
     confirm: 'Übersetzen und Sparks ausgeben',
     cancel: 'Abbrechen',
     working: 'Wird übersetzt…',
@@ -193,7 +193,7 @@ export const de = {
     empty: 'Füge vor dem Übersetzen einen englischen Titel oder Text hinzu.',
     failed: 'Übersetzung fehlgeschlagen. Es wurden keine Sparks verbraucht.',
     sourceManual: 'Getippt',
-    sourceAi: 'ET-Übersetzung',
+    sourceAi: 'ET AI-Übersetzung',
   },
   sparks: {
     title: 'Sparks-Stand',
@@ -393,13 +393,13 @@ export const ru = {
     analytics: 'Аналитика',
     analyticsDesc: 'Обезличенные данные об использовании, чтобы улучшать обучение.',
     aiPerformance: 'Качество ИИ',
-    aiPerformanceDesc: 'Помогает улучшать ответы ET и персонализацию.',
+    aiPerformanceDesc: 'Помогает улучшать ответы ET AI и персонализацию.',
   },
   auth: {
     line1: 'Самый умный класс',
     line2: 'у вас в кармане',
     subtitle: 'Обучение с ИИ для IGCSE, A-Levels, степеней и дальше.',
-    f1title: 'ET — ваш ИИ-наставник',
+    f1title: 'ET AI — ваш ИИ-наставник',
     f1desc: 'Подстраивается под то, как вы думаете, круглосуточно',
     f2title: 'IGCSE · A-Levels · Степени',
     f2desc: 'Полные учебные пути в вашем темпе',
@@ -410,7 +410,7 @@ export const ru = {
   },
   switcher: {
     change: 'Сменить язык',
-    uiFallback: 'Меню этого языка остаются на английском. ET отвечает на {{language}}.',
+    uiFallback: 'Меню этого языка остаются на английском. ET AI отвечает на {{language}}.',
   },
   lesson: {
     unit: 'Урок (блок)',
@@ -426,8 +426,8 @@ export const ru = {
     localizedBody: 'Переведённый урок',
     save: 'Сохранить перевод',
     clear: 'Очистить этот язык',
-    translate: 'Перевести с ET',
-    confirmBody: 'ET переведёт английский урок на {{language}}. Это спишет {{cost}} Sparks.',
+    translate: 'Перевести с ET AI',
+    confirmBody: 'ET AI переведёт английский урок на {{language}}. Это спишет {{cost}} Sparks.',
     confirm: 'Перевести и потратить Sparks',
     cancel: 'Отмена',
     working: 'Перевод…',
@@ -437,7 +437,7 @@ export const ru = {
     empty: 'Перед переводом добавьте английский заголовок или текст.',
     failed: 'Перевод не удался. Sparks не списаны.',
     sourceManual: 'Набран',
-    sourceAi: 'Перевод ET',
+    sourceAi: 'Перевод ET AI',
   },
   sparks: {
     title: 'Баланс Sparks',
@@ -637,13 +637,13 @@ export const tr = {
     analytics: 'Analiz',
     analyticsDesc: 'Öğrenme deneyimini geliştirmek için anonim kullanım verisi.',
     aiPerformance: 'YZ başarımı',
-    aiPerformanceDesc: 'ET yanıt kalitesini ve kişiselleştirmeyi geliştirmemize yardım eder.',
+    aiPerformanceDesc: 'ET AI yanıt kalitesini ve kişiselleştirmeyi geliştirmemize yardım eder.',
   },
   auth: {
     line1: 'En akıllı sınıfın',
     line2: 'cebine sığar',
     subtitle: 'IGCSE, A-Levels, dereceler ve ötesi için YZ ile öğrenme.',
-    f1title: 'ET — YZ öğretmenin',
+    f1title: 'ET AI — YZ öğretmenin',
     f1desc: 'Düşünme biçimine uyum sağlar, günün her saati',
     f2title: 'IGCSE · A-Levels · Dereceler',
     f2desc: 'Tam akademik yollar, senin tempon',
@@ -654,7 +654,7 @@ export const tr = {
   },
   switcher: {
     change: 'Dili değiştir',
-    uiFallback: 'Bu dilin menüleri İngilizce kalır. ET {{language}} dilinde yanıt verir.',
+    uiFallback: 'Bu dilin menüleri İngilizce kalır. ET AI {{language}} dilinde yanıt verir.',
   },
   lesson: {
     unit: 'Ders (ünite)',
@@ -670,8 +670,8 @@ export const tr = {
     localizedBody: 'Çevrilmiş ders',
     save: 'Çeviriyi kaydet',
     clear: 'Bu dili temizle',
-    translate: 'ET ile çevir',
-    confirmBody: 'ET, İngilizce dersi {{language}} diline çevirecek. Bu {{cost}} Sparks kullanır.',
+    translate: 'ET AI ile çevir',
+    confirmBody: 'ET AI, İngilizce dersi {{language}} diline çevirecek. Bu {{cost}} Sparks kullanır.',
     confirm: 'Çevir ve Sparks harca',
     cancel: 'Vazgeç',
     working: 'Çevriliyor…',
@@ -681,7 +681,7 @@ export const tr = {
     empty: 'Çevirmeden önce İngilizce bir başlık veya metin ekle.',
     failed: 'Çeviri başarısız. Sparks harcanmadı.',
     sourceManual: 'Elle yazıldı',
-    sourceAi: 'ET çevirisi',
+    sourceAi: 'ET AI çevirisi',
   },
   sparks: {
     title: 'Sparks bakiyesi',
