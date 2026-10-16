@@ -21,6 +21,7 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { AI_TEACHERS } from '@/lib/ai-teachers';
 import { coachingForTeacher } from '@/lib/essays/coaching';
 import { MathMarkdown } from '@/components/math-markdown';
+import { HandwritingCapture } from '@/components/handwriting-capture';
 import { LiveVoiceSession } from '@/components/live-voice-session';
 import { LANGUAGES, LANGUAGE_STORAGE_KEY, RECOGNITION_LANG } from '@/lib/languages';
 import { Speaker, SentenceStream } from '@/lib/speech';
@@ -638,6 +639,7 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
             </div>
             <div className="p-3">
               <div className="flex items-end gap-2 max-w-3xl mx-auto">
+                <HandwritingCapture tone="onDark" onText={text => setInput(current => current.trim() ? `${current.trim()}\n${text}` : text)} />
                 <textarea
                   value={input}
                   onChange={e => setInput(e.target.value)}
@@ -710,6 +712,7 @@ function ProblemCard({ item, accent, onCheck }: { item: ProblemItem; accent: str
         {item.submitted && <span className="text-[10px] font-bold text-sky-300">Checking in chat →</span>}
       </div>
       <div className="prose prose-sm prose-invert max-w-none prose-p:my-1 mb-3"><MathMarkdown>{item.prompt}</MathMarkdown></div>
+      <HandwritingCapture tone="onDark" onText={text => setAnswer(current => current.trim() ? `${current.trim()}\n${text}` : text)} />
       <textarea
         value={answer}
         onChange={e => setAnswer(e.target.value)}

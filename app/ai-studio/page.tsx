@@ -35,6 +35,7 @@ import {
 import { PROGRAMMES, studioModeForProgramme, subjectsForProgramme } from '@/lib/programmes';
 import { bookSourcePrompt, parseBookCommand } from '@/lib/platform/studio-commands';
 import { EssaysDesk } from '@/components/essays/essays-desk';
+import { HandwritingCapture } from '@/components/handwriting-capture';
 import { BOOKS, bookById } from '@/lib/reads/seed';
 
 type FormatId = 'text' | 'flashcards' | 'quiz' | 'slides' | 'notes' | 'summary' | 'problems' | 'glossary' | 'mindmap' | 'infographic' | 'videoScript' | 'audioScript';
@@ -678,6 +679,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                     className={`w-full bg-transparent outline-none resize-none px-4 pt-3 pb-1 text-[15px] ${C.text} placeholder:text-muted-foreground`}
                   />
                   <div className="flex items-center gap-1.5 px-3 pb-3 flex-wrap">
+                    <HandwritingCapture disabled={busy} onText={text => setInput(current => current.trim() ? `${current.trim()}\n${text}` : text)} />
                     {/* Skills picker */}
                     <div className="relative">
                       <button

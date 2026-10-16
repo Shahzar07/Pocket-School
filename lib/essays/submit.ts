@@ -19,7 +19,19 @@ export function reviewSubmission(input: {
   body: string;
   signals: IntegritySignals;
   title?: string;
+  /** Handwriting is transcribed, not typed, so paste and AI-likelihood checks do not apply. */
+  handwritten?: boolean;
 }): SubmissionReview {
+  if (input.handwritten) {
+    return {
+      flagged: false,
+      status: 'clear',
+      message: 'ET AI can mark this handwritten submission.',
+      score: 0,
+      evidence: [],
+      aiLikelihood: 0,
+    };
+  }
   const aiLikelihood = Math.max(input.signals.aiLikelihood ?? 0, aiLikelihoodSignal(input.body));
   const signals: IntegritySignals = { ...input.signals, aiLikelihood };
   const drafted = buildIntegrityCase({ signals, assignmentTitle: input.title });

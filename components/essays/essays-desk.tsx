@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { PenLine, Upload } from 'lucide-react';
+import { HandwritingCapture } from '@/components/handwriting-capture';
 import { toast } from 'sonner';
 import { EssayDelivery } from '@/components/essays/essay-delivery';
 import { EssayGrades } from '@/components/essays/essay-grades';
@@ -191,45 +192,53 @@ export function EssaysDesk() {
     captureRef.current = emptyCapture(Date.now());
   }
 
-  async function submit() {
-    if (!body.trim()) {
+  async function submit(options?: { handwritten?: boolean; text?: string; assist?: AssistEntry[] }) {
+    const essayBody = (options?.text ?? body).trim();
+    const handwritten = options?.handwritten === true;
+    const baseAssist = options?.assist ?? assist;
+    if (!essayBody) {
       toast.error('Write the essay before submitting.');
       return;
     }
+    if (options?.text) setBody(options.text);
     setChecking(true);
     let modelScore = 0;
-    const integrity = new AbortController();
-    const integrityTimer = setTimeout(() => integrity.abort(), 4000);
-    try {
-      const res = await fetch('/api/ai/integrity-check', {
-        method: 'POST',
-        signal: integrity.signal,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: body, assignmentTitle: title }),
-      });
-      if (res.ok) {
-        const data = await res.json() as { aiScore?: number };
-        if (typeof data.aiScore === 'number') modelScore = data.aiScore;
+    if (!handwritten) {
+      const integrity = new AbortController();
+      const integrityTimer = setTimeout(() => integrity.abort(), 4000);
+      try {
+        const res = await fetch('/api/ai/integrity-check', {
+          method: 'POST',
+          signal: integrity.signal,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: essayBody, assignmentTitle: title }),
+        });
+        if (res.ok) {
+          const data = await res.json() as { aiScore?: number };
+          if (typeof data.aiScore === 'number') modelScore = data.aiScore;
+        }
+      } catch {
+        modelScore = 0;
+      } finally {
+        clearTimeout(integrityTimer);
       }
-    } catch {
-      modelScore = 0;
-    } finally {
-      clearTimeout(integrityTimer);
     }
-    const signals = {
-      ...captureToSignals(captureRef.current, Date.now()),
-      aiLikelihood: modelScore,
-    };
-    const review = reviewSubmission({ body, signals, title });
+    const signals = handwritten
+      ? { pasteEvents: 0, largeInsertChars: 0, aiLikelihood: 0 }
+      : {
+        ...captureToSignals(captureRef.current, Date.now()),
+        aiLikelihood: modelScore,
+      };
+    const review = reviewSubmission({ body: essayBody, signals, title, handwritten });
     if (review.flagged) {
-      const localMark = markEssay({ body, prompt, level });
+      const localMark = markEssay({ body: essayBody, prompt, level });
       const withheld = gradeIfClear(review, localMark);
       setMark(withheld);
       setStatus('flagged');
       setMessage(ESSAY_FLAG_MESSAGE);
       setEvidence(review.evidence);
       const entries: AssistEntry[] = [
-        ...assist,
+        ...baseAssist,
         { at: Date.now(), kind: 'submit', note: 'Submitted for marking.' },
         { at: Date.now() + 1, kind: 'flag', note: ESSAY_FLAG_MESSAGE },
       ];
@@ -274,7 +283,7 @@ export function EssaysDesk() {
       }
       caseRef.current = caseId;
       remember({
-        body,
+        body: essayBody,
         title,
         mark: null,
         status: 'flagged',
@@ -287,20 +296,34 @@ export function EssaysDesk() {
       return;
     }
 
-    const local = markEssay({ body, prompt, level });
+    const local = markEssay({ body: essayBody, prompt, level });
     setMark(local);
     setStatus('marked');
     setMessage(review.message);
     setEvidence(review.evidence);
-    const entries: AssistEntry[] = [...assist, { at: Date.now(), kind: 'submit', note: 'Submitted for marking.' }];
+    const entries: AssistEntry[] = [...baseAssist, { at: Date.now(), kind: 'submit', note: handwritten ? 'Handwritten work submitted for marking. Paste and AI-likelihood checks were skipped.' : 'Submitted for marking.' }];
     setAssist(entries);
-    remember({ body, title, mark: local, status: 'marked', message: review.message, evidence: review.evidence, assist: entries });
-    const remote = await postEssay('mark', { body, prompt, level });
+    remember({ body: essayBody, title, mark: local, status: 'marked', message: review.message, evidence: review.evidence, assist: entries });
+    const remote = await postEssay('mark', { body: essayBody, prompt, level });
     setChecking(false);
     if (remote?.mark) {
       setMark(remote.mark);
-      remember({ body, title, mark: remote.mark, status: 'marked', message: review.message, evidence: review.evidence, assist: entries });
+      remember({ body: essayBody, title, mark: remote.mark, status: 'marked', message: review.message, evidence: review.evidence, assist: entries });
     }
+  }
+
+  async function onHandwriting(text: string) {
+    resetCapture();
+    setMode('write');
+    setMark(null);
+    setStatus('draft');
+    setMessage('');
+    const entries: AssistEntry[] = [
+      ...assist,
+      { at: Date.now(), kind: 'handwriting', note: 'A handwritten photo was read. Paste and AI-likelihood checks were not applied.' },
+    ];
+    setAssist(entries);
+    await submit({ handwritten: true, text, assist: entries });
   }
 
   function rewrite() {
@@ -461,6 +484,7 @@ export function EssaysDesk() {
                   <button type="button" data-testid="submit-essay" disabled={checking} onClick={() => void submit()} className="h-10 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50">
                     {checking ? 'ET AI is checking…' : 'Submit for marking'}
                   </button>
+                  <HandwritingCapture disabled={checking} onText={onHandwriting} />
                   <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border border-border px-4 text-sm font-semibold">
                     <Upload className="h-4 w-4" /> Upload
                     <input aria-label="Upload an essay" type="file" accept=".txt,.md,.docx,.pdf,.html,.htm" className="sr-only" onChange={event => { void onUpload(event.target.files?.[0]); event.target.value = ''; }} />
@@ -472,7 +496,7 @@ export function EssaysDesk() {
               <p className="text-sm text-muted-foreground">Planning help is off for this assessment.</p>
             )}
             {mode === 'write' && (
-              <p className="text-sm text-muted-foreground">ET Essays records paste and large insertions, then checks whether the writing appears AI-generated.</p>
+              <p className="text-sm text-muted-foreground">Typed work is checked for paste and writing that appears AI-generated. A handwritten photo is read and marked straight away, without those checks.</p>
             )}
           </div>
 

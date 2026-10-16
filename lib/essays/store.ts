@@ -14,7 +14,7 @@ export const ESSAY_STORAGE_KEY = 'poket-et-essays';
 export const ESSAY_POLICY_KEY = 'poket-et-essays-policy';
 
 export type EssayStatus = 'draft' | 'marked' | 'flagged' | 'released';
-export type AssistKind = 'question' | 'plan' | 'exemplar' | 'submit' | 'flag' | 'override' | 'resubmit';
+export type AssistKind = 'question' | 'plan' | 'exemplar' | 'submit' | 'flag' | 'override' | 'resubmit' | 'handwriting';
 
 export interface AssistEntry {
   at: number;

@@ -128,6 +128,16 @@ test('a paste burst or machine-like prose withholds the grade', () => {
   assert.equal(even.flagged, true);
   assert.equal(even.status, 'Flagged – redo required');
 
+  const handwritten = reviewSubmission({
+    body: 'The river keeps the bridge. The river keeps the road. The river keeps the town. The river keeps the people.',
+    signals: { pasteEvents: 1, largeInsertChars: 400, aiLikelihood: 90 },
+    handwritten: true,
+  });
+  assert.equal(handwritten.flagged, false);
+  assert.equal(handwritten.aiLikelihood, 0);
+  assert.equal(handwritten.status, 'clear');
+  assert.ok(gradeIfClear(handwritten, markEssay({ body: 'Handwritten.', prompt: PROMPT, level: 'igcse' })));
+
   const typed = reviewSubmission({
     body: [
       'The harbour keeps the letter.',
