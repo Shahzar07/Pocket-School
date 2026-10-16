@@ -390,6 +390,7 @@ app/dashboard/calendar/page.tsx	Event deleted.
 app/dashboard/calendar/page.tsx	Event title *
 app/dashboard/calendar/page.tsx	Failed to create event.
 app/dashboard/calendar/page.tsx	Fill in title and date.
+app/dashboard/calendar/page.tsx	Month events and school terms live on this page.
 app/dashboard/calendar/page.tsx	New Event
 app/dashboard/calendar/page.tsx	No upcoming events.
 app/dashboard/calendar/page.tsx	Stay on top of deadlines and school events.
@@ -509,6 +510,7 @@ app/dashboard/parent/reports/page.tsx	Acknowledge and e-sign
 app/dashboard/parent/reports/page.tsx	No report cards yet.
 app/dashboard/parent/reports/page.tsx	Parent reply
 app/dashboard/parent/reports/page.tsx	Report cards
+app/dashboard/planner/page.tsx	Opening terms on the calendar…
 app/dashboard/profile/page.tsx	A parent can edit a profile only for an under-13 account.
 app/dashboard/profile/page.tsx	Check the new inbox. The email changes after you open the link.
 app/dashboard/profile/page.tsx	Child profile saved.
@@ -1910,12 +1912,15 @@ components/pip-guide.tsx	Pip, your guide
 components/pip-guide.tsx	Previous step
 components/pip-guide.tsx	Show me around
 components/planner/year-planner.tsx	A blank field shows every campus, class, or year group. Events with a different campus stay hidden.
+components/planner/year-planner.tsx	Add a term and at least one line. Weekends, holidays, and exam weeks are skipped.
 components/planner/year-planner.tsx	Add a term and at least one unit. Weekends, holidays, and exam weeks are skipped.
+components/planner/year-planner.tsx	Add term
 components/planner/year-planner.tsx	Loading the school year…
 components/planner/year-planner.tsx	National Day 2026-08-31
 components/planner/year-planner.tsx	Next month
 components/planner/year-planner.tsx	Nothing due in the next 7 days for this campus, class, or year group.
 components/planner/year-planner.tsx	Previous month
+components/planner/year-planner.tsx	Remove last term
 components/planner/year-planner.tsx	Save draft
 components/planner/year-planner.tsx	Schedule releases
 components/planner/year-planner.tsx	Start or import
@@ -1923,6 +1928,7 @@ components/planner/year-planner.tsx	Teaching weeks
 components/planner/year-planner.tsx	Term end
 components/planner/year-planner.tsx	Term start
 components/planner/year-planner.tsx	This week
+components/planner/year-planner.tsx	Two-way Google Calendar sync needs the owner&apos;s OAuth client. Until then, paste an ICS link or upload a term file.
 components/planner/year-planner.tsx	Who this view is for
 components/planner/year-planner.tsx	Year planner
 components/planner/year-planner.tsx	https://calendar.google.com/...ics
