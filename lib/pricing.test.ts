@@ -29,7 +29,9 @@ test('USD quotes use the stored monthly and annual amounts', () => {
   const annual = quotePlan(config, 'igcse_alevel', 'annual', 'USD');
   assert.equal(monthly?.currency, 'USD');
   assert.equal(monthly?.amount, 79);
-  assert.equal(annual?.amount, 711);
+  assert.equal(annual?.amount, 708);
+  assert.equal(quotePlan(config, 'professional', 'monthly', 'USD')?.amount, 99);
+  assert.equal(quotePlan(config, 'professional', 'annual', 'USD')?.amount, 888);
   assert.equal(annualFromMonthly(19, 0.25), 171);
   assert.equal(quotePlan(config, 'primary_secondary', 'annual', 'usd')?.amount, 171);
 });

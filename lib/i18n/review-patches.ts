@@ -106,85 +106,12 @@ const SEARCH: Record<string, { search: string; none: string }> = {
   kk: { search: 'Тілді іздеу', none: 'Сәйкес тіл жоқ.' },
 };
 
-const MALAY_SECTIONS = {
-  exam: { label: 'Kami menyediakan pelajar di samping' },
-  degrees: {
-    eyebrow: 'Program ijazah',
-    title: 'LLB, MBBS, Engineering dan Nursing',
-    lede: 'Termasuk dalam Professional & Degrees.',
-    llbBody: 'LLB Law merangkumi University of London (UoL) dan universiti lain. ET Law mengajar ijazah itu.',
-    mbbsBody: 'Ijazah perubatan penuh. ET Medicine termasuk dalam Professional & Degrees.',
-    engineeringBody: 'Program ijazah. ET Engineering termasuk dalam Professional & Degrees.',
-    nursingBody: 'Program ijazah. ET Nursing termasuk dalam Professional & Degrees.',
-  },
-  supplement: {
-    eyebrow: 'Kami melengkapi',
-    title: 'Persediaan di sisi sukatan',
-    body: 'Poket School menyediakan pelajar untuk program yang mereka sudah ikuti. Ia tidak menggantikan badan peperiksaan, universiti, atau sekolah perubatan.',
-    learners: 'Untuk siapa',
-    igcse: 'Pelajar IGCSE',
-    alevel: 'Pelajar A-Level',
-    llb: 'Calon LLB',
-    mbbs: 'Pelajar MBBS',
-    engineering: 'Pelajar Engineering',
-    nursing: 'Pelajar Nursing',
-    independent: 'Pelajar bebas',
-  },
-  reach: {
-    eyebrow: 'Jangkauan global',
-    title: 'Dari Kuala Lumpur ke Beijing',
-    body: "Poket School dibina di Malaysia bersama Rochford's International School, Ipoh, untuk pelajar dan sekolah di serantau dan seterusnya.",
-  },
-  rochford: {
-    eyebrow: "Rochford's International School, Ipoh",
-    title: 'Dibina bersama sebuah sekolah',
-    body: "Kewibawaan Poket School bermula dengan Rochford's International School, Ipoh. ET AI ada di sisi bilik darjah itu, dan di sisi bilik darjah yang menerimanya.",
-  },
-  schools: {
-    body: 'Institution merangkumi alat guru, papan pemuka institusi, kumpulan Sparks bersama, dan white-label untuk sekolah, kolej perubatan, sekolah undang-undang, dan pusat tuisyen. Beritahu kami tentang institusi itu dan kami akan membalas dari institutions@poketschool.ai.',
-  },
-};
-
-const ARABIC_SECTIONS = {
-  exam: { label: 'نُعِدّ المتعلمين إلى جانب' },
-  degrees: {
-    eyebrow: 'برامج الدرجات',
-    title: 'LLB وMBBS والهندسة والتمريض',
-    lede: 'مشمولة في Professional & Degrees.',
-    llbTitle: 'LLB Law',
-    llbBody: 'يغطي LLB Law جامعة لندن (UoL) وجامعات أخرى. يدرّس ET Law الدرجة.',
-    mbbsTitle: 'MBBS Medicine',
-    mbbsBody: 'درجة طبية كاملة. ET Medicine مشمول في Professional & Degrees.',
-    engineeringTitle: 'Engineering',
-    engineeringBody: 'برنامج درجة. ET Engineering مشمول في Professional & Degrees.',
-    nursingTitle: 'Nursing',
-    nursingBody: 'برنامج درجة. ET Nursing مشمول في Professional & Degrees.',
-  },
-  reach: {
-    eyebrow: 'انتشار عالمي',
-    title: 'من كوالالمبور إلى بكين',
-    body: "بُني Poket School في ماليزيا مع Rochford's International School, Ipoh، للمتعلمين والمدارس في المنطقة وخارجها.",
-  },
-  rochford: {
-    eyebrow: "Rochford's International School, Ipoh",
-    title: 'بُني مع مدرسة',
-    body: "مصداقية Poket School تبدأ مع Rochford's International School, Ipoh. يجلس ET AI إلى جانب ذلك الصف، وإلى جانب الصفوف التي تعتمده.",
-  },
-};
-
 export function reviewPatch(code: string): Record<string, unknown> | undefined {
   const hero = HERO[code];
   const search = SEARCH[code];
-  const landing = code === 'ms'
-    ? MALAY_SECTIONS
-    : code === 'ar'
-      ? { ...ARABIC_SECTIONS, hero: hero ?? undefined }
-      : hero
-        ? { hero }
-        : undefined;
-  if (!landing && !search) return undefined;
+  if (!hero && !search) return undefined;
   return {
-    ...(landing ? { landing } : {}),
+    ...(hero ? { landing: { hero } } : {}),
     ...(search ? { switcher: search } : {}),
   };
 }

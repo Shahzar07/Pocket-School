@@ -134,7 +134,7 @@ const enCore = {
     aup: 'Acceptable Use',
     contact: 'Contact',
     independent: 'Independent platform.',
-    disclaimer: 'Poket School is an independent learning and preparation platform. We are not affiliated with, endorsed by, or accredited by Cambridge Assessment International Education, Pearson Edexcel, AQA, the Malaysian Ministry of Education, or any other examination board or government body. All curriculum references are for alignment and preparation purposes only. Certificates issued by Poket School are platform-specific and do not constitute official academic qualifications.',
+    disclaimer: 'Poket School is not affiliated with, endorsed by, or accredited by Cambridge Assessment International Education (CAIE), Pearson Edexcel, Oxford AQA, the University of London, or any other examination board or government body. Curriculum references are for alignment and supplementary learning purposes only. Platform certificates are not official academic qualifications.',
     trading: 'trading as Poket School · Made in Malaysia',
     follow: 'Follow Us:',
   },
@@ -378,7 +378,7 @@ const ms = {
     aup: 'Penggunaan Diterima',
     contact: 'Hubungi',
     independent: 'Platform bebas.',
-    disclaimer: 'Poket School ialah platform pembelajaran dan persediaan yang bebas. Kami tidak bergabung dengan, disokong oleh, atau diakreditasi oleh Cambridge Assessment International Education, Pearson Edexcel, AQA, Kementerian Pendidikan Malaysia, atau mana-mana lembaga peperiksaan atau badan kerajaan yang lain. Semua rujukan kurikulum adalah untuk penjajaran dan persediaan sahaja. Sijil yang dikeluarkan oleh Poket School adalah khusus untuk platform dan bukan kelayakan akademik rasmi.',
+    disclaimer: 'Poket School tidak bergabung dengan, disokong oleh, atau diakreditasi oleh Cambridge Assessment International Education (CAIE), Pearson Edexcel, Oxford AQA, University of London, atau mana-mana lembaga peperiksaan atau badan kerajaan yang lain. Rujukan kurikulum adalah untuk penjajaran dan pembelajaran tambahan sahaja. Sijil platform bukan kelayakan akademik rasmi.',
     trading: 'berdagang sebagai Poket School · Dibuat di Malaysia',
     follow: 'Ikuti kami:',
   },
@@ -622,7 +622,7 @@ const zh = {
     aup: '可接受使用',
     contact: '联系',
     independent: '独立平台。',
-    disclaimer: 'Poket School 是一个独立的学习与备考平台。我们不隶属于、未获认可、也未获 Cambridge Assessment International Education、Pearson Edexcel、AQA、马来西亚教育部或任何其他考试委员会或政府机构认证。所有课程引用仅用于对齐与备考。Poket School 颁发的证书仅适用于本平台，不构成官方学历。',
+    disclaimer: 'Poket School 不隶属于、未获认可、也未获 Cambridge Assessment International Education (CAIE)、Pearson Edexcel、Oxford AQA、伦敦大学或任何其他考试委员会或政府机构认证。课程引用仅用于对齐与补充学习。平台证书不是官方学历。',
     trading: '以 Poket School 名义运营 · 马来西亚制造',
     follow: '关注我们：',
   },
@@ -866,7 +866,7 @@ const ta = {
     aup: 'ஏற்கத்தக்க பயன்பாடு',
     contact: 'தொடர்பு',
     independent: 'சுயாதீன தளம்.',
-    disclaimer: 'Poket School ஒரு சுயாதீன கற்றல் மற்றும் தயாரிப்பு தளம். Cambridge Assessment International Education, Pearson Edexcel, AQA, மலேசிய கல்வி அமைச்சு அல்லது வேறு எந்தத் தேர்வு வாரியத்துடனும் அரசு அமைப்புடனும் நாங்கள் இணைக்கப்படவில்லை, அங்கீகரிக்கப்படவில்லை, அங்கீகாரம் பெறவில்லை. பாடத்திட்டக் குறிப்புகள் அமைவுக்கும் தயாரிப்புக்கும் மட்டுமே. Poket School வழங்கும் சான்றிதழ்கள் இந்தத் தளத்துக்கானவை; அவை அதிகாரப்பூர்வ கல்வித் தகுதியல்ல.',
+    disclaimer: 'Poket School, Cambridge Assessment International Education (CAIE), Pearson Edexcel, Oxford AQA, University of London அல்லது வேறு எந்தத் தேர்வு வாரியத்துடனும் அரசு அமைப்புடனும் இணைக்கப்படவில்லை, அங்கீகரிக்கப்படவில்லை, அங்கீகாரம் பெறவில்லை. பாடத்திட்டக் குறிப்புகள் அமைவுக்கும் துணைக் கற்றலுக்கும் மட்டுமே. தளச் சான்றிதழ்கள் அதிகாரப்பூர்வ கல்வித் தகுதியல்ல.',
     trading: 'Poket School என்ற பெயரில் இயங்குகிறது · மலேசியாவில் உருவாக்கப்பட்டது',
     follow: 'எங்களைப் பின்தொடரவும்:',
   },
@@ -1044,6 +1044,10 @@ const seeded = Object.fromEntries(
   [K in keyof typeof rawCatalogs]: (typeof rawCatalogs)[K] & (typeof pageNamespaces)['en'];
 };
 
+const OFFICIAL_DISCLAIMER = 'Poket School is not affiliated with, endorsed by, or accredited by Cambridge Assessment International Education (CAIE), Pearson Edexcel, Oxford AQA, the University of London, or any other examination board or government body. Curriculum references are for alignment and supplementary learning purposes only. Platform certificates are not official academic qualifications.';
+const OFFICIAL_RIGHTS = '© {{year}} Poket Media Sdn Bhd (1332289-X) · Made in Malaysia';
+const HUMAN_CATALOGS = new Set(['en', 'ms', 'zh', 'ta']);
+
 const englishCatalog = mergeCatalog(
   seeded.en as unknown as Record<string, unknown>,
   chromeEn as unknown as Record<string, unknown>,
@@ -1057,11 +1061,15 @@ export const catalogs = Object.fromEntries(
     if (human) merged = mergeCatalog(merged, human as Record<string, unknown>);
     const reviewed = reviewPatch(language.code);
     if (reviewed) merged = mergeCatalog(merged, reviewed);
+    merged = mergeCatalog(merged, {
+      footer: {
+        rights: OFFICIAL_RIGHTS,
+        ...(HUMAN_CATALOGS.has(language.code) ? {} : { disclaimer: OFFICIAL_DISCLAIMER }),
+      },
+    });
     return [language.code, merged];
   }),
 ) as typeof seeded & Record<string, (typeof seeded)['en']>;
-
-const HUMAN_CATALOGS = new Set(['en', 'ms', 'zh', 'ta']);
 
 /** Human copy versus an AI draft that still needs a reviewer. */
 export const CATALOG_REVIEW: Record<string, 'human' | 'needs-review'> = Object.fromEntries(

@@ -110,6 +110,15 @@ test('the language list covers the major world languages and rtl scripts', () =>
   assert.equal(catalogs.en.landing.hero.title, 'Learn your way. Go further with AI.');
   assert.equal(catalogs.ms.landing.hero.title, 'Belajar dengan cara anda. Pergi lebih jauh dengan AI.');
   assert.equal(catalogs.ar.landing.hero.title, 'تعلّم بطريقتك. امضِ أبعد مع الذكاء الاصطناعي.');
+  assert.equal(catalogs.en.landing.degrees.title, 'Beyond A-Level.');
+  assert.equal(catalogs.en.landing.degrees.lineup, 'LLB Law, MBBS Medicine, Engineering and Nursing');
+  assert.equal(catalogs.en.landing.supplement.title, 'We supplement. We do not replace.');
+  assert.equal(
+    catalogs.en.footer.disclaimer,
+    'Poket School is not affiliated with, endorsed by, or accredited by Cambridge Assessment International Education (CAIE), Pearson Edexcel, Oxford AQA, the University of London, or any other examination board or government body. Curriculum references are for alignment and supplementary learning purposes only. Platform certificates are not official academic qualifications.',
+  );
+  assert.equal(catalogs.en.footer.rights, '© {{year}} Poket Media Sdn Bhd (1332289-X) · Made in Malaysia');
+  assert.equal(catalogs.ar.footer.rights, catalogs.en.footer.rights);
   assert.equal(catalogs.en.auth.line2.includes('Pocket'), false);
 });
 
