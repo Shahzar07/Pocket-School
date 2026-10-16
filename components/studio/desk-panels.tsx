@@ -15,8 +15,10 @@ import {
   canUseDeskTool,
   deskSparkCost,
   explainerLines,
+  parentExplainerFromFacts,
   RESEARCH_INTEGRITY,
   researchLines,
+  teacherFallback,
   toolkitLessonBody,
   toolkitLines,
   TOOLKIT_KINDS,
@@ -138,30 +140,39 @@ function Section({ title, items }: { title: string; items: string[] }) {
   );
 }
 
-export function TeacherToolkitPanel() {
+export function TeacherToolkitPanel({ sample = false }: { sample?: boolean }) {
   const { user, profile } = useAuthSTORE();
-  const allowed = canUseDeskTool(profile, 'teacher-toolkit');
-  const [subject, setSubject] = useState('Mathematics');
-  const [topic, setTopic] = useState('');
-  const [level, setLevel] = useState(PROGRAMMES[0]?.label ?? 'Primary');
+  const allowed = sample || canUseDeskTool(profile, 'teacher-toolkit');
+  const [subject, setSubject] = useState(sample ? 'Science' : 'Mathematics');
+  const [topic, setTopic] = useState(sample ? 'Photosynthesis' : '');
+  const [level, setLevel] = useState(sample ? 'IGCSE' : (PROGRAMMES[0]?.label ?? 'Primary'));
   const [kind, setKind] = useState<ToolkitKind>('pack');
   const [busy, setBusy] = useState(false);
-  const [pack, setPack] = useState<TeacherPack | null>(null);
+  const [pack, setPack] = useState<TeacherPack | null>(sample ? teacherFallback({
+    topic: 'Photosynthesis',
+    subject: 'Science',
+    level: 'IGCSE',
+    kind: 'pack',
+  }) : null);
   const [drafts, setDrafts] = useState<Course[]>([]);
   const [courseId, setCourseId] = useState('new');
   const [saving, setSaving] = useState(false);
   const [savedHref, setSavedHref] = useState('');
 
   useEffect(() => {
-    if (!user || !allowed) return;
+    if (sample || !user || !allowed) return;
     getTeacherCourses(user.uid).then(rows => {
       setDrafts(rows.filter(course => course.status === 'draft'));
     }).catch(() => setDrafts([]));
-  }, [user, allowed]);
+  }, [user, allowed, sample]);
 
   if (!allowed) return <Locked tool="teacher-toolkit" />;
 
   async function generate() {
+    if (sample) {
+      setPack(teacherFallback({ topic, subject, level, kind }));
+      return;
+    }
     setBusy(true);
     setSavedHref('');
     try {
@@ -176,6 +187,10 @@ export function TeacherToolkitPanel() {
   }
 
   async function saveDraft() {
+    if (sample) {
+      toast.message('This preview does not save a course.');
+      return;
+    }
     if (!pack || !user) return;
     setSaving(true);
     try {
@@ -289,27 +304,46 @@ export function ParentExplainerView({ note }: { note: ParentExplainer }) {
   );
 }
 
-export function ParentExplainerPanel() {
+const SAMPLE_NOTE = parentExplainerFromFacts({
+  childName: 'Mina',
+  studyMinutes: 40,
+  quizAverage: 72,
+  mastery: 61,
+  lessonsCompleted: 3,
+  goalsMet: 2,
+  goalsMissed: 1,
+  strengths: ['fractions'],
+  gaps: ['decimals'],
+  courses: [{ label: 'Mathematics', progress: 48 }],
+  goalTitles: ['Finish the fractions goal'],
+  misconceptions: ['place value'],
+});
+
+export function ParentExplainerPanel({ sample = false }: { sample?: boolean }) {
   const { user, profile } = useAuthSTORE();
-  const allowed = canUseDeskTool(profile, 'parent-explainer');
-  const [children, setChildren] = useState<{ id: string; name: string }[]>([]);
-  const [childId, setChildId] = useState('');
+  const allowed = sample || canUseDeskTool(profile, 'parent-explainer');
+  const [children, setChildren] = useState<{ id: string; name: string }[]>(sample ? [{ id: 'mina', name: 'Mina' }] : []);
+  const [childId, setChildId] = useState(sample ? 'mina' : '');
   const [language, setLanguage] = useState(profile?.language || 'en');
   const [busy, setBusy] = useState(false);
-  const [note, setNote] = useState<ParentExplainer | null>(null);
+  const [note, setNote] = useState<ParentExplainer | null>(sample ? SAMPLE_NOTE : null);
 
   useEffect(() => {
-    if (!user || !allowed) return;
+    if (sample || !user || !allowed) return;
     getChildrenProfiles(user.uid).then(rows => {
       const list = rows.map(row => ({ id: row.id, name: row.data.name || 'Your child' }));
       setChildren(list);
       setChildId(current => current || list[0]?.id || '');
     }).catch(() => setChildren([]));
-  }, [user, allowed]);
+  }, [user, allowed, sample]);
 
   if (!allowed) return <Locked tool="parent-explainer" />;
 
   async function generate() {
+    if (sample) {
+      setNote(SAMPLE_NOTE);
+      return;
+    }
     setBusy(true);
     try {
       const data = await askDesk({ tool: 'parent-explainer', childId, language });
@@ -389,16 +423,45 @@ export function ResearchPackView({ pack }: { pack: ResearchPack }) {
   );
 }
 
-export function ResearchHelperPanel() {
+const SAMPLE_RESEARCH: ResearchPack = {
+  question: 'How do plants store energy from light?',
+  integrity: RESEARCH_INTEGRITY,
+  refusedWriting: false,
+  nextSteps: [
+    'Read one source and note the claim you might use.',
+    'Check the credibility note before you quote it.',
+    'Write the assignment yourself.',
+  ],
+  sources: [
+    {
+      title: 'NASA Climate',
+      authors: 'NASA',
+      url: 'https://climate.nasa.gov',
+      summary: 'A public page on how plants use light. It describes the process. It is not a finished answer.',
+      credibility: 'A government science office. Check the date on the page before you cite it.',
+      citations: {
+        apa: 'NASA. NASA Climate. https://climate.nasa.gov',
+        harvard: 'NASA, NASA Climate. Available at: https://climate.nasa.gov',
+        mla: 'NASA. "NASA Climate." https://climate.nasa.gov',
+      },
+    },
+  ],
+};
+
+export function ResearchHelperPanel({ sample = false }: { sample?: boolean }) {
   const { user, profile } = useAuthSTORE();
-  const allowed = canUseDeskTool(profile, 'research-helper');
-  const [question, setQuestion] = useState('');
+  const allowed = sample || canUseDeskTool(profile, 'research-helper');
+  const [question, setQuestion] = useState(sample ? SAMPLE_RESEARCH.question : '');
   const [busy, setBusy] = useState(false);
-  const [pack, setPack] = useState<ResearchPack | null>(null);
+  const [pack, setPack] = useState<ResearchPack | null>(sample ? SAMPLE_RESEARCH : null);
 
   if (!allowed) return <Locked tool="research-helper" />;
 
   async function generate() {
+    if (sample) {
+      setPack({ ...SAMPLE_RESEARCH, question: question || SAMPLE_RESEARCH.question });
+      return;
+    }
     setBusy(true);
     try {
       const data = await askDesk({ tool: 'research-helper', question });
