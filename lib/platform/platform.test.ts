@@ -69,8 +69,10 @@ test('the board hides people who opted out and shortens other names', () => {
   assert.deepEqual(rows.map(row => row.label), ['Ada L.', 'You']);
 });
 
-test('feature flags default off except the books hook', () => {
+test('feature flags default off except the books hook and the study planner', () => {
   assert.equal(isFlagEnabled('books'), true);
+  assert.equal(isFlagEnabled('studyPlanner'), true);
   assert.equal(isFlagEnabled('referral'), false);
   assert.equal(isFlagEnabled('referral', { referral: true }), true);
+  assert.equal(isFlagEnabled('studyPlanner', { studyPlanner: false }), false);
 });

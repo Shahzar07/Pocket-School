@@ -13,7 +13,7 @@ export const FEATURE_FLAGS = {
   emailDigests: false,
   push: false,
   spacedRepetition: false,
-  studyPlanner: false,
+  studyPlanner: true,
   lessonDiscussion: false,
 } as const;
 

@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'motion/react';
 import {
-  ArrowRight, BookOpen, Calculator, ClipboardList, GraduationCap, Library, PenLine, Search, Sparkles,
+  ArrowRight, BookOpen, Calculator, CalendarDays, ClipboardList, GraduationCap, Library, PenLine, Search, Sparkles,
   type LucideIcon,
 } from 'lucide-react';
 import { useAuthSTORE } from '@/hooks/use-auth';
+import { hasAccountRole } from '@/lib/account-modes';
+import { isFlagEnabled, type FlagName } from '@/lib/flags';
 import { STUDIO_ET, STUDIO_EXAM_PREP, STUDIO_MATHS } from '@/lib/studio-paths';
 import { canUseDeskTool, deskSparkCost, type DeskToolId } from '@/lib/studio/desk';
 
@@ -20,6 +22,10 @@ export interface StudioTool {
   bar: string;
   links: { href: string; label: string }[];
   gate?: DeskToolId;
+  /** Hide the card unless this product switch is on. */
+  flag?: FlagName;
+  /** Students, including an account that also teaches or parents. */
+  studentsOnly?: boolean;
 }
 
 export const STUDIO_TOOLS: StudioTool[] = [
@@ -116,11 +122,27 @@ export const STUDIO_TOOLS: StudioTool[] = [
     links: [],
     gate: 'research-helper',
   },
+  {
+    href: '/dashboard/planner',
+    icon: CalendarDays,
+    name: 'Study planner',
+    kicker: 'Plan',
+    blurb: 'A week of revision for your level: Primary, Lower Secondary, IGCSE, or A-Level.',
+    well: 'bg-[#E7F4F2] text-[#0F6E62] dark:bg-[#122420] dark:text-[#B7E0D6]',
+    bar: 'bg-[#0F6E62] dark:bg-[#7DCFC0]',
+    links: [],
+    flag: 'studyPlanner',
+    studentsOnly: true,
+  },
 ];
 
 export function visibleStudioTools(source: { role?: string | null; roles?: readonly string[] | null } | null, showAll: boolean): StudioTool[] {
-  if (showAll) return STUDIO_TOOLS;
-  return STUDIO_TOOLS.filter(tool => !tool.gate || canUseDeskTool(source, tool.gate));
+  return STUDIO_TOOLS.filter(tool => {
+    if (tool.flag && !isFlagEnabled(tool.flag)) return false;
+    if (showAll) return true;
+    if (tool.studentsOnly && !hasAccountRole(source, 'student')) return false;
+    return !tool.gate || canUseDeskTool(source, tool.gate);
+  });
 }
 
 export function StudioToolGrid({ showAll = false }: { showAll?: boolean }) {
