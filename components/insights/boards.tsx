@@ -48,7 +48,7 @@ export function Heatmap({ grid }: { grid: number[][] }) {
                 key={`${day}-${hour}`}
                 title={`${days[day]} ${hour}:00 · ${value} min`}
                 className="h-3 rounded-sm"
-                style={{ background: `rgba(39,134,164,${value ? 0.15 + 0.85 * (value / max) : 0.06})` }}
+                style={{ background: `color-mix(in srgb, var(--primary) ${value ? Math.round((0.15 + 0.85 * (value / max)) * 100) : 6}%, transparent)` }}
               />
             ))}
           </div>

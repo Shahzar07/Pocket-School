@@ -36,7 +36,7 @@ export default function ExamPrepListPage() {
         eyebrow={<><Link href="/dashboard/studio" className="hover:underline">AI Studio</Link> · Exam Prep</>}
         title="Walk into every exam"
         accent="ready."
-        description="Add your notes, slides and past papers. ET turns them into a day-by-day plan that ends on your exam date — lessons, quizzes, flashcards, podcasts and a full mock."
+        description="Add your notes, slides and past papers. ET AI turns them into a day-by-day plan that ends on your exam date — lessons, quizzes, flashcards, podcasts and a full mock."
         actions={
           <Link href="/dashboard/studio/exam-prep/new" className="h-10 px-4 rounded-full bg-primary text-primary-foreground text-sm font-semibold inline-flex items-center gap-1.5 hover:opacity-90">
             <Plus className="w-4 h-4" /> New exam prep
@@ -51,7 +51,7 @@ export default function ExamPrepListPage() {
           <div className="grid md:grid-cols-2 gap-8 items-center py-4">
             <div>
               <p className="font-heading text-2xl text-foreground mb-2">Your notes in. Your study plan out.</p>
-              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">Upload photos of your notes, PDFs, slides or old exams and set your exam date. ET finds the topics, builds your plan and teaches you from your own material — so you only study what&apos;s actually on the exam.</p>
+              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">Upload photos of your notes, PDFs, slides or old exams and set your exam date. ET AI finds the topics, builds your plan and teaches you from your own material — so you only study what&apos;s actually on the exam.</p>
               <Link href="/dashboard/studio/exam-prep/new" className="h-11 px-5 rounded-full bg-primary text-primary-foreground font-semibold inline-flex items-center gap-2"><Sparkles className="w-4 h-4" /> Create my first plan</Link>
             </div>
             <ol className="space-y-3">

@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { CheckoutPanel, type MethodChoice, type QuoteView } from '@/components/payments/checkout-panel';
 import { DashHeader, DashPage } from '@/components/dash-ui';
 import { ApiError, authedFetch } from '@/lib/api-client';
+import { readGeoCountry } from '@/lib/countries';
 
 function CheckoutScreen() {
   const params = useSearchParams();
@@ -14,6 +15,10 @@ function CheckoutScreen() {
   const currency = params.get('currency') || undefined;
   const sandboxId = params.get('sandbox') === '1' ? params.get('paid') : null;
   const [country, setCountry] = useState('MY');
+  useEffect(() => {
+    const geo = readGeoCountry();
+    if (geo) setCountry(geo);
+  }, []);
   const [coupon, setCoupon] = useState('');
   const [seats, setSeats] = useState(1);
   const [method, setMethod] = useState('card');

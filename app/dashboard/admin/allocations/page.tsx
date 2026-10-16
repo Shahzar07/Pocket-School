@@ -97,7 +97,11 @@ function PeoplePanel({ courses }: { courses: Course[] }) {
   const [saving, setSaving] = useState<string | null>(null);
 
   const [courseId, setCourseId] = useState('');
+  const [courseQuery, setCourseQuery] = useState('');
   const [kind, setKind] = useState<(typeof ALLOC_KINDS)[number]['id']>('free');
+  const visibleCourses = courses.filter((course) =>
+    course.title.toLowerCase().includes(courseQuery.trim().toLowerCase()),
+  );
 
   const search = async () => {
     const q = email.trim();
@@ -274,6 +278,13 @@ function PeoplePanel({ courses }: { courses: Course[] }) {
               {ALLOC_KINDS.find(k => k.id === kind)?.help}
             </p>
             <div className="flex flex-wrap items-center gap-2">
+              <Input
+                value={courseQuery}
+                onChange={(e) => setCourseQuery(e.target.value)}
+                placeholder="Filter courses"
+                aria-label="Filter courses"
+                className="rounded-full h-10 max-w-xs"
+              />
               <select
                 value={courseId}
                 onChange={e => setCourseId(e.target.value)}
@@ -281,7 +292,7 @@ function PeoplePanel({ courses }: { courses: Course[] }) {
                 className="h-10 rounded-full border border-border bg-card px-4 text-sm min-w-[16rem] max-w-full"
               >
                 <option value="">Select a course…</option>
-                {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                {visibleCourses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
               </select>
               <select
                 value={kind}

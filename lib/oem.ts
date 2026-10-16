@@ -98,16 +98,29 @@ export interface AcademyBrand {
   certificateIssuer?: string;
 }
 
-export function brandedInvite(brand: AcademyBrand, joinCode: string, origin: string): { subject: string; text: string } {
+export function brandedInvite(
+  brand: AcademyBrand,
+  joinCode: string,
+  origin: string,
+  template?: { subject?: string; text?: string },
+): { subject: string; text: string } {
   const school = brand.displayName || 'Poket School';
-  return {
-    subject: `${school} invited you`,
-    text: [
+  const vars: Record<string, string> = {
+    school,
+    code: joinCode,
+    origin,
+    from: brand.emailFromName || school,
+  };
+  const fill = (value: string) => value.replace(/\{\{\s*(school|code|origin|from)\s*\}\}/g, (_, key: string) => vars[key] ?? '');
+  const subject = template?.subject?.trim() ? fill(template.subject) : `${school} invited you`;
+  const text = template?.text?.trim()
+    ? fill(template.text)
+    : [
       `${brand.emailFromName || school} invited you to ${school}.`,
       `Join at ${origin} with the code ${joinCode}.`,
       'Poket School runs the academy. Your school chose the programmes.',
-    ].join('\n'),
-  };
+    ].join('\n');
+  return { subject, text };
 }
 
 export function certificateBrandLine(brand: AcademyBrand): string {

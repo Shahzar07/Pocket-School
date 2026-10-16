@@ -8,15 +8,42 @@ import { updateUser } from '@/lib/db';
 import {
   GEO_COUNTRY_COOKIE,
   GEO_REGION_COOKIE,
+  LANGUAGE_REGIONS,
   LANGUAGES,
   readLanguage,
   getLanguage,
+  type LanguageRegion,
 } from '@/lib/languages';
 import { applyAppLanguage, readLanguageSource } from '@/lib/i18n/apply';
 import { hasUiCatalog } from '@/lib/i18n/catalog';
 import { languageShortcut, suggestedLanguage } from '@/lib/i18n/detect';
 
 const SUGGEST_DISMISS_KEY = 'poket-lang-suggest-dismissed';
+
+const REGION_KEY: Record<LanguageRegion, string> = {
+  Default: 'default',
+  Europe: 'europe',
+  'Middle East': 'middleEast',
+  'South Asia': 'southAsia',
+  'Southeast Asia': 'southeastAsia',
+  'East Asia': 'eastAsia',
+  'Central Asia': 'centralAsia',
+  Africa: 'africa',
+  Americas: 'americas',
+};
+
+function groupedLanguages(query: string): { region: LanguageRegion; languages: typeof LANGUAGES[number][] }[] {
+  const q = query.trim().toLowerCase();
+  const filtered = LANGUAGES.filter((language) =>
+    !q
+    || language.label.toLowerCase().includes(q)
+    || language.englishName.toLowerCase().includes(q)
+    || language.code.toLowerCase().includes(q),
+  );
+  return LANGUAGE_REGIONS
+    .map((region) => ({ region, languages: filtered.filter((language) => language.region === region) }))
+    .filter((group) => group.languages.length > 0);
+}
 
 function readCookie(name: string): string | null {
   const prefix = `${name}=`;
@@ -45,6 +72,7 @@ export function LanguageSwitcher({ tone = 'default' }: { tone?: 'default' | 'onD
   const [selected, setSelected] = useState('en');
   const [country, setCountry] = useState<string | null>(null);
   const [suggestion, setSuggestion] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
   const ref = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -86,7 +114,7 @@ export function LanguageSwitcher({ tone = 'default' }: { tone?: 'default' | 'onD
       if (!root || !menu) return;
       const trigger = root.getBoundingClientRect();
       const margin = 12;
-      const width = Math.min(240, window.innerWidth - margin * 2);
+      const width = Math.min(320, window.innerWidth - margin * 2);
       const rtl = document.documentElement.dir === 'rtl';
       let left = rtl ? trigger.left : trigger.right - width;
       left = Math.max(margin, Math.min(left, window.innerWidth - margin - width));
@@ -129,6 +157,7 @@ export function LanguageSwitcher({ tone = 'default' }: { tone?: 'default' | 'onD
   };
 
   const current = LANGUAGES.find(l => l.code === selected) ?? LANGUAGES[0];
+  const groups = groupedLanguages(query);
   const showFallback = !hasUiCatalog(selected);
   const shortcutCode = languageShortcut(country, selected);
   const shortcut = shortcutCode ? getLanguage(shortcutCode) : null;
@@ -175,23 +204,46 @@ export function LanguageSwitcher({ tone = 'default' }: { tone?: 'default' | 'onD
         <div
           ref={menuRef}
           data-lang-menu
-          className={`fixed z-[60] max-h-80 overflow-y-auto bg-card border border-border rounded-2xl shadow-lg py-1 ${
+          className={`fixed z-[60] max-h-[70vh] overflow-y-auto bg-card border border-border rounded-2xl shadow-lg py-1 ${
             placed ? 'visible' : 'invisible'
           }`}
         >
-          {LANGUAGES.map(lang => (
-            <button
-              key={lang.code}
-              type="button"
-              onClick={() => select(lang.code)}
-              className={`w-full text-start px-4 py-2.5 text-sm flex items-center gap-3 transition-colors ${
-                selected === lang.code ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-foreground hover:bg-muted'
-              }`}
-            >
-              <span className="text-lg">{lang.flag}</span>
-              <span>{lang.label}</span>
-            </button>
+          <div className="sticky top-0 z-10 bg-card px-3 pt-2 pb-2 border-b border-border">
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={t('switcher.search')}
+              aria-label={t('switcher.search')}
+              className="h-9 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground"
+            />
+          </div>
+          {groups.map((group) => (
+            <div key={group.region}>
+              <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                {t(`switcher.region.${REGION_KEY[group.region]}`)}
+              </p>
+              {group.languages.map((lang) => (
+                <button
+                  key={lang.code}
+                  type="button"
+                  onClick={() => select(lang.code)}
+                  dir={lang.rtl ? 'rtl' : 'ltr'}
+                  className={`w-full text-start px-4 py-2.5 text-sm flex items-center gap-3 transition-colors ${
+                    selected === lang.code ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-foreground hover:bg-muted'
+                  }`}
+                >
+                  <span className="text-lg">{lang.flag}</span>
+                  <span className="min-w-0">
+                    <span className="block truncate">{lang.label}</span>
+                    <span className="block truncate text-[11px] font-normal text-muted-foreground">{lang.englishName}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
           ))}
+          {groups.length === 0 && (
+            <p className="px-4 py-3 text-sm text-muted-foreground">{t('switcher.none')}</p>
+          )}
           {showFallback && (
             <p className="px-4 py-2 text-[11px] leading-snug text-muted-foreground border-t border-border">
               {t('switcher.uiFallback', { language: getLanguage(selected).label })}

@@ -82,7 +82,7 @@ export function ProfilePhoto({
       <div className="flex items-center gap-4">
         <Avatar className="h-16 w-16 border-2 border-border">
           <AvatarImage src={draft?.src || src || undefined} />
-          <AvatarFallback className="bg-gradient-to-br from-[#2786A4] to-[#1E6A83] text-lg font-bold text-white">{initials}</AvatarFallback>
+          <AvatarFallback className="bg-primary text-lg font-bold text-primary-foreground">{initials}</AvatarFallback>
         </Avatar>
         <div className="flex flex-wrap gap-2">
           <label className="inline-flex h-9 cursor-pointer items-center rounded-full border border-border px-3 text-sm font-semibold">

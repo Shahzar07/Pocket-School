@@ -9,10 +9,13 @@ export interface Programme {
   value: string;
   /** Public label. No year numbers. */
   label: string;
+  /** Short public description. Degree cards and the CMS use this. */
+  summary?: string;
   tier: 0 | 1 | 2 | 3 | 4;
   /**
    * Year / Level labels for this programme.
    * Empty means the only choice is "Not applicable" (adult and professional courses).
+   * School years stay as placement labels. Public cards show levels, not those years.
    */
   years: readonly string[];
   subjects: readonly string[];
@@ -28,7 +31,7 @@ export const PROGRAMMES: readonly Programme[] = [
   },
   {
     value: 'Lower Secondary',
-    label: 'Lower Secondary',
+    label: 'Secondary',
     tier: 1,
     years: ['Year 7', 'Year 8', 'Year 9'],
     subjects: [
@@ -63,6 +66,7 @@ export const PROGRAMMES: readonly Programme[] = [
   {
     value: 'LLB Law',
     label: 'LLB Law',
+    summary: 'LLB Law covers the University of London (UoL) and other universities.',
     tier: 4,
     years: ['Year 1 (LLB)', 'Year 2 (LLB)', 'Year 3 (LLB)'],
     subjects: [
@@ -73,6 +77,7 @@ export const PROGRAMMES: readonly Programme[] = [
   {
     value: 'MBBS Medicine',
     label: 'MBBS Medicine',
+    summary: 'A full medical degree. ET Medicine is included on Professional & Degrees.',
     tier: 4,
     years: ['Year 1 (MBBS)', 'Year 2 (MBBS)', 'Year 3 (MBBS)', 'Year 4 (MBBS)', 'Year 5 (MBBS)'],
     subjects: [
@@ -82,22 +87,38 @@ export const PROGRAMMES: readonly Programme[] = [
     ],
   },
   {
+    value: 'Engineering',
+    label: 'Engineering',
+    summary: 'A degree programme. ET Engineering is included on Professional & Degrees.',
+    tier: 4,
+    years: ['Foundation', 'Degree'],
+    subjects: ['Engineering Mathematics', 'Mechanics', 'Materials', 'Circuits', 'Structures', 'Design'],
+  },
+  {
+    value: 'Nursing',
+    label: 'Nursing',
+    summary: 'A degree programme. ET Nursing is included on Professional & Degrees.',
+    tier: 4,
+    years: ['Foundation', 'Degree'],
+    subjects: ['Anatomy', 'Physiology', 'Pharmacology', 'Patient Care', 'Clinical Practice', 'Community Health'],
+  },
+  {
     value: 'Micro Degree',
-    label: 'Micro Degree',
+    label: 'Micro Degrees',
     tier: 3,
     years: [],
     subjects: [],
   },
   {
     value: 'Professional Certification',
-    label: 'Professional Certification',
+    label: 'Professional',
     tier: 3,
     years: [],
     subjects: [],
   },
   {
     value: 'Independent Learning',
-    label: 'Independent Learning',
+    label: 'Independent',
     tier: 3,
     years: [],
     subjects: ['Mandarin', 'French', 'German', 'Russian', 'Languages'],
@@ -292,6 +313,42 @@ export function studioModeForProgramme(value: string | null | undefined): Studio
   const programme = canonicalProgramme(value);
   if (programme === 'Primary' || programme === 'Lower Secondary') return 'k12';
   if (programme === 'IGCSE' || programme === 'A-Level') return 'college';
-  if (programme === 'LLB Law' || programme === 'MBBS Medicine') return 'legal';
+  if (programme === 'LLB Law') return 'legal';
+  if (programme === 'MBBS Medicine' || programme === 'Engineering' || programme === 'Nursing') return 'professional';
   return 'professional';
+}
+
+/**
+ * Public level names for a CMS year list.
+ * "Year 9 · Year 10 · Year 11" becomes "Secondary · IGCSE".
+ * Degree placement labels that already name a level are kept.
+ */
+export function displayLevels(yearGroups: readonly string[] | null | undefined): string {
+  if (!yearGroups?.length) return '';
+  const labels: string[] = [];
+  for (const raw of yearGroups) {
+    for (const part of raw.split(/[·,]/).map((item) => item.trim()).filter(Boolean)) {
+      labels.push(...levelsInLabel(part));
+    }
+  }
+  return [...new Set(labels)].join(' · ');
+}
+
+function levelsInLabel(part: string): string[] {
+  if (/LLB/i.test(part)) return ['LLB Law'];
+  if (/MBBS/i.test(part)) return ['MBBS Medicine'];
+  if (/engineering/i.test(part) && /foundation|degree/i.test(part)) return ['Engineering'];
+  if (/nursing/i.test(part) && /foundation|degree/i.test(part)) return ['Nursing'];
+  const year = /\bYear\s+(\d+)\b/i.exec(part);
+  if (year) {
+    const n = Number(year[1]);
+    if (n <= 6) return ['Primary'];
+    if (n <= 9) return ['Secondary'];
+    if (n <= 11) return ['IGCSE'];
+    if (n <= 13) return ['A-Level'];
+    return ['Degree'];
+  }
+  const known = PROGRAMMES.find((programme) => programme.value === part || programme.label === part);
+  if (known) return [known.label];
+  return [part];
 }

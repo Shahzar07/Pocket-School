@@ -9,7 +9,10 @@
  * 3. Set its review status in CATALOG_REVIEW
  */
 import { aiDrafts } from './ai-drafts';
+import { chromeEn, chromeLocale } from './chrome';
 import { pageNamespaces } from './page-copy';
+import { LANGUAGES } from '../languages';
+import { reviewPatch } from './review-patches';
 import { landingEn, landingMs, landingTa, landingZh, type LandingCopy } from './landing';
 
 const enCore = {
@@ -131,7 +134,7 @@ const enCore = {
     aup: 'Acceptable Use',
     contact: 'Contact',
     independent: 'Independent platform.',
-    disclaimer: 'Poket School is an independent learning and preparation platform. We are not affiliated with, endorsed by, or accredited by Cambridge Assessment International Education, Pearson Edexcel, AQA, the Malaysian Ministry of Education, or any other examination board or government body. All curriculum references are for alignment and preparation purposes only. Certificates issued by Poket School are platform-specific and do not constitute official academic qualifications.',
+    disclaimer: 'Poket School is not affiliated with, endorsed by, or accredited by Cambridge Assessment International Education (CAIE), Pearson Edexcel, Oxford AQA, the University of London, or any other examination board or government body. Curriculum references are for alignment and supplementary learning purposes only. Platform certificates are not official academic qualifications.',
     trading: 'trading as Poket School · Made in Malaysia',
     follow: 'Follow Us:',
   },
@@ -155,13 +158,13 @@ const enCore = {
     analytics: 'Analytics',
     analyticsDesc: 'Anonymised usage data so we can improve the learning experience.',
     aiPerformance: 'AI performance',
-    aiPerformanceDesc: 'Helps us improve ET response quality and personalisation.',
+    aiPerformanceDesc: 'Helps us improve ET AI response quality and personalisation.',
   },
   auth: {
     line1: 'Your Smartest',
-    line2: 'Classroom in Your Pocket',
+    line2: 'Classroom in Your Poket',
     subtitle: 'AI-powered learning for IGCSE, A-Levels, degrees & beyond.',
-    f1title: 'ET — Your AI Tutor',
+    f1title: 'ET AI — Your AI Tutor',
     f1desc: 'Adapts to how you think, 24 / 7',
     f2title: 'IGCSE · A-Levels · Degrees',
     f2desc: 'Full academic pathways, your pace',
@@ -172,7 +175,7 @@ const enCore = {
   },
   switcher: {
     change: 'Change language',
-    uiFallback: 'Menus stay in English for this language. ET still replies in {{language}}.',
+    uiFallback: 'Menus stay in English for this language. ET AI still replies in {{language}}.',
   },
   lesson: {
     unit: 'Lesson (Unit)',
@@ -188,8 +191,8 @@ const enCore = {
     localizedBody: 'Translated lesson',
     save: 'Save translation',
     clear: 'Clear this language',
-    translate: 'Translate with ET',
-    confirmBody: 'ET will translate the English lesson into {{language}}. This uses {{cost}} Sparks.',
+    translate: 'Translate with ET AI',
+    confirmBody: 'ET AI will translate the English lesson into {{language}}. This uses {{cost}} Sparks.',
     confirm: 'Translate and spend Sparks',
     cancel: 'Cancel',
     working: 'Translating…',
@@ -199,7 +202,7 @@ const enCore = {
     empty: 'Add an English lesson title or body before translating.',
     failed: 'Translation failed. No Sparks were spent.',
     sourceManual: 'Typed',
-    sourceAi: 'ET translation',
+    sourceAi: 'ET AI translation',
   },
   sparks: {
     title: 'Sparks balance',
@@ -375,7 +378,7 @@ const ms = {
     aup: 'Penggunaan Diterima',
     contact: 'Hubungi',
     independent: 'Platform bebas.',
-    disclaimer: 'Poket School ialah platform pembelajaran dan persediaan yang bebas. Kami tidak bergabung dengan, disokong oleh, atau diakreditasi oleh Cambridge Assessment International Education, Pearson Edexcel, AQA, Kementerian Pendidikan Malaysia, atau mana-mana lembaga peperiksaan atau badan kerajaan yang lain. Semua rujukan kurikulum adalah untuk penjajaran dan persediaan sahaja. Sijil yang dikeluarkan oleh Poket School adalah khusus untuk platform dan bukan kelayakan akademik rasmi.',
+    disclaimer: 'Poket School tidak bergabung dengan, disokong oleh, atau diakreditasi oleh Cambridge Assessment International Education (CAIE), Pearson Edexcel, Oxford AQA, University of London, atau mana-mana lembaga peperiksaan atau badan kerajaan yang lain. Rujukan kurikulum adalah untuk penjajaran dan pembelajaran tambahan sahaja. Sijil platform bukan kelayakan akademik rasmi.',
     trading: 'berdagang sebagai Poket School · Dibuat di Malaysia',
     follow: 'Ikuti kami:',
   },
@@ -399,13 +402,13 @@ const ms = {
     analytics: 'Analitik',
     analyticsDesc: 'Data penggunaan tanpa nama supaya kami boleh menambah baik pengalaman pembelajaran.',
     aiPerformance: 'Prestasi AI',
-    aiPerformanceDesc: 'Membantu kami menambah baik kualiti respons ET dan pemperibadian.',
+    aiPerformanceDesc: 'Membantu kami menambah baik kualiti respons ET AI dan pemperibadian.',
   },
   auth: {
     line1: 'Bilik darjah',
     line2: 'paling pintar dalam poket anda',
     subtitle: 'Pembelajaran berkuasa AI untuk IGCSE, A-Level, ijazah dan seterusnya.',
-    f1title: 'ET — Tutor AI anda',
+    f1title: 'ET AI — Tutor AI anda',
     f1desc: 'Menyesuaikan diri dengan cara anda berfikir, 24 / 7',
     f2title: 'IGCSE · A-Level · Ijazah',
     f2desc: 'Laluan akademik penuh, pada kadar anda',
@@ -416,7 +419,7 @@ const ms = {
   },
   switcher: {
     change: 'Tukar bahasa',
-    uiFallback: 'Menu kekal dalam Bahasa Inggeris untuk bahasa ini. ET tetap membalas dalam {{language}}.',
+    uiFallback: 'Menu kekal dalam Bahasa Inggeris untuk bahasa ini. ET AI tetap membalas dalam {{language}}.',
   },
   lesson: {
     unit: 'Pelajaran (Unit)',
@@ -432,8 +435,8 @@ const ms = {
     localizedBody: 'Pelajaran terjemahan',
     save: 'Simpan terjemahan',
     clear: 'Padam bahasa ini',
-    translate: 'Terjemah dengan ET',
-    confirmBody: 'ET akan menterjemah pelajaran Bahasa Inggeris ke {{language}}. Ini menggunakan {{cost}} Sparks.',
+    translate: 'Terjemah dengan ET AI',
+    confirmBody: 'ET AI akan menterjemah pelajaran Bahasa Inggeris ke {{language}}. Ini menggunakan {{cost}} Sparks.',
     confirm: 'Terjemah dan gunakan Sparks',
     cancel: 'Batal',
     working: 'Menterjemah…',
@@ -443,7 +446,7 @@ const ms = {
     empty: 'Tambah tajuk atau isi pelajaran Bahasa Inggeris sebelum menterjemah.',
     failed: 'Terjemahan gagal. Tiada Sparks digunakan.',
     sourceManual: 'Ditaip',
-    sourceAi: 'Terjemahan ET',
+    sourceAi: 'Terjemahan ET AI',
   },
   sparks: {
     title: 'Baki Sparks',
@@ -619,7 +622,7 @@ const zh = {
     aup: '可接受使用',
     contact: '联系',
     independent: '独立平台。',
-    disclaimer: 'Poket School 是一个独立的学习与备考平台。我们不隶属于、未获认可、也未获 Cambridge Assessment International Education、Pearson Edexcel、AQA、马来西亚教育部或任何其他考试委员会或政府机构认证。所有课程引用仅用于对齐与备考。Poket School 颁发的证书仅适用于本平台，不构成官方学历。',
+    disclaimer: 'Poket School 不隶属于、未获认可、也未获 Cambridge Assessment International Education (CAIE)、Pearson Edexcel、Oxford AQA、伦敦大学或任何其他考试委员会或政府机构认证。课程引用仅用于对齐与补充学习。平台证书不是官方学历。',
     trading: '以 Poket School 名义运营 · 马来西亚制造',
     follow: '关注我们：',
   },
@@ -643,13 +646,13 @@ const zh = {
     analytics: '分析',
     analyticsDesc: '匿名使用数据，帮助我们改进学习体验。',
     aiPerformance: 'AI 表现',
-    aiPerformanceDesc: '帮助我们改进 ET 的回复质量与个性化。',
+    aiPerformanceDesc: '帮助我们改进 ET AI 的回复质量与个性化。',
   },
   auth: {
     line1: '你最聪明的',
     line2: '口袋课堂',
     subtitle: '面向 IGCSE、A-Level、学位及更多阶段的 AI 学习。',
-    f1title: 'ET — 你的 AI 导师',
+    f1title: 'ET AI — 你的 AI 导师',
     f1desc: '适应你的思考方式，全天 24 小时',
     f2title: 'IGCSE · A-Level · 学位',
     f2desc: '完整学术路径，按你的节奏',
@@ -660,7 +663,7 @@ const zh = {
   },
   switcher: {
     change: '切换语言',
-    uiFallback: '此语言的菜单仍为英语。ET 仍会用{{language}}回复。',
+    uiFallback: '此语言的菜单仍为英语。ET AI 仍会用{{language}}回复。',
   },
   lesson: {
     unit: '课程（单元）',
@@ -676,8 +679,8 @@ const zh = {
     localizedBody: '译后课文',
     save: '保存译文',
     clear: '清除此语言',
-    translate: '用 ET 翻译',
-    confirmBody: 'ET 会把英语课文翻译成{{language}}。这将使用 {{cost}} Sparks。',
+    translate: '用 ET AI 翻译',
+    confirmBody: 'ET AI 会把英语课文翻译成{{language}}。这将使用 {{cost}} Sparks。',
     confirm: '翻译并使用 Sparks',
     cancel: '取消',
     working: '正在翻译…',
@@ -687,7 +690,7 @@ const zh = {
     empty: '请先填写英语课文标题或正文，再进行翻译。',
     failed: '翻译失败。没有消耗 Sparks。',
     sourceManual: '手工',
-    sourceAi: 'ET 翻译',
+    sourceAi: 'ET AI 翻译',
   },
   sparks: {
     title: 'Sparks 余额',
@@ -863,7 +866,7 @@ const ta = {
     aup: 'ஏற்கத்தக்க பயன்பாடு',
     contact: 'தொடர்பு',
     independent: 'சுயாதீன தளம்.',
-    disclaimer: 'Poket School ஒரு சுயாதீன கற்றல் மற்றும் தயாரிப்பு தளம். Cambridge Assessment International Education, Pearson Edexcel, AQA, மலேசிய கல்வி அமைச்சு அல்லது வேறு எந்தத் தேர்வு வாரியத்துடனும் அரசு அமைப்புடனும் நாங்கள் இணைக்கப்படவில்லை, அங்கீகரிக்கப்படவில்லை, அங்கீகாரம் பெறவில்லை. பாடத்திட்டக் குறிப்புகள் அமைவுக்கும் தயாரிப்புக்கும் மட்டுமே. Poket School வழங்கும் சான்றிதழ்கள் இந்தத் தளத்துக்கானவை; அவை அதிகாரப்பூர்வ கல்வித் தகுதியல்ல.',
+    disclaimer: 'Poket School, Cambridge Assessment International Education (CAIE), Pearson Edexcel, Oxford AQA, University of London அல்லது வேறு எந்தத் தேர்வு வாரியத்துடனும் அரசு அமைப்புடனும் இணைக்கப்படவில்லை, அங்கீகரிக்கப்படவில்லை, அங்கீகாரம் பெறவில்லை. பாடத்திட்டக் குறிப்புகள் அமைவுக்கும் துணைக் கற்றலுக்கும் மட்டுமே. தளச் சான்றிதழ்கள் அதிகாரப்பூர்வ கல்வித் தகுதியல்ல.',
     trading: 'Poket School என்ற பெயரில் இயங்குகிறது · மலேசியாவில் உருவாக்கப்பட்டது',
     follow: 'எங்களைப் பின்தொடரவும்:',
   },
@@ -887,13 +890,13 @@ const ta = {
     analytics: 'பகுப்பாய்வு',
     analyticsDesc: 'கற்றல் அனுபவத்தை மேம்படுத்த பெயரில்லா பயன்பாட்டுத் தரவு.',
     aiPerformance: 'AI செயல்திறன்',
-    aiPerformanceDesc: 'ET பதில்களின் தரத்தையும் தனிப்பயனாக்கலையும் மேம்படுத்த உதவுகிறது.',
+    aiPerformanceDesc: 'ET AI பதில்களின் தரத்தையும் தனிப்பயனாக்கலையும் மேம்படுத்த உதவுகிறது.',
   },
   auth: {
     line1: 'உங்கள் மிகச் சிறந்த',
     line2: 'பாக்கெட் வகுப்பறை',
     subtitle: 'IGCSE, A-Level, பட்டங்கள் மற்றும் அதற்கு அப்பால் AI கற்றல்.',
-    f1title: 'ET — உங்கள் AI ஆசிரியர்',
+    f1title: 'ET AI — உங்கள் AI ஆசிரியர்',
     f1desc: 'நீங்கள் சிந்திக்கும் முறைக்கு ஏற்ப, 24 / 7',
     f2title: 'IGCSE · A-Level · பட்டங்கள்',
     f2desc: 'முழு கல்விப் பாதைகள், உங்கள் வேகத்தில்',
@@ -904,7 +907,7 @@ const ta = {
   },
   switcher: {
     change: 'மொழியை மாற்று',
-    uiFallback: 'இந்த மொழிக்கு மெனுக்கள் ஆங்கிலத்திலேயே இருக்கும். ET {{language}} மொழியில் பதிலளிக்கும்.',
+    uiFallback: 'இந்த மொழிக்கு மெனுக்கள் ஆங்கிலத்திலேயே இருக்கும். ET AI {{language}} மொழியில் பதிலளிக்கும்.',
   },
   lesson: {
     unit: 'பாடம் (அலகு)',
@@ -920,8 +923,8 @@ const ta = {
     localizedBody: 'மொழிபெயர்த்த பாடம்',
     save: 'மொழிபெயர்ப்பைச் சேமி',
     clear: 'இந்த மொழியை அகற்று',
-    translate: 'ET மூலம் மொழிபெயர்',
-    confirmBody: 'ET ஆங்கிலப் பாடத்தை {{language}} மொழிக்கு மொழிபெயர்க்கும். இதற்கு {{cost}} Sparks ஆகும்.',
+    translate: 'ET AI மூலம் மொழிபெயர்',
+    confirmBody: 'ET AI ஆங்கிலப் பாடத்தை {{language}} மொழிக்கு மொழிபெயர்க்கும். இதற்கு {{cost}} Sparks ஆகும்.',
     confirm: 'மொழிபெயர்த்து Sparks செலவிடு',
     cancel: 'ரத்து',
     working: 'மொழிபெயர்க்கிறது…',
@@ -931,7 +934,7 @@ const ta = {
     empty: 'மொழிபெயர்க்கும் முன் ஆங்கிலத் தலைப்பையோ உடலையோ சேர்க்கவும்.',
     failed: 'மொழிபெயர்ப்பு தோல்வியடைந்தது. Sparks செலவிடப்படவில்லை.',
     sourceManual: 'தட்டச்சு',
-    sourceAi: 'ET மொழிபெயர்ப்பு',
+    sourceAi: 'ET AI மொழிபெயர்ப்பு',
   },
   sparks: {
     title: 'Sparks இருப்பு',
@@ -990,8 +993,14 @@ const ta = {
 
 const en = { ...enCore, landing: landingEn };
 
-function withLanding<T extends typeof enCore>(catalog: T, landing: LandingCopy = landingEn): typeof en {
-  return { ...catalog, landing };
+function withLanding<T extends typeof enCore>(catalog: T, landing: Record<string, unknown> = {}): typeof en {
+  return {
+    ...catalog,
+    landing: mergeCatalog(
+      landingEn as unknown as Record<string, unknown>,
+      landing,
+    ) as LandingCopy,
+  };
 }
 
 function catalogsOf<T extends Record<string, typeof en>>(value: T): T {
@@ -1023,7 +1032,7 @@ const rawCatalogs = catalogsOf({
   ),
 });
 
-export const catalogs = Object.fromEntries(
+const seeded = Object.fromEntries(
   Object.entries(rawCatalogs).map(([code, catalog]) => [
     code,
     mergeCatalog(
@@ -1035,7 +1044,32 @@ export const catalogs = Object.fromEntries(
   [K in keyof typeof rawCatalogs]: (typeof rawCatalogs)[K] & (typeof pageNamespaces)['en'];
 };
 
+const OFFICIAL_DISCLAIMER = 'Poket School is not affiliated with, endorsed by, or accredited by Cambridge Assessment International Education (CAIE), Pearson Edexcel, Oxford AQA, the University of London, or any other examination board or government body. Curriculum references are for alignment and supplementary learning purposes only. Platform certificates are not official academic qualifications.';
+const OFFICIAL_RIGHTS = '© {{year}} Poket Media Sdn Bhd (1332289-X) · Made in Malaysia';
 const HUMAN_CATALOGS = new Set(['en', 'ms', 'zh', 'ta']);
+
+const englishCatalog = mergeCatalog(
+  seeded.en as unknown as Record<string, unknown>,
+  chromeEn as unknown as Record<string, unknown>,
+);
+
+export const catalogs = Object.fromEntries(
+  LANGUAGES.map((language) => {
+    const seededCatalog = (seeded as unknown as Record<string, Record<string, unknown>>)[language.code];
+    let merged = seededCatalog ? mergeCatalog(englishCatalog, seededCatalog) : englishCatalog;
+    const human = language.code === 'en' ? chromeEn : chromeLocale(language.code);
+    if (human) merged = mergeCatalog(merged, human as Record<string, unknown>);
+    const reviewed = reviewPatch(language.code);
+    if (reviewed) merged = mergeCatalog(merged, reviewed);
+    merged = mergeCatalog(merged, {
+      footer: {
+        rights: OFFICIAL_RIGHTS,
+        ...(HUMAN_CATALOGS.has(language.code) ? {} : { disclaimer: OFFICIAL_DISCLAIMER }),
+      },
+    });
+    return [language.code, merged];
+  }),
+) as typeof seeded & Record<string, (typeof seeded)['en']>;
 
 /** Human copy versus an AI draft that still needs a reviewer. */
 export const CATALOG_REVIEW: Record<string, 'human' | 'needs-review'> = Object.fromEntries(

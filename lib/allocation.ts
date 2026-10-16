@@ -18,6 +18,7 @@ import {
   type PriceType,
 } from './entitlements';
 import { hasAccountRole } from './account-modes';
+import { canonicalProgramme } from './programmes';
 import { evaluatePolicy, policyActive, priceDecision, type AccessPolicy } from './access-policy';
 import { anyTargetMatch, migrateAllocation, normaliseTargets } from './allocation-targets';
 
@@ -134,7 +135,21 @@ function contentTypeFor(product: AllocatableProduct): string {
   if (product.kind === 'book') return 'BOOK';
   if (product.contentType) return product.contentType;
   if (coursePriceType(product) === 'MARKETPLACE_PURCHASE') return 'MARKETPLACE_PURCHASE';
-  return 'COURSE_IGCSE';
+  const level = canonicalProgramme(product.level);
+  const mapped: Record<string, string> = {
+    Primary: 'COURSE_PRIMARY',
+    'Lower Secondary': 'COURSE_SECONDARY',
+    IGCSE: 'COURSE_IGCSE',
+    'A-Level': 'COURSE_ALEVEL',
+    'LLB Law': 'COURSE_LLB',
+    'MBBS Medicine': 'COURSE_MBBS',
+    Engineering: 'COURSE_ENGINEERING',
+    Nursing: 'COURSE_NURSING',
+    'Micro Degree': 'COURSE_MICRO_DEGREE',
+    'Professional Certification': 'COURSE_PROFESSIONAL_CERT',
+    'Independent Learning': 'COURSE_INDEPENDENT',
+  };
+  return mapped[level] ?? 'COURSE_IGCSE';
 }
 
 /**

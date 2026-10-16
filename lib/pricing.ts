@@ -96,18 +96,22 @@ export function annualFromMonthly(monthlyUsd: number, discount: number): number 
 
 export function seedPricing(): PricingConfig {
   const annualDiscount = 0.25;
-  const drafts = [
+  const drafts: Array<{ id: string; monthlyUsd: number; sparks: number; annualUsd?: number }> = [
     { id: 'preview', monthlyUsd: 0, sparks: 0 },
     { id: 'primary_secondary', monthlyUsd: 19, sparks: 300 },
-    { id: 'igcse_alevel', monthlyUsd: 79, sparks: 800 },
-    { id: 'professional', monthlyUsd: 99, sparks: 2000 },
+    // $59 × 12 and $74 × 12 match the public annual prices. A strict 25% of the
+    // year would be $711 and $891 ($59.25 and $74.25 a month).
+    { id: 'igcse_alevel', monthlyUsd: 79, sparks: 800, annualUsd: 708 },
+    { id: 'professional', monthlyUsd: 99, sparks: 2000, annualUsd: 888 },
   ];
   return {
     version: 1,
     annualDiscount,
     plans: drafts.map(plan => ({
-      ...plan,
-      annualUsd: annualFromMonthly(plan.monthlyUsd, annualDiscount),
+      id: plan.id,
+      monthlyUsd: plan.monthlyUsd,
+      sparks: plan.sparks,
+      annualUsd: plan.annualUsd ?? annualFromMonthly(plan.monthlyUsd, annualDiscount),
     })),
     addons: [
       { id: 'lyra_live', monthlyUsd: 49 },

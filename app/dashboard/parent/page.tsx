@@ -63,7 +63,7 @@ const fadeUp: Record<string, any> = {
 
 const GOAL_STATUS_META: Record<string, { label: string; pill: string }> = {
   not_started: { label: 'Not started', pill: 'bg-muted text-muted-foreground' },
-  in_progress: { label: 'In progress', pill: 'bg-[#2786A4]/10 text-[#2786A4]' },
+  in_progress: { label: 'In progress', pill: 'bg-primary/10 text-primary' },
   completed: { label: 'Completed', pill: 'bg-emerald-500/10 text-emerald-600' },
   overdue: { label: 'Overdue', pill: 'bg-destructive/10 text-destructive' },
   excused: { label: 'Excused', pill: 'bg-amber-500/10 text-amber-600' },
@@ -268,7 +268,7 @@ export default function ParentDashboard() {
                 <div key={child.childId} className="bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] p-5 sm:p-6 space-y-4">
                   <div className="flex items-center gap-3">
                     <Avatar className="w-10 h-10 shrink-0">
-                      <AvatarFallback className="bg-gradient-to-br from-[#2786A4] to-[#1E6A83] text-white font-bold text-sm">
+                      <AvatarFallback className="bg-primary text-primary-foreground font-bold text-sm">
                         {child.childName?.charAt(0)?.toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
@@ -291,7 +291,7 @@ export default function ParentDashboard() {
                     <>
                       <div className="h-2 bg-muted rounded-full overflow-hidden">
                         <motion.div
-                          className={`h-full rounded-full ${pct === 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-[#2786A4] to-[#1E6A83]'}`}
+                          className={`h-full rounded-full ${pct === 100 ? 'bg-emerald-500' : 'bg-primary'}`}
                           initial={{ width: 0 }}
                           animate={{ width: `${pct}%` }}
                           transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -367,12 +367,12 @@ export default function ParentDashboard() {
                 {/* Child hero band */}
                 <div className="relative bg-[#203337] p-7 sm:p-8 text-white overflow-hidden">
                   <div className="pointer-events-none absolute inset-0">
-                    <div className="absolute -top-20 -left-16 w-72 h-72 rounded-full bg-[#2786A4]/25 blur-[80px]" />
+                    <div className="absolute -top-20 -left-16 w-72 h-72 rounded-full bg-primary/25 blur-[80px]" />
                     <div className="absolute -bottom-24 -right-10 w-72 h-72 rounded-full bg-[#1E6A83]/20 blur-[80px]" />
                   </div>
                   <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
-                    <Avatar className="w-16 h-16 border-2 border-white/20 shadow-[0_0_30px_rgba(39,134,164,0.35)] shrink-0">
-                      <AvatarFallback className="bg-gradient-to-br from-[#2786A4] to-[#1E6A83] text-white font-bold text-2xl">
+                    <Avatar className="w-16 h-16 border-2 border-white/20 shadow-[0_0_30px_rgba(30,106,131,0.35)] shrink-0">
+                      <AvatarFallback className="bg-primary text-primary-foreground font-bold text-2xl">
                         {childProfile.name?.charAt(0)?.toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
@@ -396,7 +396,7 @@ export default function ParentDashboard() {
                 {/* Stats band */}
                 <div className="grid grid-cols-3 divide-x divide-border border-b border-border bg-muted/40">
                   {[
-                    { label: 'Enrolled', value: enrollments.length, icon: BookOpen, accent: 'text-[#2786A4]' },
+                    { label: 'Enrolled', value: enrollments.length, icon: BookOpen, accent: 'text-primary' },
                     { label: 'In Progress', value: inProgress.length, icon: TrendingUp, accent: 'text-amber-600' },
                     { label: 'Completed', value: completed.length, icon: Trophy, accent: 'text-emerald-600' },
                   ].map((s) => (
@@ -490,7 +490,7 @@ export default function ParentDashboard() {
                             </div>
                             <div className="h-2.5 bg-muted rounded-full overflow-hidden">
                               <motion.div
-                                className="h-full rounded-full bg-gradient-to-r from-[#2786A4] to-[#1E6A83]"
+                                className="h-full rounded-full bg-primary"
                                 initial={{ width: 0 }}
                                 animate={{ width: `${pct}%` }}
                                 transition={{ duration: 1, delay: 0.3 + i * 0.1, ease: 'easeOut' }}
