@@ -405,7 +405,9 @@ app/dashboard/exam-centre/page.tsx	Paper published.
 app/dashboard/helpdesk/page.tsx	Describe your issue in detail *
 app/dashboard/helpdesk/page.tsx	Failed to submit ticket.
 app/dashboard/helpdesk/page.tsx	Fill in all fields.
+app/dashboard/helpdesk/page.tsx	Internal note
 app/dashboard/helpdesk/page.tsx	Marked as resolved.
+app/dashboard/helpdesk/page.tsx	Marked as solved.
 app/dashboard/helpdesk/page.tsx	New Support Ticket
 app/dashboard/helpdesk/page.tsx	Reply sent.
 app/dashboard/helpdesk/page.tsx	Reply to Ticket
@@ -544,9 +546,11 @@ app/dashboard/resources/page.tsx	Description (optional)
 app/dashboard/resources/page.tsx	Failed to add resource.
 app/dashboard/resources/page.tsx	New Resource
 app/dashboard/resources/page.tsx	No resources found
+app/dashboard/resources/page.tsx	Open the CMS
 app/dashboard/resources/page.tsx	Price (optional)
 app/dashboard/resources/page.tsx	Resource added!
 app/dashboard/resources/page.tsx	Search resources…
+app/dashboard/resources/page.tsx	The file library for links, videos, and documents. The curriculum CMS builds lessons and can point here.
 app/dashboard/resources/page.tsx	Title *
 app/dashboard/resources/page.tsx	Title and URL are required.
 app/dashboard/resources/page.tsx	Try a different search or add a new resource.
