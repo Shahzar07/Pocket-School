@@ -183,11 +183,13 @@ export default function MockExamPage({ params }: { params: Promise<{ id: string 
                 ))}
               </div>
             ) : (
-              <textarea value={answers[q.id] ?? ''} onChange={e => setAnswers(a => ({ ...a, [q.id]: e.target.value }))} rows={q.type === 'structured' ? 9 : 4}
-                placeholder="Write your answer. Show your working — method marks count." className="mt-5 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[15px] leading-relaxed outline-none focus:border-primary resize-y" />
-              <div className="mt-3">
-                <HandwritingCapture onText={text => setAnswers(a => ({ ...a, [q.id]: a[q.id]?.trim() ? `${a[q.id].trim()}\n${text}` : text }))} />
-              </div>
+              <>
+                <textarea value={answers[q.id] ?? ''} onChange={e => setAnswers(a => ({ ...a, [q.id]: e.target.value }))} rows={q.type === 'structured' ? 9 : 4}
+                  placeholder="Write your answer. Show your working — method marks count." className="mt-5 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[15px] leading-relaxed outline-none focus:border-primary resize-y" />
+                <div className="mt-3">
+                  <HandwritingCapture onText={text => setAnswers(a => ({ ...a, [q.id]: a[q.id]?.trim() ? `${a[q.id].trim()}\n${text}` : text }))} />
+                </div>
+              </>
             )}
             <div className="mt-5 flex items-center justify-between">
               <button disabled={current === 0} onClick={() => setCurrent(c => c - 1)} className="h-10 px-4 rounded-full border border-border text-sm font-semibold disabled:opacity-40">Previous</button>
