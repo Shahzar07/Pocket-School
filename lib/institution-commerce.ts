@@ -170,6 +170,10 @@ export function teacherPayout(input: {
 
 export type CourseAccessMode = 'subscription' | 'a_la_carte' | 'both';
 
+export function asAccessMode(value: unknown): CourseAccessMode {
+  return value === 'a_la_carte' || value === 'both' ? value : 'subscription';
+}
+
 export function setAccessMode(input: {
   mode: CourseAccessMode;
   alaCarteEligible: boolean;

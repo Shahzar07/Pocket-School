@@ -52,6 +52,20 @@ export function addInterval(iso: string, interval: VolumeInterval): string {
   return date.toISOString().slice(0, 10);
 }
 
+/** The day a period opened, given the end written by addInterval. */
+export function periodStartFor(periodEnd: string, interval: VolumeInterval): string {
+  if (!DATE.test(periodEnd)) return '';
+  const [year, month, day] = periodEnd.split('-').map(Number);
+  const date = new Date(Date.UTC(year, (month ?? 1) - 1, day ?? 1));
+  if (interval === 'annual') date.setUTCFullYear(date.getUTCFullYear() - 1);
+  else date.setUTCMonth(date.getUTCMonth() - 1);
+  return date.toISOString().slice(0, 10);
+}
+
+export function asVolumePlanId(value: unknown): VolumePlanId | '' {
+  return typeof value === 'string' && PLAN_IDS.has(value) ? value as VolumePlanId : '';
+}
+
 export interface SparksPlanConfig {
   primary_secondary: number;
   igcse_alevel: number;
@@ -466,6 +480,61 @@ export function advanceSubscription(state: SubscriptionState, today: string): { 
 
 export function learningOpen(phase: BillingPhase): boolean {
   return phase === 'active' || phase === 'grace';
+}
+
+/** A renewal date has passed, or a bill already in grace needs its next reminder. */
+export function cycleSubscription(state: SubscriptionState, today: string): { state: SubscriptionState; notices: BillingNotice[] } {
+  if (state.phase === 'active' && state.periodEnd && today > state.periodEnd) return failRenewal(state, today);
+  if (state.phase === 'grace') return advanceSubscription(state, today);
+  return { state, notices: [] };
+}
+
+/** Stripe or the gateway reported a failure. Grace keeps counting; anything else enters grace. */
+export function onPaymentFailed(state: SubscriptionState, today: string): { state: SubscriptionState; notices: BillingNotice[] } {
+  return state.phase === 'grace' ? advanceSubscription(state, today) : failRenewal(state, today);
+}
+
+export function billingMoved(before: SubscriptionState, after: { state: SubscriptionState; notices: readonly BillingNotice[] }): boolean {
+  return after.state.phase !== before.phase
+    || after.notices.length > 0
+    || after.state.remindersSent.length !== before.remindersSent.length;
+}
+
+export function blankSubscription(subject: BillingSubject, on: string): SubscriptionState {
+  return openSubscription({
+    subject,
+    planId: 'igcse_alevel',
+    interval: subject === 'individual' ? 'monthly' : 'annual',
+    seats: subject === 'individual' ? 1 : 0,
+    currency: 'USD',
+    total: 0,
+    payerEmail: '',
+    on,
+  }).state;
+}
+
+/** Reads a stored bill. Unknown fields fall back so a partial document cannot invent a plan. */
+export function readSubscription(data: Record<string, unknown> | null | undefined, fallback: SubscriptionState): SubscriptionState {
+  if (!data) return fallback;
+  const phase = data.phase === 'active' || data.phase === 'grace' || data.phase === 'suspended' || data.phase === 'pending_payment'
+    ? data.phase
+    : fallback.phase;
+  const planId = asVolumePlanId(data.planId);
+  return {
+    subject: data.subject === 'individual' ? 'individual' : fallback.subject,
+    phase,
+    planId: planId || fallback.planId,
+    interval: data.interval === 'monthly' ? 'monthly' : 'annual',
+    seats: typeof data.seats === 'number' ? data.seats : fallback.seats,
+    currency: typeof data.currency === 'string' ? data.currency : fallback.currency,
+    total: typeof data.total === 'number' ? data.total : fallback.total,
+    periodEnd: typeof data.periodEnd === 'string' ? data.periodEnd : '',
+    failedOn: typeof data.failedOn === 'string' ? data.failedOn : '',
+    graceEndsOn: typeof data.graceEndsOn === 'string' ? data.graceEndsOn : '',
+    suspendedOn: typeof data.suspendedOn === 'string' ? data.suspendedOn : '',
+    remindersSent: Array.isArray(data.remindersSent) ? data.remindersSent.filter((item): item is string => typeof item === 'string') : [],
+    payerEmail: typeof data.payerEmail === 'string' ? data.payerEmail : fallback.payerEmail,
+  };
 }
 
 export function institutionInvoiceLines(input: {

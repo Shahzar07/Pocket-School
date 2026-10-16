@@ -43,9 +43,10 @@ export default function ApprovalsPage() {
       <DashHeader eyebrow="Institution" title="Approvals" description="Pending students, parents, and teachers. Assign a level when you approve a student." />
       {!institutionId && <Panel><p className="text-sm text-muted-foreground">This account is not attached to an institution yet.</p></Panel>}
       {rows.length === 0 && institutionId && <Panel><p className="text-sm text-muted-foreground">No join requests.</p></Panel>}
-      <div className="space-y-3">
+      <ul className="space-y-3">
         {rows.map((row) => (
-          <Panel key={row.id}>
+          <li key={row.id}>
+          <Panel>
             <p className="font-semibold">{row.name}</p>
             <p className="text-sm text-muted-foreground">{row.email} · {row.role} · {row.status}</p>
             {row.role === 'student' && row.status === 'pending' && (
@@ -61,14 +62,15 @@ export default function ApprovalsPage() {
               </label>
             )}
             {row.status === 'pending' && (
-              <div className="mt-3 flex gap-2">
-                <Button className="rounded-full" onClick={() => void decide(row, 'approved')}>Approve</Button>
-                <Button variant="outline" className="rounded-full" onClick={() => void decide(row, 'rejected')}>Reject</Button>
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <Button className="h-11 rounded-full" onClick={() => void decide(row, 'approved')}>Approve</Button>
+                <Button variant="outline" className="h-11 rounded-full" onClick={() => void decide(row, 'rejected')}>Reject</Button>
               </div>
             )}
           </Panel>
+          </li>
         ))}
-      </div>
+      </ul>
     </DashPage>
   );
 }

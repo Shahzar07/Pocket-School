@@ -45,9 +45,9 @@ export default function InstitutionFlowPreview() {
       <FeeSummary />
       <Panel>
         <h2 className="font-semibold mb-3">Course access</h2>
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap" role="group" aria-label="Access mode">
           {(['subscription', 'a_la_carte', 'both'] as const).map((item) => (
-            <button key={item} type="button" className="rounded-full border border-border px-3 py-1 text-sm" onClick={() => setMode(item)}>
+            <button key={item} type="button" aria-pressed={mode === item} className="min-h-11 rounded-full border border-border px-4 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" onClick={() => setMode(item)}>
               {accessBadge(item).title}
             </button>
           ))}

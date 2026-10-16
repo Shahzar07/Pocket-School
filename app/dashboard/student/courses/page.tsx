@@ -6,8 +6,7 @@ import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { getEnrolledCourses, getAllPublishedCourses, enrollStudent, Course, Enrollment } from '@/lib/db';
 import { productAccess, viewerFromProfile } from '@/lib/allocation';
-import { canSeeCourse, type AccessViewer } from '@/lib/institution-membership';
-import type { VolumePlanId } from '@/lib/institution-pricing';
+import { asVolumePlanId, canSeeCourse, type AccessViewer } from '@/lib/institution-membership';
 import { forLearnerView } from '@/lib/account-modes';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -17,17 +16,13 @@ import { toast } from 'sonner';
 
 interface CE { course: Course; enrollment: Enrollment }
 
-function asLevel(value: unknown): VolumePlanId | '' {
-  return value === 'primary_secondary' || value === 'igcse_alevel' || value === 'professional' ? value : '';
-}
-
 function memberCanSee(course: Course, profile: { role?: string | null; institutionId?: string | null; level?: string | null; cohortIds?: string[] | null; childIds?: string[] | null } | null | undefined, userId: string): boolean {
   const gated = Boolean(course.visibility) || course.publishScope === 'institution' || course.libraryApproved === false;
   if (!gated) return true;
   const role = profile?.role === 'parent' || profile?.role === 'teacher' || profile?.role === 'institution_admin' || profile?.role === 'admin'
     ? profile.role
     : 'student';
-  const level = asLevel(profile?.level);
+  const level = asVolumePlanId(profile?.level);
   const viewer: AccessViewer = {
     userId,
     role,
@@ -44,7 +39,7 @@ function memberCanSee(course: Course, profile: { role?: string | null; instituti
     id: course.id,
     institutionId: course.institutionId,
     visibility,
-    level: asLevel(course.level),
+    level: asVolumePlanId(course.level),
     marketplaceApproved: course.marketplaceApproved,
     libraryApproved: course.libraryApproved,
     classIds: course.classIds,

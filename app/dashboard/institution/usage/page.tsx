@@ -34,7 +34,7 @@ export default function InstitutionUsagePage() {
           <Field label="Active students" value={students} onChange={setStudents} />
           <Field label="Lessons completed" value={lessons} onChange={setLessons} />
           <Field label="Certificates" value={certificates} onChange={setCertificates} />
-          <Field label="Attendance 0–1" value={attendance} onChange={setAttendance} />
+          <Field label="Attendance rate, from 0 to 1" value={attendance} onChange={setAttendance} />
           <Field label="Sparks spent" value={spent} onChange={setSpent} />
           <Field label="Sparks allowance" value={allowance} onChange={setAllowance} />
         </div>
@@ -46,7 +46,7 @@ export default function InstitutionUsagePage() {
 function Field({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
   return (
     <label className="text-sm">{label}
-      <Input className="mt-1 h-11 rounded-xl" type="number" value={value} onChange={(event) => onChange(Number(event.target.value))} />
+      <Input className="mt-1 h-11 rounded-xl" type="number" min={0} inputMode="decimal" value={value} onChange={(event) => onChange(Number(event.target.value))} />
     </label>
   );
 }
