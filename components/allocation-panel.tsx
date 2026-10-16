@@ -267,7 +267,7 @@ export function AllocationPanel({
             });
           }} />
         </label>
-        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Year / Level</p>
+        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Level</p>
         <div className="flex flex-wrap gap-1">
           {allocationYearsFor(policy.programmeIds ?? []).map(year => (
             <button key={year} type="button" className={`px-2 py-1 rounded-full text-[11px] ${(policy.yearGroups ?? []).includes(year) ? 'bg-foreground text-background' : 'bg-muted'}`} onClick={() => {

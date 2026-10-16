@@ -17,7 +17,7 @@ import { landingPath, readActiveMode } from '@/lib/account-modes';
 import { SIGNUP_GRANT } from '@/lib/sparks';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { Timestamp } from 'firebase/firestore';
-import { PROGRAMMES, NOT_APPLICABLE, assertPlacement, levelsForProgramme } from '@/lib/programmes';
+import { PROGRAMMES, NOT_APPLICABLE, assertPlacement, levelsForProgramme, toNamedLevel } from '@/lib/programmes';
 import { canonicalLevel } from '@/lib/year-groups';
 import { authedFetch } from '@/lib/api-client';
 
@@ -39,8 +39,9 @@ export default function OnboardingPage() {
     const next = canonicalLevel(profile.level);
     if (next) {
       const years = levelsForProgramme(next);
+      const stored = toNamedLevel(profile.yearGroup ?? '');
       setProgramme(next);
-      setYearGroup(years.includes(profile.yearGroup ?? '') ? (profile.yearGroup ?? '') : (years[0] ?? ''));
+      setYearGroup(years.includes(stored) ? stored : '');
     }
     setPrefilled(true);
   }, [profile, prefilled]);
@@ -65,7 +66,7 @@ export default function OnboardingPage() {
     try {
       placement = assertPlacement(programme, yearGroup || yearChoices[0] || '');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Choose a programme and year.');
+      toast.error(error instanceof Error ? error.message : 'Choose a programme and level.');
       return;
     }
     try {
@@ -238,8 +239,7 @@ export default function OnboardingPage() {
                     key={item.value}
                     onClick={() => {
                       setProgramme(item.value);
-                      const years = levelsForProgramme(item.value);
-                      setYearGroup(years[0] ?? '');
+                      setYearGroup('');
                     }}
                     className={`p-4 rounded-2xl border-2 cursor-pointer transition-all text-left font-semibold ${
                       programme === item.value
@@ -270,8 +270,8 @@ export default function OnboardingPage() {
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <GraduationCap className="w-8 h-8 text-white" />
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">Which year are you in?</h1>
-                <p className="text-muted-foreground mt-2 text-base">These years belong to {programme}.</p>
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">Which level are you on?</h1>
+                <p className="text-muted-foreground mt-2 text-base">Your level depends on {programme}.</p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {yearChoices.map(yg => (

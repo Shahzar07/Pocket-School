@@ -77,11 +77,11 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
 
   // Role-specific
-  const [pathway, setPathway] = useState(PROGRAMMES[0]?.value ?? 'Primary');
-  const [yearGroup, setYearGroup] = useState(levelsForProgramme(PROGRAMMES[0]?.value)[0] ?? '');
+  const [pathway, setPathway] = useState('');
+  const [yearGroup, setYearGroup] = useState('');
   const [placementEdited, setPlacementEdited] = useState(false);
   const [subject, setSubject] = useState('');
-  const [teachingLevel, setTeachingLevel] = useState('IGCSE');
+  const [teachingLevel, setTeachingLevel] = useState('');
   const [institution, setInstitution] = useState('');
   const [childEmail, setChildEmail] = useState('');
 
@@ -519,8 +519,9 @@ export default function SignupPage() {
                       const next = e.target.value;
                       setPlacementEdited(true);
                       setPathway(next);
-                      setYearGroup(levelsForProgramme(next)[0] ?? '');
+                      setYearGroup(current => levelsForProgramme(next).includes(current) ? current : '');
                     }} disabled={loading}>
+                    <option value="" className="bg-[#0B0F1A]">{t('signup.programme')}</option>
                     {PROGRAMMES.map(p => <option key={p.value} value={p.value} className="bg-[#0B0F1A]">{p.label}</option>)}
                   </select>
                 </div>
@@ -528,6 +529,7 @@ export default function SignupPage() {
                   <Label htmlFor="yearGroup" className={LABEL_CLASS}>{t('signup.yearLevel')}</Label>
                   <select id="yearGroup" className={SELECT_CLASS} value={yearGroup}
                     onChange={e => { setPlacementEdited(true); setYearGroup(e.target.value); }} disabled={loading}>
+                    <option value="" className="bg-[#0B0F1A]">{t('signup.yearLevel')}</option>
                     {yearOptions.map(year => (
                       <option key={year} value={year} className="bg-[#0B0F1A]">
                         {year === NOT_APPLICABLE ? t('signup.notApplicable') : year}
@@ -554,6 +556,7 @@ export default function SignupPage() {
                     <Label htmlFor="teachingLevel" className={LABEL_CLASS}>{t('signup.levelTeach')}</Label>
                     <select id="teachingLevel" className={SELECT_CLASS} value={teachingLevel}
                       onChange={e => setTeachingLevel(e.target.value)} disabled={loading}>
+                      <option value="" className="bg-[#0B0F1A]">{t('signup.levelTeach')}</option>
                       {PROGRAMMES.map(p => <option key={p.value} value={p.value} className="bg-[#0B0F1A]">{p.label}</option>)}
                     </select>
                   </div>

@@ -423,7 +423,7 @@ export default function PricingPage() {
               </h2>
               <p className="text-base text-white/70 leading-relaxed mb-8 max-w-md">
                 Custom pricing built around your cohort size, curriculum and deployment. Pilot with one
-                year group, scale across the whole institution.
+                level, scale across the whole institution.
               </p>
               <a
                 href="mailto:institutions@poketschool.ai?subject=Institutional%20Pricing%20Enquiry"

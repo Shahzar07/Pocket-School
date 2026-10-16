@@ -41,7 +41,7 @@ Write the solution as a sequence of steps a strong teacher would use with this s
 Also give:
 - "problem": the problem restated cleanly (Markdown + LaTeX).
 - "topic": the syllabus topic, e.g. "Quadratic equations".
-- "level": typical level, e.g. "Form 4 / IGCSE".
+- "level": typical level, e.g. "IGCSE".
 - "method": one sentence naming the method.
 - "finalAnswer": the final answer in LaTeX, every part included.
 - "checkValues": the final numeric answer(s) as plain numbers when the answer is numeric, otherwise [].

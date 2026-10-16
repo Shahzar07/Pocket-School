@@ -16,7 +16,7 @@ export function ModePreview({
   const [mode, setMode] = useState<AccountMode>(initialMode);
   const [open, setOpen] = useState(menuOpen);
   const [teachingOn, setTeachingOn] = useState(!learner);
-  const [headline, setHeadline] = useState('Year 8 science');
+  const [headline, setHeadline] = useState('');
   const [accepted, setAccepted] = useState(false);
   const modes: AccountMode[] = teachingOn
     ? (learner ? ['student', 'teacher'] : ['student', 'teacher', 'parent'])
@@ -99,7 +99,7 @@ export function ModePreview({
                 </p>
                 <label className="block text-sm font-semibold">
                   Headline
-                  <input className="mt-1 w-full rounded-xl border border-border px-3 py-2" value={headline} onChange={event => setHeadline(event.target.value)} />
+                  <input className="mt-1 w-full rounded-xl border border-border px-3 py-2" value={headline} onChange={event => setHeadline(event.target.value)} placeholder="e.g. Lower Secondary science" />
                 </label>
                 <label className="flex items-start gap-2 text-sm">
                   <input type="checkbox" className="mt-1" checked={accepted} onChange={event => setAccepted(event.target.checked)} />
@@ -128,7 +128,7 @@ export function ModePreview({
             <p className="text-sm text-muted-foreground">Your own courses, certificates, and Sparks stay in Learning.</p>
             <article className="rounded-3xl border border-border bg-card p-5">
               <h2 className="font-heading text-2xl">Amina Yusuf</h2>
-              <p className="text-sm text-muted-foreground">Year 8 · weekly report on</p>
+              <p className="text-sm text-muted-foreground">Lower Secondary · weekly report on</p>
             </article>
           </section>
         )}

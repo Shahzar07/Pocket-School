@@ -234,7 +234,7 @@ export const LEGAL_DOCS: LegalDoc[] = [
             head: ['Category', 'Data Collected', 'Applies To'],
             rows: [
               ['Account Data', 'Full name, email address, password (hashed), account type, country, preferred language, date of birth', 'All users'],
-              ['Student Data', "Age, year group, enrolled programmes, learning style profile, Bloom's profile, quiz scores, lesson progress, daily goals, streaks, Sparks balance", 'Students'],
+              ['Student Data', "Age, level, enrolled programmes, learning style profile, Bloom's profile, quiz scores, lesson progress, daily goals, streaks, Sparks balance", 'Students'],
               ['Parent Data', 'Name, email, relationship to student, notification preferences, payment details', 'Parents/Guardians'],
               ['Teacher Data', 'Name, email, professional credentials, bank details for revenue payments, published courses, student analytics', 'Teachers/Creators'],
               ['Institution Data', 'Organisation name, registered address, contact person, registration number, teacher and student lists', 'Institutions'],

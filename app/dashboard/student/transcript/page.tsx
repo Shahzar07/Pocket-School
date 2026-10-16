@@ -229,7 +229,7 @@ export default function TranscriptPage() {
           <p><span className="font-semibold">Student:</span> {profile?.name ?? '—'}</p>
           <p><span className="font-semibold">Reporting period:</span> {periodLabel}</p>
           <p><span className="font-semibold">Email:</span> {user?.email ?? '—'}</p>
-          <p><span className="font-semibold">Year group:</span> {profile?.yearGroup ?? '—'}</p>
+          <p><span className="font-semibold">Level:</span> {profile?.yearGroup ?? '—'}</p>
           <p><span className="font-semibold">Courses reported:</span> {records.length}</p>
           <p><span className="font-semibold">Cumulative GPA:</span> {overallGPA}</p>
           <p>

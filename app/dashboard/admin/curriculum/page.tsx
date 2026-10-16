@@ -909,6 +909,7 @@ export default function AdminCurriculumPage() {
             <p className="text-sm">No subjects yet — load the sample curriculum or create one.</p>
           </div>
         ) : (
+          <>
           <div className="divide-y divide-border">
             {subjectSlice.map((m) => {
               const index = modules.findIndex(item => item.id === m.id);
@@ -1013,6 +1014,7 @@ export default function AdminCurriculumPage() {
             })}
           </div>
           <Pager page={subjectPageSafe} pages={subjectPages} onPage={setSubjectPage} />
+          </>
         )}
       </Card>
     </div>

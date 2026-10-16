@@ -159,8 +159,8 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
   const [skill, setSkill] = useState<FormatId | null>(null);
   const [skillsOpen, setSkillsOpen] = useState(false);
   const [subject, setSubject] = useState('');
-  const [level, setLevel] = useState<string>(PROGRAMMES[0]?.value ?? 'Primary');
-  const chatMode = studioModeForProgramme(level);
+  const [level, setLevel] = useState('');
+  const chatMode = level ? studioModeForProgramme(level) : 'k12';
   const subjectOptions = subjectsForProgramme(level);
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState<number | null>(null);
@@ -715,6 +715,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                       className={`max-w-[11rem] px-2.5 py-1.5 rounded-full text-xs border ${C.border} bg-[#242220] outline-none ${C.dim} cursor-pointer`}
                       aria-label="Programme"
                     >
+                      <option value="">Level</option>
                       {PROGRAMMES.map(programme => <option key={programme.value} value={programme.value}>{programme.label}</option>)}
                     </select>
 

@@ -476,10 +476,10 @@ export default function AdminUsersPage() {
           </select>
         )}
         {programmes.length > 0 && (
-          <select aria-label="Filter by year group" value={programmeFilter}
+          <select aria-label="Filter by level" value={programmeFilter}
             onChange={e => setProgrammeFilter(e.target.value)}
             className="h-11 rounded-full border border-border bg-card px-4 text-sm font-medium">
-            <option value="all">All year groups</option>
+            <option value="all">All levels</option>
             {programmes.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
         )}

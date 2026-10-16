@@ -44,13 +44,13 @@ export function TutorsScreen({
   onVerify?: (tutorId: string, approve: boolean) => void;
 }) {
   const [bio, setBio] = useState('');
-  const [subjects, setSubjects] = useState('Maths');
-  const [hourly, setHourly] = useState('4000');
+  const [subjects, setSubjects] = useState('');
+  const [hourly, setHourly] = useState('');
   const [slotInput, setSlotInput] = useState('');
   const [slots, setSlots] = useState<TutorSlotCard[]>([]);
   const [chosen, setChosen] = useState<Record<string, string>>({});
   const [reviewFor, setReviewFor] = useState('');
-  const [rating, setRating] = useState('5');
+  const [rating, setRating] = useState('');
   const [reviewBody, setReviewBody] = useState('');
 
   const addSlot = () => {
@@ -104,8 +104,8 @@ export function TutorsScreen({
           <PanelHeader title="Your tutor profile" />
           <form className="space-y-3" onSubmit={(event: FormEvent) => { event.preventDefault(); onSaveProfile?.(bio, subjects, Number(hourly) || 0, slots); }}>
             <Textarea value={bio} onChange={(event) => setBio(event.target.value)} placeholder="What you help with" className="rounded-xl min-h-24" />
-            <Input value={subjects} onChange={(event) => setSubjects(event.target.value)} aria-label="Subjects" className="rounded-xl" />
-            <Input value={hourly} onChange={(event) => setHourly(event.target.value)} aria-label="Hourly cents" className="rounded-xl" />
+            <Input value={subjects} onChange={(event) => setSubjects(event.target.value)} aria-label="Subjects" placeholder="e.g. Mathematics" className="rounded-xl" />
+            <Input value={hourly} onChange={(event) => setHourly(event.target.value)} aria-label="Hourly cents" placeholder="e.g. 4000" className="rounded-xl" />
             <div className="flex gap-2">
               <Input type="datetime-local" value={slotInput} onChange={(event) => setSlotInput(event.target.value)} aria-label="Open time" className="rounded-xl" />
               <Button type="button" variant="outline" className="rounded-xl" onClick={addSlot}>Add time</Button>
@@ -132,7 +132,7 @@ export function TutorsScreen({
             ))}
             {reviewFor && onReview && (
               <form className="flex flex-wrap gap-2" onSubmit={(event) => { event.preventDefault(); onReview(reviewFor, Number(rating) || 5, reviewBody); setReviewFor(''); setReviewBody(''); }}>
-                <Input value={rating} onChange={(event) => setRating(event.target.value)} aria-label="Rating" className="rounded-xl w-20" />
+                <Input value={rating} onChange={(event) => setRating(event.target.value)} aria-label="Rating" placeholder="e.g. 5" className="rounded-xl w-20" />
                 <Input value={reviewBody} onChange={(event) => setReviewBody(event.target.value)} aria-label="Review" placeholder="How was the session?" className="rounded-xl flex-1" />
                 <Button type="submit" className="rounded-xl">Send review</Button>
               </form>
@@ -179,14 +179,14 @@ export function ExamScreen({
   onGuide?: (interest: string, grades: Record<string, string>) => void;
   onUpload?: (paper: { title: string; board: string; subject: string; minutes: number; questions: { prompt: string; answer: string; marks: number }[] }) => void;
 }) {
-  const [interest, setInterest] = useState('Medicine');
+  const [interest, setInterest] = useState('');
   const [grades, setGrades] = useState<Record<string, string>>({ biology: 'A', chemistry: 'A', maths: 'A', physics: 'B', english: 'B' });
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [title, setTitle] = useState('');
-  const [board, setBoard] = useState('School');
-  const [subject, setSubject] = useState('Maths');
-  const [minutes, setMinutes] = useState('45');
-  const [lines, setLines] = useState('Simplify 2x + 4 = 10 | x = 3 | 2');
+  const [board, setBoard] = useState('');
+  const [subject, setSubject] = useState('');
+  const [minutes, setMinutes] = useState('');
+  const [lines, setLines] = useState('');
 
   const parseLines = () => lines.split('\n').map((line) => {
     const [prompt, answer, marks] = line.split('|').map((part) => part.trim());
@@ -215,7 +215,7 @@ export function ExamScreen({
           <PanelHeader title="University and careers" />
           <form className="space-y-2 mb-3" onSubmit={(event) => { event.preventDefault(); onGuide?.(interest, grades); }}>
             <div className="flex gap-2">
-              <Input value={interest} onChange={(event) => setInterest(event.target.value)} aria-label="Interest" className="rounded-xl" />
+              <Input value={interest} onChange={(event) => setInterest(event.target.value)} aria-label="Interest" placeholder="e.g. Medicine" className="rounded-xl" />
               <Button type="submit" className="rounded-xl">Suggest</Button>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -261,9 +261,9 @@ export function ExamScreen({
           }}>
             <Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Title" aria-label="Paper title" className="rounded-xl" />
             <div className="grid grid-cols-3 gap-2">
-              <Input value={board} onChange={(event) => setBoard(event.target.value)} aria-label="Board" className="rounded-xl" />
-              <Input value={subject} onChange={(event) => setSubject(event.target.value)} aria-label="Subject" className="rounded-xl" />
-              <Input value={minutes} onChange={(event) => setMinutes(event.target.value)} aria-label="Minutes" className="rounded-xl" />
+              <Input value={board} onChange={(event) => setBoard(event.target.value)} aria-label="Board" placeholder="e.g. IGCSE" className="rounded-xl" />
+              <Input value={subject} onChange={(event) => setSubject(event.target.value)} aria-label="Subject" placeholder="e.g. Mathematics" className="rounded-xl" />
+              <Input value={minutes} onChange={(event) => setMinutes(event.target.value)} aria-label="Minutes" placeholder="e.g. 45" className="rounded-xl" />
             </div>
             <Textarea value={lines} onChange={(event) => setLines(event.target.value)} aria-label="Questions" className="rounded-xl min-h-24" placeholder="prompt | answer | marks" />
             <Button type="submit" className="rounded-xl">Publish paper</Button>
@@ -346,7 +346,7 @@ export function SnapScreen({
   result?: { answer: string; steps: string[]; similar: string[] } | null;
   blocked?: string;
 }) {
-  const [text, setText] = useState('2x + 4 = 10');
+  const [text, setText] = useState('');
   const [context, setContext] = useState<'study' | 'assessment'>('study');
   const [photo, setPhoto] = useState('');
   const [photoNote, setPhotoNote] = useState('');
@@ -371,7 +371,7 @@ export function SnapScreen({
       <DashHeader eyebrow="Study help" title="Snap" accent="and solve" description="A photo or the question text becomes a worked explanation and similar questions. It is refused during an assessment, and every attempt is logged." />
       <Panel>
         <div className="space-y-3">
-          <Textarea value={text} onChange={(event) => setText(event.target.value)} className="rounded-xl min-h-24" aria-label="Question" />
+          <Textarea value={text} onChange={(event) => setText(event.target.value)} className="rounded-xl min-h-24" aria-label="Question" placeholder="e.g. 2x + 4 = 10" />
           <Input type="file" accept="image/*" aria-label="Question photo" className="rounded-xl" onChange={(event) => readPhoto(event.target.files?.[0])} />
           {photoNote && <p className="text-xs text-muted-foreground">{photoNote}</p>}
           <div className="flex flex-wrap gap-2">

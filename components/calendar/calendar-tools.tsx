@@ -16,9 +16,9 @@ export function CalendarTools({
   const [drafts, setDrafts] = useState<CalendarItem[]>([]);
   const [selected, setSelected] = useState<Record<number, boolean>>({});
   const [text, setText] = useState('');
-  const [units, setUnits] = useState('Unit 1\nUnit 2\nUnit 3');
-  const [start, setStart] = useState('2026-10-12');
-  const [end, setEnd] = useState('2026-11-06');
+  const [units, setUnits] = useState('');
+  const [start, setStart] = useState('');
+  const [end, setEnd] = useState('');
   const [lessons, setLessons] = useState(5);
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState('');
@@ -94,7 +94,7 @@ export function CalendarTools({
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="text-sm space-y-1">
           <span className="font-semibold">Units, one per line</span>
-          <textarea value={units} onChange={event => setUnits(event.target.value)} rows={4} className="w-full rounded-xl border border-border bg-muted/40 p-3 text-sm" />
+          <textarea value={units} onChange={event => setUnits(event.target.value)} rows={4} placeholder={'Unit 1\nUnit 2\nUnit 3'} className="w-full rounded-xl border border-border bg-muted/40 p-3 text-sm" />
         </label>
         <div className="space-y-2">
           <label className="text-sm block">Term start <Input type="date" value={start} onChange={event => setStart(event.target.value)} /></label>

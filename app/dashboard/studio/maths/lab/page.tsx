@@ -68,10 +68,11 @@ function GraphingCalculator() {
 }
 
 function FunctionAnalysis() {
-  const [input, setInput] = useState('x^3 - 6x^2 + 9x - 2');
+  const [input, setInput] = useState('');
   const [range, setRange] = useState<[number, number]>([-2, 6]);
   const analysis = useMemo(() => {
     try {
+      if (!input.trim()) return { ok: false as const, error: '' };
       const f = compileFn(input);
       const d1 = derivativeOf(input);
       const d2 = derivativeOf(d1);
@@ -93,7 +94,7 @@ function FunctionAnalysis() {
     <div className="grid lg:grid-cols-12 gap-5 items-start">
       <Panel className="lg:col-span-4">
         <PanelHeader title="f(x) =" meta={<Sigma className="w-4 h-4 text-muted-foreground" />} />
-        <input value={input} onChange={e => setInput(e.target.value)} className="w-full h-11 rounded-xl border border-border bg-background px-3 font-mono text-[15px] outline-none focus:border-primary" />
+        <input value={input} onChange={e => setInput(e.target.value)} placeholder="e.g. x^3 - 6x^2 + 9x - 2" className="w-full h-11 rounded-xl border border-border bg-background px-3 font-mono text-[15px] outline-none focus:border-primary" />
         <div className="flex items-center gap-2 mt-3 text-[13px]">
           <span className="text-muted-foreground">x from</span>
           <input type="number" value={range[0]} onChange={e => setRange([Number(e.target.value), range[1]])} className="w-20 h-9 rounded-lg border border-border px-2" />
@@ -110,7 +111,11 @@ function FunctionAnalysis() {
             <div><dt className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Stationary points</dt>
               <dd className="space-y-0.5">{analysis.stationary.length ? analysis.stationary.map((p, i) => <p key={i} className="tabular-nums">{p.kind} at ({fmt(p.x)}, {fmt(p.y)})</p>) : 'none found in range'}</dd></div>
           </dl>
-        ) : <p className="mt-4 text-[13px] text-rose-600">{analysis.error}</p>}
+        ) : (
+          analysis.error
+            ? <p className="mt-4 text-[13px] text-rose-600">{analysis.error}</p>
+            : null
+        )}
       </Panel>
       <div className="lg:col-span-8">
         {analysis.ok && (

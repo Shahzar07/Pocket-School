@@ -295,7 +295,7 @@ function labelFor(token: string): string {
   return token;
 }
 
-/** A plain sentence, for example "Visible to students, Year 8, and the marketplace." */
+/** A plain sentence, for example "Visible to students, Lower Secondary, and the marketplace." */
 export function describeTargets(targets: readonly string[], labels: Record<string, string> = {}): string {
   const clean = uniqueTokens(targets).filter(token => isAllocationTarget(token) || token.startsWith('programme:'));
   if (!clean.length) return 'Nobody is selected yet.';

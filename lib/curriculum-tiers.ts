@@ -244,7 +244,7 @@ const GENERAL_RULES = `GENERAL RULES
 - You may draw on textbooks, articles or reference material for facts and concepts, but rewrite everything fully in your own words. Never copy sentences or phrasing directly.
 - No exam board, publisher, curriculum brand, or branded resource names anywhere.
 - Case studies and scenarios use original, fictional people and organisations only. The single exception is Law case law and statutes, which must be real (see the Law tier), and subjects that require real historical or scientific fact (History, Science), which are cited factually and neutrally.
-- Match vocabulary, sentence complexity and explanation depth to the stated Year/Level. A Year 1 lesson and a Year 11 lesson on a related idea must read completely differently.`;
+- Match vocabulary, sentence complexity and explanation depth to the stated level. A Primary lesson and an IGCSE lesson on a related idea must read completely differently.`;
 
 const EXPLAINER_RULES = (tone: string) => `EXPLAINER TEXT FORMAT
 - Flowing prose in paragraphs. Not headers, not bullet lists, not labelled sub-sections, not lesson-plan notes.
@@ -554,7 +554,7 @@ function metaBlock(meta: GenerationMeta): string {
   const rows: string[] = [];
   if (meta.programme) rows.push(`Programme: ${meta.programme}`);
   if (meta.subject) rows.push(`Subject: ${meta.subject}`);
-  if (meta.yearLevel) rows.push(`Year / Level: ${meta.yearLevel}`);
+  if (meta.yearLevel) rows.push(`Level: ${meta.yearLevel}`);
   if (meta.unit) rows.push(`Unit: ${meta.unit}`);
   if (meta.chapter) rows.push(`Chapter: ${meta.chapter}`);
   if (meta.topic) rows.push(`Topic: ${meta.topic}`);

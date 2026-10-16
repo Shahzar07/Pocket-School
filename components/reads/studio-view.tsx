@@ -15,6 +15,7 @@ import { composeCoverSizes } from '@/components/reads/cover-compose';
 import { BOOKS } from '@/lib/reads/seed';
 import { publishIssues, screenCoverAge, type CoverBrief, type CoverFont, type CoverPlacement } from '@/lib/reads/cover';
 import type { Book, BookChapter, BookStatus } from '@/lib/reads/types';
+import { useCoursePlaceholders } from '@/hooks/use-example-course';
 import { useReadsT } from '@/lib/reads/i18n';
 import { getLanguage } from '@/lib/languages';
 import { moveItem } from '@/lib/platform/cms';
@@ -36,6 +37,7 @@ function cloneBooks(): Book[] {
 
 export function StudioView() {
   const t = useReadsT();
+  const placeholders = useCoursePlaceholders();
   const [books, setBooks] = useState<Book[]>(cloneBooks);
   const [id, setId] = useState('monsoon-market');
   const [tab, setTab] = useState<'details' | 'write' | 'import' | 'pictures' | 'cover'>('details');
@@ -242,10 +244,10 @@ export function StudioView() {
           {tab === 'details' && (
             <>
               <label className="block text-sm font-semibold">{t('reads.studio.fieldTitle')}
-                <input value={book.title} onChange={e => update({ title: e.target.value })} className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal" />
+                <input value={book.title} onChange={e => update({ title: e.target.value })} placeholder={placeholders.title} className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal" />
               </label>
               <label className="block text-sm font-semibold">{t('reads.studio.fieldBlurb')}
-                <textarea value={book.blurb} onChange={e => update({ blurb: e.target.value })} rows={3} className="mt-1 w-full rounded-xl border border-border px-3 py-2 font-normal" />
+                <textarea value={book.blurb} onChange={e => update({ blurb: e.target.value })} rows={3} placeholder={placeholders.description} className="mt-1 w-full rounded-xl border border-border px-3 py-2 font-normal" />
               </label>
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="text-sm font-semibold">{t('reads.studio.price')}

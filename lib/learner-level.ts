@@ -1,5 +1,5 @@
 /**
- * The tutor speaks differently to a Year 8 and to a postgraduate. Onboarding
+ * The tutor speaks differently to a Lower Secondary learner and to a postgraduate. Onboarding
  * records a free-text level; this maps it to the tutor's register so a child
  * never gets the university voice by default.
  */

@@ -13,9 +13,9 @@ export const SEED_EVENTS: PlannerEvent[] = [
   { id: 'term', title: 'Term 4', date: '2026-10-01', endDate: '2026-11-06', kind: 'term', source: 'template', audience: 'all' },
   { id: 'deepavali', title: 'Deepavali', date: '2026-10-19', kind: 'holiday', source: 'template', audience: 'all' },
   { id: 'exams', title: 'Exam week', date: '2026-10-26', endDate: '2026-10-30', kind: 'exam', source: 'template', audience: 'all' },
-  { id: 'ptm', title: 'Parent meeting', date: '2026-11-05', kind: 'ptm', source: 'manual', audience: 'parents', campusId: 'north', classId: '4A', yearGroup: 'Y4' },
+  { id: 'ptm', title: 'Parent meeting', date: '2026-11-05', kind: 'ptm', source: 'manual', audience: 'parents', campusId: 'north', classId: '4A', yearGroup: 'Primary' },
   { id: 'south', title: 'South campus sports', date: '2026-10-16', kind: 'event', source: 'manual', audience: 'all', campusId: 'south' },
-  { id: 'period', title: 'P1 Fractions', date: '2026-10-05', kind: 'period', source: 'manual', audience: 'students', classId: '4A', yearGroup: 'Y4', campusId: 'north', recurrence: 'weekly', period: '08:30–09:10' },
+  { id: 'period', title: 'P1 Fractions', date: '2026-10-05', kind: 'period', source: 'manual', audience: 'students', classId: '4A', yearGroup: 'Primary', campusId: 'north', recurrence: 'weekly', period: '08:30–09:10' },
   { id: 'report', title: 'Report cards', date: '2026-10-30', kind: 'report', source: 'manual', audience: 'all', campusId: 'north' },
 ];
 
@@ -33,7 +33,7 @@ export function seedPlan(): YearPlan {
   };
 }
 
-const north = { campusId: 'north', classId: '4A', yearGroup: 'Y4' };
+const north = { campusId: 'north', classId: '4A', yearGroup: 'Primary' };
 
 export function seedChecks(side: 'institution' | 'teacher' | 'parent' | 'student') {
   const plan = seedPlan();
