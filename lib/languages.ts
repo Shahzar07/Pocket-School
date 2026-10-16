@@ -16,6 +16,29 @@
  * Geolocation never changes the language; it can only suggest one.
  */
 
+export type LanguageRegion =
+  | 'Default'
+  | 'Europe'
+  | 'Middle East'
+  | 'South Asia'
+  | 'Southeast Asia'
+  | 'East Asia'
+  | 'Central Asia'
+  | 'Africa'
+  | 'Americas';
+
+export const LANGUAGE_REGIONS: readonly LanguageRegion[] = [
+  'Default',
+  'East Asia',
+  'South Asia',
+  'Southeast Asia',
+  'Middle East',
+  'Europe',
+  'Central Asia',
+  'Africa',
+  'Americas',
+];
+
 export interface AppLanguage {
   /** Short code stored in localStorage and passed to the AI routes. */
   code: string;
@@ -26,34 +49,66 @@ export interface AppLanguage {
   flag: string;
   /** Full BCP-47 tag for SpeechRecognition and SpeechSynthesis. */
   bcp47: string;
+  /** Picker group. English stays in Default. */
+  region: LanguageRegion;
   /** Right-to-left script. */
   rtl?: boolean;
 }
 
 export const LANGUAGES: AppLanguage[] = [
-  { code: 'en', label: 'English',           englishName: 'English',                flag: '🇬🇧', bcp47: 'en-GB' },
-  { code: 'zh', label: '简体中文',           englishName: 'Chinese (Simplified)',   flag: '🇨🇳', bcp47: 'zh-CN' },
-  { code: 'zh-Hant', label: '繁體中文',      englishName: 'Chinese (Traditional)',  flag: '🇹🇼', bcp47: 'zh-TW' },
-  { code: 'hi', label: 'हिन्दी',             englishName: 'Hindi',                  flag: '🇮🇳', bcp47: 'hi-IN' },
-  { code: 'es', label: 'Español',           englishName: 'Spanish',                flag: '🇪🇸', bcp47: 'es-ES' },
-  { code: 'fr', label: 'Français',          englishName: 'French',                 flag: '🇫🇷', bcp47: 'fr-FR' },
-  { code: 'ar', label: 'العربية',           englishName: 'Arabic',                 flag: '🇸🇦', bcp47: 'ar-SA', rtl: true },
-  { code: 'bn', label: 'বাংলা',             englishName: 'Bengali',                flag: '🇧🇩', bcp47: 'bn-BD' },
-  { code: 'pt', label: 'Português',         englishName: 'Portuguese',             flag: '🇧🇷', bcp47: 'pt-BR' },
-  { code: 'ru', label: 'Русский',           englishName: 'Russian',                flag: '🇷🇺', bcp47: 'ru-RU' },
-  { code: 'kk', label: 'Қазақша',           englishName: 'Kazakh',                 flag: '🇰🇿', bcp47: 'kk-KZ' },
-  { code: 'ur', label: 'اردو',              englishName: 'Urdu',                   flag: '🇵🇰', bcp47: 'ur-PK', rtl: true },
-  { code: 'id', label: 'Bahasa Indonesia',  englishName: 'Indonesian',             flag: '🇮🇩', bcp47: 'id-ID' },
-  { code: 'ms', label: 'Bahasa Melayu',     englishName: 'Malay',                  flag: '🇲🇾', bcp47: 'ms-MY' },
-  { code: 'de', label: 'Deutsch',           englishName: 'German',                 flag: '🇩🇪', bcp47: 'de-DE' },
-  { code: 'ja', label: '日本語',             englishName: 'Japanese',               flag: '🇯🇵', bcp47: 'ja-JP' },
-  { code: 'ko', label: '한국어',             englishName: 'Korean',                 flag: '🇰🇷', bcp47: 'ko-KR' },
-  { code: 'tr', label: 'Türkçe',            englishName: 'Turkish',                flag: '🇹🇷', bcp47: 'tr-TR' },
-  { code: 'vi', label: 'Tiếng Việt',        englishName: 'Vietnamese',             flag: '🇻🇳', bcp47: 'vi-VN' },
-  { code: 'ta', label: 'தமிழ்',             englishName: 'Tamil',                  flag: '🇮🇳', bcp47: 'ta-IN' },
-  { code: 'th', label: 'ไทย',               englishName: 'Thai',                   flag: '🇹🇭', bcp47: 'th-TH' },
-  { code: 'it', label: 'Italiano',          englishName: 'Italian',                flag: '🇮🇹', bcp47: 'it-IT' },
-  { code: 'sw', label: 'Kiswahili',         englishName: 'Swahili',                flag: '🇰🇪', bcp47: 'sw-KE' },
+  { code: 'en', label: 'English', englishName: 'English', flag: '🇬🇧', bcp47: 'en-GB', region: 'Default' },
+  { code: 'zh', label: '简体中文', englishName: 'Chinese (Simplified)', flag: '🇨🇳', bcp47: 'zh-CN', region: 'East Asia' },
+  { code: 'zh-Hant', label: '繁體中文', englishName: 'Chinese (Traditional)', flag: '🇹🇼', bcp47: 'zh-TW', region: 'East Asia' },
+  { code: 'yue', label: '粵語', englishName: 'Cantonese', flag: '🇭🇰', bcp47: 'yue-HK', region: 'East Asia' },
+  { code: 'ja', label: '日本語', englishName: 'Japanese', flag: '🇯🇵', bcp47: 'ja-JP', region: 'East Asia' },
+  { code: 'ko', label: '한국어', englishName: 'Korean', flag: '🇰🇷', bcp47: 'ko-KR', region: 'East Asia' },
+  { code: 'hi', label: 'हिन्दी', englishName: 'Hindi', flag: '🇮🇳', bcp47: 'hi-IN', region: 'South Asia' },
+  { code: 'bn', label: 'বাংলা', englishName: 'Bengali', flag: '🇧🇩', bcp47: 'bn-BD', region: 'South Asia' },
+  { code: 'ur', label: 'اردو', englishName: 'Urdu', flag: '🇵🇰', bcp47: 'ur-PK', region: 'South Asia', rtl: true },
+  { code: 'pa', label: 'ਪੰਜਾਬੀ', englishName: 'Punjabi', flag: '🇮🇳', bcp47: 'pa-IN', region: 'South Asia' },
+  { code: 'ta', label: 'தமிழ்', englishName: 'Tamil', flag: '🇮🇳', bcp47: 'ta-IN', region: 'South Asia' },
+  { code: 'te', label: 'తెలుగు', englishName: 'Telugu', flag: '🇮🇳', bcp47: 'te-IN', region: 'South Asia' },
+  { code: 'mr', label: 'मराठी', englishName: 'Marathi', flag: '🇮🇳', bcp47: 'mr-IN', region: 'South Asia' },
+  { code: 'gu', label: 'ગુજરાતી', englishName: 'Gujarati', flag: '🇮🇳', bcp47: 'gu-IN', region: 'South Asia' },
+  { code: 'kn', label: 'ಕನ್ನಡ', englishName: 'Kannada', flag: '🇮🇳', bcp47: 'kn-IN', region: 'South Asia' },
+  { code: 'ml', label: 'മലയാളം', englishName: 'Malayalam', flag: '🇮🇳', bcp47: 'ml-IN', region: 'South Asia' },
+  { code: 'ne', label: 'नेपाली', englishName: 'Nepali', flag: '🇳🇵', bcp47: 'ne-NP', region: 'South Asia' },
+  { code: 'or', label: 'ଓଡ଼ିଆ', englishName: 'Odia', flag: '🇮🇳', bcp47: 'or-IN', region: 'South Asia' },
+  { code: 'si', label: 'සිංහල', englishName: 'Sinhala', flag: '🇱🇰', bcp47: 'si-LK', region: 'South Asia' },
+  { code: 'id', label: 'Bahasa Indonesia', englishName: 'Indonesian', flag: '🇮🇩', bcp47: 'id-ID', region: 'Southeast Asia' },
+  { code: 'jv', label: 'Basa Jawa', englishName: 'Javanese', flag: '🇮🇩', bcp47: 'jv-ID', region: 'Southeast Asia' },
+  { code: 'ms', label: 'Bahasa Melayu', englishName: 'Malay', flag: '🇲🇾', bcp47: 'ms-MY', region: 'Southeast Asia' },
+  { code: 'vi', label: 'Tiếng Việt', englishName: 'Vietnamese', flag: '🇻🇳', bcp47: 'vi-VN', region: 'Southeast Asia' },
+  { code: 'th', label: 'ไทย', englishName: 'Thai', flag: '🇹🇭', bcp47: 'th-TH', region: 'Southeast Asia' },
+  { code: 'fil', label: 'Filipino', englishName: 'Filipino', flag: '🇵🇭', bcp47: 'fil-PH', region: 'Southeast Asia' },
+  { code: 'my', label: 'မြန်မာ', englishName: 'Burmese', flag: '🇲🇲', bcp47: 'my-MM', region: 'Southeast Asia' },
+  { code: 'km', label: 'ភាសាខ្មែរ', englishName: 'Khmer', flag: '🇰🇭', bcp47: 'km-KH', region: 'Southeast Asia' },
+  { code: 'ar', label: 'العربية', englishName: 'Arabic', flag: '🇸🇦', bcp47: 'ar-SA', region: 'Middle East', rtl: true },
+  { code: 'he', label: 'עברית', englishName: 'Hebrew', flag: '🇮🇱', bcp47: 'he-IL', region: 'Middle East', rtl: true },
+  { code: 'fa', label: 'فارسی', englishName: 'Persian', flag: '🇮🇷', bcp47: 'fa-IR', region: 'Middle East', rtl: true },
+  { code: 'ps', label: 'پښتو', englishName: 'Pashto', flag: '🇦🇫', bcp47: 'ps-AF', region: 'Middle East', rtl: true },
+  { code: 'tr', label: 'Türkçe', englishName: 'Turkish', flag: '🇹🇷', bcp47: 'tr-TR', region: 'Europe' },
+  { code: 'ru', label: 'Русский', englishName: 'Russian', flag: '🇷🇺', bcp47: 'ru-RU', region: 'Europe' },
+  { code: 'de', label: 'Deutsch', englishName: 'German', flag: '🇩🇪', bcp47: 'de-DE', region: 'Europe' },
+  { code: 'fr', label: 'Français', englishName: 'French', flag: '🇫🇷', bcp47: 'fr-FR', region: 'Europe' },
+  { code: 'it', label: 'Italiano', englishName: 'Italian', flag: '🇮🇹', bcp47: 'it-IT', region: 'Europe' },
+  { code: 'pt-PT', label: 'Português (Portugal)', englishName: 'Portuguese (Portugal)', flag: '🇵🇹', bcp47: 'pt-PT', region: 'Europe' },
+  { code: 'nl', label: 'Nederlands', englishName: 'Dutch', flag: '🇳🇱', bcp47: 'nl-NL', region: 'Europe' },
+  { code: 'pl', label: 'Polski', englishName: 'Polish', flag: '🇵🇱', bcp47: 'pl-PL', region: 'Europe' },
+  { code: 'uk', label: 'Українська', englishName: 'Ukrainian', flag: '🇺🇦', bcp47: 'uk-UA', region: 'Europe' },
+  { code: 'ro', label: 'Română', englishName: 'Romanian', flag: '🇷🇴', bcp47: 'ro-RO', region: 'Europe' },
+  { code: 'el', label: 'Ελληνικά', englishName: 'Greek', flag: '🇬🇷', bcp47: 'el-GR', region: 'Europe' },
+  { code: 'cs', label: 'Čeština', englishName: 'Czech', flag: '🇨🇿', bcp47: 'cs-CZ', region: 'Europe' },
+  { code: 'hu', label: 'Magyar', englishName: 'Hungarian', flag: '🇭🇺', bcp47: 'hu-HU', region: 'Europe' },
+  { code: 'sv', label: 'Svenska', englishName: 'Swedish', flag: '🇸🇪', bcp47: 'sv-SE', region: 'Europe' },
+  { code: 'kk', label: 'Қазақша', englishName: 'Kazakh', flag: '🇰🇿', bcp47: 'kk-KZ', region: 'Central Asia' },
+  { code: 'uz', label: 'Oʻzbekcha', englishName: 'Uzbek', flag: '🇺🇿', bcp47: 'uz-UZ', region: 'Central Asia' },
+  { code: 'sw', label: 'Kiswahili', englishName: 'Swahili', flag: '🇰🇪', bcp47: 'sw-KE', region: 'Africa' },
+  { code: 'ha', label: 'Hausa', englishName: 'Hausa', flag: '🇳🇬', bcp47: 'ha-NG', region: 'Africa' },
+  { code: 'yo', label: 'Yorùbá', englishName: 'Yoruba', flag: '🇳🇬', bcp47: 'yo-NG', region: 'Africa' },
+  { code: 'am', label: 'አማርኛ', englishName: 'Amharic', flag: '🇪🇹', bcp47: 'am-ET', region: 'Africa' },
+  { code: 'es', label: 'Español', englishName: 'Spanish', flag: '🇪🇸', bcp47: 'es-ES', region: 'Americas' },
+  { code: 'pt', label: 'Português (Brasil)', englishName: 'Portuguese (Brazil)', flag: '🇧🇷', bcp47: 'pt-BR', region: 'Americas' },
 ];
 
 export const DEFAULT_LANGUAGE = 'en';

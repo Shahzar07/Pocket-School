@@ -20,6 +20,7 @@ export interface QuoteView {
   taxRate: number;
   total: number;
   seats: number;
+  highlights?: string[];
 }
 
 export function CheckoutPanel({
@@ -50,6 +51,13 @@ export function CheckoutPanel({
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">Checkout</p>
             <h2 className="font-heading text-2xl tracking-tight mt-1">{quote.title}</h2>
+            {quote.highlights && quote.highlights.length > 0 ? (
+              <ul className="mt-3 max-w-xl space-y-1 text-sm text-muted-foreground">
+                {quote.highlights.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            ) : null}
           </div>
           <div className="min-w-56 text-sm">
             <CountrySelect label="Country" locale={i18n.language} value={country} onChange={onCountry} />

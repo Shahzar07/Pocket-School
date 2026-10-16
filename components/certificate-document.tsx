@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Award, Download, Printer, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
+import i18n from '@/lib/i18n';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
@@ -57,7 +58,7 @@ export function downloadCertificate(face: CertificateFace) {
 export function printCertificate(face: CertificateFace) {
   const win = window.open('', '_blank', 'noopener,noreferrer');
   if (!win) {
-    toast.error('Allow pop-ups to print this certificate.');
+    toast.error(i18n.t('certificate.popup'));
     return;
   }
   win.document.write(certificateDocumentHtml(face, origin()));
@@ -77,7 +78,7 @@ export async function shareCertificate(face: CertificateFace) {
     }
   }
   await navigator.clipboard.writeText(url);
-  toast.success('Verification link copied.');
+  toast.success(i18n.t('certificate.copied'));
 }
 
 export function CertificateDocument({
@@ -148,7 +149,7 @@ export function CertificateDocument({
           <Button type="button" size="sm" variant="outline" className="rounded-full font-bold gap-2" onClick={() => printCertificate(certificate)}>
             <Printer className="w-3.5 h-3.5" /> Print
           </Button>
-          <Button type="button" size="sm" variant="outline" className="rounded-full font-bold gap-2" onClick={() => shareCertificate(certificate).catch(() => toast.error('Could not share this certificate.'))}>
+          <Button type="button" size="sm" variant="outline" className="rounded-full font-bold gap-2" onClick={() => shareCertificate(certificate).catch(() => toast.error(i18n.t('certificate.shareFailed')))}>
             <Share2 className="w-3.5 h-3.5" /> Share
           </Button>
           <a

@@ -43,6 +43,7 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { resolveLessonCopy } from '@/lib/i18n/detect';
+import { useContentTranslation } from '@/hooks/use-content-translation';
 import { getLanguage } from '@/lib/languages';
 import {
   ArrowLeft, CheckCircle2, FileText, Headphones, FlipHorizontal,
@@ -631,6 +632,15 @@ export default function LessonPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [closedReason, setClosedReason] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const sourceCopy = lesson
+    ? resolveLessonCopy(lesson, i18n.language)
+    : { title: '', text: '', language: 'en', fellBack: false };
+  const translation = useContentTranslation(
+    `lesson:${lessonId ?? 'pending'}`,
+    { title: sourceCopy.title, text: sourceCopy.text },
+    i18n.language,
+    Boolean(lesson) && sourceCopy.fellBack,
+  );
 
   useEffect(() => {
     if (!user || !courseId || !lessonId) return;
@@ -669,7 +679,7 @@ export default function LessonPage() {
             result.lesson, units[unitIndex].lessons, statuses[unitIndex].state, completedIds
           );
           if (lessonStatus === 'locked') {
-            toast.error('This lesson is locked. Complete the previous lessons first.');
+            toast.error(t('lesson.locked'));
             router.replace(`/dashboard/student/courses/${courseId}`);
             return;
           }
@@ -893,16 +903,16 @@ export default function LessonPage() {
   if (loadError) return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-24 text-center">
       <AlertTriangle className="w-10 h-10 mx-auto mb-4 text-amber-500" />
-      <p className="font-semibold text-foreground mb-1">Couldn&apos;t load this lesson</p>
+      <p className="font-semibold text-foreground mb-1">{t('lesson.loadFailed')}</p>
       <p className="text-sm text-muted-foreground mb-6">{loadError}</p>
       <Button onClick={() => setReloadKey(k => k + 1)} className="rounded-full px-6 font-bold gap-2">
-        <RotateCcw className="w-4 h-4" /> Retry
+        <RotateCcw className="w-4 h-4" /> {t('lesson.retry')}
       </Button>
     </div>
   );
 
   if (!lesson) return (
-    <div className="text-center py-16 text-muted-foreground">Lesson not found.</div>
+    <div className="text-center py-16 text-muted-foreground">{t('lesson.notFound')}</div>
   );
 
   if (closedReason) return (
@@ -911,15 +921,27 @@ export default function LessonPage() {
       <h1 className="font-heading text-xl text-foreground mb-2">{lesson.title}</h1>
       <p className="text-sm text-muted-foreground mb-6">{closedReason}</p>
       <Button onClick={() => router.push(`/dashboard/student/courses/${courseId}`)} className="rounded-full px-6 font-bold gap-2">
-        <ArrowLeft className="w-4 h-4" /> Back to the course
+        <ArrowLeft className="w-4 h-4" /> {t('lesson.backToCourse')}
       </Button>
     </div>
   );
 
-  const copy = resolveLessonCopy(lesson, i18n.language);
-  const languageNotice = copy.fellBack ? (
+  const copy = {
+    title: translation.values.title || sourceCopy.title,
+    text: translation.values.text || sourceCopy.text,
+  };
+  const languageNotice = translation.autoTranslated ? (
+    <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-primary">
+      <span className="rounded-full bg-primary/10 px-2 py-0.5 font-semibold">{t('lesson.autoTranslated')}</span>
+      <button type="button" className="underline" onClick={translation.toggle}>
+        {translation.showOriginal ? t('lesson.showTranslation') : t('lesson.showOriginal')}
+      </button>
+    </p>
+  ) : sourceCopy.fellBack ? (
     <p className="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-      {t('lesson.fallback', { language: getLanguage(i18n.language).label })}
+      {translation.status === 'unavailable'
+        ? t('lesson.unavailable')
+        : t('lesson.fallback', { language: getLanguage(i18n.language).label })}
     </p>
   ) : null;
 
@@ -939,7 +961,7 @@ export default function LessonPage() {
           </div>
           {completed && (
             <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 rounded-full gap-1.5 shrink-0">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Passed
+              <CheckCircle2 className="w-3.5 h-3.5" /> {t('lesson.passed')}
             </Badge>
           )}
         </div>
@@ -959,8 +981,8 @@ export default function LessonPage() {
         ) : (
           <div className="text-center py-20 text-muted-foreground bg-muted/30 rounded-3xl border border-dashed border-border">
             <Trophy className="w-12 h-12 mx-auto mb-4 opacity-30" />
-            <p className="font-semibold">Quiz not yet published</p>
-            <p className="text-sm mt-1">Your school is preparing this module mastery quiz. Check back soon.</p>
+            <p className="font-semibold">{t('lesson.quizUnpublished')}</p>
+            <p className="text-sm mt-1">{t('lesson.quizUnpublishedBody')}</p>
           </div>
         )}
       </div>
@@ -1006,7 +1028,7 @@ export default function LessonPage() {
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">{isCurriculum ? t('lesson.unit') : t('lesson.course')}</p>
             <h1 className="font-heading text-foreground text-2xl truncate">{copy.title}</h1>
             {languageNotice}
-            {!aiOutputs && !copy.text.trim() && <p className="text-xs text-muted-foreground">No content generated yet</p>}
+            {!aiOutputs && !copy.text.trim() && <p className="text-xs text-muted-foreground">{t('lesson.empty')}</p>}
             {isCurriculum && lesson.objectiveCodes && lesson.objectiveCodes.length > 0 && (
               <p className="text-xs text-muted-foreground font-mono truncate">{lesson.objectiveCodes.join(' · ')}</p>
             )}

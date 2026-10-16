@@ -42,7 +42,7 @@ async function fallbackFor(req: Request, email: string): Promise<MfaFallback[]> 
 }
 
 export async function POST(req: Request) {
-  let body: { email?: string };
+  let body: { email?: string; language?: string };
   try {
     body = await req.json();
   } catch {
@@ -78,7 +78,8 @@ export async function POST(req: Request) {
   const token = signOtp(email, code, expiresAt);
 
   try {
-    await sendOtpEmail(email, code);
+    const headerLanguage = req.headers.get('accept-language')?.split(',')[0]?.split('-')[0] ?? 'en';
+    await sendOtpEmail(email, code, body.language || headerLanguage);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to send verification email.';
     return NextResponse.json({ error: message }, { status: 502 });

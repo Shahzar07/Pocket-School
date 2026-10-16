@@ -26,7 +26,7 @@ import { reorderById, sortByOrder, withSequentialOrder } from '@/lib/reorder';
 import { hasCmsAddon } from '@/lib/entitlements';
 import { stripUnitPrefix } from '@/lib/unit-title';
 import { ReorderControls, reorderKeyDown } from '@/components/reorder-controls';
-import { cmsSubjectYearOptions, cmsYearLevelSuggestions, levelsForProgramme } from '@/lib/programmes';
+import { PROGRAMMES, cmsSubjectYearOptions, displayLevels } from '@/lib/programmes';
 
 const STATUS_BADGE: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -35,7 +35,7 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 /** Year / Level suggestions from the same taxonomy as sign-up. */
-const YEAR_LEVEL_SUGGESTIONS = cmsYearLevelSuggestions();
+const YEAR_LEVEL_SUGGESTIONS = PROGRAMMES.map((programme) => programme.label);
 
 function yearChoices(name: string | undefined, stored: readonly string[], current: string): readonly string[] {
   const years = cmsSubjectYearOptions(name, stored);
@@ -61,7 +61,7 @@ export default function AdminCurriculumPage() {
   const [showProgrammeForm, setShowProgrammeForm] = useState(false);
   const [progName, setProgName] = useState('');
   const [progSubjects, setProgSubjects] = useState('');
-  const [progYearGroups, setProgYearGroups] = useState(levelsForProgramme('Lower Secondary').join(', '));
+  const [progYearGroups, setProgYearGroups] = useState('Secondary');
   const [progTier, setProgTier] = useState<'free' | 'academic'>('academic');
   const [creatingProgramme, setCreatingProgramme] = useState(false);
   /** Programme being edited; null means the form creates a new one. */
@@ -317,7 +317,7 @@ export default function AdminCurriculumPage() {
   const resetProgrammeForm = () => {
     setProgName('');
     setProgSubjects('');
-    setProgYearGroups('Year 7, Year 8, Year 9');
+    setProgYearGroups('Secondary');
     setProgTier('academic');
     setEditingProgramme(null);
     setShowProgrammeForm(false);
@@ -439,7 +439,7 @@ export default function AdminCurriculumPage() {
         <div className="sm:text-right">
           <Button onClick={handleSeed} disabled={seeding} variant="outline" className="gap-2 rounded-xl">
             <BookOpen className="w-4 h-4" />
-            {seeding ? 'Loading…' : 'Load Sample Curriculum (Year 7 Science)'}
+            {seeding ? 'Loading…' : 'Load Sample Curriculum (Secondary Science)'}
           </Button>
           <p className="text-xs text-muted-foreground mt-1.5 max-w-xs sm:ml-auto">
             Creates a ready-made demo subject you can edit or delete at any time.
@@ -474,7 +474,7 @@ export default function AdminCurriculumPage() {
             <div className="space-y-1.5">
               <Label>Year / Level</Label>
               <Input value={archYear} onChange={e => setArchYear(e.target.value)}
-                list="year-level-suggestions" placeholder="e.g. Year 9"
+                list="year-level-suggestions" placeholder="e.g. Secondary"
                 className="rounded-xl h-10" />
             </div>
             <div className="space-y-1.5">
@@ -693,7 +693,7 @@ export default function AdminCurriculumPage() {
                     {p.requiredTier === 'academic' ? 'Academic' : 'Free'}
                   </span>
                 </div>
-                <p className="text-xs text-muted-foreground">{p.yearGroups?.join(' · ')}</p>
+                <p className="text-xs text-muted-foreground">{displayLevels(p.yearGroups) || p.name}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{p.subjects?.join(', ')}</p>
                 <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border">
                   <Button size="sm" variant="ghost" className="h-8 rounded-lg text-xs gap-1.5"
@@ -730,7 +730,7 @@ export default function AdminCurriculumPage() {
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Title *</Label>
-                <Input value={modTitle} onChange={e => setModTitle(e.target.value)} placeholder="e.g. Maths — Year 7" className="rounded-xl h-10" />
+                <Input value={modTitle} onChange={e => setModTitle(e.target.value)} placeholder="e.g. Maths — Secondary" className="rounded-xl h-10" />
               </div>
               <div className="space-y-1.5">
                 <Label>Subject *</Label>

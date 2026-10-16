@@ -157,9 +157,7 @@ export function SiteFooter() {
           </div>
         </div>
         <div className={styles.footerLegal}>
-          <p>
-            <strong>{t("footer.independent")}</strong> {t("footer.disclaimer")}
-          </p>
+          <p>{t("footer.disclaimer")}</p>
           <p>
             {t("footer.rights", { year: new Date().getFullYear() })}
           </p>
@@ -250,9 +248,6 @@ export function SiteFooter() {
           {/* Mandatory non-affiliation disclaimer — must be visible, not buried */}
           <div className="rounded-2xl bg-white/5 border border-white/10 px-5 py-4 mb-8">
             <p className="text-[11px] leading-relaxed text-white/55">
-              <strong className="text-white/80 font-semibold">
-                {t("footer.independent")}
-              </strong>{" "}
               {t("footer.disclaimer")}
             </p>
           </div>

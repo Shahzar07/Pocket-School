@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 import { motion, type Variants } from 'motion/react';
 import { toast } from 'sonner';
-import { ADDONS, TIERS } from '@/lib/entitlements';
+import { ADDONS, TIERS, planProgrammes } from '@/lib/entitlements';
+import { LANGUAGES } from '@/lib/languages';
 import { SIGNUP_GRANT } from '@/lib/sparks';
 import { discountLabel, formatMoney, planById, quoteAddon, quotePlan, type BillingInterval } from '@/lib/pricing';
 import { usePricing } from '@/hooks/use-pricing';
@@ -53,6 +55,22 @@ interface PlanCopy {
   features: string[];
 }
 
+const PREVIEW_EXTRAS = [
+  'ET AI tutor — 20 messages a day',
+  'ET AI generator — 3 items a day',
+  'Buy any marketplace course outright',
+];
+
+const PRIMARY_EXTRAS = [
+  'Unlimited ET AI study materials',
+  'Progress tracking and streaks',
+];
+
+const IGCSE_EXTRAS = [
+  'ET AI tutor, unlimited',
+  "Bloom's progress tracking",
+];
+
 /** Marketing copy for the sold plans. Amounts come from the pricing document. */
 const PLANS: PlanCopy[] = [
   {
@@ -61,59 +79,32 @@ const PLANS: PlanCopy[] = [
     tier: 0,
     tagline: 'Browse everything, and take the first lesson of any course. No card, no countdown.',
     cta: 'Start free',
-    features: [
-      'Full course catalogue',
-      'First lesson of every course',
-      'ET AI tutor — 20 messages a day',
-      'ET generator — 3 items a day',
-      'Buy any marketplace course outright',
-    ],
+    features: PREVIEW_EXTRAS,
   },
   {
     id: 'primary_secondary',
     name: 'Primary & Lower Secondary',
     tier: 1,
-    tagline: 'Years 1–9. Every core subject, built to the curriculum.',
+    tagline: 'Primary and Lower Secondary. Every core subject, built to the curriculum.',
     cta: 'Choose this plan',
-    features: [
-      'Primary Years 1–6, all subjects',
-      'Lower Secondary Years 7–9',
-      'Unlimited ET study materials',
-      'Progress tracking and streaks',
-    ],
+    features: PRIMARY_EXTRAS,
   },
   {
     id: 'igcse_alevel',
     name: 'IGCSE & A-Level',
     tier: 2,
-    tagline: 'Years 10–13. The exam years, with everything below included.',
+    tagline: 'IGCSE to A-Level, with everything below included.',
     popular: true,
     cta: 'Choose this plan',
-    features: [
-      'IGCSE / GCSE — Cambridge & Edexcel',
-      'A-Level and AS-Level',
-      'Pre-University and Foundation',
-      'Everything in Primary & Lower Secondary',
-      'ET AI tutor, unlimited',
-      "Bloom's progress tracking",
-      'Parent dashboard',
-      'Completion certificates',
-    ],
+    features: IGCSE_EXTRAS,
   },
   {
     id: 'professional',
     name: 'Professional & Degrees',
     tier: 3,
-    tagline: 'Micro degrees, professional certifications and the UoL External LLB.',
+    tagline: 'MBBS Medicine, LLB Law (University of London and other universities), Engineering and Nursing.',
     cta: 'Choose this plan',
-    features: [
-      'Micro Degrees and Diplomas',
-      'Professional Certifications',
-      'University of London External LLB — all 12 modules',
-      'Amara, the law specialist AI teacher',
-      'IRAC coaching and case law analysis',
-      'Everything in IGCSE & A-Level',
-    ],
+    features: [],
   },
 ];
 
@@ -131,28 +122,7 @@ const SPARK_USES = [
   { title: 'Deep exam work', desc: 'Full mock paper generation with rubric-based marking and gap analysis.' },
 ];
 
-const FAQS = [
-  {
-    q: 'What are Sparks?',
-    a: 'Sparks are the credits that power premium AI generation — long-form podcasts, narrated audio, generated imagery and full mock-paper marking. Everyday tutoring and standard ET generations do not consume Sparks on paid plans. Each plan includes a monthly allowance that resets on your billing date, and you can buy top-up packs at any time if you run out mid-term.',
-  },
-  {
-    q: 'Can I cancel anytime?',
-    a: 'Yes. Cancel from your dashboard in two clicks — no phone call, no retention script. Your plan stays active until the end of the period you have already paid for, and anything you have generated stays in your library on the Free plan afterwards.',
-  },
-  {
-    q: 'Do you offer student discounts?',
-    a: 'The Free plan is genuinely free forever. Beyond that we run a verified-student rate of 40% off Academic for learners in full-time education, and hardship places for those who need them. Email students@poketschool.ai from your school or university address and we will sort it out.',
-  },
-  {
-    q: 'Is there a free trial?',
-    a: 'There is no time-limited trial because the Free plan does the same job better — use ET every day, indefinitely, with daily caps instead of a ticking clock. When the caps start getting in your way, that is the honest signal to upgrade.',
-  },
-  {
-    q: 'What payment methods do you accept?',
-    a: 'Visa, Mastercard and American Express, plus FPX online banking, GrabPay, Touch ’n Go eWallet and Boost for Malaysian learners. Institutional customers can pay by invoice and bank transfer in MYR or USD. All payments are processed by Stripe — we never see or store your card details.',
-  },
-];
+const FAQ_IDS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'] as const;
 
 /* ─── Page ──────────────────────────────────────────────────── */
 
@@ -568,7 +538,8 @@ function PlanCard({
   const sparksLine = sparks > 0
     ? `${sparks.toLocaleString('en')} Sparks a month${rollover > 0 ? ` · ${rollover.toLocaleString('en')} roll over` : ''}`
     : `${SIGNUP_GRANT.toLocaleString('en')} welcome Sparks`;
-  const features = sparks > 0 ? [...plan.features, `${sparks.toLocaleString('en')} Sparks a month`] : plan.features;
+  const included = [...planProgrammes(plan.id), ...plan.features];
+  const features = sparks > 0 ? [...included, `${sparks.toLocaleString('en')} Sparks a month`] : included;
 
   return (
     <motion.div
@@ -688,10 +659,12 @@ function PlanCard({
 /* ─── FAQ ───────────────────────────────────────────────────── */
 
 function PricingFaq() {
+  const { t } = useTranslation();
   const [active, setActive] = useState<number | null>(0);
+  const count = LANGUAGES.length;
 
   return (
-    <section className="py-20 lg:py-24 bg-white">
+    <section id="pricing-faq" className="py-20 lg:py-24 bg-white">
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
         <motion.div
           variants={fadeUp}
@@ -700,18 +673,19 @@ function PricingFaq() {
           viewport={{ once: true, margin: '-60px' }}
           className="text-center mb-10"
         >
-          <p className="text-xs font-bold tracking-[0.2em] text-primary mb-4">PRICING QUESTIONS</p>
+          <p className="text-xs font-bold tracking-[0.2em] uppercase text-primary mb-4">{t('landing.faq.pricingEyebrow')}</p>
           <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#203337] leading-[1.05]">
-            The things people actually ask
+            {t('landing.faq.pricingTitle')}
           </h2>
         </motion.div>
 
         <div className="flex flex-col gap-3">
-          {FAQS.map((item, i) => {
+          {FAQ_IDS.map((id, i) => {
             const open = active === i;
+            const question = t(`landing.faq.q${id}`);
             return (
               <div
-                key={item.q}
+                key={id}
                 className="bg-white border rounded-xl transition-all duration-200 hover:border-[#eaeaea]"
                 style={{
                   borderColor: open ? '#eaeaea' : '#f0f0f0',
@@ -724,7 +698,7 @@ function PricingFaq() {
                   aria-expanded={open}
                   className="w-full text-left flex justify-between items-center gap-3 font-semibold text-[0.95rem] text-[#203337] px-5 py-[18px] cursor-pointer"
                 >
-                  <span className="flex-1">{item.q}</span>
+                  <span className="flex-1">{question}</span>
                   {open ? (
                     <ChevronUp className="w-5 h-5 shrink-0 text-slate-400" />
                   ) : (
@@ -732,7 +706,9 @@ function PricingFaq() {
                   )}
                 </button>
                 {open && (
-                  <div className="px-5 pb-5 -mt-1 text-[0.9rem] text-slate-600 leading-[1.65]">{item.a}</div>
+                  <div className="px-5 pb-5 -mt-1 text-[0.9rem] text-slate-600 leading-[1.65]">
+                    {t(`landing.faq.a${id}`, { count })}
+                  </div>
                 )}
               </div>
             );
