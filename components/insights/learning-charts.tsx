@@ -10,7 +10,7 @@ import type { AnalyticsSnapshot } from '@/lib/insights/aggregate';
 import { Heatmap } from '@/components/insights/boards';
 import { Button } from '@/components/ui/button';
 
-const TEAL = '#2786A4';
+const TEAL = 'var(--primary)';
 const AMBER = '#d97706';
 const INK = '#0f172a';
 

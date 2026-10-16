@@ -248,7 +248,7 @@ function QuizViewer({
 
       {!graded && (
         <Button onClick={handleSubmit} disabled={loading || Object.keys(answers).length < questions.length}
-          className="w-full h-11 rounded-full font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white"
+          className="w-full h-11 rounded-full font-bold bg-primary text-primary-foreground"
         >
           {loading ? 'Grading with AI…' : `Submit Quiz (${Object.keys(answers).length}/${questions.length})`}
         </Button>
@@ -363,14 +363,14 @@ function UnitQuizMode({
   if (phase === 'intro') {
     return (
       <motion.div initial="hidden" animate="visible" variants={fadeUp} className="max-w-2xl mx-auto py-8">
-        <div className="relative overflow-hidden bg-gradient-to-br from-[#2786A4] to-[#1E6A83] rounded-3xl p-8 text-white text-center mb-6">
+        <div className="relative overflow-hidden bg-primary rounded-3xl p-8 text-primary-foreground text-center mb-6">
           <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-white/10 blur-2xl" />
           <div className="absolute -bottom-20 -left-10 w-56 h-56 rounded-full bg-white/5 blur-3xl" />
           <div className="relative">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/70 mb-3">Mastery Challenge</p>
-            <Trophy className="w-10 h-10 mx-auto mb-3 text-amber-300" />
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary-foreground/70 mb-3">Mastery Challenge</p>
+            <Trophy className="w-10 h-10 mx-auto mb-3 text-primary-foreground" />
             <h2 className="font-heading text-3xl mb-2">{unit.title} — Mastery Quiz</h2>
-            <p className="text-white/80 text-sm max-w-md mx-auto">
+            <p className="text-primary-foreground/80 text-sm max-w-md mx-auto">
               {questions.length} questions covering every lesson in this module.
               Score {threshold}% or higher to pass and unlock the next module.
             </p>
@@ -392,7 +392,7 @@ function UnitQuizMode({
           </div>
         </div>
 
-        <Button onClick={startQuiz} className="w-full h-12 rounded-full font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white text-base gap-2">
+        <Button onClick={startQuiz} className="w-full h-12 rounded-full font-bold bg-primary text-primary-foreground text-base gap-2">
           <Timer className="w-4 h-4" />
           {attempts.length ? 'Retake quiz' : 'Start quiz'} — your time will be recorded
         </Button>
@@ -496,7 +496,7 @@ function UnitQuizMode({
           )}
           <Button
             onClick={() => router.push(`/dashboard/student/courses/${courseId}`)}
-            className={`flex-1 h-11 rounded-full font-bold ${result.passed ? 'bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white' : ''}`}
+            className={`flex-1 h-11 rounded-full font-bold ${result.passed ? 'bg-primary text-primary-foreground' : ''}`}
             variant={result.passed ? 'default' : 'outline'}
           >
             Back to course
@@ -549,7 +549,7 @@ function UnitQuizMode({
       <Button
         onClick={handleSubmit}
         disabled={submitting || Object.keys(answers).length < questions.length}
-        className="w-full h-12 rounded-full font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white"
+        className="w-full h-12 rounded-full font-bold bg-primary text-primary-foreground"
       >
         {submitting ? 'Saving attempt…' : `Submit Mastery Quiz (${Object.keys(answers).length}/${questions.length})`}
       </Button>
@@ -1033,7 +1033,7 @@ export default function LessonPage() {
           ) : (
             <Button
               size="sm"
-              className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white gap-1.5"
+              className="rounded-full h-11 px-5 font-bold bg-primary text-primary-foreground gap-1.5"
               onClick={handleComplete}
               disabled={completing}
             >
@@ -1064,7 +1064,7 @@ export default function LessonPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="flex-wrap h-auto gap-1.5 bg-muted/50 p-1.5 rounded-2xl mb-6">
             {TABS.map(t => (
-              <TabsTrigger key={t.id} value={t.id} className="rounded-full h-8 px-3.5 text-xs font-semibold gap-1.5 text-muted-foreground hover:text-foreground data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#2786A4] data-[state=active]:to-[#1E6A83] data-[state=active]:text-white data-[state=active]:shadow-sm">
+              <TabsTrigger key={t.id} value={t.id} className="rounded-full h-8 px-3.5 text-xs font-semibold gap-1.5 text-muted-foreground hover:text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
                 {t.icon}{t.label}
                 {isFormatLocked(t.format) && (
                   <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-600">
@@ -1157,7 +1157,7 @@ export default function LessonPage() {
                   {slides.map((slide, i) => (
                     <motion.div key={i} initial="hidden" animate="visible" variants={fadeUp} custom={i} className="bg-card border border-border rounded-3xl p-6 card-glow">
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#2786A4] to-[#1E6A83] flex items-center justify-center text-white font-bold text-sm shrink-0">{i + 1}</div>
+                        <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">{i + 1}</div>
                         <h3 className="font-bold text-foreground">{slide.title}</h3>
                       </div>
                       <ul className="space-y-2">

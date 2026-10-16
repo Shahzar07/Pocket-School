@@ -110,7 +110,7 @@ export function DashboardSearch() {
                   {books.slice(0, 3).map(b => (
                     <button key={b.id} onClick={() => { router.push(b.href); setOpen(false); setQuery(''); }}
                       className="w-full flex items-center gap-3 px-4 py-2 hover:bg-muted text-left">
-                      <BookMarked className="w-4 h-4 text-[#2786A4] shrink-0" />
+                      <BookMarked className="w-4 h-4 text-primary shrink-0" />
                       <div><p className="text-sm font-medium text-foreground truncate">{b.title}</p>
                       <p className="text-xs text-gray-400 truncate">{b.subject}</p></div>
                     </button>
