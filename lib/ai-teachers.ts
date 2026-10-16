@@ -66,7 +66,7 @@ const VOICES: TeacherVoice[] = [
   'Kore', 'Charon', 'Aoede', 'Puck', 'Leda', 'Zephyr', 'Fenrir', 'Orus', 'Iapetus',
 ];
 
-const PALETTE = ['#1A73E8', '#1E3A8A', '#0B1B3F', '#10B981', '#2786A4', '#8B5CF6', '#EC4899', '#E2AF4D'];
+const PALETTE = ['#1A73E8', '#1E3A8A', '#0B1B3F', '#10B981', '#1E6A83', '#8B5CF6', '#EC4899', '#E2AF4D'];
 
 let voiceCursor = 0;
 
@@ -101,7 +101,7 @@ function et(input: {
 }
 
 /**
- * Every teacher is "ET" plus a subject. No personal names. No exam-board names
+ * Every teacher is "ET AI" plus a subject. No personal names. No exam-board names
  * in the description. Levels use programme names only.
  * Source: landing brief v4, kept where the master brief does not override it.
  */
@@ -145,7 +145,7 @@ export const AI_TEACHERS: AiTeacher[] = [
   et({
     id: 'et-maths', name: 'ET Maths', title: 'Primary · Secondary · IGCSE · A-Level · Independent',
     subjects: ['Mathematics'], category: 'Mathematics', iconKey: 'calculator',
-    tagline: 'Snap a problem. ET walks you through it step by step — or shows a full worked solution. 1 Spark per problem.',
+    tagline: 'Snap a problem. ET AI walks you through it step by step — or shows a full worked solution. 1 Spark per problem.',
     sampleQuestions: ['Walk me through completing the square.', 'How do I solve a quadratic equation?', 'Explain percentages with an example.'],
   }),
   et({
@@ -330,4 +330,4 @@ export const CEFR_LEVELS: readonly { code: string; label: string }[] = [
 ];
 
 export const CEFR_BANNER =
-  'All ET language teachers are aligned to the Common European Framework of Reference for Languages (CEFR). A1 Beginner / A2 Elementary / B1 Intermediate / B2 Upper Intermediate / C1 Advanced / C2 Mastery — whether learning for school, an exam, travel, work, or pure curiosity.';
+  'All ET AI language teachers are aligned to the Common European Framework of Reference for Languages (CEFR). A1 Beginner / A2 Elementary / B1 Intermediate / B2 Upper Intermediate / C1 Advanced / C2 Mastery — whether learning for school, an exam, travel, work, or pure curiosity.';

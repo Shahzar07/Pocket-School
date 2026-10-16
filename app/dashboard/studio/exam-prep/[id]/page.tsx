@@ -149,7 +149,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
           value={tab}
           onChange={setTab}
         />
-        <Link href={`/dashboard/studio/exam-prep/${prep.id}/topic/all?tab=chat`} className="text-[13px] font-semibold text-primary inline-flex items-center gap-1.5"><MessageCircle className="w-4 h-4" /> Ask ET about your notes</Link>
+        <Link href={`/dashboard/studio/exam-prep/${prep.id}/topic/all?tab=chat`} className="text-[13px] font-semibold text-primary inline-flex items-center gap-1.5"><MessageCircle className="w-4 h-4" /> Ask ET AI about your notes</Link>
       </div>
 
       {tab === 'today' && (
@@ -275,8 +275,8 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
             </Link>
             <Link href={`/dashboard/studio/exam-prep/${prep.id}/oral`} className="group rounded-2xl p-5 bg-card border border-border shadow-[var(--shadow-card)] hover:border-primary/40">
               <Mic className="w-8 h-8 mb-6 text-primary" />
-              <p className="font-heading text-xl text-foreground">Oral exam with ET</p>
-              <p className="text-[13px] text-muted-foreground mt-1">Answer out loud. ET examines, probes and grades how well you explain.</p>
+              <p className="font-heading text-xl text-foreground">Oral exam with ET AI</p>
+              <p className="text-[13px] text-muted-foreground mt-1">Answer out loud. ET AI examines, probes and grades how well you explain.</p>
               <span className="mt-4 inline-flex items-center gap-1 text-[13px] font-semibold text-primary">Start <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" /></span>
             </Link>
           </div>

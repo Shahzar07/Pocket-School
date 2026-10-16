@@ -252,7 +252,7 @@ export function certificateDocumentHtml(face: CertificateFace, origin?: string):
   <style>
     body { margin: 0; background: #f4f7f8; font-family: Georgia, "Times New Roman", serif; color: #1c2b30; }
     .sheet { width: 900px; margin: 32px auto; background: #fff; border: 10px solid ${accent}; padding: 18px; }
-    .inner { border: 2px solid #2786A4; padding: 48px 56px 36px; text-align: center; }
+    .inner { border: 2px solid #1E6A83; padding: 48px 56px 36px; text-align: center; }
     .brand { letter-spacing: 0.32em; font-size: 13px; color: #1E6A83; font-family: "Gill Sans", "Trebuchet MS", sans-serif; }
     h1 { font-weight: normal; font-size: 40px; margin: 18px 0 8px; }
     .lead, .meta { color: #526066; font-size: 16px; }

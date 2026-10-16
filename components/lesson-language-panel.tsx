@@ -13,7 +13,7 @@ import { formatAppNumber } from '@/lib/i18n/detect';
 import { Button } from '@/components/ui/button';
 
 /**
- * Editors add a localized title and body, or ask ET to translate the English
+ * Editors add a localized title and body, or ask ET AI to translate the English
  * source. AI translation confirms the Sparks cost first and charges only
  * after a translation comes back.
  */

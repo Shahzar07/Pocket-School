@@ -66,6 +66,8 @@ import {
   updateUser,
   type UserProfile,
 } from '@/lib/db';
+import { actionLabel } from '@/lib/audit/model';
+import { reportActivity } from '@/lib/audit/report';
 import {
   EMPTY_PAYOUT,
   SettingsPanel,
@@ -120,9 +122,31 @@ export default function ProfilePage() {
   const { mode, ready } = useAccountMode();
   const { config } = usePricing();
   const [view, setView] = useState<SettingsView | null>(null);
+  const [loginActivity, setLoginActivity] = useState<{ id: string; at: number; action: string; ip: string; device: string }[]>([]);
   const [reloadKey, setReloadKey] = useState(0);
 
   const sectionRole = mode ?? profile?.role ?? 'student';
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    authedFetch('/api/audit?scope=mine')
+      .then((data) => {
+        if (cancelled) return;
+        const events = Array.isArray(data.events) ? data.events as { id?: string; at?: number; action?: string; ip?: string; device?: string }[] : [];
+        setLoginActivity(events.map((row, index) => ({
+          id: row.id || String(index),
+          at: typeof row.at === 'number' ? row.at : Date.now(),
+          action: actionLabel(typeof row.action === 'string' ? row.action : ''),
+          ip: typeof row.ip === 'string' ? row.ip : '',
+          device: typeof row.device === 'string' ? row.device : '',
+        })));
+      })
+      .catch(() => {
+        if (!cancelled) setLoginActivity([]);
+      });
+    return () => { cancelled = true; };
+  }, [user]);
 
   useEffect(() => {
     if (!user || !profile || !ready) return;
@@ -373,6 +397,11 @@ export default function ProfilePage() {
       onToggleTwoFactor={async enabled => {
         try {
           await updateUser(user.uid, { twoFactorEnabled: enabled });
+          void reportActivity({
+            action: enabled ? 'auth.two_factor_enabled' : 'auth.two_factor_disabled',
+            targetType: 'account',
+            targetId: user.uid,
+          });
           await refresh();
           toast.success(enabled ? 'Two-factor authentication is on.' : 'Two-factor authentication is off.');
         } catch (error) {
@@ -384,6 +413,7 @@ export default function ProfilePage() {
           const row = view.sessions.find(session => session.id === sessionId);
           await deleteUserSession(sessionId);
           if (row?.current) {
+            await reportActivity({ action: 'auth.logout', targetType: 'session', targetId: user.uid });
             await signOut(auth);
             router.push('/login');
             return;
@@ -397,6 +427,7 @@ export default function ProfilePage() {
         try {
           await deleteAllUserSessions(user.uid);
           await updateUser(user.uid, { sessionsRevokedAt: Date.now() });
+          await reportActivity({ action: 'auth.logout', targetType: 'session', targetId: user.uid });
           await signOut(auth);
           router.push('/login');
         } catch (error) {
@@ -558,6 +589,7 @@ export default function ProfilePage() {
           toast.error(authMessage(error, 'Could not accept that invite.'));
         }
       }}
+      loginActivity={loginActivity}
       onRespondLink={async (linkId, approve) => {
         try {
           await respondToParentLink(linkId, user.uid, approve);

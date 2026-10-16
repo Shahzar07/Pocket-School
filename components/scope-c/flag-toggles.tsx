@@ -5,6 +5,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { db } from '@/lib/firebase';
 import { FEATURE_FLAGS, FEATURE_FLAG_LABELS, isFeatureEnabled } from '@/lib/feature-flags';
+import { reportContentChange } from '@/lib/audit/report';
 import { useFeatureFlags } from '@/hooks/use-feature-flags';
 
 export function FlagToggles() {
@@ -14,7 +15,16 @@ export function FlagToggles() {
   const toggle = async (flag: (typeof FEATURE_FLAGS)[number]) => {
     setSaving(flag);
     try {
-      await setDoc(doc(db, 'platform_settings', 'feature_flags'), { [flag]: !isFeatureEnabled(flags, flag) }, { merge: true });
+      const next = !isFeatureEnabled(flags, flag);
+      await setDoc(doc(db, 'platform_settings', 'feature_flags'), { [flag]: next }, { merge: true });
+      reportContentChange({
+        action: 'flags.edit',
+        targetType: 'feature_flag',
+        targetId: flag,
+        targetLabel: FEATURE_FLAG_LABELS[flag],
+        before: { [flag]: isFeatureEnabled(flags, flag) },
+        after: { [flag]: next },
+      });
       toast.success(`${FEATURE_FLAG_LABELS[flag]} updated.`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Could not update the flag.');

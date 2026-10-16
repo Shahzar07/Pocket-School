@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { reportActivity } from '@/lib/audit/report';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { sessionExpired } from '@/lib/admin-console';
 import {
@@ -39,9 +40,12 @@ export function useAdminIdle(enabled: boolean) {
       const last = Number(sessionStorage.getItem(ADMIN_ACTIVITY_KEY) || Date.now());
       if (sessionExpired(last, Date.now())) {
         clearViewAs();
-        signOut(auth).finally(() => {
-          useAuthSTORE.getState().setUser(null);
-          router.push('/admin/login?reason=timeout');
+        const uid = useAuthSTORE.getState().user?.uid || '';
+        void reportActivity({ action: 'auth.logout', targetType: 'session', targetId: uid }).finally(() => {
+          void signOut(auth).finally(() => {
+            useAuthSTORE.getState().setUser(null);
+            router.push('/admin/login?reason=timeout');
+          });
         });
       }
     }, 15000);
