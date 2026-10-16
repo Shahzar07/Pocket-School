@@ -11,7 +11,7 @@ import { SAMPLE_OWNED, SAMPLE_READER, planLabel } from '@/lib/reads/access';
 import { decideBook } from '@/lib/platform/allocation';
 import { discussionSpace, suggestWinPost } from '@/lib/platform/community';
 import { licenceOffer } from '@/lib/platform/licence';
-import { editionFor } from '@/lib/platform/localization';
+import { activeLocale, editionFor } from '@/lib/platform/localization';
 import { downloadBookOffline } from '@/lib/platform/offline';
 import { quotePrice, viewerCurrency } from '@/lib/platform/pricing';
 import { authedFetch, ApiError } from '@/lib/api-client';
@@ -37,6 +37,7 @@ export function BookDetail({ bookId }: { bookId: string }) {
     if (!ready) return;
     setList(myList(profile.id));
     setCurrency(viewerCurrency());
+    setLang(activeLocale());
   }, [ready, profile.id]);
 
   if (!book || book.status !== 'published') {

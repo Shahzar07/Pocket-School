@@ -20,7 +20,7 @@ import { eventDocId, claimDecision } from '../idempotency';
 import { toMinor } from '../minor';
 import { canonicalMethod, methodsFor, stripeTypesForCharge, type MethodId } from '../methods';
 import { buildQuote, type CheckoutKind, type PricedItem, type Quote } from '../quote';
-import { quoteCourse, readsPriceUsd } from '../../pricing';
+import { quoteCourse } from '../../pricing';
 import { loadPricingConfig } from '../../pricing-store';
 import { quoteCheckout } from '../../platform/wallet';
 import { readsBookItem, readsPlanItem } from '../reads';
@@ -191,7 +191,8 @@ async function resolveItem(input: CheckoutInput, settings: PaymentsSettings, pay
     return item;
   }
   if (kind === 'reads') {
-    const item = readsPlanItem(sku, interval, readsPriceUsd(await loadPricingConfig(), sku));
+    const config = await loadPricingConfig();
+    const item = readsPlanItem(sku, interval, config);
     if (!item) throw new ActionError('INVALID', 'Choose Poket Reads or Poket Reads Family.');
     return item;
   }

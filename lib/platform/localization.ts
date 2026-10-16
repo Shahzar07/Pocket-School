@@ -1,10 +1,10 @@
 import type { Book } from '@/lib/reads/types';
+import { readLanguage } from '@/lib/languages';
 
 /**
- * One translated edition. Field names match a review record:
- * locale, source version, status, AI flag, and the translated fields.
- * When the geo language pack lands, map its record onto this and stop
- * reading `book.languageVersions` directly.
+ * One translated edition of a book.
+ * The active language is the shared reader preference (`lib/languages.ts`,
+ * applied by `I18nProvider`). This file only picks the matching book edition.
  */
 export interface LocalizedEdition {
   locale: string;
@@ -17,12 +17,9 @@ export interface LocalizedEdition {
   chapters: { id: string; title: string; markdown: string }[];
 }
 
+/** Saved app language. English when none is stored or the code is not in the shared list. */
 export function activeLocale(): string {
-  if (typeof window === 'undefined') return 'en';
-  const saved = window.localStorage.getItem('pocket-school-lang');
-  if (saved) return saved;
-  const nav = window.navigator.language?.slice(0, 2);
-  return nav || 'en';
+  return readLanguage();
 }
 
 export function editionFor(book: Book, locale: string): LocalizedEdition {
