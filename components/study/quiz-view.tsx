@@ -58,9 +58,9 @@ export function QuizView({ questions, onComplete }: { questions: QuizQuestion[];
             {q.options.map((o, k) => {
               const state = picked === null ? 'idle' : k === answerIdx ? 'right' : k === picked ? 'wrong' : 'dim';
               return (
-                <button key={k} disabled={picked !== null}
+                <button key={k} type="button" disabled={picked !== null} aria-pressed={picked === k}
                   onClick={() => { setPicked(k); if (k === answerIdx) setRight(r => r + 1); }}
-                  className={`w-full text-left rounded-2xl border px-4 py-3 text-[15px] flex items-center gap-3 transition-colors ${
+                  className={`w-full text-start min-h-12 rounded-2xl border px-4 py-3 text-[15px] flex items-center gap-3 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                     state === 'right' ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
                     : state === 'wrong' ? 'border-rose-300 bg-rose-50 text-rose-900'
                     : state === 'dim' ? 'border-border opacity-60'
@@ -93,7 +93,7 @@ export function TrueFalseView({ items, onComplete }: { items: TrueFalseItem[]; o
   const packed = useMemo(() => trueFalsePayload(items), [items]);
   const translation = useContentTranslation(
     'study-truefalse',
-    { items: packed },
+    { items: packed, trueLabel: 'True', falseLabel: 'False' },
     i18n.language,
     i18n.language !== 'en' && items.length > 0,
   );
@@ -101,6 +101,8 @@ export function TrueFalseView({ items, onComplete }: { items: TrueFalseItem[]; o
     () => parseTrueFalseTranslation(translation.values.items ?? packed, items) ?? [...items],
     [items, packed, translation.values.items],
   );
+  const trueLabel = translation.values.trueLabel || 'True';
+  const falseLabel = translation.values.falseLabel || 'False';
   const [i, setI] = useState(0);
   const [picked, setPicked] = useState<boolean | null>(null);
   const [right, setRight] = useState(0);
@@ -127,19 +129,19 @@ export function TrueFalseView({ items, onComplete }: { items: TrueFalseItem[]; o
         className="rounded-3xl border border-border bg-card shadow-[var(--shadow-card)] p-8 min-h-[160px] grid place-items-center text-[18px] font-medium text-foreground [&_p]:my-0">
         <MathMarkdown>{it.statement}</MathMarkdown>
       </motion.div>
-      <div className="flex justify-center gap-3 mt-5">
-        {[true, false].map(v => (
-          <button key={String(v)} onClick={() => choose(v)} disabled={picked !== null}
-            className={`h-12 w-36 rounded-2xl border text-[15px] font-bold transition-colors ${
+      <div className="flex flex-col sm:flex-row justify-center gap-3 mt-5">
+        {([true, false] as const).map(v => (
+          <button key={String(v)} type="button" onClick={() => choose(v)} disabled={picked !== null} aria-pressed={picked === v}
+            className={`h-12 w-full sm:w-36 rounded-2xl border text-[15px] font-bold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
               picked === null ? 'border-border hover:border-primary/50 hover:bg-primary/5'
-              : source && v === source.answer ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+              : v === source.answer ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
               : picked === v ? 'border-rose-300 bg-rose-50 text-rose-800' : 'border-border opacity-50'}`}>
-            {v ? 'True' : 'False'}
+            {v ? trueLabel : falseLabel}
           </button>
         ))}
       </div>
       {picked !== null && (
-        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-4 text-left rounded-2xl bg-muted/50 border border-border p-4">
+        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-4 text-start rounded-2xl bg-muted/50 border border-border p-4">
           <div className="text-[14px] leading-relaxed [&_p]:my-1"><MathMarkdown>{it.explanation}</MathMarkdown></div>
           <button onClick={() => { if (i + 1 >= items.length) { setFinished(true); onComplete(Math.round((right / items.length) * 100)); } else { setI(i + 1); setPicked(null); } }}
             className="mt-3 h-10 px-4 rounded-full bg-primary text-primary-foreground text-sm font-semibold inline-flex items-center gap-1.5">

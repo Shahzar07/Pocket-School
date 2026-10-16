@@ -4,31 +4,35 @@ import { useState } from 'react';
 import { CheckCircle2, ClipboardList, Lightbulb, PenSquare, XCircle } from 'lucide-react';
 import { MathMarkdown } from '@/components/math-markdown';
 import { correctIndex } from '@/lib/quiz-answer';
+import { optionId, optionIndex } from '@/lib/quiz';
 import type { ProblemItem, QuizItem } from '@/lib/teacher-chat';
 
 export function QuizCard({ item, accent, onAnswer }: { item: QuizItem; accent: string; onAnswer: (id: number, option: string) => void }) {
   const answered = !!item.chosen;
   const answerIdx = correctIndex(item.options, item.answer);
-  const isCorrect = (option: string) => item.options.indexOf(option) === answerIdx;
+  const storedIndex = optionIndex(item.chosen, item.options.length);
+  const picked = storedIndex >= 0 ? storedIndex : (item.chosen ? item.options.indexOf(item.chosen) : -1);
   return (
     <div className="p-4">
       <div className="flex items-center gap-2 mb-2.5">
         <ClipboardList className="w-3.5 h-3.5" style={{ color: accent }} />
         <span className="text-[10px] font-bold uppercase tracking-widest text-white/50">Quiz</span>
-        {answered && (isCorrect(item.chosen!)
+        {answered && (picked === answerIdx
           ? <span className="text-[10px] font-bold text-emerald-300 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Correct</span>
           : <span className="text-[10px] font-bold text-red-300 flex items-center gap-1"><XCircle className="w-3 h-3" /> Not quite</span>)}
       </div>
       <div className="prose prose-sm prose-invert max-w-none prose-p:my-1 mb-3"><MathMarkdown>{item.question}</MathMarkdown></div>
-      <div className="space-y-1.5">
+      <div className="space-y-1.5" role="group" aria-label="Quiz options">
         {item.options.map((option, index) => {
-          const chosen = item.chosen === option;
-          const showState = answered && (chosen || isCorrect(option));
+          const chosen = picked === index;
+          const right = index === answerIdx;
+          const showState = answered && (chosen || right);
           return (
-            <button key={index} onClick={() => !answered && onAnswer(item.id, option)} disabled={answered}
-              className={`w-full text-left text-sm rounded-xl px-3 py-2 border transition-colors ${
+            <button key={optionId(index)} type="button" onClick={() => !answered && onAnswer(item.id, optionId(index))} disabled={answered}
+              aria-pressed={chosen}
+              className={`w-full text-start min-h-11 text-sm rounded-xl px-3 py-2 border transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-white ${
                 showState
-                  ? isCorrect(option) ? 'border-emerald-400/60 bg-emerald-500/10 text-emerald-200' : 'border-red-400/60 bg-red-500/10 text-red-200'
+                  ? right ? 'border-emerald-400/60 bg-emerald-500/10 text-emerald-200' : 'border-red-400/60 bg-red-500/10 text-red-200'
                   : 'border-white/10 bg-white/[0.02] text-white/80 hover:border-white/30'
               }`}>
               {String.fromCharCode(65 + index)}. {option}
@@ -57,6 +61,7 @@ export function ProblemCard({ item, accent, onCheck }: { item: ProblemItem; acce
       <textarea
         value={answer}
         onChange={event => setAnswer(event.target.value)}
+        aria-label="Your answer"
         placeholder="Write your answer here"
         rows={2}
         className="w-full resize-none rounded-xl bg-white/[0.04] border border-white/10 px-3 py-2 text-sm outline-none focus:border-white/25 placeholder:text-white/25"

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { answersMatch, shuffle, shuffleQuizOptions } from './quiz';
+import { answersMatch, optionId, shuffle, shuffleQuizOptions } from './quiz';
 
 describe('shuffle', () => {
   it('returns every item and does not edit the original', () => {
@@ -36,5 +36,12 @@ describe('answersMatch', () => {
     const options = ['wrong', 'right', 'also wrong', 'nope'];
     assert.equal(answersMatch('right', 'B', options), true);
     assert.equal(answersMatch('wrong', 'B', options), false);
+  });
+
+  it('grades a translated label by the option id', () => {
+    const english = ['plants digest food', 'plants photosynthesize'];
+    assert.equal(answersMatch(optionId(1), 'plants photosynthesize', english), true);
+    assert.equal(answersMatch(optionId(0), 'B', english), false);
+    assert.equal(answersMatch('tumbuhan berfotosintesis', 'plants photosynthesize', english), false);
   });
 });

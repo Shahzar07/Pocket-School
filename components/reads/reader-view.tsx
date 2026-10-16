@@ -16,6 +16,7 @@ import { bookToShelf, visibleBooks } from '@/lib/shelf/catalogue';
 import { recommend } from '@/lib/shelf/recommend';
 import { useReadsT } from '@/lib/reads/i18n';
 import { chapterProgress, paginateChapter, sentencesOf } from '@/lib/reads/paginate';
+import { markdownForPageCount } from '@/lib/reads/page-count';
 import { isPictureBook, pictureSpreads, readerFontFamily, readerTypeface, wordsOf, type ReaderTypeface } from '@/lib/reads/picture-book';
 import { ChapterProse, proseForSpeech } from '@/components/reads/prose';
 import { QUIET_LABEL, isQuietHour } from '@/lib/reads/quiet';
@@ -123,8 +124,34 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
     lang,
     Boolean(machine && chapter),
   );
+  const prevChapter = chapterIndex > 0 ? chapters[chapterIndex - 1] : undefined;
+  const nextChapter = chapterIndex + 1 < chapters.length ? chapters[chapterIndex + 1] : undefined;
+  const prevTranslation = useContentTranslation(
+    `book:${book?.id ?? bookId}:${prevChapter?.id ?? 'prev'}`,
+    { title: prevChapter?.title ?? '', markdown: prevChapter?.markdown ?? '' },
+    lang,
+    Boolean(machine && prevChapter),
+  );
+  const nextTranslation = useContentTranslation(
+    `book:${book?.id ?? bookId}:${nextChapter?.id ?? 'next'}`,
+    { title: nextChapter?.title ?? '', markdown: nextChapter?.markdown ?? '' },
+    lang,
+    Boolean(machine && nextChapter),
+  );
   const readingTitle = machine ? (chapterTranslation.values.title || chapter?.title || '') : (chapter?.title ?? '');
   const readingMarkdown = machine ? (chapterTranslation.values.markdown || chapter?.markdown || '') : (chapter?.markdown ?? '');
+  const translatedAt = (index: number): string | undefined => {
+    if (index === chapterIndex) return chapterTranslation.values.markdown;
+    if (index === chapterIndex - 1) return prevTranslation.values.markdown;
+    if (index === chapterIndex + 1) return nextTranslation.values.markdown;
+    return undefined;
+  };
+  const showingOriginal = (index: number) => {
+    if (index === chapterIndex) return chapterTranslation.showOriginal;
+    if (index === chapterIndex - 1) return prevTranslation.showOriginal;
+    if (index === chapterIndex + 1) return nextTranslation.showOriginal;
+    return true;
+  };
   const scriptDir = textDirection(chapterTranslation.showOriginal || !machine ? 'en' : lang);
   const picture = isPictureBook(book);
   const spreads = useMemo(() => pictureSpreads(readingMarkdown), [readingMarkdown]);
@@ -132,9 +159,14 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
     () => (picture ? spreads.map(spread => spread.text) : paginateChapter(readingMarkdown)),
     [picture, spreads, readingMarkdown],
   );
-  const page = pages[Math.min(pageIndex, pages.length - 1)] ?? '';
+  const page = pages[Math.min(pageIndex, Math.max(0, pages.length - 1))] ?? '';
   const spread = picture ? spreads[Math.min(pageIndex, Math.max(0, spreads.length - 1))] : null;
-  const pageCountOf = (markdown: string) => (picture ? pictureSpreads(markdown).length : paginateChapter(markdown).length);
+  const pageCountOf = (index: number) => {
+    const source = chapters[index]?.markdown ?? '';
+    const useTranslation = machine && !showingOriginal(index);
+    const markdown = markdownForPageCount(source, translatedAt(index), useTranslation);
+    return picture ? pictureSpreads(markdown).length : paginateChapter(markdown).length;
+  };
   const access = book && chapter ? decideBook(book, SAMPLE_READER, { ownedIds: SAMPLE_OWNED, chapter }) : null;
   const upNext = useMemo(() => {
     if (!book) return [];
@@ -151,9 +183,18 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
 
   const persist = useCallback((c: number, p: number) => {
     if (!book || !ready || !placed) return;
-    const nextPercent = chapterProgress(c, p, chapters.length, pageCountOf(chapters[c]?.markdown ?? ''));
+    const nextPercent = chapterProgress(c, p, chapters.length, pageCountOf(c));
     saveProgress(profile.id, book.id, { chapterIndex: c, pageIndex: p, percent: nextPercent, updatedAt: Date.now() });
-  }, [book, chapters, profile.id, ready, placed]);
+  }, [
+    book, chapters, chapterIndex, machine, picture, profile.id, ready, placed,
+    chapterTranslation.showOriginal, chapterTranslation.values.markdown,
+    prevTranslation.showOriginal, prevTranslation.values.markdown,
+    nextTranslation.showOriginal, nextTranslation.values.markdown,
+  ]);
+
+  useEffect(() => {
+    if (pages.length > 0 && pageIndex >= pages.length) setPageIndex(pages.length - 1);
+  }, [pageIndex, pages.length]);
 
   const go = (c: number, p: number, direction: 1 | -1) => {
     setDir(direction);
@@ -172,7 +213,7 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
   const prev = () => {
     if (pageIndex > 0) go(chapterIndex, pageIndex - 1, -1);
     else if (chapterIndex > 0) {
-      const prevPages = pageCountOf(chapters[chapterIndex - 1]?.markdown ?? '');
+      const prevPages = pageCountOf(chapterIndex - 1);
       go(chapterIndex - 1, Math.max(0, prevPages - 1), -1);
     }
   };

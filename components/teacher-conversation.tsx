@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ComponentType } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
@@ -8,7 +8,7 @@ import {
   ArrowLeft, BookOpen, Camera, ClipboardList, Globe, Lightbulb, Loader2, Lock, MessageSquare,
   Mic, PenSquare, Phone, PhoneOff, Play, RotateCcw, Send, StickyNote, Video, Volume2, VolumeX, X,
 } from 'lucide-react';
-import { LiveVoiceSession } from '@/components/live-voice-session';
+import type { LiveVoiceSessionProps } from '@/components/live-voice-session';
 import { MathMarkdown } from '@/components/math-markdown';
 import { ProblemCard, QuizCard } from '@/components/teacher-board';
 import { useAuthSTORE } from '@/hooks/use-auth';
@@ -22,7 +22,9 @@ import { useContentTranslation } from '@/hooks/use-content-translation';
 import { LANGUAGES, RECOGNITION_LANG, readLanguage, textDirection } from '@/lib/languages';
 import { tutorModeFor } from '@/lib/learner-level';
 import { formatMoney, quoteAddon } from '@/lib/pricing';
-import { SentenceStream, Speaker } from '@/lib/speech';
+import type { Speaker } from '@/lib/speech';
+import { correctIndex } from '@/lib/quiz-answer';
+import { optionIndex } from '@/lib/quiz';
 import {
   extractBoardItems, TEACHER_QUICK_PROMPTS, transcriptText,
   type BoardItem, type ChatMessage, type ProblemItem, type QuizItem,
@@ -95,6 +97,7 @@ export function TeacherConversation({
   const [autoPlay, setAutoPlay] = useState(true);
   const [speaking, setSpeaking] = useState(false);
   const [liveVoice, setLiveVoice] = useState(false);
+  const [LiveSession, setLiveSession] = useState<ComponentType<LiveVoiceSessionProps> | null>(null);
   const [videoOn, setVideoOn] = useState(false);
   const [lyraPrompt, setLyraPrompt] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -108,7 +111,7 @@ export function TeacherConversation({
 
   const endRef = useRef<HTMLDivElement>(null);
   const speakerRef = useRef<Speaker | null>(null);
-  if (!speakerRef.current) speakerRef.current = new Speaker({ onSpeakingChange: setSpeaking });
+  const liveRequest = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
   const busyRef = useRef(false);
   const langRef = useRef(lang);
@@ -185,6 +188,19 @@ export function TeacherConversation({
 
   const nextId = () => ++idCounter.current;
 
+  const ensureSpeaker = useCallback(async () => {
+    const { Speaker: SpeakerCtor } = await import('@/lib/speech');
+    if (!speakerRef.current) {
+      speakerRef.current = new SpeakerCtor({ onSpeakingChange: setSpeaking });
+    }
+    speakerRef.current.setOptions({
+      voice: teacher.voice,
+      style: teacher.voiceStyle,
+      lang: RECOGNITION_LANG[langRef.current] ?? 'en-GB',
+    });
+    return speakerRef.current;
+  }, [teacher.voice, teacher.voiceStyle]);
+
   const ask = useCallback(async (
     text: string,
     history: ChatMessage[],
@@ -193,11 +209,15 @@ export function TeacherConversation({
     busyRef.current = true;
     setThinking(true);
     setStreamingText('');
-    const speaker = speakerRef.current!;
     const ownVoice = !opts.say && speakRef.current;
-    const turn = ownVoice ? speaker.begin() : -1;
-    const say = opts.say ?? (ownVoice ? (sentence: string) => speaker.enqueue(sentence, turn) : null);
-    const sentences = say ? new SentenceStream(say) : null;
+    let sentences: { push: (delta: string) => void; flush: () => void } | null = null;
+    if (ownVoice || opts.say) {
+      const { SentenceStream } = await import('@/lib/speech');
+      const speaker = ownVoice ? await ensureSpeaker() : null;
+      const turn = speaker ? speaker.begin() : -1;
+      const say = opts.say ?? (speaker ? (sentence: string) => speaker.enqueue(sentence, turn) : null);
+      sentences = say ? new SentenceStream(say) : null;
+    }
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     opts.signal?.addEventListener('abort', () => ctrl.abort());
@@ -270,7 +290,7 @@ export function TeacherConversation({
       setThinking(false);
       setStreamingText(null);
     }
-  }, [lessonContext, mode, teacher.name, teacher.subjects, teacher.title, variant]);
+  }, [ensureSpeaker, lessonContext, mode, teacher.name, teacher.subjects, teacher.title, variant]);
 
   const askRef = useRef(ask);
   askRef.current = ask;
@@ -316,14 +336,18 @@ export function TeacherConversation({
     void askRef.current(`Greet me warmly as ${teacher.name} in 2 short sentences, then ask what I would like to learn today. Do not add a quiz yet.`, []);
   };
 
-  const answerQuiz = (id: number, option: string) => {
-    setBoard(prev => prev.map(item => (item.kind === 'quiz' && item.id === id && !item.chosen ? { ...item, chosen: option } : item)));
+  const answerQuiz = (id: number, choice: string) => {
+    setBoard(prev => prev.map(item => (item.kind === 'quiz' && item.id === id && !item.chosen ? { ...item, chosen: choice } : item)));
     const item = board.find(entry => entry.id === id) as QuizItem | undefined;
     if (!item || item.chosen) return;
-    const correct = item.options.indexOf(option) === item.options.indexOf(item.answer);
+    const selected = optionIndex(choice, item.options.length);
+    const answerIdx = correctIndex(item.options, item.answer);
+    const correct = selected >= 0 ? selected === answerIdx : item.options.indexOf(choice) === answerIdx;
     setScore(current => ({ right: current.right + (correct ? 1 : 0), total: current.total + 1 }));
     if (!correct && !busyRef.current) {
-      sendRef.current(`On the quiz "${item.question}" I chose "${option}" but the correct answer was "${item.answer}". Briefly explain why my choice is wrong.`);
+      const chosenWords = selected >= 0 ? (item.options[selected] ?? choice) : choice;
+      const answerWords = answerIdx >= 0 ? (item.options[answerIdx] ?? item.answer) : item.answer;
+      sendRef.current(`On the quiz "${item.question}" I chose "${chosenWords}" but the correct answer was "${answerWords}". Briefly explain why my choice is wrong.`);
     }
   };
 
@@ -335,11 +359,14 @@ export function TeacherConversation({
   };
 
   const playReply = (text: string) => {
-    const speaker = speakerRef.current!;
-    const turn = speaker.begin();
-    const sentences = new SentenceStream(sentence => speaker.enqueue(sentence, turn));
-    sentences.push(text);
-    sentences.flush();
+    void (async () => {
+      const speaker = await ensureSpeaker();
+      const { SentenceStream } = await import('@/lib/speech');
+      const turn = speaker.begin();
+      const sentences = new SentenceStream(sentence => speaker.enqueue(sentence, turn));
+      sentences.push(text);
+      sentences.flush();
+    })();
   };
 
   const stopRecording = () => {
@@ -439,8 +466,13 @@ export function TeacherConversation({
     }
     abortRef.current?.abort();
     speakerRef.current?.stop();
-    setVideoOn(withCamera);
-    setLiveVoice(true);
+    const request = ++liveRequest.current;
+    void import('@/components/live-voice-session').then((mod) => {
+      if (liveRequest.current !== request) return;
+      setLiveSession(() => mod.LiveVoiceSession);
+      setVideoOn(withCamera);
+      setLiveVoice(true);
+    });
   };
 
   const downloadTranscript = () => {
@@ -487,51 +519,51 @@ export function TeacherConversation({
             </div>
           </motion.div>
         )}
-        {liveVoice && (
+        {liveVoice && LiveSession && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-40">
-            <LiveVoiceSession teacher={teacher} lang={lang} camera={videoOn} onAsk={askByVoice} onClose={() => { setLiveVoice(false); setVideoOn(false); }} />
+            <LiveSession teacher={teacher} lang={lang} camera={videoOn} onAsk={askByVoice} onClose={() => { liveRequest.current += 1; setLiveVoice(false); setVideoOn(false); }} />
           </motion.div>
         )}
       </AnimatePresence>
 
-      <header className="h-12 px-3 flex items-center justify-between border-b border-white/10 shrink-0 bg-[#0D0D18]">
+      <header className="min-h-12 px-2 py-1 flex flex-wrap items-center justify-between gap-1 border-b border-white/10 shrink-0 bg-[#0D0D18]">
         {variant === 'dock' ? <span className="text-sm font-semibold">{teacher.name}</span> : (
-          <Link href={backHref} className="flex items-center gap-2 text-sm font-semibold text-white/60 hover:text-white">
-            <ArrowLeft className="w-4 h-4" /><span className="hidden sm:inline">{variant === 'studio' ? 'AI Teachers' : 'AI Teachers'}</span>
+          <Link href={backHref} className="min-h-11 px-2 inline-flex items-center gap-2 text-sm font-semibold text-white/60 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white rounded-full">
+            <ArrowLeft className="w-4 h-4" /><span className="hidden sm:inline">AI Teachers</span>
           </Link>
         )}
-        <span className="text-[11px] font-bold tracking-widest uppercase truncate">Live · {teacher.name}</span>
-        <div className="flex items-center gap-1">
+        <span className="text-[11px] font-bold tracking-widest uppercase truncate max-w-[40vw]">Live · {teacher.name}</span>
+        <div className="flex items-center gap-1 flex-wrap justify-end">
           <div className="relative">
-            <button type="button" onClick={() => setLangOpen(open => !open)} className="text-white/70 p-1.5" aria-label="Language"><Globe className="w-4 h-4" /></button>
+            <button type="button" onClick={() => setLangOpen(open => !open)} className="text-white/70 min-w-11 min-h-11 grid place-items-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" aria-label="Content language" aria-expanded={langOpen} aria-haspopup="listbox"><Globe className="w-4 h-4" /></button>
             {langOpen && (
-              <div className="absolute top-full right-0 mt-1 w-44 max-h-64 overflow-y-auto rounded-xl bg-[#15161c] border border-white/10 py-1 z-40">
+              <div role="listbox" aria-label="Languages" className="absolute top-full right-0 mt-1 w-52 max-h-64 overflow-y-auto rounded-xl bg-[#15161c] border border-white/10 py-1 z-40">
                 {LANGUAGES.map(language => (
-                  <button key={language.code} type="button" onClick={() => { applyAppLanguage(language.code, { explicit: true }); setLang(language.code); setLangOpen(false); }}
-                    className={`w-full text-left px-3 py-1.5 text-xs ${language.code === lang ? 'bg-white/10' : 'text-white/70'}`}>
+                  <button key={language.code} type="button" role="option" aria-selected={language.code === lang} onClick={() => { applyAppLanguage(language.code, { explicit: true }); setLang(language.code); setLangOpen(false); }}
+                    className={`w-full text-start min-h-11 px-3 text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-white ${language.code === lang ? 'bg-white/10' : 'text-white/70'}`}>
                     {language.flag} {language.label}
                   </button>
                 ))}
               </div>
             )}
           </div>
-          <button type="button" onClick={() => openLive(false)} className="text-xs font-bold px-2 py-1 rounded-full text-black inline-flex items-center gap-1" style={{ background: accent }} title="Live voice">
-            <Phone className="w-3.5 h-3.5" />{!lyraUnlocked && <Lock className="w-3 h-3" />}
+          <button type="button" onClick={() => openLive(false)} className="min-h-11 min-w-11 text-xs font-bold px-2 rounded-full text-black inline-flex items-center justify-center gap-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" style={{ background: accent }} aria-label="Live voice">
+            <Phone className="w-4 h-4" />{!lyraUnlocked && <Lock className="w-3 h-3" aria-hidden />}
           </button>
-          <button type="button" onClick={() => openLive(true)} className="text-xs font-bold px-2 py-1 rounded-full border border-white/15 inline-flex items-center gap-1" title="Video session">
-            <Video className="w-3.5 h-3.5" />{!lyraUnlocked && <Lock className="w-3 h-3" />}
+          <button type="button" onClick={() => openLive(true)} className="min-h-11 min-w-11 text-xs font-bold px-2 rounded-full border border-white/15 inline-flex items-center justify-center gap-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" aria-label="Video session">
+            <Video className="w-4 h-4" />{!lyraUnlocked && <Lock className="w-3 h-3" aria-hidden />}
           </button>
-          <button type="button" onClick={newSession} className="p-1.5 text-white/70" title="New session"><RotateCcw className="w-4 h-4" /></button>
-          <button type="button" onClick={() => { setAutoPlay(value => { const next = !value; localStorage.setItem('poket-teacher-autoplay', next ? '1' : '0'); if (!next) speakerRef.current?.stop(); return next; }); }} className="p-1.5 text-white/70" title={autoPlay ? 'Auto-play on' : 'Auto-play off'}>
+          <button type="button" onClick={newSession} className="min-w-11 min-h-11 grid place-items-center text-white/70 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" aria-label="New session"><RotateCcw className="w-4 h-4" /></button>
+          <button type="button" onClick={() => { setAutoPlay(value => { const next = !value; localStorage.setItem('poket-teacher-autoplay', next ? '1' : '0'); if (!next) speakerRef.current?.stop(); return next; }); }} className="min-w-11 min-h-11 grid place-items-center text-white/70 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" aria-pressed={autoPlay} aria-label={autoPlay ? 'Auto-play voice replies on' : 'Auto-play voice replies off'}>
             {autoPlay && replyMode === 'voice' ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </button>
-          {variant === 'session' && <Link href={backHref} className="p-1.5 text-white/50" title="End"><X className="w-4 h-4" /></Link>}
-          {variant === 'dock' && onClose && <button type="button" onClick={onClose} className="p-1.5 text-white/50" title="Close"><X className="w-4 h-4" /></button>}
+          {variant === 'session' && <Link href={backHref} className="min-w-11 min-h-11 grid place-items-center text-white/50 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" aria-label="End session"><X className="w-4 h-4" /></Link>}
+          {variant === 'dock' && onClose && <button type="button" onClick={onClose} className="min-w-11 min-h-11 grid place-items-center text-white/50 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" aria-label="Close chat"><X className="w-4 h-4" /></button>}
         </div>
       </header>
 
       {notices.length > 0 && (
-        <div className="px-3 py-2 bg-amber-500/10 text-amber-100 text-xs space-y-1 shrink-0">
+        <div role="status" className="px-3 py-2 bg-amber-500/10 text-amber-100 text-xs space-y-1 shrink-0">
           {notices.map(note => <p key={note}>{note}</p>)}
         </div>
       )}
@@ -548,15 +580,15 @@ export function TeacherConversation({
           </div>
         )}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex border-b border-white/10 text-xs font-semibold shrink-0">
+          <div role="tablist" aria-label="Conversation" className="flex border-b border-white/10 text-xs font-semibold shrink-0 overflow-x-auto">
             {([
               ['chat', 'Chat', <MessageSquare key="c" className="w-3.5 h-3.5" />],
               ['board', 'Workboard', <ClipboardList key="b" className="w-3.5 h-3.5" />],
               ['notes', 'Notes', <StickyNote key="n" className="w-3.5 h-3.5" />],
               ['transcript', 'Transcript', <BookOpen key="t" className="w-3.5 h-3.5" />],
             ] as const).map(([id, label, icon]) => (
-              <button key={id} type="button" onClick={() => { setTab(id); if (id === 'board') { boardBadge.current = 0; setUnseenBoard(0); } }}
-                className={`px-3 py-2 inline-flex items-center gap-1 border-b-2 ${tab === id ? 'text-white' : 'text-white/40 border-transparent'}`}
+              <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => { setTab(id); if (id === 'board') { boardBadge.current = 0; setUnseenBoard(0); } }}
+                className={`min-h-11 px-3 py-2 inline-flex items-center gap-1 border-b-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white ${tab === id ? 'text-white' : 'text-white/40 border-transparent'}`}
                 style={tab === id ? { borderColor: accent } : undefined}>
                 {icon} {label}
                 {id === 'board' && unseenBoard > 0 ? <span className="text-[9px] text-black px-1 rounded-full" style={{ background: accent }}>{unseenBoard}</span> : null}
@@ -589,7 +621,7 @@ export function TeacherConversation({
               </div>
             )))}
             {tab === 'notes' && (
-              <textarea value={notes} onChange={event => setNotes(event.target.value)} placeholder="Notes stay on this device." className="w-full min-h-[220px] rounded-2xl bg-white/5 border border-white/10 p-3 text-sm outline-none" />
+              <textarea value={notes} onChange={event => setNotes(event.target.value)} aria-label="Notes" placeholder="Notes stay on this device." className="w-full min-h-[220px] rounded-2xl bg-white/5 border border-white/10 p-3 text-sm outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" />
             )}
             {tab === 'transcript' && (
               <div>
@@ -600,7 +632,7 @@ export function TeacherConversation({
             <div ref={endRef} />
           </div>
           <div className="border-t border-white/10 p-2 shrink-0">
-            {noteStatus && <p className="text-xs text-amber-100 px-2 pb-1">{noteStatus}</p>}
+            {noteStatus && <p role="status" className="text-xs text-amber-100 px-2 pb-1">{noteStatus}</p>}
             <div className="flex gap-1 overflow-x-auto pb-2">
               {TEACHER_QUICK_PROMPTS.map(action => (
                 <button key={action.id} type="button" disabled={thinking} onClick={() => send(action.prompt)} className="shrink-0 text-[11px] border border-white/10 rounded-full px-3 py-1 inline-flex items-center gap-1">
@@ -610,21 +642,21 @@ export function TeacherConversation({
             </div>
             {pendingImage && <img src={pendingImage} alt="Ready to send" className="h-16 rounded-lg mb-2" />}
             <div className="flex items-end gap-2">
-              <button type="button" onClick={() => fileRef.current?.click()} className="w-10 h-10 rounded-full border border-white/15 grid place-items-center" title="Photo"><Camera className="w-4 h-4" /></button>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={event => { onPhoto(event.target.files?.[0]); event.target.value = ''; }} />
-              <button type="button" onClick={() => void startRecording()} className={`w-10 h-10 rounded-full grid place-items-center ${recording ? 'bg-red-500' : 'border border-white/15'}`} title={recording ? 'Stop and send voice note' : 'Voice note'}>
+              <button type="button" onClick={() => fileRef.current?.click()} className="w-11 h-11 rounded-full border border-white/15 grid place-items-center shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" aria-label="Attach a photo"><Camera className="w-4 h-4" /></button>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" aria-label="Photo upload" onChange={event => { onPhoto(event.target.files?.[0]); event.target.value = ''; }} />
+              <button type="button" onClick={() => void startRecording()} aria-pressed={recording} className={`w-11 h-11 rounded-full grid place-items-center shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white ${recording ? 'bg-red-500' : 'border border-white/15'}`} aria-label={recording ? 'Stop and send voice note' : 'Record a voice note'}>
                 {recording ? <PhoneOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </button>
-              <label className="text-[11px] text-white/60 self-center">
+              <label htmlFor={`teacher-reply-${teacher.id}`} className="text-[11px] text-white/60 self-center shrink-0">
                 Reply
-                <select value={replyMode} onChange={event => { const next = event.target.value === 'voice' ? 'voice' : 'text'; setReplyMode(next); localStorage.setItem('poket-teacher-reply', next); }} className="ml-1 bg-transparent">
+                <select id={`teacher-reply-${teacher.id}`} value={replyMode} onChange={event => { const next = event.target.value === 'voice' ? 'voice' : 'text'; setReplyMode(next); localStorage.setItem('poket-teacher-reply', next); }} className="ml-1 bg-transparent min-h-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white">
                   <option value="text">Text</option>
                   <option value="voice">Voice</option>
                 </select>
               </label>
               <textarea value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); send(); } }}
-                placeholder={`Message ${teacher.name}`} rows={1} className="flex-1 resize-none max-h-28 rounded-2xl bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none" />
-              <button type="button" onClick={() => send()} disabled={thinking || (!input.trim() && !pendingImage)} className="w-10 h-10 rounded-full grid place-items-center text-black disabled:opacity-30" style={{ background: accent }}>
+                aria-label={`Message ${teacher.name}`} placeholder={`Message ${teacher.name}`} rows={1} className="flex-1 min-w-0 resize-none max-h-28 rounded-2xl bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" />
+              <button type="button" onClick={() => send()} disabled={thinking || (!input.trim() && !pendingImage)} aria-label="Send message" className="w-11 h-11 rounded-full grid place-items-center text-black disabled:opacity-30 shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" style={{ background: accent }}>
                 {thinking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </button>
             </div>
@@ -658,9 +690,9 @@ function TeacherBubble({
     <div className="max-w-[85%] rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm" dir={dir}>
       <div className="prose prose-sm prose-invert max-w-none"><MathMarkdown>{shown}</MathMarkdown></div>
       <div className="mt-2 flex items-center gap-3 text-[11px] text-white/60">
-        <button type="button" onClick={onPlay} className="inline-flex items-center gap-1"><Play className="w-3 h-3" style={{ color: accent }} /> Play</button>
+        <button type="button" onClick={onPlay} className="min-h-11 inline-flex items-center gap-1 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" aria-label="Play this reply"><Play className="w-3 h-3" style={{ color: accent }} /> Play</button>
         {lang !== 'en' && (
-          <button type="button" onClick={() => setWantEnglish(value => !value)}>
+          <button type="button" aria-pressed={wantEnglish} onClick={() => setWantEnglish(value => !value)} className="min-h-11 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-white">
             {english.status === 'loading' ? 'Translating…' : wantEnglish ? `Show ${teacher.name}` : 'Show English'}
           </button>
         )}
