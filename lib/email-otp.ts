@@ -39,7 +39,7 @@ export function verifyOtpToken(email: string, code: string, expiresAt: number, t
   return expected.length === provided.length && timingSafeEqual(expected, provided);
 }
 
-export async function sendOtpEmail(to: string, code: string, language = 'en'): Promise<void> {
+export async function sendOtpEmail(to: string, code: string, language = 'en', brand?: { name: string; fromName: string; logoUrl?: string; primaryColor?: string } | null): Promise<void> {
   const nodemailer = (await import('nodemailer')).default;
   const port = Number(process.env.SMTP_PORT || 587);
   const transport = nodemailer.createTransport({
@@ -55,25 +55,23 @@ export async function sendOtpEmail(to: string, code: string, language = 'en'): P
   const emailCopy = (catalogs[codeKey as keyof typeof catalogs] as { email?: {
     otpSubject: string; otpText: string; otpIntro: string; otpExpiry: string;
   } }).email;
-  const fill = (template: string) => template.split('{{code}}').join(code);
+  const { brandedMailHtml, mailFromHeader } = await import('./academy-mail');
+  const school = brand?.name || 'Poket School';
+  const fill = (template: string) => template.split('{{code}}').join(code).split('Poket School').join(school);
   const subject = fill(emailCopy?.otpSubject ?? '{{code}} is your Poket School verification code');
   const text = fill(emailCopy?.otpText ?? 'Your Poket School verification code is {{code}}.');
   const intro = emailCopy?.otpIntro ?? 'Use this code to verify your email address.';
   const expiry = emailCopy?.otpExpiry ?? 'This code expires in 10 minutes.';
 
   await transport.sendMail({
-    from: process.env.SMTP_FROM || `Poket School <${process.env.SMTP_USER}>`,
+    from: mailFromHeader(brand?.fromName),
     to,
     subject,
-    text,
-    html: `
-      <div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#06060F;border-radius:16px;color:#fff" dir="auto">
-        <h1 style="font-size:20px;margin:0 0 8px;color:#fff">Poket School</h1>
-        <p style="color:rgba(255,255,255,0.6);font-size:14px;margin:0 0 24px">${intro}</p>
-        <div style="background:rgba(26,115,232,0.15);border:1px solid rgba(26,115,232,0.4);border-radius:12px;padding:20px;text-align:center;margin-bottom:24px">
-          <span style="font-size:32px;font-weight:bold;letter-spacing:0.4em;color:#60A5FA">${code}</span>
-        </div>
-        <p style="color:rgba(255,255,255,0.4);font-size:12px;margin:0">${expiry}</p>
-      </div>`,
+    text: `${text}\n${intro}\n${expiry}`,
+    html: brandedMailHtml({
+      brand,
+      heading: code,
+      paragraphs: [intro, expiry],
+    }),
   });
 }

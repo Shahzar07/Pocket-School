@@ -3404,6 +3404,10 @@ export interface Certificate {
   kind?: 'module';
   status?: 'valid' | 'revoked';
   revokedAt?: Timestamp;
+  accent?: string;
+  showPoweredBy?: boolean;
+  logoUrl?: string;
+  certificateFooter?: string;
 }
 
 export async function getCertificatesForStudent(studentId: string): Promise<Certificate[]> {

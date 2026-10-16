@@ -36,6 +36,10 @@ function toFace(cert: Certificate): CertificateFace {
     issuedAt: issued,
     issuedByName: cert.issuedByName,
     status: cert.status,
+    accent: cert.accent,
+    showPoweredBy: cert.showPoweredBy,
+    logoUrl: cert.logoUrl,
+    certificateFooter: cert.certificateFooter,
   };
 }
 

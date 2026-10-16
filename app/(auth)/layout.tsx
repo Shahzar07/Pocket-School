@@ -5,7 +5,9 @@ import { Brain, BookOpen, Sparkles, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { AcademyLockup } from '@/components/academy-lockup';
 import { useWhiteLabel } from '@/components/white-label-provider';
+import { accentInk } from '@/lib/white-label';
 
 const FEATURES = [
   { icon: <Brain className="w-4 h-4" />, title: 'auth.f1title', desc: 'auth.f1desc' },
@@ -17,6 +19,8 @@ const FEATURES = [
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const { branding } = useWhiteLabel();
+  const accent = branding.isWhiteLabel && /^#[0-9a-fA-F]{6}$/.test(branding.primaryColor ?? '') ? branding.primaryColor : '';
+  const ink = accent ? accentInk(accent) : '#ffffff';
   return (
     <div className="min-h-screen flex bg-[#06060F]" style={{ fontFamily: 'var(--font-institution), inherit' }}>
       {/* ── Left: video hero panel ── */}
@@ -35,16 +39,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           {/* Floating content — no full-screen overlay, text/cards carry their own blur */}
           <div className="relative z-10 h-full flex flex-col justify-between p-10">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 w-fit">
-              <div className="bg-black/30 backdrop-blur-md p-2 rounded-xl border border-white/20">
-                <Brain className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-white font-bold text-xl drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                {branding.displayName}
-              </span>
-              {branding.isWhiteLabel && !branding.hidePoweredBy && (
-                <span className="text-white/70 text-xs drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Powered by Poket School</span>
-              )}
+            <Link href="/" className="flex w-fit drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+              <AcademyLockup
+                name={branding.displayName}
+                logoUrl={branding.isWhiteLabel ? branding.logoUrl : null}
+                accent={accent || undefined}
+                powered={branding.isWhiteLabel && !branding.hidePoweredBy}
+              />
             </Link>
 
             {/* Hero text + feature cards */}
@@ -75,7 +76,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                     transition={{ duration: 0.45, delay: 0.35 + i * 0.09, ease: [0.16, 1, 0.3, 1] }}
                     className="flex items-center gap-3 bg-black/25 backdrop-blur-md rounded-2xl px-4 py-3 border border-white/10"
                   >
-                    <div className="bg-[#2786A4]/80 backdrop-blur-sm p-2 rounded-lg text-white shrink-0">
+                    <div className="backdrop-blur-sm p-2 rounded-lg shrink-0" style={{ background: accent || '#2786A4', color: ink }}>
                       {f.icon}
                     </div>
                     <div>
@@ -97,11 +98,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </div>
         <div className="w-full max-w-md">
           {/* Mobile-only logo */}
-          <div className="lg:hidden mb-10 flex items-center gap-2">
-            <div className="bg-[#2786A4]/20 p-2 rounded-xl border border-[#2786A4]/30">
-              <Brain className="w-5 h-5 text-[#2786A4]" />
-            </div>
-            <span className="text-white font-bold text-xl">Poket School</span>
+          <div className="lg:hidden mb-10">
+            <AcademyLockup
+              name={branding.isWhiteLabel ? branding.displayName : 'Poket School'}
+              logoUrl={branding.isWhiteLabel ? branding.logoUrl : null}
+              accent={accent || '#2786A4'}
+              powered={branding.isWhiteLabel && !branding.hidePoweredBy}
+            />
           </div>
 
           {children}

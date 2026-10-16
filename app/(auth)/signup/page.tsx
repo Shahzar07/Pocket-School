@@ -358,7 +358,7 @@ export default function SignupPage() {
       const res = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: guardianEmail.trim() }),
+        body: JSON.stringify({ email: guardianEmail.trim(), institutionId: academy?.id || undefined }),
       });
       const data = await res.json();
       if (!res.ok) { toast.error(data.error || t('signup.guardianUnreachable')); return; }
@@ -411,7 +411,7 @@ export default function SignupPage() {
       const res = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() }),
+        body: JSON.stringify({ email: email.trim(), institutionId: academy?.id || undefined }),
       });
       const data = await res.json();
       if (!res.ok) { toast.error(data.error || t('signup.verifySendFailed')); return; }

@@ -41,6 +41,10 @@ export interface CertificateFace {
   partnerName?: string | null;
   recognisedBy?: string | null;
   partnerLogoUrl?: string | null;
+  /** Academy logo. Https, or a root-relative path on this site. */
+  logoUrl?: string | null;
+  /** Printed under the disclaimer. Stored on the academy brand. */
+  certificateFooter?: string | null;
 }
 
 export function safeLogoUrl(value: string | null | undefined): string | null {
@@ -52,6 +56,15 @@ export function safeLogoUrl(value: string | null | undefined): string | null {
   } catch {
     return null;
   }
+}
+
+/** A logo that can render on a page. Emails stay on safeLogoUrl so the address is absolute https. */
+export function displayLogoUrl(value: string | null | undefined): string | null {
+  const remote = safeLogoUrl(value);
+  if (remote) return remote;
+  const path = (value ?? '').trim();
+  if (/^\/[A-Za-z0-9._~/-]+$/.test(path)) return path;
+  return null;
 }
 
 export function certificateRecognition(face: Pick<CertificateFace, 'partnerName' | 'recognisedBy'>): string | null {
@@ -215,6 +228,7 @@ export function buildCertificatePdf(face: CertificateFace, origin?: string): Uin
     { text: 'Scan the QR code to open this verification page', size: 9, gap: 16 },
     { text: 'Not an official academic qualification', size: 9, gap: 14 },
     { text: certificateCopyright(face.issuedAt), size: 9, gap: 12 },
+    ...(face.certificateFooter?.trim() ? [{ text: face.certificateFooter.trim().slice(0, 180), size: 9, gap: 12 }] : []),
     ...(header.poweredBy ? [{ text: 'Powered by Poket School', size: 9, gap: 12 }] : []),
   ];
   const commands = [
@@ -294,6 +308,7 @@ export function certificateDocumentHtml(face: CertificateFace, origin?: string):
 <body>
   <div class="sheet"><div class="inner">
     <div class="brand">${escapeHtml(header.brand)}</div>
+    ${displayLogoUrl(face.logoUrl) ? `<img alt="" src="${escapeHtml(displayLogoUrl(face.logoUrl) ?? '')}" width="72" height="72" style="margin-top:12px;object-fit:contain" />` : ''}
     ${certificateRecognition(face) ? `<p class="meta">${escapeHtml(certificateRecognition(face) ?? '')}</p>` : ''}
     ${safeLogoUrl(face.partnerLogoUrl) ? `<img alt="" src="${escapeHtml(safeLogoUrl(face.partnerLogoUrl) ?? '')}" width="96" height="48" style="margin-top:12px;object-fit:contain" />` : ''}
     <h1>Certificate of Achievement</h1>
@@ -308,6 +323,7 @@ export function certificateDocumentHtml(face: CertificateFace, origin?: string):
     <div class="qr">${qrSvg(verify)}</div>
     <p class="meta">Scan the QR code to open ${escapeHtml(verify)}</p>
     <p class="disclaimer">${escapeHtml(CERTIFICATE_DISCLAIMER)}</p>
+    ${face.certificateFooter?.trim() ? `<p class="copyright">${escapeHtml(face.certificateFooter.trim().slice(0, 240))}</p>` : ''}
     <p class="copyright">${escapeHtml(certificateCopyright(face.issuedAt))}</p>
     ${header.poweredBy ? '<p class="copyright">Powered by Poket School</p>' : ''}
   </div></div>

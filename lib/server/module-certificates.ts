@@ -7,6 +7,7 @@ import {
   certificateKey,
   certificateStudentName,
   moduleIsComplete,
+  safeLogoUrl,
 } from '../certificates';
 import { certificateBrandLine } from '../oem';
 
@@ -23,6 +24,8 @@ interface IssueInput {
   issuerName?: string;
   showPoweredBy?: boolean;
   accent?: string;
+  logoUrl?: string;
+  certificateFooter?: string;
 }
 
 /**
@@ -54,6 +57,8 @@ export function issueInTransaction(
     brand: issuedByName,
     showPoweredBy: input.showPoweredBy !== false,
     ...(input.accent ? { accent: input.accent } : {}),
+    ...(input.logoUrl ? { logoUrl: input.logoUrl } : {}),
+    ...(input.certificateFooter ? { certificateFooter: input.certificateFooter } : {}),
     status: 'valid',
     disclaimer: CERTIFICATE_DISCLAIMER,
   });
@@ -78,15 +83,30 @@ export function issueInTransaction(
   };
 }
 
-export function issuerFromInstitution(data: Record<string, unknown> | undefined): { issuerName: string; showPoweredBy: boolean; accent?: string } {
+export function issuerFromInstitution(data: Record<string, unknown> | undefined): {
+  issuerName: string;
+  showPoweredBy: boolean;
+  accent?: string;
+  logoUrl?: string;
+  certificateFooter?: string;
+} {
   if (!data) return { issuerName: CERTIFICATE_ISSUER_NAME, showPoweredBy: true };
   const branding = data.branding && typeof data.branding === 'object'
-    ? data.branding as { displayName?: string; certificateIssuer?: string; hidePoweredBy?: boolean; primaryColor?: string }
+    ? data.branding as {
+      displayName?: string;
+      certificateIssuer?: string;
+      hidePoweredBy?: boolean;
+      primaryColor?: string;
+      logoUrl?: string;
+      certificateFooter?: string;
+    }
     : {};
   const name = typeof data.name === 'string' ? data.name : '';
   const accent = typeof branding.primaryColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(branding.primaryColor)
     ? branding.primaryColor
     : undefined;
+  const logoUrl = safeLogoUrl(branding.logoUrl) ?? undefined;
+  const certificateFooter = typeof branding.certificateFooter === 'string' ? branding.certificateFooter.trim().slice(0, 240) : '';
   return {
     issuerName: certificateBrandLine({
       displayName: branding.displayName || name || CERTIFICATE_ISSUER_NAME,
@@ -94,5 +114,7 @@ export function issuerFromInstitution(data: Record<string, unknown> | undefined)
     }),
     showPoweredBy: branding.hidePoweredBy !== true,
     accent,
+    ...(logoUrl ? { logoUrl } : {}),
+    ...(certificateFooter ? { certificateFooter } : {}),
   };
 }
