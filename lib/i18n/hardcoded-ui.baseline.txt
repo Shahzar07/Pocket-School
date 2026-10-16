@@ -280,20 +280,25 @@ app/dashboard/admin/institutions/[institutionId]/page.tsx	This academy is outsid
 app/dashboard/admin/institutions/[institutionId]/page.tsx	Weekly report scheduled.
 app/dashboard/admin/institutions/page.tsx	Could not load institutions.
 app/dashboard/admin/institutions/page.tsx	This console is for academy administrators.
+app/dashboard/admin/integrations/page.tsx	. Paste keys only here.
 app/dashboard/admin/integrations/page.tsx	Every required key is present.
 app/dashboard/admin/integrations/page.tsx	Missing required keys
 app/dashboard/admin/integrations/page.tsx	Monthly cap in dollars
 app/dashboard/admin/integrations/page.tsx	OpenRouter spend cap
+app/dashboard/admin/integrations/page.tsx	Payment providers
+app/dashboard/admin/integrations/page.tsx	Turn methods on from
 app/dashboard/admin/page.tsx	AI generation failures:
 app/dashboard/admin/page.tsx	Add an institution
 app/dashboard/admin/page.tsx	Firestore quota and errors:
 app/dashboard/admin/page.tsx	Jump to
 app/dashboard/admin/page.tsx	No institutions yet
 app/dashboard/admin/page.tsx	System health
+app/dashboard/admin/payments/page.tsx	. This page does not store a second copy.
 app/dashboard/admin/payments/page.tsx	Paste the key
 app/dashboard/admin/payments/page.tsx	Secret slot
 app/dashboard/admin/payments/page.tsx	Secret value
 app/dashboard/admin/payments/page.tsx	Store a key
+app/dashboard/admin/payments/page.tsx	Stripe, Billplz, iPay88, RMS, PayPal, and Xendit. A super admin sets each key in
 app/dashboard/admin/settings/page.tsx	Automatic daily backups are managed by Firebase. Manual export is available in the Firebase console.
 app/dashboard/admin/settings/page.tsx	Configure SMTP
 app/dashboard/admin/settings/page.tsx	Configure SMTP settings for system notifications and reports.
