@@ -1,4 +1,4 @@
-/** ET Essay Writer marks. 9–1 plus U, with the letter a school report would show. */
+/** ET AI Essay Writer marks. 9–1 plus U, with the letter a school report would show. */
 
 export interface EssayGrade {
   mark: number;

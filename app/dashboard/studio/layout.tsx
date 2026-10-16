@@ -9,7 +9,7 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
           <Link href="/dashboard/studio/et">ET AI</Link>
           <Link href="/dashboard/studio/maths">ET Maths</Link>
           <Link href="/dashboard/studio/exam-prep">ET Exams</Link>
-          <Link href="/dashboard/studio/essay">ET Essay Writer</Link>
+          <Link href="/dashboard/studio/essay">ET AI Essay Writer</Link>
         </nav>
       </div>
       <div className="min-h-0 flex-1 overflow-auto">{children}</div>

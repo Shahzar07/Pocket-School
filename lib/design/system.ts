@@ -9,7 +9,10 @@
 export const TOKENS = {
   color: {
     ink: '#203337',
-    teal: '#2786A4',
+    /** Light text primary. #2786A4 is only 4.2:1 on white. */
+    teal: '#1E6A83',
+    /** Dark text primary. Light enough for 4.5:1 on #0B1417 and #121E22. */
+    tealOnDark: '#6FBBCE',
     tealDeep: '#1E6A83',
     page: '#F4F6F6',
     card: '#FFFFFF',

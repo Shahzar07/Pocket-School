@@ -98,7 +98,7 @@ export default function MathsTutorPage() {
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  // Arriving from an exam pack ("work through it with ET"): pre-fill the problem.
+  // Arriving from an exam pack ("work through it with ET AI"): pre-fill the problem.
   // Snap opens the camera here instead of a separate page.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -242,7 +242,7 @@ export default function MathsTutorPage() {
       persist(s);
       if (nowSolved && !s0.solved) setTimeout(loadHistory, 600);
     } catch (e) {
-      if ((e as Error)?.name !== 'AbortError') toast.error(e instanceof Error ? e.message : 'ET is unavailable right now.');
+      if ((e as Error)?.name !== 'AbortError') toast.error(e instanceof Error ? e.message : 'ET AI is unavailable right now.');
     } finally {
       setStreamRaw(null);
       setBusy(false);
@@ -330,7 +330,7 @@ export default function MathsTutorPage() {
         eyebrow={<><Link href="/dashboard/studio" className="hover:underline">AI Studio</Link> · ET Maths</>}
         title="Stuck on a problem?"
         accent="Snap it."
-        description="Scan or type any maths problem. ET guides you one step at a time — you do the thinking — or shows a full worked solution."
+        description="Scan or type any maths problem. ET AI guides you one step at a time — you do the thinking — or shows a full worked solution."
         actions={phase === 'session' ? (
           <button onClick={reset} className="h-10 px-4 rounded-full bg-primary text-primary-foreground text-sm font-semibold inline-flex items-center gap-1.5 hover:opacity-90">
             <Plus className="w-4 h-4" /> New problem
@@ -399,7 +399,7 @@ export default function MathsTutorPage() {
                     </div>
                     <button onClick={() => solve(problem)} disabled={!problem.trim()}
                       className="h-11 px-6 rounded-full bg-primary text-primary-foreground font-semibold inline-flex items-center gap-2 hover:opacity-90 disabled:opacity-40 shadow-sm">
-                      <Sparkles className="w-4 h-4" /> {mode === 'guide' ? 'Start with ET' : 'Solve it'}
+                      <Sparkles className="w-4 h-4" /> {mode === 'guide' ? 'Start with ET AI' : 'Solve it'}
                     </button>
                   </div>
                 </Panel>
@@ -440,7 +440,7 @@ export default function MathsTutorPage() {
                       animate={{ rotate: [0, 6, -6, 0] }} transition={{ repeat: Infinity, duration: 2.4 }}>
                       <Sparkles className="w-7 h-7 text-primary" />
                     </motion.div>
-                    <p className="font-heading text-xl text-foreground mb-1">ET is working it out</p>
+                    <p className="font-heading text-xl text-foreground mb-1">ET AI is working it out</p>
                     <p className="text-[13px] text-muted-foreground mb-6">Solving it properly first, so every hint is right.</p>
                     <ul className="space-y-2 text-left">
                       {SOLVING_STAGES.map((st, i) => (
@@ -548,11 +548,11 @@ export default function MathsTutorPage() {
 
                 {/* Conversation */}
                 <Panel>
-                  <PanelHeader title={session.mode === 'guide' ? 'Work it out with ET' : 'Questions about the solution'} />
+                  <PanelHeader title={session.mode === 'guide' ? 'Work it out with ET AI' : 'Questions about the solution'} />
                   <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
                     {session.messages.length === 0 && streamRaw === null && (
                       <p className="text-[13px] text-muted-foreground">
-                        {session.mode === 'guide' ? 'ET will ask you for the first step.' : 'Ask about any step — "why do we divide here?"'}
+                        {session.mode === 'guide' ? 'ET AI will ask you for the first step.' : 'Ask about any step — "why do we divide here?"'}
                       </p>
                     )}
                     {session.messages.map((m, i) => <Bubble key={i} m={m} />)}
@@ -614,7 +614,7 @@ export default function MathsTutorPage() {
                       onChange={e => setReply(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); } }}
                       rows={1}
-                      placeholder={session.mode === 'guide' && !session.solved ? 'Type your next step — or ask a question…' : 'Ask ET anything about this problem…'}
+                      placeholder={session.mode === 'guide' && !session.solved ? 'Type your next step — or ask a question…' : 'Ask ET AI anything about this problem…'}
                       className="flex-1 resize-none max-h-32 rounded-2xl border border-border bg-background px-4 py-2.5 text-[14px] outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
                     />
                     {session.mode === 'guide' && !session.solved && (
@@ -681,7 +681,7 @@ export default function MathsTutorPage() {
 
           {phase !== 'session' && (
             <Panel>
-              <PanelHeader title="How ET teaches" />
+              <PanelHeader title="How ET AI teaches" />
               <ul className="space-y-3 text-[13px]">
                 {[
                   { icon: Camera, t: 'Snap or type', d: 'Printed, handwritten or a screenshot.' },
@@ -750,7 +750,7 @@ export default function MathsTutorPage() {
 }
 
 function EtAvatar() {
-  return <span className="w-7 h-7 rounded-full bg-primary text-primary-foreground text-[11px] font-bold grid place-items-center shrink-0 mt-0.5">ET</span>;
+  return <span className="h-7 px-1.5 rounded-full bg-primary text-primary-foreground text-[9px] font-bold inline-flex items-center justify-center shrink-0 tracking-tight mt-0.5">ET AI</span>;
 }
 
 function TypingDots() {

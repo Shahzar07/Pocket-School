@@ -30,8 +30,18 @@ export function useAccountMode() {
   const activeRole: Role = mode ?? (ready ? (profile?.role ?? 'student') : 'student');
 
   const setMode = (next: AccountMode) => {
+    const previous = mode;
     writeActiveMode(next);
     setStored(next);
+    if (previous && previous !== next) {
+      void import('@/lib/audit/report').then((mod) => mod.reportActivity({
+        action: 'role.switch',
+        targetType: 'mode',
+        targetId: next,
+        before: { mode: previous },
+        after: { mode: next },
+      }));
+    }
   };
 
   return {

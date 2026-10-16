@@ -82,7 +82,7 @@ export default function TeacherAssignmentsPage() {
         courseId: selectedCourse,
         title: form.title,
         description: essayTask
-          ? `${form.description}\n\nWrite this in ET Essay Writer. ET AI grades on the 9–1 scale.`
+          ? `${form.description}\n\nWrite this in ET AI Essay Writer. ET AI grades on the 9–1 scale.`
           : form.description,
         dueDate: Timestamp.fromDate(new Date(form.dueDate)),
         maxScore: Number(form.maxScore),
@@ -289,7 +289,7 @@ export default function TeacherAssignmentsPage() {
             </div>
             <label className="md:col-span-2 flex items-center gap-2 text-sm">
               <input type="checkbox" checked={essayTask} onChange={e => setEssayTask(e.target.checked)} />
-              ET Essay Writer task. ET AI grades it from 9 to 1.
+              ET AI Essay Writer task. ET AI grades it from 9 to 1.
             </label>
             <div className="md:col-span-2">
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Description / Instructions</label>

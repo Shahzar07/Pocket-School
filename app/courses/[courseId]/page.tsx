@@ -20,6 +20,8 @@ import {
   Star, Users, Globe, Clock, PlayCircle, Lock, ChevronDown, Award, Infinity as InfinityIcon,
   Smartphone, BarChart3, ShieldCheck,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useContentTranslation } from '@/hooks/use-content-translation';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { Timestamp } from 'firebase/firestore';
@@ -54,6 +56,13 @@ export default function CourseDetailPage() {
   /** Coupon grants held by the signed-in user, for this course. */
   const [couponGranted, setCouponGranted] = useState(false);
   const [enrolledHere, setEnrolledHere] = useState(false);
+  const { t, i18n } = useTranslation();
+  const courseCopy = useContentTranslation(
+    `course:${courseId ?? 'pending'}`,
+    { title: course?.title ?? '', description: course?.description ?? '' },
+    i18n.language,
+    Boolean(course) && i18n.resolvedLanguage !== 'en' && i18n.language !== 'en',
+  );
 
   const load = async () => {
     if (!courseId) return;
@@ -303,8 +312,8 @@ export default function CourseDetailPage() {
 
       {!loading && !error && !course && (
         <div className="text-center py-32">
-          <p className="text-muted-foreground mb-4">Product not found or not publicly listed.</p>
-          <Button variant="outline" onClick={() => router.push('/courses')}>Browse marketplace</Button>
+          <p className="text-muted-foreground mb-4">{t('courseUi.notFound')}</p>
+          <Button variant="outline" onClick={() => router.push('/courses')}>{t('courseUi.browse')}</Button>
         </div>
       )}
 
@@ -315,17 +324,25 @@ export default function CourseDetailPage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
               <div className="lg:max-w-[62%]">
                 <nav className="flex items-center gap-2 text-xs text-white/50 mb-4">
-                  <Link href="/courses" className="hover:text-white">Marketplace</Link>
+                  <Link href="/courses" className="hover:text-white">{t('courseUi.marketplace')}</Link>
                   {course.category && <><span>›</span><span>{course.category}</span></>}
                   {course.subject && <><span>›</span><span className="text-white/70">{course.subject}</span></>}
                 </nav>
 
                 <h1 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold leading-[1.15] tracking-tight mb-4">
-                  {course.title}
+                  {courseCopy.values.title || course.title}
                 </h1>
-                {course.description && (
+                {(courseCopy.values.description || course.description) && (
                   <p className="text-base sm:text-lg text-white/70 leading-relaxed mb-5 line-clamp-3">
-                    {course.description}
+                    {courseCopy.values.description || course.description}
+                  </p>
+                )}
+                {courseCopy.autoTranslated && (
+                  <p className="mb-4 flex flex-wrap items-center gap-2 text-xs text-white/80">
+                    <span className="rounded-full bg-white/15 px-2 py-0.5 font-semibold">{t('lesson.autoTranslated')}</span>
+                    <button type="button" className="underline" onClick={courseCopy.toggle}>
+                      {courseCopy.showOriginal ? t('lesson.showTranslation') : t('lesson.showOriginal')}
+                    </button>
                   </p>
                 )}
 

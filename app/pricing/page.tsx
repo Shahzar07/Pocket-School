@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 import { motion, type Variants } from 'motion/react';
 import { toast } from 'sonner';
-import { ADDONS, TIERS } from '@/lib/entitlements';
+import { ADDONS, TIERS, planProgrammes } from '@/lib/entitlements';
+import { LANGUAGES } from '@/lib/languages';
 import { SIGNUP_GRANT } from '@/lib/sparks';
 import { discountLabel, formatMoney, planById, quoteAddon, quotePlan, type BillingInterval } from '@/lib/pricing';
 import { usePricing } from '@/hooks/use-pricing';
@@ -53,6 +55,22 @@ interface PlanCopy {
   features: string[];
 }
 
+const PREVIEW_EXTRAS = [
+  'ET AI tutor — 20 messages a day',
+  'ET AI generator — 3 items a day',
+  'Buy any marketplace course outright',
+];
+
+const PRIMARY_EXTRAS = [
+  'Unlimited ET AI study materials',
+  'Progress tracking and streaks',
+];
+
+const IGCSE_EXTRAS = [
+  'ET AI tutor, unlimited',
+  "Bloom's progress tracking",
+];
+
 /** Marketing copy for the sold plans. Amounts come from the pricing document. */
 const PLANS: PlanCopy[] = [
   {
@@ -61,59 +79,32 @@ const PLANS: PlanCopy[] = [
     tier: 0,
     tagline: 'Browse everything, and take the first lesson of any course. No card, no countdown.',
     cta: 'Start free',
-    features: [
-      'Full course catalogue',
-      'First lesson of every course',
-      'ET AI tutor — 20 messages a day',
-      'ET generator — 3 items a day',
-      'Buy any marketplace course outright',
-    ],
+    features: PREVIEW_EXTRAS,
   },
   {
     id: 'primary_secondary',
     name: 'Primary & Lower Secondary',
     tier: 1,
-    tagline: 'Years 1–9. Every core subject, built to the curriculum.',
+    tagline: 'Primary and Lower Secondary. Every core subject, built to the curriculum.',
     cta: 'Choose this plan',
-    features: [
-      'Primary Years 1–6, all subjects',
-      'Lower Secondary Years 7–9',
-      'Unlimited ET study materials',
-      'Progress tracking and streaks',
-    ],
+    features: PRIMARY_EXTRAS,
   },
   {
     id: 'igcse_alevel',
     name: 'IGCSE & A-Level',
     tier: 2,
-    tagline: 'Years 10–13. The exam years, with everything below included.',
+    tagline: 'IGCSE to A-Level, with everything below included.',
     popular: true,
     cta: 'Choose this plan',
-    features: [
-      'IGCSE / GCSE — Cambridge & Edexcel',
-      'A-Level and AS-Level',
-      'Pre-University and Foundation',
-      'Everything in Primary & Lower Secondary',
-      'ET AI tutor, unlimited',
-      "Bloom's progress tracking",
-      'Parent dashboard',
-      'Completion certificates',
-    ],
+    features: IGCSE_EXTRAS,
   },
   {
     id: 'professional',
     name: 'Professional & Degrees',
     tier: 3,
-    tagline: 'Micro degrees, professional certifications and the UoL External LLB.',
+    tagline: 'MBBS Medicine, LLB Law (University of London and other universities), Engineering and Nursing.',
     cta: 'Choose this plan',
-    features: [
-      'Micro Degrees and Diplomas',
-      'Professional Certifications',
-      'University of London External LLB — all 12 modules',
-      'Amara, the law specialist AI teacher',
-      'IRAC coaching and case law analysis',
-      'Everything in IGCSE & A-Level',
-    ],
+    features: [],
   },
 ];
 
@@ -131,28 +122,7 @@ const SPARK_USES = [
   { title: 'Deep exam work', desc: 'Full mock paper generation with rubric-based marking and gap analysis.' },
 ];
 
-const FAQS = [
-  {
-    q: 'What are Sparks?',
-    a: 'Sparks are the credits that power premium AI generation — long-form podcasts, narrated audio, generated imagery and full mock-paper marking. Everyday tutoring and standard ET generations do not consume Sparks on paid plans. Each plan includes a monthly allowance that resets on your billing date, and you can buy top-up packs at any time if you run out mid-term.',
-  },
-  {
-    q: 'Can I cancel anytime?',
-    a: 'Yes. Cancel from your dashboard in two clicks — no phone call, no retention script. Your plan stays active until the end of the period you have already paid for, and anything you have generated stays in your library on the Free plan afterwards.',
-  },
-  {
-    q: 'Do you offer student discounts?',
-    a: 'The Free plan is genuinely free forever. Beyond that we run a verified-student rate of 40% off Academic for learners in full-time education, and hardship places for those who need them. Email students@poketschool.ai from your school or university address and we will sort it out.',
-  },
-  {
-    q: 'Is there a free trial?',
-    a: 'There is no time-limited trial because the Free plan does the same job better — use ET every day, indefinitely, with daily caps instead of a ticking clock. When the caps start getting in your way, that is the honest signal to upgrade.',
-  },
-  {
-    q: 'What payment methods do you accept?',
-    a: 'Visa, Mastercard and American Express, plus FPX online banking, GrabPay, Touch ’n Go eWallet and Boost for Malaysian learners. Institutional customers can pay by invoice and bank transfer in MYR or USD. All payments are processed by Stripe — we never see or store your card details.',
-  },
-];
+const FAQ_IDS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'] as const;
 
 /* ─── Page ──────────────────────────────────────────────────── */
 
@@ -184,22 +154,22 @@ export default function PricingPage() {
 
   return (
     <div
-      className="min-h-screen bg-white text-foreground overflow-x-hidden"
+      className="pricing-page min-h-screen bg-white text-foreground overflow-x-hidden"
       data-pricing-ready={ready ? '1' : '0'}
       data-display-currency={currency}
     >
       {/* ── Hero ───────────────────────────────────────────────── */}
       <section className="relative pt-24 lg:pt-32 pb-14 bg-gradient-to-b from-[#E9F7FA] via-[#F5F1FF] to-white overflow-hidden">
-        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-[#2786A4]/10 blur-3xl" aria-hidden />
+        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-primary/10 blur-3xl" aria-hidden />
         <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[#E2AF4D]/10 blur-3xl" aria-hidden />
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <motion.div variants={fadeUp} initial="hidden" animate="visible">
-            <p className="text-xs font-bold tracking-[0.25em] text-[#2786A4] mb-5">PLANS &amp; PRICING</p>
+            <p className="text-xs font-bold tracking-[0.25em] text-primary mb-5">PLANS &amp; PRICING</p>
             <h1 className="font-heading text-4xl sm:text-5xl lg:text-7xl tracking-tight text-[#203337] leading-[0.98] mb-6">
               Learn free.
               <br />
-              <span className="bg-gradient-to-r from-[#2786A4] via-[#1E3A8A] to-[#2786A4] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary via-[#1E3A8A] to-primary bg-clip-text text-transparent">
                 Upgrade when it earns it.
               </span>
             </h1>
@@ -247,7 +217,7 @@ export default function PricingPage() {
                 );
               })}
             </div>
-            <p className="text-xs font-semibold text-[#2786A4] inline-flex items-center gap-1.5">
+            <p className="text-xs font-semibold text-primary inline-flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-[#E2AF4D]" />
               Pay annually and save {discountLabel(config)}
             </p>
@@ -311,8 +281,8 @@ export default function PricingPage() {
               key={a.id}
               className="rounded-2xl border-2 border-slate-200 bg-white p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center gap-6 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.4)]"
             >
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1E6A83] to-[#2786A4] grid place-items-center shrink-0">
-                <Video className="w-7 h-7 text-white" />
+              <div className="w-14 h-14 rounded-2xl bg-primary grid place-items-center shrink-0">
+                <Video className="w-7 h-7 text-primary-foreground" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-lg text-slate-900">{a.name}</h3>
@@ -350,10 +320,10 @@ export default function PricingPage() {
               whileInView="visible"
               viewport={{ once: true, margin: '-60px' }}
             >
-              <p className="text-xs font-bold tracking-[0.2em] text-[#2786A4] mb-4">THE SPARKS SYSTEM</p>
+              <p className="text-xs font-bold tracking-[0.2em] text-primary mb-4">THE SPARKS SYSTEM</p>
               <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#203337] leading-[1.05] mb-5">
                 What exactly is a{' '}
-                <span className="bg-gradient-to-r from-[#2786A4] to-[#1E3A8A] bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-primary to-[#1E3A8A] bg-clip-text text-transparent">
                   Spark
                 </span>
                 ?
@@ -406,7 +376,7 @@ export default function PricingPage() {
               {SPARK_USES.map((u) => (
                 <div
                   key={u.title}
-                  className="flex gap-4 rounded-2xl bg-white border border-slate-200 p-5 hover:border-[#2786A4]/40 hover:shadow-[0_20px_50px_-20px_rgba(39,134,164,0.25)] transition-all"
+                  className="flex gap-4 rounded-2xl bg-white border border-slate-200 p-5 hover:border-primary/40 hover:shadow-[0_20px_50px_-20px_rgba(30,106,131,0.25)] transition-all"
                 >
                   <div className="w-10 h-10 shrink-0 rounded-xl bg-[#FFF8E6] flex items-center justify-center">
                     <Zap className="w-4 h-4 text-[#E2AF4D] fill-[#E2AF4D]" />
@@ -417,7 +387,7 @@ export default function PricingPage() {
                   </div>
                 </div>
               ))}
-              <div className="rounded-2xl border border-dashed border-[#2786A4]/30 bg-[#E9F7FA] p-5">
+              <div className="rounded-2xl border border-dashed border-primary/30 bg-[#E9F7FA] p-5">
                 <p className="text-sm text-[#1E3A8A] leading-relaxed">
                   <span className="font-bold">Never expire mid-cycle.</span> Unused monthly Sparks reset
                   each billing period, but purchased top-up Sparks roll over for as long as your account
@@ -432,7 +402,7 @@ export default function PricingPage() {
       {/* ── Institutions ───────────────────────────────────────── */}
       <section className="py-20 lg:py-28 bg-[#203337] relative overflow-hidden">
         <div
-          className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(39,134,164,0.25),transparent)]"
+          className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(30,106,131,0.25),transparent)]"
           aria-hidden
         />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
@@ -447,7 +417,7 @@ export default function PricingPage() {
               <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-white leading-[1.05] mb-5">
                 Schools, colleges and
                 <br />
-                <span className="bg-gradient-to-r from-[#2786A4] via-[#6FBBCE] to-[#E2AF4D] bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-[#6FBBCE] via-[#A9D7E4] to-[#E2AF4D] bg-clip-text text-transparent">
                   training providers.
                 </span>
               </h2>
@@ -457,7 +427,7 @@ export default function PricingPage() {
               </p>
               <a
                 href="mailto:institutions@poketschool.ai?subject=Institutional%20Pricing%20Enquiry"
-                className="inline-flex items-center gap-2 rounded-full h-12 px-7 text-sm font-bold bg-[#2786A4] hover:bg-[#1E6A83] text-white shadow-xl shadow-[#2786A4]/40 transition-colors"
+                className="inline-flex items-center gap-2 rounded-full h-12 px-7 text-sm font-bold bg-primary hover:bg-[#1E6A83] text-primary-foreground shadow-xl shadow-primary/40 transition-colors"
               >
                 <Building2 className="w-4 h-4" />
                 Talk to us
@@ -481,7 +451,7 @@ export default function PricingPage() {
                   key={f.label}
                   className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur-sm"
                 >
-                  <div className="w-9 h-9 rounded-xl bg-[#2786A4]/20 text-[#6FBBCE] flex items-center justify-center mb-3">
+                  <div className="w-9 h-9 rounded-xl bg-primary/20 text-[#6FBBCE] flex items-center justify-center mb-3">
                     {f.icon}
                   </div>
                   <p className="text-sm font-extrabold text-white mb-1">{f.label}</p>
@@ -568,7 +538,8 @@ function PlanCard({
   const sparksLine = sparks > 0
     ? `${sparks.toLocaleString('en')} Sparks a month${rollover > 0 ? ` · ${rollover.toLocaleString('en')} roll over` : ''}`
     : `${SIGNUP_GRANT.toLocaleString('en')} welcome Sparks`;
-  const features = sparks > 0 ? [...plan.features, `${sparks.toLocaleString('en')} Sparks a month`] : plan.features;
+  const included = [...planProgrammes(plan.id), ...plan.features];
+  const features = sparks > 0 ? [...included, `${sparks.toLocaleString('en')} Sparks a month`] : included;
 
   return (
     <motion.div
@@ -579,13 +550,13 @@ function PlanCard({
       custom={index}
       className={`relative flex flex-col rounded-2xl border transition-all h-full ${
         plan.popular
-          ? 'border-[#2786A4] bg-white shadow-[0_30px_70px_-30px_rgba(39,134,164,0.55)] lg:-mt-4 lg:mb-4'
-          : 'border-slate-200 bg-white hover:border-[#2786A4]/40 hover:shadow-[0_20px_50px_-20px_rgba(39,134,164,0.25)]'
+          ? 'border-primary bg-white shadow-[0_30px_70px_-30px_rgba(30,106,131,0.55)] lg:-mt-4 lg:mb-4'
+          : 'border-slate-200 bg-white hover:border-primary/40 hover:shadow-[0_20px_50px_-20px_rgba(30,106,131,0.25)]'
       }`}
     >
       {plan.popular && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#2786A4] text-white text-[10px] font-bold tracking-[0.15em] shadow-lg shadow-[#2786A4]/30">
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold tracking-[0.15em] shadow-lg shadow-primary/30">
             <Sparkles className="w-3 h-3 text-[#E2AF4D]" />
             MOST POPULAR
           </span>
@@ -594,7 +565,7 @@ function PlanCard({
 
       <div className={`p-7 sm:p-8 ${plan.popular ? 'pt-9 sm:pt-10' : ''}`}>
         <div className="flex items-center gap-2 mb-2">
-          <GraduationCap className={`w-4 h-4 ${plan.popular ? 'text-[#2786A4]' : 'text-slate-400'}`} />
+          <GraduationCap className={`w-4 h-4 ${plan.popular ? 'text-primary' : 'text-slate-400'}`} />
           <h2 className="text-sm font-bold tracking-[0.15em] uppercase text-[#203337]">{plan.name}</h2>
         </div>
         <p className="text-sm text-slate-600 leading-relaxed min-h-[3.25rem]">{plan.tagline}</p>
@@ -643,7 +614,7 @@ function PlanCard({
             disabled={checkingOut}
             className={`mt-6 w-full inline-flex items-center justify-center gap-2 h-12 rounded-full text-sm font-bold transition-all disabled:opacity-60 ${
               plan.popular
-                ? 'bg-[#2786A4] hover:bg-[#1E6A83] text-white shadow-lg shadow-[#2786A4]/30'
+                ? 'bg-primary hover:bg-[#1E6A83] text-primary-foreground shadow-lg shadow-primary/30'
                 : 'bg-[#203337] hover:bg-[#132a5e] text-white'
             }`}
           >
@@ -663,10 +634,10 @@ function PlanCard({
               <li key={f} className="flex items-start gap-2.5">
                 <span
                   className={`mt-0.5 w-4 h-4 shrink-0 rounded-full flex items-center justify-center ${
-                    plan.popular ? 'bg-[#2786A4]' : 'bg-[#E9F7FA]'
+                    plan.popular ? 'bg-primary' : 'bg-[#E9F7FA]'
                   }`}
                 >
-                  <Check className={`w-2.5 h-2.5 ${plan.popular ? 'text-white' : 'text-[#2786A4]'}`} strokeWidth={3.5} />
+                  <Check className={`w-2.5 h-2.5 ${plan.popular ? 'text-primary-foreground' : 'text-primary'}`} strokeWidth={3.5} />
                 </span>
                 <span className="text-sm text-slate-700 leading-snug">{f}</span>
               </li>
@@ -688,10 +659,12 @@ function PlanCard({
 /* ─── FAQ ───────────────────────────────────────────────────── */
 
 function PricingFaq() {
+  const { t } = useTranslation();
   const [active, setActive] = useState<number | null>(0);
+  const count = LANGUAGES.length;
 
   return (
-    <section className="py-20 lg:py-24 bg-white">
+    <section id="pricing-faq" className="py-20 lg:py-24 bg-white">
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
         <motion.div
           variants={fadeUp}
@@ -700,18 +673,19 @@ function PricingFaq() {
           viewport={{ once: true, margin: '-60px' }}
           className="text-center mb-10"
         >
-          <p className="text-xs font-bold tracking-[0.2em] text-[#2786A4] mb-4">PRICING QUESTIONS</p>
+          <p className="text-xs font-bold tracking-[0.2em] uppercase text-primary mb-4">{t('landing.faq.pricingEyebrow')}</p>
           <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#203337] leading-[1.05]">
-            The things people actually ask
+            {t('landing.faq.pricingTitle')}
           </h2>
         </motion.div>
 
         <div className="flex flex-col gap-3">
-          {FAQS.map((item, i) => {
+          {FAQ_IDS.map((id, i) => {
             const open = active === i;
+            const question = t(`landing.faq.q${id}`);
             return (
               <div
-                key={item.q}
+                key={id}
                 className="bg-white border rounded-xl transition-all duration-200 hover:border-[#eaeaea]"
                 style={{
                   borderColor: open ? '#eaeaea' : '#f0f0f0',
@@ -724,7 +698,7 @@ function PricingFaq() {
                   aria-expanded={open}
                   className="w-full text-left flex justify-between items-center gap-3 font-semibold text-[0.95rem] text-[#203337] px-5 py-[18px] cursor-pointer"
                 >
-                  <span className="flex-1">{item.q}</span>
+                  <span className="flex-1">{question}</span>
                   {open ? (
                     <ChevronUp className="w-5 h-5 shrink-0 text-slate-400" />
                   ) : (
@@ -732,7 +706,9 @@ function PricingFaq() {
                   )}
                 </button>
                 {open && (
-                  <div className="px-5 pb-5 -mt-1 text-[0.9rem] text-slate-600 leading-[1.65]">{item.a}</div>
+                  <div className="px-5 pb-5 -mt-1 text-[0.9rem] text-slate-600 leading-[1.65]">
+                    {t(`landing.faq.a${id}`, { count })}
+                  </div>
                 )}
               </div>
             );

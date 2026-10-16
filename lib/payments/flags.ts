@@ -29,6 +29,7 @@ export const FEATURE_FLAGS: readonly FeatureFlag[] = [
   { id: 'integrations.smtp', label: 'SMTP', group: 'integrations', defaultEnabled: true },
   { id: 'integrations.saml', label: 'SSO / SAML', group: 'integrations', defaultEnabled: false },
   { id: 'integrations.lti', label: 'LTI', group: 'integrations', defaultEnabled: false },
+  { id: 'integrations.domains', label: 'Custom domains', group: 'integrations', defaultEnabled: true },
   { id: 'integrations.fcm', label: 'Firebase Cloud Messaging', group: 'integrations', defaultEnabled: false },
   { id: 'integrations.expo', label: 'Expo push', group: 'integrations', defaultEnabled: false },
   { id: 'integrations.openrouter', label: 'OpenRouter', group: 'integrations', defaultEnabled: true },

@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: 'system',
-          content: 'You are ET AI grading for ET Essay Writer. Reply with JSON only: {"mark": number from 0 to 100, "feedback": string}. The mark is a percentage. Mention strengths and one next step. Do not mention any other brand.',
+          content: 'You are ET AI grading for ET AI Essay Writer. Reply with JSON only: {"mark": number from 0 to 100, "feedback": string}. The mark is a percentage. Mention strengths and one next step. Do not mention any other brand.',
         },
         { role: 'user', content: `Task: ${prompt || 'Open essay'}\n\nEssay:\n${essay}` },
       ],

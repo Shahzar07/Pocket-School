@@ -5,6 +5,7 @@ import { Brain, BookOpen, Sparkles, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { useWhiteLabel } from '@/components/white-label-provider';
 
 const FEATURES = [
   { icon: <Brain className="w-4 h-4" />, title: 'auth.f1title', desc: 'auth.f1desc' },
@@ -15,8 +16,9 @@ const FEATURES = [
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
+  const { branding } = useWhiteLabel();
   return (
-    <div className="min-h-screen flex bg-[#06060F]">
+    <div className="min-h-screen flex bg-[#06060F]" style={{ fontFamily: 'var(--font-institution), inherit' }}>
       {/* ── Left: video hero panel ── */}
       <div className="hidden lg:block w-[52%] shrink-0 p-5">
         <div className="relative w-full h-full rounded-3xl overflow-hidden bg-black min-h-[calc(100vh-2.5rem)]">
@@ -38,8 +40,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                 <Brain className="w-5 h-5 text-white" />
               </div>
               <span className="text-white font-bold text-xl drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                Poket School
+                {branding.displayName}
               </span>
+              {branding.isWhiteLabel && !branding.hidePoweredBy && (
+                <span className="text-white/70 text-xs drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Powered by Poket School</span>
+              )}
             </Link>
 
             {/* Hero text + feature cards */}

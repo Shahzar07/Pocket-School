@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callerIsAdmin, isNextResponse, requireUser } from '@/lib/api-guard';
+import { requestClient } from '@/lib/audit/model';
+import { recordActivity } from '@/lib/audit/server';
 import { ActionError } from '@/lib/server/actions';
 import { runPost } from '@/lib/server/http';
 import {
@@ -9,7 +11,9 @@ import {
   financeAdmin,
   integrationsAdmin,
   paymentsAdmin,
+  activePromoBanners,
   quoteFor,
+  recordReferralClick,
   referralState,
   refundCheckout,
   startCheckout,
@@ -57,13 +61,35 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
     if (isNextResponse(admin)) return admin;
     try {
       const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
-      if (action === 'admin-payments') return NextResponse.json(body.action ? await updatePayments(body) : await paymentsAdmin());
+      if (action === 'admin-payments') {
+        if (!body.action) return NextResponse.json(await paymentsAdmin());
+        const result = await updatePayments(body);
+        await recordPaymentsChange(req, admin, body.action === 'flags' ? 'flags.edit' : 'payments.edit', body);
+        return NextResponse.json(result);
+      }
       if (action === 'admin-integrations') {
         if (body.action === 'test') return NextResponse.json(await testSlot(typeof body.slot === 'string' ? body.slot : ''));
-        return NextResponse.json(body.action ? await updateIntegrations(body) : await integrationsAdmin());
+        if (!body.action) return NextResponse.json(await integrationsAdmin());
+        const result = await updateIntegrations(body);
+        await recordPaymentsChange(req, admin, body.action === 'flags' ? 'flags.edit' : 'payments.edit', body);
+        return NextResponse.json(result);
       }
       if (action === 'admin-finance') return NextResponse.json(await financeAdmin());
-      return NextResponse.json(await refundCheckout(admin.uid, typeof body.checkoutId === 'string' ? body.checkoutId : ''));
+      const checkoutId = typeof body.checkoutId === 'string' ? body.checkoutId : '';
+      const refund = await refundCheckout(admin.uid, checkoutId);
+      const client = requestClient(req.headers);
+      await recordActivity({
+        action: 'admin.action',
+        actorId: admin.uid,
+        actorEmail: admin.email,
+        actorRole: 'super_admin',
+        ip: client.ip,
+        device: client.device,
+        targetType: 'checkout',
+        targetId: checkoutId,
+        targetLabel: 'refund',
+      });
+      return NextResponse.json(refund);
     } catch (error) {
       return fail(error);
     }
@@ -86,7 +112,13 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
     }
     if (action === 'referral') {
       const profile = body;
-      return referralState(user.uid, typeof profile.name === 'string' ? profile.name : '', body.create === true);
+      return referralState(user.uid, typeof profile.name === 'string' ? profile.name : '', body.create === true, {
+        item: typeof body.item === 'string' ? body.item : undefined,
+        kind: typeof body.kind === 'string' ? body.kind : undefined,
+        percentOff: body.percentOff === undefined ? undefined : Number(body.percentOff),
+        quantityLimit: body.quantityLimit === undefined ? undefined : Number(body.quantityLimit),
+        expiresAt: typeof body.expiresAt === 'string' ? body.expiresAt : undefined,
+      });
     }
     throw new ActionError('INVALID', 'Unknown payment action.');
   });
@@ -114,6 +146,38 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ action: str
   } catch (error) {
     return fail(error);
   }
+}
+
+function safePaymentsAfter(body: Record<string, unknown>): Record<string, unknown> {
+  if (body.action === 'secret') {
+    return { slot: typeof body.slot === 'string' ? body.slot : '', changed: true };
+  }
+  const copy: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(body)) {
+    if (key === 'value' || key === 'secret' || key === 'apiKey') continue;
+    copy[key] = value;
+  }
+  return copy;
+}
+
+async function recordPaymentsChange(
+  req: NextRequest,
+  admin: { uid: string; email?: string },
+  action: 'payments.edit' | 'flags.edit',
+  body: Record<string, unknown>,
+) {
+  const client = requestClient(req.headers);
+  await recordActivity({
+    action,
+    actorId: admin.uid,
+    actorEmail: admin.email,
+    actorRole: 'super_admin',
+    ip: client.ip,
+    device: client.device,
+    targetType: 'payments',
+    targetId: typeof body.action === 'string' ? body.action : 'payments',
+    after: safePaymentsAfter(body),
+  });
 }
 
 function fail(error: unknown): NextResponse {

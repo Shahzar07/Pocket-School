@@ -216,7 +216,7 @@ export default function AchievementsPage() {
                   {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
                 </div>
                 <Avatar className="w-8 h-8">
-                  <AvatarFallback className="text-xs bg-gradient-to-br from-primary to-violet-500 text-white font-bold">
+                  <AvatarFallback className="text-xs bg-primary text-primary-foreground font-bold">
                     {row.label.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>

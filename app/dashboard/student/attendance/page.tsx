@@ -167,8 +167,8 @@ export default function StudentAttendancePage() {
                 {/* Course header */}
                 <div className="flex items-center justify-between p-5 sm:p-6 border-b border-border">
                   <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-r from-[#2786A4] to-[#1E6A83] flex items-center justify-center shrink-0">
-                      <ClipboardCheck className="w-5 h-5 text-white" />
+                    <div className="w-11 h-11 rounded-2xl bg-primary flex items-center justify-center shrink-0">
+                      <ClipboardCheck className="w-5 h-5 text-primary-foreground" />
                     </div>
                     <div>
                       <p className="font-heading font-bold text-foreground text-lg">{ca.courseTitle}</p>

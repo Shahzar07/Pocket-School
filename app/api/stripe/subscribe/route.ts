@@ -36,7 +36,10 @@ export async function POST(req: NextRequest) {
           ? Math.round(monthly * 12 * (1 - pricing.annualDiscount) * 100)
           : Math.round(monthly * 100),
         recurring: { interval: body.annual ? 'year' : 'month' },
-        product_data: { name: `Poket School — ${def.name}` },
+        product_data: {
+          name: `Poket School — ${def.name}`,
+          description: def.programmes.join(' · '),
+        },
       },
     }],
     metadata: {

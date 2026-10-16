@@ -4,6 +4,7 @@
  * Firestore rules repeat the same names in `selfServiceFields()`.
  */
 
+import { resolveCountryCode } from './countries';
 import { assertPlacement } from './programmes';
 
 export const DELETION_GRACE_MS = 14 * 24 * 60 * 60 * 1000;
@@ -60,29 +61,6 @@ export const PRIVILEGED_PROFILE_FIELDS = [
   'sparksMonthlyAllowance',
   'sparksGrantedAt',
   'xp',
-] as const;
-
-export const PROFILE_COUNTRIES = [
-  'Malaysia',
-  'Singapore',
-  'Indonesia',
-  'United Kingdom',
-  'United States',
-  'India',
-  'Australia',
-  'United Arab Emirates',
-  'China',
-  'Canada',
-  'New Zealand',
-  'Philippines',
-  'Thailand',
-  'Vietnam',
-  'South Africa',
-  'Nigeria',
-  'Kenya',
-  'Ireland',
-  'France',
-  'Germany',
 ] as const;
 
 export interface NotificationPrefs {
@@ -227,11 +205,12 @@ export interface ProfileDraft {
 }
 
 export function profilePatch(draft: ProfileDraft, role: string): Record<string, unknown> {
+  const country = resolveCountryCode(draft.country) || draft.country.trim();
   const patch: Record<string, unknown> = {
     name: draft.name.trim(),
     displayName: draft.displayName.trim(),
     bio: draft.bio.trim(),
-    country: draft.country.trim(),
+    country,
     timezone: draft.timezone.trim(),
     phone: draft.phone.trim(),
     language: draft.language,

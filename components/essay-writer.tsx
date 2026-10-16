@@ -39,7 +39,7 @@ export function EssayWriter({ purpose }: { purpose: string }) {
 
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-4">
-      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">ET Essay Writer</p>
+      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">ET AI Essay Writer</p>
       <h1 className="font-heading text-4xl tracking-tight">Write, then let ET AI mark it</h1>
       <p className="text-sm text-muted-foreground">{purpose}</p>
       <input aria-label="Essay task" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="What should the essay answer?" className="h-11 w-full rounded-xl border border-border px-3 text-sm" />

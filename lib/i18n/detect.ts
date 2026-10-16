@@ -28,7 +28,7 @@ const COUNTRY_LANGUAGE: Record<string, string> = {
   LB: 'ar', SY: 'ar', IQ: 'ar', YE: 'ar', LY: 'ar', TN: 'ar', DZ: 'ar', MA: 'ar',
   SD: 'ar', PS: 'ar', MR: 'ar',
   BD: 'bn',
-  BR: 'pt', PT: 'pt', AO: 'pt', MZ: 'pt',
+  BR: 'pt', PT: 'pt-PT', AO: 'pt', MZ: 'pt',
   RU: 'ru', BY: 'ru', KG: 'ru',
   KZ: 'kk',
   PK: 'ur',
@@ -41,7 +41,10 @@ const COUNTRY_LANGUAGE: Record<string, string> = {
   TH: 'th',
   IT: 'it', SM: 'it',
   US: 'en', GB: 'en', AU: 'en', NZ: 'en', IE: 'en', CA: 'en', SG: 'en', ZA: 'en',
-  NG: 'en', PH: 'en', KE: 'en',
+  NG: 'en',
+  IL: 'he', IR: 'fa', AF: 'ps',
+  PL: 'pl', UA: 'uk', NL: 'nl', PH: 'fil', NP: 'ne', MM: 'my', UZ: 'uz',
+  KE: 'sw', TZ: 'sw', ET: 'am', RO: 'ro', GR: 'el', CZ: 'cs', HU: 'hu', SE: 'sv',
 };
 
 /** `${country}-${region}` overrides, using Vercel's region code. */
@@ -49,7 +52,24 @@ const REGION_LANGUAGE: Record<string, string> = {
   'IN-TN': 'ta',
   'IN-PY': 'ta',
   'IN-WB': 'bn',
+  'IN-TG': 'te',
+  'IN-AP': 'te',
+  'IN-MH': 'mr',
+  'IN-GJ': 'gu',
+  'IN-PB': 'pa',
+  'IN-KA': 'kn',
+  'IN-KL': 'ml',
+  'IN-OR': 'or',
+  'IN-OD': 'or',
   'CA-QC': 'fr',
+};
+
+const TAG_ALIASES: Record<string, string> = {
+  tl: 'fil',
+  iw: 'he',
+  yue: 'yue',
+  cmn: 'zh',
+  jw: 'jv',
 };
 
 function matchBrowserTag(tag: string): string | null {
@@ -64,8 +84,11 @@ function matchBrowserTag(tag: string): string | null {
   ) {
     return 'zh-Hant';
   }
+  if (lower === 'pt-pt' || lower.startsWith('pt-pt-')) return 'pt-PT';
   if (lower === 'zh' || lower.startsWith('zh-')) return 'zh';
   const primary = lower.split('-')[0] ?? '';
+  const alias = TAG_ALIASES[primary];
+  if (alias && isSupportedLanguage(alias)) return alias;
   return isSupportedLanguage(primary) ? primary : null;
 }
 

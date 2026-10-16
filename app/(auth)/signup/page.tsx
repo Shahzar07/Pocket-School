@@ -23,6 +23,10 @@ import { useTranslation } from 'react-i18next';
 import { NOT_APPLICABLE, PROGRAMMES, assertPlacement, levelsForProgramme, suggestPlacementFromDob } from '@/lib/programmes';
 import { authedFetch } from '@/lib/api-client';
 import { publicDisplayName } from '@/lib/display-name';
+import { CountrySelect, PhoneField } from '@/components/country-select';
+import { readGeoCountry } from '@/lib/countries';
+import { useWhiteLabel } from '@/components/white-label-provider';
+import { passwordAccepts, signupDecision } from '@/lib/academy-settings';
 
 const ROLES = [
   { id: 'student', titleKey: 'signup.student', icon: <GraduationCap className="w-5 h-5" /> },
@@ -49,13 +53,18 @@ function ageFromDob(dob: string): number | null {
 
 export default function SignupPage() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { institution: academy } = useWhiteLabel();
   // 'form' → details, 'consent' → guardian consent code (minors), 'verify' → email code
   const [step, setStep] = useState<'form' | 'consent' | 'verify'>('form');
 
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [country, setCountry] = useState('');
+  useEffect(() => {
+    setCountry((current) => current || readGeoCountry());
+  }, []);
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('student');
   useEffect(() => {
@@ -147,6 +156,8 @@ export default function SignupPage() {
           emailVerificationRequired: !result.user.emailVerified,
           consentAcceptedAt: serverTimestamp(),
           ...(dob ? { dateOfBirth: dob } : {}),
+          ...(country ? { country } : {}),
+          ...(phone.trim() ? { phone: phone.trim() } : {}),
           ...roleProfileFields(),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
@@ -173,6 +184,22 @@ export default function SignupPage() {
   const validateForm = (): boolean => {
     if (!name.trim() || !email.trim() || !password) {
       toast.error(t('signup.fillRequired'));
+      return false;
+    }
+    const academySignup = signupDecision({
+      policy: academy?.signupPolicy,
+      domains: academy?.allowedEmailDomains,
+      email,
+    });
+    if (academy && !academySignup.ok) {
+      toast.error(academySignup.reason);
+      return false;
+    }
+    const academyPassword = academy
+      ? passwordAccepts(password, { minLength: academy.passwordMinLength, requireSymbol: academy.passwordRequireSymbol })
+      : null;
+    if (academyPassword) {
+      toast.error(academyPassword);
       return false;
     }
     if (password.length < 6) {
@@ -240,6 +267,7 @@ export default function SignupPage() {
         guardianEmail: guardianEmail.trim().toLowerCase(),
         guardianConsentAt: serverTimestamp(),
       } : {}),
+      ...(country ? { country } : {}),
       ...(phone.trim() ? { phone: phone.trim() } : {}),
       ...roleProfileFields(),
       createdAt: serverTimestamp(),
@@ -575,13 +603,14 @@ export default function SignupPage() {
               </div>
             )}
 
-            <div className="space-y-1.5">
-              <Label htmlFor="phone" className={LABEL_CLASS}>
-                {t('signup.phone')} <span className="text-white/30 normal-case font-normal">{t('signup.optional')}</span>
-              </Label>
-              <Input id="phone" type="tel" placeholder="+60123456789" className={INPUT_CLASS}
-                value={phone} onChange={e => setPhone(e.target.value)} disabled={loading} />
-            </div>
+            <CountrySelect tone="inverse" label={t('signup.country', { defaultValue: 'Country' })} locale={i18n.language} value={country} onChange={setCountry} />
+            <PhoneField
+              tone="inverse"
+              country={country}
+              label={t('signup.phone')}
+              value={phone}
+              onChange={setPhone}
+            />
 
             <div className="space-y-1.5">
               <Label htmlFor="password" className={LABEL_CLASS}>{t('signup.password')}</Label>
