@@ -259,7 +259,12 @@ app/dashboard/admin/curriculum/page.tsx	e.g. Science, Maths, English, Computing
 app/dashboard/admin/curriculum/page.tsx	e.g. Secondary
 app/dashboard/admin/curriculum/page.tsx	e.g. iLowerSecondary
 app/dashboard/admin/finance/page.tsx	Checkout to refund
+app/dashboard/admin/finance/page.tsx	No matching invoices.
 app/dashboard/admin/finance/page.tsx	No transactions yet.
+app/dashboard/admin/finance/page.tsx	Search invoices
+app/dashboard/admin/finance/page.tsx	Search name, invoice, or status
+app/dashboard/admin/finance/page.tsx	Select invoices to email them together. Each row can also download or email on its own.
+app/dashboard/admin/finance/page.tsx	The payer can be a parent, an institution, or an adult learner.
 app/dashboard/admin/finance/page.tsx	chk_…
 app/dashboard/admin/institutions/[institutionId]/page.tsx	Academy price saved.
 app/dashboard/admin/institutions/[institutionId]/page.tsx	Academy settings saved.
@@ -1878,6 +1883,11 @@ components/institutions/workspace.tsx	Webhook URL
 components/institutions/workspace.tsx	https://example.edu/hooks/poket
 components/institutions/workspace.tsx	learn.school.example
 components/institutions/workspace.tsx	name@school.example
+components/invoice-delivery.tsx	Download PDF
+components/invoice-delivery.tsx	Optional message
+components/invoice-delivery.tsx	Other addresses, separated by commas
+components/invoice-delivery.tsx	Other email addresses
+components/invoice-delivery.tsx	The account holder is selected by default. Add other addresses if someone else should receive the PDF.
 components/lesson-format-views.tsx	Audio Summary
 components/lesson-format-views.tsx	Not generated yet.
 components/lesson-manuscript.tsx	An unsaved copy of this lesson is on this device.
