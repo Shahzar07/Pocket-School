@@ -202,7 +202,7 @@ export default function OralExamPage({ params }: { params: Promise<{ id: string 
                   animate={speaking || listening ? { scale: [1, 1.35 + i * 0.12], opacity: [0.5, 0] } : { scale: 1, opacity: 0.15 }}
                   transition={{ repeat: speaking || listening ? Infinity : 0, duration: 1.6, delay: i * 0.4 }} />
               ))}
-              <span className={`absolute inset-0 rounded-full grid place-items-center text-white text-3xl font-bold ${listening ? 'bg-rose-500' : 'bg-primary'}`}>
+              <span className={`absolute inset-0 rounded-full grid place-items-center text-3xl font-bold ${listening ? 'bg-rose-500 text-white' : 'bg-primary text-primary-foreground'}`}>
                 {listening ? <Mic className="w-10 h-10" /> : speaking ? <Volume2 className="w-10 h-10" /> : live !== null ? <Loader2 className="w-10 h-10 animate-spin" /> : 'ET'}
               </span>
             </div>

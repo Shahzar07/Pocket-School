@@ -49,7 +49,7 @@ import { useTranslation } from 'react-i18next';
 type Role = 'student' | 'teacher' | 'parent' | 'admin' | 'institution_admin';
 
 const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string }> = {
-  student: { icon: 'text-[#6FBBCE]', bar: 'bg-[#6FBBCE]', chip: 'from-[#2786A4] to-[#1E6A83]' },
+  student: { icon: 'text-primary', bar: 'bg-primary', chip: 'from-primary to-primary' },
   teacher: { icon: 'text-emerald-400', bar: 'bg-emerald-400', chip: 'from-emerald-500 to-teal-600' },
   parent:  { icon: 'text-amber-400',  bar: 'bg-amber-400',  chip: 'from-amber-500 to-orange-600' },
   admin:   { icon: 'text-violet-400', bar: 'bg-violet-400', chip: 'from-violet-500 to-fuchsia-600' },
@@ -621,7 +621,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               >
                 <Avatar className="w-9 h-9 border-2 border-border cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all">
                   <AvatarImage src={profile.avatarUrl ?? user.photoURL ?? undefined} />
-                  <AvatarFallback className="bg-gradient-to-br from-[#2786A4] to-[#1E6A83] text-white text-sm font-bold">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-sm font-bold">
                     {profile.name?.charAt(0)?.toUpperCase() ?? 'U'}
                   </AvatarFallback>
                 </Avatar>
@@ -649,7 +649,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         <main id="dashboard-main" className="flex-1 overflow-y-auto relative pb-20 lg:pb-0">
           {/* A faint teal wash at the top, echoing the homepage sky. */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(39,134,164,0.06)_0%,transparent_100%)]" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(30,106,131,0.06)_0%,transparent_100%)]" />
           <OfflineBanner />
           <div className="relative px-4 pb-6 pt-1 lg:px-6 lg:pb-10">
             <RoleChecklist role={role} />

@@ -66,7 +66,7 @@ const VOICES: TeacherVoice[] = [
   'Kore', 'Charon', 'Aoede', 'Puck', 'Leda', 'Zephyr', 'Fenrir', 'Orus', 'Iapetus',
 ];
 
-const PALETTE = ['#1A73E8', '#1E3A8A', '#0B1B3F', '#10B981', '#2786A4', '#8B5CF6', '#EC4899', '#E2AF4D'];
+const PALETTE = ['#1A73E8', '#1E3A8A', '#0B1B3F', '#10B981', '#1E6A83', '#8B5CF6', '#EC4899', '#E2AF4D'];
 
 let voiceCursor = 0;
 

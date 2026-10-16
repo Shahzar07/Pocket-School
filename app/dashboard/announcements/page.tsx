@@ -127,7 +127,7 @@ export default function AnnouncementsPage() {
         </div>
         {canCreate && (
           <Button onClick={() => setShowCreate(true)}
-            className="rounded-full h-11 px-5 gap-2 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] hover:opacity-90 text-white shrink-0"
+            className="rounded-full h-11 px-5 gap-2 font-bold bg-primary hover:opacity-90 text-primary-foreground shrink-0"
           >
             <Plus className="w-4 h-4" /> New Announcement
           </Button>
@@ -174,7 +174,7 @@ export default function AnnouncementsPage() {
               />
             </div>
           </div>
-          <Button onClick={handleCreate} disabled={saving} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white gap-2">
+          <Button onClick={handleCreate} disabled={saving} className="w-full rounded-full h-11 font-bold bg-primary text-primary-foreground gap-2">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Megaphone className="w-4 h-4" />}
             Post Announcement
           </Button>

@@ -102,7 +102,7 @@ export default function StudentLiveClasses() {
                   </div>
                   <Button
                     onClick={() => handleJoin(cls)}
-                    className={`shrink-0 text-white ${cls.status === 'live' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:bg-primary/90'}`}
+                    className={`shrink-0 ${cls.status === 'live' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-primary hover:bg-primary/90 text-primary-foreground'}`}
                   >
                     {cls.status === 'live' ? 'Join Now' : 'Join Class'}
                   </Button>

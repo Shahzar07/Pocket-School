@@ -24,7 +24,7 @@ const fadeUp: Record<string, any> = {
 };
 
 const TYPE_COLORS: Record<string, string> = {
-  assignment: 'bg-[#2786A4]',
+  assignment: 'bg-primary',
   exam: 'bg-violet-500',
   event: 'bg-emerald-500',
   holiday: 'bg-amber-500',
@@ -150,7 +150,7 @@ export default function CalendarPage() {
         </div>
         {canCreate && (
           <Button onClick={() => setShowCreate(true)}
-            className="rounded-full h-11 px-5 gap-2 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] hover:opacity-90 text-white shrink-0"
+            className="rounded-full h-11 px-5 gap-2 font-bold bg-primary hover:opacity-90 text-primary-foreground shrink-0"
           >
             <Plus className="w-4 h-4" /> Add Event
           </Button>
@@ -213,7 +213,7 @@ export default function CalendarPage() {
             value={form.targets}
             onChange={targets => setForm(current => ({ ...current, targets }))}
           />
-          <Button onClick={handleCreate} disabled={saving} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white gap-2">
+          <Button onClick={handleCreate} disabled={saving} className="w-full rounded-full h-11 font-bold bg-primary text-primary-foreground gap-2">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
             Create Event
           </Button>
@@ -245,7 +245,7 @@ export default function CalendarPage() {
                 <div key={i} className={`min-h-[80px] border-t border-r border-border p-1.5 ${!day ? 'bg-muted/10' : 'hover:bg-muted/20 cursor-pointer transition-colors'}`}>
                   {day && (
                     <>
-                      <p className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full mb-1 ${isToday ? 'bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white' : 'text-foreground'}`}>
+                      <p className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full mb-1 ${isToday ? 'bg-primary text-primary-foreground' : 'text-foreground'}`}>
                         {day}
                       </p>
                       {dayEvents.slice(0, 2).map(e => (

@@ -81,7 +81,7 @@ export function CertificateDocument({
   return (
     <div className={compact ? '' : 'bg-card border border-border rounded-3xl overflow-hidden card-glow'}>
       <div className="bg-white text-[#1c2b30] border-[10px] border-[#1E6A83] m-3 sm:m-4 rounded-sm">
-        <div className="border-2 border-[#2786A4] px-6 py-8 sm:px-10 sm:py-10 text-center">
+        <div className="border-2 border-primary px-6 py-8 sm:px-10 sm:py-10 text-center">
           <div className="flex items-center justify-center gap-2 text-[#1E6A83]">
             <Award className="w-4 h-4" />
             <p className="text-[11px] font-bold tracking-[0.28em]">POKET SCHOOL</p>

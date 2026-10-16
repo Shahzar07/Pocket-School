@@ -106,7 +106,7 @@ export default function StudentCertificatesPage() {
             Finish every published lesson in a module. Draft lessons do not count, and they do not hold the certificate back.
           </p>
           <Link href="/dashboard/student/courses">
-            <Button className="mt-6 rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white border-0 hover:opacity-90 transition-opacity">
+            <Button className="mt-6 rounded-full h-11 px-5 font-bold bg-primary text-primary-foreground border-0 hover:opacity-90 transition-opacity">
               Browse Courses
             </Button>
           </Link>

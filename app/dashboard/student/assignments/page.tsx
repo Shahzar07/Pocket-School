@@ -235,7 +235,7 @@ export default function StudentAssignmentsPage() {
                   <Button
                     onClick={() => handleSubmit(item.assignment)}
                     disabled={submitting === item.assignment.id}
-                    className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white gap-2"
+                    className="rounded-full h-11 px-5 font-bold bg-primary text-primary-foreground gap-2"
                   >
                     {submitting === item.assignment.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                     Submit Assignment
