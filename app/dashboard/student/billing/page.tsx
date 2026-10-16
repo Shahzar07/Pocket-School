@@ -17,6 +17,7 @@ import {
 import { CreditCard, Printer, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { formatMoney } from '@/lib/pricing';
+import { PAYER_NOTE } from '@/lib/billing-model';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -106,6 +107,7 @@ export default function StudentBillingPage() {
         <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1.5">
           <span className="gradient-text italic">Billing</span>
         </h1>
+        <p className="text-sm text-muted-foreground mt-2 max-w-2xl">{PAYER_NOTE}</p>
       </motion.div>
 
       {/* Outstanding Balance Banner */}
