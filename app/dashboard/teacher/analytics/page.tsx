@@ -7,6 +7,7 @@ import { getTeacherCourses, getSubmissionsForTeacher, getEnrollmentsForCourse, C
 import { Badge } from '@/components/ui/badge';
 import { Users, BookOpen, ClipboardList, BarChart3, CheckCircle2, Clock } from 'lucide-react';
 import { ClassCharts } from '@/components/insights/learning-charts';
+import { StatCard } from '@/components/dash-ui';
 import { ExportBar } from '@/components/insights/boards';
 import { DocumentDelivery } from '@/components/document-delivery';
 import { textDocument } from '@/lib/documents/packet';
@@ -108,21 +109,10 @@ export default function TeacherAnalytics() {
 
       {/* Overview stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[
-          { label: 'Total Students', value: totalStudents, icon: <Users className="w-5 h-5 text-blue-500" />, gradient: 'from-blue-500 to-indigo-500' },
-          { label: 'Submissions', value: totalSubmissions, icon: <ClipboardList className="w-5 h-5 text-violet-500" />, gradient: 'from-violet-500 to-purple-500' },
-          { label: 'Graded', value: totalGraded, icon: <CheckCircle2 className="w-5 h-5 text-emerald-500" />, gradient: 'from-emerald-500 to-teal-500' },
-          { label: 'Avg Quiz Score', value: overallAvg !== null ? `${overallAvg}%` : '—', icon: <BarChart3 className="w-5 h-5 text-amber-500" />, gradient: 'from-amber-500 to-orange-500' },
-        ].map((s, i) => (
-          <motion.div key={i} variants={fadeUp} initial="hidden" animate="visible" custom={i + 1}
-            className="bg-card border border-border rounded-3xl p-5 sm:p-6 relative overflow-hidden card-glow"
-          >
-            <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${s.gradient}`} />
-            <div className="flex justify-center mb-3">{s.icon}</div>
-            <p className="text-3xl font-extrabold text-foreground text-center">{s.value}</p>
-            <p className="text-[11px] text-muted-foreground font-medium mt-1 text-center uppercase tracking-wide">{s.label}</p>
-          </motion.div>
-        ))}
+        <StatCard icon={Users} label="Total students" value={totalStudents} tone="sky" index={0} />
+        <StatCard icon={ClipboardList} label="Submissions" value={totalSubmissions} tone="violet" index={1} trend={totalSubmissions > 0 ? { direction: 'up', label: 'Handed in' } : { direction: 'flat', label: 'None yet' }} />
+        <StatCard icon={CheckCircle2} label="Graded" value={totalGraded} tone="emerald" index={2} trend={totalGraded > 0 ? { direction: 'up', label: 'Marked' } : { direction: 'flat', label: 'None yet' }} />
+        <StatCard icon={BarChart3} label="Avg quiz score" value={overallAvg !== null ? `${overallAvg}%` : '—'} tone="amber" index={3} trend={overallAvg != null && overallAvg >= 70 ? { direction: 'up', label: 'Strong' } : overallAvg != null ? { direction: 'down', label: 'Needs practice' } : { direction: 'flat', label: 'No quizzes' }} />
       </div>
 
       <ClassCharts rows={courseStats.map(row => ({

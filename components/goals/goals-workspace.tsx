@@ -104,10 +104,10 @@ export function GoalsWorkspace({
         </div>
       )}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Target} label="Today" value={`${done}/${todayGoals.length || 0}`} index={0} />
-        <StatCard icon={Flame} label="Streak" value={`${streak}d`} index={1} />
-        <StatCard icon={Check} label="Focus" value={`${focusTotal}m`} index={2} />
-        <StatCard icon={Check} label="Co-signed" value={goals.filter(g => g.cosignedBy).length} index={3} />
+        <StatCard icon={Target} label="Today" value={`${done}/${todayGoals.length || 0}`} index={0} tone="teal" trend={done > 0 ? { direction: 'up', label: 'Done today' } : { direction: 'flat', label: 'Still open' }} />
+        <StatCard icon={Flame} label="Streak" value={`${streak}d`} index={1} tone="coral" trend={streak >= 3 ? { direction: 'up', label: 'On a roll' } : streak > 0 ? { direction: 'flat', label: 'Keep going' } : { direction: 'down', label: 'Start today' }} />
+        <StatCard icon={Check} label="Focus" value={`${focusTotal}m`} index={2} tone="violet" trend={focusTotal > 0 ? { direction: 'up', label: 'Focused' } : { direction: 'flat', label: 'No timer yet' }} />
+        <StatCard icon={Check} label="Co-signed" value={goals.filter(g => g.cosignedBy).length} index={3} tone="emerald" />
       </div>
 
       <Panel>

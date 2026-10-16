@@ -2,17 +2,18 @@
 
 import { useState, type ReactNode } from 'react';
 import {
-  Bar, BarChart, CartesianGrid, Legend, Line, LineChart, PolarAngleAxis, PolarGrid, Radar, RadarChart,
+  Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, PolarAngleAxis, PolarGrid, Radar, RadarChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { BLOOM_LABELS, weeklyStudySeries, type BloomLevel } from '@/lib/insights/analytics';
 import type { AnalyticsSnapshot } from '@/lib/insights/aggregate';
 import { Heatmap } from '@/components/insights/boards';
+import { ChartPatternDefs, SeriesLegend, patternFill } from '@/components/charts/patterns';
 import { Button } from '@/components/ui/button';
+import { ACCENT_IDS, accentForIndex, type AccentId } from '@/lib/design/chart-colours';
 
-const TEAL = 'var(--primary)';
-const AMBER = '#d97706';
-const INK = '#0f172a';
+const tick = { fontSize: 10, fill: 'var(--muted-foreground)' };
+const gridStroke = 'var(--border)';
 
 function Table({ caption, headers, rows }: { caption: string; headers: string[]; rows: string[][] }) {
   return (
@@ -26,17 +27,19 @@ function Table({ caption, headers, rows }: { caption: string; headers: string[];
   );
 }
 
-function Frame({ title, summary, children, table }: {
+function Frame({ title, summary, children, table, legend }: {
   title: string;
   summary: string;
   children: ReactNode;
   table: { headers: string[]; rows: string[][] };
+  legend?: { id: AccentId; label: string }[];
 }) {
   return (
-    <figure className="rounded-2xl border border-border p-4" aria-label={title}>
+    <figure className="rounded-2xl border border-border bg-card p-4" aria-label={title} style={{ background: 'linear-gradient(180deg, color-mix(in srgb, var(--ps-teal) 7%, var(--card)), var(--card) 42%)' }}>
       <figcaption className="text-sm font-semibold mb-1">{title}</figcaption>
       <p className="text-xs text-muted-foreground mb-3">{summary}</p>
-      <div className="h-56">{children}</div>
+      <div className="h-52">{children}</div>
+      {legend && legend.length > 0 && <SeriesLegend items={legend} />}
       <Table caption={title} headers={table.headers} rows={table.rows} />
     </figure>
   );
@@ -64,8 +67,18 @@ export function LearningCharts({
     confidence: row.confidence,
   }));
 
+  const attendanceRate = snapshot.metrics.attendance_rate;
+  const attendanceSlices = attendanceRate == null
+    ? []
+    : [
+      { name: 'Present', value: attendanceRate, tone: 'sky' as AccentId },
+      { name: 'Away', value: Math.max(0, 100 - attendanceRate), tone: 'coral' as AccentId },
+    ];
+  const bloomTones = ACCENT_IDS;
+
   return (
-    <div className="space-y-4" data-learning-charts>
+    <div className="relative space-y-4" data-learning-charts>
+      <ChartPatternDefs />
       <p className="text-sm">{snapshot.summary}</p>
       {snapshot.dropOffs.length > 0 && (
         <p className="text-xs text-muted-foreground">Drop-off: {snapshot.dropOffs.join('; ')}</p>
@@ -87,6 +100,7 @@ export function LearningCharts({
         <Frame
           title="Study time"
           summary={studySummary}
+          legend={[{ id: 'teal', label: 'Study time' }]}
           table={{ headers: ['When', 'Minutes'], rows: study.map(row => [row.label, String(row.minutes)]) }}
         >
           <div className="flex justify-end mb-1">
@@ -95,13 +109,13 @@ export function LearningCharts({
             </button>
           </div>
           <ResponsiveContainer width="100%" height="90%">
-            <LineChart data={study}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" tick={{ fontSize: 10 }} tickFormatter={value => String(value).slice(5)} />
-              <YAxis tick={{ fontSize: 10 }} />
+            <AreaChart data={study}>
+              <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+              <XAxis dataKey="label" tick={tick} tickFormatter={value => String(value).slice(5)} />
+              <YAxis tick={tick} />
               <Tooltip />
-              <Line type="monotone" dataKey="minutes" name="Minutes" stroke={TEAL} strokeWidth={2} dot={false} />
-            </LineChart>
+              <Area type="monotone" dataKey="minutes" name="Minutes" stroke="var(--ps-teal)" strokeWidth={2} fill="url(#ps-area-teal)" />
+            </AreaChart>
           </ResponsiveContainer>
         </Frame>
         <figure className="rounded-2xl border border-border p-4" aria-label="Study activity heatmap">
@@ -124,6 +138,7 @@ export function LearningCharts({
             summary={snapshot.courseProgress.length
               ? snapshot.courseProgress.map(row => `${row.label} ${row.progress}%`).join(', ')
               : `${snapshot.lessonsCompleted} lessons completed in goals.`}
+            legend={(snapshot.courseProgress.length ? snapshot.courseProgress : [{ label: 'Lessons' }]).map((row, index) => ({ id: accentForIndex(index), label: row.label }))}
             table={{
               headers: ['Course', 'Progress'],
               rows: (snapshot.courseProgress.length ? snapshot.courseProgress : [{ label: 'Lessons in goals', progress: snapshot.lessonsCompleted }])
@@ -132,11 +147,15 @@ export function LearningCharts({
           >
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={snapshot.courseProgress.length ? snapshot.courseProgress : [{ label: 'Lessons', progress: snapshot.lessonsCompleted }]}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="label" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                <XAxis dataKey="label" tick={tick} />
+                <YAxis tick={tick} />
                 <Tooltip />
-                <Bar dataKey="progress" name="Progress" fill={TEAL} />
+                <Bar dataKey="progress" name="Progress">
+                  {(snapshot.courseProgress.length ? snapshot.courseProgress : [{ label: 'Lessons' }]).map((row, index) => (
+                    <Cell key={row.label} fill={patternFill(accentForIndex(index))} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </Frame>
@@ -144,28 +163,30 @@ export function LearningCharts({
         <Frame
           title="Quiz scores"
           summary={snapshot.quizTrend.map(row => `${row.label.slice(5)} ${row.average}%`).join(', ') || 'No quizzes in this range.'}
+          legend={[{ id: 'amber', label: 'Grades' }]}
           table={{ headers: ['Day', 'Average'], rows: snapshot.quizTrend.map(row => [row.label, String(row.average)]) }}
         >
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={snapshot.quizTrend}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" tick={{ fontSize: 10 }} tickFormatter={value => String(value).slice(5)} />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+              <XAxis dataKey="label" tick={tick} tickFormatter={value => String(value).slice(5)} />
+              <YAxis domain={[0, 100]} tick={tick} />
               <Tooltip />
-              <Line type="monotone" dataKey="average" name="Score %" stroke={AMBER} strokeWidth={2} />
+              <Line type="monotone" dataKey="average" name="Score %" stroke="var(--ps-amber)" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </Frame>
         <Frame
           title="Topic mastery"
           summary={topics.map(row => `${row.topic} ${row.score}% (confidence ${row.confidence}%)`).join(', ') || 'No topic scores yet.'}
+          legend={[{ id: 'violet', label: 'Topic score' }]}
           table={{ headers: ['Topic', 'Score', 'Confidence'], rows: topics.map(row => [row.topic, String(row.score), String(row.confidence)]) }}
         >
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart data={topics.length ? topics : [{ topic: '—', score: 0, confidence: 0 }]}>
               <PolarGrid />
               <PolarAngleAxis dataKey="topic" tick={{ fontSize: 10 }} />
-              <Radar dataKey="score" name="Score" stroke={TEAL} fill={TEAL} fillOpacity={0.35} />
+              <Radar dataKey="score" name="Score" stroke="var(--ps-violet)" fill="var(--ps-violet)" fillOpacity={0.35} />
               <Tooltip />
             </RadarChart>
           </ResponsiveContainer>
@@ -173,51 +194,74 @@ export function LearningCharts({
         <Frame
           title="Goals met and missed"
           summary={`${snapshot.goalsMet} met, ${snapshot.goalsMissed} missed. Streak ${snapshot.metrics.streak ?? 0} days.`}
+          legend={[{ id: 'emerald', label: 'Goals met' }, { id: 'coral', label: 'Goals missed' }]}
           table={{ headers: ['Result', 'Count'], rows: [['Met', String(snapshot.goalsMet)], ['Missed', String(snapshot.goalsMissed)]] }}
         >
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={[{ name: 'Goals', met: snapshot.goalsMet, missed: snapshot.goalsMissed }]}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
+            <PieChart>
+              <Pie
+                data={[
+                  { name: 'Met', value: snapshot.goalsMet },
+                  { name: 'Missed', value: snapshot.goalsMissed },
+                ]}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={46}
+                outerRadius={72}
+                label={({ name, value }) => `${name} ${value}`}
+              >
+                <Cell fill={patternFill('emerald')} />
+                <Cell fill={patternFill('coral')} />
+              </Pie>
               <Tooltip />
-              <Legend />
-              <Bar dataKey="met" name="Met" fill={TEAL} />
-              <Bar dataKey="missed" name="Missed" fill={AMBER} />
-            </BarChart>
+            </PieChart>
           </ResponsiveContainer>
         </Frame>
         {!compact && (
           <Frame
             title="Sparks earned and spent"
             summary={`${snapshot.metrics.sparks_earned ?? 0} earned, ${snapshot.sparksSpent} spent.`}
+            legend={[{ id: 'coral', label: 'Sparks earned' }, { id: 'amber', label: 'Sparks spent' }]}
             table={{ headers: ['Kind', 'Sparks'], rows: [['Earned', String(snapshot.metrics.sparks_earned ?? 0)], ['Spent', String(snapshot.sparksSpent)]] }}
           >
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={[{ name: 'Sparks', earned: snapshot.metrics.sparks_earned ?? 0, spent: snapshot.sparksSpent }]}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} />
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Earned', value: snapshot.metrics.sparks_earned ?? 0 },
+                    { name: 'Spent', value: snapshot.sparksSpent },
+                  ]}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={46}
+                  outerRadius={72}
+                  label={({ name, value }) => `${name} ${value}`}
+                >
+                  <Cell fill={patternFill('coral')} />
+                  <Cell fill={patternFill('amber')} />
+                </Pie>
                 <Tooltip />
-                <Legend />
-                <Bar dataKey="earned" name="Earned" fill={TEAL} />
-                <Bar dataKey="spent" name="Spent" fill={INK} />
-              </BarChart>
+              </PieChart>
             </ResponsiveContainer>
           </Frame>
         )}
         <Frame
           title="Bloom’s taxonomy"
           summary={bloom.map(row => `${row.level} ${row.score}`).join(', ')}
+          legend={bloom.map((row, index) => ({ id: accentForIndex(index), label: row.level }))}
           table={{ headers: ['Level', 'Score'], rows: bloom.map(row => [row.level, String(row.score)]) }}
         >
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={bloom} layout="vertical" margin={{ left: 24 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10 }} />
-              <YAxis type="category" dataKey="level" tick={{ fontSize: 10 }} width={80} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+              <XAxis type="number" domain={[0, 100]} tick={tick} />
+              <YAxis type="category" dataKey="level" tick={tick} width={80} />
               <Tooltip />
-              <Bar dataKey="score" name="Mastery" fill={TEAL} />
+              <Bar dataKey="score" name="Mastery">
+                {bloom.map((row, index) => (
+                  <Cell key={row.level} fill={patternFill(accentForIndex(index))} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </Frame>
@@ -226,6 +270,14 @@ export function LearningCharts({
         <Frame
           title="Bloom by topic"
           summary={snapshot.bloomTopics.map(row => row.topic).join(', ')}
+          legend={[
+            { id: 'teal', label: 'Remember' },
+            { id: 'amber', label: 'Understand' },
+            { id: 'coral', label: 'Apply' },
+            { id: 'violet', label: 'Analyse' },
+            { id: 'emerald', label: 'Evaluate' },
+            { id: 'sky', label: 'Create' },
+          ]}
           table={{
             headers: ['Topic', 'Remember', 'Understand', 'Apply', 'Analyse', 'Evaluate', 'Create'],
             rows: snapshot.bloomTopics.map(row => [row.topic, String(row.remember), String(row.understand), String(row.apply), String(row.analyse), String(row.evaluate), String(row.create)]),
@@ -233,18 +285,34 @@ export function LearningCharts({
         >
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={snapshot.bloomTopics}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="topic" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+              <XAxis dataKey="topic" tick={tick} />
+              <YAxis tick={tick} />
               <Tooltip />
-              <Legend />
-              <Bar dataKey="remember" stackId="bloom" fill="#94a3b8" />
-              <Bar dataKey="understand" stackId="bloom" fill="#67e8f9" />
-              <Bar dataKey="apply" stackId="bloom" fill={TEAL} />
-              <Bar dataKey="analyse" stackId="bloom" fill="#6366f1" />
-              <Bar dataKey="evaluate" stackId="bloom" fill={AMBER} />
-              <Bar dataKey="create" stackId="bloom" fill={INK} />
+              <Bar dataKey="remember" name="Remember" stackId="bloom" fill={patternFill(bloomTones[0])} />
+              <Bar dataKey="understand" name="Understand" stackId="bloom" fill={patternFill(bloomTones[1])} />
+              <Bar dataKey="apply" name="Apply" stackId="bloom" fill={patternFill(bloomTones[2])} />
+              <Bar dataKey="analyse" name="Analyse" stackId="bloom" fill={patternFill(bloomTones[3])} />
+              <Bar dataKey="evaluate" name="Evaluate" stackId="bloom" fill={patternFill(bloomTones[4])} />
+              <Bar dataKey="create" name="Create" stackId="bloom" fill={patternFill(bloomTones[5])} />
             </BarChart>
+          </ResponsiveContainer>
+        </Frame>
+      )}
+      {!compact && attendanceSlices.length > 0 && (
+        <Frame
+          title="Attendance"
+          summary={attendanceSlices.map(row => `${row.name} ${row.value}%`).join(', ')}
+          legend={attendanceSlices.map(row => ({ id: row.tone, label: row.name }))}
+          table={{ headers: ['Mark', 'Share'], rows: attendanceSlices.map(row => [row.name, `${row.value}%`]) }}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie data={attendanceSlices} dataKey="value" nameKey="name" innerRadius={46} outerRadius={72} label={({ name, value }) => `${name} ${value}%`}>
+                {attendanceSlices.map(row => <Cell key={row.name} fill={patternFill(row.tone)} />)}
+              </Pie>
+              <Tooltip />
+            </PieChart>
           </ResponsiveContainer>
         </Frame>
       )}
@@ -293,37 +361,44 @@ export function ClassCharts({
 }) {
   const summary = rows.map(row => `${row.title}: ${row.progress}% progress${row.quiz != null ? `, quiz ${row.quiz}%` : ''}, ${row.students} students`).join('. ');
   return (
-    <div className="space-y-4" data-class-charts>
+    <div className="relative space-y-4" data-class-charts>
+      <ChartPatternDefs />
       <p className="text-sm">Class averages. Student names are not on these charts.</p>
       <p className="text-xs text-muted-foreground">{summary || 'No class totals yet.'}</p>
       <div className="grid lg:grid-cols-2 gap-4">
         <Frame
           title="Course progress"
           summary={summary || 'No courses.'}
+          legend={rows.map((row, index) => ({ id: accentForIndex(index), label: `${row.title} progress` }))}
           table={{ headers: ['Course', 'Progress', 'Students'], rows: rows.map(row => [row.title, String(row.progress), String(row.students)]) }}
         >
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={rows}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="title" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+              <XAxis dataKey="title" tick={tick} />
+              <YAxis tick={tick} />
               <Tooltip />
-              <Bar dataKey="progress" name="Progress %" fill={TEAL} />
+              <Bar dataKey="progress" name="Progress %">
+                {rows.map((row, index) => <Cell key={row.title} fill={patternFill(accentForIndex(index))} />)}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </Frame>
         <Frame
           title="Quiz score by course"
           summary={rows.filter(row => row.quiz != null).map(row => `${row.title} ${row.quiz}%`).join(', ') || 'No quiz average yet.'}
+          legend={rows.map((row, index) => ({ id: accentForIndex(index + 1), label: `${row.title} quiz` }))}
           table={{ headers: ['Course', 'Quiz'], rows: rows.map(row => [row.title, row.quiz == null ? '—' : String(row.quiz)]) }}
         >
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={rows.map(row => ({ ...row, quiz: row.quiz ?? 0 }))}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="title" tick={{ fontSize: 10 }} />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+              <XAxis dataKey="title" tick={tick} />
+              <YAxis domain={[0, 100]} tick={tick} />
               <Tooltip />
-              <Bar dataKey="quiz" name="Quiz %" fill={AMBER} />
+              <Bar dataKey="quiz" name="Quiz %">
+                {rows.map((row, index) => <Cell key={row.title} fill={patternFill(accentForIndex(index + 1))} />)}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </Frame>

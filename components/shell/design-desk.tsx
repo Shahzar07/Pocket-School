@@ -1,7 +1,7 @@
 'use client';
 
-import { BookOpen, Home, Sparkles, Target } from 'lucide-react';
-import { DashHeader, DashPage, EmptyState, Panel, PanelHeader } from '@/components/dash-ui';
+import { BookOpen, Flame, Home, Sparkles, Target, Users } from 'lucide-react';
+import { DashHeader, DashPage, EmptyState, Panel, PanelHeader, StatCard } from '@/components/dash-ui';
 import { RoleChecklist } from '@/components/role-checklist';
 import { SeeMore } from '@/components/shell/see-more';
 import { MobileNav, type ShellRole } from '@/components/shell/mobile-nav';
@@ -75,6 +75,12 @@ export function DesignDesk({ role }: { role: ShellRole }) {
               description={copy.today}
               actions={<button type="button" className="h-10 rounded-xl bg-primary px-4 text-[13px] font-semibold text-primary-foreground">{copy.action}</button>}
             />
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <StatCard icon={Target} label="Today" value={role === 'teacher' ? 3 : 1} tone="teal" index={0} trend={{ direction: 'up', label: 'On track' }} />
+              <StatCard icon={Flame} label="Streak" value={role === 'student' ? '6d' : '—'} tone="coral" index={1} trend={{ direction: 'up', label: 'Keep going' }} />
+              <StatCard icon={BookOpen} label="Courses" value={role === 'admin' ? 42 : 4} tone="violet" index={2} />
+              <StatCard icon={Users} label="People" value={role === 'institution_admin' ? 128 : 18} tone="sky" index={3} trend={{ direction: 'up', label: 'Active' }} />
+            </div>
             <Panel>
               <PanelHeader title="Today" />
               <p className="text-sm text-muted-foreground">{copy.today}</p>

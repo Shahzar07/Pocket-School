@@ -2,6 +2,8 @@
 
 import { useState, type ReactNode } from 'react';
 import { Freshness, GlossaryTip, Heatmap } from '@/components/insights/boards';
+import { ChartPatternDefs, patternFill } from '@/components/charts/patterns';
+import { accentForIndex } from '@/lib/design/chart-colours';
 import { moodLabel, quadrantLabel, type BehaviourBoardModel } from '@/lib/insights/behaviour-board';
 import { behaviourChecks } from '@/lib/insights/behaviour-seed';
 import { MOOD_EMOJI, type Mood } from '@/lib/insights/behaviour';
@@ -21,7 +23,7 @@ function Chart({
   onOpen: (id: string) => void;
 }) {
   return (
-    <section className="rounded-2xl border border-border p-4 space-y-2" data-chart={id}>
+    <section className="rounded-2xl border border-border bg-card p-4 space-y-2" data-chart={id} style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-emerald) 12%, var(--card)), var(--card) 70%)' }}>
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-base font-semibold">{title} {metricId && <GlossaryTip id={metricId} />}</h2>
         <button type="button" className="text-xs font-semibold underline" onClick={() => onOpen(id)}>Records</button>
@@ -38,10 +40,11 @@ function Gauge({ value }: { value: number | null }) {
     <div className="flex items-center gap-4">
       <div
         className="h-20 w-20 rounded-full"
-        style={{ background: `conic-gradient(#0f766e ${pct * 3.6}deg, #e5e7eb 0)` }}
-        aria-hidden
+        style={{ background: `conic-gradient(var(--ps-emerald) ${pct * 3.6}deg, var(--muted) 0)` }}
+        role="img"
+        aria-label={`Consistency ${value ?? 0} percent`}
       />
-      <p className="text-3xl font-semibold tabular-nums">{value ?? '—'}<span className="text-base text-muted-foreground">%</span></p>
+      <p className="text-3xl font-semibold tabular-nums" style={{ color: 'var(--ps-emerald)' }}>{value ?? '—'}<span className="text-base text-muted-foreground">%</span></p>
     </div>
   );
 }
@@ -50,10 +53,12 @@ function Bars({ rows }: { rows: { label: string; value: number }[] }) {
   const max = Math.max(1, ...rows.map(row => row.value));
   return (
     <div className="space-y-1">
-      {rows.map(row => (
+      {rows.map((row, index) => (
         <div key={row.label} className="grid grid-cols-[7rem_1fr_2rem] items-center gap-2 text-xs">
           <span>{row.label}</span>
-          <span className="h-2 rounded-full bg-muted overflow-hidden"><span className="block h-full bg-teal-700" style={{ width: `${(row.value / max) * 100}%` }} /></span>
+          <span className="h-2.5 rounded-full bg-muted overflow-hidden">
+            <span className="block h-full" style={{ width: `${(row.value / max) * 100}%`, background: patternFill(accentForIndex(index)) }} />
+          </span>
           <span className="tabular-nums text-right">{row.value}</span>
         </div>
       ))}
@@ -78,7 +83,8 @@ export function BehaviourDashboard({
   const staff = board.role === 'teacher' || board.role === 'institution_admin';
 
   return (
-    <div className="space-y-4" data-behaviour-dashboard={board.role}>
+    <div className="relative space-y-4" data-behaviour-dashboard={board.role}>
+      <ChartPatternDefs />
       <p className="text-sm">Behaviour for {board.scopeLabel}. The numbers use the same definitions as Reports.</p>
       <Freshness at={board.computedAt} live={!board.precomputed} />
       <div className="grid lg:grid-cols-2 gap-4">
@@ -96,7 +102,12 @@ export function BehaviourDashboard({
               <span
                 key={day.dateKey}
                 title={day.dateKey}
-                className={`h-7 min-w-7 px-1 rounded text-[10px] inline-flex items-center justify-center ${day.completed ? 'bg-teal-700 text-white' : day.studied ? 'bg-teal-200' : 'bg-muted text-muted-foreground'}`}
+                className={`h-7 min-w-7 px-1 rounded text-[10px] inline-flex items-center justify-center font-semibold ${day.completed || day.studied ? '' : 'bg-muted text-muted-foreground'}`}
+                style={day.completed
+                  ? { background: 'var(--ps-emerald)', color: 'var(--ps-on-emerald)' }
+                  : day.studied
+                    ? { background: 'color-mix(in srgb, var(--ps-sky) 28%, var(--card))', color: 'var(--ps-sky)' }
+                    : undefined}
               >
                 {day.dateKey.slice(8)}
               </span>

@@ -19,6 +19,7 @@
     --color-sidebar-primary: var(--sidebar-primary);
     --color-sidebar-foreground: var(--sidebar-foreground);
     --color-sidebar: var(--sidebar);
+    --color-chart-6: var(--chart-6);
     --color-chart-5: var(--chart-5);
     --color-chart-4: var(--chart-4);
     --color-chart-3: var(--chart-3);
@@ -99,10 +100,31 @@
     --input: #E7EDED;
     --ring: #1E6A83;
     --chart-1: #1E6A83;
-    --chart-2: #6FBBCE;
-    --chart-3: #E2AF4D;
-    --chart-4: #D0553F;
-    --chart-5: #4F7F8C;
+    --chart-2: #9A5B00;
+    --chart-3: #C23B2E;
+    --chart-4: #6D28D9;
+    --chart-5: #047857;
+    --chart-6: #0369A1;
+    /* Dashboard accents. Inks are AA text on white; on-fill is AA on the ink. */
+    --ps-teal: #1E6A83;
+    --ps-on-teal: #FFFFFF;
+    --ps-amber: #9A5B00;
+    --ps-on-amber: #FFFFFF;
+    --ps-coral: #C23B2E;
+    --ps-on-coral: #FFFFFF;
+    --ps-violet: #6D28D9;
+    --ps-on-violet: #FFFFFF;
+    --ps-emerald: #047857;
+    --ps-on-emerald: #FFFFFF;
+    --ps-sky: #0369A1;
+    --ps-on-sky: #FFFFFF;
+    --ps-pattern-ink: rgba(255, 255, 255, 0.78);
+    --medal-gold: #E8B84A;
+    --medal-gold-ink: #3D2A06;
+    --medal-silver: #D5DDE3;
+    --medal-silver-ink: #1F2933;
+    --medal-bronze: #E0A15A;
+    --medal-bronze-ink: #3A2412;
     /* The whole radius ladder above derives from this one value, so it sets
      * the roundness of every card in the app. 0.5rem lands the ladder on
      * 8 / 12 / 16 / 24px — the homepage's own range. It was 1rem, which made
@@ -167,10 +189,30 @@
     --input: #1E3238;
     --ring: #6FBBCE;
     --chart-1: #6FBBCE;
-    --chart-2: #8FB3BC;
-    --chart-3: #E2AF4D;
-    --chart-4: #E88976;
-    --chart-5: #8FB3BC;
+    --chart-2: #F0C36A;
+    --chart-3: #F0A090;
+    --chart-4: #C4B5FD;
+    --chart-5: #6EE7B7;
+    --chart-6: #7DD3FC;
+    --ps-teal: #6FBBCE;
+    --ps-on-teal: #0B1417;
+    --ps-amber: #F0C36A;
+    --ps-on-amber: #0B1417;
+    --ps-coral: #F0A090;
+    --ps-on-coral: #0B1417;
+    --ps-violet: #C4B5FD;
+    --ps-on-violet: #0B1417;
+    --ps-emerald: #6EE7B7;
+    --ps-on-emerald: #0B1417;
+    --ps-sky: #7DD3FC;
+    --ps-on-sky: #0B1417;
+    --ps-pattern-ink: rgba(11, 20, 23, 0.55);
+    --medal-gold: #F0C36A;
+    --medal-gold-ink: #3D2A06;
+    --medal-silver: #E6EDF2;
+    --medal-silver-ink: #1F2933;
+    --medal-bronze: #E8B07A;
+    --medal-bronze-ink: #3A2412;
     --sidebar: #0E191D;
     --sidebar-foreground: #E8EFEF;
     --sidebar-primary: #6FBBCE;
@@ -210,6 +252,18 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+@keyframes ps-flame {
+  0%, 100% { transform: scale(1) rotate(-4deg); }
+  50% { transform: scale(1.12) rotate(4deg); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ps-flame {
+    animation: ps-flame 1.3s ease-in-out infinite;
+    transform-origin: 50% 80%;
+  }
 }
 
 /* Animated hero blobs */

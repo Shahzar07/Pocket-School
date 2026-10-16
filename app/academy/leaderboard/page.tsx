@@ -2,6 +2,7 @@
 
 import { rankLeaderboard } from '@/lib/academy-settings';
 import { useWhiteLabel } from '@/components/white-label-provider';
+import { LeaderboardPodium } from '@/components/leaderboard/podium';
 
 export default function AcademyLeaderboardPage() {
   const { institution, branding, resolving } = useWhiteLabel();
@@ -14,18 +15,15 @@ export default function AcademyLeaderboardPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-4 px-4 py-12">
       <h1 className="font-heading text-4xl">{branding.displayName} leaderboard</h1>
-      {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No scores have been published yet.</p>
-      ) : (
-        <ol className="space-y-2">
-          {rows.map((row) => (
-            <li key={`${row.rank}-${row.name}`} className="flex justify-between rounded-2xl border border-border px-4 py-3 text-sm">
-              <span>{row.rank}. {row.name}</span>
-              <span>{row.points}</span>
-            </li>
-          ))}
-        </ol>
-      )}
+      <LeaderboardPodium
+        empty="No scores have been published yet."
+        entries={rows.map(row => ({
+          id: `${row.rank}-${row.name}`,
+          label: row.name,
+          score: row.points,
+          scoreLabel: `${row.points.toLocaleString()} points`,
+        }))}
+      />
     </div>
   );
 }

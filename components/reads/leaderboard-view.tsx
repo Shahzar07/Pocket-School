@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useReadsT } from '@/lib/reads/i18n';
 import { privacyBoard } from '@/lib/platform/leaderboard';
 import type { BoardPeriod, BoardScope } from '@/lib/reads/leaderboard';
 import { childHidden, setChildHidden } from '@/lib/shelf/storage';
 import { useShelfProfile } from '@/components/shelf/profile-bar';
+import { LeaderboardPodium } from '@/components/leaderboard/podium';
+import { rankMovement } from '@/lib/design/chart-colours';
 
 const SCOPES: BoardScope[] = ['global', 'country', 'city', 'school', 'friends'];
 const PERIODS: BoardPeriod[] = ['week', 'month', 'all'];
@@ -20,6 +22,12 @@ export function LeaderboardView() {
   useEffect(() => { setHidden(childHidden()); }, []);
 
   const rows = privacyBoard(scope, period, hidden);
+  const movement = useMemo(() => {
+    const other: BoardPeriod = period === 'week' ? 'month' : period === 'month' ? 'all' : 'month';
+    const compared = privacyBoard(scope, other, hidden);
+    const previous = new Map(compared.map((row, index) => [row.entry.id, index + 1]));
+    return new Map(rows.map((row, index) => [row.entry.id, rankMovement(previous.get(row.entry.id), index + 1)]));
+  }, [hidden, period, rows, scope]);
   const scopeLabel: Record<BoardScope, 'reads.board.global' | 'reads.board.country' | 'reads.board.city' | 'reads.board.school' | 'reads.board.friends'> = {
     global: 'reads.board.global', country: 'reads.board.country', city: 'reads.board.city', school: 'reads.board.school', friends: 'reads.board.friends',
   };
@@ -47,23 +55,18 @@ export function LeaderboardView() {
           </button>
         ))}
       </div>
-      <ol className="overflow-hidden rounded-3xl border border-border bg-card">
-        {rows.length === 0 && <li className="p-6 text-sm text-muted-foreground">{t('reads.board.empty')}</li>}
-        {rows.map((row, i) => (
-          <li key={row.entry.id} className="flex items-center gap-4 border-b border-border px-4 py-3 last:border-0">
-            <span className="w-8 font-heading text-[22px] tabular-nums text-muted-foreground">{i + 1}</span>
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-secondary text-sm font-bold text-secondary-foreground">{row.entry.nickname.slice(0, 1)}</span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold">
-                {row.entry.nickname}
-                {row.entry.id === 'lighthouse' && <span className="ml-2 text-[11px] font-bold uppercase tracking-wider text-primary">{t('reads.board.you')}</span>}
-              </p>
-              {row.place && <p className="truncate text-[12px] text-muted-foreground">{row.place}</p>}
-            </div>
-            <p className="text-sm font-semibold tabular-nums">{t('reads.board.minutes', { count: row.minutes })}</p>
-          </li>
-        ))}
-      </ol>
+      <LeaderboardPodium
+        empty={t('reads.board.empty')}
+        entries={rows.map(row => ({
+          id: row.entry.id,
+          label: row.entry.nickname,
+          score: row.minutes,
+          scoreLabel: t('reads.board.minutes', { count: row.minutes }),
+          isYou: row.entry.id === 'lighthouse',
+          streak: row.entry.streak,
+          rankDelta: movement.get(row.entry.id) ?? 0,
+        }))}
+      />
       <aside className="rounded-3xl border border-border bg-[#10262C] p-6 text-white">
         <h2 className="font-heading text-[26px]">{t('reads.board.safety')}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">{t('reads.board.safetyBody')}</p>

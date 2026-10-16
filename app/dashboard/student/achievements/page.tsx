@@ -5,9 +5,10 @@ import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { getUserBadges, getTopStudentsByXp, updateUser, Badge, UserProfile } from '@/lib/db';
 import { privacyBoard } from '@/lib/platform/privacy-board';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge as BadgeUI } from '@/components/ui/badge';
-import { Trophy, Zap, Star, Crown } from 'lucide-react';
+import { Zap, Star, Crown } from 'lucide-react';
+import { LeaderboardPodium } from '@/components/leaderboard/podium';
+import { streakFromDates } from '@/lib/learning';
 import { Progress } from '@/components/ui/progress';
 
 const fadeUp: Record<string, any> = {
@@ -56,6 +57,28 @@ export default function AchievementsPage() {
     user?.uid ?? null,
   );
   const myRank = board.findIndex(row => row.isYou) + 1;
+  const streak = streakFromDates(profile?.studyDates ?? [], new Date().toISOString().slice(0, 10)).current;
+  const boardKey = board.map(row => row.id).join('|');
+  const [rankDelta, setRankDelta] = useState<Record<string, number>>({});
+  useEffect(() => {
+    if (!boardKey) return;
+    const key = 'poket-achievement-ranks';
+    let previous: Record<string, number> = {};
+    try {
+      previous = JSON.parse(sessionStorage.getItem(key) ?? '{}') as Record<string, number>;
+    } catch {
+      previous = {};
+    }
+    const next: Record<string, number> = {};
+    const delta: Record<string, number> = {};
+    boardKey.split('|').forEach((id, index) => {
+      const rank = index + 1;
+      next[id] = rank;
+      if (typeof previous[id] === 'number') delta[id] = previous[id] - rank;
+    });
+    sessionStorage.setItem(key, JSON.stringify(next));
+    setRankDelta(delta);
+  }, [boardKey]);
   const sharing = profile?.shareBoard !== false;
 
   if (loading) return (
@@ -189,45 +212,18 @@ export default function AchievementsPage() {
               />
               Show me on the leaderboard
             </label>
-            {board.length === 0 ? (
-              <div className="bg-card border border-border rounded-3xl p-10 text-center relative overflow-hidden">
-                <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-primary/8 blur-[80px]" />
-                <Trophy className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                <p className="font-heading text-2xl text-foreground">No Rankings Yet</p>
-                <p className="text-sm text-muted-foreground mt-1">Leaderboard data will appear here soon.</p>
-              </div>
-            ) : board.map((row, i) => (
-              <motion.div
-                key={row.id}
-                variants={fadeUp}
-                initial="hidden"
-                animate="visible"
-                custom={6 + i}
-                className={`bg-card border rounded-2xl p-4 flex items-center gap-4 card-glow transition-colors ${
-                  row.isYou ? 'bg-primary/5 border-primary/20' : 'border-border'
-                }`}
-              >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
-                  i === 0 ? 'bg-amber-500/10 text-amber-600' :
-                  i === 1 ? 'bg-muted text-muted-foreground' :
-                  i === 2 ? 'bg-amber-500/10 text-amber-600' :
-                  'bg-muted text-muted-foreground'
-                }`}>
-                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
-                </div>
-                <Avatar className="w-8 h-8">
-                  <AvatarFallback className="text-xs bg-primary text-primary-foreground font-bold">
-                    {row.label.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">{row.label}</p>
-                </div>
-                <div className="flex items-center gap-1 text-primary text-sm font-bold shrink-0">
-                  <Zap className="w-3.5 h-3.5" />{row.score.toLocaleString()}
-                </div>
-              </motion.div>
-            ))}
+            <LeaderboardPodium
+              empty="Leaderboard data will appear here soon."
+              entries={board.map(row => ({
+                id: row.id,
+                label: row.label,
+                score: row.score,
+                scoreLabel: `${row.score.toLocaleString()} XP`,
+                isYou: row.isYou,
+                streak: row.isYou ? streak : 0,
+                rankDelta: rankDelta[row.id] ?? 0,
+              }))}
+            />
           </div>
         </div>
       </div>

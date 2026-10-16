@@ -14,7 +14,8 @@
 import { ReactNode } from 'react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
-import { ArrowRight, type LucideIcon } from 'lucide-react';
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Minus, type LucideIcon } from 'lucide-react';
+import { accentForIndex, type AccentId, type TrendDirection } from '@/lib/design/chart-colours';
 
 /* ── Page frame ──────────────────────────────────────────────── */
 
@@ -97,32 +98,62 @@ export interface StatCardProps {
   href?: string;
   hrefLabel?: string;
   index?: number;
+  /** Accent from the shared dashboard palette. Defaults to a rotation by index. */
+  tone?: AccentId;
+  /** Movement since the previous reading. The arrow colour is emerald, coral, or muted. */
+  trend?: { direction: TrendDirection; label: string };
+  /** Tighter padding for a dense grid. */
+  size?: 'regular' | 'compact';
 }
 
+const TREND_ICON = { up: ArrowUpRight, down: ArrowDownRight, flat: Minus } as const;
+
 export function StatCard({
-  icon: Icon, label, value, badge, progress, progressLabel, href, hrefLabel, index = 0,
+  icon: Icon, label, value, badge, progress, progressLabel, href, hrefLabel, index = 0, tone, trend, size = 'regular',
 }: StatCardProps) {
+  const accent = tone ?? accentForIndex(index);
+  const TrendIcon = trend ? TREND_ICON[trend.direction] : null;
+  const trendColour = trend?.direction === 'up' ? 'var(--ps-emerald)' : trend?.direction === 'down' ? 'var(--ps-coral)' : 'var(--muted-foreground)';
+  const compact = size === 'compact';
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.05, ease: [0.21, 0.6, 0.35, 1] }}
-      className="bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] p-5 flex flex-col"
+      className={`relative overflow-hidden border border-border rounded-2xl shadow-[var(--shadow-card)] flex flex-col ${compact ? 'p-4' : 'p-5'}`}
+      style={{
+        background: `linear-gradient(160deg, color-mix(in srgb, var(--ps-${accent}) 18%, var(--card)) 0%, var(--card) 68%)`,
+      }}
     >
-      <div className="flex items-center gap-2.5 mb-4">
-        <span className="w-8 h-8 rounded-xl border border-border grid place-items-center shrink-0">
-          <Icon className="w-4 h-4 text-muted-foreground" />
+      <span
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-1"
+        style={{ background: `linear-gradient(90deg, var(--ps-${accent}), color-mix(in srgb, var(--ps-${accent}) 55%, var(--ps-amber)))` }}
+      />
+      <div className={`flex items-center gap-2.5 ${compact ? 'mb-3' : 'mb-4'}`}>
+        <span
+          className="w-8 h-8 rounded-xl grid place-items-center shrink-0"
+          style={{ background: `color-mix(in srgb, var(--ps-${accent}) 18%, transparent)`, color: `var(--ps-${accent})` }}
+        >
+          <Icon className="w-4 h-4" />
         </span>
         <span className="text-[13px] font-medium text-muted-foreground truncate">{label}</span>
         {badge && (
-          <span className="ml-auto inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary shrink-0">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary" />{badge}
+          <span className="ml-auto inline-flex items-center gap-1.5 text-[11px] font-semibold shrink-0" style={{ color: `var(--ps-${accent})` }}>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: `var(--ps-${accent})` }} />{badge}
           </span>
         )}
       </div>
 
-      <p className="text-[34px] leading-none font-semibold tracking-[-0.04em] text-foreground tabular-nums">
+      <p className={`${compact ? 'text-[26px]' : 'text-[34px]'} leading-none font-semibold tracking-[-0.04em] text-foreground tabular-nums`}>
         {value}
       </p>
+
+      {trend && TrendIcon && (
+        <p className="mt-3 inline-flex items-center gap-1 text-[12px] font-semibold" style={{ color: trendColour }}>
+          <TrendIcon className="w-3.5 h-3.5" aria-hidden />
+          {trend.label}
+        </p>
+      )}
 
       {typeof progress === 'number' && (
         <div className="mt-4">
@@ -130,14 +161,15 @@ export function StatCard({
             <span>{progressLabel ?? 'Progress'}</span>
             <span className="font-semibold text-foreground tabular-nums">{Math.round(progress)}%</span>
           </div>
-          <ProgressBar value={progress} />
+          <ProgressBar value={progress} tone={accent} />
         </div>
       )}
 
       {href && (
         <Link
           href={href}
-          className="mt-4 flex items-center justify-between gap-2 h-9 px-3 rounded-xl border border-border text-[12px] font-semibold text-foreground hover:bg-muted transition-colors"
+          className="mt-4 flex items-center justify-between gap-2 h-9 px-3 rounded-xl border text-[12px] font-semibold text-foreground transition-colors"
+          style={{ borderColor: `color-mix(in srgb, var(--ps-${accent}) 35%, var(--border))` }}
         >
           {hrefLabel ?? 'View all'} <ArrowRight className="w-3.5 h-3.5" />
         </Link>
@@ -148,11 +180,11 @@ export function StatCard({
 
 /* ── Bits ────────────────────────────────────────────────────── */
 
-export function ProgressBar({ value, className = '' }: { value: number; className?: string }) {
+export function ProgressBar({ value, className = '', tone = 'teal' }: { value: number; className?: string; tone?: AccentId }) {
   const pct = Math.max(0, Math.min(100, value));
   return (
     <div className={`h-1.5 rounded-full bg-muted overflow-hidden ${className}`}>
-      <div className="h-full rounded-full bg-primary transition-[width] duration-500" style={{ width: `${pct}%` }} />
+      <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${pct}%`, background: `var(--ps-${tone})` }} />
     </div>
   );
 }
