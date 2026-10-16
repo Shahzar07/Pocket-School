@@ -1006,5 +1006,54 @@ describe('institution membership', () => {
       publishScope: 'institution', marketplaceApproved: false, title: 'Biology',
     }));
     await assertFails(updateDoc(doc(owner, 'courses/private-course'), { marketplaceApproved: true }));
+    await assertFails(updateDoc(doc(owner, 'courses/private-course'), { libraryApproved: true }));
+    await assertFails(setDoc(doc(owner, 'courses/priced'), {
+      ownerId: 'teacher1', institutionId: 'school-a', status: 'draft', isPublic: false,
+      publishScope: 'institution', marketplaceApproved: false, libraryApproved: false,
+      accessMode: 'both', title: 'Chemistry',
+    }));
+    await assertSucceeds(updateDoc(doc(school, 'courses/private-course'), {
+      libraryApproved: true, libraryNote: 'In the library', libraryDecidedBy: 'instadmin1', libraryDecidedAt: '2026-10-16',
+    }));
+    await assertFails(updateDoc(doc(school, 'courses/private-course'), { marketplaceApproved: true }));
+    await assertFails(setDoc(doc(member, 'courses/priced/purchases/learner1'), {
+      userId: 'learner1', amount: 40, tender: 'sparks',
+    }));
+    await assertSucceeds(setDoc(doc(independent, 'courses/priced/purchases/adult1'), {
+      userId: 'adult1', amount: 40, tender: 'card',
+    }));
+  });
+
+  it('keeps the wallet, consents, and Sparks cap with the right role', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'users/admin1'), { role: 'admin', name: 'Admin' });
+      await setDoc(doc(db, 'users/adult1'), { role: 'student', institutionId: '', name: 'Ava' });
+      await setDoc(doc(db, 'users/instadmin1'), { role: 'institution_admin', institutionId: 'school-a' });
+      await setDoc(doc(db, 'institutions/school-a'), { name: 'North', status: 'active', plan: 'team' });
+    });
+    const admin = env.authenticatedContext('admin1').firestore();
+    const person = env.authenticatedContext('adult1').firestore();
+    const school = env.authenticatedContext('instadmin1').firestore();
+    await assertSucceeds(setDoc(doc(admin, 'wallets/adult1'), { currency: 'USD', balance: 25 }));
+    await assertFails(setDoc(doc(person, 'wallets/adult1'), { currency: 'USD', balance: 999 }));
+    await assertSucceeds(getDoc(doc(person, 'wallets/adult1')));
+    await assertSucceeds(setDoc(doc(admin, 'wallet_entries/e1'), {
+      userId: 'adult1', kind: 'purchase', amount: 10, tender: 'wallet',
+    }));
+    await assertFails(setDoc(doc(admin, 'wallet_entries/e2'), {
+      userId: 'adult1', kind: 'purchase', amount: 10, tender: 'sparks',
+    }));
+    await assertSucceeds(setDoc(doc(person, 'consents/pdpa'), {
+      userId: 'adult1', kind: 'pdpa', accepted: true, version: '2024-pdpa', at: '2026-10-16',
+    }));
+    await assertFails(updateDoc(doc(person, 'consents/pdpa'), { accepted: false }));
+    await assertSucceeds(setDoc(doc(person, 'data_requests/export-1'), {
+      userId: 'adult1', kind: 'export', status: 'pending',
+    }));
+    await assertFails(updateDoc(doc(person, 'data_requests/export-1'), { status: 'done' }));
+    await assertSucceeds(updateDoc(doc(admin, 'data_requests/export-1'), { status: 'done' }));
+    await assertSucceeds(setDoc(doc(school, 'institutions/school-a/sparks_guard/current'), { cap: 800, lowAtPercent: 20 }));
+    await assertFails(setDoc(doc(person, 'institutions/school-a/sparks_guard/current'), { cap: 1 }));
   });
 });

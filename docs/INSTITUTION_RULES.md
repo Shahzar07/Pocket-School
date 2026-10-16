@@ -40,7 +40,19 @@ An institution admin cannot change `listedForSelfJoin` or `state`. Those stay wi
 
 ## Courses, invoices, report cards
 
-- A teacher creating a course for an institution must leave it private: `publishScope == institution`, `isPublic == false`, `marketplaceApproved == false`, co-brand off.
-- Only a platform admin can turn on `marketplaceApproved` or the co-brand toggle.
+- A teacher creating a course for an institution must leave it private: `publishScope == institution`, `isPublic == false`, `marketplaceApproved == false`, `libraryApproved == false`, `accessMode == subscription`, co-brand off.
+- The institution admin may set `libraryApproved` and a short decision note. They cannot set `marketplaceApproved`, `isPublic`, or `accessMode`.
+- Only a platform admin can turn on `marketplaceApproved`, change `accessMode`, or the co-brand toggle.
+- A course purchase with `tender == sparks` is refused. Card, wallet, and institution invoice stay allowed.
 - A student whose profile has `institutionId` cannot create their own invoice. An independent student still can. Marketplace purchases stay on the payment routes.
-- A report card is readable by the student, a linked parent, the teacher named on the card, a teacher of that class, and the institution admin of that academy. Another teacher in the same academy cannot open it.
+- A report card is readable by the student, a linked parent, the teacher named on the card, a teacher of that class, and the institution admin of that academy. Another teacher in the same academy cannot open it. A parent may acknowledge a card. They cannot edit the learning record.
+
+## Wallet, consent, Sparks cap
+
+| Path | Read | Write |
+| --- | --- | --- |
+| `wallets/{userId}` | that user, platform admin | platform admin |
+| `wallet_entries/{id}` | that user, platform admin | platform admin create, kinds top-up, purchase, gift, refund. `tender == sparks` is refused |
+| `consents/{id}` | that user, platform admin | the user creates one accepted record. No edits |
+| `data_requests/{id}` | that user, platform admin | the user opens `export` or `delete` as `pending`. Only a platform admin updates it |
+| `institutions/{id}/sparks_guard/{id}` | academy members | institution admin of that academy, or platform admin |

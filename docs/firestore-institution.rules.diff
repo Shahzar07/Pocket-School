@@ -1,5 +1,5 @@
 diff --git a/firestore.rules b/firestore.rules
-index 8fd71f4..73ca79d 100644
+index 8fd71f4..440bf57 100644
 --- a/firestore.rules
 +++ b/firestore.rules
 @@ -47,6 +47,9 @@ service cloud.firestore {
@@ -29,7 +29,7 @@ index 8fd71f4..73ca79d 100644
          // A person may join the one school that invited their email.
          || (isUser(userId)
              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['institutionId'])
-@@ -748,6 +761,35 @@ service cloud.firestore {
+@@ -748,9 +761,58 @@ service cloud.firestore {
          && (
            !marketplaceListing(incoming())
            || marketplaceListing(resource.data)
@@ -43,6 +43,8 @@ index 8fd71f4..73ca79d 100644
 +      return incoming().get('institutionId', '') == ''
 +        || (
 +          incoming().get('marketplaceApproved', false) == false
++          && incoming().get('libraryApproved', false) == false
++          && incoming().get('accessMode', 'subscription') == 'subscription'
 +          && incoming().get('publishScope', 'institution') == 'institution'
 +          && incoming().get('isPublic', false) == false
 +          && incoming().get('cobrand', {}).get('enabled', false) == false
@@ -53,6 +55,8 @@ index 8fd71f4..73ca79d 100644
 +        || incoming().get('institutionId', '') == ''
 +        || (
 +          incoming().get('marketplaceApproved', false) == resource.data.get('marketplaceApproved', false)
++          && incoming().get('libraryApproved', false) == resource.data.get('libraryApproved', false)
++          && incoming().get('accessMode', 'subscription') == resource.data.get('accessMode', 'subscription')
 +          && incoming().get('cobrand', {}).get('enabled', false) == resource.data.get('cobrand', {}).get('enabled', false)
 +          && incoming().get('cobrand', {}).get('partnerId', '') == resource.data.get('cobrand', {}).get('partnerId', '')
 +          && (
@@ -65,7 +69,26 @@ index 8fd71f4..73ca79d 100644
          );
      }
  
-@@ -805,7 +847,8 @@ service cloud.firestore {
++    // The institution admin opens the academy library. The public marketplace
++    // and the access mode stay with the platform admin.
++    function institutionLibraryReview() {
++      return isInstitutionAdmin()
++        && resource.data.get('institutionId', '') != ''
++        && resource.data.get('institutionId', '') == myInstitution()
++        && incoming().ownerId == resource.data.ownerId
++        && incoming().get('marketplaceApproved', false) == resource.data.get('marketplaceApproved', false)
++        && incoming().get('accessMode', 'subscription') == resource.data.get('accessMode', 'subscription')
++        && incoming().get('isPublic', false) == false
++        && incoming().get('publishScope', 'institution') == 'institution'
++        && incoming().libraryApproved is bool
++        && request.resource.data.diff(resource.data).affectedKeys()
++            .hasOnly(['libraryApproved', 'libraryNote', 'libraryDecidedBy', 'libraryDecidedAt']);
++    }
++
+     function couponGrantCreate(courseId) {
+       return isSignedIn()
+         && incoming().kind == 'coupon'
+@@ -805,11 +867,13 @@ service cloud.firestore {
        allow create: if isAdmin()
          || (isTeacherOrAdmin()
              && incoming().ownerId == request.auth.uid
@@ -75,7 +98,22 @@ index 8fd71f4..73ca79d 100644
        // The owner may edit their course. Counters still move by one for
        // enrolment, views, completion, and revenue. An admin may edit any course.
        allow update: if (isAdmin() && seatsUnchanged())
-@@ -1062,6 +1105,8 @@ service cloud.firestore {
+         || teacherCourseUpdate()
++        || institutionLibraryReview()
+         || seatIncrement(courseId)
+         || plusOne('enrollmentCount')
+         || plusOne('viewCount')
+@@ -857,7 +921,8 @@ service cloud.firestore {
+         allow create: if isUser(userId)
+           && incoming().userId == userId
+           && incoming().amount is number
+-          && incoming().amount > 0;
++          && incoming().amount > 0
++          && incoming().get('tender', 'card') != 'sparks';
+         allow update, delete: if false;
+       }
+ 
+@@ -1062,6 +1127,8 @@ service cloud.firestore {
          || (tenantStaff(institutionId)
              && sameText('status')
              && sameText('plan')
@@ -84,7 +122,7 @@ index 8fd71f4..73ca79d 100644
              && sameText('parentInstitutionId')
              && incoming().get('isolateData', false) == resource.data.get('isolateData', false)
              && (planAllowsWhiteLabel() || (hidePoweredUnchanged() && customDomainUnchanged())));
-@@ -1171,6 +1216,80 @@ service cloud.firestore {
+@@ -1171,6 +1238,86 @@ service cloud.firestore {
          allow read: if isAdmin() || (isSignedIn() && myInstitution() == institutionId);
          allow write: if isAdmin();
        }
@@ -162,10 +200,16 @@ index 8fd71f4..73ca79d 100644
 +          && incoming().body is string;
 +        allow update, delete: if isAdmin();
 +      }
++
++      match /sparks_guard/{docId} {
++        allow read: if tenantReader(institutionId);
++        allow write: if isAdmin()
++          || (isInstitutionAdmin() && myInstitution() == institutionId);
++      }
      }
  
      match /subdomain_redirects/{slug} {
-@@ -1220,6 +1339,36 @@ service cloud.firestore {
+@@ -1220,6 +1367,74 @@ service cloud.firestore {
        allow update, delete: if false;
      }
  
@@ -199,10 +243,48 @@ index 8fd71f4..73ca79d 100644
 +      allow write: if isAdmin();
 +    }
 +
++    // One wallet. The balance moves from the server. Sparks are not a tender.
++    match /wallets/{userId} {
++      allow read: if isAdmin() || isUser(userId);
++      allow write: if isAdmin();
++    }
++
++    match /wallet_entries/{entryId} {
++      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
++      allow create: if isAdmin()
++        && incoming().userId is string
++        && incoming().kind in ['topup', 'purchase', 'gift_out', 'gift_in', 'refund']
++        && incoming().amount is number
++        && incoming().amount > 0
++        && incoming().get('tender', 'card') != 'sparks';
++      allow update, delete: if false;
++    }
++
++    match /consents/{consentId} {
++      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
++      allow create: if isSignedIn()
++        && incoming().userId == request.auth.uid
++        && incoming().kind in ['pdpa', 'terms', 'privacy', 'parental']
++        && incoming().accepted == true
++        && incoming().version is string
++        && incoming().at is string;
++      allow update, delete: if false;
++    }
++
++    match /data_requests/{requestId} {
++      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
++      allow create: if isSignedIn()
++        && incoming().userId == request.auth.uid
++        && incoming().kind in ['export', 'delete']
++        && incoming().status == 'pending';
++      allow update: if isAdmin();
++      allow delete: if false;
++    }
++
      // ── Badges ────────────────────────────────────────────────
      match /badges/{badgeId} {
        allow read: if isSignedIn();
-@@ -1438,7 +1587,8 @@ service cloud.firestore {
+@@ -1438,7 +1653,8 @@ service cloud.firestore {
        allow create: if isTeacherOrAdmin()
          || (isSignedIn()
              && incoming().studentId == request.auth.uid
@@ -212,7 +294,7 @@ index 8fd71f4..73ca79d 100644
        allow update: if isTeacherOrAdmin();
        allow delete: if isAdmin();
      }
-@@ -1446,10 +1596,17 @@ service cloud.firestore {
+@@ -1446,10 +1662,17 @@ service cloud.firestore {
      // ── Report Cards ──────────────────────────────────────────
      match /report_cards/{cardId} {
        allow read: if isSignedIn() && (

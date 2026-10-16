@@ -771,6 +771,8 @@ service cloud.firestore {
       return incoming().get('institutionId', '') == ''
         || (
           incoming().get('marketplaceApproved', false) == false
+          && incoming().get('libraryApproved', false) == false
+          && incoming().get('accessMode', 'subscription') == 'subscription'
           && incoming().get('publishScope', 'institution') == 'institution'
           && incoming().get('isPublic', false) == false
           && incoming().get('cobrand', {}).get('enabled', false) == false
@@ -781,6 +783,8 @@ service cloud.firestore {
         || incoming().get('institutionId', '') == ''
         || (
           incoming().get('marketplaceApproved', false) == resource.data.get('marketplaceApproved', false)
+          && incoming().get('libraryApproved', false) == resource.data.get('libraryApproved', false)
+          && incoming().get('accessMode', 'subscription') == resource.data.get('accessMode', 'subscription')
           && incoming().get('cobrand', {}).get('enabled', false) == resource.data.get('cobrand', {}).get('enabled', false)
           && incoming().get('cobrand', {}).get('partnerId', '') == resource.data.get('cobrand', {}).get('partnerId', '')
           && (
@@ -791,6 +795,22 @@ service cloud.firestore {
             )
           )
         );
+    }
+
+    // The institution admin opens the academy library. The public marketplace
+    // and the access mode stay with the platform admin.
+    function institutionLibraryReview() {
+      return isInstitutionAdmin()
+        && resource.data.get('institutionId', '') != ''
+        && resource.data.get('institutionId', '') == myInstitution()
+        && incoming().ownerId == resource.data.ownerId
+        && incoming().get('marketplaceApproved', false) == resource.data.get('marketplaceApproved', false)
+        && incoming().get('accessMode', 'subscription') == resource.data.get('accessMode', 'subscription')
+        && incoming().get('isPublic', false) == false
+        && incoming().get('publishScope', 'institution') == 'institution'
+        && incoming().libraryApproved is bool
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['libraryApproved', 'libraryNote', 'libraryDecidedBy', 'libraryDecidedAt']);
     }
 
     function couponGrantCreate(courseId) {
@@ -853,6 +873,7 @@ service cloud.firestore {
       // enrolment, views, completion, and revenue. An admin may edit any course.
       allow update: if (isAdmin() && seatsUnchanged())
         || teacherCourseUpdate()
+        || institutionLibraryReview()
         || seatIncrement(courseId)
         || plusOne('enrollmentCount')
         || plusOne('viewCount')
@@ -900,7 +921,8 @@ service cloud.firestore {
         allow create: if isUser(userId)
           && incoming().userId == userId
           && incoming().amount is number
-          && incoming().amount > 0;
+          && incoming().amount > 0
+          && incoming().get('tender', 'card') != 'sparks';
         allow update, delete: if false;
       }
 
@@ -1290,6 +1312,12 @@ service cloud.firestore {
           && incoming().body is string;
         allow update, delete: if isAdmin();
       }
+
+      match /sparks_guard/{docId} {
+        allow read: if tenantReader(institutionId);
+        allow write: if isAdmin()
+          || (isInstitutionAdmin() && myInstitution() == institutionId);
+      }
     }
 
     match /subdomain_redirects/{slug} {
@@ -1367,6 +1395,44 @@ service cloud.firestore {
     match /subscriber_billing/{userId} {
       allow read: if isAdmin() || isUser(userId);
       allow write: if isAdmin();
+    }
+
+    // One wallet. The balance moves from the server. Sparks are not a tender.
+    match /wallets/{userId} {
+      allow read: if isAdmin() || isUser(userId);
+      allow write: if isAdmin();
+    }
+
+    match /wallet_entries/{entryId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isAdmin()
+        && incoming().userId is string
+        && incoming().kind in ['topup', 'purchase', 'gift_out', 'gift_in', 'refund']
+        && incoming().amount is number
+        && incoming().amount > 0
+        && incoming().get('tender', 'card') != 'sparks';
+      allow update, delete: if false;
+    }
+
+    match /consents/{consentId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn()
+        && incoming().userId == request.auth.uid
+        && incoming().kind in ['pdpa', 'terms', 'privacy', 'parental']
+        && incoming().accepted == true
+        && incoming().version is string
+        && incoming().at is string;
+      allow update, delete: if false;
+    }
+
+    match /data_requests/{requestId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn()
+        && incoming().userId == request.auth.uid
+        && incoming().kind in ['export', 'delete']
+        && incoming().status == 'pending';
+      allow update: if isAdmin();
+      allow delete: if false;
     }
 
     // ── Badges ────────────────────────────────────────────────
