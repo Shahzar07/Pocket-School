@@ -9,7 +9,9 @@ import {
   financeAdmin,
   integrationsAdmin,
   paymentsAdmin,
+  activePromoBanners,
   quoteFor,
+  recordReferralClick,
   referralState,
   refundCheckout,
   startCheckout,
@@ -86,7 +88,13 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
     }
     if (action === 'referral') {
       const profile = body;
-      return referralState(user.uid, typeof profile.name === 'string' ? profile.name : '', body.create === true);
+      return referralState(user.uid, typeof profile.name === 'string' ? profile.name : '', body.create === true, {
+        item: typeof body.item === 'string' ? body.item : undefined,
+        kind: typeof body.kind === 'string' ? body.kind : undefined,
+        percentOff: body.percentOff === undefined ? undefined : Number(body.percentOff),
+        quantityLimit: body.quantityLimit === undefined ? undefined : Number(body.quantityLimit),
+        expiresAt: typeof body.expiresAt === 'string' ? body.expiresAt : undefined,
+      });
     }
     throw new ActionError('INVALID', 'Unknown payment action.');
   });

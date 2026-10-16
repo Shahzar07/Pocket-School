@@ -11,6 +11,7 @@ import {
 } from '../../server/actions';
 import { fixedPriceItem, sparkPackItem, subscriptionItem, walletTopUpItem } from '../catalog';
 import { couponRejection, normaliseCode, referralCode, type Coupon } from '../coupons';
+import { parsePromo, promoLive, type PromoDraft } from '../../promos';
 import { summariseFinance, reconcile } from '../finance';
 import { planGrants, planReversal, type FulfillmentInput, type PlannedGrant } from '../fulfillment';
 import { eventDocId, claimDecision } from '../idempotency';
@@ -993,9 +994,14 @@ export async function createOffer(uid: string, body: { title?: string; price?: n
   return { id: ref.id };
 }
 
-export async function referralState(uid: string, name: string, create: boolean) {
+export async function referralState(
+  uid: string,
+  name: string,
+  create: boolean,
+  promo?: { item?: string; kind?: string; percentOff?: number; quantityLimit?: number; expiresAt?: string },
+) {
   const settings = await loadSettings();
-  if (!settings.flags['payments.affiliates']) return { enabled: false, code: null, ledger: [], total: 0 };
+  if (!settings.flags['payments.affiliates']) return { enabled: false, code: null, ledger: [], total: 0, clicks: 0, conversions: 0 };
   const existing = await db().collection('coupons').where('affiliateId', '==', uid).limit(1).get();
   let code = existing.empty ? null : existing.docs[0].id;
   let percentOff = existing.empty ? 10 : Number(existing.docs[0].data().percentOff ?? 10);
@@ -1004,15 +1010,83 @@ export async function referralState(uid: string, name: string, create: boolean) 
     percentOff = 10;
     await db().doc(`coupons/${code}`).set({
       code, percentOff, affiliateId: uid, revenueShareBps: settings.affiliateShareBps,
-      active: true, redemptions: 0, createdAt: FieldValue.serverTimestamp(),
+      active: true, redemptions: 0, clicks: 0, createdAt: FieldValue.serverTimestamp(),
     });
   }
+  if (code && promo?.item) {
+    const parsed = parsePromo(promo);
+    if (!parsed.ok) throw new ActionError('INVALID', parsed.error);
+    percentOff = parsed.promo.percentOff;
+    await db().doc(`coupons/${code}`).set({
+      item: parsed.promo.item,
+      kind: parsed.promo.kind,
+      percentOff: parsed.promo.percentOff,
+      maxRedemptions: parsed.promo.quantityLimit,
+      expiresAt: parsed.promo.expiresAt,
+      banner: true,
+    }, { merge: true });
+  }
+  const coupon = code ? (await db().doc(`coupons/${code}`).get()).data() : undefined;
   const ledger = code
     ? await db().collection('affiliate_ledger').where('affiliateId', '==', uid).limit(30).get()
     : null;
   const rows = ledger?.docs.map((doc) => doc.data()) ?? [];
   const total = rows.filter((row) => row.status === 'earned').reduce((sum, row) => sum + Number(row.amount ?? 0), 0);
-  return { enabled: true, code, percentOff, shareBps: settings.affiliateShareBps, total, ledger: rows };
+  const awaiting = rows.filter((row) => row.status === 'awaiting_connect').reduce((sum, row) => sum + Number(row.amount ?? 0), 0);
+  return {
+    enabled: true,
+    code,
+    percentOff: Number(coupon?.percentOff ?? percentOff),
+    shareBps: settings.affiliateShareBps,
+    total,
+    awaiting,
+    clicks: Number(coupon?.clicks ?? 0),
+    conversions: Number(coupon?.redemptions ?? 0),
+    item: str(coupon?.item),
+    kind: str(coupon?.kind),
+    quantityLimit: Number(coupon?.maxRedemptions ?? 0),
+    expiresAt: str(coupon?.expiresAt),
+    shortPath: code ? `/r/${code}` : null,
+    ledger: rows,
+  };
+}
+
+export async function recordReferralClick(code: string) {
+  const normalised = normaliseCode(code);
+  if (normalised.length < 4) return { ok: false };
+  const ref = db().doc(`coupons/${normalised}`);
+  const snap = await ref.get();
+  if (!snap.exists || snap.data()?.active === false) return { ok: false };
+  await ref.set({ clicks: FieldValue.increment(1) }, { merge: true });
+  return { ok: true, code: normalised };
+}
+
+export async function activePromoBanners(today = new Date().toISOString().slice(0, 10)) {
+  const snap = await db().collection('coupons').where('banner', '==', true).limit(12).get();
+  const rows: PromoDraft[] = snap.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      item: str(data.item),
+      kind: data.kind === 'programme' || data.kind === 'book' ? data.kind : 'course',
+      percentOff: Number(data.percentOff ?? 0),
+      quantityLimit: Number(data.maxRedemptions ?? 0),
+      redeemed: Number(data.redemptions ?? 0),
+      endsAt: str(data.expiresAt),
+      banner: true,
+      active: data.active !== false,
+      code: doc.id,
+    } as PromoDraft & { code: string };
+  });
+  return rows
+    .filter((row) => promoLive(row, today))
+    .map((row) => ({
+      code: (row as PromoDraft & { code: string }).code,
+      item: row.item,
+      kind: row.kind,
+      percentOff: row.percentOff,
+      remaining: Math.max(0, row.quantityLimit - row.redeemed),
+      endsAt: row.endsAt,
+    }));
 }
 
 export async function recordDispute(input: { disputeId: string; amount: number; currency: string; reason: string; chargeId: string }) {

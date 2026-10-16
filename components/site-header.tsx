@@ -11,6 +11,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CurrencySwitcher } from "@/components/currency-switcher";
 import styles from "./home-chrome.module.css";
+import { PromoBanner } from "@/components/promo-banner";
 
 const NAV_LINKS = [
   { label: "Marketplace", href: "/courses" },
@@ -95,6 +96,7 @@ export function SiteHeader() {
   // navigated. Only the transparency differs now, and only over the hero.
   return (
     <>
+      <PromoBanner />
       <a className={styles.skip} href="#content">
         {t("landing.skip")}
       </a>
