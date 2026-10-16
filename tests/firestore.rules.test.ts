@@ -901,3 +901,100 @@ describe('activity log and credential records', () => {
     await assertFails(setDoc(doc(admin, 'certificate_templates/default'), { headline: 'Nope' }));
   });
 });
+
+describe('admin catalogue and settings writes', () => {
+  const nonAdmins = ['parent1', 'adult1', 'teacherA'] as const;
+
+  async function asAdminSeed(path: string, data: Record<string, unknown>) {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), path), data);
+    });
+  }
+
+  it('rejects parent, student, and teacher writes to seed courses', async () => {
+    const seed = {
+      title: 'SPM Add Maths',
+      seedKey: 'spm-add-maths-foundations',
+      ownerId: 'admin1',
+      ownerName: 'Poket School',
+      status: 'published',
+      isPublic: true,
+      kind: 'marketplace',
+    };
+    for (const uid of nonAdmins) {
+      await assertFails(setDoc(doc(dbFor(uid), 'courses/seed-new'), { ...seed, ownerId: uid }));
+    }
+    await assertSucceeds(setDoc(doc(dbFor('admin1'), 'courses/seed-admin'), seed));
+
+    await asAdminSeed('courses/seed-live', seed);
+    for (const uid of nonAdmins) {
+      await assertFails(updateDoc(doc(dbFor(uid), 'courses/seed-live'), { title: 'Hijack' }));
+      await assertFails(updateDoc(doc(dbFor(uid), 'courses/seed-live'), { viewCount: 1 }));
+      await assertFails(deleteDoc(doc(dbFor(uid), 'courses/seed-live')));
+      await assertFails(setDoc(doc(dbFor(uid), 'courses/seed-live/modules/m1'), { title: 'Unit', order: 1 }));
+    }
+
+    await asAdminSeed('courses/owned-seed', { ...seed, ownerId: 'teacherA' });
+    await assertFails(updateDoc(doc(dbFor('teacherA'), 'courses/owned-seed'), { title: 'Mine now' }));
+    await assertFails(setDoc(doc(dbFor('teacherA'), 'courses/owned-seed/modules/m1'), { title: 'Unit', order: 1 }));
+    await assertFails(setDoc(doc(dbFor('teacherA'), 'courses/owned-seed/modules/m1/lessons/l1'), {
+      title: 'Lesson', order: 1, status: 'published',
+    }));
+    await assertSucceeds(updateDoc(doc(dbFor('admin1'), 'courses/seed-live'), { title: 'Still the catalogue' }));
+  });
+
+  it('still lets a teacher save their own draft and blocks a public listing', async () => {
+    await assertSucceeds(setDoc(doc(dbFor('teacherA'), 'courses/mine'), {
+      title: 'My draft', ownerId: 'teacherA', status: 'draft', isPublic: false,
+    }));
+    await assertSucceeds(updateDoc(doc(dbFor('teacherA'), 'courses/mine'), { title: 'My draft renamed' }));
+    await assertFails(setDoc(doc(dbFor('teacherA'), 'courses/listed'), {
+      title: 'Public', ownerId: 'teacherA', status: 'published', isPublic: true,
+    }));
+    await assertFails(setDoc(doc(dbFor('parent1'), 'courses/parent-course'), {
+      title: 'No', ownerId: 'parent1', status: 'draft', isPublic: false,
+    }));
+    await assertFails(setDoc(doc(dbFor('adult1'), 'courses/student-course'), {
+      title: 'No', ownerId: 'adult1', status: 'draft', isPublic: false,
+    }));
+  });
+
+  it('rejects non-admin writes to platform settings, seed, and other admin collections', async () => {
+    const writes: Array<[string, Record<string, unknown>]> = [
+      ['platform_settings/main', { siteName: 'Hijack' }],
+      ['platform_settings/feature_flags', { community: false }],
+      ['platform_settings/payments', { mode: 'live' }],
+      ['seed/catalogue', { ready: true }],
+      ['programmes/igcse', { name: 'IGCSE' }],
+      ['pricing_config/main', { currency: 'USD' }],
+      ['institution_pricing/tiers', { seats: 10 }],
+      ['admin_invites/editor@poketschool.ai', { staffRole: 'content_editor' }],
+      ['platform_signals/health', { ok: false }],
+      ['badges/gold', { userId: 'parent1', name: 'Gold' }],
+      ['moderation_queue/forged', { status: 'open' }],
+      ['audit_settings/retention', { days: 1 }],
+    ];
+    for (const uid of nonAdmins) {
+      for (const [path, data] of writes) {
+        await assertFails(setDoc(doc(dbFor(uid), path), data));
+      }
+    }
+
+    await assertSucceeds(setDoc(doc(dbFor('admin1'), 'platform_settings/main'), { siteName: 'Poket' }));
+    await assertSucceeds(setDoc(doc(dbFor('admin1'), 'platform_settings/feature_flags'), { community: true }));
+    await assertSucceeds(setDoc(doc(dbFor('admin1'), 'seed/catalogue'), { ready: true }));
+    await assertSucceeds(setDoc(doc(dbFor('admin1'), 'programmes/igcse'), { name: 'IGCSE' }));
+    await assertSucceeds(setDoc(doc(dbFor('admin1'), 'pricing_config/main'), { currency: 'USD' }));
+    await assertSucceeds(setDoc(doc(dbFor('admin1'), 'institution_pricing/tiers'), { seats: 10 }));
+    await assertSucceeds(setDoc(doc(dbFor('admin1'), 'admin_invites/editor@poketschool.ai'), { staffRole: 'content_editor' }));
+    await assertSucceeds(setDoc(doc(dbFor('admin1'), 'badges/gold'), { userId: 'adult1', name: 'Gold' }));
+    await assertFails(setDoc(doc(dbFor('admin1'), 'platform_signals/health'), { ok: true }));
+    await assertFails(setDoc(doc(dbFor('admin1'), 'moderation_queue/forged'), { status: 'open' }));
+    await assertFails(setDoc(doc(dbFor('admin1'), 'audit_settings/retention'), { days: 1 }));
+
+    await assertSucceeds(getDoc(doc(dbFor('adult1'), 'platform_settings/feature_flags')));
+    await assertFails(getDoc(doc(dbFor('parent1'), 'platform_settings/payments')));
+    await assertFails(getDoc(doc(dbFor('teacherA'), 'platform_settings/main')));
+    await assertSucceeds(getDoc(doc(dbFor('admin1'), 'platform_settings/payments')));
+  });
+});

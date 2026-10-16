@@ -722,6 +722,14 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/courses/$(courseId)).data.ownerId == request.auth.uid;
     }
 
+    // Launch catalogue rows carry seedKey. Only a platform admin may create
+    // or edit them. A teacher draft without seedKey is unchanged.
+    function catalogueSeed(data) {
+      return data.keys().hasAny(['seedKey'])
+        && data.seedKey is string
+        && data.seedKey.size() > 0;
+    }
+
     // A public marketplace listing. Teachers may prepare one, but only an
     // admin may set the published public state. Editing a listing an admin
     // already approved is allowed when that state does not change.
@@ -805,18 +813,28 @@ service cloud.firestore {
       allow create: if isAdmin()
         || (isTeacherOrAdmin()
             && incoming().ownerId == request.auth.uid
-            && !marketplaceListing(incoming()));
+            && !marketplaceListing(incoming())
+            && !catalogueSeed(incoming()));
       // The owner may edit their course. Counters still move by one for
       // enrolment, views, completion, and revenue. An admin may edit any course.
+      // Seed catalogue rows are admin-only, including counter bumps.
       allow update: if (isAdmin() && seatsUnchanged())
-        || teacherCourseUpdate()
-        || seatIncrement(courseId)
-        || plusOne('enrollmentCount')
-        || plusOne('viewCount')
-        || plusOne('completionCount')
-        || revenueIncrement(courseId);
+        || (
+          !catalogueSeed(resource.data)
+          && !catalogueSeed(incoming())
+          && (
+            teacherCourseUpdate()
+            || seatIncrement(courseId)
+            || plusOne('enrollmentCount')
+            || plusOne('viewCount')
+            || plusOne('completionCount')
+            || revenueIncrement(courseId)
+          )
+        );
       allow delete: if isAdmin()
-        || (isTeacherOrAdmin() && resource.data.ownerId == request.auth.uid);
+        || (isTeacherOrAdmin()
+            && resource.data.ownerId == request.auth.uid
+            && !catalogueSeed(resource.data));
 
       match /enrollments/{studentId} {
         allow read: if isSignedIn();
@@ -894,8 +912,14 @@ service cloud.firestore {
         // curriculum before signup, the way every course marketplace does.
         // Module documents hold titles and ordering only — no lesson content.
         allow read: if true;
-        allow create, update: if isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId));
-        allow delete: if isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId));
+        allow create, update: if isAdmin()
+          || (isTeacherOrAdmin()
+              && ownsCourse(courseId)
+              && !catalogueSeed(get(/databases/$(database)/documents/courses/$(courseId)).data));
+        allow delete: if isAdmin()
+          || (isTeacherOrAdmin()
+              && ownsCourse(courseId)
+              && !catalogueSeed(get(/databases/$(database)/documents/courses/$(courseId)).data));
 
         match /lessons/{lessonId} {
           // Deliberately NOT public: lesson documents carry aiOutputs, the
@@ -954,8 +978,14 @@ service cloud.firestore {
                             && resource.data.get('order', 999) <= get(/databases/$(database)/documents/courses/$(courseId)).data.accessPolicy.get('freePreviewCount', 0))
                       ))
                 ));
-          allow create, update: if isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId));
-          allow delete: if isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId));
+          allow create, update: if isAdmin()
+            || (isTeacherOrAdmin()
+                && ownsCourse(courseId)
+                && !catalogueSeed(get(/databases/$(database)/documents/courses/$(courseId)).data));
+          allow delete: if isAdmin()
+            || (isTeacherOrAdmin()
+                && ownsCourse(courseId)
+                && !catalogueSeed(get(/databases/$(database)/documents/courses/$(courseId)).data));
         }
       }
     }
@@ -1191,8 +1221,7 @@ service cloud.firestore {
     // ── Badges ────────────────────────────────────────────────
     match /badges/{badgeId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update, delete: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
     // Adult-only direct messages. The mobile app reads this collection.
@@ -1669,9 +1698,17 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Launch catalogue documents. Clients other than a platform admin cannot write them.
+    match /seed/{docId} {
+      allow read, write: if isAdmin();
+    }
+
     // ── Platform settings (admin console) ─────────────────────
+    // feature_flags is read by every signed-in client. Payments and other
+    // settings are admin-only. Writes are admin-only for every document.
     match /platform_settings/{docId} {
-      allow read: if isSignedIn();
+      allow get: if isSignedIn() && (docId == 'feature_flags' || isAdmin());
+      allow list: if isAdmin();
       allow write: if isAdmin();
     }
 
