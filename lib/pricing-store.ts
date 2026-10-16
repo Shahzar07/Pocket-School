@@ -1,5 +1,6 @@
 import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
+import { reportContentChange } from './audit/report';
 import {
   diffPricing,
   normalizePricing,
@@ -43,6 +44,14 @@ export async function savePricingConfig(next: PricingConfig, actor: PricingActor
   const summary = diffPricing(before, clean);
   if (summary.length === 0) return summary;
   await setDoc(doc(db, 'pricing_config', 'current'), clean);
+  reportContentChange({
+    action: 'pricing.edit',
+    targetType: 'pricing',
+    targetId: 'current',
+    targetLabel: summary.join(', '),
+    before,
+    after: clean,
+  });
   await addDoc(collection(db, 'pricing_audit'), {
     actorId: actor.actorId,
     actorEmail: actor.actorEmail,

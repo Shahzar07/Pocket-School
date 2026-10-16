@@ -32,6 +32,7 @@ import {
 import { requestPush } from './push-client';
 import type { PushCategory } from './push';
 import type { CertificateAward } from './certificates';
+import { reportContentChange } from './audit/report';
 
 export type { Role };
 
@@ -668,6 +669,13 @@ export async function createLesson(courseId: string, moduleId: string, data: Omi
   const ref = await addDoc(collection(db, 'courses', courseId, 'modules', moduleId, 'lessons'), {
     ...omitUndefined(data), createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
   });
+  reportContentChange({
+    action: 'content.edit',
+    targetType: 'lesson',
+    targetId: `${courseId}/${moduleId}/${ref.id}`,
+    targetLabel: data.title,
+    after: { title: data.title, status: data.status },
+  });
   return ref.id;
 }
 
@@ -676,8 +684,17 @@ export async function updateUnit(courseId: string, unitId: string, data: Partial
 }
 
 export async function updateLesson(courseId: string, moduleId: string, lessonId: string, data: Partial<Lesson>): Promise<void> {
+  const clean = omitUndefined(data);
   await updateDoc(doc(db, 'courses', courseId, 'modules', moduleId, 'lessons', lessonId), {
-    ...omitUndefined(data), updatedAt: serverTimestamp(),
+    ...clean, updatedAt: serverTimestamp(),
+  });
+  const published = clean.status === 'published';
+  reportContentChange({
+    action: published ? 'content.publish' : 'content.edit',
+    targetType: 'lesson',
+    targetId: `${courseId}/${moduleId}/${lessonId}`,
+    targetLabel: typeof clean.title === 'string' ? clean.title : lessonId,
+    after: clean,
   });
 }
 
@@ -712,6 +729,11 @@ export async function moveLessonToUnit(
 
 export async function deleteLesson(courseId: string, moduleId: string, lessonId: string): Promise<void> {
   await deleteDoc(doc(db, 'courses', courseId, 'modules', moduleId, 'lessons', lessonId));
+  reportContentChange({
+    action: 'content.delete',
+    targetType: 'lesson',
+    targetId: `${courseId}/${moduleId}/${lessonId}`,
+  });
 }
 
 /**
@@ -3440,6 +3462,13 @@ export async function getUserPhone(uid: string): Promise<string | null> {
 export async function updateCourse(id: string, data: Partial<Course>): Promise<void> {
   const ref = doc(db, 'courses', id);
   const clean = omitUndefined(data);
+  let before: Record<string, unknown> | null = null;
+  try {
+    const existing = await getDoc(ref);
+    if (existing.exists()) before = existing.data() as Record<string, unknown>;
+  } catch {
+    before = null;
+  }
   if (clean.accessPolicy) {
     const policy = { ...clean.accessPolicy };
     delete policy.seatsUsed;
@@ -3451,9 +3480,21 @@ export async function updateCourse(id: string, data: Partial<Course>): Promise<v
       const accessPolicy = typeof current === 'number' ? { ...policy, seatsUsed: current } : policy;
       tx.update(ref, { ...clean, accessPolicy, updatedAt: serverTimestamp() });
     });
-    return;
+  } else {
+    await updateDoc(ref, { ...clean, updatedAt: serverTimestamp() });
   }
-  await updateDoc(ref, { ...clean, updatedAt: serverTimestamp() });
+  const after = { ...(before ?? {}), ...clean };
+  const was = typeof before?.status === 'string' ? before.status : '';
+  const next = typeof after.status === 'string' ? after.status : was;
+  const allocation = ['targets', 'accessPolicy', 'allocatedInstitutionIds', 'audiences', 'publishScope'].some((key) => key in clean);
+  reportContentChange({
+    action: next === 'published' && was !== 'published' ? 'content.publish' : allocation ? 'allocation.edit' : 'content.edit',
+    targetType: 'course',
+    targetId: id,
+    targetLabel: typeof after.title === 'string' ? after.title : id,
+    before,
+    after,
+  });
 }
 
 /** Drop optional course fields so "derive this" can return to the default. */
@@ -3465,6 +3506,7 @@ export async function clearCourseFields(id: string, fields: readonly ('minTier' 
 
 export async function deleteCourse(id: string): Promise<void> {
   await deleteDoc(doc(db, 'courses', id));
+  reportContentChange({ action: 'content.delete', targetType: 'course', targetId: id });
 }
 
 export async function getPublicCourses(filters?: {
@@ -3554,6 +3596,12 @@ export async function saveAccessGrants(courseId: string, rows: { id: string; act
     });
   }
   await batch.commit();
+  reportContentChange({
+    action: 'allocation.edit',
+    targetType: 'course',
+    targetId: courseId,
+    after: { grants: rows.map((row) => row.id) },
+  });
 }
 
 export interface AccessAuditEntry {
@@ -3651,6 +3699,13 @@ export async function approveCourse(id: string): Promise<void> {
     isPublic: true,
     updatedAt: serverTimestamp(),
   });
+  reportContentChange({
+    action: 'content.publish',
+    targetType: 'course',
+    targetId: id,
+    before: { status: 'pending_approval' },
+    after: { status: 'published', isPublic: true },
+  });
 }
 
 export async function rejectCourse(id: string): Promise<void> {
@@ -3658,6 +3713,13 @@ export async function rejectCourse(id: string): Promise<void> {
     status: 'draft',
     isPublic: false,
     updatedAt: serverTimestamp(),
+  });
+  reportContentChange({
+    action: 'content.edit',
+    targetType: 'course',
+    targetId: id,
+    before: { status: 'pending_approval' },
+    after: { status: 'draft', isPublic: false },
   });
 }
 
@@ -3680,6 +3742,14 @@ export async function recordMarketplaceReview(
     action: `course.${entry.action}`,
     targetId: courseId,
     at: Date.now(),
+    before: { status: 'pending_approval' },
+    after: approved ? { status: 'published', isPublic: true } : { status: 'draft', isPublic: false },
+  });
+  reportContentChange({
+    action: approved ? 'content.publish' : 'content.edit',
+    targetType: 'course',
+    targetId: courseId,
+    targetLabel: entry.title,
     before: { status: 'pending_approval' },
     after: approved ? { status: 'published', isPublic: true } : { status: 'draft', isPublic: false },
   });

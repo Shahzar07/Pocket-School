@@ -179,6 +179,7 @@ export function SettingsPanel({
   onDecidePurchase,
   onAcceptInvite,
   onRespondLink,
+  loginActivity,
 }: {
   view: SettingsView;
   currencies: string[];
@@ -212,6 +213,7 @@ export function SettingsPanel({
   onDecidePurchase: (requestId: string, approve: boolean) => Promise<void> | void;
   onAcceptInvite: (code: string) => Promise<void> | void;
   onRespondLink: (linkId: string, approve: boolean) => Promise<void> | void;
+  loginActivity?: { id: string; at: number; action: string; ip: string; device: string }[];
 }) {
   const [draft, setDraft] = useState(view.draft);
   const [zoneQuery, setZoneQuery] = useState('');
@@ -434,6 +436,20 @@ export function SettingsPanel({
         <p className="text-xs text-muted-foreground">
           Admin accounts still use the admin sign-in code. If mail is not configured, sign-in continues without a code so you are not locked out.
         </p>
+      </Section>
+
+      <Section title="My login activity">
+        <ul className="space-y-2">
+          {(loginActivity ?? []).length === 0 && <li className="text-sm text-muted-foreground">Sign-ins recorded by the server will show here.</li>}
+          {(loginActivity ?? []).map(row => (
+            <li key={row.id} className="rounded-xl border border-border px-3 py-2">
+              <span className="block text-sm font-semibold">{row.action}</span>
+              <span className="block text-xs text-muted-foreground">
+                {new Date(row.at).toLocaleString('en-GB')} · {row.ip || 'IP unavailable'} · {row.device || 'Device unavailable'}
+              </span>
+            </li>
+          ))}
+        </ul>
       </Section>
 
       <Section title="Active sessions">

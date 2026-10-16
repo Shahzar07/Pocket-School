@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { loginBlocked, requiresAdminLogin } from '@/lib/admin-console';
 import { landingPath, readActiveMode } from '@/lib/account-modes';
 import { friendlyError } from '@/lib/design/system';
+import { reportActivity, reportFailedLogin } from '@/lib/audit/report';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -51,6 +52,7 @@ export default function LoginPage() {
       return;
     }
     const roles = Array.isArray(data.roles) ? data.roles.filter((item): item is string => typeof item === 'string') : [];
+    void reportActivity({ action: 'auth.login', targetType: 'session', targetId: uid });
     router.push(landingPath({ role, roles }, readActiveMode()));
   };
 
@@ -105,6 +107,7 @@ export default function LoginPage() {
     if (result === 'sent') {
       setPendingUid(uid);
       setStep('twofa');
+      void reportActivity({ action: 'auth.two_factor_challenge', targetType: 'session', targetId: uid });
       toast.success('We emailed you a 6-digit code.');
     } else {
       // Service unavailable — don't strand the user at a dead 2FA screen.
@@ -137,9 +140,11 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (!res.ok || !data.valid) {
+        void reportActivity({ action: 'auth.two_factor_failed', targetType: 'session', targetId: pendingUid });
         toast.error(data.error || 'Invalid or expired code.');
         return;
       }
+      void reportActivity({ action: 'auth.two_factor_success', targetType: 'session', targetId: pendingUid });
       await routeUser(pendingUid);
     } catch (e: any) {
       toast.error(friendlyError(e) || 'Verification failed.');
@@ -218,6 +223,9 @@ export default function LoginPage() {
       await afterCredentialSuccess(result.user.uid);
     } catch (e: any) {
       const code = e?.code ?? '';
+      if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential' || code === 'auth/invalid-email') {
+        void reportFailedLogin(email);
+      }
       if (code === 'auth/invalid-email') toast.error(t('authForm.invalidEmail'));
       else if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') toast.error(t('authForm.badPassword'));
       else if (code === 'auth/too-many-requests') toast.error(t('authForm.tooMany'));
