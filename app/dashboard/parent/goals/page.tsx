@@ -7,6 +7,8 @@ import { excuseDailyGoal, getChildrenDailyGoals, updateDailyGoal, type DailyGoal
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { GoalsWorkspace, type WorkspaceGoal } from '@/components/goals/goals-workspace';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
 import { createSuggestion } from '@/lib/insights/client';
 import { addDays, isoDateKey, weekdayOf } from '@/lib/insights/dates';
 
@@ -40,6 +42,18 @@ export default function ParentGoalsPage() {
             <Button key={row.childId} variant={row.childId === child?.childId ? 'default' : 'outline'} onClick={() => setChildId(row.childId)}>{row.childName}</Button>
           ))}
         </div>
+      )}
+      {child && (
+        <DocumentDelivery
+          documents={[textDocument({
+            id: `goals-${child.childId}`,
+            title: `Goals · ${child.childName}`,
+            holderEmail: user?.email ?? undefined,
+            studentId: child.childId,
+            lines: child.goals.length ? child.goals.map(goal => `${goal.dateKey} · ${goal.title} · ${goal.status}`) : ['No goals yet.'],
+          })]}
+          studentIds={[child.childId]}
+        />
       )}
       <GoalsWorkspace
         viewer="parent"

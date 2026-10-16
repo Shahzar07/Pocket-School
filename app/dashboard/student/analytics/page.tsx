@@ -6,6 +6,9 @@ import { createDailyGoal, getAttendanceForStudent, getGradesForStudent, goalDate
 import { authedFetch } from '@/lib/api-client';
 import { DashHeader, DashPage, Panel, PanelHeader } from '@/components/dash-ui';
 import { AnalyticsBoard, BehaviourBoard, ExportBar, snapshotKpis } from '@/components/insights/boards';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
+import { metricById } from '@/lib/insights/metrics';
 import { LearningCharts } from '@/components/insights/learning-charts';
 import { buildSnapshot, type AnalyticsSnapshot } from '@/lib/insights/aggregate';
 import { readSnapshot, saveMood } from '@/lib/insights/client';
@@ -108,6 +111,20 @@ export default function StudentAnalyticsPage() {
         <Link href="/dashboard/reports" className="underline">Reports</Link>
         <Link href="/dashboard/behaviour" className="underline">Behaviour</Link>
       </div>
+      {user && (
+        <DocumentDelivery
+          documents={[textDocument({
+            id: `analytics-${user.uid}`,
+            title: 'Learning analytics',
+            holderEmail: user.email ?? undefined,
+            studentId: user.uid,
+            lines: snapshot
+              ? Object.entries(snapshot.metrics).map(([id, value]) => `${metricById(id)?.label ?? id}: ${value ?? '—'}`)
+              : ['Totals are still loading.'],
+          })]}
+          studentIds={[user.uid]}
+        />
+      )}
       <div className="flex gap-2">
         <Button variant={tab === 'insights' ? 'default' : 'outline'} onClick={() => setTab('insights')}>Insights</Button>
         <Button variant={tab === 'behaviour' ? 'default' : 'outline'} onClick={() => setTab('behaviour')}>Behaviour</Button>

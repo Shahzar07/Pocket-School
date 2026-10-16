@@ -7,6 +7,9 @@ import type { AllocationOption } from '@/components/allocation-picker';
 import { InstitutionWorkspace, type WorkspaceAction } from '@/components/institutions/workspace';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { usePricing } from '@/hooks/use-pricing';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
+import { formatMoney } from '@/lib/money';
 import { ApiError, authedFetch } from '@/lib/api-client';
 import {
   getAllCourses,
@@ -470,7 +473,20 @@ export default function InstitutionConsolePage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto pb-16">
+    <div className="max-w-6xl mx-auto pb-16 space-y-6">
+      <DocumentDelivery
+        documents={[textDocument({
+          id: `institution-${institutionId}`,
+          title: `${institution.name} documents`,
+          lines: [
+            institution.name,
+            ...licences.map((licence) => `${licence.seatsUsed}/${licence.seats} seats · ${formatMoney(licence.amount, licence.currency)} · ${licence.startsOn} to ${licence.endsOn}`),
+            ...invoices.map((invoice) => `${invoice.number} · ${invoice.status} · ${formatMoney(invoice.amount, invoice.currency)}`),
+          ],
+        })]}
+        studentIds={[]}
+        institutionId={institutionId}
+      />
       <InstitutionWorkspace
         name={institution.name}
         status={asStatus(institution.status)}

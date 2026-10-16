@@ -7,6 +7,8 @@ import {
   getTeacherCourses, subscribeDailyGoals, type DailyGoal,
 } from '@/lib/db';
 import { DashHeader, DashPage } from '@/components/dash-ui';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
 import { BehaviourDashboard } from '@/components/insights/behaviour-dashboard';
 import { buildBehaviourBoard, type BehaviourBoardModel, type BehaviourRole, type MoodCheck } from '@/lib/insights/behaviour-board';
 import { listFocusSessions, listMoods, listStudyEvents, readSnapshot, saveMood } from '@/lib/insights/client';
@@ -224,6 +226,23 @@ export default function BehaviourPage() {
         accent="is patterned"
         description="Teacher comments here are visible to admin, teachers, and parents. Each figure uses the Reports definition and opens the records behind it."
       />
+      {user && (
+        <DocumentDelivery
+          documents={[textDocument({
+            id: `behaviour-${subjectId || user.uid}`,
+            title: `Behaviour · ${board?.scopeLabel || 'Class'}`,
+            holderEmail: user.email ?? undefined,
+            lines: board
+              ? [
+                ...Object.entries(board.captions).map(([key, text]) => `${key}: ${text}`),
+                ...board.classPoints.slice(0, 30).map(point => `${point.label}: ${point.studyMinutes} min`),
+              ]
+              : ['Behaviour figures appear when there is a signed-in student, child, or class.'],
+          })]}
+          studentIds={profile?.role === 'admin' ? [] : profile?.role === 'teacher' ? board?.classPoints.map(point => point.studentId) ?? [] : [subjectId].filter(Boolean)}
+          institutionId={profile?.role === 'institution_admin' ? profile.institutionId : undefined}
+        />
+      )}
       {role === 'parent' && children.length > 1 && (
         <label className="text-sm">Child
           <select className="ml-2 rounded border border-border px-2 py-1" value={childId} onChange={event => setChildId(event.target.value)}>

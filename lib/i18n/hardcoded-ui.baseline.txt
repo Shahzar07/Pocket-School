@@ -2199,3 +2199,6 @@ components/video-storyboard.tsx	Full animated video production coming soon. This
 components/video-storyboard.tsx	Scene-by-scene script with visual directions
 components/video-storyboard.tsx	Video Storyboard
 lib/email-otp.ts	Poket School
+components/document-delivery.tsx	Optional message
+components/document-delivery.tsx	Other addresses, separated by commas
+components/document-delivery.tsx	Other email addresses

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { subscribeTeacherGoals, type DailyGoal } from '@/lib/db';
 import { DashPage, DashHeader, Panel, PanelHeader, EmptyState } from '@/components/dash-ui';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
 import { Target } from 'lucide-react';
 
 export default function TeacherGoalsPage() {
@@ -22,6 +24,16 @@ export default function TeacherGoalsPage() {
         title="Student goals"
         description="Goals appear here when a student in your class chooses to share them. Other teachers cannot open them."
       />
+      {goals.length > 0 && (
+        <DocumentDelivery
+          documents={[textDocument({
+            id: `shared-goals-${user?.uid || 'class'}`,
+            title: 'Shared student goals',
+            lines: goals.map(goal => `${goal.studentName || 'Student'}: ${goal.title} · ${goal.status}`),
+          })]}
+          studentIds={[...new Set(goals.map(goal => goal.studentId))]}
+        />
+      )}
       <Panel>
         <PanelHeader title="Shared with you" />
         {goals.length === 0 ? (

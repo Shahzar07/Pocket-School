@@ -13,6 +13,8 @@ import { Plus, Trash2, Loader2, CreditCard, CheckCircle2, Printer } from 'lucide
 import { motion } from 'motion/react';
 import { Timestamp } from 'firebase/firestore';
 import { formatMoney } from '@/lib/pricing';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { billingDocument } from '@/lib/documents/packet';
 import { PAYER_NOTE } from '@/lib/billing-model';
 
 const fadeUp: Record<string, any> = {
@@ -180,6 +182,21 @@ export default function TeacherBillingPage() {
           <p className="text-sm text-muted-foreground mt-2">
             {PAYER_NOTE} Issued copies also appear in admin finance.
           </p>
+          {invoices.length > 0 && (
+            <div className="mt-4">
+              <DocumentDelivery
+                documents={invoices.map(inv => billingDocument({
+                  id: inv.id,
+                  description: inv.description,
+                  totalLabel: formatMoney(inv.amount, inv.currency),
+                  status: inv.status,
+                  studentName: inv.studentName,
+                  studentId: inv.studentId,
+                }))}
+                studentIds={profile?.role === 'admin' ? [] : [...new Set(invoices.map(inv => inv.studentId))]}
+              />
+            </div>
+          )}
         </div>
         <Button
           onClick={() => setShowCreate(s => !s)}
@@ -346,6 +363,18 @@ export default function TeacherBillingPage() {
                 <Button variant="ghost" size="icon" onClick={() => handlePrint(inv)} className="text-muted-foreground">
                   <Printer className="w-4 h-4" />
                 </Button>
+                <DocumentDelivery
+                  compact
+                  documents={[billingDocument({
+                    id: inv.id,
+                    description: inv.description,
+                    totalLabel: formatMoney(inv.amount, inv.currency),
+                    status: inv.status,
+                    studentName: inv.studentName,
+                    studentId: inv.studentId,
+                  })]}
+                  studentIds={profile?.role === 'admin' ? [] : [inv.studentId]}
+                />
               </div>
             </motion.div>
           ))}

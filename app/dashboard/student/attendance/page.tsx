@@ -10,6 +10,8 @@ import { Timestamp } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ClipboardCheck, CheckCircle2, XCircle, Clock, BookOpen } from 'lucide-react';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
 
 type AttStatus = 'present' | 'absent' | 'late' | 'excused';
 
@@ -131,6 +133,22 @@ export default function StudentAttendancePage() {
           Course registers are kept by your institution and your teachers.
           {user?.metadata?.lastSignInTime ? ` Last sign-in ${new Date(user.metadata.lastSignInTime).toLocaleString()}.` : ' Sign-in time appears after you log in.'}
         </p>
+        {user && (
+          <div className="mt-4">
+            <DocumentDelivery
+              documents={[textDocument({
+                id: `attendance-${user.uid}`,
+                title: 'Attendance',
+                holderEmail: user.email ?? undefined,
+                studentId: user.uid,
+                lines: courseMap.length
+                  ? courseMap.flatMap(ca => [ca.courseTitle, ...ca.records.slice(0, 30).map(row => `${row.date.toLocaleDateString()} · ${row.lessonTitle} · ${row.status}`)])
+                  : ['No attendance records yet.'],
+              })]}
+              studentIds={[user.uid]}
+            />
+          </div>
+        )}
       </motion.div>
 
       {courseMap.length === 0 ? (

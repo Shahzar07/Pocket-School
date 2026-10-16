@@ -10,9 +10,11 @@ import { filterFinanceRows, invoiceLabel } from '@/lib/billing-model';
 import { InvoiceDelivery } from '@/components/invoice-delivery';
 import type { InvoiceFace } from '@/lib/documents/invoice-pdf';
 import { Landmark } from 'lucide-react';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
 
 interface Summary { mrr: number; arr: number; arpu: number; activeSubscribers: number }
-interface Tx { id: string; title?: string; total?: number; currency?: string; status?: string; invoiceId?: string; email?: string; buyerName?: string }
+interface Tx { id: string; title?: string; total?: number; currency?: string; status?: string; invoiceId?: string; userId?: string; email?: string; buyerName?: string }
 
 export default function FinancePage() {
   const { profile } = useAuthSTORE();
@@ -59,7 +61,22 @@ export default function FinancePage() {
 
   return (
     <DashPage>
-      <DashHeader eyebrow="Super admin" title="Finance" description="Invoices are issued here and linked to the payment gateway. Search by person, invoice, or status. The payer can be a parent, an institution, or an adult learner." />
+      <DashHeader eyebrow="Super admin" title="Finance" description="Invoices are issued here and linked to the payment gateway. Search by person, invoice, or status. The payer can be a parent, an institution, or an adult learner. MRR counts the primary subscriber." />
+      <DocumentDelivery
+        documents={[textDocument({
+          id: 'finance-statement',
+          title: 'Finance statement',
+          lines: [
+            `MRR: ${formatMoney(summary?.mrr ?? 0)}`,
+            `ARR: ${formatMoney(summary?.arr ?? 0)}`,
+            `ARPU: ${formatMoney(summary?.arpu ?? 0)}`,
+            `Active subscribers: ${summary?.activeSubscribers ?? 0}`,
+            `Matched: ${reconciliation.matched}`,
+            `Open: ${reconciliation.unmatched}`,
+          ],
+        })]}
+        studentIds={[]}
+      />
       {notice && <p className="text-sm">{notice}</p>}
       <div className="grid sm:grid-cols-3 gap-4">
         <StatCard icon={Landmark} label="MRR" value={formatMoney(summary?.mrr ?? 0)} index={0} />
