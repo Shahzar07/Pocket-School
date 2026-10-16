@@ -8,7 +8,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /** Teacher names stay "ET" plus the subject. The AI brand on its own is "ET AI". */
 const TEACHER = String.raw`Maths|Further|Additional|Science|Biology|Chemistry|Physics|Human|Medicine|Computer|ICT|English|Malay|Mandarin|French|German|Russian|Languages|Law|Global|Psychology|Sociology|Media|Business|Economics|Accounting|History|Geography|Art|Music|Exam|Study`;
-const STANDALONE = new RegExp(String.raw`\bET\b(?!\s+AI\b)(?!\s+(?:${TEACHER})\b)`, 'g');
+const STANDALONE = new RegExp(String.raw`\bET\b(?!\s+AI\b)(?!\s+(?:${TEACHER})s?\b)`, 'g');
 
 function filesUnder(dir: string): string[] {
   const found: string[] = [];

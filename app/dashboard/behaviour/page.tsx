@@ -222,7 +222,7 @@ export default function BehaviourPage() {
         eyebrow="Behaviour"
         title="How study"
         accent="is patterned"
-        description="Heatmap, consistency, focus, mood, and teacher notes. Each figure uses the Reports definition and opens the records behind it."
+        description="Teacher comments here are visible to admin, teachers, and parents. Each figure uses the Reports definition and opens the records behind it."
       />
       {role === 'parent' && children.length > 1 && (
         <label className="text-sm">Child

@@ -127,6 +127,10 @@ export default function StudentAttendancePage() {
         <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1.5">
           My <span className="gradient-text italic">Attendance</span>
         </h1>
+        <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
+          Course registers are kept by your institution and your teachers.
+          {user?.metadata?.lastSignInTime ? ` Last sign-in ${new Date(user.metadata.lastSignInTime).toLocaleString()}.` : ' Sign-in time appears after you log in.'}
+        </p>
       </motion.div>
 
       {courseMap.length === 0 ? (

@@ -14,7 +14,7 @@ Every page under `/dashboard`, what it is for, who it is for, and what we did wi
 - **Snap.** Moves into ET Maths. `/dashboard/snap` redirects to `/dashboard/studio/maths?snap=1`.
 - **Resources.** Stays the file library. The CMS links to it.
 - **Integrity.** Stays. It is the case, evidence, decision, and appeal flow.
-- **Studio.** ET AI, ET Maths, and ET Exams open full page. ET Essay Writer is a new studio tool and a student page.
+- **Studio.** ET AI, ET Maths, and ET Exams open full page. ET AI Essay Writer is a new studio tool and a student page.
 - **Helpdesk.** Ticket number, notes, priority, assignee, SLA, and statuses open / pending / KIV / solved / closed.
 - **Keys.** Integrations is the only API-key hub, super-admin only. Payments does not store a second copy. SMTP password is `SMTP_PASS`, not the database.
 
@@ -204,7 +204,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Keep.
 - **Owner keys:** None.
 
-### ET Essay Writer
+### ET AI Essay Writer
 
 - **Route:** `/dashboard/studio/essay`
 - **Audience:** student, teacher
@@ -217,7 +217,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/student/essay`
 - **Audience:** student
-- **Purpose:** The student home for ET Essay Writer: drafts, assigned essays, and grades.
+- **Purpose:** The student home for ET AI Essay Writer: drafts, assigned essays, and grades.
 - **Overlaps:** Studio essay writer.
 - **Decision:** Same writer, inside the student area so assignments stay with other schoolwork.
 - **Owner keys:** OPENROUTER_API_KEY.
@@ -282,7 +282,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Audience:** student
 - **Purpose:** Work a teacher sent to this student, their class, or the whole institution.
 - **Overlaps:** Exams and essays.
-- **Decision:** Keep. Assignments are set work; exams are timed papers; essays are ET Essay Writer.
+- **Decision:** Keep. Assignments are set work; exams are timed papers; essays are ET AI Essay Writer.
 - **Owner keys:** None.
 
 ### Exams

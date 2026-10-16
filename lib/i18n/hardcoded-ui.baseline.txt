@@ -582,6 +582,7 @@ app/dashboard/resources/page.tsx	Title *
 app/dashboard/resources/page.tsx	Title and URL are required.
 app/dashboard/resources/page.tsx	Try a different search or add a new resource.
 app/dashboard/resources/page.tsx	URL *
+app/dashboard/snap/page.tsx	Opening the camera in ET Maths.
 app/dashboard/store/page.tsx	Draft saved.
 app/dashboard/store/page.tsx	Resource allocated.
 app/dashboard/store/page.tsx	Sent for approval.
@@ -593,6 +594,7 @@ app/dashboard/student/achievements/page.tsx	Top Learners
 app/dashboard/student/achievements/page.tsx	Up Next
 app/dashboard/student/analytics/page.tsx	How your learning
 app/dashboard/student/analytics/page.tsx	Refresh saved totals
+app/dashboard/student/assignments/page.tsx	A teacher can send work to this class, to you alone, or to the whole institution. Essay tasks open in ET AI Essay Writer.
 app/dashboard/student/assignments/page.tsx	Couldn&apos;t load this page.
 app/dashboard/student/assignments/page.tsx	No assignments yet
 app/dashboard/student/assignments/page.tsx	Paste your link here…
@@ -656,8 +658,10 @@ app/dashboard/student/exams/page.tsx	Failed to submit exam.
 app/dashboard/student/exams/page.tsx	No exams available yet
 app/dashboard/student/exams/page.tsx	Past Results
 app/dashboard/student/exams/page.tsx	Ready to Take
+app/dashboard/student/exams/page.tsx	Teachers send an exam to a class, to one student, or to the institution. ET Exams is the full-page practice studio.
 app/dashboard/student/exams/page.tsx	Time is up! Submitting your exam...
 app/dashboard/student/exams/page.tsx	Your answer...
+app/dashboard/student/goals/page.tsx	Daily goals live with your tasks. Parents and teachers still have their own view.
 app/dashboard/student/goals/page.tsx	Goal saved
 app/dashboard/student/integrity/page.tsx	Appeal note
 app/dashboard/student/integrity/page.tsx	Appeal sent.
@@ -674,8 +678,10 @@ app/dashboard/student/learning/page.tsx	Academic subscription required
 app/dashboard/student/learning/page.tsx	Couldn&apos;t load this page.
 app/dashboard/student/learning/page.tsx	Modules for this subject are being prepared.
 app/dashboard/student/learning/page.tsx	Set your Year / Level
+app/dashboard/student/learning/page.tsx	Set your level
 app/dashboard/student/learning/page.tsx	Your school is preparing your subjects. Check back soon!
 app/dashboard/student/live/page.tsx	Couldn&apos;t load this page.
+app/dashboard/student/live/page.tsx	Join the room when your teacher is live. A class without a link stays here until they share one.
 app/dashboard/student/live/page.tsx	Join upcoming virtual classrooms with your teachers.
 app/dashboard/student/live/page.tsx	LIVE NOW
 app/dashboard/student/live/page.tsx	Live Classes
@@ -690,7 +696,12 @@ app/dashboard/student/page.tsx	Chat or talk live with a tutor
 app/dashboard/student/page.tsx	Continue learning
 app/dashboard/student/page.tsx	Couldn&apos;t load this page.
 app/dashboard/student/page.tsx	Daily goals
+app/dashboard/student/page.tsx	ET AI Essay Writer
+app/dashboard/student/page.tsx	ET AI Studio
+app/dashboard/student/page.tsx	ET AI grades on the 9–1 scale
+app/dashboard/student/page.tsx	ET AI, ET Maths, ET Exams, and ET AI Essay Writer
 app/dashboard/student/page.tsx	ET AI, Maths, and Exam Prep
+app/dashboard/student/page.tsx	Earned badges stay on this dashboard.
 app/dashboard/student/page.tsx	Explore marketplace
 app/dashboard/student/page.tsx	Full charts
 app/dashboard/student/page.tsx	Jump back in
@@ -738,6 +749,7 @@ app/dashboard/student/transcript/page.tsx	Cumulative GPA:
 app/dashboard/student/transcript/page.tsx	Email:
 app/dashboard/student/transcript/page.tsx	Enroll in courses to see your transcript here.
 app/dashboard/student/transcript/page.tsx	Excused:
+app/dashboard/student/transcript/page.tsx	Grades and completed courses for this level. Print, or choose Save as PDF in the print dialog.
 app/dashboard/student/transcript/page.tsx	Late:
 app/dashboard/student/transcript/page.tsx	No attendance was recorded for this period.
 app/dashboard/student/transcript/page.tsx	No courses enrolled yet
@@ -852,6 +864,11 @@ app/dashboard/studio/exam-prep/page.tsx	Your notes in. Your study plan out.
 app/dashboard/studio/exam-prep/page.tsx	est.
 app/dashboard/studio/exam-prep/page.tsx	p.examDate
 app/dashboard/studio/exam-prep/page.tsx	· Exam Prep
+app/dashboard/studio/layout.tsx	ET AI
+app/dashboard/studio/layout.tsx	ET AI Essay Writer
+app/dashboard/studio/layout.tsx	ET Exams
+app/dashboard/studio/layout.tsx	ET Maths
+app/dashboard/studio/layout.tsx	Poket School
 app/dashboard/studio/maths/lab/page.tsx	(c.length
 app/dashboard/studio/maths/lab/page.tsx	+20 stars
 app/dashboard/studio/maths/lab/page.tsx	. Drag to pan, scroll to zoom.
@@ -959,13 +976,19 @@ app/dashboard/teacher/assignments/page.tsx	New Assignment
 app/dashboard/teacher/assignments/page.tsx	No assignments yet
 app/dashboard/teacher/assignments/page.tsx	No submissions yet
 app/dashboard/teacher/assignments/page.tsx	No text content to check
+app/dashboard/teacher/assignments/page.tsx	One student
+app/dashboard/teacher/assignments/page.tsx	Only for one student
 app/dashboard/teacher/assignments/page.tsx	Running integrity check…
 app/dashboard/teacher/assignments/page.tsx	Select course
+app/dashboard/teacher/assignments/page.tsx	Send to
 app/dashboard/teacher/assignments/page.tsx	Something went wrong while fetching your data. Please try again.
+app/dashboard/teacher/assignments/page.tsx	Student id
 app/dashboard/teacher/assignments/page.tsx	Students haven&apos;t submitted their work yet.
 app/dashboard/teacher/assignments/page.tsx	Submission Type
+app/dashboard/teacher/assignments/page.tsx	This class
 app/dashboard/teacher/assignments/page.tsx	Title *
 app/dashboard/teacher/assignments/page.tsx	Title and due date are required
+app/dashboard/teacher/assignments/page.tsx	Whole institution
 app/dashboard/teacher/attendance/page.tsx	Absence note
 app/dashboard/teacher/attendance/page.tsx	Attendance saved!
 app/dashboard/teacher/attendance/page.tsx	Couldn&apos;t load attendance
@@ -1605,6 +1628,11 @@ components/editor/import-panel.tsx	Headings become chapters. You can tidy the sp
 components/editor/import-panel.tsx	Paste a manuscript
 components/editor/import-panel.tsx	Use these sections
 components/editor/version-history.tsx	Edits are kept on this device as you go. Nothing is listed until the first autosave.
+components/essay-writer.tsx	ET AI Essay Writer
+components/essay-writer.tsx	Essay task
+components/essay-writer.tsx	What should the essay answer?
+components/essay-writer.tsx	Write the essay here.
+components/essay-writer.tsx	Write, then let ET AI mark it
 components/goals/add-goal-dialog.tsx	AI Studio task
 components/goals/add-goal-dialog.tsx	AI Studio task, for example a mind map
 components/goals/add-goal-dialog.tsx	Add a goal

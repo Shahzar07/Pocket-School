@@ -99,9 +99,12 @@ export default function MathsTutorPage() {
   useEffect(() => () => abortRef.current?.abort(), []);
 
   // Arriving from an exam pack ("work through it with ET AI"): pre-fill the problem.
+  // Snap opens the camera here instead of a separate page.
   useEffect(() => {
-    const p = new URLSearchParams(window.location.search).get('problem');
+    const params = new URLSearchParams(window.location.search);
+    const p = params.get('problem');
     if (p) { setProblem(p); setMode('guide'); }
+    if (params.get('snap') === '1') cameraRef.current?.click();
   }, []);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [session?.messages.length]);
   useEffect(() => { if (streamRaw) endRef.current?.scrollIntoView({ block: 'end' }); }, [streamRaw]);

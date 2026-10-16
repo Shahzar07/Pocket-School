@@ -190,7 +190,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   },
   {
     path: '/dashboard/studio/essay',
-    title: 'ET Essay Writer',
+    title: 'ET AI Essay Writer',
     purpose: 'Write an essay and have ET AI grade it on the 9–1 scale, with a percentage, an A*–U grade, and feedback.',
     audience: ['student', 'teacher'],
     overlaps: 'Assignments.',
@@ -200,7 +200,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/student/essay',
     title: 'My essays',
-    purpose: 'The student home for ET Essay Writer: drafts, assigned essays, and grades.',
+    purpose: 'The student home for ET AI Essay Writer: drafts, assigned essays, and grades.',
     audience: ['student'],
     overlaps: 'Studio essay writer.',
     decision: 'Same writer, inside the student area so assignments stay with other schoolwork.',
@@ -266,7 +266,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     purpose: 'Work a teacher sent to this student, their class, or the whole institution.',
     audience: ['student'],
     overlaps: 'Exams and essays.',
-    decision: 'Keep. Assignments are set work; exams are timed papers; essays are ET Essay Writer.',
+    decision: 'Keep. Assignments are set work; exams are timed papers; essays are ET AI Essay Writer.',
     ownerKeys: 'None.',
   },
   {
@@ -1006,7 +1006,7 @@ export function renderAuditMarkdown(): string {
     '- **Snap.** Moves into ET Maths. `/dashboard/snap` redirects to `/dashboard/studio/maths?snap=1`.',
     '- **Resources.** Stays the file library. The CMS links to it.',
     '- **Integrity.** Stays. It is the case, evidence, decision, and appeal flow.',
-    '- **Studio.** ET AI, ET Maths, and ET Exams open full page. ET Essay Writer is a new studio tool and a student page.',
+    '- **Studio.** ET AI, ET Maths, and ET Exams open full page. ET AI Essay Writer is a new studio tool and a student page.',
     '- **Helpdesk.** Ticket number, notes, priority, assignee, SLA, and statuses open / pending / KIV / solved / closed.',
     '- **Keys.** Integrations is the only API-key hub, super-admin only. Payments does not store a second copy. SMTP password is `SMTP_PASS`, not the database.',
     '',
