@@ -32,6 +32,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { useAccountMode } from '@/hooks/use-account-mode';
 import { homeForMode, learnerSpaceRoles, modeRedirect, MODE_NAMES, type AccountMode } from '@/lib/account-modes';
 import { loginBlocked, resolveStaffRole } from '@/lib/admin-console';
+import { adminMfaPending } from '@/lib/admin-mfa-pending';
 import { AdminViewAsBanner, clearViewAs, useAdminIdle, useViewAs } from '@/components/admin-session';
 import { isSuperAdmin, ROLE_LABELS } from '@/lib/roles';
 import { PipGuide } from '@/components/pip-guide';
@@ -48,7 +49,7 @@ import { useTranslation } from 'react-i18next';
 type Role = 'student' | 'teacher' | 'parent' | 'admin' | 'institution_admin';
 
 const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string }> = {
-  student: { icon: 'text-[#6FBBCE]', bar: 'bg-[#6FBBCE]', chip: 'from-[#2786A4] to-[#1E6A83]' },
+  student: { icon: 'text-primary', bar: 'bg-primary', chip: 'from-primary to-primary' },
   teacher: { icon: 'text-emerald-400', bar: 'bg-emerald-400', chip: 'from-emerald-500 to-teal-600' },
   parent:  { icon: 'text-amber-400',  bar: 'bg-amber-400',  chip: 'from-amber-500 to-orange-600' },
   admin:   { icon: 'text-violet-400', bar: 'bg-violet-400', chip: 'from-violet-500 to-fuchsia-600' },
@@ -295,10 +296,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [newDevice, setNewDevice] = useState(false);
+  const [mfaCheckedUid, setMfaCheckedUid] = useState<string | null>(null);
+  const [mfaHold, setMfaHold] = useState(false);
 
   const handleNavClick = () => {
     if (window.innerWidth < 1024) setSidebarOpen(false);
   };
+
+  useEffect(() => {
+    if (loading) return;
+    const uid = user?.uid ?? '';
+    const hold = uid ? adminMfaPending(uid) : false;
+    setMfaHold(hold);
+    setMfaCheckedUid(uid);
+    if (hold) router.replace('/admin/login');
+  }, [user, loading, router]);
 
   useEffect(() => {
     if (loading || user) return;
@@ -322,7 +334,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const viewAs = useViewAs();
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || adminMfaPending(user.uid)) return;
     const deviceInfo = `${navigator.userAgent.slice(0, 80)}|${screen.width}x${screen.height}`;
     upsertUserSession(user.uid, deviceInfo).then(result => {
       sessionStorage.setItem('poket-session-at', String(result.createdAtMs));
@@ -335,15 +347,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [user, router, pathname]);
 
   useEffect(() => {
-    if (!profile) return;
+    if (!profile || (user && adminMfaPending(user.uid))) return;
     const started = Number(sessionStorage.getItem('poket-session-at') || '0');
     if (sessionRevoked(profile.sessionsRevokedAt, started)) {
       void signOut(auth).then(() => router.push(pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login'));
     }
-  }, [profile, router, pathname]);
+  }, [profile, user, router, pathname]);
 
   useEffect(() => {
-    if (!user || !profile) return;
+    if (!user || !profile || adminMfaPending(user.uid)) return;
     const next = learnerSpaceRoles(profile);
     if (!next) return;
     let cancelled = false;
@@ -355,14 +367,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (!account.ready || !account.mode) return;
+    if (user && adminMfaPending(user.uid)) return;
     const next = modeRedirect(pathname, account.mode);
     if (next) router.replace(next);
-  }, [account.ready, account.mode, pathname, router]);
+  }, [account.ready, account.mode, pathname, router, user]);
 
-  if (loading || !user || !profile || !account.ready) {
+  const mfaUnknown = loading || (user?.uid ? mfaCheckedUid !== user.uid : mfaCheckedUid === null);
+
+  if (mfaUnknown || loading || !user || !profile || !account.ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (mfaHold) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-6">
+        <p className="max-w-md text-center text-sm text-muted-foreground">
+          Confirm the admin second factor before opening the dashboard.
+        </p>
       </div>
     );
   }
@@ -596,7 +621,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               >
                 <Avatar className="w-9 h-9 border-2 border-border cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all">
                   <AvatarImage src={profile.avatarUrl ?? user.photoURL ?? undefined} />
-                  <AvatarFallback className="bg-gradient-to-br from-[#2786A4] to-[#1E6A83] text-white text-sm font-bold">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-sm font-bold">
                     {profile.name?.charAt(0)?.toUpperCase() ?? 'U'}
                   </AvatarFallback>
                 </Avatar>
@@ -624,7 +649,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         <main id="dashboard-main" className="flex-1 overflow-y-auto relative pb-20 lg:pb-0">
           {/* A faint teal wash at the top, echoing the homepage sky. */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(39,134,164,0.06)_0%,transparent_100%)]" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(30,106,131,0.06)_0%,transparent_100%)]" />
           <OfflineBanner />
           <div className="relative px-4 pb-6 pt-1 lg:px-6 lg:pb-10">
             <RoleChecklist role={role} />

@@ -8,7 +8,7 @@ import { CertificateDocument } from '@/components/certificate-document';
 import type { CertificateAward } from '@/lib/certificates';
 
 const CONFETTI = [
-  'bg-[#2786A4]', 'bg-[#F2C14E]', 'bg-[#E07A5F]', 'bg-[#81B29A]', 'bg-[#1E6A83]', 'bg-white',
+  'bg-primary', 'bg-[#F2C14E]', 'bg-[#E07A5F]', 'bg-[#81B29A]', 'bg-[#1E6A83]', 'bg-white',
 ];
 
 export function CertificateCelebration({
@@ -43,8 +43,8 @@ export function CertificateCelebration({
         </div>
         <div className="relative px-5 pt-6 pb-5 sm:px-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-r from-[#2786A4] to-[#1E6A83] flex items-center justify-center">
-              <Award className="w-5 h-5 text-white" />
+            <div className="w-11 h-11 rounded-2xl bg-primary flex items-center justify-center">
+              <Award className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
               <p id="certificate-celebration-title" className="font-heading text-2xl text-[#1c2b30]">Module complete</p>
@@ -54,7 +54,7 @@ export function CertificateCelebration({
           <CertificateDocument certificate={award} />
           <div className="flex flex-wrap gap-2 mt-4">
             <Link href="/dashboard/student/certificates" onClick={onClose}>
-              <Button className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white border-0">
+              <Button className="rounded-full h-11 px-5 font-bold bg-primary text-primary-foreground border-0">
                 View my certificates
               </Button>
             </Link>

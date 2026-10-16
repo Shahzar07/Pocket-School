@@ -118,7 +118,7 @@ export function AITutor() {
                 onClick={() => setIsOpen(true)}
               >
                 <div className="absolute inset-0 rounded-full bg-primary animate-ping opacity-20" />
-                <Sparkles className="w-6 h-6 text-white" />
+                <Sparkles className="w-6 h-6 text-primary-foreground" />
               </Button>
             </motion.div>
           </motion.div>
@@ -241,7 +241,7 @@ export function AITutor() {
                   className="rounded-full bg-muted border-transparent h-12"
                 />
                 <Button type="submit" size="icon" disabled={!input.trim() || isTyping} className="rounded-full w-12 h-12 bg-primary shrink-0">
-                  <Send className="w-5 h-5 text-white" />
+                  <Send className="w-5 h-5 text-primary-foreground" />
                 </Button>
               </form>
             </div>

@@ -127,12 +127,12 @@ export function DailyGoalsModal({ open, studentId, studentName, onDone }: Props)
             {/* ET AI band */}
             <div className="relative bg-[#203337] p-6 sm:p-7 text-white overflow-hidden">
               <div className="pointer-events-none absolute inset-0">
-                <div className="absolute -top-24 -left-16 w-72 h-72 rounded-full bg-[#2786A4]/30 blur-[80px]" />
+                <div className="absolute -top-24 -left-16 w-72 h-72 rounded-full bg-primary/30 blur-[80px]" />
                 <div className="absolute -bottom-24 -right-10 w-72 h-72 rounded-full bg-[#1E6A83]/25 blur-[80px]" />
               </div>
               <div className="relative flex items-start gap-4">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#2786A4] to-[#1E6A83] flex items-center justify-center shrink-0 shadow-[0_0_28px_rgba(39,134,164,0.45)]">
-                  <Sparkles className="w-5 h-5 text-white" />
+                <div className="w-11 h-11 rounded-2xl bg-primary flex items-center justify-center shrink-0 shadow-[0_0_28px_rgba(30,106,131,0.45)]">
+                  <Sparkles className="w-5 h-5 text-primary-foreground" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/60">ET AI</p>
@@ -231,7 +231,7 @@ export function DailyGoalsModal({ open, studentId, studentName, onDone }: Props)
               <Button
                 onClick={handleSubmit}
                 disabled={saving || valid.length === 0}
-                className="rounded-full h-11 px-6 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white hover:opacity-90 transition-opacity gap-2 shrink-0"
+                className="rounded-full h-11 px-6 font-bold bg-primary text-primary-foreground hover:opacity-90 transition-opacity gap-2 shrink-0"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Target className="w-4 h-4" />}
                 {saving ? 'Saving…' : 'Commit to today'}

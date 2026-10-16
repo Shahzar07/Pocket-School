@@ -153,8 +153,8 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
                           onClick={handleStart}
                           className="group inline-flex items-center gap-2.5 px-5 py-3 rounded-full bg-white text-slate-900 text-sm font-bold shadow-xl hover:bg-slate-100 transition-all"
                         >
-                          <span className="w-7 h-7 rounded-full bg-[#2786A4] flex items-center justify-center">
-                            <Play className="w-3 h-3 text-white fill-white ml-0.5" />
+                          <span className="w-7 h-7 rounded-full bg-primary flex items-center justify-center">
+                            <Play className="w-3 h-3 text-primary-foreground fill-current ml-0.5" />
                           </span>
                           {user ? 'Click to talk to ' + teacher.name.split(' ')[0] : 'Sign in to talk live'}
                         </button>
@@ -348,7 +348,7 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
                 <ul className="space-y-1.5 text-xs text-slate-700">
                   {teacher.education.map((e) => (
                     <li key={e} className="flex items-start gap-2">
-                      <span className="w-1 h-1 rounded-full bg-[#2786A4] mt-1.5 shrink-0" />
+                      <span className="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0" />
                       {e}
                     </li>
                   ))}
