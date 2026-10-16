@@ -7,6 +7,8 @@ import { DashHeader, DashPage, Panel } from '@/components/dash-ui';
 import { Button } from '@/components/ui/button';
 import { acknowledgeReport, listReportCards } from '@/lib/insights/client';
 import { parentSign } from '@/lib/insights/report-card-model';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
 import { toast } from 'sonner';
 
 interface Card {
@@ -18,6 +20,7 @@ interface Card {
   termId?: string;
   year?: number;
   comment?: string;
+  studentId?: string;
   acknowledgement?: { status?: string; reply?: string };
   integrityNote?: string;
   comparison?: { courseTitle?: string; previous?: number; current?: number; delta?: number }[];
@@ -30,8 +33,11 @@ export default function ParentReportsPage() {
   const load = async () => {
     if (!user) return;
     const children = await getChildrenProfiles(user.uid).catch(() => []);
-    const lists = await Promise.all(children.map(child => listReportCards('studentId', child.id).catch(() => [])));
-    setCards(lists.flat() as Card[]);
+    const lists = await Promise.all(children.map(async child => {
+      const rows = await listReportCards('studentId', child.id).catch(() => []);
+      return (rows as Card[]).map(card => ({ ...card, studentId: child.id }));
+    }));
+    setCards(lists.flat());
   };
 
   useEffect(() => { load(); }, [user]);
@@ -48,6 +54,26 @@ export default function ParentReportsPage() {
         <Panel key={card.id}>
           <p className="font-semibold">{card.heading} · {card.courseTitle}</p>
           <p className="text-sm text-muted-foreground">{card.studentName} · {card.termId} {card.year} · grade {card.grade}</p>
+          {card.studentId && (
+            <div className="mt-3">
+              <DocumentDelivery
+                compact
+                documents={[textDocument({
+                  id: card.id,
+                  title: `${card.heading || 'Report card'} · ${card.courseTitle || 'Course'}`,
+                  holderEmail: user?.email ?? undefined,
+                  studentId: card.studentId,
+                  lines: [
+                    card.studentName || 'Student',
+                    `${card.termId || ''} ${card.year || ''}`.trim(),
+                    `Grade: ${card.grade || '—'}`,
+                    card.comment || '',
+                  ],
+                })]}
+                studentIds={[card.studentId]}
+              />
+            </div>
+          )}
           {card.comment && <p className="text-sm mt-2">{card.comment}</p>}
           {card.integrityNote && <p className="text-sm mt-2">{card.integrityNote}</p>}
           {card.comparison?.map(row => (

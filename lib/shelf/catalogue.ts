@@ -185,8 +185,15 @@ export function bookToShelf(book: Book, profile: ReadsProfile, ownedIds: readonl
   };
 }
 
-export function visibleBooks(profileMaxAge: number | null): Book[] {
-  return publishedBooks().filter(book => profileMaxAge == null || ageNumber(book.ageRating) <= profileMaxAge);
+export function visibleBooks(profileMaxAge: number | null, extra: readonly Book[] = []): Book[] {
+  const seen = new Set<string>();
+  const merged = [...publishedBooks(), ...extra].filter(book => {
+    if (book.status !== 'published') return false;
+    if (seen.has(book.id)) return false;
+    seen.add(book.id);
+    return profileMaxAge == null || ageNumber(book.ageRating) <= profileMaxAge;
+  });
+  return merged;
 }
 
 export interface ShelfSignals {

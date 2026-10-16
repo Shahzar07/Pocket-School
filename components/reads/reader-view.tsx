@@ -17,9 +17,12 @@ import { bookToShelf, visibleBooks } from '@/lib/shelf/catalogue';
 import { recommend } from '@/lib/shelf/recommend';
 import { useReadsT } from '@/lib/reads/i18n';
 import { chapterProgress, paginateChapter, sentencesOf } from '@/lib/reads/paginate';
+import { isPictureBook, pictureSpreads, readerFontFamily, readerTypeface, wordsOf, type ReaderTypeface } from '@/lib/reads/picture-book';
 import { ChapterProse, proseForSpeech } from '@/components/reads/prose';
 import { QUIET_LABEL, isQuietHour } from '@/lib/reads/quiet';
 import { bookById } from '@/lib/reads/seed';
+import { STUDIO_AUTOSAVE_KEY, usePublishedStudioBooks } from '@/components/reads/use-studio-shelf';
+import { readAutosave } from '@/components/editor/use-autosave';
 import type { Book, BookChapter, LanguageVersion } from '@/lib/reads/types';
 import { getLanguage } from '@/lib/languages';
 import {
@@ -33,10 +36,19 @@ const THEMES = {
   dark: { bg: '#14181C', fg: '#E7E1D6', muted: '#A39B90', paper: '#1C2228' },
 } as const;
 
-export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: string }) {
+export function Reader({ bookId, initialLang, preview = false }: { bookId: string; initialLang?: string; preview?: boolean }) {
   const t = useReadsT();
   const router = useRouter();
-  const book = bookById(bookId);
+  const studioBooks = usePublishedStudioBooks();
+  const [draft, setDraft] = useState<Book | null>(null);
+  useEffect(() => {
+    if (!preview) return;
+    const saved = readAutosave<Book[]>(STUDIO_AUTOSAVE_KEY) ?? [];
+    setDraft(saved.find(item => item.id === bookId) ?? null);
+  }, [preview, bookId]);
+  const studioCopy = preview && draft?.id === bookId ? draft : null;
+  const authorPreview = Boolean(studioCopy && studioCopy.status !== 'published');
+  const book = (authorPreview ? studioCopy : null) ?? bookById(bookId) ?? studioBooks.find(item => item.id === bookId && item.status === 'published');
   const { profile, ready } = useShelfProfile();
   const [prefs, setPrefs] = useState<ReaderPrefs>({ theme: 'sepia', font: 19, spacing: 1.75, dyslexia: false });
   const [chapterIndex, setChapterIndex] = useState(0);
@@ -46,6 +58,7 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
   const [lang, setLang] = useState(initialLang || 'en');
   const [listening, setListening] = useState(false);
   const [sentence, setSentence] = useState(-1);
+  const [word, setWord] = useState(-1);
   const [timer, setTimer] = useState<'counting' | 'idle' | 'hidden' | 'quiet'>('counting');
   const [seconds, setSeconds] = useState(0);
   const [goalStatus, setGoalStatus] = useState<string | null>(null);
@@ -96,8 +109,15 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
   }, [book, version]);
 
   const chapter = chapters[chapterIndex];
-  const pages = useMemo(() => paginateChapter(chapter?.markdown ?? ''), [chapter]);
+  const picture = isPictureBook(book);
+  const spreads = useMemo(() => pictureSpreads(chapter?.markdown ?? ''), [chapter]);
+  const pages = useMemo(
+    () => (picture ? spreads.map(spread => spread.text) : paginateChapter(chapter?.markdown ?? '')),
+    [picture, spreads, chapter],
+  );
   const page = pages[Math.min(pageIndex, pages.length - 1)] ?? '';
+  const spread = picture ? spreads[Math.min(pageIndex, Math.max(0, spreads.length - 1))] : null;
+  const pageCountOf = (markdown: string) => (picture ? pictureSpreads(markdown).length : paginateChapter(markdown).length);
   const access = book && chapter ? decideBook(book, SAMPLE_READER, { ownedIds: SAMPLE_OWNED, chapter }) : null;
   const upNext = useMemo(() => {
     if (!book) return [];
@@ -107,14 +127,14 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
       .map(item => bookToShelf(item, SAMPLE_READER, SAMPLE_OWNED));
     return recommend(others, source, 3);
   }, [book, profile.maxAge]);
-  const locked = access ? !access.allowed : true;
+  const locked = authorPreview ? false : (access ? !access.allowed : true);
   const theme = THEMES[prefs.theme];
   const percent = book ? chapterProgress(chapterIndex, pageIndex, chapters.length, pages.length) : 0;
   const marked = marks.some(m => m.chapterIndex === chapterIndex && m.pageIndex === pageIndex);
 
   const persist = useCallback((c: number, p: number) => {
     if (!book || !ready || !placed) return;
-    const nextPercent = chapterProgress(c, p, chapters.length, paginateChapter(chapters[c]?.markdown ?? '').length);
+    const nextPercent = chapterProgress(c, p, chapters.length, pageCountOf(chapters[c]?.markdown ?? ''));
     saveProgress(profile.id, book.id, { chapterIndex: c, pageIndex: p, percent: nextPercent, updatedAt: Date.now() });
   }, [book, chapters, profile.id, ready, placed]);
 
@@ -123,6 +143,7 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
     setChapterIndex(c);
     setPageIndex(p);
     setSentence(-1);
+    setWord(-1);
     persist(c, p);
     stopListen();
   };
@@ -134,8 +155,8 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
   const prev = () => {
     if (pageIndex > 0) go(chapterIndex, pageIndex - 1, -1);
     else if (chapterIndex > 0) {
-      const prevPages = paginateChapter(chapters[chapterIndex - 1]?.markdown ?? '');
-      go(chapterIndex - 1, Math.max(0, prevPages.length - 1), -1);
+      const prevPages = pageCountOf(chapters[chapterIndex - 1]?.markdown ?? '');
+      go(chapterIndex - 1, Math.max(0, prevPages - 1), -1);
     }
   };
 
@@ -203,11 +224,34 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
     spoken.current = null;
     setListening(false);
     setSentence(-1);
+    setWord(-1);
   };
 
   const listen = () => {
     if (listening) { stopListen(); return; }
     if (!window.speechSynthesis) return;
+    if (picture) {
+      const spokenText = (spread?.text || page).replace(/\s+/g, ' ').trim();
+      const words = wordsOf(spokenText);
+      if (!words.length) return;
+      setListening(true);
+      setWord(0);
+      const utter = new SpeechSynthesisUtterance(spokenText);
+      utter.rate = 0.92;
+      utter.lang = getLanguage(lang).bcp47;
+      const chosen = prefs.voiceURI ? window.speechSynthesis.getVoices().find(voice => voice.voiceURI === prefs.voiceURI) : undefined;
+      if (chosen) utter.voice = chosen;
+      utter.onboundary = (event) => {
+        if (event.name !== 'word') return;
+        const heard = spokenText.slice(0, event.charIndex).split(/\s+/).filter(Boolean).length;
+        setWord(Math.min(heard, words.length - 1));
+      };
+      utter.onend = () => { setListening(false); setWord(-1); };
+      utter.onerror = () => { setListening(false); setWord(-1); };
+      spoken.current = utter;
+      window.speechSynthesis.speak(utter);
+      return;
+    }
     const parts = sentencesOf(proseForSpeech(page));
     setListening(true);
     let i = 0;
@@ -217,6 +261,8 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
       utter.rate = 0.96;
       const langCode = getLanguage(lang).bcp47;
       utter.lang = langCode;
+      const chosen = prefs.voiceURI ? window.speechSynthesis.getVoices().find(voice => voice.voiceURI === prefs.voiceURI) : undefined;
+      if (chosen) utter.voice = chosen;
       setSentence(i);
       utter.onend = () => { i += 1; speak(); };
       spoken.current = utter;
@@ -339,7 +385,33 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
               {version.status === 'approved' ? t('reads.detail.versionApproved') : t('reads.detail.versionReview')}
             </p>
           )}
-          {locked ? (
+          {picture && !locked && spread ? (
+            <div className="space-y-6" data-picture-book>
+              {spread.image ? (
+                <figure className="overflow-hidden rounded-[2rem] bg-black/5">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={spread.image.src} alt={spread.image.alt} className="max-h-[68vh] w-full object-contain" />
+                </figure>
+              ) : (
+                <div className="grid min-h-[40vh] place-items-center rounded-[2rem] border border-dashed px-6 text-center text-sm" style={{ borderColor: theme.muted }}>
+                  This page is waiting for its illustration.
+                </div>
+              )}
+              <p
+                className="text-center"
+                style={{
+                  fontFamily: readerFontFamily(readerTypeface(prefs)),
+                  fontSize: Math.max(prefs.font, 22),
+                  lineHeight: readerTypeface(prefs) === 'dyslexia' ? Math.max(prefs.spacing, 1.85) : prefs.spacing,
+                  letterSpacing: readerTypeface(prefs) === 'dyslexia' ? '0.02em' : undefined,
+                }}
+              >
+                {wordsOf(spread.text).map((token, index) => (
+                  <span key={`${index}-${token}`} className={listening && index === word ? 'rounded bg-[#E7C27D] px-0.5 text-[#1C2422]' : ''}>{token} </span>
+                ))}
+              </p>
+            </div>
+          ) : locked ? (
             <div className="rounded-3xl border p-8" style={{ borderColor: theme.muted }}>
               <h2 className="font-heading text-[32px]">{chapter.title}</h2>
               <p className="mt-4 leading-relaxed">{t('reads.reader.locked')}</p>
@@ -353,10 +425,10 @@ export function Reader({ bookId, initialLang }: { bookId: string; initialLang?: 
               <div
                 className="mt-6"
                 style={{
-                  fontFamily: prefs.dyslexia ? 'Lexend, Verdana, sans-serif' : '"Instrument Serif", Georgia, serif',
+                  fontFamily: readerFontFamily(readerTypeface(prefs)),
                   fontSize: prefs.font,
-                  lineHeight: prefs.dyslexia ? 1.85 : prefs.spacing,
-                  letterSpacing: prefs.dyslexia ? '0.02em' : undefined,
+                  lineHeight: readerTypeface(prefs) === 'dyslexia' ? Math.max(prefs.spacing, 1.85) : prefs.spacing,
+                  letterSpacing: readerTypeface(prefs) === 'dyslexia' ? '0.02em' : undefined,
                 }}
               >
                 {listening ? sentences.map((s, i) => (
@@ -521,6 +593,13 @@ function TypePanel({
   onLang: (code: string) => void;
 }) {
   const t = useReadsT();
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  useEffect(() => {
+    const load = () => setVoices(window.speechSynthesis?.getVoices() ?? []);
+    load();
+    window.speechSynthesis?.addEventListener('voiceschanged', load);
+    return () => window.speechSynthesis?.removeEventListener('voiceschanged', load);
+  }, []);
   return (
     <div className="space-y-4 text-sm">
       <div className="flex gap-2">
@@ -534,15 +613,45 @@ function TypePanel({
           </button>
         ))}
       </div>
+      <div>
+        <p className="mb-2 font-semibold">{t('reads.reader.typeface')}</p>
+        <div className="flex gap-2">
+          {([
+            ['serif', 'reads.reader.serif'],
+            ['sans', 'reads.reader.sans'],
+            ['dyslexia', 'reads.reader.dyslexia'],
+          ] as const).map(([typeface, key]) => (
+            <button
+              key={typeface}
+              type="button"
+              aria-pressed={readerTypeface(prefs) === typeface}
+              onClick={() => onChange({ ...prefs, typeface: typeface as ReaderTypeface, dyslexia: typeface === 'dyslexia' })}
+              className="h-10 flex-1 rounded-full border px-2 text-xs font-semibold"
+              style={{ fontFamily: readerFontFamily(typeface), borderColor: readerTypeface(prefs) === typeface ? 'currentColor' : undefined }}
+            >
+              {t(key)}
+            </button>
+          ))}
+        </div>
+      </div>
       <label className="block">{t('reads.reader.font')}
-        <input type="range" min={16} max={26} value={prefs.font} onChange={e => onChange({ ...prefs, font: Number(e.target.value) })} className="mt-2 w-full" />
+        <input type="range" min={16} max={32} value={prefs.font} onChange={e => onChange({ ...prefs, font: Number(e.target.value) })} className="mt-2 w-full" />
       </label>
       <label className="block">{t('reads.reader.spacing')}
-        <input type="range" min={1.45} max={2.1} step={0.05} value={prefs.spacing} onChange={e => onChange({ ...prefs, spacing: Number(e.target.value) })} className="mt-2 w-full" />
+        <input type="range" min={1.45} max={2.2} step={0.05} value={prefs.spacing} onChange={e => onChange({ ...prefs, spacing: Number(e.target.value) })} className="mt-2 w-full" />
       </label>
-      <label className="flex items-center gap-2 font-semibold">
-        <input type="checkbox" checked={prefs.dyslexia} onChange={e => onChange({ ...prefs, dyslexia: e.target.checked })} />
-        {t('reads.reader.dyslexia')}
+      <label className="block font-semibold">Voice
+        <select
+          value={prefs.voiceURI ?? ''}
+          onChange={event => onChange({ ...prefs, voiceURI: event.target.value || undefined })}
+          className="mt-2 h-10 w-full rounded-xl border bg-transparent px-2 font-normal"
+        >
+          <option value="">This browser’s voice</option>
+          {voices.map(voice => (
+            <option key={voice.voiceURI} value={voice.voiceURI}>{voice.name}</option>
+          ))}
+        </select>
+        <span className="mt-1 block text-xs font-normal">Read-aloud uses the browser. No speech key is required.</span>
       </label>
       <div>
         <p className="mb-2 inline-flex items-center gap-1 font-semibold"><Languages className="h-4 w-4" /> {t('reads.detail.languages')}</p>

@@ -82,12 +82,16 @@ app/courses/[courseId]/page.tsx	Poket School
 app/courses/[courseId]/page.tsx	That code is for a different course.
 app/courses/[courseId]/page.tsx	This course includes
 app/courses/[courseId]/page.tsx	What you&apos;ll learn
+app/dashboard/admin/access/page.tsx	Assign a school admin
 app/dashboard/admin/access/page.tsx	Authentication uses Firebase Auth (email + password with optional email 2FA, and Google sign-in). Security rules live in
 app/dashboard/admin/access/page.tsx	Could not update that role.
 app/dashboard/admin/access/page.tsx	Enforced by Firestore security rules on every read and write.
 app/dashboard/admin/access/page.tsx	Failed to update subscription
+app/dashboard/admin/access/page.tsx	Find the person
+app/dashboard/admin/access/page.tsx	Institution admin
 app/dashboard/admin/access/page.tsx	Institution administrator
 app/dashboard/admin/access/page.tsx	Look up a user by email and manage their Academic tier.
+app/dashboard/admin/access/page.tsx	Look up by email, then choose their institution.
 app/dashboard/admin/access/page.tsx	Manage Subscriptions
 app/dashboard/admin/access/page.tsx	Manage role-based access control and security policies.
 app/dashboard/admin/access/page.tsx	No user found with that email
@@ -97,6 +101,7 @@ app/dashboard/admin/access/page.tsx	Search failed
 app/dashboard/admin/access/page.tsx	Select institution…
 app/dashboard/admin/access/page.tsx	Subscription & Sparks
 app/dashboard/admin/access/page.tsx	User management
+app/dashboard/admin/access/page.tsx	Users & Sparks
 app/dashboard/admin/access/page.tsx	firestore.rules
 app/dashboard/admin/access/page.tsx	student@example.com
 app/dashboard/admin/activity/page.tsx	Activity log
@@ -126,6 +131,7 @@ app/dashboard/admin/allocations/page.tsx	Could not delete that code.
 app/dashboard/admin/allocations/page.tsx	Could not update that code.
 app/dashboard/admin/allocations/page.tsx	Create code
 app/dashboard/admin/allocations/page.tsx	Discount %
+app/dashboard/admin/allocations/page.tsx	Filter courses
 app/dashboard/admin/allocations/page.tsx	Find someone by email address
 app/dashboard/admin/allocations/page.tsx	Grant a course
 app/dashboard/admin/allocations/page.tsx	Issue a code
@@ -201,8 +207,10 @@ app/dashboard/admin/curriculum/[courseId]/page.tsx	Not generated yet.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Open the student view of this lesson in a new tab
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Prerequisite gate
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Preview as Student
+app/dashboard/admin/curriculum/[courseId]/page.tsx	Preview course
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Price per institution (£)
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Rename lesson
+app/dashboard/admin/curriculum/[courseId]/page.tsx	Review the whole course as a student sees it
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Select a lesson first.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Sparks cost override (⚡)
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Student groups
@@ -216,6 +224,9 @@ app/dashboard/admin/curriculum/[courseId]/page.tsx	Unit order saved.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Write this by hand, or generate it from the lesson.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Year groups, separate from the audience above.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	updateLesson(courseId, moduleId, snapshot.id, fields as Partial
+app/dashboard/admin/curriculum/[courseId]/preview/page.tsx	/ Preview course
+app/dashboard/admin/curriculum/[courseId]/preview/page.tsx	Content Builder
+app/dashboard/admin/curriculum/[courseId]/preview/page.tsx	Course CMS
 app/dashboard/admin/curriculum/page.tsx	AI Course Architect
 app/dashboard/admin/curriculum/page.tsx	An admin can allocate it from Access allocation. Platform admins already have the course editor.
 app/dashboard/admin/curriculum/page.tsx	Choose a programme
@@ -253,7 +264,12 @@ app/dashboard/admin/curriculum/page.tsx	e.g. Science, Maths, English, Computing
 app/dashboard/admin/curriculum/page.tsx	e.g. Secondary
 app/dashboard/admin/curriculum/page.tsx	e.g. iLowerSecondary
 app/dashboard/admin/finance/page.tsx	Checkout to refund
+app/dashboard/admin/finance/page.tsx	No matching invoices.
 app/dashboard/admin/finance/page.tsx	No transactions yet.
+app/dashboard/admin/finance/page.tsx	Search invoices
+app/dashboard/admin/finance/page.tsx	Search name, invoice, or status
+app/dashboard/admin/finance/page.tsx	Select invoices to email them together. Each row can also download or email on its own.
+app/dashboard/admin/finance/page.tsx	The payer can be a parent, an institution, or an adult learner.
 app/dashboard/admin/finance/page.tsx	chk_…
 app/dashboard/admin/institutions/[institutionId]/page.tsx	Academy price saved.
 app/dashboard/admin/institutions/[institutionId]/page.tsx	Academy settings saved.
@@ -274,20 +290,31 @@ app/dashboard/admin/institutions/[institutionId]/page.tsx	This academy is outsid
 app/dashboard/admin/institutions/[institutionId]/page.tsx	Weekly report scheduled.
 app/dashboard/admin/institutions/page.tsx	Could not load institutions.
 app/dashboard/admin/institutions/page.tsx	This console is for academy administrators.
+app/dashboard/admin/integrations/page.tsx	. Paste keys only here.
 app/dashboard/admin/integrations/page.tsx	Every required key is present.
 app/dashboard/admin/integrations/page.tsx	Missing required keys
 app/dashboard/admin/integrations/page.tsx	Monthly cap in dollars
 app/dashboard/admin/integrations/page.tsx	OpenRouter spend cap
+app/dashboard/admin/integrations/page.tsx	Payment providers
+app/dashboard/admin/integrations/page.tsx	Turn methods on from
+app/dashboard/admin/moderation/page.tsx	ET AI drafts a note. You still allow or reject the item.
+app/dashboard/admin/moderation/page.tsx	ET AI note
+app/dashboard/admin/moderation/page.tsx	First item in the queue
+app/dashboard/admin/moderation/page.tsx	Item to review
+app/dashboard/admin/moderation/page.tsx	Moderation note
+app/dashboard/admin/moderation/page.tsx	The note stays here until you confirm it.
 app/dashboard/admin/page.tsx	AI generation failures:
 app/dashboard/admin/page.tsx	Add an institution
 app/dashboard/admin/page.tsx	Firestore quota and errors:
 app/dashboard/admin/page.tsx	Jump to
 app/dashboard/admin/page.tsx	No institutions yet
 app/dashboard/admin/page.tsx	System health
+app/dashboard/admin/payments/page.tsx	. This page does not store a second copy.
 app/dashboard/admin/payments/page.tsx	Paste the key
 app/dashboard/admin/payments/page.tsx	Secret slot
 app/dashboard/admin/payments/page.tsx	Secret value
 app/dashboard/admin/payments/page.tsx	Store a key
+app/dashboard/admin/payments/page.tsx	Stripe, Billplz, iPay88, RMS, PayPal, and Xendit. A super admin sets each key in
 app/dashboard/admin/settings/page.tsx	Automatic daily backups are managed by Firebase. Manual export is available in the Firebase console.
 app/dashboard/admin/settings/page.tsx	Configure SMTP
 app/dashboard/admin/settings/page.tsx	Configure SMTP settings for system notifications and reports.
@@ -303,18 +330,28 @@ app/dashboard/admin/settings/page.tsx	General Configurations
 app/dashboard/admin/settings/page.tsx	General settings saved!
 app/dashboard/admin/settings/page.tsx	Manage data backups and retention policies.
 app/dashboard/admin/settings/page.tsx	Platform Name
+app/dashboard/admin/settings/page.tsx	Refusing a file that contains a password.
 app/dashboard/admin/settings/page.tsx	Retention Period (Days)
 app/dashboard/admin/settings/page.tsx	Retention Policies
 app/dashboard/admin/settings/page.tsx	Retention policy saved!
 app/dashboard/admin/settings/page.tsx	SMTP Host
 app/dashboard/admin/settings/page.tsx	SMTP Server Settings
 app/dashboard/admin/settings/page.tsx	SMTP settings saved!
+app/dashboard/admin/settings/page.tsx	Search settings
+app/dashboard/admin/settings/page.tsx	Search settings — SMTP, retention, pricing, flags
+app/dashboard/admin/settings/page.tsx	Send a test to
+app/dashboard/admin/settings/page.tsx	Settings imported.
 app/dashboard/admin/settings/page.tsx	Something went wrong while fetching settings. Please try again.
 app/dashboard/admin/settings/page.tsx	Support Email
+app/dashboard/admin/settings/page.tsx	Test email sent.
+app/dashboard/admin/settings/page.tsx	Test failed.
+app/dashboard/admin/settings/page.tsx	That file is not settings JSON.
 app/dashboard/admin/settings/page.tsx	The SMTP password is configured via the
+app/dashboard/admin/settings/page.tsx	The SMTP password is the
 app/dashboard/admin/settings/page.tsx	smtp.example.com
 app/dashboard/admin/settings/page.tsx	support@example.com
 app/dashboard/admin/settings/page.tsx	user@example.com
+app/dashboard/admin/settings/page.tsx	you@example.com
 app/dashboard/admin/users/page.tsx	A reason is required.
 app/dashboard/admin/users/page.tsx	All countries
 app/dashboard/admin/users/page.tsx	All institutions
@@ -349,6 +386,8 @@ app/dashboard/admin/verifications/page.tsx	All clear
 app/dashboard/admin/verifications/page.tsx	Failed to update verification.
 app/dashboard/admin/verifications/page.tsx	No pending verifications — you're all caught up!
 app/dashboard/admin/verifications/page.tsx	Review and approve parent-student account linking requests.
+app/dashboard/admin/verifications/page.tsx	Search parent, child, or id
+app/dashboard/admin/verifications/page.tsx	Search verifications
 app/dashboard/announcements/page.tsx	Announcement created!
 app/dashboard/announcements/page.tsx	Check back later for the latest school news.
 app/dashboard/announcements/page.tsx	Deleted.
@@ -372,19 +411,24 @@ app/dashboard/calendar/page.tsx	Event deleted.
 app/dashboard/calendar/page.tsx	Event title *
 app/dashboard/calendar/page.tsx	Failed to create event.
 app/dashboard/calendar/page.tsx	Fill in title and date.
+app/dashboard/calendar/page.tsx	Month events and school terms live on this page.
 app/dashboard/calendar/page.tsx	New Event
 app/dashboard/calendar/page.tsx	No upcoming events.
 app/dashboard/calendar/page.tsx	Stay on top of deadlines and school events.
 app/dashboard/channels/page.tsx	Open a channel first.
+app/dashboard/channels/page.tsx	Opening channels in Community…
 app/dashboard/checkout/page.tsx	Choose a plan or a book first.
 app/dashboard/checkout/page.tsx	Loading checkout…
+app/dashboard/community/page.tsx	Loading community…
 app/dashboard/community/page.tsx	Open a space first.
 app/dashboard/community/page.tsx	Sent for moderation.
 app/dashboard/exam-centre/page.tsx	Paper published.
 app/dashboard/helpdesk/page.tsx	Describe your issue in detail *
 app/dashboard/helpdesk/page.tsx	Failed to submit ticket.
 app/dashboard/helpdesk/page.tsx	Fill in all fields.
+app/dashboard/helpdesk/page.tsx	Internal note
 app/dashboard/helpdesk/page.tsx	Marked as resolved.
+app/dashboard/helpdesk/page.tsx	Marked as solved.
 app/dashboard/helpdesk/page.tsx	New Support Ticket
 app/dashboard/helpdesk/page.tsx	Reply sent.
 app/dashboard/helpdesk/page.tsx	Reply to Ticket
@@ -425,6 +469,8 @@ app/dashboard/layout.tsx	If this wasn't you, change your password immediately in
 app/dashboard/layout.tsx	New device detected.
 app/dashboard/layout.tsx	This account is closed
 app/dashboard/layout.tsx	void; router: ReturnType
+app/dashboard/messages/page.tsx	Draft a message
+app/dashboard/messages/page.tsx	ET AI draft
 app/dashboard/messages/page.tsx	New chat
 app/dashboard/messages/page.tsx	No conversations yet. Tap
 app/dashboard/messages/page.tsx	No new contacts to message.
@@ -487,6 +533,7 @@ app/dashboard/parent/reports/page.tsx	Acknowledge and e-sign
 app/dashboard/parent/reports/page.tsx	No report cards yet.
 app/dashboard/parent/reports/page.tsx	Parent reply
 app/dashboard/parent/reports/page.tsx	Report cards
+app/dashboard/planner/page.tsx	Opening terms on the calendar…
 app/dashboard/profile/page.tsx	A parent can edit a profile only for an under-13 account.
 app/dashboard/profile/page.tsx	Check the new inbox. The email changes after you open the link.
 app/dashboard/profile/page.tsx	Child profile saved.
@@ -506,10 +553,21 @@ app/dashboard/profile/page.tsx	Privacy settings saved.
 app/dashboard/profile/page.tsx	Profile saved.
 app/dashboard/profile/page.tsx	Provider unlinked.
 app/dashboard/profile/page.tsx	Verification email sent.
+app/dashboard/referrals/page.tsx	A live promo shows on the public site until the quantity runs out or the countdown ends.
+app/dashboard/referrals/page.tsx	Affiliate commission
+app/dashboard/referrals/page.tsx	Affiliate commission percent
+app/dashboard/referrals/page.tsx	Course, programme, or book
+app/dashboard/referrals/page.tsx	Open payouts
+app/dashboard/referrals/page.tsx	Percent off
+app/dashboard/referrals/page.tsx	Promo end date
+app/dashboard/referrals/page.tsx	Promo item
+app/dashboard/referrals/page.tsx	Promo kind
+app/dashboard/referrals/page.tsx	Quantity limit
 app/dashboard/referrals/page.tsx	Referral codes are switched off.
 app/dashboard/referrals/page.tsx	Share Poket School
 app/dashboard/reports/page.tsx	A daily, weekly, or termly schedule sends a notification when it is due. Nothing is emailed unless the school already sends mail.
 app/dashboard/reports/page.tsx	Absence note sent
+app/dashboard/reports/page.tsx	Attendance, analytics, and behaviour
 app/dashboard/reports/page.tsx	Could not schedule that report
 app/dashboard/reports/page.tsx	Could not send the absence note
 app/dashboard/reports/page.tsx	Every number,
@@ -520,16 +578,26 @@ app/dashboard/resources/page.tsx	Description (optional)
 app/dashboard/resources/page.tsx	Failed to add resource.
 app/dashboard/resources/page.tsx	New Resource
 app/dashboard/resources/page.tsx	No resources found
+app/dashboard/resources/page.tsx	Open the CMS
 app/dashboard/resources/page.tsx	Price (optional)
 app/dashboard/resources/page.tsx	Resource added!
 app/dashboard/resources/page.tsx	Search resources…
+app/dashboard/resources/page.tsx	The file library for links, videos, and documents. The curriculum CMS builds lessons and can point here.
 app/dashboard/resources/page.tsx	Title *
 app/dashboard/resources/page.tsx	Title and URL are required.
 app/dashboard/resources/page.tsx	Try a different search or add a new resource.
 app/dashboard/resources/page.tsx	URL *
+app/dashboard/snap/page.tsx	Opening the camera in ET Maths.
+app/dashboard/store/page.tsx	All kinds
+app/dashboard/store/page.tsx	Course marketplace
 app/dashboard/store/page.tsx	Draft saved.
+app/dashboard/store/page.tsx	People tutors
 app/dashboard/store/page.tsx	Resource allocated.
+app/dashboard/store/page.tsx	Resource kind
+app/dashboard/store/page.tsx	Search resources
+app/dashboard/store/page.tsx	Search title
 app/dashboard/store/page.tsx	Sent for approval.
+app/dashboard/store/page.tsx	The store is creator notes, worksheets, and templates. Courses stay on the marketplace.
 app/dashboard/student/achievements/page.tsx	All Badges
 app/dashboard/student/achievements/page.tsx	Leaderboard data will appear here soon.
 app/dashboard/student/achievements/page.tsx	Next Badge
@@ -538,6 +606,7 @@ app/dashboard/student/achievements/page.tsx	Top Learners
 app/dashboard/student/achievements/page.tsx	Up Next
 app/dashboard/student/analytics/page.tsx	How your learning
 app/dashboard/student/analytics/page.tsx	Refresh saved totals
+app/dashboard/student/assignments/page.tsx	A teacher can send work to this class, to you alone, or to the whole institution. Essay tasks open in ET AI Essay Writer.
 app/dashboard/student/assignments/page.tsx	Couldn&apos;t load this page.
 app/dashboard/student/assignments/page.tsx	No assignments yet
 app/dashboard/student/assignments/page.tsx	Paste your link here…
@@ -601,8 +670,10 @@ app/dashboard/student/exams/page.tsx	Failed to submit exam.
 app/dashboard/student/exams/page.tsx	No exams available yet
 app/dashboard/student/exams/page.tsx	Past Results
 app/dashboard/student/exams/page.tsx	Ready to Take
+app/dashboard/student/exams/page.tsx	Teachers send an exam to a class, to one student, or to the institution. ET Exams is the full-page practice studio.
 app/dashboard/student/exams/page.tsx	Time is up! Submitting your exam...
 app/dashboard/student/exams/page.tsx	Your answer...
+app/dashboard/student/goals/page.tsx	Daily goals live with your tasks. Parents and teachers still have their own view.
 app/dashboard/student/goals/page.tsx	Goal saved
 app/dashboard/student/integrity/page.tsx	Appeal note
 app/dashboard/student/integrity/page.tsx	Appeal sent.
@@ -619,8 +690,10 @@ app/dashboard/student/learning/page.tsx	Academic subscription required
 app/dashboard/student/learning/page.tsx	Couldn&apos;t load this page.
 app/dashboard/student/learning/page.tsx	Modules for this subject are being prepared.
 app/dashboard/student/learning/page.tsx	Set your Year / Level
+app/dashboard/student/learning/page.tsx	Set your level
 app/dashboard/student/learning/page.tsx	Your school is preparing your subjects. Check back soon!
 app/dashboard/student/live/page.tsx	Couldn&apos;t load this page.
+app/dashboard/student/live/page.tsx	Join the room when your teacher is live. A class without a link stays here until they share one.
 app/dashboard/student/live/page.tsx	Join upcoming virtual classrooms with your teachers.
 app/dashboard/student/live/page.tsx	LIVE NOW
 app/dashboard/student/live/page.tsx	Live Classes
@@ -635,7 +708,12 @@ app/dashboard/student/page.tsx	Chat or talk live with a tutor
 app/dashboard/student/page.tsx	Continue learning
 app/dashboard/student/page.tsx	Couldn&apos;t load this page.
 app/dashboard/student/page.tsx	Daily goals
+app/dashboard/student/page.tsx	ET AI Essay Writer
+app/dashboard/student/page.tsx	ET AI Studio
+app/dashboard/student/page.tsx	ET AI grades on the 9–1 scale
+app/dashboard/student/page.tsx	ET AI, ET Maths, ET Exams, and ET AI Essay Writer
 app/dashboard/student/page.tsx	ET AI, Maths, and Exam Prep
+app/dashboard/student/page.tsx	Earned badges stay on this dashboard.
 app/dashboard/student/page.tsx	Explore marketplace
 app/dashboard/student/page.tsx	Full charts
 app/dashboard/student/page.tsx	Jump back in
@@ -683,6 +761,7 @@ app/dashboard/student/transcript/page.tsx	Cumulative GPA:
 app/dashboard/student/transcript/page.tsx	Email:
 app/dashboard/student/transcript/page.tsx	Enroll in courses to see your transcript here.
 app/dashboard/student/transcript/page.tsx	Excused:
+app/dashboard/student/transcript/page.tsx	Grades and completed courses for this level. Print, or choose Save as PDF in the print dialog.
 app/dashboard/student/transcript/page.tsx	Late:
 app/dashboard/student/transcript/page.tsx	No attendance was recorded for this period.
 app/dashboard/student/transcript/page.tsx	No courses enrolled yet
@@ -797,6 +876,11 @@ app/dashboard/studio/exam-prep/page.tsx	Your notes in. Your study plan out.
 app/dashboard/studio/exam-prep/page.tsx	est.
 app/dashboard/studio/exam-prep/page.tsx	p.examDate
 app/dashboard/studio/exam-prep/page.tsx	· Exam Prep
+app/dashboard/studio/layout.tsx	ET AI
+app/dashboard/studio/layout.tsx	ET AI Essay Writer
+app/dashboard/studio/layout.tsx	ET Exams
+app/dashboard/studio/layout.tsx	ET Maths
+app/dashboard/studio/layout.tsx	Poket School
 app/dashboard/studio/maths/lab/page.tsx	(c.length
 app/dashboard/studio/maths/lab/page.tsx	+20 stars
 app/dashboard/studio/maths/lab/page.tsx	. Drag to pan, scroll to zoom.
@@ -904,13 +988,19 @@ app/dashboard/teacher/assignments/page.tsx	New Assignment
 app/dashboard/teacher/assignments/page.tsx	No assignments yet
 app/dashboard/teacher/assignments/page.tsx	No submissions yet
 app/dashboard/teacher/assignments/page.tsx	No text content to check
+app/dashboard/teacher/assignments/page.tsx	One student
+app/dashboard/teacher/assignments/page.tsx	Only for one student
 app/dashboard/teacher/assignments/page.tsx	Running integrity check…
 app/dashboard/teacher/assignments/page.tsx	Select course
+app/dashboard/teacher/assignments/page.tsx	Send to
 app/dashboard/teacher/assignments/page.tsx	Something went wrong while fetching your data. Please try again.
+app/dashboard/teacher/assignments/page.tsx	Student id
 app/dashboard/teacher/assignments/page.tsx	Students haven&apos;t submitted their work yet.
 app/dashboard/teacher/assignments/page.tsx	Submission Type
+app/dashboard/teacher/assignments/page.tsx	This class
 app/dashboard/teacher/assignments/page.tsx	Title *
 app/dashboard/teacher/assignments/page.tsx	Title and due date are required
+app/dashboard/teacher/assignments/page.tsx	Whole institution
 app/dashboard/teacher/attendance/page.tsx	Absence note
 app/dashboard/teacher/attendance/page.tsx	Attendance saved!
 app/dashboard/teacher/attendance/page.tsx	Couldn&apos;t load attendance
@@ -1160,7 +1250,12 @@ app/dashboard/teacher/upload/page.tsx	e.g. Biology
 app/dashboard/teacher/upload/page.tsx	e.g. Biology 101
 app/dashboard/teacher/upload/page.tsx	e.g. Science
 app/dashboard/teacher/upload/page.tsx	e.g. Science — Year 7
+app/dashboard/tutors/page.tsx	AI teachers
+app/dashboard/tutors/page.tsx	Creator store
 app/dashboard/tutors/page.tsx	Review saved.
+app/dashboard/tutors/page.tsx	Search name or subject
+app/dashboard/tutors/page.tsx	Search tutors
+app/dashboard/tutors/page.tsx	These tutors are people you can book. Subject tutors such as ET Maths live with the AI teachers.
 app/dashboard/wallet/page.tsx	Add funds
 app/dashboard/wallet/page.tsx	Malaysian ringgit
 app/dashboard/wallet/page.tsx	No wallet movements yet.
@@ -1219,6 +1314,9 @@ app/payments-preview/page.tsx	SST 8% when the buyer is in Malaysia. Supplier TIN
 app/preview/analytics/page.tsx	Loading analytics preview…
 app/preview/behaviour/page.tsx	Loading behaviour
 app/preview/certificate/page.tsx	Module certificate
+app/preview/course/[token]/page.tsx	/ Preview course
+app/preview/course/[token]/page.tsx	Course CMS
+app/preview/course/[token]/page.tsx	This preview link has expired or was not found.
 app/preview/goals/page.tsx	Loading goals preview…
 app/preview/integrity/page.tsx	Loading the desk…
 app/preview/planner/page.tsx	Preview of /dashboard/planner. The same page is linked as Year planner for every role.
@@ -1237,6 +1335,7 @@ app/pricing/page.tsx	No card required
 app/pricing/page.tsx	PLANS &amp; PRICING
 app/pricing/page.tsx	Sparks are spent on
 app/pricing/page.tsx	THE SPARKS SYSTEM
+app/r/[code]/page.tsx	Opening Poket School…
 app/verify/[uuid]/page.tsx	Anyone can check a certificate ID. The record is issued by Poket School.
 app/verify/[uuid]/page.tsx	Certificate ID
 app/verify/[uuid]/page.tsx	Certificate revoked.
@@ -1447,6 +1546,9 @@ components/certificate-document.tsx	Scan to verify
 components/certificate-document.tsx	Scanning the QR code opens
 components/certificate-document.tsx	This is to certify that
 components/certificate-document.tsx	has completed the module
+components/class-channels.tsx	Class channels live here, beside community spaces.
+components/class-channels.tsx	Open a channel first.
+components/class-channels.tsx	Open a channel that has messages first.
 components/copyright-disclaimer-modal.tsx	Before uploading any content to Poket School, please read and agree to the following:
 components/copyright-disclaimer-modal.tsx	By accepting, you acknowledge your responsibility as the uploader and agree to Poket School&apos;s content policy.
 components/copyright-disclaimer-modal.tsx	Copyright & Upload Policy
@@ -1511,6 +1613,16 @@ components/course-questions.tsx	No questions yet.
 components/course-questions.tsx	Question sent to your instructor.
 components/course-questions.tsx	Reply saved.
 components/course-questions.tsx	Write a reply
+components/course-review/review-screen.tsx	A reviewer can open the whole course for 7 days. The link does not appear on student pages.
+components/course-review/review-screen.tsx	Add a comment
+components/course-review/review-screen.tsx	No comments on this lesson yet.
+components/course-review/review-screen.tsx	Nothing has changed.
+components/course-review/review-screen.tsx	Preview link
+components/course-review/review-screen.tsx	Publish checklist
+components/course-review/review-screen.tsx	Ready to publish.
+components/course-review/review-screen.tsx	Since last publish
+components/course-review/review-screen.tsx	This lesson is empty.
+components/course-review/review-screen.tsx	What should change before this lesson is approved?
 components/course-reviews.tsx	Review saved.
 components/course-student-preview.tsx	No sections yet.
 components/credentials/credential-panel.tsx	Add to LinkedIn
@@ -1546,6 +1658,11 @@ components/editor/import-panel.tsx	Headings become chapters. You can tidy the sp
 components/editor/import-panel.tsx	Paste a manuscript
 components/editor/import-panel.tsx	Use these sections
 components/editor/version-history.tsx	Edits are kept on this device as you go. Nothing is listed until the first autosave.
+components/essay-writer.tsx	ET AI Essay Writer
+components/essay-writer.tsx	Essay task
+components/essay-writer.tsx	What should the essay answer?
+components/essay-writer.tsx	Write the essay here.
+components/essay-writer.tsx	Write, then let ET AI mark it
 components/goals/add-goal-dialog.tsx	AI Studio task
 components/goals/add-goal-dialog.tsx	AI Studio task, for example a mind map
 components/goals/add-goal-dialog.tsx	Add a goal
@@ -1842,6 +1959,11 @@ components/institutions/workspace.tsx	Webhook URL
 components/institutions/workspace.tsx	https://example.edu/hooks/poket
 components/institutions/workspace.tsx	learn.school.example
 components/institutions/workspace.tsx	name@school.example
+components/invoice-delivery.tsx	Download PDF
+components/invoice-delivery.tsx	Optional message
+components/invoice-delivery.tsx	Other addresses, separated by commas
+components/invoice-delivery.tsx	Other email addresses
+components/invoice-delivery.tsx	The account holder is selected by default. Add other addresses if someone else should receive the PDF.
 components/lesson-format-views.tsx	Audio Summary
 components/lesson-format-views.tsx	Not generated yet.
 components/lesson-manuscript.tsx	An unsaved copy of this lesson is on this device.
@@ -1867,6 +1989,7 @@ components/mindmap-renderer.tsx	Zoom in
 components/mindmap-renderer.tsx	Zoom out
 components/notifications-bell.tsx	Mark all read
 components/notifications-bell.tsx	No notifications yet
+components/page-purpose.tsx	What this page is for
 components/parent-link-form.tsx	Ask them to approve
 components/parent-link-form.tsx	Your child
 components/parent-link-requests.tsx	A parent wants to follow your learning
@@ -1884,12 +2007,15 @@ components/pip-guide.tsx	Pip, your guide
 components/pip-guide.tsx	Previous step
 components/pip-guide.tsx	Show me around
 components/planner/year-planner.tsx	A blank field shows every campus, class, or year group. Events with a different campus stay hidden.
+components/planner/year-planner.tsx	Add a term and at least one line. Weekends, holidays, and exam weeks are skipped.
 components/planner/year-planner.tsx	Add a term and at least one unit. Weekends, holidays, and exam weeks are skipped.
+components/planner/year-planner.tsx	Add term
 components/planner/year-planner.tsx	Loading the school year…
 components/planner/year-planner.tsx	National Day 2026-08-31
 components/planner/year-planner.tsx	Next month
 components/planner/year-planner.tsx	Nothing due in the next 7 days for this campus, class, or year group.
 components/planner/year-planner.tsx	Previous month
+components/planner/year-planner.tsx	Remove last term
 components/planner/year-planner.tsx	Save draft
 components/planner/year-planner.tsx	Schedule releases
 components/planner/year-planner.tsx	Start or import
@@ -1897,15 +2023,28 @@ components/planner/year-planner.tsx	Teaching weeks
 components/planner/year-planner.tsx	Term end
 components/planner/year-planner.tsx	Term start
 components/planner/year-planner.tsx	This week
+components/planner/year-planner.tsx	Two-way Google Calendar sync needs the owner&apos;s OAuth client. Until then, paste an ICS link or upload a term file.
 components/planner/year-planner.tsx	Who this view is for
 components/planner/year-planner.tsx	Year planner
 components/planner/year-planner.tsx	https://calendar.google.com/...ics
 components/reads/detail-view.tsx	This book is not on the shelf.
 components/reads/home-view.tsx	(b.age ?? 18)
+components/reads/reader-view.tsx	Read-aloud uses the browser. No speech key is required.
 components/reads/reader-view.tsx	This book is not on the shelf.
+components/reads/reader-view.tsx	This browser’s voice
 components/reads/studio-view.tsx	Added to the picture library. Write the alt text before placing it.
+components/reads/studio-view.tsx	Children&apos;s story
+components/reads/studio-view.tsx	ET AI keeps the same child, clothes, and colours. The style stays with this book. Without an image key, each page is drawn here and costs nothing.
+components/reads/studio-view.tsx	ET AI writes for the age band. School years are not used. One illustration belongs on every page, in the same style.
+components/reads/studio-view.tsx	One illustration per page
+components/reads/studio-view.tsx	Preview as a reader
+components/reads/studio-view.tsx	Read this chapter aloud
 components/reads/studio-view.tsx	The author line is always ET AI. The picture itself has no lettering; the title is drawn on top.
+components/reads/studio-view.tsx	This browser’s voice. No speech key, and nothing is charged.
 components/reads/studio-view.tsx	Version history
+components/rich-composer.tsx	Ask ET AI to draft this
+components/rich-composer.tsx	Draft prompt
+components/rich-composer.tsx	In-app posts immediately. Email needs SMTP_PASS. Push needs the web push keys. A future time is stored and waits.
 components/role-checklist.tsx	Dismiss checklist
 components/role-checklist.tsx	First visit
 components/role-checklist.tsx	Getting started
@@ -2060,3 +2199,6 @@ components/video-storyboard.tsx	Full animated video production coming soon. This
 components/video-storyboard.tsx	Scene-by-scene script with visual directions
 components/video-storyboard.tsx	Video Storyboard
 lib/email-otp.ts	Poket School
+components/document-delivery.tsx	Optional message
+components/document-delivery.tsx	Other addresses, separated by commas
+components/document-delivery.tsx	Other email addresses

@@ -10,8 +10,8 @@ import {
   ClipboardList, Presentation, Shield, BarChart, Settings, FileText, KeyRound, ChevronsUpDown, Target,
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
-  GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X, CalendarDays,
-  Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked, Compass, Camera, MessagesSquare,
+  GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
+  Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked, Compass, Camera,
   Wallet, Gift, Landmark, Plug, PieChart, Search,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -40,6 +40,7 @@ import { isSuperAdmin, ROLE_LABELS } from '@/lib/roles';
 import { PipGuide } from '@/components/pip-guide';
 import { OfflineBanner } from '@/components/offline-banner';
 import { RoleChecklist } from '@/components/role-checklist';
+import { PagePurpose } from '@/components/page-purpose';
 import dynamic from 'next/dynamic';
 import type { TourRole } from '@/lib/tour-steps';
 import { hasCmsAddon } from '@/lib/entitlements';
@@ -83,7 +84,6 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/student/attendance', icon: ClipboardCheck, labelKey: 'nav.attendance' },
       { href: '/dashboard/student/certificates', icon: Award, labelKey: 'nav.certificates' },
       { href: '/dashboard/student/tasks', icon: ListTodo, labelKey: 'nav.dailyGoals' },
-      { href: '/dashboard/student/goals', icon: Target, labelKey: 'nav.goals' },
       { href: '/dashboard/student/analytics', icon: Activity, labelKey: 'nav.insights' },
       { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
       { href: '/dashboard/student/integrity', icon: Shield, labelKey: 'nav.integrity' },
@@ -96,16 +96,14 @@ const NAV: Record<Role, NavGroup[]> = {
     ]},
     { sectionKey: 'nav.section.community', items: [
       { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
-      { href: '/dashboard/channels', icon: MessagesSquare, labelKey: 'nav.channels', flag: 'messagingHub' },
       { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
       { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.examCentre', flag: 'examCentre' },
       { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
-      { href: '/dashboard/snap', icon: Camera, labelKey: 'nav.snapSolve', flag: 'snapAndSolve' },
+      { href: '/dashboard/studio/maths', icon: Camera, labelKey: 'nav.snapSolve', label: 'ET Maths', flag: 'snapAndSolve' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
-      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
-      { href: '/dashboard/planner', icon: CalendarDays, labelKey: 'nav.planner' },
+      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
       { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
@@ -146,15 +144,13 @@ const NAV: Record<Role, NavGroup[]> = {
     // Billing and Helpdesk are institution-admin responsibilities, not teachers'.
     { sectionKey: 'nav.section.community', items: [
       { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
-      { href: '/dashboard/channels', icon: MessagesSquare, labelKey: 'nav.channels', flag: 'messagingHub' },
       { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
       { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.examCentre', flag: 'examCentre' },
       { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
-      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
-      { href: '/dashboard/planner', icon: CalendarDays, labelKey: 'nav.planner' },
+      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
       { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
     ]},
     { sectionKey: 'nav.section.account', items: [
@@ -181,13 +177,11 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
     ]},
     { sectionKey: 'nav.section.family', items: [
-      { href: '/dashboard/channels', icon: MessagesSquare, labelKey: 'nav.channels', flag: 'messagingHub' },
       { href: '/dashboard/parent/controls', icon: Shield, labelKey: 'nav.controls', flag: 'community' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
-      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
-      { href: '/dashboard/planner', icon: CalendarDays, labelKey: 'nav.planner' },
+      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
     { sectionKey: 'nav.section.account', items: [
@@ -200,6 +194,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/dashboard/admin/courses', icon: Presentation, labelKey: 'nav.allCourses' },
       { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' },
+      { href: '/dashboard/admin/books', icon: BookOpen, labelKey: 'nav.books', label: 'Book Studio' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/admin/users', icon: UserCog, labelKey: 'nav.usersSparks' },
@@ -226,8 +221,7 @@ const NAV: Record<Role, NavGroup[]> = {
     ]},
     { sectionKey: 'nav.section.platform', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
-      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
-      { href: '/dashboard/planner', icon: CalendarDays, labelKey: 'nav.planner' },
+      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
       { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
       { href: '/dashboard/teacher/billing', icon: CreditCard, labelKey: 'nav.billing' },
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
@@ -251,8 +245,7 @@ const NAV: Record<Role, NavGroup[]> = {
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
-      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar' },
-      { href: '/dashboard/planner', icon: CalendarDays, labelKey: 'nav.planner' },
+      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
     ]},
     { sectionKey: 'nav.section.account', items: [
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
@@ -534,9 +527,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
   const nav = (NAV[role] ?? NAV.student).map((group, index) => {
     const cmsItem: NavEntry = { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' };
+    const bookItem: NavEntry = { href: '/dashboard/admin/books', icon: BookOpen, labelKey: 'nav.books', label: 'Book Studio' };
     const withCms = index !== 0 || role === 'admin' || !hasCmsAddon(profile) || (role !== 'teacher' && role !== 'institution_admin')
       ? group.items
-      : [...group.items, cmsItem];
+      : [...group.items, cmsItem, bookItem];
     return {
       ...group,
       items: withCms.filter((item) => (!item.superOnly || superAdmin) && (!item.flag || isFeatureEnabled(flags, item.flag))),
@@ -711,6 +705,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             )}
             <RoleChecklist role={role} />
+            <PagePurpose pathname={pathname} />
             {children}
           </div>
         </main>

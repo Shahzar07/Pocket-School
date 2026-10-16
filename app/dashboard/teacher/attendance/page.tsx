@@ -16,6 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { ClipboardCheck, CheckCircle2, XCircle, Clock, BookOpen, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
 
 type AttStatus = 'present' | 'absent' | 'late' | 'excused';
 
@@ -153,6 +155,18 @@ export default function TeacherAttendancePage() {
           Track <span className="gradient-text italic">Attendance</span>
         </h1>
         <p className="text-muted-foreground mt-1">Mark attendance for each lesson. Add a note for an absence. Dates marked as holidays on the calendar are left out of the attendance rate.</p>
+        <div className="mt-4">
+          <DocumentDelivery
+            documents={[textDocument({
+              id: `attendance-${selectedCourse || 'class'}`,
+              title: 'Class attendance',
+              lines: students.length
+                ? students.map(student => `${student.name}: ${statuses[student.studentId] ?? 'unmarked'}`)
+                : ['No students enrolled in this course.'],
+            })]}
+            studentIds={students.map(student => student.studentId)}
+          />
+        </div>
       </motion.div>
 
       {/* Mark Attendance */}

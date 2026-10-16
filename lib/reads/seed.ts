@@ -1,3 +1,5 @@
+import { proceduralArt } from '@/components/media/fallback-art';
+import { fullPageImage } from '@/lib/reads/picture-book';
 import type { Book } from './types';
 
 const HARBOUR_1 = `The jetty smelled of rain and warm rope. Aisha stopped where the boards turned dark and watched the lighthouse take its turn: a slow white sweep, then nothing, then the sweep again. Behind her, the night market was packing up. Someone dropped a crate of mangoes and laughed. The sound did not reach the water.
@@ -411,6 +413,55 @@ export const BOOKS: Book[] = [
         order: 1,
         title: 'When an offer dies',
         markdown: 'An offer does not live forever. It can be revoked before acceptance, rejected, or killed by a counter-offer. It can lapse after a stated time or, if nobody stated one, after a reasonable time. What is reasonable depends on the thing being sold: bananas and houses do not share a calendar.\n\nRevocation must be communicated. Silence is not a loudspeaker. The reliable cases turn on whether the other person had a fair chance to hear that the offer was gone before they said yes. Learn one case for each way an offer ends, and you can structure the essay as a sequence instead of a pile.\n\nThis chapter is the paid continuation. The sample you just read is the free first gate.',
+      },
+    ],
+  },
+  {
+    id: 'yellow-window',
+    title: 'The yellow window',
+    author: 'ET AI',
+    blurb: 'A picture book for Ages 5–7. The same child, in the same yellow raincoat, on every page.',
+    cover: { from: '#F4C95D', to: '#1E6A83', accent: '#F7F1E1', image: proceduralArt('illustrated-kids', 'yellow window cover', 0) },
+    category: 'childrens_stories',
+    form: 'fiction',
+    genre: "Children's Stories",
+    ageRating: '8+',
+    readingLevel: 'primary',
+    pictureBook: true,
+    ageBand: '5-7',
+    curriculumTags: [{ programme: 'Primary', subject: 'English', year: 'Ages 5–7' }],
+    status: 'published',
+    version: 1,
+    accessMode: 'subscription',
+    minTier: 1,
+    priceUsd: 0,
+    priceRM: 0,
+    licensable: false,
+    programme: 'Primary',
+    allocateLibrary: true,
+    allocateMarketplace: true,
+    targets: ['students'],
+    weeklyReads: 40,
+    releasedAt: '2026-10-16',
+    chapters: [
+      {
+        id: 'yw-1',
+        order: 0,
+        title: 'The window',
+        preview: true,
+        markdown: `${fullPageImage('A child in a yellow raincoat at a yellow window', proceduralArt('illustrated-kids', 'yellow window page', 0))}\n\nThere was a small child in a yellow raincoat. The window was yellow. Rain tapped the glass.`,
+      },
+      {
+        id: 'yw-2',
+        order: 1,
+        title: 'One step',
+        markdown: `${fullPageImage('The same child steps outside the yellow window', proceduralArt('illustrated-kids', 'yellow window page', 1))}\n\nThe child opened the door. One step. The rain was warm.`,
+      },
+      {
+        id: 'yw-3',
+        order: 2,
+        title: 'Home',
+        markdown: `${fullPageImage('The same child back by the yellow window', proceduralArt('illustrated-kids', 'yellow window page', 2))}\n\nThe child came back. The window was still yellow. That was enough.`,
       },
     ],
   },

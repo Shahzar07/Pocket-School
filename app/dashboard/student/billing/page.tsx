@@ -17,6 +17,9 @@ import {
 import { CreditCard, Printer, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { formatMoney } from '@/lib/pricing';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { billingDocument } from '@/lib/documents/packet';
+import { PAYER_NOTE } from '@/lib/billing-model';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -106,6 +109,23 @@ export default function StudentBillingPage() {
         <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1.5">
           <span className="gradient-text italic">Billing</span>
         </h1>
+        <p className="text-sm text-muted-foreground mt-2 max-w-2xl">{PAYER_NOTE}</p>
+        {user && invoices.length > 0 && (
+          <div className="mt-4">
+            <DocumentDelivery
+              documents={invoices.map(inv => billingDocument({
+                id: inv.id,
+                description: inv.description,
+                totalLabel: formatMoney(inv.amount, inv.currency || 'USD'),
+                status: inv.status,
+                studentName: inv.studentName,
+                studentId: inv.studentId,
+                holderEmail: user.email ?? undefined,
+              }))}
+              studentIds={[user.uid]}
+            />
+          </div>
+        )}
       </motion.div>
 
       {/* Outstanding Balance Banner */}
@@ -196,6 +216,19 @@ export default function StudentBillingPage() {
                     <Badge className={`rounded-full text-[10px] ${STATUS_STYLES[inv.status]}`}>
                       {inv.status}
                     </Badge>
+                    <DocumentDelivery
+                      compact
+                      documents={[billingDocument({
+                        id: inv.id,
+                        description: inv.description,
+                        totalLabel: formatMoney(inv.amount, inv.currency || 'USD'),
+                        status: inv.status,
+                        studentName: inv.studentName,
+                        studentId: inv.studentId,
+                        holderEmail: user?.email ?? undefined,
+                      })]}
+                      studentIds={[user?.uid || inv.studentId]}
+                    />
                   </div>
                   <Button
                     onClick={() => handlePay(inv)}
@@ -259,6 +292,19 @@ export default function StudentBillingPage() {
                   >
                     <Printer className="w-4 h-4" />
                   </button>
+                  <DocumentDelivery
+                    compact
+                    documents={[billingDocument({
+                      id: inv.id,
+                      description: inv.description,
+                      totalLabel: formatMoney(inv.amount, inv.currency || 'USD'),
+                      status: inv.status,
+                      studentName: inv.studentName,
+                      studentId: inv.studentId,
+                      holderEmail: user?.email ?? undefined,
+                    })]}
+                    studentIds={[user?.uid || inv.studentId]}
+                  />
                 </div>
               </motion.div>
             ))}

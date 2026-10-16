@@ -2,11 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { getPendingVerifications, updateVerificationStatus, getUserByEmail, unlinkChildFromParent, ParentVerification } from '@/lib/db';
+import { updateVerificationStatus, getUserByEmail, unlinkChildFromParent, ParentVerification } from '@/lib/db';
+import { listVerifications } from '@/lib/verification-queue';
+import { filterVerifications, verificationsToCsv, type VerificationStatus } from '@/lib/verification-export';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ShieldCheck, CheckCircle2, XCircle, Users, Loader2 } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, XCircle, Users, Loader2, Download } from 'lucide-react';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { rowsToCsv, textDocument } from '@/lib/documents/packet';
 import { Timestamp } from 'firebase/firestore';
 
 const fadeUp: Record<string, any> = {
@@ -19,12 +24,14 @@ export default function AdminVerificationsPage() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState<VerificationStatus | 'all'>('pending');
 
   const load = async () => {
     setLoading(true);
     setLoadError(null);
     try {
-      const data = await getPendingVerifications();
+      const data = await listVerifications();
       setVerifications(data);
     } catch (e: any) {
       setLoadError(e?.message || 'Failed to load verifications.');
@@ -48,9 +55,23 @@ export default function AdminVerificationsPage() {
         } catch { /* link may not exist — status update already succeeded */ }
       }
       toast.success(status === 'approved' ? 'Verification approved!' : 'Verification rejected and link removed.');
-      setVerifications(prev => prev.filter(x => x.id !== v.id));
+      setVerifications(prev => prev.map(x => x.id === v.id ? { ...x, status } : x));
     } catch { toast.error('Failed to update verification.'); }
     finally { setProcessing(null); }
+  };
+
+  const visible = filterVerifications(verifications, query, status);
+  const pendingCount = verifications.filter((row) => row.status === 'pending').length;
+
+  const download = () => {
+    const csv = verificationsToCsv(visible);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'verifications.csv';
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   if (loading) return (
@@ -79,6 +100,25 @@ export default function AdminVerificationsPage() {
           Parent <span className="gradient-text italic">verifications</span>
         </h1>
         <p className="text-muted-foreground mt-2 text-[15px]">Review and approve parent-student account linking requests.</p>
+        <div className="mt-4">
+          <DocumentDelivery
+            documents={[textDocument({
+              id: 'verifications',
+              title: 'Parent verifications',
+              lines: verifications.length
+                ? verifications.map(row => `${row.parentName} · ${row.parentEmail} · student ${row.studentEmail} · ${row.status}`)
+                : ['No pending verifications.'],
+            })]}
+            csv={{
+              filename: 'verifications.csv',
+              text: rowsToCsv(
+                ['Parent', 'Parent email', 'Student email', 'Student id', 'Status'],
+                verifications.map(row => [row.parentName, row.parentEmail, row.studentEmail, row.studentId, row.status]),
+              ),
+            }}
+            studentIds={[]}
+          />
+        </div>
       </motion.header>
 
       {/* Stat */}
@@ -87,13 +127,26 @@ export default function AdminVerificationsPage() {
       >
         <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-amber-500 opacity-80" />
         <ShieldCheck className="w-5 h-5 text-amber-600" />
-        <p className="font-heading text-4xl sm:text-5xl text-foreground mt-3 leading-none">{verifications.length}</p>
-        <p className="text-xs text-muted-foreground mt-2 font-semibold uppercase tracking-wider">Pending</p>
+        <p className="font-heading text-4xl sm:text-5xl text-foreground mt-3 leading-none">{pendingCount}</p>
+        <p className="text-xs text-muted-foreground mt-2 font-semibold uppercase tracking-wider">Pending of {verifications.length}</p>
       </motion.div>
+
+      <div className="flex flex-wrap gap-2 items-center">
+        <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search parent, child, or id" aria-label="Search verifications" className="rounded-full h-11 max-w-sm" />
+        {(['all', 'pending', 'approved', 'rejected'] as const).map((item) => (
+          <button key={item} type="button" onClick={() => setStatus(item)}
+            className={`h-10 px-4 rounded-full text-xs font-semibold capitalize ${status === item ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'}`}>
+            {item}
+          </button>
+        ))}
+        <Button type="button" variant="outline" className="rounded-full h-10" onClick={download}>
+          <Download className="w-4 h-4 mr-1.5" /> CSV
+        </Button>
+      </div>
 
       {/* List */}
       <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={2}>
-        {verifications.length === 0 ? (
+        {visible.length === 0 ? (
           <div className="relative text-center py-16 bg-card rounded-[2rem] border border-border overflow-hidden">
             <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-emerald-500/8 blur-[80px]" />
             <ShieldCheck className="w-12 h-12 mx-auto mb-4 text-emerald-600/40" />
@@ -102,7 +155,7 @@ export default function AdminVerificationsPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {verifications.map((v, i) => {
+            {visible.map((v, i) => {
               const date = v.createdAt instanceof Timestamp ? v.createdAt.toDate() : new Date(v.createdAt as any);
               return (
                 <motion.div key={v.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.06 }}
@@ -118,13 +171,14 @@ export default function AdminVerificationsPage() {
                         <p className="text-xs text-muted-foreground">{v.parentEmail}</p>
                         <div className="flex flex-wrap gap-2 mt-2">
                           <Badge className="rounded-full text-[10px] bg-primary/10 text-primary border border-primary/20">Child: {v.studentEmail}</Badge>
-                          {v.studentId && <Badge className="rounded-full text-[10px] bg-muted text-muted-foreground">ID: {v.studentId}</Badge>}
-                          <Badge className="rounded-full text-[10px] bg-amber-500/10 text-amber-600 border border-amber-500/20">Pending</Badge>
+                          {v.studentId && <Badge className="rounded-full text-[10px] bg-muted text-muted-foreground">Student ID: {v.studentId}</Badge>}
+                          <Badge className="rounded-full text-[10px] bg-muted text-muted-foreground">Parent ID: {v.parentId}</Badge>
+                          <Badge className="rounded-full text-[10px] capitalize bg-amber-500/10 text-amber-600 border border-amber-500/20">{v.status}</Badge>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">Submitted {date.toLocaleDateString()}</p>
                       </div>
                     </div>
-                    <div className="flex gap-2 shrink-0">
+                    {v.status === 'pending' && <div className="flex gap-2 shrink-0">
                       <Button size="sm" onClick={() => handle(v, 'approved')} disabled={processing === v.id}
                         className="rounded-full px-4 gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
                       >
@@ -136,7 +190,7 @@ export default function AdminVerificationsPage() {
                       >
                         <XCircle className="w-3.5 h-3.5" /> Reject
                       </Button>
-                    </div>
+                    </div>}
                   </div>
                 </motion.div>
               );

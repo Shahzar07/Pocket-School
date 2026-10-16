@@ -14,9 +14,9 @@ export default async function ReadPage({
   searchParams,
 }: {
   params: Promise<{ bookId: string }>;
-  searchParams: Promise<{ lang?: string }>;
+  searchParams: Promise<{ lang?: string; preview?: string }>;
 }) {
   const { bookId } = await params;
-  const { lang } = await searchParams;
-  return <Reader bookId={bookId} initialLang={lang} />;
+  const { lang, preview } = await searchParams;
+  return <Reader bookId={bookId} initialLang={lang} preview={preview === '1'} />;
 }

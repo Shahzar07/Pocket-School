@@ -174,7 +174,7 @@ export default function PricingPage() {
               </span>
             </h1>
             <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
-              One price, everything included — ET for tutoring and study materials, and every
+              One price, everything included — ET AI for tutoring and study materials, and every
               format in between. No per-subject fees, no surprise add-ons.
             </p>
           </motion.div>
@@ -330,8 +330,8 @@ export default function PricingPage() {
               </h2>
               <p className="text-base text-slate-600 leading-relaxed mb-4">
                 Sparks are credits for the heavyweight AI work — the generations that take real compute
-                rather than a quick answer. Chatting with ET and making standard notes, flashcards or
-                quizzes with ET never touches them on a paid plan.
+                rather than a quick answer. Chatting with ET AI and making standard notes, flashcards or
+                quizzes with ET AI never touches them on a paid plan.
               </p>
               <p className="text-base text-slate-600 leading-relaxed mb-8">
                 Every plan includes a monthly allowance that refreshes on your billing date. Run dry
@@ -491,7 +491,7 @@ export default function PricingPage() {
               <em>Decide later.</em>
             </h2>
             <p className="text-[0.95rem] sm:text-base mb-8 font-normal text-white/90 max-w-md leading-relaxed">
-              No card needed. Meet ET, make something with it, and see whether it changes how you study.
+              No card needed. Meet ET AI, make something with it, and see whether it changes how you study.
             </p>
             <Link
               href="/signup"

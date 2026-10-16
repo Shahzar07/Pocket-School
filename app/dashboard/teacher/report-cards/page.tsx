@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Loader2, FileBarChart, Printer, Sparkles, Award, Search } from 'lucide-react';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
 import {
   TERMS, TermId, termRange, inRange, formatPeriod, selectableYears,
 } from '@/lib/reporting-periods';
@@ -219,13 +221,31 @@ export default function ReportCardsPage() {
           </h1>
           <p className="text-sm text-muted-foreground mt-1">AI-generated report cards with grade summaries</p>
         </div>
-        <Button
-          onClick={() => window.print()}
-          variant="outline"
-          className="rounded-full gap-2 print:hidden"
-        >
-          <Printer className="w-4 h-4" /> Print All
-        </Button>
+        <div className="flex flex-col items-end gap-2 print:hidden">
+          <Button
+            onClick={() => window.print()}
+            variant="outline"
+            className="rounded-full gap-2"
+          >
+            <Printer className="w-4 h-4" /> Print All
+          </Button>
+          {reports.length > 0 && (
+            <DocumentDelivery
+              documents={reports.map(report => textDocument({
+                id: `report-${report.studentId}`,
+                title: `Report card · ${report.studentName}`,
+                studentId: report.studentId,
+                lines: [
+                  report.studentName,
+                  `Overall: ${report.overall}`,
+                  report.comment,
+                  ...Object.entries(report.avgByType).map(([kind, row]) => `${kind}: ${row.avg}`),
+                ],
+              }))}
+              studentIds={reports.map(report => report.studentId)}
+            />
+          )}
+        </div>
       </div>
 
       {/* Controls */}

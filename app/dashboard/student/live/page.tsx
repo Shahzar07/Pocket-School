@@ -64,7 +64,7 @@ export default function StudentLiveClasses() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8">
       <div>
         <h1 className="text-2xl font-extrabold text-foreground tracking-tight">Live Classes</h1>
-        <p className="text-muted-foreground text-sm mt-1">Join upcoming virtual classrooms with your teachers.</p>
+        <p className="text-muted-foreground text-sm mt-1">Join the room when your teacher is live. A class without a link stays here until they share one.</p>
       </div>
 
       {classes.length === 0 ? (

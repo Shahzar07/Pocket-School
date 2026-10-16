@@ -6,6 +6,9 @@ import { getChildrenProfiles } from '@/lib/db';
 import { authedFetch } from '@/lib/api-client';
 import { DashHeader, DashPage } from '@/components/dash-ui';
 import { AnalyticsBoard, ExportBar, snapshotKpis } from '@/components/insights/boards';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
+import { metricById } from '@/lib/insights/metrics';
 import { LearningCharts } from '@/components/insights/learning-charts';
 import { createSuggestion } from '@/lib/insights/client';
 import { toast } from 'sonner';
@@ -50,6 +53,20 @@ export default function ParentAnalyticsPage() {
           } catch { /* the scheduled job will fill this in */ }
         }}>Refresh</Button>}
       />
+      {childId && (
+        <DocumentDelivery
+          documents={[textDocument({
+            id: `analytics-${childId}`,
+            title: `Analytics · ${name || 'Child'}`,
+            holderEmail: user?.email ?? undefined,
+            studentId: childId,
+            lines: snapshot
+              ? Object.entries(snapshot.metrics).map(([id, value]) => `${metricById(id)?.label ?? id}: ${value ?? '—'}`)
+              : ['No saved totals yet.'],
+          })]}
+          studentIds={[childId]}
+        />
+      )}
       <div className="flex gap-2">
         {children.map(child => (
           <Button key={child.id} variant={child.id === childId ? 'default' : 'outline'} onClick={() => setChildId(child.id)}>{child.name}</Button>

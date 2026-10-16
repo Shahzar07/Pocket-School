@@ -7,11 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { Shield, Search, Sparkles, Loader2, GraduationCap, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
-  getUserByEmail, setUserSubscription, UserProfile,
-  getInstitutions, setInstitutionAdmin, Institution,
+  getUserByEmail, UserProfile,
+  getInstitutions, setInstitutionAdmin, Institution, getAllUsers,
 } from '@/lib/db';
 import { isSuperAdminEmail } from '@/lib/roles';
+import { countByRole } from '@/lib/access-counts';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -23,14 +25,21 @@ export default function AdminAccessConfig() {
   const [searching, setSearching] = useState(false);
   const [foundUser, setFoundUser] = useState<{ id: string; data: UserProfile } | null>(null);
   const [searched, setSearched] = useState(false);
-  const [updatingTier, setUpdatingTier] = useState(false);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [counts, setCounts] = useState<Record<string, number>>({});
   const [assignInstitution, setAssignInstitution] = useState('');
   const [savingRole, setSavingRole] = useState(false);
 
   // Institutions are needed only to populate the assignment dropdown; a
   // failure here shouldn't block the rest of the page.
   useEffect(() => { getInstitutions().then(setInstitutions).catch(() => setInstitutions([])); }, []);
+  useEffect(() => {
+    getAllUsers().then((rows) => {
+      const next: Record<string, number> = {};
+      for (const row of countByRole(rows.map((row) => row.data))) next[row.role] = row.count;
+      setCounts(next);
+    }).catch(() => setCounts({}));
+  }, []);
 
   // Preselect the user's current institution when one is found.
   useEffect(() => {
@@ -78,25 +87,6 @@ export default function AdminAccessConfig() {
     }
   };
 
-  const handleSetTier = async (tier: 'free' | 'academic') => {
-    if (!foundUser) return;
-    setUpdatingTier(true);
-    try {
-      await setUserSubscription(foundUser.id, tier);
-      const refreshed = await getUserByEmail(foundUser.data.email);
-      setFoundUser(refreshed);
-      toast.success(
-        tier === 'academic'
-          ? 'Academic subscription activated — +400 Sparks granted'
-          : 'Subscription set to Free'
-      );
-    } catch {
-      toast.error('Failed to update subscription');
-    } finally {
-      setUpdatingTier(false);
-    }
-  };
-
   return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
 
@@ -126,14 +116,15 @@ export default function AdminAccessConfig() {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { role: 'Super Admin', color: 'text-violet-600', items: ['Full curriculum CMS & Content Builder', 'Approve / publish all content', 'Manage users, tiers & Sparks', 'Institutions & allocations'] },
-              { role: 'Institution Admin', color: 'text-indigo-600', items: ['Runs one institution only', 'Its courses, grades & attendance', 'Its report cards & reporting', 'White-label branding & subdomain'] },
-              { role: 'Teacher', color: 'text-blue-600', items: ['Create & upload courses', 'Grade submissions & exams', 'Attendance, behaviour, billing', 'Live classes & report cards'] },
-              { role: 'Student', color: 'text-emerald-600', items: ['Enrol & learn', 'Take quizzes, exams, assignments', 'Earn & spend Sparks', 'AI Studio & AI tutor'] },
-              { role: 'Parent', color: 'text-amber-600', items: ['View linked children', 'Progress & report cards', 'Due dates & reminders', 'Message teachers'] },
+              { role: 'Super Admin', key: 'admin', color: 'text-violet-600', items: ['Full curriculum CMS & Content Builder', 'Approve / publish all content', 'Manage users, tiers & Sparks', 'Institutions & allocations'] },
+              { role: 'Institution Admin', key: 'institution_admin', color: 'text-indigo-600', items: ['Runs one institution only', 'Its courses, grades & attendance', 'Its report cards & reporting', 'White-label branding & subdomain'] },
+              { role: 'Teacher', key: 'teacher', color: 'text-blue-600', items: ['Create & upload courses', 'Grade submissions & exams', 'Attendance, behaviour, billing', 'Live classes & report cards'] },
+              { role: 'Student', key: 'student', color: 'text-emerald-600', items: ['Enrol & learn', 'Take quizzes, exams, assignments', 'Earn & spend Sparks', 'ET AI Studio'] },
+              { role: 'Parent', key: 'parent', color: 'text-amber-600', items: ['View linked children', 'Progress & report cards', 'Due dates & reminders', 'Message teachers'] },
             ].map(r => (
               <div key={r.role} className="rounded-2xl border border-border bg-muted/20 p-4">
-                <p className={`text-sm font-bold mb-2 ${r.color}`}>{r.role}</p>
+                <p className={`text-sm font-bold mb-1 ${r.color}`}>{r.role}</p>
+                <p className="text-xs text-muted-foreground mb-2">{counts[r.key] ?? '—'} people</p>
                 <ul className="space-y-1.5">
                   {r.items.map(item => (
                     <li key={item} className="text-xs text-muted-foreground flex items-start gap-1.5">
@@ -153,8 +144,15 @@ export default function AdminAccessConfig() {
       {/* Subscription & Sparks */}
       <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={5}>
         <div className="mb-5">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-amber-600">User management</p>
-          <h2 className="font-heading text-3xl text-foreground mt-1.5">Subscription & Sparks</h2>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-amber-600">Institution admin</p>
+          <h2 className="font-heading text-3xl text-foreground mt-1.5">Assign a school admin</h2>
+          <p className="text-sm text-muted-foreground mt-2 max-w-xl">
+            People, Sparks, status, and subscriptions are edited in{' '}
+            <Link href="/dashboard/admin/users" className="font-semibold text-primary underline-offset-2 hover:underline">Users & Sparks</Link>.
+            Tiers and coupons are in{' '}
+            <Link href="/dashboard/admin/allocations" className="font-semibold text-primary underline-offset-2 hover:underline">Allocations</Link>.
+            This search only assigns who runs one institution.
+          </p>
         </div>
         <div className="bg-card border border-border rounded-3xl p-6 sm:p-7 relative overflow-hidden card-glow">
           <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-amber-500 opacity-80" />
@@ -163,8 +161,8 @@ export default function AdminAccessConfig() {
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="font-heading text-xl text-foreground">Manage Subscriptions</p>
-              <p className="text-sm text-muted-foreground">Look up a user by email and manage their Academic tier.</p>
+              <p className="font-heading text-xl text-foreground">Find the person</p>
+              <p className="text-sm text-muted-foreground">Look up by email, then choose their institution.</p>
             </div>
           </div>
 
@@ -197,27 +195,6 @@ export default function AdminAccessConfig() {
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">{foundUser.data.email}</p>
-                <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" /> {foundUser.data.sparksBalance ?? 0} Sparks
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  disabled={updatingTier || foundUser.data.subscriptionTier !== 'academic'}
-                  onClick={() => handleSetTier('free')}
-                  className="rounded-full h-10 px-4 font-semibold"
-                >
-                  Set to Free
-                </Button>
-                <Button
-                  disabled={updatingTier || foundUser.data.subscriptionTier === 'academic'}
-                  onClick={() => handleSetTier('academic')}
-                  className="rounded-full h-10 px-4 font-bold bg-gradient-to-r from-amber-500 to-orange-600 text-white"
-                >
-                  {updatingTier ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                  Grant Academic (+400 Sparks)
-                </Button>
               </div>
             </div>
           )}

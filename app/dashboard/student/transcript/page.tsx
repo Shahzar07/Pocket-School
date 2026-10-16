@@ -10,6 +10,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { GraduationCap, Printer, TrendingUp } from 'lucide-react';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
 import {
   TERMS, TermId, termRange, inRange, formatPeriod, selectableYears,
 } from '@/lib/reporting-periods';
@@ -154,11 +156,32 @@ export default function TranscriptPage() {
           <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight">
             Academic <span className="gradient-text italic">Transcript</span>
           </h1>
-          <p className="text-muted-foreground text-sm">Official record of your academic performance.</p>
+          <p className="text-muted-foreground text-sm">Grades and completed courses for this level. Print, or choose Save as PDF in the print dialog.</p>
         </div>
-        <Button onClick={() => window.print()} variant="outline" className="rounded-full h-11 px-5 font-bold gap-2">
-          <Printer className="w-4 h-4" /> Print report card
-        </Button>
+        <div className="flex flex-col items-end gap-2">
+          <Button onClick={() => window.print()} variant="outline" className="rounded-full h-11 px-5 font-bold gap-2">
+            <Printer className="w-4 h-4" /> Print or save PDF
+          </Button>
+          {user && (
+            <DocumentDelivery
+              documents={[textDocument({
+                id: `transcript-${user.uid}-${term}-${year}`,
+                title: `Transcript · ${periodLabel}`,
+                holderEmail: user.email ?? undefined,
+                studentId: user.uid,
+                lines: [
+                  `Student: ${profile?.name || 'Student'}`,
+                  `Period: ${periodLabel}`,
+                  `GPA: ${overallGPA}`,
+                  `Average: ${overallAverage ?? '—'}`,
+                  `Attendance: ${attendanceRate ?? '—'}%`,
+                  ...records.map(row => `${row.course.title}: ${row.avg ?? '—'}% · ${row.status}`),
+                ],
+              })]}
+              studentIds={[user.uid]}
+            />
+          )}
+        </div>
       </motion.div>
 
       {/* Reporting period ─ drives every figure below and the printed card */}
