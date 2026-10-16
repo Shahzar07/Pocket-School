@@ -25,7 +25,7 @@ import { readAutosave } from '@/components/editor/use-autosave';
 import type { Book, BookChapter, LanguageVersion } from '@/lib/reads/types';
 import { ContentLanguageBar } from '@/components/content-language-bar';
 import { useContentTranslation } from '@/hooks/use-content-translation';
-import { LANGUAGES, getLanguage, textDirection } from '@/lib/languages';
+import { LANGUAGES, getLanguage, readLanguage, textDirection } from '@/lib/languages';
 import {
   addNote, addSessionSeconds, bookmarks, notesFor, progressMap, readerPrefs, saveProgress,
   saveReaderPrefs, toggleBookmark, type ReaderPrefs,
@@ -81,7 +81,13 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
     const stored = readerPrefs();
     if (initialLang) stored.lang = initialLang;
     setPrefs(stored);
-    setLang(stored.lang || initialLang || 'en');
+    setLang(stored.lang || initialLang || readLanguage());
+    const onLang = () => {
+      const current = readerPrefs();
+      if (!current.lang && !initialLang) setLang(readLanguage());
+    };
+    window.addEventListener('pocket-school-lang-change', onLang);
+    return () => window.removeEventListener('pocket-school-lang-change', onLang);
   }, [initialLang]);
 
   useEffect(() => {

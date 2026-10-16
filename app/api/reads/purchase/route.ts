@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { startWalletCheckout } from '@/app/api/stripe/create-checkout/route';
+import { startWalletCheckout } from '@/lib/payments/wallet-checkout';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

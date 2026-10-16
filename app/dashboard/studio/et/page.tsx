@@ -1,6 +1,6 @@
 'use client';
 
-import { AiStudio } from '@/app/ai-studio/page';
+import { AiStudio } from '@/components/ai-studio-view';
 
 /** ET AI chat, full page inside the dashboard frame. */
 export default function StudioEt() {
