@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import Link from 'next/link';
 import { Library, Plus, Trash2, ExternalLink, X, Loader2, FileText, Link2, Film, BookOpen } from 'lucide-react';
 
 const fadeUp: Record<string, any> = {
@@ -110,7 +111,7 @@ export default function ResourcesPage() {
           <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-3">
             Learning <span className="gradient-text italic">resources</span>
           </h1>
-          <p className="text-muted-foreground mt-2 text-[15px]">Curated learning materials and references.</p>
+          <p className="text-muted-foreground mt-2 text-[15px]">The file library for links, videos, and documents. The curriculum CMS builds lessons and can point here. <Link href="/dashboard/admin/curriculum" className="text-primary font-semibold">Open the CMS</Link></p>
         </div>
         {canCreate && (
           <Button onClick={() => setShowCreate(true)}
