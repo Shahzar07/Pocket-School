@@ -16,6 +16,8 @@ import { describeTargets } from '@/lib/allocation-targets';
 import { toast } from 'sonner';
 import { Megaphone, Plus, Pin, Trash2, X, Loader2, Bell } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
+import { RichComposer } from '@/components/rich-composer';
+import { deliveryWhen, type DeliveryChannel } from '@/lib/compose';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -43,7 +45,7 @@ export default function AnnouncementsPage() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ title: '', content: '', priority: 'normal' as Announcement['priority'], targets: ['all'] as string[] });
+  const [form, setForm] = useState({ title: '', content: '', priority: 'normal' as Announcement['priority'], targets: ['all'] as string[], channels: ['in_app'] as DeliveryChannel[], schedule: '' });
 
   const canCreate = (mode === 'teacher' && hasAccountRole(profile, 'teacher')) || profile?.role === 'admin';
 
@@ -82,9 +84,11 @@ export default function AnnouncementsPage() {
         createdBy: user.uid,
         createdByName: profile?.name ?? 'Staff',
         createdAt: Timestamp.now(),
-      });
-      toast.success('Announcement created!');
-      setForm({ title: '', content: '', priority: 'normal', targets: ['all'] });
+        ...(form.channels.length ? { channels: form.channels } : {}),
+        ...(form.schedule ? { scheduledFor: form.schedule } : {}),
+      } as Announcement);
+      toast.success(deliveryWhen(form.schedule) === 'later' ? 'Announcement scheduled.' : 'Announcement created!');
+      setForm({ title: '', content: '', priority: 'normal', targets: ['all'], channels: ['in_app'], schedule: '' });
       setShowCreate(false);
       await load();
     } catch { toast.error('Failed to create announcement.'); }
@@ -146,7 +150,14 @@ export default function AnnouncementsPage() {
             </button>
           </div>
           <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Title *" className="rounded-xl h-11 bg-muted/50" />
-          <Textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} placeholder="Message *" className="rounded-xl min-h-24 text-sm resize-none bg-muted/50" />
+          <RichComposer
+            value={form.content}
+            onChange={(content) => setForm((current) => ({ ...current, content }))}
+            channels={form.channels}
+            onChannels={(channels) => setForm((current) => ({ ...current, channels }))}
+            schedule={form.schedule}
+            onSchedule={(schedule) => setForm((current) => ({ ...current, schedule }))}
+          />
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Priority</label>
