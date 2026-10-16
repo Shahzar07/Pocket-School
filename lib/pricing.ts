@@ -102,7 +102,7 @@ export function seedPricing(): PricingConfig {
     // $59 × 12 and $74 × 12 match the public annual prices. A strict 25% of the
     // year would be $711 and $891 ($59.25 and $74.25 a month).
     { id: 'igcse_alevel', monthlyUsd: 79, sparks: 800, annualUsd: 708 },
-    { id: 'professional', monthlyUsd: 99, sparks: 2000, annualUsd: 888 },
+    { id: 'professional', monthlyUsd: 99, sparks: 1000, annualUsd: 888 },
   ];
   return {
     version: 1,

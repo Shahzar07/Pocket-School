@@ -89,7 +89,7 @@ export const TIERS: TierDefinition[] = [
   {
     tier: 3, id: 'professional', name: 'Professional & Degrees',
     blurb: 'MBBS Medicine, LLB Law (University of London and other universities), Engineering and Nursing.',
-    sparks: 2000, sparksRollover: 700,
+    sparks: 1000, sparksRollover: 700,
     programmes: [
       'LLB Law — University of London (UoL) and other universities',
       'MBBS Medicine — ET Medicine',
@@ -105,14 +105,14 @@ export const TIERS: TierDefinition[] = [
   {
     tier: 4, id: 'llb', name: 'Law & LLB',
     blurb: 'LLB Law covers the University of London (UoL) and other universities. Unlocks within Professional & Degrees.',
-    sparks: 2000, sparksRollover: 700,
+    sparks: 1000, sparksRollover: 700,
     programmes: ['LLB Law — University of London (UoL) and other universities', 'A-Level Law', 'Pre-University Law', 'Everything in Professional & Degrees'],
   },
   {
     tier: 5, id: 'institution', name: 'Institution',
-    blurb: 'Annual contract for schools, learning centres and exam centres.',
-    sparks: 10000, sparksRollover: 0,
-    programmes: ['Everything in Professional & Degrees', 'Teacher CMS', 'Institution admin dashboard', 'Shared Sparks pool', 'White-label'],
+    blurb: 'Annual contract for schools, learning centres and exam centres. Sparks are a pooled per-seat allowance, not an unlimited balance.',
+    sparks: 0, sparksRollover: 0,
+    programmes: ['Everything in Professional & Degrees', 'Teacher CMS', 'Institution admin dashboard', 'Pooled Sparks by seat', 'White-label'],
   },
   {
     tier: 6, id: 'marketplace', name: 'Marketplace',

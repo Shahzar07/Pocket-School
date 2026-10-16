@@ -37,6 +37,26 @@ export interface CertificateFace {
   accent?: string | null;
   /** When false, a white-label certificate omits the Poket School line. */
   showPoweredBy?: boolean | null;
+  /** Partner endorsement. Poket School stays the creator. */
+  partnerName?: string | null;
+  recognisedBy?: string | null;
+  partnerLogoUrl?: string | null;
+}
+
+export function safeLogoUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:') return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+export function certificateRecognition(face: Pick<CertificateFace, 'partnerName' | 'recognisedBy'>): string | null {
+  const line = (face.recognisedBy || (face.partnerName ? `Recognised by ${face.partnerName}` : '')).replace(/\s+/g, ' ').trim();
+  return line ? line.slice(0, 160) : null;
 }
 
 export function certificateStatus(status: unknown): CertificateStatus {
@@ -181,6 +201,7 @@ export function buildCertificatePdf(face: CertificateFace, origin?: string): Uin
   const header = certificateHeader(face);
   const lines: { text: string; size: number; gap: number }[] = [
     { text: header.brand, size: 12, gap: 28 },
+    ...(certificateRecognition(face) ? [{ text: certificateRecognition(face) as string, size: 11, gap: 20 }] : []),
     { text: 'Certificate of Achievement', size: 28, gap: 36 },
     { text: 'This is to certify that', size: 12, gap: 28 },
     { text: face.studentName, size: 24, gap: 32 },
@@ -273,6 +294,8 @@ export function certificateDocumentHtml(face: CertificateFace, origin?: string):
 <body>
   <div class="sheet"><div class="inner">
     <div class="brand">${escapeHtml(header.brand)}</div>
+    ${certificateRecognition(face) ? `<p class="meta">${escapeHtml(certificateRecognition(face) ?? '')}</p>` : ''}
+    ${safeLogoUrl(face.partnerLogoUrl) ? `<img alt="" src="${escapeHtml(safeLogoUrl(face.partnerLogoUrl) ?? '')}" width="96" height="48" style="margin-top:12px;object-fit:contain" />` : ''}
     <h1>Certificate of Achievement</h1>
     <p class="lead">This is to certify that</p>
     <div class="name">${escapeHtml(face.studentName)}</div>
