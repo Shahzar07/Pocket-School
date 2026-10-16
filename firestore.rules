@@ -35,6 +35,29 @@ service cloud.firestore {
     // their school's courses, grades, attendance and reports.
     function isInstitutionAdmin() { return isSignedIn() && role() == 'institution_admin'; }
 
+    function tenantStaff(institutionId) {
+      return isAdmin() || (isInstitutionAdmin() && myInstitution() == institutionId);
+    }
+    function tenantReader(institutionId) {
+      return isAdmin() || (isSignedIn() && myInstitution() == institutionId);
+    }
+    function sameText(field) {
+      return incoming().get(field, '') == resource.data.get(field, '');
+    }
+    function sameNumber(field) {
+      return incoming().get(field, 0) == resource.data.get(field, 0);
+    }
+    function planAllowsWhiteLabel() {
+      return resource.data.get('plan', '') == 'enterprise' || resource.data.get('plan', '') == 'oem';
+    }
+    function hidePoweredUnchanged() {
+      return incoming().get('branding', {}).get('hidePoweredBy', false)
+        == resource.data.get('branding', {}).get('hidePoweredBy', false);
+    }
+    function customDomainUnchanged() {
+      return incoming().get('customDomain', '') == resource.data.get('customDomain', '');
+    }
+
     function isTeacherOrAdmin() { return isSignedIn() && (hasRole('teacher') || role() == 'admin' || role() == 'institution_admin'); }
 
     function audienceGated(data) {
@@ -998,7 +1021,12 @@ service cloud.firestore {
       // An institution admin may edit their own institution — branding,
       // subdomain — but not create or remove one, and not touch another's.
       allow update: if isAdmin()
-        || (isInstitutionAdmin() && myInstitution() == institutionId);
+        || (tenantStaff(institutionId)
+            && sameText('status')
+            && sameText('plan')
+            && sameText('parentInstitutionId')
+            && incoming().get('isolateData', false) == resource.data.get('isolateData', false)
+            && (planAllowsWhiteLabel() || (hidePoweredUnchanged() && customDomainUnchanged())));
 
       match /licences/{licenceId} {
         allow read: if isAdmin() || (isSignedIn() && myInstitution() == institutionId);
@@ -1031,6 +1059,75 @@ service cloud.firestore {
         allow update, delete: if isAdmin()
           || (isInstitutionAdmin() && myInstitution() == institutionId);
       }
+
+      match /settings/{settingId} {
+        allow read: if tenantReader(institutionId);
+        allow create: if isAdmin()
+          || (tenantStaff(institutionId)
+              && incoming().get('seatCount', 0) == 0
+              && incoming().get('amount', 0) == 0);
+        allow update: if isAdmin()
+          || (tenantStaff(institutionId)
+              && sameNumber('seatCount')
+              && sameNumber('seatsUsed')
+              && sameNumber('amount')
+              && sameText('currency')
+              && sameText('licenceStartsOn')
+              && sameText('licenceEndsOn')
+              && sameText('renewalOn')
+              && sameText('poNumber')
+              && sameText('plan'));
+        allow delete: if isAdmin();
+      }
+
+      match /audit/{eventId} {
+        allow read: if tenantReader(institutionId);
+        allow create: if tenantStaff(institutionId)
+          && incoming().actorId == request.auth.uid
+          && incoming().keys().hasAll(['actorId', 'action', 'target', 'at']);
+        allow update, delete: if false;
+      }
+
+      match /catalogue/{itemId} {
+        allow read: if tenantReader(institutionId);
+        allow create, update, delete: if tenantStaff(institutionId);
+      }
+
+      match /compliance/{itemId} {
+        allow read: if tenantReader(institutionId);
+        allow create, update, delete: if tenantStaff(institutionId);
+      }
+
+      match /learning_paths/{pathId} {
+        allow read: if tenantReader(institutionId);
+        allow create, update, delete: if tenantStaff(institutionId);
+      }
+
+      match /skills/{skillId} {
+        allow read: if tenantReader(institutionId);
+        allow create, update, delete: if tenantStaff(institutionId);
+      }
+
+      match /webhooks/{hookId} {
+        allow read: if tenantStaff(institutionId);
+        allow create, update: if tenantStaff(institutionId)
+          && !incoming().keys().hasAny(['secret', 'token', 'key']);
+        allow delete: if tenantStaff(institutionId);
+      }
+
+      match /api_keys/{keyId} {
+        allow read: if tenantStaff(institutionId);
+        allow create: if tenantStaff(institutionId)
+          && !incoming().keys().hasAny(['secret', 'token', 'key']);
+        allow update, delete: if isAdmin() || (isInstitutionAdmin() && myInstitution() == institutionId);
+      }
+
+      match /invoices/{invoiceId} {
+        allow read: if tenantReader(institutionId);
+        allow create: if isAdmin()
+          || (tenantStaff(institutionId) && incoming().status == 'requested');
+        allow update, delete: if isAdmin();
+      }
     }
 
     match /join_codes/{code} {
@@ -1038,6 +1135,35 @@ service cloud.firestore {
       allow create, update: if isAdmin()
         || (isInstitutionAdmin() && incoming().institutionId == myInstitution());
       allow delete: if isAdmin();
+    }
+
+    match /demo_leads/{leadId} {
+      allow create: if incoming().keys().hasOnly(['name', 'email', 'organisation', 'country', 'type', 'seats', 'message', 'status', 'createdAt'])
+        && incoming().status == 'new'
+        && incoming().name is string
+        && incoming().name.size() > 1
+        && incoming().name.size() < 200
+        && incoming().email is string
+        && incoming().email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
+        && incoming().organisation is string
+        && incoming().organisation.size() > 1
+        && incoming().organisation.size() < 200
+        && incoming().country is string
+        && incoming().country.size() == 2
+        && incoming().type in ['school', 'university', 'corporate', 'government']
+        && incoming().seats is int
+        && incoming().seats >= 1
+        && incoming().seats <= 100000
+        && incoming().message is string
+        && incoming().message.size() < 2000
+        && incoming().createdAt is timestamp;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /admin_audit/{eventId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && incoming().actorId == request.auth.uid;
+      allow update, delete: if false;
     }
 
     // ── Badges ────────────────────────────────────────────────
@@ -1994,7 +2120,11 @@ service cloud.firestore {
     }
 
     match /report_schedules/{scheduleId} {
-      allow read: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow read: if isSignedIn() && (
+        resource.data.ownerId == request.auth.uid
+        || isAdmin()
+        || (isInstitutionAdmin() && resource.data.get('institutionId', '') == myInstitution())
+      );
       allow create: if isSignedIn()
         && incoming().ownerId == request.auth.uid
         && (isTeacherOrAdmin() || role() == 'parent');

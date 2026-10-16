@@ -387,8 +387,15 @@ export interface Institution {
   adminId?: string;
   studentCount: number;
   teacherCount: number;
-  status: 'active' | 'pending';
+  status: 'active' | 'pending' | 'suspended';
   createdAt?: Timestamp;
+  type?: 'school' | 'university' | 'corporate' | 'government';
+  /** ISO 3166-1 alpha-2. */
+  country?: string;
+  plan?: 'starter' | 'team' | 'enterprise' | 'oem';
+  /** Set on a sub-academy. Data stays in this institution's own subcollections. */
+  parentInstitutionId?: string;
+  isolateData?: boolean;
 
   /** White-label: the host label this institution is served under, e.g.
    * "kolej-utama" for kolej-utama.poketschool.ai. Lowercase, unique. */
@@ -399,6 +406,7 @@ export interface Institution {
     logoUrl?: string;
     /** CSS colour applied to the accent, e.g. "#f5c451". */
     primaryColor?: string;
+    secondaryColor?: string;
     tagline?: string;
     /** Hide "Powered by Poket School" for institutions on a plan that allows it. */
     hidePoweredBy?: boolean;
@@ -406,6 +414,16 @@ export interface Institution {
     emailFromName?: string;
     /** Name printed on certificates. Falls back to the academy name. */
     certificateIssuer?: string;
+    certificateFooter?: string;
+    fontId?: string;
+    faviconUrl?: string;
+    loginHeadline?: string;
+    loginBody?: string;
+    inviteSubject?: string;
+    inviteBody?: string;
+    mobileAppName?: string;
+    mobileIconUrl?: string;
+    splashColor?: string;
   };
   /** A hostname the school owns, such as learn.kolej.example. */
   customDomain?: string;
@@ -1435,6 +1453,7 @@ export interface AcademyClass {
   name: string;
   programmeIds: string[];
   memberIds: string[];
+  kind?: 'class' | 'department' | 'campus' | 'group';
 }
 
 export async function listAcademyClasses(institutionId: string): Promise<AcademyClass[]> {
@@ -1456,6 +1475,7 @@ export interface AcademyInvite {
   email: string;
   name: string;
   role: 'student' | 'teacher';
+  academyRole?: string;
 }
 
 export async function saveAcademyInvites(institutionId: string, rows: AcademyInvite[]): Promise<void> {
@@ -1476,6 +1496,7 @@ export interface AcademyMember {
   email?: string;
   name?: string;
   role?: string;
+  academyRole?: string;
 }
 
 export async function listAcademyMembers(institutionId: string): Promise<AcademyMember[]> {

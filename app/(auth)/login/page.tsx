@@ -20,9 +20,11 @@ import { useTranslation } from 'react-i18next';
 import { loginBlocked, requiresAdminLogin } from '@/lib/admin-console';
 import { landingPath, readActiveMode } from '@/lib/account-modes';
 import { friendlyError } from '@/lib/design/system';
+import { useWhiteLabel } from '@/components/white-label-provider';
 
 export default function LoginPage() {
   const { t } = useTranslation();
+  const { branding } = useWhiteLabel();
   const router = useRouter();
   const [step, setStep] = useState<'credentials' | 'twofa'>('credentials');
   const [email, setEmail] = useState('');
@@ -237,8 +239,8 @@ export default function LoginPage() {
       {step === 'credentials' && (
         <>
           <div className="mb-9">
-            <h2 className="text-3xl font-bold text-white mb-2">{t('authForm.welcome')}</h2>
-            <p className="text-white/45 text-sm">{t('authForm.details')}</p>
+            <h2 className="text-3xl font-bold text-white mb-2">{branding.loginHeadline || t('authForm.welcome')}</h2>
+            <p className="text-white/45 text-sm">{branding.loginBody || branding.tagline || t('authForm.details')}</p>
           </div>
 
           <button

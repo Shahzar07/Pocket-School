@@ -13,6 +13,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { getInstitutionByDomain, getInstitutionBySubdomain, type Institution } from '@/lib/db';
 import { subdomainFromHost, brandingFor, DEFAULT_BRANDING, type Branding } from '@/lib/white-label';
+import { brandFontStack } from '@/lib/enterprise';
 
 interface WhiteLabelValue {
   branding: Branding;
@@ -67,6 +68,16 @@ export function WhiteLabelProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     if (branding.isWhiteLabel) document.title = branding.displayName;
   }, [branding.isWhiteLabel, branding.displayName]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const stack = brandFontStack(branding.fontId);
+    if (stack) root.style.setProperty('--font-institution', stack);
+    else root.style.removeProperty('--font-institution');
+    if (branding.secondaryColor) root.style.setProperty('--accent', branding.secondaryColor);
+    const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (branding.faviconUrl && icon) icon.href = branding.faviconUrl;
+  }, [branding.fontId, branding.secondaryColor, branding.faviconUrl]);
 
   return (
     <WhiteLabelContext.Provider value={{ branding, institution, resolving }}>

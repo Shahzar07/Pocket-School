@@ -1,6 +1,8 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { formatMoney } from '@/lib/money';
+import { CountrySelect } from '@/components/country-select';
 
 export interface MethodChoice {
   id: string;
@@ -19,13 +21,6 @@ export interface QuoteView {
   total: number;
   seats: number;
 }
-
-const COUNTRIES = [
-  { id: 'MY', label: 'Malaysia' },
-  { id: 'SG', label: 'Singapore' },
-  { id: 'US', label: 'United States' },
-  { id: 'GB', label: 'United Kingdom' },
-];
 
 export function CheckoutPanel({
   quote, methods, method, onMethod, country, onCountry, coupon, onCoupon,
@@ -47,6 +42,7 @@ export function CheckoutPanel({
   onPay?: () => void;
   payLabel?: string;
 }) {
+  const { i18n } = useTranslation();
   return (
     <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
       <section className="bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] p-5 space-y-4">
@@ -55,17 +51,9 @@ export function CheckoutPanel({
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">Checkout</p>
             <h2 className="font-heading text-2xl tracking-tight mt-1">{quote.title}</h2>
           </div>
-          <label className="text-sm">
-            <span className="block text-[11px] font-semibold text-muted-foreground mb-1">Country</span>
-            <select
-              aria-label="Country"
-              value={country}
-              onChange={(event) => onCountry(event.target.value)}
-              className="h-10 rounded-xl border border-border bg-background px-3 text-sm"
-            >
-              {COUNTRIES.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-            </select>
-          </label>
+          <div className="min-w-56 text-sm">
+            <CountrySelect label="Country" locale={i18n.language} value={country} onChange={onCountry} />
+          </div>
         </div>
 
         {showSeats && onSeats && (

@@ -47,6 +47,10 @@ export const SECRET_SLOTS: readonly SecretSlot[] = [
   { id: 'saml_entry', label: 'SAML entry point', envVar: 'SAML_ENTRY_POINT', group: 'identity', flag: 'integrations.saml', required: false, why: 'Identity provider SSO URL.' },
   { id: 'saml_issuer', label: 'SAML issuer', envVar: 'SAML_ISSUER', group: 'identity', flag: 'integrations.saml', required: false, why: 'SAML entity ID.' },
   { id: 'saml_cert', label: 'SAML certificate', envVar: 'SAML_CERT', group: 'identity', flag: 'integrations.saml', required: false, why: 'IdP signing certificate.' },
+  { id: 'oidc_issuer', label: 'OIDC issuer', envVar: 'OIDC_ISSUER', group: 'identity', flag: 'integrations.saml', required: false, why: 'OpenID Connect issuer URL. SSO stays on email invites until this set is complete.' },
+  { id: 'oidc_client', label: 'OIDC client ID', envVar: 'OIDC_CLIENT_ID', group: 'identity', flag: 'integrations.saml', required: false, why: 'OpenID Connect client ID.' },
+  { id: 'oidc_secret', label: 'OIDC client secret', envVar: 'OIDC_CLIENT_SECRET', group: 'identity', flag: 'integrations.saml', required: false, why: 'OpenID Connect client secret.' },
+  { id: 'scim_token', label: 'SCIM bearer token', envVar: 'SCIM_BEARER_TOKEN', group: 'identity', flag: 'integrations.saml', required: false, why: 'Bearer token a directory uses to provision academy members. Invites still work without it.' },
   { id: 'lti_client', label: 'LTI client ID', envVar: 'LTI_CLIENT_ID', group: 'identity', flag: 'integrations.lti', required: false, why: 'LTI 1.3 tool client ID.' },
   { id: 'lti_deployment', label: 'LTI deployment ID', envVar: 'LTI_DEPLOYMENT_ID', group: 'identity', flag: 'integrations.lti', required: false, why: 'LTI deployment ID.' },
   { id: 'lti_key', label: 'LTI private key', envVar: 'LTI_PRIVATE_KEY', group: 'identity', flag: 'integrations.lti', required: false, why: 'Signs LTI launches.' },
@@ -121,9 +125,12 @@ export function harrySetup(): SetupAccount[] {
       keys: [...slots('integrations.whatsapp'), ...SECRET_SLOTS.filter((slot) => slot.group === 'messaging' && slot.flag === 'integrations.smtp')].map(brief),
     },
     {
-      account: 'SSO / SAML and LTI',
+      account: 'SSO (SAML or OIDC), SCIM and LTI',
       where: 'The school identity provider, and the LTI platform',
-      tasks: ['Institution plans mention SSO. The flag stays off until a school is ready to connect.'],
+      tasks: [
+        'Institution plans mention SSO and directory provisioning. The flag stays off until a school is ready to connect.',
+        'Without these keys, academies stay on email and join links.',
+      ],
       keys: [...slots('integrations.saml'), ...slots('integrations.lti')].map(brief),
     },
     {

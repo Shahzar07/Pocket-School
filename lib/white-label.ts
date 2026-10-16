@@ -45,10 +45,18 @@ export interface Branding {
   displayName: string;
   logoUrl?: string;
   primaryColor?: string;
+  secondaryColor?: string;
   tagline?: string;
   hidePoweredBy: boolean;
   emailFromName?: string;
   certificateIssuer?: string;
+  certificateFooter?: string;
+  fontId?: string;
+  faviconUrl?: string;
+  loginHeadline?: string;
+  loginBody?: string;
+  mobileAppName?: string;
+  splashColor?: string;
   /** True when an institution's branding is in effect rather than the default. */
   isWhiteLabel: boolean;
 }
@@ -68,10 +76,18 @@ export function brandingFor(
       displayName?: string;
       logoUrl?: string;
       primaryColor?: string;
+      secondaryColor?: string;
       tagline?: string;
       hidePoweredBy?: boolean;
       emailFromName?: string;
       certificateIssuer?: string;
+      certificateFooter?: string;
+      fontId?: string;
+      faviconUrl?: string;
+      loginHeadline?: string;
+      loginBody?: string;
+      mobileAppName?: string;
+      splashColor?: string;
     };
   } | null | undefined,
 ): Branding {
@@ -82,10 +98,18 @@ export function brandingFor(
     displayName,
     logoUrl: b.logoUrl,
     primaryColor: b.primaryColor,
+    secondaryColor: b.secondaryColor,
     tagline: b.tagline ?? DEFAULT_BRANDING.tagline,
     hidePoweredBy: !!b.hidePoweredBy,
     emailFromName: b.emailFromName || displayName,
     certificateIssuer: b.certificateIssuer || displayName,
+    certificateFooter: b.certificateFooter,
+    fontId: b.fontId,
+    faviconUrl: b.faviconUrl,
+    loginHeadline: b.loginHeadline,
+    loginBody: b.loginBody,
+    mobileAppName: b.mobileAppName,
+    splashColor: b.splashColor,
     isWhiteLabel: true,
   };
 }

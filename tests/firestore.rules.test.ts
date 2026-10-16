@@ -7,7 +7,7 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from 'firebase/firestore';
 
 const PROJECT_ID = 'demo-poket';
 const hostEnv = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8080';
@@ -763,5 +763,44 @@ describe('certificates', () => {
     await assertSucceeds(getDocs(query(collection(parent, 'certificates'), where('studentId', '==', 'student1'))));
     const stranger = env.authenticatedContext('student2').firestore();
     await assertFails(getDocs(query(collection(stranger, 'certificates'), where('studentId', '==', 'student1'))));
+  });
+});
+
+describe('institution console', () => {
+  it('lets anyone request a demo and keeps the pipeline with platform admins', async () => {
+    const anon = env.unauthenticatedContext().firestore();
+    const lead = {
+      name: 'Ada',
+      email: 'ada@school.example',
+      organisation: 'North Academy',
+      country: 'MY',
+      type: 'school',
+      seats: 40,
+      message: 'A walkthrough for the campus team.',
+      createdAt: new Date(),
+    };
+    await assertSucceeds(addDoc(collection(anon, 'demo_leads'), { ...lead, status: 'new' }));
+    await assertFails(addDoc(collection(anon, 'demo_leads'), { ...lead, status: 'won' }));
+    await assertFails(getDocs(collection(anon, 'demo_leads')));
+  });
+
+  it('stops an institution admin writing another academy audit log or a raw secret', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'users/instA'), { role: 'institution_admin', institutionId: 'school-a', name: 'A' });
+      await setDoc(doc(db, 'institutions/school-a'), { name: 'A', status: 'active', plan: 'team' });
+      await setDoc(doc(db, 'institutions/school-b'), { name: 'B', status: 'active', plan: 'oem' });
+    });
+    const academy = env.authenticatedContext('instA').firestore();
+    await assertFails(addDoc(collection(academy, 'institutions/school-b/audit'), {
+      actorId: 'instA', action: 'save-profile', target: 'school-b', at: '2026-10-16',
+    }));
+    await assertSucceeds(addDoc(collection(academy, 'institutions/school-a/audit'), {
+      actorId: 'instA', action: 'save-profile', target: 'school-a', at: '2026-10-16',
+    }));
+    await assertFails(updateDoc(doc(academy, 'institutions/school-a'), { plan: 'oem' }));
+    await assertFails(addDoc(collection(academy, 'institutions/school-a/api_keys'), {
+      name: 'leaked', prefix: 'pk_abcd', hash: 'abc', secret: 'nope',
+    }));
   });
 });

@@ -22,6 +22,7 @@ import { useAccountMode } from '@/hooks/use-account-mode';
 import { auth } from '@/lib/firebase';
 import { authedFetch } from '@/lib/api-client';
 import { applyAppLanguage } from '@/lib/i18n/apply';
+import { readGeoCountry } from '@/lib/countries';
 import { writeCurrencyChoice, enabledCurrencies, seedPricing } from '@/lib/pricing';
 import { usePricing } from '@/hooks/use-pricing';
 import { formatMoney } from '@/lib/money';
@@ -223,7 +224,7 @@ export default function ProfilePage() {
           name: profile.name ?? '',
           displayName: profile.displayName ?? profile.name ?? '',
           bio: profile.bio ?? '',
-          country: profile.country ?? '',
+          country: profile.country || readGeoCountry(),
           timezone: profile.timezone ?? 'Asia/Kuala_Lumpur',
           phone: profile.phone ?? '',
           language: profile.language ?? 'en',
