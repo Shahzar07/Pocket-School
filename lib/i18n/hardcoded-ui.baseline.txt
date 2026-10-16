@@ -82,12 +82,16 @@ app/courses/[courseId]/page.tsx	Poket School
 app/courses/[courseId]/page.tsx	That code is for a different course.
 app/courses/[courseId]/page.tsx	This course includes
 app/courses/[courseId]/page.tsx	What you&apos;ll learn
+app/dashboard/admin/access/page.tsx	Assign a school admin
 app/dashboard/admin/access/page.tsx	Authentication uses Firebase Auth (email + password with optional email 2FA, and Google sign-in). Security rules live in
 app/dashboard/admin/access/page.tsx	Could not update that role.
 app/dashboard/admin/access/page.tsx	Enforced by Firestore security rules on every read and write.
 app/dashboard/admin/access/page.tsx	Failed to update subscription
+app/dashboard/admin/access/page.tsx	Find the person
+app/dashboard/admin/access/page.tsx	Institution admin
 app/dashboard/admin/access/page.tsx	Institution administrator
 app/dashboard/admin/access/page.tsx	Look up a user by email and manage their Academic tier.
+app/dashboard/admin/access/page.tsx	Look up by email, then choose their institution.
 app/dashboard/admin/access/page.tsx	Manage Subscriptions
 app/dashboard/admin/access/page.tsx	Manage role-based access control and security policies.
 app/dashboard/admin/access/page.tsx	No user found with that email
@@ -97,6 +101,7 @@ app/dashboard/admin/access/page.tsx	Search failed
 app/dashboard/admin/access/page.tsx	Select institution…
 app/dashboard/admin/access/page.tsx	Subscription & Sparks
 app/dashboard/admin/access/page.tsx	User management
+app/dashboard/admin/access/page.tsx	Users & Sparks
 app/dashboard/admin/access/page.tsx	firestore.rules
 app/dashboard/admin/access/page.tsx	student@example.com
 app/dashboard/admin/activity/page.tsx	Activity log
@@ -126,6 +131,7 @@ app/dashboard/admin/allocations/page.tsx	Could not delete that code.
 app/dashboard/admin/allocations/page.tsx	Could not update that code.
 app/dashboard/admin/allocations/page.tsx	Create code
 app/dashboard/admin/allocations/page.tsx	Discount %
+app/dashboard/admin/allocations/page.tsx	Filter courses
 app/dashboard/admin/allocations/page.tsx	Find someone by email address
 app/dashboard/admin/allocations/page.tsx	Grant a course
 app/dashboard/admin/allocations/page.tsx	Issue a code
