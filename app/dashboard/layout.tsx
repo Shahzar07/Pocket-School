@@ -31,6 +31,7 @@ import { MobileNav } from '@/components/shell/mobile-nav';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useAccountMode } from '@/hooks/use-account-mode';
 import { homeForMode, learnerSpaceRoles, modeRedirect, MODE_NAMES, type AccountMode } from '@/lib/account-modes';
+import { ACCESS_DENIED_MESSAGE, decideDashboardAccess } from '@/lib/dashboard-access';
 import { loginBlocked, resolveStaffRole } from '@/lib/admin-console';
 import { reportActivity } from '@/lib/audit/report';
 import { adminMfaPending } from '@/lib/admin-mfa-pending';
@@ -304,10 +305,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [newDevice, setNewDevice] = useState(false);
   const [mfaCheckedUid, setMfaCheckedUid] = useState<string | null>(null);
   const [mfaHold, setMfaHold] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   const handleNavClick = () => {
     if (window.innerWidth < 1024) setSidebarOpen(false);
   };
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    user.getIdToken().then(async (token) => {
+      if (cancelled) return;
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [user]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('notice') !== '403') {
+      setAccessDenied(false);
+      return;
+    }
+    setAccessDenied(true);
+    params.delete('notice');
+    const query = params.toString();
+    window.history.replaceState(null, '', `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (loading || !profile) return;
+    const next = decideDashboardAccess(pathname, profile, account.mode);
+    if (!next.allowed) router.replace(next.redirectTo);
+  }, [loading, profile, pathname, account.mode, router]);
 
   useEffect(() => {
     if (loading) return;
@@ -491,7 +524,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
   const showModes = account.modes.length > 1 || account.canBecome;
   const become = account.canBecome ? () => router.push('/dashboard/student/become-instructor') : undefined;
-  if (account.mode && modeRedirect(pathname, account.mode)) {
+  const access = decideDashboardAccess(pathname, profile, account.mode);
+  if (!access.allowed || (account.mode && modeRedirect(pathname, account.mode))) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -671,6 +705,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(30,106,131,0.06)_0%,transparent_100%)]" />
           <OfflineBanner />
           <div className="relative px-4 pb-6 pt-1 lg:px-6 lg:pb-10">
+            {accessDenied && (
+              <div role="alert" className="mb-4 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                {ACCESS_DENIED_MESSAGE}
+              </div>
+            )}
             <RoleChecklist role={role} />
             {children}
           </div>

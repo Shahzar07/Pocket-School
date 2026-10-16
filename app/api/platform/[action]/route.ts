@@ -46,17 +46,21 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
       case 'sparks-monthly':
         return grantMonthly(user.uid);
       case 'sparks-grant': {
-        if (!(await callerIsAdmin(user.uid, user.email))) throw new ActionError('FORBIDDEN', 'Only an admin can grant Sparks.');
-        return adminGrant(user.uid, str(body.uid), Number(body.amount), str(body.note));
+        if (!(await callerIsAdmin(user.uid, user.email, user))) throw new ActionError('FORBIDDEN', 'Only an admin can grant Sparks.');
+        return adminGrant(user.uid, str(body.uid), Number(body.amount), str(body.note), user);
       }
-      case 'sparks-bootstrap':
-        return ensureAdminBootstrap(user.uid);
+      case 'sparks-bootstrap': {
+        if (!(await callerIsAdmin(user.uid, user.email, user))) throw new ActionError('FORBIDDEN', 'Only an admin can do that.');
+        return ensureAdminBootstrap(user.uid, user);
+      }
       case 'progress-complete':
         return completeLesson(user.uid, str(body.courseId), str(body.lessonId), Number(body.xpReward) || 50, true);
       case 'sync-certificates':
         return syncModuleCertificates(user.uid, str(body.studentId) || user.uid, str(body.courseId) || undefined);
-      case 'revoke-certificate':
-        return revokeCertificate(user.uid, user.email, str(body.certificateId), str(body.reason));
+      case 'revoke-certificate': {
+        if (!(await callerIsAdmin(user.uid, user.email, user))) throw new ActionError('FORBIDDEN', 'Only an admin can revoke a certificate.');
+        return revokeCertificate(user.uid, user.email, str(body.certificateId), str(body.reason), user);
+      }
       case 'unit-quiz':
         return recordUnitQuiz(user.uid, {
           courseId: str(body.courseId),
@@ -87,8 +91,9 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
         return { ok: true };
       }
       case 'admin-subscription': {
+        if (!(await callerIsAdmin(user.uid, user.email, user))) throw new ActionError('FORBIDDEN', 'Only an admin can change a subscription.');
         const tier = Number(body.accessTier) as AccessTier;
-        await setSubscription(user.uid, str(body.uid), tier);
+        await setSubscription(user.uid, str(body.uid), tier, user);
         return { ok: true };
       }
       case 'sync-profile':

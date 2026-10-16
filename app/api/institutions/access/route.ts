@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   if (!institutionId) return NextResponse.json({ error: 'Name the academy.' }, { status: 400 });
 
   const profile = await loadUser(user.uid);
-  const admin = await callerIsAdmin(user.uid, user.email);
+  const admin = await callerIsAdmin(user.uid, user.email, user);
   if (!admin && profile?.institutionId !== institutionId) {
     return NextResponse.json({ error: 'This academy is outside your account.' }, { status: 403 });
   }

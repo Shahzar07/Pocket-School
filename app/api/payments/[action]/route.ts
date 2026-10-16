@@ -46,7 +46,7 @@ function input(uid: string, email: string | undefined, body: Record<string, unkn
 async function requireSuper(req: NextRequest) {
   const user = await requireUser(req);
   if (isNextResponse(user)) return user;
-  if (!(await callerIsAdmin(user.uid, user.email))) {
+  if (!(await callerIsAdmin(user.uid, user.email, user))) {
     return NextResponse.json({ error: 'Super admin access required.', code: 'FORBIDDEN' }, { status: 403 });
   }
   return user;
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
       }
       if (action === 'admin-finance') return NextResponse.json(await financeAdmin());
       const checkoutId = typeof body.checkoutId === 'string' ? body.checkoutId : '';
-      const refund = await refundCheckout(admin.uid, checkoutId);
+      const refund = await refundCheckout(admin.uid, checkoutId, admin);
       const client = requestClient(req.headers);
       await recordActivity({
         action: 'admin.action',

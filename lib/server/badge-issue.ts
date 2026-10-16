@@ -53,7 +53,11 @@ export async function saveTemplate(input: Partial<CertificateTemplate>, actor: {
   return next;
 }
 
-export async function issuerAccess(uid: string, email?: string): Promise<{
+export async function issuerAccess(
+  uid: string,
+  email?: string,
+  claims?: { role?: string | null; adminRole?: string | null },
+): Promise<{
   actorRole: string;
   institutionId: string;
   admin: boolean;
@@ -66,7 +70,10 @@ export async function issuerAccess(uid: string, email?: string): Promise<{
     role,
     adminRole: typeof profile?.adminRole === 'string' ? profile.adminRole : '',
   });
-  const admin = (await callerIsAdmin(uid, email)) || staff === 'super_admin' || staff === 'admin';
+  if (claims?.role && claims.role !== 'admin' && claims.role !== 'institution_admin' && claims.role !== role) {
+    return null;
+  }
+  const admin = (await callerIsAdmin(uid, email, claims)) || staff === 'super_admin' || staff === 'admin';
   const school = role === 'institution_admin';
   if (!admin && !school) return null;
   return {
