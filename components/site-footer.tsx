@@ -13,6 +13,7 @@
  */
 
 import Link from "next/link";
+import { useWhiteLabel } from "@/components/white-label-provider";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
 import {
@@ -102,7 +103,10 @@ function FooterLink({ href, label }: { href: string; label: string }) {
 
 export function SiteFooter() {
   const { t } = useTranslation();
+  const { branding } = useWhiteLabel();
   const pathname = usePathname() || "";
+  const brandName = branding.isWhiteLabel ? branding.displayName : "Poket School";
+  const powered = branding.isWhiteLabel && !branding.hidePoweredBy;
   if (HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))) return null;
 
   if (pathname === "/")
@@ -113,9 +117,10 @@ export function SiteFooter() {
             <Link href="/" className={styles.brand}>
               <Brain size={26} />
               <span>
-                Poket School <small>/ AI</small>
+                {brandName} <small>/ AI</small>
               </span>
             </Link>
+            {powered && <p className="mt-2 text-xs">Powered by Poket School</p>}
             <p>
               {t("footer.tagline1")}
               <br />
@@ -160,7 +165,7 @@ export function SiteFooter() {
           </p>
         </div>
         <div className={styles.footerWordmark} aria-hidden="true">
-          Poket School
+          {brandName}
         </div>
       </footer>
     );
@@ -207,7 +212,8 @@ export function SiteFooter() {
                 <div className="bg-white/10 backdrop-blur-sm p-2 rounded-xl border border-white/20">
                   <Brain className="w-5 h-5" />
                 </div>
-                <span className="text-xl font-semibold">Poket School</span>
+                <span className="text-xl font-semibold">{brandName}</span>
+                {powered && <span className="text-[11px] text-white/50">Powered by Poket School</span>}
               </Link>
               <p className="text-sm leading-relaxed max-w-sm text-white/60">
                 {t("footer.blurb")}

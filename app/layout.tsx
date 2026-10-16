@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { AuthProvider } from '@/components/auth-provider';
 import { I18nProvider } from '@/components/i18n-provider';
 import { WhiteLabelProvider } from '@/components/white-label-provider';
+import { TenantChrome } from '@/components/tenant-chrome';
 import { Toaster } from "@/components/ui/sonner"
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
@@ -71,6 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <I18nProvider>
           <WhiteLabelProvider>
             <SiteHeader />
+            <TenantChrome />
             <div id="content">{children}</div>
             <SiteFooter />
             <CookieConsent />

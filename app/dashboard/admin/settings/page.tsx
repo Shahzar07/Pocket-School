@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useEffect, useState } from 'react';
 import { getPlatformSettings, savePlatformSettings } from '@/lib/db';
 import { AdminPricingPanel } from '@/components/admin-pricing-panel';
+import { VolumePricingEditor } from '@/components/institutions/volume-pricing-editor';
 import { FlagToggles } from '@/components/scope-c/flag-toggles';
 
 const fadeUp: Record<string, any> = {
@@ -122,6 +123,7 @@ export default function AdminSystemSettings() {
       </motion.header>
 
       <AdminPricingPanel />
+      <VolumePricingEditor />
 
       <div className="space-y-5">
         <FlagToggles />

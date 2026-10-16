@@ -32,7 +32,10 @@ import {
 import { requestPush } from './push-client';
 import type { PushCategory } from './push';
 import type { CertificateAward } from './certificates';
+import { isReservedSubdomain, normaliseSubdomain } from './tenant-host';
 import { reportContentChange } from './audit/report';
+
+export { isReservedSubdomain, normaliseSubdomain };
 
 export type { Role };
 
@@ -388,8 +391,15 @@ export interface Institution {
   adminId?: string;
   studentCount: number;
   teacherCount: number;
-  status: 'active' | 'pending';
+  status: 'active' | 'pending' | 'suspended';
   createdAt?: Timestamp;
+  type?: 'school' | 'university' | 'corporate' | 'government';
+  /** ISO 3166-1 alpha-2. */
+  country?: string;
+  plan?: 'starter' | 'team' | 'enterprise' | 'oem';
+  /** Set on a sub-academy. Data stays in this institution's own subcollections. */
+  parentInstitutionId?: string;
+  isolateData?: boolean;
 
   /** White-label: the host label this institution is served under, e.g.
    * "kolej-utama" for kolej-utama.poketschool.ai. Lowercase, unique. */
@@ -400,6 +410,7 @@ export interface Institution {
     logoUrl?: string;
     /** CSS colour applied to the accent, e.g. "#f5c451". */
     primaryColor?: string;
+    secondaryColor?: string;
     tagline?: string;
     /** Hide "Powered by Poket School" for institutions on a plan that allows it. */
     hidePoweredBy?: boolean;
@@ -407,29 +418,36 @@ export interface Institution {
     emailFromName?: string;
     /** Name printed on certificates. Falls back to the academy name. */
     certificateIssuer?: string;
+    certificateFooter?: string;
+    fontId?: string;
+    faviconUrl?: string;
+    loginHeadline?: string;
+    loginBody?: string;
+    inviteSubject?: string;
+    inviteBody?: string;
+    mobileAppName?: string;
+    mobileIconUrl?: string;
+    splashColor?: string;
   };
   /** A hostname the school owns, such as learn.kolej.example. */
   customDomain?: string;
-}
-
-/** Reserved hosts that must never resolve to an institution. */
-const RESERVED_SUBDOMAINS = new Set([
-  'www', 'app', 'api', 'admin', 'dashboard', 'mail', 'staging', 'dev', 'test', 'preview',
-]);
-
-/** Normalise user input into a valid host label, or null if unusable. */
-export function normaliseSubdomain(input: string): string | null {
-  const s = input.trim().toLowerCase()
-    .replace(/[^a-z0-9-]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-  if (s.length < 3 || s.length > 63) return null;
-  if (RESERVED_SUBDOMAINS.has(s)) return null;
-  return s;
-}
-
-export function isReservedSubdomain(s: string): boolean {
-  return RESERVED_SUBDOMAINS.has(s.trim().toLowerCase());
+  customDomainStatus?: 'manual' | 'pending' | 'verified' | 'active' | 'error';
+  customDomainMessage?: string;
+  /** Older host labels that redirect to `subdomain`. */
+  previousSubdomains?: string[];
+  signupPolicy?: 'open' | 'invite' | 'domain';
+  allowedEmailDomains?: string[];
+  catalogueVisibility?: 'private' | 'curated' | 'public';
+  publicCatalogueIds?: string[];
+  defaultLocale?: string;
+  require2fa?: boolean;
+  passwordMinLength?: number;
+  passwordRequireSymbol?: boolean;
+  sessionTimeoutMinutes?: number;
+  features?: Record<string, boolean>;
+  leaderboardVisible?: 'academy' | 'group' | 'off';
+  leaderboard?: { rank: number; name: string; points: number }[];
+  publishedPages?: { slug: string; title: string; body: string }[];
 }
 
 export interface LiveClass {
@@ -1419,13 +1437,17 @@ export async function getInstitution(id: string): Promise<Institution | null> {
   return snap.exists() ? ({ id: snap.id, ...snap.data() } as Institution) : null;
 }
 
-/** Resolve a white-label host label to its institution, or null if unclaimed. */
+/** Resolve a white-label host label to its institution, following a rename redirect. */
 export async function getInstitutionBySubdomain(subdomain: string): Promise<Institution | null> {
   const s = subdomain.trim().toLowerCase();
   if (!s || isReservedSubdomain(s)) return null;
   const snap = await getDocs(query(collection(db, 'institutions'), where('subdomain', '==', s), limit(1)));
   const d = snap.docs[0];
-  return d ? ({ id: d.id, ...d.data() } as Institution) : null;
+  if (d) return { id: d.id, ...d.data() } as Institution;
+  const redirect = await getDoc(doc(db, 'subdomain_redirects', s));
+  if (!redirect.exists()) return null;
+  const institutionId = String(redirect.data()?.institutionId ?? '');
+  return institutionId ? getInstitution(institutionId) : null;
 }
 
 /** A school that claimed this exact hostname. */
@@ -1457,6 +1479,7 @@ export interface AcademyClass {
   name: string;
   programmeIds: string[];
   memberIds: string[];
+  kind?: 'class' | 'department' | 'campus' | 'group';
 }
 
 export async function listAcademyClasses(institutionId: string): Promise<AcademyClass[]> {
@@ -1478,6 +1501,7 @@ export interface AcademyInvite {
   email: string;
   name: string;
   role: 'student' | 'teacher';
+  academyRole?: string;
 }
 
 export async function saveAcademyInvites(institutionId: string, rows: AcademyInvite[]): Promise<void> {
@@ -1498,6 +1522,7 @@ export interface AcademyMember {
   email?: string;
   name?: string;
   role?: string;
+  academyRole?: string;
 }
 
 export async function listAcademyMembers(institutionId: string): Promise<AcademyMember[]> {
@@ -1597,7 +1622,9 @@ export async function isSubdomainAvailable(subdomain: string, exceptId?: string)
   const s = normaliseSubdomain(subdomain);
   if (!s) return false;
   const snap = await getDocs(query(collection(db, 'institutions'), where('subdomain', '==', s), limit(2)));
-  return snap.docs.every(d => d.id === exceptId);
+  if (!snap.docs.every(d => d.id === exceptId)) return false;
+  const redirect = await getDoc(doc(db, 'subdomain_redirects', s));
+  return !redirect.exists();
 }
 
 /** Members of one institution — the listing an institution admin is scoped to. */

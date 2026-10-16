@@ -38,6 +38,7 @@ import { usePricing } from '@/hooks/use-pricing';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { isAdmin } from '@/lib/roles';
 import { useHomeMotion } from '@/hooks/use-home-motion';
+import { DemoLeadForm } from '@/components/demo-lead-form';
 import s from '@/app/home.module.css';
 
 const DEMO = 'mailto:institutions@poketschool.ai?subject=Book%20a%20Poket%20School%20demo';
@@ -184,7 +185,7 @@ export function LandingPage() {
               <Link className={s.secondary} href="#schools">
                 {t('landing.hero.schools')}
               </Link>
-              <a className={s.quiet} href={DEMO}>
+              <a className={s.quiet} href="#demo">
                 {t('landing.hero.demo')}
               </a>
             </div>
@@ -518,7 +519,7 @@ export function LandingPage() {
           <p className="mt-4 max-w-2xl leading-relaxed text-muted-foreground">{t('landing.schools.body')}</p>
           <div className="mt-6 flex flex-wrap gap-3">
             <a
-              href={DEMO}
+              href="#demo"
               className="inline-flex h-11 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
             >
               {t('landing.schools.demo')}
@@ -529,6 +530,12 @@ export function LandingPage() {
             >
               {t('landing.schools.pricing')}
             </Link>
+          </div>
+          <div id="demo" className="mt-8 max-w-3xl">
+            <DemoLeadForm />
+            <p className="mt-3 text-sm text-muted-foreground">
+              Prefer email? <a className="font-semibold text-primary" href={DEMO}>institutions@poketschool.ai</a>
+            </p>
           </div>
         </div>
       </section>
@@ -546,7 +553,7 @@ export function LandingPage() {
             <Link className={s.secondary} href="#schools">
               {t('landing.cta.schools')}
             </Link>
-            <a className={s.quiet} href={DEMO}>
+            <a className={s.quiet} href="#demo">
               {t('landing.cta.demo')}
             </a>
           </div>
