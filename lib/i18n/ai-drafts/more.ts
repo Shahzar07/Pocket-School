@@ -1,7 +1,7 @@
 /**
  * AI-ASSISTED — NEEDS HUMAN REVIEW
  * Interface drafts for Arabic, Indonesian and Kiswahili.
- * Proper nouns stay official: Poket School, ET, Sparks, AI Studio,
+ * Proper nouns stay official: Poket School, ET AI, Sparks, AI Studio,
  * Cambridge Assessment International Education, Pearson Edexcel, AQA,
  * Malaysian Ministry of Education.
  */
@@ -149,13 +149,13 @@ export const ar = {
     analytics: 'تحليلات',
     analyticsDesc: 'بيانات استخدام مجهولة لتحسين تجربة التعلّم.',
     aiPerformance: 'أداء الذكاء',
-    aiPerformanceDesc: 'يساعدنا على تحسين جودة ردود ET وتخصيصها.',
+    aiPerformanceDesc: 'يساعدنا على تحسين جودة ردود ET AI وتخصيصها.',
   },
   auth: {
     line1: 'أذكى صف',
     line2: 'في جيبك',
     subtitle: 'تعلّم بالذكاء الاصطناعي لـ IGCSE وA-Levels والدرجات وما بعدها.',
-    f1title: 'ET — معلّمك بالذكاء',
+    f1title: 'ET AI — معلّمك بالذكاء',
     f1desc: 'يتكيّف مع طريقة تفكيرك، على مدار الساعة',
     f2title: 'IGCSE · A-Levels · درجات',
     f2desc: 'مسارات أكاديمية كاملة، بإيقاعك',
@@ -166,7 +166,7 @@ export const ar = {
   },
   switcher: {
     change: 'تغيير اللغة',
-    uiFallback: 'قوائم هذه اللغة تبقى بالإنجليزية. يرد ET بـ {{language}}.',
+    uiFallback: 'قوائم هذه اللغة تبقى بالإنجليزية. يرد ET AI بـ {{language}}.',
   },
   lesson: {
     unit: 'درس (وحدة)',
@@ -182,8 +182,8 @@ export const ar = {
     localizedBody: 'الدرس المترجم',
     save: 'حفظ الترجمة',
     clear: 'مسح هذه اللغة',
-    translate: 'ترجمة بـ ET',
-    confirmBody: 'سيترجم ET الدرس الإنجليزي إلى {{language}}. يستهلك ذلك {{cost}} Sparks.',
+    translate: 'ترجمة بـ ET AI',
+    confirmBody: 'سيترجم ET AI الدرس الإنجليزي إلى {{language}}. يستهلك ذلك {{cost}} Sparks.',
     confirm: 'ترجمة وإنفاق Sparks',
     cancel: 'إلغاء',
     working: 'جارٍ الترجمة…',
@@ -193,7 +193,7 @@ export const ar = {
     empty: 'أضف عنوانًا أو نصًا إنجليزيًا قبل الترجمة.',
     failed: 'فشلت الترجمة. لم تُنفق Sparks.',
     sourceManual: 'مكتوبة',
-    sourceAi: 'ترجمة ET',
+    sourceAi: 'ترجمة ET AI',
   },
   sparks: {
     title: 'رصيد Sparks',
@@ -393,13 +393,13 @@ export const id = {
     analytics: 'Analitik',
     analyticsDesc: 'Data pemakaian anonim agar pengalaman belajar lebih baik.',
     aiPerformance: 'Kinerja AI',
-    aiPerformanceDesc: 'Membantu kami memperbaiki mutu jawaban ET dan personalisasi.',
+    aiPerformanceDesc: 'Membantu kami memperbaiki mutu jawaban ET AI dan personalisasi.',
   },
   auth: {
     line1: 'Kelas tercerdas Anda',
     line2: 'di dalam saku',
     subtitle: 'Belajar dengan AI untuk IGCSE, A-Levels, gelar, dan seterusnya.',
-    f1title: 'ET — tutor AI Anda',
+    f1title: 'ET AI — tutor AI Anda',
     f1desc: 'Menyesuaikan cara Anda berpikir, 24 jam',
     f2title: 'IGCSE · A-Levels · Gelar',
     f2desc: 'Jalur akademik lengkap, tempo Anda',
@@ -410,7 +410,7 @@ export const id = {
   },
   switcher: {
     change: 'Ganti bahasa',
-    uiFallback: 'Menu bahasa ini tetap bahasa Inggris. ET tetap membalas dalam {{language}}.',
+    uiFallback: 'Menu bahasa ini tetap bahasa Inggris. ET AI tetap membalas dalam {{language}}.',
   },
   lesson: {
     unit: 'Pelajaran (unit)',
@@ -426,8 +426,8 @@ export const id = {
     localizedBody: 'Pelajaran terjemahan',
     save: 'Simpan terjemahan',
     clear: 'Hapus bahasa ini',
-    translate: 'Terjemahkan dengan ET',
-    confirmBody: 'ET akan menerjemahkan pelajaran bahasa Inggris ke {{language}}. Ini memakai {{cost}} Sparks.',
+    translate: 'Terjemahkan dengan ET AI',
+    confirmBody: 'ET AI akan menerjemahkan pelajaran bahasa Inggris ke {{language}}. Ini memakai {{cost}} Sparks.',
     confirm: 'Terjemahkan dan pakai Sparks',
     cancel: 'Batal',
     working: 'Menerjemahkan…',
@@ -437,7 +437,7 @@ export const id = {
     empty: 'Tambahkan judul atau isi bahasa Inggris sebelum menerjemahkan.',
     failed: 'Terjemahan gagal. Sparks tidak terpakai.',
     sourceManual: 'Diketik',
-    sourceAi: 'Terjemahan ET',
+    sourceAi: 'Terjemahan ET AI',
   },
   sparks: {
     title: 'Saldo Sparks',
@@ -637,13 +637,13 @@ export const sw = {
     analytics: 'Uchambuzi',
     analyticsDesc: 'Data isiyotambulisha ili kuboresha kujifunza.',
     aiPerformance: 'Utendaji wa AI',
-    aiPerformanceDesc: 'Hutusaidia kuboresha ubora wa majibu ya ET na ubinafsishaji.',
+    aiPerformanceDesc: 'Hutusaidia kuboresha ubora wa majibu ya ET AI na ubinafsishaji.',
   },
   auth: {
     line1: 'Darasa lako werevu zaidi',
     line2: 'mfukoni mwako',
     subtitle: 'Kujifunza kwa AI kwa IGCSE, A-Levels, shahada na zaidi.',
-    f1title: 'ET — mwalimu wako wa AI',
+    f1title: 'ET AI — mwalimu wako wa AI',
     f1desc: 'Hubadilika kulingana na jinsi unavyofikiri, saa 24',
     f2title: 'IGCSE · A-Levels · Shahada',
     f2desc: 'Njia kamili za masomo, kasi yako',
@@ -654,7 +654,7 @@ export const sw = {
   },
   switcher: {
     change: 'Badilisha lugha',
-    uiFallback: 'Menyu za lugha hii hubaki Kiingereza. ET hujibu kwa {{language}}.',
+    uiFallback: 'Menyu za lugha hii hubaki Kiingereza. ET AI hujibu kwa {{language}}.',
   },
   lesson: {
     unit: 'Somo (kipengele)',
@@ -670,8 +670,8 @@ export const sw = {
     localizedBody: 'Somo lililotafsiriwa',
     save: 'Hifadhi tafsiri',
     clear: 'Futa lugha hii',
-    translate: 'Tafsiri kwa ET',
-    confirmBody: 'ET itatafsiri somo la Kiingereza kuwa {{language}}. Hii hutumia {{cost}} Sparks.',
+    translate: 'Tafsiri kwa ET AI',
+    confirmBody: 'ET AI itatafsiri somo la Kiingereza kuwa {{language}}. Hii hutumia {{cost}} Sparks.',
     confirm: 'Tafsiri na tumia Sparks',
     cancel: 'Ghairi',
     working: 'Inatafsiri…',
@@ -681,7 +681,7 @@ export const sw = {
     empty: 'Ongeza kichwa au maandishi ya Kiingereza kabla ya kutafsiri.',
     failed: 'Tafsiri imeshindwa. Sparks hazikutumika.',
     sourceManual: 'Imeandikwa',
-    sourceAi: 'Tafsiri ya ET',
+    sourceAi: 'Tafsiri ya ET AI',
   },
   sparks: {
     title: 'Salio la Sparks',

@@ -37,7 +37,7 @@ export const EXAM_PACKS: ExamPack[] = [
     level: 'Form 4–5',
     scale: 'spm',
     blurb: 'The full KSSM Mathematics syllabus for Forms 4 and 5, with Paper 1 and Paper 2 style questions.',
-    accent: '#2786A4',
+    accent: 'var(--primary)',
     units: [
       { id: 'f4', title: 'Form 4', topics: t('f4', [
         ['Quadratic functions and equations in one variable', 5], 'Number bases', 'Logical reasoning', 'Operations on sets',

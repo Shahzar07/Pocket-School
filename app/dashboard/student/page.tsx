@@ -34,7 +34,7 @@ const fadeUp: Record<string, any> = {
 };
 
 const COURSE_GRADIENTS = [
-  'from-[#2786A4] to-[#1E6A83]',
+  'from-primary to-primary',
   'from-emerald-500 to-teal-600',
   'from-amber-500 to-orange-600',
   'from-rose-500 to-pink-600',
@@ -340,7 +340,7 @@ export default function StudentDashboard() {
                 href="/dashboard/studio"
                 leading={<span className="w-9 h-9 rounded-xl bg-secondary grid place-items-center shrink-0"><Sparkles className="w-4 h-4 text-primary" /></span>}
                 title="AI Studio"
-                subtitle="ET, Maths, and Exam Prep"
+                subtitle="ET AI, Maths, and Exam Prep"
                 trailing={<ArrowRight className="w-4 h-4 text-muted-foreground" />}
               />
               <ListRow

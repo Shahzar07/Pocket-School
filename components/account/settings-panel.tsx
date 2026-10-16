@@ -641,7 +641,7 @@ function Strength({ score, label }: { score: number; label: string }) {
   return (
     <div>
       <div className="h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
-        <div className="h-full bg-[#2786A4]" style={{ width: `${(score / 4) * 100}%` }} />
+        <div className="h-full bg-primary" style={{ width: `${(score / 4) * 100}%` }} />
       </div>
       <p className="mt-1 text-xs text-muted-foreground">Password strength: {label}</p>
     </div>
