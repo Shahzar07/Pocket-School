@@ -31,6 +31,7 @@ import {
   type ImportDraft,
 } from '@/lib/insights/planner-import';
 import { loadSchoolPlan, saveSchoolPlan, type StoredYearPlan } from '@/lib/planner-store';
+import { nextTermName, parseTermFile, termsToLines } from '@/lib/terms';
 
 const KINDS: PlannerKind[] = ['term', 'holiday', 'exam', 'closure', 'assessment', 'report', 'period', 'event', 'ptm', 'revision'];
 
@@ -430,6 +431,7 @@ export function YearPlanner({
                   onChange={event => { void onFile(event.target.files?.[0]); }}
                 />
               </label>
+              <p className="mt-3 text-xs text-muted-foreground">Two-way Google Calendar sync needs the owner&apos;s OAuth client. Until then, paste an ICS link or upload a term file.</p>
               <label className="mt-3 block text-sm font-medium">Google or Outlook link
                 <span className="mt-1 flex gap-2">
                   <Input value={link} onChange={event => setLink(event.target.value)} placeholder="https://calendar.google.com/...ics" />
@@ -459,11 +461,26 @@ export function YearPlanner({
           <label className="text-sm">Term start <Input type="date" value={plan.termStart} disabled={!canEdit} onChange={event => setPlan(current => ({ ...current, termStart: event.target.value, status: 'draft' }))} /></label>
           <label className="text-sm">Term end <Input type="date" value={plan.termEnd} disabled={!canEdit} onChange={event => setPlan(current => ({ ...current, termEnd: event.target.value, status: 'draft' }))} /></label>
         </div>
-        <label className="text-sm block mb-3">Units, one per line. Lessons after a colon, separated by |
+        <div className="flex flex-wrap gap-2 mb-2">
+          <Button type="button" size="sm" variant="outline" className="rounded-full" disabled={!canEdit} onClick={() => setPlan(current => ({ ...current, unitsText: `${current.unitsText.trim()}\n${nextTermName(current.unitsText)}: Week 1 | Week 2`.trim(), status: 'draft' }))}>Add term</Button>
+          <Button type="button" size="sm" variant="outline" className="rounded-full" disabled={!canEdit} onClick={() => setPlan(current => ({ ...current, unitsText: current.unitsText.trim().split('\n').slice(0, -1).join('\n'), status: 'draft' }))}>Remove last term</Button>
+          <label className="inline-flex items-center h-8 px-3 rounded-full border border-border text-xs font-semibold cursor-pointer">
+            Upload term dates
+            <input type="file" accept=".csv,.txt,text/plain" className="sr-only" disabled={!canEdit} onChange={async (event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              const rows = parseTermFile(await file.text());
+              if (!rows.length) return;
+              const first = rows[0]!;
+              setPlan(current => ({ ...current, termStart: first.from, termEnd: rows[rows.length - 1]!.to, unitsText: termsToLines(rows), status: 'draft' }));
+            }} />
+          </label>
+        </div>
+        <label className="text-sm block mb-3">Terms, one per line. Lessons after a colon, separated by |
           <textarea value={plan.unitsText} disabled={!canEdit} onChange={event => setPlan(current => ({ ...current, unitsText: event.target.value, status: 'draft' }))} rows={3} className="mt-1 w-full rounded-xl border border-border bg-background p-2 text-sm" />
         </label>
         {pacing.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Add a term and at least one unit. Weekends, holidays, and exam weeks are skipped.</p>
+          <p className="text-sm text-muted-foreground">Add a term and at least one line. Weekends, holidays, and exam weeks are skipped.</p>
         ) : (
           <ul className="space-y-1 text-sm">
             {pacing.map(row => (
