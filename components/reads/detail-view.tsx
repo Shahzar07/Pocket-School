@@ -17,12 +17,14 @@ import { quotePrice, viewerCurrency } from '@/lib/platform/pricing';
 import { authedFetch, ApiError } from '@/lib/api-client';
 import { useReadsT } from '@/lib/reads/i18n';
 import { bookById, publishedBooks } from '@/lib/reads/seed';
+import { usePublishedStudioBooks } from '@/components/reads/use-studio-shelf';
 import { myList, toggleList } from '@/lib/shelf/storage';
 import { getLanguage } from '@/lib/languages';
 
 export function BookDetail({ bookId }: { bookId: string }) {
   const t = useReadsT();
-  const book = bookById(bookId);
+  const studioBooks = usePublishedStudioBooks();
+  const book = bookById(bookId) ?? studioBooks.find(item => item.id === bookId && item.status === 'published');
   const { profile, ready } = useShelfProfile();
   const [list, setList] = useState<string[]>([]);
   const [lang, setLang] = useState('en');
@@ -92,7 +94,7 @@ export function BookDetail({ bookId }: { bookId: string }) {
           <dl className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-muted-foreground">
             <div>{t('reads.detail.age', { rating: book.ageRating })}</div>
             <div>{book.form === 'fiction' ? t('reads.filter.fiction') : t('reads.filter.nonfiction')}</div>
-            <div>{book.category === 'academic' ? t('reads.filter.academic') : t('reads.filter.general')}</div>
+            <div>{book.category === 'academic' ? t('reads.filter.academic') : book.category === 'childrens_stories' ? t('reads.filter.childrens') : t('reads.filter.general')}</div>
           </dl>
           <div className="mt-6 flex flex-wrap gap-2">
             <Link href={`/reads/read/${book.id}?lang=${lang}`} className="inline-flex h-11 items-center rounded-full bg-foreground px-5 text-sm font-bold text-background">

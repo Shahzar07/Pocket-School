@@ -7,6 +7,7 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { getCourse, getModulesWithLessons, getEnrolledCourses, getUnitQuizAttempts, listCourseQuestions, Course, Module, Lesson, Enrollment, UnitQuizAttempt, CourseQuestion } from '@/lib/db';
 import { CourseQuestions } from '@/components/course-questions';
 import { getUnitStatuses, getCurriculumLessonStatus } from '@/lib/curriculum';
+import { courseOpenToStudents, visibleStudentLessons } from '@/lib/course-review';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -43,12 +44,15 @@ export default function CourseDetailPage() {
         getEnrolledCourses(user.uid),
       ]);
       let mods = modsRaw;
-      // Curriculum modules: students only see published lessons, and unit
-      // progression depends on mastery quiz attempts.
-      if (c?.kind === 'curriculum') {
+      // Students never see unpublished lessons, on curriculum or marketplace courses.
+      if (c && !courseOpenToStudents(c)) {
+        mods = [];
+      } else if (c) {
         mods = mods
-          .map(m => ({ module: m.module, lessons: m.lessons.filter(l => l.status === 'published') }))
+          .map(m => ({ module: m.module, lessons: visibleStudentLessons(m.lessons, c) }))
           .filter(m => m.lessons.length > 0);
+      }
+      if (c?.kind === 'curriculum') {
         setAttempts(await getUnitQuizAttempts(user.uid, courseId));
       }
       setCourse(c);

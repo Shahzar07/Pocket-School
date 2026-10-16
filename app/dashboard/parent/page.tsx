@@ -20,6 +20,7 @@ import { DashPage, DashHeader } from '@/components/dash-ui';
 import dynamic from 'next/dynamic';
 import { SeeMore } from '@/components/shell/see-more';
 import { friendlyError } from '@/lib/design/system';
+import { lessonVisibleToStudent } from '@/lib/course-review';
 
 const LearningCharts = dynamic(
   () => import('@/components/insights/learning-charts').then(mod => mod.LearningCharts),
@@ -127,6 +128,7 @@ async function buildUnitReports(
         reviewLessons: (latest.recommendedLessonIds ?? [])
           .map(id => lessonById.get(id))
           .filter((l): l is NonNullable<typeof l> => !!l)
+          .filter(l => course ? lessonVisibleToStudent(l, course) : false)
           .map(l => ({ id: l.id, title: l.title, lessonNumber: l.lessonNumber })),
       });
     }

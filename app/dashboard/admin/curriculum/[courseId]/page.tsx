@@ -1070,14 +1070,13 @@ export default function ContentBuilderPage() {
         </span>
         {draft && (
           /* Admin preview — always available, whatever the publish status. */
-          <a
-            href={`/dashboard/student/courses/${courseId}/lessons/${draft.id}`}
-            target="_blank" rel="noreferrer"
-            title="Open the student view of this lesson in a new tab"
+          <Link
+            href={`/dashboard/admin/curriculum/${courseId}/preview`}
+            title="Review the whole course as a student sees it"
             className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border border-border hover:bg-muted"
           >
-            <Eye className="w-3.5 h-3.5" /> Preview
-          </a>
+            <Eye className="w-3.5 h-3.5" /> Preview course
+          </Link>
         )}
         <Button size="sm" variant="outline" className="rounded-xl h-8 text-xs" onClick={saveNow} disabled={!draft || saveState === 'saved' || saveState === 'saving'}>
           Save
@@ -2128,9 +2127,9 @@ function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseI
           </Button>
         </div>
         {/* Always available to admins, published or not. */}
-        <a href={`/dashboard/student/courses/${courseId}/lessons/${draft.id}`} target="_blank" rel="noreferrer" className="block">
-          <Button variant="outline" className="w-full rounded-xl gap-2 text-xs"><Eye className="w-3.5 h-3.5" /> Preview as Student</Button>
-        </a>
+        <Link href={`/dashboard/admin/curriculum/${courseId}/preview`} className="block">
+          <Button variant="outline" className="w-full rounded-xl gap-2 text-xs"><Eye className="w-3.5 h-3.5" /> Preview course</Button>
+        </Link>
         {status === 'draft' && (
           <Button variant="outline" className="w-full rounded-xl gap-2 text-xs" onClick={() => setStatus('in_review', 'Submitted for review')}>
             <RotateCcw className="w-3.5 h-3.5" /> Submit for Review

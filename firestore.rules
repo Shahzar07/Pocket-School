@@ -929,6 +929,38 @@ service cloud.firestore {
           allow delete: if isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId));
         }
       }
+
+      // Review comments stay with the course. Students never read them.
+      match /reviewComments/{commentId} {
+        allow read: if isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId));
+        allow create: if (isAdmin() || (isTeacherOrAdmin() && ownsCourse(courseId)))
+          && incoming().authorId == request.auth.uid
+          && incoming().lessonId is string
+          && incoming().body is string
+          && incoming().body.size() > 0
+          && incoming().body.size() <= 2000;
+        allow update, delete: if isAdmin()
+          || (isSignedIn() && resource.data.authorId == request.auth.uid);
+      }
+    }
+
+    // Shareable course preview. A guest may fetch one unexpired snapshot by
+    // its token. Listing the collection is refused so unpublished courses
+    // cannot be enumerated.
+    match /coursePreviews/{token} {
+      allow get: if resource.data.expiresAt is number
+        && resource.data.expiresAt > request.time.toMillis();
+      allow list: if false;
+      allow create: if isTeacherOrAdmin()
+        && incoming().token == token
+        && incoming().courseId is string
+        && incoming().createdBy == request.auth.uid
+        && incoming().expiresAt is number
+        && incoming().expiresAt > request.time.toMillis()
+        && incoming().expiresAt <= request.time.toMillis() + duration.value(14, 'd');
+      allow update: if false;
+      allow delete: if isAdmin()
+        || (isSignedIn() && resource.data.createdBy == request.auth.uid);
     }
 
     // ── Coupon codes ──────────────────────────────────────────
@@ -1606,10 +1638,12 @@ service cloud.firestore {
         && (request.resource == null || request.resource.data.userId == request.auth.uid);
     }
 
-    // Poket Reads. Client writes of ownership, Sparks, and leaderboard
-    // totals stay denied. The Admin SDK bypasses these rules.
+    // Poket Reads. Library, reading sessions, and leaderboard writes stay
+    // denied. A teacher may write a book they own. The Admin SDK bypasses
+    // these rules.
     match /books/{bookId} {
       allow read: if isAdmin()
+        || (isTeacherOrAdmin() && resource.data.ownerId == request.auth.uid)
         || (resource.data.status == 'published' && (
           (targetsGated(resource.data) && targetsHit(resource.data))
           || (!targetsGated(resource.data) && (
@@ -1617,13 +1651,26 @@ service cloud.firestore {
             || resource.data.get('allocateLibrary', false) == true
           ))
         ));
-      allow create, update, delete: if isAdmin();
+      allow create: if isAdmin()
+        || (isTeacherOrAdmin()
+            && incoming().ownerId == request.auth.uid
+            && incoming().id == bookId);
+      allow update: if isAdmin()
+        || (isTeacherOrAdmin()
+            && resource.data.ownerId == request.auth.uid
+            && incoming().ownerId == request.auth.uid);
+      allow delete: if isAdmin()
+        || (isTeacherOrAdmin() && resource.data.ownerId == request.auth.uid);
       match /chapters/{chapterId} {
         allow read: if isAdmin()
+          || (isTeacherOrAdmin()
+              && get(/databases/$(database)/documents/books/$(bookId)).data.ownerId == request.auth.uid)
           || (isSignedIn() && get(/databases/$(database)/documents/books/$(bookId)).data.status == 'published')
           || (resource.data.preview == true
               && get(/databases/$(database)/documents/books/$(bookId)).data.status == 'published');
-        allow write: if isAdmin();
+        allow write: if isAdmin()
+          || (isTeacherOrAdmin()
+              && get(/databases/$(database)/documents/books/$(bookId)).data.ownerId == request.auth.uid);
       }
       match /languageVersions/{lang} {
         allow read: if isAdmin() || resource.data.status == 'approved';

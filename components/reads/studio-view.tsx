@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 import {
@@ -12,8 +13,13 @@ import {
   CoverArtPicker, IllustrationPrompt, ImageLibrary, optimiseImage, storeMedia,
 } from '@/components/media';
 import { composeCoverSizes } from '@/components/reads/cover-compose';
+import { generateIllustration } from '@/components/media/generate';
 import { BOOKS } from '@/lib/reads/seed';
 import { publishIssues, screenCoverAge, type CoverBrief, type CoverFont, type CoverPlacement } from '@/lib/reads/cover';
+import { bookEpub, bookPdf, chapterPlain } from '@/lib/reads/book-export';
+import {
+  AGE_BANDS, ageBand, blankChildrensStory, fallbackStory, isPictureBook, storyChapters, storyPublishIssues, storyShape, withPageIllustration, wordsOf,
+} from '@/lib/reads/picture-book';
 import type { Book, BookChapter, BookStatus } from '@/lib/reads/types';
 import { useReadsT } from '@/lib/reads/i18n';
 import { getLanguage } from '@/lib/languages';
@@ -67,7 +73,7 @@ export function StudioView() {
     if (book.status === 'draft' && status === 'published') return;
     if (book.status === 'published' && status === 'draft') return;
     if (status === 'published') {
-      const issue = publishIssues(book)[0];
+      const issue = [...publishIssues(book), ...storyPublishIssues(book)][0];
       if (issue) {
         toast.error(issue);
         return;
@@ -111,6 +117,94 @@ export function StudioView() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('reads.studio.generateFail'));
     }
+  };
+
+  const writeStory = async () => {
+    const band = ageBand(book.ageBand);
+    const local = fallbackStory(book.blurb || book.title, band.id);
+    let title = local.title;
+    let blurb = local.blurb;
+    let pages = local.chapters;
+    let fallback = true;
+    try {
+      const res = await fetch('/api/reads/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kind: 'story',
+          title: book.title,
+          blurb: book.blurb,
+          ageBand: band.label,
+          category: 'childrens_stories',
+          form: 'fiction',
+          genre: "Children's Stories",
+          ageRating: band.ageRating,
+          readingLevel: 'primary',
+        }),
+      });
+      const data = await res.json() as {
+        title?: string;
+        blurb?: string;
+        chapters?: { title?: string; summary?: string; illustration?: string }[];
+      };
+      if (res.ok && data.chapters?.length) {
+        fallback = false;
+        title = data.title || title;
+        blurb = data.blurb || blurb;
+        pages = data.chapters.filter(page => page.title).map(page => ({
+          title: page.title || 'Page',
+          text: page.summary || '',
+          illustration: page.illustration || page.summary || page.title || '',
+        }));
+      }
+    } catch {
+      fallback = true;
+    }
+    const chapters = storyChapters(pages, `page-${Date.now()}`);
+    update({
+      ...storyShape(band.id),
+      title: book.title.trim() && book.title !== 'Untitled story' ? book.title : title,
+      blurb,
+      chapters,
+      curriculumTags: [{ programme: 'Primary', subject: 'English', year: band.label }],
+      coverBrief: { placement: 'bottom', font: 'rounded', brand: true, ...book.coverBrief, styleId: book.coverBrief?.styleId || 'illustrated-kids' },
+    });
+    if (chapters[0]) setChapterId(chapters[0].id);
+    setTab('write');
+    toast.success(fallback
+      ? `ET AI wrote a local story for ${band.label}. No school year is used. Edit every page, then add the pictures.`
+      : `ET AI drafted a story for ${band.label}. Edit every page before you approve it.`);
+  };
+
+  const illustratePages = async () => {
+    const styleId = book.coverBrief?.styleId || 'illustrated-kids';
+    const lock = `Children's picture book, style ${styleId}. The same child, the same clothes, and the same colours on every page. No letters in the picture.`;
+    const images = [...(book.images ?? [])];
+    const chapters: BookChapter[] = [];
+    let fallback = false;
+    for (const chapter of book.chapters) {
+      const picture = await generateIllustration(`${lock} ${chapter.title}. ${chapter.markdown.replace(/!full?\[[^\]]*\]\([^)]*\)/g, ' ').slice(0, 280)}`, styleId);
+      fallback = fallback || picture.fallback;
+      const alt = chapter.title || 'Illustration';
+      chapters.push({ ...chapter, markdown: withPageIllustration(chapter.markdown, alt, picture.src) });
+      images.push({
+        id: `page-${chapter.id}`,
+        src: picture.src,
+        alt,
+        width: 800,
+        height: 1200,
+        fullBleed: true,
+      });
+    }
+    update({
+      chapters,
+      images,
+      pictureBook: true,
+      coverBrief: { placement: 'bottom', font: 'rounded', brand: true, ...book.coverBrief, styleId },
+    });
+    toast.success(fallback
+      ? 'Each page has a picture in this book’s style. Drawn on this device, so it costs 0 Sparks.'
+      : 'Each page has an illustration in the same style.');
   };
 
   const applyImport = (result: ImportResult) => {
@@ -203,6 +297,19 @@ export function StudioView() {
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
         <aside className="space-y-2">
           <p className="px-1 text-[12px] text-muted-foreground">{counts.draft} {t('reads.studio.draft')} · {counts.review} {t('reads.studio.review')} · {counts.published} {t('reads.studio.published')}</p>
+          <button
+            type="button"
+            className="h-10 w-full rounded-full border border-border text-sm font-semibold"
+            onClick={() => {
+              const created = blankChildrensStory();
+              setBooks(list => [created, ...list]);
+              setId(created.id);
+              setChapterId(created.chapters[0]?.id ?? '');
+              setTab('details');
+            }}
+          >
+            New children’s story
+          </button>
           {books.map(item => (
             <button
               key={item.id}
@@ -231,6 +338,47 @@ export function StudioView() {
 
           {tab === 'details' && (
             <>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="text-sm font-semibold">Type
+                  <select
+                    value={isPictureBook(book) ? 'childrens_story' : 'reader'}
+                    onChange={event => {
+                      if (event.target.value === 'childrens_story') {
+                        const band = ageBand(book.ageBand);
+                        update({
+                          ...storyShape(band.id),
+                          curriculumTags: [{ programme: 'Primary', subject: book.curriculumTags[0]?.subject || 'English', year: band.label }],
+                          coverBrief: { placement: 'bottom', font: 'rounded', brand: true, ...book.coverBrief, styleId: book.coverBrief?.styleId || 'illustrated-kids' },
+                        });
+                      } else {
+                        update({ pictureBook: false, ageBand: undefined, category: book.category === 'childrens_stories' ? 'general' : book.category });
+                      }
+                    }}
+                    className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal"
+                  >
+                    <option value="reader">Reader</option>
+                    <option value="childrens_story">Children&apos;s story</option>
+                  </select>
+                </label>
+                {isPictureBook(book) && (
+                  <label className="text-sm font-semibold">Age band
+                    <select
+                      value={ageBand(book.ageBand).id}
+                      onChange={event => {
+                        const band = ageBand(event.target.value);
+                        update({
+                          ...storyShape(band.id),
+                          curriculumTags: [{ programme: 'Primary', subject: 'English', year: band.label }],
+                        });
+                      }}
+                      className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal"
+                    >
+                      {AGE_BANDS.map(band => <option key={band.id} value={band.id}>{band.label}</option>)}
+                    </select>
+                  </label>
+                )}
+              </div>
+              {isPictureBook(book) && <p className="text-sm text-muted-foreground">ET AI writes for the age band. School years are not used. One illustration belongs on every page, in the same style.</p>}
               <label className="block text-sm font-semibold">{t('reads.studio.fieldTitle')}
                 <input value={book.title} onChange={e => update({ title: e.target.value })} className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal" />
               </label>
@@ -259,7 +407,14 @@ export function StudioView() {
                 onChange={targets => update({ targets, ...bookFlagsFromTargets(targets) })}
               />
               <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => void generate()} className="h-10 rounded-full bg-secondary px-4 text-sm font-bold text-secondary-foreground">{t('reads.studio.generate')}</button>
+                <Link href={`/reads/read/${book.id}?preview=1`} className="inline-flex h-10 items-center rounded-full border border-border px-4 text-sm font-semibold">Preview as a reader</Link>
+                <button type="button" onClick={() => downloadBook(book, 'pdf')} className="h-10 rounded-full border border-border px-4 text-sm font-semibold">Download PDF</button>
+                <button type="button" onClick={() => downloadBook(book, 'epub')} className="h-10 rounded-full border border-border px-4 text-sm font-semibold">Download EPUB</button>
+                {isPictureBook(book) ? (
+                  <button type="button" onClick={() => void writeStory()} className="h-10 rounded-full bg-secondary px-4 text-sm font-bold text-secondary-foreground">Write story</button>
+                ) : (
+                  <button type="button" onClick={() => void generate()} className="h-10 rounded-full bg-secondary px-4 text-sm font-bold text-secondary-foreground">{t('reads.studio.generate')}</button>
+                )}
                 {book.status === 'draft' && <button type="button" onClick={() => setStatus('review')} className="h-10 rounded-full bg-foreground px-4 text-sm font-bold text-background">{t('reads.studio.toReview')}</button>}
                 {book.status === 'review' && <button type="button" onClick={() => setStatus('published')} className="h-10 rounded-full bg-foreground px-4 text-sm font-bold text-background">{t('reads.studio.publish')}</button>}
                 {book.status === 'review' && <button type="button" onClick={() => setStatus('draft')} className="h-10 rounded-full border border-border px-4 text-sm font-semibold">{t('reads.studio.back')}</button>}
@@ -355,6 +510,7 @@ export function StudioView() {
                 onManuscript={applyImport}
                 onPasteImages={files => { void addFiles(files); }}
               />
+              <ReadAloud text={chapter.markdown} />
               <div>
                 <h2 className="font-heading text-[22px]">Version history</h2>
                 <div className="mt-2">
@@ -379,6 +535,15 @@ export function StudioView() {
 
           {tab === 'pictures' && (
             <div className="space-y-4">
+              {isPictureBook(book) && (
+                <div className="rounded-2xl border border-border p-3">
+                  <p className="text-sm font-semibold">One illustration per page</p>
+                  <p className="mt-1 text-sm text-muted-foreground">ET AI keeps the same child, clothes, and colours. The style stays with this book. Without an image key, each page is drawn here and costs nothing.</p>
+                  <button type="button" className="mt-3 h-10 rounded-full bg-secondary px-4 text-sm font-bold text-secondary-foreground" onClick={() => void illustratePages()}>
+                    Illustrate every page
+                  </button>
+                </div>
+              )}
               <IllustrationPrompt
                 onCreated={(asset, note) => {
                   update({ images: [...(book.images ?? []), asset] });
@@ -513,6 +678,64 @@ export function StudioView() {
           )}
         </section>
       </div>
+    </div>
+  );
+}
+
+function downloadBook(book: Book, kind: 'pdf' | 'epub') {
+  const year = new Date().getFullYear();
+  const bytes = kind === 'pdf' ? bookPdf(book, year) : bookEpub(book, year);
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  const blob = new Blob([copy.buffer], { type: kind === 'pdf' ? 'application/pdf' : 'application/epub+zip' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `${book.id || 'book'}.${kind}`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function ReadAloud({ text }: { text: string }) {
+  const spoken = chapterPlain(text);
+  const words = wordsOf(spoken);
+  const [on, setOn] = useState(false);
+  const [at, setAt] = useState(-1);
+  const stop = () => {
+    window.speechSynthesis?.cancel();
+    setOn(false);
+    setAt(-1);
+  };
+  const play = () => {
+    if (on) { stop(); return; }
+    if (!spoken || !window.speechSynthesis) return;
+    const utter = new SpeechSynthesisUtterance(spoken);
+    utter.rate = 0.92;
+    utter.onboundary = (event) => {
+      if (event.name !== 'word') return;
+      const heard = spoken.slice(0, event.charIndex).split(/\s+/).filter(Boolean).length;
+      setAt(Math.min(heard, Math.max(0, words.length - 1)));
+    };
+    utter.onend = () => { setOn(false); setAt(-1); };
+    utter.onerror = () => { setOn(false); setAt(-1); };
+    setOn(true);
+    setAt(0);
+    window.speechSynthesis.speak(utter);
+  };
+  return (
+    <div className="rounded-2xl border border-border p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-semibold">Read this chapter aloud</p>
+        <button type="button" onClick={play} className="h-9 rounded-full bg-secondary px-3 text-sm font-bold text-secondary-foreground">{on ? 'Stop' : 'Play'}</button>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">This browser’s voice. No speech key, and nothing is charged.</p>
+      {words.length > 0 && (
+        <p className="mt-3 text-sm leading-relaxed">
+          {words.map((token, index) => (
+            <span key={`${index}-${token}`} className={on && index === at ? 'rounded bg-[#E7C27D] px-0.5' : ''}>{token} </span>
+          ))}
+        </p>
+      )}
     </div>
   );
 }

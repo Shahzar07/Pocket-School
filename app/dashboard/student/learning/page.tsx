@@ -11,6 +11,7 @@ import {
 } from '@/lib/db';
 import { getUnitStatuses, getCurriculumLessonStatus, UnitStatus } from '@/lib/curriculum';
 import { productAccess, viewerFromProfile } from '@/lib/allocation';
+import { visibleStudentLessons } from '@/lib/course-review';
 import { usePricing } from '@/hooks/use-pricing';
 import { formatMoney, planById, quotePlan } from '@/lib/pricing';
 import { TIERS } from '@/lib/entitlements';
@@ -85,7 +86,7 @@ export default function MyLearningPage() {
         ]);
         const units = allUnits.map(u => ({
           module: u.module,
-          lessons: u.lessons.filter(l => l.status === 'published'),
+          lessons: visibleStudentLessons(u.lessons, course),
         })).filter(u => u.lessons.length > 0);
         result.push({
           course,

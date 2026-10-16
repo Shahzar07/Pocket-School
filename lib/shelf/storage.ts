@@ -77,6 +77,10 @@ export interface ReaderPrefs {
   font: number;
   spacing: number;
   dyslexia: boolean;
+  /** Serif, sans, or the dyslexia-friendly face. Applies to every book. */
+  typeface?: 'serif' | 'sans' | 'dyslexia';
+  /** Browser speech voice. Empty uses the device default. No speech key. */
+  voiceURI?: string;
   lang?: string;
 }
 

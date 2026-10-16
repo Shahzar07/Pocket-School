@@ -14,6 +14,7 @@ import { AddGoalDialog, type GoalCourseOption } from '@/components/goals/add-goa
 import { GoalsWorkspace, type WorkspaceGoal } from '@/components/goals/goals-workspace';
 import { autoProgress, spawnNextGoal, suggestGoalsFromSignals, weakTopicsFromQuizzes, type GoalDraft, type SuggestedGoal } from '@/lib/insights/goals';
 import { listSuggestions, logFocusSession, logStudyEvent, setSuggestionStatus } from '@/lib/insights/client';
+import { lessonVisibleToStudent } from '@/lib/course-review';
 
 function toWorkspace(goal: DailyGoal): WorkspaceGoal {
   return {
@@ -98,7 +99,9 @@ export default function StudentGoalsPage() {
           units: tree.map(item => ({
             id: item.module.id,
             title: item.module.title,
-            lessons: item.lessons.map(lesson => ({ id: lesson.id, title: lesson.title })),
+            lessons: item.lessons
+              .filter(lesson => lessonVisibleToStudent(lesson, row.course))
+              .map(lesson => ({ id: lesson.id, title: lesson.title })),
           })),
           completed: row.enrollment.completedLessons ?? [],
         };
