@@ -177,7 +177,7 @@ export function BlockShell({
 export function ObjectivesBlock({ value, onChange, onSuggest, suggesting }: {
   value: { text: string; bloom: string }[];
   onChange: (v: { text: string; bloom: string }[]) => void;
-  /** ET: fills this block with Bloom's-aligned objectives. */
+  /** ET AI: fills this block with Bloom's-aligned objectives. */
   onSuggest?: () => void;
   suggesting?: boolean;
 }) {
@@ -211,7 +211,7 @@ export function ObjectivesBlock({ value, onChange, onSuggest, suggesting }: {
       ))}
       {rows.length === 0 && (
         <p className="text-xs text-muted-foreground">
-          No objectives yet — add them by hand or let ET suggest a Bloom’s-aligned set.
+          No objectives yet — add them by hand or let ET AI suggest a Bloom’s-aligned set.
         </p>
       )}
       <div className="flex flex-wrap gap-2">
@@ -223,7 +223,7 @@ export function ObjectivesBlock({ value, onChange, onSuggest, suggesting }: {
           <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-50"
             disabled={suggesting} onClick={onSuggest}>
             {suggesting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-            Suggest with ET
+            Suggest with ET AI
           </Button>
         )}
       </div>
@@ -393,7 +393,7 @@ export function LessonTextBlock({ value, onChange, ai, generating, onImprove, im
   onChange: (v: string) => void;
   ai: AiRunner;
   generating: boolean;
-  /** ET: rewrites the existing text in place (expand / simplify / tighten). */
+  /** ET AI: rewrites the existing text in place (expand / simplify / tighten). */
   onImprove?: (instruction: string) => void;
   improving?: boolean;
   storageKey: string;
@@ -423,11 +423,11 @@ export function LessonTextBlock({ value, onChange, ai, generating, onImprove, im
           <>
             <Button size="sm" variant="outline" className="rounded-xl h-7 text-[11px] gap-1 border-violet-200 text-violet-700 hover:bg-violet-50" disabled={improving}
               onClick={() => onImprove('Expand this lesson text with more depth, worked examples and clearer explanations. Keep the same structure and headings.')}>
-              {improving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} ET Expand
+              {improving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} ET AI Expand
             </Button>
             <Button size="sm" variant="outline" className="rounded-xl h-7 text-[11px] gap-1 border-violet-200 text-violet-700 hover:bg-violet-50" disabled={improving}
               onClick={() => onImprove('Simplify this lesson text for a younger reading level while keeping every key fact and all worked examples.')}>
-              {improving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} ET Simplify
+              {improving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} ET AI Simplify
             </Button>
           </>
         ) : (
@@ -683,7 +683,7 @@ export function AssessmentBlock({ value, onChange, ai, generating, onDraftSectio
   onChange: (v: NonNullable<Lesson['assessmentConfig']>) => void;
   ai: AiRunner;
   generating: boolean;
-  /** ET: proposes a Bloom's-weighted section structure for the total marks. */
+  /** ET AI: proposes a Bloom's-weighted section structure for the total marks. */
   onDraftSections?: () => void;
   draftingSections?: boolean;
 }) {
@@ -747,7 +747,7 @@ export function AssessmentBlock({ value, onChange, ai, generating, onDraftSectio
           {onDraftSections && (
             <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-7 text-[11px] border-violet-200 text-violet-700 hover:bg-violet-50"
               disabled={draftingSections} onClick={onDraftSections}>
-              {draftingSections ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} Draft Sections with ET
+              {draftingSections ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} Draft Sections with ET AI
             </Button>
           )}
           <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-7 text-[11px]" disabled={generating} onClick={() => ai('quiz')}>

@@ -43,7 +43,7 @@
     --color-foreground: var(--foreground);
     --color-background: var(--background);
 
-    --color-google-blue: #2786A4;
+    --color-google-blue: var(--primary);
     --color-google-teal: #00897B;
     --color-google-amber: #F9AB00;
 
@@ -57,8 +57,8 @@
 
     --shadow-google-soft: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
     --shadow-google-hover: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
-    --shadow-glow-blue: 0 0 0 1px rgba(39,134,164,0.15), 0 4px 24px rgba(39,134,164,0.12);
-    --shadow-glow-hover: 0 0 0 1px rgba(39,134,164,0.25), 0 8px 40px rgba(39,134,164,0.18);
+    --shadow-glow-blue: 0 0 0 1px rgba(30,106,131,0.15), 0 4px 24px rgba(30,106,131,0.12);
+    --shadow-glow-hover: 0 0 0 1px rgba(30,106,131,0.25), 0 8px 40px rgba(30,106,131,0.18);
     /* Cooler and softer than a neutral drop — matches the homepage's
      * 0 3px 6px #23485812 card lift. */
     --shadow-card: 0 1px 2px 0 rgba(35,72,88,0.04), 0 3px 10px 0 rgba(35,72,88,0.06);
@@ -67,8 +67,11 @@
 
 /* ── Product palette ──────────────────────────────────────────
  * Taken from the homepage (app/home.module.css) so the marketing site
- * and the product read as one thing: ink #203337, teal #2786A4, a warm
- * off-white page and hairline #E7EDED borders.
+ * and the product read as one thing: ink #203337, primary teal #1E6A83
+ * (light) / #6FBBCE (dark), a warm off-white page and hairline #E7EDED
+ * borders. #1E6A83 is the light primary because #2786A4 is only 4.2:1 on
+ * white, under the 4.5:1 text minimum. Dark primary stays the lighter
+ * #6FBBCE so it clears 4.5:1 on #0B1417 and #121E22, with dark text on it.
  *
  * Every component already consumes these tokens (bg-card, border-border,
  * text-foreground, bg-primary), so the palette is changed here once rather
@@ -81,7 +84,7 @@
     --card-foreground: #203337;
     --popover: #FFFFFF;
     --popover-foreground: #203337;
-    --primary: #2786A4;
+    --primary: #1E6A83;
     --primary-foreground: #FFFFFF;
     --secondary: #E9F7FA;
     --secondary-foreground: #1E6A83;
@@ -94,8 +97,8 @@
     --destructive-foreground: #FFFFFF;
     --border: #E7EDED;
     --input: #E7EDED;
-    --ring: #2786A4;
-    --chart-1: #2786A4;
+    --ring: #1E6A83;
+    --chart-1: #1E6A83;
     --chart-2: #6FBBCE;
     --chart-3: #E2AF4D;
     --chart-4: #D0553F;
@@ -125,12 +128,20 @@
     --ease-out: cubic-bezier(0.21, 0.6, 0.35, 1);
     --sidebar: #FFFFFF;
     --sidebar-foreground: #203337;
-    --sidebar-primary: #2786A4;
+    --sidebar-primary: #1E6A83;
     --sidebar-primary-foreground: #FFFFFF;
     --sidebar-accent: #E9F7FA;
     --sidebar-accent-foreground: #1E6A83;
     --sidebar-border: #E7EDED;
-    --sidebar-ring: #2786A4;
+    --sidebar-ring: #1E6A83;
+}
+
+/* Pricing is a light canvas. Pin the light primary so dark mode does not
+ * paint #6FBBCE onto white, which would drop under 4.5:1. */
+.pricing-page {
+    --primary: #1E6A83;
+    --primary-foreground: #FFFFFF;
+    --ring: #1E6A83;
 }
 
 /* Dark mode keeps the same teal family, cooled into a deep slate-teal so the
@@ -156,7 +167,7 @@
     --input: #1E3238;
     --ring: #6FBBCE;
     --chart-1: #6FBBCE;
-    --chart-2: #2786A4;
+    --chart-2: #8FB3BC;
     --chart-3: #E2AF4D;
     --chart-4: #E88976;
     --chart-5: #8FB3BC;
@@ -181,17 +192,17 @@
     @apply bg-background text-foreground;
   }
   ::selection {
-    background-color: rgba(39, 134, 164, 0.18);
-    color: #2786A4;
+    background-color: color-mix(in srgb, var(--primary) 24%, transparent);
+    color: var(--foreground);
   }
 }
 
 /* Gradient text utility */
 .gradient-text {
-  background: linear-gradient(135deg, #2786A4 0%, #1E6A83 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--primary);
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  background-clip: border-box;
 }
 
 .gradient-text-warm {
@@ -317,7 +328,7 @@ h1.font-heading, .font-heading.text-4xl, .font-heading.text-5xl {
 @property --c5-s5 { syntax: '<percentage>'; inherits: false; initial-value: 65%; }
 
 .c5-animated-gradient {
-  background-color: #2786A4;
+  background-color: #1E6A83;
   background-image:
     radial-gradient(circle at var(--c5-x1) var(--c5-y1), #93C5FD 0px, transparent var(--c5-s1)),
     radial-gradient(circle at var(--c5-x2) var(--c5-y2), #1E3A8A 0px, transparent var(--c5-s2)),
@@ -361,10 +372,28 @@ h1.font-heading, .font-heading.text-4xl, .font-heading.text-5xl {
   position: relative;
   overflow: hidden;
 }
-/* Directional icons (arrows that mean "forward") mirror in Arabic and Urdu. */
+/* Directional icons (arrows that mean "forward") mirror in right-to-left languages. */
 [dir='rtl'] .ps-dir-icon {
   transform: scaleX(-1);
 }
+
+/* Arabic-script and Hebrew faces. The document direction is set with the language. */
+html[dir='rtl'] {
+  font-family: var(--font-arabic), var(--font-sans), sans-serif;
+}
+html[dir='rtl'][lang='he'] {
+  font-family: var(--font-hebrew), var(--font-sans), sans-serif;
+}
+html[dir='rtl'] .text-left { text-align: right; }
+html[dir='rtl'] .text-right { text-align: left; }
+html[dir='rtl'] .left-0 { left: auto; right: 0; }
+html[dir='rtl'] .right-0 { right: auto; left: 0; }
+html[dir='rtl'] .ml-auto { margin-left: 0; margin-right: auto; }
+html[dir='rtl'] .mr-auto { margin-right: 0; margin-left: auto; }
+html[dir='rtl'] .ml-1 { margin-left: 0; margin-right: 0.25rem; }
+html[dir='rtl'] .mr-1 { margin-right: 0; margin-left: 0.25rem; }
+html[dir='rtl'] .pl-4 { padding-left: 0; padding-right: 1rem; }
+html[dir='rtl'] .pr-4 { padding-right: 0; padding-left: 1rem; }
 
 .liquid-glass::before {
   content: '';

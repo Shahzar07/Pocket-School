@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { callOpenRouter, CONTENT_MODEL } from '@/lib/openrouter';
+import { callOpenRouter, CONTENT_MODEL, isOpenRouterConfigured } from '@/lib/openrouter';
 import { DEFAULT_LANGUAGE, LANGUAGE_NAMES, isSupportedLanguage } from '@/lib/languages';
 
 const MAX_TITLE = 300;
@@ -23,25 +23,34 @@ function parseTranslation(raw: string): { title: string; text: string } | null {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as { title?: unknown; text?: unknown; targetLanguage?: unknown };
+    const body = await req.json() as Record<string, unknown>;
     const targetLanguage = typeof body.targetLanguage === 'string' ? body.targetLanguage : '';
     if (!isSupportedLanguage(targetLanguage) || targetLanguage === DEFAULT_LANGUAGE) {
       return NextResponse.json({ error: 'Choose a supported language other than English.' }, { status: 400 });
     }
-    const title = String(body.title ?? '').slice(0, MAX_TITLE);
-    const text = String(body.text ?? '').slice(0, MAX_BODY);
-    if (!title.trim() && !text.trim()) {
+    const fields: Record<string, string> = {};
+    for (const [key, value] of Object.entries(body)) {
+      if (key === 'targetLanguage' || key === 'viewer') continue;
+      if (typeof value !== 'string') continue;
+      fields[key] = value.slice(0, key === 'text' || key === 'description' ? MAX_BODY : MAX_TITLE);
+    }
+    const title = fields.title ?? '';
+    const text = fields.text ?? '';
+    if (!Object.values(fields).some((value) => value.trim())) {
       return NextResponse.json({ error: 'Nothing to translate.' }, { status: 400 });
     }
+    if (!isOpenRouterConfigured()) {
+      return NextResponse.json({ unavailable: true });
+    }
     const name = LANGUAGE_NAMES[targetLanguage] ?? targetLanguage;
+    const fieldBlock = Object.entries(fields).map(([key, value]) => `${key}:\n${value}`).join('\n\n');
+    const keys = Object.keys(fields);
     const prompt = [
-      `Translate this lesson into ${name}.`,
-      'Return ONLY a JSON object with two string keys: "title" and "text".',
+      `Translate this course content into ${name}.`,
+      `Return ONLY a JSON object with these string keys: ${keys.map((key) => `"${key}"`).join(', ')}.`,
       'Preserve Markdown and LaTeX ($...$ and $$...$$). Do not add commentary, and do not wrap the JSON in code fences.',
       '',
-      `Title:\n${title}`,
-      '',
-      `Body:\n${text}`,
+      fieldBlock || `Title:\n${title}\n\nBody:\n${text}`,
     ].join('\n');
 
     const raw = await callOpenRouter(

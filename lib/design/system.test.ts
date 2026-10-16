@@ -3,7 +3,8 @@ import test from 'node:test';
 import { friendlyError, sparksCostLine, TOKENS } from './system';
 
 test('tokens keep the Poket School teal and ink', () => {
-  assert.equal(TOKENS.color.teal, '#2786A4');
+  assert.equal(TOKENS.color.teal, '#1E6A83');
+  assert.equal(TOKENS.color.tealOnDark, '#6FBBCE');
   assert.equal(TOKENS.color.ink, '#203337');
   assert.equal(TOKENS.motion.base, '220ms');
   assert.equal(TOKENS.color.page, '#F4F6F6');

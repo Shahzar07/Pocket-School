@@ -5,7 +5,7 @@
  * the masked form only.
  */
 
-export type SecretGroup = 'payments' | 'meetings' | 'messaging' | 'identity' | 'notifications' | 'ai' | 'tax';
+export type SecretGroup = 'payments' | 'meetings' | 'messaging' | 'identity' | 'notifications' | 'ai' | 'tax' | 'hosting';
 
 export interface SecretSlot {
   id: string;
@@ -47,9 +47,14 @@ export const SECRET_SLOTS: readonly SecretSlot[] = [
   { id: 'saml_entry', label: 'SAML entry point', envVar: 'SAML_ENTRY_POINT', group: 'identity', flag: 'integrations.saml', required: false, why: 'Identity provider SSO URL.' },
   { id: 'saml_issuer', label: 'SAML issuer', envVar: 'SAML_ISSUER', group: 'identity', flag: 'integrations.saml', required: false, why: 'SAML entity ID.' },
   { id: 'saml_cert', label: 'SAML certificate', envVar: 'SAML_CERT', group: 'identity', flag: 'integrations.saml', required: false, why: 'IdP signing certificate.' },
+  { id: 'oidc_issuer', label: 'OIDC issuer', envVar: 'OIDC_ISSUER', group: 'identity', flag: 'integrations.saml', required: false, why: 'OpenID Connect issuer URL. SSO stays on email invites until this set is complete.' },
+  { id: 'oidc_client', label: 'OIDC client ID', envVar: 'OIDC_CLIENT_ID', group: 'identity', flag: 'integrations.saml', required: false, why: 'OpenID Connect client ID.' },
+  { id: 'oidc_secret', label: 'OIDC client secret', envVar: 'OIDC_CLIENT_SECRET', group: 'identity', flag: 'integrations.saml', required: false, why: 'OpenID Connect client secret.' },
+  { id: 'scim_token', label: 'SCIM bearer token', envVar: 'SCIM_BEARER_TOKEN', group: 'identity', flag: 'integrations.saml', required: false, why: 'Bearer token a directory uses to provision academy members. Invites still work without it.' },
   { id: 'lti_client', label: 'LTI client ID', envVar: 'LTI_CLIENT_ID', group: 'identity', flag: 'integrations.lti', required: false, why: 'LTI 1.3 tool client ID.' },
   { id: 'lti_deployment', label: 'LTI deployment ID', envVar: 'LTI_DEPLOYMENT_ID', group: 'identity', flag: 'integrations.lti', required: false, why: 'LTI deployment ID.' },
   { id: 'lti_key', label: 'LTI private key', envVar: 'LTI_PRIVATE_KEY', group: 'identity', flag: 'integrations.lti', required: false, why: 'Signs LTI launches.' },
+  { id: 'vercel_token', label: 'Vercel token', envVar: 'VERCEL_TOKEN', group: 'hosting', flag: 'integrations.domains', required: false, why: 'Adds an academy custom domain to the Vercel project so SSL is issued. DNS instructions still work when this is empty.' },
   { id: 'fcm', label: 'FCM service account', envVar: 'FCM_SERVICE_ACCOUNT', group: 'notifications', flag: 'integrations.fcm', required: false, why: 'Firebase Cloud Messaging for web and Android push.' },
   { id: 'expo', label: 'Expo access token', envVar: 'EXPO_ACCESS_TOKEN', group: 'notifications', flag: 'integrations.expo', required: false, why: 'Expo push notifications.' },
   { id: 'openrouter', label: 'OpenRouter API key', envVar: 'OPENROUTER_API_KEY', group: 'ai', flag: 'integrations.openrouter', required: true, why: 'AI Studio and lesson generation.' },
@@ -121,10 +126,27 @@ export function harrySetup(): SetupAccount[] {
       keys: [...slots('integrations.whatsapp'), ...SECRET_SLOTS.filter((slot) => slot.group === 'messaging' && slot.flag === 'integrations.smtp')].map(brief),
     },
     {
-      account: 'SSO / SAML and LTI',
+      account: 'SSO (SAML or OIDC), SCIM and LTI',
       where: 'The school identity provider, and the LTI platform',
-      tasks: ['Institution plans mention SSO. The flag stays off until a school is ready to connect.'],
+      tasks: [
+        'Institution plans mention SSO and directory provisioning. The flag stays off until a school is ready to connect.',
+        'Without these keys, academies stay on email and join links.',
+      ],
       keys: [...slots('integrations.saml'), ...slots('integrations.lti')].map(brief),
+    },
+    {
+      account: 'Vercel project for poketschool.ai',
+      where: 'Vercel → Project → Settings → Domains, and a token with domain write access',
+      tasks: [
+        'Add poketschool.ai and *.poketschool.ai on the project. Wildcard DNS is a CNAME or ALIAS for * to cname.vercel-dns.com.',
+        'Set VERCEL_TOKEN and VERCEL_PROJECT_ID so an academy custom domain is attached and SSL is issued. Leave them empty to keep manual DNS instructions.',
+        'VERCEL_TEAM_ID is only needed when the project lives on a team.',
+      ],
+      keys: [
+        { envVar: 'VERCEL_TOKEN', required: false, why: 'Writes the academy hostname onto the Vercel project.' },
+        { envVar: 'VERCEL_PROJECT_ID', required: false, why: 'Project that should receive the domain and certificate.' },
+        { envVar: 'VERCEL_TEAM_ID', required: false, why: 'Team id when the project is not on a personal account.' },
+      ],
     },
     {
       account: 'FCM and Expo',

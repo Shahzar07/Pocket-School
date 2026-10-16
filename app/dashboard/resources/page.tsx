@@ -115,7 +115,7 @@ export default function ResourcesPage() {
         </div>
         {canCreate && (
           <Button onClick={() => setShowCreate(true)}
-            className="rounded-full h-11 px-5 gap-2 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] hover:opacity-90 text-white shrink-0"
+            className="rounded-full h-11 px-5 gap-2 font-bold bg-primary hover:opacity-90 text-primary-foreground shrink-0"
           >
             <Plus className="w-4 h-4" /> Add Resource
           </Button>
@@ -157,7 +157,7 @@ export default function ResourcesPage() {
             </Select>
           </div>
           <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Description (optional)" className="rounded-xl text-sm resize-none min-h-20 bg-muted/50" />
-          <Button onClick={handleCreate} disabled={saving} className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-[#2786A4] to-[#1E6A83] text-white gap-2">
+          <Button onClick={handleCreate} disabled={saving} className="w-full rounded-full h-11 font-bold bg-primary text-primary-foreground gap-2">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Library className="w-4 h-4" />}
             Add Resource
           </Button>
@@ -172,7 +172,7 @@ export default function ResourcesPage() {
         <div className="flex gap-2">
           {['all', 'link', 'video', 'pdf', 'doc'].map(t => (
             <button key={t} onClick={() => setTypeFilter(t)}
-              className={`px-4 py-2 rounded-full text-xs font-semibold transition-colors ${typeFilter === t ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
+              className={`px-4 py-2 rounded-full text-xs font-semibold transition-colors ${typeFilter === t ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
             >
               {t === 'all' ? 'All' : t.toUpperCase()}
             </button>

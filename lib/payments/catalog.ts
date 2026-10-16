@@ -20,6 +20,7 @@ export function subscriptionItem(tierId: string, interval: 'month' | 'year'): Pr
     kind: 'subscription',
     sku: tier.id,
     title: `Poket School — ${tier.name}`,
+    highlights: tier.programmes,
     unitAmount: amount,
     currency: PLATFORM_CURRENCY,
     accessTier: tier.tier,

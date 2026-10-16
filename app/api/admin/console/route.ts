@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import firebaseConfig from '@/firebase-applet-config.json';
+import { activityDocument, requestClient } from '@/lib/audit/model';
 import {
   initialSuperAdmin,
   auditEntry,
@@ -145,7 +146,7 @@ export async function POST(request: Request) {
       await db.collection('users').doc(targetId).set({ adminRole: next ?? '', role: platformRole }, { merge: true });
       const { getAuth } = await import('firebase-admin/auth');
       await getAuth(app!).setCustomUserClaims(targetId, customClaimsFor(next, platformRole));
-      await writeAudit(db, caller, 'set-role', targetId, before, { adminRole: next ?? '', role: platformRole });
+      await writeAudit(db, request, caller, actor, 'set-role', targetId, before, { adminRole: next ?? '', role: platformRole });
     }
     return NextResponse.json({ ok: true, applied: Boolean(db), role: platformRole, adminRole: next ?? '' });
   }
@@ -170,7 +171,7 @@ export async function POST(request: Request) {
       }, { merge: true });
       const { getAuth } = await import('firebase-admin/auth');
       await getAuth(app!).updateUser(targetId, { disabled: next === 'banned' || next === 'deleted' });
-      await writeAudit(db, caller, 'set-status', targetId, { status: 'previous' }, { status: next, reason: reason.trim() });
+      await writeAudit(db, request, caller, actor, 'set-status', targetId, { status: 'previous' }, { status: next, reason: reason.trim() });
     }
     return NextResponse.json({ ok: true, applied: Boolean(db), status: next, reason: reason.trim() });
   }
@@ -203,7 +204,7 @@ export async function POST(request: Request) {
         });
         return after;
       });
-      await writeAudit(db, caller, 'sparks', targetId, { balance }, { balance: nextBalance, amount, reason: reason.trim() });
+      await writeAudit(db, request, caller, actor, 'sparks', targetId, { balance }, { balance: nextBalance, amount, reason: reason.trim() });
       return NextResponse.json({ ok: true, applied: true, balance: nextBalance });
     }
     return NextResponse.json({ ok: true, applied: false, amount, reason: reason.trim() });
@@ -227,7 +228,7 @@ export async function POST(request: Request) {
         patch.permissions = mode === 'revoke' ? FieldValue.arrayRemove(permission) : FieldValue.arrayUnion(permission);
       }
       await db.collection('users').doc(targetId).set(patch, { merge: true });
-      await writeAudit(db, caller, action, targetId, {}, { tier, permission, mode, reason: reason.trim() });
+      await writeAudit(db, request, caller, actor, action, targetId, {}, { tier, permission, mode, reason: reason.trim() });
     }
     return NextResponse.json({ ok: true, applied: Boolean(db), tier, permission, mode });
   }
@@ -237,7 +238,7 @@ export async function POST(request: Request) {
     if (db && target) {
       const { getAuth } = await import('firebase-admin/auth');
       await getAuth(app!).revokeRefreshTokens(targetId);
-      await writeAudit(db, caller, 'revoke-sessions', targetId, {}, { reason: reason.trim() });
+      await writeAudit(db, request, caller, actor, 'revoke-sessions', targetId, {}, { reason: reason.trim() });
     }
     return NextResponse.json({ ok: true, applied: Boolean(db) });
   }
@@ -249,7 +250,7 @@ export async function POST(request: Request) {
     if (!app) return NextResponse.json({ ok: true, applied: false, email });
     const { getAuth } = await import('firebase-admin/auth');
     const link = await getAuth(app).generatePasswordResetLink(email);
-    if (db) await writeAudit(db, caller, 'password-reset', targetId || email, {}, { email });
+    if (db) await writeAudit(db, request, caller, actor, 'password-reset', targetId || email, {}, { email });
     return NextResponse.json({ ok: true, applied: true, email, resetLink: link });
   }
 
@@ -282,7 +283,7 @@ export async function POST(request: Request) {
         const { getAuth } = await import('firebase-admin/auth');
         await getAuth(app!).setCustomUserClaims(existing.id, customClaimsFor(staffRole, 'admin'));
       }
-      await writeAudit(db, caller, 'invite', email, {}, { staffRole, email });
+      await writeAudit(db, request, caller, actor, 'invite', email, {}, { staffRole, email });
     }
     return NextResponse.json({ ok: true, applied: Boolean(db), email, staffRole });
   }
@@ -292,7 +293,9 @@ export async function POST(request: Request) {
 
 async function writeAudit(
   db: Awaited<ReturnType<typeof namedDb>>,
+  request: Request,
   caller: { uid: string; email: string },
+  actorRole: string,
   action: string,
   targetId: string,
   before: Record<string, unknown>,
@@ -307,4 +310,20 @@ async function writeAudit(
     after,
   });
   await db.collection('admin_audit').add(entry);
+  const client = requestClient(request.headers);
+  const event = activityDocument({
+    action: action === 'set-role' ? 'role.switch' : 'admin.action',
+    actorId: caller.uid,
+    actorEmail: caller.email,
+    actorRole,
+    ip: client.ip,
+    device: client.device,
+    targetType: action === 'invite' ? 'invite' : 'user',
+    targetId,
+    targetLabel: action,
+    before,
+    after,
+  });
+  const ref = db.collection('activity_log').doc();
+  await ref.set(event);
 }

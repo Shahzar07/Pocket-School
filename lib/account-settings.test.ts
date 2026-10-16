@@ -55,6 +55,7 @@ test('a profile save never includes privileged fields', () => {
     twoFactorEnabled: true,
     instructor: { headline: 'Science', bio: 'Labs', public: true },
   }, 'student');
+  assert.equal(patch.country, 'MY');
   assert.equal(patch.currency, 'MYR');
   assert.equal(patch.shareBoard, false);
   assert.equal(patch.level, 'Lower Secondary');

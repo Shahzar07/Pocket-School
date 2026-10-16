@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * New exam prep, in four steps: add material → exam details → ET reads it
+ * New exam prep, in four steps: add material → exam details → ET AI reads it
  * → review the topics. Files are read in the browser (PDF text, compressed
  * photos); only the extracted text and the plan are stored.
  */
@@ -207,7 +207,7 @@ export default function NewExamPrepPage() {
                           {f.status === 'reading' ? `Reading… ${f.progress ?? ''}`
                             : f.status === 'error' ? <span className="text-rose-600">{f.error}</span>
                             : f.file?.kind === 'pdf' ? `${f.file.pages} pages · ${(f.file.text?.length ?? 0).toLocaleString()} characters${f.file.pageImages?.length ? ` · ${f.file.pageImages.length} scanned pages` : ''}`
-                            : f.file?.kind === 'image' ? 'Photo — ET will read it' : `${(f.file?.text?.length ?? 0).toLocaleString()} characters`}
+                            : f.file?.kind === 'image' ? 'Photo — ET AI will read it' : `${(f.file?.text?.length ?? 0).toLocaleString()} characters`}
                         </p>
                       </div>
                       {f.status === 'reading' ? <Loader2 className="w-4 h-4 animate-spin text-primary" />
@@ -243,7 +243,7 @@ export default function NewExamPrepPage() {
                   <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Form 4 Add Maths — Final" className="input-ps" />
                 </Field>
                 <Field label="Subject (optional)">
-                  <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="ET will work it out" className="input-ps" />
+                  <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="ET AI will work it out" className="input-ps" />
                 </Field>
                 <Field label="Exam date">
                   <input type="date" value={examDate} min={addDays(isoDay(), 1)} onChange={e => setExamDate(e.target.value)} className="input-ps" />
@@ -291,7 +291,7 @@ export default function NewExamPrepPage() {
                   ))}
                   <span className="absolute inset-0 rounded-full bg-primary/10 grid place-items-center"><Sparkles className="w-8 h-8 text-primary" /></span>
                 </div>
-                <p className="font-heading text-xl text-foreground mb-5">ET is reading everything</p>
+                <p className="font-heading text-xl text-foreground mb-5">ET AI is reading everything</p>
                 <ul className="space-y-2.5 text-left">
                   {ANALYSE_STAGES.map((s, i) => (
                     <li key={s} className="flex items-center gap-2.5 text-sm">

@@ -56,7 +56,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
       case 'sync-certificates':
         return syncModuleCertificates(user.uid, str(body.studentId) || user.uid, str(body.courseId) || undefined);
       case 'revoke-certificate':
-        return revokeCertificate(user.uid, user.email, str(body.certificateId));
+        return revokeCertificate(user.uid, user.email, str(body.certificateId), str(body.reason));
       case 'unit-quiz':
         return recordUnitQuiz(user.uid, {
           courseId: str(body.courseId),
