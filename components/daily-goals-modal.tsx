@@ -56,7 +56,7 @@ interface Props {
 
 /**
  * Full-screen, non-dismissible goal-setting gate. Students land here before they
- * can start any module for the day — ET asks for the commitment up front.
+ * can start any module for the day — ET AI asks for the commitment up front.
  */
 export function DailyGoalsModal({ open, studentId, studentName, onDone }: Props) {
   const [drafts, setDrafts] = useState<Draft[]>([blankDraft()]);
@@ -124,7 +124,7 @@ export function DailyGoalsModal({ open, studentId, studentName, onDone }: Props)
             transition={{ duration: 0.45, ease: [0.21, 0.6, 0.35, 1] }}
             className="relative w-full max-w-2xl my-auto bg-card border border-border rounded-[2rem] overflow-hidden shadow-[0_24px_80px_-20px_rgba(15,23,42,0.45)]"
           >
-            {/* ET band */}
+            {/* ET AI band */}
             <div className="relative bg-[#203337] p-6 sm:p-7 text-white overflow-hidden">
               <div className="pointer-events-none absolute inset-0">
                 <div className="absolute -top-24 -left-16 w-72 h-72 rounded-full bg-primary/30 blur-[80px]" />
@@ -135,7 +135,7 @@ export function DailyGoalsModal({ open, studentId, studentName, onDone }: Props)
                   <Sparkles className="w-5 h-5 text-primary-foreground" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/60">ET · AI Tutor</p>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/60">ET AI</p>
                   <p className="text-[15px] leading-relaxed mt-2 text-white/90">
                     {greeting()} {firstName}. Before you start — what are you committing to today? Set your goals and
                     I&apos;ll check in with you.

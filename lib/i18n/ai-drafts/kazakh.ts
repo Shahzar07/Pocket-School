@@ -1,6 +1,6 @@
 /**
  * AI-ASSISTED — NEEDS HUMAN REVIEW
- * Interface draft for Kazakh. Proper nouns stay official: Poket School, ET,
+ * Interface draft for Kazakh. Proper nouns stay official: Poket School, ET AI,
  * Sparks, AI Studio, Cambridge Assessment International Education,
  * Pearson Edexcel, AQA, Malaysian Ministry of Education.
  */
@@ -148,13 +148,13 @@ export const kk = {
     analytics: 'Талдау',
     analyticsDesc: 'Оқуды жақсартуға арналған иесіздендірілген пайдалану деректері.',
     aiPerformance: 'ЖИ сапасы',
-    aiPerformanceDesc: 'ET жауаптары мен жекелендіруді жақсартуға көмектеседі.',
+    aiPerformanceDesc: 'ET AI жауаптары мен жекелендіруді жақсартуға көмектеседі.',
   },
   auth: {
     line1: 'Ең ақылды сынып',
     line2: 'қалтаңызда',
     subtitle: 'IGCSE, A-Levels, дәрежелер және одан әрі үшін ЖИ-мен оқу.',
-    f1title: 'ET — сіздің ЖИ тәлімгеріңіз',
+    f1title: 'ET AI — сіздің ЖИ тәлімгеріңіз',
     f1desc: 'Ойлауыңызға бейімделеді, тәулік бойы',
     f2title: 'IGCSE · A-Levels · Дәрежелер',
     f2desc: 'Толық оқу жолдары, өз қарқыныңызбен',
@@ -165,7 +165,7 @@ export const kk = {
   },
   switcher: {
     change: 'Тілді ауыстыру',
-    uiFallback: 'Бұл тілдің мәзірлері ағылшынша қалады. ET {{language}} тілінде жауап береді.',
+    uiFallback: 'Бұл тілдің мәзірлері ағылшынша қалады. ET AI {{language}} тілінде жауап береді.',
   },
   lesson: {
     unit: 'Сабақ (бөлім)',
@@ -181,8 +181,8 @@ export const kk = {
     localizedBody: 'Аударылған сабақ',
     save: 'Аударманы сақтау',
     clear: 'Бұл тілді тазалау',
-    translate: 'ET арқылы аудару',
-    confirmBody: 'ET ағылшынша сабақты {{language}} тіліне аударады. Бұл {{cost}} Sparks есептен шығарады.',
+    translate: 'ET AI арқылы аудару',
+    confirmBody: 'ET AI ағылшынша сабақты {{language}} тіліне аударады. Бұл {{cost}} Sparks есептен шығарады.',
     confirm: 'Аудару және Sparks жұмсау',
     cancel: 'Болдырмау',
     working: 'Аударылуда…',
@@ -192,7 +192,7 @@ export const kk = {
     empty: 'Аудармас бұрын ағылшынша тақырып немесе мәтін қосыңыз.',
     failed: 'Аударма сәтсіз. Sparks есептен шығарылмады.',
     sourceManual: 'Терілген',
-    sourceAi: 'ET аудармасы',
+    sourceAi: 'ET AI аудармасы',
   },
   sparks: {
     title: 'Sparks теңгерімі',

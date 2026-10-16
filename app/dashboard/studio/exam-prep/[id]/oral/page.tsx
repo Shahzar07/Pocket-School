@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Oral exam with ET. The examiner speaks each question (sentence by sentence
+ * Oral exam with ET AI. The examiner speaks each question (sentence by sentence
  * as it's written, so there's no dead air), the student answers out loud —
  * or types — and the transcript is graded on a four-part rubric.
  */
@@ -179,8 +179,8 @@ export default function OralExamPage({ params }: { params: Promise<{ id: string 
         <div className="max-w-2xl mx-auto w-full">
           <Panel>
             <span className="w-12 h-12 rounded-2xl bg-primary/10 text-primary grid place-items-center mb-4"><Mic className="w-6 h-6" /></span>
-            <h1 className="font-heading text-[30px] leading-tight tracking-[-0.03em]">Oral exam with ET</h1>
-            <p className="text-[14px] text-muted-foreground mt-1">ET asks questions out loud, probes when an answer is thin, and grades how well you know it and how clearly you explain it. The best practice there is for explaining under pressure.</p>
+            <h1 className="font-heading text-[30px] leading-tight tracking-[-0.03em]">Oral exam with ET AI</h1>
+            <p className="text-[14px] text-muted-foreground mt-1">ET AI asks questions out loud, probes when an answer is thin, and grades how well you know it and how clearly you explain it. The best practice there is for explaining under pressure.</p>
             <p className="text-[13px] font-semibold mt-6 mb-2">Number of questions</p>
             <div className="flex gap-2">
               {[3, 5, 8].map(n => <button key={n} onClick={() => setTotal(n)} className={`h-11 flex-1 rounded-xl border text-[14px] font-semibold ${total === n ? 'border-primary bg-primary/10 text-primary' : 'border-border'}`}>{n}</button>)}
@@ -203,10 +203,10 @@ export default function OralExamPage({ params }: { params: Promise<{ id: string 
                   transition={{ repeat: speaking || listening ? Infinity : 0, duration: 1.6, delay: i * 0.4 }} />
               ))}
               <span className={`absolute inset-0 rounded-full grid place-items-center text-3xl font-bold ${listening ? 'bg-rose-500 text-white' : 'bg-primary text-primary-foreground'}`}>
-                {listening ? <Mic className="w-10 h-10" /> : speaking ? <Volume2 className="w-10 h-10" /> : live !== null ? <Loader2 className="w-10 h-10 animate-spin" /> : 'ET'}
+                {listening ? <Mic className="w-10 h-10" /> : speaking ? <Volume2 className="w-10 h-10" /> : live !== null ? <Loader2 className="w-10 h-10 animate-spin" /> : 'ET AI'}
               </span>
             </div>
-            <p className="font-semibold text-foreground">{listening ? 'Listening — answer out loud' : speaking ? 'ET is asking…' : live !== null ? 'ET is thinking…' : 'Your turn'}</p>
+            <p className="font-semibold text-foreground">{listening ? 'Listening — answer out loud' : speaking ? 'ET AI is asking…' : live !== null ? 'ET AI is thinking…' : 'Your turn'}</p>
             <p className="text-[12px] text-muted-foreground mt-1 tabular-nums">Answered {answered} of {total}</p>
             <div className="flex gap-1 justify-center mt-3">{Array.from({ length: total }, (_, i) => <span key={i} className={`h-1.5 w-8 rounded-full ${i < answered ? 'bg-primary' : 'bg-muted'}`} />)}</div>
 
@@ -237,14 +237,14 @@ export default function OralExamPage({ params }: { params: Promise<{ id: string 
             <div className="space-y-3 min-h-[300px]">
               {lines.map((l, i) => (
                 <motion.div key={i} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className={`flex ${l.role === 'student' ? 'justify-end' : 'gap-2.5'}`}>
-                  {l.role === 'examiner' && <span className="w-7 h-7 rounded-full bg-primary text-primary-foreground text-[11px] font-bold grid place-items-center shrink-0">ET</span>}
+                  {l.role === 'examiner' && <span className="h-7 px-1.5 rounded-full bg-primary text-primary-foreground text-[9px] font-bold inline-flex items-center justify-center shrink-0 tracking-tight">ET AI</span>}
                   <p className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed ${l.role === 'student' ? 'bg-foreground text-background rounded-tr-md' : 'bg-primary/[0.06] border border-primary/15 rounded-tl-md'}`}>{l.text}</p>
                 </motion.div>
               ))}
               <AnimatePresence>
                 {live !== null && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex gap-2.5">
-                    <span className="w-7 h-7 rounded-full bg-primary text-primary-foreground text-[11px] font-bold grid place-items-center shrink-0">ET</span>
+                    <span className="h-7 px-1.5 rounded-full bg-primary text-primary-foreground text-[9px] font-bold inline-flex items-center justify-center shrink-0 tracking-tight">ET AI</span>
                     <p className="max-w-[85%] rounded-2xl rounded-tl-md bg-primary/[0.06] border border-primary/15 px-4 py-2.5 text-[14px]">{live || <Loader2 className="w-4 h-4 animate-spin text-primary" />}</p>
                   </motion.div>
                 )}

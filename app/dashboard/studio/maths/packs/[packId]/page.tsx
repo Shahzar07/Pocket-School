@@ -157,7 +157,7 @@ export default function PackPage({ params }: { params: Promise<{ packId: string 
             <div className="text-center py-16">
               <Wand2 className="w-8 h-8 mx-auto text-primary mb-3" />
               <p className="font-heading text-xl">Pick a topic to practise</p>
-              <p className="text-[13px] text-muted-foreground mt-1">Five exam-style questions per set, each with a full worked solution. Stuck? Work through any question with ET.</p>
+              <p className="text-[13px] text-muted-foreground mt-1">Five exam-style questions per set, each with a full worked solution. Stuck? Work through any question with ET AI.</p>
             </div>
           ) : (
             <>
@@ -196,7 +196,7 @@ export default function PackPage({ params }: { params: Promise<{ packId: string 
                       extraAction={(_, i) => (
                         <Link href={`/dashboard/studio/maths?problem=${encodeURIComponent(questions[i].question)}`}
                           className="h-9 px-3.5 rounded-full border border-primary/30 text-primary text-[13px] font-semibold inline-flex items-center gap-1.5 hover:bg-primary/5">
-                          Work through it with ET <ChevronRight className="w-4 h-4" />
+                          Work through it with ET AI <ChevronRight className="w-4 h-4" />
                         </Link>
                       )}
                     />
