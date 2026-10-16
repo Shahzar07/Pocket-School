@@ -15,7 +15,7 @@ import { MathMarkdown } from '@/components/math-markdown';
 import { readLanguage } from '@/lib/languages';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import {
-  Sparkles, ArrowUp, ArrowLeft, Library, MessageSquare,
+  Sparkles, ArrowUp, ArrowLeft, Library, MessageSquare, PenLine,
   FileText, ClipboardList, Network, BookMarked,
   Presentation, Image as ImageIcon, Calculator, FlipHorizontal,
   Loader2, Save, Trash2, Copy, Plus, ChevronRight, User as UserIcon,
@@ -34,6 +34,7 @@ import {
 } from '@/lib/db';
 import { PROGRAMMES, studioModeForProgramme, subjectsForProgramme } from '@/lib/programmes';
 import { bookSourcePrompt, parseBookCommand } from '@/lib/platform/studio-commands';
+import { EssaysDesk } from '@/components/essays/essays-desk';
 import { BOOKS, bookById } from '@/lib/reads/seed';
 
 type FormatId = 'text' | 'flashcards' | 'quiz' | 'slides' | 'notes' | 'summary' | 'problems' | 'glossary' | 'mindmap' | 'infographic' | 'videoScript' | 'audioScript';
@@ -146,7 +147,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
   /** Undefined until Firebase reports the first auth state — prevents a
    * sign-in flash for users who are already logged in. */
   const [authReady, setAuthReady] = useState(false);
-  const [view, setView] = useState<'chat' | 'library'>('chat');
+  const [view, setView] = useState<'chat' | 'library' | 'essays'>('chat');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Conversations (session-scoped, like Claude's recents)
@@ -446,9 +447,15 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
             </Link>
             <button
               onClick={() => { setView('chat'); setSkill('problems'); setSubject('Mathematics'); setSidebarOpen(false); }}
-              className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${skill === 'problems' ? `${C.raised} ${C.text}` : `${C.dim} ${C.surfaceHover}`}`}
+              className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${view === 'chat' && skill === 'problems' ? `${C.raised} ${C.text}` : `${C.dim} ${C.surfaceHover}`}`}
             >
               <Calculator className="w-4 h-4" /> ET Maths
+            </button>
+            <button
+              onClick={() => { setView('essays'); setSidebarOpen(false); }}
+              className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${view === 'essays' ? `${C.raised} ${C.text}` : `${C.dim} ${C.surfaceHover}`}`}
+            >
+              <PenLine className="w-4 h-4" /> ET Essays
             </button>
             <Link href="/dashboard/student/exams" className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm ${C.dim} ${C.surfaceHover} transition-colors group`}>
               <span className="flex items-center gap-2.5"><ClipboardList className="w-4 h-4" /> Exam Prep</span>
@@ -507,7 +514,17 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
           <span className="text-sm font-bold">ET</span>
         </div>
 
-        {view === 'library' ? (
+        {view === 'essays' ? (
+          <div className="flex-1 overflow-auto bg-background text-foreground">
+            <div className="mx-auto max-w-[1100px] px-4 py-6 sm:px-6">
+              <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-muted-foreground">ET AI</p>
+              <h1 className="mt-1 font-heading text-3xl tracking-[-0.04em] text-foreground">ET Essays</h1>
+              <div className="mt-5">
+                <EssaysDesk />
+              </div>
+            </div>
+          </div>
+        ) : view === 'library' ? (
           <LibraryView
             user={user} library={library} loading={libraryLoading}
             onDelete={removeFromLibrary} onNew={newChat}

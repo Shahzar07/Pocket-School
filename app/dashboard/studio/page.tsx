@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Calculator, ClipboardList, Sparkles } from 'lucide-react';
+import { ArrowRight, Calculator, ClipboardList, PenLine, Sparkles } from 'lucide-react';
 import { DashPage, DashHeader } from '@/components/dash-ui';
 import { STUDIO_ET, STUDIO_EXAM_PREP, STUDIO_MATHS } from '@/lib/studio-paths';
 
@@ -9,7 +9,7 @@ const TOOLS = [
   {
     href: STUDIO_ET,
     icon: Sparkles,
-    name: 'ET',
+    name: 'ET AI',
     blurb: 'Turn any topic into a lesson, quiz, flashcards, audio or video, and keep it in your library.',
     links: [] as { href: string; label: string }[],
   },
@@ -17,7 +17,7 @@ const TOOLS = [
     href: STUDIO_MATHS,
     icon: Calculator,
     name: 'ET Maths',
-    blurb: 'Snap or type a problem. ET walks you through it, with exam packs and a puzzle for today.',
+    blurb: 'Snap or type a problem. ET Maths walks you through it, with exam packs and a puzzle for today.',
     links: [
       { href: `${STUDIO_MATHS}/packs`, label: 'Exam packs' },
       { href: `${STUDIO_MATHS}/lab`, label: "Today's puzzle" },
@@ -27,9 +27,18 @@ const TOOLS = [
     href: STUDIO_EXAM_PREP,
     icon: ClipboardList,
     name: 'Exam Prep',
-    blurb: 'Your notes, slides and past papers become a day-by-day plan, a mock, and an oral with ET.',
+    blurb: 'Your notes, slides and past papers become a day-by-day plan, a mock, and an oral with ET AI.',
     links: [
       { href: `${STUDIO_EXAM_PREP}/new`, label: 'New plan' },
+    ],
+  },
+  {
+    href: '/dashboard/studio/essays',
+    icon: PenLine,
+    name: 'ET Essays',
+    blurb: 'ET AI drafts an essay, or marks one you paste or upload, with a percentage, a 9–1 grade, and an A*–U grade.',
+    links: [
+      { href: '/studio/essays', label: 'Full page' },
     ],
   },
 ];
@@ -39,11 +48,11 @@ export default function StudioHub() {
     <DashPage>
       <DashHeader
         eyebrow="AI Studio"
-        title="ET's tools,"
+        title="ET AI's tools,"
         accent="in one place."
-        description="Create study material, work a maths problem, or build a plan that ends on exam day. Each tool opens here in your dashboard."
+        description="Create study material, work a maths problem, mark an essay, or build a plan that ends on exam day. Each tool opens here in your dashboard."
       />
-      <ul className="grid md:grid-cols-3 gap-4">
+      <ul className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
         {TOOLS.map((tool) => {
           const Icon = tool.icon;
           return (

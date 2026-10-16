@@ -19,6 +19,7 @@ test('standalone modules show the shared header', () => {
     '/preview/goals',
     '/teacher-studio',
     '/a/kolej-utama',
+    '/studio/essays',
   ]) {
     assert.equal(showsModuleHeader(path), true, path);
   }

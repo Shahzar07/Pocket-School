@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { AI_TEACHERS } from '@/lib/ai-teachers';
+import { coachingForTeacher } from '@/lib/essays/coaching';
 import { MathMarkdown } from '@/components/math-markdown';
 import { LiveVoiceSession } from '@/components/live-voice-session';
 import { LANGUAGES, LANGUAGE_STORAGE_KEY, RECOGNITION_LANG } from '@/lib/languages';
@@ -214,6 +215,7 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
           message: text,
           mode,
           persona: teacher ? `${teacher.name}, ${teacher.title}` : undefined,
+          coaching: teacher ? coachingForTeacher(teacher.id) : undefined,
           lessonContext: teacher ? `Subjects: ${teacher.subjects.join(', ')}` : undefined,
           language: langRef.current,
           workboard: true,

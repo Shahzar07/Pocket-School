@@ -31,6 +31,7 @@ const HIDDEN_PREFIXES = [
   "/payments-preview",
   "/account-preview",
   "/teacher-studio",
+  "/studio",
   "/a/",
 ];
 

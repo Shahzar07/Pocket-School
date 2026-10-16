@@ -42,6 +42,7 @@ const HIDDEN_PREFIXES = [
   "/forgot-password",
   "/reset-password",
   "/reads",
+  "/studio",
   "/preview/design",
 ];
 
