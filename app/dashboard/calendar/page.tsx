@@ -15,6 +15,8 @@ import { Plus, ChevronLeft, ChevronRight, X, Calendar, Trash2, Loader2 } from 'l
 import { CalendarTools } from '@/components/calendar/calendar-tools';
 import type { CalendarItem } from '@/lib/insights/calendar';
 import { Timestamp } from 'firebase/firestore';
+import { YearPlanner, type PlannerRole } from '@/components/planner/year-planner';
+import { isoDateKey } from '@/lib/insights/dates';
 import { AllocationPicker } from '@/components/allocation-picker';
 import { describeTargets, recordVisible } from '@/lib/allocation-targets';
 
@@ -55,6 +57,10 @@ export default function CalendarPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ title: '', date: '', type: 'event' as CalendarEvent['type'], description: '', targets: ['all'] as string[] });
   const [selected, setSelected] = useState<CalendarEvent | null>(null);
+  const [view, setView] = useState<'month' | 'terms'>('month');
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('view') === 'terms') setView('terms');
+  }, []);
 
   const teaching = mode === 'teacher' && hasAccountRole(profile, 'teacher');
   const canCreate = teaching || profile?.role === 'admin' || profile?.role === 'institution_admin';
@@ -146,7 +152,11 @@ export default function CalendarPage() {
           <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-3">
             School <span className="gradient-text italic">calendar</span>
           </h1>
-          <p className="text-muted-foreground mt-2 text-[15px]">Stay on top of deadlines and school events.</p>
+          <p className="text-muted-foreground mt-2 text-[15px]">Month events and school terms live on this page.</p>
+          <div className="flex gap-2 mt-3">
+            <button type="button" onClick={() => setView('month')} className={`h-8 px-3 rounded-full text-xs font-semibold ${view === 'month' ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'}`}>Month</button>
+            <button type="button" onClick={() => setView('terms')} className={`h-8 px-3 rounded-full text-xs font-semibold ${view === 'terms' ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'}`}>Terms</button>
+          </div>
         </div>
         {canCreate && (
           <Button onClick={() => setShowCreate(true)}
@@ -157,7 +167,19 @@ export default function CalendarPage() {
         )}
       </motion.header>
 
-      {canCreate && user && (
+      {view === 'terms' && user && profile ? (
+        <YearPlanner
+          role={(profile.role ?? 'student') as PlannerRole}
+          canEdit={profile.role === 'teacher' || profile.role === 'admin' || profile.role === 'institution_admin'}
+          persist
+          today={isoDateKey()}
+          ownerId={user.uid}
+          institutionId={profile.institutionId || 'school'}
+          brand="Poket School"
+        />
+      ) : null}
+
+      {view === 'month' && canCreate && user && (
         <CalendarTools onPublish={async (items: CalendarItem[]) => {
           for (const item of items) {
             await createCalendarEvent({
@@ -176,7 +198,7 @@ export default function CalendarPage() {
       )}
 
       {/* Create form */}
-      {showCreate && canCreate && (
+      {view === 'month' && showCreate && canCreate && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
           className="bg-card border border-border rounded-3xl p-6 sm:p-7 space-y-4"
         >
@@ -220,7 +242,7 @@ export default function CalendarPage() {
         </motion.div>
       )}
 
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
+      {view === 'month' && <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
         className="grid lg:grid-cols-3 gap-6"
       >
         {/* Calendar grid */}
@@ -288,7 +310,7 @@ export default function CalendarPage() {
             ))
           )}
         </div>
-      </motion.div>
+      </motion.div>}
 
       {/* Event detail modal */}
       {selected && (
