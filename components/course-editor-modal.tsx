@@ -497,7 +497,7 @@ export default function CourseEditorModal({
               <Button variant="outline" onClick={() => save(false)} disabled={saving}>
                 {saving ? 'Saving…' : 'Save as draft'}
               </Button>
-              <Button onClick={() => save(true)} disabled={saving} className="bg-google-blue hover:bg-[#1E6A83] text-white">
+              <Button onClick={() => save(true)} disabled={saving} className="bg-primary text-primary-foreground hover:opacity-90">
                 {saving ? 'Saving…' : 'Publish'}
               </Button>
             </div>

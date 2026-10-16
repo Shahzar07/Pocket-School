@@ -31,6 +31,9 @@ import { AdminAccountPanel } from '@/components/admin-account-panel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import {
   Loader2, Search, Sparkles, Users as UsersIcon, Download, Plus, Minus,
@@ -95,7 +98,6 @@ export default function AdminUsersPage() {
   const [countryFilter, setCountryFilter] = useState('all');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState<string | null>(null);
-  const [menuFor, setMenuFor] = useState<string | null>(null);
   const [customFor, setCustomFor] = useState<string | null>(null);
   const [customAmount, setCustomAmount] = useState('');
   const [sparkReason, setSparkReason] = useState('');
@@ -122,12 +124,6 @@ export default function AdminUsersPage() {
   useEffect(() => {
     if (user && isSuperAdmin(profile)) ensureAdminSparks(user.uid, ADMIN_SPARKS_GRANT).catch(() => {});
   }, [user, profile]);
-
-  useEffect(() => {
-    const close = () => setMenuFor(null);
-    document.addEventListener('click', close);
-    return () => document.removeEventListener('click', close);
-  }, []);
 
   const programmes = useMemo(() => {
     const set = new Set<string>();
@@ -255,6 +251,44 @@ export default function AdminUsersPage() {
     setBusy(null);
   };
 
+  const targetOf = (row: Row): ConsoleProfile => ({
+    id: row.id,
+    email: row.data.email,
+    role: row.data.role,
+    adminRole: row.data.adminRole ?? '',
+    accountStatus: accountStatusOf(row.data),
+  });
+
+  const sendPasswordReset = async (row: Row) => {
+    if (viewAs) { toast.error('View-as is read-only.'); return; }
+    setBusy(row.id);
+    try {
+      const result = await resetStaffPassword({
+        actorId, actorEmail, actor, directory: consoleDirectory, target: targetOf(row),
+      });
+      toast.success(
+        result.resetLink ? 'Reset link ready' : `Reset link sent to ${row.data.email}.`,
+        result.resetLink ? { description: result.resetLink } : undefined,
+      );
+    } catch (e: any) {
+      toast.error(e?.message || 'Could not reset that password.');
+    } finally { setBusy(null); }
+  };
+
+  const signOutSessions = async (row: Row) => {
+    if (viewAs) { toast.error('View-as is read-only.'); return; }
+    setBusy(row.id);
+    try {
+      const result = await revokeStaffSessions({
+        actorId, actorEmail, actor, directory: consoleDirectory, target: targetOf(row),
+        reason: 'Signed out from the user directory',
+      });
+      toast.success(result.note || `Signed ${row.data.name ?? 'that user'} out of active sessions.`);
+    } catch (e: any) {
+      toast.error(e?.message || 'Could not sign that user out.');
+    } finally { setBusy(null); }
+  };
+
   const sendInvite = async () => {
     setBusy('invite');
     try {
@@ -334,7 +368,7 @@ export default function AdminUsersPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total users', value: stats.total, accent: 'bg-[#2786A4]' },
+          { label: 'Total users', value: stats.total, accent: 'bg-primary' },
           { label: 'Students', value: stats.students, accent: 'bg-emerald-500' },
           { label: 'Suspended', value: stats.suspended, accent: 'bg-red-500' },
           { label: 'Sparks in circulation', value: stats.sparks.toLocaleString(), accent: 'bg-amber-500' },
@@ -572,52 +606,46 @@ export default function AdminUsersPage() {
                         ) : null}
                       </div>
                     </td>
-                    <td className="px-4 py-3 relative">
-                      <button
-                        onClick={e => { e.stopPropagation(); setMenuFor(menuFor === r.id ? null : r.id); }}
-                        aria-label={`Actions for ${r.data.name}`}
-                        className="w-8 h-8 grid place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground">
-                        {busy === r.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <MoreVertical className="w-4 h-4" />}
-                      </button>
-                      {menuFor === r.id && (
-                        <div onClick={e => e.stopPropagation()}
-                          className="absolute right-4 top-full z-30 mt-1 w-56 bg-card border border-border rounded-2xl shadow-xl p-1.5">
-                          <button onClick={() => { setMenuFor(null); setProfileFor(r); }}
-                            className="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-muted flex items-center gap-2.5">
+                    <td className="px-4 py-3">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          aria-label={`Actions for ${r.data.name}`}
+                          disabled={busy === r.id}
+                          className="w-8 h-8 grid place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40">
+                          {busy === r.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <MoreVertical className="w-4 h-4" />}
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" side="bottom" sideOffset={6} className="w-56 rounded-2xl p-1.5">
+                          <DropdownMenuItem className="rounded-xl px-3 py-2 gap-2.5" onClick={() => setProfileFor(r)}>
                             <Eye className="w-4 h-4 text-muted-foreground" /> Profile and activity
-                          </button>
+                          </DropdownMenuItem>
                           {can(actor, 'view_as') && (
-                            <button onClick={() => { setMenuFor(null); writeViewAs({ id: r.id, name: r.data.name ?? 'User', email: r.data.email ?? '' }); toast.success('Viewing as this user. Actions are read-only.'); }}
-                              className="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-muted flex items-center gap-2.5">
+                            <DropdownMenuItem className="rounded-xl px-3 py-2 gap-2.5" onClick={() => {
+                              writeViewAs({ id: r.id, name: r.data.name ?? 'User', email: r.data.email ?? '' });
+                              toast.success('Viewing as this user. Actions are read-only.');
+                            }}>
                               <Eye className="w-4 h-4 text-muted-foreground" /> View as read-only
-                            </button>
+                            </DropdownMenuItem>
                           )}
                           {can(actor, 'sessions') && (
                             <>
-                              <button onClick={() => { setMenuFor(null); setBusy(r.id); resetStaffPassword({
-                                actorId, actorEmail, actor, directory: consoleDirectory,
-                                target: { id: r.id, email: r.data.email, role: r.data.role, adminRole: r.data.adminRole ?? '' },
-                              }).then(result => toast.success(result.resetLink ? 'Reset link ready' : `Reset link sent to ${r.data.email}.`, result.resetLink ? { description: result.resetLink } : undefined))
-                                .catch((e: any) => toast.error(e?.message || 'Could not reset that password.'))
-                                .finally(() => setBusy(null)); }}
-                                className="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-muted flex items-center gap-2.5">
+                              <DropdownMenuItem className="rounded-xl px-3 py-2 gap-2.5" onClick={() => { void sendPasswordReset(r); }}>
                                 <KeyRound className="w-4 h-4 text-muted-foreground" /> Send password reset
-                              </button>
-                              <button onClick={() => { setMenuFor(null); setProfileFor(r); }}
-                                className="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-muted flex items-center gap-2.5">
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="rounded-xl px-3 py-2 gap-2.5" onClick={() => { void signOutSessions(r); }}>
                                 <ShieldOff className="w-4 h-4 text-amber-600" /> Sign out sessions
-                              </button>
+                              </DropdownMenuItem>
                             </>
                           )}
                           {can(actor, 'moderate') && (
-                            <button onClick={() => { setMenuFor(null); setProfileFor(r); }}
-                              className="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-muted flex items-center gap-2.5">
-                              {status === 'suspended' ? <ShieldCheck className="w-4 h-4 text-emerald-600" /> : <ShieldOff className="w-4 h-4 text-amber-600" />}
+                            <DropdownMenuItem className="rounded-xl px-3 py-2 gap-2.5" onClick={() => setProfileFor(r)}>
+                              {status === 'suspended'
+                                ? <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                                : <ShieldOff className="w-4 h-4 text-amber-600" />}
                               Suspend, ban, or restore
-                            </button>
+                            </DropdownMenuItem>
                           )}
-                        </div>
-                      )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 );

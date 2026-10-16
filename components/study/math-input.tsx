@@ -3,7 +3,7 @@
 /**
  * Typing maths on a phone is miserable. A row of the symbols students
  * actually need, inserted at the cursor, plus a live rendered preview so
- * they can see the question is right before ET reads it.
+ * they can see the question is right before ET AI reads it.
  */
 
 import { useRef } from 'react';

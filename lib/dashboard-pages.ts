@@ -944,6 +944,33 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     decision: 'Keep as the shared read view.',
     ownerKeys: 'None.',
   },
+  {
+    path: '/dashboard/admin/activity',
+    title: 'Activity log',
+    purpose: 'Server-written sign-in, role, content, and admin actions. Super admins read it. People cannot edit a row.',
+    audience: ['admin'],
+    overlaps: 'Institution audit on an academy.',
+    decision: 'Keep. This is the platform log. Academy settings keep their own audit.',
+    ownerKeys: 'None. The server stamps actor, time, and IP.',
+  },
+  {
+    path: '/dashboard/admin/certificates',
+    title: 'Certificates',
+    purpose: 'Design the Open Badge and issue it to a school list. Each badge is a signed credential with a public verify page.',
+    audience: ['admin'],
+    overlaps: 'Module certificates and the school issuance desk.',
+    decision: 'Keep as the platform badge template and bulk issue desk.',
+    ownerKeys: 'Credential signing keys stay on the server.',
+  },
+  {
+    path: '/dashboard/institution/certificates',
+    title: 'Class certificates',
+    purpose: 'Issue Poket School badges for students in this school who have finished a module.',
+    audience: ['institution'],
+    overlaps: 'Admin certificates.',
+    decision: 'Keep as the academy issuance desk. It does not change the platform template.',
+    ownerKeys: 'None.',
+  },
 ];
 
 const byPath = new Map(DASHBOARD_PAGES.map((page) => [page.path, page]));

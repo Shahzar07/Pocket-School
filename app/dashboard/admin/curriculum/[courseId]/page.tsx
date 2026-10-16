@@ -148,7 +148,7 @@ async function callGenerate(
   return { result: data.result, warning: data.warning };
 }
 
-/** ET — the CMS assistant (objectives, briefs, rewrites, assessments). */
+/** ET AI — the CMS assistant (objectives, briefs, rewrites, assessments). */
 async function callEt<T>(task: string, context: Record<string, unknown>): Promise<T> {
   const res = await fetch('/api/ai/course-architect', {
     method: 'POST',
@@ -156,7 +156,7 @@ async function callEt<T>(task: string, context: Record<string, unknown>): Promis
     body: JSON.stringify({ task, context }),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'ET could not complete that request.');
+  if (!res.ok) throw new Error(data.error || 'ET AI could not complete that request.');
   return data as T;
 }
 
@@ -556,9 +556,9 @@ export default function ContentBuilderPage() {
     }
   }, [course, units, enqueueSave]);
 
-  /* ── ET assistance ── */
+  /* ── ET AI assistance ── */
 
-  /** Runs a ET task against the selected lesson and persists the patch it
+  /** Runs a ET AI task against the selected lesson and persists the patch it
    * produces, adding an audit-trail entry for the action. */
   const runEt = useCallback(async (
     key: string,
@@ -578,7 +578,7 @@ export default function ContentBuilderPage() {
       const data = await callEt<any>(task, buildContext(d));
       const live = draftRef.current?.id === lessonId ? draftRef.current : d;
       const patch = apply(live, data);
-      if (!patch) { toast.error('ET returned nothing usable — try again.'); return; }
+      if (!patch) { toast.error('ET AI returned nothing usable — try again.'); return; }
       const next = { ...live, ...patch } as Lesson;
       if (patch.aiOutputs) next.aiOutputs = { ...(live.aiOutputs ?? {}), ...patch.aiOutputs };
       if (draftRef.current?.id === lessonId) {
@@ -588,7 +588,7 @@ export default function ContentBuilderPage() {
       await enqueueSave(moduleId, next, historyLabel);
       toast.success(historyLabel);
     } catch (e: any) {
-      toast.error(e?.message || 'ET request failed.');
+      toast.error(e?.message || 'ET AI request failed.');
     } finally {
       inflightAi.current.delete(`${lessonId}:${key}`);
       setEtBusy(null);
@@ -603,7 +603,7 @@ export default function ContentBuilderPage() {
       yearLevel: course?.yearGroup ?? course?.level ?? '',
       subject: course?.subject ?? '',
       // Where this lesson sits, and what it actually teaches — without these
-      // ET can only paraphrase the title.
+      // ET AI can only paraphrase the title.
       siblingLessons: (units.find(u => u.module.id === selUnit)?.lessons ?? [])
         .filter(l => l.id !== d.id).map(l => l.title),
       lessonText: readLessonBody(d),
@@ -617,7 +617,7 @@ export default function ContentBuilderPage() {
         blocksOrder: blocks.includes('objectives') ? blocks : ['objectives', ...blocks],
       };
     },
-    'ET suggested objectives',
+    'ET AI suggested objectives',
   ), [runEt, course, units, selUnit]);
 
   const writeBrief = useCallback(() => {
@@ -626,8 +626,8 @@ export default function ContentBuilderPage() {
     const replacing = Boolean(current.briefPrompt?.trim());
     const ok = window.confirm(
       replacing
-        ? `Replace the generation brief on “${current.title}”? ET will rewrite only this lesson.`
-        : `Ask ET to write a generation brief for “${current.title}”? You can also type one in the brief box without using ET.`,
+        ? `Replace the generation brief on “${current.title}”? ET AI will rewrite only this lesson.`
+        : `Ask ET AI to write a generation brief for “${current.title}”? You can also type one in the brief box without using ET AI.`,
     );
     if (!ok) return;
     return runEt(
@@ -641,7 +641,7 @@ export default function ContentBuilderPage() {
         .filter(l => l.id !== d.id).map(l => l.title),
     }),
     (_d, data) => (typeof data?.brief === 'string' && data.brief.trim() ? { briefPrompt: data.brief } : null),
-    'ET wrote the generation brief',
+    'ET AI wrote the generation brief',
   );
   }, [runEt, course, units, selUnit]);
 
@@ -657,7 +657,7 @@ export default function ContentBuilderPage() {
     (d, data) => (typeof data?.text === 'string' && data.text.trim()
       ? lessonBodyPatch(d, data.text)
       : null),
-    'ET rewrote the lesson text',
+    'ET AI rewrote the lesson text',
   ), [runEt, course]);
 
   const applyManuscript = useCallback(async (result: ImportResult) => {
@@ -738,7 +738,7 @@ export default function ContentBuilderPage() {
         },
       };
     },
-    'ET drafted assessment sections',
+    'ET AI drafted assessment sections',
   ), [runEt, course]);
 
   /* ── Status workflow ── */
@@ -1177,10 +1177,10 @@ export default function ContentBuilderPage() {
 
                 <LessonLanguagePanel draft={draft} patch={patchDraft} />
 
-                {/* ET assist bar */}
+                {/* ET AI assist bar */}
                 <div className="flex flex-wrap items-center gap-2 rounded-xl border border-violet-200 bg-violet-50/60 px-3 py-2">
                   <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-violet-700">
-                    <Sparkles className="w-3.5 h-3.5" /> ET
+                    <Sparkles className="w-3.5 h-3.5" /> ET AI
                   </span>
                   <Button size="sm" variant="outline" className="rounded-xl h-7 text-[11px] gap-1.5 bg-card border-violet-200 text-violet-700 hover:bg-violet-100"
                     disabled={etBusy !== null} onClick={suggestObjectives}>
@@ -1192,7 +1192,7 @@ export default function ContentBuilderPage() {
                     {etBusy === 'brief' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                     Write generation brief
                   </Button>
-                  <span className="text-[10px] text-violet-700/70">ET drafts — always review before publishing.</span>
+                  <span className="text-[10px] text-violet-700/70">ET AI drafts — always review before publishing.</span>
                 </div>
 
                 {/* Curriculum tier — sets the academic depth and the
@@ -1227,7 +1227,7 @@ export default function ContentBuilderPage() {
                   })}
                 />
 
-                {/* Content format — decides the shape everything ET writes. */}
+                {/* Content format — decides the shape everything ET AI writes. */}
                 <div className="rounded-xl border border-border bg-card px-3 py-2.5 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -1264,7 +1264,7 @@ export default function ContentBuilderPage() {
                   <textarea
                     value={draft.briefPrompt ?? ''}
                     onChange={e => patchDraft({ briefPrompt: e.target.value })}
-                    placeholder="Type the brief for this lesson. ET can draft one too — that button asks first."
+                    placeholder="Type the brief for this lesson. ET AI can draft one too — that button asks first."
                     className="mt-2 w-full min-h-28 rounded-lg border border-border bg-background p-2 text-xs leading-relaxed outline-none"
                   />
                   <p className="text-[10px] text-muted-foreground mt-1">
@@ -1971,7 +1971,7 @@ function PropertiesTab({
     <>
       <section className="space-y-2">
         <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-violet-700">
-          <Sparkles className="w-3 h-3" /> AI assist (ET)
+          <Sparkles className="w-3 h-3" /> AI assist (ET AI)
         </p>
         <div className="space-y-1.5">
           {quillActions.map(a => (
@@ -1988,7 +1988,7 @@ function PropertiesTab({
           ))}
         </div>
         <p className="text-[10px] text-muted-foreground">
-          ET writes drafts into this lesson — review everything before you publish.
+          ET AI writes drafts into this lesson — review everything before you publish.
         </p>
       </section>
 
@@ -2332,7 +2332,7 @@ function HistoryTab({ draft }: { draft: Lesson }) {
     <>
       <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Content audit log</p>
       {entries.length === 0 && (
-        <p className="text-xs text-muted-foreground">No history yet — edits, saves, ET assists and publish actions will appear here with the name of whoever made them.</p>
+        <p className="text-xs text-muted-foreground">No history yet — edits, saves, ET AI assists and publish actions will appear here with the name of whoever made them.</p>
       )}
       <div className="space-y-3">
         {entries.map((h, i) => (

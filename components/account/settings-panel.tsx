@@ -5,7 +5,6 @@ import { LANGUAGES } from '@/lib/languages';
 import {
   DEFAULT_NOTIFICATIONS,
   DEFAULT_PRIVACY,
-  PROFILE_COUNTRIES,
   formatDeletionDate,
   passwordAcceptable,
   passwordStrength,
@@ -17,6 +16,8 @@ import {
   type PrivacySettings,
   type ProfileDraft,
 } from '@/lib/account-settings';
+import { CountrySelect, PhoneField } from '@/components/country-select';
+import { readGeoCountry, resolveCountryCode } from '@/lib/countries';
 import { ProfilePhoto } from '@/components/account/profile-photo';
 import {
   FamilySettings,
@@ -143,7 +144,9 @@ export function blankDraft(partial: Partial<ProfileDraft> = {}): ProfileDraft {
     instructor: { headline: '', bio: '', public: false, ...partial.instructor },
   };
   const defined = Object.fromEntries(Object.entries(partial).filter(([, value]) => value !== undefined));
-  return { ...draft, ...defined, notificationPrefs: draft.notificationPrefs, privacy: draft.privacy, instructor: draft.instructor };
+  const next = { ...draft, ...defined, notificationPrefs: draft.notificationPrefs, privacy: draft.privacy, instructor: draft.instructor };
+  const country = resolveCountryCode(next.country) || next.country;
+  return { ...next, country };
 }
 
 export function SettingsPanel({
@@ -179,6 +182,7 @@ export function SettingsPanel({
   onDecidePurchase,
   onAcceptInvite,
   onRespondLink,
+  loginActivity,
 }: {
   view: SettingsView;
   currencies: string[];
@@ -212,8 +216,14 @@ export function SettingsPanel({
   onDecidePurchase: (requestId: string, approve: boolean) => Promise<void> | void;
   onAcceptInvite: (code: string) => Promise<void> | void;
   onRespondLink: (linkId: string, approve: boolean) => Promise<void> | void;
+  loginActivity?: { id: string; at: number; action: string; ip: string; device: string }[];
 }) {
   const [draft, setDraft] = useState(view.draft);
+  useEffect(() => {
+    const geo = readGeoCountry();
+    if (!geo) return;
+    setDraft((current) => (current.country ? current : { ...current, country: geo }));
+  }, []);
   const [zoneQuery, setZoneQuery] = useState('');
   const [emailNext, setEmailNext] = useState('');
   const [emailPassword, setEmailPassword] = useState('');
@@ -288,15 +298,17 @@ export function SettingsPanel({
           <textarea value={draft.bio} onChange={event => setDraft({ ...draft, bio: event.target.value })} rows={3} className="w-full rounded-xl border border-border bg-muted/50 px-3 py-2 text-sm" />
         </Field>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Country">
-            <input list="profile-countries" value={draft.country} onChange={event => setDraft({ ...draft, country: event.target.value })} className="h-11 w-full rounded-xl border border-border bg-muted/50 px-3 text-sm" />
-            <datalist id="profile-countries">
-              {PROFILE_COUNTRIES.map(country => <option key={country} value={country} />)}
-            </datalist>
-          </Field>
-          <Field label="Phone">
-            <Input value={draft.phone} onChange={event => setDraft({ ...draft, phone: event.target.value })} className="h-11 rounded-xl" />
-          </Field>
+          <CountrySelect
+            label="Country"
+            value={draft.country}
+            onChange={country => setDraft({ ...draft, country })}
+          />
+          <PhoneField
+            label="Phone"
+            country={draft.country}
+            value={draft.phone}
+            onChange={phone => setDraft({ ...draft, phone })}
+          />
         </div>
         <Field label="Timezone">
           <Input value={zoneQuery} onChange={event => setZoneQuery(event.target.value)} placeholder="Search timezones" aria-label="Search timezones" className="mb-2 h-10 rounded-xl" />
@@ -434,6 +446,20 @@ export function SettingsPanel({
         <p className="text-xs text-muted-foreground">
           Admin accounts still use the admin sign-in code. If mail is not configured, sign-in continues without a code so you are not locked out.
         </p>
+      </Section>
+
+      <Section title="My login activity">
+        <ul className="space-y-2">
+          {(loginActivity ?? []).length === 0 && <li className="text-sm text-muted-foreground">Sign-ins recorded by the server will show here.</li>}
+          {(loginActivity ?? []).map(row => (
+            <li key={row.id} className="rounded-xl border border-border px-3 py-2">
+              <span className="block text-sm font-semibold">{row.action}</span>
+              <span className="block text-xs text-muted-foreground">
+                {new Date(row.at).toLocaleString('en-GB')} · {row.ip || 'IP unavailable'} · {row.device || 'Device unavailable'}
+              </span>
+            </li>
+          ))}
+        </ul>
       </Section>
 
       <Section title="Active sessions">
@@ -625,7 +651,7 @@ function Strength({ score, label }: { score: number; label: string }) {
   return (
     <div>
       <div className="h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
-        <div className="h-full bg-[#2786A4]" style={{ width: `${(score / 4) * 100}%` }} />
+        <div className="h-full bg-primary" style={{ width: `${(score / 4) * 100}%` }} />
       </div>
       <p className="mt-1 text-xs text-muted-foreground">Password strength: {label}</p>
     </div>

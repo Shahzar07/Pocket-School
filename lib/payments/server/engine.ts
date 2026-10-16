@@ -433,7 +433,10 @@ async function stripeSession(input: {
       price_data: {
         currency: input.quote.currency.toLowerCase(),
         unit_amount: toMinor(input.quote.total),
-        product_data: { name: input.quote.tax > 0 ? `${input.quote.title} (incl. SST)` : input.quote.title },
+        product_data: {
+          name: input.quote.tax > 0 ? `${input.quote.title} (incl. SST)` : input.quote.title,
+          ...(input.quote.highlights?.length ? { description: input.quote.highlights.join(' · ') } : {}),
+        },
         ...(subscription ? { recurring: { interval: input.quote.interval === 'year' ? 'year' : 'month' } } : {}),
       },
     }],

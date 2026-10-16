@@ -32,6 +32,8 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { useAccountMode } from '@/hooks/use-account-mode';
 import { homeForMode, learnerSpaceRoles, modeRedirect, MODE_NAMES, type AccountMode } from '@/lib/account-modes';
 import { loginBlocked, resolveStaffRole } from '@/lib/admin-console';
+import { reportActivity } from '@/lib/audit/report';
+import { adminMfaPending } from '@/lib/admin-mfa-pending';
 import { AdminViewAsBanner, clearViewAs, useAdminIdle, useViewAs } from '@/components/admin-session';
 import { isSuperAdmin, ROLE_LABELS } from '@/lib/roles';
 import { PipGuide } from '@/components/pip-guide';
@@ -45,11 +47,12 @@ import { isFeatureEnabled, type FeatureFlag } from '@/lib/feature-flags';
 import { useFeatureFlags } from '@/hooks/use-feature-flags';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
+import { AcademySession } from '@/components/academy-session';
 
 type Role = 'student' | 'teacher' | 'parent' | 'admin' | 'institution_admin';
 
 const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string }> = {
-  student: { icon: 'text-[#6FBBCE]', bar: 'bg-[#6FBBCE]', chip: 'from-[#2786A4] to-[#1E6A83]' },
+  student: { icon: 'text-primary', bar: 'bg-primary', chip: 'from-primary to-primary' },
   teacher: { icon: 'text-emerald-400', bar: 'bg-emerald-400', chip: 'from-emerald-500 to-teal-600' },
   parent:  { icon: 'text-amber-400',  bar: 'bg-amber-400',  chip: 'from-amber-500 to-orange-600' },
   admin:   { icon: 'text-violet-400', bar: 'bg-violet-400', chip: 'from-violet-500 to-fuchsia-600' },
@@ -90,12 +93,12 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
     ]},
-    { sectionLabel: 'Community', items: [
-      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.dashboard', label: 'Community', flag: 'community' },
-      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.dashboard', label: 'Tutors', flag: 'tutorMarketplace' },
-      { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.exams', label: 'Exam centre', flag: 'examCentre' },
-      { href: '/dashboard/store', icon: Library, labelKey: 'nav.resources', label: 'Creator store', flag: 'creatorStore' },
-      { href: '/dashboard/studio/maths', icon: Camera, labelKey: 'nav.dashboard', label: 'ET Maths', flag: 'snapAndSolve' },
+    { sectionKey: 'nav.section.community', items: [
+      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
+      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
+      { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.examCentre', flag: 'examCentre' },
+      { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
+      { href: '/dashboard/studio/maths', icon: Camera, labelKey: 'nav.snapSolve', label: 'ET Maths', flag: 'snapAndSolve' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
@@ -135,14 +138,14 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher/integrity/cases', icon: Shield, labelKey: 'nav.integrityCases' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
       { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
-      { href: '/dashboard/teacher/behaviour', icon: Star, labelKey: 'nav.behaviour', label: 'Merits' },
+      { href: '/dashboard/teacher/behaviour', icon: Star, labelKey: 'nav.merits' },
     ]},
     // Billing and Helpdesk are institution-admin responsibilities, not teachers'.
-    { sectionLabel: 'Community', items: [
-      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.dashboard', label: 'Community', flag: 'community' },
-      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.dashboard', label: 'Tutors', flag: 'tutorMarketplace' },
-      { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.exams', label: 'Exam centre', flag: 'examCentre' },
-      { href: '/dashboard/store', icon: Library, labelKey: 'nav.resources', label: 'Creator store', flag: 'creatorStore' },
+    { sectionKey: 'nav.section.community', items: [
+      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
+      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
+      { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.examCentre', flag: 'examCentre' },
+      { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
@@ -172,8 +175,8 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/parent/reports', icon: FileBarChart, labelKey: 'nav.reportCards' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
     ]},
-    { sectionLabel: 'Family', items: [
-      { href: '/dashboard/parent/controls', icon: Shield, labelKey: 'nav.dashboard', label: 'Controls', flag: 'community' },
+    { sectionKey: 'nav.section.family', items: [
+      { href: '/dashboard/parent/controls', icon: Shield, labelKey: 'nav.controls', flag: 'community' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
@@ -199,11 +202,13 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
       { href: '/dashboard/admin/settings', icon: Settings, labelKey: 'nav.systemSettings' },
       { href: '/dashboard/admin/verifications', icon: ShieldCheck, labelKey: 'nav.verifications' },
+      { href: '/dashboard/admin/activity', icon: ClipboardList, labelKey: 'nav.dashboard', label: 'Activity log', superOnly: true },
+      { href: '/dashboard/admin/certificates', icon: Award, labelKey: 'nav.certificates', label: 'Certificates' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
-      { href: '/dashboard/admin/moderation', icon: Shield, labelKey: 'nav.dashboard', label: 'Moderation', flag: 'community' },
-      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.dashboard', label: 'Community', flag: 'community' },
-      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.dashboard', label: 'Tutors', flag: 'tutorMarketplace' },
-      { href: '/dashboard/store', icon: Library, labelKey: 'nav.resources', label: 'Creator store', flag: 'creatorStore' },
+      { href: '/dashboard/admin/moderation', icon: Shield, labelKey: 'nav.moderation', flag: 'community' },
+      { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
+      { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
+      { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
     ]},
     { sectionKey: 'nav.section.money', items: [
       { href: '/dashboard/admin/payments', icon: Landmark, labelKey: 'nav.payments', superOnly: true },
@@ -226,6 +231,7 @@ const NAV: Record<Role, NavGroup[]> = {
   institution_admin: [
     { items: [
       { href: '/dashboard/institution', icon: GraduationCap, labelKey: 'nav.myClasses' },
+      { href: '/dashboard/admin/institutions', icon: Users, labelKey: 'nav.institutions' },
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
@@ -233,6 +239,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
       { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
       { href: '/dashboard/institution/templates', icon: FileText, labelKey: 'nav.reportStudio' },
+      { href: '/dashboard/institution/certificates', icon: Award, labelKey: 'nav.certificates', label: 'Certificates' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
@@ -287,10 +294,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [newDevice, setNewDevice] = useState(false);
+  const [mfaCheckedUid, setMfaCheckedUid] = useState<string | null>(null);
+  const [mfaHold, setMfaHold] = useState(false);
 
   const handleNavClick = () => {
     if (window.innerWidth < 1024) setSidebarOpen(false);
   };
+
+  useEffect(() => {
+    if (loading) return;
+    const uid = user?.uid ?? '';
+    const hold = uid ? adminMfaPending(uid) : false;
+    setMfaHold(hold);
+    setMfaCheckedUid(uid);
+    if (hold) router.replace('/admin/login');
+  }, [user, loading, router]);
 
   useEffect(() => {
     if (loading || user) return;
@@ -314,28 +332,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const viewAs = useViewAs();
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || adminMfaPending(user.uid)) return;
     const deviceInfo = `${navigator.userAgent.slice(0, 80)}|${screen.width}x${screen.height}`;
     upsertUserSession(user.uid, deviceInfo).then(result => {
       sessionStorage.setItem('poket-session-at', String(result.createdAtMs));
       if (result.isNew) setNewDevice(true);
       const revokedAt = useAuthSTORE.getState().profile?.sessionsRevokedAt;
       if (sessionRevoked(revokedAt, result.createdAtMs)) {
-        void signOut(auth).then(() => router.push(pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login'));
+        void reportActivity({ action: 'auth.logout', targetType: 'session', targetId: user.uid }).finally(() => {
+          void signOut(auth).then(() => router.push(pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login'));
+        });
       }
     }).catch(() => {});
   }, [user, router, pathname]);
 
   useEffect(() => {
-    if (!profile) return;
+    if (!profile || !user || adminMfaPending(user.uid)) return;
     const started = Number(sessionStorage.getItem('poket-session-at') || '0');
     if (sessionRevoked(profile.sessionsRevokedAt, started)) {
-      void signOut(auth).then(() => router.push(pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login'));
+      void reportActivity({ action: 'auth.logout', targetType: 'session', targetId: user.uid }).finally(() => {
+        void signOut(auth).then(() => router.push(pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login'));
+      });
     }
-  }, [profile, router, pathname]);
+  }, [profile, user, router, pathname]);
 
   useEffect(() => {
-    if (!user || !profile) return;
+    if (!user || !profile || adminMfaPending(user.uid)) return;
     const next = learnerSpaceRoles(profile);
     if (!next) return;
     let cancelled = false;
@@ -347,14 +369,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (!account.ready || !account.mode) return;
+    if (user && adminMfaPending(user.uid)) return;
     const next = modeRedirect(pathname, account.mode);
     if (next) router.replace(next);
-  }, [account.ready, account.mode, pathname, router]);
+  }, [account.ready, account.mode, pathname, router, user]);
 
-  if (loading || !user || !profile || !account.ready) {
+  const mfaUnknown = loading || (user?.uid ? mfaCheckedUid !== user.uid : mfaCheckedUid === null);
+
+  if (mfaUnknown || loading || !user || !profile || !account.ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (mfaHold) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-6">
+        <p className="max-w-md text-center text-sm text-muted-foreground">
+          Confirm the admin second factor before opening the dashboard.
+        </p>
       </div>
     );
   }
@@ -383,7 +418,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               className="h-10 rounded-full border border-border px-4 text-sm font-semibold"
               onClick={() => {
                 clearViewAs();
-                void signOut(auth).then(() => router.push(staffRole ? '/admin/login' : '/login'));
+                void reportActivity({ action: 'auth.logout', targetType: 'session', targetId: user.uid }).finally(() => {
+                  void signOut(auth).then(() => router.push(staffRole ? '/admin/login' : '/login'));
+                });
               }}
             >
               Sign out
@@ -421,7 +458,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </a>
           <button
             type="button"
-            onClick={() => { signOut(auth).then(() => { useAuthSTORE.getState().setUser(null); router.push('/login'); }); }}
+            onClick={() => {
+              void reportActivity({ action: 'auth.logout', targetType: 'session', targetId: user.uid }).finally(() => {
+                void signOut(auth).then(() => { useAuthSTORE.getState().setUser(null); router.push('/login'); });
+              });
+            }}
             className="mt-3 text-sm font-semibold text-muted-foreground"
           >
             {t('nav.signOut')}
@@ -463,6 +504,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
+      <AcademySession />
       <a href="#dashboard-main" className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-xl focus:bg-card focus:px-3 focus:py-2">
         Skip to content
       </a>
@@ -529,9 +571,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button
             onClick={() => {
               clearViewAs();
-              signOut(auth).then(() => {
-                useAuthSTORE.getState().setUser(null);
-                router.push(staffRole ? '/admin/login' : '/login');
+              void reportActivity({ action: 'auth.logout', targetType: 'session', targetId: user.uid }).finally(() => {
+                void signOut(auth).then(() => {
+                  useAuthSTORE.getState().setUser(null);
+                  router.push(staffRole ? '/admin/login' : '/login');
+                });
               });
             }}
             className="w-full flex items-center gap-3 px-3 h-9 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
@@ -588,7 +632,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               >
                 <Avatar className="w-9 h-9 border-2 border-border cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all">
                   <AvatarImage src={profile.avatarUrl ?? user.photoURL ?? undefined} />
-                  <AvatarFallback className="bg-gradient-to-br from-[#2786A4] to-[#1E6A83] text-white text-sm font-bold">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-sm font-bold">
                     {profile.name?.charAt(0)?.toUpperCase() ?? 'U'}
                   </AvatarFallback>
                 </Avatar>
@@ -616,7 +660,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         <main id="dashboard-main" className="flex-1 overflow-y-auto relative pb-20 lg:pb-0">
           {/* A faint teal wash at the top, echoing the homepage sky. */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(39,134,164,0.06)_0%,transparent_100%)]" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(30,106,131,0.06)_0%,transparent_100%)]" />
           <OfflineBanner />
           <div className="relative px-4 pb-6 pt-1 lg:px-6 lg:pb-10">
             <RoleChecklist role={role} />

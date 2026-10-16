@@ -2,53 +2,42 @@
  * White-label host handling.
  *
  * An institution can be served from its own subdomain — kolej-utama.poketschool.ai —
- * and the app then wears that institution's name, logo and accent colour.
- * This module only answers "which host label are we on"; resolving the label to
- * an institution is a Firestore read (getInstitutionBySubdomain).
+ * from `/a/kolej-utama` until wildcard DNS is live, or from a hostname it owns.
+ * Resolving the label to an institution is a Firestore read.
  */
 
-/** Hosts that are the platform itself rather than a tenant. */
-const PLATFORM_HOSTS = new Set([
-  'poketschool.ai',
-  'www.poketschool.ai',
-  'localhost',
-]);
+import { tenantFromRequest } from './tenant-host';
 
 /**
- * The tenant label in a hostname, or null when the host is the platform, a
- * preview deployment or an IP.
+ * The Poket School subdomain label, or null for the platform, a custom domain,
+ * a preview deployment, or an IP.
  *
  * kolej-utama.poketschool.ai → "kolej-utama"
  * poketschool.ai             → null
- * anything.vercel.app        → null  (preview builds are not tenants)
+ * learn.school.example       → null  (custom domains are resolved by hostname)
+ * anything.vercel.app        → null
  */
 export function subdomainFromHost(host: string | null | undefined): string | null {
-  if (!host) return null;
-  // Strip port and normalise.
-  const hostname = host.split(':')[0].trim().toLowerCase();
-  if (!hostname || PLATFORM_HOSTS.has(hostname)) return null;
-  // Bare IPs are never tenants.
-  if (/^[\d.]+$/.test(hostname)) return null;
-  // Preview and platform-provider hosts carry deployment ids, not tenants.
-  if (hostname.endsWith('.vercel.app') || hostname.endsWith('.local')) return null;
-
-  const parts = hostname.split('.');
-  // Need at least sub.domain.tld; localhost subdomains (sub.localhost) count too.
-  if (parts.length === 2 && parts[1] === 'localhost') return parts[0];
-  if (parts.length < 3) return null;
-
-  const label = parts[0];
-  return label === 'www' ? null : label;
+  const tenant = tenantFromRequest(host, '/');
+  return tenant.kind === 'subdomain' ? tenant.slug : null;
 }
 
 export interface Branding {
   displayName: string;
   logoUrl?: string;
   primaryColor?: string;
+  secondaryColor?: string;
   tagline?: string;
   hidePoweredBy: boolean;
   emailFromName?: string;
   certificateIssuer?: string;
+  certificateFooter?: string;
+  fontId?: string;
+  faviconUrl?: string;
+  loginHeadline?: string;
+  loginBody?: string;
+  mobileAppName?: string;
+  splashColor?: string;
   /** True when an institution's branding is in effect rather than the default. */
   isWhiteLabel: boolean;
 }
@@ -68,10 +57,18 @@ export function brandingFor(
       displayName?: string;
       logoUrl?: string;
       primaryColor?: string;
+      secondaryColor?: string;
       tagline?: string;
       hidePoweredBy?: boolean;
       emailFromName?: string;
       certificateIssuer?: string;
+      certificateFooter?: string;
+      fontId?: string;
+      faviconUrl?: string;
+      loginHeadline?: string;
+      loginBody?: string;
+      mobileAppName?: string;
+      splashColor?: string;
     };
   } | null | undefined,
 ): Branding {
@@ -82,10 +79,18 @@ export function brandingFor(
     displayName,
     logoUrl: b.logoUrl,
     primaryColor: b.primaryColor,
+    secondaryColor: b.secondaryColor,
     tagline: b.tagline ?? DEFAULT_BRANDING.tagline,
     hidePoweredBy: !!b.hidePoweredBy,
     emailFromName: b.emailFromName || displayName,
     certificateIssuer: b.certificateIssuer || displayName,
+    certificateFooter: b.certificateFooter,
+    fontId: b.fontId,
+    faviconUrl: b.faviconUrl,
+    loginHeadline: b.loginHeadline,
+    loginBody: b.loginBody,
+    mobileAppName: b.mobileAppName,
+    splashColor: b.splashColor,
     isWhiteLabel: true,
   };
 }

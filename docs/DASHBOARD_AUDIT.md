@@ -959,3 +959,30 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Overlaps:** Teacher merits.
 - **Decision:** Keep as the shared read view.
 - **Owner keys:** None.
+
+### Activity log
+
+- **Route:** `/dashboard/admin/activity`
+- **Audience:** admin
+- **Purpose:** Server-written sign-in, role, content, and admin actions. Super admins read it. People cannot edit a row.
+- **Overlaps:** Institution audit on an academy.
+- **Decision:** Keep. This is the platform log. Academy settings keep their own audit.
+- **Owner keys:** None. The server stamps actor, time, and IP.
+
+### Certificates
+
+- **Route:** `/dashboard/admin/certificates`
+- **Audience:** admin
+- **Purpose:** Design the Open Badge and issue it to a school list. Each badge is a signed credential with a public verify page.
+- **Overlaps:** Module certificates and the school issuance desk.
+- **Decision:** Keep as the platform badge template and bulk issue desk.
+- **Owner keys:** Credential signing keys stay on the server.
+
+### Class certificates
+
+- **Route:** `/dashboard/institution/certificates`
+- **Audience:** institution
+- **Purpose:** Issue Poket School badges for students in this school who have finished a module.
+- **Overlaps:** Admin certificates.
+- **Decision:** Keep as the academy issuance desk. It does not change the platform template.
+- **Owner keys:** None.

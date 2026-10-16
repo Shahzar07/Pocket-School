@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CertificateDocument } from '@/components/certificate-document';
 import { CERTIFICATE_DISCLAIMER, certificateStatus, formatCertificateDate, type CertificateFace } from '@/lib/certificates';
+import { CredentialPanel } from '@/components/credentials/credential-panel';
 import { copyrightLine } from '@/lib/insights/copyright';
 
 function toFace(cert: Certificate): CertificateFace {
@@ -174,6 +175,7 @@ function VerificationRecord({
         ) : null}
       </div>
       <CertificateDocument certificate={face} />
+      {face.id ? <CredentialPanel id={face.id} /> : null}
     </div>
   );
 }

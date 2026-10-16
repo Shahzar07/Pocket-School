@@ -1,7 +1,7 @@
 /**
  * AI-ASSISTED — NEEDS HUMAN REVIEW
  * Interface drafts for Traditional Chinese, Japanese, Korean, Vietnamese and Thai.
- * Proper nouns stay official: Poket School, ET, Sparks, AI Studio,
+ * Proper nouns stay official: Poket School, ET AI, Sparks, AI Studio,
  * Cambridge Assessment International Education, Pearson Edexcel, AQA,
  * Malaysian Ministry of Education.
  */
@@ -149,13 +149,13 @@ export const zhHant = {
     analytics: '分析',
     analyticsDesc: '匿名使用資料，協助我們改善學習體驗。',
     aiPerformance: 'AI 表現',
-    aiPerformanceDesc: '協助我們改善 ET 的回應品質與個人化。',
+    aiPerformanceDesc: '協助我們改善 ET AI 的回應品質與個人化。',
   },
   auth: {
     line1: '你最聰明的',
     line2: '口袋裡的課堂',
     subtitle: '為 IGCSE、A-Levels、學位及更遠目標而設的 AI 學習。',
-    f1title: 'ET — 你的 AI 導師',
+    f1title: 'ET AI — 你的 AI 導師',
     f1desc: '依照你的思考方式調整，全天 24 小時',
     f2title: 'IGCSE · A-Levels · 學位',
     f2desc: '完整學術路徑，照你的節奏',
@@ -166,7 +166,7 @@ export const zhHant = {
   },
   switcher: {
     change: '變更語言',
-    uiFallback: '此語言的選單仍以英文顯示。ET 仍會以{{language}}回覆。',
+    uiFallback: '此語言的選單仍以英文顯示。ET AI 仍會以{{language}}回覆。',
   },
   lesson: {
     unit: '課（單元）',
@@ -182,8 +182,8 @@ export const zhHant = {
     localizedBody: '翻譯課程',
     save: '儲存翻譯',
     clear: '清除此語言',
-    translate: '用 ET 翻譯',
-    confirmBody: 'ET 會把英文課程翻譯成{{language}}。這會使用 {{cost}} Sparks。',
+    translate: '用 ET AI 翻譯',
+    confirmBody: 'ET AI 會把英文課程翻譯成{{language}}。這會使用 {{cost}} Sparks。',
     confirm: '翻譯並使用 Sparks',
     cancel: '取消',
     working: '翻譯中…',
@@ -193,7 +193,7 @@ export const zhHant = {
     empty: '翻譯前請先加入英文標題或正文。',
     failed: '翻譯失敗。沒有扣除 Sparks。',
     sourceManual: '自行輸入',
-    sourceAi: 'ET 翻譯',
+    sourceAi: 'ET AI 翻譯',
   },
   sparks: {
     title: 'Sparks 餘額',
@@ -393,13 +393,13 @@ export const ja = {
     analytics: '分析',
     analyticsDesc: '学習体験を改善するための匿名の利用データです。',
     aiPerformance: 'AIの品質',
-    aiPerformanceDesc: 'ETの回答品質とパーソナライズの改善に使います。',
+    aiPerformanceDesc: 'ET AIの回答品質とパーソナライズの改善に使います。',
   },
   auth: {
     line1: 'いちばん賢い',
     line2: 'ポケットの中の教室',
     subtitle: 'IGCSE、A-Levels、学位とその先のためのAI学習。',
-    f1title: 'ET — あなたのAIチューター',
+    f1title: 'ET AI — あなたのAIチューター',
     f1desc: '考え方に合わせて、24時間',
     f2title: 'IGCSE · A-Levels · 学位',
     f2desc: '自分のペースで進む学習経路',
@@ -410,7 +410,7 @@ export const ja = {
   },
   switcher: {
     change: '言語を変更',
-    uiFallback: 'この言語のメニューは英語のままです。ETは{{language}}で返信します。',
+    uiFallback: 'この言語のメニューは英語のままです。ET AIは{{language}}で返信します。',
   },
   lesson: {
     unit: 'レッスン（単元）',
@@ -426,8 +426,8 @@ export const ja = {
     localizedBody: '翻訳したレッスン',
     save: '翻訳を保存',
     clear: 'この言語を消去',
-    translate: 'ETで翻訳',
-    confirmBody: 'ETが英語のレッスンを{{language}}に翻訳します。{{cost}} Sparks を使います。',
+    translate: 'ET AIで翻訳',
+    confirmBody: 'ET AIが英語のレッスンを{{language}}に翻訳します。{{cost}} Sparks を使います。',
     confirm: '翻訳して Sparks を使う',
     cancel: 'キャンセル',
     working: '翻訳しています…',
@@ -437,7 +437,7 @@ export const ja = {
     empty: '翻訳する前に、英語のタイトルまたは本文を追加してください。',
     failed: '翻訳に失敗しました。Sparks は使っていません。',
     sourceManual: '手入力',
-    sourceAi: 'ETの翻訳',
+    sourceAi: 'ET AIの翻訳',
   },
   sparks: {
     title: 'Sparks の残高',
@@ -637,13 +637,13 @@ export const ko = {
     analytics: '분석',
     analyticsDesc: '학습 경험을 개선하기 위한 익명 사용 데이터입니다.',
     aiPerformance: 'AI 성능',
-    aiPerformanceDesc: 'ET 응답 품질과 개인화를 개선하는 데 쓰입니다.',
+    aiPerformanceDesc: 'ET AI 응답 품질과 개인화를 개선하는 데 쓰입니다.',
   },
   auth: {
     line1: '가장 똑똑한',
     line2: '주머니 속 교실',
     subtitle: 'IGCSE, A-Levels, 학위와 그 이후를 위한 AI 학습.',
-    f1title: 'ET — 나의 AI 튜터',
+    f1title: 'ET AI — 나의 AI 튜터',
     f1desc: '생각하는 방식에 맞추고, 24시간',
     f2title: 'IGCSE · A-Levels · 학위',
     f2desc: '내 속도의 전체 학습 경로',
@@ -654,7 +654,7 @@ export const ko = {
   },
   switcher: {
     change: '언어 변경',
-    uiFallback: '이 언어의 메뉴는 영어로 유지됩니다. ET는 {{language}}로 답합니다.',
+    uiFallback: '이 언어의 메뉴는 영어로 유지됩니다. ET AI는 {{language}}로 답합니다.',
   },
   lesson: {
     unit: '수업 (단원)',
@@ -670,8 +670,8 @@ export const ko = {
     localizedBody: '번역된 수업',
     save: '번역 저장',
     clear: '이 언어 지우기',
-    translate: 'ET로 번역',
-    confirmBody: 'ET가 영어 수업을 {{language}}로 번역합니다. {{cost}} Sparks를 사용합니다.',
+    translate: 'ET AI로 번역',
+    confirmBody: 'ET AI가 영어 수업을 {{language}}로 번역합니다. {{cost}} Sparks를 사용합니다.',
     confirm: '번역하고 Sparks 사용',
     cancel: '취소',
     working: '번역 중…',
@@ -681,7 +681,7 @@ export const ko = {
     empty: '번역하기 전에 영어 제목이나 본문을 추가하세요.',
     failed: '번역에 실패했습니다. Sparks는 사용되지 않았습니다.',
     sourceManual: '직접 입력',
-    sourceAi: 'ET 번역',
+    sourceAi: 'ET AI 번역',
   },
   sparks: {
     title: 'Sparks 잔액',
@@ -881,13 +881,13 @@ export const vi = {
     analytics: 'Phân tích',
     analyticsDesc: 'Dữ liệu sử dụng ẩn danh để cải thiện trải nghiệm học.',
     aiPerformance: 'Hiệu năng AI',
-    aiPerformanceDesc: 'Giúp chúng tôi cải thiện chất lượng trả lời và cá nhân hóa của ET.',
+    aiPerformanceDesc: 'Giúp chúng tôi cải thiện chất lượng trả lời và cá nhân hóa của ET AI.',
   },
   auth: {
     line1: 'Lớp học thông minh nhất',
     line2: 'ngay trong túi bạn',
     subtitle: 'Học bằng AI cho IGCSE, A-Levels, bằng cấp và xa hơn.',
-    f1title: 'ET — Gia sư AI của bạn',
+    f1title: 'ET AI — Gia sư AI của bạn',
     f1desc: 'Thích ứng với cách bạn nghĩ, 24/7',
     f2title: 'IGCSE · A-Levels · Bằng cấp',
     f2desc: 'Lộ trình học đầy đủ, theo nhịp của bạn',
@@ -898,7 +898,7 @@ export const vi = {
   },
   switcher: {
     change: 'Đổi ngôn ngữ',
-    uiFallback: 'Menu của ngôn ngữ này vẫn bằng tiếng Anh. ET vẫn trả lời bằng {{language}}.',
+    uiFallback: 'Menu của ngôn ngữ này vẫn bằng tiếng Anh. ET AI vẫn trả lời bằng {{language}}.',
   },
   lesson: {
     unit: 'Bài học (đơn vị)',
@@ -914,8 +914,8 @@ export const vi = {
     localizedBody: 'Bài học đã dịch',
     save: 'Lưu bản dịch',
     clear: 'Xóa ngôn ngữ này',
-    translate: 'Dịch bằng ET',
-    confirmBody: 'ET sẽ dịch bài tiếng Anh sang {{language}}. Việc này dùng {{cost}} Sparks.',
+    translate: 'Dịch bằng ET AI',
+    confirmBody: 'ET AI sẽ dịch bài tiếng Anh sang {{language}}. Việc này dùng {{cost}} Sparks.',
     confirm: 'Dịch và dùng Sparks',
     cancel: 'Hủy',
     working: 'Đang dịch…',
@@ -925,7 +925,7 @@ export const vi = {
     empty: 'Hãy thêm tiêu đề hoặc nội dung tiếng Anh trước khi dịch.',
     failed: 'Dịch không thành công. Không mất Sparks.',
     sourceManual: 'Tự nhập',
-    sourceAi: 'Bản dịch ET',
+    sourceAi: 'Bản dịch ET AI',
   },
   sparks: {
     title: 'Số dư Sparks',
@@ -1125,13 +1125,13 @@ export const th = {
     analytics: 'การวิเคราะห์',
     analyticsDesc: 'ข้อมูลการใช้งานแบบไม่ระบุตัวตน เพื่อปรับปรุงประสบการณ์การเรียน',
     aiPerformance: 'ประสิทธิภาพ AI',
-    aiPerformanceDesc: 'ช่วยเราปรับปรุงคุณภาพคำตอบและการปรับให้เข้ากับบุคคลของ ET',
+    aiPerformanceDesc: 'ช่วยเราปรับปรุงคุณภาพคำตอบและการปรับให้เข้ากับบุคคลของ ET AI',
   },
   auth: {
     line1: 'ห้องเรียนที่ฉลาดที่สุด',
     line2: 'อยู่ในกระเป๋าคุณ',
     subtitle: 'การเรียนรู้ด้วย AI สำหรับ IGCSE, A-Levels, ปริญญา และต่อไป',
-    f1title: 'ET — ติวเตอร์ AI ของคุณ',
+    f1title: 'ET AI — ติวเตอร์ AI ของคุณ',
     f1desc: 'ปรับตามวิธีที่คุณคิด ตลอด 24 ชั่วโมง',
     f2title: 'IGCSE · A-Levels · ปริญญา',
     f2desc: 'เส้นทางวิชาการครบ ตามจังหวะของคุณ',
@@ -1142,7 +1142,7 @@ export const th = {
   },
   switcher: {
     change: 'เปลี่ยนภาษา',
-    uiFallback: 'เมนูของภาษานี้ยังเป็นภาษาอังกฤษ ET ยังตอบเป็น {{language}}',
+    uiFallback: 'เมนูของภาษานี้ยังเป็นภาษาอังกฤษ ET AI ยังตอบเป็น {{language}}',
   },
   lesson: {
     unit: 'บทเรียน (หน่วย)',
@@ -1158,8 +1158,8 @@ export const th = {
     localizedBody: 'บทเรียนที่แปลแล้ว',
     save: 'บันทึกคำแปล',
     clear: 'ล้างภาษานี้',
-    translate: 'แปลด้วย ET',
-    confirmBody: 'ET จะแปลบทเรียนภาษาอังกฤษเป็น{{language}} การนี้ใช้ {{cost}} Sparks',
+    translate: 'แปลด้วย ET AI',
+    confirmBody: 'ET AI จะแปลบทเรียนภาษาอังกฤษเป็น{{language}} การนี้ใช้ {{cost}} Sparks',
     confirm: 'แปลและใช้ Sparks',
     cancel: 'ยกเลิก',
     working: 'กำลังแปล…',
@@ -1169,7 +1169,7 @@ export const th = {
     empty: 'เพิ่มชื่อหรือเนื้อหาภาษาอังกฤษก่อนแปล',
     failed: 'แปลไม่สำเร็จ ไม่มีการใช้ Sparks',
     sourceManual: 'พิมพ์เอง',
-    sourceAi: 'คำแปลของ ET',
+    sourceAi: 'คำแปลของ ET AI',
   },
   sparks: {
     title: 'ยอด Sparks',

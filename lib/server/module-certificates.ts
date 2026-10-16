@@ -8,6 +8,7 @@ import {
   certificateStudentName,
   moduleIsComplete,
 } from '../certificates';
+import { certificateBrandLine } from '../oem';
 
 interface IssueInput {
   studentId: string;
@@ -19,6 +20,9 @@ interface IssueInput {
   publishedIds: readonly string[];
   completedIds: readonly string[];
   fresh: boolean;
+  issuerName?: string;
+  showPoweredBy?: boolean;
+  accent?: string;
 }
 
 /**
@@ -35,6 +39,7 @@ export function issueInTransaction(
   const id = crypto.randomUUID();
   const studentName = certificateStudentName(input.studentName);
   const issuedAt = new Date().toISOString();
+  const issuedByName = input.issuerName?.trim() || CERTIFICATE_ISSUER_NAME;
   tx.set(firestore.doc(`certificates/${id}`), {
     studentId: input.studentId,
     studentName,
@@ -44,9 +49,11 @@ export function issueInTransaction(
     moduleTitle: input.moduleTitle,
     issuedAt: FieldValue.serverTimestamp(),
     issuedBy: CERTIFICATE_ISSUER_ID,
-    issuedByName: CERTIFICATE_ISSUER_NAME,
+    issuedByName,
     kind: 'module',
-    brand: 'Poket School',
+    brand: issuedByName,
+    showPoweredBy: input.showPoweredBy !== false,
+    ...(input.accent ? { accent: input.accent } : {}),
     status: 'valid',
     disclaimer: CERTIFICATE_DISCLAIMER,
   });
@@ -67,6 +74,25 @@ export function issueInTransaction(
     moduleId: input.moduleId,
     moduleTitle: input.moduleTitle,
     issuedAt,
-    issuedByName: CERTIFICATE_ISSUER_NAME,
+    issuedByName,
+  };
+}
+
+export function issuerFromInstitution(data: Record<string, unknown> | undefined): { issuerName: string; showPoweredBy: boolean; accent?: string } {
+  if (!data) return { issuerName: CERTIFICATE_ISSUER_NAME, showPoweredBy: true };
+  const branding = data.branding && typeof data.branding === 'object'
+    ? data.branding as { displayName?: string; certificateIssuer?: string; hidePoweredBy?: boolean; primaryColor?: string }
+    : {};
+  const name = typeof data.name === 'string' ? data.name : '';
+  const accent = typeof branding.primaryColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(branding.primaryColor)
+    ? branding.primaryColor
+    : undefined;
+  return {
+    issuerName: certificateBrandLine({
+      displayName: branding.displayName || name || CERTIFICATE_ISSUER_NAME,
+      certificateIssuer: branding.certificateIssuer,
+    }),
+    showPoweredBy: branding.hidePoweredBy !== true,
+    accent,
   };
 }

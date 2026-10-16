@@ -40,6 +40,10 @@ const MAX_RETRIES = 3;
 const REQUEST_TIMEOUT_MS = 60_000;
 const DEFAULT_MAX_TOKENS = 4096;
 
+export function isOpenRouterConfigured(): boolean {
+  return !!process.env.OPENROUTER_API_KEY;
+}
+
 export async function callOpenRouter(
   messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
   opts?: { model?: string; temperature?: number; maxTokens?: number; jsonMode?: boolean }
