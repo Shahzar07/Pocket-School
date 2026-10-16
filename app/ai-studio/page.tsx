@@ -1,21 +1,21 @@
 'use client';
 
 /**
- * AI Studio — ET.
- * A Claude-style conversational studio: one thread where ET both tutors
- * (Socratic chat) and generates any of the 12 study formats as rich turns.
- * Warm charcoal palette, skills composer, session recents, persistent library.
+ * AI Studio — ET AI.
+ * One thread where ET AI tutors and generates study formats.
+ * Theme tokens so light and dark match the studio hub.
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import { useTheme } from 'next-themes';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { MathMarkdown } from '@/components/math-markdown';
 import { readLanguage } from '@/lib/languages';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import {
-  Sparkles, ArrowUp, ArrowLeft, Library, MessageSquare, PenLine,
+  Sparkles, ArrowUp, ArrowLeft, Library, MessageSquare, PenLine, BookOpen,
   FileText, ClipboardList, Network, BookMarked,
   Presentation, Image as ImageIcon, Calculator, FlipHorizontal,
   Loader2, Save, Trash2, Copy, Plus, ChevronRight, User as UserIcon,
@@ -68,20 +68,23 @@ type Turn =
 
 interface Chat { id: number; title: string; turns: Turn[] }
 
-/* Warm charcoal palette with a soothing golden-yellow accent */
+/* Theme-aware shell. Buttons stay on #1E6A83 so white label text clears WCAG AA in both themes. */
 const C = {
-  bg: 'bg-[#1A1918]',
-  surface: 'bg-[#242220]',
-  surfaceHover: 'hover:bg-[#2B2927]',
-  raised: 'bg-[#2B2927]',
-  border: 'border-[#3A3733]',
-  borderSoft: 'border-[#2E2B28]',
-  text: 'text-[#EDEAE4]',
-  dim: 'text-[#A8A296]',
-  faint: 'text-[#6E695F]',
-  accent: '#E8C15E',
-  accentInk: '#1A1918',
+  bg: 'bg-background',
+  surface: 'bg-card',
+  surfaceHover: 'hover:bg-muted',
+  raised: 'bg-muted',
+  border: 'border-border',
+  borderSoft: 'border-border',
+  text: 'text-foreground',
+  dim: 'text-muted-foreground',
+  faint: 'text-muted-foreground',
+  accent: 'var(--secondary-foreground)',
+  accentInk: '#FFFFFF',
 };
+const FILL = '#1E6A83';
+const HERO = 'radial-gradient(ellipse at 100% 0%, rgba(226,175,77,0.42), transparent 42%), linear-gradient(145deg, #143E4E 0%, #1E6A83 62%, #18556A 100%)';
+const PROSE_CLASSES = 'prose prose-sm max-w-none dark:prose-invert prose-headings:font-heading prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground prose-a:text-[#1E6A83] dark:prose-a:text-[#A7D9E5]';
 
 /* Rotating status lines ET shows while working. */
 const THINKING_PHRASES = [
@@ -91,12 +94,11 @@ const THINKING_PHRASES = [
   'Almost there — sharpening the answer…',
 ];
 const CREATING_PHRASES = [
-  'Welcome, future champ — ET is on it ✨',
-  'Searching and thinking the best solutions for you…',
-  'Good idea — there you got! Drafting it now…',
-  'Sketching the big picture…',
-  'Cooking something brilliant for you…',
-  'Polishing every detail…',
+  'ET AI is working on this…',
+  'Searching for a clear path…',
+  'Connecting the ideas…',
+  'Checking the steps…',
+  'Polishing the result…',
 ];
 
 function PocoWorking({ creating }: { creating: boolean }) {
@@ -110,7 +112,7 @@ function PocoWorking({ creating }: { creating: boolean }) {
     <div className="flex gap-3">
       <motion.div
         className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1"
-        style={{ background: C.accent }}
+        style={{ background: FILL }}
         animate={{ rotate: 360, scale: [1, 1.08, 1] }}
         transition={{ rotate: { repeat: Infinity, duration: 3.5, ease: 'linear' }, scale: { repeat: Infinity, duration: 1.6 } }}
       >
@@ -119,7 +121,7 @@ function PocoWorking({ creating }: { creating: boolean }) {
       <div className="flex items-center gap-2.5 py-2 min-h-[36px]">
         <span className="flex gap-1">
           {[0, 1, 2].map(d => (
-            <motion.span key={d} className="w-1.5 h-1.5 rounded-full" style={{ background: C.accent }}
+            <motion.span key={d} className="w-1.5 h-1.5 rounded-full" style={{ background: FILL }}
               animate={{ opacity: [0.25, 1, 0.25], y: [0, -3, 0] }}
               transition={{ repeat: Infinity, duration: 1.1, delay: d * 0.18 }} />
           ))}
@@ -131,7 +133,7 @@ function PocoWorking({ creating }: { creating: boolean }) {
             animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             exit={{ opacity: 0, y: -8, filter: 'blur(4px)' }}
             transition={{ duration: 0.35 }}
-            className="text-sm text-[#A8A296]"
+            className="text-sm text-muted-foreground"
           >
             {phrases[idx]}
           </motion.span>
@@ -172,8 +174,17 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
 
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const seeded = useRef(false);
+  const { resolvedTheme } = useTheme();
 
   useEffect(() => onAuthStateChanged(auth, u => { setUser(u); setAuthReady(true); }), []);
+  useEffect(() => {
+    if (seeded.current) return;
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (!q) return;
+    seeded.current = true;
+    setInput(q);
+  }, []);
   useEffect(() => { if (view === 'library' && user) loadLibrary(); }, [view, user]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chat.turns.length, busy]);
 
@@ -239,7 +250,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || `ET hit an error (${res.status})`);
+      throw new Error(err.error || `ET AI hit an error (${res.status})`);
     }
     const data = await res.json();
     pushTurns(chatId, { kind: 'chat', text: data.reply || '…' });
@@ -330,7 +341,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
   // ── Auth gate: AI Studio is a paid feature and must not run anonymously ──
   if (!authReady) {
     return (
-      <div className={`flex ${frame} items-center justify-center ${C.bg}`} style={{ colorScheme: 'dark' }}>
+      <div className={`flex ${frame} items-center justify-center ${C.bg}`} >
         <Loader2 className="w-6 h-6 animate-spin" style={{ color: C.accent }} />
       </div>
     );
@@ -338,7 +349,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
 
   if (!user) {
     return (
-      <div className={`flex ${frame} items-center justify-center px-5 ${C.bg} ${C.text}`} style={{ colorScheme: 'dark' }}>
+      <div className={`flex ${frame} items-center justify-center px-5 ${C.bg} ${C.text}`} >
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -350,24 +361,24 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: 'spring', damping: 14 }}
             className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-6"
-            style={{ background: C.accent, boxShadow: '0 0 48px rgba(232,193,94,0.35)' }}
+            style={{ background: FILL, boxShadow: '0 0 48px rgba(232,193,94,0.35)' }}
           >
             <Asterisk className="w-8 h-8" style={{ color: C.accentInk }} />
           </motion.div>
 
           <h1 className="font-heading text-3xl sm:text-4xl leading-tight mb-3">
-            Sign in to meet <span style={{ color: C.accent }}>ET</span>
+            Sign in to meet <span style={{ color: C.accent }}>ET AI</span>
           </h1>
           <p className={`${C.dim} text-[15px] leading-relaxed mb-7`}>
-            ET turns any topic into lessons, quizzes, flashcards, mind maps, narrated video and
-            audio — and saves everything to your personal library. Create a free account to start.
+            ET AI turns any topic into lessons, quizzes, flashcards, mind maps, narrated video and
+            audio, and saves everything to your personal library. Create a free Poket School account to start.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-2.5 justify-center mb-8">
             <Link
               href="/signup"
               className="h-11 px-6 rounded-full font-bold text-sm flex items-center justify-center transition-transform hover:scale-105"
-              style={{ background: C.accent, color: C.accentInk }}
+              style={{ background: FILL, color: C.accentInk }}
             >
               Create free account
             </Link>
@@ -392,7 +403,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
             ))}
           </div>
 
-          <Link href="/" className={`text-xs ${C.faint} hover:text-white transition-colors inline-flex items-center gap-1.5`}>
+          <Link href="/" className={`text-xs ${C.faint} hover:text-foreground transition-colors inline-flex items-center gap-1.5`}>
             <ArrowLeft className="w-3.5 h-3.5 ps-dir-icon" /> Back to Poket School
           </Link>
         </motion.div>
@@ -401,23 +412,23 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
   }
 
   return (
-    <div className={`relative flex ${frame} ${C.bg} ${C.text} overflow-hidden`} style={{ colorScheme: 'dark' }}>
+    <div className={`relative flex ${frame} ${C.bg} ${C.text} overflow-hidden`} >
 
       {/* ── Sidebar ── */}
-      <aside className={`${sidebarOpen ? 'flex' : 'hidden'} lg:flex w-[264px] shrink-0 flex-col border-e ${C.borderSoft} bg-[#1F1E1C] absolute lg:static inset-y-0 start-0 z-40`}>
+      <aside className={`${sidebarOpen ? 'flex' : 'hidden'} lg:flex w-[264px] shrink-0 flex-col border-e ${C.borderSoft} bg-sidebar absolute lg:static inset-y-0 start-0 z-40`}>
         <div className="p-3">
           <Link href={embedded ? '/dashboard/studio' : '/'} className="flex items-center gap-2.5 px-2 py-2 mb-1">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: C.accent }}>
-              <Asterisk className="w-5 h-5 text-[#1A1918]" />
+            <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: FILL }}>
+              <Asterisk className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="text-[15px] font-bold leading-tight">ET</p>
+              <p className="text-[15px] font-bold leading-tight">ET AI</p>
               <p className={`text-[10px] ${C.faint} tracking-[0.2em] uppercase leading-tight`}>AI Studio</p>
             </div>
           </Link>
           {!embedded && (
             <div className="flex justify-end px-2">
-              <LanguageSwitcher tone="onDark" />
+              <LanguageSwitcher />
             </div>
           )}
 
@@ -433,32 +444,40 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
               onClick={() => { setView('chat'); setSidebarOpen(false); }}
               className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${view === 'chat' ? `${C.raised} ${C.text}` : `${C.dim} ${C.surfaceHover}`}`}
             >
+              <span className="h-2 w-2 rounded-full bg-[#1E6A83] dark:bg-[#6FBBCE]" aria-hidden />
               <MessageSquare className="w-4 h-4" /> Chats
             </button>
             <button
               onClick={() => { setView('library'); setSidebarOpen(false); }}
               className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${view === 'library' ? `${C.raised} ${C.text}` : `${C.dim} ${C.surfaceHover}`}`}
             >
+              <span className="h-2 w-2 rounded-full bg-[#4F7F8C]" aria-hidden />
               <Library className="w-4 h-4" /> Library
             </button>
             <Link href="/ai-teachers" className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm ${C.dim} ${C.surfaceHover} transition-colors group`}>
-              <span className="flex items-center gap-2.5"><UserIcon className="w-4 h-4" /> AI Teachers</span>
+              <span className="flex items-center gap-2.5"><span className="h-2 w-2 rounded-full bg-[#1E6A83] dark:bg-[#6FBBCE]" aria-hidden /><UserIcon className="w-4 h-4" /> AI Teachers</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 transition-opacity" />
             </Link>
             <button
               onClick={() => { setView('chat'); setSkill('problems'); setSubject('Mathematics'); setSidebarOpen(false); }}
               className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${view === 'chat' && skill === 'problems' ? `${C.raised} ${C.text}` : `${C.dim} ${C.surfaceHover}`}`}
             >
+              <span className="h-2 w-2 rounded-full bg-[#8A5A12] dark:bg-[#E2AF4D]" aria-hidden />
               <Calculator className="w-4 h-4" /> ET Maths
             </button>
             <button
               onClick={() => { setView('essays'); setSidebarOpen(false); }}
               className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${view === 'essays' ? `${C.raised} ${C.text}` : `${C.dim} ${C.surfaceHover}`}`}
             >
+              <span className="h-2 w-2 rounded-full bg-[#5B3D8A] dark:bg-[#C4B0E8]" aria-hidden />
               <PenLine className="w-4 h-4" /> ET Essays
             </button>
-            <Link href="/dashboard/student/exams" className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm ${C.dim} ${C.surfaceHover} transition-colors group`}>
-              <span className="flex items-center gap-2.5"><ClipboardList className="w-4 h-4" /> Exam Prep</span>
+            <Link href="/dashboard/studio/exam-prep" className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm ${C.dim} ${C.surfaceHover} transition-colors group`}>
+              <span className="flex items-center gap-2.5"><span className="h-2 w-2 rounded-full bg-[#9A3B2F] dark:bg-[#E88976]" aria-hidden /><ClipboardList className="w-4 h-4" /> ET Exams</span>
+              <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 transition-opacity" />
+            </Link>
+            <Link href="/reads/studio" className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm ${C.dim} ${C.surfaceHover} transition-colors group`}>
+              <span className="flex items-center gap-2.5"><span className="h-2 w-2 rounded-full bg-[#2F6B4F] dark:bg-[#8FCBAA]" aria-hidden /><BookOpen className="w-4 h-4" /> Book Studio</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 transition-opacity" />
             </Link>
           </nav>
@@ -484,17 +503,17 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
         <div className={`p-3 border-t ${C.borderSoft} space-y-1`}>
           {user ? (
             <div className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl ${C.surface}`}>
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-[#1A1918] shrink-0" style={{ background: C.accent }}>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ background: FILL }}>
                 {(user.email ?? 'U').slice(0, 2).toUpperCase()}
               </div>
               <span className={`text-xs ${C.dim} truncate`}>{user.email}</span>
             </div>
           ) : (
-            <Link href="/login" className={`flex items-center gap-2 text-xs ${C.dim} hover:text-white px-2.5 py-2`}>
+            <Link href="/login" className={`flex items-center gap-2 text-xs ${C.dim} hover:text-foreground px-2.5 py-2`}>
               <UserIcon className="w-3.5 h-3.5" /> Sign in to save
             </Link>
           )}
-          <Link href={embedded ? '/dashboard/studio' : '/'} className={`flex items-center gap-2 text-xs ${C.faint} hover:text-white px-2.5 py-1.5 transition-colors`}>
+          <Link href={embedded ? '/dashboard/studio' : '/'} className={`flex items-center gap-2 text-xs ${C.faint} hover:text-foreground px-2.5 py-1.5 transition-colors`}>
             <ArrowLeft className="w-3.5 h-3.5" /> {embedded ? 'All AI Studio tools' : 'Back to Poket School'}
           </Link>
         </div>
@@ -508,10 +527,10 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
         {/* Mobile top bar */}
         <div className={`lg:hidden flex items-center gap-3 px-4 py-3 border-b ${C.borderSoft}`}>
           <button onClick={() => setSidebarOpen(true)} className={C.dim}><Menu className="w-5 h-5" /></button>
-          <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: C.accent }}>
-            <Asterisk className="w-4 h-4 text-[#1A1918]" />
+          <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: FILL }}>
+            <Asterisk className="w-4 h-4 text-white" />
           </div>
-          <span className="text-sm font-bold">ET</span>
+          <span className="text-sm font-bold">ET AI</span>
         </div>
 
         {view === 'essays' ? (
@@ -536,28 +555,24 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
             <div className="flex-1 overflow-y-auto">
               <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-8 pb-4">
                 {empty ? (
-                  <div className="flex flex-col items-center justify-center text-center pt-[14vh]">
-                    <motion.div
-                      initial={{ scale: 0.6, opacity: 0, rotate: -30 }}
-                      animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                      transition={{ type: 'spring', damping: 14 }}
-                      className="w-14 h-14 rounded-full flex items-center justify-center mb-6"
-                      style={{ background: C.accent, boxShadow: '0 0 48px rgba(232,193,94,0.35)' }}
-                    >
-                      <Asterisk className="w-8 h-8 text-[#1A1918]" />
-                    </motion.div>
-                    <h1 className="font-heading text-3xl sm:text-[2.6rem] leading-tight tracking-tight mb-3">
-                      Hi, I&apos;m <span style={{ color: C.accent }}>ET</span>.
-                    </h1>
-                    <p className={`${C.dim} text-base sm:text-lg max-w-md`}>
-                      Ask me anything, or pick a skill and I&apos;ll turn any topic into a lesson, quiz, video, audio and more.
-                    </p>
-                    <div className="grid sm:grid-cols-2 gap-2.5 mt-10 w-full max-w-xl">
+                  <div className="pt-4" data-testid="studio-greeting">
+                    <div className="relative overflow-hidden rounded-3xl px-6 py-8 text-center text-white sm:px-10" style={{ background: HERO }}>
+                      <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-white text-[#1E6A83]">
+                        <Asterisk className="h-7 w-7" />
+                      </div>
+                      <h1 className="font-heading text-3xl leading-tight tracking-tight text-white sm:text-[2.6rem]">
+                        Hi, I&apos;m ET AI.
+                      </h1>
+                      <p className="mx-auto mt-2 max-w-md text-base text-white sm:text-lg">
+                        Ask anything, or pick a skill. ET AI turns a topic into a lesson, quiz, video, audio and more.
+                      </p>
+                    </div>
+                    <div className="mt-4 grid w-full gap-2.5 sm:grid-cols-2">
                       {SUGGESTIONS.map(s => (
                         <button
                           key={s.label}
                           onClick={() => { setSkill(s.format); submit(s.text, s.format); }}
-                          className={`text-left px-4 py-3 rounded-2xl border ${C.border} ${C.surfaceHover} text-sm ${C.dim} hover:text-white transition-all flex items-center gap-2.5`}
+                          className={`flex items-center gap-2.5 rounded-2xl border ${C.border} bg-card px-4 py-3 text-left text-sm text-foreground transition hover:-translate-y-0.5 hover:shadow-md motion-reduce:transform-none`}
                         >
                           {s.format
                             ? <span style={{ color: C.accent }}>{FORMATS.find(f => f.id === s.format)?.icon}</span>
@@ -575,7 +590,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                           <div key={i} className="flex justify-end">
                             <div className={`max-w-[85%] rounded-2xl rounded-br-md px-4 py-3 ${C.raised}`}>
                               {t.skill && (
-                                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-1.5 px-2 py-0.5 rounded-full" style={{ background: 'rgba(232,193,94,0.18)', color: C.accent }}>
+                                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-1.5 px-2 py-0.5 rounded-full" style={{ background: 'color-mix(in srgb, var(--secondary-foreground) 16%, transparent)', color: C.accent }}>
                                   {FORMATS.find(f => f.id === t.skill)?.icon}
                                   {FORMATS.find(f => f.id === t.skill)?.label}
                                 </span>
@@ -587,12 +602,12 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                       }
                       return (
                         <div key={i} className="flex gap-3">
-                          <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1" style={{ background: C.accent }}>
-                            <Asterisk className="w-4 h-4 text-[#1A1918]" />
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1" style={{ background: FILL }}>
+                            <Asterisk className="w-4 h-4 text-white" />
                           </div>
                           <div className="flex-1 min-w-0">
                             {t.kind === 'chat' ? (
-                              <div className="prose prose-sm prose-invert max-w-none prose-headings:font-heading prose-p:text-[#D8D4CC] prose-p:text-[15px] prose-p:leading-relaxed prose-strong:text-white prose-li:text-[#D8D4CC] prose-a:text-[#EAD28A] prose-code:text-[#F0DCA0]">
+                              <div className={PROSE_CLASSES}>
                                 <MathMarkdown>{t.text}</MathMarkdown>
                               </div>
                             ) : (
@@ -609,16 +624,16 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-1 mt-2">
-                                  <button onClick={() => copyGen(t)} className={`p-1.5 rounded-lg ${C.faint} hover:text-white ${C.surfaceHover} transition-colors`} title="Copy">
+                                  <button onClick={() => copyGen(t)} className={`p-1.5 rounded-lg ${C.faint} hover:text-foreground ${C.surfaceHover} transition-colors`} title="Copy">
                                     <Copy className="w-3.5 h-3.5" />
                                   </button>
-                                  <button onClick={() => regenerate(i)} disabled={busy} className={`p-1.5 rounded-lg ${C.faint} hover:text-white ${C.surfaceHover} transition-colors`} title="Regenerate">
+                                  <button onClick={() => regenerate(i)} disabled={busy} className={`p-1.5 rounded-lg ${C.faint} hover:text-foreground ${C.surfaceHover} transition-colors`} title="Regenerate">
                                     <RefreshCw className="w-3.5 h-3.5" />
                                   </button>
                                   <button
                                     onClick={() => saveGen(i)}
                                     disabled={saving === i || t.saved}
-                                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${t.saved ? 'text-emerald-400' : `${C.faint} hover:text-white ${C.surfaceHover}`}`}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${t.saved ? 'text-emerald-400' : `${C.faint} hover:text-foreground ${C.surfaceHover}`}`}
                                   >
                                     <Save className="w-3.5 h-3.5" />
                                     {saving === i ? 'Saving…' : t.saved ? 'Saved' : 'Save to library'}
@@ -640,13 +655,13 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
             {/* ── Composer ── */}
             <div className="shrink-0 px-4 sm:px-6 pb-5 pt-2">
               <div className="max-w-3xl mx-auto">
-                <div className={`rounded-3xl border ${C.border} ${C.surface} shadow-[0_8px_40px_rgba(0,0,0,0.35)] focus-within:border-[#E8C15E]/50 transition-colors`}>
+                <div className={`rounded-3xl border ${C.border} ${C.surface} shadow-[0_8px_30px_rgba(30,106,131,0.12)] focus-within:border-[#1E6A83] dark:shadow-[0_8px_30px_rgba(0,0,0,0.35)] transition-colors`}>
                   {/* Selected skill chip */}
                   {activeFormat && (
                     <div className="px-4 pt-3 -mb-1">
-                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(232,193,94,0.18)', color: C.accent }}>
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: 'color-mix(in srgb, var(--secondary-foreground) 16%, transparent)', color: C.accent }}>
                         {activeFormat.icon} {activeFormat.label}
-                        <button onClick={() => setSkill(null)} className="hover:text-white ml-0.5" title="Back to chat mode"><X className="w-3 h-3" /></button>
+                        <button onClick={() => setSkill(null)} className="hover:text-foreground ml-0.5" title="Back to chat mode"><X className="w-3 h-3" /></button>
                       </span>
                     </div>
                   )}
@@ -657,17 +672,17 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                     onKeyDown={e => {
                       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
                     }}
-                    placeholder={activeFormat ? `What topic should the ${activeFormat.label.toLowerCase()} cover?` : 'Ask ET anything…'}
+                    placeholder={activeFormat ? `What topic should the ${activeFormat.label.toLowerCase()} cover?` : 'Ask ET AI anything…'}
                     rows={2}
                     disabled={busy}
-                    className={`w-full bg-transparent outline-none resize-none px-4 pt-3 pb-1 text-[15px] ${C.text} placeholder:text-[#6E695F]`}
+                    className={`w-full bg-transparent outline-none resize-none px-4 pt-3 pb-1 text-[15px] ${C.text} placeholder:text-muted-foreground`}
                   />
                   <div className="flex items-center gap-1.5 px-3 pb-3 flex-wrap">
                     {/* Skills picker */}
                     <div className="relative">
                       <button
                         onClick={() => setSkillsOpen(o => !o)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${C.border} ${C.dim} hover:text-white ${C.surfaceHover} transition-colors`}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${C.border} ${C.dim} hover:text-foreground ${C.surfaceHover} transition-colors`}
                       >
                         <Sparkles className="w-3.5 h-3.5" style={{ color: C.accent }} /> Skills
                       </button>
@@ -678,9 +693,9 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 6, scale: 0.98 }}
                             transition={{ duration: 0.12 }}
-                            className={`absolute bottom-full mb-2 left-0 w-[290px] sm:w-[330px] rounded-2xl border ${C.border} bg-[#242220] shadow-2xl p-2 z-30`}
+                            className={`absolute bottom-full mb-2 left-0 w-[290px] sm:w-[330px] rounded-2xl border ${C.border} bg-card shadow-2xl p-2 z-30`}
                           >
-                            <p className={`px-2 pt-1 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] ${C.faint}`}>ET&apos;s skills</p>
+                            <p className={`px-2 pt-1 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] ${C.faint}`}>ET AI&apos;s skills</p>
                             <div className="grid grid-cols-2 gap-1 max-h-72 overflow-y-auto">
                               <button
                                 onClick={() => { setSkill(null); setSkillsOpen(false); inputRef.current?.focus(); }}
@@ -717,7 +732,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                       onChange={e => setSubject(e.target.value)}
                       placeholder="Subject"
                       list="programme-subjects"
-                      className={`w-28 sm:w-36 px-3 py-1.5 rounded-full text-xs border ${C.border} bg-transparent outline-none ${C.dim} placeholder:text-[#6E695F] focus:text-white transition-colors`}
+                      className={`w-28 sm:w-36 px-3 py-1.5 rounded-full text-xs border ${C.border} bg-transparent outline-none ${C.dim} placeholder:text-muted-foreground focus:text-foreground transition-colors`}
                     />
                     <datalist id="programme-subjects">
                       {subjectOptions.map((option) => <option key={option} value={option} />)}
@@ -730,7 +745,8 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                         const options = subjectsForProgramme(next);
                         if (subject && options.length > 0 && !options.includes(subject)) setSubject('');
                       }}
-                      className={`max-w-[11rem] px-2.5 py-1.5 rounded-full text-xs border ${C.border} bg-[#242220] outline-none ${C.dim} cursor-pointer`}
+                      className={`max-w-[11rem] px-2.5 py-1.5 rounded-full text-xs border ${C.border} bg-card outline-none ${C.dim} cursor-pointer`}
+                      style={{ colorScheme: resolvedTheme === 'dark' ? 'dark' : 'light' }}
                       aria-label="Programme"
                     >
                       {PROGRAMMES.map(programme => <option key={programme.value} value={programme.value}>{programme.label}</option>)}
@@ -740,8 +756,8 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                     <button
                       onClick={() => submit()}
                       disabled={busy || !input.trim()}
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-[#1A1918] disabled:opacity-30 transition-all hover:scale-105 active:scale-95"
-                      style={{ background: C.accent }}
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-white disabled:opacity-30 transition-all hover:scale-105 active:scale-95"
+                      style={{ background: FILL }}
                       title="Send"
                     >
                       {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUp className="w-4.5 h-4.5" />}
@@ -749,7 +765,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                   </div>
                 </div>
                 <p className={`text-center text-[10px] ${C.faint} mt-2`}>
-                  ET can make mistakes — always double-check important answers.
+                  ET AI can make mistakes. Check important answers.
                 </p>
               </div>
             </div>
@@ -776,8 +792,8 @@ function LibraryView({ user, library, loading, onDelete, onNew }: {
           </div>
           <button
             onClick={onNew}
-            className="flex items-center gap-2 px-4 py-2 rounded-full text-[#1A1918] text-sm font-semibold transition-transform hover:scale-105"
-            style={{ background: C.accent }}
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-white text-sm font-semibold transition-transform hover:scale-105"
+            style={{ background: FILL }}
           >
             <Plus className="w-4 h-4" /> New chat
           </button>
@@ -800,7 +816,8 @@ function LibraryView({ user, library, loading, onDelete, onNew }: {
         {user && !loading && library.length === 0 && (
           <div className="text-center py-24">
             <Sparkles className={`w-8 h-8 mx-auto mb-4 ${C.faint}`} />
-            <p className={`text-sm ${C.dim}`}>Nothing saved yet — generate something with ET and hit &ldquo;Save to library&rdquo;.</p>
+            <p className="font-heading text-[22px] tracking-[-0.03em] text-foreground">Nothing saved yet</p>
+            <p className={`mt-1 text-sm ${C.dim}`}>Ask ET AI for a lesson, quiz or video, then choose Save to library.</p>
           </div>
         )}
 
@@ -814,7 +831,7 @@ function LibraryView({ user, library, loading, onDelete, onNew }: {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.04 }}
-                  className={`${C.surface} border ${C.borderSoft} rounded-2xl p-5 hover:border-[#4A463F] transition-colors`}
+                  className={`${C.surface} border ${C.borderSoft} rounded-2xl p-5 transition hover:-translate-y-0.5 hover:shadow-md motion-reduce:transform-none`}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -842,18 +859,19 @@ function LibraryView({ user, library, loading, onDelete, onNew }: {
 
 /* ─── Generation output renderer ───────────────────────────── */
 
-const PROSE_CLASSES = 'prose prose-sm prose-invert max-w-none prose-headings:font-heading prose-headings:text-white prose-p:text-[#D8D4CC] prose-strong:text-white prose-li:text-[#D8D4CC] prose-a:text-[#EAD28A] prose-blockquote:border-l-[#E8C15E] prose-blockquote:text-[#A8A296] prose-hr:border-[#3A3733] prose-code:text-[#F0DCA0]';
-
 function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
+  const { resolvedTheme } = useTheme();
+  const dark = resolvedTheme === 'dark';
+  const card = 'rounded-xl bg-muted border border-border p-4';
   if (format === 'flashcards' && Array.isArray(data)) {
     return (
       <div className="grid sm:grid-cols-2 gap-3">
-        {data.map((card: any, i: number) => (
-          <div key={i} className="rounded-xl bg-[#1F1E1C] border border-[#2E2B28] p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#EAD28A' }}>Question</p>
-            <p className="text-sm text-white mb-3">{card.question}</p>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-400 mb-2">Answer</p>
-            <p className="text-sm text-[#D8D4CC]">{card.answer}</p>
+        {data.map((cardItem: any, i: number) => (
+          <div key={i} className={card}>
+            <p className="text-[10px] font-semibold uppercase tracking-widest mb-2 text-[#1E6A83] dark:text-[#A7D9E5]">Question</p>
+            <p className="text-sm text-foreground mb-3">{cardItem.question}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest mb-2 text-[#166534] dark:text-[#86EFAC]">Answer</p>
+            <p className="text-sm text-foreground">{cardItem.answer}</p>
           </div>
         ))}
       </div>
@@ -863,16 +881,16 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
     return (
       <div className="space-y-4">
         {data.map((q: any, i: number) => (
-          <div key={i} className="rounded-xl bg-[#1F1E1C] border border-[#2E2B28] p-4">
-            <p className="text-sm font-semibold text-white mb-3">{i + 1}. {q.question}</p>
+          <div key={i} className={card}>
+            <p className="text-sm font-semibold text-foreground mb-3">{i + 1}. {q.question}</p>
             <ul className="space-y-1.5 mb-3">
               {q.options?.map((opt: string, j: number) => (
-                <li key={j} className={`text-sm rounded-lg px-3 py-2 ${q.answer === String.fromCharCode(65 + j) || q.answer === opt ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30' : 'bg-white/[0.02] text-[#D8D4CC] border border-transparent'}`}>
+                <li key={j} className={`text-sm rounded-lg px-3 py-2 text-foreground ${q.answer === String.fromCharCode(65 + j) || q.answer === opt ? 'bg-emerald-500/10 border border-emerald-700/40 dark:border-emerald-300/40' : 'bg-background border border-transparent'}`}>
                   {String.fromCharCode(65 + j)}. {opt}
                 </li>
               ))}
             </ul>
-            {q.explanation && <p className="text-xs text-[#A8A296] italic">{q.explanation}</p>}
+            {q.explanation && <p className="text-xs text-muted-foreground italic">{q.explanation}</p>}
           </div>
         ))}
       </div>
@@ -882,12 +900,12 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
     return (
       <div className="space-y-4">
         {data.map((slide: any, i: number) => (
-          <div key={i} className="rounded-xl bg-gradient-to-br from-[#2B2320] to-[#1B1917] border border-[#2E2B28] p-6">
-            <p className="text-xs text-[#6E695F] mb-2">Slide {i + 1}</p>
-            <h3 className="font-heading text-2xl text-white mb-3">{slide.title}</h3>
+          <div key={i} className="rounded-xl border border-border bg-card p-6">
+            <p className="text-xs text-muted-foreground mb-2">Slide {i + 1}</p>
+            <h3 className="font-heading text-2xl text-foreground mb-3">{slide.title}</h3>
             <ul className="space-y-2">
               {slide.bullets?.map((b: string, j: number) => (
-                <li key={j} className="text-sm text-[#D8D4CC] flex gap-2"><ChevronRight className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#E8C15E' }} />{b}</li>
+                <li key={j} className="text-sm text-foreground flex gap-2"><ChevronRight className="w-4 h-4 mt-0.5 shrink-0 text-[#1E6A83] dark:text-[#A7D9E5]" />{b}</li>
               ))}
             </ul>
           </div>
@@ -899,37 +917,37 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
     return (
       <div className="space-y-2">
         {data.map((g: any, i: number) => (
-          <div key={i} className="rounded-xl bg-[#1F1E1C] border border-[#2E2B28] p-4">
-            <p className="text-sm font-bold mb-1" style={{ color: '#F0DCA0' }}>{g.term}</p>
-            <p className="text-xs text-[#D8D4CC]">{g.definition}</p>
+          <div key={i} className={card}>
+            <p className="text-sm font-bold mb-1 text-[#1E6A83] dark:text-[#A7D9E5]">{g.term}</p>
+            <p className="text-xs text-foreground">{g.definition}</p>
           </div>
         ))}
       </div>
     );
   }
   if (format === 'mindmap' && typeof data === 'string') {
-    return <MindmapRenderer content={data} dark />;
+    return <MindmapRenderer content={data} dark={dark} />;
   }
   if (format === 'infographic' && typeof data === 'string') {
-    return <InfographicRenderer content={data} dark />;
+    return <InfographicRenderer content={data} dark={dark} />;
   }
   if (format === 'videoScript' && typeof data === 'string') {
     return (
       <div className="space-y-4">
         <VideoPlayer script={data} />
-        <details className="rounded-xl bg-[#1F1E1C] border border-[#2E2B28] overflow-hidden">
-          <summary className="cursor-pointer select-none px-4 py-3 text-xs font-semibold uppercase tracking-widest text-[#A8A296] hover:text-white transition-colors">
+        <details className="rounded-xl bg-muted border border-border overflow-hidden">
+          <summary className="cursor-pointer select-none px-4 py-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors">
             View storyboard &amp; script
           </summary>
           <div className="px-4 pb-4">
-            <VideoStoryboard script={data} dark />
+            <VideoStoryboard script={data} dark={dark} />
           </div>
         </details>
       </div>
     );
   }
   if (format === 'audioScript' && typeof data === 'string') {
-    return <SmartAudioPlayer script={data} dark />;
+    return <SmartAudioPlayer script={data} dark={dark} />;
   }
   const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
   return (
