@@ -10,6 +10,8 @@ import { getCertificatesForStudent, type Certificate } from '@/lib/db';
 import { authedFetch } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { CertificateDocument } from '@/components/certificate-document';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
 import { CertificateCelebration } from '@/components/certificate-celebration';
 import type { CertificateAward, CertificateFace } from '@/lib/certificates';
 
@@ -89,6 +91,20 @@ export default function StudentCertificatesPage() {
         <p className="text-sm text-muted-foreground mt-2 max-w-xl">
           Poket School awards one certificate for each module once every published lesson in it is complete.
         </p>
+        {user && certs.length > 0 && (
+          <div className="mt-4">
+            <DocumentDelivery
+              documents={certs.map(cert => textDocument({
+                id: cert.id || `${cert.courseId}-${cert.moduleId || 'module'}`,
+                title: `Certificate · ${cert.moduleTitle || cert.courseTitle}`,
+                holderEmail: user.email ?? undefined,
+                studentId: user.uid,
+                lines: [cert.studentName, cert.courseTitle, cert.moduleTitle || '', cert.status || 'valid'],
+              }))}
+              studentIds={[user.uid]}
+            />
+          </div>
+        )}
       </motion.div>
 
       {certs.length === 0 ? (

@@ -9,6 +9,9 @@ import {
 } from '@/lib/db';
 import { DashHeader, DashPage, Panel, PanelHeader } from '@/components/dash-ui';
 import { GlossaryList } from '@/components/insights/boards';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
+import { metricById } from '@/lib/insights/metrics';
 import { ReportsHub } from '@/components/insights/reports-hub';
 import { buildReportHub, type HubFilters, type ReportCardView, type ReportHub, type ReportRole } from '@/lib/insights/hub';
 import { flattenSessionRecords, meanRate, summariseAttendance, type AttendanceMark } from '@/lib/insights/attendance';
@@ -74,6 +77,7 @@ interface Loaded {
   storedAttendance: number | null;
   reportCard: ReportCardView | null;
   childId: string;
+  studentIds: string[];
 }
 
 const EMPTY_FILTERS = (institutionId: string): HubFilters => {
@@ -127,6 +131,7 @@ export default function ReportsPage() {
         subjectId ? readSnapshot(subjectId).catch(() => null) : Promise.resolve(null),
         subjectId ? listReportCards('studentId', subjectId).catch(() => []) : Promise.resolve([]),
       ]);
+      let linkedIds = subjectId ? [subjectId] : [];
       let courseMarks = marksFromSessions(attendance, institutionId);
       let courseGrades = grades;
       let enrolments: Loaded['enrolments'] = [];
@@ -152,6 +157,7 @@ export default function ReportsPage() {
           studentLabel: `Learner ${index + 1}`,
         })));
         classRates = packs.map(pack => summariseAttendance(marksFromSessions(pack.rows, institutionId)).rate);
+        linkedIds = [...new Set(packs.flatMap(pack => pack.enrolled.map(row => row.studentId)))];
       }
       const stored = snapshot && typeof (snapshot as { metrics?: { attendance_rate?: number } }).metrics?.attendance_rate === 'number'
         ? (snapshot as { metrics: { attendance_rate: number } }).metrics.attendance_rate
@@ -183,6 +189,7 @@ export default function ReportsPage() {
           heading: card.heading || 'Term report',
         } : null,
         childId: subjectId,
+        studentIds: linkedIds,
       };
       if (!cancelled) {
         setLoaded(next);
@@ -240,6 +247,21 @@ export default function ReportsPage() {
         accent="with its records"
         description="The same definitions as the analytics charts. A click opens the lessons, quizzes, or attendance rows behind the figure. Exports carry the Poket School copyright line."
       />
+      {hub && (
+        <DocumentDelivery
+          documents={[textDocument({
+            id: `report-${loaded?.studentId || user?.uid || 'class'}`,
+            title: `Report · ${hub.scopeLabel}`,
+            holderEmail: user?.email ?? undefined,
+            lines: hub.sections.flatMap(section => [
+              section.title,
+              ...section.kpis.map(kpi => `${metricById(kpi.metricId)?.label ?? kpi.metricId}: ${kpi.value ?? '—'}`),
+            ]),
+          })]}
+          studentIds={role === 'admin' ? [] : (loaded?.studentIds ?? [])}
+          institutionId={role === 'institution_admin' ? profile?.institutionId : undefined}
+        />
+      )}
       {role === 'parent' && children.length > 1 && (
         <label className="text-sm">Child
           <select className="ml-2 rounded border border-border px-2 py-1" value={childId} onChange={event => { setChildId(event.target.value); setFilters(null); }}>

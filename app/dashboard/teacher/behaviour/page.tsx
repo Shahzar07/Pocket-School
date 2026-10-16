@@ -13,6 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Plus, Star, Loader2 } from 'lucide-react';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
 import { motion } from 'motion/react';
 
 const TYPE_STYLES: Record<string, string> = {
@@ -103,6 +105,18 @@ export default function BehaviourPage() {
             Student <span className="gradient-text italic">Behaviour</span>
           </h1>
           <p className="text-sm text-muted-foreground mt-2"><a className="underline" href="/dashboard/behaviour">Open the behaviour dashboard</a> for the class heatmap, quadrant, and alerts.</p>
+          <div className="mt-4">
+            <DocumentDelivery
+              documents={[textDocument({
+                id: `behaviour-${user?.uid || 'class'}`,
+                title: 'Behaviour notes',
+                lines: records.length
+                  ? records.slice(0, 40).map(record => `${record.studentName}: ${record.type} · ${record.points} · ${record.description}`)
+                  : ['No behaviour notes yet.'],
+              })]}
+              studentIds={[...new Set(records.map(record => record.studentId))]}
+            />
+          </div>
         </div>
         <Button
           onClick={() => setShowForm(s => !s)}

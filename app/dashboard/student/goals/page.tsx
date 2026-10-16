@@ -11,6 +11,8 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { authedFetch } from '@/lib/api-client';
 import { AddGoalDialog, type GoalCourseOption } from '@/components/goals/add-goal-dialog';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
 import { GoalsWorkspace, type WorkspaceGoal } from '@/components/goals/goals-workspace';
 import { autoProgress, spawnNextGoal, suggestGoalsFromSignals, weakTopicsFromQuizzes, type GoalDraft, type SuggestedGoal } from '@/lib/insights/goals';
 import { listSuggestions, logFocusSession, logStudyEvent, setSuggestionStatus } from '@/lib/insights/client';
@@ -170,6 +172,18 @@ export default function StudentGoalsPage() {
 
   return (
     <>
+      {user && (
+        <DocumentDelivery
+          documents={[textDocument({
+            id: `goals-${user.uid}`,
+            title: 'Goals',
+            holderEmail: user.email ?? undefined,
+            studentId: user.uid,
+            lines: goals.length ? goals.map(goal => `${goal.dateKey} · ${goal.title} · ${goal.status}`) : ['No goals yet.'],
+          })]}
+          studentIds={[user.uid]}
+        />
+      )}
       <GoalsWorkspace
         viewer="student"
         goals={goals.map(toWorkspace)}

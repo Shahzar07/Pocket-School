@@ -9,6 +9,8 @@ import {
   DailyGoal, GoalCategory, Course, Enrollment,
 } from '@/lib/db';
 import { DailyGoalsModal } from '@/components/daily-goals-modal';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -522,6 +524,20 @@ export default function StudentDailyGoalsPage() {
           Set what you&apos;re committing to before you start your modules. ET checks in, your streak keeps score,
           and your parent sees how the day went.
         </p>
+        {user && (
+          <div className="mt-4">
+            <DocumentDelivery
+              documents={[textDocument({
+                id: `goals-${user.uid}`,
+                title: 'Daily goals',
+                holderEmail: user.email ?? undefined,
+                studentId: user.uid,
+                lines: goals.length ? goals.map(goal => `${goal.dateKey} · ${goal.title} · ${goal.status}`) : ['No goals yet.'],
+              })]}
+              studentIds={[user.uid]}
+            />
+          </div>
+        )}
       </motion.div>
 
       {/* ── Stat cards ── */}

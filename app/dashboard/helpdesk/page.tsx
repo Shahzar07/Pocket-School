@@ -11,6 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { HelpCircle, Plus, MessageSquare, CheckCircle2, X, Loader2 } from 'lucide-react';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
+import type { Deliverable } from '@/lib/documents/delivery';
 import { Timestamp } from 'firebase/firestore';
 
 const fadeUp: Record<string, any> = {
@@ -24,6 +27,21 @@ const STATUS_STYLES: Record<string, string> = {
   resolved: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20',
   closed: 'bg-muted text-muted-foreground',
 };
+
+function ticketDocument(ticket: SupportTicket): Deliverable {
+  return textDocument({
+    id: ticket.id,
+    title: `Ticket · ${ticket.subject}`,
+    studentId: ticket.userId,
+    lines: [
+      `From: ${ticket.userName} (${ticket.userRole})`,
+      `Status: ${ticket.status}`,
+      `Priority: ${ticket.priority}`,
+      ticket.description,
+      ticket.response ? `Reply: ${ticket.response}` : '',
+    ],
+  });
+}
 
 const PRIORITY_STYLES: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
@@ -129,6 +147,12 @@ export default function HelpdeskPage() {
           </Button>
         )}
       </motion.header>
+      {tickets.length > 0 && (
+        <DocumentDelivery
+          documents={tickets.map(ticketDocument)}
+          studentIds={isAdmin ? [] : [...new Set(tickets.map(ticket => ticket.userId))]}
+        />
+      )}
 
       {/* Create form */}
       {showCreate && !isAdmin && (
@@ -189,6 +213,13 @@ export default function HelpdeskPage() {
                   </div>
                   {isAdmin && <p className="text-xs text-muted-foreground">From: {ticket.userName}</p>}
                   <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{ticket.description}</p>
+                  <div className="mt-3">
+                    <DocumentDelivery
+                      compact
+                      documents={[ticketDocument(ticket)]}
+                      studentIds={isAdmin ? [] : [ticket.userId]}
+                    />
+                  </div>
                   {ticket.response && (
                     <div className="mt-3 bg-primary/5 border border-primary/20 rounded-2xl p-3">
                       <p className="text-xs font-bold text-primary mb-1">Support Reply:</p>
@@ -234,6 +265,9 @@ export default function HelpdeskPage() {
             <div className="bg-muted/50 rounded-2xl p-4">
               <p className="text-xs font-semibold text-muted-foreground mb-1">{selected.subject}</p>
               <p className="text-sm text-foreground">{selected.description}</p>
+              <div className="mt-3">
+                <DocumentDelivery compact documents={[ticketDocument(selected)]} studentIds={[]} />
+              </div>
             </div>
             <Textarea
               value={reply}

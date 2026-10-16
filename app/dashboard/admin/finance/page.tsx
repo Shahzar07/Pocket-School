@@ -7,9 +7,11 @@ import { formatMoney } from '@/lib/money';
 import { isSuperAdmin } from '@/lib/roles';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { Landmark } from 'lucide-react';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
 
 interface Summary { mrr: number; arr: number; arpu: number; activeSubscribers: number }
-interface Tx { id: string; title?: string; total?: number; currency?: string; status?: string; invoiceId?: string }
+interface Tx { id: string; title?: string; total?: number; currency?: string; status?: string; invoiceId?: string; userId?: string }
 
 export default function FinancePage() {
   const { profile } = useAuthSTORE();
@@ -40,6 +42,21 @@ export default function FinancePage() {
   return (
     <DashPage>
       <DashHeader eyebrow="Super admin" title="Finance" description="MRR counts the primary subscriber. Reconciliation is a transaction with an invoice against one without." />
+      <DocumentDelivery
+        documents={[textDocument({
+          id: 'finance-statement',
+          title: 'Finance statement',
+          lines: [
+            `MRR: ${formatMoney(summary?.mrr ?? 0)}`,
+            `ARR: ${formatMoney(summary?.arr ?? 0)}`,
+            `ARPU: ${formatMoney(summary?.arpu ?? 0)}`,
+            `Active subscribers: ${summary?.activeSubscribers ?? 0}`,
+            `Matched: ${reconciliation.matched}`,
+            `Open: ${reconciliation.unmatched}`,
+          ],
+        })]}
+        studentIds={[]}
+      />
       {notice && <p className="text-sm">{notice}</p>}
       <div className="grid sm:grid-cols-3 gap-4">
         <StatCard icon={Landmark} label="MRR" value={formatMoney(summary?.mrr ?? 0)} index={0} />
@@ -48,12 +65,48 @@ export default function FinancePage() {
       </div>
       <Panel>
         <PanelHeader title="Reconciliation" meta={<span className="text-xs text-muted-foreground">{reconciliation.matched} matched · {reconciliation.unmatched} open</span>} />
-        <DataTable minWidth={640} head={<><th className="py-2 pr-4">Checkout</th><th className="py-2 pr-4">Status</th><th className="py-2">Total</th></>}>
+        {rows.length > 0 && (
+          <div className="mb-3">
+            <DocumentDelivery
+              documents={rows.map((row) => textDocument({
+                id: row.id,
+                title: row.title || row.invoiceId || 'Invoice',
+                studentId: row.userId,
+                lines: [
+                  'Invoice',
+                  row.title || row.id,
+                  `Status: ${row.status || ''}`,
+                  `Total: ${formatMoney(Number(row.total ?? 0), row.currency || 'USD')}`,
+                  row.invoiceId ? `Invoice id: ${row.invoiceId}` : '',
+                ],
+              }))}
+              studentIds={[]}
+            />
+          </div>
+        )}
+        <DataTable minWidth={720} head={<><th className="py-2 pr-4">Checkout</th><th className="py-2 pr-4">Status</th><th className="py-2 pr-4">Total</th><th className="py-2">File</th></>}>
           {rows.map((row) => (
             <tr key={row.id}>
               <td className="py-3 pr-4 text-sm">{row.title || row.id}</td>
               <td className="py-3 pr-4 text-sm">{row.status}</td>
-              <td className="py-3 text-sm">{formatMoney(Number(row.total ?? 0), row.currency || 'USD')}</td>
+              <td className="py-3 pr-4 text-sm">{formatMoney(Number(row.total ?? 0), row.currency || 'USD')}</td>
+              <td className="py-3">
+                <DocumentDelivery
+                  compact
+                  documents={[textDocument({
+                    id: row.id,
+                    title: row.title || row.invoiceId || 'Invoice',
+                    studentId: row.userId,
+                    lines: [
+                      'Invoice',
+                      row.title || row.id,
+                      `Status: ${row.status || ''}`,
+                      `Total: ${formatMoney(Number(row.total ?? 0), row.currency || 'USD')}`,
+                    ],
+                  })]}
+                  studentIds={[]}
+                />
+              </td>
             </tr>
           ))}
         </DataTable>

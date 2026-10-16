@@ -10,6 +10,8 @@ import { usePricing } from '@/hooks/use-pricing';
 import { formatMoney, quotePlan } from '@/lib/pricing';
 import { AllocationPicker } from '@/components/allocation-picker';
 import { Button } from '@/components/ui/button';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -84,6 +86,36 @@ export default function InstitutionLicencePage() {
         <Link href="/dashboard/admin/institutions" className="text-xs font-semibold text-muted-foreground">Institutions</Link>
         <h1 className="font-heading text-4xl mt-2">{institution?.name ?? 'Institution'} licence</h1>
         <p className="text-sm text-muted-foreground mt-2">Choose programmes, seats and a term. The price is stored from the pricing config so a later rate change does not rewrite this contract.</p>
+        <div className="mt-4">
+          <DocumentDelivery
+            documents={[
+              textDocument({
+                id: `quote-${institutionId}`,
+                title: `${institution?.name || 'Institution'} quote`,
+                lines: [
+                  'Quote',
+                  `Seats: ${seats}`,
+                  `Price: ${amount || '—'} ${currency}`,
+                  `Term: ${startsOn} to ${endsOn}`,
+                  ...programmeIds.map(id => programmes.find(programme => programme.id === id)?.name || id),
+                ],
+              }),
+              ...licences.map((licence, index) => textDocument({
+                id: licence.id || `licence-${index}`,
+                title: `${institution?.name || 'Institution'} licence`,
+                lines: [
+                  'Invoice',
+                  `${licencePhase(licence, today())}`,
+                  `${licence.seatsUsed}/${licence.seats} seats`,
+                  `${formatMoney(licence.amount, licence.currency)}`,
+                  `${licence.startsOn} to ${licence.endsOn}`,
+                ],
+              })),
+            ]}
+            studentIds={[]}
+            institutionId={institutionId}
+          />
+        </div>
       </div>
 
       <section className="rounded-3xl border border-border p-5 space-y-4">

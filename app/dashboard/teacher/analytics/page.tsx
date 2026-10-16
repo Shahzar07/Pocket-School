@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Users, BookOpen, ClipboardList, BarChart3, CheckCircle2, Clock } from 'lucide-react';
 import { ClassCharts } from '@/components/insights/learning-charts';
 import { ExportBar } from '@/components/insights/boards';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
 
 interface CourseStats {
   course: Course;
@@ -28,6 +30,7 @@ export default function TeacherAnalytics() {
   const [courseStats, setCourseStats] = useState<CourseStats[]>([]);
   const [recentSubmissions, setRecentSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [linkedIds, setLinkedIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -36,9 +39,11 @@ export default function TeacherAnalytics() {
       getSubmissionsForTeacher(user.uid),
     ]).then(async ([courses, submissions]) => {
       // Build per-course stats
+      const ids = new Set<string>();
       const stats: CourseStats[] = await Promise.all(
         courses.map(async (course) => {
           const enrollments = await getEnrollmentsForCourse(course.id!);
+          enrollments.forEach((row) => ids.add(row.studentId));
           const courseSubs = submissions.filter(s => s.courseId === course.id);
           const gradedSubs = courseSubs.filter(s => s.score !== undefined);
           const avgScore = gradedSubs.length > 0
@@ -58,6 +63,7 @@ export default function TeacherAnalytics() {
           };
         })
       );
+      setLinkedIds([...ids]);
       setCourseStats(stats);
       setRecentSubmissions(submissions.slice(0, 8));
       setLoading(false);
@@ -88,6 +94,16 @@ export default function TeacherAnalytics() {
           Your <span className="gradient-text italic">Analytics</span> Dashboard
         </h1>
         <p className="text-muted-foreground mt-2 text-[15px]">Real-time data from your courses and students.</p>
+        <div className="mt-4">
+          <DocumentDelivery
+            documents={[textDocument({
+              id: `class-analytics-${user?.uid || 'class'}`,
+              title: 'Class analytics',
+              lines: courseStats.map(row => `${row.course.title}: ${row.enrolledCount} students, progress ${row.avgProgress}%, quiz ${row.avgScore ?? '—'}`),
+            })]}
+            studentIds={linkedIds}
+          />
+        </div>
       </motion.header>
 
       {/* Overview stats */}

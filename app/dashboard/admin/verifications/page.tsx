@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { ShieldCheck, CheckCircle2, XCircle, Users, Loader2 } from 'lucide-react';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { rowsToCsv, textDocument } from '@/lib/documents/packet';
 import { Timestamp } from 'firebase/firestore';
 
 const fadeUp: Record<string, any> = {
@@ -79,6 +81,25 @@ export default function AdminVerificationsPage() {
           Parent <span className="gradient-text italic">verifications</span>
         </h1>
         <p className="text-muted-foreground mt-2 text-[15px]">Review and approve parent-student account linking requests.</p>
+        <div className="mt-4">
+          <DocumentDelivery
+            documents={[textDocument({
+              id: 'verifications',
+              title: 'Parent verifications',
+              lines: verifications.length
+                ? verifications.map(row => `${row.parentName} · ${row.parentEmail} · student ${row.studentEmail} · ${row.status}`)
+                : ['No pending verifications.'],
+            })]}
+            csv={{
+              filename: 'verifications.csv',
+              text: rowsToCsv(
+                ['Parent', 'Parent email', 'Student email', 'Student id', 'Status'],
+                verifications.map(row => [row.parentName, row.parentEmail, row.studentEmail, row.studentId, row.status]),
+              ),
+            }}
+            studentIds={[]}
+          />
+        </div>
       </motion.header>
 
       {/* Stat */}
