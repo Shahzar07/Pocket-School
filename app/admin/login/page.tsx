@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FirebaseError } from 'firebase/app';
 import {
@@ -33,6 +33,7 @@ import {
 } from '@/lib/admin-console';
 import { parseFallbackFactors, type MfaFallback } from '@/lib/admin-mfa';
 import { clearAdminMfaPending, markAdminMfaPending } from '@/lib/admin-mfa-pending';
+import { clearFallbackSession, readFallbackSession, saveFallbackSession } from '@/lib/admin-mfa-fallback-session';
 import { syncStaffClaims } from '@/lib/admin-actions';
 import { touchAdminActivity } from '@/lib/view-as';
 import { ShieldCheck } from 'lucide-react';
@@ -80,7 +81,6 @@ function AdminLoginForm() {
   const [otpToken, setOtpToken] = useState('');
   const [otpExpiresAt, setOtpExpiresAt] = useState(0);
   const [pendingUid, setPendingUid] = useState<string | null>(null);
-  const [fallback, setFallback] = useState<MfaFallback[]>([]);
   const [totpSecret, setTotpSecret] = useState<TotpSecret | null>(null);
   const [totpUrl, setTotpUrl] = useState('');
   const [resolver, setResolver] = useState<MultiFactorResolver | null>(null);
@@ -88,14 +88,24 @@ function AdminLoginForm() {
   const [formError, setFormError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const saved = readFallbackSession();
+    if (!saved) return;
+    setPendingUid(saved.uid);
+    setEmail(saved.email);
+    setStep('fallback');
+  }, []);
+
   const refuse = async (message: string) => {
     try { await signOut(auth); } catch { /* already signed out */ }
     clearAdminMfaPending();
+    clearFallbackSession();
     setFormError(message);
   };
 
   const finish = async (uid: string, address: string) => {
     clearAdminMfaPending();
+    clearFallbackSession();
     const snap = await getDoc(doc(db, 'users', uid));
     const data = snap.exists() ? snap.data() : {};
     const lower = address.trim().toLowerCase();
@@ -154,9 +164,13 @@ function AdminLoginForm() {
         return 'error';
       }
       if (data.configured === false) {
-        const factors = parseFallbackFactors(data.fallback);
+        const fromServer = parseFallbackFactors(data.fallback);
+        // Seeded owners still get the second factor when the server cannot
+        // verify the ID token. Regular admins stay blocked.
+        const factors: MfaFallback[] = fromServer.length
+          ? fromServer
+          : (initialSuperAdmin(address) ? ['google', 'totp'] : []);
         if (factors.length) {
-          setFallback(factors);
           setFormError('');
           return 'fallback';
         }
@@ -214,9 +228,10 @@ function AdminLoginForm() {
         if (sent === 'fallback') {
           setPendingUid(result.user.uid);
           setEmail(address);
+          saveFallbackSession({ uid: result.user.uid, email: address });
+          setStep('fallback');
           await signOut(auth);
           clearAdminMfaPending();
-          setStep('fallback');
           return;
         }
         await signOut(auth);
@@ -305,7 +320,7 @@ function AdminLoginForm() {
   const confirmWithGoogle = async () => {
     setFormError('');
     const expected = email.trim().toLowerCase();
-    if (!pendingUid || !expected || !password) {
+    if (!pendingUid || !expected) {
       setFormError('Sign in with your password again, then confirm with Google.');
       setStep('credentials');
       return;
@@ -327,6 +342,11 @@ function AdminLoginForm() {
         const googleEmail = (err.customData as { email?: string } | undefined)?.email?.trim().toLowerCase() ?? '';
         if (!cred || googleEmail !== expected) {
           setFormError('Google must be the same email as this admin account. The second factor is still required.');
+          return;
+        }
+        if (!password) {
+          setFormError('Sign in with your password again so Google can be linked to this admin account.');
+          setStep('credentials');
           return;
         }
         try {
@@ -450,6 +470,7 @@ function AdminLoginForm() {
   const resetToCredentials = async () => {
     try { await signOut(auth); } catch { /* already signed out */ }
     clearAdminMfaPending();
+    clearFallbackSession();
     setStep('credentials');
     setPendingUid(null);
     setResolver(null);
@@ -520,16 +541,24 @@ function AdminLoginForm() {
               <p className="text-sm text-slate-600 leading-relaxed">
                 Password accepted for {email.trim()}. Email codes are unavailable because SMTP is not configured. Confirm with Google or an authenticator. This step is not skipped.
               </p>
-              {fallback.includes('google') ? (
-                <Button type="button" disabled={loading} onClick={() => void confirmWithGoogle()} className="w-full h-11 rounded-xl font-semibold">
-                  {loading ? 'Checking…' : 'Confirm with Google'}
-                </Button>
-              ) : null}
-              {fallback.includes('totp') ? (
-                <Button type="button" variant="outline" disabled={loading} onClick={() => void startTotp()} className="w-full h-11 rounded-xl font-semibold">
-                  Enrol an authenticator app
-                </Button>
-              ) : null}
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => void confirmWithGoogle()}
+                className="w-full h-11 rounded-xl font-semibold text-white disabled:opacity-60"
+                style={{ backgroundColor: '#2786A4' }}
+              >
+                {loading ? 'Checking…' : 'Confirm with Google'}
+              </button>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => void startTotp()}
+                className="w-full h-11 rounded-xl font-semibold disabled:opacity-60"
+                style={{ backgroundColor: '#ffffff', color: '#2786A4', border: '2px solid #2786A4' }}
+              >
+                Enrol an authenticator app
+              </button>
               <button type="button" className="text-sm font-semibold text-[#2786A4]" onClick={() => void resetToCredentials()}>
                 Sign out
               </button>
