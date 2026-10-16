@@ -583,9 +583,16 @@ app/dashboard/resources/page.tsx	Title and URL are required.
 app/dashboard/resources/page.tsx	Try a different search or add a new resource.
 app/dashboard/resources/page.tsx	URL *
 app/dashboard/snap/page.tsx	Opening the camera in ET Maths.
+app/dashboard/store/page.tsx	All kinds
+app/dashboard/store/page.tsx	Course marketplace
 app/dashboard/store/page.tsx	Draft saved.
+app/dashboard/store/page.tsx	People tutors
 app/dashboard/store/page.tsx	Resource allocated.
+app/dashboard/store/page.tsx	Resource kind
+app/dashboard/store/page.tsx	Search resources
+app/dashboard/store/page.tsx	Search title
 app/dashboard/store/page.tsx	Sent for approval.
+app/dashboard/store/page.tsx	The store is creator notes, worksheets, and templates. Courses stay on the marketplace.
 app/dashboard/student/achievements/page.tsx	All Badges
 app/dashboard/student/achievements/page.tsx	Leaderboard data will appear here soon.
 app/dashboard/student/achievements/page.tsx	Next Badge
@@ -1238,7 +1245,12 @@ app/dashboard/teacher/upload/page.tsx	e.g. Biology
 app/dashboard/teacher/upload/page.tsx	e.g. Biology 101
 app/dashboard/teacher/upload/page.tsx	e.g. Science
 app/dashboard/teacher/upload/page.tsx	e.g. Science — Year 7
+app/dashboard/tutors/page.tsx	AI teachers
+app/dashboard/tutors/page.tsx	Creator store
 app/dashboard/tutors/page.tsx	Review saved.
+app/dashboard/tutors/page.tsx	Search name or subject
+app/dashboard/tutors/page.tsx	Search tutors
+app/dashboard/tutors/page.tsx	These tutors are people you can book. Subject tutors such as ET Maths live with the AI teachers.
 app/dashboard/wallet/page.tsx	Add funds
 app/dashboard/wallet/page.tsx	Malaysian ringgit
 app/dashboard/wallet/page.tsx	No wallet movements yet.
