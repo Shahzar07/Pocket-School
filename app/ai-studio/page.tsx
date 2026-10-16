@@ -36,7 +36,12 @@ import { PROGRAMMES, studioModeForProgramme, subjectsForProgramme } from '@/lib/
 import { bookSourcePrompt, parseBookCommand } from '@/lib/platform/studio-commands';
 import { EssaysDesk } from '@/components/essays/essays-desk';
 import { HandwritingCapture } from '@/components/handwriting-capture';
+import {
+  DeskFrame, ParentExplainerPanel, ResearchHelperPanel, TeacherToolkitPanel,
+} from '@/components/studio/desk-panels';
+import { useAuthSTORE } from '@/hooks/use-auth';
 import { BOOKS, bookById } from '@/lib/reads/seed';
+import { canUseDeskTool, type DeskToolId } from '@/lib/studio/desk';
 
 type FormatId = 'text' | 'flashcards' | 'quiz' | 'slides' | 'notes' | 'summary' | 'problems' | 'glossary' | 'mindmap' | 'infographic' | 'videoScript' | 'audioScript';
 
@@ -150,7 +155,8 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
   /** Undefined until Firebase reports the first auth state — prevents a
    * sign-in flash for users who are already logged in. */
   const [authReady, setAuthReady] = useState(false);
-  const [view, setView] = useState<'chat' | 'library' | 'essays'>('chat');
+  const [view, setView] = useState<'chat' | 'library' | 'essays' | DeskToolId>('chat');
+  const profile = useAuthSTORE(state => state.profile);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Conversations (session-scoped, like Claude's recents)
@@ -181,8 +187,16 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
   useEffect(() => onAuthStateChanged(auth, u => { setUser(u); setAuthReady(true); }), []);
   useEffect(() => {
     if (seeded.current) return;
-    const q = new URLSearchParams(window.location.search).get('q');
-    if (!q) return;
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    if (mode === 'teacher-toolkit' || mode === 'parent-explainer' || mode === 'research-helper') {
+      setView(mode);
+    }
+    const q = params.get('q');
+    if (!q) {
+      seeded.current = true;
+      return;
+    }
     seeded.current = true;
     setInput(q);
   }, []);
@@ -481,6 +495,33 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
               <span className="flex items-center gap-2.5"><span className="h-2 w-2 rounded-full bg-[#2F6B4F] dark:bg-[#8FCBAA]" aria-hidden /><BookOpen className="w-4 h-4" /> Book Studio</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 transition-opacity" />
             </Link>
+            {canUseDeskTool(profile, 'teacher-toolkit') && (
+              <button
+                onClick={() => { setView('teacher-toolkit'); setSidebarOpen(false); }}
+                className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${view === 'teacher-toolkit' ? `${C.raised} ${C.text}` : `${C.dim} ${C.surfaceHover}`}`}
+              >
+                <span className="h-2 w-2 rounded-full bg-[#C45C26] dark:bg-[#E8A06A]" aria-hidden />
+                <ClipboardList className="w-4 h-4" /> Teacher Toolkit
+              </button>
+            )}
+            {canUseDeskTool(profile, 'parent-explainer') && (
+              <button
+                onClick={() => { setView('parent-explainer'); setSidebarOpen(false); }}
+                className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${view === 'parent-explainer' ? `${C.raised} ${C.text}` : `${C.dim} ${C.surfaceHover}`}`}
+              >
+                <span className="h-2 w-2 rounded-full bg-[#8B3A62] dark:bg-[#E7A3C0]" aria-hidden />
+                <UserIcon className="w-4 h-4" /> Parent Explainer
+              </button>
+            )}
+            {canUseDeskTool(profile, 'research-helper') && (
+              <button
+                onClick={() => { setView('research-helper'); setSidebarOpen(false); }}
+                className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${view === 'research-helper' ? `${C.raised} ${C.text}` : `${C.dim} ${C.surfaceHover}`}`}
+              >
+                <span className="h-2 w-2 rounded-full bg-[#2457A6] dark:bg-[#8FB0E8]" aria-hidden />
+                <BookMarked className="w-4 h-4" /> Research Helper
+              </button>
+            )}
           </nav>
         </div>
 
@@ -534,7 +575,19 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
           <span className="text-sm font-bold">ET AI</span>
         </div>
 
-        {view === 'essays' ? (
+        {view === 'teacher-toolkit' ? (
+          <DeskFrame kicker="Teach" title="Teacher Toolkit" testId="mode-teacher-toolkit" blurb="Lesson plans, worksheets, rubrics, the same task for support, core, and stretch, and an exit ticket. Download it, email it, or save it as a course draft.">
+            <TeacherToolkitPanel />
+          </DeskFrame>
+        ) : view === 'parent-explainer' ? (
+          <DeskFrame kicker="Home" title="Parent Explainer" testId="mode-parent-explainer" blurb="A plain-language week from your child's saved activity, in the language you choose. ET AI only opens children linked to you.">
+            <ParentExplainerPanel />
+          </DeskFrame>
+        ) : view === 'research-helper' ? (
+          <DeskFrame kicker="Sources" title="Research Helper" testId="mode-research-helper" blurb="Sources, citations in APA, Harvard, and MLA, and a note on credibility. ET AI does not write the assignment.">
+            <ResearchHelperPanel />
+          </DeskFrame>
+        ) : view === 'essays' ? (
           <div className="flex-1 overflow-auto bg-background text-foreground">
             <div className="mx-auto max-w-[1100px] px-4 py-6 sm:px-6">
               <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-muted-foreground">ET AI</p>
