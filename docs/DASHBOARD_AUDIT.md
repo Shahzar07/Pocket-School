@@ -1004,3 +1004,12 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Overlaps:** Admin certificates.
 - **Decision:** Keep as the academy issuance desk. It does not change the platform template.
 - **Owner keys:** None.
+
+### Dashboard session
+
+- **Route:** `/dashboard/session`
+- **Audience:** everyone
+- **Purpose:** Exchanges a verified Firebase ID token for the signed dashboard cookie, then continues to the requested page.
+- **Overlaps:** None. It is not a product page.
+- **Decision:** Keep. Middleware sends role-restricted URLs here when the cookie is missing. It does not render admin tools.
+- **Owner keys:** DASHBOARD_SESSION_SECRET, or OTP_SECRET when that is already set.
