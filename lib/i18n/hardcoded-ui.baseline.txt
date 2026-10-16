@@ -443,6 +443,8 @@ app/dashboard/layout.tsx	If this wasn't you, change your password immediately in
 app/dashboard/layout.tsx	New device detected.
 app/dashboard/layout.tsx	This account is closed
 app/dashboard/layout.tsx	void; router: ReturnType
+app/dashboard/messages/page.tsx	Draft a message
+app/dashboard/messages/page.tsx	ET AI draft
 app/dashboard/messages/page.tsx	New chat
 app/dashboard/messages/page.tsx	No conversations yet. Tap
 app/dashboard/messages/page.tsx	No new contacts to message.
@@ -1925,6 +1927,9 @@ components/reads/reader-view.tsx	This book is not on the shelf.
 components/reads/studio-view.tsx	Added to the picture library. Write the alt text before placing it.
 components/reads/studio-view.tsx	The author line is always ET AI. The picture itself has no lettering; the title is drawn on top.
 components/reads/studio-view.tsx	Version history
+components/rich-composer.tsx	Ask ET AI to draft this
+components/rich-composer.tsx	Draft prompt
+components/rich-composer.tsx	In-app posts immediately. Email needs SMTP_PASS. Push needs the web push keys. A future time is stored and waits.
 components/role-checklist.tsx	Dismiss checklist
 components/role-checklist.tsx	First visit
 components/role-checklist.tsx	Getting started
