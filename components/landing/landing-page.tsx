@@ -47,10 +47,11 @@ const COMPARE = ['1', '2', '3', '4', '5'] as const;
 const COUNTRIES = ['malaysia', 'nigeria', 'uk', 'singapore', 'china', 'more'] as const;
 const SCHOOL_CARDS = ['brand', 'curriculum', 'data', 'admin'] as const;
 const PLAN_CARDS = [
-  { id: 'preview', name: 'previewName', features: ['preview1', 'preview2', 'preview3', 'preview4'], popular: false },
-  { id: 'igcse_alevel', name: 'igcseName', features: ['igcse1', 'igcse2', 'igcse3', 'igcse4', 'igcse5', 'igcse6'], popular: true },
-  { id: 'professional', name: 'professionalName', features: ['professional1', 'professional2', 'professional3', 'professional4', 'professional5', 'professional6', 'professional7', 'professional8'], popular: false },
+  { id: 'preview', name: 'previewName', features: ['preview1', 'preview2', 'preview3', 'preview4', 'preview5'], popular: false },
+  { id: 'igcse_alevel', name: 'igcseName', features: ['igcse1', 'igcse2', 'igcse3', 'igcse4', 'igcse5', 'igcse6', 'igcse7', 'igcse8', 'igcse9', 'igcse10', 'igcse11', 'igcse12', 'igcse13'], popular: true },
+  { id: 'professional', name: 'professionalName', features: ['professional1', 'professional2', 'professional3', 'professional4', 'professional5', 'professional6', 'professional7', 'professional8', 'professional9'], popular: false },
 ] as const;
+const NEW_FEATURES = ['essay', 'live', 'reads', 'badges', 'transcripts', 'parents', 'languages', 'studio'] as const;
 
 const SHOTS = [
   { id: 'analytics', src: '/landing/analytics.webp' },
@@ -204,6 +205,21 @@ export function LandingPage() {
               <li key={id}>
                 <span className="inline-flex h-8 items-center rounded-full border border-border bg-background px-3 text-xs font-semibold">
                   {t(`landing.exam.${id}`)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="border-b border-border bg-background" aria-label={t('landing.newFeatures.label')}>
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between">
+          <p className="text-sm font-semibold text-foreground">{t('landing.newFeatures.label')}</p>
+          <ul className="flex flex-wrap gap-2">
+            {NEW_FEATURES.map((id) => (
+              <li key={id}>
+                <span className="inline-flex h-8 items-center rounded-full border border-border bg-card px-3 text-xs font-semibold">
+                  {t(`landing.newFeatures.${id}`)}
                 </span>
               </li>
             ))}

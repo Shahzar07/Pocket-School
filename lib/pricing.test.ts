@@ -170,4 +170,17 @@ test('plan copy uses levels and keeps the $19 and $99 prices', () => {
   assert.match(lines, /Engineering — ET Engineering/);
   assert.match(lines, /Nursing — ET Nursing/);
   assert.equal(TIERS.find(tier => tier.id === 'primary_secondary')?.name, 'Primary & Lower Secondary');
+  const primary = TIERS.find(tier => tier.id === 'primary_secondary');
+  const igcse = TIERS.find(tier => tier.id === 'igcse_alevel');
+  assert.match((primary?.programmes ?? []).join('\n'), /Poket Reads books and audiobooks/);
+  assert.match((primary?.programmes ?? []).join('\n'), /ET AI Studio and ET Maths/);
+  assert.match((igcse?.programmes ?? []).join('\n'), /ET AI Essay Writer — AI-graded 9-1 \/ A\*-U/);
+  assert.match((igcse?.programmes ?? []).join('\n'), /Open Badges 3.0 certificates with LinkedIn sharing/);
+  assert.match((igcse?.programmes ?? []).join('\n'), /Downloadable transcripts/);
+  assert.match((igcse?.programmes ?? []).join('\n'), /Parent dashboard and reports/);
+  assert.match((igcse?.programmes ?? []).join('\n'), /Attendance and daily goals/);
+  assert.match((igcse?.programmes ?? []).join('\n'), /ET AI Live add-on/);
+  assert.match((igcse?.programmes ?? []).join('\n'), /ET AI Studio, ET Maths and ET Exams/);
+  assert.match(lines, /ET AI Live add-on/);
+  assert.match(plans, /53 languages/);
 });

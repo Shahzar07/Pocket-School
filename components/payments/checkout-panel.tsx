@@ -18,6 +18,7 @@ export interface QuoteView {
   taxRate: number;
   total: number;
   seats: number;
+  highlights?: string[];
 }
 
 const COUNTRIES = [
@@ -54,6 +55,13 @@ export function CheckoutPanel({
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">Checkout</p>
             <h2 className="font-heading text-2xl tracking-tight mt-1">{quote.title}</h2>
+            {quote.highlights && quote.highlights.length > 0 ? (
+              <ul className="mt-3 max-w-xl space-y-1 text-sm text-muted-foreground">
+                {quote.highlights.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            ) : null}
           </div>
           <label className="text-sm">
             <span className="block text-[11px] font-semibold text-muted-foreground mb-1">Country</span>

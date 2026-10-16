@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { motion, type Variants } from 'motion/react';
 import { toast } from 'sonner';
-import { ADDONS, TIERS } from '@/lib/entitlements';
+import { ADDONS, TIERS, planProgrammes } from '@/lib/entitlements';
 import { SIGNUP_GRANT } from '@/lib/sparks';
 import { discountLabel, formatMoney, planById, quoteAddon, quotePlan, type BillingInterval } from '@/lib/pricing';
 import { usePricing } from '@/hooks/use-pricing';
@@ -53,6 +53,22 @@ interface PlanCopy {
   features: string[];
 }
 
+const PREVIEW_EXTRAS = [
+  'ET AI tutor — 20 messages a day',
+  'ET AI generator — 3 items a day',
+  'Buy any marketplace course outright',
+];
+
+const PRIMARY_EXTRAS = [
+  'Unlimited ET AI study materials',
+  'Progress tracking and streaks',
+];
+
+const IGCSE_EXTRAS = [
+  'ET AI tutor, unlimited',
+  "Bloom's progress tracking",
+];
+
 /** Marketing copy for the sold plans. Amounts come from the pricing document. */
 const PLANS: PlanCopy[] = [
   {
@@ -61,13 +77,7 @@ const PLANS: PlanCopy[] = [
     tier: 0,
     tagline: 'Browse everything, and take the first lesson of any course. No card, no countdown.',
     cta: 'Start free',
-    features: [
-      'Full course catalogue',
-      'First lesson of every course',
-      'ET AI tutor — 20 messages a day',
-      'ET generator — 3 items a day',
-      'Buy any marketplace course outright',
-    ],
+    features: PREVIEW_EXTRAS,
   },
   {
     id: 'primary_secondary',
@@ -75,12 +85,7 @@ const PLANS: PlanCopy[] = [
     tier: 1,
     tagline: 'Primary and Lower Secondary. Every core subject, built to the curriculum.',
     cta: 'Choose this plan',
-    features: [
-      'Primary',
-      'Lower Secondary',
-      'Unlimited ET AI study materials',
-      'Progress tracking and streaks',
-    ],
+    features: PRIMARY_EXTRAS,
   },
   {
     id: 'igcse_alevel',
@@ -89,16 +94,7 @@ const PLANS: PlanCopy[] = [
     tagline: 'IGCSE to A-Level, with everything below included.',
     popular: true,
     cta: 'Choose this plan',
-    features: [
-      'IGCSE / GCSE',
-      'A-Level',
-      'Pre-University',
-      'Everything in Primary & Lower Secondary',
-      'ET AI tutor, unlimited',
-      "Bloom's progress tracking",
-      'Parent dashboard',
-      'Completion certificates',
-    ],
+    features: IGCSE_EXTRAS,
   },
   {
     id: 'professional',
@@ -106,16 +102,7 @@ const PLANS: PlanCopy[] = [
     tier: 3,
     tagline: 'MBBS Medicine, LLB Law (University of London and other universities), Engineering and Nursing.',
     cta: 'Choose this plan',
-    features: [
-      'LLB Law — University of London (UoL) and other universities',
-      'MBBS Medicine — ET Medicine',
-      'Engineering — ET Engineering',
-      'Nursing — ET Nursing',
-      'Micro Degrees and Diplomas',
-      'Professional Certifications',
-      'Independent Learning — open',
-      'Everything in IGCSE & A-Level',
-    ],
+    features: [],
   },
 ];
 
@@ -570,7 +557,8 @@ function PlanCard({
   const sparksLine = sparks > 0
     ? `${sparks.toLocaleString('en')} Sparks a month${rollover > 0 ? ` · ${rollover.toLocaleString('en')} roll over` : ''}`
     : `${SIGNUP_GRANT.toLocaleString('en')} welcome Sparks`;
-  const features = sparks > 0 ? [...plan.features, `${sparks.toLocaleString('en')} Sparks a month`] : plan.features;
+  const included = [...planProgrammes(plan.id), ...plan.features];
+  const features = sparks > 0 ? [...included, `${sparks.toLocaleString('en')} Sparks a month`] : included;
 
   return (
     <motion.div

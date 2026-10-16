@@ -49,19 +49,42 @@ export const TIERS: TierDefinition[] = [
     tier: 0, id: 'preview', name: 'Free Preview',
     blurb: 'Public access, no account required.',
     sparks: 0, sparksRollover: 0,
-    programmes: ['Course catalogue', 'First lesson of any course', 'Certificate verification'],
+    programmes: [
+      'Course catalogue',
+      'First lesson of any course',
+      'Certificate verification',
+      '53 languages',
+    ],
   },
   {
     tier: 1, id: 'primary_secondary', name: 'Primary & Lower Secondary',
     blurb: 'Primary and Lower Secondary, entry-level individual subscription.',
     sparks: 300, sparksRollover: 100,
-    programmes: ['Primary', 'Lower Secondary', 'All core subjects'],
+    programmes: [
+      'Primary',
+      'Lower Secondary',
+      'ET AI Studio and ET Maths',
+      'Poket Reads books and audiobooks',
+      '53 languages',
+    ],
   },
   {
     tier: 2, id: 'igcse_alevel', name: 'IGCSE & A-Level',
     blurb: 'IGCSE to A-Level, the core academic subscription.',
     sparks: 800, sparksRollover: 300,
-    programmes: ['IGCSE / GCSE', 'A-Level', 'Pre-University', 'Everything in Primary & Lower Secondary'],
+    programmes: [
+      'IGCSE / GCSE',
+      'A-Level',
+      'Pre-University',
+      'Everything in Primary & Lower Secondary',
+      'ET AI Studio, ET Maths and ET Exams',
+      'ET AI Essay Writer — AI-graded 9-1 / A*-U',
+      'Open Badges 3.0 certificates with LinkedIn sharing',
+      'Downloadable transcripts',
+      'Parent dashboard and reports',
+      'Attendance and daily goals',
+      'ET AI Live add-on',
+    ],
   },
   {
     tier: 3, id: 'professional', name: 'Professional & Degrees',
@@ -76,6 +99,7 @@ export const TIERS: TierDefinition[] = [
       'Professional Certifications',
       'Independent Learning — open',
       'Everything in IGCSE & A-Level',
+      'ET AI Live add-on',
     ],
   },
   {
@@ -100,6 +124,11 @@ export const TIERS: TierDefinition[] = [
 
 export function tierDefinition(tier: AccessTier): TierDefinition {
   return TIERS.find(t => t.tier === tier) ?? TIERS[0];
+}
+
+/** Plan bullets shown on pricing cards and at checkout. */
+export function planProgrammes(id: string): string[] {
+  return TIERS.find(tier => tier.id === id)?.programmes ?? [];
 }
 
 /* ── Content types ───────────────────────────────────────────── */

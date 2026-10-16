@@ -111,6 +111,9 @@ test('the language list covers the major world languages and rtl scripts', () =>
   assert.equal(catalogs.ms.landing.hero.title, 'Belajar dengan cara anda. Pergi lebih jauh dengan AI.');
   assert.equal(catalogs.ar.landing.hero.title, 'تعلّم بطريقتك. امضِ أبعد مع الذكاء الاصطناعي.');
   assert.equal(catalogs.en.landing.degrees.title, 'Beyond A-Level.');
+  assert.equal(catalogs.en.landing.newFeatures.label, 'New features');
+  assert.equal(catalogs.en.landing.pricing.igcse7, 'ET AI Essay Writer — AI-graded 9-1 / A*-U');
+  assert.equal(catalogs.en.landing.pricing.professional9, 'ET AI Live add-on');
   assert.equal(catalogs.en.landing.degrees.lineup, 'LLB Law, MBBS Medicine, Engineering and Nursing');
   assert.equal(catalogs.en.landing.supplement.title, 'We supplement. We do not replace.');
   assert.equal(
