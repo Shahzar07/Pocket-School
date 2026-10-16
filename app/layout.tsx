@@ -7,6 +7,7 @@ import { I18nProvider } from '@/components/i18n-provider';
 import { WhiteLabelProvider } from '@/components/white-label-provider';
 import { Toaster } from "@/components/ui/sonner"
 import { SiteHeader } from '@/components/site-header';
+import { ModuleHeader } from '@/components/module-header';
 import { SiteFooter } from '@/components/site-footer';
 import { CookieConsent } from '@/components/cookie-consent';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -71,6 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <I18nProvider>
           <WhiteLabelProvider>
             <SiteHeader />
+            <ModuleHeader />
             <div id="content">{children}</div>
             <SiteFooter />
             <CookieConsent />

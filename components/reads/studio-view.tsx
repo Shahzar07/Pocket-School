@@ -17,6 +17,8 @@ import { generateIllustration } from '@/components/media/generate';
 import { BOOKS } from '@/lib/reads/seed';
 import { publishIssues, screenCoverAge, type CoverBrief, type CoverFont, type CoverPlacement } from '@/lib/reads/cover';
 import { bookEpub, bookPdf, chapterPlain } from '@/lib/reads/book-export';
+import { blankCraftBook } from '@/lib/reads/creator';
+import { CreatorPanel } from '@/components/reads/creator-panel';
 import {
   AGE_BANDS, ageBand, blankChildrensStory, fallbackStory, isPictureBook, storyChapters, storyPublishIssues, storyShape, withPageIllustration, wordsOf,
 } from '@/lib/reads/picture-book';
@@ -43,7 +45,7 @@ export function StudioView() {
   const t = useReadsT();
   const [books, setBooks] = useState<Book[]>(cloneBooks);
   const [id, setId] = useState('monsoon-market');
-  const [tab, setTab] = useState<'details' | 'write' | 'import' | 'pictures' | 'cover'>('details');
+  const [tab, setTab] = useState<'details' | 'create' | 'write' | 'import' | 'pictures' | 'cover'>('details');
   const [chapterId, setChapterId] = useState('mm-1');
   const [dragFrom, setDragFrom] = useState<number | null>(null);
   const [replaceImport, setReplaceImport] = useState(false);
@@ -310,6 +312,19 @@ export function StudioView() {
           >
             New children’s story
           </button>
+          <button
+            type="button"
+            className="h-10 w-full rounded-full bg-foreground text-sm font-semibold text-background"
+            onClick={() => {
+              const created = blankCraftBook();
+              setBooks(list => [created, ...list]);
+              setId(created.id);
+              setChapterId(created.chapters[0]?.id ?? '');
+              setTab('create');
+            }}
+          >
+            New book with ET AI
+          </button>
           {books.map(item => (
             <button
               key={item.id}
@@ -330,6 +345,7 @@ export function StudioView() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Tab on={tab === 'details'} label={t('reads.studio.tabDetails')} onClick={() => setTab('details')} />
+            <Tab on={tab === 'create'} label="Create" onClick={() => setTab('create')} />
             <Tab on={tab === 'write'} label={t('reads.studio.tabWrite')} onClick={() => setTab('write')} />
             <Tab on={tab === 'import'} label={t('reads.studio.tabImport')} onClick={() => setTab('import')} />
             <Tab on={tab === 'pictures'} label={t('reads.studio.tabPictures')} onClick={() => setTab('pictures')} />
@@ -447,6 +463,10 @@ export function StudioView() {
                 </ul>
               </div>
             </>
+          )}
+
+          {tab === 'create' && (
+            <CreatorPanel book={book} onChange={update} onStatus={setStatus} />
           )}
 
           {tab === 'write' && chapter && (

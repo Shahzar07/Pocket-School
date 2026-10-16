@@ -126,6 +126,62 @@ export interface Book {
   releasedAt: string;
   region?: string;
   languageVersions?: LanguageVersion[];
+  /** Idea-to-book notes. Absent on older titles. Prices are not stored here. */
+  craft?: BookCraft;
+}
+
+export interface StoryCharacter {
+  id: string;
+  name: string;
+  role: string;
+  traits: string;
+  appearance: string;
+  backstory: string;
+  voice: string;
+  relationships: string;
+  portrait?: string;
+}
+
+export interface SceneCard {
+  id: string;
+  title: string;
+  summary: string;
+  act: string;
+  twist: boolean;
+}
+
+export interface GlossaryEntry {
+  term: string;
+  meaning: string;
+}
+
+export interface SavedPrompt {
+  id: string;
+  name: string;
+  body: string;
+}
+
+/** Studio-only writing desk. It does not carry a price. */
+export interface BookCraft {
+  kind: string;
+  idea: string;
+  logline: string;
+  tone: string;
+  audience: string;
+  titles: string[];
+  language: string;
+  styleId: string;
+  structure: string;
+  characters: StoryCharacter[];
+  worldName: string;
+  worldTime: string;
+  worldPlace: string;
+  worldRules: string;
+  scenes: SceneCard[];
+  objectives: string[];
+  glossary: GlossaryEntry[];
+  references: string[];
+  customPrompts: SavedPrompt[];
 }
 
 export function ageNumber(rating: AgeRating): number {

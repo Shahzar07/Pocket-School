@@ -24,11 +24,14 @@ const HIDDEN_PREFIXES = [
   "/dashboard",
   "/onboarding",
   "/ai-studio",
+  "/ai-teachers",
   "/reads",
   "/preview",
   "/mode-preview",
   "/payments-preview",
   "/account-preview",
+  "/teacher-studio",
+  "/a/",
 ];
 
 export function SiteHeader() {

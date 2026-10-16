@@ -27,6 +27,7 @@ import { deletionClosed, formatDeletionDate, sessionRevoked } from '@/lib/accoun
 import { AccountMenu } from '@/components/account/account-menu';
 import { ModeSwitch } from '@/components/account/mode-switch';
 import { Breadcrumbs } from '@/components/shell/breadcrumbs';
+import { ModuleHeader } from '@/components/module-header';
 import { MobileNav } from '@/components/shell/mobile-nav';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useAccountMode } from '@/hooks/use-account-mode';
@@ -579,6 +580,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ── Main Content ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <AdminViewAsBanner />
+        {pathname.startsWith('/dashboard/studio') && <ModuleHeader force />}
         {/* Header */}
         <header className="h-[72px] bg-background/80 backdrop-blur-xl flex items-center justify-between gap-4 px-4 lg:px-6 shrink-0 z-10">
           <div className="flex items-center gap-3">
