@@ -94,6 +94,16 @@ export function annualFromMonthly(monthlyUsd: number, discount: number): number 
   return round2(monthly * 12 * (1 - rate));
 }
 
+/** Display names for the Reads rows in `seedPricing()`. Amounts live on the plan. */
+export const READS_PLAN_LABELS = {
+  reads: 'Poket Reads',
+  'reads-family': 'Poket Reads Family',
+} as const;
+
+export function isReadsPlan(id: string): id is keyof typeof READS_PLAN_LABELS {
+  return Object.prototype.hasOwnProperty.call(READS_PLAN_LABELS, id);
+}
+
 export function seedPricing(): PricingConfig {
   const annualDiscount = 0.25;
   const drafts: Array<{ id: string; monthlyUsd: number; sparks: number; annualUsd?: number }> = [
@@ -104,15 +114,23 @@ export function seedPricing(): PricingConfig {
     { id: 'igcse_alevel', monthlyUsd: 79, sparks: 800, annualUsd: 708 },
     { id: 'professional', monthlyUsd: 99, sparks: 1000, annualUsd: 888 },
   ];
+  // Reads annual is ten times the monthly price. School plans use annualDiscount.
+  const reads = [
+    { id: 'reads', monthlyUsd: 9, annualUsd: 90, sparks: 0 },
+    { id: 'reads-family', monthlyUsd: 15, annualUsd: 150, sparks: 0 },
+  ];
   return {
     version: 1,
     annualDiscount,
-    plans: drafts.map(plan => ({
-      id: plan.id,
-      monthlyUsd: plan.monthlyUsd,
-      sparks: plan.sparks,
-      annualUsd: plan.annualUsd ?? annualFromMonthly(plan.monthlyUsd, annualDiscount),
-    })),
+    plans: [
+      ...drafts.map(plan => ({
+        id: plan.id,
+        monthlyUsd: plan.monthlyUsd,
+        sparks: plan.sparks,
+        annualUsd: plan.annualUsd ?? annualFromMonthly(plan.monthlyUsd, annualDiscount),
+      })),
+      ...reads,
+    ],
     addons: [
       { id: 'lyra_live', monthlyUsd: 49 },
       { id: 'cms', monthlyUsd: 29 },

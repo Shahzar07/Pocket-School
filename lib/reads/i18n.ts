@@ -4,6 +4,13 @@ import { useEffect, useState } from 'react';
 import i18n from 'i18next';
 import { READS_EN, type ReadsKey } from './messages';
 
+/**
+ * Reads strings only. The language list, storage key, and i18next instance
+ * belong to `lib/languages.ts`, `lib/i18n`, and `I18nProvider`. This does not
+ * start a second i18next. `READS_EN` is the English default when a key has
+ * no catalog entry yet.
+ */
+
 function fill(text: string, vars?: Record<string, string | number>): string {
   if (!vars) return text;
   return text.replace(/\{\{(\w+)\}\}/g, (_, key: string) => String(vars[key] ?? ''));

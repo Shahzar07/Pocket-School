@@ -186,7 +186,8 @@ async function resolveItem(input: CheckoutInput, settings: PaymentsSettings, pay
     return item;
   }
   if (kind === 'reads') {
-    const item = readsPlanItem(sku, interval);
+    const config = await loadPricingConfig();
+    const item = readsPlanItem(sku, interval, config);
     if (!item) throw new ActionError('INVALID', 'Choose Poket Reads or Poket Reads Family.');
     return item;
   }

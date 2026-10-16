@@ -1,3 +1,4 @@
+import { planById, READS_PLAN_LABELS, seedPricing, type PricingConfig } from '@/lib/pricing';
 import type { PricedItem } from './quote';
 
 /**
@@ -7,10 +8,18 @@ import type { PricedItem } from './quote';
  * A Firestore `books/{id}` document overrides this list when Book Studio has saved one.
  */
 
-export const READS_PLANS = [
-  { id: 'reads', name: 'Poket Reads', usd: 9, permission: 'plan:reads' },
-  { id: 'reads-family', name: 'Poket Reads Family', usd: 15, permission: 'plan:reads-family' },
-] as const;
+const READS_PERMISSIONS = {
+  reads: 'plan:reads',
+  'reads-family': 'plan:reads-family',
+} as const;
+
+/** Names and grant strings. Monthly USD comes from `seedPricing()`. */
+export const READS_PLANS = (Object.keys(READS_PLAN_LABELS) as Array<keyof typeof READS_PLAN_LABELS>).map(id => ({
+  id,
+  name: READS_PLAN_LABELS[id],
+  usd: planById(seedPricing(), id)?.monthlyUsd ?? 0,
+  permission: READS_PERMISSIONS[id],
+}));
 
 export const READS_BOOKS = [
   { id: 'harbour-light', title: 'The Harbour Light', usd: 5, myr: 24 },
@@ -19,20 +28,25 @@ export const READS_BOOKS = [
   { id: 'plain-contract', title: 'Plain Words for Contract', usd: 10, myr: 49 },
 ] as const;
 
-export function readsPlanItem(sku: string, interval: 'month' | 'year'): PricedItem | null {
-  const plan = READS_PLANS.find((item) => item.id === sku);
-  if (!plan) return null;
-  const amount = interval === 'year' ? plan.usd * 10 : plan.usd;
+export function readsPlanItem(
+  sku: string,
+  interval: 'month' | 'year',
+  config: PricingConfig = seedPricing(),
+): PricedItem | null {
+  const listed = READS_PLANS.find((item) => item.id === sku);
+  const plan = planById(config, sku);
+  if (!listed || !plan) return null;
+  const amount = interval === 'year' ? plan.annualUsd : plan.monthlyUsd;
   return {
     kind: 'reads',
-    sku: plan.id,
-    title: plan.name,
+    sku: listed.id,
+    title: listed.name,
     unitAmount: amount,
     currency: 'USD',
     accessTier: 1,
     interval,
-    recurringMonthly: interval === 'year' ? Math.round((amount / 12) * 100) / 100 : plan.usd,
-    permission: plan.permission,
+    recurringMonthly: interval === 'year' ? Math.round((amount / 12) * 100) / 100 : plan.monthlyUsd,
+    permission: listed.permission,
   };
 }
 

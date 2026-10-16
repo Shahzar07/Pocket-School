@@ -1,3 +1,4 @@
+import { migrateAllocation } from '@/lib/allocation-targets';
 import {
   allocFree,
   allocInstitution,
@@ -6,7 +7,7 @@ import {
   type PriceType,
 } from '@/lib/entitlements';
 import { checkBookAccess, type BookAccess, type ReadsProfile } from '@/lib/reads/access';
-import { BOOK_TARGETS, type Book, type BookChapter, type BookTarget } from '@/lib/reads/types';
+import type { Book, BookChapter } from '@/lib/reads/types';
 
 /**
  * A book is a product. The fields mirror the allocator Harry described.
@@ -17,7 +18,8 @@ import { BOOK_TARGETS, type Book, type BookChapter, type BookTarget } from '@/li
 export interface ProductAllocation {
   kind: 'book';
   id: string;
-  audiences: BookTarget[];
+  /** Same tokens `migrateAllocation` and Firestore `targetsHit` use. */
+  audiences: string[];
   minTier: number;
   priceType: PriceType | 'SPARKS_UNLOCK';
   sparksCost?: number;
@@ -34,12 +36,22 @@ export interface ProductAllocation {
   };
 }
 
-/** Default multi-select when a book has not chosen targets yet. */
-export function defaultBookTargets(book: { allocateLibrary?: boolean; allocateMarketplace?: boolean }): BookTarget[] {
-  const targets: BookTarget[] = ['students', 'parents'];
-  if (book.allocateLibrary) targets.push('institutions');
-  if (book.allocateMarketplace) targets.push('marketplace');
-  return BOOK_TARGETS.filter(target => targets.includes(target));
+/**
+ * Targets for a book. An explicit `targets` list is kept.
+ * An empty list expands the library and marketplace flags the same way
+ * `migrateAllocation` does, which is what the rules use when `targets` is absent.
+ * Seat counts on the book stay local. The institution seat ledger is not wired.
+ */
+export function defaultBookTargets(book: {
+  targets?: readonly string[] | null;
+  allocateLibrary?: boolean | null;
+  allocateMarketplace?: boolean | null;
+}): string[] {
+  return migrateAllocation({
+    targets: book.targets,
+    allocateLibrary: book.allocateLibrary,
+    allocateMarketplace: book.allocateMarketplace,
+  });
 }
 
 export function bookAllocation(book: Book): ProductAllocation {
@@ -51,8 +63,7 @@ export function bookAllocation(book: Book): ProductAllocation {
   return {
     kind: 'book',
     id: book.id,
-    audiences: (book.targets?.length ? book.targets : defaultBookTargets(book))
-      .filter((target): target is BookTarget => (BOOK_TARGETS as readonly string[]).includes(target)),
+    audiences: defaultBookTargets(book),
     minTier: book.minTier,
     priceType,
     sparksCost: book.sparksCost,

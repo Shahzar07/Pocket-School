@@ -317,6 +317,16 @@ An enrolled student can create a question. The course owner can read and reply. 
 
 Books are products on the same allocator as courses. A purchase writes the existing `alloc:marketplace:{bookId}` permission. A Reads plan writes `plan:reads` or `plan:reads-family` and sets the subscription through the existing Stripe apply path.
 
+### Display prices
+
+Shelf quotes go through `lib/pricing.ts`. `quotePrice` and `viewerCurrency` no longer keep a private FX table. The rate source is `pricing_config/current`, with `seedPricing()` when that document is missing. The reader currency is the `poket-currency` key, and it is used only when `poket-currency-source` is `user`. USD, MYR, and GBP are the enabled seed currencies. A daily FX feed is not stored.
+
+`seedPricing()` now includes `reads` (9 USD a month, 90 USD a year) and `reads-family` (15 USD a month, 150 USD a year). `normalizePricing` merges those rows into an existing pricing document. Reads annual is ten times the monthly price. School plans still use `annualDiscount` (25%). Reads subscriptions stay on card, in USD.
+
+### Language
+
+The reader language is `lib/languages.ts` (`pocket-school-lang`), applied by `I18nProvider`. Book editions still live on `languageVersions` and are chosen by `editionFor`. Reads UI strings stay in `lib/reads/i18n.ts` as English defaults for i18next. This main lists 23 languages. The open 53-language change is not part of this branch.
+
 ### library/{uid}/books/{bookId}
 
 Written by the Stripe webhook when `checkout.session.completed` has `metadata.kind = book`.
@@ -331,7 +341,7 @@ The parent path `library/{uid}` is the signed-in student. Clients do not write t
 
 ### Book targets
 
-A book document (seeded in the app today, stored with the catalogue when that collection lands) may include `targets`, an array of `students`, `teachers`, `parents`, `institutions`, `all`, `marketplace`. That is the multi-select the allocator already uses for audiences. An empty list falls back to students and parents, plus institutions when the book is on the subscription shelf, plus marketplace when it is sold.
+A book document may include `targets`: role tokens (`students`, `teachers`, `parents`, `institutions`, `all`, `marketplace`) or a specific `user:`, `class:`, `parent:`, or `institution:` id. `lib/platform/allocation.ts` reads that list with `migrateAllocation`, the same expansion the server checks use. An explicit list is kept. An empty list becomes students and parents, plus institutions when `allocateLibrary` is set, plus marketplace when `allocateMarketplace` is set. Firestore `targetsHit` is the rule for a stored list. Seat `used` and `total` on the book are still the local cap. There is no seat-ledger collection on this branch.
 
 ### daily_goals (reading)
 
@@ -355,7 +365,7 @@ Book Studio writes the shared `media_assets` documents from `components/media` w
 
 ### Push
 
-A reading notice uses the shared push body: `recipientUid`, `category` (`goals` for a reading goal), `title`, `body`, optional `link`. `POST /api/push` verifies the signed-in caller and sends through `deviceTokens` (Expo and Web Push). Clients cannot read those documents. A missing sender configuration returns an error with `{ sent: 0, pruned: [] }`.
+A continue-reading notice is a push with `category: goals`. `postReadingNotice` posts that body to `POST /api/push`, which verifies the signed-in caller and sends with `sendGoalParentAlert` through `deviceTokens` (Expo and Web Push). The recipient is the signed-in uid. A sample shelf profile with no Firebase uid is shown on the page and is not pushed. Clients cannot read `deviceTokens`. A missing sender configuration returns an error with `{ sent: 0, pruned: [] }`.
 
 ## Community, tutors, exams, and the creator store
 
