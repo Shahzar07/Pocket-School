@@ -355,6 +355,8 @@ app/dashboard/admin/verifications/page.tsx	All clear
 app/dashboard/admin/verifications/page.tsx	Failed to update verification.
 app/dashboard/admin/verifications/page.tsx	No pending verifications — you're all caught up!
 app/dashboard/admin/verifications/page.tsx	Review and approve parent-student account linking requests.
+app/dashboard/admin/verifications/page.tsx	Search parent, child, or id
+app/dashboard/admin/verifications/page.tsx	Search verifications
 app/dashboard/announcements/page.tsx	Announcement created!
 app/dashboard/announcements/page.tsx	Check back later for the latest school news.
 app/dashboard/announcements/page.tsx	Deleted.
