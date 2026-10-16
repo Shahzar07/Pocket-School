@@ -6,7 +6,14 @@ import {
   displayedFields,
   type TranslationFields,
 } from '@/lib/i18n/content-translation';
-import { DEFAULT_LANGUAGE } from '@/lib/languages';
+import { DEFAULT_LANGUAGE, textDirection } from '@/lib/languages';
+
+export interface ContentTranslationOptions {
+  /** Translate the source into English, even though English is the default. */
+  intoEnglish?: boolean;
+  /** Direction of the source text. English lessons are left to right. */
+  sourceDirection?: 'ltr' | 'rtl';
+}
 
 const memory = new Map<string, TranslationFields>();
 
@@ -42,16 +49,22 @@ export function useContentTranslation(
   source: TranslationFields,
   language: string,
   enabled: boolean,
+  options?: ContentTranslationOptions,
 ) {
+  const intoEnglish = options?.intoEnglish === true;
+  const sourceDirection = options?.sourceDirection ?? 'ltr';
   const [showOriginal, setShowOriginal] = useState(false);
   const [translated, setTranslated] = useState<TranslationFields | null>(null);
   const [status, setStatus] = useState<TranslationStatus>('source');
-  const cacheKey = contentCacheKey(id, language, source);
+  const [notice, setNotice] = useState('');
+  const target = intoEnglish ? 'en-from-source' : language;
+  const cacheKey = contentCacheKey(id, target, source);
   const sourceKey = useMemo(() => JSON.stringify(source), [source]);
 
   useEffect(() => {
     setShowOriginal(false);
-    if (!enabled || !language || language === DEFAULT_LANGUAGE) {
+    setNotice('');
+    if (!enabled || !language || (!intoEnglish && language === DEFAULT_LANGUAGE)) {
       setTranslated(null);
       setStatus('source');
       return;
@@ -65,24 +78,31 @@ export function useContentTranslation(
     const controller = new AbortController();
     setStatus('loading');
     setTranslated(null);
-    fetch('/api/ai/translate-lesson', {
+    fetch('/api/content/translate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...source, targetLanguage: language, viewer: true }),
+      body: JSON.stringify({ id, language, fields: source, intoEnglish }),
       signal: controller.signal,
     })
       .then(async (res) => {
-        const data = await res.json() as TranslationFields & { unavailable?: boolean; error?: string };
-        if (data.unavailable || !res.ok) {
+        const data = await res.json() as {
+          fields?: TranslationFields;
+          unavailable?: boolean;
+          error?: string;
+          notice?: string;
+        };
+        if (data.unavailable || !res.ok || !data.fields) {
+          setNotice(data.error || data.notice || '');
           setStatus('unavailable');
           return;
         }
         const next: TranslationFields = {};
         for (const key of Object.keys(source)) {
-          next[key] = typeof data[key] === 'string' ? data[key] : source[key];
+          next[key] = typeof data.fields[key] === 'string' ? data.fields[key] : source[key];
         }
         writeCache(cacheKey, next);
         setTranslated(next);
+        setNotice(data.notice ?? '');
         setStatus('ready');
       })
       .catch((err: unknown) => {
@@ -90,12 +110,18 @@ export function useContentTranslation(
         setStatus('unavailable');
       });
     return () => controller.abort();
-  }, [cacheKey, enabled, language, sourceKey]);
+  }, [cacheKey, enabled, id, intoEnglish, language, sourceKey]);
 
-  const values = displayedFields(source, translated, showOriginal || status !== 'ready');
+  const showingSource = showOriginal || status !== 'ready';
+  const values = displayedFields(source, translated, showingSource);
+  const dir: 'ltr' | 'rtl' = showingSource
+    ? sourceDirection
+    : (intoEnglish ? 'ltr' : textDirection(language));
   return {
     values,
     status,
+    notice,
+    dir,
     showOriginal,
     toggle: () => setShowOriginal((current) => !current),
     autoTranslated: status === 'ready' && !showOriginal,

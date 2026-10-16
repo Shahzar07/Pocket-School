@@ -23,7 +23,9 @@ import { bookById } from '@/lib/reads/seed';
 import { STUDIO_AUTOSAVE_KEY, usePublishedStudioBooks } from '@/components/reads/use-studio-shelf';
 import { readAutosave } from '@/components/editor/use-autosave';
 import type { Book, BookChapter, LanguageVersion } from '@/lib/reads/types';
-import { getLanguage } from '@/lib/languages';
+import { ContentLanguageBar } from '@/components/content-language-bar';
+import { useContentTranslation } from '@/hooks/use-content-translation';
+import { LANGUAGES, getLanguage, textDirection } from '@/lib/languages';
 import {
   addNote, addSessionSeconds, bookmarks, notesFor, progressMap, readerPrefs, saveProgress,
   saveReaderPrefs, toggleBookmark, type ReaderPrefs,
@@ -108,11 +110,21 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
   }, [book, version]);
 
   const chapter = chapters[chapterIndex];
+  const machine = lang !== 'en' && !version;
+  const chapterTranslation = useContentTranslation(
+    `book:${book?.id ?? bookId}:${chapter?.id ?? 'chapter'}`,
+    { title: chapter?.title ?? '', markdown: chapter?.markdown ?? '' },
+    lang,
+    Boolean(machine && chapter),
+  );
+  const readingTitle = machine ? (chapterTranslation.values.title || chapter?.title || '') : (chapter?.title ?? '');
+  const readingMarkdown = machine ? (chapterTranslation.values.markdown || chapter?.markdown || '') : (chapter?.markdown ?? '');
+  const scriptDir = textDirection(chapterTranslation.showOriginal || !machine ? 'en' : lang);
   const picture = isPictureBook(book);
-  const spreads = useMemo(() => pictureSpreads(chapter?.markdown ?? ''), [chapter]);
+  const spreads = useMemo(() => pictureSpreads(readingMarkdown), [readingMarkdown]);
   const pages = useMemo(
-    () => (picture ? spreads.map(spread => spread.text) : paginateChapter(chapter?.markdown ?? '')),
-    [picture, spreads, chapter],
+    () => (picture ? spreads.map(spread => spread.text) : paginateChapter(readingMarkdown)),
+    [picture, spreads, readingMarkdown],
   );
   const page = pages[Math.min(pageIndex, pages.length - 1)] ?? '';
   const spread = picture ? spreads[Math.min(pageIndex, Math.max(0, spreads.length - 1))] : null;
@@ -340,7 +352,7 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
   const highlighted = notes.some(n => page.includes(n.quote));
 
   return (
-    <div className="min-h-screen" style={{ background: theme.bg, color: theme.fg }}>
+    <div className="min-h-screen" dir={scriptDir} style={{ background: theme.bg, color: theme.fg }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500&display=swap" />
       <header className="sticky top-0 z-20 flex items-center gap-2 px-3 py-3 sm:px-6" style={{ background: theme.bg }}>
         <button type="button" onClick={() => router.push(`/reads/book/${book.id}`)} className="grid h-11 w-11 place-items-center rounded-full" aria-label={t('reads.nav.home')}>
@@ -348,7 +360,7 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
         </button>
         <div className="min-w-0 flex-1">
           <p className="truncate text-[13px] font-semibold">{version?.title ?? book.title}</p>
-          <p className="truncate text-[11px]" style={{ color: theme.muted }}>{chapter.title}</p>
+          <p className="truncate text-[11px]" style={{ color: theme.muted }}>{readingTitle}</p>
         </div>
         <span className="hidden text-[12px] font-semibold sm:inline" aria-live="polite">{timerLabel} · {formatClock(seconds)}{goalStatus ? ` · ${t('reads.reader.goal', { status: goalStatus })}` : ''}</span>
         <Tool label={t('reads.reader.contents')} onClick={() => setPanel(panel === 'contents' ? 'none' : 'contents')}><List className="h-5 w-5" /></Tool>
@@ -361,6 +373,11 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
       </div>
 
       <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-28 lg:grid-cols-[1fr_280px] lg:px-6">
+        {machine && (
+          <div className="lg:col-span-2">
+            <ContentLanguageBar status={chapterTranslation.status} showOriginal={chapterTranslation.showOriginal} notice={chapterTranslation.notice} onToggle={chapterTranslation.toggle} />
+          </div>
+        )}
         <article
           key={`${chapterIndex}-${pageIndex}`}
           className="mx-auto w-full"
@@ -420,7 +437,7 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
             </div>
           ) : (
             <>
-              <h2 className="font-heading text-[34px] leading-tight tracking-[-0.03em]">{chapter.title}</h2>
+              <h2 className="font-heading text-[34px] leading-tight tracking-[-0.03em]">{readingTitle}</h2>
               <div
                 className="mt-6"
                 style={{
@@ -654,14 +671,14 @@ function TypePanel({
       </label>
       <div>
         <p className="mb-2 inline-flex items-center gap-1 font-semibold"><Languages className="h-4 w-4" /> {t('reads.detail.languages')}</p>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => onLang('en')} aria-pressed={lang === 'en'} className="rounded-full border px-3 py-1">English</button>
-          {(book.languageVersions ?? []).map(v => (
-            <button key={v.language} type="button" onClick={() => onLang(v.language)} aria-pressed={lang === v.language} className="rounded-full border px-3 py-1">
-              {getLanguage(v.language).label}
+        <div className="flex max-h-40 flex-wrap gap-2 overflow-y-auto">
+          {LANGUAGES.map(language => (
+            <button key={language.code} type="button" onClick={() => onLang(language.code)} aria-pressed={lang === language.code} className="rounded-full border px-3 py-1">
+              {language.label}
             </button>
           ))}
         </div>
+        <p className="text-xs font-normal">English is the original. Other languages are translated when you open a chapter.</p>
       </div>
     </div>
   );

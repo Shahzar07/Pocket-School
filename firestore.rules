@@ -2296,6 +2296,14 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Machine translations of lessons, quizzes, books, essay feedback, and
+    // teacher replies. The server writes them with the Admin SDK. Clients
+    // may read one document and cannot list or edit the cache.
+    match /content_translations/{docId} {
+      allow get: if isSignedIn();
+      allow list, create, update, delete: if false;
+    }
+
     // Public lookup by id for the QR. Listing every card is refused.
     match /published_reports/{token} {
       allow get: if true;

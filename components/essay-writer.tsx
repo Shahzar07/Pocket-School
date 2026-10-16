@@ -1,7 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { authedFetch } from '@/lib/api-client';
+import { ContentLanguageBar } from '@/components/content-language-bar';
+import { useContentTranslation } from '@/hooks/use-content-translation';
 import type { EssayGrade } from '@/lib/essay/scale';
 
 interface Result extends EssayGrade {
@@ -9,11 +12,18 @@ interface Result extends EssayGrade {
 }
 
 export function EssayWriter({ purpose }: { purpose: string }) {
+  const { i18n } = useTranslation();
   const [prompt, setPrompt] = useState('');
   const [essay, setEssay] = useState('');
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const feedback = useContentTranslation(
+    `essay:${(result?.feedback ?? '').slice(0, 80)}`,
+    { feedback: result?.feedback ?? '' },
+    i18n.language,
+    Boolean(result?.feedback) && i18n.language !== 'en',
+  );
 
   const grade = async () => {
     setBusy(true);
@@ -52,7 +62,10 @@ export function EssayWriter({ purpose }: { purpose: string }) {
         <div className="rounded-2xl border border-border p-4 space-y-2">
           <p className="text-3xl font-semibold">{result.mark}%</p>
           <p className="text-sm">Level {result.level} · {result.letter}</p>
-          <p className="text-sm leading-relaxed">{result.feedback}</p>
+          <div dir={feedback.dir}>
+            <ContentLanguageBar status={feedback.status} showOriginal={feedback.showOriginal} notice={feedback.notice} onToggle={feedback.toggle} />
+            <p className="text-sm leading-relaxed">{feedback.values.feedback || result.feedback}</p>
+          </div>
         </div>
       )}
     </div>

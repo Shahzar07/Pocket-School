@@ -1,22 +1,48 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Eye } from 'lucide-react';
 import { MathMarkdown } from '@/components/math-markdown';
+import { ContentLanguageBar } from '@/components/content-language-bar';
+import { useContentTranslation } from '@/hooks/use-content-translation';
 import type { LessonAsset } from '@/lib/study/types';
 
 export function LessonView({ lesson, onComplete, done }: { lesson: LessonAsset; onComplete: () => void; done?: boolean }) {
+  const { i18n } = useTranslation();
   const [open, setOpen] = useState<Record<number, boolean>>({});
+  const source = useMemo(() => ({
+    markdown: lesson.markdown,
+    checkpoints: JSON.stringify(lesson.checkpoints ?? []),
+  }), [lesson]);
+  const translation = useContentTranslation(
+    `study-lesson:${lesson.markdown.slice(0, 80)}`,
+    source,
+    i18n.language,
+    i18n.language !== 'en',
+  );
+  let checkpoints = lesson.checkpoints ?? [];
+  try {
+    const parsed = JSON.parse(translation.values.checkpoints || '[]') as { question?: string; answer?: string }[];
+    if (Array.isArray(parsed) && parsed.length === checkpoints.length) {
+      checkpoints = checkpoints.map((item, index) => ({
+        ...item,
+        question: parsed[index]?.question?.trim() || item.question,
+        answer: parsed[index]?.answer?.trim() || item.answer,
+      }));
+    }
+  } catch { /* keep the English checkpoints */ }
   return (
-    <article className="max-w-3xl mx-auto">
+    <article className="max-w-3xl mx-auto" dir={translation.dir}>
+      <ContentLanguageBar status={translation.status} showOriginal={translation.showOriginal} notice={translation.notice} onToggle={translation.toggle} />
       <div className="prose prose-slate max-w-none prose-headings:font-heading prose-headings:tracking-tight prose-h2:text-[22px] prose-p:leading-relaxed prose-table:text-[14px] prose-th:bg-muted/60 prose-th:px-3 prose-td:px-3">
-        <MathMarkdown>{lesson.markdown}</MathMarkdown>
+        <MathMarkdown>{translation.values.markdown || lesson.markdown}</MathMarkdown>
       </div>
       {lesson.checkpoints?.length > 0 && (
         <div className="mt-8 rounded-2xl border border-primary/20 bg-primary/[0.04] p-5">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary mb-3">Check yourself</p>
           <ol className="space-y-3">
-            {lesson.checkpoints.map((c, i) => (
+            {checkpoints.map((c, i) => (
               <li key={i}>
                 <div className="text-[15px] text-foreground [&_p]:my-0"><MathMarkdown>{`${i + 1}. ${c.question}`}</MathMarkdown></div>
                 {open[i]

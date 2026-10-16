@@ -44,7 +44,9 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { resolveLessonCopy } from '@/lib/i18n/detect';
+import { ContentLanguageBar } from '@/components/content-language-bar';
 import { useContentTranslation } from '@/hooks/use-content-translation';
+import { useQuizCopy } from '@/hooks/use-quiz-copy';
 import { getLanguage } from '@/lib/languages';
 import {
   ArrowLeft, CheckCircle2, FileText, Headphones, FlipHorizontal,
@@ -151,6 +153,8 @@ function QuizViewer({
   questions: { question: string; options: string[]; answer: string; explanation?: string }[];
   onComplete: (score: number, total: number, answers: { question: string; answer: string; correct: boolean }[]) => void;
 }) {
+  const { i18n } = useTranslation();
+  const { display, translation } = useQuizCopy(`course-quiz:${questions[0]?.question ?? 'quiz'}`, questions, i18n.language);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [graded, setGraded] = useState<Record<number, { correct: boolean; feedback: string }> | null>(null);
   const [loading, setLoading] = useState(false);
@@ -196,7 +200,8 @@ function QuizViewer({
   const percentage = graded ? Math.round(Object.values(graded).filter(r => r.correct).length / questions.length * 100) : 0;
 
   return (
-    <div className="max-w-2xl mx-auto py-6 space-y-6">
+    <div className="max-w-2xl mx-auto py-6 space-y-6" dir={translation.dir}>
+      <ContentLanguageBar status={translation.status} showOriginal={translation.showOriginal} notice={translation.notice} onToggle={translation.toggle} />
       {graded && (
         <div className={`rounded-3xl p-5 text-center border ${percentage >= 70 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'}`}>
           <p className="text-3xl font-extrabold">{percentage}%</p>
@@ -207,13 +212,16 @@ function QuizViewer({
         </div>
       )}
 
-      {questions.map((q, i) => (
+      {questions.map((q, i) => {
+        const shown = display[i] ?? q;
+        return (
         <div key={i} className="bg-card border border-border rounded-3xl p-5">
           <p className="font-semibold text-foreground mb-4 text-sm leading-relaxed">
-            <span className="text-primary font-bold">{i + 1}. </span>{q.question}
+            <span className="text-primary font-bold">{i + 1}. </span>{shown.question}
           </p>
           <div className="space-y-2">
-            {q.options.map(opt => {
+            {q.options.map((opt, k) => {
+              const label = shown.options[k] ?? opt;
               const selected = answers[i] === opt;
               const isCorrect = graded ? answersMatch(opt, q.answer, q.options) : null;
               const isWrong = graded && selected && !graded[i]?.correct;
@@ -233,7 +241,7 @@ function QuizViewer({
                         : 'border-border hover:border-primary/50 hover:bg-muted/50 text-foreground'
                   }`}
                 >
-                  {opt}
+                  {label}
                   {graded && isCorrect && <span className="float-right text-emerald-600">✓</span>}
                   {graded && isWrong && <span className="float-right text-destructive">✗</span>}
                 </button>
@@ -246,7 +254,8 @@ function QuizViewer({
             </p>
           )}
         </div>
-      ))}
+      );
+      })}
 
       {!graded && (
         <Button onClick={handleSubmit} disabled={loading || Object.keys(answers).length < questions.length}
@@ -1081,7 +1090,7 @@ export default function LessonPage() {
           <p className="text-sm mt-1">Your teacher needs to publish this lesson from the teacher upload page.</p>
         </div>
       ) : !aiOutputs ? (
-        <div className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
+        <div className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow" dir={translation.dir}>
           {downloadFor('notes', copy.text, 'text')}
           <LessonBody
             markdown={copy.text}
@@ -1108,7 +1117,7 @@ export default function LessonPage() {
           {/* Text */}
           <TabsContent value="text">
             {gate('text',
-              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
+              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow" dir={translation.dir}>
                 {downloadFor('notes', copy.text, 'text')}
                 {aiOutputs.image?.placement === 'before' && <LessonFigure visual={aiOutputs.image} />}
                 {aiOutputs.illustration?.placement === 'before' && <LessonFigure visual={aiOutputs.illustration} />}
