@@ -1265,6 +1265,8 @@ export interface PlatformSettings {
   smtpHost?: string;
   smtpPort?: string;
   smtpUser?: string;
+  /** Which host preset filled the fields. The password is never stored. */
+  smtpPreset?: string;
   retentionDays?: number;
   updatedAt?: Timestamp;
 }

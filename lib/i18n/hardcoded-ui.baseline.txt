@@ -309,18 +309,28 @@ app/dashboard/admin/settings/page.tsx	General Configurations
 app/dashboard/admin/settings/page.tsx	General settings saved!
 app/dashboard/admin/settings/page.tsx	Manage data backups and retention policies.
 app/dashboard/admin/settings/page.tsx	Platform Name
+app/dashboard/admin/settings/page.tsx	Refusing a file that contains a password.
 app/dashboard/admin/settings/page.tsx	Retention Period (Days)
 app/dashboard/admin/settings/page.tsx	Retention Policies
 app/dashboard/admin/settings/page.tsx	Retention policy saved!
 app/dashboard/admin/settings/page.tsx	SMTP Host
 app/dashboard/admin/settings/page.tsx	SMTP Server Settings
 app/dashboard/admin/settings/page.tsx	SMTP settings saved!
+app/dashboard/admin/settings/page.tsx	Search settings
+app/dashboard/admin/settings/page.tsx	Search settings — SMTP, retention, pricing, flags
+app/dashboard/admin/settings/page.tsx	Send a test to
+app/dashboard/admin/settings/page.tsx	Settings imported.
 app/dashboard/admin/settings/page.tsx	Something went wrong while fetching settings. Please try again.
 app/dashboard/admin/settings/page.tsx	Support Email
+app/dashboard/admin/settings/page.tsx	Test email sent.
+app/dashboard/admin/settings/page.tsx	Test failed.
+app/dashboard/admin/settings/page.tsx	That file is not settings JSON.
 app/dashboard/admin/settings/page.tsx	The SMTP password is configured via the
+app/dashboard/admin/settings/page.tsx	The SMTP password is the
 app/dashboard/admin/settings/page.tsx	smtp.example.com
 app/dashboard/admin/settings/page.tsx	support@example.com
 app/dashboard/admin/settings/page.tsx	user@example.com
+app/dashboard/admin/settings/page.tsx	you@example.com
 app/dashboard/admin/users/page.tsx	A reason is required.
 app/dashboard/admin/users/page.tsx	All countries
 app/dashboard/admin/users/page.tsx	All institutions

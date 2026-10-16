@@ -4,13 +4,15 @@ import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Globe, Database, Mail, Loader2 } from 'lucide-react';
+import { Globe, Database, Mail, Loader2, Download, Upload } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { useEffect, useState } from 'react';
-import { getPlatformSettings, savePlatformSettings } from '@/lib/db';
+import { getAllUsers, getPlatformSettings, savePlatformSettings } from '@/lib/db';
 import { AdminPricingPanel } from '@/components/admin-pricing-panel';
 import { VolumePricingEditor } from '@/components/institutions/volume-pricing-editor';
 import { FlagToggles } from '@/components/scope-c/flag-toggles';
+import { SMTP_PRESETS, smtpPreset } from '@/lib/smtp-presets';
+import { useAuthSTORE } from '@/hooks/use-auth';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -18,6 +20,8 @@ const fadeUp: Record<string, any> = {
 };
 
 export default function AdminSystemSettings() {
+  const { user } = useAuthSTORE();
+  const [sectionQuery, setSectionQuery] = useState('');
   const [smtpOpen, setSmtpOpen] = useState(false);
   const [retentionOpen, setRetentionOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -31,7 +35,14 @@ export default function AdminSystemSettings() {
   const [smtpHost, setSmtpHost] = useState('');
   const [smtpPort, setSmtpPort] = useState('');
   const [smtpUser, setSmtpUser] = useState('');
+  const [presetId, setPresetId] = useState('');
+  const [testTo, setTestTo] = useState('');
+  const [testing, setTesting] = useState(false);
   const [retentionDays, setRetentionDays] = useState('365');
+  const show = (label: string) => {
+    const q = sectionQuery.trim().toLowerCase();
+    return !q || label.toLowerCase().includes(q);
+  };
 
   const load = () => {
     setLoading(true);
@@ -43,6 +54,7 @@ export default function AdminSystemSettings() {
         setSmtpHost(s.smtpHost ?? '');
         setSmtpPort(s.smtpPort ?? '');
         setSmtpUser(s.smtpUser ?? '');
+        setPresetId(s.smtpPreset ?? '');
         setRetentionDays(String(s.retentionDays ?? 365));
       })
       .catch(() => setLoadError(true))
@@ -66,7 +78,12 @@ export default function AdminSystemSettings() {
   const handleSaveSmtp = async () => {
     setSavingSmtp(true);
     try {
-      await savePlatformSettings({ smtpHost: smtpHost.trim(), smtpPort: smtpPort.trim(), smtpUser: smtpUser.trim() });
+      await savePlatformSettings({
+        smtpHost: smtpHost.trim(),
+        smtpPort: smtpPort.trim(),
+        smtpUser: smtpUser.trim(),
+        smtpPreset: presetId,
+      });
       toast.success('SMTP settings saved!');
       setSmtpOpen(false);
     } catch (e: any) {
@@ -122,13 +139,21 @@ export default function AdminSystemSettings() {
         <p className="text-muted-foreground mt-2 text-[15px]">Configure global platform settings, integrations, and preferences.</p>
       </motion.header>
 
-      <AdminPricingPanel />
-      <VolumePricingEditor />
+      <Input
+        value={sectionQuery}
+        onChange={(e) => setSectionQuery(e.target.value)}
+        placeholder="Search settings — SMTP, retention, pricing, flags"
+        aria-label="Search settings"
+        className="rounded-full h-11 max-w-lg"
+      />
+
+      {show('pricing money plans') && <AdminPricingPanel />}
+      {show('volume pricing institution') && <VolumePricingEditor />}
 
       <div className="space-y-5">
-        <FlagToggles />
+        {show('flags features') && <FlagToggles />}
         {/* General */}
-        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
+        {show('general name support email') && <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
           className="bg-card border border-border rounded-3xl p-6 sm:p-7 relative overflow-hidden card-glow"
         >
           <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-violet-500 opacity-80" />
@@ -152,10 +177,10 @@ export default function AdminSystemSettings() {
               Save Changes
             </Button>
           </div>
-        </motion.div>
+        </motion.div>}
 
         {/* Email */}
-        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}
+        {show('email smtp mail gmail sendgrid') && <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}
           className="bg-card border border-border rounded-3xl p-6 sm:p-7 relative overflow-hidden card-glow"
         >
           <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-primary opacity-80" />
@@ -176,6 +201,25 @@ export default function AdminSystemSettings() {
                 <DialogDescription>Enter your mail server details.</DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
+                <div className="flex flex-wrap gap-2">
+                  {SMTP_PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => {
+                        const next = smtpPreset(preset.id);
+                        if (!next) return;
+                        setPresetId(next.id);
+                        setSmtpHost(next.host);
+                        setSmtpPort(next.port);
+                        if (!smtpUser.trim()) setSmtpUser(next.userHint);
+                      }}
+                      className={`h-8 px-3 rounded-full text-xs font-semibold border ${presetId === preset.id ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground'}`}
+                    >
+                      {preset.name}
+                    </button>
+                  ))}
+                </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">SMTP Host</label>
                   <Input value={smtpHost} onChange={e => setSmtpHost(e.target.value)} placeholder="smtp.example.com" className="rounded-xl h-11" />
@@ -189,11 +233,35 @@ export default function AdminSystemSettings() {
                   <Input value={smtpUser} onChange={e => setSmtpUser(e.target.value)} placeholder="user@example.com" className="rounded-xl h-11" />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  The SMTP password is configured via the <code className="font-mono">SMTP_PASS</code> environment variable and is never stored in the database.
+                  The SMTP password is the <code className="font-mono">SMTP_PASS</code> environment variable. Presets fill the host only. A super admin can send a test.
                 </p>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Send a test to</label>
+                  <Input value={testTo} onChange={e => setTestTo(e.target.value)} placeholder="you@example.com" className="rounded-xl h-11" />
+                </div>
               </div>
               <DialogFooter className="gap-2">
                 <Button variant="outline" onClick={() => setSmtpOpen(false)} className="rounded-full">Cancel</Button>
+                <Button variant="outline" disabled={testing} className="rounded-full" onClick={async () => {
+                  setTesting(true);
+                  try {
+                    const token = await user?.getIdToken();
+                    const response = await fetch('/api/admin/smtp-test', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                      body: JSON.stringify({ host: smtpHost, port: smtpPort, user: smtpUser, to: testTo }),
+                    });
+                    const payload = await response.json() as { error?: string };
+                    if (!response.ok) toast.error(payload.error || 'Test failed.');
+                    else toast.success('Test email sent.');
+                  } catch {
+                    toast.error('Test failed.');
+                  } finally {
+                    setTesting(false);
+                  }
+                }}>
+                  {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Send test'}
+                </Button>
                 <Button onClick={handleSaveSmtp} disabled={savingSmtp} className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-bold gap-2">
                   {savingSmtp && <Loader2 className="w-4 h-4 animate-spin" />}
                   Save Settings
@@ -201,10 +269,10 @@ export default function AdminSystemSettings() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        </motion.div>
+        </motion.div>}
 
         {/* Data Management */}
-        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3}
+        {show('data retention export import backup') && <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3}
           className="bg-card border border-border rounded-3xl p-6 sm:p-7 relative overflow-hidden card-glow"
         >
           <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-emerald-500 opacity-80" />
@@ -222,6 +290,57 @@ export default function AdminSystemSettings() {
             >
               About Backups
             </Button>
+            <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={() => {
+              const blob = new Blob([JSON.stringify({ platformName, supportEmail, smtpHost, smtpPort, smtpUser, smtpPreset: presetId, retentionDays: Number(retentionDays) }, null, 2)], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = 'platform-settings.json';
+              link.click();
+              URL.revokeObjectURL(url);
+            }}>
+              <Download className="w-4 h-4 mr-1.5" /> Export settings
+            </Button>
+            <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={async () => {
+              const people = await getAllUsers();
+              const rows = people.map((person) => ({ id: person.id, name: person.data.name, email: person.data.email, role: person.data.role }));
+              const blob = new Blob([JSON.stringify(rows, null, 2)], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = 'people.json';
+              link.click();
+              URL.revokeObjectURL(url);
+            }}>
+              <Download className="w-4 h-4 mr-1.5" /> Export people
+            </Button>
+            <label className="inline-flex items-center gap-1.5 h-11 px-5 rounded-full border border-border text-sm font-semibold cursor-pointer">
+              <Upload className="w-4 h-4" /> Import settings
+              <input type="file" accept="application/json" className="sr-only" onChange={async (event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                try {
+                  const parsed = JSON.parse(await file.text()) as Record<string, unknown>;
+                  if ('password' in parsed || 'smtpPass' in parsed) {
+                    toast.error('Refusing a file that contains a password.');
+                    return;
+                  }
+                  await savePlatformSettings({
+                    platformName: typeof parsed.platformName === 'string' ? parsed.platformName : platformName,
+                    supportEmail: typeof parsed.supportEmail === 'string' ? parsed.supportEmail : supportEmail,
+                    smtpHost: typeof parsed.smtpHost === 'string' ? parsed.smtpHost : smtpHost,
+                    smtpPort: typeof parsed.smtpPort === 'string' ? parsed.smtpPort : smtpPort,
+                    smtpUser: typeof parsed.smtpUser === 'string' ? parsed.smtpUser : smtpUser,
+                    smtpPreset: typeof parsed.smtpPreset === 'string' ? parsed.smtpPreset : presetId,
+                    retentionDays: typeof parsed.retentionDays === 'number' ? parsed.retentionDays : Number(retentionDays),
+                  });
+                  toast.success('Settings imported.');
+                  load();
+                } catch {
+                  toast.error('That file is not settings JSON.');
+                }
+              }} />
+            </label>
             <Dialog open={retentionOpen} onOpenChange={setRetentionOpen}>
               <DialogTrigger>
                 <Button variant="outline" className="rounded-full h-11 px-5 font-semibold">Retention Policies</Button>
@@ -247,7 +366,7 @@ export default function AdminSystemSettings() {
               </DialogContent>
             </Dialog>
           </div>
-        </motion.div>
+        </motion.div>}
       </div>
     </div>
   );
