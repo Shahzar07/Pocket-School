@@ -1,11 +1,24 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, browserLocalPersistence, setPersistence, connectAuthEmulator } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, persistentLocalCache, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import firebaseConfig from '../firebase-applet-config.json';
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId); // CRITICAL: Database ID
+
+function openFirestore() {
+  const databaseId = firebaseConfig.firestoreDatabaseId;
+  // The app reads the same note documents. Persistence lets an edit made
+  // offline sync when the browser reconnects. The server render has no cache.
+  if (typeof window === 'undefined') return getFirestore(app, databaseId);
+  try {
+    return initializeFirestore(app, { localCache: persistentLocalCache() }, databaseId);
+  } catch {
+    return getFirestore(app, databaseId);
+  }
+}
+
+export const db = openFirestore();
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 

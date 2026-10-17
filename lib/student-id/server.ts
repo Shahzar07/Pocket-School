@@ -46,7 +46,7 @@ export function cardTokenSecret(): string {
 
 function secret(): string {
   const value = cardTokenSecret();
-  if (value.length < 16) throw new ActionError('INVALID', 'CARD_TOKEN_SECRET is not set.');
+  if (value.length < 16) throw new ActionError('INVALID', 'The student ID check is coming soon.');
   return value;
 }
 

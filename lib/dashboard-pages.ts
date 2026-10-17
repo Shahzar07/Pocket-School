@@ -927,6 +927,15 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     ownerKeys: 'Payment provider keys in Integrations for cash top-ups.',
   },
   {
+    path: '/dashboard/notes',
+    title: 'Notes',
+    purpose: 'Private sticky notes for a student. They sync with the app, can link to a lesson, course, assignment, or exam, and stay in trash for 30 days.',
+    audience: ['student'],
+    overlaps: 'The old lesson notepad on a lesson tab is a single text field. These notes are the board.',
+    decision: 'Keep. Sharing is off until the student chooses a study group, and under-18s stay inside their school.',
+    ownerKeys: 'OPENROUTER_API_KEY when the student asks ET AI to use selected notes. CRON_SECRET for reminders.',
+  },
+  {
     path: '/dashboard/student/perks',
     title: 'Perks',
     purpose: 'Partner discounts on the free student card, grouped by category. Age-restricted offers are hidden on the server.',

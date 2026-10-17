@@ -162,7 +162,7 @@ export function HomeView({
         </div>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {tiles.map((tile, index) => (
-            <TileLink key={tile.id} href={tile.href} label={tile.label} hint={CATEGORY_STYLE[tile.category].label} category={tile.category}>
+            <TileLink key={tile.id} href={tile.href} label={tile.label} hint={tile.hint ?? CATEGORY_STYLE[tile.category].label} category={tile.category} icon={tile.id === 'notes' ? 'sticky-note' : undefined}>
               {arranging && onTileOrder ? (
                 <span className="flex gap-2">
                   <button

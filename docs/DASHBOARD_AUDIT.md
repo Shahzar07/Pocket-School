@@ -942,6 +942,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Sparks are the learning token inside this wallet, not a second product.
 - **Owner keys:** Payment provider keys in Integrations for cash top-ups.
 
+### Notes
+
+- **Route:** `/dashboard/notes`
+- **Audience:** student
+- **Purpose:** Private sticky notes for a student. They sync with the app, can link to a lesson, course, assignment, or exam, and stay in trash for 30 days.
+- **Overlaps:** The old lesson notepad on a lesson tab is a single text field. These notes are the board.
+- **Decision:** Keep. Sharing is off until the student chooses a study group, and under-18s stay inside their school.
+- **Owner keys:** OPENROUTER_API_KEY when the student asks ET AI to use selected notes. CRON_SECRET for reminders.
+
 ### Perks
 
 - **Route:** `/dashboard/student/perks`

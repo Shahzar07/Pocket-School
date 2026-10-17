@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { StickyNote } from 'lucide-react';
 import { ALERT_TONE, CATEGORY_STYLE, type AlertTone, type DashCategory } from '@/lib/dashboard/home';
 import { CategoryIcon } from './icons';
 
@@ -145,6 +146,7 @@ export function TileLink({
   hint,
   category,
   badge,
+  icon,
   children,
 }: {
   href: string;
@@ -152,6 +154,7 @@ export function TileLink({
   hint?: string;
   category: DashCategory;
   badge?: number;
+  icon?: 'sticky-note';
   children?: ReactNode;
 }) {
   const style = CATEGORY_STYLE[category];
@@ -162,7 +165,7 @@ export function TileLink({
         className="flex min-h-12 flex-col justify-between gap-3 text-foreground transition-transform motion-safe:hover:-translate-y-0.5 motion-reduce:transition-none"
       >
         <span className="grid h-12 w-12 place-items-center rounded-[18px] bg-card shadow-[var(--shadow-card)]" style={{ color: style.ink }}>
-          <CategoryIcon category={category} />
+          {icon === 'sticky-note' ? <StickyNote className="h-6 w-6" strokeWidth={1.75} aria-hidden /> : <CategoryIcon category={category} />}
         </span>
         <span>
           <span className="block text-sm font-semibold">{label}</span>

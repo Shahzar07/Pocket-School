@@ -20,12 +20,12 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 function ready(): void {
-  if (!isAdminConfigured()) throw new ActionError('INVALID', 'The member card needs the server account.');
+  if (!isAdminConfigured()) throw new ActionError('INVALID', 'Your member card is coming soon.');
 }
 
 export async function GET(req: NextRequest) {
   if (!isAdminConfigured()) {
-    return NextResponse.json({ error: 'The member card needs the server account.', code: 'ADMIN_NOT_CONFIGURED' }, { status: 503 });
+    return NextResponse.json({ error: 'Your member card is coming soon.', code: 'ADMIN_NOT_CONFIGURED' }, { status: 503 });
   }
   return runGet(req, async (user) => {
     const card = await ownerCard(user.uid);

@@ -11,6 +11,7 @@ import { PenSquare, CheckCircle2, Clock, Loader2, ChevronRight, Trophy } from 'l
 import { IntegrityNotice } from '@/components/insights/integrity-notice';
 import { applyCapture, captureToSignals, emptyCapture } from '@/lib/insights/integrity-capture';
 import { authedFetch } from '@/lib/api-client';
+import { NoteDock } from '@/components/notes/note-dock';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -278,6 +279,7 @@ export default function StudentExamsPage() {
             {submitting ? 'Grading...' : 'Submit Exam'}
           </Button>
         </motion.div>
+        <NoteDock link={{ type: 'exam', id: activeExam.id ?? '' }} title={activeExam.title} />
       </div>
     );
   }
@@ -411,6 +413,7 @@ export default function StudentExamsPage() {
           </div>
         </section>
       )}
+      <NoteDock link={{ type: 'exam', id: '' }} match="type" title="Exams" />
     </div>
   );
 }

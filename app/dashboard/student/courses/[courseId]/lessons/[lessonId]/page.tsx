@@ -49,6 +49,7 @@ import { ContentLanguageBar } from '@/components/content-language-bar';
 import { useContentTranslation } from '@/hooks/use-content-translation';
 import { useQuizCopy } from '@/hooks/use-quiz-copy';
 import { VisualBlockView } from '@/components/visual-blocks';
+import { NoteDock } from '@/components/notes/note-dock';
 import {
   applyReviewLock, questionsForVersion, resolvePassMark, reviewGate, toAttemptSnapshot,
 } from '@/lib/unit-test';
@@ -1409,6 +1410,7 @@ export default function LessonPage() {
         </Tabs>
       )}
       <LessonQa courseId={courseId} lessonId={lessonId} lessonTitle={lesson.title} inAssessment={activeTab === 'quiz'} />
+      <NoteDock link={{ type: 'lesson', id: lessonId }} title={copy.title} />
     </div>
   );
 }

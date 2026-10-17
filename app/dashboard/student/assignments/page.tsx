@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { ClipboardList, Upload, CheckCircle2, Clock, AlertTriangle, Loader2, Send } from 'lucide-react';
+import { NoteDock } from '@/components/notes/note-dock';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -284,6 +285,7 @@ export default function StudentAssignmentsPage() {
           })}
         </section>
       )}
+      <NoteDock link={{ type: 'assignment', id: '' }} match="type" title="Assignments" />
     </div>
   );
 }

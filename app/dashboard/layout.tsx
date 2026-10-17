@@ -12,7 +12,7 @@ import {
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X, Phone, Siren,
   Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked, Compass, Camera, Newspaper,
-  Wallet, Gift, Landmark, Plug, PieChart, Search, Briefcase, IdCard, Tag,
+  Wallet, Gift, Landmark, Plug, PieChart, Search, Briefcase, IdCard, Tag, StickyNote,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -75,6 +75,7 @@ const NAV: Record<Role, NavGroup[]> = {
     { items: [
       { href: '/dashboard/student', icon: Home, labelKey: 'nav.dashboard' },
       { href: '/dashboard/student/perks', icon: Tag, labelKey: 'nav.marketplace', label: 'Perks' },
+      { href: '/dashboard/notes', icon: StickyNote, labelKey: 'nav.notes', label: 'Notes' },
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/ai-teachers', icon: Users, labelKey: 'nav.aiTeachers' },
       { href: '/dashboard/student/learning', icon: GraduationCap, labelKey: 'nav.myLearning' },

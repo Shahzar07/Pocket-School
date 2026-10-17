@@ -126,6 +126,7 @@ const student: RoleHome = {
     { id: 'my-progress', label: 'Progress', href: '/dashboard/student/progress', category: 'progress', hint: 'A note from ET AI' },
   ],
   tiles: [
+    { id: 'notes', label: 'Notes', href: '/dashboard/notes', category: 'learning', hint: 'Sticky notes' },
     { id: 'unit-tests', label: 'Unit tests due', href: '/dashboard/student/exams', category: 'learning' },
     { id: 'groups', label: 'Groups', href: '/dashboard/community', category: 'community' },
     { id: 'courses', label: 'Courses', href: '/dashboard/student/courses', category: 'learning' },
