@@ -130,6 +130,11 @@ export default function StudentBillingPage() {
             Cancel at period end
           </Button>
         )}
+        {typeof profile?.alumniDiscount === 'number' && profile.alumniDiscount > 0 && (
+          <p className="text-sm mt-3 max-w-2xl rounded-2xl border border-border bg-card px-4 py-3">
+            An alumni discount of {Math.round(profile.alumniDiscount * 100)}% applies when you move to an individual plan. Certificates and the transcript stay on this account.
+          </p>
+        )}
         {profile?.institutionId && (
           <p className="text-sm mt-3 max-w-2xl rounded-2xl border border-border bg-card px-4 py-3">
             Your institution pays this seat. Poket School does not charge you for it. Marketplace courses are a separate purchase with a card or the wallet. Sparks cannot buy them.

@@ -11,6 +11,7 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CertificateDocument } from '@/components/certificate-document';
+import { verifyStatusText } from '@/lib/alumni';
 import { CERTIFICATE_DISCLAIMER, certificateStatus, certificateStudentNumber, formatCertificateDate, type CertificateFace } from '@/lib/certificates';
 import { CredentialPanel } from '@/components/credentials/credential-panel';
 import { copyrightLine } from '@/lib/insights/copyright';
@@ -181,7 +182,7 @@ function VerificationRecord({
     { label: 'Course', value: face.courseTitle },
     { label: 'Issue date', value: formatCertificateDate(face.issuedAt) },
     { label: 'Certificate ID', value: face.id },
-    { label: 'Status', value: revoked ? 'Revoked' : 'Valid' },
+    { label: 'Status', value: verifyStatusText(face.status, certificate.revocationReason) },
   ];
   return (
     <div className="space-y-4">

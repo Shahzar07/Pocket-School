@@ -54,6 +54,8 @@ export interface RosterEntry {
   programmeId: string;
   claimToken: string;
   status: 'unclaimed' | 'pending' | 'joined' | 'waiting' | 'leaver';
+  /** While this date is still ahead, a leaver still holds a seat. */
+  graceEndsOn?: string;
 }
 
 export interface SeatPool {

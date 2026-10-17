@@ -57,6 +57,15 @@ export interface UserProfile {
   studentNumber?: string;
   /** Level name assigned by the academy, such as IGCSE or Primary. */
   academyLevel?: string;
+  /** active while the academy pays, grace after leaving, ended when the seat is free. */
+  institutionAccess?: 'active' | 'grace' | 'ended';
+  /** Academy this person graduated or left. The account stays. */
+  alumniOf?: string;
+  alumniName?: string;
+  alumniGraceEnds?: string;
+  /** Fraction off the individual plan, for example 0.15. */
+  alumniDiscount?: number;
+  alumniPublic?: boolean;
   /** Children linked from a parent account, including children at other academies. */
   parentLinks?: { studentNumber: string; institutionId: string; name: string }[];
   /** Storage path for the profile photo, under media/{uid}/. */
@@ -3453,6 +3462,8 @@ export interface Certificate {
   kind?: 'module';
   status?: 'valid' | 'revoked';
   revokedAt?: Timestamp;
+  /** Set when the holder asks for deletion. The verify page stays up. */
+  revocationReason?: string;
   accent?: string;
   showPoweredBy?: boolean;
   logoUrl?: string;

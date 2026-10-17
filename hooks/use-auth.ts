@@ -28,6 +28,12 @@ interface UserProfile {
   level?: string;
   /** Level name assigned by the academy, such as IGCSE or Primary. */
   academyLevel?: string;
+  institutionAccess?: 'active' | 'grace' | 'ended';
+  alumniOf?: string;
+  alumniName?: string;
+  alumniGraceEnds?: string;
+  alumniDiscount?: number;
+  alumniPublic?: boolean;
   learningStyle?: string;
   interests?: string[];
   xp?: number;

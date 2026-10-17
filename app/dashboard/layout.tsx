@@ -244,6 +244,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/institution/insights', icon: PieChart, labelKey: 'nav.analytics', label: 'Insights' },
       { href: '/dashboard/institution/approvals', icon: ShieldCheck, labelKey: 'nav.approvals', label: 'Approvals' },
       { href: '/dashboard/institution/join', icon: Users, labelKey: 'nav.join', label: 'Join settings' },
+      { href: '/dashboard/institution/alumni', icon: Award, labelKey: 'nav.alumni', label: 'Alumni' },
       { href: '/dashboard/institution/verify', icon: Camera, labelKey: 'nav.verifyStudent', label: 'Verify student' },
       { href: '/dashboard/institution/publishing', icon: Library, labelKey: 'nav.library', label: 'Course library' },
       { href: '/dashboard/institution/sparks', icon: Sparkles, labelKey: 'nav.sparks', label: 'Sparks pool' },
@@ -360,6 +361,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setMfaCheckedUid(uid);
     if (hold) router.replace('/admin/login');
   }, [user, loading, router]);
+
+  useEffect(() => {
+    if (!user || !profile || !deletionClosed(profile.deletionRequest, Date.now())) return;
+    void authedFetch('/api/alumni', { method: 'POST', body: JSON.stringify({ action: 'honour-deletion' }) }).catch(() => undefined);
+  }, [user, profile]);
 
   useEffect(() => {
     if (loading || user) return;

@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { parentFinalSummary } from '@/lib/alumni';
 import { ageOn, parentExplainerCopy, type JoinAttempt } from '@/lib/institution-join';
 import { accentInk } from '@/lib/white-label';
 
@@ -27,13 +28,26 @@ export function InstitutionAcademyDoor({
   primaryColor,
   secondaryColor,
   showPoweredBy = true,
+  alumniCount,
 }: {
   schoolName: string;
   slug: string;
   primaryColor?: string | null;
   secondaryColor?: string | null;
   showPoweredBy?: boolean;
+  alumniCount?: number;
 }) {
+  const [count, setCount] = useState(alumniCount ?? 0);
+  useEffect(() => {
+    if (alumniCount != null) {
+      setCount(alumniCount);
+      return;
+    }
+    fetch(`/api/alumni?slug=${encodeURIComponent(slug)}`)
+      .then((response) => response.json())
+      .then((data: { alumni?: number }) => setCount(typeof data.alumni === 'number' ? data.alumni : 0))
+      .catch(() => setCount(0));
+  }, [alumniCount, slug]);
   const accent = /^#[0-9a-fA-F]{6}$/.test(primaryColor ?? '') ? primaryColor ?? '#1A3C34' : '#1A3C34';
   const gold = /^#[0-9a-fA-F]{6}$/.test(secondaryColor ?? '') ? secondaryColor ?? '#C8922A' : '#C8922A';
   const ink = accentInk(accent);
@@ -43,6 +57,7 @@ export function InstitutionAcademyDoor({
         <section className="rounded-[28px] border border-[#1A3C34]/10 bg-white p-6 shadow-[0_24px_60px_-36px_rgba(26,60,52,0.45)] sm:p-8">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: gold }}>Poket School academy</p>
           <h1 className="mt-2 font-heading text-4xl tracking-tight">{schoolName}</h1>
+          {count > 0 ? <p className="mt-3 inline-flex rounded-full bg-[#F8E7C4] px-3 py-1 text-xs font-semibold">{count} alumni</p> : null}
           <p className="mt-3 text-sm leading-relaxed text-[#1A3C34]/75">
             Students and parents register with {schoolName} here. Everyone else signs up as an individual.
           </p>
@@ -266,14 +281,18 @@ export function ParentExplainerScreen({
   schoolName,
   primaryColor,
   secondaryColor,
+  graduate,
 }: {
   schoolName: string;
   primaryColor?: string | null;
   secondaryColor?: string | null;
+  graduate?: { childName: string; level: string; certificates: number } | null;
 }) {
   const accent = /^#[0-9a-fA-F]{6}$/.test(primaryColor ?? '') ? primaryColor ?? '#1A3C34' : '#1A3C34';
   const gold = /^#[0-9a-fA-F]{6}$/.test(secondaryColor ?? '') ? secondaryColor ?? '#C8922A' : '#C8922A';
-  const copy = parentExplainerCopy(schoolName);
+  const copy = graduate
+    ? parentFinalSummary({ institutionName: schoolName, childName: graduate.childName, level: graduate.level, certificates: graduate.certificates })
+    : parentExplainerCopy(schoolName);
   return (
     <main className="min-h-screen bg-[#F6F1E7] px-5 py-12 text-[#1A3C34]">
       <article className="mx-auto max-w-xl rounded-[28px] border border-[#1A3C34]/10 bg-white p-8">

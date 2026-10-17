@@ -2,21 +2,26 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { AlumniOfferCard } from '@/components/alumni/record-panels';
 import { DashHeader, DashPage, Panel } from '@/components/dash-ui';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { authedFetch } from '@/lib/api-client';
+import { documentPdf } from '@/lib/institution-pricing';
 
 export default function StudentAcademyPage() {
-  const { profile } = useAuthSTORE();
+  const { user, profile, fetchProfile } = useAuthSTORE();
   const [slug, setSlug] = useState('');
   const [busy, setBusy] = useState(false);
-  const joined = Boolean(profile?.institutionId);
+  const joined = Boolean(profile?.institutionId) && profile?.institutionAccess !== 'grace' && profile?.institutionAccess !== 'ended';
 
   const leave = async () => {
     setBusy(true);
     try {
       const data = await authedFetch('/api/institutions/join', { method: 'POST', body: JSON.stringify({ action: 'leave' }) });
-      toast.success(data.progressKept === true ? 'Progress stays with you. Academy access has ended.' : 'You are an individual again.');
+      if (user) await fetchProfile(user.uid);
+      toast.success(typeof data.graceEndsOn === 'string'
+        ? `You are an alumnus. Academy courses stay open until ${data.graceEndsOn}, then the seat is free. Your record stays.`
+        : 'You are an alumnus. Your record stays.');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Could not leave the academy.');
     } finally {
@@ -29,8 +34,37 @@ export default function StudentAcademyPage() {
       <DashHeader
         eyebrow="Student"
         title="My academy"
-        description="An individual account can join an academy later. Progress stays. A personal plan can offer the unused days as a credit. Leaving ends academy-paid access."
+        description="An individual account can join an academy later. Progress stays. Leaving opens an alumni record: academy courses stay for the grace period, then the seat is free."
       />
+      {(profile?.alumniOf || profile?.institutionAccess === 'grace' || profile?.institutionAccess === 'ended') && (
+        <AlumniOfferCard
+          name={profile?.name ?? ''}
+          graceEndsOn={profile?.alumniGraceEnds ?? ''}
+          discount={profile?.alumniDiscount ?? 0}
+          studentNumber={profile?.studentNumber ?? ''}
+          publicOn={profile?.alumniPublic === true}
+          joinHref={slug.trim() ? `/i/${slug.trim()}/join` : '/signup'}
+          onTogglePublic={(optIn) => {
+            void authedFetch('/api/alumni', { method: 'POST', body: JSON.stringify({ action: 'public', optIn }) })
+              .then(() => user && fetchProfile(user.uid))
+              .catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not update the public profile.'));
+          }}
+          onTranscript={() => {
+            void authedFetch('/api/alumni', { method: 'POST', body: JSON.stringify({ action: 'transcript', rows: [] }) })
+              .then((data) => {
+                const lines = Array.isArray(data.lines) ? data.lines.filter((line): line is string => typeof line === 'string') : [];
+                const bytes = documentPdf(lines);
+                const url = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: 'application/pdf' }));
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'record-of-achievement.pdf';
+                link.click();
+                URL.revokeObjectURL(url);
+              })
+              .catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not download the record.'));
+          }}
+        />
+      )}
       {joined ? (
         <Panel>
           <p className="text-sm leading-relaxed">You are with your academy{profile?.academyLevel ? ` on ${profile.academyLevel}` : ''}.</p>

@@ -9,7 +9,6 @@ import {
   claimTokenFor,
   decideJoin,
   joinReport,
-  leaveAcademy,
   linkChild,
   offboard,
   overlapCredit,
@@ -27,6 +26,7 @@ import {
   type RosterEntry,
   type SeatPool,
 } from '../institution-join';
+import { beginAlumni, releaseAlumniSeat } from './alumni-store';
 import { loadAutomation, logAutomation } from './automation-store';
 import { sendInstitutionMail } from './institution-mail';
 import { syncWelcome } from './onboarding-store';
@@ -66,6 +66,7 @@ function entryFrom(data: Record<string, unknown> | undefined): RosterEntry | nul
     programmeId: text(data.programmeId),
     claimToken: text(data.claimToken),
     status,
+    graceEndsOn: DATE.test(text(data.graceEndsOn)) ? text(data.graceEndsOn) : '',
   };
 }
 
@@ -120,13 +121,19 @@ async function seatPool(institutionId: string, level: string, programmeId: strin
   const bill = await adminDb().doc(`institutions/${institutionId}/billing/current`).get();
   const purchased = typeof bill.get('seats') === 'number' ? Math.floor(bill.get('seats')) : 0;
   if (purchased < 1) return null;
-  const joined = await adminDb().collection(`institutions/${institutionId}/joinRoster`).where('status', '==', 'joined').limit(500).get();
-  const used = joined.docs.filter((doc) => {
-    const row = entryFrom(doc.data());
+  const today = todayIso();
+  const [joined, leaving] = await Promise.all([
+    adminDb().collection(`institutions/${institutionId}/joinRoster`).where('status', '==', 'joined').limit(500).get(),
+    adminDb().collection(`institutions/${institutionId}/joinRoster`).where('status', '==', 'leaver').limit(500).get(),
+  ]);
+  const holdsSeat = (data: Record<string, unknown> | undefined) => {
+    const row = entryFrom(data);
     if (!row || row.role !== 'student') return false;
+    if (row.status === 'leaver' && (!row.graceEndsOn || today >= row.graceEndsOn)) return false;
     if (programmeId && row.programmeId === programmeId) return true;
     return Boolean(level) && row.level === level;
-  }).length;
+  };
+  const used = [...joined.docs, ...leaving.docs].filter((doc) => holdsSeat(doc.data())).length;
   return { programmeId, level, purchased, used, overage: seatsOn ? overage : 'prompt' };
 }
 
@@ -272,6 +279,8 @@ export async function attachJoin(input: {
         if (childId) patch.childIds = FieldValue.arrayUnion(childId);
       }
     }
+    const previousAcademy = text(user.alumniOf);
+    if (previousAcademy && previousAcademy !== academy.id) await releaseAlumniSeat(previousAcademy, input.uid, todayIso());
     await userRef.set(patch, { merge: true });
     if (decision.seat === 'auto_add') {
       const bill = adminDb().doc(`institutions/${academy.id}/billing/current`);
@@ -323,21 +332,22 @@ export async function attachJoin(input: {
   return { ...preview, credit, message: `${decision.message}${progress}${creditLine}` };
 }
 
-export async function leaveInstitution(uid: string): Promise<{ progressKept: true; institutionAccess: 'ended' } | { error: string }> {
-  const userRef = adminDb().doc(`users/${uid}`);
-  const snap = await userRef.get();
-  const institutionId = text(snap.get('institutionId'));
-  if (!institutionId) return { error: 'This account is already an individual.' };
-  await userRef.set({
-    institutionId: FieldValue.delete(),
-    academyLevel: FieldValue.delete(),
-    institutionAccess: 'ended',
-  }, { merge: true });
-  const email = text(snap.get('email')).toLowerCase();
-  if (email) {
-    await adminDb().doc(`institutions/${institutionId}/joinRoster/${rosterId(email)}`).set({ status: 'leaver', className: '' }, { merge: true });
-  }
-  return leaveAcademy();
+export async function leaveInstitution(uid: string): Promise<{ progressKept: true; institutionAccess: 'grace'; graceEndsOn: string } | { error: string }> {
+  const snap = await adminDb().doc(`users/${uid}`).get();
+  const institutionId = text(snap.get('institutionId')) || text(snap.get('alumniOf'));
+  if (!institutionId || text(snap.get('institutionAccess')) === 'ended') return { error: 'This account is already an individual.' };
+  const person = await beginAlumni({
+    institutionId,
+    studentId: uid,
+    schoolStudentId: '',
+    name: text(snap.get('name')),
+    email: text(snap.get('email')).toLowerCase(),
+    studentNumber: text(snap.get('studentNumber')),
+    level: text(snap.get('academyLevel')),
+    reason: 'marked',
+    today: todayIso(),
+  });
+  return { progressKept: true, institutionAccess: 'grace', graceEndsOn: person.graceEndsOn };
 }
 
 export async function linkParentChild(uid: string, studentNumber: string, institutionId: string, name: string): Promise<ParentLink[] | { error: string }> {
@@ -407,14 +417,19 @@ export async function rolloverJoin(institutionId: string, actorId: string): Prom
   for (const row of rolled.rows) await writeRoster(institutionId, row);
   for (const leaver of rolled.leavers) {
     const snap = await adminDb().collection('users').where('email', '==', leaver.email).limit(1).get();
-    const uid = snap.docs[0]?.id;
-    if (uid && snap.docs[0]?.get('institutionId') === institutionId) {
-      await adminDb().doc(`users/${uid}`).set({
-        institutionId: FieldValue.delete(),
-        academyLevel: FieldValue.delete(),
-        institutionAccess: 'ended',
-      }, { merge: true });
-    }
+    const uid = snap.docs[0]?.id ?? '';
+    if (uid && snap.docs[0]?.get('institutionId') && snap.docs[0]?.get('institutionId') !== institutionId) continue;
+    await beginAlumni({
+      institutionId,
+      studentId: uid,
+      schoolStudentId: leaver.studentId,
+      name: leaver.name,
+      email: leaver.email,
+      studentNumber: text(snap.docs[0]?.get('studentNumber')),
+      level: 'Graduated',
+      reason: 'final_level',
+      today: todayIso(),
+    });
   }
   await logAutomation({ rule: 'institution_join', outcome: 'auto', summary: `Moved ${rolled.rows.length} roster rows to the next level name.`, actorId, refId: institutionId });
   return { report: joinReport(rolled.rows), moved: rolled.rows.length };
@@ -440,14 +455,19 @@ export async function offboardJoin(institutionId: string, studentIds: readonly s
     if (!studentIds.some((id) => id.trim().toLowerCase() === row.studentId.toLowerCase() || id.trim().toLowerCase() === row.email)) continue;
     await writeRoster(institutionId, row);
     const snap = await adminDb().collection('users').where('email', '==', row.email).limit(1).get();
-    const uid = snap.docs[0]?.id;
-    if (uid && snap.docs[0]?.get('institutionId') === institutionId) {
-      await adminDb().doc(`users/${uid}`).set({
-        institutionId: FieldValue.delete(),
-        academyLevel: FieldValue.delete(),
-        institutionAccess: 'ended',
-      }, { merge: true });
-    }
+    const uid = snap.docs[0]?.id ?? '';
+    if (uid && snap.docs[0]?.get('institutionId') && snap.docs[0]?.get('institutionId') !== institutionId) continue;
+    await beginAlumni({
+      institutionId,
+      studentId: uid,
+      schoolStudentId: row.studentId,
+      name: row.name,
+      email: row.email,
+      studentNumber: text(snap.docs[0]?.get('studentNumber')),
+      level: row.level,
+      reason: 'marked',
+      today: todayIso(),
+    });
   }
   return rows;
 }

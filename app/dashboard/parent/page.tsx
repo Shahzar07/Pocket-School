@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { ChildExamPrep } from '@/components/study/child-exam-prep';
 import { DashPage, DashHeader } from '@/components/dash-ui';
 import { JoinByCode, type JoinStudentCard } from '@/components/join-by-code';
+import { FinalSummaryCard } from '@/components/alumni/record-panels';
 import { authedFetch } from '@/lib/api-client';
 import dynamic from 'next/dynamic';
 import { SeeMore } from '@/components/shell/see-more';
@@ -282,6 +283,16 @@ export default function ParentDashboard() {
         extra={<Link href="/ai-studio?mode=parent-explainer" className="inline-flex text-sm font-semibold text-[#1A3C34] underline">Open Parent Explainer</Link>}
       />
       </div>
+
+      {children.filter((child) => child.profile.alumniOf || child.profile.institutionAccess === 'grace' || child.profile.institutionAccess === 'ended').map((child) => (
+        <FinalSummaryCard
+          key={child.id}
+          institutionName={child.profile.alumniName || 'their academy'}
+          childName={child.profile.name || 'Your child'}
+          level={child.profile.academyLevel || (typeof child.profile.level === 'string' ? child.profile.level : '')}
+          certificates={child.certificates.length}
+        />
+      ))}
 
       {/* ── Today's Goals ── */}
       <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={0.5} className="space-y-4">

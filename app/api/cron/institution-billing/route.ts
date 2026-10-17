@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAdminConfigured } from '@/lib/firebase-admin';
+import { releaseDueAlumni, sweepEndDates } from '@/lib/server/alumni-store';
 import { advanceOpenBills } from '@/lib/server/institution-billing';
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +16,11 @@ export async function GET(req: NextRequest) {
   if (!isAdminConfigured()) {
     return NextResponse.json({ error: 'Server is not configured.', code: 'ADMIN_NOT_CONFIGURED' }, { status: 503 });
   }
-  const result = await advanceOpenBills();
-  return NextResponse.json({ ok: true, ...result });
+  const today = new Date().toISOString().slice(0, 10);
+  const [result, seatsFreed, endDated] = await Promise.all([
+    advanceOpenBills(),
+    releaseDueAlumni(today),
+    sweepEndDates(today),
+  ]);
+  return NextResponse.json({ ok: true, ...result, seatsFreed, endDated });
 }
