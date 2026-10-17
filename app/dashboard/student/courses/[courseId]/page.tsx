@@ -7,6 +7,7 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { getCourse, getModulesWithLessons, getEnrolledCourses, getUnitQuizAttempts, listCourseQuestions, Course, Module, Lesson, Enrollment, UnitQuizAttempt, CourseQuestion } from '@/lib/db';
 import { CourseQuestions } from '@/components/course-questions';
 import { getUnitStatuses, getCurriculumLessonStatus } from '@/lib/curriculum';
+import { applyReviewLock, previousUnitUnlocked, resolvePassMark, reviewGate, toAttemptSnapshot } from '@/lib/unit-test';
 import { courseOpenToStudents, visibleStudentLessons } from '@/lib/course-review';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -86,11 +87,21 @@ export default function CourseDetailPage() {
 
   const getLessonStatus = (lesson: Lesson, modIndex: number, lesIndex: number): 'completed' | 'available' | 'locked' => {
     if (isCurriculum) {
-      return getCurriculumLessonStatus(lesson, modules[modIndex].lessons, unitStatuses[modIndex].state, completedIds);
+      return applyReviewLock(
+        getCurriculumLessonStatus(lesson, modules[modIndex].lessons, unitStatuses[modIndex].state, completedIds),
+        lesson,
+        attempts,
+        enrollment?.lessonCompletedAt,
+      );
     }
     if (completedIds.has(lesson.id)) return 'completed';
+    if (!previousUnitUnlocked(modules, modIndex, attempts)) return 'locked';
+    if (lesson.lessonType === 'unit_test' || lesson.isUnitQuiz) {
+      const others = modules[modIndex].lessons.filter(item => item.id !== lesson.id);
+      const ready = others.every(item => completedIds.has(item.id)) ? 'available' as const : 'locked' as const;
+      return applyReviewLock(ready, lesson, attempts, enrollment?.lessonCompletedAt);
+    }
     if (modIndex === 0 && lesIndex === 0) return 'available';
-    // Previous lesson must be completed to unlock next
     const allLessons = modules.flatMap(m => m.lessons);
     const currentIndex = allLessons.findIndex(l => l.id === lesson.id);
     if (currentIndex === 0) return 'available';
@@ -181,7 +192,7 @@ export default function CourseDetailPage() {
       <div className="space-y-4">
         {modules.map((mod, modIndex) => {
           const unitStatus = isCurriculum ? unitStatuses[modIndex] : null;
-          const unitLocked = unitStatus?.state === 'locked';
+          const unitLocked = unitStatus?.state === 'locked' || (!isCurriculum && !previousUnitUnlocked(modules, modIndex, attempts));
           return (
           <motion.div key={mod.module.id}
             variants={fadeUp} initial="hidden" animate="visible" custom={modIndex + 2}
@@ -216,7 +227,7 @@ export default function CourseDetailPage() {
                 <h3 className="font-bold text-foreground">{mod.module.title}</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {unitLocked
-                    ? `Pass the previous module's mastery quiz (≥${mod.module.masteryThreshold ?? 70}%) to unlock`
+                    ? `Pass the previous module's unit test (≥${resolvePassMark(course, modules[modIndex - 1]?.module)}%) to unlock`
                     : `${mod.lessons.filter(l => completedIds.has(l.id)).length}/${mod.lessons.length} lessons`}
                 </p>
               </div>
@@ -232,9 +243,12 @@ export default function CourseDetailPage() {
               <div className="border-t border-border divide-y divide-border">
                 {mod.lessons.map((lesson, lesIndex) => {
                   const status = getLessonStatus(lesson, modIndex, lesIndex);
+                  const review = lesson.lessonType === 'unit_test'
+                    ? reviewGate(attempts.map(toAttemptSnapshot), enrollment?.lessonCompletedAt, lesson.id)
+                    : null;
                   return (
+                    <div key={lesson.id}>
                     <button
-                      key={lesson.id}
                       disabled={status === 'locked'}
                       onClick={() => router.push(`/dashboard/student/courses/${courseId}/lessons/${lesson.id}`)}
                       className={`w-full flex items-center gap-4 px-5 py-4 text-left transition-colors ${
@@ -257,17 +271,43 @@ export default function CourseDetailPage() {
                           {isCurriculum && lesson.lessonNumber ? `L${lesson.lessonNumber} · ` : ''}{lesson.title}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {lesson.isUnitQuiz
-                            ? status === 'completed' ? '✓ Mastery quiz passed'
-                              : status === 'available' ? `Mastery quiz · score ≥${mod.module.masteryThreshold ?? 70}% to unlock the next module`
+                          {lesson.lessonType === 'unit_test'
+                            ? status === 'completed' ? 'Unit test passed'
+                              : status === 'available' ? `Unit test · pass at ${resolvePassMark(course, mod.module)}% to unlock the next module`
+                              : reviewGate(attempts.map(toAttemptSnapshot), enrollment?.lessonCompletedAt, lesson.id).locked
+                                ? 'Review these lessons, then retake the unit test'
+                                : 'Complete every lesson in this module to unlock the unit test'
+                            : lesson.isUnitQuiz
+                            ? status === 'completed' ? 'Mastery quiz passed'
+                              : status === 'available' ? `Mastery quiz · score at least ${resolvePassMark(course, mod.module)}% to unlock the next module`
                               : 'Complete all lessons in this module to unlock the quiz'
-                            : status === 'completed' ? `✓ Completed · +50 XP${isCurriculum ? ' · ⚡10' : ''}` :
+                            : status === 'completed' ? `Completed · +50 XP${isCurriculum ? ' · ⚡10' : ''}` :
                               status === 'available' ? `Start lesson · +50 XP${isCurriculum ? ' · ⚡10' : ''}` :
-                              'Complete previous lesson to unlock'}
+                              'Complete the previous lesson to unlock'}
                         </p>
                       </div>
                       {status !== 'locked' && <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
                     </button>
+                    {review?.locked && (
+                      <div className="px-5 pb-4">
+                        <p className="text-xs font-bold text-foreground mb-2">Review these lessons</p>
+                        <div className="space-y-1">
+                          {review.pendingLessonIds.map(id => {
+                            const item = mod.lessons.find(row => row.id === id);
+                            return (
+                              <button
+                                key={id}
+                                onClick={() => router.push(`/dashboard/student/courses/${courseId}/lessons/${id}`)}
+                                className="text-sm text-primary underline text-left"
+                              >
+                                {item?.title ?? 'Lesson'}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    </div>
                   );
                 })}
               </div>

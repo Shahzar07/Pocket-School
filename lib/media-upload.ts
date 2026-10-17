@@ -8,9 +8,11 @@ export async function uploadLessonImage(
   kind: string,
   data: Blob,
   contentType = 'image/png',
+  extension = 'png',
 ): Promise<string> {
   const safeKind = kind.replace(/[^a-z0-9-]/gi, '') || 'image';
-  const path = `curriculum/${courseId}/${lessonId}/${safeKind}-${Date.now()}.png`;
+  const safeExt = extension.replace(/[^a-z0-9]/gi, '') || 'png';
+  const path = `curriculum/${courseId}/${lessonId}/${safeKind}-${Date.now()}.${safeExt}`;
   const stored = storageRef(storage, path);
   await uploadBytes(stored, data, { contentType });
   return getDownloadURL(stored);

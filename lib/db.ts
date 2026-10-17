@@ -212,6 +212,8 @@ export interface Course {
    * Absent follows tier and allocation. true forces downloads on. false forces them off.
    */
   downloadsEnabled?: boolean;
+  /** Unit test pass mark for every module in this course. Default 70. A module can override it. */
+  unitTestPassMark?: number;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -227,6 +229,8 @@ export interface Module {
   unitNumber?: number;
   term?: string;
   masteryThreshold?: number;
+  /** Overrides the course unit-test pass mark for this module only. */
+  unitTestPassMark?: number;
   estimatedHours?: number;
   sparkBudget?: number;
 }
@@ -256,7 +260,7 @@ export interface Lesson {
   reviewedAt?: Timestamp;
   createdAt?: Timestamp;
   // ── Content Builder fields (all optional; older docs unaffected) ──
-  lessonType?: 'lesson' | 'video' | 'assignment' | 'assessment' | 'live' | 'resource';
+  lessonType?: 'lesson' | 'video' | 'assignment' | 'assessment' | 'live' | 'resource' | 'unit_test';
   bloomsLevel?: string;
   durationMinutes?: number;
   marks?: number;
@@ -264,7 +268,13 @@ export interface Lesson {
   activity?: {
     title?: string; type?: string; instructions?: string;
     marks?: number; bloom?: string; modelAnswer?: string;
+    /** Optional multiple-intelligence tag. */
+    intelligence?: string;
   };
+  /** Version A and Version B papers for a unit test lesson. */
+  unitTest?: import('./unit-test').UnitTestContent;
+  /** Mind map, comic, infographic, revision poster, gallery, and audio chant blocks. */
+  visualBlocks?: import('./visual-blocks').VisualBlock[];
   assignmentConfig?: {
     title?: string; submissionType?: string; dueInDays?: number;
     totalMarks?: number; passMark?: number; latePolicy?: string; brief?: string;
@@ -372,6 +382,8 @@ export interface Enrollment {
   /** Last lesson the learner opened, so My Courses can resume it. */
   lastLessonId?: string;
   bookmarkedLessons?: string[];
+  /** lessonId -> millis when the learner last completed that lesson, including a review. */
+  lessonCompletedAt?: Record<string, number>;
 }
 
 export interface Badge {
@@ -525,13 +537,23 @@ export interface UnitQuizAttempt {
   percentage: number;
   passed: boolean;
   timeTakenSeconds: number;
+  /** Set on a unit test attempt. Mastery quizzes omit it. */
+  kind?: 'unit_test';
+  /** A on attempt 1, B on attempt 2, then alternating. */
+  version?: 'A' | 'B';
+  marksAwarded?: number;
+  marksMax?: number;
   responses: {
     questionIndex: number;
     question: string;
     objectiveCode?: string;
     sourceLessonId?: string;
+    lessonId?: string;
     selected: string;
     correct: boolean;
+    marks?: number;
+    marksAwarded?: number;
+    bloom?: string;
   }[];
   weakestObjective?: string;
   recommendedLessonIds?: string[];
@@ -714,8 +736,8 @@ export async function createLesson(courseId: string, moduleId: string, data: Omi
   return ref.id;
 }
 
-export async function updateUnit(courseId: string, unitId: string, data: Partial<Module>): Promise<void> {
-  await updateDoc(doc(db, 'courses', courseId, 'modules', unitId), omitUndefined(data) as Record<string, unknown>);
+export async function updateUnit(courseId: string, unitId: string, data: Partial<Module> | Record<string, unknown>): Promise<void> {
+  await updateDoc(doc(db, 'courses', courseId, 'modules', unitId), omitUndefined(data as Record<string, unknown>) as Record<string, unknown>);
 }
 
 export async function updateLesson(courseId: string, moduleId: string, lessonId: string, data: Partial<Lesson>): Promise<void> {
@@ -1146,6 +1168,7 @@ export async function saveUnitQuizAttempt(
 ): Promise<UnitQuizAttempt> {
   // attemptNumber = previous attempts on this quiz lesson + 1
   let attemptNumber = 1;
+  let previous: UnitQuizAttempt[] = [];
   try {
     const prevQ = query(
       collection(db, 'unit_quiz_attempts'),
@@ -1154,7 +1177,17 @@ export async function saveUnitQuizAttempt(
     );
     const prev = await getDocs(prevQ);
     attemptNumber = prev.size + 1;
+    previous = prev.docs.map(d => ({ id: d.id, ...d.data() } as UnitQuizAttempt));
   } catch { /* first attempt */ }
+
+  let version = data.version;
+  if (data.kind === 'unit_test') {
+    const { reviewGate, toAttemptSnapshot, versionForAttempt } = await import('./unit-test');
+    const enrollment = await getEnrollment(data.studentId, data.courseId);
+    const gate = reviewGate(previous.map(toAttemptSnapshot), enrollment?.lessonCompletedAt, data.lessonId);
+    if (gate.locked) throw new Error('Review these lessons before the unit test unlocks.');
+    version = versionForAttempt(attemptNumber);
+  }
 
   // Tally wrong answers per objective, and collect source lessons to revisit
   const wrongByObjective: Record<string, number> = {};
@@ -1175,6 +1208,7 @@ export async function saveUnitQuizAttempt(
 
   const ref = await addDoc(collection(db, 'unit_quiz_attempts'), {
     ...data,
+    ...(version ? { version } : {}),
     attemptNumber,
     ...(weakestObjective ? { weakestObjective } : {}),
     recommendedLessonIds,
@@ -1189,6 +1223,7 @@ export async function saveUnitQuizAttempt(
   return {
     ...data,
     id: ref.id,
+    ...(version ? { version } : {}),
     attemptNumber,
     weakestObjective,
     recommendedLessonIds,

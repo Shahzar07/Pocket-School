@@ -65,6 +65,13 @@ export const BLOCK_DEFS: BlockDef[] = [
   { id: 'glossary', icon: '📚', label: 'Glossary', sparks: 5 },
   { id: 'image', icon: '🖼️', label: 'Image', sparks: 10 },
   { id: 'illustration', icon: '🎨', label: 'Illustration', sparks: 15 },
+  { id: 'unitTest', icon: '🧪', label: 'Unit Test' },
+  { id: 'mindmapImage', icon: '🗺️', label: 'Mind Map image' },
+  { id: 'comic', icon: '💬', label: 'Comic strip' },
+  { id: 'infographicImage', icon: '📊', label: 'Infographic' },
+  { id: 'revisionPoster', icon: '🖼️', label: 'Unit revision poster' },
+  { id: 'gallery', icon: '🎠', label: 'Gallery' },
+  { id: 'audioChant', icon: '🎵', label: 'Audio chant' },
 ];
 
 export type AiRunOptions = {
@@ -499,6 +506,13 @@ export function ActivityBlock({ value, onChange }: {
         <select value={value.bloom ?? 'Apply'} onChange={e => onChange({ ...value, bloom: e.target.value })}
           className="h-9 rounded-xl border border-border bg-card px-3 text-sm">
           {BLOOMS.map(b => <option key={b}>{b}</option>)}
+        </select>
+        <select value={value.intelligence ?? ''} onChange={e => onChange({ ...value, intelligence: e.target.value || undefined })}
+          className="h-9 rounded-xl border border-border bg-card px-3 text-sm sm:col-span-2">
+          <option value="">Multiple intelligence (optional)</option>
+          {['Linguistic', 'Logical-Mathematical', 'Spatial', 'Bodily-Kinaesthetic', 'Musical', 'Interpersonal', 'Intrapersonal', 'Naturalistic'].map(tag => (
+            <option key={tag} value={tag}>{tag}</option>
+          ))}
         </select>
       </div>
       <Textarea value={value.modelAnswer ?? ''} onChange={e => onChange({ ...value, modelAnswer: e.target.value })}

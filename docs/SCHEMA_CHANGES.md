@@ -715,3 +715,40 @@ Further optional fields: `priority` (`low|medium|high`), `reminderTime` (`HH:mm`
 Rules still need an owner deploy.
 
 Sparks amounts for goals live only in `lib/sparks.ts` (`GOAL_ON_TIME_BONUS`, `GOAL_STREAK_BONUS`). The ledger type is `earn`.
+
+## Unit tests and visual blocks
+
+For the mobile app. Rules and indexes are listed here and in `firestore.indexes.json`. They are not deployed by this change.
+
+`courses.unitTestPassMark` is an optional number. Missing means 70. `courses/{courseId}/modules.unitTestPassMark` overrides that course mark for one module.
+
+A unit test is a lesson with `lessonType: "unit_test"` and `isUnitQuiz: true`.
+
+| Field | Type | Notes |
+|---|---|---|
+| `unitTest.versionA` / `unitTest.versionB` | array | Question papers. Attempt 1 uses A, attempt 2 uses B, then they alternate. |
+| `unitTest.questions[].prompt` | string | |
+| `unitTest.questions[].options` | array | `{ id: "opt:0", text }`. Grade on `answerId`, not the label. |
+| `unitTest.questions[].marks` | number | Weighted. Missing or 0 counts as 1. |
+| `unitTest.questions[].bloom` | string | Remember, Understand, Apply, Analyse, Evaluate, Create. |
+| `unitTest.questions[].lessonId` | string | Lesson to review when this question is missed. |
+| `unitTest.intelligence` | string | Optional. Linguistic, Logical-Mathematical, Spatial, Bodily-Kinaesthetic, Musical, Interpersonal, Intrapersonal, Naturalistic. |
+
+`unit_quiz_attempts` gains optional fields. Older mastery rows omit them.
+
+| Field | Type | Notes |
+|---|---|---|
+| `kind` | string | `unit_test` |
+| `version` | string | `A` or `B` |
+| `marksAwarded` / `marksMax` | number | Weighted score. `score` / `total` / `percentage` stay. |
+| `responses[].marks` / `marksAwarded` / `bloom` / `lessonId` | | Per question. `sourceLessonId` is still set to the same lesson. |
+| `timeTakenSeconds` | number | Already stored. |
+| `recommendedLessonIds` | string[] | Lessons to show as Review these lessons. |
+
+A fail keeps the unit test locked until each id in `recommendedLessonIds` has `enrollments.lessonCompletedAt[lessonId]` greater than that attempt's `completedAt`. Completing a lesson again updates that map. A pass still unlocks the next module.
+
+`lesson.visualBlocks[]` holds Mind Map image (`mindmapImage`), comic (`comic` with `panels`), infographic (`infographicImage`), unit revision poster (`revisionPoster`), gallery (`gallery` with `items`), and audio chant (`audioChant` with `transcript`). Each block has required `alt`. Comic panels and gallery items have their own `alt`. `intelligence` is optional. Publish is refused while alt text is blank.
+
+New composite indexes, not deployed: `unit_quiz_attempts` on `courseId + unitId + completedAt`, and `courseId + completedAt`. Current class and parent reads stay single-field on `courseId` or `studentId`.
+
+Import shape for the curriculum upload: `docs/unit-test-schema.md`.

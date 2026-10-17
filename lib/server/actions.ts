@@ -8,6 +8,10 @@ import { canDirectMessage } from '../community/policy';
 import { asAgeTier, isAgeTier } from '../age-tier';
 import { accessTierFor, freePreviewCount, tierDefinition, type AccessTier } from '../entitlements';
 import { answersMatch } from '../quiz';
+import {
+  gradeUnitTest, questionsForVersion, resolvePassMark, reviewGate, toAttemptSnapshot, versionForAttempt,
+  type UnitTestContent,
+} from '../unit-test';
 import { countCompleted, isPublishedLesson, progressPercent } from '../progress';
 import { certificateKey, certificateStatus, certificateStudentName, moduleIsComplete } from '../certificates';
 import { issueInTransaction, issuerFromInstitution } from './module-certificates';
@@ -176,10 +180,12 @@ export async function completeLesson(
     const institutionId = typeof userSnap.data()?.institutionId === 'string' ? userSnap.data()?.institutionId as string : '';
     const instSnap = institutionId ? await tx.get(db().doc(`institutions/${institutionId}`)) : null;
     const issuer = issuerFromInstitution(instSnap?.data() as Record<string, unknown> | undefined);
+    const reviewedAt = Date.now();
     if (!already) {
       tx.update(enrollRef, {
         completedLessons: FieldValue.arrayUnion(lessonId),
         progress,
+        [`lessonCompletedAt.${lessonId}`]: reviewedAt,
       });
       tx.update(userRef, {
         xp,
@@ -197,8 +203,11 @@ export async function completeLesson(
           createdAt: FieldValue.serverTimestamp(),
         });
       }
-    } else if ((enrollment.progress as number | undefined) !== progress) {
-      tx.update(enrollRef, { progress });
+    } else {
+      tx.update(enrollRef, {
+        [`lessonCompletedAt.${lessonId}`]: reviewedAt,
+        ...((enrollment.progress as number | undefined) !== progress ? { progress } : {}),
+      });
     }
     const studentName = certificateStudentName(userSnap.data()?.name);
     const certificate = issueInTransaction(tx, db(), keySnap.exists, {
@@ -519,13 +528,86 @@ export async function recordUnitQuiz(uid: string, body: {
   timeTakenSeconds?: number;
   studentName?: string;
 }) {
+  const course = await loadCourse(body.courseId);
+  const mod = await db().doc(`courses/${body.courseId}/modules/${body.unitId}`).get();
+  const threshold = resolvePassMark(
+    course as { unitTestPassMark?: number },
+    mod.data() as { unitTestPassMark?: number; masteryThreshold?: number } | undefined,
+  );
+  const hit = await findLesson(body.courseId, body.lessonId);
+  const unitTest = hit?.data.unitTest as UnitTestContent | undefined;
+  if (hit?.data.lessonType === 'unit_test' && unitTest) {
+    const prev = await db().collection('unit_quiz_attempts')
+      .where('studentId', '==', uid)
+      .where('lessonId', '==', body.lessonId)
+      .get();
+    const enroll = await db().doc(`courses/${body.courseId}/enrollments/${uid}`).get();
+    const completedAt = enroll.data()?.lessonCompletedAt as Record<string, number> | undefined;
+    const gate = reviewGate(prev.docs.map((doc) => toAttemptSnapshot(doc.data())), completedAt, body.lessonId);
+    if (gate.locked) throw new ActionError('LOCKED', 'Review these lessons before the unit test unlocks.');
+    const paper = questionsForVersion(unitTest, gate.nextVersion);
+    const selected: Record<string, string> = {};
+    paper.forEach((question, index) => {
+      selected[question.id] = body.responses[index]?.selected ?? '';
+    });
+    const result = gradeUnitTest(paper, selected, threshold);
+    const ref = await db().collection('unit_quiz_attempts').add({
+      studentId: uid,
+      studentName: body.studentName ?? '',
+      courseId: body.courseId,
+      unitId: body.unitId,
+      lessonId: body.lessonId,
+      kind: 'unit_test',
+      version: versionForAttempt(prev.size + 1),
+      attemptNumber: prev.size + 1,
+      score: result.score,
+      total: result.total,
+      marksAwarded: result.marksAwarded,
+      marksMax: result.marksMax,
+      percentage: result.percentage,
+      passed: result.passed,
+      timeTakenSeconds: body.timeTakenSeconds ?? 0,
+      responses: result.responses,
+      ...(result.weakestObjective ? { weakestObjective: result.weakestObjective } : {}),
+      recommendedLessonIds: result.recommendedLessonIds,
+      completedAt: FieldValue.serverTimestamp(),
+    });
+    let counted = false;
+    let certificate = null;
+    if (result.passed) {
+      const completion = await completeLesson(uid, body.courseId, body.lessonId, 100, false);
+      counted = completion.accepted !== false;
+      certificate = completion.certificate ?? null;
+      if (counted && !completion.already) {
+        await addSparks(uid, UNIT_PASS_REWARD, 'earn', 'Unit test passed');
+      }
+    }
+    return {
+      id: ref.id,
+      studentId: uid,
+      courseId: body.courseId,
+      unitId: body.unitId,
+      lessonId: body.lessonId,
+      kind: 'unit_test' as const,
+      version: versionForAttempt(prev.size + 1),
+      attemptNumber: prev.size + 1,
+      score: result.score,
+      total: result.total,
+      marksAwarded: result.marksAwarded,
+      marksMax: result.marksMax,
+      percentage: result.percentage,
+      passed: result.passed,
+      counted,
+      certificate,
+      weakestObjective: result.weakestObjective,
+      recommendedLessonIds: result.recommendedLessonIds,
+      responses: result.responses,
+    };
+  }
   const graded = await gradeQuiz(body.courseId, body.lessonId, body.responses.map((r) => ({ question: r.question, selected: r.selected })));
   const total = graded.length;
   const score = graded.filter((g) => g.correct).length;
   const percentage = total ? Math.round((score / total) * 100) : 0;
-  const course = await loadCourse(body.courseId);
-  const mod = await db().doc(`courses/${body.courseId}/modules/${body.unitId}`).get();
-  const threshold = (mod.data()?.masteryThreshold as number) ?? 70;
   const passed = percentage >= threshold;
   const responses = body.responses.map((r, i) => ({
     questionIndex: i,
@@ -666,7 +748,7 @@ export async function courseOutlineFor(courseId: string) {
   if (!courseSnap.exists) throw new ActionError('NOT_FOUND', 'Course not found');
   const course = { id: courseSnap.id, ...courseSnap.data() };
   const lessons = await listLessons(courseId);
-  const byModule = new Map<string, { id: string; title: string; order: number; status?: string; isUnitQuiz?: boolean }[]>();
+  const byModule = new Map<string, { id: string; title: string; order: number; status?: string; isUnitQuiz?: boolean; lessonType?: string }[]>();
   for (const lesson of lessons) {
     const list = byModule.get(lesson.moduleId) ?? [];
     list.push({
@@ -674,7 +756,8 @@ export async function courseOutlineFor(courseId: string) {
       title: (lesson.data.title as string) ?? 'Lesson',
       order: (lesson.data.order as number) ?? 0,
       status: lesson.data.status as string | undefined,
-      isUnitQuiz: lesson.data.isUnitQuiz === true,
+      isUnitQuiz: lesson.data.isUnitQuiz === true || lesson.data.lessonType === 'unit_test',
+      lessonType: lesson.data.lessonType as string | undefined,
     });
     byModule.set(lesson.moduleId, list);
   }

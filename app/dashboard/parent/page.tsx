@@ -9,6 +9,7 @@ import {
   UserProfile, Course, Enrollment, DailyGoal, Certificate,
 } from '@/lib/db';
 import { UnitReportCard, UnitReportData } from '@/components/unit-report-card';
+import { resolvePassMark } from '@/lib/unit-test';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -127,7 +128,7 @@ async function buildUnitReports(
         courseTitle: course?.title ?? 'Course',
         unitId,
         unitTitle: unit?.module.title ?? 'Unit',
-        masteryThreshold: unit?.module.masteryThreshold ?? 70,
+        masteryThreshold: resolvePassMark(course, unit?.module),
         attempts: unitAttempts,
         reviewLessons: (latest.recommendedLessonIds ?? [])
           .map(id => lessonById.get(id))
