@@ -5,6 +5,7 @@ import { isEmailServiceConfigured, verifyOtpToken } from '@/lib/email-otp';
 import { blankProfile } from '@/lib/enterprise';
 import { adminAuth, adminDb, isAdminConfigured } from '@/lib/firebase-admin';
 import { validateInstitutionApplication } from '@/lib/institution-journey';
+import { parseOrganisationSize } from '@/lib/institution-self-serve';
 import { INSTITUTION_ADMIN_CODE_UNAVAILABLE } from '@/lib/institution-login';
 
 export const dynamic = 'force-dynamic';
@@ -42,6 +43,8 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
   const parsed = validateInstitutionApplication(body);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+  const size = parseOrganisationSize(body.organisationSize);
+  if (!size.ok) return NextResponse.json({ error: size.error }, { status: 400 });
 
   const email = parsed.value.email;
   const code = typeof body.code === 'string' ? body.code.trim() : '';
@@ -83,6 +86,9 @@ export async function POST(req: NextRequest) {
       studentCount: 0,
       teacherCount: 0,
       status: 'pending',
+      billingPhase: 'pending_payment',
+      reviewHold: false,
+      organisationSize: size.size,
       type: application.type,
       country: application.country,
       state: application.state,

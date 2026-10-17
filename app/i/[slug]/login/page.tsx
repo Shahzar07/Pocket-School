@@ -166,6 +166,8 @@ export default function InstitutionLoginPage() {
       platformStaff: resolveStaffRole({ email: address, role: actor.role, adminRole: actor.adminRole }) != null,
       institutionStatus: institution.status,
       setupComplete: institution.setupComplete,
+      billingPhase: institution.billingPhase,
+      reviewHold: institution.reviewHold,
     });
     if (!decision.allowed) {
       await refuse();
@@ -285,6 +287,10 @@ export default function InstitutionLoginPage() {
           storedMode: readActiveMode(),
           tab: pendingTab,
           platformStaff: resolveStaffRole({ email: emailForCode, role: actor.role, adminRole: actor.adminRole }) != null,
+          institutionStatus: institution.status,
+          setupComplete: institution.setupComplete,
+          billingPhase: institution.billingPhase,
+          reviewHold: institution.reviewHold,
         })
         : { allowed: false as const, reason: 'not_member' as const };
       if (!decision.allowed) {

@@ -96,7 +96,12 @@ export function validateInstitutionApplication(input: {
 export function institutionAdminDestination(input: {
   status?: string | null;
   setupComplete?: boolean | null;
+  billingPhase?: string | null;
+  reviewHold?: boolean | null;
 }): string {
+  if (input.status === 'pending' && input.billingPhase === 'pending_payment' && !input.reviewHold) {
+    return '/institutions/checkout';
+  }
   if (input.status === 'pending' || input.status === 'suspended' || !input.status) {
     return INSTITUTION_PENDING_PATH;
   }
@@ -178,5 +183,6 @@ export function isInstitutionJourneyPath(pathname: string): boolean {
   return path === '/institutions'
     || path.startsWith('/institutions/')
     || path === '/preview/institution-pending'
-    || path === '/preview/institution-onboarding';
+    || path === '/preview/institution-onboarding'
+    || path === '/preview/institution-checkout';
 }

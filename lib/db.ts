@@ -494,6 +494,14 @@ export interface Institution {
    * Absent means an academy that predates the checklist and opens the dashboard.
    */
   setupComplete?: boolean;
+  /** pending_payment sends a new admin back to checkout until the academy is paid or held. */
+  billingPhase?: 'pending_payment' | 'active' | 'grace' | 'suspended';
+  reviewHold?: boolean;
+  reviewReasons?: string[];
+  organisationSize?: string;
+  planId?: string;
+  accessMode?: 'subscription' | 'a_la_carte';
+  programmeIds?: string[];
   leaderboardVisible?: 'academy' | 'group' | 'off';
   leaderboard?: { rank: number; name: string; points: number }[];
   publishedPages?: { slug: string; title: string; body: string }[];

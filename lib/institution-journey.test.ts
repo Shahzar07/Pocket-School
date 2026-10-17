@@ -43,6 +43,14 @@ test('a complete application is accepted and a partial one is named', () => {
 
 test('sign-in lands on pending, the checklist, or the academy dashboard', () => {
   assert.equal(institutionAdminDestination({ status: 'pending' }), '/institutions/pending');
+  assert.equal(
+    institutionAdminDestination({ status: 'pending', billingPhase: 'pending_payment' }),
+    '/institutions/checkout',
+  );
+  assert.equal(
+    institutionAdminDestination({ status: 'pending', billingPhase: 'pending_payment', reviewHold: true }),
+    '/institutions/pending',
+  );
   assert.equal(institutionAdminDestination({ status: 'suspended' }), '/institutions/pending');
   assert.equal(institutionAdminDestination({ status: null }), '/institutions/pending');
   assert.equal(

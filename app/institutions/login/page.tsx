@@ -99,6 +99,8 @@ export default function InstitutionAdminLoginPage() {
       router.push(institutionAdminDestination({
         status: academy?.status ?? 'pending',
         setupComplete: academy?.setupComplete,
+        billingPhase: academy?.billingPhase,
+        reviewHold: academy?.reviewHold,
       }));
     } catch {
       setError('The code was accepted. Sign in again to open the academy.');

@@ -16,7 +16,7 @@ export type ParsedStripeEvent =
   | { type: 'dispute'; eventId: string; disputeId: string; amount: number; currency: string; reason: string; chargeId: string }
   | { type: 'refund'; eventId: string; checkoutId?: string; amount: number; currency: string; chargeId: string }
   | { type: 'subscription_ended'; eventId: string; subscriptionId: string; uid?: string }
-  | { type: 'institution_paid'; eventId: string; institutionId: string; interval: 'monthly' | 'annual' }
+  | { type: 'institution_paid'; eventId: string; institutionId: string; interval: 'monthly' | 'annual'; selfServe: boolean; paymentIntentId?: string }
   | { type: 'individual_paid'; eventId: string; uid: string; interval: 'monthly' | 'annual'; planId: string }
   | { type: 'institution_payment_failed'; eventId: string; institutionId: string }
   | { type: 'individual_payment_failed'; eventId: string; uid: string }
@@ -51,6 +51,8 @@ export function parseStripeEvent(event: StripeEventLike): ParsedStripeEvent {
         eventId: event.id,
         institutionId: metadata.institutionId,
         interval: metadata.interval === 'monthly' ? 'monthly' : 'annual',
+        selfServe: metadata.selfServe === '1',
+        paymentIntentId: str(object.payment_intent) || undefined,
       };
     }
     if (metadata.kind === 'individual_billing' && metadata.uid) {

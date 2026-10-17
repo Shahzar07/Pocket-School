@@ -282,6 +282,15 @@ export default function InstitutionConsolePage() {
         });
         await note('save-brand', subdomain || customDomain || branding.displayName);
         toast.success(subdomain ? `Live at ${institutionOrigin(subdomain)} and /a/${subdomain}` : 'Branding saved.');
+      } else if (action.type === 'refund') {
+        if (!platform) throw new Error('Only a platform administrator can refund an academy.');
+        await authedFetch('/api/institutions/billing/refund', {
+          method: 'POST',
+          body: JSON.stringify({ institutionId }),
+        });
+        await note('refund');
+        toast.success('Refund recorded and the academy is suspended.');
+        await reload();
       } else if (action.type === 'status' || action.type === 'delete') {
         if (!platform) throw new Error('Only a platform administrator can change academy status.');
         if (action.type === 'delete') {

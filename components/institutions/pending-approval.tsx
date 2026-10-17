@@ -27,11 +27,13 @@ export function PendingApproval({
   organisation,
   email,
   continueHref,
+  reasons = [],
 }: {
   status: ApprovalStatus;
   organisation: string;
   email?: string;
   continueHref?: string;
+  reasons?: string[];
 }) {
   const copy = COPY[status];
   const name = organisation.trim() || 'Your organisation';
@@ -52,6 +54,12 @@ export function PendingApproval({
           <div className="flex items-start justify-between gap-4">
             <dt className="text-[#1A3C34]/60">Approval email</dt>
             <dd className="text-right font-semibold">{email}</dd>
+          </div>
+        )}
+        {reasons.length > 0 && (
+          <div>
+            <dt className="text-[#1A3C34]/60">Waiting on</dt>
+            <dd className="mt-1 font-semibold">{reasons.join(' ')}</dd>
           </div>
         )}
       </dl>

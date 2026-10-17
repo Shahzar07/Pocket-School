@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { InstitutionDirectory } from '@/components/institutions/directory';
+import { SignupControls } from '@/components/institutions/signup-controls';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { isInstitutionAdmin, isSuperAdmin } from '@/lib/roles';
 import type { DirectoryRow, LeadStatus } from '@/lib/enterprise';
@@ -74,6 +75,7 @@ export default function AdminInstitutions() {
 
   return (
     <div className="max-w-6xl mx-auto pb-12">
+      {superAdmin && <SignupControls />}
       <InstitutionDirectory
         rows={rows}
         leads={superAdmin ? leads : []}

@@ -110,6 +110,8 @@ export function decideInstitutionLogin(
     /** When set, a pending academy or a first-time admin leaves the dashboard path. */
     institutionStatus?: string | null;
     setupComplete?: boolean | null;
+    billingPhase?: string | null;
+    reviewHold?: boolean | null;
   },
 ): InstitutionLoginDecision {
   if (!belongsToInstitution(actor, institutionId)) return { allowed: false, reason: 'not_member' };
@@ -123,6 +125,8 @@ export function decideInstitutionLogin(
       ? institutionAdminDestination({
           status: options.institutionStatus,
           setupComplete: options.setupComplete,
+          billingPhase: options.billingPhase,
+          reviewHold: options.reviewHold,
         })
       : '/dashboard/institution';
     return { allowed: true, destination, needsEmailCode: true, mode: null };

@@ -31,7 +31,9 @@ export async function POST(req: NextRequest) {
   if (!snap.exists) return NextResponse.json({ error: 'That academy was not found.' }, { status: 404 });
   const data = snap.data() ?? {};
   const name = typeof data.name === 'string' && data.name.trim() ? data.name.trim() : 'Your academy';
-  await ref.set({ status: 'active' }, { merge: true });
+  await ref.set({ status: 'active', reviewHold: false, reviewReasons: [] }, { merge: true });
+  const { releaseHeldInstitution } = await import('@/lib/server/institution-activate');
+  await releaseHeldInstitution(institutionId);
 
   let email = '';
   let personName = '';

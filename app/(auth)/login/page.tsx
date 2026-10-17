@@ -72,6 +72,8 @@ export default function LoginPage() {
       router.push(institutionAdminDestination({
         status: academy?.status ?? 'pending',
         setupComplete: academy?.setupComplete,
+        billingPhase: academy?.billingPhase,
+        reviewHold: academy?.reviewHold,
       }));
       return;
     }

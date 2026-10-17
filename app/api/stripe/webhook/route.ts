@@ -36,8 +36,17 @@ export async function POST(req: NextRequest) {
     });
 
     if (parsed.type === 'institution_paid') {
-      const { markInstitutionPaid } = await import('@/lib/server/institution-billing');
-      await markInstitutionPaid(parsed.institutionId, parsed.interval);
+      if (parsed.selfServe) {
+        const { settleInstitutionOrder } = await import('@/lib/server/institution-activate');
+        await settleInstitutionOrder(parsed.institutionId, {
+          interval: parsed.interval,
+          providerRef: parsed.eventId,
+          paymentIntentId: parsed.paymentIntentId,
+        });
+      } else {
+        const { markInstitutionPaid } = await import('@/lib/server/institution-billing');
+        await markInstitutionPaid(parsed.institutionId, parsed.interval);
+      }
     } else if (parsed.type === 'individual_paid') {
       const { markIndividualPaid } = await import('@/lib/server/institution-billing');
       await markIndividualPaid(parsed.uid, parsed.planId, parsed.interval);

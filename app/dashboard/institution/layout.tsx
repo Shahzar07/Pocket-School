@@ -26,8 +26,10 @@ export default function InstitutionDashboardLayout({ children }: { children: Rea
         const destination = institutionAdminDestination({
           status: academy?.status,
           setupComplete: academy?.setupComplete,
+          billingPhase: academy?.billingPhase,
+          reviewHold: academy?.reviewHold,
         });
-        if (destination === '/institutions/pending') {
+        if (destination === '/institutions/pending' || destination === '/institutions/checkout') {
           router.replace(destination);
           return;
         }

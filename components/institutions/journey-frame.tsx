@@ -7,15 +7,21 @@ export function InstitutionJourneyFrame({
   title,
   lede,
   children,
+  align = 'center',
 }: {
   eyebrow: string;
   title: string;
   lede?: string;
   children: ReactNode;
+  /** Start keeps a long form at the top of the page. */
+  align?: 'center' | 'start';
 }) {
+  const column = align === 'start'
+    ? 'mx-auto flex max-w-xl flex-col px-5 py-12'
+    : 'mx-auto flex min-h-screen max-w-xl flex-col justify-center px-5 py-12';
   return (
     <main className="min-h-screen bg-[#F6F1E7] text-[#1A3C34]">
-      <div className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-5 py-12">
+      <div className={column}>
         <p className="mb-4 text-sm font-semibold">
           <Link href="/" className="underline decoration-[#C8922A] underline-offset-4">Poket School</Link>
         </p>

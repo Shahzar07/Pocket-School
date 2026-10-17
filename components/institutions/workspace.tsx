@@ -48,6 +48,7 @@ export type WorkspaceAction =
   | { type: 'verify-domain' }
   | { type: 'privacy-erase' }
   | { type: 'status'; status: InstitutionStatus }
+  | { type: 'refund' }
   | { type: 'delete' }
   | { type: 'invite'; csv: string }
   | { type: 'group'; name: string; kind: GroupKind; programmeIds: string[] }
@@ -165,6 +166,9 @@ export function InstitutionWorkspace({
           <div className="flex flex-wrap gap-2">
             {superAdmin && status !== 'suspended' && (
               <Button type="button" variant="outline" className="rounded-full" disabled={busy} onClick={() => void onAction({ type: 'status', status: 'suspended' })}>Suspend</Button>
+            )}
+            {superAdmin && (
+              <Button type="button" variant="outline" className="rounded-full" disabled={busy} onClick={() => void onAction({ type: 'refund' })}>Refund</Button>
             )}
             {superAdmin && status !== 'active' && (
               <Button type="button" variant="outline" className="rounded-full" disabled={busy} onClick={() => void onAction({ type: 'status', status: 'active' })}>Activate</Button>

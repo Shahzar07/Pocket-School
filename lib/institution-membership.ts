@@ -806,11 +806,15 @@ export interface EmailDraft {
   text: string;
 }
 
-export function institutionEmail(kind: 'payment_link' | 'dunning' | 'suspended' | 'restored' | 'invoice' | 'invite' | 'join_approved' | 'join_rejected' | 'join_received' | 'academy_approved', vars: {
+export function institutionEmail(kind: 'payment_link' | 'dunning' | 'suspended' | 'restored' | 'invoice' | 'invite' | 'join_approved' | 'join_rejected' | 'join_received' | 'academy_approved' | 'welcome_receipt' | 'under_review', vars: {
   institutionName: string;
   plan?: string;
   seats?: number;
   total?: string;
+  tax?: string;
+  sparks?: number;
+  tender?: string;
+  reasons?: string;
   link?: string;
   graceEnds?: string;
   code?: string;
@@ -857,6 +861,33 @@ export function institutionEmail(kind: 'payment_link' | 'dunning' | 'suspended' 
         `${name} is approved. Sign in to finish setup, including the branded login page.`,
         `Sign in: ${link}`,
       ].join('\n'),
+    };
+  }
+  if (kind === 'welcome_receipt') {
+    return {
+      subject: `Welcome to Poket School — ${name}`,
+      text: [
+        `${vars.personName || 'Hello'},`,
+        `${name} is open. The next page is the setup checklist, including the branded login page.`,
+        vars.plan ? `Plan: ${vars.plan}.` : '',
+        typeof vars.seats === 'number' ? `Seats: ${vars.seats}.` : '',
+        typeof vars.sparks === 'number' ? `Sparks allowance: ${vars.sparks}.` : '',
+        vars.tender ? `Payment: ${vars.tender}.` : '',
+        vars.tax ? `Tax: ${vars.tax}.` : '',
+        vars.total ? `Receipt total: ${vars.total}.` : '',
+        `Sign in: ${link}`,
+      ].filter(Boolean).join('\n'),
+    };
+  }
+  if (kind === 'under_review') {
+    return {
+      subject: `${name} is waiting for a review`,
+      text: [
+        `${vars.personName || 'Hello'},`,
+        `Payment for ${name} is recorded. Poket School will check it before the academy opens.`,
+        vars.reasons || '',
+        `Status: ${link}`,
+      ].filter(Boolean).join('\n'),
     };
   }
   if (kind === 'invite') {
