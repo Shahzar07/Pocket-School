@@ -15,6 +15,7 @@ import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, BookOpen, CheckCircle2, Lock, PlayCircle, ChevronDown, ChevronRight, Trophy } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useContentTranslation } from '@/hooks/use-content-translation';
+import { NoteDock } from '@/components/notes/note-dock';
 
 interface ModuleWithLessons { module: Module; lessons: Lesson[] }
 
@@ -342,6 +343,7 @@ export default function CourseDetailPage() {
           </div>
         </div>
       )}
+      <NoteDock link={{ type: 'course', id: courseId }} title={course.title} />
     </div>
   );
 }

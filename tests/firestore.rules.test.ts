@@ -321,6 +321,21 @@ describe('age tiers', () => {
     await assertFails(updateDoc(doc(db, 'users/child1'), { studentStatus: { status: 'verified', verifiedAt: 1, validUntil: 2 } }));
     await assertFails(setDoc(doc(db, 'offers/offer1'), { title: 'Drink', status: 'live' }));
     await assertFails(setDoc(doc(db, 'redemptions/red1'), { offerId: 'offer1', uid: 'child1', partnerId: 'cafe', at: 1, method: 'scan' }));
+    const note = {
+      text: 'Revise photosynthesis',
+      colour: 'cyan',
+      pinned: false,
+      order: 1,
+      board: 'My board',
+      linkedTo: { type: 'lesson', id: 'l1' },
+      createdAt: 1,
+      updatedAt: 1,
+    };
+    await assertSucceeds(setDoc(doc(db, 'users/child1/notes/n1'), note));
+    await assertFails(getDoc(doc(dbFor('adult1'), 'users/child1/notes/n1')));
+    await assertFails(setDoc(doc(db, 'users/child1/notes/n2'), { ...note, share: { spaceId: 'class-1', status: 'live' } }));
+    await assertFails(deleteDoc(doc(db, 'users/child1/notes/n1')));
+    await assertFails(setDoc(doc(db, 'note_shares/child1_n1'), { ownerId: 'child1', spaceId: 'class-1', status: 'live', text: 'Revise' }));
     await assertFails(setDoc(doc(db, 'referrals/AB12CD34'), { inviterUid: 'child1', createdAt: 1, redeemedBy: [] }));
     await assertFails(setDoc(doc(db, 'card_shares/shareidshareidshare'), { uid: 'child1', revoked: false }));
     await assertFails(setDoc(doc(db, 'card_audit/evt1'), { type: 'view', uid: 'child1' }));

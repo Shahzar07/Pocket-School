@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Bell, Menu, Plus, Search, UserRound } from 'lucide-react';
+import { Bell, Menu, Plus, Search, StickyNote, UserRound } from 'lucide-react';
 import {
   CATEGORY_STYLE,
   groupNotices,
@@ -232,7 +232,7 @@ export function DashboardShell({ role, hour = 9 }: { role: DashRole; hour?: numb
             {home.tiles.map(tile => (
               <li key={tile.id}>
                 <Link href={tile.href} className="flex min-h-12 items-center gap-3 text-sm font-medium">
-                  <CategoryIcon category={tile.category} />
+                  {tile.id === 'notes' ? <StickyNote className="h-6 w-6" strokeWidth={1.75} aria-hidden /> : <CategoryIcon category={tile.category} />}
                   {tile.label}
                 </Link>
               </li>

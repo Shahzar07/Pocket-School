@@ -1621,6 +1621,49 @@ service cloud.firestore {
       }
     }
 
+    // Sticky notes. Private to the owner. Sharing is written by the server.
+    function noteShape() {
+      return incoming().text is string
+        && incoming().text.size() <= 2000
+        && incoming().colour in ['cyan', 'sky', 'coral', 'success', 'lilac', 'white']
+        && incoming().pinned is bool
+        && incoming().order is number
+        && incoming().board is string
+        && incoming().board.size() > 0
+        && incoming().board.size() <= 80
+        && incoming().linkedTo is map
+        && incoming().linkedTo.type in ['lesson', 'course', 'assignment', 'exam', 'none']
+        && incoming().linkedTo.id is string
+        && incoming().createdAt is number
+        && incoming().updatedAt is number;
+    }
+
+    match /users/{userId}/notes/{noteId} {
+      allow read: if isUser(userId);
+      allow create: if isUser(userId)
+        && noteShape()
+        && !incoming().keys().hasAny(['share'])
+        && (!incoming().keys().hasAny(['remindedAt']) || incoming().remindedAt == 0);
+      allow update: if isUser(userId)
+        && noteShape()
+        && incoming().get('share', null) == resource.data.get('share', null)
+        && (
+          incoming().get('remindedAt', 0) == 0
+          || incoming().get('remindedAt', 0) == resource.data.get('remindedAt', 0)
+        );
+      allow delete: if false;
+    }
+
+    match /note_shares/{shareId} {
+      allow read: if isSignedIn()
+        && resource.data.status == 'live'
+        && (
+          resource.data.ownerId == request.auth.uid
+          || canSeeSpaceData(spaceDoc(resource.data.spaceId))
+        );
+      allow write: if false;
+    }
+
     // A classmate can read a shared plan's content to start their own copy;
     // only the person who shared it can change or withdraw it.
     match /shared_preps/{shareId} {

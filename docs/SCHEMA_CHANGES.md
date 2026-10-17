@@ -1390,3 +1390,17 @@ Offers with `ageMin` above 0 are hidden on the server from anyone who is not an 
 
 `partner_merchant` is a role of its own. It is not the tier-4 police or NGO partner, and `canPublishAmberAlerts` is false for it. Onboarding is `/partner`. Admin review is `/dashboard/admin/partners`. The portal is `/dashboard/partner`. Students use `/dashboard/student/perks`. Approval sets `users.role` to `partner_merchant` and `partnerId`.
 
+## Sticky notes
+
+`users/{uid}/notes/{noteId}` is `{ text, colour, pinned, order, board, linkedTo, remindAt, checklist, createdAt, updatedAt, deletedAt }`. `text` is at most 2000 characters. `colour` is `cyan`, `sky`, `coral`, `success`, `lilac`, or `white`. `board` defaults to `My board`. `linkedTo` is `{ type, id }` where `type` is `lesson`, `course`, `assignment`, `exam`, or `none`. `checklist` is an optional list of `{ id, text, done }`. `remindAt` is optional. `remindedAt` is `0` until the reminder cron sends it.
+
+Only the owner can read or write a note. Clients cannot set `share`, cannot set `remindedAt` to anything except `0`, and cannot hard-delete. A delete sets `deletedAt`. The note stays in trash for 30 days. `GET /api/cron/notes` (every 15 minutes, `CRON_SECRET`) sends due reminders and then deletes trash older than 30 days. A reminder push uses category `general`. It waits while `notify_settings/{uid}` quiet hours are in effect (default 21:00–07:00).
+
+The web client and the app use the same documents. The web Firestore client turns on offline persistence so an edit made offline syncs on reconnect.
+
+Sharing is off until the owner asks. `POST /api/notes` with `action: "share"` checks the study group, then runs the note through ET AI moderation (`moderateText` plus the model). A live share is copied to `note_shares/{uid}_{noteId}` as `{ ownerId, noteId, spaceId, status, text, colour, authorFirstName, at }`. Held or blocked notes are not readable by the group and land on `moderation_queue` with surface `note`. Under-18s can share only to a `class` or `school` space whose `institutionId` matches their own. A space without `institutionId` is refused for minors. Adults can share to a study group they belong to. `action: "unshare"` removes the copy.
+
+`action` `flashcards`, `summarise`, or `plan` reads only the owner's selected notes and sends them to ET AI. Nothing is sent until the student presses one of those actions.
+
+Indexes for the reminder query and the trash query are in `firestore.indexes.json`. They are not deployed from this change.
+
