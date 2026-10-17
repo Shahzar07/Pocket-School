@@ -32,6 +32,7 @@ import {
 import { SERVER_DEVICE } from '../ledger/device';
 import { exportCsv, exportPdf, type ExportFile } from '../ledger/export';
 import { appendChain, readChain, verifyStoredChain } from './ledger';
+import { notifyTicketStaff } from './staff-notify';
 import {
   DEFAULT_WORK,
   escalationTarget,
@@ -216,6 +217,13 @@ export async function createTicket(uid: string, input: Record<string, unknown>) 
     before: {},
     after: { category, priority, status: 'pending', addressedTo, body },
   }, deviceOf(input));
+  if (category === 'safeguarding' && priority === 'high') {
+    try {
+      await notifyTicketStaff(ref.id);
+    } catch (error) {
+      console.error('staff notice failed', error);
+    }
+  }
   return { id: ref.id, addressedTo, slaDueAt: ticket.slaDueAt, safeguardingCaseId };
 }
 

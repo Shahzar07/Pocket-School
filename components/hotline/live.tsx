@@ -442,6 +442,11 @@ export function StaffHotlineLive({ sample = false }: { sample?: boolean }) {
 
 export function EmergencyLive({ sample = false }: { sample?: boolean }) {
   const [alertId, setAlertId] = useState(sample ? 'sample-alert' : '');
+  useEffect(() => {
+    if (sample) return;
+    const id = new URLSearchParams(window.location.search).get('id') ?? '';
+    if (/^[A-Za-z0-9_-]{1,128}$/.test(id)) setAlertId(id);
+  }, [sample]);
   const [type, setType] = useState('missing_child');
   const [title, setTitle] = useState(sample ? 'Missing child near the school gate' : '');
   const [description, setDescription] = useState(sample ? 'Last seen at the gate after dismissal. Police reference is on the draft.' : '');

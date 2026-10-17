@@ -7,6 +7,7 @@ import { type Firestore } from 'firebase-admin/firestore';
 import { adminDb } from '../firebase-admin';
 import { ActionError } from './actions';
 import { sendPush } from '../push';
+import { notifyAlertStaff } from './staff-notify';
 import { adminPushStore } from '../push-store';
 import { sendToDevice } from '../push-transport';
 import { createHash } from 'crypto';
@@ -417,6 +418,11 @@ export async function confirmAlert(uid: string, id: string, device: ChainDevice 
     createdAtMs: now,
   });
   await notifyRegion(next);
+  try {
+    await notifyAlertStaff(id);
+  } catch (error) {
+    console.error('staff notice failed', error);
+  }
   return { id, status: 'active' };
 }
 

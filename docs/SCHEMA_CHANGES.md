@@ -1083,7 +1083,7 @@ Parent-to-school tickets. The website shape here is canonical. Client writes are
 
 Storage path: `institutions/{institutionId}/hotline/{ticketId}/{fileId}-{name}`. Clients cannot read or write it. `GET /api/hotline/file` returns a signed URL and writes a `viewed` event.
 
-`hotline_tickets/{id}/events/{eventId}` is append-only. See [Tamper-evident logs](#tamper-evident-logs). Actions include `created`, `assigned`, `status_change`, `escalated`, `reopened`, `rated`, `uploaded`, `viewed`, `authorities`, `authority_reminder`, `legal_hold_set`, `legal_hold_cleared`, `internal_redacted`, and `exported`.
+`hotline_tickets/{id}/events/{eventId}` is append-only. See [Tamper-evident logs](#tamper-evident-logs). Actions include `created`, `assigned`, `status_change`, `escalated`, `reopened`, `rated`, `uploaded`, `viewed`, `authorities`, `authority_reminder`, `legal_hold_set`, `legal_hold_cleared`, `internal_redacted`, `exported`, and `delivery`.
 
 | Method | Path |
 | --- | --- |
@@ -1108,7 +1108,7 @@ Storage path: `institutions/{institutionId}/hotline/{ticketId}/{fileId}-{name}`.
 
 Analytics hide any group under 5: category counts, SLA compliance, average resolution time, satisfaction, and the overdue count. The parent desk is `/dashboard/parent/hotline`. Staff queues are `/dashboard/teacher/hotline`, `/dashboard/admin/hotline`, and `/dashboard/institution/hotline`.
 
-Push category `hotline`. It can be muted with `notificationPrefs.hotline`. Student safety reports from someone under 13 also send a `safety` push with `force` so a muted preference does not delay it, plus an email when SMTP is set. The email names the student and does not include the report.
+Push category `hotline`. It can be muted with `notificationPrefs.hotline`. Student safety reports, danger alerts, high safeguarding tickets, and published emergency alerts also notify staff by push and email. See [Staff case notices](#staff-case-notices).
 
 ## Emergency alerts
 
@@ -1148,7 +1148,7 @@ Amber and other emergency alerts. Publishing is server-only. A verified principa
 
 `emergency_alerts/{id}/consent/{consentId}` is an append-only chain entry (`action: consent`). Fields: `details`, `photo`, `regions`, `channels`, `disclaimer`, `guardianName`, `relation`, `signature`, `signatureKind` (`drawn` or `typed`), `at`, `ip`, `clientDevice` (the user agent), `version`. The chain `device` object is separate and stores only `platform`, `appVersion`, and `ipHash`. A missing-child alert cannot be published without one. The server creates a version and never updates it.
 
-`emergency_alerts/{id}/audit/{auditId}` is an append-only chain entry. Actions include `created`, `confirmed`, `resolved`, `closed`, `uploaded`, `viewed`, `authorities`, `authority_reminder`, `consent_withdrawn`, `reviewed`, `review_paused`, `retracted`, `reported`, `shared`, `legal_hold_set`, `legal_hold_cleared`, `internal_redacted`, and `exported`. An update lives on `updates`, and a consent version lives on `consent`. They share `chainSeq` with `audit`.
+`emergency_alerts/{id}/audit/{auditId}` is an append-only chain entry. Actions include `created`, `confirmed`, `resolved`, `closed`, `uploaded`, `viewed`, `authorities`, `authority_reminder`, `consent_withdrawn`, `reviewed`, `review_paused`, `retracted`, `reported`, `shared`, `legal_hold_set`, `legal_hold_cleared`, `internal_redacted`, `exported`, and `delivery`. An update lives on `updates`, and a consent version lives on `consent`. They share `chainSeq` with `audit`.
 
 `alert_reports/{id}`: `alertId`, `reporterId` (empty for an anonymous visitor, and visible to staff only), `reason`, `falseReport`, `flaggedBy`, `at`, `day`. Three reports per user or anonymous visitor per day. A second false report sets `alert_report_bans/{uid}.banned`. Anonymous reports are rate limited, and they require a captcha when `CAPTCHA_SECRET` is set. Each report is copied to `moderation_queue` with `surface: emergency_alert`.
 
@@ -1190,7 +1190,7 @@ Public page: `/alerts/[id]`. OG image: `/alerts/[id]/opengraph-image`. The card 
 
 Push category `emergency`. It is targeted to institution members and to profiles whose country, state, and city match `region`. Delivery sets `force` and `sound: emergency`, so quiet hours and a muted preference do not apply. There is no mute toggle for it.
 
-A student's **I'm in danger now** action is not one of these published alerts. It is a `hotline_tickets` document with `source: danger_now` and a linked `safeguarding_cases` document at severity `critical`. The push is still category `emergency`, with `force` and `sound: emergency`, and the body is the student's name and the time. Recipients are the approved `parent_links`, the safeguarding lead, the principal, and the form teacher, unless the parent-exclusion rule removes every parent link. See [Student safety reports](#student-safety-reports).
+A student's **I'm in danger now** action is not one of these published alerts. It is a `hotline_tickets` document with `source: danger_now` and a linked `safeguarding_cases` document at severity `critical`. Parents who are not excluded still get an `emergency` push with `force`, `sound: emergency`, the student's name, and the time. Staff get the lock-screen push and the confidential case card in [Staff case notices](#staff-case-notices). The parent-exclusion rule still removes every parent link from that parent push.
 
 Admin desks: `/dashboard/admin/emergency` and `/dashboard/institution/emergency`.
 
@@ -1226,7 +1226,7 @@ It also opens `safeguarding_cases/{id}` with `source: student_safety_report` and
 | The reporter | Tracker only: `received`, `being_looked_at`, `action_taken`, `closed`. No staff notes, events, comments, or assignee. |
 | Anyone else | Hidden. |
 
-`users.ageTier` or a computed tier from `users.dateOfBirth` decides the under-13 notice. A missing tier is not treated as under 13. When the reporter is under 13, each safeguarding lead gets an immediate `safety` push with `force` and an email if `SMTP_HOST`, `SMTP_USER`, and `SMTP_PASS` are set. If mail cannot be sent, the chain records `email: skipped` and the report still exists.
+`users.ageTier` or a computed tier from `users.dateOfBirth` decides whether a safety-report push uses `force`. A missing tier is not treated as under 13. Every student safety report notifies the form teacher, the safeguarding lead, and the principal. When the reporter is under 13 the push category stays `safety` and `force` is true, so a muted preference does not delay it. The email is the same confidential case card as every other staff notice, and it includes the report. See [Staff case notices](#staff-case-notices). The report still exists when mail cannot be sent. The chain records a failed delivery instead of skipping the email.
 
 The third report from the same student on a UTC day, and every report after it, sets `throttled` and `flagged` with `flagReason: rate`, and the chain records `safety_report_flagged`. `POST /api/safety/report` and `POST /api/safety/danger` do not use the generic API rate limit, so a burst cannot return 429. Nothing in this path returns a refusal because of volume.
 
@@ -1252,7 +1252,7 @@ The lead records `familyDecision: { contact: now | later | not_now, when, reason
 
 Not deployed.
 
-`hotline_tickets` get stays available to the parent or a super admin only when `source` is neither `student_safety_report` nor `danger_now`. List stays false. `events` and `comments` on those sources are not client-readable. `safeguarding_cases` with those sources are not client-readable. `safety_helplines` is signed-in read, write false. `safety_flags` and `safety_rate` are read and write false.
+`hotline_tickets` get stays available to the parent or a super admin only when `source` is neither `student_safety_report` nor `danger_now`. List stays false. `events` and `comments` on those sources are not client-readable. `safeguarding_cases` with those sources are not client-readable. `safety_helplines` is signed-in read, write false. `safety_flags`, `safety_rate`, and `mail_deliveries` are read and write false.
 
 Indexes, not deployed:
 
@@ -1271,8 +1271,98 @@ Indexes, not deployed:
 | POST | `/api/safety/ack` |
 | POST | `/api/safety/family` |
 | POST | `/api/safety/false-danger` |
+| POST | `/api/safety/notify` |
+| POST | `/api/mail/resend` |
 
-The parent desk, staff queue, and emergency desk use the dashboard kit from PR #131 (`StatCard`, `AlertCard`, `EmptyState`) inside the existing dashboard chrome. Routes: `/dashboard/parent/hotline`, `/dashboard/teacher/hotline`, `/dashboard/admin/hotline`, `/dashboard/institution/hotline`, `/dashboard/admin/emergency`, `/dashboard/institution/emergency`, `/dashboard/student/safety`, and the public page `/alerts/[id]`.
+The parent desk, staff queue, and emergency desk use the dashboard kit from PR #131 (`StatCard`, `AlertCard`, `EmptyState`) inside the existing dashboard chrome. Routes: `/dashboard/parent/hotline`, `/dashboard/teacher/hotline`, `/dashboard/admin/hotline`, `/dashboard/institution/hotline`, `/dashboard/admin/emergency`, `/dashboard/institution/emergency`, `/dashboard/student/safety`, and the public page `/alerts/[id]`. A staff case link for an alert opens `/dashboard/admin/emergency?id={alertId}` and fills the alert id.
+
+## Staff case notices
+
+Staff are notified when a student files a safety report, taps **I'm in danger now**, a parent opens a high-priority safeguarding hotline ticket, or a second staff member confirms an emergency alert. The form teacher, the head, and the principal each get a push and an email. Parents are not on this list. Do not deploy the `mail_deliveries` rule from this branch.
+
+### Who is notified
+
+| Role | How they are chosen |
+| --- | --- |
+| Form teacher | `users.formTeacherUid` on the student. If it is empty, a user at the same school with `staffPost: teacher` whose `classId` or `classIds` matches the student's `classId`. Skipped when the alert has no student. |
+| Head | `staffPost: safeguarding_lead` for a danger alert, a safety report, a high safeguarding ticket, and an emergency of type `missing_child` or `medical`. `staffPost: academic_lead` for `lockdown`, `weather`, and `general`. If that school has no academic lead, the safeguarding lead is used. |
+| Principal | `staffPost: principal` at the same `institutionId`. |
+
+Ids are deduplicated. Any id that is also an approved parent of that student is removed. When the parent-exclusion rule applies, parents are not pushed and not emailed. The staff email still lists those parents' names, phone numbers, and email addresses, and the card says `Parents were not notified.`
+
+`POST /api/safety/report`, `POST /api/safety/danger`, a high safeguarding `POST /api/hotline/create`, and `POST /api/emergency/confirm` call the notifier after the document is written. A mail failure does not fail the ticket or the alert. The public region push from `notifyRegion` still runs. A person who is both a region recipient and a staff recipient can receive both.
+
+### Push
+
+Lock-screen text only. Title is the short type (`Danger now`, `Bullying`, `Missing child`, and the other labels in `lib/staff-notice/copy.ts`). Body is `{first} {LastInitial}. · {class} · {HH:MM Asia/Kuala_Lumpur}. Open case.` A single name stays as that name. An empty name and class become `School`. The body has no description, phone, or email.
+
+| Kind | Category | Force | Sound |
+| --- | --- | --- | --- |
+| `student_safety_report` | `safety` | `true` only when the student is under 13 | none |
+| `danger_now`, high safeguarding ticket, `emergency_alert` | `emergency` | `true` | `emergency` |
+
+Under 13 is `users.ageTier === 'under13'` or `ageTierFromDob`. A missing tier is not under 13. The five-minute danger escalation re-push uses this same lock-screen copy. It does not send a second email.
+
+### Email
+
+`POST /api/safety/notify` is server-only. It runs before any user session check. `Authorization: Bearer $SAFETY_NOTIFY_SECRET` must match with a constant-time compare. A missing secret, a wrong secret, or a Firebase user token is `401`. Firebase admin not configured is `503` after the secret check. The body is exactly one of `{ "ticketId": "..." }` or `{ "alertId": "..." }`. The id matches `^[A-Za-z0-9_-]{1,128}$`. Anything else is `400`. The server loads the document. Client fields are not trusted as the child's name, contacts, or description. A ticket that is not a safety report, a danger alert, or a high safeguarding ticket returns `{ "skipped": true }`.
+
+The message is a confidential staff case card (`lib/staff-notice/template.ts`):
+
+| Field | Source |
+| --- | --- |
+| Subject | `Confidential: {type}`. The child's name and the description are not in the subject. |
+| Opening line | Open this message on a private screen. |
+| Child | `users.name`, or the alert `subjectName`. |
+| Student number | Optional `users.studentNumber`. Missing values render as `Not on file`. |
+| Class | `className`, then `classId`, then `yearGroup`. |
+| Photo | `users.avatarUrl` or the alert `photoUrl`, and only when the URL is `https`. |
+| Parents or guardians | Approved `parent_links` for the student: name, phone, and email. Staff see these even when parents were excluded from notification. |
+| Description | Ticket body, or the alert description. |
+| Location | Ticket `location.place` when it was shared. Alert `region.city` and `region.state`. Omitted when empty. |
+| Time | ISO time from `createdAt` or `publishedAt`. |
+| Case | The ticket or alert id. |
+| Link | `{origin}/dashboard/safety/{ticketId}` or `{origin}/dashboard/admin/emergency?id={alertId}`. Origin is `NEXT_PUBLIC_APP_URL`, then `APP_URL`, then `https://poketschool.ai`. |
+| Footer | `Confidential, do not forward`. |
+
+HTML uses the blue palette (`#1E6A83`, `#2786A4`, `#6FBBCE`, page `#F3F7F8`, ink `#17343C`). The same card has a plain-text part.
+
+### Mail provider
+
+`lib/mail/` picks one adapter:
+
+| Mode | When |
+| --- | --- |
+| Resend | `RESEND_API_KEY` is set. `POST https://api.resend.com/emails`. From is `MAIL_FROM`, or `Poket School <safety@poketschool.ai>`. |
+| SMTP | No Resend key, and `SMTP_HOST`, `SMTP_USER`, and `SMTP_PASS` are set. The existing nodemailer path. |
+| Console | Neither is set and `NODE_ENV` is not `production`. The message is logged and treated as sent. The provider id starts with `console-` and is not stored for webhooks. |
+| Failed | Neither is set and `NODE_ENV` is `production`. The send returns `Email is not configured.` The institution admin is notified. |
+
+Resend needs a verified sender domain for `poketschool.ai`. Add the SPF and DKIM TXT records from the Resend dashboard for that domain, and keep `MAIL_FROM` on it. Do not send from an unverified domain. The API key is not written to logs. Production logs do not include the email body.
+
+Each send retries inline with delays `0`, `400`, and `1600` milliseconds (`MAIL_BACKOFF_MS`), up to three attempts. The same helper retries push. A push with `sent === 0` is a failure, including when the user has no device token. There is no new cron. `vercel.json` still schedules only `/api/cron/insights`.
+
+### Delivery log
+
+Each recipient and each channel appends chain action `delivery`. Ticket entries go to `hotline_tickets/{id}/events`. Alert entries go to `emergency_alerts/{id}/audit`. A status change is a new entry. Entries are never updated. `diff` is `{ before: { status }, after: { status, channel, recipientUid } }`. Extra fields, all strings:
+
+| Field | Values |
+| --- | --- |
+| `channel` | `push` or `email`. |
+| `recipientUid` | Staff uid. Empty only when no institution admin exists. |
+| `status` | `queued`, then `sent` or `failed`. A webhook later appends `delivered`, `opened`, or `failed`. |
+| `provider` | `push`, `resend`, `smtp`, `console`, or `none`. |
+| `providerId` | Provider message id. Empty for push and for the console adapter. |
+| `error` | Short failure text. Empty when the send was accepted. |
+| `fallback` | `email` when push failed and email was sent. `push` when email failed and push was sent. Otherwise empty. |
+
+The chain does not store the description, a phone number, or an email address. Both channels are always tried. When one fails and the other is sent, a further `delivery` entry is appended on the surviving channel with `fallback` set. If either channel fails, or nobody was eligible, the institution admin (`role: institution_admin` at that school) gets a minimal push: title `Staff notice failed`, body `Open case.`, category `safety`, `force: true`. If that push fails, one email is sent with subject `Confidential: a staff notice failed`, the case link, and no child description or parent phone. That email does not start another full staff notice. If the school has no institution admin, one failed `delivery` entry records `No institution admin is on file.`
+
+`mail_deliveries/{id}` is a create-only pointer so a webhook can find the chain. The id is the provider id with characters outside `[A-Za-z0-9_.-]` removed. Fields: `providerId`, `parentPath`, `collection` (`events` or `audit`), `recipientUid`, `channel: email`, `caseId`, `createdAt`. Clients cannot read or write it. Console provider ids are not stored. A repeated create is ignored.
+
+`POST /api/mail/resend` verifies the Svix signature (`svix-id`, `svix-timestamp`, `svix-signature`) with `RESEND_WEBHOOK_SECRET`. The secret is `whsec_` plus the base64 key. The signed payload is `{id}.{timestamp}.{raw body}` and the digest is HMAC-SHA256. Signatures older than five minutes are rejected. A missing secret is `401`, including in development. `email.delivered` appends `delivered`, `email.opened` appends `opened`, and `email.bounced` or `email.complained` appends `failed`. The webhook entry's `before` status is `sent`. Unknown event types are acknowledged and ignored. Firebase admin not configured is `503` after the signature check.
+
+After a ticket notice, the ticket stores `staffUids` and `formTeacherUid` with a merge. An alert does not gain those fields. The emergency desk reads `?id=` so the email link opens the matching alert.
 
 ## App reconciliation
 

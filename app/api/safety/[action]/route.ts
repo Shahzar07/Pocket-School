@@ -1,8 +1,11 @@
+import { timingSafeEqual } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { isNextResponse, requireUser } from '@/lib/api-guard';
+import { isAdminConfigured } from '@/lib/firebase-admin';
 import { runGet, runPost } from '@/lib/server/http';
 import { ActionError } from '@/lib/server/actions';
 import { deviceFromHeaders } from '@/lib/ledger/device';
+import { notifyAlertStaff, notifyTicketStaff } from '@/lib/server/staff-notify';
 import {
   acknowledgeDanger,
   fileSafetyReport,
@@ -25,8 +28,43 @@ function stamp(req: NextRequest, body: Record<string, unknown>) {
   return { ...body, device: deviceFromHeaders(req.headers) };
 }
 
+function bearerMatches(expected: string, provided: string): boolean {
+  const left = Buffer.from(expected);
+  const right = Buffer.from(provided);
+  if (left.length === 0 || left.length !== right.length) return false;
+  return timingSafeEqual(left, right);
+}
+
+function caseId(value: unknown): string {
+  return typeof value === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(value) ? value : '';
+}
+
 export async function POST(req: NextRequest, ctx: { params: Promise<{ action: string }> }) {
   const { action } = await ctx.params;
+  if (action === 'notify') {
+    const secret = process.env.SAFETY_NOTIFY_SECRET ?? '';
+    const header = req.headers.get('authorization') ?? '';
+    const provided = header.startsWith('Bearer ') ? header.slice('Bearer '.length) : '';
+    if (!bearerMatches(secret, provided)) {
+      return NextResponse.json({ error: 'Unauthorized.', code: 'UNAUTHORIZED' }, { status: 401 });
+    }
+    if (!isAdminConfigured()) {
+      return NextResponse.json({ error: 'Server is not configured.', code: 'ADMIN_NOT_CONFIGURED' }, { status: 503 });
+    }
+    const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+    const ticketId = caseId(body.ticketId);
+    const alertId = caseId(body.alertId);
+    if ((ticketId && alertId) || (!ticketId && !alertId)) {
+      return NextResponse.json({ error: 'Send a ticket id or an alert id.', code: 'BAD_REQUEST' }, { status: 400 });
+    }
+    try {
+      const data = ticketId ? await notifyTicketStaff(ticketId) : await notifyAlertStaff(alertId);
+      return NextResponse.json(data);
+    } catch (error) {
+      console.error(error);
+      return NextResponse.json({ error: 'Something went wrong. Please try again.', code: 'INTERNAL' }, { status: 500 });
+    }
+  }
   if (action === 'report' || action === 'danger') {
     const user = await requireUser(req, { enforceRateLimit: false });
     if (isNextResponse(user)) return user;

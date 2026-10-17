@@ -6,7 +6,6 @@
 
 import { type Firestore } from 'firebase-admin/firestore';
 import { adminDb } from '../firebase-admin';
-import { ageTierFromDob } from '../age-tier';
 import { initialAuthorities } from '../authorities/policy';
 import { GENESIS, emptyLegalHold, type ChainDevice, type ChainDiff } from '../ledger/chain';
 import { SERVER_DEVICE } from '../ledger/device';
@@ -16,6 +15,8 @@ import { adminPushStore } from '../push-store';
 import { sendToDevice } from '../push-transport';
 import { ActionError } from './actions';
 import { appendChain } from './ledger';
+import { notifyTicketStaff } from './staff-notify';
+import { lockScreenNotice } from '../staff-notice/copy';
 import {
   DEFAULT_HELPLINES,
   cleanHelplines,
@@ -26,7 +27,6 @@ import {
   helplinesFor,
   isSafetyType,
   isWherePlace,
-  needsUrgentLeadNotice,
   placeOnce,
   safetyRateFlag,
   safetyView,
@@ -86,11 +86,6 @@ function deviceOf(input: Record<string, unknown> | undefined): ChainDevice {
   return { platform: device.platform.slice(0, 40), appVersion: device.appVersion.slice(0, 40), ipHash: device.ipHash };
 }
 
-function knownAgeTier(actor: Pick<Actor, 'ageTier' | 'dateOfBirth'>): string {
-  if (actor.ageTier === 'under13' || actor.ageTier === 'teen' || actor.ageTier === 'adult') return actor.ageTier;
-  return ageTierFromDob(actor.dateOfBirth, new Date()) ?? '';
-}
-
 async function calendarFor(institutionId: string): Promise<WorkCalendar> {
   if (!institutionId) return DEFAULT_WORK;
   const snap = await db().doc(`institutions/${institutionId}`).get();
@@ -135,38 +130,6 @@ async function pushTo(uid: string, category: 'safety' | 'emergency', title: stri
     );
   } catch (error) {
     console.error('safety push failed', error);
-  }
-}
-
-function smtpReady(): boolean {
-  return !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
-}
-
-async function mailLead(to: string, studentName: string, when: string): Promise<'sent' | 'skipped'> {
-  if (!to || !smtpReady()) return 'skipped';
-  const nodemailer = (await import('nodemailer')).default;
-  const { brandedMailHtml, mailFromHeader } = await import('../academy-mail');
-  const port = Number(process.env.SMTP_PORT || 587);
-  const transport = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port,
-    secure: port === 465,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-  });
-  const heading = 'A student under 13 sent a safety report';
-  const line = `${studentName} sent a safety report at ${when}. Open the safeguarding queue. This email does not include the report.`;
-  try {
-    await transport.sendMail({
-      from: mailFromHeader('Poket School'),
-      to,
-      subject: heading,
-      text: line,
-      html: brandedMailHtml({ heading, paragraphs: [line] }),
-    });
-    return 'sent';
-  } catch (error) {
-    console.error('safety email failed', error);
-    return 'skipped';
   }
 }
 
@@ -329,20 +292,10 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
     }, device);
   }
 
-  const ageTier = knownAgeTier(actor);
-  if (needsUrgentLeadNotice(ageTier)) {
-    const leads = await usersWithPost(actor.institutionId, 'safeguarding_lead');
-    const whenText = new Date(now).toISOString();
-    let email: 'sent' | 'skipped' = 'skipped';
-    for (const lead of leads) {
-      await pushTo(lead.id, 'safety', 'Safety report from a student under 13', `${actor.name} needs a safeguarding lead now.`, '/dashboard/teacher/hotline');
-      const result = await mailLead(lead.email, actor.name, whenText);
-      if (result === 'sent') email = 'sent';
-    }
-    await logEvent(ref.id, { id: 'system', role: 'system' }, 'lead_notice', {
-      before: {},
-      after: { ageTier, push: leads.length > 0, email, leads: leads.length },
-    }, SERVER_DEVICE);
+  try {
+    await notifyTicketStaff(ref.id);
+  } catch (error) {
+    console.error('staff notice failed', error);
   }
   return { ...trackerRow(ref.id, ticket), throttled: rate.throttled };
 }
@@ -443,8 +396,13 @@ export async function raiseDanger(uid: string, input: Record<string, unknown>) {
     },
   }, deviceOf(input));
   const body = `${actor.name} needs help now. ${whenText}`;
-  for (const recipient of fan.recipients) {
+  for (const recipient of fan.parentUids) {
     await pushTo(recipient, 'emergency', 'A student is in danger', body, `/dashboard/safety/${ref.id}`, 'emergency');
+  }
+  try {
+    await notifyTicketStaff(ref.id);
+  } catch (error) {
+    console.error('staff notice failed', error);
   }
   return {
     id: ref.id,
@@ -554,9 +512,14 @@ export async function escalateUnackedDanger(now = Date.now()) {
       before: { dangerEscalatedAt: 0 },
       after: { dangerEscalatedAt: now, reason: 'no staff acknowledgement in 5 minutes' },
     }, SERVER_DEVICE);
-    const name = str(data.reporterName) || 'A student';
+    const copy = lockScreenNotice({
+      typeLabel: 'Danger now',
+      fullName: str(data.reporterName),
+      classLabel: '',
+      at: now,
+    });
     for (const staffId of stringList(data.staffUids)) {
-      await pushTo(staffId, 'emergency', 'Danger alert needs a staff response', `${name} is still waiting. No staff member has acknowledged.`, `/dashboard/safety/${doc.id}`, 'emergency');
+      await pushTo(staffId, 'emergency', copy.title, copy.body, `/dashboard/safety/${doc.id}`, 'emergency');
     }
     escalated += 1;
   }

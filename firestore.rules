@@ -2731,6 +2731,9 @@ service cloud.firestore {
     match /safety_rate/{rateId} {
       allow read, write: if false;
     }
+    match /mail_deliveries/{deliveryId} {
+      allow read, write: if false;
+    }
     match /alert_reports/{reportId} {
       allow read: if isAdmin();
       allow create, update, delete: if false;
