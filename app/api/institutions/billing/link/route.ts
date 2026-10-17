@@ -3,6 +3,8 @@ import { callerIsAdmin, isNextResponse, requireUser } from '@/lib/api-guard';
 import { institutionEmail } from '@/lib/institution-membership';
 import { planName } from '@/lib/institution-pricing';
 import type { VolumeInterval, VolumePlanId } from '@/lib/institution-pricing';
+import { brandedMailHtml, mailBrandFromInstitution, mailFromHeader } from '@/lib/academy-mail';
+import { adminDb, isAdminConfigured } from '@/lib/firebase-admin';
 import { openInstitutionBill } from '@/lib/server/institution-billing';
 
 export const dynamic = 'force-dynamic';
@@ -82,11 +84,14 @@ export async function POST(req: NextRequest) {
       secure: port === 465,
       auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
     });
+    const academy = isAdminConfigured() ? await adminDb().doc(`institutions/${institutionId}`).get() : null;
+    const brand = mailBrandFromInstitution(academy?.data() as Record<string, unknown> | undefined);
     await transport.sendMail({
-      from: process.env.SMTP_FROM || `Poket School <${process.env.SMTP_USER}>`,
+      from: mailFromHeader(brand?.fromName),
       to: payerEmail,
       subject: mail.subject,
       text: mail.text,
+      html: brandedMailHtml({ brand, heading: mail.subject, paragraphs: mail.text.split('\n') }),
     });
     emailed = true;
   }

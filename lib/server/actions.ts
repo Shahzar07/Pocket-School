@@ -214,6 +214,8 @@ export async function completeLesson(
       issuerName: issuer.issuerName,
       showPoweredBy: issuer.showPoweredBy,
       accent: issuer.accent,
+      logoUrl: issuer.logoUrl,
+      certificateFooter: issuer.certificateFooter,
     });
     return {
       accepted: true,
@@ -929,6 +931,8 @@ export async function syncModuleCertificates(callerId: string, studentId: string
           issuerName: issuer.issuerName,
           showPoweredBy: issuer.showPoweredBy,
           accent: issuer.accent,
+          logoUrl: issuer.logoUrl,
+          certificateFooter: issuer.certificateFooter,
         });
       });
       if (award) {

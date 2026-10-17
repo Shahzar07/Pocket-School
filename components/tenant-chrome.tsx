@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { AcademyLockup } from '@/components/academy-lockup';
 import { useWhiteLabel } from '@/components/white-label-provider';
 
 /** A slim academy bar on public pages. The dashboard keeps its own shell. */
@@ -14,7 +15,9 @@ export function TenantChrome() {
   return (
     <div className="border-b border-border bg-card">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-2 text-sm">
-        <Link href={hrefFor('/')} className="font-semibold">{branding.displayName}</Link>
+        <Link href={hrefFor('/')}>
+          <AcademyLockup name={branding.displayName} logoUrl={branding.logoUrl} accent={branding.primaryColor} tone="light" />
+        </Link>
         <Link href={hrefFor('/courses')} className="text-muted-foreground">Catalogue</Link>
         <Link href={hrefFor('/login')} className="text-muted-foreground">Sign in</Link>
         {institution.features?.leaderboard && institution.leaderboardVisible !== 'off' && (

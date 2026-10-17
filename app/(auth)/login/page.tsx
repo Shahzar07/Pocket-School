@@ -22,11 +22,19 @@ import { getInstitution } from '@/lib/db';
 import { landingPath, readActiveMode } from '@/lib/account-modes';
 import { friendlyError } from '@/lib/design/system';
 import { useWhiteLabel } from '@/components/white-label-provider';
+import { accentInk } from '@/lib/white-label';
 import { reportActivity, reportFailedLogin } from '@/lib/audit/report';
 
 export default function LoginPage() {
   const { t } = useTranslation();
   const { branding, institution } = useWhiteLabel();
+  const accent = branding.isWhiteLabel && /^#[0-9a-fA-F]{6}$/.test(branding.primaryColor ?? '') ? branding.primaryColor ?? '' : '';
+  const linkColor = branding.isWhiteLabel && /^#[0-9a-fA-F]{6}$/.test(branding.secondaryColor ?? '') ? branding.secondaryColor ?? accent : accent;
+  const buttonStyle = accent ? { background: accent, color: accentInk(accent) } : undefined;
+  const buttonClass = accent
+    ? 'w-full h-12 rounded-2xl font-semibold text-base transition-all mt-2'
+    : 'w-full h-12 rounded-2xl bg-[#2786A4] hover:bg-[#1E6A83] text-white font-semibold text-base shadow-lg shadow-blue-900/30 transition-all mt-2';
+  const linkClass = linkColor ? 'font-semibold' : 'text-[#6FBBCE] font-semibold hover:text-[#93C5FD] transition-colors';
   const router = useRouter();
   const [step, setStep] = useState<'credentials' | 'twofa'>('credentials');
   const [email, setEmail] = useState('');
@@ -77,7 +85,7 @@ export default function LoginPage() {
     const res = await fetch('/api/auth/send-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: targetEmail }),
+      body: JSON.stringify({ email: targetEmail, institutionId: institution?.id || undefined }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -294,7 +302,8 @@ export default function LoginPage() {
                 id="email"
                 type="email"
                 placeholder="name@example.com"
-                className="h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-[#2786A4] focus:ring-[#2786A4]/20 transition-all"
+                className="h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 transition-all"
+                style={accent ? { outlineColor: accent } : undefined}
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 disabled={loading}
@@ -303,7 +312,7 @@ export default function LoginPage() {
             <div className="space-y-1.5">
               <div className="flex justify-between items-center">
                 <Label htmlFor="password" className="text-white/60 text-xs font-semibold uppercase tracking-wider">{t('authForm.password')}</Label>
-                <Link href="/forgot-password" className="text-xs font-medium text-[#6FBBCE] hover:text-[#93C5FD] transition-colors">
+                <Link href="/forgot-password" className={`text-xs font-medium ${linkClass}`} style={linkColor ? { color: linkColor } : undefined}>
                   {t('authForm.forgot')}
                 </Link>
               </div>
@@ -311,7 +320,7 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 placeholder="••••••••"
-                className="h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-[#2786A4] focus:ring-[#2786A4]/20 transition-all"
+                className="h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 transition-all"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 disabled={loading}
@@ -319,7 +328,8 @@ export default function LoginPage() {
             </div>
             <Button
               type="submit"
-              className="w-full h-12 rounded-2xl bg-[#2786A4] hover:bg-[#1E6A83] text-white font-semibold text-base shadow-lg shadow-blue-900/30 transition-all mt-2"
+              className={buttonClass}
+              style={buttonStyle}
               disabled={loading}
             >
               {loading ? t('authForm.signingIn') : t('authForm.signIn')}
@@ -328,7 +338,7 @@ export default function LoginPage() {
 
           <p className="text-center mt-7 text-white/40 text-sm">
             {t('authForm.noAccount')}{' '}
-            <Link href="/signup" className="text-[#6FBBCE] font-semibold hover:text-[#93C5FD] transition-colors">
+            <Link href="/signup" className={linkClass} style={linkColor ? { color: linkColor } : undefined}>
               {t('authForm.createFree')}
             </Link>
           </p>
@@ -354,7 +364,7 @@ export default function LoginPage() {
                   inputMode="numeric"
                   maxLength={6}
                   placeholder="123456"
-                  className="h-14 rounded-2xl bg-white/5 border-white/10 text-white text-center text-2xl tracking-[0.5em] font-bold placeholder:text-white/20 focus:border-[#2786A4]"
+                  className="h-14 rounded-2xl bg-white/5 border-white/10 text-white text-center text-2xl tracking-[0.5em] font-bold placeholder:text-white/20"
                   value={code}
                   onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
                   autoFocus
@@ -364,7 +374,8 @@ export default function LoginPage() {
               </div>
               <Button
                 type="submit"
-                className="w-full h-12 rounded-2xl bg-[#2786A4] hover:bg-[#1E6A83] text-white font-semibold shadow-lg shadow-blue-900/30"
+                className={buttonClass}
+                style={buttonStyle}
                 disabled={loading}
               >
                 {loading ? t('authForm.verifying') : t('authForm.verify')}
@@ -373,7 +384,8 @@ export default function LoginPage() {
                 type="button"
                 onClick={resendCode}
                 disabled={loading}
-                className="w-full text-xs text-[#6FBBCE] font-semibold hover:text-[#93C5FD] transition-colors"
+                className={`w-full text-xs ${linkClass}`}
+                style={linkColor ? { color: linkColor } : undefined}
               >
                 {t('authForm.resend')}
               </button>

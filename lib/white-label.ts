@@ -99,3 +99,15 @@ export function brandingFor(
 export function institutionOrigin(subdomain: string, rootDomain = 'poketschool.ai'): string {
   return `https://${subdomain}.${rootDomain}`;
 }
+
+/** Text colour that stays readable on an academy accent. */
+export function accentInk(hex: string): string {
+  const value = hex.trim();
+  if (!/^#[0-9a-fA-F]{6}$/.test(value)) return '#ffffff';
+  const n = Number.parseInt(value.slice(1), 16);
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.62 ? '#102027' : '#ffffff';
+}

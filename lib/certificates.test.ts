@@ -203,6 +203,23 @@ describe('certificate document', () => {
     expect(html).toContain('<svg');
     expect(html).toContain(certificateVerifyUrl(face.id));
     expect(html).toContain('not official academic qualifications');
+    const branded = certificateDocumentHtml({
+      ...face,
+      issuedByName: 'North Academy',
+      logoUrl: '/preview-assets/north.svg',
+      certificateFooter: 'Awarded by North Academy',
+      showPoweredBy: true,
+    });
+    expect(branded).toContain('NORTH ACADEMY');
+    expect(branded).toContain('/preview-assets/north.svg');
+    expect(branded).toContain('Awarded by North Academy');
+    expect(branded).toContain('Powered by Poket School');
+    const pdf = new TextDecoder().decode(buildCertificatePdf({
+      ...face,
+      issuedByName: 'North Academy',
+      certificateFooter: 'Awarded by North Academy',
+    }));
+    expect(pdf).toContain('Awarded by North Academy');
     expect(html).toContain(copyrightLine(2026));
     expect(certificateStatus('revoked')).toBe('revoked');
     expect(certificateStatus(undefined)).toBe('valid');

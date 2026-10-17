@@ -305,9 +305,13 @@ export default function InstitutionConsolePage() {
           displayName: institution.branding?.displayName || institution.name,
           emailFromName: institution.branding?.emailFromName,
         }, code, origin, { subject: institution.branding?.inviteSubject, text: institution.branding?.inviteBody });
-        await navigator.clipboard.writeText(`${message.subject}\n${message.text}`).catch(() => undefined);
+        const sent = await authedFetch('/api/institutions/invites/send', {
+          method: 'POST',
+          body: JSON.stringify({ institutionId, emails: parsed.rows.map((row) => row.email), code }),
+        }).catch(() => ({ emailed: false }));
+        if (sent.emailed !== true) await navigator.clipboard.writeText(`${message.subject}\n${message.text}`).catch(() => undefined);
         await note('invite', String(parsed.rows.length));
-        toast.success(`Invited ${parsed.rows.length}. The message is on the clipboard.`);
+        toast.success(sent.emailed === true ? `Emailed ${parsed.rows.length} invites from ${institution.branding?.emailFromName || institution.name}.` : `Invited ${parsed.rows.length}. The message is on the clipboard.`);
       } else if (action.type === 'group') {
         if (!action.name.trim()) throw new Error('Name the group.');
         await saveGroup(institutionId, action);

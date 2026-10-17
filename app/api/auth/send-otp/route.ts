@@ -14,6 +14,8 @@ import {
   sendOtpEmail,
   signOtp,
 } from '@/lib/email-otp';
+import { mailBrandFromInstitution } from '@/lib/academy-mail';
+import { adminDb, isAdminConfigured } from '@/lib/firebase-admin';
 import { bearerToken, lookupIdToken } from '@/lib/identity-token';
 
 export const dynamic = 'force-dynamic';
@@ -42,7 +44,7 @@ async function fallbackFor(req: Request, email: string): Promise<MfaFallback[]> 
 }
 
 export async function POST(req: Request) {
-  let body: { email?: string; language?: string };
+  let body: { email?: string; language?: string; institutionId?: string };
   try {
     body = await req.json();
   } catch {
@@ -79,7 +81,13 @@ export async function POST(req: Request) {
 
   try {
     const headerLanguage = req.headers.get('accept-language')?.split(',')[0]?.split('-')[0] ?? 'en';
-    await sendOtpEmail(email, code, body.language || headerLanguage);
+    const institutionId = body.institutionId?.trim() ?? '';
+    let brand = null;
+    if (institutionId && isAdminConfigured()) {
+      const snap = await adminDb().doc(`institutions/${institutionId}`).get();
+      brand = mailBrandFromInstitution(snap.data() as Record<string, unknown> | undefined);
+    }
+    await sendOtpEmail(email, code, body.language || headerLanguage, brand);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to send verification email.';
     return NextResponse.json({ error: message }, { status: 502 });

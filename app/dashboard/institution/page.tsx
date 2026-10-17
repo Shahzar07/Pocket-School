@@ -16,6 +16,7 @@ import { institutionOrigin } from '@/lib/white-label';
 import { Mail, Ticket, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashPage, DashHeader, Panel, StatCard } from '@/components/dash-ui';
+import { authedFetch } from '@/lib/api-client';
 import { friendlyError } from '@/lib/design/system';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -77,8 +78,12 @@ export default function InstitutionAcademyPage() {
         emailFromName: institution.branding?.emailFromName,
       }, code, institution.subdomain ? institutionOrigin(institution.subdomain) : 'https://poketschool.ai');
       setInvites(count => count + parsed.rows.length);
-      toast.success(message.subject);
-      await navigator.clipboard.writeText(message.text).catch(() => undefined);
+      const sent = await authedFetch('/api/institutions/invites/send', {
+        method: 'POST',
+        body: JSON.stringify({ institutionId, emails: parsed.rows.map((row) => row.email), code }),
+      }).catch(() => ({ emailed: false }));
+      toast.success(sent.emailed === true ? message.subject : `${message.subject}. The message is on the clipboard.`);
+      if (sent.emailed !== true) await navigator.clipboard.writeText(message.text).catch(() => undefined);
     } catch (err) {
       toast.error(friendlyError(err));
     }
