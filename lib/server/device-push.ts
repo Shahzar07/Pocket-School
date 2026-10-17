@@ -21,9 +21,11 @@ export type PushPref =
   | 'attendance'
   | 'integrity'
   | 'behaviour'
-  | 'reports';
+  | 'reports'
+  | 'progress';
 
 function categoryFor(pref: PushPref): PushCategory {
+  if (pref === 'progress') return 'progress';
   if (pref === 'attendance') return 'attendance';
   if (pref === 'integrity') return 'flags';
   if (pref === 'digest' || pref === 'reports') return 'digests';

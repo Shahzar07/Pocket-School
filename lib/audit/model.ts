@@ -123,6 +123,7 @@ export function categoryFor(action: string): ActivityCategory {
   if (action.startsWith('impersonation.')) return 'impersonation';
   if (action.startsWith('certificate.')) return 'certificate';
   if (action.startsWith('retention.')) return 'retention';
+  if (action.startsWith('progress.')) return 'admin';
   if (action === 'admin.action') return 'admin';
   return 'settings';
 }
@@ -175,6 +176,17 @@ export function actionLabel(action: string): string {
     'certificate.bulk': 'Bulk certificates',
     'retention.set': 'Retention updated',
     'retention.purge': 'Retention purge',
+    'progress.acknowledge': 'Progress alert acknowledged',
+    'progress.assign': 'Progress alert assigned',
+    'progress.note': 'Progress alert note',
+    'progress.resolve': 'Progress alert resolved',
+    'progress.settings': 'Progress alert settings',
+    'progress.act': 'Progress action logged',
+    'progress.seen': 'Progress alert seen by family',
+    'progress.parent_act': 'Family progress action',
+    'progress.delegate': 'Progress alert delegated',
+    'progress.check_in': 'Progress check-in',
+    'progress.meeting': 'Progress meeting saved',
   };
   return labels[action] ?? action;
 }

@@ -222,6 +222,12 @@ export async function completeLesson(
     await writePublicXp(uid, result.name ?? '', result.xp, result.role ?? 'student');
     await awardBadges(uid, result.xp);
   }
+  try {
+    const { noteLearner } = await import('../alerts/progress-server');
+    await noteLearner(uid, courseId);
+  } catch {
+    /* A progress note must not block lesson completion. */
+  }
   return result;
 }
 

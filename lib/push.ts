@@ -16,6 +16,7 @@ export const PUSH_CATEGORIES = [
   'grades',
   'assignments',
   'general',
+  'progress',
 ] as const;
 
 export type PushCategory = (typeof PUSH_CATEGORIES)[number];

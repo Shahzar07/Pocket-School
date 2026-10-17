@@ -124,6 +124,7 @@ export async function markUnitTestAttempt(uid: string, body: MarkUnitTestBody) {
     certificate = await issueCourseCertificate(uid, courseId);
   }
 
+  await noteProgress(uid, courseId);
   return {
     id: ref.id,
     attemptId: ref.id,
@@ -149,6 +150,15 @@ export async function markUnitTestAttempt(uid: string, body: MarkUnitTestBody) {
     recommendedLessonIds: result.recommendedLessonIds,
     responses: result.responses,
   };
+}
+
+async function noteProgress(uid: string, courseId: string): Promise<void> {
+  try {
+    const { noteLearner } = await import('../alerts/progress-server');
+    await noteLearner(uid, courseId);
+  } catch {
+    /* A progress note must not block the marked attempt. */
+  }
 }
 
 function clampTime(value: number | undefined): number {
