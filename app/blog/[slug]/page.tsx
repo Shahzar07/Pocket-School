@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArticleBody, ArticleCta, Cover } from '@/components/blog/article';
+import { AffiliateNote, ArticleBody, ArticleCta, Cover } from '@/components/blog/article';
 import { publishedPost, publishedPosts } from '@/lib/blog/load';
-import { articleJsonLd, faqJsonLd, jsonLdScript } from '@/lib/blog/posts';
+import { absoluteCover, articleJsonLd, faqJsonLd, isCoverPath, jsonLdScript } from '@/lib/blog/posts';
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -36,7 +36,7 @@ export async function generateMetadata({
       modifiedTime: new Date(post.updatedAt).toISOString(),
       authors: [post.author],
       tags: post.tags,
-      images: post.coverImage ? [{ url: post.coverImage }] : undefined,
+      images: isCoverPath(post.coverImage) ? [{ url: absoluteCover(post.coverImage) }] : undefined,
     },
   };
 }
@@ -62,6 +62,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           {post.author}
           {when ? ` · ${when}` : ''}
         </p>
+        <AffiliateNote post={post} />
         <Cover post={post} className="mt-6 h-64 rounded-[2rem] sm:h-80" />
         <p className="mt-8 text-lg leading-8 text-[#203337]/80">{post.excerpt}</p>
         <div className="mt-6">

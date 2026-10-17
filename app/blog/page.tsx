@@ -104,7 +104,7 @@ export default async function BlogIndex({
             <p className="text-xs font-bold tracking-[0.18em] text-[#E2AF4D]">FEATURED</p>
             <h2 className="mt-2 font-heading text-3xl tracking-tight">The next essay is still on the desk</h2>
             <p className="mt-3 max-w-xl text-[#203337]/75">
-              Published essays will appear here. Sample drafts stay in the admin desk until a super admin publishes them.
+              Published essays will appear here. The six drafts on the admin desk stay unpublished until a super admin publishes them.
             </p>
           </section>
         )}

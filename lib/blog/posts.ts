@@ -1,10 +1,16 @@
-/** Marketing journal. Draft samples never appear on the public site. */
+/** Marketing journal. Repo drafts never appear on the public site. */
+import { DRAFT_POSTS } from './drafts';
 
 export type BlogStatus = 'draft' | 'scheduled' | 'published';
 
 export interface BlogFaq {
   question: string;
   answer: string;
+}
+
+export interface BlogLink {
+  label: string;
+  href: string;
 }
 
 export interface BlogPost {
@@ -22,12 +28,36 @@ export interface BlogPost {
   updatedAt: number;
   ctaTitle: string;
   ctaBody: string;
+  ctaLinks: BlogLink[];
   faq: BlogFaq[];
-  /** Repo samples. They stay off the public site even if a status is edited by mistake. */
+  /** Book reviews keep Shopee placeholders until a real link is pasted in. */
+  affiliate: boolean;
+  /** Repo drafts. They stay off the public site until a super admin saves a published copy. */
   sample: boolean;
 }
 
-export const BLOG_CATEGORIES = ['Learning', 'ET AI', 'Families', 'Schools'] as const;
+export const BLOG_CATEGORIES = ['Learning', 'ET AI', 'Families', 'Schools', 'Book Reviews'] as const;
+
+export const AFFILIATE_DISCLOSURE = 'This post contains affiliate links. If you buy through them, Poket School may earn a small commission at no extra cost to you. We only review books we think are genuinely useful to learners and families.';
+
+export const AFFILIATE_REL = 'sponsored nofollow';
+
+const AFFILIATE_TOKEN = /^\[SHOPEE_AFFILIATE_LINK:\s*([^\]]+)\]$/;
+
+export function isAffiliateToken(value: string): boolean {
+  return AFFILIATE_TOKEN.test(value.trim());
+}
+
+/** Local covers live in public/blog. Remote covers stay on https. */
+export function isCoverPath(value: string): boolean {
+  if (value.startsWith('https://')) return true;
+  return value.startsWith('/blog/') && !value.includes('..') && value.endsWith('.webp');
+}
+
+export function absoluteCover(value: string): string {
+  if (value.startsWith('/blog/')) return `${BLOG_ORIGIN}${value}`;
+  return value;
+}
 
 export const BLOG_ORIGIN = 'https://poketschool.ai';
 
@@ -36,90 +66,8 @@ const SAMPLE_CTA = {
   ctaBody: 'Read the offer, then open an account. ET AI stays with the learner from the first lesson.',
 };
 
-export const SAMPLE_POSTS: BlogPost[] = [
-  {
-    slug: 'sample-how-et-ai-studies-with-you',
-    title: 'Sample draft: How ET AI studies with you',
-    excerpt: 'Unpublished sample. A short look at a one-to-one lesson with ET AI.',
-    body: [
-      'This is a sample draft. It is not published.',
-      'ET AI sits with one learner at a time. A Primary lesson can be a short explanation and a question. A Secondary lesson can slow down on the step that slipped. IGCSE and A-Level lessons keep the wording of the specification and the habit of showing working.',
-      'The teacher on the screen is ET AI. Poket School is the school around that conversation: lessons, practice, and a record of what has been learned.',
-    ].join('\n\n'),
-    category: 'ET AI',
-    tags: ['ET AI', 'lessons'],
-    author: 'Poket School',
-    coverImage: '',
-    featured: true,
-    status: 'draft',
-    publishedAt: null,
-    updatedAt: 1760572800000,
-    ...SAMPLE_CTA,
-    faq: [
-      {
-        question: 'Who is the tutor in a Poket School lesson?',
-        answer: 'ET AI. The name on the screen is always ET AI, or ET followed by the subject, such as ET Maths.',
-      },
-      {
-        question: 'Which pathways does this sample mention?',
-        answer: 'Primary, Secondary, IGCSE, and A-Level. It does not use numbered year groups.',
-      },
-    ],
-    sample: true,
-  },
-  {
-    slug: 'sample-a-week-that-stays',
-    title: 'Sample draft: A week of lessons that stay',
-    excerpt: 'Unpublished sample. How a family can keep a short daily rhythm.',
-    body: [
-      'This is a sample draft. It is not published.',
-      'A useful week is small. One lesson, a few questions, and a note of what still feels shaky. Families can see that rhythm without sitting the lesson themselves.',
-      'Poket School keeps the lesson in the learner’s language of study and the record in one place, so the next session starts where the last one stopped.',
-    ].join('\n\n'),
-    category: 'Families',
-    tags: ['families', 'practice'],
-    author: 'Poket School',
-    coverImage: '',
-    featured: false,
-    status: 'draft',
-    publishedAt: null,
-    updatedAt: 1760486400000,
-    ...SAMPLE_CTA,
-    faq: [
-      {
-        question: 'Is this essay live on the site?',
-        answer: 'No. It is a labelled sample draft for the editorial desk.',
-      },
-    ],
-    sample: true,
-  },
-  {
-    slug: 'sample-what-schools-hand-to-et-ai',
-    title: 'Sample draft: What a school can hand to ET AI',
-    excerpt: 'Unpublished sample. Notes, topics, and the line between the school and the tutor.',
-    body: [
-      'This is a sample draft. It is not published.',
-      'A school can hand ET AI the topic, the level, and the kind of practice it wants. Primary, Secondary, IGCSE, and A-Level stay named that way, so a department can see the pathway without a numbered year label.',
-      'Poket School does not replace the school’s own teachers. ET AI is the extra conversation between lessons.',
-    ].join('\n\n'),
-    category: 'Schools',
-    tags: ['schools', 'ET AI'],
-    author: 'Poket School',
-    coverImage: '',
-    featured: false,
-    status: 'draft',
-    publishedAt: null,
-    updatedAt: 1760400000000,
-    ...SAMPLE_CTA,
-    faq: [
-      {
-        question: 'Does ET AI replace a school’s teachers?',
-        answer: 'No. ET AI is the extra one-to-one conversation. The school keeps its own teachers.',
-      },
-    ],
-    sample: true,
-  },
-];
+/** Unpublished drafts shipped with the site. Public pages ignore them until published. */
+export const SAMPLE_POSTS: BlogPost[] = DRAFT_POSTS;
 
 export function slugify(value: string): string {
   return value
@@ -203,7 +151,7 @@ export function articleJsonLd(post: BlogPost): Record<string, unknown> {
     mainEntityOfPage: `${BLOG_ORIGIN}/blog/${post.slug}`,
   };
   if (post.publishedAt) data.datePublished = new Date(post.publishedAt).toISOString();
-  if (post.coverImage.startsWith('https://')) data.image = [post.coverImage];
+  if (isCoverPath(post.coverImage)) data.image = [absoluteCover(post.coverImage)];
   return data;
 }
 
@@ -249,22 +197,37 @@ export function parseStoredPost(slug: string, raw: unknown): BlogPost | null {
     }).slice(0, 8)
     : [];
   const publishedAt = typeof data.publishedAt === 'number' && Number.isFinite(data.publishedAt) ? data.publishedAt : null;
+  const category = (typeof data.category === 'string' && data.category.trim() ? data.category : 'Learning').slice(0, 40);
+  const ctaLinks = Array.isArray(data.ctaLinks)
+    ? data.ctaLinks.flatMap((item) => {
+      if (!item || typeof item !== 'object') return [];
+      const row = item as Record<string, unknown>;
+      const label = typeof row.label === 'string' ? row.label.trim() : '';
+      const href = typeof row.href === 'string' ? row.href.trim() : '';
+      if (!label || !href) return [];
+      if (!(href.startsWith('/') || href.startsWith('mailto:') || href.startsWith('https://') || isAffiliateToken(href))) return [];
+      return [{ label: label.slice(0, 80), href: href.slice(0, 300) }];
+    }).slice(0, 6)
+    : [];
+  const coverImage = typeof data.coverImage === 'string' && isCoverPath(data.coverImage) ? data.coverImage.slice(0, 500) : '';
   return {
     slug: slugify(typeof data.slug === 'string' && data.slug.trim() ? data.slug : slug) || slug,
     title: title.slice(0, 180),
     excerpt: (typeof data.excerpt === 'string' ? data.excerpt : '').slice(0, 300),
-    body: body.slice(0, 20000),
-    category: (typeof data.category === 'string' && data.category.trim() ? data.category : 'Learning').slice(0, 40),
+    body: body.slice(0, 28000),
+    category,
     tags,
     author: (typeof data.author === 'string' && data.author.trim() ? data.author : 'Poket School').slice(0, 80),
-    coverImage: typeof data.coverImage === 'string' && data.coverImage.startsWith('https://') ? data.coverImage.slice(0, 500) : '',
+    coverImage,
     featured: data.featured === true,
     status,
     publishedAt,
     updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : Date.now(),
     ctaTitle: (typeof data.ctaTitle === 'string' && data.ctaTitle.trim() ? data.ctaTitle : SAMPLE_CTA.ctaTitle).slice(0, 120),
-    ctaBody: (typeof data.ctaBody === 'string' && data.ctaBody.trim() ? data.ctaBody : SAMPLE_CTA.ctaBody).slice(0, 300),
+    ctaBody: (typeof data.ctaBody === 'string' && data.ctaBody.trim() ? data.ctaBody : SAMPLE_CTA.ctaBody).slice(0, 400),
+    ctaLinks,
     faq,
+    affiliate: data.affiliate === true || category === 'Book Reviews',
     sample: false,
   };
 }

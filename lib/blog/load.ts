@@ -2,7 +2,7 @@ import 'server-only';
 import { adminDb, isAdminConfigured } from '@/lib/firebase-admin';
 import { SAMPLE_POSTS, isPublic, parseStoredPost, type BlogPost } from '@/lib/blog/posts';
 
-/** Samples plus anything a super admin has saved. A missing admin SDK keeps the samples only. */
+/** Repo drafts plus anything a super admin has saved. A missing admin SDK keeps the drafts only. */
 export async function loadBlogPosts(): Promise<BlogPost[]> {
   const posts = SAMPLE_POSTS.map((post) => ({ ...post, faq: post.faq.map((item) => ({ ...item })) }));
   if (!isAdminConfigured()) return posts;

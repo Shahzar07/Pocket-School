@@ -7,7 +7,7 @@ import { DashHeader, DashPage } from '@/components/dash-ui';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { resolveStaffRole } from '@/lib/admin-console';
 import { db } from '@/lib/firebase';
-import { BLOG_CATEGORIES, SAMPLE_POSTS, slugify, type BlogFaq, type BlogPost, type BlogStatus } from '@/lib/blog/posts';
+import { BLOG_CATEGORIES, SAMPLE_POSTS, isCoverPath, slugify, type BlogFaq, type BlogPost, type BlogStatus } from '@/lib/blog/posts';
 
 const EMPTY: BlogPost = {
   slug: '',
@@ -24,7 +24,12 @@ const EMPTY: BlogPost = {
   updatedAt: 0,
   ctaTitle: 'See how Poket School fits',
   ctaBody: 'Read the offer, then open an account. ET AI stays with the learner from the first lesson.',
+  ctaLinks: [
+    { label: 'See the offer', href: '/offer' },
+    { label: 'Create an account', href: '/signup' },
+  ],
   faq: [{ question: '', answer: '' }],
+  affiliate: false,
   sample: false,
 };
 
@@ -57,14 +62,14 @@ export default function BlogDeskPage() {
       setPosts(rows);
       setNotice('');
     } catch {
-      setNotice('Saved essays could not be loaded. The sample drafts below stay on this page.');
+      setNotice('Saved essays could not be loaded. The unpublished drafts below stay on this page.');
     }
   };
 
   useEffect(() => { void load(); }, []);
 
   const edit = (post: BlogPost) => {
-    const next = { ...post, sample: false, slug: post.sample ? `${post.slug}-copy` : post.slug };
+    const next = { ...post, sample: false };
     setDraft(next);
     setTags(next.tags.join(', '));
   };
@@ -87,7 +92,8 @@ export default function BlogDeskPage() {
       excerpt: draft.excerpt.trim(),
       body: draft.body,
       tags: tags.split(',').map((tag) => tag.trim()).filter(Boolean).slice(0, 12),
-      coverImage: draft.coverImage.startsWith('https://') ? draft.coverImage : '',
+      coverImage: isCoverPath(draft.coverImage) ? draft.coverImage : '',
+      affiliate: draft.category === 'Book Reviews' || draft.affiliate,
       faq,
       sample: false,
       updatedAt: Date.now(),
@@ -125,21 +131,21 @@ export default function BlogDeskPage() {
         eyebrow="Journal"
         title="Blog"
         accent="desk."
-        description="Super admins write, schedule, and publish. Sample drafts are labelled and stay unpublished until you save a copy."
+        description="Super admins write, schedule, and publish. These six drafts stay off the public site until you publish them."
       />
-      {!allowed ? <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">Only a super admin can save or publish. You can still read the sample drafts.</p> : null}
+      {!allowed ? <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">Only a super admin can save or publish. You can still read the unpublished drafts.</p> : null}
       {notice ? <p role="status" className="text-sm text-amber-800">{notice}</p> : null}
 
       <section aria-labelledby="sample-drafts">
-        <h2 id="sample-drafts" className="text-sm font-bold">Sample drafts — not published</h2>
-        <ul className="mt-3 grid gap-3 md:grid-cols-3">
+        <h2 id="sample-drafts" className="text-sm font-bold">Unpublished drafts</h2>
+        <ul className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {SAMPLE_POSTS.map((post) => (
             <li key={post.slug} className="rounded-2xl border border-border bg-card p-4">
-              <p className="text-[11px] font-bold tracking-wider text-amber-700">SAMPLE DRAFT</p>
+              <p className="text-[11px] font-bold tracking-wider text-amber-700">UNPUBLISHED DRAFT</p>
               <h3 className="mt-1 font-semibold">{post.title}</h3>
               <p className="mt-1 text-xs text-muted-foreground">{post.category}</p>
               <button type="button" className="mt-3 min-h-11 text-sm font-bold text-primary" onClick={() => edit(post)}>
-                Edit a copy
+                Edit
               </button>
             </li>
           ))}
@@ -186,7 +192,7 @@ export default function BlogDeskPage() {
             <input value={tags} onChange={(event) => setTags(event.target.value)} placeholder="ET AI, families" className="mt-1 w-full min-h-11 rounded-xl border border-border px-3" />
           </label>
           <label className="block text-sm font-semibold">Cover image URL
-            <input value={draft.coverImage} onChange={(event) => setDraft({ ...draft, coverImage: event.target.value })} placeholder="https://" className="mt-1 w-full min-h-11 rounded-xl border border-border px-3" />
+            <input value={draft.coverImage} onChange={(event) => setDraft({ ...draft, coverImage: event.target.value })} placeholder="/blog/essay.webp or https://" className="mt-1 w-full min-h-11 rounded-xl border border-border px-3" />
           </label>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-sm font-semibold">Status
@@ -218,7 +224,7 @@ export default function BlogDeskPage() {
                 <input aria-label={`Answer ${index + 1}`} value={item.answer} onChange={(event) => setDraft({ ...draft, faq: draft.faq.map((row, i) => i === index ? { ...row, answer: event.target.value } : row) })} placeholder="Answer" className="min-h-11 rounded-xl border border-border px-3" />
               </div>
             ))}
-            {draft.faq.length < 4 ? (
+            {draft.faq.length < 8 ? (
               <button type="button" className="min-h-11 text-sm font-bold text-primary" onClick={() => setDraft({ ...draft, faq: [...draft.faq, { question: '', answer: '' }] })}>
                 Add a question
               </button>
