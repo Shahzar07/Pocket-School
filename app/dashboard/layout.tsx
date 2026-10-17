@@ -39,6 +39,7 @@ import { adminMfaPending } from '@/lib/admin-mfa-pending';
 import { AdminViewAsBanner, clearViewAs, useAdminIdle, useViewAs } from '@/components/admin-session';
 import { isSuperAdmin, ROLE_LABELS } from '@/lib/roles';
 import { PipGuide } from '@/components/pip-guide';
+import { AllStaffBanner } from '@/components/alerts/all-staff';
 import { OfflineBanner } from '@/components/offline-banner';
 import { RoleChecklist } from '@/components/role-checklist';
 import { PagePurpose } from '@/components/page-purpose';
@@ -725,6 +726,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )}
             <RoleChecklist role={role} />
             <PagePurpose pathname={pathname} />
+            {role === 'teacher' || role === 'institution_admin' || role === 'admin' ? <AllStaffBanner /> : null}
             {children}
           </div>
         </main>

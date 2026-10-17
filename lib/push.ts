@@ -84,6 +84,11 @@ export function wantsCategory(token: DeviceToken, category: PushCategory): boole
   return token.prefs?.[category] !== false;
 }
 
+/** Emergency alerts, including an all-staff alert, ignore quiet hours and a muted category. */
+export function pushBypassesQuietHours(category: PushCategory): boolean {
+  return category === 'emergency';
+}
+
 export function tokensForRecipient(tokens: readonly DeviceToken[], userId: string): DeviceToken[] {
   return tokens.filter(token => token.userId === userId && token.token.trim().length > 0);
 }
@@ -96,7 +101,8 @@ async function deliver(message: PushMessage, deps: PushDeps): Promise<PushReport
   let skipped = 0;
 
   for (const token of tokens) {
-    if (!message.force && !wantsCategory(token, message.category)) {
+    const deliverAnyway = message.force === true || pushBypassesQuietHours(message.category);
+    if (!deliverAnyway && !wantsCategory(token, message.category)) {
       skipped += 1;
       continue;
     }

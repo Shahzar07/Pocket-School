@@ -32,6 +32,8 @@ import {
 import { SERVER_DEVICE } from '../ledger/device';
 import { exportCsv, exportPdf, type ExportFile } from '../ledger/export';
 import { appendChain, readChain, verifyStoredChain } from './ledger';
+import { resolveRecipients } from '../alerts/recipients';
+import { peopleAtInstitution } from './alert-directory';
 import { notifyTicketStaff } from './staff-notify';
 import {
   DEFAULT_WORK,
@@ -171,9 +173,18 @@ export async function createTicket(uid: string, input: Record<string, unknown>) 
   const calendar = await calendarFor(institutionId);
   const now = Date.now();
   const addressedTo = routeAddress(str(input.addressedTo), category);
+  const sensitive = isSensitiveCategory(category);
+  const directory = await peopleAtInstitution(institutionId);
+  const recipients = resolveRecipients({
+    kind: 'hotline',
+    institutionId,
+    people: directory,
+    addressedTo,
+    sensitive,
+  });
   const ref = db().collection('hotline_tickets').doc();
   let safeguardingCaseId = '';
-  if (isSensitiveCategory(category)) {
+  if (sensitive) {
     const caseRef = db().collection('safeguarding_cases').doc();
     safeguardingCaseId = caseRef.id;
     await caseRef.set({
@@ -205,6 +216,7 @@ export async function createTicket(uid: string, input: Record<string, unknown>) 
     safeguardingCaseId,
     authorities: authorities.decision,
     authoritiesRemindedAt: 0,
+    recipientUids: recipients.uids,
     chainSeq: 0,
     chainHead: GENESIS,
     legalHold: emptyLegalHold(),
@@ -222,6 +234,10 @@ export async function createTicket(uid: string, input: Record<string, unknown>) 
       await notifyTicketStaff(ref.id);
     } catch (error) {
       console.error('staff notice failed', error);
+    }
+  } else {
+    for (const recipient of recipients.uids) {
+      await notify(recipient, 'School hotline', 'A hotline ticket is waiting.', '/dashboard/teacher/hotline');
     }
   }
   return { id: ref.id, addressedTo, slaDueAt: ticket.slaDueAt, safeguardingCaseId };
@@ -491,12 +507,16 @@ export async function escalateDueTickets(now = Date.now()) {
       before: { addressedTo: str(data.addressedTo), escalationLevel: level },
       after: { addressedTo: next, escalationLevel: level + 1 },
     });
-    const staff = await db().collection('users')
-      .where('institutionId', '==', str(data.institutionId))
-      .limit(40)
-      .get();
-    for (const person of staff.docs.filter(doc => str(doc.data().staffPost) === next).slice(0, 10)) {
-      await notify(person.id, 'Hotline ticket is overdue', `Escalated to ${next.replace('_', ' ')}.`, '/dashboard/teacher/hotline');
+    const institutionId = str(data.institutionId);
+    const chain = resolveRecipients({
+      kind: 'hotline',
+      institutionId,
+      people: await peopleAtInstitution(institutionId),
+      addressedTo: next,
+      sensitive: isSensitiveCategory(str(data.category)),
+    });
+    for (const recipient of chain.uids) {
+      await notify(recipient, 'Hotline ticket is overdue', `Escalated to ${next.replaceAll('_', ' ')}.`, '/dashboard/teacher/hotline');
     }
     escalated += 1;
   }

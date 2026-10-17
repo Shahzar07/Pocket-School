@@ -10,6 +10,7 @@ import { initialAuthorities } from '../authorities/policy';
 import { GENESIS, emptyLegalHold, type ChainDevice, type ChainDiff } from '../ledger/chain';
 import { SERVER_DEVICE } from '../ledger/device';
 import { slaDueAt, DEFAULT_WORK, type WorkCalendar } from '../hotline/policy';
+import { alertPerson, resolveRecipients, type ResolvedRecipients } from '../alerts/recipients';
 import { sendPush } from '../push';
 import { adminPushStore } from '../push-store';
 import { sendToDevice } from '../push-transport';
@@ -20,7 +21,6 @@ import { lockScreenNotice } from '../staff-notice/copy';
 import {
   DEFAULT_HELPLINES,
   cleanHelplines,
-  dangerFanOut,
   dangerNeedsEscalation,
   dangerRepeatFlag,
   familyContactChoice,
@@ -138,6 +138,36 @@ async function usersWithPost(institutionId: string, staffPost: string): Promise<
   return snap.docs.map(doc => ({ id: doc.id, email: str(doc.data().email) }));
 }
 
+async function safetyAudience(actor: Actor, kind: 'student_safety_report' | 'danger_now', exclusion: {
+  type: string;
+  who: string;
+  concernRole: string;
+  dontTellParents: boolean;
+}): Promise<ResolvedRecipients & { formTeacherUid: string }> {
+  const linkSnap = await db().collection('parent_links').where('studentId', '==', actor.id).limit(20).get();
+  const parentUids = linkSnap.docs
+    .map(doc => ({ parentId: str(doc.data().parentId), status: str(doc.data().status) }))
+    .filter(link => link.status === 'approved' && link.parentId)
+    .map(link => link.parentId);
+  const leads = await usersWithPost(actor.institutionId, 'safeguarding_lead');
+  const principals = await usersWithPost(actor.institutionId, 'principal');
+  const teacher = await formTeacherUid(actor);
+  const people = [
+    ...leads.map(row => alertPerson({ uid: row.id, institutionId: actor.institutionId, role: 'teacher', staffPost: 'safeguarding_lead' })),
+    ...principals.map(row => alertPerson({ uid: row.id, institutionId: actor.institutionId, role: 'teacher', staffPost: 'principal' })),
+  ];
+  if (teacher) people.push(alertPerson({ uid: teacher, institutionId: actor.institutionId, role: 'teacher', staffPost: 'teacher' }));
+  const resolved = resolveRecipients({
+    kind,
+    institutionId: actor.institutionId,
+    people,
+    formTeacherUid: teacher,
+    parentUids,
+    exclusion,
+  });
+  return { ...resolved, formTeacherUid: teacher };
+}
+
 async function formTeacherUid(actor: Actor): Promise<string> {
   if (actor.formTeacherUid) return actor.formTeacherUid;
   if (!actor.classId || !actor.institutionId) return '';
@@ -218,6 +248,14 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
   const where = str(input.where).slice(0, 40);
   if (where && !isWherePlace(where)) throw new ActionError('BAD_REQUEST', 'Choose where this happened.');
   const when = str(input.when).slice(0, 200);
+  const concernRole = str(input.concernRole).slice(0, 40);
+  const dontTellParents = input.dontTellParents === true;
+  const audience = await safetyAudience(actor, 'student_safety_report', {
+    type: safetyType,
+    who,
+    concernRole,
+    dontTellParents,
+  });
   const now = Date.now();
   const prior = await db().collection('hotline_tickets')
     .where('reporterUid', '==', actor.id)
@@ -254,15 +292,17 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
     status: 'pending',
     body: description,
     who,
+    concernRole,
+    dontTellParents,
     where,
     when,
     flagged: rate.flagged,
     throttled: rate.throttled,
     flagReason: rate.flagged ? 'rate' : '',
-    parentsExcluded: false,
-    notifiedParentUids: [] as string[],
-    staffUids: [] as string[],
-    formTeacherUid: '',
+    parentsExcluded: audience.parentsExcluded,
+    notifiedParentUids: audience.parentUids,
+    staffUids: audience.staffUids,
+    formTeacherUid: audience.formTeacherUid,
     location: null,
     slaDueAt: slaDueAt(now, 'high', calendar),
     escalationLevel: 0,
@@ -311,16 +351,7 @@ export async function raiseDanger(uid: string, input: Record<string, unknown>) {
   const flags = await db().doc(`safety_flags/${actor.id}`).get();
   const previousFalse = Number(flags.data()?.falseDanger) || 0;
   const repeat = dangerRepeatFlag(previousFalse);
-  const linkSnap = await db().collection('parent_links').where('studentId', '==', actor.id).limit(20).get();
-  const links = linkSnap.docs.map(doc => ({
-    parentId: str(doc.data().parentId),
-    status: str(doc.data().status),
-  }));
-  const leads = await usersWithPost(actor.institutionId, 'safeguarding_lead');
-  const principals = await usersWithPost(actor.institutionId, 'principal');
-  const teacher = await formTeacherUid(actor);
-  const staffUids = [...leads.map(row => row.id), ...principals.map(row => row.id), teacher].filter(Boolean);
-  const fan = dangerFanOut({ type, who, concernRole, dontTellParents, links, staffUids });
+  const audience = await safetyAudience(actor, 'danger_now', { type, who, concernRole, dontTellParents });
   const share = input.shareLocation === true;
   const location = placeOnce(share, input.place, now);
   const authorities = initialAuthorities('unsure', '');
@@ -362,10 +393,10 @@ export async function raiseDanger(uid: string, input: Record<string, unknown>) {
     flagged: repeat,
     throttled: false,
     flagReason: repeat ? 'repeat_false' : '',
-    parentsExcluded: fan.excluded,
-    notifiedParentUids: fan.parentUids,
-    staffUids,
-    formTeacherUid: teacher,
+    parentsExcluded: audience.parentsExcluded,
+    notifiedParentUids: audience.parentUids,
+    staffUids: audience.staffUids,
+    formTeacherUid: audience.formTeacherUid,
     location,
     slaDueAt: slaDueAt(now, 'high', calendar),
     escalationLevel: 0,
@@ -389,16 +420,12 @@ export async function raiseDanger(uid: string, input: Record<string, unknown>) {
       source: 'danger_now',
       safetyType: type,
       status: 'pending',
-      parentsExcluded: fan.excluded,
-      recipientCount: fan.recipients.length,
+      parentsExcluded: audience.parentsExcluded,
+      recipientCount: audience.uids.length,
       locationShared: location !== null,
       flagged: repeat,
     },
   }, deviceOf(input));
-  const body = `${actor.name} needs help now. ${whenText}`;
-  for (const recipient of fan.parentUids) {
-    await pushTo(recipient, 'emergency', 'A student is in danger', body, `/dashboard/safety/${ref.id}`, 'emergency');
-  }
   try {
     await notifyTicketStaff(ref.id);
   } catch (error) {
@@ -407,7 +434,7 @@ export async function raiseDanger(uid: string, input: Record<string, unknown>) {
   return {
     id: ref.id,
     tracker: 'received' as const,
-    parentsExcluded: fan.excluded,
+    parentsExcluded: audience.parentsExcluded,
     locationShared: location !== null,
     flagged: repeat,
     createdAt: now,

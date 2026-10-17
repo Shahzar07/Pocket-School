@@ -1,7 +1,8 @@
 /**
- * Staff notices for danger alerts, safety reports, high safeguarding tickets,
- * and published emergency alerts. Push is lock-screen safe. Email is the
- * confidential case card. Parents are never recipients of this path.
+ * Confidential case card for safety reports, danger alerts, and high
+ * safeguarding tickets. Who is notified comes from resolveRecipients.
+ * Parents are pushed and are not emailed the case card. Amber and
+ * emergency alerts use the community audience, not this card.
  */
 
 import { type Firestore } from 'firebase-admin/firestore';
@@ -12,17 +13,18 @@ import { currentMailAdapter, currentMailEnv, sendWithBackoff, type MailSendResul
 import { sendPush, type PushReport } from '../push';
 import { adminPushStore } from '../push-store';
 import { sendToDevice } from '../push-transport';
+import { alertPerson, resolveRecipients, type AlertPerson } from '../alerts/recipients';
+import { parentsExcluded } from '../safety/policy';
 import {
   deliveryExtra,
   fallbackChannel,
-  headPost,
   lockScreenNotice,
   noticeCategory,
   noticeTypeLabel,
-  staffRecipients,
   type NoticeKind,
 } from '../staff-notice/copy';
 import { caseCardHtml, caseCardSubject, caseCardText, type GuardianContact } from '../staff-notice/template';
+import { peopleAtInstitution } from './alert-directory';
 import { appendChain } from './ledger';
 
 function db(): Firestore {
@@ -180,14 +182,21 @@ interface BuiltNotice {
   under13: boolean;
 }
 
-async function people(institutionId: string, student: FirebaseFirestore.DocumentData | null, studentId: string, kind: NoticeKind, alertType: string) {
-  const post = headPost(kind, alertType);
-  let heads = await usersWithPost(institutionId, post);
-  if (heads.length === 0 && post === 'academic_lead') heads = await usersWithPost(institutionId, 'safeguarding_lead');
+async function safetyRoster(institutionId: string, student: FirebaseFirestore.DocumentData | null, studentId: string) {
+  const leads = await usersWithPost(institutionId, 'safeguarding_lead');
   const principals = await usersWithPost(institutionId, 'principal');
   const formTeacherUid = student ? await formTeacherFor(student, studentId) : '';
   const family = await guardians(studentId);
-  return { heads, principals, formTeacherUid, family };
+  return { leads, principals, formTeacherUid, family };
+}
+
+function rosterPeople(institutionId: string, leads: Array<{ id: string }>, principals: Array<{ id: string }>, formTeacherUid: string): AlertPerson[] {
+  const people = [
+    ...leads.map(row => alertPerson({ uid: row.id, institutionId, role: 'teacher', staffPost: 'safeguarding_lead' })),
+    ...principals.map(row => alertPerson({ uid: row.id, institutionId, role: 'teacher', staffPost: 'principal' })),
+  ];
+  if (formTeacherUid) people.push(alertPerson({ uid: formTeacherUid, institutionId, role: 'teacher', staffPost: 'teacher' }));
+  return people;
 }
 
 function studentFields(data: FirebaseFirestore.DocumentData | null) {
@@ -222,9 +231,33 @@ export async function notifyTicketStaff(ticketId: string): Promise<{ recipients:
   const studentSnap = studentId ? await db().doc(`users/${studentId}`).get() : null;
   const student = studentSnap?.data() ?? null;
   const fields = studentFields(student);
-  const roster = await people(str(data.institutionId), student, studentId, kind, '');
+  const institutionId = str(data.institutionId);
+  const roster = await safetyRoster(institutionId, student, studentId);
   const under13 = fields.ageTier === 'under13' || ageTierFromDob(fields.dateOfBirth, new Date()) === 'under13';
   const location = data.location && typeof data.location === 'object' ? str((data.location as { place?: unknown }).place) : '';
+  const excluded = data.parentsExcluded === true || parentsExcluded({
+    type: str(data.safetyType),
+    who: str(data.who),
+    concernRole: str(data.concernRole),
+    dontTellParents: data.dontTellParents === true,
+  });
+  const resolved = kind === 'safeguarding_ticket'
+    ? resolveRecipients({
+      kind: 'hotline',
+      institutionId,
+      people: await peopleAtInstitution(institutionId),
+      addressedTo: str(data.addressedTo),
+      addressedUid: str(data.assigneeUid),
+      sensitive: true,
+    })
+    : resolveRecipients({
+      kind: kind === 'danger_now' ? 'danger_now' : 'student_safety_report',
+      institutionId,
+      people: rosterPeople(institutionId, roster.leads, roster.principals, roster.formTeacherUid),
+      formTeacherUid: roster.formTeacherUid,
+      parentUids: roster.family.parentUids,
+      parentsExcluded: excluded,
+    });
   const notice: BuiltNotice = {
     kind,
     parentPath: `hotline_tickets/${id}`,
@@ -240,75 +273,56 @@ export async function notifyTicketStaff(ticketId: string): Promise<{ recipients:
     description: str(data.body) || str(data.who),
     location,
     at: Number(data.createdAt) || Date.now(),
-    parentsExcluded: data.parentsExcluded === true,
+    parentsExcluded: excluded,
     force: kind !== 'student_safety_report' || under13,
     sound: kind === 'student_safety_report' ? undefined : 'emergency',
     category: noticeCategory(kind),
     formTeacherUid: roster.formTeacherUid,
-    headUids: roster.heads.map(row => row.id),
+    headUids: roster.leads.map(row => row.id),
     principalUids: roster.principals.map(row => row.id),
     guardians: roster.family.contacts,
     parentUids: roster.family.parentUids,
     under13,
   };
   const staffEmails = new Map<string, string>();
-  for (const row of [...roster.heads, ...roster.principals]) staffEmails.set(row.id, row.email);
+  for (const row of [...roster.leads, ...roster.principals]) staffEmails.set(row.id, row.email);
   if (roster.formTeacherUid && !staffEmails.has(roster.formTeacherUid)) {
     const teacher = await db().doc(`users/${roster.formTeacherUid}`).get();
     staffEmails.set(roster.formTeacherUid, str(teacher.data()?.email));
   }
-  return deliver(notice, staffEmails);
+  if (kind === 'safeguarding_ticket') {
+    const directory = await peopleAtInstitution(institutionId);
+    for (const person of directory) staffEmails.set(person.uid, person.email);
+  }
+  for (const parentUid of resolved.parentUids) {
+    const title = kind === 'danger_now' ? 'A student is in danger' : 'Safety report';
+    const body = kind === 'danger_now'
+      ? `${notice.fullName || 'A student'} needs help now.`
+      : `${notice.fullName || 'A student'} sent a safety report.`;
+    await sendChannel(notice, parentUid, 'push', async () => sendWithBackoff(async () => {
+      const report = await pushOnce(
+        parentUid,
+        kind === 'danger_now' ? 'emergency' : 'safety',
+        title,
+        body,
+        notice.caseUrl,
+        kind === 'danger_now' || under13,
+        kind === 'danger_now' ? 'emergency' : undefined,
+      );
+      const ok = report.sent > 0;
+      return { ok, provider: 'push', providerId: '', error: ok ? '' : 'Push was not delivered.' };
+    }));
+  }
+  return deliver(notice, staffEmails, resolved.staffUids);
 }
 
 export async function notifyAlertStaff(alertId: string): Promise<{ recipients: number; failed: number; skipped?: boolean }> {
   const id = safeId(alertId);
   if (!id) return { recipients: 0, failed: 0, skipped: true };
-  const snap = await db().doc(`emergency_alerts/${id}`).get();
-  if (!snap.exists) return { recipients: 0, failed: 0, skipped: true };
-  const data = snap.data() ?? {};
-  const type = str(data.type);
-  const region = data.region && typeof data.region === 'object'
-    ? [str((data.region as { city?: unknown }).city), str((data.region as { state?: unknown }).state)].filter(Boolean).join(', ')
-    : '';
-  const roster = await people(str(data.institutionId), null, '', 'emergency_alert', type);
-  const notice: BuiltNotice = {
-    kind: 'emergency_alert',
-    parentPath: `emergency_alerts/${id}`,
-    collection: 'audit',
-    institutionId: str(data.institutionId),
-    caseId: id,
-    caseUrl: `${appOrigin()}/dashboard/admin/emergency?id=${id}`,
-    typeLabel: noticeTypeLabel(type),
-    fullName: str(data.subjectName),
-    studentNumber: '',
-    classLabel: '',
-    photoUrl: publicPhoto(str(data.photoUrl)),
-    description: str(data.description),
-    location: region,
-    at: Number(data.publishedAt) || Number(data.createdAt) || Date.now(),
-    parentsExcluded: false,
-    force: true,
-    sound: 'emergency',
-    category: 'emergency',
-    formTeacherUid: '',
-    headUids: roster.heads.map(row => row.id),
-    principalUids: roster.principals.map(row => row.id),
-    guardians: [],
-    parentUids: [],
-    under13: false,
-  };
-  const staffEmails = new Map<string, string>();
-  for (const row of [...roster.heads, ...roster.principals]) staffEmails.set(row.id, row.email);
-  return deliver(notice, staffEmails);
+  return { recipients: 0, failed: 0, skipped: true };
 }
 
-async function deliver(notice: BuiltNotice, emails: Map<string, string>): Promise<{ recipients: number; failed: number }> {
-  const recipients = staffRecipients({
-    formTeacherUid: notice.formTeacherUid,
-    headUids: notice.headUids,
-    principalUids: notice.principalUids,
-    parentUids: notice.parentUids,
-  });
+async function deliver(notice: BuiltNotice, emails: Map<string, string>, recipients: string[]): Promise<{ recipients: number; failed: number }> {
   const pushCopy = lockScreenNotice({
     typeLabel: notice.typeLabel,
     fullName: notice.fullName,

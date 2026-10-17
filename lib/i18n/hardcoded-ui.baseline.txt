@@ -2403,3 +2403,16 @@ components/hotline/live.tsx	What should the school know
 components/safety/desk.tsx	Classroom, gate, or bus stop
 components/safety/desk.tsx	Place to share once
 components/safety/desk.tsx	Where this happened
+app/preview/all-staff/page.tsx	Staff are checking in
+components/alerts/all-staff.tsx	All-staff alert type
+components/alerts/all-staff.tsx	Block B, first floor
+components/alerts/all-staff.tsx	Description staff may see
+components/alerts/all-staff.tsx	I am safe
+components/alerts/all-staff.tsx	Location in school
+components/alerts/all-staff.tsx	Location in school: Block B, first floor. Reason recorded in the audit.
+components/alerts/all-staff.tsx	Need help
+components/alerts/all-staff.tsx	No all-staff alert
+components/alerts/all-staff.tsx	One tap tells every staff member. Private report details stay off the staff banner.
+components/alerts/all-staff.tsx	Reason for widening
+components/alerts/all-staff.tsx	Staff roll-call
+components/alerts/all-staff.tsx	Widen to all staff

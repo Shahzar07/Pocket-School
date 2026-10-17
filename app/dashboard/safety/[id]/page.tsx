@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { WidenAllStaff } from '@/components/alerts/all-staff';
 import { DashHeader, DashPage } from '@/components/dash-ui';
 import { authedFetch, postJSON } from '@/lib/authed-fetch';
 
@@ -93,6 +94,7 @@ export default function SafetyNoticePage() {
           ) : null}
         </section>
       ) : null}
+      <WidenAllStaff source="case" sourceId={id} />
     </DashPage>
   );
 }

@@ -192,6 +192,7 @@ const teacher: RoleHome = {
     { id: 'insights', label: 'Insights', href: '/dashboard/teacher/insights', category: 'insights' },
     { id: 'assignments', label: 'Assignments', href: '/dashboard/teacher/assignments', category: 'learning' },
     { id: 'hotline', label: 'Hotline queue', href: '/dashboard/teacher/hotline', category: 'safety' },
+    { id: 'roll-call', label: 'Staff roll-call', href: '/dashboard/staff/roll-call', category: 'safety' },
     { id: 'profile', label: 'Settings', href: '/dashboard/profile', category: 'settings' },
   ],
 };
@@ -216,6 +217,7 @@ const institution: RoleHome = {
     { id: 'automation', label: 'Automation', href: '/dashboard/institution/templates', category: 'settings' },
     { id: 'care', label: 'Care cases', href: '/dashboard/institution/progress', category: 'safety', hint: 'Linked from progress alerts' },
     { id: 'emergency', label: 'Emergency alerts', href: '/dashboard/institution/emergency', category: 'safety' },
+    { id: 'roll-call', label: 'Staff roll-call', href: '/dashboard/staff/roll-call', category: 'safety' },
     { id: 'activity', label: 'Activity', href: '/dashboard/institution/activity', category: 'insights' },
     { id: 'usage', label: 'Usage', href: '/dashboard/institution/usage', category: 'insights' },
     { id: 'messages', label: 'Messages', href: '/dashboard/messages', category: 'messages' },
@@ -248,6 +250,7 @@ const admin: RoleHome = {
     { id: 'help', label: 'Help articles', href: '/dashboard/admin/help', category: 'settings' },
     { id: 'hotline', label: 'Hotline analytics', href: '/dashboard/admin/hotline', category: 'safety' },
     { id: 'emergency', label: 'Emergency desk', href: '/dashboard/admin/emergency', category: 'safety' },
+    { id: 'roll-call', label: 'Staff roll-call', href: '/dashboard/staff/roll-call', category: 'safety' },
     { id: 'activity', label: 'Activity', href: '/dashboard/admin/activity', category: 'insights' },
     { id: 'profile', label: 'Settings', href: '/dashboard/profile', category: 'settings' },
   ],

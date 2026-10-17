@@ -77,7 +77,10 @@ export function noticeCategory(kind: NoticeKind): NoticeCategory {
   return 'emergency';
 }
 
-/** Safeguarding cases go to the safeguarding lead. Operational alerts go to the academic lead. */
+/**
+ * Kept for the lock-screen tests. Alert fan-out does not use this.
+ * Recipients are resolveRecipients in lib/alerts/recipients.ts.
+ */
 export function headPost(kind: NoticeKind, alertType = ''): 'safeguarding_lead' | 'academic_lead' {
   if (kind === 'emergency_alert' && alertType !== 'missing_child' && alertType !== 'medical') {
     return 'academic_lead';

@@ -5,7 +5,8 @@ import { isAdminConfigured } from '@/lib/firebase-admin';
 import { runGet, runPost } from '@/lib/server/http';
 import { ActionError } from '@/lib/server/actions';
 import { deviceFromHeaders } from '@/lib/ledger/device';
-import { notifyAlertStaff, notifyTicketStaff } from '@/lib/server/staff-notify';
+import { renotifyAlert } from '@/lib/server/emergency';
+import { notifyTicketStaff } from '@/lib/server/staff-notify';
 import {
   acknowledgeDanger,
   fileSafetyReport,
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
       return NextResponse.json({ error: 'Send a ticket id or an alert id.', code: 'BAD_REQUEST' }, { status: 400 });
     }
     try {
-      const data = ticketId ? await notifyTicketStaff(ticketId) : await notifyAlertStaff(alertId);
+      const data = ticketId ? await notifyTicketStaff(ticketId) : await renotifyAlert(alertId);
       return NextResponse.json(data);
     } catch (error) {
       console.error(error);

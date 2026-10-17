@@ -2734,6 +2734,23 @@ service cloud.firestore {
     match /mail_deliveries/{deliveryId} {
       allow read, write: if false;
     }
+    match /all_staff_alerts/{alertId} {
+      allow read, write: if false;
+      match /checkins/{staffId} {
+        allow read, write: if false;
+      }
+      match /audit/{auditId} {
+        allow read: if false;
+        allow create: if false;
+        allow update, delete: if false;
+      }
+    }
+    match /all_staff_open/{institutionId} {
+      allow read, write: if false;
+    }
+    match /all_staff_instructions/{institutionId} {
+      allow read, write: if false;
+    }
     match /alert_reports/{reportId} {
       allow read: if isAdmin();
       allow create, update, delete: if false;

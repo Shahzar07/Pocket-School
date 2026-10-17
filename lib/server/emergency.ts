@@ -7,7 +7,8 @@ import { type Firestore } from 'firebase-admin/firestore';
 import { adminDb } from '../firebase-admin';
 import { ActionError } from './actions';
 import { sendPush } from '../push';
-import { notifyAlertStaff } from './staff-notify';
+import { resolveRecipients } from '../alerts/recipients';
+import { peopleAtInstitution, peopleOptedIn } from './alert-directory';
 import { adminPushStore } from '../push-store';
 import { sendToDevice } from '../push-transport';
 import { createHash } from 'crypto';
@@ -39,7 +40,6 @@ import {
   canCreate,
   isEmergencyType,
   publicView,
-  regionMatch,
   type AuthorityNotice,
   type EmergencyRecord,
   type EmergencyStatus,
@@ -258,18 +258,16 @@ async function notifyPeople(record: EmergencyRecord, title: string, body: string
 }
 
 async function audience(record: EmergencyRecord): Promise<string[]> {
-  const members = await db().collection('users').where('institutionId', '==', record.institutionId).limit(200).get();
-  const targets = members.docs.map(doc => doc.id);
-  const nearby = await db().collection('users').where('country', '==', record.region.country).limit(200).get();
-  for (const doc of nearby.docs) {
-    const data = doc.data();
-    if (regionMatch({
-      country: str(data.country),
-      state: str(data.state),
-      city: str(data.city),
-    }, record.region)) targets.push(doc.id);
-  }
-  return targets;
+  const [members, optedIn] = await Promise.all([
+    peopleAtInstitution(record.institutionId),
+    peopleOptedIn(),
+  ]);
+  return resolveRecipients({
+    kind: record.type === 'missing_child' ? 'amber' : 'emergency',
+    institutionId: record.institutionId,
+    people: [...members, ...optedIn],
+    region: record.region,
+  }).uids;
 }
 
 async function storeRecipients(alertId: string, uids: string[], now: number) {
@@ -281,6 +279,17 @@ async function storeRecipients(alertId: string, uids: string[], now: number) {
 async function notifyRegion(record: EmergencyRecord) {
   const sent = await notifyPeople(record, record.title, record.description, await audience(record));
   await storeRecipients(record.id, sent, Date.now());
+}
+
+export async function renotifyAlert(alertId: string): Promise<{ recipients: number; failed: number; skipped?: boolean }> {
+  const snap = await db().doc(`emergency_alerts/${alertId}`).get();
+  if (!snap.exists) return { recipients: 0, failed: 0, skipped: true };
+  const record = asRecord(snap.id, snap.data() ?? {});
+  if (record.status === 'draft' || record.status === 'retracted' || record.status === 'closed' || record.status === 'resolved') {
+    return { recipients: 0, failed: 0, skipped: true };
+  }
+  const sent = await notifyPeople(record, record.title, record.description, await audience(record));
+  return { recipients: sent.length, failed: 0 };
 }
 
 export async function createAlert(uid: string, input: Record<string, unknown>) {
@@ -418,11 +427,6 @@ export async function confirmAlert(uid: string, id: string, device: ChainDevice 
     createdAtMs: now,
   });
   await notifyRegion(next);
-  try {
-    await notifyAlertStaff(id);
-  } catch (error) {
-    console.error('staff notice failed', error);
-  }
   return { id, status: 'active' };
 }
 

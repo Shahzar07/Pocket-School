@@ -1282,13 +1282,9 @@ Staff are notified when a student files a safety report, taps **I'm in danger no
 
 ### Who is notified
 
-| Role | How they are chosen |
-| --- | --- |
-| Form teacher | `users.formTeacherUid` on the student. If it is empty, a user at the same school with `staffPost: teacher` whose `classId` or `classIds` matches the student's `classId`. Skipped when the alert has no student. |
-| Head | `staffPost: safeguarding_lead` for a danger alert, a safety report, a high safeguarding ticket, and an emergency of type `missing_child` or `medical`. `staffPost: academic_lead` for `lockdown`, `weather`, and `general`. If that school has no academic lead, the safeguarding lead is used. |
-| Principal | `staffPost: principal` at the same `institutionId`. |
+The recipient list is [Alert recipients matrix](#alert-recipients-matrix). This section describes the lock-screen copy, the confidential case card, and the delivery log. Amber and emergency alerts are not emailed as a staff case card. They use the community push from that matrix.
 
-Ids are deduplicated. Any id that is also an approved parent of that student is removed. When the parent-exclusion rule applies, parents are not pushed and not emailed. The staff email still lists those parents' names, phone numbers, and email addresses, and the card says `Parents were not notified.`
+The confidential card still goes to the staff uids from the resolver, not to parents. The card lists approved guardian names, phone numbers, and email addresses even when those parents were excluded, and it says `Parents were not notified.`
 
 `POST /api/safety/report`, `POST /api/safety/danger`, a high safeguarding `POST /api/hotline/create`, and `POST /api/emergency/confirm` call the notifier after the document is written. A mail failure does not fail the ticket or the alert. The public region push from `notifyRegion` still runs. A person who is both a region recipient and a staff recipient can receive both.
 
@@ -1474,4 +1470,58 @@ Retention: closed alerts stay archived and are not indexed. Retracted alerts are
 
 `hotline` and `emergency`, on both `lib/push.ts` and `lib/platform/push.ts`. The reject string is `category must be goals, flags, attendance, digests, grades, assignments, general, achievements, network, safety, hotline, or emergency.`
 
-Account toggle: `notificationPrefs.hotline`. Emergency alerts are not a preference.
+Account toggle: `notificationPrefs.hotline`. Emergency alerts are not a preference. `pushBypassesQuietHours` is true for category `emergency`, so an all-staff alert and every other emergency push are delivered during quiet hours and when the device has muted the category.
+
+## Alert recipients matrix
+
+`resolveRecipients` in `lib/alerts/recipients.ts` is the only recipient list. Safety reports, danger alerts, hotline tickets, amber alerts, emergency alerts, Safety Desk cases, and all-staff alerts call it. Server notify paths do not keep a second staff or parent list.
+
+| Kind | Who is included |
+| --- | --- |
+| Student safety report and I'm in danger now | Safeguarding lead, principal, and form teacher at the school, plus approved `parent_links`, unless the parent-exclusion rule applies. No other staff. An academic lead, another teacher, or an institution admin is not added. |
+| Hotline ticket | The addressed post, the addressed uid when one is set, and every post in the escalation chain. Sensitive tickets (`bullying`, `safeguarding`) are the safeguarding lead and the principal. Other tickets are the teacher, the academic lead, and the principal. |
+| Amber (`missing_child`) or any other emergency | Every user whose `institutionId` is the school (students, parents, and staff), plus users with `emergencyOptIn: true` who match `region` (country, and state and city when the alert set them) or whose `homeCountry` is the same country. A region match without `emergencyOptIn` is not included. Institution members are included without that opt-in. |
+| Safety Desk | Super admins (`role: admin`), the on-call primary, the backup only when the case has escalated, and linked guardians whose verification tier is 2 or higher. Parent exclusion removes those parent uids from the recipient list. The confidential card still lists the guardian contacts and says parents were not notified. |
+| All-staff | Every staff member at the institution: teachers, institution admins, and users with a staff post. Students and parents are not included. |
+
+Parent exclusion is unchanged: type `abuse`, `concernRole` of parent or guardian, `who` naming a parent or guardian, or `dontTellParents`. Excluded parents are not pushed. The form teacher is `users.formTeacherUid`, or a teacher at the school whose `classId` or `classIds` matches the student.
+
+`users.emergencyOptIn` is the regional opt-in. It is not the founders `optIn` and not the recruiter `optedIn`. Missing means not opted in. `homeCountry` is compared with the alert country, including `MY` / `Malaysia`, `US` / `United States` / `USA`, and `GB` / `United Kingdom` / `UK`.
+
+Safety and danger store `staffUids`, `notifiedParentUids`, `parentsExcluded`, and `formTeacherUid` from this resolver. Hotline tickets store `recipientUids`. A high safeguarding ticket still sends the confidential case card to the hotline staff set. Other hotline tickets get a `hotline` push. Danger parent pushes stay category `emergency` with `force` and sound `emergency`. A safety-report parent push is category `safety`, and `force` only when the student is under 13.
+
+## All-staff alert
+
+A principal or safeguarding lead at verification tier 3 or higher can widen one open case or emergency to every staff member at that school. Tier 0 is used when `users.verification.tier` is missing. A teacher, an academic lead, and a super admin without that post cannot widen it.
+
+Types: `lockdown`, `intruder`, `missing_child_on_site`, `fire_evacuation`, `medical`.
+
+`POST /api/all-staff/widen` requires `source` (`case` or `emergency`), `sourceId`, `type`, `location` (at least 2 characters), and `reason` (at least 3 characters). `missing_child_on_site` may include `publicDescription` (maximum 240 characters), which is the only description staff see. Other types store that field empty. One open all-staff alert per school. A second widen returns `An all-staff alert is already open. Send the all-clear first.`
+
+The push category is `emergency`, with `force: true` and sound `emergency`. That bypasses quiet hours. The body is the location, the instruction in the staff member's language, and a prompt to check in. It does not include the report, the evidence, or the child's name.
+
+Instructions are preset in English, Malay, Chinese, and Tamil. `zh-Hant` and `zh-TW` use Chinese. A tier-3 principal or safeguarding lead replaces a language with `POST /api/all-staff/instructions`. The document is `all_staff_instructions/{institutionId}` with `types.{type}.{en|ms|zh|ta}`. An edited language does not replace the other languages. Clients cannot read or write it.
+
+The staff banner and roll-call use `staffAlertView`. The payload is `id`, `type`, `typeLabel`, `location`, `instruction`, `status`, `publicDescription`, and `checkIn`. Report body, evidence, and child identity are not copied onto it.
+
+Check-in is `POST /api/all-staff/check-in` with `status` `safe` or `need_help`. Counts are safe, need help, and no response. Need help pushes the principal: title `Staff needs help`, with the type and location, and no child identity. A cleared alert rejects further check-ins with `Roll-call is closed.`
+
+`POST /api/all-staff/clear` is the all-clear. The same tier-3 principal or safeguarding lead can send it. Staff receive a cancel push, title `All clear`, body `The all-staff alert is over. Roll-call is closed.` The pointer `all_staff_open/{institutionId}` moves to `cleared`.
+
+Widening appends chain action `widened_all_staff` on the source ticket (`events`) or emergency alert (`audit`), and on `all_staff_alerts/{id}/audit`. The diff is type, location, reason, alert id, and the public description. All-clear appends `all_clear`. Entries are created with `appendChain`. They are not updated or deleted.
+
+`all_staff_alerts/{id}` stores `institutionId`, `source`, `sourceId`, `type`, `location`, `publicDescription`, `reason`, `instructions`, `status` (`open` or `cleared`), `widenedBy`, `widenedAt`, `clearedBy`, `clearedAt`, `staffUids`, `chainSeq`, `chainHead`, and `legalHold`. Check-ins are `all_staff_alerts/{id}/checkins/{uid}` with `status` and `at`. Firestore rules deny client reads and writes, including update and delete on `audit`. Not deployed.
+
+Web: the case page `/dashboard/safety/{id}` and an emergency desk opened with `?id=` have **Widen to all staff**. Staff at the school see the banner with **I am safe**, **Need help**, and **Roll-call**. The roll-call is `/dashboard/staff/roll-call`. It is a home tile, not a fourth task. A public sample is `/preview/all-staff`.
+
+| Method | Path |
+| --- | --- |
+| POST | `/api/all-staff/widen` |
+| POST | `/api/all-staff/check-in` |
+| POST | `/api/all-staff/clear` |
+| GET | `/api/all-staff/banner` |
+| GET | `/api/all-staff/roll-call` |
+| GET | `/api/all-staff/instructions` |
+| POST | `/api/all-staff/instructions` |
+
+Index, not deployed: `all_staff_alerts` on `institutionId` ASC, `status` ASC. The open pointer is the read the banner uses, so the desk works before that index is deployed.

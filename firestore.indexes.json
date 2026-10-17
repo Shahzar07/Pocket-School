@@ -658,7 +658,15 @@
         { "fieldPath": "reporterId", "order": "ASCENDING" },
         { "fieldPath": "at", "order": "DESCENDING" }
       ]
-    }
+    },
+    {
+      "collectionGroup": "all_staff_alerts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
   ],
   "fieldOverrides": []
 }
