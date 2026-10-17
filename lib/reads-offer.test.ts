@@ -2,7 +2,16 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readsOfferExcerpts } from './reads-offer-excerpts';
 import { LANGUAGES } from './languages';
-import { READS_BOOKS, READS_PLANS } from './payments/reads';
+import { BOOKS } from './reads/seed';
+import {
+  READS_BOOKS,
+  READS_BOOK_USD,
+  READS_PLANS,
+  booksDearerThanUnlimited,
+  booksVersusUnlimitedLine,
+  ownOrReadLine,
+  readsPlanItem,
+} from './payments/reads';
 import {
   READS_OFFER_CHECKOUTS,
   READS_OFFER_FAQ,
@@ -16,15 +25,19 @@ import {
   readsYearlyUsd,
 } from './reads-offer';
 
-test('Reads prices match the shelf and the ten-month year', () => {
-  assert.equal(readsMonthlyUsd('reads'), 9);
-  assert.equal(readsYearlyUsd('reads'), 90);
-  assert.equal(readsMonthlyUsd('reads-family'), 15);
-  assert.equal(readsYearlyUsd('reads-family'), 150);
-  assert.equal(READS_PLANS.find(plan => plan.id === 'reads')?.usd, 9);
+test('Reads prices match the shared shelf', () => {
+  assert.equal(readsMonthlyUsd('reads'), readsPlanItem('reads', 'month')?.unitAmount);
+  assert.equal(readsYearlyUsd('reads'), readsPlanItem('reads', 'year')?.unitAmount);
+  assert.equal(readsMonthlyUsd('reads'), 4.99);
+  assert.equal(readsYearlyUsd('reads'), 49.99);
+  assert.equal(readsMonthlyUsd('reads-family'), 7.99);
+  assert.equal(readsYearlyUsd('reads-family'), 79.99);
+  assert.equal(READS_PLANS.find(plan => plan.id === 'reads')?.monthlyUsd, 4.99);
+  assert.equal(READS_PLANS.find(plan => plan.id === 'reads')?.yearlyUsd, 49.99);
+  assert.notEqual(readsYearlyUsd('reads'), readsMonthlyUsd('reads') * 10);
   assert.deepEqual(
     READS_OFFER_CHECKOUTS.map(item => item.usd),
-    [9, 90, 15, 150],
+    [4.99, 49.99, 7.99, 79.99],
   );
 });
 
@@ -35,10 +48,18 @@ test('checkout links use the unified Reads checkout', () => {
   assert.equal(bookCheckoutHref('harbour-light'), '/dashboard/checkout?kind=book&sku=harbour-light');
 });
 
-test('buy-to-own prices are the published shelf prices', () => {
+test('buy-to-own prices are the shared own-forever price', () => {
   const harbour = READS_BOOKS.find(book => book.id === 'harbour-light');
-  assert.equal(harbour?.usd, 5);
+  assert.equal(harbour?.usd, READS_BOOK_USD);
+  assert.equal(harbour?.usd, 1.99);
   assert.equal(harbour?.title, 'The Harbour Light');
+  assert.equal(READS_BOOKS.every(book => book.usd === READS_BOOK_USD), true);
+  assert.equal(BOOKS.every(book => book.priceUsd === READS_BOOK_USD), true);
+  assert.equal(booksDearerThanUnlimited(), 3);
+  assert.equal(3 * READS_BOOK_USD > readsMonthlyUsd('reads'), true);
+  assert.equal(2 * READS_BOOK_USD > readsMonthlyUsd('reads'), false);
+  assert.equal(ownOrReadLine(), 'Own any book for $1.99, or read everything for $4.99/month');
+  assert.equal(booksVersusUnlimitedLine(), 'Three books cost more than a month of unlimited');
 });
 
 test('excerpts are the opening of real seed chapters', () => {
@@ -63,8 +84,13 @@ test('language count follows the catalogue, and the letter does not invent socia
   assert.equal(blob.includes('reviewCount'), false);
   assert.equal(blob.includes('ratingValue'), false);
   assert.match(blob, /"@type":"FAQPage"/);
-  assert.match(blob, /"price":"9.00"/);
-  assert.match(blob, /"price":"150.00"/);
+  assert.match(blob, /"price":"4.99"/);
+  assert.match(blob, /"price":"49.99"/);
+  assert.match(blob, /"price":"7.99"/);
+  assert.match(blob, /"price":"79.99"/);
+  assert.match(blob, /"price":"1.99"/);
+  assert.equal(blob.includes('"price":"9.00"'), false);
+  assert.equal(blob.includes('"price":"150.00"'), false);
 });
 
 test('the letter has a founder note and no invented reviews, guarantee or bonus', () => {
@@ -79,6 +105,17 @@ test('the letter has a founder note and no invented reviews, guarantee or bonus'
   assert.equal(/bonus/i.test(founderBlob), false);
   assert.equal(/30-day/i.test(faqBlob), false);
   assert.equal(/thousand/i.test(faqBlob), false);
+  assert.equal(/ten times/i.test(faqBlob), false);
+  assert.equal(/two months/i.test(faqBlob), false);
+  assert.equal(/ten times/i.test(founderBlob), false);
+  assert.equal(/two months/i.test(founderBlob), false);
+  assert.match(faqBlob, /\$1\.99/);
+  assert.match(faqBlob, /\$4\.99/);
+  assert.match(faqBlob, /\$49\.99/);
+  assert.match(faqBlob, /\$7\.99/);
+  assert.match(faqBlob, /\$79\.99/);
+  assert.match(founderBlob, /1\.99 US dollars/);
+  assert.match(founderBlob, /Three books cost more than a month of unlimited/);
   const json = JSON.stringify(readsOfferJsonLd());
   assert.equal(json.includes('"@type":"Review"'), false);
   assert.equal(json.includes('aggregateRating'), false);

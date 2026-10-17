@@ -6,7 +6,7 @@
  * Standalone Poket Reads uses the shared shelf price and links to /reads/offer.
  */
 
-import { readsPlanItem } from './payments/reads';
+import { booksVersusUnlimitedLine, ownOrReadLine, readsPlanItem } from './payments/reads';
 
 export const OFFER_BUNDLE_EXTRAS = true;
 
@@ -120,7 +120,11 @@ const BUNDLE_EXTRAS = [
   '1-week ET AI Live taster',
 ] as const;
 
-function readsShelfPrice(): { price: string; priceNote: string; family: string } {
+function shelfUsd(amount: number): string {
+  return `$${amount.toFixed(2)}`;
+}
+
+function readsShelfPrice(): { price: string; priceNote: string; family: string; choice: string; compare: string } {
   const month = readsPlanItem('reads', 'month');
   const year = readsPlanItem('reads', 'year');
   const familyMonth = readsPlanItem('reads-family', 'month');
@@ -129,9 +133,11 @@ function readsShelfPrice(): { price: string; priceNote: string; family: string }
     throw new Error('Reads price is missing from the shared shelf.');
   }
   return {
-    price: `$${month.unitAmount}/mo`,
-    priceNote: `$${year.unitAmount}/yr`,
-    family: `Reads Family $${familyMonth.unitAmount}/mo or $${familyYear.unitAmount}/yr`,
+    price: `${shelfUsd(month.unitAmount)}/mo`,
+    priceNote: `${shelfUsd(year.unitAmount)}/yr`,
+    family: `Reads Family ${shelfUsd(familyMonth.unitAmount)}/mo or ${shelfUsd(familyYear.unitAmount)}/yr`,
+    choice: ownOrReadLine(),
+    compare: booksVersusUnlimitedLine(),
   };
 }
 
@@ -214,8 +220,9 @@ export function offerPlans(extras: boolean = OFFER_BUNDLE_EXTRAS): OfferPlan[] {
       name: 'Poket Reads',
       price: reads.price,
       priceNote: reads.priceNote,
-      tagline: 'A library that reads with you.',
+      tagline: reads.choice,
       features: [
+        reads.compare,
         reads.family,
         'Books and audiobooks',
         'Children’s illustrated stories',

@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 import { OfferCurrencyProvider } from '@/components/reads-offer/money';
 import { ReadsOfferLetter } from '@/components/reads-offer/letter';
-import { READS_OFFER_PATH, readsOfferJsonLd } from '@/lib/reads-offer';
+import { READS_OFFER_PATH, ownOrReadLine, readsOfferJsonLd } from '@/lib/reads-offer';
 import { jsonLdScript } from '@/lib/seo';
 
 export const revalidate = 86400;
 
 const TITLE = 'Poket Reads — a bookshelf you can subscribe to from Malaysia';
-const DESCRIPTION = 'Poket Reads is sold on its own: nine US dollars a month, or buy a book and keep it. Academic titles and stories, Ask ET, and Malaysian payment methods. Kindle Unlimited is not sold here.';
+const DESCRIPTION = `Poket Reads is sold on its own. ${ownOrReadLine()}. Academic titles and stories, Ask ET, and Malaysian payment methods. Kindle Unlimited is not sold here.`;
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
