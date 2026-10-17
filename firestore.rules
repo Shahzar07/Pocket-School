@@ -2769,6 +2769,31 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Anti-bullying. Client reads and writes are false. Not deployed.
+    match /evidence_locker/{itemId} {
+      allow read, write: if false;
+      match /events/{eventId} {
+        allow read: if false;
+        allow create: if false;
+        allow update, delete: if false;
+      }
+    }
+    match /school_referrals/{referralId} {
+      allow read, write: if false;
+    }
+    match /account_limits/{userId} {
+      allow read, write: if false;
+    }
+    match /safety_desk/{docId} {
+      allow read, write: if false;
+    }
+    match /network_restricts/{pairId} {
+      allow read, write: if false;
+    }
+    match /network_mutes/{pairId} {
+      allow read, write: if false;
+    }
+
     match /published_reports/{token} {
       allow get: if true;
       allow list: if false;

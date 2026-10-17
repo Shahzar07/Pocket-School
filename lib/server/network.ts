@@ -19,6 +19,7 @@ import {
   type Availability, type CandidateCard, type NetworkPerson, type OpenToWork, type ProfileVisibility,
 } from '../network/policy';
 import type { ModerationSurface } from '../moderation/screen';
+import { bullyingReceiveAllowed, commentVisible, outreachPaused } from '../bullying/policy';
 
 function db(): Firestore {
   return adminDb();
@@ -46,6 +47,7 @@ async function requireNetwork() {
 interface Actor extends NetworkPerson {
   name: string;
   email: string;
+  staffPost: string;
 }
 
 async function loadActor(uid: string): Promise<Actor> {
@@ -69,6 +71,7 @@ async function loadActor(uid: string): Promise<Actor> {
     blockedIds: blocks.docs.map(doc => str(doc.data().targetId)),
     name: str(data.name) || 'Member',
     email: str(data.email),
+    staffPost: str(data.staffPost),
   };
 }
 
@@ -216,11 +219,43 @@ export async function commentOnPost(uid: string, postId: string, body: string) {
   const ref = db().collection('network_comments').doc();
   const mod = await screen(actor, 'network_comment', body, `network_comments/${ref.id}`);
   if (mod.decision === 'block') throw new ActionError('FORBIDDEN', mod.authorMessage);
+  const postAuthorId = str(post.data()?.authorId);
+  const limits = await accountLimits(uid);
+  const pair = postAuthorId ? await db().doc(`network_restricts/${postAuthorId}_${uid}`).get() : null;
+  const restricted = limits.commentRestricted || pair?.exists === true;
   await ref.set({
     postId, authorId: uid, authorName: actor.name, ageTier: actor.ageTier, body: body.slice(0, 2000),
-    moderation: mod.decision, createdAtMs: Date.now(),
+    moderation: mod.decision, restricted, postAuthorId, createdAtMs: Date.now(),
   });
-  return { id: ref.id, moderation: mod.decision, authorMessage: mod.authorMessage };
+  return { id: ref.id, moderation: mod.decision, authorMessage: mod.authorMessage, restricted };
+}
+
+export async function listPostComments(uid: string, postId: string) {
+  await requireNetwork();
+  bullyingReceiveAllowed();
+  const actor = await loadActor(uid);
+  const post = await db().doc(`network_posts/${postId}`).get();
+  if (!post.exists) throw new ActionError('NOT_FOUND', 'Post not found.');
+  const postAuthorId = str(post.data()?.authorId);
+  const snap = await db().collection('network_comments').where('postId', '==', postId).limit(50).get();
+  const mutes = await db().collection('network_mutes').where('userId', '==', uid).limit(50).get();
+  const muted = new Set(mutes.docs.map(doc => str(doc.data().targetId)));
+  const deskLead = actor.role === 'admin' || actor.staffPost === 'safety_desk';
+  const comments = snap.docs.flatMap(doc => {
+    const data = doc.data();
+    const authorId = str(data.authorId);
+    if ((muted.has(authorId) || actor.blockedIds.includes(authorId)) && authorId !== uid && !deskLead) return [];
+    const visible = commentVisible({
+      viewerId: uid,
+      authorId: str(data.authorId),
+      postAuthorId,
+      restrictedByPostAuthor: data.restricted === true,
+      deskLead,
+    });
+    if (!visible) return [];
+    return [{ id: doc.id, authorId: str(data.authorId), body: str(data.body), restricted: data.restricted === true }];
+  });
+  return { comments };
 }
 
 export async function reactToPost(uid: string, postId: string, emoji: string) {
@@ -239,11 +274,15 @@ export async function repost(uid: string, postId: string) {
 export async function feedFor(uid: string) {
   await requireNetwork();
   const actor = await loadActor(uid);
+  const mutes = await db().collection('network_mutes').where('userId', '==', uid).limit(50).get();
+  const muted = new Set(mutes.docs.map(doc => str(doc.data().targetId)));
   const posts = await db().collection('network_posts').where('moderation', '==', 'allow').limit(40).get();
   const connections = await db().collection('network_connections').where('userIds', 'array-contains', uid).where('status', '==', 'accepted').limit(50).get();
   const follows = await db().collection('network_follows').where('followerId', '==', uid).limit(50).get();
   const visible = posts.docs.filter(doc => {
     const data = doc.data();
+    const authorId = str(data.authorId);
+    if (muted.has(authorId) || actor.blockedIds.includes(authorId)) return false;
     if (isMinorTier(actor.ageTier)) return data.institutionId === actor.institutionId && (data.space === 'school' || data.space === 'class');
     if (isMinorTier(asAgeTier(data.ageTier))) return false;
     return true;
@@ -268,10 +307,23 @@ export async function feedFor(uid: string) {
   return { posts: ranked.map(item => ({ id: item.id, ...byId.get(item.id) })) };
 }
 
+async function accountLimits(uid: string): Promise<{ dmLimited: boolean; connectionLimited: boolean; commentRestricted: boolean }> {
+  const snap = await db().doc(`account_limits/${uid}`).get();
+  const data = snap.data() ?? {};
+  return {
+    dmLimited: data.dmLimited === true,
+    connectionLimited: data.connectionLimited === true,
+    commentRestricted: data.commentRestricted === true,
+  };
+}
+
 export async function requestConnection(uid: string, targetId: string) {
   await requireNetwork();
+  bullyingReceiveAllowed();
   const actor = await loadActor(uid);
   const target = await loadActor(targetId);
+  const paused = outreachPaused(await accountLimits(uid), 'connection');
+  if (!paused.ok) throw new ActionError('FORBIDDEN', paused.reason);
   const decision = canConnect(actor, target);
   if (!decision.ok) throw new ActionError('FORBIDDEN', decision.reason);
   const day = new Date().toISOString().slice(0, 10);
@@ -319,8 +371,11 @@ export async function followTarget(uid: string, targetId: string, orgId: string)
 
 export async function sendDirectMessage(uid: string, targetId: string, body: string) {
   await requireNetwork();
+  bullyingReceiveAllowed();
   const actor = await loadActor(uid);
   const target = await loadActor(targetId);
+  const paused = outreachPaused(await accountLimits(uid), 'dm');
+  if (!paused.ok) throw new ActionError('FORBIDDEN', paused.reason);
   const id = [uid, targetId].sort().join('_');
   const connection = await db().doc(`network_connections/${id}`).get();
   const connected = connection.data()?.status === 'accepted';
@@ -337,6 +392,7 @@ export async function sendDirectMessage(uid: string, targetId: string, body: str
 }
 
 export async function reportOrBlock(uid: string, input: Record<string, unknown>, block: boolean) {
+  bullyingReceiveAllowed();
   await requireNetwork();
   const targetId = str(input.targetId);
   if (block && targetId) {

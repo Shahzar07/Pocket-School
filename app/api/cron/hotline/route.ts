@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAdminConfigured } from '@/lib/firebase-admin';
+import { escalateCriticalDesk, sendDueCheckIns } from '@/lib/server/bullying';
 import { escalateDueTickets, remindAuthorityTickets } from '@/lib/server/hotline';
 import { escalateUnackedDanger } from '@/lib/server/safety';
 
@@ -20,5 +21,7 @@ export async function GET(req: NextRequest) {
   const result = await escalateDueTickets(now);
   const reminders = await remindAuthorityTickets(now);
   const danger = await escalateUnackedDanger(now);
-  return NextResponse.json({ ok: true, ...result, ...reminders, ...danger });
+  const desk = await escalateCriticalDesk(now);
+  const checkIns = await sendDueCheckIns(now);
+  return NextResponse.json({ ok: true, ...result, ...reminders, ...danger, ...desk, ...checkIns });
 }

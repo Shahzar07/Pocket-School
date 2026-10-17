@@ -11,6 +11,15 @@ import { GENESIS, emptyLegalHold, type ChainDevice, type ChainDiff } from '../le
 import { SERVER_DEVICE } from '../ledger/device';
 import { slaDueAt, DEFAULT_WORK, type WorkCalendar } from '../hotline/policy';
 import { alertPerson, resolveRecipients, type ResolvedRecipients } from '../alerts/recipients';
+import { tierOf } from './alert-directory';
+import {
+  bullyingReceiveAllowed,
+  checkInTimes,
+  deskDueAt,
+  falseReportReview,
+  repeatedReportLimits,
+  severityForSafetyType,
+} from '../bullying/policy';
 import { sendPush } from '../push';
 import { adminPushStore } from '../push-store';
 import { sendToDevice } from '../push-transport';
@@ -189,6 +198,27 @@ function stringList(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && item.length > 0) : [];
 }
 
+/** Repeated reports limit new outreach. They do not suspend or mute the account. */
+async function noteRepeatedTarget(targetUid: string, ticketId: string) {
+  const id = targetUid.trim();
+  if (!id) return;
+  const snap = await db().collection('hotline_tickets').where('targetUid', '==', id).limit(40).get();
+  const open = snap.docs.filter(doc => {
+    const status = str(doc.data().status);
+    return status !== 'closed' && status !== 'resolved';
+  });
+  const counted = open.some(doc => doc.id === ticketId) ? open.length : open.length + 1;
+  const limits = repeatedReportLimits(counted);
+  if (!limits.review) return;
+  await db().doc(`account_limits/${id}`).set({
+    dmLimited: limits.dmLimited,
+    connectionLimited: limits.connectionLimited,
+    review: true,
+    punish: false,
+    updatedAt: Date.now(),
+  }, { merge: true });
+}
+
 function viewOf(actor: Actor, data: FirebaseFirestore.DocumentData): SafetyView {
   return safetyView(
     { id: actor.id, role: actor.role, staffPost: actor.staffPost, institutionId: actor.institutionId },
@@ -199,6 +229,7 @@ function viewOf(actor: Actor, data: FirebaseFirestore.DocumentData): SafetyView 
       institutionId: str(data.institutionId),
       parentsExcluded: data.parentsExcluded === true,
       notifiedParentUids: stringList(data.notifiedParentUids),
+      anonymous: data.anonymous === true,
     },
   );
 }
@@ -232,15 +263,55 @@ function noticeRow(id: string, data: FirebaseFirestore.DocumentData) {
   };
 }
 
-async function requireStudent(uid: string): Promise<Actor> {
-  const actor = await loadActor(uid);
-  if (actor.role !== 'student') throw new ActionError('FORBIDDEN', 'A student sends this report.');
-  if (!actor.institutionId) throw new ActionError('BAD_REQUEST', 'Join a school before sending a safety report.');
-  return actor;
+async function requireReporter(uid: string): Promise<Actor> {
+  bullyingReceiveAllowed();
+  return loadActor(uid);
+}
+
+function under18(actor: Actor): boolean {
+  return actor.ageTier === 'under13' || actor.ageTier === 'teen';
+}
+
+async function deskAudience(actor: Actor, exclusion: {
+  type: string;
+  who: string;
+  concernRole: string;
+  dontTellParents: boolean;
+}, anonymous: boolean): Promise<ResolvedRecipients> {
+  const rota = await db().doc('safety_desk/rota').get();
+  const rotaData = rota.data() ?? {};
+  const admins = await db().collection('users').where('role', '==', 'admin').limit(20).get();
+  const people = admins.docs.map(doc => alertPerson({ uid: doc.id, role: 'admin' }));
+  const linkSnap = await db().collection('parent_links').where('studentId', '==', actor.id).limit(20).get();
+  const guardianUids: string[] = [];
+  const guardianTiers: Record<string, number> = {};
+  if (under18(actor)) {
+    for (const doc of linkSnap.docs) {
+      const parentId = str(doc.data().parentId);
+      if (str(doc.data().status) !== 'approved' || !parentId) continue;
+      const parent = await db().doc(`users/${parentId}`).get();
+      const tier = tierOf(parent.data());
+      guardianUids.push(parentId);
+      guardianTiers[parentId] = tier;
+      people.push(alertPerson({ uid: parentId, role: 'parent', verificationTier: tier }));
+    }
+  }
+  return resolveRecipients({
+    kind: 'bullying',
+    institutionId: actor.institutionId,
+    anonymous: anonymous || !actor.institutionId,
+    people,
+    primaryUid: str(rotaData.primaryUid),
+    backupUid: str(rotaData.backupUid),
+    guardianUids,
+    guardianTiers,
+    parentUids: guardianUids,
+    exclusion,
+  });
 }
 
 export async function fileSafetyReport(uid: string, input: Record<string, unknown>) {
-  const actor = await requireStudent(uid);
+  const actor = await requireReporter(uid);
   const safetyType = str(input.type) || str(input.safetyType);
   if (!isSafetyType(safetyType)) throw new ActionError('BAD_REQUEST', 'Choose a report type.');
   const description = str(input.description).slice(0, 4000);
@@ -250,13 +321,14 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
   const when = str(input.when).slice(0, 200);
   const concernRole = str(input.concernRole).slice(0, 40);
   const dontTellParents = input.dontTellParents === true;
-  const audience = await safetyAudience(actor, 'student_safety_report', {
-    type: safetyType,
-    who,
-    concernRole,
-    dontTellParents,
-  });
+  const anonymous = input.anonymous === true;
+  const exclusion = { type: safetyType, who, concernRole, dontTellParents };
+  const toDesk = anonymous || !actor.institutionId;
+  const audience = toDesk
+    ? { ...(await deskAudience(actor, exclusion, anonymous)), formTeacherUid: '' }
+    : await safetyAudience(actor, 'student_safety_report', exclusion);
   const now = Date.now();
+  const severity = severityForSafetyType(safetyType);
   const prior = await db().collection('hotline_tickets')
     .where('reporterUid', '==', actor.id)
     .where('createdAt', '>=', startOfUtcDay(now))
@@ -270,7 +342,7 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
   await caseRef.set({
     source: 'student_safety_report',
     category: 'safeguarding',
-    severity: 'high',
+    severity,
     ticketId: ref.id,
     institutionId: actor.institutionId,
     studentId: actor.id,
@@ -284,11 +356,14 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
     parentUid: '',
     reporterUid: actor.id,
     reporterName: actor.name,
-    addressedTo: 'safeguarding_lead',
+    targetUid: str(input.targetUid).slice(0, 128),
+    anonymous,
+    addressedTo: toDesk ? 'safety_desk' : 'safeguarding_lead',
     assigneeUid: '',
     category: 'safeguarding',
     safetyType,
-    priority: 'high',
+    priority: severity === 'critical' ? 'high' : severity,
+    deskSeverity: severity,
     status: 'pending',
     body: description,
     who,
@@ -304,7 +379,8 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
     staffUids: audience.staffUids,
     formTeacherUid: audience.formTeacherUid,
     location: null,
-    slaDueAt: slaDueAt(now, 'high', calendar),
+    slaDueAt: toDesk ? deskDueAt(now, severity) : slaDueAt(now, severity === 'low' ? 'low' : 'high', calendar),
+    checkIns: checkInTimes(now).map(dueAt => ({ dueAt, sentAt: 0 })),
     escalationLevel: 0,
     safeguardingCaseId: caseRef.id,
     authorities: authorities.decision,
@@ -316,10 +392,12 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
     staffAckAt: 0,
     parentAckAt: 0,
     dangerEscalatedAt: 0,
+    deskEscalatedAt: 0,
     createdAt: now,
     updatedAt: now,
   };
   await ref.set(ticket);
+  await noteRepeatedTarget(ticket.targetUid, ref.id);
   const device = deviceOf(input);
   await logEvent(ref.id, actor, 'created', {
     before: {},
@@ -333,15 +411,21 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
   }
 
   try {
-    await notifyTicketStaff(ref.id);
+    if (anonymous) {
+      for (const staffId of audience.staffUids) {
+        await pushTo(staffId, 'safety', 'Safety Desk', 'A report is waiting. The name stays with Desk leads.', `/dashboard/safety/${ref.id}`);
+      }
+    } else {
+      await notifyTicketStaff(ref.id);
+    }
   } catch (error) {
     console.error('staff notice failed', error);
   }
-  return { ...trackerRow(ref.id, ticket), throttled: rate.throttled };
+  return { ...trackerRow(ref.id, ticket), throttled: rate.throttled, anonymous };
 }
 
 export async function raiseDanger(uid: string, input: Record<string, unknown>) {
-  const actor = await requireStudent(uid);
+  const actor = await requireReporter(uid);
   const safetyType = str(input.type) || str(input.safetyType);
   const type = isSafetyType(safetyType) ? safetyType : 'unsafe_other';
   const who = str(input.who).slice(0, 200);
@@ -351,7 +435,12 @@ export async function raiseDanger(uid: string, input: Record<string, unknown>) {
   const flags = await db().doc(`safety_flags/${actor.id}`).get();
   const previousFalse = Number(flags.data()?.falseDanger) || 0;
   const repeat = dangerRepeatFlag(previousFalse);
-  const audience = await safetyAudience(actor, 'danger_now', { type, who, concernRole, dontTellParents });
+  const anonymous = input.anonymous === true;
+  const exclusion = { type, who, concernRole, dontTellParents };
+  const toDesk = anonymous || !actor.institutionId;
+  const audience = toDesk
+    ? { ...(await deskAudience(actor, exclusion, anonymous)), formTeacherUid: '' }
+    : await safetyAudience(actor, 'danger_now', exclusion);
   const share = input.shareLocation === true;
   const location = placeOnce(share, input.place, now);
   const authorities = initialAuthorities('unsure', '');
@@ -378,7 +467,9 @@ export async function raiseDanger(uid: string, input: Record<string, unknown>) {
     parentUid: '',
     reporterUid: actor.id,
     reporterName: actor.name,
-    addressedTo: 'safeguarding_lead',
+    targetUid: str(input.targetUid).slice(0, 128),
+    anonymous,
+    addressedTo: toDesk ? 'safety_desk' : 'safeguarding_lead',
     assigneeUid: '',
     category: 'safeguarding',
     safetyType: type,
@@ -398,7 +489,9 @@ export async function raiseDanger(uid: string, input: Record<string, unknown>) {
     staffUids: audience.staffUids,
     formTeacherUid: audience.formTeacherUid,
     location,
-    slaDueAt: slaDueAt(now, 'high', calendar),
+    slaDueAt: toDesk ? deskDueAt(now, 'critical') : slaDueAt(now, 'high', calendar),
+    deskSeverity: 'critical',
+    checkIns: checkInTimes(now).map(dueAt => ({ dueAt, sentAt: 0 })),
     escalationLevel: 0,
     safeguardingCaseId: caseRef.id,
     authorities: authorities.decision,
@@ -410,10 +503,12 @@ export async function raiseDanger(uid: string, input: Record<string, unknown>) {
     staffAckAt: 0,
     parentAckAt: 0,
     dangerEscalatedAt: 0,
+    deskEscalatedAt: 0,
     createdAt: now,
     updatedAt: now,
   };
   await ref.set(ticket);
+  await noteRepeatedTarget(ticket.targetUid, ref.id);
   await logEvent(ref.id, actor, 'created', {
     before: {},
     after: {
@@ -427,7 +522,13 @@ export async function raiseDanger(uid: string, input: Record<string, unknown>) {
     },
   }, deviceOf(input));
   try {
-    await notifyTicketStaff(ref.id);
+    if (anonymous) {
+      for (const staffId of audience.staffUids) {
+        await pushTo(staffId, 'safety', 'Safety Desk', 'A report is waiting. The name stays with Desk leads.', `/dashboard/safety/${ref.id}`);
+      }
+    } else {
+      await notifyTicketStaff(ref.id);
+    }
   } catch (error) {
     console.error('staff notice failed', error);
   }
@@ -437,6 +538,7 @@ export async function raiseDanger(uid: string, input: Record<string, unknown>) {
     parentsExcluded: audience.parentsExcluded,
     locationShared: location !== null,
     flagged: repeat,
+    anonymous,
     createdAt: now,
   };
 }
@@ -520,10 +622,16 @@ export async function markDangerFalse(uid: string, id: string, device: ChainDevi
   const flagRef = db().doc(`safety_flags/${studentId}`);
   const flag = await flagRef.get();
   const next = (Number(flag.data()?.falseDanger) || 0) + 1;
-  await flagRef.set({ falseDanger: next, updatedAt: Date.now() }, { merge: true });
-  await db().doc(`hotline_tickets/${id}`).set({ falseTrigger: true, updatedAt: Date.now() }, { merge: true });
-  await logEvent(id, actor, 'false_trigger', { before: {}, after: { falseDanger: next } }, device);
-  return { ok: true, falseDanger: next };
+  const review = falseReportReview(next);
+  await flagRef.set({
+    falseDanger: next,
+    review: review.review,
+    punish: false,
+    updatedAt: Date.now(),
+  }, { merge: true });
+  await db().doc(`hotline_tickets/${id}`).set({ falseTrigger: true, review: review.review, updatedAt: Date.now() }, { merge: true });
+  await logEvent(id, actor, 'false_trigger', { before: {}, after: { falseDanger: next, review: review.review, punish: false } }, device);
+  return { ok: true, falseDanger: next, review: review.review, punish: false as const };
 }
 
 export async function escalateUnackedDanger(now = Date.now()) {

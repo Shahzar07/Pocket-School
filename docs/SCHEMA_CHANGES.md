@@ -1555,3 +1555,44 @@ The community push for an Amber alert links to `/amber/{id}`. The body is the ap
 | POST | `/api/amber/opt-in` |
 
 Samples: `/amber/sample` and `/amber/sample-resolved`. The sample referral code is `POKETAMBER` (`referrals/POKETAMBER`).
+
+## Anti-bullying is free
+
+Anti-bullying help is free for every account, including an account with no school. `bullyingReceiveAllowed` is always true. It does not read `accessTier` or `subscriptionTier`. Safety Report, I'm in danger, block, mute, restrict, ET AI moderation, the evidence locker, Get help near me, and the report tracker all use that gate.
+
+Routing is still `resolveRecipients`. Kind `bullying` with an `institutionId` and `anonymous` not true uses the student safety report list (safeguarding lead, principal, form teacher, and approved parents unless parent exclusion applies). No school, or an anonymous report, uses the Safety Desk list: super admins (`role: admin`), the on-call primary on `safety_desk/rota`, the backup only when `escalate` is set, and linked guardians at verification tier 2 or higher unless parent exclusion applies. The reporter's real name stays on the ticket. Anonymous pushes say the name stays with Desk leads and do not call `notifyTicketStaff`. `safetyView` returns `full` for a super admin or `staffPost: safety_desk` only. The reporter gets `tracker`. Everyone else, including a guardian and a school principal, gets `hidden`.
+
+Desk SLAs are config in `DESK_SLA_MS`: critical 15 minutes, high 1 hour, medium 24 hours, low 72 hours. A desk ticket stores `deskSeverity` and `slaDueAt` from that clock. Hotline `priority` still uses `low|medium|high`, so critical is stored as priority `high` plus `deskSeverity: critical`. The cron `GET /api/cron/hotline` calls `escalateCriticalDesk`. An unacknowledged critical desk ticket past 15 minutes sets `deskEscalatedAt` and pushes the backup and super admins. It appends `desk_escalated`.
+
+Check-ins are `checkIns: [{ dueAt, sentAt }]` on the ticket, 24 hours and 7 days after `createdAt`. The same cron calls `sendDueCheckIns` and pushes "How are you doing?" to the reporter. Closed and resolved tickets are skipped. The event is `check_in_sent`.
+
+On Poket School, `network_restricts/{postAuthorId}_{commenterId}` marks that person's comments on the post author's posts as `restricted`. `account_limits/{uid}.commentRestricted` does the same for every comment. `commentVisible` shows a restricted comment to its author, the post owner, and a Desk lead (`role: admin` or `staffPost: safety_desk`). Three or more open reports with the same `targetUid` set `account_limits.dmLimited` and `connectionLimited`. That blocks new DMs and connection requests. It does not suspend or mute. Adults still cannot DM under-18s. Block is `network_blocks/{uid}_{targetId}`. Mute is `network_mutes/{uid}_{targetId}` and hides that person's posts and comments from the muter.
+
+Off-platform evidence is `evidence_locker/{id}`: `ownerId`, `note`, `platform`, `hash` (SHA-256 of timestamp, note, and screenshot bytes), `createdAt`, `guardianIds`, `parentsExcluded`, and `imageBase64`. `canSeeEvidence` allows the owner, a non-excluded guardian id, and the Desk. `GET /api/bullying/evidence-pdf` returns a PDF from `casePdf`. The hash chain event is `evidence_saved` on `evidence_locker/{id}/events`.
+
+A Desk lead sends `school_referrals/{id}` only after consent and only when `institutions/{bullySchoolId}` exists. The document is `bullySchoolId`, `where`, `summary` (trimmed, no requirement to include a name), `reporterHidden: true`, `leadUids`, `sentBy`, and `createdAt`. It has no `reporterUid`. The school push does not link to the victim's ticket. The ticket audit event `school_referral` records the referral id. `GET /api/bullying/referral` returns the summary, the place, and `reporterHidden` only.
+
+ET AI support is labelled `ET AI support is not a counsellor.` Risk phrases (`riskSeverity`) file a `self_harm_concern` report at critical severity and return helplines immediately. Outside Desk hours (`Asia/Kuala_Lumpur`, 08:00–22:00) the same response shows helplines and Get help near me. Numbers live in `OFFICIAL_HELPLINES` with `sourceUrl`. A line without an `https://` source is dropped. Unknown countries return no numbers. Malaysia is Talian Kasih 15999, Befrienders KL +603-7627 2929, and Talian HEAL 15555, each with the official page that was checked. Other countries are a TODO until an official page is opened. Do not invent a number. Get help near me for Malaysia is emergency 999 and the Befrienders "I need help right now" page.
+
+Report rate flags at three reports in a UTC day and still accepts the report (`refused: false`). `markDangerFalse` increments `safety_flags/{uid}.falseDanger`. At two or more it sets `review: true` and `punish: false`. It does not write `account_limits`.
+
+The public page is `/stand-up-to-bullying`. It is indexed, canonical, and lists no victim data. The join link is `/signup?help=bullying&ref=POKETSTAND`. The code is `referrals/POKETSTAND` with `kind: bullying`. Signup already stores `referredBy` from `ref`. Clients cannot read or write the new collections. Rules are not deployed.
+
+| Method | Path |
+| --- | --- |
+| GET | `/stand-up-to-bullying` |
+| GET | `/api/bullying/guide` |
+| POST | `/api/bullying/support` |
+| POST | `/api/bullying/evidence` |
+| GET | `/api/bullying/evidence` |
+| GET | `/api/bullying/evidence-pdf` |
+| POST | `/api/bullying/block` |
+| POST | `/api/bullying/mute` |
+| POST | `/api/bullying/restrict` |
+| POST | `/api/bullying/desk-restrict` |
+| POST | `/api/bullying/referral` |
+| GET | `/api/bullying/referral` |
+
+Samples: `/preview/bullying` and `/preview/bullying?view=desk`. Platform report links: WhatsApp `https://www.whatsapp.com/safety`, Instagram `https://help.instagram.com/`, TikTok `https://www.tiktok.com/safety`.
+
+Indexes, not deployed: `evidence_locker` on `ownerId`; `evidence_locker` on `guardianIds` (array); `hotline_tickets` on `targetUid`; `hotline_tickets` on `deskSeverity`; `network_mutes` on `userId`.

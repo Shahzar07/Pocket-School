@@ -2425,3 +2425,38 @@ components/amber/public-alert.tsx	Photo shared with consent
 components/amber/public-alert.tsx	This alert is not available.
 components/hotline/live.tsx	A child name, photo, and this description stay off the public page until you approve them.
 components/hotline/live.tsx	Public description
+components/bullying/stand-up.tsx	Free anti-bullying help for every person, including someone with no school.
+components/bullying/stand-up.tsx	Free for everyone
+components/bullying/stand-up.tsx	If it happened somewhere else
+components/bullying/stand-up.tsx	No school and no subscription are required. A report still reaches the Poket School Safety Desk.
+components/bullying/stand-up.tsx	Official helplines
+components/bullying/stand-up.tsx	Official source
+components/bullying/stand-up.tsx	Other countries stay blank until an official page is checked. This page does not invent a number.
+components/bullying/stand-up.tsx	POKET SCHOOL
+components/bullying/stand-up.tsx	Stand up to bullying
+components/bullying/stand-up.tsx	This page shows no reports, names, or evidence.
+components/bullying/surfaces.tsx	A message about wanting to die goes to the Safety Desk as critical and shows helplines at once.
+components/bullying/surfaces.tsx	A screenshot and a note are hashed and time-stamped. Only you, a guardian who is allowed, and the Desk can open it.
+components/bullying/surfaces.tsx	Anti-bullying help
+components/bullying/surfaces.tsx	Bullying desk
+components/bullying/surfaces.tsx	ET AI support
+components/bullying/surfaces.tsx	Evidence locker
+components/bullying/surfaces.tsx	Export PDF
+components/bullying/surfaces.tsx	False reports
+components/bullying/surfaces.tsx	Free, including when you have no school.
+components/bullying/surfaces.tsx	Get help near me
+components/bullying/surfaces.tsx	Hidden from the school and from the other student.
+components/bullying/surfaces.tsx	How are you doing?
+components/bullying/surfaces.tsx	On Poket School
+components/bullying/surfaces.tsx	Online. Short account with no names.
+components/bullying/surfaces.tsx	POKET SCHOOL
+components/bullying/surfaces.tsx	People with no school, and anonymous reports, stay with the on-call rota.
+components/bullying/surfaces.tsx	Repeated false reports are flagged for a person to review. The reporter is not muted or restricted for that flag.
+components/bullying/surfaces.tsx	Response times
+components/bullying/surfaces.tsx	Restrict keeps a comment visible only to the person who wrote it. Repeated reports limit new messages and connection requests. Adults cannot message under-18s.
+components/bullying/surfaces.tsx	SAFETY DESK
+components/bullying/surfaces.tsx	Sample only. This preview is not a report.
+components/bullying/surfaces.tsx	School referral
+components/bullying/surfaces.tsx	Send referral
+components/bullying/surfaces.tsx	Send this only after the person who reported it agrees, and only if the other school is on Poket School.
+components/bullying/surfaces.tsx	You get this check-in 24 hours after a report, and again after 7 days.
