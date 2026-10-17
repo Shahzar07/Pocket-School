@@ -57,6 +57,23 @@ export function storedBookPriceRM(priceUsd: number, config = seedPricing()): num
   return quoteCourse(config, priceUsd, 'USD', 'MYR').amount;
 }
 
+/**
+ * USD to charge for a buy-to-own book.
+ * A stored price wins, including zero, which means the book is not sold separately.
+ * A missing stored price uses the catalogue price, then the shared default.
+ */
+export function bookChargeUsd(input: {
+  storedUsd?: number | null;
+  catalogueUsd?: number | null;
+  defaultUsd: number;
+}): number | null {
+  if (typeof input.storedUsd === 'number' && Number.isFinite(input.storedUsd)) {
+    return input.storedUsd > 0 ? input.storedUsd : null;
+  }
+  if (typeof input.catalogueUsd === 'number' && input.catalogueUsd > 0) return input.catalogueUsd;
+  return input.defaultUsd > 0 ? input.defaultUsd : null;
+}
+
 export function quotePrice(amount: number | null | undefined, currency = 'USD', local = 'USD'): PriceQuote {
   const shown = codeOf(local);
   if (!(amount && amount > 0)) {

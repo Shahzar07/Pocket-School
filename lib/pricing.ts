@@ -57,6 +57,8 @@ export interface PricingConfig {
   version: 1;
   /** Fraction off the monthly run-rate, e.g. 0.25 for 25%. */
   annualDiscount: number;
+  /** Default USD price for a buy-to-own book. A book can still set its own `priceUsd`. */
+  defaultBookUsd: number;
   plans: PlanPrice[];
   addons: AddonPrice[];
   currencies: CurrencyPrice[];
@@ -128,14 +130,15 @@ export function seedPricing(): PricingConfig {
     { id: 'igcse_alevel', monthlyUsd: 79, sparks: 800, annualUsd: 708 },
     { id: 'professional', monthlyUsd: null, sparks: 1000, annualUsd: null },
   ];
-  // Reads annual is ten times the monthly price. School plans use annualDiscount.
+  // Reads annual amounts are the published prices. School plans use annualDiscount.
   const reads = [
-    { id: 'reads', monthlyUsd: 9, annualUsd: 90, sparks: 0 },
-    { id: 'reads-family', monthlyUsd: 15, annualUsd: 150, sparks: 0 },
+    { id: 'reads', monthlyUsd: 4.99, annualUsd: 49.99, sparks: 0 },
+    { id: 'reads-family', monthlyUsd: 7.99, annualUsd: 79.99, sparks: 0 },
   ];
   return {
     version: 1,
     annualDiscount,
+    defaultBookUsd: 1.99,
     plans: [
       ...drafts.map(plan => ({
         id: plan.id,
@@ -151,8 +154,8 @@ export function seedPricing(): PricingConfig {
     ],
     familyBundleDiscount: null,
     reads: [
-      { id: 'reads', monthlyUsd: 9 },
-      { id: 'reads-family', monthlyUsd: 15 },
+      { id: 'reads', monthlyUsd: 4.99 },
+      { id: 'reads-family', monthlyUsd: 7.99 },
     ],
     currencies: [
       emptyCurrency('USD', { enabled: true, mode: 'base', rate: 1, rounding: 'none' }),
@@ -264,12 +267,12 @@ export function quotePlan(
   return priceInCurrency(config, usd, planId, interval, requestedCurrency);
 }
 
-/** Reads monthly USD from config, or the published $9 / $15 shelf when that row is absent. */
+/** Reads monthly USD from config, or the published $4.99 / $7.99 shelf when that row is absent. */
 export function readsPriceUsd(config: PricingConfig, id: string): number | null {
   const row = config.reads.find(item => item.id === id);
   if (row) return Number.isFinite(row.monthlyUsd) && row.monthlyUsd > 0 ? row.monthlyUsd : null;
-  if (id === 'reads') return 9;
-  if (id === 'reads-family') return 15;
+  if (id === 'reads') return 4.99;
+  if (id === 'reads-family') return 7.99;
   return null;
 }
 
@@ -328,6 +331,9 @@ export function validatePricing(config: PricingConfig): string | null {
   if (!Number.isFinite(config.annualDiscount) || config.annualDiscount < 0 || config.annualDiscount > 1) {
     return 'Annual discount must be between 0 and 100.';
   }
+  if (!Number.isFinite(config.defaultBookUsd) || config.defaultBookUsd < 0) {
+    return 'The default book price must be zero or more.';
+  }
   if (config.plans.length === 0) return 'Add at least one plan.';
   for (const plan of config.plans) {
     if (!plan.id.trim()) return 'Every plan needs an id.';
@@ -380,12 +386,14 @@ export function normalizePricing(raw: unknown): PricingConfig {
   if (!raw || typeof raw !== 'object') return seed;
   const record = raw as Record<string, unknown>;
   const annualDiscount = clamp(finite(record.annualDiscount, seed.annualDiscount), 0, 1);
+  const defaultBookUsd = finite(record.defaultBookUsd, seed.defaultBookUsd);
   const plans = mergePlans(record.plans, seed.plans);
   const addons = mergeAddons(record.addons, seed.addons);
   const currencies = mergeCurrencies(record.currencies, seed.currencies);
   return {
     version: 1,
     annualDiscount,
+    defaultBookUsd: defaultBookUsd > 0 ? defaultBookUsd : seed.defaultBookUsd,
     plans,
     addons,
     currencies,
@@ -398,6 +406,9 @@ export function diffPricing(before: PricingConfig, after: PricingConfig): string
   const lines: string[] = [];
   if (before.annualDiscount !== after.annualDiscount) {
     lines.push(`Annual discount ${discountLabel(before)} → ${discountLabel(after)}`);
+  }
+  if (before.defaultBookUsd !== after.defaultBookUsd) {
+    lines.push(`Default book USD ${before.defaultBookUsd} → ${after.defaultBookUsd}`);
   }
   const beforePlans = new Map(before.plans.map(plan => [plan.id, plan]));
   const afterPlans = new Map(after.plans.map(plan => [plan.id, plan]));

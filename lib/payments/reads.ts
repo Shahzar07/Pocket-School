@@ -1,11 +1,13 @@
 import { planById, READS_PLAN_LABELS, seedPricing, type PricingConfig } from '@/lib/pricing';
+import { storedBookPriceRM } from '@/lib/platform/pricing';
 import type { PricedItem } from './quote';
 
 /**
- * Poket Reads prices from the published shelf (PR #55).
- * Annual Reads is ten times the monthly price. The checkout prefers the admin
- * FX quote for a ringgit book. This list is the fallback shelf price.
- * A Firestore `books/{id}` document overrides this list when Book Studio has saved one.
+ * Poket Reads prices from `seedPricing()`.
+ * Plan amounts are the published monthly and annual prices. A buy-to-own book
+ * uses `defaultBookUsd` unless that book sets its own price. The checkout
+ * prefers the admin FX quote for a ringgit book. This list is the fallback
+ * shelf price. A Firestore `books/{id}` document overrides it.
  */
 
 const READS_PERMISSIONS = {
@@ -21,8 +23,10 @@ export const READS_PLANS = (Object.keys(READS_PLAN_LABELS) as Array<keyof typeof
   permission: READS_PERMISSIONS[id],
 }));
 
+const shelfUsd = seedPricing().defaultBookUsd;
+
 export const READS_BOOKS = [
-  { id: 'harbour-light', title: 'The Harbour Light', usd: 5, myr: 24 },
+  { id: 'harbour-light', title: 'The Harbour Light', usd: shelfUsd, myr: storedBookPriceRM(shelfUsd) },
   { id: 'cells-to-systems', title: 'Cells to Systems', usd: 8, myr: 36 },
   { id: 'malacca', title: 'A Short History of Malacca', usd: 4, myr: 18 },
   { id: 'plain-contract', title: 'Plain Words for Contract', usd: 10, myr: 49 },
