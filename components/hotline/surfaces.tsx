@@ -7,6 +7,7 @@ import {
   Share2,
   ShieldAlert,
 } from 'lucide-react';
+import { SafetyDisclaimerFooter } from '@/components/safety/disclaimer';
 import { BRAND } from '@/lib/brand';
 import { disclaimerFor, type PublicEmergency, typeLabel } from '@/lib/emergency/policy';
 
@@ -86,6 +87,7 @@ export function ParentHotline() {
           <p>Attach a photo, a medical certificate, or a PDF. Location data is removed before it is stored.</p>
           <p>Authorities: to be informed. A ticket cannot close until that is recorded.</p>
           <button type="button" className="hk-btn">Send to the school</button>
+          <SafetyDisclaimerFooter emergencyNumber="999" />
         </section>
         <article className="hk-card">
           <div className="hk-row">
@@ -146,6 +148,7 @@ export function StaffQueue() {
           <p>Escalates to the academic lead, then the principal.</p>
         </article>
         <p className="hk-note">Safeguarding tickets are hidden from this desk.</p>
+        <SafetyDisclaimerFooter emergencyNumber="999" />
       </div>
     </main>
   );
@@ -160,6 +163,9 @@ export function PublicAlert({ view }: { view: PublicEmergency | null }) {
           <p className="hk-kicker">Poket School</p>
           <h1 className="hk-title">Alert</h1>
         </header>
+        <div className="hk-body">
+          <SafetyDisclaimerFooter emergencyNumber="999" />
+        </div>
       </main>
     );
   }
@@ -198,6 +204,7 @@ export function PublicAlert({ view }: { view: PublicEmergency | null }) {
         ) : null}
         <button type="button" className="hk-btn ghost">Report this alert</button>
         <p className="hk-warn">{view.disclaimer || disclaimerFor(view.region.country)}</p>
+        <SafetyDisclaimerFooter emergencyNumber={view.emergencyNumber || '999'} />
       </div>
     </main>
   );
@@ -224,6 +231,7 @@ export function EmergencyDesk() {
             <button type="button" className="hk-btn ghost">Verify integrity</button>
           </div>
           <p>Views 0 · Shares 0</p>
+          <SafetyDisclaimerFooter emergencyNumber="999" />
         </article>
       </div>
     </main>

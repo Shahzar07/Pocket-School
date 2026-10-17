@@ -14,6 +14,7 @@ export const RECIPIENT_KINDS = [
   'amber',
   'emergency',
   'safety_desk',
+  'bullying',
   'all_staff',
 ] as const;
 export type RecipientKind = (typeof RECIPIENT_KINDS)[number];
@@ -42,6 +43,8 @@ export interface ResolveInput {
   addressedTo?: string;
   addressedUid?: string;
   sensitive?: boolean;
+  /** An anonymous bullying report stays with the Safety Desk even when a school is known. */
+  anonymous?: boolean;
   region?: Region;
   primaryUid?: string;
   backupUid?: string;
@@ -238,6 +241,12 @@ export function resolveRecipients(input: ResolveInput): ResolvedRecipients {
       communityUids: groups.communityUids,
       optedInUids: groups.optedInUids,
     };
+  }
+  if (input.kind === 'bullying') {
+    if (input.institutionId && input.anonymous !== true) {
+      return resolveRecipients({ ...input, kind: 'student_safety_report' });
+    }
+    return resolveRecipients({ ...input, kind: 'safety_desk' });
   }
   if (input.kind === 'safety_desk') {
     const groups = desk(input);

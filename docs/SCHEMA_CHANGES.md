@@ -2560,3 +2560,195 @@ Amber and emergency push targeting is institution members, plus region match, pl
 `/help/near-me` is public. It is linked from the safety shield, the danger screen, and the public alert page. It renders tap-to-call numbers from the bundled seed first, so the numbers are on the page when the network is down. The country picker defaults from the geo cookie when that country is in the seed. A row marked `needsReview` says the numbers still need a review.
 
 `Nearest police station` and `Nearest hospital` open `https://www.google.com/maps/search/?api=1&query=police%20station` or `hospital`. The device location is added to that query only after the person grants it. A denial opens the search without coordinates. There is no Places API. People without a school can submit a title and description on this page. That calls `POST /api/safety-desk/submit` and does not publish an alert.
+
+## Anti-bullying is free
+
+Anti-bullying help is free for every account, including an account with no school. `bullyingReceiveAllowed` is always true. It does not read `accessTier` or `subscriptionTier`. Safety Report, I'm in danger, block, mute, restrict, ET AI moderation, the evidence locker, Get help near me, and the report tracker all use that gate.
+
+Routing is still `resolveRecipients`. Kind `bullying` with an `institutionId` and `anonymous` not true uses the student safety report list (safeguarding lead, principal, form teacher, and approved parents unless parent exclusion applies). No school, or an anonymous report, uses the Safety Desk list: super admins (`role: admin`), the on-call primary on `safety_desk/rota`, the backup only when `escalate` is set, and linked guardians at verification tier 2 or higher unless parent exclusion applies. The reporter's real name stays on the ticket. Anonymous pushes say the name stays with Desk leads and do not call `notifyTicketStaff`. `safetyView` returns `full` for a super admin or `staffPost: safety_desk` only. The reporter gets `tracker`. Everyone else, including a guardian and a school principal, gets `hidden`.
+
+Desk SLAs are config in `DESK_SLA_MS`: critical 15 minutes, high 1 hour, medium 24 hours, low 72 hours. A desk ticket stores `deskSeverity` and `slaDueAt` from that clock. Hotline `priority` still uses `low|medium|high`, so critical is stored as priority `high` plus `deskSeverity: critical`. The cron `GET /api/cron/hotline` calls `escalateCriticalDesk`. An unacknowledged critical desk ticket past 15 minutes sets `deskEscalatedAt` and pushes the backup and super admins. It appends `desk_escalated`.
+
+Check-ins are `checkIns: [{ dueAt, sentAt }]` on the ticket, 24 hours and 7 days after `createdAt`. The same cron calls `sendDueCheckIns` and pushes "How are you doing?" to the reporter. Closed and resolved tickets are skipped. The event is `check_in_sent`.
+
+On Poket School, `network_restricts/{postAuthorId}_{commenterId}` marks that person's comments on the post author's posts as `restricted`. `account_limits/{uid}.commentRestricted` does the same for every comment. `commentVisible` shows a restricted comment to its author, the post owner, and a Desk lead (`role: admin` or `staffPost: safety_desk`). Three or more open reports with the same `targetUid` set `account_limits.dmLimited` and `connectionLimited`. That blocks new DMs and connection requests. It does not suspend or mute. Adults still cannot DM under-18s. Block is `network_blocks/{uid}_{targetId}`. Mute is `network_mutes/{uid}_{targetId}` and hides that person's posts and comments from the muter.
+
+Off-platform evidence is `evidence_locker/{id}`: `ownerId`, `note`, `platform`, `hash` (SHA-256 of timestamp, note, and screenshot bytes), `createdAt`, `guardianIds`, `parentsExcluded`, and `imageBase64`. `canSeeEvidence` allows the owner, a non-excluded guardian id, and the Desk. `GET /api/bullying/evidence-pdf` returns a PDF from `casePdf`. The hash chain event is `evidence_saved` on `evidence_locker/{id}/events`.
+
+A Desk lead sends `school_referrals/{id}` only after consent and only when `institutions/{bullySchoolId}` exists. The document is `bullySchoolId`, `where`, `summary` (trimmed, no requirement to include a name), `reporterHidden: true`, `leadUids`, `sentBy`, and `createdAt`. It has no `reporterUid`. The school push does not link to the victim's ticket. The ticket audit event `school_referral` records the referral id. `GET /api/bullying/referral` returns the summary, the place, and `reporterHidden` only.
+
+ET AI support is labelled `ET AI support is not a counsellor.` Risk phrases (`riskSeverity`) file a `self_harm_concern` report at critical severity and return helplines immediately. Outside Desk hours (`Asia/Kuala_Lumpur`, 08:00–22:00) the same response shows helplines and Get help near me. Numbers live in `OFFICIAL_HELPLINES` with `sourceUrl`. A line without an `https://` source is dropped. Unknown countries return no numbers. Malaysia is Talian Kasih 15999, Befrienders KL +603-7627 2929, and Talian HEAL 15555, each with the official page that was checked. Other countries are a TODO until an official page is opened. Do not invent a number. Get help near me for Malaysia is emergency 999 and the Befrienders "I need help right now" page.
+
+Report rate flags at three reports in a UTC day and still accepts the report (`refused: false`). `markDangerFalse` increments `safety_flags/{uid}.falseDanger`. At two or more it sets `review: true` and `punish: false`. It does not write `account_limits`.
+
+The public page is `/stand-up-to-bullying`. It is indexed, canonical, and lists no victim data. The join link is `/signup?help=bullying&ref=POKETSTAND`. The code is `referrals/POKETSTAND` with `kind: bullying`. Signup already stores `referredBy` from `ref`. Clients cannot read or write the new collections. Rules are not deployed.
+
+| Method | Path |
+| --- | --- |
+| GET | `/stand-up-to-bullying` |
+| GET | `/api/bullying/guide` |
+| POST | `/api/bullying/support` |
+| POST | `/api/bullying/evidence` |
+| GET | `/api/bullying/evidence` |
+| GET | `/api/bullying/evidence-pdf` |
+| POST | `/api/bullying/block` |
+| POST | `/api/bullying/mute` |
+| POST | `/api/bullying/restrict` |
+| POST | `/api/bullying/desk-restrict` |
+| POST | `/api/bullying/referral` |
+| GET | `/api/bullying/referral` |
+
+Samples: `/preview/bullying` and `/preview/bullying?view=desk`. Platform report links: WhatsApp `https://www.whatsapp.com/safety`, Instagram `https://help.instagram.com/`, TikTok `https://www.tiktok.com/safety`.
+
+Indexes, not deployed: `evidence_locker` on `ownerId`; `evidence_locker` on `guardianIds` (array); `hotline_tickets` on `targetUid`; `hotline_tickets` on `deskSeverity`; `network_mutes` on `userId`.
+
+## Schools that are not on Poket School
+
+When the student's school, or the other student's school, is not an `institutions/{id}` document, the Safety Desk can still tell that school. Naming a school on a report does not send anything. `fileSafetyReport` writes a draft and the email goes out only when a Desk lead posts `send: true`.
+
+The report form asks, optionally, "Your school" and "Bully's school". Each field is a directory picker plus free text. The ticket stores `victimSchoolId`, `victimSchoolName`, `victimSchoolOnPoket`, `bullySchoolId`, `bullySchoolName`, `bullySchoolOnPoket`, `schoolNoticeConsent`, `schoolNoticeGuardianId`, and `schoolInformedAt`. `schoolNoticeConsent` is saved only when the reporter is not `under13` and they ticked the box. A Desk request cannot set that flag.
+
+`schools/{id}` is the directory of off-platform schools. A free-text name is stored at the first 20 hex characters of SHA-256 of the cleaned lowercase name, with `name`, `nameLower`, `onPoket: false`, `contactEmail: ''`, `contactSource: ''`, and `contactVerified: false`. An id that already exists as `institutions/{id}` is on Poket School. The email notice is refused with "That school is on Poket School. Use the safeguarding referral." `GET /api/bullying/schools?q=` returns `{ id, name, onPoket }` only. It does not return an email address. The search reads up to 50 directory rows and 40 institutions and filters in memory, so it does not need a new composite index.
+
+`schoolNotices/{id}` is append-only through `appendChain` on `schoolNotices/{id}/events`. Clients cannot read or write `schoolNotices`, its `events`, or `schools`. Rules are not deployed. The document is:
+
+| Field | Meaning |
+| --- | --- |
+| `reportId` | `hotline_tickets` id |
+| `schoolId` | `schools/{id}` or blank |
+| `schoolName` | Display name |
+| `side` | `victim` or `bully` |
+| `contact` | Verified email, or the word `phone` or `letter`. Never a guessed address |
+| `contactSource` | `https://` page the Desk opened |
+| `consentBy` | Student uid, guardian uid, or the Desk uid for a serious-risk override |
+| `sentBy` | Desk uid. Blank until something is actually sent or logged as reached |
+| `sentAt` | Milliseconds. `0` until then |
+| `ackAt` | Milliseconds the school confirmed, else `0` |
+| `actionTaken` | What the school wrote |
+| `status` | `draft`, `find_contact`, `sent`, `reminded`, `escalated`, `acknowledged` |
+| `channel` | `email`, `phone`, or `letter` |
+| `incidentType` | Safety type |
+| `dates` | When it happened |
+| `summary` | Short account. Rejected if it contains the reporter's name |
+| `token` | 48 hex characters. Server only. Clients cannot read this collection |
+| `tokenHash` | SHA-256 of `token`. The public page looks up this |
+| `tokenExpiresAt` | 30 days after send |
+| `remindedAt` | Set when the 3-working-day reminder runs |
+| `escalatedAt` | Set when the 7-working-day escalation runs |
+| `chainSeq`, `chainHead`, `legalHold` | Same audit chain as other safety records |
+
+A draft starts at `find_contact`. The Desk push says "Find contact. A school notice is waiting for review. Nothing was sent." An email is accepted only when it is a valid address, the source is a public `https://` URL (no localhost, no IP address, no userinfo, and the fetch does not follow redirects), and that exact address appears on the page. Otherwise the status stays `find_contact` and the task is `Find contact`. Phone and letter logging store the channel word plus the source URL. They do not store a number or a postal address. `reached` has to be true before that log counts as sent.
+
+Consent is the student's own tick from age 13, or `POST /api/bullying/school-consent` from an approved guardian at verification tier 2 or higher who is not excluded by the parent-exclusion rule. Under 13, the student's tick is ignored. A serious-risk override needs `seriousRisk: true` and `overrideReason` of at least 8 characters. That writes `school_notice_override` on the ticket chain and on the notice chain, with the reason. The notice body is built by `schoolNoticeMessage`. It has the incident type, the dates, the summary, the Desk address `safety@poketschool.ai`, the acknowledgement link, and the free join link `/signup?help=bullying&ref=POKETSTAND`. It says the reporter is not named. Mail goes through `lib/mail` from `Poket School <safety@poketschool.ai>`, even when `MAIL_FROM` is something else. An evidence PDF is attached only when the Desk passes an evidence locker id whose note does not contain the reporter's name.
+
+The acknowledgement page is `/school-notice/{token}`. It is `noindex`, omitted from the sitemap, and disallowed in `robots.ts`. The sample `/school-notice/sample` renders a static notice and does not call Firebase. A bad or unknown token says "This link is not available." An expired token says "This link has expired." The page shows the incident type, the dates, the summary, the Desk contact, a receipt form, and the join link. It does not show the reporter, the report id, or the token hash. `POST /api/school-notice/ack` is public. The token is the credential.
+
+`GET /api/cron/hotline` calls `remindSchoolNotices` and `escalateSchoolNotices`. Three working days after `sentAt` (Monday to Friday, `Asia/Kuala_Lumpur`, skipping holidays on `DEFAULT_WORK`), a `sent` notice becomes `reminded`. The reminder email reuses the stored token, and only when the channel is email, the contact contains `@`, and the token is 48 hex characters. Otherwise the Desk is pushed: "Remind the school. No acknowledgement yet, and no email is on file." Seven working days with no `ackAt` sets `escalated` and pushes the rota primary, the backup, and `staffPost: safety_desk`. The school is not emailed a third time. The push does not include the reporter's name.
+
+When a notice is sent, or a phone or letter is logged as reached, the ticket `schoolInformedAt` is set. The student's tracker then shows "Your school has been informed". It does not name the school.
+
+| Method | Path |
+| --- | --- |
+| GET | `/api/bullying/schools` |
+| GET | `/api/bullying/school-notice` |
+| POST | `/api/bullying/school-notice` |
+| POST | `/api/bullying/school-consent` |
+| GET | `/school-notice/{token}` |
+| POST | `/api/school-notice/ack` |
+
+Queries, single field, not a new composite index: `schoolNotices.reportId`, `schoolNotices.tokenHash`, `schoolNotices.status`. Rules and indexes are not deployed. Samples: `/school-notice/sample` and the desk card on `/preview/bullying?view=desk`. The report form sample is `/preview/safety`.
+
+## Authority referrals
+
+High and critical safety cases reuse `hotline_tickets.authorities`. A case is high or critical when `deskSeverity` or `safetyType` is `high`, `critical`, `bullying`, `cyberbullying`, `harassment`, `abuse`, or `self_harm_concern`, or when the text matches threats of violence, assault, sexual content or exploitation, extortion, self-harm risk, or a hate crime. Before `solved` or `closed`, the Desk records refer (`required: yes`, `status: to_be_informed`) or not needed (`required: no`, `status: not_required`, reason at least 3 characters). Refer cannot close until the referral is sent and the status is `informed`, `acknowledged`, or `closed_by_authority`. A parent hotline ticket keeps the older close check. Low `unsafe_other` with none of those words is not this extra gate. New safety and danger tickets store `reporterCountry` from the account `country` or `homeCountry`, `authorityReferredAt: 0`, and `authorityTrackerVisible: false`.
+
+Nothing is emailed unless `POST /api/bullying/authority-send` has `send: true`. A verified partner is a `users` document with `partnerKind` of `police` or `child_protection`, `verification.tier` at least 4, and the same country (Malaysia and `MY` match). If both the partner and the report have a state, those must match. The Desk list returns `{ id, name, kind, country }` and never an email. Mail uses the account email only when it already matches an email shape. If that partner has no email, the Desk pushes the case link instead. The message is from `Poket School <safety@poketschool.ai>` and is rejected if it contains the reporter's name. An evidence PDF is attached only when the evidence note does not name the reporter.
+
+Where no partner matches, the Desk submits a referral pack through an official channel in `OFFICIAL_AUTHORITY_CHANNELS`. Checked Malaysia pages, and no others:
+
+| Channel | How | Source |
+| --- | --- | --- |
+| Royal Malaysia Police | In person at a station. e-Reporting is not used for a crime | `https://rmp2u.rmp.gov.my/faq` |
+| Talian Kasih 15999 | Child and family line | `https://www.malaysia.gov.my/en/topics/talian-kasih-15999` |
+| National Scam Response Centre 997 | Extortion or a scam that took money, and a station report is still required | `https://nfcc.jpm.gov.my/index.php/en/about-nsrc` |
+
+TODO: another country, only after its official page is opened. TODO: MCMC Cyber999, only after the official reporting URL is opened. A country with no checked channel returns "No verified official channel is on file for this country. The task is to find the official page. Do not guess an email." The pack stores the agency, the source URL, the incident type, the dates, the summary, and the reference. It does not invent an email.
+
+Sexual cases in Malaysia include a mandatory-reporting note citing Child Act 2001 sections 27 to 29A and Sexual Offences Against Children Act 2017 section 19, with source `https://petari.bheuu.gov.my/wp-content/uploads/2025/10/UNICEF-Child-Sexual-Abuse-Report-Final-FA_Digital-Version-Interactive-pdf-compressed.pdf`. Other countries and other kinds leave the note empty.
+
+The student sees the country emergency number first. The page says "The Safety Desk does not replace emergency services." Guardians are told unless the case is abuse by a parent or guardian, or parents are already excluded. The student is told unless the Desk sets `withholdStudent` with a reason of at least 8 characters. That writes `authority_referral_withhold` on the ticket chain and the referral chain. The tracker shows "Referred to authorities" only when `authorityTrackerVisible` is true and `authorityReferredAt` is set, which is only when the student is told.
+
+`authorityReferrals/{id}` is append-only through `appendChain` on `authorityReferrals/{id}/events`. Clients cannot read or write the collection or its events. Rules are not deployed.
+
+| Field | Meaning |
+| --- | --- |
+| `reportId` | `hotline_tickets` id |
+| `country` | Reporter country, or Malaysia when the account has none |
+| `agency` | Partner name or official agency |
+| `partnerId` | `users` id, or blank for an official pack |
+| `channel` | `partner`, `police`, `helpline`, or `scam` |
+| `sentBy` | Desk uid |
+| `sentAt` | Milliseconds |
+| `reference` | Official reference, or `PS-` plus the first 8 token characters |
+| `status` | `draft`, `sent`, `acknowledged`, `closed` |
+| `outcome` | What the authority did. The Desk records it. Status becomes `acknowledged` |
+| `contact` | Source URL, or the words `Poket School partner` |
+| `summary`, `incidentType`, `dates` | Minimal facts. The summary cannot contain the reporter's name |
+| `token` | 48 hex characters. Server only |
+| `tokenHash` | SHA-256. The public page looks up this |
+| `tokenExpiresAt` | 30 days |
+| `chainSeq`, `chainHead`, `legalHold` | Same audit chain as other safety records |
+
+The partner page is `/authority-case/{token}`. It is `noindex` and disallowed in `robots.ts`. `/authority-case/sample` does not call Firebase. A bad token says "This link is not available." An expired token says "This link has expired." The page shows the emergency number, the agency, the country, the incident type, the dates, the summary, the reference, the status, and `safety@poketschool.ai`. It does not show the reporter or the report id.
+
+| Method | Path |
+| --- | --- |
+| GET | `/api/bullying/authority` |
+| POST | `/api/bullying/authority-decision` |
+| POST | `/api/bullying/authority-send` |
+| POST | `/api/bullying/authority-outcome` |
+| GET | `/authority-case/{token}` |
+
+Queries, single field, not a new composite index: `users.partnerKind`, `authorityReferrals.tokenHash`. Rules and indexes are not deployed. The desk sample is `/preview/bullying?view=desk`.
+
+## Community safety terms
+
+The draft wording lives in `lib/safety/disclaimer.ts` as version `2026-10-17`. The title keeps `DRAFT, pending legal review`. Clause 2.1 keeps the placeholder `[COMPANY LEGAL NAME]`. The public page `/safety-terms` is indexable and is in the sitemap. Its server HTML always includes the ten clauses so a crawler can read them. A signed-in under-13 account, including an account with no `ageTier`, sees the child sentence after the page loads and the long clauses are hidden in the browser. The child sentence is the one in the draft. This build does not add BM, ZH, or TA translations.
+
+The requested path `legal/safetyTerms/{version}` is stored as the document `legal/safetyTerms/versions/{version}` because a Firestore document path needs an even number of segments. The server creates that document in `ensureCurrentTerms` only when it is missing, with `chainSeq: 0`, `chainHead` set to the genesis hash, and an empty `legalHold`. A later write merges the draft text and does not reset the chain. Clients may get the version document when they are signed in. They cannot list, create, update, or delete it. The subcollection `legal/safetyTerms/versions/{version}/audit` is denied to clients. Rules are not deployed.
+
+Each acknowledgement is one `appendChain` entry on that audit subcollection. The action is `safety_terms_ack`. The entry stores `uid`, `version`, and `timestamp` in addition to the usual chain fields. The user document also stores `safetyTermsAckVersion` and `safetyTermsAckAt` so the next check is one read. Those two fields are not in `selfServiceFields()`, so a client cannot write them. A matching version is not written again. A different version asks for a new acknowledgement.
+
+`POST /api/safety/terms-ack` writes the acknowledgement. `GET /api/safety/terms` returns the current version, whether this account still needs to acknowledge it, and whether the account is under 13. Non-emergency safety writes call `requireSafetyTerms` at the route: a safety report, a hotline ticket, evidence, restrict, mute, block, desk restrict, a school referral, ET AI support chat, a school notice, school-notice consent, and an authority decision, send, or outcome. A support chat whose text is `critical` self-harm risk skips the acknowledgement so the report can still be filed. The check is not inside `fileSafetyReport` or `raiseDanger`.
+
+These actions never wait for the disclaimer or the acknowledgement: I'm in danger (`danger`), the danger acknowledgement (`ack`), emergency numbers, roll-call I'm safe and Need help (`check-in`), and an Amber receipt (`lib/server/emergency.ts` and the Amber opt-in route). The I'm in danger button stays above the short footer. The footer does not cover it.
+
+The short footer is the draft headline with the local emergency number, the goodwill sentence, and a link to `/safety-terms`. It is on `/amber/{id}`, the hotline and report pages, I'm in danger, `/stand-up-to-bullying`, the Safety Desk, ET AI support, Get help near me, school-notice pages, and authority case pages. School-notice email, the authority partner message, the authority referral pack, the staff case-card email, and the failed-notice email append the same footer. When the country is unknown the email uses `999`. The SMS body is `caseCardSms` and `safetyDeskSmsText`. This build has no SMS provider, so nothing is sent or logged as a failed SMS.
+
+| Method | Path |
+| --- | --- |
+| GET | `/safety-terms` |
+| GET | `/api/safety/terms` |
+| POST | `/api/safety/terms-ack` |
+
+The short footer and `/safety-terms` also say "Poket School's safety features are a free community service. We invite community partners to get involved." and link to `/community-partners`.
+
+## Community partners
+
+`/community-partners` is a public indexable page. It lists police, child-protection NGOs, schools, counsellors and mental-health organisations, helplines, businesses and sponsors, volunteers, and media. The interest form posts to `POST /api/community-partners`. The page itself does not call Firebase, so it still renders when the admin SDK is missing.
+
+`communityPartnerApplications/{id}` is written only by the server. Clients cannot read or write it. Rules are not deployed. The document is `{ orgName, type, country, region, contactName, email, phone, website, message, status, createdAt }`, plus `route`, `nextPath`, `reviewedAt`, and `reviewedBy` after a review. `status` starts as `pending`. A hidden honeypot field is dropped and is not stored. The route allows five applications an hour for one address. A website, when present, has to start with `https://`.
+
+If Firebase Admin is not configured, the form answers "Partner applications are coming soon." and writes nothing. If mail is not configured, the application is still saved and the review email is not treated as a crash. The review note goes to `SAFETY_ADMIN_EMAIL` or `safety@poketschool.ai`, from `Poket School <safety@poketschool.ai>`.
+
+`POST /api/community-partners/review` is admin only. Approve sets `route` and `nextPath` and does not change a user, a verification tier, `partnerKind`, or a merchant record. Police and child-protection NGOs are pointed at tier-4 verification (`/signup?partner=tier4`). Schools are pointed at the existing institution onboarding page (`/dashboard/institution/onboarding`). Businesses and sponsors are pointed at the partner merchant flow (`/signup?partner=merchant`). Other types wait for a person. Decline stores `declined` and grants nothing.
+
+An approval also emails the contact the absolute next link, from `Poket School <safety@poketschool.ai>`. The letter says the approval does not grant access. A missing mail key, a bad address, or a send failure leaves the approval in place and does not throw. Signup does not read `partner`. The school link is the onboarding page an institution admin already uses. The tier-4 and merchant links name those routes. They do not raise `verification.tier`, set `partnerKind`, or create a merchant record.
+
+Get involved links to `/community-partners` from `/stand-up-to-bullying`, `/amber/{id}`, Get help near me, the safety footer, school-notice email, and Safety Desk email.
+
+| Method | Path |
+| --- | --- |
+| GET | `/community-partners` |
+| POST | `/api/community-partners` |
+| POST | `/api/community-partners/review` |

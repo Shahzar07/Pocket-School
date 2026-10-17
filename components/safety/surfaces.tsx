@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Phone, Shield } from 'lucide-react';
+import { SafetyDisclaimerFooter } from '@/components/safety/disclaimer';
 import { emergencyNumber } from '@/lib/emergency/policy';
 import { DEFAULT_HELPLINES, TRACKER_STAGES, type Helpline, type TrackerStage } from '@/lib/safety/policy';
 
@@ -66,7 +67,7 @@ export function SafetyShieldLink({ href = '/dashboard/student/safety' }: { href?
   );
 }
 
-export function SupportCard({ lines = DEFAULT_HELPLINES }: { lines?: Helpline[] }) {
+export function SupportCard({ lines = DEFAULT_HELPLINES, emergencyNumber = '999' }: { lines?: Helpline[]; emergencyNumber?: string }) {
   return (
     <section className="sf-card" aria-label="Support resources">
       <h2 style={{ margin: '0 0 8px', fontSize: 18 }}>Support resources</h2>
@@ -82,15 +83,28 @@ export function SupportCard({ lines = DEFAULT_HELPLINES }: { lines?: Helpline[] 
           </div>
         ))}
       </div>
+      <div style={{ marginTop: 12 }}>
+        <SafetyDisclaimerFooter emergencyNumber={emergencyNumber} />
+      </div>
     </section>
   );
 }
 
-export function TrackerCard({ stage = 'received' }: { stage?: TrackerStage }) {
+export function TrackerCard({
+  stage = 'received',
+  schoolInformed = false,
+  authorityReferred = false,
+}: {
+  stage?: TrackerStage;
+  schoolInformed?: boolean;
+  authorityReferred?: boolean;
+}) {
   return (
     <section className="sf-card" aria-label="Report tracker">
       <h2 style={{ margin: '0 0 8px', fontSize: 18 }}>Your report</h2>
       <p className="sf-note">You can see where it stands. Staff notes stay with the safeguarding lead.</p>
+      {schoolInformed ? <p className="sf-note" style={{ color: '#1E6A83', fontWeight: 700 }}>Your school has been informed</p> : null}
+      {authorityReferred ? <p className="sf-note" style={{ color: '#1E6A83', fontWeight: 700 }}>Referred to authorities</p> : null}
       <div className="sf-row" style={{ marginTop: 12 }}>
         {TRACKER_STAGES.map(item => (
           <span key={item} className={item === stage ? 'sf-stage on' : 'sf-stage'}>{STAGE_LABEL[item]}</span>
@@ -112,6 +126,7 @@ export function DangerCard({
     <section className="sf-card" aria-label="I'm in danger now">
       <p className="sf-kicker" style={{ color: '#D0553F' }}>Emergency</p>
       <p className="sf-call">Call {number}</p>
+      <p className="sf-note">The Safety Desk does not replace emergency services.</p>
       <p className="sf-note">This is the emergency number for your country. Call it now if you can. Poket School is not a replacement for emergency services.</p>
       <HelpNearMeLink />
       <button type="button" className="sf-danger" style={{ marginTop: 12 }}>
@@ -119,6 +134,7 @@ export function DangerCard({
         I&apos;m in danger now
       </button>
       <p className="sf-note">{sent ? 'Your school has been told. Location is shared only if you chose it, and only once.' : 'Your school is told when you press this. Parents are told unless you say not to, or the concern is abuse.'}</p>
+      <SafetyDisclaimerFooter emergencyNumber={number} />
     </section>
   );
 }

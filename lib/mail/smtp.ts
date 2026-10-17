@@ -17,11 +17,12 @@ export function smtpAdapter(env: MailEnv): MailAdapter {
         auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
       });
       const sent = await transport.sendMail({
-        from: fromHeader(env),
+        from: message.from || fromHeader(env),
         to: message.to,
         subject: message.subject,
         text: message.text,
         html: message.html,
+        attachments: message.attachments?.map(file => ({ filename: file.filename, content: Buffer.from(file.content, 'base64') })),
       });
       const providerId = typeof sent.messageId === 'string' ? sent.messageId : '';
       return { ok: true, provider: 'smtp', providerId, error: '' };

@@ -14,11 +14,12 @@ export function resendAdapter(env: MailEnv, fetchImpl: typeof fetch = fetch): Ma
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: fromHeader(env),
+          from: message.from || fromHeader(env),
           to: [message.to],
           subject: message.subject,
           html: message.html,
           text: message.text,
+          ...(message.attachments && message.attachments.length > 0 ? { attachments: message.attachments } : {}),
         }),
       });
       const payload = await response.json().catch(() => ({})) as { id?: string; message?: string };

@@ -2933,6 +2933,68 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Anti-bullying. Client reads and writes are false. Not deployed.
+    match /evidence_locker/{itemId} {
+      allow read, write: if false;
+      match /events/{eventId} {
+        allow read: if false;
+        allow create: if false;
+        allow update, delete: if false;
+      }
+    }
+    match /school_referrals/{referralId} {
+      allow read, write: if false;
+    }
+    match /account_limits/{userId} {
+      allow read, write: if false;
+    }
+    match /safety_desk/{docId} {
+      allow read, write: if false;
+    }
+    match /network_restricts/{pairId} {
+      allow read, write: if false;
+    }
+    match /network_mutes/{pairId} {
+      allow read, write: if false;
+    }
+    // Off-platform school notices. Append-only on the server. Not deployed.
+    match /schoolNotices/{noticeId} {
+      allow read, write: if false;
+      match /events/{eventId} {
+        allow read: if false;
+        allow create: if false;
+        allow update, delete: if false;
+      }
+    }
+    match /schools/{schoolId} {
+      allow read, write: if false;
+    }
+    // Authority referrals. Append-only on the server. Not deployed.
+    match /authorityReferrals/{referralId} {
+      allow read, write: if false;
+      match /events/{eventId} {
+        allow read: if false;
+        allow create: if false;
+        allow update, delete: if false;
+      }
+    }
+    // Community safety terms. The server writes legal/safetyTerms/versions/{version}.
+    // Signed-in clients may read that document. They cannot write it or its audit chain. Not deployed.
+    // Community partner applications. Server only. Applying grants nothing. Not deployed.
+    match /communityPartnerApplications/{applicationId} {
+      allow read, write: if false;
+    }
+    match /legal/safetyTerms {
+      allow read, write: if false;
+      match /versions/{version} {
+        allow get: if request.auth != null;
+        allow list, create, update, delete: if false;
+        match /audit/{entryId} {
+          allow read, write: if false;
+        }
+      }
+    }
+
     match /published_reports/{token} {
       allow get: if true;
       allow list: if false;

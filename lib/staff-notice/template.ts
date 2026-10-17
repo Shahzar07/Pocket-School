@@ -4,6 +4,7 @@
  */
 
 import { escapeHtml } from '../certificates';
+import { originFromUrl, safetyDeskEmailText, safetyDeskSmsText, safetyMessageFooter } from '../safety/disclaimer';
 
 export interface GuardianContact {
   name: string;
@@ -55,7 +56,12 @@ export function caseCardText(card: CaseCard): string {
     '',
     FOOTER,
   ];
-  return rows.filter(row => row !== '').join('\n');
+  return safetyDeskEmailText(rows.filter(row => row !== '').join('\n'), '999', originFromUrl(card.caseUrl));
+}
+
+export function caseCardSms(card: CaseCard): string {
+  const brief = `Safety Desk. ${card.typeLabel || 'Safeguarding'}. Case ${card.caseId}. Open case: ${card.caseUrl}`;
+  return safetyDeskSmsText(brief, '999', originFromUrl(card.caseUrl));
 }
 
 export function caseCardHtml(card: CaseCard): string {
@@ -93,7 +99,10 @@ export function caseCardHtml(card: CaseCard): string {
         <a href="${escapeHtml(card.caseUrl)}" style="display:inline-block;min-height:48px;line-height:48px;padding:0 18px;border-radius:14px;background:#2786A4;color:#ffffff;text-decoration:none;font-weight:700">Open case</a>
         ${excluded}
       </div>
-      <p style="margin:0;padding:16px 24px;background:#E7F1F4;color:#1E6A83;font-size:13px;font-weight:700">${FOOTER}</p>
+      <div style="margin:0;padding:16px 24px;background:#E7F1F4;color:#1E6A83;font-size:13px">
+        <p style="margin:0 0 8px;font-weight:700">${FOOTER}</p>
+        ${safetyMessageFooter('999', originFromUrl(card.caseUrl)).split('\n').map(line => `<p style="margin:0 0 8px">${escapeHtml(line)}</p>`).join('')}
+      </div>
     </div>
   </div>`;
 }

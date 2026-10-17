@@ -4,6 +4,7 @@ import { runGet, runPost } from '@/lib/server/http';
 import { ActionError } from '@/lib/server/actions';
 import { shareRefusal } from '@/lib/ledger/chain';
 import { deviceFromHeaders } from '@/lib/ledger/device';
+import { requireSafetyTerms } from '@/lib/server/safety-terms';
 import {
   assignTicket, attachTicket, commentTicket, createTicket, exportTicketLog, getTicket, hotlineAnalytics,
   listTickets, rateTicket, redactTicketInternal, reopenTicket, setTicketAuthorities, setTicketLegalHold,
@@ -39,7 +40,10 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
   return runPost(req, async (user, body) => {
     const input = stamp(req, body);
     const device = deviceFromHeaders(req.headers);
-    if (action === 'create') return createTicket(user.uid, input);
+    if (action === 'create') {
+      await requireSafetyTerms(user.uid);
+      return createTicket(user.uid, input);
+    }
     if (action === 'comment') return commentTicket(user.uid, str(body.ticketId), input);
     if (action === 'assign') return assignTicket(user.uid, str(body.ticketId), str(body.assigneeUid), device);
     if (action === 'status') return setTicketStatus(user.uid, str(body.ticketId), input);

@@ -2452,3 +2452,116 @@ components/safety/desk-queue.tsx	Start time
 components/safety/desk-queue.tsx	The desk is clear
 components/safety/desk-queue.tsx	User id
 components/safety/desk.tsx	Get help near me
+components/bullying/stand-up.tsx	Free anti-bullying help for every person, including someone with no school.
+components/bullying/stand-up.tsx	Free for everyone
+components/bullying/stand-up.tsx	If it happened somewhere else
+components/bullying/stand-up.tsx	No school and no subscription are required. A report still reaches the Poket School Safety Desk.
+components/bullying/stand-up.tsx	Official helplines
+components/bullying/stand-up.tsx	Official source
+components/bullying/stand-up.tsx	Other countries stay blank until an official page is checked. This page does not invent a number.
+components/bullying/stand-up.tsx	POKET SCHOOL
+components/bullying/stand-up.tsx	Stand up to bullying
+components/bullying/stand-up.tsx	This page shows no reports, names, or evidence.
+components/bullying/surfaces.tsx	A message about wanting to die goes to the Safety Desk as critical and shows helplines at once.
+components/bullying/surfaces.tsx	A screenshot and a note are hashed and time-stamped. Only you, a guardian who is allowed, and the Desk can open it.
+components/bullying/surfaces.tsx	Anti-bullying help
+components/bullying/surfaces.tsx	Bullying desk
+components/bullying/surfaces.tsx	ET AI support
+components/bullying/surfaces.tsx	Evidence locker
+components/bullying/surfaces.tsx	Export PDF
+components/bullying/surfaces.tsx	False reports
+components/bullying/surfaces.tsx	Free, including when you have no school.
+components/bullying/surfaces.tsx	Get help near me
+components/bullying/surfaces.tsx	Hidden from the school and from the other student.
+components/bullying/surfaces.tsx	How are you doing?
+components/bullying/surfaces.tsx	On Poket School
+components/bullying/surfaces.tsx	Online. Short account with no names.
+components/bullying/surfaces.tsx	POKET SCHOOL
+components/bullying/surfaces.tsx	People with no school, and anonymous reports, stay with the on-call rota.
+components/bullying/surfaces.tsx	Repeated false reports are flagged for a person to review. The reporter is not muted or restricted for that flag.
+components/bullying/surfaces.tsx	Response times
+components/bullying/surfaces.tsx	Restrict keeps a comment visible only to the person who wrote it. Repeated reports limit new messages and connection requests. Adults cannot message under-18s.
+components/bullying/surfaces.tsx	SAFETY DESK
+components/bullying/surfaces.tsx	Sample only. This preview is not a report.
+components/bullying/surfaces.tsx	School referral
+components/bullying/surfaces.tsx	Send referral
+components/bullying/surfaces.tsx	Send this only after the person who reported it agrees, and only if the other school is on Poket School.
+components/bullying/surfaces.tsx	You get this check-in 24 hours after a report, and again after 7 days.
+components/bullying/ack-form.tsx	Action taken
+components/bullying/ack-form.tsx	Confirm receipt
+components/bullying/ack-form.tsx	What the school did
+components/bullying/inform-school.tsx	A Desk member reviews every notice. Nothing is sent until you send it. The reporter is not named.
+components/bullying/inform-school.tsx	A short account with no names
+components/bullying/inform-school.tsx	Copied from the official page
+components/bullying/inform-school.tsx	Evidence record
+components/bullying/inform-school.tsx	Inform a school
+components/bullying/inform-school.tsx	Official email
+components/bullying/inform-school.tsx	Official page
+components/bullying/inform-school.tsx	Serious risk, tell the school without consent
+components/bullying/inform-school.tsx	That school is on Poket School. Use the safeguarding referral.
+components/bullying/inform-school.tsx	Which school
+components/bullying/inform-school.tsx	Why this child is at serious risk
+components/bullying/inform-school.tsx	https://
+components/bullying/school-field.tsx	Not on Poket School
+components/bullying/school-field.tsx	On Poket School
+components/bullying/school-field.tsx	School name
+components/bullying/school-field.tsx	Which school do you go to?
+components/bullying/school-field.tsx	Which school is the bully at?
+components/bullying/school-notice-view.tsx	Confidential notice
+components/bullying/school-notice-view.tsx	Dates.
+components/bullying/school-notice-view.tsx	Incident type.
+components/bullying/school-notice-view.tsx	Join Poket School for free safeguarding tools
+components/bullying/school-notice-view.tsx	SAFETY DESK
+components/bullying/school-notice-view.tsx	Safety Desk.
+components/bullying/school-notice-view.tsx	Summary.
+components/bullying/school-notice-view.tsx	The reporter is not named in this notice.
+components/bullying/school-notice-view.tsx	This link has expired.
+components/bullying/school-notice-view.tsx	This link is not available.
+components/safety/desk.tsx	I am 13 or older and I agree the Safety Desk may tell these schools. My name stays off the notice.
+components/safety/surfaces.tsx	Your school has been informed
+components/bullying/authority-case-view.tsx	Confidential case
+components/bullying/authority-case-view.tsx	Country.
+components/bullying/authority-case-view.tsx	Dates.
+components/bullying/authority-case-view.tsx	Incident type.
+components/bullying/authority-case-view.tsx	Reference.
+components/bullying/authority-case-view.tsx	SAFETY DESK
+components/bullying/authority-case-view.tsx	Safety Desk.
+components/bullying/authority-case-view.tsx	Status.
+components/bullying/authority-case-view.tsx	Summary.
+components/bullying/authority-case-view.tsx	The reporter is not named in this message.
+components/bullying/authority-case-view.tsx	The reporter is not named.
+components/bullying/authority-case-view.tsx	This link has expired.
+components/bullying/authority-case-view.tsx	This link is not available.
+components/bullying/authority-desk.tsx	A Desk member sends this. Nothing is sent automatically. The reporter is not named.
+components/bullying/authority-desk.tsx	A short account with no names
+components/bullying/authority-desk.tsx	Case summary
+components/bullying/authority-desk.tsx	Do not tell the student
+components/bullying/authority-desk.tsx	Evidence record
+components/bullying/authority-desk.tsx	Mandatory reporting.
+components/bullying/authority-desk.tsx	No verified official channel is on file for this country.
+components/bullying/authority-desk.tsx	No verified partner is on file for this country.
+components/bullying/authority-desk.tsx	Official channel
+components/bullying/authority-desk.tsx	Official reference
+components/bullying/authority-desk.tsx	Refer to the authorities
+components/bullying/authority-desk.tsx	Sample case. Nothing is sent from this preview.
+components/bullying/authority-desk.tsx	Verified partners
+components/bullying/authority-desk.tsx	What the authority did
+components/bullying/authority-desk.tsx	Why it is not needed
+components/bullying/authority-desk.tsx	Write why telling the student would put them at risk.
+components/bullying/school-field.tsx	Bully's school
+components/bullying/school-field.tsx	Your school
+components/safety/desk.tsx	The Safety Desk does not replace emergency services.
+components/safety/surfaces.tsx	Referred to authorities
+components/safety/surfaces.tsx	The Safety Desk does not replace emergency services.
+app/safety-terms/page.tsx	POKET SCHOOL
+components/safety/disclaimer.tsx	Read the full terms
+app/community-partners/page.tsx	Community partners
+app/community-partners/page.tsx	POKET SCHOOL
+app/community-partners/page.tsx	Who can get involved
+app/safety-terms/page.tsx	Get involved
+components/community/partners-form.tsx	Applying grants nothing until an admin verifies the organisation.
+components/community/partners-form.tsx	Contact name
+components/community/partners-form.tsx	Partner type
+components/community/partners-form.tsx	Tell us about your organisation
+components/community/partners-form.tsx	https://
+components/safety/disclaimer.tsx	Get involved

@@ -185,8 +185,14 @@ export function safetyView(viewer: { id: string; role: string; staffPost: string
   institutionId: string;
   parentsExcluded: boolean;
   notifiedParentUids: string[];
+  anonymous?: boolean;
 }): SafetyView {
   if (!isSafetySource(ticket.source)) return 'hidden';
+  if (ticket.anonymous === true) {
+    if (viewer.role === 'admin' || viewer.staffPost === 'safety_desk') return 'full';
+    if (viewer.id && viewer.id === ticket.reporterUid) return 'tracker';
+    return 'hidden';
+  }
   if (viewer.role === 'admin') return 'full';
   const lead = viewer.staffPost === 'principal' || viewer.staffPost === 'safeguarding_lead';
   if (lead && viewer.institutionId && viewer.institutionId === ticket.institutionId) return 'full';
