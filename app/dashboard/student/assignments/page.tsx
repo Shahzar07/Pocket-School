@@ -115,7 +115,7 @@ export default function StudentAssignmentsPage() {
     graded: 'bg-emerald-500/10 text-emerald-600',
     submitted: 'bg-primary/10 text-primary',
     overdue: 'bg-destructive/10 text-destructive',
-    pending: 'bg-amber-500/10 text-amber-600',
+    pending: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
   };
 
   if (loading) return (

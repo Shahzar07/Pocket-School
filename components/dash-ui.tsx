@@ -15,7 +15,7 @@ import { ReactNode } from 'react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Minus, type LucideIcon } from 'lucide-react';
-import { accentForIndex, type AccentId, type TrendDirection } from '@/lib/design/chart-colours';
+import { accentFillVar, accentForIndex, accentVar, type AccentId, type TrendDirection } from '@/lib/design/chart-colours';
 
 /* ── Page frame ──────────────────────────────────────────────── */
 
@@ -112,6 +112,8 @@ export function StatCard({
   icon: Icon, label, value, badge, progress, progressLabel, href, hrefLabel, index = 0, tone, trend, size = 'regular',
 }: StatCardProps) {
   const accent = tone ?? accentForIndex(index);
+  const ink = `var(${accentVar(accent)})`;
+  const fill = `var(${accentFillVar(accent)})`;
   const TrendIcon = trend ? TREND_ICON[trend.direction] : null;
   const trendColour = trend?.direction === 'up' ? 'var(--ps-emerald)' : trend?.direction === 'down' ? 'var(--ps-coral)' : 'var(--muted-foreground)';
   const compact = size === 'compact';
@@ -121,25 +123,25 @@ export function StatCard({
       transition={{ duration: 0.4, delay: index * 0.05, ease: [0.21, 0.6, 0.35, 1] }}
       className={`relative overflow-hidden border border-border rounded-2xl shadow-[var(--shadow-card)] flex flex-col ${compact ? 'p-4' : 'p-5'}`}
       style={{
-        background: `linear-gradient(160deg, color-mix(in srgb, var(--ps-${accent}) 18%, var(--card)) 0%, var(--card) 68%)`,
+        background: `linear-gradient(160deg, color-mix(in srgb, ${fill} 18%, var(--card)) 0%, var(--card) 68%)`,
       }}
     >
       <span
         aria-hidden
         className="absolute inset-x-0 top-0 h-1"
-        style={{ background: `linear-gradient(90deg, var(--ps-${accent}), color-mix(in srgb, var(--ps-${accent}) 55%, var(--ps-amber-fill)))` }}
+        style={{ background: fill }}
       />
       <div className={`flex items-center gap-2.5 ${compact ? 'mb-3' : 'mb-4'}`}>
         <span
           className="w-8 h-8 rounded-xl grid place-items-center shrink-0"
-          style={{ background: `color-mix(in srgb, var(--ps-${accent}) 18%, transparent)`, color: `var(--ps-${accent})` }}
+          style={{ background: accent === 'cyan' ? 'var(--ps-cyan-soft)' : `color-mix(in srgb, ${ink} 18%, transparent)`, color: ink }}
         >
           <Icon className="w-4 h-4" />
         </span>
         <span className="text-[13px] font-medium text-muted-foreground truncate">{label}</span>
         {badge && (
-          <span className="ml-auto inline-flex items-center gap-1.5 text-[11px] font-semibold shrink-0" style={{ color: `var(--ps-${accent})` }}>
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: `var(--ps-${accent})` }} />{badge}
+          <span className="ml-auto inline-flex items-center gap-1.5 text-[11px] font-semibold shrink-0" style={{ color: ink }}>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: fill }} />{badge}
           </span>
         )}
       </div>
@@ -169,7 +171,7 @@ export function StatCard({
         <Link
           href={href}
           className="mt-4 flex items-center justify-between gap-2 h-9 px-3 rounded-xl border text-[12px] font-semibold text-foreground transition-colors"
-          style={{ borderColor: `color-mix(in srgb, var(--ps-${accent}) 35%, var(--border))` }}
+          style={{ borderColor: `color-mix(in srgb, ${ink} 35%, var(--border))` }}
         >
           {hrefLabel ?? 'View all'} <ArrowRight className="w-3.5 h-3.5" />
         </Link>
@@ -184,7 +186,7 @@ export function ProgressBar({ value, className = '', tone = 'teal' }: { value: n
   const pct = Math.max(0, Math.min(100, value));
   return (
     <div className={`h-1.5 rounded-full bg-muted overflow-hidden ${className}`}>
-      <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${pct}%`, background: `var(--ps-${tone})` }} />
+      <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${pct}%`, background: `var(${accentFillVar(tone)})` }} />
     </div>
   );
 }

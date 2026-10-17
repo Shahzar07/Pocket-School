@@ -184,9 +184,9 @@ function QuizViewer({
     <div className="max-w-2xl mx-auto py-6 space-y-6" dir={translation.dir}>
       <ContentLanguageBar status={translation.status} showOriginal={translation.showOriginal} notice={translation.notice} onToggle={translation.toggle} />
       {graded && (
-        <div className={`rounded-3xl p-5 text-center border ${percentage >= 70 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'}`}>
+        <div className={`rounded-3xl p-5 text-center border ${percentage >= 70 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-[var(--ps-cyan-soft)] border-[var(--ps-cyan-border)]/20'}`}>
           <p className="text-3xl font-extrabold">{percentage}%</p>
-          <p className={`text-sm font-semibold mt-1 ${percentage >= 70 ? 'text-emerald-600' : 'text-amber-600'}`}>
+          <p className={`text-sm font-semibold mt-1 ${percentage >= 70 ? 'text-emerald-600' : 'text-[var(--ps-cyan-text)]'}`}>
             {Object.values(graded).filter(r => r.correct).length}/{questions.length} correct
             {percentage >= 70 ? ' — Great work! 🎉' : ' — Keep studying! 📚'}
           </p>
@@ -233,7 +233,7 @@ function QuizViewer({
             })}
           </div>
           {graded?.[i] && (
-            <p className={`mt-3 text-xs px-3 py-2 rounded-lg ${graded[i].correct ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'}`}>
+            <p className={`mt-3 text-xs px-3 py-2 rounded-lg ${graded[i].correct ? 'bg-emerald-500/10 text-emerald-600' : 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]'}`}>
               {graded[i].feedback}
             </p>
           )}
@@ -502,16 +502,16 @@ function UnitQuizMode({
         <div className={`relative overflow-hidden rounded-3xl p-8 text-center border ${
           result.passed
             ? 'bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-emerald-500/20'
-            : 'bg-gradient-to-br from-amber-500/10 to-destructive/5 border-amber-500/20'
+            : 'bg-gradient-to-br from-[var(--ps-cyan)]/10 to-destructive/5 border-[var(--ps-cyan-border)]/20'
         }`}>
           {result.passed
             ? <Trophy className="w-10 h-10 mx-auto mb-3 text-emerald-600" />
-            : <AlertTriangle className="w-10 h-10 mx-auto mb-3 text-amber-600" />}
+            : <AlertTriangle className="w-10 h-10 mx-auto mb-3 text-[var(--ps-cyan-text)]" />}
           <p className="text-5xl font-extrabold text-foreground">{result.percentage}%</p>
-          <p className={`text-sm font-semibold mt-2 ${result.passed ? 'text-emerald-600' : 'text-amber-600'}`}>
+          <p className={`text-sm font-semibold mt-2 ${result.passed ? 'text-emerald-600' : 'text-[var(--ps-cyan-text)]'}`}>
             {result.marksAwarded ?? result.score}/{result.marksMax ?? result.total} marks · {formatTime(result.timeTakenSeconds)} · attempt #{result.attemptNumber}{result.version ? ` · Version ${result.version}` : ''}
           </p>
-          <p className={`text-base font-bold mt-3 ${result.passed ? 'text-emerald-600' : 'text-amber-600'}`}>
+          <p className={`text-base font-bold mt-3 ${result.passed ? 'text-emerald-600' : 'text-[var(--ps-cyan-text)]'}`}>
             {result.passed
               ? `Passed! +${UNIT_PASS_REWARD}⚡ — the next module is now unlocked.`
               : `Not yet — you need ${threshold}% to pass. Review these lessons, then the unit test unlocks on Version ${result.version === 'A' ? 'B' : 'A'}.`}
@@ -659,11 +659,11 @@ function FormatLockCard({
       initial="hidden" animate="visible" variants={fadeUp}
       className="relative overflow-hidden bg-card border border-border rounded-3xl p-10 text-center max-w-md mx-auto my-8 card-glow"
     >
-      <div className="absolute -top-16 -right-16 w-44 h-44 rounded-full bg-amber-500/10 blur-2xl" />
+      <div className="absolute -top-16 -right-16 w-44 h-44 rounded-full bg-[var(--ps-cyan-soft)] blur-2xl" />
       <div className="relative">
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-amber-600 mb-3">Premium Format</p>
-        <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
-          <Lock className="w-6 h-6 text-amber-600" />
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--ps-cyan-text)] mb-3">Premium Format</p>
+        <div className="w-14 h-14 rounded-2xl bg-[var(--ps-cyan-soft)] flex items-center justify-center mx-auto mb-4">
+          <Lock className="w-6 h-6 text-[var(--ps-cyan-text)]" />
         </div>
         <h3 className="font-heading text-2xl text-foreground mb-1">
           Unlock {FORMAT_LABELS[format] ?? format}
@@ -671,16 +671,16 @@ function FormatLockCard({
         <p className="text-sm text-muted-foreground mb-2">
           Unlock this format for this lesson — yours forever once unlocked.
         </p>
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 mb-5">
-          <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
-          <span className="text-base font-extrabold text-amber-600">⚡{cost}</span>
-          <span className="text-xs font-semibold text-amber-600/80">Sparks</span>
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-[var(--ps-cyan-soft)] px-3 py-1 mb-5">
+          <Zap className="w-4 h-4 text-[var(--ps-cyan-text)] fill-[var(--ps-cyan-text)]" />
+          <span className="text-base font-extrabold text-[var(--ps-cyan-text)]">⚡{cost}</span>
+          <span className="text-xs font-semibold text-[var(--ps-cyan-text)]/80">Sparks</span>
         </div>
         <div>
           <Button
             onClick={onUnlock}
             disabled={!canAfford || unlocking}
-            className="rounded-full h-11 px-6 font-bold gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white"
+            className="rounded-full h-11 px-6 font-bold gap-2 border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)]"
           >
             <Zap className="w-4 h-4 fill-white" />
             {unlocking ? 'Unlocking…' : `Unlock for ⚡${cost}`}
@@ -1006,7 +1006,7 @@ export default function LessonPage() {
 
   if (loadError) return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-24 text-center">
-      <AlertTriangle className="w-10 h-10 mx-auto mb-4 text-amber-500" />
+      <AlertTriangle className="w-10 h-10 mx-auto mb-4 text-[var(--ps-cyan-text)]" />
       <p className="font-semibold text-foreground mb-1">{t('lesson.loadFailed')}</p>
       <p className="text-sm text-muted-foreground mb-6">{loadError}</p>
       <Button onClick={() => setReloadKey(k => k + 1)} className="rounded-full px-6 font-bold gap-2">
@@ -1042,7 +1042,7 @@ export default function LessonPage() {
       </button>
     </p>
   ) : sourceCopy.fellBack ? (
-    <p className="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+    <p className="mt-2 text-xs text-[var(--ps-cyan-text)] bg-[var(--ps-cyan-soft)] border border-[var(--ps-cyan-border)] rounded-xl px-3 py-2">
       {translation.status === 'unavailable'
         ? t('lesson.unavailable')
         : t('lesson.fallback', { language: getLanguage(i18n.language).label })}
@@ -1145,7 +1145,7 @@ export default function LessonPage() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {studyStreak > 0 && (
-            <span className="hidden sm:inline text-xs font-semibold text-amber-700">{studyStreak}-day streak</span>
+            <span className="hidden sm:inline text-xs font-semibold text-[var(--ps-cyan-text)]">{studyStreak}-day streak</span>
           )}
           <Button
             size="sm"
@@ -1199,7 +1199,7 @@ export default function LessonPage() {
               <TabsTrigger key={t.id} value={t.id} className="rounded-full h-8 px-3.5 text-xs font-semibold gap-1.5 text-muted-foreground hover:text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
                 {t.icon}{t.label}
                 {isFormatLocked(t.format) && (
-                  <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-600">
+                  <span className="flex items-center gap-0.5 text-[10px] font-bold text-[var(--ps-cyan-text)]">
                     <Lock className="w-2.5 h-2.5" />⚡{FORMAT_COSTS[t.format!]}
                   </span>
                 )}
@@ -1309,7 +1309,7 @@ export default function LessonPage() {
           {/* Study Notes */}
           <TabsContent value="notes">
             {gate('notes',
-              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-amber-500/10 dark:bg-amber-900/10 border border-amber-500/20 rounded-3xl p-6 sm:p-8">
+              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-[var(--ps-cyan-soft)] dark:bg-[var(--ps-cyan-soft)] border border-[var(--ps-cyan-border)]/20 rounded-3xl p-6 sm:p-8">
                 {downloadFor('notes', aiOutputs.notes ?? '', 'notes')}
                 <MathMarkdown>{aiOutputs.notes ?? ''}</MathMarkdown>
               </motion.div>

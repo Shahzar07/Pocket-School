@@ -54,7 +54,7 @@ const SOLVING_STAGES = ['Reading the question', 'Choosing a method', 'Working it
 
 const VERDICT_STYLE: Record<Exclude<Verdict, 'none'>, { label: string; cls: string; icon: typeof CheckCircle2 }> = {
   correct: { label: 'Correct', cls: 'text-emerald-700 bg-emerald-50 border-emerald-200', icon: CheckCircle2 },
-  partly: { label: 'Nearly', cls: 'text-amber-700 bg-amber-50 border-amber-200', icon: CircleDot },
+  partly: { label: 'Nearly', cls: 'text-[var(--ps-cyan-text)] bg-[var(--ps-cyan-soft)] border-[var(--ps-cyan-border)]', icon: CircleDot },
   wrong: { label: 'Not quite', cls: 'text-rose-700 bg-rose-50 border-rose-200', icon: XCircle },
 };
 
@@ -354,7 +354,7 @@ export default function MathsTutorPage() {
                       value={mode}
                       onChange={setMode}
                     />
-                    <span className="text-[12px] text-muted-foreground inline-flex items-center gap-1"><Zap className="w-3.5 h-3.5 text-amber-500" /> {STUDY_COSTS.mathSolve} Spark per problem</span>
+                    <span className="text-[12px] text-muted-foreground inline-flex items-center gap-1"><Zap className="w-3.5 h-3.5 text-[var(--ps-cyan-text)]" /> {STUDY_COSTS.mathSolve} Spark per problem</span>
                   </div>
 
                   <div className="grid sm:grid-cols-2 gap-3 mb-4">
@@ -377,7 +377,7 @@ export default function MathsTutorPage() {
                   </div>
 
                   {readNote && (
-                    <p className="mb-3 text-[13px] rounded-xl bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2">{readNote}</p>
+                    <p className="mb-3 text-[13px] rounded-xl bg-[var(--ps-cyan-soft)] border border-[var(--ps-cyan-border)] text-[var(--ps-cyan-text)] px-3 py-2">{readNote}</p>
                   )}
                   <MathInput
                     value={problem}
@@ -575,7 +575,7 @@ export default function MathsTutorPage() {
                       <span className="text-2xl">🎉</span>
                       <div className="flex-1 min-w-[180px]">
                         <p className="font-semibold text-emerald-900">Solved it — nicely done.</p>
-                        <p className="text-[13px] text-emerald-800/80 inline-flex items-center gap-1"><Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> +5 stars · keep your streak going</p>
+                        <p className="text-[13px] text-emerald-800/80 inline-flex items-center gap-1"><Star className="w-3.5 h-3.5 fill-[var(--ps-cyan-text)] text-[var(--ps-cyan-text)]" /> +5 stars · keep your streak going</p>
                       </div>
                       <button onClick={() => practice('similar')} disabled={busy} className="h-9 px-3.5 rounded-full border border-border bg-card text-[13px] font-semibold">Try a similar one</button>
                       <button onClick={() => practice('harder')} disabled={busy} className="h-9 px-3.5 rounded-full bg-primary text-primary-foreground text-[13px] font-semibold inline-flex items-center gap-1"><TrendingUp className="w-3.5 h-3.5" /> Harder</button>
@@ -673,7 +673,7 @@ export default function MathsTutorPage() {
               <PanelHeader title="Watch out for" />
               <ul className="space-y-2">
                 {sol.commonMistakes.map((m, i) => (
-                  <li key={i} className="flex gap-2 text-[13px] text-foreground"><span className="text-amber-500 mt-0.5">▲</span><span className="[&_p]:my-0"><MathMarkdown>{m}</MathMarkdown></span></li>
+                  <li key={i} className="flex gap-2 text-[13px] text-foreground"><span className="text-[var(--ps-cyan-text)] mt-0.5">▲</span><span className="[&_p]:my-0"><MathMarkdown>{m}</MathMarkdown></span></li>
                 ))}
               </ul>
             </Panel>

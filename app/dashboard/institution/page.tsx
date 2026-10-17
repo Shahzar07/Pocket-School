@@ -160,7 +160,7 @@ export default function InstitutionAcademyPage() {
 
       <section className="grid sm:grid-cols-3 gap-3">
         <StatCard icon={Users} label="People" value={members} tone="sky" index={0} />
-        <StatCard icon={Mail} label="Invites waiting" value={invites} tone="amber" index={1} trend={invites > 0 ? { direction: 'up', label: 'To send' } : { direction: 'flat', label: 'None waiting' }} />
+        <StatCard icon={Mail} label="Invites waiting" value={invites} tone="cyan" index={1} trend={invites > 0 ? { direction: 'up', label: 'To send' } : { direction: 'flat', label: 'None waiting' }} />
         <StatCard icon={Ticket} label="Seats left" value={seats} tone="emerald" index={2} trend={seats > 0 ? { direction: 'up', label: 'Open seats' } : { direction: 'down', label: 'Full' }} />
       </section>
 

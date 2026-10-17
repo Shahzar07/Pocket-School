@@ -56,12 +56,12 @@ export function ChildExamPrep({ childId, name }: { childId: string; name?: strin
               </div>
               <div className="mt-3 grid grid-cols-2 gap-y-1.5 text-[12px] text-muted-foreground">
                 <span className="inline-flex items-center gap-1"><Target className="w-3.5 h-3.5" /> {mastery}% ready · aim {prep.targetGrade}</span>
-                <span className="inline-flex items-center gap-1"><Flame className="w-3.5 h-3.5 text-orange-500" /> {prep.streak ?? 0}-day streak</span>
+                <span className="inline-flex items-center gap-1"><Flame className="w-3.5 h-3.5 text-[var(--ps-cyan-text)]" /> {prep.streak ?? 0}-day streak</span>
                 <span className="inline-flex items-center gap-1"><CalendarDays className="w-3.5 h-3.5" /> {parseDay(prep.examDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</span>
                 <span className="inline-flex items-center gap-1"><GraduationCap className="w-3.5 h-3.5" /> {last ? `Last ${last.kind}: ${last.grade ?? gradeFor(prep.gradeScale, last.percent)}` : 'No mock yet'}</span>
               </div>
               {!studiedRecently && left > 0 && (
-                <p className="mt-3 text-[12px] rounded-lg bg-amber-50 border border-amber-200 text-amber-800 px-2.5 py-1.5">{first} hasn&apos;t studied for this in a few days — a little encouragement could help.</p>
+                <p className="mt-3 text-[12px] rounded-lg bg-[var(--ps-cyan-soft)] border border-[var(--ps-cyan-border)] text-[var(--ps-cyan-text)] px-2.5 py-1.5">{first} hasn&apos;t studied for this in a few days — a little encouragement could help.</p>
               )}
             </motion.div>
           );

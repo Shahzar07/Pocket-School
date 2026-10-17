@@ -183,9 +183,9 @@ export function BadgeArt({ label, earned }: { label: string; earned: boolean }) 
   return (
     <div className={`flex min-h-12 items-center gap-3 rounded-[18px] border border-border px-3 py-2 ${earned ? 'bg-card' : 'bg-muted/50'}`}>
       <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
-        <circle cx="18" cy="16" r="10" fill={earned ? 'var(--medal-gold)' : 'var(--muted)'} />
+        <circle cx="18" cy="16" r="10" fill={earned ? 'var(--medal-first)' : 'var(--muted)'} />
         <path d="M12 24 l6 8 6-8" fill={earned ? 'var(--medal-bronze)' : 'var(--border)'} />
-        <circle cx="18" cy="16" r="4" fill={earned ? 'var(--medal-gold-ink)' : 'var(--muted-foreground)'} />
+        <circle cx="18" cy="16" r="4" fill={earned ? 'var(--medal-first-ink)' : 'var(--muted-foreground)'} />
       </svg>
       <div>
         <p className="text-sm font-semibold text-foreground">{label}</p>

@@ -20,7 +20,7 @@ export function ContentLanguageBar({
   }
   if (status === 'unavailable') {
     return (
-      <p role="status" className="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+      <p role="status" className="mt-2 text-xs text-[var(--ps-cyan-text)] bg-[var(--ps-cyan-soft)] border border-[var(--ps-cyan-border)] rounded-xl px-3 py-2">
         {notice || t('lesson.unavailable')}
       </p>
     );

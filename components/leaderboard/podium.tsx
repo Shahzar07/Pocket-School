@@ -17,7 +17,7 @@ export interface PodiumEntry {
 }
 
 const PLACE: Record<MedalId, { icon: typeof Crown; pattern: string }> = {
-  gold: { icon: Crown, pattern: 'none' },
+  first: { icon: Crown, pattern: 'none' },
   silver: {
     icon: Star,
     pattern: 'repeating-linear-gradient(135deg, transparent 0 5px, color-mix(in srgb, var(--medal-silver-ink) 28%, transparent) 5px 7px)',
@@ -110,7 +110,7 @@ function PodiumBlock({ entry, rank }: { entry: PodiumEntry; rank: number }) {
 }
 
 const PLACE_NAME: Record<MedalId, string> = {
-  gold: '1st · Gold',
+  first: '1st',
   silver: '2nd · Silver',
   bronze: '3rd · Bronze',
 };

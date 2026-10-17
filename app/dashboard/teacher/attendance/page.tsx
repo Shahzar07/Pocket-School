@@ -33,14 +33,14 @@ const fadeUp: Record<string, any> = {
 const STATUS_STYLES_SELECTED: Record<AttStatus, string> = {
   present: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
   absent: 'bg-red-500/10 text-red-600 border-red-500/20',
-  late: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  late: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20',
   excused: 'bg-sky-500/10 text-sky-600 border-sky-500/20',
 };
 
 const STATUS_BADGE_STYLES: Record<AttStatus, string> = {
   present: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
   absent: 'bg-red-500/10 text-red-600 border-red-500/20',
-  late: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  late: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20',
   excused: 'bg-sky-500/10 text-sky-600 border-sky-500/20',
 };
 
@@ -138,7 +138,7 @@ export default function TeacherAttendancePage() {
   if (loadError) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12">
       <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
-        <ClipboardCheck className="w-10 h-10 mx-auto text-amber-500" />
+        <ClipboardCheck className="w-10 h-10 mx-auto text-[var(--ps-cyan-text)]" />
         <p className="font-heading text-2xl text-foreground">Couldn&apos;t load attendance</p>
         <p className="text-sm text-muted-foreground">Something went wrong while fetching your courses. Please try again.</p>
         <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={loadCourses}>Retry</Button>
@@ -288,7 +288,7 @@ export default function TeacherAttendancePage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <Badge className={`rounded-full text-[10px] border ${rate >= 80 ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : rate >= 60 ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' : 'bg-red-500/10 text-red-600 border-red-500/20'}`}>
+                    <Badge className={`rounded-full text-[10px] border ${rate >= 80 ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : rate >= 60 ? 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20' : 'bg-red-500/10 text-red-600 border-red-500/20'}`}>
                       {rate}% present
                     </Badge>
                     {isExp ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}

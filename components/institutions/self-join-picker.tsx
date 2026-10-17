@@ -89,7 +89,7 @@ export function SelfJoinPicker({
             </select>
           </label>
           {institutions.length === 0 && country && state && (
-            <p className={inverse ? 'text-xs text-amber-200' : 'text-sm text-amber-700'}>
+            <p className={inverse ? 'text-xs text-[var(--ps-cyan-text)]' : 'text-sm text-[var(--ps-cyan-text)]'}>
               No listed institution in that state. Continue as Independent and pay online.
             </p>
           )}

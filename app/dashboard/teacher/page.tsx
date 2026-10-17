@@ -24,7 +24,7 @@ const fadeUp: Record<string, any> = {
 const COURSE_GRADIENTS = [
   'from-emerald-500 to-teal-600',
   'from-primary to-primary',
-  'from-amber-500 to-orange-600',
+  'from-[var(--ps-cyan)] to-[var(--ps-cyan-border)]',
   'from-rose-500 to-pink-600',
 ];
 
@@ -74,7 +74,7 @@ export default function TeacherDashboard() {
   if (loadError) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12">
       <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
-        <BookOpen className="w-10 h-10 mx-auto text-amber-500" />
+        <BookOpen className="w-10 h-10 mx-auto text-[var(--ps-cyan-text)]" />
         <p className="font-heading text-2xl text-foreground">Couldn&apos;t load your dashboard</p>
         <p className="text-sm text-muted-foreground">Something went wrong while fetching your data. Please try again.</p>
         <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={load}>Retry</Button>
@@ -163,8 +163,8 @@ export default function TeacherDashboard() {
       <SeeMore label="Enrolments, reviews, and questions">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard index={4} icon={GraduationCap} label="Enrolments" value={insight.enrollments} tone="violet" href="/dashboard/teacher/courses" hrefLabel="Courses" />
-        <StatCard index={5} icon={Wallet} label="Recorded revenue" value={revenueLabel} tone="amber" href="/dashboard/teacher/courses" hrefLabel="Pricing" />
-        <StatCard index={6} icon={Star} label="Rating" value={insight.average ?? '—'} tone="amber" badge={insight.reviewCount ? `${insight.reviewCount} reviews` : undefined} />
+        <StatCard index={5} icon={Wallet} label="Recorded revenue" value={revenueLabel} tone="cyan" href="/dashboard/teacher/courses" hrefLabel="Pricing" />
+        <StatCard index={6} icon={Star} label="Rating" value={insight.average ?? '—'} tone="cyan" badge={insight.reviewCount ? `${insight.reviewCount} reviews` : undefined} />
         <StatCard index={7} icon={MessageSquare} label="Open questions" value={insight.openQuestions} tone="sky" href="/dashboard/teacher/courses" hrefLabel="Studio" trend={insight.openQuestions > 0 ? { direction: 'down', label: 'Waiting' } : { direction: 'up', label: 'Clear' }} />
       </div>
 

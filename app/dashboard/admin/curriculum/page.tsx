@@ -34,7 +34,7 @@ const PAGE_SIZE = 12;
 
 const STATUS_BADGE: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
-  pending_approval: 'bg-amber-50 text-amber-700 border border-amber-200',
+  pending_approval: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border border-[var(--ps-cyan-border)]',
   published: 'bg-emerald-50 text-emerald-700',
 };
 
@@ -758,7 +758,7 @@ export default function AdminCurriculumPage() {
         )}
 
         {blockedDelete && (
-          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          <div className="mb-4 rounded-xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] px-3 py-2 text-sm text-[var(--ps-cyan-text)]">
             <p className="font-semibold">{blockedDelete.name} still has these subjects. Open one and change its programme, then delete again.</p>
             <ul className="mt-1 space-y-1">
               {blockedDelete.subjects.map(s => (
@@ -810,7 +810,7 @@ export default function AdminCurriculumPage() {
                     <div className="flex items-center justify-between gap-2">
                       <p className="font-medium text-sm text-foreground truncate">{p.name}</p>
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold shrink-0 ${
-                        p.requiredTier === 'academic' ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'
+                        p.requiredTier === 'academic' ? 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]' : 'bg-blue-50 text-blue-700'
                       }`}>
                         {p.requiredTier === 'academic' ? 'Academic' : 'Free'}
                       </span>

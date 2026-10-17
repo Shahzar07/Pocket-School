@@ -75,8 +75,8 @@ export default function ParentDueDates() {
 
       {/* Header */}
       <motion.header variants={fadeUp} initial="hidden" animate="visible" custom={0} className="pt-2">
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-amber-600 flex items-center gap-2">
-          <span className="w-5 h-px bg-amber-600 inline-block" /> Deadline tracker
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--ps-cyan-text)] flex items-center gap-2">
+          <span className="w-5 h-px bg-[var(--ps-cyan)] inline-block" /> Deadline tracker
         </p>
         <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-3">
           Upcoming <span className="gradient-text italic">due dates</span>
@@ -103,10 +103,10 @@ export default function ParentDueDates() {
                   <div className="flex items-center gap-4">
                     <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-md ${
                       u === 'high' ? 'bg-gradient-to-br from-red-500 to-rose-600' :
-                      u === 'medium' ? 'bg-gradient-to-br from-amber-500 to-orange-600' :
+                      u === 'medium' ? 'border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)]' :
                       'bg-gradient-to-br from-emerald-500 to-teal-600'
                     }`}>
-                      {u === 'high' ? <AlertCircle className="w-5 h-5 text-white" /> : <Calendar className="w-5 h-5 text-white" />}
+                      {u === 'high' ? <AlertCircle className="w-5 h-5 text-white" /> : <Calendar className={`w-5 h-5 ${u === 'medium' ? 'text-[var(--ps-cyan-ink)]' : 'text-white'}`} />}
                     </div>
                     <div>
                       <h3 className="font-bold text-foreground">{item.assignment.title}</h3>

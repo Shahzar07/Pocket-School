@@ -53,7 +53,7 @@ const igcse = gradeOnScale(86, scaleById('igcse_9_1'));
 export default function ScopePreviewPage() {
   return (
     <main className="max-w-5xl mx-auto px-4 py-8 space-y-8">
-      <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+      <div className="rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] px-4 py-3 text-sm text-[var(--ps-cyan-text)]">
         Sample data for review. This is not live school data.
       </div>
       <header>

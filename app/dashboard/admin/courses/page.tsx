@@ -26,7 +26,7 @@ const fadeUp: Record<string, any> = {
 const COURSE_GRADIENTS = [
   'from-primary to-primary',
   'from-emerald-500 to-teal-600',
-  'from-amber-500 to-orange-600',
+  'from-[var(--ps-cyan)] to-[var(--ps-cyan-border)]',
   'from-rose-500 to-pink-600',
 ];
 
@@ -178,7 +178,7 @@ export default function AdminCourseMgmt() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
         {[
           { label: 'All Courses', value: courses.length, icon: BookOpen, accent: 'text-primary', bar: 'bg-primary' },
-          { label: 'Pending', value: pendingCourses.length, icon: Clock, accent: 'text-amber-600', bar: 'bg-amber-500' },
+          { label: 'Pending', value: pendingCourses.length, icon: Clock, accent: 'text-[var(--ps-cyan-text)]', bar: 'bg-[var(--ps-cyan)]' },
           { label: 'Published', value: courses.filter(c => c.status === 'published').length, icon: CheckCircle2, accent: 'text-emerald-600', bar: 'bg-emerald-500' },
           { label: 'Drafts', value: courses.filter(c => c.status === 'draft').length, icon: Edit, accent: 'text-violet-600', bar: 'bg-violet-500' },
         ].map((s, i) => (
@@ -268,7 +268,7 @@ export default function AdminCourseMgmt() {
                   </span>
                   <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${
                     c.status === 'published' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' :
-                    c.status === 'pending_approval' ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20' :
+                    c.status === 'pending_approval' ? 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border border-[var(--ps-cyan-border)]/20' :
                     'bg-muted text-muted-foreground'
                   }`}>
                     {c.status === 'published' ? 'Published' : c.status === 'pending_approval' ? 'In review' : 'Draft'}
@@ -278,7 +278,7 @@ export default function AdminCourseMgmt() {
                 <p className="text-xs text-muted-foreground mt-0.5">by {c.ownerName ?? 'Unknown'}</p>
                 <p className="text-[13px] text-muted-foreground line-clamp-2 mt-1.5">{c.description}</p>
                 <div className="flex items-center gap-2 flex-wrap mt-3">
-                  <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600">{fmtPrice(c)}</span>
+                  <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]">{fmtPrice(c)}</span>
                   {c.level && <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-muted text-muted-foreground">{c.level}</span>}
                   {c.isPublic && <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-primary/10 text-primary">Public</span>}
                 </div>

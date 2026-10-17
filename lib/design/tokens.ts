@@ -5,6 +5,9 @@
  * Rochford forest `#1A3C34` and gold `#C8922A` are that school's colours.
  * They stay off the Poket School brand. A white-label academy may set its
  * own `branding.primaryColor`.
+ *
+ * Cyan is the accent fill. It is not a text colour on white (1.64:1).
+ * Text and links on light backgrounds use brand blue `#1E6A83`.
  */
 
 export interface RoleWash {
@@ -12,6 +15,22 @@ export interface RoleWash {
   parent: string;
   admin: string;
 }
+
+/** Shared cyan accent. PoketBooks and Reads should use these instead of hexes. */
+export const CYAN = {
+  /** Fills, glows, buttons, and accents on dark or blue. */
+  fill: '#3FE0D0',
+  /** Fills and icons on dark backgrounds only. 2.49:1 on white. */
+  strong: '#14B8A6',
+  /** Text and links on light backgrounds. Brand blue, 6.10:1 on white. */
+  text: '#1E6A83',
+  /** Chips. 15% of the cyan fill. */
+  soft: 'rgba(63, 224, 208, 0.15)',
+  /** Label on a cyan fill. */
+  ink: '#203337',
+  /** 1px edge. The fill alone is 1.64:1 against white. */
+  border: '#1E6A83',
+} as const;
 
 export interface Palette {
   bg: string;
@@ -26,8 +45,12 @@ export interface Palette {
   blueDeep: string;
   blueBright: string;
   onPrimary: string;
-  amber: string;
-  amberSoft: string;
+  cyan: string;
+  cyanStrong: string;
+  cyanText: string;
+  cyanSoft: string;
+  cyanInk: string;
+  cyanBorder: string;
   coral: string;
   coralSoft: string;
   good: string;
@@ -49,8 +72,12 @@ export const light: Palette = {
   blueDeep: '#1E6A83',
   blueBright: '#6FBBCE',
   onPrimary: '#FFFFFF',
-  amber: '#E2AF4D',
-  amberSoft: '#FFF6E4',
+  cyan: CYAN.fill,
+  cyanStrong: CYAN.strong,
+  cyanText: CYAN.text,
+  cyanSoft: CYAN.soft,
+  cyanInk: CYAN.ink,
+  cyanBorder: CYAN.border,
   coral: '#D0553F',
   coralSoft: '#FDECEA',
   good: '#1F8A70',
@@ -76,8 +103,13 @@ export const dark: Palette = {
   blueDeep: '#8ED0DE',
   blueBright: '#6FBBCE',
   onPrimary: '#0B1417',
-  amber: '#E2AF4D',
-  amberSoft: '#2A2416',
+  cyan: CYAN.fill,
+  cyanStrong: CYAN.strong,
+  /** `#1E6A83` is 3.06:1 on the dark canvas, so dark text uses the cyan fill. */
+  cyanText: CYAN.fill,
+  cyanSoft: CYAN.soft,
+  cyanInk: CYAN.ink,
+  cyanBorder: CYAN.border,
   coral: '#E88976',
   coralSoft: '#2C1C1A',
   good: '#8ED9C4',

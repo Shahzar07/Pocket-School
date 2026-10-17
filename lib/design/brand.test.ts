@@ -31,8 +31,12 @@ test('light palette matches the confirmed Poket School brand', () => {
     blueDeep: '#1E6A83',
     blueBright: '#6FBBCE',
     onPrimary: '#FFFFFF',
-    amber: '#E2AF4D',
-    amberSoft: '#FFF6E4',
+    cyan: '#3FE0D0',
+    cyanStrong: '#14B8A6',
+    cyanText: '#1E6A83',
+    cyanSoft: 'rgba(63, 224, 208, 0.15)',
+    cyanInk: '#203337',
+    cyanBorder: '#1E6A83',
     coral: '#D0553F',
     coralSoft: '#FDECEA',
     good: '#1F8A70',
@@ -56,8 +60,12 @@ test('dark palette matches the confirmed Poket School brand', () => {
     blueDeep: '#8ED0DE',
     blueBright: '#6FBBCE',
     onPrimary: '#0B1417',
-    amber: '#E2AF4D',
-    amberSoft: '#2A2416',
+    cyan: '#3FE0D0',
+    cyanStrong: '#14B8A6',
+    cyanText: '#3FE0D0',
+    cyanSoft: 'rgba(63, 224, 208, 0.15)',
+    cyanInk: '#203337',
+    cyanBorder: '#1E6A83',
     coral: '#E88976',
     coralSoft: '#2C1C1A',
     good: '#8ED9C4',
@@ -82,7 +90,7 @@ test('hero, radius, and brand fonts', () => {
   assert.equal(font.display, 'Instrument Sans');
 });
 
-test('Rochford forest and gold are reserved, not used as Poket brand', () => {
+test('Rochford school colours stay on the ROCHFORD constant', () => {
   assert.equal(ROCHFORD.forest, '#1A3C34');
   assert.equal(ROCHFORD.gold, '#C8922A');
   const offenders: string[] = [];

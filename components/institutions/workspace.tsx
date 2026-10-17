@@ -424,7 +424,7 @@ function BrandTab({
     tagline: branding.tagline ?? '',
     logoUrl: branding.logoUrl ?? '',
     primaryColor: branding.primaryColor ?? '#1E6A83',
-    secondaryColor: branding.secondaryColor ?? '#E2AF4D',
+    secondaryColor: branding.secondaryColor ?? '#3FE0D0',
     fontId: branding.fontId ?? 'system',
     faviconUrl: branding.faviconUrl ?? '',
     loginHeadline: branding.loginHeadline ?? '',

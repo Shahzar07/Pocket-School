@@ -14,7 +14,7 @@ export default function NotFound() {
       {/* Ambient wash */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#E9F7FA] via-[#F5F1FF] to-white" aria-hidden />
       <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-primary/10 blur-3xl" aria-hidden />
-      <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[#E2AF4D]/10 blur-3xl" aria-hidden />
+      <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[var(--ps-cyan-soft)] blur-3xl" aria-hidden />
 
       <div className="relative w-full max-w-3xl mx-auto px-4 sm:px-6 py-28 lg:py-32 text-center">
         <p className="text-xs font-bold tracking-[0.25em] text-primary mb-6">PAGE NOT FOUND</p>

@@ -12,13 +12,14 @@ import { Button } from '@/components/ui/button';
 import { ClipboardCheck, CheckCircle2, XCircle, Clock, BookOpen } from 'lucide-react';
 import { DocumentDelivery } from '@/components/document-delivery';
 import { textDocument } from '@/lib/documents/packet';
+import { accentFillVar, accentVar, type AccentId } from '@/lib/design/chart-colours';
 
 type AttStatus = 'present' | 'absent' | 'late' | 'excused';
 
 const STATUS_STYLES: Record<AttStatus, string> = {
   present: 'bg-emerald-500/10 text-emerald-600',
   absent: 'bg-destructive/10 text-destructive',
-  late: 'bg-amber-500/10 text-amber-600',
+  late: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
   excused: 'bg-primary/10 text-primary',
 };
 
@@ -171,7 +172,7 @@ export default function StudentAttendancePage() {
           {courseMap.map((ca, i) => {
             const summary = summaryFor(ca);
             const rate = summary.rate ?? 0;
-            const rateTone = rate >= 80 ? 'emerald' : rate >= 60 ? 'amber' : 'coral';
+            const rateTone: AccentId = rate >= 80 ? 'emerald' : rate >= 60 ? 'cyan' : 'coral';
             return (
               <motion.div
                 key={ca.courseId}
@@ -195,7 +196,7 @@ export default function StudentAttendancePage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-heading text-4xl" style={{ color: `var(--ps-${rateTone})` }}>{rate}%</p>
+                    <p className="font-heading text-4xl" style={{ color: `var(${accentVar(rateTone)})` }}>{rate}%</p>
                     <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mt-1">
                       attendance rate
                     </p>
@@ -211,7 +212,7 @@ export default function StudentAttendancePage() {
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all duration-500"
-                      style={{ width: `${rate}%`, background: `var(--ps-${rateTone})` }}
+                      style={{ width: `${rate}%`, background: `var(${accentFillVar(rateTone)})` }}
                     />
                   </div>
                 </div>

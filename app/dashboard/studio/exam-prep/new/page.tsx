@@ -315,7 +315,7 @@ export default function NewExamPrepPage() {
                 </div>
                 <input value={title} onChange={e => setTitle(e.target.value)} className="input-ps sm:w-72" aria-label="Exam name" />
               </div>
-              {warning && <p className="mb-3 text-[13px] rounded-xl bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2">{warning}</p>}
+              {warning && <p className="mb-3 text-[13px] rounded-xl bg-[var(--ps-cyan-soft)] border border-[var(--ps-cyan-border)] text-[var(--ps-cyan-text)] px-3 py-2">{warning}</p>}
               <ul className="space-y-2">
                 {topics.map((t, i) => (
                   <motion.li key={t.id} layout className="rounded-xl border border-border px-3 py-2.5 flex items-start gap-2.5">
@@ -331,7 +331,7 @@ export default function NewExamPrepPage() {
                     <span className="flex items-center gap-0.5 pt-1.5" aria-label={`Weight ${t.weight} of 5`}>
                       {[1, 2, 3, 4, 5].map(w => (
                         <button key={w} onClick={() => setTopics(ts => ts.map(x => (x.id === t.id ? { ...x, weight: w } : x)))}>
-                          <Star className={`w-4 h-4 ${w <= t.weight ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/40'}`} />
+                          <Star className={`w-4 h-4 ${w <= t.weight ? 'fill-[var(--ps-cyan-text)] text-[var(--ps-cyan-text)]' : 'text-muted-foreground/40'}`} />
                         </button>
                       ))}
                     </span>
@@ -346,7 +346,7 @@ export default function NewExamPrepPage() {
                 <div className="flex-1 min-w-[200px] text-[13px] text-muted-foreground">
                   <span className="font-semibold text-foreground">{daysLeft} days</span> to {examDate} · target <span className="font-semibold text-foreground">{target}</span> ({scoreForGrade(scale, target)}%) · {minutes} min/day
                 </div>
-                <span className="text-[12px] text-muted-foreground inline-flex items-center gap-1"><Zap className="w-3.5 h-3.5 text-amber-500" /> {STUDY_COSTS.examPrep} Sparks</span>
+                <span className="text-[12px] text-muted-foreground inline-flex items-center gap-1"><Zap className="w-3.5 h-3.5 text-[var(--ps-cyan-text)]" /> {STUDY_COSTS.examPrep} Sparks</span>
                 <button disabled={!topics.length || creating} onClick={create}
                   className="h-11 px-5 rounded-full bg-primary text-primary-foreground font-semibold text-sm inline-flex items-center gap-2 disabled:opacity-50">
                   {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Build my plan

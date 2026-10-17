@@ -55,7 +55,7 @@ export function PipCharacter({
 
       {/* antenna */}
       <line x1="60" y1="24" x2="60" y2="12" stroke="#1E6A83" strokeWidth="4" strokeLinecap="round" />
-      <circle cx="60" cy="9" r="6" fill="#E2AF4D">
+      <circle cx="60" cy="9" r="6" fill="#3FE0D0">
         <animate attributeName="r" values="6;7;6" dur="2s" repeatCount="indefinite" />
       </circle>
 
@@ -351,7 +351,7 @@ export function PipGuide({ role }: { role: TourRole }) {
       >
         <PipCharacter size={28} mood="waving" />
         <span className="text-xs font-bold text-foreground hidden sm:inline">Show me around</span>
-        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#E2AF4D] opacity-0 group-hover:opacity-100 transition-opacity" />
+        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] opacity-0 group-hover:opacity-100 transition-opacity" />
       </button>
 
       <AnimatePresence>

@@ -102,7 +102,7 @@ export default function TeacherClassesPage() {
   if (loadError) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12">
       <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
-        <BookOpen className="w-10 h-10 mx-auto text-amber-500" />
+        <BookOpen className="w-10 h-10 mx-auto text-[var(--ps-cyan-text)]" />
         <p className="font-heading text-2xl text-foreground">Couldn&apos;t load subjects</p>
         <p className="text-sm text-muted-foreground">Something went wrong while fetching curriculum subjects. Please try again.</p>
         <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={loadModules}>Retry</Button>

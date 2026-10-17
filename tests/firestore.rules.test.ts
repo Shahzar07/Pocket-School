@@ -970,7 +970,7 @@ describe('admin catalogue and settings writes', () => {
       ['institution_pricing/tiers', { seats: 10 }],
       ['admin_invites/editor@poketschool.ai', { staffRole: 'content_editor' }],
       ['platform_signals/health', { ok: false }],
-      ['badges/gold', { userId: 'parent1', name: 'Gold' }],
+      ['badges/first', { userId: 'parent1', name: 'First' }],
       ['moderation_queue/forged', { status: 'open' }],
       ['audit_settings/retention', { days: 1 }],
     ];
@@ -987,7 +987,7 @@ describe('admin catalogue and settings writes', () => {
     await assertSucceeds(setDoc(doc(dbFor('admin1'), 'pricing_config/main'), { currency: 'USD' }));
     await assertSucceeds(setDoc(doc(dbFor('admin1'), 'institution_pricing/tiers'), { seats: 10 }));
     await assertSucceeds(setDoc(doc(dbFor('admin1'), 'admin_invites/editor@poketschool.ai'), { staffRole: 'content_editor' }));
-    await assertSucceeds(setDoc(doc(dbFor('admin1'), 'badges/gold'), { userId: 'adult1', name: 'Gold' }));
+    await assertSucceeds(setDoc(doc(dbFor('admin1'), 'badges/first'), { userId: 'adult1', name: 'First' }));
     await assertFails(setDoc(doc(dbFor('admin1'), 'platform_signals/health'), { ok: true }));
     await assertFails(setDoc(doc(dbFor('admin1'), 'moderation_queue/forged'), { status: 'open' }));
     await assertFails(setDoc(doc(dbFor('admin1'), 'audit_settings/retention'), { days: 1 }));

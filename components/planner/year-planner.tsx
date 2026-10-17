@@ -37,14 +37,14 @@ import { nextTermName, parseTermFile, termsToLines } from '@/lib/terms';
 const KINDS: PlannerKind[] = ['term', 'holiday', 'exam', 'closure', 'assessment', 'report', 'period', 'event', 'ptm', 'revision'];
 
 const DOT: Record<string, string> = {
-  holiday: 'bg-amber-500',
+  holiday: 'bg-[var(--ps-cyan)]',
   exam: 'bg-violet-500',
   assessment: 'bg-rose-500',
   report: 'bg-emerald-500',
   period: 'bg-sky-500',
   term: 'bg-primary',
   event: 'bg-teal-500',
-  ptm: 'bg-orange-500',
+  ptm: 'bg-[var(--ps-cyan)]',
   closure: 'bg-stone-500',
   revision: 'bg-fuchsia-500',
 };

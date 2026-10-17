@@ -171,7 +171,7 @@ export default function MockExamPage({ params }: { params: Promise<{ id: string 
           <Panel className="lg:col-span-9">
             <div className="flex items-center justify-between gap-3 mb-4">
               <span className="text-[12px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Question {current + 1} of {questions.length} · {q.marks} mark{q.marks === 1 ? '' : 's'}</span>
-              <button onClick={() => setFlags(f => ({ ...f, [q.id]: !f[q.id] }))} className={`h-8 px-3 rounded-full text-[12px] font-semibold inline-flex items-center gap-1.5 border ${flags[q.id] ? 'border-amber-300 bg-amber-50 text-amber-800' : 'border-border'}`}><Flag className="w-3.5 h-3.5" /> {flags[q.id] ? 'Flagged' : 'Flag'}</button>
+              <button onClick={() => setFlags(f => ({ ...f, [q.id]: !f[q.id] }))} className={`h-8 px-3 rounded-full text-[12px] font-semibold inline-flex items-center gap-1.5 border ${flags[q.id] ? 'border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]' : 'border-border'}`}><Flag className="w-3.5 h-3.5" /> {flags[q.id] ? 'Flagged' : 'Flag'}</button>
             </div>
             <div className="text-[17px] leading-relaxed text-foreground [&_p]:my-1.5"><MathMarkdown>{q.question}</MathMarkdown></div>
             {q.type === 'mcq' && q.options ? (
@@ -208,7 +208,7 @@ export default function MockExamPage({ params }: { params: Promise<{ id: string 
                 {questions.map((x, i) => (
                   <button key={x.id} onClick={() => setCurrent(i)}
                     className={`h-9 rounded-lg text-[13px] font-bold tabular-nums relative ${i === current ? 'ring-2 ring-primary' : ''} ${(answers[x.id] ?? '').trim() ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                    {i + 1}{flags[x.id] && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400" />}
+                    {i + 1}{flags[x.id] && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[var(--ps-cyan)]" />}
                   </button>
                 ))}
               </div>
@@ -237,7 +237,7 @@ export default function MockExamPage({ params }: { params: Promise<{ id: string 
                   <ul className="space-y-2">
                     {result.gaps.map((g, i) => (
                       <li key={i} className="rounded-xl border border-border p-3 flex gap-3">
-                        <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${g.severity === 'weakest' ? 'text-rose-500' : g.severity === 'attention' ? 'text-amber-500' : 'text-muted-foreground'}`} />
+                        <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${g.severity === 'weakest' ? 'text-rose-500' : g.severity === 'attention' ? 'text-[var(--ps-cyan-text)]' : 'text-muted-foreground'}`} />
                         <div className="flex-1 min-w-0">
                           <p className="text-[14px] font-semibold">{g.topic} <span className="text-[11px] font-bold uppercase text-muted-foreground ml-1">{g.severity === 'weakest' ? 'weakest area' : g.severity === 'attention' ? 'needs attention' : 'minor'}</span></p>
                           <p className="text-[13px] text-muted-foreground">{g.issue}</p>
@@ -262,7 +262,7 @@ export default function MockExamPage({ params }: { params: Promise<{ id: string 
                 return (
                   <li key={x.id} className="rounded-2xl border border-border">
                     <button onClick={() => setOpen(o => ({ ...o, [x.id]: !o[x.id] }))} className="w-full flex items-center gap-3 px-4 py-3 text-left">
-                      {full ? <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" /> : zero ? <XCircle className="w-5 h-5 text-rose-500 shrink-0" /> : <span className="w-5 h-5 rounded-full border-2 border-amber-400 shrink-0" />}
+                      {full ? <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" /> : zero ? <XCircle className="w-5 h-5 text-rose-500 shrink-0" /> : <span className="w-5 h-5 rounded-full border-2 border-[var(--ps-cyan-border)] shrink-0" />}
                       <span className="flex-1 min-w-0 text-[14px] line-clamp-1 [&_p]:inline [&_p]:my-0"><MathMarkdown>{`${i + 1}. ${x.question}`}</MathMarkdown></span>
                       <span className="text-[13px] font-bold tabular-nums">{m?.awarded ?? 0}/{x.marks}</span>
                       <ChevronDown className={`w-4 h-4 transition-transform ${open[x.id] ? 'rotate-180' : ''}`} />

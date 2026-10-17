@@ -233,7 +233,7 @@ export default function MarketplacePage() {
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className="relative max-w-3xl mx-auto rounded-2xl border border-border bg-card overflow-hidden shadow-[var(--shadow-card-hover)]"
             >
-              <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-primary via-[#6FBBCE] to-[#E2AF4D]" />
+              <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-primary via-[#6FBBCE] to-[#3FE0D0]" />
               <div className="p-8 sm:p-12 text-center">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary border border-primary/20 text-[10px] font-bold tracking-[0.15em] text-secondary-foreground">
                   <ShieldCheck className="w-3 h-3" />
@@ -349,10 +349,10 @@ export default function MarketplacePage() {
                         <p className="text-xs text-muted-foreground mb-2">{c.ownerName ?? 'Poket School'}</p>
 
                         <div className="flex items-center gap-1.5 mb-2">
-                          <span className="text-[13px] font-bold text-amber-700 tabular-nums">{t('market.new')}</span>
+                          <span className="text-[13px] font-bold text-[var(--ps-cyan-text)] tabular-nums">{t('market.new')}</span>
                           <span className="flex items-center gap-0.5">
                             {[1, 2, 3, 4, 5].map(n => (
-                              <Star key={n} className="w-3 h-3 fill-amber-400 text-amber-400" />
+                              <Star key={n} className="w-3 h-3 fill-[var(--ps-cyan-text)] text-[var(--ps-cyan-text)]" />
                             ))}
                           </span>
                           <span className="text-[11px] text-muted-foreground">

@@ -8,7 +8,7 @@ import type { LevelCount, ProgressAlertView, ProgressSettings } from '@/lib/aler
 import { DEFAULT_THRESHOLDS } from '@/lib/alerts/progress';
 
 const LIGHT: Record<AlertSeverity, string> = {
-  low: 'bg-[var(--ps-amber-fill)]',
+  low: 'bg-[var(--ps-cyan)]',
   medium: 'bg-[var(--ps-coral-fill)]',
   high: 'bg-[var(--ps-coral)]',
   critical: 'bg-destructive',

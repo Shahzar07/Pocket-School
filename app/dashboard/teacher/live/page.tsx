@@ -100,7 +100,7 @@ export default function TeacherLiveClassesPage() {
   if (loadError) return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
       <div className="bg-card border border-border rounded-2xl p-10 text-center space-y-4">
-        <Video className="w-10 h-10 mx-auto text-amber-500" />
+        <Video className="w-10 h-10 mx-auto text-[var(--ps-cyan-text)]" />
         <p className="font-bold text-xl text-foreground">Couldn&apos;t load live classes</p>
         <p className="text-sm text-muted-foreground">Something went wrong while fetching your data. Please try again.</p>
         <Button variant="outline" className="rounded-xl" onClick={load}>Retry</Button>

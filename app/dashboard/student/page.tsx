@@ -37,7 +37,7 @@ const fadeUp: Record<string, any> = {
 const COURSE_GRADIENTS = [
   'from-primary to-primary',
   'from-emerald-500 to-teal-600',
-  'from-amber-500 to-orange-600',
+  'from-[var(--ps-cyan)] to-[var(--ps-cyan-border)]',
   'from-rose-500 to-pink-600',
   'from-cyan-500 to-blue-600',
   'from-violet-500 to-fuchsia-600',

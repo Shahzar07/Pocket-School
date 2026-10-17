@@ -39,11 +39,11 @@ export function ExercisesView({ exercises, onComplete, extraAction }: {
             <textarea value={st.work ?? ''} onChange={e => set(i, { work: e.target.value })} rows={3} placeholder="Your working (optional — paper is fine too)…"
               className="mt-3 w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-[14px] outline-none focus:border-primary" />
             <div className="flex flex-wrap gap-2 mt-3">
-              {ex.hint?.trim() && <button onClick={() => set(i, { hint: !st.hint })} className="h-9 px-3.5 rounded-full border border-border text-[13px] font-semibold inline-flex items-center gap-1.5"><Lightbulb className="w-4 h-4 text-amber-500" /> {st.hint ? 'Hide hint' : 'Hint'}</button>}
+              {ex.hint?.trim() && <button onClick={() => set(i, { hint: !st.hint })} className="h-9 px-3.5 rounded-full border border-border text-[13px] font-semibold inline-flex items-center gap-1.5"><Lightbulb className="w-4 h-4 text-[var(--ps-cyan-text)]" /> {st.hint ? 'Hide hint' : 'Hint'}</button>}
               <button onClick={() => set(i, { open: true })} className="h-9 px-3.5 rounded-full bg-foreground text-background text-[13px] font-semibold inline-flex items-center gap-1.5"><Eye className="w-4 h-4" /> Show worked solution</button>
               {extraAction?.(ex, i)}
             </div>
-            {st.hint && <div className="mt-3 text-[13px] rounded-xl bg-amber-50 border border-amber-200 text-amber-900 px-3 py-2 [&_p]:my-0"><MathMarkdown>{ex.hint}</MathMarkdown></div>}
+            {st.hint && <div className="mt-3 text-[13px] rounded-xl bg-[var(--ps-cyan-soft)] border border-[var(--ps-cyan-border)] text-[var(--ps-cyan-text)] px-3 py-2 [&_p]:my-0"><MathMarkdown>{ex.hint}</MathMarkdown></div>}
             {st.open && (
               <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-3 rounded-xl bg-muted/50 border border-border p-4">
                 <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground mb-1">Worked solution</p>

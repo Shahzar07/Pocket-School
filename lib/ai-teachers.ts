@@ -67,7 +67,21 @@ const VOICES: TeacherVoice[] = [
   'Kore', 'Charon', 'Aoede', 'Puck', 'Leda', 'Zephyr', 'Fenrir', 'Orus', 'Iapetus',
 ];
 
-const PALETTE = ['#1A73E8', '#1E3A8A', '#0B1B3F', '#10B981', '#1E6A83', '#8B5CF6', '#EC4899', '#E2AF4D'];
+const PALETTE = ['#1A73E8', '#1E3A8A', '#0B1B3F', '#10B981', '#1E6A83', '#8B5CF6', '#EC4899', '#3FE0D0'];
+
+/** Cyan fills are not text on white. Brand blue is the light-background ink. */
+export function accentOnLight(hex: string): string {
+  const color = hex.trim().toUpperCase();
+  if (color === '#3FE0D0' || color === '#14B8A6') return '#1E6A83';
+  return hex;
+}
+
+/** Text that sits on the accent when it is used as a button fill. */
+export function accentOnFill(hex: string): string {
+  const color = hex.trim().toUpperCase();
+  if (color === '#3FE0D0' || color === '#14B8A6') return '#203337';
+  return '#FFFFFF';
+}
 
 let voiceCursor = 0;
 
@@ -328,7 +342,7 @@ export const ET_AI_TUTOR: AiTeacher = {
   category: 'Study Support',
   status: 'live',
   avatarUrl: dicebear('et-ai'),
-  accentColor: '#E8C15E',
+  accentColor: '#3FE0D0',
   iconKey: 'brain',
   voice: 'Kore',
   voiceStyle: 'Warm, clear, and patient. Short steps, then a check that the idea has landed.',

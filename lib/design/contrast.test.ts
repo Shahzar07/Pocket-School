@@ -66,7 +66,7 @@ test('light and dark primary tokens clear WCAG 4.5:1', () => {
     ['#0B1417', '#6FBBCE', 'dark text on dark primary'],
     ['#6FBBCE', '#203337', 'institution eyebrow'],
     ['#A9D7E4', '#203337', 'institution headline mid stop'],
-    ['#E2AF4D', '#203337', 'institution headline gold stop'],
+    ['#3FE0D0', '#203337', 'institution headline cyan stop'],
   ];
   for (const [foreground, background, label] of pairs) {
     const ratio = contrast(foreground, background);
@@ -100,10 +100,66 @@ test('pricing and dashboards do not hardcode the old primary', () => {
 
   const pricing = readFileSync(path.join(ROOT, 'app/pricing/page.tsx'), 'utf8');
   assert.match(pricing, /pricing-page/);
-  assert.match(pricing, /from-\[#6FBBCE\] via-\[#A9D7E4\] to-\[#E2AF4D\]/);
+  assert.match(pricing, /from-\[#6FBBCE\] via-\[#A9D7E4\] to-\[#3FE0D0\]/);
   assert.doesNotMatch(pricing, /from-primary via-\[#6FBBCE\]/);
 
   const certificate = readFileSync(path.join(ROOT, 'lib/certificates.ts'), 'utf8');
   assert.match(certificate, /border: 2px solid #1E6A83/);
   assert.doesNotMatch(certificate, /var\(--primary\)/);
+});
+
+test('cyan tokens match the shared accent and keep weak pairs off text', () => {
+  const css = readFileSync(path.join(ROOT, 'app/globals.css'), 'utf8');
+  const light = block(css, ':root');
+  const dark = block(css, '.dark');
+
+  assert.equal(decl(light, '--ps-cyan'), '#3FE0D0');
+  assert.equal(decl(light, '--ps-cyan-strong'), '#14B8A6');
+  assert.equal(decl(light, '--ps-cyan-text'), '#1E6A83');
+  assert.equal(decl(light, '--ps-cyan-ink'), '#203337');
+  assert.equal(decl(light, '--ps-cyan-border'), '#1E6A83');
+  assert.match(light, /--ps-cyan-soft:\s*rgba\(63,\s*224,\s*208,\s*0\.15\)/);
+  assert.match(light, /--ps-amber:\s*var\(--ps-cyan-text\)/);
+  assert.match(light, /--ps-amber-fill:\s*var\(--ps-cyan\)/);
+
+  assert.equal(decl(dark, '--ps-cyan'), '#3FE0D0');
+  assert.equal(decl(dark, '--ps-cyan-strong'), '#14B8A6');
+  assert.equal(decl(dark, '--ps-cyan-text'), '#3FE0D0');
+  assert.equal(decl(dark, '--ps-cyan-ink'), '#203337');
+  assert.equal(decl(dark, '--ps-cyan-border'), '#1E6A83');
+  assert.match(dark, /--ps-amber:\s*var\(--ps-cyan-text\)/);
+  assert.match(dark, /--ps-amber-fill:\s*var\(--ps-cyan\)/);
+
+  const required: Array<[string, string, string]> = [
+    ['#1E6A83', '#FFFFFF', 'cyan text on white'],
+    ['#1E6A83', '#F4F6F6', 'cyan text on the page'],
+    ['#203337', '#3FE0D0', 'ink on the cyan fill'],
+    ['#203337', '#14B8A6', 'ink on the dark cyan fill'],
+    ['#3FE0D0', '#0B1417', 'cyan accent on the dark canvas'],
+    ['#3FE0D0', '#121E22', 'cyan accent on a dark card'],
+    ['#3FE0D0', '#203337', 'cyan accent on institution ink'],
+    ['#14B8A6', '#0B1417', 'cyan strong on the dark canvas'],
+  ];
+  for (const [foreground, background, label] of required) {
+    const ratio = contrast(foreground, background);
+    assert.ok(ratio >= 4.5, `${label} is ${ratio.toFixed(2)}:1`);
+  }
+
+  const forbidden: Array<[string, string, string]> = [
+    ['#14B8A6', '#FFFFFF', 'cyan strong on white'],
+    ['#14B8A6', '#F4F6F6', 'cyan strong on the page'],
+    ['#3FE0D0', '#FFFFFF', 'cyan fill on white'],
+    ['#3FE0D0', '#F4F6F6', 'cyan fill on the page'],
+    ['#1E6A83', '#3FE0D0', 'brand blue on the cyan fill'],
+    ['#1E6A83', '#0B1417', 'brand blue on the dark canvas'],
+  ];
+  for (const [foreground, background, label] of forbidden) {
+    const ratio = contrast(foreground, background);
+    assert.ok(ratio < 4.5, `${label} is ${ratio.toFixed(2)}:1 and must not be used for text`);
+  }
+
+  assert.doesNotMatch(css, /#0F766E/i);
+  assert.doesNotMatch(css, /#E2AF4D/i);
+  assert.doesNotMatch(css, /#9A5B00/i);
+  assert.doesNotMatch(css, /#F9AB00/i);
 });

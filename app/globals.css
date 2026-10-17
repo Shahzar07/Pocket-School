@@ -45,7 +45,6 @@
 
     --color-google-blue: var(--primary);
     --color-google-teal: #00897B;
-    --color-google-amber: #F9AB00;
 
     --radius-sm: 12px;
     --radius-md: 18px;
@@ -71,8 +70,10 @@
  * src/theme/tokens.ts). Named --ps-* variables below are those hexes.
  * Shadcn --primary in light mode stays blueDeep #1E6A83, because brand
  * primary #2786A4 is 4.17:1 on white. Dark --primary is #6FBBCE with
- * on-primary #0B1417. Chart text inks live on --ps-teal/amber/coral/…;
- * brand fills that fail as small text live on --ps-*-fill.
+ * on-primary #0B1417. Chart text inks live on --ps-teal/cyan-text/coral/…;
+ * Cyan #3FE0D0 is a fill (--ps-cyan). It is 1.64:1 on white, so light text
+ * uses --ps-cyan-text (#1E6A83). #14B8A6 is --ps-cyan-strong, for fills and
+ * icons on dark backgrounds only.
  */
 :root {
     --background: #F4F6F6;
@@ -96,17 +97,29 @@
     --input: #E7EDED;
     --ring: #1E6A83;
     --chart-1: #1E6A83;
-    --chart-2: #9A5B00;
+    --chart-2: #1E6A83;
     --chart-3: #C23B2E;
     --chart-4: #6D28D9;
     --chart-5: #0E7A62;
     --chart-6: #0369A1;
+    /* Cyan accent. The fill is not text on white. --ps-cyan-text is brand blue. */
+    --ps-cyan: #3FE0D0;
+    --ps-cyan-strong: #14B8A6;
+    --ps-cyan-text: #1E6A83;
+    --ps-cyan-soft: rgba(63, 224, 208, 0.15);
+    --ps-cyan-ink: #203337;
+    --ps-cyan-border: #1E6A83;
+    /* Deprecated mustard. Text aliases to brand blue so existing labels stay
+     * above 4.5:1. Fills alias to the cyan swatch. */
+    --ps-amber: var(--ps-cyan-text);
+    --ps-on-amber: var(--ps-cyan-ink);
+    --ps-amber-fill: var(--ps-cyan);
+    --ps-amber-soft: var(--ps-cyan-soft);
     /* Dashboard accents. Inks are AA text on white; on-fill is AA on the ink.
-     * Amber and coral brand swatches are fills (--ps-*-fill), not these inks. */
+     * Coral brand swatch is a fill (--ps-coral-fill), not this ink. */
     --ps-teal: #1E6A83;
     --ps-on-teal: #FFFFFF;
-    --ps-amber: #9A5B00;
-    --ps-on-amber: #FFFFFF;
+    --ps-on-cyan: #FFFFFF;
     --ps-coral: #C23B2E;
     --ps-on-coral: #FFFFFF;
     --ps-violet: #6D28D9;
@@ -127,8 +140,6 @@
     --ps-blue-deep: #1E6A83;
     --ps-blue-bright: #6FBBCE;
     --ps-on-primary: #FFFFFF;
-    --ps-amber-fill: #E2AF4D;
-    --ps-amber-soft: #FFF6E4;
     --ps-coral-fill: #D0553F;
     --ps-coral-soft: #FDECEA;
     --ps-good: #1F8A70;
@@ -142,12 +153,15 @@
     --ps-hero: linear-gradient(135deg, #1E6A83 0%, #2786A4 50%, #6FBBCE 100%);
     --ps-band: linear-gradient(135deg, #1E6A83 0%, #2786A4 100%);
     --ps-pattern-ink: rgba(255, 255, 255, 0.78);
-    --medal-gold: #E8B84A;
-    --medal-gold-ink: #3D2A06;
+    --medal-first: #3FE0D0;
+    --medal-first-ink: #203337;
     --medal-silver: #D5DDE3;
     --medal-silver-ink: #1F2933;
-    --medal-bronze: #E0A15A;
-    --medal-bronze-ink: #3A2412;
+    --medal-bronze: #1E6A83;
+    --medal-bronze-ink: #FFFFFF;
+    /* Deprecated. First place used to be a mustard swatch. */
+    --medal-gold: var(--medal-first);
+    --medal-gold-ink: var(--medal-first-ink);
     /* lg. Components that read var(--radius) directly follow the 24px step.
      * The Tailwind ladder is set explicitly above: 12 / 18 / 24 / 32, pill 999. */
     --radius: 24px;
@@ -209,15 +223,26 @@
     --input: #1E3238;
     --ring: #6FBBCE;
     --chart-1: #6FBBCE;
-    --chart-2: #E2AF4D;
+    --chart-2: #3FE0D0;
     --chart-3: #E88976;
     --chart-4: #C4B5FD;
     --chart-5: #8ED9C4;
     --chart-6: #7DD3FC;
+    /* Same cyan fill. #1E6A83 is 3.06:1 on this canvas, so dark text uses the fill. */
+    --ps-cyan: #3FE0D0;
+    --ps-cyan-strong: #14B8A6;
+    --ps-cyan-text: #3FE0D0;
+    --ps-cyan-soft: rgba(63, 224, 208, 0.15);
+    --ps-cyan-ink: #203337;
+    --ps-cyan-border: #1E6A83;
+    /* Deprecated mustard aliases. See :root. */
+    --ps-amber: var(--ps-cyan-text);
+    --ps-on-amber: var(--ps-cyan-ink);
+    --ps-amber-fill: var(--ps-cyan);
+    --ps-amber-soft: var(--ps-cyan-soft);
     --ps-teal: #6FBBCE;
     --ps-on-teal: #0B1417;
-    --ps-amber: #E2AF4D;
-    --ps-on-amber: #0B1417;
+    --ps-on-cyan: #203337;
     --ps-coral: #E88976;
     --ps-on-coral: #0B1417;
     --ps-violet: #C4B5FD;
@@ -238,8 +263,6 @@
     --ps-blue-deep: #8ED0DE;
     --ps-blue-bright: #6FBBCE;
     --ps-on-primary: #0B1417;
-    --ps-amber-fill: #E2AF4D;
-    --ps-amber-soft: #2A2416;
     --ps-coral-fill: #E88976;
     --ps-coral-soft: #2C1C1A;
     --ps-good: #8ED9C4;
@@ -253,12 +276,15 @@
     --ps-hero: linear-gradient(135deg, #0B1417 0%, #17282D 50%, #1E6A83 100%);
     --ps-band: linear-gradient(135deg, #17282D 0%, #1E6A83 100%);
     --ps-pattern-ink: rgba(11, 20, 23, 0.55);
-    --medal-gold: #F0C36A;
-    --medal-gold-ink: #3D2A06;
+    --medal-first: #3FE0D0;
+    --medal-first-ink: #203337;
     --medal-silver: #E6EDF2;
     --medal-silver-ink: #1F2933;
-    --medal-bronze: #E8B07A;
-    --medal-bronze-ink: #3A2412;
+    --medal-bronze: #6FBBCE;
+    --medal-bronze-ink: #0B1417;
+    /* Deprecated. First place used to be a mustard swatch. */
+    --medal-gold: var(--medal-first);
+    --medal-gold-ink: var(--medal-first-ink);
     --sidebar: #121E22;
     --sidebar-foreground: #E8EFEF;
     --sidebar-primary: #6FBBCE;
@@ -294,7 +320,7 @@
 }
 
 .gradient-text-warm {
-  background: linear-gradient(135deg, #F9AB00 0%, #E53935 100%);
+  background: linear-gradient(135deg, #6FBBCE 0%, #1E6A83 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -432,7 +458,7 @@ h1.font-heading, .font-heading.text-4xl, .font-heading.text-5xl {
   background-image:
     radial-gradient(circle at var(--c5-x1) var(--c5-y1), #93C5FD 0px, transparent var(--c5-s1)),
     radial-gradient(circle at var(--c5-x2) var(--c5-y2), #1E3A8A 0px, transparent var(--c5-s2)),
-    radial-gradient(circle at var(--c5-x3) var(--c5-y3), #E2AF4D 0px, transparent var(--c5-s3)),
+    radial-gradient(circle at var(--c5-x3) var(--c5-y3), #3FE0D0 0px, transparent var(--c5-s3)),
     radial-gradient(circle at var(--c5-x4) var(--c5-y4), #6FBBCE 0px, transparent var(--c5-s4)),
     radial-gradient(circle at var(--c5-x5) var(--c5-y5), #1E6A83 0px, transparent var(--c5-s5));
   animation:

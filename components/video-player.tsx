@@ -16,7 +16,7 @@ const SCENE_THEMES = [
   'from-purple-950 via-fuchsia-900 to-slate-950',
   'from-teal-950 via-cyan-900 to-slate-950',
   'from-rose-950 via-red-900 to-slate-950',
-  'from-amber-950 via-orange-900 to-slate-950',
+  'from-[#0B1417] via-[#17282D] to-slate-950',
   'from-emerald-950 via-green-900 to-slate-950',
 ];
 
@@ -465,7 +465,7 @@ export function VideoPlayer({
                     {scene.title}
                   </h3>
                   {scene.visual && (
-                    <p className="mt-4 text-xs sm:text-sm italic text-cyan-200/70 max-w-xl">{scene.visual}</p>
+                    <p className="mt-4 text-xs sm:text-sm italic text-[var(--ps-cyan)] max-w-xl">{scene.visual}</p>
                   )}
                   {visualsState === 'generating' && (
                     <span className="mt-5 inline-flex items-center gap-1.5 text-[11px] text-white/60">
@@ -485,7 +485,7 @@ export function VideoPlayer({
             className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 transition-opacity"
             aria-label="Play video"
           >
-            <span className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-amber-400 flex items-center justify-center shadow-2xl hover:scale-105 transition-transform">
+            <span className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[var(--ps-cyan)] flex items-center justify-center shadow-2xl hover:scale-105 transition-transform">
               <Play className="w-7 h-7 sm:w-9 sm:h-9 text-slate-950 ml-1" />
             </span>
           </button>
@@ -512,7 +512,7 @@ export function VideoPlayer({
                 title={`Scene ${i + 1}: ${scenes[i].title}`}
               >
                 <div
-                  className="h-full bg-amber-400 rounded-full transition-[width] duration-200"
+                  className="h-full bg-[var(--ps-cyan)] rounded-full transition-[width] duration-200"
                   style={{ width: i < current ? '100%' : i === current ? `${sceneProgress * 100}%` : '0%' }}
                 />
               </button>
@@ -522,7 +522,7 @@ export function VideoPlayer({
             <button onClick={() => jumpTo(current - 1)} className="text-white/80 hover:text-white" aria-label="Previous scene">
               <SkipBack className="w-4 h-4" />
             </button>
-            <button onClick={togglePlay} className="text-white hover:text-amber-300" aria-label={playing ? 'Pause' : 'Play'}>
+            <button onClick={togglePlay} className="text-white hover:text-[var(--ps-cyan)]" aria-label={playing ? 'Pause' : 'Play'}>
               {playing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
             </button>
             <button onClick={() => jumpTo(current + 1)} className="text-white/80 hover:text-white" aria-label="Next scene">
@@ -540,7 +540,7 @@ export function VideoPlayer({
             {(visualsState === 'unavailable' || visualsState === 'error') && (
               <button
                 onClick={generateVisuals}
-                className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-300 hover:text-amber-200"
+                className="flex items-center gap-1.5 text-[11px] font-semibold text-[var(--ps-cyan)] hover:text-[var(--ps-cyan)]"
                 title={visualsError || 'Retry generating scene visuals'}
               >
                 <ImageIcon className="w-3.5 h-3.5" /> Retry visuals
@@ -564,7 +564,7 @@ export function VideoPlayer({
               </span>
             )}
             {voiceState === 'unavailable' && (
-              <button onClick={() => generateVoices(spokenText, voiceName)} className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-amber-300 hover:text-amber-200" title="Retry AI voice">
+              <button onClick={() => generateVoices(spokenText, voiceName)} className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-[var(--ps-cyan)] hover:text-[var(--ps-cyan)]" title="Retry AI voice">
                 <Volume2 className="w-3.5 h-3.5" /> Retry voice
               </button>
             )}
@@ -635,7 +635,7 @@ export function VideoPlayer({
         {voiceState === 'idle' && !autoGenerate && (
           <button type="button" className="underline" onClick={() => generateVoices(spokenText, voiceName)}>Generate voice</button>
         )}
-        {visualsError && <span className="text-amber-700">{visualsError}</span>}
+        {visualsError && <span className="text-[var(--ps-cyan-text)]">{visualsError}</span>}
         {lang !== 'en' && <><span>·</span><span>{LANGUAGES.find(l => l.code === lang)?.label}</span></>}
       </div>
     </div>

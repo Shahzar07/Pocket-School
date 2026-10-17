@@ -27,7 +27,7 @@ const fadeUp: Record<string, any> = {
 const CATEGORY_META: Record<GoalCategory, { label: string; pill: string; dot: string }> = {
   study:    { label: 'Study',    pill: 'bg-primary/10 text-primary',   dot: 'bg-primary' },
   revision: { label: 'Revision', pill: 'bg-primary/10 text-primary',   dot: 'bg-primary' },
-  practice: { label: 'Practice', pill: 'bg-amber-500/10 text-amber-600',   dot: 'bg-amber-500' },
+  practice: { label: 'Practice', pill: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',   dot: 'bg-[var(--ps-cyan)]' },
   reading:  { label: 'Reading',  pill: 'bg-emerald-500/10 text-emerald-600', dot: 'bg-emerald-500' },
   other:    { label: 'Other',    pill: 'bg-muted text-muted-foreground',   dot: 'bg-muted-foreground' },
 };
@@ -42,7 +42,7 @@ const STATUS_META: Record<DisplayStatus, { label: string; pill: string }> = {
   in_progress: { label: 'In Progress', pill: 'bg-primary/10 text-primary' },
   completed:   { label: 'Completed',   pill: 'bg-emerald-500/10 text-emerald-600' },
   overdue:     { label: 'Overdue',     pill: 'bg-destructive/10 text-destructive' },
-  excused:     { label: 'Excused',     pill: 'bg-amber-500/10 text-amber-600' },
+  excused:     { label: 'Excused',     pill: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]' },
 };
 
 /** Parse an 'HH:mm' deadline into a Date on the goal's own day. */
@@ -410,7 +410,7 @@ export default function StudentDailyGoalsPage() {
     const deadlineTone =
       st === 'completed' || st === 'excused' ? 'text-muted-foreground'
       : minsToDeadline < 0 ? 'text-destructive font-bold'
-      : minsToDeadline < 30 ? 'text-amber-600 font-semibold'
+      : minsToDeadline < 30 ? 'text-[var(--ps-cyan-text)] font-semibold'
       : 'text-muted-foreground';
 
     return (
@@ -451,7 +451,7 @@ export default function StudentDailyGoalsPage() {
             <span className="text-xs text-muted-foreground">· {goal.estimateMinutes} min</span>
           </div>
           {goal.status === 'excused' && goal.excuseReason && (
-            <p className="text-xs text-amber-600 mt-2 flex items-center gap-1.5">
+            <p className="text-xs text-[var(--ps-cyan-text)] mt-2 flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5" /> Excused by {goal.excusedBy || 'parent'}: {goal.excuseReason}
             </p>
           )}
@@ -485,7 +485,7 @@ export default function StudentDailyGoalsPage() {
             </span>
           )}
           {goal.status === 'excused' && (
-            <span className="text-sm font-bold text-amber-600 flex items-center gap-1.5 px-2">
+            <span className="text-sm font-bold text-[var(--ps-cyan-text)] flex items-center gap-1.5 px-2">
               <ShieldCheck className="w-4 h-4" /> Excused
             </span>
           )}
@@ -546,7 +546,7 @@ export default function StudentDailyGoalsPage() {
           { label: 'Goals Today', value: stats.total, accent: 'bg-primary', icon: Target },
           { label: 'In Progress', value: stats.inProgress, accent: 'bg-primary', icon: Play },
           { label: 'Completed', value: stats.completed, accent: 'bg-emerald-500', icon: CheckCircle2 },
-          { label: '🔥 Streak', value: `${stats.streak}d`, accent: 'bg-amber-500', icon: Flame },
+          { label: '🔥 Streak', value: `${stats.streak}d`, accent: 'bg-[var(--ps-cyan)]', icon: Flame },
         ].map(stat => (
           <div key={stat.label} className="bg-card border border-border rounded-3xl p-5 relative overflow-hidden card-glow">
             <span className={`absolute top-0 left-6 right-6 h-[3px] rounded-b-full ${stat.accent} opacity-80`} />
@@ -580,10 +580,10 @@ export default function StudentDailyGoalsPage() {
       {!anyStarted && (
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible" custom={3}
-          className="bg-amber-500/10 border border-amber-500/30 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 justify-between"
+          className="bg-[var(--ps-cyan-soft)] border border-[var(--ps-cyan-border)]/30 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 justify-between"
         >
           <div className="flex items-start gap-3">
-            <Lock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <Lock className="w-5 h-5 text-[var(--ps-cyan-text)] shrink-0 mt-0.5" />
             <div>
               <p className="font-heading text-xl text-foreground">Start a goal to unlock your courses</p>
               <p className="text-sm text-muted-foreground mt-1">
@@ -591,7 +591,7 @@ export default function StudentDailyGoalsPage() {
               </p>
             </div>
           </div>
-          <Button onClick={focusForm} className="rounded-full h-11 px-5 font-bold gap-2 shrink-0 bg-amber-500 text-white hover:bg-amber-600 transition-colors">
+          <Button onClick={focusForm} className="rounded-full h-11 px-5 font-bold gap-2 shrink-0 bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)] hover:bg-[var(--ps-cyan)] transition-colors">
             <Plus className="w-4 h-4" /> Add Goal
           </Button>
         </motion.div>
@@ -680,7 +680,7 @@ export default function StudentDailyGoalsPage() {
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={5} className="bg-card border border-border rounded-3xl p-5 sm:p-6 card-glow">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
-            <Flame className="w-4 h-4 text-amber-500" />
+            <Flame className="w-4 h-4 text-[var(--ps-cyan-text)]" />
             <h2 className="font-heading text-xl text-foreground">Last 14 days</h2>
           </div>
           <span className="text-xs text-muted-foreground font-semibold">{stats.streak} day streak</span>
@@ -756,12 +756,12 @@ export default function StudentDailyGoalsPage() {
                         <p className="text-xs text-muted-foreground mt-0.5">{day.done} of {day.goals.length} completed</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className={`font-heading text-3xl ${day.rate === 100 ? 'text-emerald-600' : day.rate >= 50 ? 'text-amber-600' : 'text-destructive'}`}>{day.rate}%</p>
+                        <p className={`font-heading text-3xl ${day.rate === 100 ? 'text-emerald-600' : day.rate >= 50 ? 'text-[var(--ps-cyan-text)]' : 'text-destructive'}`}>{day.rate}%</p>
                       </div>
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
                       <motion.div
-                        className={`h-full rounded-full ${day.rate === 100 ? 'bg-emerald-500' : day.rate >= 50 ? 'bg-amber-500' : 'bg-destructive'}`}
+                        className={`h-full rounded-full ${day.rate === 100 ? 'bg-emerald-500' : day.rate >= 50 ? 'bg-[var(--ps-cyan)]' : 'bg-destructive'}`}
                         initial={{ width: 0 }}
                         animate={{ width: `${day.rate}%` }}
                         transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -840,7 +840,7 @@ export default function StudentDailyGoalsPage() {
                     ))}
                     {insights.avgCompletion === null && (
                       <div className="bg-card border border-border rounded-2xl p-4 flex items-center gap-3">
-                        <AlertTriangle className="w-4 h-4 text-amber-500" />
+                        <AlertTriangle className="w-4 h-4 text-[var(--ps-cyan-text)]" />
                         <p className="text-sm text-muted-foreground">Complete a few more goals for richer insights.</p>
                       </div>
                     )}

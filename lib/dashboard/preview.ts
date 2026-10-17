@@ -90,7 +90,7 @@ const parent: PreviewHome = {
   ],
   alerts: [{
     id: 'mina',
-    tone: 'amber',
+    tone: 'cyan',
     title: 'Mina · Mathematics',
     detail: 'Version B is waiting. A short review comes first.',
   }],
@@ -100,7 +100,7 @@ const parent: PreviewHome = {
   ],
   listTitle: 'What you have done',
   children: [
-    { id: 'mina', name: 'Mina', tone: 'amber', level: 'Lower Secondary' },
+    { id: 'mina', name: 'Mina', tone: 'cyan', level: 'Lower Secondary' },
     { id: 'arun', name: 'Arun', tone: 'coral', level: 'IGCSE' },
     { id: 'leila', name: 'Leila', tone: 'good', level: 'A-Level' },
   ],
@@ -150,7 +150,7 @@ const institution: PreviewHome = {
   ],
   alerts: [{
     id: 'sla',
-    tone: 'amber',
+    tone: 'cyan',
     title: 'Two replies are past the window',
     detail: 'Both are high alerts. The academic lead can take them.',
   }],

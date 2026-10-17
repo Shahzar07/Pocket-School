@@ -177,7 +177,7 @@ export function SmartAudioPlayer({ script, title, dark }: { script: string; titl
 
         {state === 'error' && (
           <div className="space-y-2">
-            <p className="text-sm text-amber-700">{error || 'Audio generation failed.'}</p>
+            <p className="text-sm text-[var(--ps-cyan-text)]">{error || 'Audio generation failed.'}</p>
             <Button onClick={() => generate()} variant="outline" className="rounded-xl gap-2">
               <RefreshCw className="w-4 h-4" /> Retry audio
             </Button>

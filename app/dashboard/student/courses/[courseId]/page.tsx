@@ -219,7 +219,7 @@ export default function CourseDetailPage() {
                     </Badge>
                   )}
                   {unitStatus?.state === 'in_progress' && unitStatus.bestQuizPercentage !== undefined && (
-                    <Badge className="text-[10px] rounded-full bg-amber-500/10 text-amber-600 border-amber-500/20">
+                    <Badge className="text-[10px] rounded-full bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20">
                       Quiz best: {unitStatus.bestQuizPercentage}%
                     </Badge>
                   )}

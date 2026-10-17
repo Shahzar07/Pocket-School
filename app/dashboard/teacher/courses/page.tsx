@@ -27,7 +27,7 @@ const fadeUp: Record<string, any> = {
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   draft: { label: 'Draft', className: 'bg-muted text-muted-foreground' },
-  pending_approval: { label: 'Pending Review', className: 'bg-amber-500/10 text-amber-600 border border-amber-500/20' },
+  pending_approval: { label: 'Pending Review', className: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border border-[var(--ps-cyan-border)]/20' },
   published: { label: 'Published', className: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' },
 };
 
@@ -251,7 +251,7 @@ export default function TeacherCourseMgmt() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="w-full rounded-full font-bold border-amber-500/20 text-amber-600 hover:bg-amber-500/10"
+                        className="w-full rounded-full font-bold border-[var(--ps-cyan-border)]/20 text-[var(--ps-cyan-text)] hover:bg-[var(--ps-cyan-soft)]"
                         onClick={() => withdrawReview(c)}
                       >
                         <RotateCcw className="w-3.5 h-3.5 mr-1.5" /> Withdraw Review Request

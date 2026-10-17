@@ -42,7 +42,7 @@ export function SparksChip() {
         aria-label={`Sparks balance ${balance}. Opens your Sparks history.`}
         title={t('sparks.title')}
       >
-        <Zap className="w-4 h-4 fill-amber-400 text-amber-500" />
+        <Zap className="w-4 h-4 fill-[var(--ps-cyan-text)] text-[var(--ps-cyan-text)]" />
         <span className="text-sm font-bold">{formatAppNumber(balance, i18n.language)}</span>
       </button>
 
@@ -50,7 +50,7 @@ export function SparksChip() {
         <DialogContent className="max-w-md rounded-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Zap className="w-5 h-5 fill-amber-400 text-amber-500" />
+              <Zap className="w-5 h-5 fill-[var(--ps-cyan-text)] text-[var(--ps-cyan-text)]" />
               {t('sparks.heading', { count: formatAppNumber(balance, i18n.language) })}
             </DialogTitle>
           </DialogHeader>
@@ -60,7 +60,7 @@ export function SparksChip() {
             {t('sparks.spend')}
           </p>
           <div className="flex gap-3 text-xs font-semibold">
-            <Link href="/dashboard/student/sparks" className="text-amber-700" onClick={() => setOpen(false)}>What are Sparks?</Link>
+            <Link href="/dashboard/student/sparks" className="text-[var(--ps-cyan-text)]" onClick={() => setOpen(false)}>What are Sparks?</Link>
             <Link href="/dashboard/checkout?kind=sparks&sku=sparks_100" className="text-primary" onClick={() => setOpen(false)}>Get more Sparks</Link>
           </div>
 
@@ -76,11 +76,11 @@ export function SparksChip() {
               return (
               <div key={tx.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                  tx.amount >= 0 ? 'bg-emerald-100' : 'bg-amber-100'
+                  tx.amount >= 0 ? 'bg-emerald-100' : 'bg-[var(--ps-cyan-soft)]'
                 }`}>
                   {tx.amount >= 0
                     ? <ArrowDownLeft className="w-4 h-4 text-emerald-600" />
-                    : <ArrowUpRight className="w-4 h-4 text-amber-600" />}
+                    : <ArrowUpRight className="w-4 h-4 text-[var(--ps-cyan-text)]" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-foreground truncate">
@@ -92,7 +92,7 @@ export function SparksChip() {
                     {t('sparks.balance', { count: formatAppNumber(tx.balanceAfter, i18n.language) })}
                   </p>
                 </div>
-                <span className={`text-sm font-bold shrink-0 ${tx.amount >= 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                <span className={`text-sm font-bold shrink-0 ${tx.amount >= 0 ? 'text-emerald-600' : 'text-[var(--ps-cyan-text)]'}`}>
                   {tx.amount >= 0 ? '+' : ''}{formatAppNumber(tx.amount, i18n.language)}⚡
                 </span>
               </div>

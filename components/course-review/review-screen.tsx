@@ -112,7 +112,7 @@ export function ReviewScreen({
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       <article className="space-y-6" data-course-preview>
         {staff && (
-          <p className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <p className="rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] px-4 py-3 text-sm text-[var(--ps-cyan-text)]">
             Preview course. This is the student view of every module, lesson, quiz, picture, and the certificate. Students do not see it until it is published.
           </p>
         )}
@@ -153,7 +153,7 @@ export function ReviewScreen({
                         {image.caption && <figcaption className="px-3 py-2 text-center text-sm text-muted-foreground">{image.caption}</figcaption>}
                       </figure>
                     ) : (
-                      <div key={`${lesson.id}-missing-${index}`} className="rounded-2xl border border-dashed border-amber-400 bg-amber-50 px-4 py-8 text-center text-sm text-amber-900">
+                      <div key={`${lesson.id}-missing-${index}`} className="rounded-2xl border border-dashed border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] px-4 py-8 text-center text-sm text-[var(--ps-cyan-text)]">
                         Missing image · {image.alt}
                       </div>
                     ))}
@@ -173,7 +173,7 @@ export function ReviewScreen({
                               const chosen = answers[question.question] === option;
                               const correct = option === question.answer;
                               return (
-                                <label key={option} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${chosen && correct ? 'border-emerald-500 bg-emerald-50' : chosen ? 'border-amber-400 bg-amber-50' : 'border-border'}`}>
+                                <label key={option} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${chosen && correct ? 'border-emerald-500 bg-emerald-50' : chosen ? 'border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)]' : 'border-border'}`}>
                                   <input
                                     type="radio"
                                     name={question.question}

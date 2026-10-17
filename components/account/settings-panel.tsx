@@ -266,7 +266,7 @@ export function SettingsPanel({
       </header>
 
       {view.deletion && (
-        <section className="rounded-3xl border border-amber-500/40 bg-amber-500/10 p-5">
+        <section className="rounded-3xl border border-[var(--ps-cyan-border)]/40 bg-[var(--ps-cyan-soft)] p-5">
           <h2 className="font-heading text-xl">Deletion scheduled</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             This account closes on {formatDeletionDate(view.deletion)} unless you cancel. You can keep using Poket School until then.

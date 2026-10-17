@@ -492,7 +492,7 @@ export default function CourseEditorModal({
               </div>
             </div>
 
-            <p className="text-xs text-muted-foreground bg-amber-50 border border-amber-100 rounded-lg px-4 py-3">
+            <p className="text-xs text-muted-foreground bg-[var(--ps-cyan-soft)] border border-[var(--ps-cyan-border)] rounded-lg px-4 py-3">
               <strong>Note:</strong> After saving, use &quot;Submit for Review&quot; from your dashboard. An admin will approve before it appears on the public marketplace.
             </p>
 

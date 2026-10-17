@@ -77,7 +77,7 @@ export function ImportPanel({ onApply }: { onApply: (result: ImportResult) => vo
             </div>
           </div>
           {draft.warnings.length > 0 && (
-            <ul className="space-y-1 text-sm text-amber-900">
+            <ul className="space-y-1 text-sm text-[var(--ps-cyan-text)]">
               {draft.warnings.map(warning => <li key={warning.message}>{warning.message}</li>)}
             </ul>
           )}

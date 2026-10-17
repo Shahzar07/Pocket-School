@@ -570,7 +570,7 @@ export default function SignupPage() {
                 <p className="text-xs text-red-300">{t('signup.tooYoung')}</p>
               )}
               {isMinor && !tooYoung && (
-                <p className="text-xs text-amber-300 flex items-start gap-1.5">
+                <p className="text-xs text-[var(--ps-cyan-text)] flex items-start gap-1.5">
                   <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                   {t('signup.minorHint')}
                 </p>
@@ -654,8 +654,8 @@ export default function SignupPage() {
 
             {/* ── Guardian consent block (under-18 students) ── */}
             {isMinor && !tooYoung && (
-              <div className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.07] p-4 space-y-3">
-                <p className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+              <div className="rounded-2xl border border-[var(--ps-cyan-border)]/25 bg-[var(--ps-cyan-soft)] p-4 space-y-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--ps-cyan-text)] flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5" /> {t('signup.guardianTitle')}
                 </p>
                 <p className="text-xs text-white/50 leading-relaxed">
@@ -722,7 +722,7 @@ export default function SignupPage() {
 
       {step === 'consent' && (
         <form onSubmit={verifyGuardianConsent} className="space-y-4">
-          <div className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.07] p-4">
+          <div className="rounded-2xl border border-[var(--ps-cyan-border)]/25 bg-[var(--ps-cyan-soft)] p-4">
             <p className="text-xs text-white/60 leading-relaxed">
               {t('signup.consentSent', { name: guardianName, email: guardianEmail })}
             </p>

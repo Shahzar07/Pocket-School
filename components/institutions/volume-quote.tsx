@@ -79,12 +79,12 @@ export function VolumeQuote({
         </p>
       </div>
       {notices.overLimit && (
-        <p className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm">
+        <p className="rounded-2xl border border-[var(--ps-cyan-border)]/40 bg-[var(--ps-cyan-soft)] px-3 py-2 text-sm">
           Seat limit reached. {seatsUsed} students are on a licence for {seatsPurchased}.
         </p>
       )}
       {notices.upgradeTo && (
-        <p className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm">
+        <p className="rounded-2xl border border-[var(--ps-cyan-border)]/40 bg-[var(--ps-cyan-soft)] px-3 py-2 text-sm">
           Usage is in tier {notices.upgradeTo}. The purchased seats are in tier {notices.upgradeFrom}. Raise the seat count to move the quote onto the higher tier.
         </p>
       )}

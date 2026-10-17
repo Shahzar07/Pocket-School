@@ -49,8 +49,8 @@ export default function ParentIntegrityPage() {
           <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ps-violet)' }}>Integrity</p>
           <p className="mt-1 text-3xl font-semibold tabular-nums">{rows.filter(row => row.kind === 'integrity').length}</p>
         </div>
-        <div className="rounded-2xl border border-border p-4" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-amber) 16%, var(--card)), var(--card))' }}>
-          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ps-amber)' }}>Other flags</p>
+        <div className="rounded-2xl border border-border p-4" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-cyan-text) 16%, var(--card)), var(--card))' }}>
+          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ps-cyan-text)' }}>Other flags</p>
           <p className="mt-1 text-3xl font-semibold tabular-nums">{rows.filter(row => row.kind !== 'integrity').length}</p>
         </div>
       </div>

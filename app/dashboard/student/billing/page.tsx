@@ -150,7 +150,7 @@ export default function StudentBillingPage() {
           custom={1}
           className="bg-card border border-border rounded-3xl p-6 card-glow relative overflow-hidden flex items-center justify-between gap-4"
         >
-          <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-amber-500 opacity-80" />
+          <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-[var(--ps-cyan)] opacity-80" />
           <div>
             <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
               Outstanding Balance
