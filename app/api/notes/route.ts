@@ -1,6 +1,7 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { runGet, runPost } from '@/lib/server/http';
 import { ActionError } from '@/lib/server/actions';
+import { isAdminConfigured } from '@/lib/firebase-admin';
 import { listStudyGroups, runNoteAction, shareNote, unshareNote } from '@/lib/notes/server';
 import type { NoteAction } from '@/lib/notes/model';
 
@@ -10,12 +11,21 @@ export const dynamic = 'force-dynamic';
 const ACTIONS: readonly NoteAction[] = ['flashcards', 'summarise', 'plan'];
 
 export async function GET(req: NextRequest) {
+  if (!isAdminConfigured()) return NextResponse.json({ groups: [] });
   return runGet(req, async (user) => ({ groups: await listStudyGroups(user.uid) }));
 }
 
 export async function POST(req: NextRequest) {
   return runPost(req, async (user, body) => {
     const action = typeof body.action === 'string' ? body.action : '';
+    if (!isAdminConfigured()) {
+      if (action === 'groups') return { groups: [] };
+      if (ACTIONS.includes(action as NoteAction)) throw new ActionError('INVALID', 'ET AI is coming soon.');
+      throw new ActionError('INVALID', 'Study group sharing is coming soon.');
+    }
+    if (ACTIONS.includes(action as NoteAction) && !process.env.OPENROUTER_API_KEY) {
+      throw new ActionError('INVALID', 'ET AI is coming soon.');
+    }
     if (action === 'groups') return { groups: await listStudyGroups(user.uid) };
     if (action === 'share') {
       const noteId = typeof body.noteId === 'string' ? body.noteId : '';
