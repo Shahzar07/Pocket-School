@@ -9,6 +9,7 @@ import { adminDb } from '../firebase-admin';
 import {
   canConnect,
   canEditYearbook,
+  wallAcceptsNotes,
   canSubmitPage,
   defaultAudiences,
   lockDateFrom,
@@ -261,10 +262,14 @@ export async function signYearbook(input: {
   sticker: unknown;
 }): Promise<{ id: string; visible: boolean; queued: boolean } | { error: string }> {
   const bookRef = bookPath(input.institutionId, input.bookId);
-  if (!(await bookRef.get()).exists) return { error: 'Choose a yearbook.' };
+  const book = await bookRef.get();
+  if (!book.exists) return { error: 'Choose a yearbook.' };
   const mine = await bookRef.collection('pages').doc(input.uid).get();
   if (!mine.exists) return { error: 'This yearbook is for your class.' };
   const toId = input.toId === 'wall' ? 'wall' : safeId(input.toId);
+  if (toId === 'wall' && !wallAcceptsNotes(new Date().toISOString().slice(0, 10), text(book.get('lockOn')), text(book.get('wallOpenUntil')))) {
+    return { error: 'The signing wall is closed. It opens again for a reunion.' };
+  }
   if (!toId) return { error: 'Choose a page.' };
   if (toId !== 'wall' && !(await bookRef.collection('pages').doc(toId).get()).exists) return { error: 'Choose a classmate page.' };
   if (toId !== 'wall' && toId !== input.uid && await blocked(input.uid, toId)) return { error: 'That page is not open to you.' };

@@ -3,7 +3,9 @@ import { adminDb } from '../firebase-admin';
 import { hasAccountRole } from '../account-modes';
 import { VOLUME_PLANS, type VolumePlanId } from '../institution-pricing';
 import { parentLinkId, pendingLink } from '../parent-controls';
+import { asAgeTier } from '../age-tier';
 import { certificateStudentName, certificateStudentNumber, certificateStatus } from '../certificates';
+import { portfolioOnCertificate } from '../institution-extras';
 import { ActionError } from './actions';
 import {
   isStudentNumber,
@@ -282,6 +284,7 @@ export interface PublicCertificate {
   moduleTitle: string;
   issuedAt: string;
   status: 'valid' | 'revoked';
+  portfolioUrl: string;
 }
 
 function issuedIso(value: unknown): string {
@@ -311,6 +314,19 @@ export async function publicCertificate(id: string): Promise<PublicCertificate |
       studentNumber = '';
     }
   }
+  let portfolioUrl = '';
+  if (studentId && certificateStatus(data.status) !== 'revoked') {
+    const [learner, consent] = await Promise.all([
+      db().doc(`users/${studentId}`).get(),
+      db().doc(`users/${studentId}/portfolio/profile`).get(),
+    ]);
+    portfolioUrl = portfolioOnCertificate({
+      publicPortfolio: consent.get('publicPortfolio') === true,
+      ageTier: asAgeTier(learner.get('ageTier')),
+      parentApproved: consent.get('parentApproved') === true,
+      studentNumber: studentNumber || text(learner.get('studentNumber')),
+    });
+  }
   return {
     studentNumber,
     studentName: certificateStudentName(data.studentName),
@@ -318,5 +334,6 @@ export async function publicCertificate(id: string): Promise<PublicCertificate |
     moduleTitle: text(data.moduleTitle),
     issuedAt: issuedIso(data.issuedAt),
     status: certificateStatus(data.status),
+    portfolioUrl,
   };
 }

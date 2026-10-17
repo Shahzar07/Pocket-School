@@ -1559,6 +1559,100 @@ A later request for that same school name follows the registered academy. A pare
 
 Parent confirmation notifies the parent in app with `skipPush`. A `pending` claim notifies the academy `adminId` with push preference `institution`. A verified learner is notified with the same preference. A minor still cannot open direct messages, and a minor’s posts on the official wall stay in `institutions/{id}/alumni_queue`.
 
+## Career extras
+
+Rules and indexes for this section are in the repo only. Harry approves the deploy. The Admin SDK writes every collection below. A missing Firebase admin account returns `ADMIN_NOT_CONFIGURED`. A missing SMTP host returns the receipt or parent summary as text. Giving and reunion tickets use the sandbox payments layer and never charge a card. ET AI ranks opportunities that already exist. It does not call a model and it does not invent a row.
+
+Level names are stored as text, for example Oak. Push for reunions and the reopened signing wall uses the `alumni` category.
+
+### Skills passport
+
+`skill_maps/{institutionId}_{skillId}` or `skill_maps/platform_{skillId}`:
+
+| Field | Type | Notes |
+|---|---|---|
+| `name` | string | Named skill. |
+| `institutionId` | string | Empty for a platform map. |
+| `lessonIds` | string[] | Lesson ids that prove the skill. |
+| `blooms` | string[] | `remember`, `understand`, `apply`, `analyze`, `evaluate`, `create`. A unit test must carry one of these and the lesson id. |
+| `badgeIds` | string[] | Badge document ids. |
+
+`users/{uid}/proven_skills/{skillId}`: `name`, `visible`, `locked: true`, `evidence[]` (`kind` `lesson` | `unit_test` | `badge`, `id`, `lessonId`, `bloom`, `label`, `url`). Refresh copies the map name and the evidence from lessons, passed `unit_quiz_attempts`, and `badges`. The learner can change `visible` only. Hidden skills stay off the CV and the public portfolio.
+
+### Teacher references
+
+`users/{studentId}/endorsements/{id}`: `institutionId`, `studentId`, `teacherId`, `teacherName`, `body` (max 400), `visible`, `revoked`, `locked: true`. A teacher at that academy writes it. The student cannot change `body`. The student can set `visible`. The academy sets `revoked: true`, which hides it. The ET AI safety filter blocks a threat. A minor cannot write a reference.
+
+### Matcher and tracker
+
+`opportunities/{id}`: `kind` `scholarship` | `university` | `internship`, `title`, `organisation`, `summary`, `url`, `deadline` (`YYYY-MM-DD`), `interests[]`, `levels[]` (level names), `minScore` or null, `institutionId` (empty means every academy). A super admin or the institution enters the row.
+
+`suggestOpportunities` returns a subset of that list. It needs a stated interest on `users/{uid}/career/profile.interests`, the learner's level when the row names levels, and a verified grade or passed unit test when `minScore` is set. No interests means no matches.
+
+Saving a match writes `users/{uid}/applications/{id}` with `company`, `role`, `link`, `status: applied`, `date`, `deadline`, `reminderOn` (the deadline), and optional `cvVersionId`.
+
+### School board
+
+`institutions/{id}/openings/{openingId}`: `title`, `employer`, `kind` `job` | `internship`, `summary`, `url`, `deadline`, `level`, `posterRole` `alumni` | `partner`, `posterId`, `status` `pending` | `published` | `rejected`. Students and alumni of that academy see `published` only. Applying stores the same application shape plus `openingId`.
+
+### Alumni giving
+
+`institutions/{id}.givingEnabled` is false until the academy turns it on.
+
+`institutions/{id}/campaigns/{id}`: `title`, `kind` `fundraising` | `sponsor_seat`, `goal`, `raised`, `currency`. `gifts/{id}`: `uid`, `amount`, `sandbox: true`, `receipt`, `at`. The receipt says no card was charged.
+
+### Reunions
+
+`institutions/{id}/reunions/{id}`: `title`, `when`, `place`, `ticketed`, `price`, `currency`, `wallOpenUntil`, `bookId`, `rsvpCount`. `rsvps/{uid}` is `{ going, at }`. `tickets/{uid}` is a sandbox receipt. `album/{id}` opens on or after `when`, with `caption`, `url`, `visible`, `queued`. A minor's caption is held. A public RSVP count under 5 is omitted. Reopening the wall sets `wallOpenUntil` on `institutions/{id}/yearbooks/{bookId}`. Wall notes after the lock date need that date. Pushes use `alumni`.
+
+### Career talks
+
+`institutions/{id}/talks/{id}`: `title`, `alumniId`, `alumniName`, `format` `live` | `recorded`, `provider` `zoom` | `meet` | `teams` or empty, `link`, `when`, `level`, `status` `proposed` | `approved` | `declined`. A live link must be on Zoom, Meet, or Teams. Students see `approved` talks. The speaker is an adult. This is not a direct message.
+
+### Parent bridge
+
+On graduation, linked parents receive the existing graduation letter plus one summary line. `users/{uid}/parent_bridge/access`: `consent`, `keepsPdf`, `needsConsent`, `institutionId`, `summarySentAt`. A learner under 18 leaves `keepsPdf: true`. An adult leaves `needsConsent: true` until they set `consent: true`. `GET /api/institutions/extras?view=achievement&studentId=` returns the achievement PDF for the learner, or for a linked parent when `keepsPdf` is true.
+
+### Certificate portfolio link
+
+`GET /api/verify/{id}` adds `portfolioUrl`. It is `https://poketschool.ai/portfolio/{studentNumber}` only when the public portfolio is already on. A learner under 18 still needs parent approval. Otherwise `portfolioUrl` is empty. The verify page shows the link only in that case.
+
+### Routes
+
+`GET /api/institutions/extras` is the learner desk: skills, references, matches, openings, campaigns, reunions, talks, and the parent bridge. `?view=institution&institutionId=` is the academy desk. Missing admin config returns 503.
+
+`POST /api/institutions/extras` `action`:
+
+| Action | Who | Effect |
+|---|---|---|
+| `interests` | learner | Saves stated interests. |
+| `refresh-skills` | learner | Rebuilds proven skills from the record. |
+| `hide-skill` | learner | Sets `visible` only. |
+| `hide-endorsement` | learner | Sets `visible` only. |
+| `endorse` | teacher | Writes a locked reference. |
+| `revoke-endorsement` | institution | Revokes a reference. |
+| `save-skill` | institution, or a super admin when `platform` is true | Saves a skill map. |
+| `save-opportunity` | institution or super admin | Enters an opportunity. |
+| `save-match` | learner | Copies a matched row into the tracker. |
+| `post-opening` | alumnus or academy | Creates a pending opening. |
+| `review-opening` | institution | Publishes or rejects it. |
+| `apply-opening` | student or alumnus of that academy | Applies with a CV version. |
+| `set-giving` | institution | Turns giving on or off. |
+| `save-campaign` | institution | Refuses while giving is off. |
+| `give` | member of that academy | Sandbox gift and receipt. |
+| `save-reunion` | institution | Creates a reunion and pings `alumni`. |
+| `rsvp` | student or alumnus | RSVP. |
+| `ticket` | student or alumnus | Sandbox ticket. |
+| `album` | student or alumnus | Photo after the date. |
+| `reopen-wall` | institution | Reopens the signing wall and pings `alumni`. |
+| `propose-talk` | adult alumnus | Proposes a talk. |
+| `review-talk` | institution | Approves or declines it. |
+| `parent-consent` | learner | Adult graduate shares the achievement PDF. |
+
+Screens: `/dashboard/student/career`, `/dashboard/institution/career`, `/dashboard/teacher/references`.
+
+Those three screens use the app home in `components/career/app-surface.tsx`: brand-gradient header, rounded category tiles with badge counts, a collapsible icon rail on desktop, a 64px bottom tab bar on mobile, and the top three tasks one tap from home. Icons are lucide-react at 24px. Rings and charts use `--chart-1`. Solid buttons use `bg-primary` and `text-primary-foreground`. Tile radius is 18 and greeting cards are 24. Touch targets are at least 48px. Light and dark follow the kit tokens `--ps-wash`, `--ps-blue-deep`, `--ps-hero`, `--ps-mint`, `--ps-amber-soft`, and `--ps-coral-soft`. When `components/dashboard` lands, swap `CareerHome`, `CategoryIcon`, `ProgressRing`, and `StatCard` for the kit exports of the same names.
+
 
 
 

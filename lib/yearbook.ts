@@ -111,6 +111,13 @@ export function canEditYearbook(today: string, lockOn: string): boolean {
   return DATE.test(today) && DATE.test(lockOn) && today <= lockOn;
 }
 
+/** The signing wall closes with the yearbook and opens again through a reunion date. */
+export function wallAcceptsNotes(today: string, lockOn: string, wallOpenUntil: string): boolean {
+  if (DATE.test(today) && DATE.test(wallOpenUntil) && today <= wallOpenUntil) return true;
+  if (!DATE.test(lockOn)) return true;
+  return canEditYearbook(today, lockOn);
+}
+
 export function canSubmitPage(input: { today: string; lockOn: string; ageTier: AgeTier; parentApproved: boolean }): { ok: boolean; reason: string } {
   if (!canEditYearbook(input.today, input.lockOn)) return { ok: false, reason: 'This yearbook is locked.' };
   if (isMinorTier(asAgeTier(input.ageTier)) && !input.parentApproved) {

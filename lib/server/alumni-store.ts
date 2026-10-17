@@ -31,6 +31,8 @@ import { adminDb } from '../firebase-admin';
 import { blankSubscription, periodStartFor, readSubscription } from '../institution-membership';
 import { loadAutomation, logAutomation } from './automation-store';
 import { countInstitutionStudents, loadInstitutionCatalogue } from './institution-catalogue';
+import { asAgeTier } from '../age-tier';
+import { appendParentBridge, parentBridgePlan } from '../institution-extras';
 import { sendInstitutionMail } from './institution-mail';
 import { reviewInstitutionTier } from './institution-tier';
 import { rememberAttendance } from './alumni-network-store';
@@ -301,7 +303,20 @@ export async function beginAlumni(input: {
   }
   if (input.studentId) {
     const parents = await adminDb().collection('users').where('childIds', 'array-contains', input.studentId).limit(20).get();
-    const parentLetter = graduationLetter({
+    const studentUser = await adminDb().doc(`users/${input.studentId}`).get();
+    const bridge = parentBridgePlan({
+      ageTier: asAgeTier(studentUser.get('ageTier')),
+      consent: false,
+      studentName: person.name,
+    });
+    await adminDb().doc(`users/${input.studentId}/parent_bridge/access`).set({
+      consent: false,
+      keepsPdf: bridge.keepsPdf,
+      needsConsent: bridge.needsConsent,
+      institutionId,
+      summarySentAt: new Date().toISOString(),
+    }, { merge: true });
+    const parentLetter = appendParentBridge(graduationLetter({
       audience: 'parent',
       institutionName: person.institutionName,
       studentName: person.name,
@@ -309,7 +324,7 @@ export async function beginAlumni(input: {
       reviewOpen,
       graceEndsOn: person.graceEndsOn,
       upgradeUrl,
-    });
+    }), bridge);
     for (const parent of parents.docs) {
       const email = text(parent.get('email')).toLowerCase();
       if (!email || email === input.email.toLowerCase()) continue;
