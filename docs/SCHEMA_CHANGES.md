@@ -752,3 +752,129 @@ A fail keeps the unit test locked until each id in `recommendedLessonIds` has `e
 New composite indexes, not deployed: `unit_quiz_attempts` on `courseId + unitId + completedAt`, and `courseId + completedAt`. Current class and parent reads stay single-field on `courseId` or `studentId`.
 
 Import shape for the curriculum upload: `docs/unit-test-schema.md`.
+
+## Unit test marking, unlocks, and certificates
+
+For the Poket School mobile app. Mirror these fields and routes. Rules are unchanged and are not deployed. Do not deploy the indexes in `firestore.indexes.json`.
+
+### Unit test paper
+
+A unit test is a lesson (`courses/{courseId}/modules/{unitId}/lessons/{lessonId}`) with `lessonType: "unit_test"` and `isUnitQuiz: true`.
+
+| Field | Type | Notes |
+|---|---|---|
+| `finalAssessment` | boolean | Course final. Optional. An assessment with `assessmentConfig.certificateOnPass: true` or `assessmentConfig.kind: "mock_exam"` is also a final. |
+| `unitTest.versionA` / `unitTest.versionB` | array | Attempt 1 is A, attempt 2 is B, then they alternate. Further versions would be added as `versionC` and so on; the marker currently serves A and B. |
+| `unitTest.questions[].prompt` | string | |
+| `unitTest.questions[].options` | array | `{ id: "opt:0", text }` |
+| `unitTest.questions[].answerId` | string | Option id. Grade this, not the label. |
+| `unitTest.questions[].marks` | number | Missing or 0 counts as 1. |
+| `unitTest.questions[].bloom` | string | Remember, Understand, Apply, Analyse, Evaluate, Create. |
+| `unitTest.questions[].lessonId` | string | Lesson to review when the question is missed. |
+
+`courses.unitTestPassMark` is the course pass mark. Missing means 70. `modules.unitTestPassMark` overrides it for that unit's test only. The certificate uses the course pass mark, not the unit override.
+
+### Attempts
+
+Collection `unit_quiz_attempts`. Written by the server. A client score is ignored.
+
+| Field | Type | Notes |
+|---|---|---|
+| `studentId`, `courseId`, `unitId`, `lessonId` | string | |
+| `kind` | string | `unit_test` |
+| `version` | string | `A` or `B` |
+| `attemptNumber` | number | |
+| `score`, `total` | number | Marks awarded and marks available. |
+| `marksAwarded`, `marksMax` | number | Same marks. |
+| `percentage` | number | Rounded marks awarded / marks available. |
+| `passed` | boolean | `percentage` against that unit's pass mark. |
+| `timeTakenSeconds` | number | |
+| `responses[]` | array | `question`, `selected` (option id), `correct`, `marks`, `marksAwarded`, `bloom`, `lessonId` |
+| `recommendedLessonIds` | string[] | Distinct lesson ids from missed questions. |
+| `completedAt` | timestamp | |
+
+Read attempts with `studentId` + `lessonId` (existing index). Do not query the new `courseId` composites until they are deployed.
+
+### Unit progress and unlocks
+
+On a pass, the server updates `courses/{courseId}/enrollments/{studentId}`:
+
+| Field | Type | Notes |
+|---|---|---|
+| `completedLessons` | string[] | The unit test lesson id is added. |
+| `lessonCompletedAt.{lessonId}` | number | Millis. A later review writes a newer millis and can unlock a retake. |
+| `unitProgress.{unitId}` | object | `{ passed: true, score, lessonId, passedAt }`. `score` is the percentage. |
+| `unlockedUnitIds` | string[] | The next module id, when there is one. |
+
+A fail does not unlock the next unit. The unit test stays locked until each id in `recommendedLessonIds` has `lessonCompletedAt` greater than that attempt's `completedAt`. The next attempt then uses the other version.
+
+Passing a unit does not award a certificate.
+
+### Certificates
+
+Collection `certificates`. Clients cannot create them. One course certificate per student, keyed in `certificate_keys` as `{studentId}__{courseId}__course`.
+
+Issued only when both are true:
+
+1. A final assessment attempt has `percentage` greater than or equal to the course pass mark (default 70).
+2. Every unit that has a unit test has an attempt with `passed: true`.
+
+Finishing lessons does not issue one. Passing a unit that is not the final does not issue one, unless the final was already passed and this pass is the last unit still outstanding.
+
+| Field | Type | Notes |
+|---|---|---|
+| `studentId`, `studentName` | string | Name comes from the user profile. |
+| `courseId`, `courseTitle` | string | |
+| `level` | string | Level name only. Primary, Lower Secondary, IGCSE, A-Level, and the other named levels. Never a year number. |
+| `score` | number | Best final-assessment percentage. |
+| `passMark` | number | Course pass mark used for that decision. |
+| `issuedAt` | timestamp | |
+| `kind` | string | `course` |
+| `status` | string | `valid` or `revoked` |
+| `id` | string | Document id. This is the certificate ID. Public check: `GET /verify/{id}`. PDF: `GET /api/certificates/{id}/pdf`. |
+
+Older rows with `kind: "module"` were issued for a finished module. New issuance does not create those.
+
+If SMTP is configured (`SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`), the server emails the PDF link. If it is not configured, issuance still succeeds and the email is skipped.
+
+### `POST /api/unit-tests/mark`
+
+Signed-in student. The server loads the paper and grades it.
+
+Request:
+
+```json
+{
+  "courseId": "course-id",
+  "unitId": "module-id",
+  "lessonId": "lesson-id",
+  "answers": [{ "questionId": "q1", "selected": "opt:1" }],
+  "timeTakenSeconds": 120
+}
+```
+
+`score`, `passed`, and `percentage` on the request are ignored. `selected` is the option id.
+
+Response:
+
+```json
+{
+  "attemptId": "attempt-id",
+  "score": 80,
+  "passed": true,
+  "lessonIds": ["lesson-to-review"],
+  "percentage": 80,
+  "marksAwarded": 8,
+  "marksMax": 10,
+  "version": "A",
+  "attemptNumber": 1,
+  "unlockedUnitId": "next-module-id",
+  "certificate": null
+}
+```
+
+`score` and `percentage` are the same rounded percentage. `lessonIds` are the lessons behind missed questions. `unlockedUnitId` is null when there is no next module or the attempt failed. `certificate` is an object `{ id, fresh, studentName, courseTitle, issuedAt }` when this pass awards one, otherwise null.
+
+A locked retake returns HTTP 400 with `code: "LOCKED"` and the message `Review these lessons before the unit test unlocks.`
+
+`POST /api/platform/unit-quiz` marks a unit test through the same function. Mastery quizzes that are not unit tests still use that route and do not award a certificate.

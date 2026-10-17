@@ -27,6 +27,7 @@ import { recordStudyDay, streakFromDates, toggleBookmark } from '@/lib/learning'
 import { rememberOfflineLesson } from '@/components/offline-banner';
 import { FORMAT_COSTS, FORMAT_LABELS, LESSON_COMPLETE_REWARD, UNIT_PASS_REWARD } from '@/lib/sparks';
 import type { CertificateAward } from '@/lib/certificates';
+import { authedFetch } from '@/lib/api-client';
 import { CertificateCelebration } from '@/components/certificate-celebration';
 import { SmartAudioPlayer } from '@/components/smart-audio-player';
 import { VideoPlayer } from '@/components/video-player';
@@ -49,7 +50,7 @@ import { useContentTranslation } from '@/hooks/use-content-translation';
 import { useQuizCopy } from '@/hooks/use-quiz-copy';
 import { VisualBlockView } from '@/components/visual-blocks';
 import {
-  applyReviewLock, gradeUnitTest, questionsForVersion, resolvePassMark, reviewGate, toAttemptSnapshot,
+  applyReviewLock, questionsForVersion, resolvePassMark, reviewGate, toAttemptSnapshot,
 } from '@/lib/unit-test';
 import { answersMatch, correctOptionId, optionId, optionIndex } from '@/lib/quiz';
 import { getLanguage } from '@/lib/languages';
@@ -325,51 +326,91 @@ function UnitQuizMode({
     setSubmitting(true);
     const timeTakenSeconds = Math.floor((Date.now() - startedAtRef.current) / 1000);
 
-    const graded = unitMode
-      ? gradeUnitTest(paper, Object.fromEntries(paper.map((q, i) => [q.id, answers[i] ?? ''])), threshold)
-      : null;
-    const responses = graded?.responses ?? questions.map((q, i) => ({
-      questionIndex: i,
-      question: q.question,
-      ...(q.objectiveCode ? { objectiveCode: q.objectiveCode } : {}),
-      ...(q.sourceLessonId ? { sourceLessonId: q.sourceLessonId } : {}),
-      selected: answers[i] ?? '',
-      correct: answersMatch(answers[i], q.answer, q.options),
-    }));
-    const score = graded?.score ?? responses.filter(r => r.correct).length;
-    const total = graded?.total ?? questions.length;
-    const percentage = graded?.percentage ?? (total > 0 ? Math.round((score / total) * 100) : 0);
-    const passed = graded?.passed ?? percentage >= threshold;
-
-    try {
-      const saved = await saveUnitQuizAttempt({
+    const saveMarkedUnitTest = async (): Promise<UnitQuizAttempt> => {
+      const marked = await authedFetch('/api/unit-tests/mark', {
+        method: 'POST',
+        body: JSON.stringify({
+          courseId,
+          unitId: unit.id,
+          lessonId: lesson.id,
+          answers: paper.map((question, index) => ({ questionId: question.id, selected: answers[index] ?? '' })),
+          timeTakenSeconds,
+        }),
+      });
+      const lessonIds = Array.isArray(marked.lessonIds) ? marked.lessonIds.filter((id): id is string => typeof id === 'string') : [];
+      const responses = Array.isArray(marked.responses) ? marked.responses as UnitQuizAttempt['responses'] : [];
+      const certificate = marked.certificate && typeof marked.certificate === 'object'
+        ? marked.certificate as CertificateAward
+        : null;
+      return {
+        id: typeof marked.attemptId === 'string' ? marked.attemptId : '',
         studentId: user.uid,
         studentName: profile?.name ?? '',
         courseId,
         unitId: unit.id,
         lessonId: lesson.id,
-        ...(unitMode ? { kind: 'unit_test' as const, version: gate.nextVersion, marksAwarded: graded?.marksAwarded, marksMax: graded?.marksMax } : {}),
+        kind: 'unit_test',
+        version: marked.version === 'B' ? 'B' : 'A',
+        attemptNumber: Number(marked.attemptNumber) || 1,
+        score: Number(marked.marksAwarded) || 0,
+        total: Number(marked.marksMax) || 0,
+        marksAwarded: Number(marked.marksAwarded) || 0,
+        marksMax: Number(marked.marksMax) || 0,
+        percentage: Number(marked.score) || 0,
+        passed: marked.passed === true,
+        counted: marked.counted !== false,
+        timeTakenSeconds,
+        responses,
+        recommendedLessonIds: lessonIds,
+        ...(typeof marked.weakestObjective === 'string' ? { weakestObjective: marked.weakestObjective } : {}),
+        ...(certificate ? { certificate } : {}),
+      };
+    };
+
+    const saveLegacyQuiz = async (): Promise<UnitQuizAttempt> => {
+      const responses = questions.map((q, i) => ({
+        questionIndex: i,
+        question: q.question,
+        ...(q.objectiveCode ? { objectiveCode: q.objectiveCode } : {}),
+        ...(q.sourceLessonId ? { sourceLessonId: q.sourceLessonId } : {}),
+        selected: answers[i] ?? '',
+        correct: answersMatch(answers[i], q.answer, q.options),
+      }));
+      const score = responses.filter(r => r.correct).length;
+      const total = questions.length;
+      const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
+      return saveUnitQuizAttempt({
+        studentId: user.uid,
+        studentName: profile?.name ?? '',
+        courseId,
+        unitId: unit.id,
+        lessonId: lesson.id,
         score,
         total,
         percentage,
-        passed,
+        passed: percentage >= threshold,
         timeTakenSeconds,
         responses,
-        ...(graded?.weakestObjective ? { weakestObjective: graded.weakestObjective } : {}),
         startedAt: Timestamp.fromMillis(startedAtRef.current),
       });
+    };
+
+    try {
+      const saved = unitMode
+        ? await saveMarkedUnitTest()
+        : await saveLegacyQuiz();
       setResult(saved);
       setPhase('result');
       onAttemptSaved(saved);
       if (saved.certificate?.fresh) {
         await fetchProfile(user.uid);
         onCertificate(saved.certificate);
-      } else if (passed && saved.counted !== false) {
+      } else if (saved.passed && saved.counted !== false) {
         await fetchProfile(user.uid);
         toast.success(`Module passed! +${UNIT_PASS_REWARD}⚡ earned 🏆`, { duration: 5000 });
       }
-    } catch {
-      toast.error('Could not save your attempt. Please try again.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not save your attempt. Please try again.');
     }
     setSubmitting(false);
   };

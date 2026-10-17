@@ -10,6 +10,7 @@ import { getCertificatesForStudent, type Certificate } from '@/lib/db';
 import { authedFetch } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { CertificateDocument } from '@/components/certificate-document';
+import { CourseCertificateCard } from '@/components/course-certificate';
 import { DocumentDelivery } from '@/components/document-delivery';
 import { textDocument } from '@/lib/documents/packet';
 import { CertificateCelebration } from '@/components/certificate-celebration';
@@ -24,7 +25,7 @@ const fadeUp: Record<string, any> = {
   }),
 };
 
-function toFace(cert: Certificate): CertificateFace {
+function toFace(cert: Certificate): CertificateFace & { level?: string; score?: number } {
   const issued = cert.issuedAt instanceof Timestamp ? cert.issuedAt.toDate() : cert.issuedAt;
   return {
     id: cert.id ?? '',
@@ -40,6 +41,8 @@ function toFace(cert: Certificate): CertificateFace {
     showPoweredBy: cert.showPoweredBy,
     logoUrl: cert.logoUrl,
     certificateFooter: cert.certificateFooter,
+    level: cert.level,
+    score: cert.score,
   };
 }
 
@@ -76,7 +79,7 @@ export default function StudentCertificatesPage() {
   if (loading) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="w-4 h-4 animate-spin" /> Checking finished modules
+        <Loader2 className="w-4 h-4 animate-spin" /> Checking course certificates
       </div>
       <div className="grid gap-5">
         {[1, 2].map((i) => <div key={i} className="h-64 bg-muted animate-pulse rounded-3xl" />)}
@@ -93,7 +96,7 @@ export default function StudentCertificatesPage() {
           My <span className="gradient-text italic">Certificates</span>
         </h1>
         <p className="text-sm text-muted-foreground mt-2 max-w-xl">
-          Poket School awards one certificate for each completed course module. A super admin can edit the certificate template. Issuing stays automatic when the module is complete.
+          Poket School awards a certificate when you pass the course final assessment and every unit. Finishing lessons, or passing one unit, does not award it.
         </p>
         {user && certs.length > 0 && (
           <div className="mt-4">
@@ -123,7 +126,7 @@ export default function StudentCertificatesPage() {
           <Award className="w-14 h-14 text-muted-foreground/30 mb-4" />
           <h2 className="font-heading text-2xl text-foreground">No certificates yet</h2>
           <p className="text-sm text-muted-foreground mt-2 max-w-sm">
-            Finish every published lesson in a module. Draft lessons do not count, and they do not hold the certificate back.
+            Pass the course final assessment, and pass every unit. A unit on its own does not award a certificate.
           </p>
           <Link href="/dashboard/student/courses">
             <Button className="mt-6 rounded-full h-11 px-5 font-bold bg-primary text-primary-foreground border-0 hover:opacity-90 transition-opacity">
@@ -135,7 +138,9 @@ export default function StudentCertificatesPage() {
         <div className="grid gap-6">
           {certs.map((cert, i) => (
             <motion.div key={cert.id} variants={fadeUp} initial="hidden" animate="visible" custom={i + 1}>
-              <CertificateDocument certificate={toFace(cert)} />
+              {cert.kind === 'course' || typeof cert.score === 'number'
+                ? <CourseCertificateCard certificate={toFace(cert)} />
+                : <CertificateDocument certificate={toFace(cert)} />}
             </motion.div>
           ))}
         </div>

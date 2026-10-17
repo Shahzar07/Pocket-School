@@ -261,6 +261,8 @@ export interface Lesson {
   createdAt?: Timestamp;
   // ── Content Builder fields (all optional; older docs unaffected) ──
   lessonType?: 'lesson' | 'video' | 'assignment' | 'assessment' | 'live' | 'resource' | 'unit_test';
+  /** Course final assessment. A pass here can award a certificate only when every unit is also passed. */
+  finalAssessment?: boolean;
   bloomsLevel?: string;
   durationMinutes?: number;
   marks?: number;
@@ -384,6 +386,10 @@ export interface Enrollment {
   bookmarkedLessons?: string[];
   /** lessonId -> millis when the learner last completed that lesson, including a review. */
   lessonCompletedAt?: Record<string, number>;
+  /** unitId -> pass recorded by the server after a unit test. */
+  unitProgress?: Record<string, { passed: boolean; score: number; lessonId: string; passedAt: number }>;
+  /** Next module ids unlocked by a passed unit test. */
+  unlockedUnitIds?: string[];
 }
 
 export interface Badge {
@@ -3436,7 +3442,11 @@ export interface Certificate {
   issuedAt: Timestamp;
   issuedBy: string;
   issuedByName: string;
-  kind?: 'module';
+  kind?: 'module' | 'course';
+  /** Named level. Never a year number. */
+  level?: string;
+  /** Final assessment percentage. */
+  score?: number;
   status?: 'valid' | 'revoked';
   revokedAt?: Timestamp;
   accent?: string;

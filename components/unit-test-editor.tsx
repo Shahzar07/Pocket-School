@@ -29,14 +29,16 @@ function blankQuestion(index: number): UnitTestQuestion {
 }
 
 export function UnitTestEditor({
-  value, lessons, coursePassMark, unitPassMark, onChange, onUnitPassMark,
+  value, lessons, coursePassMark, unitPassMark, finalAssessment, onChange, onUnitPassMark, onFinalAssessment,
 }: {
   value: UnitTestContent | undefined;
   lessons: Lesson[];
   coursePassMark: number;
   unitPassMark?: number;
+  finalAssessment?: boolean;
   onChange: (value: UnitTestContent) => void;
   onUnitPassMark: (value: number | null) => void;
+  onFinalAssessment: (value: boolean) => void;
 }) {
   const content = value ?? emptyUnitTest();
   const [raw, setRaw] = useState('');
@@ -73,6 +75,10 @@ export function UnitTestEditor({
       <p className="text-xs text-muted-foreground">
         Questions carry marks, a Bloom level, and the lesson they revise. Version A is the first paper. A fail locks this test until those lessons are completed again, then the learner sits Version B.
       </p>
+      <label className="flex items-center gap-2 text-xs cursor-pointer">
+        <input type="checkbox" checked={finalAssessment === true} onChange={(e) => onFinalAssessment(e.target.checked)} className="accent-teal-500" />
+        Course final assessment. A certificate is issued only when this is passed and every unit is passed.
+      </label>
       <div className="flex flex-wrap items-end gap-3">
         <label className="text-xs text-muted-foreground">
           Unit pass mark %

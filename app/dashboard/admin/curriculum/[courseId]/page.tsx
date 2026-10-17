@@ -1966,8 +1966,10 @@ function BuilderBlock({
           lessons={siblingLessons}
           coursePassMark={coursePassMark}
           unitPassMark={unitPassMark}
+          finalAssessment={draft.finalAssessment}
           onChange={unitTest => patch({ unitTest, lessonType: 'unit_test', isUnitQuiz: true })}
           onUnitPassMark={onUnitPassMark}
+          onFinalAssessment={finalAssessment => patch({ finalAssessment })}
         />
       );
     case 'mindmapImage':

@@ -724,7 +724,7 @@ export function AssessmentBlock({ value, onChange, ai, generating, onDraftSectio
         <Input type="number" value={value.attempts ?? ''} onChange={e => onChange({ ...value, attempts: e.target.value ? Number(e.target.value) : undefined })} placeholder="Attempts" className="h-9 rounded-xl text-sm" />
         <label className="flex items-center gap-2 text-xs cursor-pointer">
           <input type="checkbox" checked={value.certificateOnPass ?? false} onChange={e => onChange({ ...value, certificateOnPass: e.target.checked })} className="accent-teal-500" />
-          Certificate on pass
+          Course final assessment
         </label>
       </div>
 
