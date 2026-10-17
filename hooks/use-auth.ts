@@ -61,6 +61,10 @@ interface UserProfile {
   ageTier?: 'under13' | 'teen' | 'adult';
   /** YYYY-MM-DD. Server-set. */
   dateOfBirth?: string;
+  currentCountry?: string;
+  homeCountry?: string;
+  /** Server-written verification tier. Clients cannot change it. */
+  verification?: { tier: number; method: string; verifiedAt: number; verifiedBy: string };
 }
 
 interface AuthState {

@@ -139,6 +139,7 @@ service cloud.firestore {
               'institutionId', 'adminSparksGrantedAt', 'accountStatus',
               'adminRole', 'statusReason', 'deletedAt', 'cohortIds',
               'ageTier', 'dateOfBirth', 'emailVerified', 'phoneVerified',
+              'verification', 'partnerKind',
               'sparksBalance', 'sparksMonthlyAllowance', 'sparksGrantedAt',
               'sparksWelcomeGrantedAt', 'xp', 'stripeCustomerId', 'stripeAccountId'];
     }
@@ -153,7 +154,12 @@ service cloud.firestore {
               'notificationPrefs', 'privacy', 'instructor',
               'twoFactorEnabled', 'sessionsRevokedAt', 'deletionRequest',
               'email', 'updatedAt', 'onboardedAt', 'studyDates',
-              'lastActiveAt', 'region', 'parentContacts'];
+              'lastActiveAt', 'region', 'parentContacts',
+              'currentCountry', 'homeCountry'];
+    }
+
+    function verificationUntouched() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['verification', 'partnerKind']);
     }
 
     function deletionRequestOk() {
@@ -417,8 +423,9 @@ service cloud.firestore {
       allow read: if isSignedIn();
       // Signup may store dateOfBirth. ageTier and Stripe ids are server-only, including on create.
       allow create: if isUser(userId)
-        && !incoming().keys().hasAny(['ageTier', 'stripeAccountId', 'stripeCustomerId']);
-      allow update: if (isAdmin() && staffWriteAllowed())
+        && !incoming().keys().hasAny(['ageTier', 'stripeAccountId', 'stripeCustomerId', 'verification', 'partnerKind']);
+      allow update: if verificationUntouched()
+        && ((isAdmin() && staffWriteAllowed())
         || (isUser(userId) && selfProfileUpdate())
         || (isUser(userId) && walletProgressUpdate())
         || parentUnlink(userId)
@@ -440,7 +447,7 @@ service cloud.firestore {
         || (isUser(userId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['institutionId'])
             && incoming().institutionId is string
-            && exists(/databases/$(database)/documents/institutions/$(incoming().institutionId)/invites/$(request.auth.token.email)));
+            && exists(/databases/$(database)/documents/institutions/$(incoming().institutionId)/invites/$(request.auth.token.email))));
       allow delete: if isAdmin();
 
       // Payout details and the payment method. The user document itself is
@@ -1968,6 +1975,12 @@ service cloud.firestore {
       allow get: if isSignedIn() && (docId == 'feature_flags' || isAdmin());
       allow list: if isAdmin();
       allow write: if isAdmin();
+      // Emergency numbers live at platform_settings/emergency_numbers/catalog/{countryCode}.
+      // The editor is the API. Clients, including admins, cannot write the catalog.
+      match /catalog/{countryCode} {
+        allow read: if true;
+        allow write: if false;
+      }
     }
 
     // ── Public pricing (admin-managed). Deploy with the rest of these rules.
@@ -2732,6 +2745,15 @@ service cloud.firestore {
       allow read, write: if false;
     }
     match /mail_deliveries/{deliveryId} {
+      allow read, write: if false;
+    }
+    match /safety_desk/{docId} {
+      allow read, write: if false;
+    }
+    match /verification_reviews/{reviewId} {
+      allow read, write: if false;
+    }
+    match /guardian_link_codes/{code} {
       allow read, write: if false;
     }
     match /alert_reports/{reportId} {

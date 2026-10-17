@@ -38,6 +38,8 @@ export const SELF_SERVICE_FIELDS = [
   'lastActiveAt',
   'region',
   'parentContacts',
+  'currentCountry',
+  'homeCountry',
 ] as const;
 
 /** A signed-in person must not be able to set these on their own document. */
@@ -61,6 +63,8 @@ export const PRIVILEGED_PROFILE_FIELDS = [
   'sparksMonthlyAllowance',
   'sparksGrantedAt',
   'xp',
+  'verification',
+  'partnerKind',
 ] as const;
 
 export interface NotificationPrefs {

@@ -76,6 +76,7 @@ function viewFor(role: string): SettingsView {
     receipts: role === 'parent' ? [{ id: 'inv-1', description: 'Lower Secondary science pack', amountLabel: 'RM 89', status: 'paid' }] : [],
     purchases: role === 'parent' ? [{ id: 'buy-1', title: 'Lower Secondary science pack', amountLabel: 'RM 89', status: 'pending' }] : [],
     studentLimits: role === 'student' ? { screenTimeMinutes: 120, sparksDailyLimit: 50, purchaseApproval: true } : null,
+    verificationTier: role === 'admin' ? 0 : 1,
   };
 }
 

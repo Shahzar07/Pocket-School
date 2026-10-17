@@ -61,6 +61,9 @@ import {
 import { SERVER_DEVICE, hashActor } from '../ledger/device';
 import { exportCsv, exportPdf, type ExportFile } from '../ledger/export';
 import { appendChain, readChain, verifyStoredChain } from './ledger';
+import { homeCountryQueries, sameCountry } from '../emergency-numbers/catalog';
+import { localAlertPush } from '../emergency-numbers/copy';
+import { publishBlock, readVerification } from '../verification/policy';
 
 function db(): Firestore {
   return adminDb();
@@ -80,6 +83,7 @@ interface Actor {
   country: string;
   state: string;
   city: string;
+  tier: number;
 }
 
 async function loadActor(uid: string): Promise<Actor> {
@@ -96,7 +100,19 @@ async function loadActor(uid: string): Promise<Actor> {
     country: str(data.country),
     state: str(data.state),
     city: str(data.city),
+    tier: readVerification(data.verification).tier,
   };
+}
+
+function assertMayPublish(actor: Actor, type: string) {
+  const reason = publishBlock({
+    tier: actor.tier,
+    role: actor.role,
+    staffPost: actor.staffPost,
+    institutionId: actor.institutionId,
+    type,
+  });
+  if (reason) throw new ActionError('FORBIDDEN', reason);
 }
 
 async function institutionRegion(institutionId: string): Promise<Region> {
@@ -258,8 +274,11 @@ async function notifyPeople(record: EmergencyRecord, title: string, body: string
 }
 
 async function audience(record: EmergencyRecord): Promise<string[]> {
-  const members = await db().collection('users').where('institutionId', '==', record.institutionId).limit(200).get();
-  const targets = members.docs.map(doc => doc.id);
+  const targets: string[] = [];
+  if (record.institutionId) {
+    const members = await db().collection('users').where('institutionId', '==', record.institutionId).limit(200).get();
+    targets.push(...members.docs.map(doc => doc.id));
+  }
   const nearby = await db().collection('users').where('country', '==', record.region.country).limit(200).get();
   for (const doc of nearby.docs) {
     const data = doc.data();
@@ -268,6 +287,12 @@ async function audience(record: EmergencyRecord): Promise<string[]> {
       state: str(data.state),
       city: str(data.city),
     }, record.region)) targets.push(doc.id);
+  }
+  for (const value of homeCountryQueries(record.region.country)) {
+    const homes = await db().collection('users').where('homeCountry', '==', value).limit(200).get();
+    for (const doc of homes.docs) {
+      if (sameCountry(str(doc.data().homeCountry), record.region.country)) targets.push(doc.id);
+    }
   }
   return targets;
 }
@@ -279,7 +304,24 @@ async function storeRecipients(alertId: string, uids: string[], now: number) {
 }
 
 async function notifyRegion(record: EmergencyRecord) {
-  const sent = await notifyPeople(record, record.title, record.description, await audience(record));
+  const seen = new Set<string>();
+  const sent: string[] = [];
+  for (const uid of await audience(record)) {
+    if (!uid || seen.has(uid)) continue;
+    seen.add(uid);
+    const user = await db().doc(`users/${uid}`).get();
+    const copy = localAlertPush(str(user.data()?.language), record.type);
+    await sendPush({
+      recipientUid: uid,
+      category: 'emergency',
+      title: copy.title,
+      body: copy.body,
+      link: `/alerts/${record.id}`,
+      force: true,
+      sound: 'emergency',
+    }, { store: adminPushStore(), send: sendToDevice });
+    sent.push(uid);
+  }
   await storeRecipients(record.id, sent, Date.now());
 }
 
@@ -290,6 +332,7 @@ export async function createAlert(uid: string, input: Record<string, unknown>) {
   }
   const type = str(input.type) === 'missing' ? 'missing_child' : str(input.type);
   if (!isEmergencyType(type)) throw new ActionError('BAD_REQUEST', 'Choose an alert type.');
+  assertMayPublish(actor, type);
   const title = str(input.title).slice(0, 120);
   const description = str(input.description).slice(0, 2000);
   if (title.length < 3 || description.length < 3) throw new ActionError('BAD_REQUEST', 'Add a title and a description.');
@@ -387,6 +430,7 @@ export async function confirmAlert(uid: string, id: string, device: ChainDevice 
     consentOnFile,
   });
   if (problem) throw new ActionError('FORBIDDEN', problem);
+  assertMayPublish(actor, record.type);
   const now = Date.now();
   const reviewDueAt = now + record.reviewEveryMs;
   const next = { ...record, status: 'active' as const, confirmedBy: actor.id, confirmedAt: now, publishedAt: now, reviewDueAt, sharePaused: false, publicShareEnabled: true };

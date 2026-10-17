@@ -107,6 +107,16 @@ export interface UserProfile {
   sparksGrantedAt?: Timestamp;
   /** Preferred UI and lesson language. A short code from `lib/languages.ts`. */
   language?: string;
+  /** ISO-like code for where the person is now. */
+  currentCountry?: string;
+  /** ISO-like code used for alert targeting when they are away. */
+  homeCountry?: string;
+  /** Server-written. Clients cannot change it. */
+  verification?: { tier: number; method: string; verifiedAt: number; verifiedBy: string };
+  /** Set with a tier 4 partner review. */
+  partnerKind?: 'police' | 'ngo';
+  /** Shown on a confidential staff card when the school has recorded it. */
+  studentNumber?: string;
   /** YYYY-MM-DD days a lesson was opened, used for the study streak. */
   studyDates?: string[];
   /** When false, the privacy-safe leaderboard omits this student. */

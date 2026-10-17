@@ -48,6 +48,14 @@ const CSS = `
 .sf-check { display: flex; gap: 8px; align-items: center; min-height: 48px; font-weight: 600; }
 `;
 
+export function HelpNearMeLink() {
+  return (
+    <Link href="/help/near-me" className="sf-btn" style={{ minHeight: 48 }}>
+      Get help near me
+    </Link>
+  );
+}
+
 export function SafetyShieldLink({ href = '/dashboard/student/safety' }: { href?: string }) {
   return (
     <Link href={href} className="sf-shield" style={{ minHeight: 48 }}>
@@ -105,6 +113,7 @@ export function DangerCard({
       <p className="sf-kicker" style={{ color: '#D0553F' }}>Emergency</p>
       <p className="sf-call">Call {number}</p>
       <p className="sf-note">This is the emergency number for your country. Call it now if you can. Poket School is not a replacement for emergency services.</p>
+      <HelpNearMeLink />
       <button type="button" className="sf-danger" style={{ marginTop: 12 }}>
         <Phone size={24} aria-hidden="true" />
         I&apos;m in danger now
@@ -125,7 +134,7 @@ export function SafetyPreview({ view = 'tracker' }: { view?: string }) {
         <p className="sf-kicker">{home ? 'Student home' : notice ? 'Safeguarding' : 'Student safety'}</p>
         <div className="sf-row" style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <h1 className="sf-title">{danger ? 'I need help now' : notice ? 'A student needs help' : 'Report a safety concern'}</h1>
-          {home ? <SafetyShieldLink /> : null}
+          {home ? <span className="sf-row"><SafetyShieldLink /><HelpNearMeLink /></span> : null}
         </div>
         <p className="sf-sub">
           {home
@@ -138,6 +147,7 @@ export function SafetyPreview({ view = 'tracker' }: { view?: string }) {
           <section className="sf-card">
             <h2 style={{ marginTop: 0 }}>Community</h2>
             <SafetyShieldLink />
+            <HelpNearMeLink />
           </section>
         ) : null}
         {danger ? <DangerCard sent /> : null}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isAdminConfigured } from '@/lib/firebase-admin';
 import { escalateDueTickets, remindAuthorityTickets } from '@/lib/server/hotline';
 import { escalateUnackedDanger } from '@/lib/server/safety';
+import { escalateUnackedDesk } from '@/lib/server/safety-desk';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,5 +21,6 @@ export async function GET(req: NextRequest) {
   const result = await escalateDueTickets(now);
   const reminders = await remindAuthorityTickets(now);
   const danger = await escalateUnackedDanger(now);
-  return NextResponse.json({ ok: true, ...result, ...reminders, ...danger });
+  const desk = await escalateUnackedDesk(now);
+  return NextResponse.json({ ok: true, ...result, ...reminders, ...danger, ...desk });
 }

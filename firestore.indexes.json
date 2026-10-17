@@ -612,6 +612,14 @@
       ]
     },
     {
+      "collectionGroup": "hotline_tickets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "addressedTo", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
