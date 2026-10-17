@@ -1,5 +1,6 @@
 'use client';
 
+import { useId } from 'react';
 import { CountrySelect } from '@/components/country-select';
 import { statesForCountry } from '@/lib/institution-states';
 import type { JoinDirectoryRow } from '@/lib/institution-membership';
@@ -37,6 +38,7 @@ export function SelfJoinPicker({
   onInviteCode: (code: string) => void;
   onChildEmails: (value: string) => void;
 }) {
+  const pathLabelId = useId();
   const inverse = tone === 'inverse';
   const label = inverse ? 'text-white/60 text-xs font-semibold uppercase tracking-wider' : 'text-sm font-medium';
   const control = inverse
@@ -45,14 +47,15 @@ export function SelfJoinPicker({
   const states = statesForCountry(country);
   return (
     <div className="space-y-3">
-      <p className={label}>How are you joining?</p>
-      <div className="grid grid-cols-2 gap-2">
+      <p id={pathLabelId} className={label}>How are you joining?</p>
+      <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2" role="group" aria-labelledby={pathLabelId}>
         {(['independent', 'institution'] as const).map((item) => (
           <button
             key={item}
             type="button"
+            aria-pressed={path === item}
             onClick={() => onPath(item)}
-            className={`rounded-2xl border px-3 py-3 text-sm font-semibold ${
+            className={`min-h-12 rounded-2xl border px-3 py-3 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6FBBCE] ${
               path === item
                 ? 'border-[#2786A4] bg-[#2786A4]/15 text-[#6FBBCE]'
                 : inverse
@@ -74,13 +77,13 @@ export function SelfJoinPicker({
           <CountrySelect tone={tone} label="Country" value={country} onChange={onCountry} />
           <label className="block space-y-1.5">
             <span className={label}>State</span>
-            <select className={control} value={state} onChange={(event) => onState(event.target.value)} aria-label="State">
+            <select className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6FBBCE]`} value={state} onChange={(event) => onState(event.target.value)} aria-label="State">
               {states.map((item) => <option key={item} value={item} className="bg-[#0B0F1A]">{item}</option>)}
             </select>
           </label>
           <label className="block space-y-1.5">
             <span className={label}>Institution</span>
-            <select className={control} value={institutionId} onChange={(event) => onInstitution(event.target.value)} aria-label="Institution">
+            <select className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6FBBCE]`} value={institutionId} onChange={(event) => onInstitution(event.target.value)} aria-label="Institution">
               <option value="" className="bg-[#0B0F1A]">Choose a listed institution</option>
               {institutions.map((item) => <option key={item.id} value={item.id} className="bg-[#0B0F1A]">{item.name}</option>)}
             </select>
@@ -92,14 +95,14 @@ export function SelfJoinPicker({
           )}
           <label className="block space-y-1.5">
             <span className={label}>Invite code, if you have one</span>
-            <input className={control} value={inviteCode} onChange={(event) => onInviteCode(event.target.value.toUpperCase())} placeholder="AB23CD45" aria-label="Invite code" />
+            <input className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6FBBCE]`} value={inviteCode} onChange={(event) => onInviteCode(event.target.value.toUpperCase())} placeholder="AB23CD45" aria-label="Invite code" autoCapitalize="characters" autoComplete="off" />
           </label>
         </div>
       )}
       {showChildren && (
         <label className="block space-y-1.5">
           <span className={label}>Children&apos;s emails</span>
-          <input className={control} value={childEmails} onChange={(event) => onChildEmails(event.target.value)} placeholder="child@school.edu" aria-label="Children emails" />
+          <input className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6FBBCE]`} value={childEmails} onChange={(event) => onChildEmails(event.target.value)} placeholder="child@school.edu" aria-label="Children emails" autoComplete="email" inputMode="email" />
         </label>
       )}
     </div>

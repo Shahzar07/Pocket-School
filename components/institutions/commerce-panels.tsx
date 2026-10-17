@@ -2,10 +2,12 @@
 
 import { accessBadge, checkoutChoices, type CourseAccessMode } from '@/lib/institution-commerce';
 
+const chip = 'min-h-11 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
+
 export function AccessBadge({ mode }: { mode: CourseAccessMode }) {
   const badge = accessBadge(mode);
   return (
-    <span className="inline-flex flex-col rounded-2xl border border-border bg-card px-3 py-2">
+    <span className="inline-flex max-w-full flex-col rounded-2xl border border-border bg-card px-3 py-2">
       <span className="text-xs font-semibold uppercase tracking-wide text-primary">{badge.title}</span>
       <span className="text-sm text-muted-foreground">{badge.detail}</span>
     </span>
@@ -23,15 +25,16 @@ export function CheckoutChoice({
 }) {
   const choices = checkoutChoices(mode);
   return (
-    <div className="flex flex-wrap gap-2" role="group" aria-label="How to pay for this course">
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap" role="group" aria-label="How to pay for this course">
       {choices.map((choice) => (
         <button
           key={choice}
           type="button"
+          aria-pressed={value === choice}
           onClick={() => onChange(choice)}
-          className={`rounded-full border px-4 py-2 text-sm font-semibold ${value === choice ? 'border-primary bg-primary/10 text-primary' : 'border-border'}`}
+          className={`${chip} ${value === choice ? 'border-primary bg-primary/10 text-primary' : 'border-border'}`}
         >
-          {choice === 'subscription' ? 'Subscription' : 'A la carte · lifetime'}
+          {choice === 'subscription' ? 'Subscription' : 'A la carte, lifetime'}
         </button>
       ))}
     </div>
@@ -48,18 +51,14 @@ export function FeeSummary() {
     ['Marketplace', 'Card, wallet, or an institution invoice. Sparks cannot buy it'],
   ];
   return (
-    <div className="overflow-hidden rounded-2xl border border-border">
-      <table className="w-full text-sm">
-        <tbody>
-          {rows.map(([who, bill]) => (
-            <tr key={who} className="border-t border-border first:border-t-0">
-              <th className="px-4 py-3 text-left font-semibold">{who}</th>
-              <td className="px-4 py-3 text-muted-foreground">{bill}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <dl className="overflow-hidden rounded-2xl border border-border text-sm">
+      {rows.map(([who, bill]) => (
+        <div key={who} className="border-t border-border px-4 py-3 first:border-t-0 sm:grid sm:grid-cols-2 sm:gap-4">
+          <dt className="font-semibold">{who}</dt>
+          <dd className="mt-1 text-muted-foreground sm:mt-0">{bill}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -70,9 +69,10 @@ export function OnboardingList({ steps }: { steps: { id: string; label: string; 
       <p className="text-sm text-muted-foreground">{done} of {steps.length} complete.</p>
       <ol className="space-y-2">
         {steps.map((step) => (
-          <li key={step.id} className="flex items-center gap-3 rounded-xl border border-border px-3 py-2 text-sm">
-            <span className={`h-2.5 w-2.5 rounded-full ${step.done ? 'bg-emerald-500' : 'bg-muted'}`} />
-            {step.label}
+          <li key={step.id} className="flex min-h-11 items-center gap-3 rounded-xl border border-border px-3 py-2 text-sm">
+            <span aria-hidden className={`h-2.5 w-2.5 shrink-0 rounded-full ${step.done ? 'bg-emerald-500' : 'bg-muted'}`} />
+            <span>{step.label}</span>
+            <span className="sr-only">{step.done ? ', done' : ', not done'}</span>
           </li>
         ))}
       </ol>

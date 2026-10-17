@@ -2,11 +2,24 @@
  * Client writes for self-join. Decisions live in lib/institution-membership.ts.
  */
 
-import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from 'firebase/firestore';
-import { allocateSparks, buildSparkPool, type SparkAllocation, type SparkPool } from './institution-membership';
+import { collection, doc, getDoc, getDocs, limit, orderBy, query, setDoc, updateDoc, where, type Query } from 'firebase/firestore';
+import { asAccessMode, type CourseAccessMode } from './institution-commerce';
 import { db } from './firebase';
-import { draftJoinRequest, institutionsForSelfJoin, inviteCodeUsable, reviewJoin, type JoinDirectoryRow, type JoinRole } from './institution-membership';
+import {
+  allocateSparks, asVolumePlanId, blankSubscription, draftJoinRequest, institutionsForSelfJoin,
+  inviteCodeUsable, readSubscription, reviewJoin,
+  type JoinDirectoryRow, type JoinRole, type SparkAllocation, type SparkPool, type SubscriptionState,
+} from './institution-membership';
 import type { VolumePlanId } from './institution-pricing';
+
+/** Uses the indexed query, and the single-field query when that index is not deployed yet. */
+async function docsOr(primary: Query, fallback: Query) {
+  try {
+    return await getDocs(primary);
+  } catch {
+    return await getDocs(fallback);
+  }
+}
 
 function rowFrom(id: string, data: Record<string, unknown>): JoinDirectoryRow {
   const phase = data.billingPhase;
@@ -22,7 +35,22 @@ function rowFrom(id: string, data: Record<string, unknown>): JoinDirectoryRow {
 }
 
 export async function listSelfJoinInstitutions(country: string, state: string): Promise<JoinDirectoryRow[]> {
-  const snap = await getDocs(query(collection(db, 'institutions'), where('listedForSelfJoin', '==', true)));
+  const countryCode = country.trim().toUpperCase();
+  const stateName = state.trim();
+  if (!countryCode || !stateName) return [];
+  const institutions = collection(db, 'institutions');
+  const snap = await docsOr(
+    query(
+      institutions,
+      where('listedForSelfJoin', '==', true),
+      where('country', '==', countryCode),
+      where('state', '==', stateName),
+      where('status', '==', 'active'),
+      orderBy('name'),
+      limit(50),
+    ),
+    query(institutions, where('listedForSelfJoin', '==', true), limit(200)),
+  );
   const rows = snap.docs.map((item) => rowFrom(item.id, item.data() as Record<string, unknown>));
   return institutionsForSelfJoin(rows, country, state);
 }
@@ -87,12 +115,16 @@ export interface StoredJoinRequest {
 }
 
 export async function listJoinRequests(institutionId: string): Promise<StoredJoinRequest[]> {
-  const snap = await getDocs(collection(db, 'institutions', institutionId, 'join_requests'));
+  const requests = collection(db, 'institutions', institutionId, 'join_requests');
+  const snap = await docsOr(
+    query(requests, where('status', '==', 'pending'), orderBy('createdAt', 'asc'), limit(100)),
+    query(requests, where('status', '==', 'pending'), limit(100)),
+  );
   return snap.docs.map((item) => {
     const data = item.data() as Record<string, unknown>;
     const role = data.role === 'teacher' || data.role === 'parent' ? data.role : 'student';
     const status = data.status === 'approved' || data.status === 'rejected' ? data.status : 'pending';
-    const level = data.level === 'primary_secondary' || data.level === 'igcse_alevel' || data.level === 'professional' ? data.level : '';
+    const level = asVolumePlanId(data.level);
     return {
       id: item.id,
       userId: typeof data.userId === 'string' ? data.userId : item.id,
@@ -148,18 +180,45 @@ export async function decideJoinRequest(input: {
   }
 }
 
-export async function loadSparkPool(institutionId: string, seats: number, perSeat: number): Promise<SparkPool> {
+export async function loadCurrentBill(institutionId: string): Promise<SubscriptionState | null> {
+  const snap = await getDoc(doc(db, 'institutions', institutionId, 'billing', 'current'));
+  if (!snap.exists()) return null;
+  return readSubscription(snap.data() as Record<string, unknown>, blankSubscription('institution', new Date().toISOString().slice(0, 10)));
+}
+
+export async function loadSparkPool(institutionId: string): Promise<{ topUps: number; allocated: number }> {
   const snap = await getDoc(doc(db, 'institutions', institutionId, 'sparks_pool', 'current'));
   const data = snap.exists() ? snap.data() as { topUps?: number; allocated?: number } : {};
-  const built = buildSparkPool({
-    planId: 'igcse_alevel',
-    seats,
-    perSeat,
+  return {
     topUps: typeof data.topUps === 'number' ? data.topUps : 0,
     allocated: typeof data.allocated === 'number' ? data.allocated : 0,
-  });
-  if ('error' in built) throw new Error(built.error);
-  return built;
+  };
+}
+
+export interface InstitutionCourseRow {
+  id: string;
+  title: string;
+  libraryApproved: boolean;
+  accessMode: CourseAccessMode;
+}
+
+export async function listInstitutionCourses(institutionId: string): Promise<InstitutionCourseRow[]> {
+  const courses = collection(db, 'courses');
+  const snap = await docsOr(
+    query(courses, where('institutionId', '==', institutionId), where('publishScope', '==', 'institution'), limit(100)),
+    query(courses, where('institutionId', '==', institutionId), limit(100)),
+  );
+  return snap.docs
+    .map((item) => {
+      const data = item.data() as { title?: string; libraryApproved?: boolean; accessMode?: unknown };
+      return {
+        id: item.id,
+        title: data.title || 'Course',
+        libraryApproved: data.libraryApproved === true,
+        accessMode: asAccessMode(data.accessMode),
+      };
+    })
+    .sort((a, b) => a.title.localeCompare(b.title));
 }
 
 export async function saveSparkAllocation(institutionId: string, pool: SparkPool, current: readonly SparkAllocation[], next: SparkAllocation): Promise<SparkAllocation[]> {

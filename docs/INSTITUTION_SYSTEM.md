@@ -31,7 +31,9 @@ A public walkthrough that does not need a login is `/preview/institution-flow`.
 
 A super admin picks the level and the student seat count. `POST /api/institutions/billing/link` writes `institutions/{id}/billing/current`, opens a Stripe Checkout session when `STRIPE_SECRET_KEY` is set (`metadata.kind = institution_billing`), and emails the link when SMTP is set. The webhook marks the bill paid and restores a suspended academy.
 
-`GET /api/cron/institution-billing` with `Authorization: Bearer $CRON_SECRET` sends the day-1, day-3, and day-6 reminders, suspends on day 7, and uses the same lifecycle for `subscriber_billing/{uid}`.
+`GET /api/cron/institution-billing` with `Authorization: Bearer $CRON_SECRET` sends the day-1, day-3, and day-6 reminders, suspends on day 7, and uses the same lifecycle for `subscriber_billing/{uid}`. The cron reads academies whose `billingPhase` is `active` or `grace`, and subscriber bills in those same phases. It does not scan every institution.
+
+Signup lists institutions with `listedForSelfJoin`, `country`, `state`, and `status`, ordered by name. The institution course library queries `institutionId` and `publishScope`. Pending join requests are ordered by `createdAt`. Those three composite indexes are in `firestore.indexes.json`. They are not deployed from this change. Until an owner deploys them, the screens fall back to the single-field query and filter in memory. Seat changes use the period already stored on the bill.
 
 Seat changes inside the period are pro-rated. Teachers and parents are not seats.
 

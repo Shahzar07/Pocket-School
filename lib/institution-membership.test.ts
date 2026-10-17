@@ -14,6 +14,10 @@ import {
   chooseEnrolment,
   defaultSparksConfig,
   entitledProgrammes,
+  asVolumePlanId,
+  billingMoved,
+  blankSubscription,
+  cycleSubscription,
   failRenewal,
   institutionEmail,
   institutionsForSelfJoin,
@@ -22,11 +26,14 @@ import {
   normaliseSparksConfig,
   noticeFor,
   onboardingChecklist,
+  onPaymentFailed,
   openSubscription,
   parseRosterCsv,
+  periodStartFor,
   partnerRevenue,
   paymentGateway,
   quoteForInstitution,
+  readSubscription,
   recordPayment,
   resolveCobrand,
   reviewJoin,
@@ -147,6 +154,21 @@ test('failed payment duns during a 7-day grace, then suspends, and payment resto
   const personFailed = failRenewal(personPaid.state, '2026-04-01');
   assert.equal(personFailed.state.subject, 'individual');
   assert.equal(personFailed.state.graceEndsOn, '2026-04-08');
+  assert.equal(periodStartFor(paid.state.periodEnd, 'annual'), '2026-01-02');
+  assert.equal(periodStartFor(personPaid.state.periodEnd, 'monthly'), '2026-03-01');
+  const idle = cycleSubscription(paid.state, '2026-06-01');
+  assert.equal(billingMoved(paid.state, idle), false);
+  const due = cycleSubscription(paid.state, '2027-01-03');
+  assert.equal(due.state.phase, 'grace');
+  assert.equal(onPaymentFailed(paid.state, '2026-06-01').state.phase, 'grace');
+  const read = readSubscription(
+    { phase: 'grace', planId: 'professional', seats: 3, remindersSent: ['2026-01-01', 4] },
+    blankSubscription('institution', '2026-01-01'),
+  );
+  assert.equal(read.phase, 'grace');
+  assert.equal(read.planId, 'professional');
+  assert.equal(asVolumePlanId('nope'), '');
+  assert.deepEqual(read.remindersSent, ['2026-01-01']);
 });
 
 test('Sparks defaults are finite and the pool cannot be allocated past its seats', () => {
