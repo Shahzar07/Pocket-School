@@ -4,6 +4,7 @@
  * OEM seat maths stay in lib/oem.ts.
  */
 
+import { namedLevel, parseGender } from './insights/census';
 import { isFlagEnabled } from './payments/flags';
 
 export const INSTITUTION_TYPES = ['school', 'university', 'corporate', 'government'] as const;
@@ -262,6 +263,11 @@ export interface MemberRow {
   email: string;
   name: string;
   academyRole: AcademyRole;
+  gender?: 'male' | 'female';
+  level?: string;
+  country?: string;
+  state?: string;
+  dateOfBirth?: string;
 }
 
 export interface MemberParse {
@@ -280,15 +286,35 @@ const ROLE_ALIASES: Record<string, AcademyRole> = {
   parent: 'parent',
 };
 
-/** CSV header `email,name,role`. Roles: institution admin, manager, teacher, learner, parent. */
+const MEMBER_COLUMNS = ['email', 'name', 'role', 'gender', 'level', 'country', 'state', 'dateofbirth'];
+
+function columnKey(cell: string): string {
+  return cell.toLowerCase().replace(/[^a-z]/g, '');
+}
+
+/** CSV header `email,name,role`. Optional columns: gender, level, country, state, dateOfBirth. */
 export function parseMemberCsv(text: string): MemberParse {
   const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   const rows: MemberRow[] = [];
   const errors: string[] = [];
+  let columns = MEMBER_COLUMNS;
   lines.forEach((line, index) => {
-    if (index === 0 && /^e-?mail\b/i.test(line)) return;
-    const [emailRaw = '', nameRaw = '', roleRaw = ''] = splitCsvLine(line);
-    const email = emailRaw.toLowerCase();
+    const cells = splitCsvLine(line).map((cell) => cell.trim());
+    const first = cells[0] ?? '';
+    if (index === 0 && /^e-?mail$/i.test(columnKey(first)) && !first.includes('@')) {
+      const named = cells.map(columnKey);
+      if (named.includes('email')) columns = named;
+      return;
+    }
+    const at = (key: string, position: number) => {
+      const named = columns.indexOf(key);
+      if (named >= 0) return cells[named] ?? '';
+      if (!columns.includes('gender') && cells.length > position) return cells[position] ?? '';
+      return '';
+    };
+    const email = at('email', 0).toLowerCase();
+    const nameRaw = at('name', 1);
+    const roleRaw = at('role', 2);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       errors.push(`Line ${index + 1} needs an email address.`);
       return;
@@ -298,7 +324,39 @@ export function parseMemberCsv(text: string): MemberParse {
       errors.push(`Line ${index + 1}: role must be institution admin, manager, teacher, learner, or parent.`);
       return;
     }
-    rows.push({ email, name: nameRaw || email, academyRole });
+    const genderRaw = at('gender', 3);
+    const gender = genderRaw ? parseGender(genderRaw) : '';
+    if (genderRaw && !gender) {
+      errors.push(`Line ${index + 1}: gender must be male or female.`);
+      return;
+    }
+    const levelRaw = at('level', 4);
+    const level = levelRaw ? namedLevel(levelRaw) : '';
+    if (levelRaw && !level) {
+      errors.push(`Line ${index + 1}: level must be a level name, not a year number.`);
+      return;
+    }
+    const country = at('country', 5).toUpperCase();
+    if (country && !/^[A-Z]{2}$/.test(country)) {
+      errors.push(`Line ${index + 1}: country must be a two-letter code.`);
+      return;
+    }
+    const dob = at('dateofbirth', 7);
+    if (dob && !/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
+      errors.push(`Line ${index + 1}: date of birth must be YYYY-MM-DD.`);
+      return;
+    }
+    const state = at('state', 6).slice(0, 80);
+    rows.push({
+      email,
+      name: nameRaw || email,
+      academyRole,
+      ...(gender ? { gender } : {}),
+      ...(level ? { level } : {}),
+      ...(country ? { country } : {}),
+      ...(state ? { state } : {}),
+      ...(dob ? { dateOfBirth: dob } : {}),
+    });
   });
   return { rows, errors };
 }

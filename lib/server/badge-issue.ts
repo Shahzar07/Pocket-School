@@ -188,6 +188,7 @@ export async function publicCredential(id: string, origin: string, now = Date.no
       credential: null,
       linkedInUrl: linkedInCertificationUrl({
         name: moduleTitle,
+        organizationId: process.env.LINKEDIN_ORGANIZATION_ID,
         issuedAt: '2026-10-15T12:00:00.000Z',
         certUrl: verifyUrl,
         certId: id,
@@ -234,6 +235,7 @@ export async function publicCredential(id: string, origin: string, now = Date.no
     credential,
     linkedInUrl: linkedInCertificationUrl({
       name: moduleTitle,
+      organizationId: process.env.LINKEDIN_ORGANIZATION_ID,
       issuedAt: issuedIso(data.issuedAt, new Date(now).toISOString()),
       expiresAt,
       certUrl: verifyUrl,

@@ -14,7 +14,8 @@ import { CourseCertificateCard } from '@/components/course-certificate';
 import { DocumentDelivery } from '@/components/document-delivery';
 import { textDocument } from '@/lib/documents/packet';
 import { CertificateCelebration } from '@/components/certificate-celebration';
-import type { CertificateAward, CertificateFace } from '@/lib/certificates';
+import { certificateStudentNumber, type CertificateAward, type CertificateFace } from '@/lib/certificates';
+import { useEnsureStudentNumber } from '@/components/use-student-number';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -25,7 +26,7 @@ const fadeUp: Record<string, any> = {
   }),
 };
 
-function toFace(cert: Certificate): CertificateFace & { level?: string; score?: number } {
+function toFace(cert: Certificate, fallbackNumber?: string): CertificateFace & { level?: string; score?: number } {
   const issued = cert.issuedAt instanceof Timestamp ? cert.issuedAt.toDate() : cert.issuedAt;
   return {
     id: cert.id ?? '',
@@ -43,11 +44,13 @@ function toFace(cert: Certificate): CertificateFace & { level?: string; score?: 
     certificateFooter: cert.certificateFooter,
     level: cert.level,
     score: cert.score,
+    studentNumber: certificateStudentNumber(cert.studentNumber) || certificateStudentNumber(fallbackNumber),
   };
 }
 
 export default function StudentCertificatesPage() {
-  const { user } = useAuthSTORE();
+  const { user, profile } = useAuthSTORE();
+  useEnsureStudentNumber();
   const [certs, setCerts] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [celebration, setCelebration] = useState<CertificateAward | null>(null);
@@ -106,7 +109,7 @@ export default function StudentCertificatesPage() {
                 title: `Certificate · ${cert.moduleTitle || cert.courseTitle}`,
                 holderEmail: user.email ?? undefined,
                 studentId: user.uid,
-                lines: [cert.studentName, cert.courseTitle, cert.moduleTitle || '', cert.status || 'valid'],
+                lines: [cert.studentName, certificateStudentNumber(cert.studentNumber) || certificateStudentNumber(profile?.studentNumber), cert.courseTitle, cert.moduleTitle || '', cert.status || 'valid'],
               }))}
               studentIds={[user.uid]}
             />
@@ -139,8 +142,8 @@ export default function StudentCertificatesPage() {
           {certs.map((cert, i) => (
             <motion.div key={cert.id} variants={fadeUp} initial="hidden" animate="visible" custom={i + 1}>
               {cert.kind === 'course' || typeof cert.score === 'number'
-                ? <CourseCertificateCard certificate={toFace(cert)} />
-                : <CertificateDocument certificate={toFace(cert)} />}
+                ? <CourseCertificateCard certificate={toFace(cert, profile?.studentNumber)} />
+                : <CertificateDocument certificate={toFace(cert, profile?.studentNumber)} />}
             </motion.div>
           ))}
         </div>

@@ -50,7 +50,7 @@ test('a profile save never includes privileged fields', () => {
     level: 'secondary',
     learningStyle: 'visual',
     yearGroup: 'Year 8',
-    notificationPrefs: { email: true, push: false, messages: true, announcements: true, product: false },
+    notificationPrefs: { email: true, push: false, messages: true, announcements: true, product: false, alumni: true, institution: true, achievements: true },
     privacy: { shareBoard: false, profilePublic: true, showEmail: false },
     twoFactorEnabled: true,
     instructor: { headline: 'Science', bio: 'Labs', public: true },
@@ -59,7 +59,7 @@ test('a profile save never includes privileged fields', () => {
   assert.equal(patch.currency, 'MYR');
   assert.equal(patch.shareBoard, false);
   assert.equal(patch.level, 'Lower Secondary');
-  assert.equal(patch.yearGroup, 'Year 8');
+  assert.equal(patch.yearGroup, 'Lower Secondary');
   assert.equal('instructor' in patch, false);
   for (const field of PRIVILEGED_PROFILE_FIELDS) {
     assert.equal(field in patch, false, field);
@@ -78,7 +78,7 @@ test('a profile save never includes privileged fields', () => {
     level: '',
     learningStyle: '',
     yearGroup: '',
-    notificationPrefs: { email: true, push: true, messages: true, announcements: true, product: true },
+    notificationPrefs: { email: true, push: true, messages: true, announcements: true, product: true, alumni: false, institution: true, achievements: true },
     privacy: { shareBoard: true, profilePublic: true, showEmail: false },
     twoFactorEnabled: false,
     instructor: { headline: '  Physics  ', bio: 'Public bio', public: true },

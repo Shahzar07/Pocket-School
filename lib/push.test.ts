@@ -3,12 +3,14 @@ import test from 'node:test';
 import { coerceDailyGoal } from './goals';
 import {
   expoShouldPrune,
+  isPushCategory,
   sendAttendanceAlert,
   sendDigest,
   sendFlagAlert,
   sendGoalParentAlert,
   tokensForRecipient,
   wantsCategory,
+  userWantsPush,
   webPushShouldPrune,
   type DeviceToken,
   type PushDeps,
@@ -99,6 +101,14 @@ test('provider errors that mean the token is dead are pruned', () => {
   assert.equal(webPushShouldPrune(500), false);
   assert.equal(wantsCategory(token({ prefs: { digests: false } }), 'digests'), false);
   assert.equal(wantsCategory(token(), 'attendance'), true);
+  assert.equal(wantsCategory(token({ prefs: { alumni: false } }), 'alumni'), false);
+  assert.equal(userWantsPush({ push: true, alumni: false }, 'alumni'), false);
+  assert.equal(userWantsPush({ push: false, alumni: true }, 'alumni'), false);
+  assert.equal(userWantsPush({}, 'achievements'), true);
+  assert.equal(userWantsPush({}, 'grades'), true);
+  assert.equal(userWantsPush(null, 'alumni'), true);
+  assert.equal(isPushCategory('grades'), true);
+  assert.equal(isPushCategory('reunions'), false);
   assert.equal(tokensForRecipient([token({ userId: 'a' }), token({ userId: 'b' })], 'a').length, 1);
 });
 

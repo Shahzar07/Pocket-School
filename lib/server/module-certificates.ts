@@ -21,6 +21,7 @@ interface IssueInput {
   accent?: string;
   logoUrl?: string;
   certificateFooter?: string;
+  studentNumber?: string;
 }
 
 /**

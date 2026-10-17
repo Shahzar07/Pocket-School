@@ -12,6 +12,7 @@ const sample: CertificateFace = {
   issuedAt: '2026-10-15T12:00:00.000Z',
   issuedByName: 'Poket School',
   status: 'valid',
+  studentNumber: 'PS-K7NP-4R2C',
 };
 
 /** Sample certificate for review. It is not a live record and is not written to Firestore. */

@@ -429,6 +429,10 @@ export function InstitutionSettings({
 
         <section id="settings-leaderboard" className="rounded-3xl border border-border p-5 space-y-3">
           <h2 className="font-semibold">Leaderboard</h2>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={draft.showOnSchoolStrip} onChange={(event) => setDraft({ ...draft, showOnSchoolStrip: event.target.checked })} />
+            Show this academy name on the Poket School homepage. Off until you opt in.
+          </label>
           <select aria-label="Leaderboard visibility" value={draft.leaderboardVisible} onChange={(event) => setDraft({ ...draft, leaderboardVisible: event.target.value as AcademySettings['leaderboardVisible'] })} className="h-11 rounded-xl border border-border bg-background px-3">
             <option value="academy">Visible to the academy</option>
             <option value="group">Visible inside groups</option>

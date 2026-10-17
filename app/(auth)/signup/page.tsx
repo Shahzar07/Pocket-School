@@ -27,6 +27,7 @@ import { CountrySelect, PhoneField } from '@/components/country-select';
 import { readGeoCountry } from '@/lib/countries';
 import { useWhiteLabel } from '@/components/white-label-provider';
 import { passwordAccepts, signupDecision } from '@/lib/academy-settings';
+import { DemographicConsent, GenderSelect, LevelNameSelect } from '@/components/account/demographic-fields';
 import { SelfJoinPicker } from '@/components/institutions/self-join-picker';
 import { listSelfJoinInstitutions, redeemInviteCode, submitSelfJoin } from '@/lib/institution-membership-store';
 import type { JoinDirectoryRow, JoinRole } from '@/lib/institution-membership';
@@ -65,9 +66,9 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [country, setCountry] = useState('');
+  const [country, setCountry] = useState('MY');
   useEffect(() => {
-    setCountry((current) => current || readGeoCountry());
+    setCountry((current) => current || readGeoCountry() || 'MY');
   }, []);
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('student');
@@ -76,20 +77,44 @@ export default function SignupPage() {
   const [joinInstitution, setJoinInstitution] = useState('');
   const [listed, setListed] = useState<JoinDirectoryRow[]>([]);
   const [inviteCode, setInviteCode] = useState('');
+  const [joinSlug, setJoinSlug] = useState('');
+  const [studentNumber, setStudentNumber] = useState('');
+  const [childStudentNumber, setChildStudentNumber] = useState('');
+  const [linkedConsent, setLinkedConsent] = useState(false);
   useEffect(() => {
     const states = statesForCountry(country);
-    setJoinState((current) => (states as readonly string[]).includes(current) ? current : states[0] ?? '');
+    setJoinState((current) => (states as readonly string[]).includes(current) ? current : '');
   }, [country]);
   useEffect(() => {
-    if (joinPath !== 'institution' || !country || !joinState) {
+    const wantsList = role === 'student' || joinPath === 'institution';
+    if (!wantsList || !country || !joinState) {
       setListed([]);
       return;
     }
     listSelfJoinInstitutions(country, joinState).then(setListed).catch(() => setListed([]));
-  }, [joinPath, country, joinState]);
+  }, [role, joinPath, country, joinState]);
   useEffect(() => {
-    const requested = new URLSearchParams(window.location.search).get('role');
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get('role');
     if (requested === 'student' || requested === 'teacher' || requested === 'parent') setRole(requested);
+    const slug = (params.get('join') ?? '').trim().toLowerCase();
+    if (/^[a-z0-9-]{2,40}$/.test(slug)) {
+      setJoinSlug(slug);
+      setJoinPath('institution');
+    }
+    const prefillEmail = params.get('email') ?? '';
+    if (prefillEmail.includes('@')) setEmail(prefillEmail);
+    const prefillName = params.get('name') ?? '';
+    if (prefillName) setName(prefillName.slice(0, 120));
+    const prefillDob = params.get('dob') ?? '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(prefillDob)) setDob(prefillDob);
+    const prefillCode = params.get('code') ?? '';
+    if (prefillCode) setInviteCode(prefillCode.toUpperCase().slice(0, 16));
+    const prefillStudent = params.get('studentId') ?? '';
+    if (prefillStudent) setStudentNumber(prefillStudent.slice(0, 40));
+    const prefillChild = params.get('child') ?? '';
+    if (prefillChild) setChildStudentNumber(prefillChild.slice(0, 40));
+    if (params.get('consent') === '1') setLinkedConsent(true);
   }, []);
   const [dob, setDob] = useState('');
   const [agreed, setAgreed] = useState(false);
@@ -103,7 +128,13 @@ export default function SignupPage() {
   const [subject, setSubject] = useState('');
   const [teachingLevel, setTeachingLevel] = useState('');
   const [institution, setInstitution] = useState('');
+  const [schoolName, setSchoolName] = useState('');
   const [childEmail, setChildEmail] = useState('');
+  const [gender, setGender] = useState<'' | 'male' | 'female'>('');
+  const [demographicConsent, setDemographicConsent] = useState(false);
+  const [childGender, setChildGender] = useState<'' | 'male' | 'female'>('');
+  const [childLevel, setChildLevel] = useState('');
+  const [childDob, setChildDob] = useState('');
 
   // Parental consent (under-18 students)
   const [guardianName, setGuardianName] = useState('');
@@ -135,6 +166,26 @@ export default function SignupPage() {
     const person = (account?.name || name).trim();
     const childEmails = childEmail.trim() ? [childEmail.trim().toLowerCase()] : [];
     try {
+      if (joinSlug) {
+        const result = await authedFetch('/api/institutions/join', {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'attach',
+            slug: joinSlug,
+            role: joinRole,
+            name: person,
+            email: address,
+            dob,
+            studentId: studentNumber,
+            inviteCode,
+            parentConsent: guardianVerified || linkedConsent,
+            childStudentNumber,
+            takeCredit: true,
+          }),
+        });
+        toast.message(typeof result.message === 'string' ? result.message : 'The academy has this account.');
+        return;
+      }
       if (inviteCode.trim()) {
         const result = await redeemInviteCode({
           userId: uid, email: address, code: inviteCode, role: joinRole, name: person, childEmails,
@@ -172,19 +223,57 @@ export default function SignupPage() {
     }
     if (role === 'teacher') {
       const subjects = subject.split(',').map(s => s.trim()).filter(Boolean);
+      const school = schoolName.trim() || institution.trim();
       return {
         subjects,
         subject: subjects[0] ?? '',
         teachingLevel,
         level: teachingLevel,
-        ...(institution.trim() ? { institutionName: institution.trim(), institution: institution.trim() } : {}),
+        ...(school ? { institutionName: school, institution: school } : {}),
       };
     }
     if (role === 'parent') return childEmail.trim() ? { pendingChildEmail: childEmail.trim().toLowerCase() } : {};
     return {};
   };
 
+  const syncDemographics = async () => {
+    const pendingChild = role === 'parent' && childEmail.trim()
+      ? {
+        email: childEmail.trim().toLowerCase(),
+        gender: childGender,
+        level: childLevel,
+        dateOfBirth: childDob,
+        country,
+        region: joinState,
+      }
+      : undefined;
+    await authedFetch('/api/insights/sync', {
+      method: 'POST',
+      body: JSON.stringify({
+        gender,
+        demographicConsent: true,
+        country,
+        region: joinState,
+        level: role === 'teacher' ? teachingLevel : yearGroup,
+        yearGroup: role === 'student' ? yearGroup : '',
+        institutionName: schoolName.trim() || institution.trim(),
+        dateOfBirth: dob,
+        ...(pendingChild ? { pendingChild } : {}),
+      }),
+    }).catch(() => undefined);
+  };
+
+  const reportSchool = async () => {
+    if (role !== 'student' || joinInstitution || !schoolName.trim()) return;
+    await authedFetch('/api/account/self-reported-school', {
+      method: 'POST',
+      body: JSON.stringify({ name: schoolName.trim(), country, state: joinState }),
+    }).catch(() => undefined);
+  };
+
   const handleGoogleSignIn = async () => {
+    if (!gender) { toast.error('Choose male or female.'); return; }
+    if (!demographicConsent) { toast.error('Confirm the demographic statistics notice.'); return; }
     if (!agreed) { toast.error(t('signup.acceptFirst')); return; }
     try {
       setLoading(true);
@@ -203,13 +292,18 @@ export default function SignupPage() {
           emailVerificationRequired: !result.user.emailVerified,
           consentAcceptedAt: serverTimestamp(),
           ...(dob ? { dateOfBirth: dob } : {}),
+          ...(gender ? { gender } : {}),
+          ...(demographicConsent ? { demographicConsentAt: Date.now() } : {}),
           ...(country ? { country } : {}),
+          ...(joinState ? { region: joinState } : {}),
           ...(phone.trim() ? { phone: phone.trim() } : {}),
           ...roleProfileFields(),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
         if (role === 'student') {
+          await authedFetch('/api/account/student-number', { method: 'POST', body: '{}' }).catch(() => undefined);
+          await reportSchool();
           await authedFetch('/api/account/placement', {
             method: 'POST',
             body: JSON.stringify({ programme: pathway, year: yearGroup }),
@@ -218,6 +312,7 @@ export default function SignupPage() {
           });
         }
         await finishJoin(result.user.uid, { email: result.user.email, name: result.user.displayName });
+        await syncDemographics();
       }
       const existing = snap.exists() ? snap.data() : { role };
       routeAfterSignup(existing.role || role);
@@ -270,8 +365,24 @@ export default function SignupPage() {
       toast.error(t('signup.phoneFormat'));
       return false;
     }
+    if (!gender) {
+      toast.error('Choose male or female.');
+      return false;
+    }
+    if (!demographicConsent) {
+      toast.error('Confirm the demographic statistics notice.');
+      return false;
+    }
     if (role === 'teacher' && !subject.trim()) {
       toast.error(t('signup.needSubjects'));
+      return false;
+    }
+    if (role === 'teacher' && !teachingLevel) {
+      toast.error('Choose the level you teach.');
+      return false;
+    }
+    if (role === 'parent' && childEmail.trim() && (!childGender || !childLevel || !childDob || !demographicConsent)) {
+      toast.error('Add the child gender, level, date of birth, and the demographic notice.');
       return false;
     }
     if (role === 'student') {
@@ -308,6 +419,8 @@ export default function SignupPage() {
       emailVerified: false,
       emailVerificationRequired: true,
       dateOfBirth: dob,
+      ...(gender ? { gender } : {}),
+      ...(demographicConsent ? { demographicConsentAt: Date.now() } : {}),
       consentAcceptedAt: serverTimestamp(),
       ...(isMinor ? {
         isMinor: true,
@@ -316,6 +429,7 @@ export default function SignupPage() {
         guardianConsentAt: serverTimestamp(),
       } : {}),
       ...(country ? { country } : {}),
+      ...(joinState ? { region: joinState } : {}),
       ...(phone.trim() ? { phone: phone.trim() } : {}),
       ...roleProfileFields(),
       createdAt: serverTimestamp(),
@@ -332,6 +446,8 @@ export default function SignupPage() {
       toast.message(t('signup.confirmLink'));
     }
     if (role === 'student') {
+      await authedFetch('/api/account/student-number', { method: 'POST', body: '{}' }).catch(() => undefined);
+      await reportSchool();
       await authedFetch('/api/account/placement', {
         method: 'POST',
         body: JSON.stringify({ programme: pathway, year: yearGroup }),
@@ -341,6 +457,7 @@ export default function SignupPage() {
     }
     toast.success(t('signup.welcome'));
     await finishJoin(result.user.uid, { email: result.user.email, name });
+    await syncDemographics();
     routeAfterSignup(role);
   };
 
@@ -495,7 +612,7 @@ export default function SignupPage() {
                   disabled={loading}
                   className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all text-sm font-semibold ${
                     role === r.id
-                      ? 'border-[#2786A4] bg-[#2786A4]/15 text-[#6FBBCE]'
+                      ? 'border-[#C8922A] bg-[#1A3C34] text-[#F8E7C4]'
                       : 'border-white/10 bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/70 hover:border-white/20'
                   }`}
                 >
@@ -506,6 +623,11 @@ export default function SignupPage() {
             </div>
           </div>
 
+          {joinSlug && (
+            <p className="mb-4 rounded-2xl border border-[#C8922A]/50 bg-[#1A3C34] px-4 py-3 text-sm leading-relaxed text-[#F8E7C4]">
+              This account joins your academy. Everyone else signs up as an individual. Progress stays with the account.
+            </p>
+          )}
           <div className="mb-6">
             <SelfJoinPicker
               path={joinPath}
@@ -516,12 +638,16 @@ export default function SignupPage() {
               inviteCode={inviteCode}
               childEmails={childEmail}
               showChildren={false}
+              student={role === 'student'}
+              place={role !== 'student'}
               onPath={setJoinPath}
               onCountry={setCountry}
               onState={setJoinState}
               onInstitution={setJoinInstitution}
               onInviteCode={setInviteCode}
               onChildEmails={setChildEmail}
+              schoolName={schoolName}
+              onSchoolName={setSchoolName}
             />
           </div>
 
@@ -577,6 +703,9 @@ export default function SignupPage() {
               )}
             </div>
 
+            <GenderSelect tone="inverse" value={gender} onChange={setGender} disabled={loading} />
+            <DemographicConsent tone="inverse" checked={demographicConsent} onChange={setDemographicConsent} disabled={loading} />
+
             {/* ── Role-specific fields ── */}
             {role === 'student' && (
               <div className="grid grid-cols-1 gap-3">
@@ -619,23 +748,7 @@ export default function SignupPage() {
                     value={subject} onChange={e => setSubject(e.target.value)} disabled={loading} />
                   <p className="text-xs text-white/25">{t('signup.subjectsHint')}</p>
                 </div>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="teachingLevel" className={LABEL_CLASS}>{t('signup.levelTeach')}</Label>
-                    <select id="teachingLevel" className={SELECT_CLASS} value={teachingLevel}
-                      onChange={e => setTeachingLevel(e.target.value)} disabled={loading}>
-                      <option value="" className="bg-[#0B0F1A]">{t('signup.levelTeach')}</option>
-                      {PROGRAMMES.map(p => <option key={p.value} value={p.value} className="bg-[#0B0F1A]">{p.label}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="institution" className={LABEL_CLASS}>
-                      {t('signup.institution')} <span className="text-white/30 normal-case font-normal">{t('signup.optional')}</span>
-                    </Label>
-                    <Input id="institution" type="text" placeholder={t('signup.institutionPlaceholder')} className={INPUT_CLASS}
-                      value={institution} onChange={e => setInstitution(e.target.value)} disabled={loading} />
-                  </div>
-                </div>
+                <LevelNameSelect tone="inverse" id="teachingLevel" label={t('signup.levelTeach')} value={teachingLevel} onChange={setTeachingLevel} disabled={loading} />
               </>
             )}
 
@@ -649,6 +762,17 @@ export default function SignupPage() {
                 <p className="text-xs text-white/25">
                   {t('signup.childHint')}
                 </p>
+                {childEmail.trim() && (
+                  <div className="space-y-3 rounded-2xl border border-[#C8922A]/40 bg-[#1A3C34] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#F8E7C4]">Child details</p>
+                    <GenderSelect tone="inverse" id="child-gender" value={childGender} onChange={setChildGender} disabled={loading} />
+                    <LevelNameSelect tone="inverse" id="child-level" value={childLevel} onChange={setChildLevel} disabled={loading} />
+                    <div className="space-y-1.5">
+                      <Label htmlFor="childDob" className={LABEL_CLASS}>Child date of birth</Label>
+                      <Input id="childDob" type="date" className={INPUT_CLASS} value={childDob} max={new Date().toISOString().slice(0, 10)} onChange={e => setChildDob(e.target.value)} disabled={loading} />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

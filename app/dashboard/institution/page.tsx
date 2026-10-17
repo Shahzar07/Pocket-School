@@ -9,6 +9,8 @@ import {
   saveAcademyClass, saveAcademyInvites, saveJoinCode, updateInstitution, type Institution,
 } from '@/lib/db';
 import { brandedInvite, licencePhase, makeJoinCode, parseInviteCsv, seatsRemaining, type OemLicence } from '@/lib/oem';
+import { institutionLoginLinks } from '@/lib/institution-login';
+import { InstitutionLoginShare } from '@/components/institution-login-share';
 import { PROGRAMMES, allocationYearsFor } from '@/lib/programmes';
 import { AllocationPicker } from '@/components/allocation-picker';
 import { describeTargets } from '@/lib/allocation-targets';
@@ -73,10 +75,15 @@ export default function InstitutionAcademyPage() {
       const code = joinCode || makeJoinCode();
       setJoinCode(code);
       await saveJoinCode(institutionId, code);
+      const origin = institution.subdomain ? institutionOrigin(institution.subdomain) : 'https://poketschool.ai';
       const message = brandedInvite({
         displayName: institution.branding?.displayName || institution.name,
         emailFromName: institution.branding?.emailFromName,
-      }, code, institution.subdomain ? institutionOrigin(institution.subdomain) : 'https://poketschool.ai');
+      }, code, origin, {
+        subject: institution.branding?.inviteSubject,
+        text: institution.branding?.inviteBody,
+        loginUrl: institutionLoginLinks({ slug: institution.subdomain, customDomain: institution.customDomain }).share,
+      });
       setInvites(count => count + parsed.rows.length);
       const sent = await authedFetch('/api/institutions/invites/send', {
         method: 'POST',
@@ -162,6 +169,14 @@ export default function InstitutionAcademyPage() {
         </div>
         <p className="text-xs text-muted-foreground">Logo, colours, domain and certificate name are set with the platform admin. Invitations and certificates use the name saved here.</p>
       </section>
+
+      {institution && (
+        <InstitutionLoginShare
+          slug={institution.subdomain}
+          customDomain={institution.customDomain}
+          schoolName={institution.branding?.displayName || institution.name || 'Your academy'}
+        />
+      )}
 
       <section id="academy-invite" className="rounded-3xl border border-border bg-card p-5 space-y-3">
         <h2 className="font-semibold">Invite teachers and students</h2>

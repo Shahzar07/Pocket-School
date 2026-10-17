@@ -11,6 +11,7 @@ import {
   sendNotification,
 } from '../../server/actions';
 import { fixedPriceItem, sparkPackItem, subscriptionItem, walletTopUpItem } from '../catalog';
+import { alumniCheckoutCoupon } from '../../graduation';
 import { couponRejection, normaliseCode, referralCode, type Coupon } from '../coupons';
 import { parsePromo, promoLive, type PromoDraft } from '../../promos';
 import { summariseFinance, reconcile } from '../finance';
@@ -279,7 +280,10 @@ async function quoted(input: CheckoutInput): Promise<{ quote: Quote; settings: P
   const settings = await loadSettings();
   const payer = await profileOf(input.uid);
   const item = await resolveItem(input, settings, payer);
-  const coupon = await loadCoupon(input.coupon, item.currency, settings);
+  const coupon = await loadCoupon(input.coupon, item.currency, settings)
+    ?? (item.kind === 'subscription'
+      ? alumniCheckoutCoupon(typeof payer.alumniDiscount === 'number' ? payer.alumniDiscount : 0)
+      : null);
   const country = (input.country || 'MY').trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(country)) throw new ActionError('INVALID', 'Choose a country.');
   const quote = buildQuote({

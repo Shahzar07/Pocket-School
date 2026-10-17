@@ -12,6 +12,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { CurrencySwitcher } from "@/components/currency-switcher";
 import styles from "./home-chrome.module.css";
 import { PromoBanner } from "@/components/promo-banner";
+import { isBrandedLoginPath } from "@/lib/institution-login";
+import { isInstitutionJourneyPath } from "@/lib/institution-journey";
 
 const NAV_LINKS = [
   { label: "Marketplace", href: "/courses" },
@@ -40,6 +42,8 @@ const HIDDEN_PREFIXES = [
 function hidesSiteChrome(pathname: string): boolean {
   return (
     HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix)) ||
+    isBrandedLoginPath(pathname) ||
+    isInstitutionJourneyPath(pathname) ||
     pathname === "/offer" ||
     pathname.startsWith("/offer/")
   );
@@ -129,6 +133,7 @@ export function SiteHeader() {
             <Link href="/reads">{t("nav.books")}</Link>
             <Link href="/pricing">{t("header.pricing")}</Link>
             <Link href="/blog" aria-current={pathname.startsWith("/blog") ? "page" : undefined}>{t("header.blog")}</Link>
+            <Link href="/institutions/register">For Schools & Organisations</Link>
             {!user && <Link href="/login">{t("header.signIn")}</Link>}
           </nav>
           <div className={styles.headerTools}>
@@ -166,6 +171,7 @@ export function SiteHeader() {
             <Link href="/reads">{t("nav.books")}</Link>
             <Link href="/pricing">{t("header.pricing")}</Link>
             <Link href="/blog">{t("header.blog")}</Link>
+            <Link href="/institutions/register">For Schools & Organisations</Link>
             <Link href={user ? dashPath : "/login"}>
               {user ? t("header.dashboard") : t("header.signIn")}
             </Link>

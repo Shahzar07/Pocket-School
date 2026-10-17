@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
-  getTeacherCourses, deleteCourse, updateCourse, writeAccessAudit,
+  getTeacherCourses, deleteCourse, updateCourse,
   type Course,
 } from '@/lib/db';
 import { awaitsMarketplaceReview } from '@/lib/course-builder';
@@ -66,12 +66,15 @@ export default function TeacherCourseMgmt() {
 
   const submitForReview = async (c: Course) => {
     try {
-      await updateCourse(c.id, { status: 'pending_approval', isPublic: false });
-      if (user) await writeAccessAudit(c.id, { actorId: user.uid, action: 'submit', detail: 'Submitted for marketplace review' });
-      toast.success('Submitted for admin review. You\'ll be notified once approved.');
+      const { authedFetch } = await import('@/lib/api-client');
+      const result = await authedFetch('/api/courses/automate-publish', {
+        method: 'POST',
+        body: JSON.stringify({ courseId: c.id, wantsMarketplace: awaitsMarketplaceReview(c) }),
+      });
+      toast.success(typeof result.note === 'string' ? result.note : 'Course updated.');
       load();
     } catch (e: any) {
-      toast.error(e?.message || 'Failed to submit for review.');
+      toast.error(e?.message || 'Failed to publish the course.');
     }
   };
 
@@ -235,7 +238,7 @@ export default function TeacherCourseMgmt() {
                         className="w-full rounded-full font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all"
                         onClick={() => submitForReview(c)}
                       >
-                        <Send className="w-3.5 h-3.5 mr-1.5" /> Submit for Review
+                        <Send className="w-3.5 h-3.5 mr-1.5" /> Publish
                       </Button>
                     )}
                     {c.status === 'draft' && !awaitsMarketplaceReview(c) && (

@@ -7,6 +7,7 @@ import {
   sessionSecretConfigured,
   verifyDashboardSession,
 } from '@/lib/dashboard-session';
+import { institutionLoginRewrite } from '@/lib/institution-login';
 import { GEO_COUNTRY_COOKIE, GEO_REGION_COOKIE } from '@/lib/languages';
 import { stripAcademyPath, TENANT_HEADER, tenantFromRequest } from '@/lib/tenant-host';
 
@@ -18,7 +19,7 @@ import { stripAcademyPath, TENANT_HEADER, tenantFromRequest } from '@/lib/tenant
  * An academy hostname, or `/a/{slug}` until poketschool.ai DNS is live, is
  * marked on the request. The path prefix is rewritten onto the real route
  * and stays in the browser URL, so the main site is never branded by a visit
- * to one academy.
+ * to one academy. `/login` on that host is the academy's branded login.
  */
 /**
  * Role-restricted dashboard URLs need a signed session. The cookie is issued
@@ -72,9 +73,14 @@ export async function middleware(request: NextRequest) {
     requestHeaders.set('x-poket-tenant-mode', 'custom');
   }
 
-  const response = tenant.kind === 'path'
-    ? NextResponse.rewrite(rewriteAcademyPath(request), { request: { headers: requestHeaders } })
-    : NextResponse.next({ request: { headers: requestHeaders } });
+  const loginPath = institutionLoginRewrite(request.headers.get('host'), request.nextUrl.pathname);
+  const loginUrl = request.nextUrl.clone();
+  if (loginPath) loginUrl.pathname = loginPath;
+  const response = loginPath
+    ? NextResponse.rewrite(loginUrl, { request: { headers: requestHeaders } })
+    : tenant.kind === 'path'
+      ? NextResponse.rewrite(rewriteAcademyPath(request), { request: { headers: requestHeaders } })
+      : NextResponse.next({ request: { headers: requestHeaders } });
 
   const cookie = { path: '/', maxAge: 60 * 60 * 24, sameSite: 'lax' as const };
   if (country) response.cookies.set(GEO_COUNTRY_COOKIE, country, cookie);

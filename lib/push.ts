@@ -16,7 +16,13 @@ export const PUSH_CATEGORIES = [
   'grades',
   'assignments',
   'general',
+  'alumni',
+  'institution',
+  'achievements',
 ] as const;
+
+/** Account toggles. A missing key stays on. `alumni` covers reunions, the wall, yearbook release, and alumni messages. Badge pushes use `achievements`. `grades` stays a category for unit tests and is not an account toggle. */
+export const USER_PUSH_TOGGLES = ['alumni', 'institution', 'achievements'] as const;
 
 export type PushCategory = (typeof PUSH_CATEGORIES)[number];
 
@@ -73,6 +79,15 @@ export function isPushCategory(value: string): value is PushCategory {
 /** Missing prefs stay on. An explicit false opts that device out. */
 export function wantsCategory(token: DeviceToken, category: PushCategory): boolean {
   return token.prefs?.[category] !== false;
+}
+
+/** Account toggle. `push: false` stops every category. A missing category key stays on. */
+export function userWantsPush(prefs: unknown, category: PushCategory): boolean {
+  if (!prefs || typeof prefs !== 'object') return true;
+  const record = prefs as Record<string, unknown>;
+  if (record.push === false) return false;
+  if ((USER_PUSH_TOGGLES as readonly string[]).includes(category) && record[category] === false) return false;
+  return true;
 }
 
 export function tokensForRecipient(tokens: readonly DeviceToken[], userId: string): DeviceToken[] {

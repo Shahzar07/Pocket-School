@@ -15,6 +15,7 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { isAdmin } from '@/lib/roles';
 import { useHomeMotion } from '@/hooks/use-home-motion';
 import { DemoLeadForm } from '@/components/demo-lead-form';
+import { SchoolStrip } from '@/components/landing/school-strip';
 import s from '@/app/home.module.css';
 
 const DEMO = 'mailto:institutions@poketschool.ai';
@@ -184,8 +185,8 @@ export function LandingPage() {
               <Link className={s.primary} href={startHref}>
                 {t('landing.hero.start')} <ArrowRight size={16} aria-hidden className="ps-dir-icon" />
               </Link>
-              <Link className={s.secondary} href="#schools">
-                {t('landing.hero.schools')}
+              <Link className={s.secondary} href="/institutions/register">
+                For Schools & Organisations
               </Link>
               <a className={s.quiet} href="#demo">
                 {t('landing.hero.demo')}
@@ -197,6 +198,8 @@ export function LandingPage() {
           </div>
         </div>
       </section>
+
+      <SchoolStrip />
 
       <section className="border-b border-border bg-card" aria-label={t('landing.exam.label')}>
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between">
@@ -551,6 +554,12 @@ export function LandingPage() {
           <h3 className="text-2xl font-medium">{t('landing.schools.ctaTitle')}</h3>
           <p className="mt-3 max-w-2xl text-muted-foreground">{t('landing.schools.ctaBody')}</p>
           <div className="mt-6 flex flex-wrap items-center gap-4">
+            <Link
+              href="/institutions/register"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
+            >
+              For Schools & Organisations
+            </Link>
             <a className="text-sm font-semibold text-primary" href={DEMO}>{t('landing.schools.email')}</a>
             <a
               href="#demo"

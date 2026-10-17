@@ -23,7 +23,7 @@ Fields the app writes:
 | `provider` | string | `expo` or `webpush`. |
 | `deviceId` | string | Same id as the document id. |
 | `keys` | map | Web Push subscription keys: `p256dh`, `auth`. Omit for Expo. |
-| `prefs` | map | Optional booleans. A missing key stays on. `false` opts that device out. Keys: `goals`, `flags`, `attendance`, `digests`, `grades`, `assignments`, `general`. |
+| `prefs` | map | Optional booleans. A missing key stays on. `false` opts that device out. Keys: `goals`, `flags`, `attendance`, `digests`, `grades`, `assignments`, `general`, `alumni`, `institution`, `achievements`. `alumni` covers reunions, the alumni wall, yearbook release, and alumni messages. `grades` stays for unit-test pushes. |
 | `app` | string | Which client registered the device. |
 | `updatedAt` | timestamp | Last registration write. |
 
@@ -942,3 +942,623 @@ The server writes one `events` document when a lesson is first completed on the 
 | `at` | timestamp | |
 
 Completing the same lesson again does not write another event. Clients must not post `lesson.first_complete`. There is no route that accepts an event name. Firestore's default deny already blocks client writes to `events`. That rule is not changed or deployed by this change.
+
+## Lifelong learner record
+
+One Poket School account follows the learner. The student number on `users/{uid}` does not change when they join another academy. Mobile clients do not write `studentNumber`, `institutionId`, or `role`.
+
+Joining an academy adds a span and closes the previous open span. Graduation closes the span. Spans are not deleted. A transfer frees the previous academy’s used seat and does not send a graduation letter.
+
+## `users/{uid}/education/{institutionId}`
+
+| Field | Meaning |
+| --- | --- |
+| `institutionId` | Academy id. This is also the document id. |
+| `institutionName` | Academy name at the time of the span |
+| `level` | Level name |
+| `from` | `YYYY-MM-DD` |
+| `to` | `YYYY-MM-DD`, or empty while this academy is current |
+| `studentNumber` | The same number on every span for this account |
+
+The signed-in learner may read and list their own spans. Client creates, updates, and deletes are denied, so the number cannot be edited from the app. The server writes these documents with the Admin SDK.
+
+## `users/{uid}/portfolio/profile`
+
+| Field | Meaning |
+| --- | --- |
+| `publicPortfolio` | Ask for a public page. Default `false` |
+| `parentApproved` | A linked parent sets this. The learner cannot |
+| `sharePortfolioWithSchools` | Former schools may see sections marked for schools. Default `false` |
+| `shareDestinationWithSchools` | Former schools may count the next step. Default `false` |
+| `includeScores` | Unit and final scores on the CV. Default `false` |
+| `template` | `deep`, `mid`, `bright`, or `classic`. Older rows may still say `forest`, `gold`, or `coral`. The server reads those as `deep`, `mid`, and `bright`. |
+| `sections` | Map of section id to `private`, `schools`, or `public` |
+| `summary`, `bullets` | Wording the learner saved after reviewing an ET AI draft |
+
+Section ids: `education`, `courses`, `scores`, `certificates`, `badges`, `projects`, `endorsements`, `activities`, `awards`, `experience`, `skills`, `links`.
+
+The learner may update the sharing toggles, template, section map, summary, and bullets. The learner cannot set `parentApproved`. A parent whose `childIds` contain this learner may set `parentApproved` only.
+
+A public page stays off until `publicPortfolio` is true. If `ageTier` is `under13` or `teen`, it also stays off until `parentApproved` is true. A missing age tier is treated as under 13, so the public page stays off.
+
+## `users/{uid}/portfolio_items/{id}`
+
+Self-reported achievements. The learner may create, update, and delete. `source` is `self_reported`. Fields: `kind` (`activity`, `award`, `competition`, `volunteering`, `sport`, `leadership`, `work`, `skill`, `language`, `link`), `title`, `detail`, `when`, `evidenceLink`, `evidencePath`, `section`, `userId`.
+
+`evidenceLink` is empty or an `https://` URL. `evidencePath` is empty or `media/{uid}/portfolio/{itemId}`. Storage rules already let that user write images under `media/{uid}/`. Keep files at or under 5 MB. Do not store a data URL in Firestore.
+
+## Verified inputs the CV reads
+
+These collections are reserved. The CV builder reads them when a document is present. It does not invent a project or an endorsement.
+
+| Collection | Who writes | Notes |
+| --- | --- | --- |
+| `users/{uid}/studio_projects/{id}` | The signed-in learner, from Studio or Research Helper | `title`, `detail` |
+| `users/{uid}/endorsements/{id}` | A teacher at the same academy | `title`, `detail`, `teacherId` |
+
+Certificates stay in `certificates` where `studentId` matches. Badges stay in `badges` where `userId` matches. Scores are read from `grades` and `unit_quiz_attempts` only when `includeScores` is true, and only when a numeric score is already stored.
+
+Verified lines are labelled `Verified by Poket School`. Self-reported lines are labelled `Self-reported`.
+
+## `users/{uid}/destination/current`
+
+The learner’s own next step: `kind` (`university`, `college`, `institution`, `work`, `other`), `name`, `course`, `country`, `source` (`stated` or `detected`), `shareWithSchools`, `shareName`, `testimonial`, `shareTestimonial`, and optional `destinationInstitutionId`. The learner may write this private copy. Sharing with a school is a separate consent flag.
+
+## `learner_destinations/{fromInstitutionId}_{uid}`
+
+One document per former school for this learner. The destination academy itself is not given a row about its own join.
+
+| Field | Meaning |
+| --- | --- |
+| `fromInstitutionId` | The school that may see this row |
+| `studentId` | Learner uid, used to remove the row |
+| `learnerName` | First name and last initial, and only when `shareName` is true. Otherwise empty |
+| `name`, `course`, `country`, `kind` | The next step |
+| `source` | `stated` or `detected` |
+| `shareWithSchools`, `shareName`, `shareTestimonial` | Consent flags |
+| `testimonial` | Optional quote, empty unless the learner opts in |
+
+A school reads with `where('fromInstitutionId', '==', institutionId)`. That is a single-field query. The index is automatic. It is not added to `firestore.indexes.json`. The same is true for `where('studentId', '==', uid)` when a deletion removes the rows.
+
+Counts group by institution, country, and course. A bucket under 5 is omitted. An opted-in name or testimonial is not a count, so it can still be shown.
+
+## `portfolio_public/{studentNumber}`
+
+Public `get` by the student number. `list` is denied. The same pattern as `alumni_public`.
+
+The document stores `name` (first name and last initial), `studentNumber`, `summary`, `qrUrl` (`https://poketschool.ai/portfolio/{studentNumber}`), and the items whose section is `public`. It does not store email, date of birth, or private sections. Certificate links on an item point at `https://poketschool.ai/verify/{id}`.
+
+The server deletes this document when sharing is off, when a learner under 18 has no parent approval, or when account deletion is honoured. The private record remains until the existing 14-day deletion wait finishes. `honourHolderDeletion` turns off public sharing and destination sharing immediately. Certificate pages stay up with `revoked at holder's request`.
+
+Rules still need an owner deploy. These rules are not deployed from this change.
+
+## LinkedIn and job applications
+
+Poket School uses LinkedIn’s own buttons and OpenID Connect. It does not scrape LinkedIn and it does not submit applications on LinkedIn.
+
+Add to Profile uses `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME`. Share uses `https://www.linkedin.com/sharing/share-offsite/`. Neither needs a LinkedIn API product. `LINKEDIN_ORGANIZATION_ID` is optional. When it is unset, the button sends `organizationName` as Poket School.
+
+Sign in with LinkedIn is hidden until `LINKEDIN_CLIENT_ID` and `LINKEDIN_CLIENT_SECRET` are set. The requested scope is `openid profile email` only. The redirect is `/api/auth/linkedin/callback`. A person who is already signed in can link `linkedInSub` on `users/{uid}`. A signed-out LinkedIn sign-in works only when that `sub` is already linked. The server looks it up with `where('linkedInSub', '==', sub)`. That is a single-field query. The index is automatic.
+
+A member post stays off. It needs LinkedIn approval for `w_member_social` and `LINKEDIN_MEMBER_SHARE=on`, and this server does not request or store that token. `POST /api/auth/linkedin/share` returns that explanation and does not call LinkedIn.
+
+## `share_links/{token}`
+
+The token is the document id. The learner creates one link per job application.
+
+| Field | Meaning |
+| --- | --- |
+| `studentId` | Learner uid. Listed with `where('studentId', '==', uid)` |
+| `label` | The learner’s name for the link, such as Company X - Analyst |
+| `expiresOn` | `YYYY-MM-DD` |
+| `createdAt` | ISO time |
+| `revoked` | Closed by the learner |
+
+`share_links/{token}/views/{id}` stores `at`, `itemTitle`, and `visitorLabel`. `visitorLabel` is only the text the visitor types. The view does not store an IP address or any other detail about the visitor.
+
+The public page is `/record/{token}`. An expired or revoked token does not return the record.
+
+## `verification_requests/{id}`
+
+An employer can ask the learner or the school to confirm a self-reported item. The employer cannot write the record.
+
+| Field | Meaning |
+| --- | --- |
+| `studentId` | Learner uid |
+| `itemId`, `itemTitle` | The self-reported item |
+| `note`, `visitorLabel` | What the visitor typed |
+| `status` | `open` or `confirmed` |
+| `confirmedBy` | `learner` or `school` |
+| `schoolIds` | Academies already on the learner’s education history |
+
+A school reads with `where('schoolIds', 'array-contains', institutionId)`. That is a single-field query. Confirming sets `confirmation` on `users/{uid}/portfolio_items/{id}` to `learner` or `school`. The line stays self-reported. It does not become a Poket School certificate.
+
+## `users/{uid}/applications/{id}`
+
+The learner’s own job tracker: `company`, `role`, `link` (https or empty), `status` (`draft`, `applied`, `interview`, `offer`, `hired`, `studying`, `closed`), `date`, `shareToken`, `reminderOn`. A reminder shows in the portfolio when the date is today or earlier and the status is `applied` or `interview`. Poket School does not email a blast and does not apply for the learner.
+
+ET AI tailors bullets from verified achievements whose title or detail already contains a word from the pasted job description. A skill that appears only in the job text is left out.
+
+When the status is `hired` or `studying` and the learner already shares a destination with former schools, that outcome is copied onto the existing destination rows. Alumni Destinations then counts Hired and Studying. A count under 5 stays hidden.
+
+`linkedInSub` on `users/{uid}` is written by the server during link. Mobile clients do not write it.
+
+Rules still need an owner deploy. These rules are not deployed from this change.
+
+## CV versions and the public portfolio theme
+
+A learner can keep more than one CV. Each version is presentation only. The Poket School record stays the source of the verified facts.
+
+## `users/{uid}/cv_versions/{id}`
+
+The learner reads and writes these through the portfolio API. The id matches `cv-` plus letters, numbers, and hyphens.
+
+| Field | Meaning |
+| --- | --- |
+| `name` | The learner’s name for this CV, such as Company X - Analyst |
+| `shareToken` | Optional id of a `share_links` document this learner owns |
+| `template` | `classic`, `serif`, `compact`, `deep`, `mid`, `bright`, or `mist`. Older rows may still say `forest`, `gold`, `coral`, or `blue`. The server reads those as `deep`, `mid`, `bright`, and `bright`. |
+| `accent` | Hex colour. New colourful templates start from the confirmed tokens in `lib/brand-theme.ts`: `blueDeep`, `primary`, `blueBright`, and `wash`. |
+| `font` | `sans`, `serif`, or `mono` |
+| `layout` | `one` or `two` |
+| `photo` | Whether the CV shows a photo block |
+| `pageSize` | `A4` or `Letter` |
+| `language` | A supported language code. English stays as written |
+| `sectionOrder` | Section ids, including custom ids |
+| `sectionTitles` | Renamed headings |
+| `hiddenSections`, `hiddenItems` | Lines and sections left off this version |
+| `customSections` | Up to eight `{ id, title, body }` blocks |
+| `wording` | Title and detail overrides for self-reported items only |
+| `summary` | Summary wording for this version |
+| `showScores` | Whether score lines are eligible for this version |
+| `updatedAt` | ISO time |
+
+`wording` is ignored for a verified item. Showing or hiding that item is the only choice, so the Verified mark stays honest. A language other than English is a display copy from content translation at download. The stored facts are not replaced. If `OPENROUTER_API_KEY` is unset, the download keeps the original wording and says so.
+
+PDF and DOCX are produced from the composed version. The photo block draws initials. It does not fetch a remote image into the file.
+
+## Public theme
+
+`users/{uid}/portfolio/profile.theme` and `portfolio_public/{studentNumber}.theme` store the same visual choices: template, accent, font, layout, photo, section order, renamed headings, hidden sections, custom sections, self-reported wording, and summary. The public page `/portfolio/{studentNumber}` renders that theme. A verified title in `portfolio_public` stays the recorded title.
+
+`photoUrl` is copied from the account avatar only when it is an `https` URL and photo is on. The public document still stores the public name, student number, and public items. It does not store an email address.
+
+This is a single-document read by student number, and a subcollection under the learner. No composite index is required. Rules still need an owner deploy. These rules are not deployed from this change.
+
+## Alumni communications and class networks
+
+An alumnus stays linked to every academy they attended, including after the account is Individual. The link is history. It does not occupy a seat.
+
+## `users/{uid}/attended/{institutionId}`
+
+Written by the server when someone graduates or transfers. Mobile clients read it. They do not write `seatCounted` or `holdsSeat`.
+
+| Field | Meaning |
+| --- | --- |
+| `institutionId`, `institutionName` | The academy |
+| `level`, `className`, `programme`, `country` | The class or cohort they left |
+| `leftOn` | The day the span closed, `YYYY-MM-DD` |
+| `destination`, `job`, `contact` | What the alumnus later told that academy. Contact is not shown in the directory |
+| `seatCounted` | Always `false` |
+| `holdsSeat` | Always `false` |
+
+If `institutions/{id}/alumni/{uid}` is missing, the server creates it with `seatFreed: true` and `seatCounted: false` so the academy can reach them. An existing alumni document keeps its graduation seat fields. This change does not rewrite `seatFreed`, `seatCounted`, or `undoneOn` on a graduation that already happened.
+
+## `users/{uid}/alumni_consent/{institutionId}`
+
+One consent record per academy. Email and push default off. Inbox defaults on. Directory, direct messages, and mentorship default off.
+
+| Field | Meaning |
+| --- | --- |
+| `email`, `inbox`, `push` | Channels. Unsubscribe stops email and push. Inbox stays on its own flag |
+| `directory` | Opt in to the classmate directory. The directory shows a first name and last initial, never an email |
+| `messages` | Opt in to 1:1 notes. Both adults must opt in |
+| `mentor` | Opt in to mentor a current student. The academy still approves the match |
+| `unsubscribed` | Stops email and push from this academy |
+| `unsubscribeToken` | 32 hex characters. The public unsubscribe page reads `alumni_unsubscribes/{token}` |
+
+`alumni_unsubscribes/{token}` stores `studentId` and `institutionId` so the email link is one document read.
+
+## `alumni_outbox/{id}`
+
+Top-level, so a scheduled send is `where('status', '==', 'scheduled')`. The academy list is `where('institutionId', '==', id)`. Status is filtered in memory. No composite index.
+
+| Field | Meaning |
+| --- | --- |
+| `institutionId` | The sender |
+| `kind` | `reunion`, `newsletter`, `event`, `fundraising`, or `survey` |
+| `subject`, `body` | Rendered from the template plus the academy's note |
+| `filter` | Optional cohort year, level, programme, class, country, and destination. An empty field means everyone |
+| `sendOn` | `YYYY-MM-DD`. A future date waits for the daily cron |
+| `status` | `scheduled`, `sending`, or `sent` |
+| `reached`, `opened`, `clicked`, `replies` | Counts. Opens and clicks are unique per alumnus |
+| `createdAt`, `sentAt` | ISO times |
+
+`alumni_outbox/{id}/receipts/{studentId}` stores `opened`, `clicked`, `emailed`, and a 32-hex `token`. `alumni_receipts/{token}` points back at the campaign so the view link and the event link can record one open or click. There is no tracking pixel.
+
+`alumni_outbox/{id}/replies` stores `studentId`, `body`, `decision`, and `at`. The alumnus can reply to the academy.
+
+`users/{uid}/inbox/{campaignId}` is the in-app copy: `institutionId`, `subject`, `body`, `fromName`, `at`. Push uses the existing device token store and is skipped when push consent is off.
+
+The older academy newsletter toggle is unchanged. These campaigns are separate and follow the per-person consent above.
+
+## Class groups, events, and safety
+
+`institutions/{id}/alumni_groups/{groupId}` is created for the class, or for the level cohort when there is no class name. `memberCount` is a number. Members live in `members/{uid}` with `studentId`, `joinedOn`, and `directoryName` (empty until they opt in).
+
+Posts live in `alumni_groups/{groupId}/posts/{postId}`: `authorId`, `authorName`, `body`, `decision` (`allow`, `hold`, or `block`), `visible`, `queued`, `at`. A minor's post is held even when the safety filter would allow it. An adult post that is held (contact details, harassment, or an off-platform app) waits too. A blocked post is not stored.
+
+`institutions/{id}/alumni_queue/{postId}` is the moderator list: `status` `held`, `released`, or `blocked`, plus `kind` `post` or `mentor`. The held query is a single field.
+
+`institutions/{id}/alumni_events/{eventId}` stores `title`, `when`, `place`, `rsvpCount`, and `at`. RSVPs are `rsvps/{uid}` with `going` and `at`.
+
+`users/{uid}/blocks/{otherId}` is a block. `institutions/{id}/alumni_reports` stores `reporterId`, `targetId`, `postId`, `reason`, `status: open`, and `at`.
+
+Direct messages exist only between two adults who both opted in and have not blocked each other. They are stored at `users/{uid}/alumni_threads/{otherId}` and `messages/{id}`. A minor cannot open a direct message.
+
+## Mentorship
+
+`institutions/{id}/mentorships/{id}` and a mirror at `users/{uid}/mentorships/{id}`: `mentorId`, `studentId`, `mentorName`, `studentName`, `status` (`pending`, `approved`, `closed`), `moderated`, `institutionId`, `at`.
+
+The mentor is an adult alumnus who opted in. The student is a current student of that academy. Messages stay closed until the academy sets `approved`. `moderated` is true when the student is under 18, and the academy can read `mentorships/{id}/messages`. A minor's message in that thread is held for the same moderator queue.
+
+These are single-document reads, subcollections, or one-field queries. No composite index and no collection-group query. Rules still need an owner deploy. These rules are not deployed from this change. Mobile clients do not write seat counts.
+
+## Alumni yearbook and wall
+
+Each graduating class has one yearbook. The book id is the class group id, or the level cohort when there is no class name. Creating a page does not occupy a seat and does not change `seatCounted`, `seatFreed`, or `undoneOn`.
+
+## `institutions/{id}/yearbooks/{bookId}`
+
+| Field | Meaning |
+| --- | --- |
+| `institutionId`, `institutionName` | The academy |
+| `name` | Class or cohort label, such as Oak 2026 |
+| `cohort` | Four-digit graduating cohort, or empty |
+| `className`, `level` | The class the page was opened from |
+| `lockOn` | `YYYY-MM-DD`. Students can edit through this day. Default is 30 days after they leave |
+| `status` | `open` or `released` |
+| `template` | `deep`, `mid`, `bright`, or `mist`. Older books may still say `forest`, `gold`, `coral`, or `blue`. The server reads those as `deep`, `mid`, `bright`, and `bright`. |
+| `principalMessage`, `teacherMessage` | Staff notes printed on the cover. Contact details are refused |
+| `releasedAt` | ISO time, set when the academy releases the book |
+
+`yearbooks/{bookId}/pages/{studentId}` is the student's page. The student writes `quote`, `mostLikely`, `clubs`, and `photo` (a boolean). The server fills achievements and destination from the existing record. The client does not write `status`, `parentApproved`, or achievement titles.
+
+`audiences` is one of `classmates`, `institution`, `alumni`, or `public` for each of `photo`, `name`, `className`, `quote`, `mostLikely`, `clubs`, `achievements`, and `destination`. The default is `classmates`. A wider audience includes the narrower ones. A field set to classmates stays off the public page.
+
+`status` is `draft`, `pending`, or `approved`. `parentApproved` is set only by a linked parent whose `childIds` contains the student. A student cannot set it. An under-18 page stays hidden from classmates, other alumni, and the public until the parent has agreed and the academy has approved it. The academy can still read the draft in order to approve it.
+
+`yearbooks/{bookId}/signatures/{id}` is a note or sticker on a classmate page or the class wall (`toId` `wall`). Fields: `fromId`, `fromName` (first name and last initial), `toId`, `body`, `sticker` (`star`, `spark`, `deep`, `mid`, `bright`, or empty). Older notes may still say `leaf`, `gold`, or `coral`. The server reads those as `deep`, `mid`, and `bright`. Also `decision`, `visible`, `queued`, `at`. A minor's signature is held even when the safety filter would allow it. A blocked note is not stored. There is no direct message for anyone under 18.
+
+`yearbooks/{bookId}/memories/{id}` is the class timeline: `authorId`, `authorName`, `title`, `body`, `visible`, `queued`, `at`. A minor's memory is held.
+
+`yearbooks/{bookId}/gallery/{id}` is a class photo the academy adds: `caption`, `imageUrl` (https only, otherwise empty), `at`.
+
+Push uses the device token store. A released book, a visible signature, a reunion, and a connection request all use category `alumni`. Other academy notices use `institution`. The link is `/dashboard/student/yearbook`. Push is skipped when that person's alumni push consent is off, when `users.notificationPrefs.push` is `false`, or when the `alumni` account toggle is `false`. The printable PDF is built on the server. It does not fetch remote photos.
+
+## Alumni wall, map, and directory
+
+`alumni_feed/{id}` is one update for an academy. The list is `where('institutionId', '==', id)`. No composite index.
+
+| Field | Meaning |
+| --- | --- |
+| `institutionId`, `authorId`, `authorName` | Who posted, with a public name |
+| `kind` | `update`, `reunion`, `throwback`, or `achievement` |
+| `title`, `body` | The note. An achievement title must match a badge or certificate already on the record |
+| `visible`, `queued` | A minor's update is held. Hidden rows stay out of the feed |
+| `likeCount`, `rsvpCount` | Counts. RSVP is only for a reunion |
+| `at` | ISO time |
+
+Likes are `alumni_feed/{id}/likes/{uid}`. Comments are `comments/{id}` with `authorId`, `authorName`, `body`, `visible`, `queued`, and `at`. Reunion RSVPs are `rsvps/{uid}` with `going` and `at`. A reunion notifies alumni who still accept inbox or push.
+
+`alumni_directory/{institutionId}__{uid}` is the opt-in adult directory. The query is `where('institutionId', '==', id)`, then cohort, class, destination, industry, and country are filtered in memory. Fields: `studentId`, `name` (first name and last initial), `year`, `className`, `destination`, `industry`, `country`. No email. A minor cannot opt in.
+
+`alumni_places/{institutionId}__{uid}` is the map opt-in: `country`, `shareName`, `name` (empty unless they opted to show a name and they are an adult). Countries with fewer than five people are hidden. The map uses country names only, not a personal coordinate.
+
+`users/{uid}/connections/{otherId}` is an adult connection request: `status` `pending` or `accepted`, `institutionId`, `name`, `at`. Both people must be adults in that academy's directory, and neither may have blocked the other. There is no direct message until both have the existing messages consent, and never for a minor.
+
+Mentorship stays on `institutions/{id}/mentorships/{id}`. An adult alumnus can offer to mentor a current student. Messages stay closed until the academy approves. A minor student's thread is moderated.
+
+Held yearbook signatures, memories, feed updates, and comments join the existing `institutions/{id}/alumni_queue` list. `kind` may be `yearbook`, `yearbook-memory`, `feed`, or `feed-comment`, in addition to `post` and `mentor`. The held query is still one field.
+
+These are single-document reads, subcollections, or one-field queries. No composite index and no collection-group query. Rules still need an owner deploy. These rules are not deployed from this change. Mobile clients do not write seat counts, `parentApproved`, or verified achievement text.
+
+## Poketschool app contract
+
+This is the request and response shape the mobile app uses. Collection fields named earlier in this file stay as written. A missing push preference stays on.
+
+### Signup fields
+
+`users/{uid}` on first signup. The client writes these. The server issues `studentNumber` and never lets the client choose it.
+
+| Field | Type | Notes |
+|---|---|---|
+| `email` | string | From the auth account. |
+| `name` | string | Display name. |
+| `avatarUrl` | string | Optional photo URL. |
+| `role` | string | `student`, `parent`, or `teacher`. |
+| `dateOfBirth` | string | `YYYY-MM-DD` when the person entered one. |
+| `gender` | string | Labels are Male and Female. Stored exactly as `male` or `female`. No other value is accepted. |
+| `demographicConsentAt` | number | Milliseconds. Required before gender is stored. |
+| `country` | string | Country code or name entered at signup. |
+| `region` | string | State or region. |
+| `phone` | string | Optional. |
+| `consentAcceptedAt` | timestamp | Terms accepted. |
+| `pathway`, `level`, `yearGroup` | string | Student placement. |
+| `subjects`, `subject`, `teachingLevel`, `institutionName` | string or array | Teacher profile. |
+| `pendingChildEmail` | string | Parent signup, until the child is linked. |
+| `xp` | number | Starts at 0. |
+
+`POST /api/account/student-number` with a Firebase ID token and `{}` returns `{ studentNumber }`. The same call returns the existing code. `POST /api/account/self-reported-school` with `{ name, country, state }` records a school the student typed. It does not attach an institution membership.
+
+### Student number and QR
+
+Format: `PS-XXXX-XXXX`. Alphabet: `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (no `I`, `O`, `0`, or `1`). The QR payload is the join path `/join/PS-XXXX-XXXX`. A scan or a typed code is normalised before lookup. The public portfolio URL is `https://poketschool.ai/portfolio/PS-XXXX-XXXX` and the credential URL is `https://poketschool.ai/p/PS-XXXX-XXXX`.
+
+### Parent link
+
+`POST /api/join` with a Firebase ID token.
+
+| `action` | Body | Response |
+|---|---|---|
+| `lookup` | `{ action: "lookup", code }` | `{ card: { studentNumber, name, level, photoUrl, membership } }` |
+| `membership` | `{ action: "membership", code, level }` | Same card, plus `{ message }`. Institution admin only. Sets membership. Does not set `parentApproved`. |
+| `parent` | `{ action: "parent", code }` | `{ message, confirmBy }` where `confirmBy` is `student` or `institution_admin`. |
+| `confirm` | `{ action: "confirm", requestId }` | `{ ok: true, message }`. Institution admin confirms an under-13 link. |
+
+`code` may be `PS-XXXX-XXXX` or a scanned `/join/PS-XXXX-XXXX` URL. A teen or adult student confirms on `parent_links/{parentId}_{studentId}`. A learner under 13, or with no age tier yet, creates `institution_parent_requests/{parentId}_{studentId}` with `status: pending` and the institution admin confirms it. `GET /api/join` returns `{ requests: [{ id, parentName, studentName, studentNumber, status }] }` for that admin.
+
+`POST /api/institutions/join` with `{ action: "link", studentNumber, institutionId, name }` is the parent link from the academy join page. It returns `{ links }` or `{ error }`.
+
+### Invite code, roster, and email domain
+
+`institutions/{id}.domains` is `string[]`: lower-case hosts, with a leading `@` stripped. `institutions/{id}.joinPolicy` is one of `open`, `invite`, `domain`, `code`, `roster`, or `manual`.
+
+| `joinPolicy` | What approves |
+|---|---|
+| `open` | The account is approved. `decision.method` is `open`. |
+| `invite` | A class code or a generic invite of at least four characters. |
+| `domain` | The email host is in `domains`. |
+| `code` | A class code only. |
+| `roster` | A roster row only. |
+| `manual` | The admin queue. |
+
+When `joinPolicy` is absent, the older combined checks stay: roster, then invite code, then domain, then the queue. `signupPolicy` (`open`, `invite`, or `domain` on academy settings) does not select `joinPolicy`. A non-empty `domains` list replaces `settings/join` `emailDomains`. An empty or missing `domains` leaves that older list. `allowedEmailDomains` fills in only when both are empty.
+
+`GET /api/institutions/join?slug={slug}` returns `{ name, slug, policy, domains, joinPolicy, codes, overage }`. `domains` is the effective host list. `joinPolicy` is the mode, or `null` when the combined checks still apply. `policy` still includes `emailDomains`, `acceptInviteCode`, `rosterMatch`, and `manualFallback`. `codes` is `[{ code, level, className }]`.
+
+`POST /api/institutions/join` `{ action: "decide", slug, role, email, name, dob, studentId, inviteCode, parentConsent, programmeId, level }` returns `{ decision, programmes, institutionName }`. `decision.status` is `approved`, `pending`, `needs_consent`, `waiting_for_seat`, or `rejected`. `decision.method` is `roster`, `code`, `domain`, `manual`, `open`, or empty. A roster row matches the school student id, the email, or the name plus date of birth. A student under 13 returns `needs_consent` until `parentConsent` is true.
+
+`{ action: "attach", slug, ...same attempt, childStudentNumber, takeCredit }` signs the caller in and returns the preview plus `credit` and `message`. An approved student keeps the same `studentNumber`. `{ action: "claim", slug, token }` claims a seat-ledger invite. `{ action: "leave" }` returns `{ progressKept: true, account: "individual", institutionAccess, graceEndsOn }`.
+
+### Import roster
+
+`institutions/{institutionId}/rosters/{rosterId}` is the import and match list. It is not `joinRoster`. `joinRoster` remains the seat ledger (`unclaimed`, `pending`, `joined`, `waiting`, `leaver`).
+
+| Field | Type | Notes |
+|---|---|---|
+| `email` | string | Lower case. Required. |
+| `studentNumber` | string | Optional school id. |
+| `firstName`, `lastName` | string | Required. |
+| `level` | string | Required. |
+| `classId` | string | Optional class id. |
+| `gender` | string | Labels Male and Female. Stored exactly as `male` or `female`. |
+| `role` | string | `student` or `parent`. |
+| `status` | string | `pending`, `matched`, or `invited`. |
+| `matchedUid` | string | Optional. The matched person may read their own row. |
+| `importedAt` | string | ISO time. |
+| `importBatchId` | string | The import batch. |
+
+The server writes this collection. An institution admin may write it under the rules in `firestore.rules`. A teacher, an institution admin, or a platform admin may read it. A matched person may read their own row. Clients do not set `matchedUid` for someone else. Join and alumni verification match `email` or `studentNumber`. A `student` row in `pending`, `matched`, or `invited` counts. It does not occupy a seat.
+
+`POST /api/institutions/join` `{ action: "importRoster", institutionId, roster: { ...fields } }` writes one row. The document id is the lower-case email. The response is `{ id, row }`.
+
+Indexes, not deployed: `email` + `status`, `importBatchId` + `importedAt` descending, `studentNumber` + `status`. Harry approves the rules deploy.
+
+### Welcome star
+
+The onboarding course awards a badge only. Finishing the welcome track writes `badges/{uid}_welcome_{track}`. `track` is `student`, `parent`, `teacher`, `institution`, or `independent`. Fields: `userId`, `type` (`welcome_{track}`), `name` (`Welcome star`), `description`, `icon`, `sparks` (`0`), `awardedAt`. It does not issue a certificate and it does not spend Sparks. Badge push uses category `achievements`.
+
+### Graduation to an individual account
+
+Graduating decrements the occupied seat immediately (`seatFreed: true` on `institutions/{id}/alumni/{uid}`; the server writes `seatCounted`). That academy’s finished courses move to the Completed shelf. The account becomes an individual: `users/{uid}` keeps `role: student` and the same `studentNumber`, the server deletes `institutionId` when that academy was the current one, and it sets `alumniOf`, `alumniName`, `alumniLeftOn`, `alumniGraceEnds`, `alumniDiscount`, and `institutionAccess` (`grace` for a Professional or Law leaver inside 90 days, otherwise `ended`). Undo stays open for 7 days (`undoUntil`). Undoing restores the seat and academy access. Progress, the portfolio, and the student number stay on the account. `POST /api/institutions/join` `{ action: "leave" }` is the student's own move to an individual account and returns the same access fields.
+
+### CV, portfolio, share links, and the job tracker
+
+The record lives at `users/{uid}/portfolio/profile`, `users/{uid}/portfolio_items/{id}`, `users/{uid}/cv_versions/{id}`, and `portfolio_public/{studentNumber}`. Each CV version is a draft. There is no separate draft collection and a CV does not issue a certificate. Verified rows come from courses, scores, certificates, and badges. The client does not write a verified line. Routes: `GET` and `POST /api/portfolio`, `GET` and `POST /api/applications`, `GET /api/record?token=`.
+
+`share_links/{token}` fields are `studentId`, `label`, `expiresOn`, `createdAt`, and `revoked`. The public page is `/record/{token}`. Each open adds `share_links/{token}/views/{id}` with `at`, `itemTitle`, and `visitorLabel`. The view count is the size of that subcollection. The app reads it. It does not write a count field, an IP address, or a visitor id.
+
+`users/{uid}/applications/{id}` is the job tracker: `company`, `role`, `link` (https or empty), `status` (`draft`, `applied`, `interview`, `offer`, `hired`, `studying`, `closed`), `date`, `shareToken`, and `reminderOn`. Poket School does not apply for the learner.
+
+### Alumni messages, yearbook, wall, reunions, and mentoring
+
+Direct messages are `users/{uid}/alumni_threads/{otherId}/messages/{id}` with `authorId`, `body`, and `at`. Both adults must have `messages: true` on `users/{uid}/alumni_consent/{institutionId}`. A minor cannot open that consent. The push category is `alumni`.
+
+Yearbook documents are `institutions/{id}/yearbooks/{bookId}` and `pages/{studentId}`. Yearbook release, wall signatures, reunion posts, and alumni messages use `alumni`. Other academy campaigns use `institution`.
+
+Mentoring stays on `institutions/{id}/mentorships/{id}`. A minor student's thread is moderated. Mentor consent is `mentor: true` on the same alumni consent document, and a minor cannot set it.
+
+Alumni posts are `alumni_feed/{id}` (`kind` `update`, `reunion`, `throwback`, or `achievement`) and `institutions/{id}/alumni_groups/{groupId}/posts/{postId}`. Class networks are `institutions/{id}/alumni_groups/{groupId}` with `members/{uid}`. Reunions are `institutions/{id}/alumni_events/{eventId}` plus feed items with `kind: reunion`. Directory consent is the `directory` boolean on `users/{uid}/alumni_consent/{institutionId}`. The directory row is `alumni_directory/{institutionId}__{uid}`. Routes: `GET` and `POST /api/alumni/network`, `GET` and `POST /api/alumni/yearbook`, `GET` and `POST /api/institutions/alumni`, `GET` and `POST /api/institutions/yearbook`.
+
+### DM consent and minor moderation
+
+`users/{uid}/alumni_consent/{institutionId}` fields: `email`, `inbox`, `push`, `directory`, `messages`, `mentor`, `unsubscribed`. Missing means off. `messages` is the DM consent. Both people must opt in. Under-18 accounts cannot set `messages` or `mentor`.
+
+A minor's wall signature, memory, feed post, and comment is held on `institutions/{id}/alumni_queue` until a staff member releases it. `kind` is `yearbook`, `yearbook-memory`, `feed`, or `feed-comment`. The minor's own yearbook page can be saved when their own text passes the word filter. They still need `parentApproved` before the page is submitted, and the client never writes that flag.
+
+### Push preference toggles
+
+Each new category has an account toggle on `users/{uid}.notificationPrefs` and the same key on `deviceTokens/{deviceId}.prefs`.
+
+| Key | What it covers |
+|---|---|
+| `alumni` | Reunions, the alumni wall, yearbook release, and alumni messages |
+| `institution` | Institution notices that are not alumni events |
+| `achievements` | Badge pushes |
+| `grades` | Unit-test grade pushes. It is a send category. It is not an account toggle |
+
+There is no separate `reunions`, `wall`, `yearbook`, or `alumni_messages` category.
+
+`notificationPrefs.push: false` stops every push from the shared sender. A missing key stays on. `false` opts out. The in-app `notifications` row is still written.
+
+### Indexes and rules waiting for an owner deploy
+
+These rows are in `firestore.indexes.json` and `firestore.rules`. They are not deployed from this change. Harry approves the deploy.
+
+| Collection | Index |
+|---|---|
+| `leaderboard_entries` | `scope` ASC, `scopeId` ASC, `period` ASC, `xp` DESC. House boards use `scope: house`. |
+| `rosters` | `email` + `status`; `importBatchId` + `importedAt` DESC; `studentNumber` + `status` |
+| `certificates` | `studentId` ASC, `issuedAt` DESC |
+| `badges` | `userId` ASC, `awardedAt` DESC |
+| `parent_links` | `parentId` + `studentEmail`; `studentId` + `status` |
+| `join_requests` | `status` + `createdAt` |
+
+`certificates` allow a public get, a signed-in list for the owner, a teacher, or a linked parent, and no client write. `badges` allow a signed-in read and an admin write. `parent_links` and `institutions/{id}/join_requests` keep their existing create and update checks. `gamification/{uid}` is readable by that person, an admin, or a linked parent, and is not client-writable. `gamification_config/{docId}` is readable while signed in and writable by an admin. `leaderboard_entries/{id}` is readable when `shareBoard` is true and is not client-writable. Fields on a board row: `userId`, `scope` (`class`, `institution`, or `house`), `scopeId`, `period` (ISO week or `all`), `xp`, `label`, `schoolName`, `shareBoard`, `updatedAt`.
+
+### Brand colours
+
+Poket School brand colours are the confirmed blue gradient. Forest green `#1A3C34` and gold `#C8922A` are Rochford's school colours, not Poket School's. A platform pass sets the same token names site-wide. This branch keeps a local copy in `lib/brand-theme.ts` and `app/globals.css` so screens, PDFs, and cards match that palette.
+
+The hero gradient is `135deg`, from `#1E6A83` through `#2786A4` to `#6FBBCE`. Screens use `bg-hero`, which reads `--hero-gradient`.
+
+| Token | Value | Class |
+| --- | --- | --- |
+| `primary` | `#2786A4` | `bg-brand-primary` |
+| `blueDeep` | `#1E6A83` | `bg-blue-deep`, `text-blue-deep`. White text clears on this fill. Small accent text uses it, because primary on white is under 4.5:1 |
+| `blueBright` | `#6FBBCE` | `bg-blue-bright`. Use ink text on it |
+| `amber` | `#E2AF4D` | Warning and accent. Use ink text. Stored as `--amber`, not a Tailwind amber scale |
+| `coral` | `#D0553F` | Danger. Stored as `--coral` |
+| `good` | `#1F8A70` | Success |
+| `bg` | `#F4F6F6` | Page background. `bg-background` already matches |
+| `wash` | `#E9F7FA` | `bg-wash` |
+| `card` | `#FFFFFF` | Card, and text on the deep and primary stops |
+| `line` | `#E7EDED` | `border-line` |
+| `ink` | `#203337` | `text-ink` |
+| `muted` | `#5F7074` | Secondary text. `--muted-ink` |
+| `teacher` | `#E9F7FA` | Role wash |
+| `parent` | `#E5F6EF` | Role wash |
+| `admin` | `#F0F5F4` | Role wash |
+
+Plus Jakarta Sans is the UI face and Instrument Sans is the display face. Radius steps are 12, 18, 24, 32, and pill (`--radius-12`, `--radius-18`, `--radius-24`, `--radius-32`, `--radius-pill`).
+
+Institution white-label colours stay on each academy (`primaryColor` and `secondaryColor`). They are not this palette. Older stored yearbook templates, CV templates, pricing-card accents, and welcome hues named `forest`, `gold`, `coral`, `cream`, or `blue` still open. New writes use `deep`, `mid`, `bright`, and `mist`.
+
+## Individual alumni claims
+
+An individual learner can add a school they attended from the portfolio, the alumni network page, or a parent page. The control is “Add a school I attended”. The server writes every document below with the Admin SDK. Clients cannot write `seatCounted`, `parentApproved`, `studentNumber`, `ageTier`, `claimedIndividual`, or these claim documents. The default Firestore rule denies them.
+
+A verified claim does not set `users.institutionId` or `users.alumniOf`, and it does not occupy or free a licence. `releaseAlumniSeat` returns immediately when `claimedIndividual` is true. The seat-release sweep skips those rows. A later real graduation still runs if that person is currently enrolled at the academy (`users.institutionId` equals the academy).
+
+### `users/{uid}/alumni_claims/{id}`
+
+Document id is the institution id when the school is registered, or the school key when it is not.
+
+| Field | Type | Notes |
+|---|---|---|
+| `institutionId` | string | Set for a registered academy. Empty for a self-reported group until that school registers. |
+| `schoolKey` | string | `schoolKey(country, state, name)`. Empty for a registered claim. Format `CC\|state\|slug`, with no slash. |
+| `schoolName` | string | Academy name or the typed school name. |
+| `className` | string | Class the learner entered. |
+| `graduationYear` | string | Four digits, from 1950 through the current year. |
+| `status` | string | `needs_parent`, `pending`, `verified`, `unverified`, or `rejected`. |
+| `method` | string | `roster`, `domain`, `admin`, `peer`, or empty. |
+| `email` | string | Lower-case email copied at request time. |
+| `createdAt` | string | ISO time. |
+
+### `institutions/{id}/alumni_claims/{uid}`
+
+Same claim, plus `studentId` and `name`. The academy queue lists `pending` and `needs_parent` only. An admin can confirm or decline `pending`. `needs_parent` stays until a linked parent confirms.
+
+### Decision
+
+`decideAlumniClaim` in `lib/alumni-claim.ts`:
+
+| Case | Status | Method |
+|---|---|---|
+| Minor (`under13` or `teen`) and the parent has not confirmed | `needs_parent` | empty |
+| School is not registered | `unverified` | `peer` |
+| `joinPolicy` is absent, `rosterMatch` is on, and a `joinRoster` or `rosters` row matches the email, `role` is `student`, and `status` is not `leaver` | `verified` | `roster` |
+| `joinPolicy` is `roster` and that same row matches | `verified` | `roster` |
+| `joinPolicy` is absent and the email host is in `domains`, or in `emailDomains` when `domains` is empty | `verified` | `domain` |
+| `joinPolicy` is `domain` and the email host is in `domains` | `verified` | `domain` |
+| Registered academy, no automatic match | `pending` | `admin` |
+
+A missing age tier fails closed as `under13`. An institution admin cannot file a claim. A learner who still has `users.institutionId` equal to that academy is told alumni opens when they leave or graduate. An existing `users/{uid}/attended/{institutionId}` returns already verified and does not write a second membership.
+
+### Verified placement
+
+`rememberAttendance` with `claimedIndividual: true` writes:
+
+- `users/{uid}/attended/{institutionId}` with `seatCounted: false` and `holdsSeat: false`.
+- `users/{uid}/alumni_consent/{institutionId}` if missing. Consent stays off. `messages` and `mentor` stay unavailable to a minor.
+- `institutions/{id}/alumni_groups/{groupId}` and `members/{uid}`. The group id uses the class name, or the level, plus the graduation year.
+- A yearbook page for that class and year.
+- `institutions/{id}/alumni/{uid}` only when that document is missing. Fields include `reason: claimed`, `claimedIndividual: true`, `seatFreed: false`, `seatCounted: false`, and `publicProfile: false`. An existing graduate document is not overwritten, so a real graduation keeps `seatFreed`.
+
+`seatFreed: false` keeps the row out of “seats freed” and blocks undo. The desk shows “joined · no seat”. Class networks, the yearbook, the wall, messaging, and the directory are the same surfaces institution-graduated alumni use. Directory, messages, and mentor stay opt-in. A minor cannot set `messages` or `mentor`, and `canDirectMessage` blocks a minor.
+
+### Unregistered group
+
+`unregistered_alumni/{schoolKey}`:
+
+| Field | Type | Notes |
+|---|---|---|
+| `name` | string | Display name. |
+| `country` | string | Two-letter country code. |
+| `state` | string | Region, as typed. |
+| `verified` | boolean | `false`. The badge is Unverified. |
+| `mergedInto` | string | Empty until the school registers. Then the institution id. |
+| `memberCount` | number | Incremented when a new member is added. |
+
+`unregistered_alumni/{schoolKey}/members/{uid}`: `studentId`, `name` (public name), `className`, `graduationYear`, `parentApproved` (`true` once a parent has confirmed, or immediately for an adult), `joinedOn`.
+
+`unregistered_alumni/{schoolKey}/posts/{id}`: `authorId`, `authorName`, `body` (max 500), `visible`, `queued`, `at`. `screenPost` blocks a threat. A minor’s note is held (`queued: true`, `visible: false`). Another adult member, not the author, can release it. There is no academy admin for this group.
+
+A minor’s request does not create the member until a parent confirms.
+
+### Sales lead
+
+`unregistered_schools/{schoolKey}` gains:
+
+| Field | Type | Notes |
+|---|---|---|
+| `alumniCount` | number | People who asked to join this name as alumni. |
+| `registeredInstitutionId` | string | Set when the group merges into a registered academy. |
+
+`unregistered_schools/{schoolKey}/alumni_leads/{uid}` is `{ at }` and is written once. `alumniCount` increments with that first write. `count` increments in the same write only when `users/{uid}.selfReportedSchool.key` is not already this key, so a student who already named the school is not counted twice. Super admin sees “N alumni asked to join” and, after registration, “Now on Poket School”. Merging two lead rows adds their `alumniCount` values.
+
+### Merge when the school registers
+
+`POST /api/institutions/register` calls `mergeUnregisteredAlumni` after the academy document is committed. The key is `schoolKey(country, state, organisation name)`, using the same two-letter country and state the registration form stores. A typed state that does not match that string will not merge.
+
+Members with `parentApproved === false` are skipped. Everyone else is placed with `claimedIndividual: true`. Their user claim becomes `status: verified`, `method: admin`, and `institutionId` is set. The group’s `mergedInto` and the lead’s `registeredInstitutionId` are set. A failure is logged and does not fail registration.
+
+A later request for that same school name follows the registered academy. A parent confirmation that arrives after the merge places the child in the official network instead of the old group. Posts to a merged group are refused.
+
+### Routes
+
+`GET /api/alumni/claim` requires a Firebase ID token.
+
+| Query | Response |
+|---|---|
+| `?q=` of at least two characters | `{ schools: [{ id, name, country, state }] }`. Registered academies whose name contains the query. Suspended academies are omitted. At most eight. |
+| none | `{ country, state, minor, mine, groups, children }`. `mine` is the caller’s claims. `groups` are unverified groups and their posts. `children` are linked `childIds` claims still on `needs_parent`. |
+
+`POST /api/alumni/claim`:
+
+| `action` | Body | Response |
+|---|---|---|
+| `request` (default) | `{ institutionId?, schoolName?, graduationYear, className, country?, state? }` | `{ status, message }`. `country` is required only when `institutionId` is empty, and it must be two letters. |
+| `approve-child` | `{ childId, claimId }` | `{ status, message }`. The caller’s `childIds` must include `childId`. The decision runs again with `parentApproved: true` and the child’s real age tier. |
+| `post` | `{ schoolKey, body }` | `{ id, visible, queued }`. |
+| `release` | `{ schoolKey, postId }` | `{ ok: true }`. |
+
+`GET /api/institutions/alumni` adds `claims: [{ studentId, name, className, graduationYear, status }]`. `POST` `{ action: "review-claim", institutionId, studentId, approve }` returns `{ status }` (`verified` or `rejected`). `approve` defaults to true. A `needs_parent` row returns “A parent confirms this learner first.”
+
+Parent confirmation notifies the parent in app with `skipPush`. A `pending` claim notifies the academy `adminId` with push preference `institution`. A verified learner is notified with the same preference. A minor still cannot open direct messages, and a minor’s posts on the official wall stay in `institutions/{id}/alumni_queue`.
+
+
+
+

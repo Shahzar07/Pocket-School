@@ -25,6 +25,9 @@ import {
   DashPage, DashHeader, Panel, PanelHeader, StatCard, ProgressBar,
   ListRow, Initials, EmptyState,
 } from '@/components/dash-ui';
+import { StudentPassCard } from '@/components/student-pass-card';
+import { useEnsureStudentNumber } from '@/components/use-student-number';
+import { learnerLevelLabel } from '@/lib/student-number';
 
 interface CourseWithEnrollment { course: Course; enrollment: Enrollment }
 
@@ -69,6 +72,7 @@ function ProgressRing({ value, size = 116, stroke = 9 }: { value: number; size?:
 export default function StudentDashboard() {
   const router = useRouter();
   const { user, profile } = useAuthSTORE();
+  useEnsureStudentNumber();
   const [enrolled, setEnrolled] = useState<CourseWithEnrollment[]>([]);
   const [badges, setBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState(true);
@@ -197,6 +201,12 @@ export default function StudentDashboard() {
             </Button>
           </div>
         )}
+      />
+
+      <StudentPassCard
+        name={profile?.name ?? firstName}
+        level={learnerLevelLabel(profile)}
+        code={profile?.studentNumber ?? ''}
       />
 
       <StudyLaunchpad />
