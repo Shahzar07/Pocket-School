@@ -76,6 +76,14 @@ export default function SignupPage() {
   const [joinInstitution, setJoinInstitution] = useState('');
   const [listed, setListed] = useState<JoinDirectoryRow[]>([]);
   const [inviteCode, setInviteCode] = useState('');
+  const [refCode, setRefCode] = useState('');
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get('ref') ?? '';
+    const stored = window.sessionStorage.getItem('ps-ref') ?? '';
+    if (fromUrl) window.sessionStorage.setItem('ps-ref', fromUrl);
+    setRefCode(fromUrl || stored);
+  }, []);
   useEffect(() => {
     const states = statesForCountry(country);
     setJoinState((current) => (states as readonly string[]).includes(current) ? current : states[0] ?? '');
@@ -184,6 +192,13 @@ export default function SignupPage() {
     return {};
   };
 
+  const issueMemberCard = async () => {
+    await authedFetch('/api/card', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'issue', ...(refCode ? { ref: refCode } : {}) }),
+    }).catch(() => {});
+  };
+
   const handleGoogleSignIn = async () => {
     if (!agreed) { toast.error(t('signup.acceptFirst')); return; }
     try {
@@ -217,6 +232,7 @@ export default function SignupPage() {
             toast.error(error instanceof Error ? error.message : t('signup.placementFailed'));
           });
         }
+        await issueMemberCard();
         await finishJoin(result.user.uid, { email: result.user.email, name: result.user.displayName });
       }
       const existing = snap.exists() ? snap.data() : { role };
@@ -339,6 +355,7 @@ export default function SignupPage() {
         toast.error(error instanceof Error ? error.message : t('signup.placementFailed'));
       });
     }
+    await issueMemberCard();
     toast.success(t('signup.welcome'));
     await finishJoin(result.user.uid, { email: result.user.email, name });
     routeAfterSignup(role);

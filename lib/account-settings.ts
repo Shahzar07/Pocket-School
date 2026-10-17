@@ -63,6 +63,11 @@ export const PRIVILEGED_PROFILE_FIELDS = [
   'sparksMonthlyAllowance',
   'sparksGrantedAt',
   'xp',
+  'studentNumber',
+  'referralCode',
+  'cardShareId',
+  'cardIndexed',
+  'cardSharing',
 ] as const;
 
 export interface NotificationPrefs {

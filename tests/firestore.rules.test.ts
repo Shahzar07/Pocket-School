@@ -317,6 +317,10 @@ describe('age tiers', () => {
     await assertFails(updateDoc(doc(db, 'users/child1'), { ageTier: 'adult' }));
     await assertFails(updateDoc(doc(db, 'users/child1'), { ageTier: 'teen' }));
     await assertFails(updateDoc(doc(db, 'users/child1'), { dateOfBirth: '1990-01-01' }));
+    await assertFails(updateDoc(doc(db, 'users/child1'), { studentNumber: 'PSM-0001' }));
+    await assertFails(setDoc(doc(db, 'referrals/AB12CD34'), { inviterUid: 'child1', createdAt: 1, redeemedBy: [] }));
+    await assertFails(setDoc(doc(db, 'card_shares/shareidshareidshare'), { uid: 'child1', revoked: false }));
+    await assertFails(setDoc(doc(db, 'card_audit/evt1'), { type: 'view', uid: 'child1' }));
     const teen = dbFor('teen1');
     await assertFails(updateDoc(doc(teen, 'users/teen1'), { ageTier: 'adult' }));
     await assertSucceeds(updateDoc(doc(teen, 'users/teen1'), { yearGroup: 'Year 10' }));

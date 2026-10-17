@@ -28,6 +28,8 @@ describe('activity log model', () => {
     assert.equal(clientMayReport('impersonation.start', 'support'), true);
     assert.equal(clientMayReport('impersonation.start', 'teacher'), false);
     assert.equal(clientMayReport('certificate.issue', 'admin'), false);
+    assert.equal(clientMayReport('card.created', 'student'), false);
+    assert.equal(clientMayReport('card.channel', 'admin'), false);
     assert.equal(clientMayReport('retention.purge', 'super_admin'), false);
     assert.equal(clientMayReport('not.real', 'super_admin'), false);
   });

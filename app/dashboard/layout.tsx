@@ -12,7 +12,7 @@ import {
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
   Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked, Compass, Camera, Newspaper,
-  Wallet, Gift, Landmark, Plug, PieChart, Search,
+  Wallet, Gift, Landmark, Plug, PieChart, Search, IdCard,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -112,6 +112,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
     { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -159,6 +160,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
     ]},
     { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -191,6 +193,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
     { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -237,6 +240,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
     { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -266,6 +270,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
     ]},
     { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],

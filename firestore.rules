@@ -140,7 +140,8 @@ service cloud.firestore {
               'adminRole', 'statusReason', 'deletedAt', 'cohortIds',
               'ageTier', 'dateOfBirth', 'emailVerified', 'phoneVerified',
               'sparksBalance', 'sparksMonthlyAllowance', 'sparksGrantedAt',
-              'sparksWelcomeGrantedAt', 'xp', 'stripeCustomerId', 'stripeAccountId'];
+              'sparksWelcomeGrantedAt', 'xp', 'stripeCustomerId', 'stripeAccountId',
+              'studentNumber', 'referralCode', 'cardShareId', 'cardIndexed', 'cardSharing'];
     }
 
     // Profile & settings. Keep this list aligned with SELF_SERVICE_FIELDS
@@ -418,8 +419,9 @@ service cloud.firestore {
       allow read: if isSignedIn();
       // Signup may store dateOfBirth. ageTier and Stripe ids are server-only, including on create.
       allow create: if isUser(userId)
-        && !incoming().keys().hasAny(['ageTier', 'stripeAccountId', 'stripeCustomerId']);
-      allow update: if (isAdmin() && staffWriteAllowed())
+        && !incoming().keys().hasAny(['ageTier', 'stripeAccountId', 'stripeCustomerId', 'studentNumber', 'referralCode', 'cardShareId', 'cardIndexed', 'cardSharing']);
+      allow update: if (isAdmin() && staffWriteAllowed()
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['studentNumber', 'referralCode', 'cardShareId', 'cardIndexed', 'cardSharing']))
         || (isUser(userId) && selfProfileUpdate())
         || (isUser(userId) && walletProgressUpdate())
         || parentUnlink(userId)
@@ -2658,6 +2660,33 @@ service cloud.firestore {
     }
 
     match /billing_events/{eventId} {
+      allow read, write: if false;
+    }
+
+    // Member numbers, share links, and the referral stub. The server writes
+    // these with the Admin SDK. The card is free, so these rules do not look
+    // at a plan or an entitlement.
+    match /student_numbers/{numberId} {
+      allow read, write: if false;
+    }
+
+    match /number_sequences/{sequenceId} {
+      allow read, write: if false;
+    }
+
+    match /card_shares/{shareId} {
+      allow read, write: if false;
+    }
+
+    match /card_audit/{eventId} {
+      allow read, write: if false;
+    }
+
+    match /card_audit_head/{headId} {
+      allow read, write: if false;
+    }
+
+    match /referrals/{code} {
       allow read, write: if false;
     }
 

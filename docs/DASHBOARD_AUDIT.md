@@ -942,6 +942,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Sparks are the learning token inside this wallet, not a second product.
 - **Owner keys:** Payment provider keys in Integrations for cash top-ups.
 
+### Member card
+
+- **Route:** `/dashboard/card`
+- **Audience:** everyone
+- **Purpose:** A free digital card for every account: a server-issued number, a share link, a parent toggle for under-13s, and an adult choice about search indexing.
+- **Overlaps:** Referrals, affiliates, and promos.
+- **Decision:** Keep. This card is the public share and the member number. The referrals page stays the affiliate rewards desk. This card does not pay out.
+- **Owner keys:** None. The server writes the number, the share id, and the referral code.
+
 ### Referrals, affiliates, and promos
 
 - **Route:** `/dashboard/referrals`

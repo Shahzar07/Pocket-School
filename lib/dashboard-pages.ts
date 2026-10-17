@@ -927,6 +927,15 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     ownerKeys: 'Payment provider keys in Integrations for cash top-ups.',
   },
   {
+    path: '/dashboard/card',
+    title: 'Member card',
+    purpose: 'A free digital card for every account: a server-issued number, a share link, a parent toggle for under-13s, and an adult choice about search indexing.',
+    audience: ['everyone'],
+    overlaps: 'Referrals, affiliates, and promos.',
+    decision: 'Keep. This card is the public share and the member number. The referrals page stays the affiliate rewards desk. This card does not pay out.',
+    ownerKeys: 'None. The server writes the number, the share id, and the referral code.',
+  },
+  {
     path: '/dashboard/referrals',
     title: 'Referrals, affiliates, and promos',
     purpose: 'Share a short link, earn a commission an admin sets, and run a promo with a quantity limit and a countdown.',

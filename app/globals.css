@@ -151,6 +151,7 @@
     --ps-role-admin: #F0F5F4;
     --ps-dark-bg: #0B1417;
     --ps-hero: linear-gradient(135deg, #1E6A83 0%, #2786A4 50%, #6FBBCE 100%);
+    --ps-card-face: linear-gradient(135deg, #1E6A83 0%, #2786A4 55%, #6FBBCE 100%);
     --ps-band: linear-gradient(135deg, #1E6A83 0%, #2786A4 100%);
     --ps-pattern-ink: rgba(255, 255, 255, 0.78);
     --medal-first: #3FE0D0;
@@ -274,6 +275,7 @@
     --ps-role-admin: #10181E;
     --ps-dark-bg: #0B1417;
     --ps-hero: linear-gradient(135deg, #0B1417 0%, #17282D 50%, #1E6A83 100%);
+    --ps-card-face: linear-gradient(135deg, #1E6A83 0%, #2786A4 55%, #6FBBCE 100%);
     --ps-band: linear-gradient(135deg, #17282D 0%, #1E6A83 100%);
     --ps-pattern-ink: rgba(11, 20, 23, 0.55);
     --medal-first: #3FE0D0;
