@@ -3435,8 +3435,18 @@ export interface Certificate {
   id?: string;
   studentId: string;
   studentName: string;
+  /** Same value as `studentName`. */
+  name?: string;
   courseId: string;
   courseTitle: string;
+  /** Same value as `courseTitle`. */
+  course?: string;
+  /** Public verify path, `/verify/{id}`. */
+  verifyUrl?: string;
+  /** QR payload. Same string as `verifyUrl`. */
+  qr?: string;
+  /** Institution student number, when the server had one at issuance. */
+  studentNumber?: string;
   moduleId?: string;
   moduleTitle?: string;
   issuedAt: Timestamp;

@@ -124,11 +124,18 @@ export async function issueCourseCertificate(studentId: string, courseId: string
     const id = crypto.randomUUID();
     const issuedAt = new Date().toISOString();
     const issuedByName = issuer.issuerName?.trim() || CERTIFICATE_ISSUER_NAME;
+    const verifyUrl = `/verify/${id}`;
+    const studentNumber = typeof user.studentNumber === 'string' ? user.studentNumber.trim() : '';
     tx.set(db().doc(`certificates/${id}`), {
       studentId,
       studentName,
+      name: studentName,
       courseId,
       courseTitle,
+      course: courseTitle,
+      verifyUrl,
+      qr: verifyUrl,
+      ...(studentNumber ? { studentNumber } : {}),
       moduleId: 'course',
       moduleTitle: courseTitle,
       level,

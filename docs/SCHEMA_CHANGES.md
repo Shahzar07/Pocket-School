@@ -812,7 +812,25 @@ Passing a unit does not award a certificate.
 
 ### Certificates
 
-Collection `certificates`. Clients cannot create them. One course certificate per student, keyed in `certificate_keys` as `{studentId}__{courseId}__course`.
+Collection `certificates`. One course certificate per student, keyed in `certificate_keys` as `{studentId}__{courseId}__course`.
+
+Issuance is server-only. The Admin SDK writes a certificate after the final assessment and every unit are passed. Clients only read issued certificates. They never create, update, or delete one.
+
+`firestore.rules` already says so. That rule is listed in the repo and is not deployed by this change:
+
+```
+match /certificates/{certId} {
+  allow get: if true;
+  allow list: if isSignedIn() && (
+    resource.data.studentId == request.auth.uid
+    || isTeacherOrAdmin()
+    || linkedTo(resource.data.studentId)
+  );
+  allow create, update, delete: if false;
+}
+```
+
+Public `get` is what makes `/verify/[certificateId]` work without a login. `list` is the signed-in student, a teacher or admin, or a linked parent.
 
 Issued only when both are true:
 
@@ -821,19 +839,23 @@ Issued only when both are true:
 
 Finishing lessons does not issue one. Passing a unit that is not the final does not issue one, unless the final was already passed and this pass is the last unit still outstanding.
 
+Fields on `certificates/{id}`:
+
 | Field | Type | Notes |
 |---|---|---|
-| `studentId`, `studentName` | string | Name comes from the user profile. |
-| `courseId`, `courseTitle` | string | |
+| `id` | string | Document id. This is the certificate ID. |
+| `verifyUrl` | string | Public verify page. Path only, for example `/verify/11111111-2222-4333-8444-555555555555`. The page is `app/verify/[uuid]`. |
+| `qr` | string | Data the QR encodes. The same value as `verifyUrl`. Not an image. |
+| `studentNumber` | string | Institution student number, when the server has one on the user profile. Omitted when there is none. |
+| `name` | string | Student name printed on the certificate. Also stored as `studentName`. |
+| `course` | string | Course title. Also stored as `courseTitle`. |
 | `level` | string | Level name only. Primary, Lower Secondary, IGCSE, A-Level, and the other named levels. Never a year number. |
 | `score` | number | Best final-assessment percentage. |
-| `passMark` | number | Course pass mark used for that decision. |
-| `issuedAt` | timestamp | |
-| `kind` | string | `course` |
-| `status` | string | `valid` or `revoked` |
-| `id` | string | Document id. This is the certificate ID. Public check: `GET /verify/{id}`. PDF: `GET /api/certificates/{id}/pdf`. |
+| `issuedAt` | timestamp | When the server issued it. |
 
-Older rows with `kind: "module"` were issued for a finished module. New issuance does not create those.
+Also stored for the web app: `studentId`, `courseId`, `passMark`, `kind` (`course`), `status` (`valid` or `revoked`). PDF download is `GET /api/certificates/{id}/pdf`.
+
+Older rows with `kind: "module"` were issued for a finished module. They may have `studentName` and `courseTitle` and no `verifyUrl`, `qr`, `name`, or `course`. New issuance does not create those rows. Read `name` then `studentName`, and `course` then `courseTitle`.
 
 If SMTP is configured (`SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`), the server emails the PDF link. If it is not configured, issuance still succeeds and the email is skipped.
 
