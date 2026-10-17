@@ -158,6 +158,18 @@ export function roundMoney(amount: number, rounding: Rounding, currency: string)
   return round2(amount);
 }
 
+/**
+ * Nearest Apple and Google USD book price. The points are $0.99, $1.99,
+ * $2.99, and so on. A non-positive or non-finite amount stays 0, so a book
+ * can remain included with the plan. A tie snaps up to the next point.
+ */
+export function snapToStorePricePoint(usd: number): number {
+  if (!Number.isFinite(usd) || usd <= 0) return 0;
+  const cents = Math.round(usd * 100);
+  const index = Math.max(0, Math.round((cents - 99) / 100));
+  return round2((index * 100 + 99) / 100);
+}
+
 export function formatMoney(amount: number, currency: string): string {
   const code = (currency || 'USD').trim().toUpperCase();
   const digits = isZeroDecimal(code) ? 0 : 2;

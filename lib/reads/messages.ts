@@ -184,6 +184,7 @@ export const READS_EN = {
   'reads.studio.languagesLead': 'Cached against the source edition. Align this with the localisation review queue when that work lands.',
   'reads.studio.approve': 'Mark reviewed',
   'reads.studio.price': 'Price (USD)',
+  'reads.studio.priceHint': 'Apple and Google sell books at prices ending in .99 ($0.99, $1.99, $2.99). A price you enter snaps to the nearest one.',
   'reads.studio.tier': 'Minimum plan',
   'reads.studio.savedLocal': 'Updated in this preview.',
   'reads.studio.generateFail': 'Outline generation needs the AI key and an admin session.',

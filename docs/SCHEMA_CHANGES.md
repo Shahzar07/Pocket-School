@@ -323,7 +323,7 @@ Shelf quotes go through `lib/pricing.ts`. `quotePrice` and `viewerCurrency` no l
 
 `seedPricing()` includes `reads` (4.99 USD a month, 49.99 USD a year) and `reads-family` (7.99 USD a month, 79.99 USD a year). `normalizePricing` merges those rows into an existing pricing document. A stored Reads row keeps the amount already saved, so an admin document that still has the previous prices has to be saved again before checkout uses the new ones. School plans still use `annualDiscount` (25%). Reads subscriptions stay on card, in USD.
 
-A buy-to-own book defaults to `defaultBookUsd` (1.99 USD). `storedBookPriceRM` turns that into the shelf ringgit figure. Harbour Light’s seed and the checkout fallback use that default. Book Studio starts a new book at the same price. A book’s own `priceUsd` still overrides it, and a purchase still writes `library/{uid}/books/{bookId}` so the copy stays after the plan ends.
+A buy-to-own book defaults to `defaultBookUsd` (1.99 USD). `storedBookPriceRM` turns that into the shelf ringgit figure. Harbour Light’s seed and the checkout fallback use that default. Book Studio starts a new book at the same price. A book’s own `priceUsd` still overrides it. In Book Studio that override snaps to the nearest Apple and Google price point through `snapToStorePricePoint` ($0.99, $1.99, $2.99, and so on). Zero stays zero, so a book can remain included with the plan. A purchase still writes `library/{uid}/books/{bookId}` so the copy stays after the plan ends.
 
 ### Language
 
