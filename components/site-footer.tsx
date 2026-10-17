@@ -65,6 +65,7 @@ const PLATFORM_LINKS = [
   { labelKey: "footer.marketplace", href: "/courses" },
   { labelKey: "nav.books", href: "/reads" },
   { labelKey: "footer.pricing", href: "/pricing" },
+  { labelKey: "footer.blog", href: "/blog" },
 ];
 
 const LEARNER_LINKS = [

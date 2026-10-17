@@ -6,6 +6,10 @@ export const chromeEn = {
   header: {
     etMaths: 'ET Maths',
     examPrep: 'Exam Prep',
+    blog: 'Blog',
+  },
+  footer: {
+    blog: 'Blog',
   },
   nav: {
     community: 'Community',
@@ -84,7 +88,8 @@ export const chromeEn = {
 };
 
 const ms = {
-  header: { etMaths: 'ET Maths', examPrep: 'Exam Prep' },
+  header: { etMaths: 'ET Maths', examPrep: 'Exam Prep', blog: 'Blog' },
+  footer: { blog: 'Blog' },
   nav: {
     community: 'Komuniti',
     channels: 'Saluran',
@@ -156,7 +161,8 @@ const ms = {
 };
 
 const zh = {
-  header: { etMaths: 'ET Maths', examPrep: 'Exam Prep' },
+  header: { etMaths: 'ET Maths', examPrep: 'Exam Prep', blog: '博客' },
+  footer: { blog: '博客' },
   nav: {
     community: '社区',
     channels: '频道',
@@ -225,7 +231,8 @@ const zh = {
 };
 
 const ta = {
-  header: { etMaths: 'ET Maths', examPrep: 'Exam Prep' },
+  header: { etMaths: 'ET Maths', examPrep: 'Exam Prep', blog: 'வலைப்பதிவு' },
+  footer: { blog: 'வலைப்பதிவு' },
   nav: {
     community: 'சமூகம்',
     channels: 'சேனல்கள்',
