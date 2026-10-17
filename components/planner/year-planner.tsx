@@ -282,20 +282,20 @@ export function YearPlanner({
   };
 
   if (loading) {
-    return <p className="text-sm text-muted-foreground p-6">Loading the school year…</p>;
+    return <p className="text-sm text-muted-foreground p-6">Loading the school plan…</p>;
   }
 
   return (
     <DashPage>
       <DashHeader
         eyebrow="Poket School"
-        title="Year planner"
+        title="School planner"
         description={plan.status === 'published'
-          ? 'This year is published. Moving a date rebuilds releases, assessments, and report cards, then waits for you to publish again.'
-          : 'Imports and photos stay a draft until a person publishes the year. Holidays and exam weeks are not teaching days.'}
+          ? 'This plan is published. Moving a date rebuilds releases, assessments, and report cards, then waits for you to publish again.'
+          : 'Imports and photos stay a draft until a person publishes the plan. Holidays and exam weeks are not teaching days.'}
         actions={canEdit ? (
           <Button type="button" className="rounded-full" onClick={publish}>
-            {plan.status === 'published' ? 'Publish updates' : 'Publish this year'}
+            {plan.status === 'published' ? 'Publish updates' : 'Publish this plan'}
           </Button>
         ) : undefined}
       />
@@ -379,7 +379,7 @@ export function YearPlanner({
               <label className="block">Class
                 <Input value={selected.classId ?? ''} disabled={!canEdit} onChange={event => patchSelected({ classId: event.target.value || undefined })} />
               </label>
-              <label className="block">Year group
+              <label className="block">Level
                 <Input value={selected.yearGroup ?? ''} disabled={!canEdit} onChange={event => patchSelected({ yearGroup: event.target.value || undefined })} />
               </label>
             </div>
@@ -396,7 +396,7 @@ export function YearPlanner({
               <label className="text-xs">Class
                 <Input value={plan.classId} disabled={!canEdit} onChange={event => setPlan(current => ({ ...current, classId: event.target.value }))} placeholder="All" />
               </label>
-              <label className="text-xs">Year
+              <label className="text-xs">Level
                 <Input value={plan.yearGroup} disabled={!canEdit} onChange={event => setPlan(current => ({ ...current, yearGroup: event.target.value }))} placeholder="All" />
               </label>
             </div>

@@ -7,6 +7,7 @@ import {
   sendDigest,
   sendFlagAlert,
   sendGoalParentAlert,
+  sendPush,
   tokensForRecipient,
   wantsCategory,
   webPushShouldPrune,
@@ -89,6 +90,14 @@ test('prefs opt out a device and invalid tokens are pruned', async () => {
   const pruned = await sendFlagAlert(message({ category: 'flags' }), dead.store);
   assert.deepEqual(pruned.pruned, ['gone']);
   assert.deepEqual(dead.pruned, ['gone']);
+});
+
+test('an fcm token is sent with the other providers', async () => {
+  const fcm = deps([token({ provider: 'fcm', deviceId: 'fcm-1', token: 'fcm-token', platform: 'android' })]);
+  const report = await sendPush(message(), fcm.store);
+  assert.equal(fcm.sent[0]?.provider, 'fcm');
+  assert.equal(report.sent, 1);
+  assert.equal(report.skipped, 0);
 });
 
 test('provider errors that mean the token is dead are pruned', () => {

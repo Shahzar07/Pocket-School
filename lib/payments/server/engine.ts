@@ -687,6 +687,12 @@ async function writePaidInvoice(checkout: CheckoutDoc, invoiceId: string) {
     createdBy: quote.ownerId || 'platform',
     createdAt: FieldValue.serverTimestamp(),
   }, { merge: true });
+  try {
+    const { enqueuePaidInvoice } = await import('./myinvois-queue');
+    await enqueuePaidInvoice(invoiceId, myInvois);
+  } catch (error) {
+    console.error('MyInvois queue skipped', error);
+  }
 }
 
 async function applyGrant(grant: PlannedGrant, checkout: CheckoutDoc, reversing: boolean): Promise<void> {

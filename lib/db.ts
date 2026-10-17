@@ -182,6 +182,15 @@ export interface Course {
   publishScope?: 'institution' | 'public' | 'marketplace';
   institutionId?: string;
   marketplaceApproved?: boolean;
+  /** Super admin placement. Featured spots are a subset of an approved marketplace listing. */
+  featured?: boolean;
+  placement?: {
+    marketplace: 'hidden' | 'pending' | 'approved' | 'rejected';
+    featured: boolean;
+    core: boolean;
+    levels: string[];
+    institutionIds: string[];
+  };
   libraryApproved?: boolean;
   /** subscription, a_la_carte, or both. Absent keeps the older catalogue rules. */
   accessMode?: 'subscription' | 'a_la_carte' | 'both';
@@ -873,7 +882,7 @@ export async function countProgrammeSubjects(programmeId: string): Promise<numbe
  *
  * Refuses while subjects still reference it — deleting anyway would leave
  * those subjects pointing at a programme that no longer exists, and they would
- * silently vanish from every year-group listing with no way to find them again.
+ * silently vanish from every level listing with no way to find them again.
  * Move or delete the subjects first.
  */
 export class ProgrammeInUseError extends Error {
@@ -903,7 +912,7 @@ export async function deleteProgramme(id: string): Promise<void> {
 }
 
 /** Curriculum "Modules" are Course docs with kind === 'curriculum' (one subject for one
- * year group). Optionally filter to a specific year group for the student dashboard. */
+ * level). Optionally filter to a specific level for the student dashboard. */
 export async function getCurriculumModules(yearGroup?: string): Promise<Course[]> {
   const clauses = [where('kind', '==', 'curriculum'), where('status', '==', 'published')];
   if (yearGroup) clauses.push(where('yearGroup', '==', yearGroup));
@@ -960,7 +969,7 @@ export async function enrollStudent(studentId: string, courseId: string, opts?: 
   });
 }
 
-/** Enrols a student in every published curriculum module for their year group. */
+/** Enrols a student in every published curriculum module for their level. */
 export async function getEnrollment(studentId: string, courseId: string): Promise<Enrollment | null> {
   const snap = await getDoc(doc(db, 'courses', courseId, 'enrollments', studentId));
   return snap.exists() ? (snap.data() as Enrollment) : null;

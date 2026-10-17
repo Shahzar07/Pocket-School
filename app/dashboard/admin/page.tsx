@@ -221,6 +221,8 @@ export default function AdminDashboard() {
           <div className="space-y-2">
             {[
               { href: '/dashboard/admin/curriculum', icon: Layers, title: 'CMS', sub: 'Programmes, subjects and lessons' },
+              { href: '/dashboard/admin/placement', icon: Layers, title: 'Course placement', sub: 'Marketplace, featured spots, and levels' },
+              { href: '/dashboard/admin/help', icon: LifeBuoy, title: 'Help articles', sub: 'What ET AI answers from' },
               { href: '/dashboard/admin/settings', icon: BarChart3, title: 'Pricing', sub: 'Plans, add-ons and currency' },
               { href: '/dashboard/admin/allocations', icon: Shield, title: 'Allocation', sub: 'Tiers, access and codes' },
               { href: '/dashboard/admin/institutions', icon: Building2, title: 'Institutions', sub: 'Schools and OEM' },

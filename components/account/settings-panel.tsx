@@ -512,6 +512,7 @@ export function SettingsPanel({
         <div className="flex flex-wrap gap-2">
           <Button type="button" className="rounded-full" onClick={() => void onSavePrivacy(privacy)}>Save privacy</Button>
           <Button type="button" variant="outline" className="rounded-full" onClick={() => void onExport()}>Download my data</Button>
+          <p className="text-xs text-muted-foreground">Your copy under the Malaysian PDPA and the GDPR. Deletion is scheduled from this page and can be cancelled for 14 days.</p>
         </div>
       </Section>
 

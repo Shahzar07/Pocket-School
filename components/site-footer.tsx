@@ -80,6 +80,7 @@ const LEGAL_LINKS = [
   { labelKey: "footer.terms", href: "/legal?doc=terms" },
   { labelKey: "footer.cookies", href: "/legal?doc=cookies" },
   { labelKey: "footer.aup", href: "/legal?doc=aup" },
+  { labelKey: "footer.help", href: "/help" },
   { labelKey: "footer.contact", href: "mailto:hello@poketschool.ai" },
 ];
 

@@ -1,7 +1,7 @@
 /**
  * Shared push delivery. Every sender loads `deviceTokens` where
  * `userId == recipientUid`, then sends through Expo or Web Push from
- * `provider`. A token whose prefs set the category to false is skipped.
+ * `provider`. Expo, Web Push, and FCM are all sent. A token whose prefs set the category to false is skipped.
  * Invalid tokens are deleted.
  *
  * Clients cannot read this collection. Callers pass a store that uses
@@ -91,7 +91,7 @@ async function deliver(message: PushMessage, deps: PushDeps): Promise<PushReport
       skipped += 1;
       continue;
     }
-    if (token.provider !== 'expo' && token.provider !== 'webpush') {
+    if (token.provider !== 'expo' && token.provider !== 'webpush' && token.provider !== 'fcm') {
       skipped += 1;
       continue;
     }

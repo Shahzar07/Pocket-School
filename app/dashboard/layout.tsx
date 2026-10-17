@@ -195,6 +195,8 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/admin/blog', icon: Newspaper, labelKey: 'nav.blog', label: 'Blog', superOnly: true },
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/dashboard/admin/courses', icon: Presentation, labelKey: 'nav.allCourses' },
+      { href: '/dashboard/admin/placement', icon: Layers, labelKey: 'nav.placement', label: 'Course placement', superOnly: true },
+      { href: '/dashboard/admin/help', icon: HelpCircle, labelKey: 'nav.helpArticles', label: 'Help articles' },
       { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' },
       { href: '/dashboard/admin/books', icon: BookOpen, labelKey: 'nav.books', label: 'Book Studio' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
@@ -249,6 +251,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
       { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
       { href: '/dashboard/institution/templates', icon: FileText, labelKey: 'nav.reportStudio' },
+      { href: '/dashboard/institution/activity', icon: Activity, labelKey: 'nav.activityLog', label: 'Activity log' },
       { href: '/dashboard/institution/certificates', icon: Award, labelKey: 'nav.certificates', label: 'Certificates' },
     ]},
     { sectionKey: 'nav.section.school', items: [

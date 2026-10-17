@@ -179,13 +179,19 @@ export const LEGAL_DOCS: LegalDoc[] = [
         ],
       },
       {
-        heading: '12. Changes to These Terms',
+        heading: '12. International users',
+        blocks: [
+          { type: 'p', text: 'These terms are governed by Malaysian law. If you use Poket School from the UK, the EEA, or another country, the privacy policy’s GDPR section applies to your personal data alongside the Malaysian PDPA. Nothing in these terms removes a right that the law of your country does not allow us to remove.' },
+        ],
+      },
+      {
+        heading: '13. Changes to These Terms',
         blocks: [
           { type: 'p', text: 'We reserve the right to modify these Terms at any time. We will notify registered users of material changes by email or prominent notice on the platform at least 14 days before the changes take effect. Your continued use of the platform after the effective date constitutes acceptance of the revised Terms.' },
         ],
       },
       {
-        heading: '13. Contact',
+        heading: '14. Contact',
         blocks: [
           {
             type: 'contact',
@@ -205,10 +211,10 @@ export const LEGAL_DOCS: LegalDoc[] = [
   {
     id: 'privacy',
     title: 'Privacy Policy',
-    meta: `Last updated: ${LEGAL_UPDATED} · Governed by: Malaysia PDPA 2010 (as amended 2024)`,
+    meta: `Last updated: ${LEGAL_UPDATED} · Malaysia PDPA 2010 (as amended 2024) and the GDPR where it applies`,
     intro: {
       tone: 'info',
-      text: 'This Privacy Policy explains how Poket Media Sdn Bhd ("Poket School," "we," "us") collects, uses, stores, and protects personal data in compliance with the Malaysian Personal Data Protection Act 2010 (Act 709), as amended by the Personal Data Protection (Amendment) Act 2024, which came into full force in June 2025.',
+      text: 'This Privacy Policy explains how Poket Media Sdn Bhd ("Poket School," "we," "us") collects, uses, stores, and protects personal data. People in Malaysia are covered by the Personal Data Protection Act 2010 (Act 709), as amended in 2024. People in the UK, the EEA, and any other place where the GDPR applies are covered by the GDPR as well. The same rights are offered to every account.',
     },
     sections: [
       {
@@ -363,7 +369,15 @@ export const LEGAL_DOCS: LegalDoc[] = [
         ],
       },
       {
-        heading: '11. Contact and Complaints',
+        heading: '11. People outside Malaysia (GDPR)',
+        blocks: [
+          { type: 'p', text: 'Where the GDPR applies, Poket Media Sdn Bhd is the controller. The legal bases are the same ones named above: consent, contract, legal obligation, and legitimate interests. You may access, correct, erase, restrict, or object to processing, and you may take a portable copy of your data.' },
+          { type: 'p', text: 'Signed-in people can download that copy from Profile, under Privacy and your data, and can schedule deletion there. Deletion waits 14 days so it can be cancelled. Invoices are kept for 7 years with the name removed, because tax law requires the record. You may also email privacy@poketschool.ai or dpo@poketschool.ai. We reply within 30 days under the GDPR, and within 21 days under the PDPA.' },
+          { type: 'p', text: 'You may complain to the Personal Data Protection Department in Malaysia, or to your local supervisory authority if you are in the UK or the EEA. International transfers use the safeguards described in the cross-border section, including contractual clauses where the GDPR requires them.' },
+        ],
+      },
+      {
+        heading: '12. Contact and Complaints',
         blocks: [
           { type: 'p', text: 'If you have concerns about how we handle your personal data, please contact our DPO first. If you are not satisfied with our response, you may lodge a complaint with the Personal Data Protection Department (JPDP) Malaysia at pdp.gov.my.' },
           {
@@ -415,7 +429,7 @@ export const LEGAL_DOCS: LegalDoc[] = [
       {
         heading: '3. Managing Cookies',
         blocks: [
-          { type: 'p', text: 'You can manage your preferences at any time using the cookie banner shown on your first visit, or by clearing site data in your browser. Disabling essential cookies will prevent you from using the platform.' },
+          { type: 'p', text: 'The cookie banner asks before any non-essential cookie or local storage category runs. That choice is the consent the Malaysian PDPA and, where it applies, the GDPR and the ePrivacy rules require. You can accept all, reject all, or choose categories. Essential cookies stay on so you can sign in. You can change the choice by clearing this site’s data in your browser. Disabling essential cookies will prevent you from using the platform.' },
         ],
       },
       {

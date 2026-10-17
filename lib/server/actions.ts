@@ -429,6 +429,28 @@ export async function sendNotification(userId: string, title: string, message: s
     read: false,
     createdAt: FieldValue.serverTimestamp(),
   });
+  try {
+    const user = await db().doc(`users/${userId}`).get();
+    const phone = typeof user.data()?.phone === 'string' ? user.data()?.phone as string : '';
+    const email = typeof user.data()?.email === 'string' ? user.data()?.email as string : '';
+    const name = typeof user.data()?.name === 'string' ? user.data()?.name as string : '';
+    if (!phone && !email) return;
+    const { deliverWithEmailFallback } = await import('../messaging/whatsapp');
+    const { renderEmailTemplate, defaultEmailTemplate } = await import('../institution-email');
+    const letter = renderEmailTemplate(defaultEmailTemplate('notification'), { name, title, message });
+    await deliverWithEmailFallback({
+      phone,
+      template: 'poket_notice',
+      params: [title, message],
+      sendEmail: async () => {
+        if (!email.includes('@')) return;
+        const { sendPlainEmail } = await import('../messaging/plain-email');
+        await sendPlainEmail(email, letter.subject, letter.text);
+      },
+    });
+  } catch (error) {
+    console.error('Notification delivery skipped', error);
+  }
 }
 
 export async function enrollFromPayment(opts: {

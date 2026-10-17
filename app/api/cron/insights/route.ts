@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAdminConfigured } from '@/lib/firebase-admin';
 import { refreshActiveSnapshots, runMissedGoalAlerts, runDueSchedules, runWeeklyDigest } from '@/lib/server/insights-jobs';
+import { processMyInvoisQueue } from '@/lib/payments/server/myinvois-queue';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,5 +24,6 @@ export async function GET(req: NextRequest) {
   const digest = await runWeeklyDigest(now);
   const schedules = await runDueSchedules(now);
   const snapshots = await refreshActiveSnapshots(now);
-  return NextResponse.json({ ok: true, missed, digest, schedules, snapshots, at: now.toISOString() });
+  const myInvois = await processMyInvoisQueue(now.getTime());
+  return NextResponse.json({ ok: true, missed, digest, schedules, snapshots, myInvois, at: now.toISOString() });
 }
