@@ -7,6 +7,7 @@ import {
 } from './account-modes';
 import { hasCmsAddon } from './entitlements';
 import { isInstitutionAdmin, isSuperAdmin } from './roles';
+import { isPartnerMerchant } from './student-id/model';
 import { stripAcademyPath } from './tenant-host';
 
 export const ACCESS_DENIED_PARAM = 'notice';
@@ -56,6 +57,7 @@ export function isRoleRestricted(pathname: string): boolean {
     || matches(path, '/dashboard/parent')
     || matches(path, '/dashboard/student')
     || matches(path, '/dashboard/institution')
+    || matches(path, '/dashboard/partner')
   );
 }
 
@@ -121,6 +123,9 @@ export function decideDashboardAccess(
   }
   if (matches(path, '/dashboard/parent')) {
     return hasAccountRole(actor, 'parent') || isSuperAdmin(actor) ? { allowed: true } : deny(actor, mode);
+  }
+  if (matches(path, '/dashboard/partner')) {
+    return isPartnerMerchant(actor) || isSuperAdmin(actor) ? { allowed: true } : deny(actor, mode);
   }
   if (matches(path, '/dashboard/student')) {
     const learner = hasAccountRole(actor, 'student')

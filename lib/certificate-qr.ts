@@ -17,7 +17,7 @@ export function qrMatrix(value: string): QrMatrix {
   };
 }
 
-export function qrSvg(value: string): string {
+export function qrSvg(value: string, label = 'QR code linking to the certificate verification page'): string {
   const matrix = qrMatrix(value);
   const quiet = QR_QUIET_ZONE;
   const dim = matrix.size + quiet * 2;
@@ -28,5 +28,5 @@ export function qrSvg(value: string): string {
       cells.push(`<rect x="${col + quiet}" y="${row + quiet}" width="1" height="1"/>`);
     }
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${dim} ${dim}" shape-rendering="crispEdges" role="img" aria-label="QR code linking to the certificate verification page"><rect width="${dim}" height="${dim}" fill="#ffffff"/><g fill="#111111">${cells.join('')}</g></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${dim} ${dim}" shape-rendering="crispEdges" role="img" aria-label="${label}"><rect width="${dim}" height="${dim}" fill="#ffffff"/><g fill="#111111">${cells.join('')}</g></svg>`;
 }

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { authedFetch } from '@/lib/api-client';
 import type { PublicCard } from '@/lib/cards/model';
 import { MemberCardFace } from './member-card-face';
+import { CardQr } from '@/components/student-id/card-qr';
 
 interface OwnerPayload {
   studentNumber: string;
@@ -38,6 +39,7 @@ export function CardDesk() {
   const [children, setChildren] = useState<ChildRow[]>([]);
   const [error, setError] = useState('');
   const [note, setNote] = useState('');
+  const [proof, setProof] = useState<{ verifyPath: string; code: string; codeValidUntil: number } | null>(null);
 
   const load = async () => {
     const data = await authedFetch('/api/card');
@@ -47,6 +49,26 @@ export function CardDesk() {
 
   useEffect(() => {
     load().catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'The card could not be loaded.'));
+    let stop = false;
+    const refreshProof = () => {
+      authedFetch('/api/student-id')
+        .then((data) => {
+          if (stop) return;
+          const origin = window.location.origin;
+          setProof({
+            verifyPath: `${origin}${String(data.verifyPath ?? '')}`,
+            code: String(data.code ?? ''),
+            codeValidUntil: Number(data.codeValidUntil ?? 0),
+          });
+        })
+        .catch(() => undefined);
+    };
+    refreshProof();
+    const timer = window.setInterval(refreshProof, 25_000);
+    return () => {
+      stop = true;
+      window.clearInterval(timer);
+    };
   }, []);
 
   const act = async (body: Record<string, unknown>) => {
@@ -67,6 +89,7 @@ export function CardDesk() {
   return (
     <div className="space-y-6">
       <MemberCardFace card={face} schoolOnCard />
+      {proof?.code ? <CardQr path={proof.verifyPath} code={proof.code} codeValidUntil={proof.codeValidUntil} /> : null}
       <p className="text-sm text-[#203337]">
         Your number is <span className="font-semibold">{card.studentNumber}</span>. It stays on this page. A shared card never shows it.
       </p>

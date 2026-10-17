@@ -90,6 +90,11 @@ export async function middleware(request: NextRequest) {
       ? NextResponse.rewrite(rewriteAcademyPath(request), { request: { headers: requestHeaders } })
       : NextResponse.next({ request: { headers: requestHeaders } });
 
+  if (stripAcademyPath(request.nextUrl.pathname).startsWith('/verify/ps1.')) {
+    response.headers.set('Cache-Control', 'private, no-store');
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+  }
+
   const cookie = { path: '/', maxAge: 60 * 60 * 24, sameSite: 'lax' as const };
   if (country) response.cookies.set(GEO_COUNTRY_COOKIE, country, cookie);
   if (region) response.cookies.set(GEO_REGION_COOKIE, region, cookie);

@@ -142,7 +142,8 @@ service cloud.firestore {
               'verification', 'partnerKind',
               'sparksBalance', 'sparksMonthlyAllowance', 'sparksGrantedAt',
               'sparksWelcomeGrantedAt', 'xp', 'stripeCustomerId', 'stripeAccountId',
-              'studentNumber', 'referralCode', 'cardShareId', 'cardIndexed', 'cardSharing'];
+              'studentNumber', 'referralCode', 'cardShareId', 'cardIndexed', 'cardSharing',
+              'studentStatus', 'partnerId'];
     }
 
     // Profile & settings. Keep this list aligned with SELF_SERVICE_FIELDS
@@ -431,10 +432,10 @@ service cloud.firestore {
       allow read: if isSignedIn();
       // Signup may store dateOfBirth. ageTier and Stripe ids are server-only, including on create.
       allow create: if isUser(userId)
-        && !incoming().keys().hasAny(['ageTier', 'stripeAccountId', 'stripeCustomerId', 'verification', 'partnerKind', 'studentNumber', 'referralCode', 'cardShareId', 'cardIndexed', 'cardSharing']);
+        && !incoming().keys().hasAny(['ageTier', 'stripeAccountId', 'stripeCustomerId', 'verification', 'partnerKind', 'studentNumber', 'referralCode', 'cardShareId', 'cardIndexed', 'cardSharing', 'studentStatus', 'partnerId']);
       allow update: if verificationUntouched()
         && ((isAdmin() && staffWriteAllowed()
-            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['studentNumber', 'referralCode', 'cardShareId', 'cardIndexed', 'cardSharing']))
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['studentNumber', 'referralCode', 'cardShareId', 'cardIndexed', 'cardSharing', 'studentStatus', 'partnerId']))
         || (isUser(userId) && selfProfileUpdate())
         || (isUser(userId) && walletProgressUpdate())
         || parentUnlink(userId)
@@ -3108,6 +3109,40 @@ service cloud.firestore {
     }
 
     match /referrals/{code} {
+      allow read, write: if false;
+    }
+
+    // Student ID, partner perks, and redemption audit. The server writes
+    // these with the Admin SDK. Clients cannot read redemption rows.
+    match /student_codes/{codeId} {
+      allow read, write: if false;
+    }
+
+    match /student_code_limits/{uid} {
+      allow read, write: if false;
+    }
+
+    match /student_code_attempts/{actorId} {
+      allow read, write: if false;
+    }
+
+    match /partners/{partnerId} {
+      allow read, write: if false;
+    }
+
+    match /offers/{offerId} {
+      allow read, write: if false;
+    }
+
+    match /redemptions/{redemptionId} {
+      allow read, write: if false;
+    }
+
+    match /perk_audit/{eventId} {
+      allow read, write: if false;
+    }
+
+    match /perk_audit_head/{headId} {
       allow read, write: if false;
     }
 
