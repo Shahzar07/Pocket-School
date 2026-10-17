@@ -65,6 +65,13 @@ export const BLOCK_DEFS: BlockDef[] = [
   { id: 'glossary', icon: '📚', label: 'Glossary', sparks: 5 },
   { id: 'image', icon: '🖼️', label: 'Image', sparks: 10 },
   { id: 'illustration', icon: '🎨', label: 'Illustration', sparks: 15 },
+  { id: 'unitTest', icon: '🧪', label: 'Unit Test' },
+  { id: 'mindmapImage', icon: '🗺️', label: 'Mind Map image' },
+  { id: 'comic', icon: '💬', label: 'Comic strip' },
+  { id: 'infographicImage', icon: '📊', label: 'Infographic' },
+  { id: 'revisionPoster', icon: '🖼️', label: 'Unit revision poster' },
+  { id: 'gallery', icon: '🎠', label: 'Gallery' },
+  { id: 'audioChant', icon: '🎵', label: 'Audio chant' },
 ];
 
 export type AiRunOptions = {
@@ -500,6 +507,13 @@ export function ActivityBlock({ value, onChange }: {
           className="h-9 rounded-xl border border-border bg-card px-3 text-sm">
           {BLOOMS.map(b => <option key={b}>{b}</option>)}
         </select>
+        <select value={value.intelligence ?? ''} onChange={e => onChange({ ...value, intelligence: e.target.value || undefined })}
+          className="h-9 rounded-xl border border-border bg-card px-3 text-sm sm:col-span-2">
+          <option value="">Multiple intelligence (optional)</option>
+          {['Linguistic', 'Logical-Mathematical', 'Spatial', 'Bodily-Kinaesthetic', 'Musical', 'Interpersonal', 'Intrapersonal', 'Naturalistic'].map(tag => (
+            <option key={tag} value={tag}>{tag}</option>
+          ))}
+        </select>
       </div>
       <Textarea value={value.modelAnswer ?? ''} onChange={e => onChange({ ...value, modelAnswer: e.target.value })}
         placeholder="Teacher model answer (never shown to students)…" className="min-h-20 rounded-xl text-sm" />
@@ -710,7 +724,7 @@ export function AssessmentBlock({ value, onChange, ai, generating, onDraftSectio
         <Input type="number" value={value.attempts ?? ''} onChange={e => onChange({ ...value, attempts: e.target.value ? Number(e.target.value) : undefined })} placeholder="Attempts" className="h-9 rounded-xl text-sm" />
         <label className="flex items-center gap-2 text-xs cursor-pointer">
           <input type="checkbox" checked={value.certificateOnPass ?? false} onChange={e => onChange({ ...value, certificateOnPass: e.target.checked })} className="accent-teal-500" />
-          Certificate on pass
+          Course final assessment
         </label>
       </div>
 

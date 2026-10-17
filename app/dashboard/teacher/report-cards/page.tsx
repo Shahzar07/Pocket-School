@@ -170,10 +170,10 @@ export default function ReportCardsPage() {
       });
       const issued = Array.isArray(result.issued) ? result.issued as { moduleTitle?: string; id?: string }[] : [];
       if (issued.length === 0) {
-        toast.message('No finished module to award yet. A certificate is issued when every published lesson in a module is complete.');
+        toast.message('No certificate yet. It is issued when the course final assessment is passed and every unit is passed.');
       } else {
         const names = issued.map((row) => row.moduleTitle).filter(Boolean).join(', ');
-        toast.success(names ? `Awarded: ${names}` : `Awarded ${issued.length} module certificate${issued.length === 1 ? '' : 's'}.`);
+        toast.success(names ? `Awarded: ${names}` : `Awarded ${issued.length} certificate${issued.length === 1 ? '' : 's'}.`);
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Could not award a certificate.';
@@ -396,7 +396,7 @@ export default function ReportCardsPage() {
                 className="print:hidden rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white gap-1.5 text-xs font-bold"
               >
                 {issuingCert === r.studentId ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Award className="w-3.5 h-3.5" />}
-                Award finished modules
+                Check course certificate
               </Button>
             </div>
           </motion.div>

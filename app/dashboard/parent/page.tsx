@@ -9,6 +9,7 @@ import {
   UserProfile, Course, Enrollment, DailyGoal, Certificate,
 } from '@/lib/db';
 import { UnitReportCard, UnitReportData } from '@/components/unit-report-card';
+import { resolvePassMark } from '@/lib/unit-test';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -34,10 +35,10 @@ interface ChildData {
   profile: UserProfile;
   enrollments: { course: Course; enrollment: Enrollment }[];
   unitReports: UnitReportData[];
-  certificates: CertificateFace[];
+  certificates: (CertificateFace & { level?: string; score?: number })[];
 }
 
-function certificateFace(cert: Certificate): CertificateFace {
+function certificateFace(cert: Certificate): CertificateFace & { level?: string; score?: number } {
   return {
     id: cert.id ?? '',
     studentName: cert.studentName,
@@ -52,6 +53,8 @@ function certificateFace(cert: Certificate): CertificateFace {
     showPoweredBy: cert.showPoweredBy,
     logoUrl: cert.logoUrl,
     certificateFooter: cert.certificateFooter,
+    level: cert.level,
+    score: cert.score,
   };
 }
 
@@ -127,7 +130,7 @@ async function buildUnitReports(
         courseTitle: course?.title ?? 'Course',
         unitId,
         unitTitle: unit?.module.title ?? 'Unit',
-        masteryThreshold: unit?.module.masteryThreshold ?? 70,
+        masteryThreshold: resolvePassMark(course, unit?.module),
         attempts: unitAttempts,
         reviewLessons: (latest.recommendedLessonIds ?? [])
           .map(id => lessonById.get(id))
@@ -445,25 +448,28 @@ export default function ParentDashboard() {
                 <div id={ci === 0 ? 'certificates' : undefined} className="p-6 sm:p-7 border-b border-border space-y-4">
                   <div className="flex items-center gap-2">
                     <Award className="w-4 h-4 text-primary" />
-                    <h3 className="font-heading text-xl text-foreground">Module certificates</h3>
+                    <h3 className="font-heading text-xl text-foreground">Certificates</h3>
                   </div>
                   {certificates.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No module certificates yet. One is awarded when every published lesson in a module is complete.</p>
+                    <p className="text-sm text-muted-foreground">No certificates yet. One is awarded when the course final assessment is passed and every unit is passed.</p>
                   ) : (
                     <ul className="space-y-3">
                       {certificates.map((cert) => (
                         <li key={cert.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold text-foreground truncate">{cert.moduleTitle || cert.courseTitle}</p>
+                            <p className="text-sm font-semibold text-foreground truncate">{cert.courseTitle}</p>
                             <p className="text-xs text-muted-foreground truncate">
-                              {cert.moduleTitle ? `${cert.courseTitle} · ` : ''}{formatCertificateDate(cert.issuedAt)}
+                              {[cert.level, typeof cert.score === 'number' ? `${Math.round(cert.score)}%` : '', formatCertificateDate(cert.issuedAt)].filter(Boolean).join(' · ')}
                             </p>
                             <p className="font-mono text-[11px] text-muted-foreground break-all mt-1">{cert.id}</p>
                             <p className={`text-[11px] font-bold uppercase tracking-wider mt-1 ${certificateStatus(cert.status) === 'revoked' ? 'text-[#9B1C1C]' : 'text-[#0F6E56]'}`}>
                               {certificateStatus(cert.status) === 'revoked' ? 'Revoked' : 'Valid'}
                             </p>
                           </div>
-                          <Link href={`/verify/${cert.id}`} className="text-sm font-bold text-primary shrink-0">Verify</Link>
+                          <span className="flex gap-3 shrink-0">
+                            <a href={`/api/certificates/${encodeURIComponent(cert.id)}/pdf`} className="text-sm font-bold text-primary">PDF</a>
+                            <Link href={`/verify/${cert.id}`} className="text-sm font-bold text-primary">Verify</Link>
+                          </span>
                         </li>
                       ))}
                     </ul>

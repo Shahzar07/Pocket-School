@@ -71,7 +71,7 @@ export function getCurriculumLessonStatus(
   if (completedIds.has(lesson.id)) return 'completed';
   if (unitState === 'locked') return 'locked';
 
-  if (lesson.isUnitQuiz) {
+  if (lesson.isUnitQuiz || lesson.lessonType === 'unit_test') {
     const others = unitLessons.filter(l => l.id !== lesson.id);
     return others.every(l => completedIds.has(l.id)) ? 'available' : 'locked';
   }

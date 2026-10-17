@@ -17,6 +17,7 @@ import { addDays, isoDateKey } from '../insights/dates';
 import { behaviourAlertMessages, buildBehaviourBoard } from '../insights/behaviour-board';
 import type { Mood } from '../insights/behaviour';
 import { notifyParents, notifyUser } from './device-push';
+import { quizPointsFromAttempt } from '../unit-test';
 
 function yesterdayKey(now = new Date()): string {
   return addDays(isoDateKey(now), -1);
@@ -186,18 +187,24 @@ export async function writeStudentSnapshot(studentId: string, now = new Date()) 
       source: data.source as StudyEvent['source'],
     };
   });
-  const quizzes: QuizPoint[] = quizSnap.docs.map(doc => {
+  const quizzes: QuizPoint[] = quizSnap.docs.flatMap(doc => {
     const data = doc.data();
-    const completed = millis(data.completedAt);
-    return {
-      at: completed ? new Date(completed).toISOString() : end,
-      score: Number(data.score) || 0,
-      max: Number(data.total) || 1,
+    return quizPointsFromAttempt({
+      completedAt: data.completedAt,
+      score: typeof data.score === 'number' ? data.score : undefined,
+      maxScore: typeof data.maxScore === 'number' ? data.maxScore : undefined,
+      total: typeof data.total === 'number' ? data.total : undefined,
+      marksAwarded: typeof data.marksAwarded === 'number' ? data.marksAwarded : undefined,
+      marksMax: typeof data.marksMax === 'number' ? data.marksMax : undefined,
       unitId: data.unitId as string | undefined,
       lessonId: data.lessonId as string | undefined,
-      topic: data.weakestObjective as string | undefined,
-      correct: data.passed === true,
-    };
+      courseId: data.courseId as string | undefined,
+      passed: data.passed === true,
+      timeTakenSeconds: Number(data.timeTakenSeconds) || 0,
+      attemptNumber: Number(data.attemptNumber) || undefined,
+      version: data.version as string | undefined,
+      responses: Array.isArray(data.responses) ? data.responses : [],
+    }, end);
   });
   const flat: AttendanceMark[] = attendanceSnap.docs.map(doc => {
     const data = doc.data();
