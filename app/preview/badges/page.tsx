@@ -2,6 +2,7 @@
 
 import { Suspense, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { BRAND } from '@/lib/brand';
 import { STARTER_BADGES, levelForXp } from '@/lib/gamification/catalog';
 import { emptyGameState, evaluateEvent, rankHouses } from '@/lib/gamification/engine';
 import { LEARNING_EVENTS } from '@/lib/events';
@@ -50,7 +51,7 @@ function Preview() {
       <div className="max-w-5xl mx-auto space-y-8 relative">
         <Celebration show={celebrate} />
         <header>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#C8922A]">Poket School</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: BRAND.primary }}>Poket School</p>
           <h1 className="font-heading text-4xl mt-1">Badges and levels</h1>
         </header>
         {view === 'card' && perfect ? (
@@ -67,7 +68,7 @@ function Preview() {
               <HouseBoard houses={houses} enabled />
             </section>
             <QuestList progress={state.quests} done={state.questsDone} periodDay="2026-10-12" periodWeek="2026-W42" />
-            <button type="button" className="rounded-full bg-[#1A3C34] text-white px-4 h-11 font-semibold" onClick={() => setCelebrate(true)}>
+            <button type="button" className="rounded-full text-white px-4 h-11 font-semibold" style={{ background: BRAND.primary }} onClick={() => setCelebrate(true)}>
               Celebrate
             </button>
           </div>

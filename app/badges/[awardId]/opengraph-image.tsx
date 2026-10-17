@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+import { BRAND } from '@/lib/brand';
 import { loadPublicBadge } from '@/lib/server/public-badge';
 
 export const runtime = 'nodejs';
@@ -24,12 +25,12 @@ export default async function BadgeOpenGraphImage({
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          background: '#1A3C34',
+          background: BRAND.hero,
           color: '#ffffff',
           padding: '72px',
         }}
       >
-        <div style={{ fontSize: 28, letterSpacing: 6, color: '#C8922A' }}>POKET SCHOOL</div>
+        <div style={{ fontSize: 28, letterSpacing: 6, color: BRAND.mint }}>POKET SCHOOL</div>
         <div style={{ fontSize: 84, marginTop: 24 }}>{name}</div>
         <div style={{ fontSize: 32, marginTop: 28, opacity: 0.9 }}>{who || 'Poket School'}</div>
       </div>

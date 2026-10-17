@@ -2,6 +2,7 @@
 
 import type { BadgeDefinition } from '@/lib/gamification/catalog';
 import { BadgeArt } from '@/components/gamification/badge-art';
+import { tierMetal } from '@/lib/brand';
 
 const TIER_LABEL = { bronze: 'Bronze', silver: 'Silver', gold: 'Gold' } as const;
 
@@ -27,7 +28,7 @@ export function BadgeShelf({
             </span>
             <span className="font-heading text-sm text-foreground">{badge.name}</span>
             <span className="text-[11px] text-muted-foreground leading-snug">{badge.description}</span>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#C8922A]">{TIER_LABEL[badge.tier]}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: tierMetal(badge.tier) }}>{TIER_LABEL[badge.tier]}</span>
           </>
         );
         return (

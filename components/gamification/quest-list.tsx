@@ -1,6 +1,7 @@
 'use client';
 
 import { QUESTS } from '@/lib/gamification/catalog';
+import { BRAND } from '@/lib/brand';
 
 export function QuestList({
   progress,
@@ -24,11 +25,11 @@ export function QuestList({
           <li key={quest.id} className="rounded-2xl border border-border bg-card p-4">
             <div className="flex items-center justify-between gap-3">
               <p className="font-heading text-base text-foreground">{quest.title}</p>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[#C8922A]">{quest.cadence}</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: BRAND.primary }}>{quest.cadence}</p>
             </div>
             <p className="text-xs text-muted-foreground mt-1">{complete ? 'Done' : `${value} of ${quest.target}`}</p>
-            <div className="mt-2 h-2 rounded-full bg-[#1A3C34]/10" aria-hidden="true">
-              <div className="h-2 rounded-full bg-[#C8922A]" style={{ width: `${(value / quest.target) * 100}%` }} />
+            <div className="mt-2 h-2 rounded-full" style={{ background: BRAND.mint }} aria-hidden="true">
+              <div className="h-2 rounded-full" style={{ width: `${(value / quest.target) * 100}%`, background: BRAND.primary }} />
             </div>
           </li>
         );

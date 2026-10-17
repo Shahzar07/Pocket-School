@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { BRAND } from '@/lib/brand';
 
-const COLOURS = ['#1A3C34', '#C8922A', '#F26B4A', '#3DB7E4', '#FFD166', '#8E7CFF', '#3DDC97'];
+const COLOURS = [BRAND.blueDeep, BRAND.primary, BRAND.blueBright, BRAND.amber, BRAND.coral, BRAND.good, BRAND.mint];
 
 interface Bit {
   x: number;
@@ -26,7 +27,7 @@ export function ConfettiBurst() {
       y: canvas.height / 3,
       vx: (Math.random() - 0.5) * 8,
       vy: Math.random() * -7 - 2,
-      colour: COLOURS[Math.floor(Math.random() * COLOURS.length)] ?? '#C8922A',
+      colour: COLOURS[Math.floor(Math.random() * COLOURS.length)] ?? BRAND.primary,
       life: 1,
     }));
     let frame = 0;

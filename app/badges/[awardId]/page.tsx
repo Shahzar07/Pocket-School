@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { BadgeArt } from '@/components/gamification/badge-art';
 import { BadgeShareLinks } from '@/components/gamification/badge-share';
+import { BRAND, tierMetal } from '@/lib/brand';
 import { publicBadgeUrl } from '@/lib/gamification/share';
 import { loadPublicBadge } from '@/lib/server/public-badge';
 
@@ -41,16 +42,16 @@ export default async function PublicBadgePage({
   const badge = await loadPublicBadge(awardId);
   if (!badge) notFound();
   return (
-    <main className="min-h-screen px-4 py-12" style={{ background: '#1A3C34' }}>
-      <article className="mx-auto w-full max-w-sm rounded-3xl bg-[#14332c] p-6 text-white shadow-lg">
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: '#C8922A' }}>Poket School</p>
+    <main className="min-h-screen px-4 py-12" style={{ background: BRAND.mint }}>
+      <article className="mx-auto w-full max-w-sm rounded-3xl p-6 text-white shadow-lg" style={{ background: BRAND.hero }}>
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: BRAND.mint }}>Poket School</p>
         <div className="mt-4 flex justify-center">
           <BadgeArt icon={badge.icon} size={120} title={badge.name} />
         </div>
         <h1 className="font-heading text-3xl mt-4">{badge.name}</h1>
         <p className="text-sm mt-2 text-white/80">{badge.description}</p>
         <p className="mt-6 text-sm font-semibold">{badge.earner}{badge.school ? ` · ${badge.school}` : ''}</p>
-        <p className="text-[11px] uppercase tracking-wider mt-1" style={{ color: '#C8922A' }}>{badge.tier}</p>
+        <p className="text-[11px] uppercase tracking-wider mt-1" style={{ color: tierMetal(badge.tier) }}>{badge.tier}</p>
         <div className="mt-6">
           <BadgeShareLinks awardId={badge.awardId} name={badge.name} issuedAt={badge.awardedAt} />
         </div>

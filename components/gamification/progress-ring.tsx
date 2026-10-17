@@ -1,5 +1,7 @@
 'use client';
 
+import { BRAND } from '@/lib/brand';
+
 export function ProgressRing({
   value,
   label,
@@ -19,20 +21,20 @@ export function ProgressRing({
   return (
     <div className="flex items-center gap-4">
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`${label}, ${clamped}%`}>
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#1A3C34" strokeOpacity="0.15" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={BRAND.blueDeep} strokeOpacity="0.15" strokeWidth={stroke} />
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#C8922A"
+          stroke={BRAND.primary}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
-        <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" fill="#1A3C34" fontSize="18" fontWeight="700">
+        <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" fill={BRAND.blueDeep} fontSize="18" fontWeight="700">
           {clamped}%
         </text>
       </svg>

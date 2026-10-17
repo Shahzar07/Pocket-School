@@ -1,38 +1,39 @@
 'use client';
 
 import { useId } from 'react';
+import { BRAND } from '@/lib/brand';
 
-const INK = '#1A3C34';
-const GOLD = '#C8922A';
+const INK = BRAND.blueDeep;
+const WARM = BRAND.amber;
 
 const ACCENTS: Record<string, string> = {
-  door: '#F26B4A',
-  lesson: '#3DB7E4',
-  pass: '#3DDC97',
-  perfect: '#FFD166',
-  comeback: '#E85D75',
-  flame: '#FF7A45',
-  sunrise: '#FFB703',
-  moon: '#8E7CFF',
-  chat: '#3DB7E4',
-  search: '#F26B4A',
-  book: '#E85D75',
-  plan: '#3DDC97',
-  hands: '#FFB703',
-  stairs: '#8E7CFF',
-  certificate: '#FFD166',
-  link: '#E85D75',
-  board: '#3DB7E4',
-  class: '#3DDC97',
-  school: '#F26B4A',
-  star: '#FFD166',
-  crown: '#FFD166',
+  door: BRAND.coral,
+  lesson: BRAND.blueBright,
+  pass: BRAND.good,
+  perfect: BRAND.amber,
+  comeback: BRAND.coral,
+  flame: BRAND.coral,
+  sunrise: BRAND.amber,
+  moon: BRAND.blueBright,
+  chat: BRAND.blueBright,
+  search: BRAND.coral,
+  book: BRAND.coral,
+  plan: BRAND.good,
+  hands: BRAND.amber,
+  stairs: BRAND.blueBright,
+  certificate: BRAND.amber,
+  link: BRAND.coral,
+  board: BRAND.blueBright,
+  class: BRAND.good,
+  school: BRAND.coral,
+  star: BRAND.amber,
+  crown: BRAND.amber,
 };
 
 function scene(icon: string, accent: string) {
   switch (icon) {
     case 'door':
-      return <><rect x="30" y="24" width="20" height="28" rx="3" fill={accent} /><circle cx="46" cy="38" r="1.6" fill={GOLD} /></>;
+      return <><rect x="30" y="24" width="20" height="28" rx="3" fill={accent} /><circle cx="46" cy="38" r="1.6" fill={WARM} /></>;
     case 'lesson':
       return <><rect x="26" y="28" width="28" height="20" rx="2" fill={accent} /><path d="M30 34h20M30 39h14" stroke={INK} strokeWidth="1.6" /></>;
     case 'pass':
@@ -44,7 +45,7 @@ function scene(icon: string, accent: string) {
     case 'flame':
       return <path d="M40 22c2 8-8 10-6 18 8 2 16-4 14-14-6 4-8 2-8-4z" fill={accent} />;
     case 'sunrise':
-      return <><circle cx="40" cy="40" r="8" fill={accent} /><path d="M24 46h32" stroke={GOLD} strokeWidth="2" strokeLinecap="round" /></>;
+      return <><circle cx="40" cy="40" r="8" fill={accent} /><path d="M24 46h32" stroke={WARM} strokeWidth="2" strokeLinecap="round" /></>;
     case 'moon':
       return <path d="M44 26a12 12 0 100 24 10 10 0 110-24z" fill={accent} />;
     case 'chat':
@@ -60,13 +61,13 @@ function scene(icon: string, accent: string) {
     case 'stairs':
       return <path d="M26 50h10V40h10V30h10" fill="none" stroke={accent} strokeWidth="4" strokeLinejoin="round" />;
     case 'certificate':
-      return <><rect x="24" y="26" width="32" height="22" rx="2" fill={accent} /><circle cx="40" cy="52" r="5" fill={GOLD} /></>;
+      return <><rect x="24" y="26" width="32" height="22" rx="2" fill={accent} /><circle cx="40" cy="52" r="5" fill={WARM} /></>;
     case 'link':
       return <path d="M32 40h16M30 34a6 6 0 000 12M50 34a6 6 0 010 12" fill="none" stroke={accent} strokeWidth="3" strokeLinecap="round" />;
     case 'board':
-      return <><rect x="24" y="26" width="32" height="22" rx="2" fill={accent} /><path d="M32 48v6M48 48v6M28 54h24" stroke={GOLD} strokeWidth="2" strokeLinecap="round" /></>;
+      return <><rect x="24" y="26" width="32" height="22" rx="2" fill={accent} /><path d="M32 48v6M48 48v6M28 54h24" stroke={WARM} strokeWidth="2" strokeLinecap="round" /></>;
     case 'class':
-      return <><circle cx="32" cy="34" r="5" fill={accent} /><circle cx="48" cy="34" r="5" fill={GOLD} /><path d="M24 50c2-6 6-8 8-8s6 2 8 8M40 50c2-6 6-8 8-8s6 2 8 8" stroke={accent} strokeWidth="2" fill="none" /></>;
+      return <><circle cx="32" cy="34" r="5" fill={accent} /><circle cx="48" cy="34" r="5" fill={WARM} /><path d="M24 50c2-6 6-8 8-8s6 2 8 8M40 50c2-6 6-8 8-8s6 2 8 8" stroke={accent} strokeWidth="2" fill="none" /></>;
     case 'school':
       return <path d="M40 24l18 8v16H22V32z" fill={accent} />;
     case 'crown':
@@ -78,17 +79,17 @@ function scene(icon: string, accent: string) {
 
 export function BadgeArt({ icon, size = 72, title }: { icon: string; size?: number; title?: string }) {
   const raw = useId().replace(/:/g, '');
-  const accent = ACCENTS[icon] ?? '#3DB7E4';
+  const accent = ACCENTS[icon] ?? BRAND.blueBright;
   return (
     <svg width={size} height={size} viewBox="0 0 80 80" role={title ? 'img' : 'presentation'} aria-label={title} aria-hidden={title ? undefined : true}>
       <defs>
         <radialGradient id={`${raw}-face`} cx="38%" cy="32%" r="70%">
-          <stop offset="0%" stopColor="#2F6A58" />
+          <stop offset="0%" stopColor={BRAND.primary} />
           <stop offset="100%" stopColor={INK} />
         </radialGradient>
       </defs>
       <circle cx="40" cy="40" r="36" fill={`url(#${raw}-face)`} />
-      <circle cx="40" cy="40" r="31" fill="none" stroke={GOLD} strokeWidth="3" />
+      <circle cx="40" cy="40" r="31" fill="none" stroke={BRAND.blueBright} strokeWidth="3" />
       <circle cx="40" cy="40" r="27" fill="none" stroke={accent} strokeWidth="1.5" opacity="0.9" />
       {scene(icon, accent)}
     </svg>
