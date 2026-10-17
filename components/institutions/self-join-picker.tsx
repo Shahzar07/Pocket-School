@@ -14,6 +14,7 @@ export function SelfJoinPicker({
   inviteCode,
   childEmails,
   showChildren,
+  schoolName = '',
   student = false,
   tone = 'inverse',
   onPath,
@@ -22,6 +23,7 @@ export function SelfJoinPicker({
   onInstitution,
   onInviteCode,
   onChildEmails,
+  onSchoolName,
 }: {
   path: 'independent' | 'institution';
   country: string;
@@ -31,6 +33,8 @@ export function SelfJoinPicker({
   inviteCode: string;
   childEmails: string;
   showChildren: boolean;
+  /** Typed when the school is not a registered institution. It does not join one. */
+  schoolName?: string;
   /** Student signup always shows country, state, and the registered-institution list. */
   student?: boolean;
   tone?: 'inverse' | 'default';
@@ -40,6 +44,7 @@ export function SelfJoinPicker({
   onInstitution: (id: string) => void;
   onInviteCode: (code: string) => void;
   onChildEmails: (value: string) => void;
+  onSchoolName?: (value: string) => void;
 }) {
   const pathLabelId = useId();
   const inverse = tone === 'inverse';
@@ -102,10 +107,27 @@ export function SelfJoinPicker({
               }}
               aria-label="Institution"
             >
-              <option value="" className="bg-[#0B0F1A]">{student ? 'Independent learner' : 'Choose a listed institution'}</option>
+              <option value="" className="bg-[#0B0F1A]">{student ? "My school isn't listed" : 'Choose a listed institution'}</option>
               {institutions.map((item) => <option key={item.id} value={item.id} className="bg-[#0B0F1A]">{item.name}</option>)}
             </select>
           </label>
+          {student && !institutionId && (
+            <label className="block space-y-1.5">
+              <span className={label}>School name</span>
+              <input
+                className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8922A]`}
+                value={schoolName}
+                onChange={(event) => onSchoolName?.(event.target.value)}
+                placeholder="Type your school name"
+                aria-label="School name"
+                autoComplete="organization"
+                maxLength={80}
+              />
+              <span className={inverse ? 'block text-xs leading-relaxed text-[#F8E7C4]' : 'block text-xs leading-relaxed text-[#1A3C34]'}>
+                This is your own school name. It does not join a Poket School institution.
+              </span>
+            </label>
+          )}
           {country && state && institutions.length === 0 && (
             <p className={inverse ? 'text-xs text-[#F8E7C4]' : 'text-sm text-[#1A3C34]'}>
               No registered institution in that state or region. Continue as an independent learner and ask your school to register.

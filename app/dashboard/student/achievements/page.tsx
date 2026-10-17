@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
+import { doc, getDoc } from 'firebase/firestore';
 import { useAuthSTORE } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
 import { getUserBadges, getTopStudentsByXp, updateUser, Badge, UserProfile } from '@/lib/db';
+import { leaderboardSchool } from '@/lib/self-reported-school';
 import { privacyBoard } from '@/lib/platform/privacy-board';
 import { Badge as BadgeUI } from '@/components/ui/badge';
 import { Zap, Star, Crown } from 'lucide-react';
@@ -31,14 +34,29 @@ const ALL_BADGES = [
 export default function AchievementsPage() {
   const { user, profile, setProfile } = useAuthSTORE();
   const [badges, setBadges] = useState<Badge[]>([]);
-  const [leaderboard, setLeaderboard] = useState<{ id: string; data: UserProfile }[]>([]);
+  const [leaderboard, setLeaderboard] = useState<{ id: string; data: UserProfile; school: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([getUserBadges(user.uid), getTopStudentsByXp(10)]).then(([bs, lb]) => {
+    Promise.all([getUserBadges(user.uid), getTopStudentsByXp(10)]).then(async ([bs, lb]) => {
+      const ids = [...new Set(lb.map((row) => row.data.institutionId).filter((id): id is string => !!id))];
+      const names = new Map<string, string>();
+      await Promise.all(ids.map(async (id) => {
+        const snap = await getDoc(doc(db, 'institutions', id)).catch(() => null);
+        const data = snap?.data() as { name?: string; branding?: { displayName?: string } } | undefined;
+        const name = data?.branding?.displayName || data?.name || '';
+        if (name) names.set(id, name);
+      }));
       setBadges(bs);
-      setLeaderboard(lb);
+      setLeaderboard(lb.map((row) => ({
+        ...row,
+        school: leaderboardSchool({
+          institutionId: row.data.institutionId,
+          institutionName: row.data.institutionId ? names.get(row.data.institutionId) : '',
+          selfReportedName: row.data.selfReportedSchool?.name,
+        }),
+      })));
       setLoading(false);
     });
   }, [user]);
@@ -48,11 +66,12 @@ export default function AchievementsPage() {
   const nextBadge = ALL_BADGES.find(b => !earnedTypes.has(b.type));
   const nextBadgeProgress = nextBadge ? Math.min((xp / nextBadge.threshold) * 100, 100) : 100;
   const board = privacyBoard(
-    leaderboard.map(({ id, data }) => ({
+    leaderboard.map(({ id, data, school }) => ({
       id,
       name: data.name,
       score: data.xp ?? 0,
       shareBoard: data.shareBoard,
+      school,
     })),
     user?.uid ?? null,
   );
@@ -217,6 +236,7 @@ export default function AchievementsPage() {
               entries={board.map(row => ({
                 id: row.id,
                 label: row.label,
+                school: row.school,
                 score: row.score,
                 scoreLabel: `${row.score.toLocaleString()} XP`,
                 isYou: row.isYou,

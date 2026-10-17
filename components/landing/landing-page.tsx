@@ -15,6 +15,7 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { isAdmin } from '@/lib/roles';
 import { useHomeMotion } from '@/hooks/use-home-motion';
 import { DemoLeadForm } from '@/components/demo-lead-form';
+import { SchoolStrip } from '@/components/landing/school-strip';
 import s from '@/app/home.module.css';
 
 const DEMO = 'mailto:institutions@poketschool.ai';
@@ -197,6 +198,8 @@ export function LandingPage() {
           </div>
         </div>
       </section>
+
+      <SchoolStrip />
 
       <section className="border-b border-border bg-card" aria-label={t('landing.exam.label')}>
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between">

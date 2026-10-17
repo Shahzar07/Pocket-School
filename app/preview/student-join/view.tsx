@@ -23,8 +23,9 @@ const SAMPLE: JoinStudentCard = {
 export function StudentJoinPreview({ panel }: { panel: string }) {
   const [country, setCountry] = useState('MY');
   const [state, setState] = useState('Selangor');
-  const [institutionId, setInstitutionId] = useState('north');
-  const [path, setPath] = useState<'independent' | 'institution'>('institution');
+  const [institutionId, setInstitutionId] = useState('');
+  const [schoolName, setSchoolName] = useState('Harbour Tuition');
+  const [path, setPath] = useState<'independent' | 'institution'>('independent');
   const listed = SCHOOLS.filter((row) => row.country === country && row.state === state);
 
   return (
@@ -56,6 +57,8 @@ export function StudentJoinPreview({ panel }: { panel: string }) {
                 onInstitution={setInstitutionId}
                 onInviteCode={() => undefined}
                 onChildEmails={() => undefined}
+                schoolName={schoolName}
+                onSchoolName={setSchoolName}
               />
             </div>
           </section>

@@ -7,6 +7,8 @@ import { medalForRank, type MedalId } from '@/lib/design/chart-colours';
 export interface PodiumEntry {
   id: string;
   label: string;
+  /** Institution or self-reported school, shown under the short name. */
+  school?: string;
   score: number;
   scoreLabel: string;
   isYou?: boolean;
@@ -99,6 +101,7 @@ function PodiumBlock({ entry, rank }: { entry: PodiumEntry; rank: number }) {
       <Icon className="mx-auto mb-1 h-5 w-5" aria-hidden />
       <p className="text-[11px] font-bold uppercase tracking-[0.16em]">{PLACE_NAME[medal]}</p>
       <p className="mt-1 truncate text-sm font-semibold">{entry.label}</p>
+      {entry.school ? <p className="truncate text-[11px] font-medium opacity-80">{entry.school}</p> : null}
       <p className="font-heading text-2xl tabular-nums leading-none">{entry.score.toLocaleString()}</p>
       <div className="mt-2 flex flex-col items-center gap-1">
         <RankChange delta={entry.rankDelta ?? 0} />
@@ -162,6 +165,7 @@ export function LeaderboardPodium({
                     {entry.label}
                     {entry.isYou && <span className="ml-2 text-[11px] font-bold uppercase tracking-wider text-primary">Your rank</span>}
                   </p>
+                  {entry.school ? <p className="truncate text-xs text-muted-foreground">{entry.school}</p> : null}
                   <div className="mt-0.5 flex flex-wrap items-center gap-2">
                     <RankChange delta={entry.rankDelta ?? 0} />
                     <StreakFlame days={entry.streak ?? 0} />

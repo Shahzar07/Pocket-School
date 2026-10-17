@@ -104,6 +104,7 @@ export default function SignupPage() {
   const [subject, setSubject] = useState('');
   const [teachingLevel, setTeachingLevel] = useState('');
   const [institution, setInstitution] = useState('');
+  const [schoolName, setSchoolName] = useState('');
   const [childEmail, setChildEmail] = useState('');
 
   // Parental consent (under-18 students)
@@ -185,6 +186,14 @@ export default function SignupPage() {
     return {};
   };
 
+  const reportSchool = async () => {
+    if (role !== 'student' || joinInstitution || !schoolName.trim()) return;
+    await authedFetch('/api/account/self-reported-school', {
+      method: 'POST',
+      body: JSON.stringify({ name: schoolName.trim(), country, state: joinState }),
+    }).catch(() => undefined);
+  };
+
   const handleGoogleSignIn = async () => {
     if (!agreed) { toast.error(t('signup.acceptFirst')); return; }
     try {
@@ -213,6 +222,7 @@ export default function SignupPage() {
         });
         if (role === 'student') {
           await authedFetch('/api/account/student-number', { method: 'POST', body: '{}' }).catch(() => undefined);
+          await reportSchool();
           await authedFetch('/api/account/placement', {
             method: 'POST',
             body: JSON.stringify({ programme: pathway, year: yearGroup }),
@@ -337,6 +347,7 @@ export default function SignupPage() {
     }
     if (role === 'student') {
       await authedFetch('/api/account/student-number', { method: 'POST', body: '{}' }).catch(() => undefined);
+      await reportSchool();
       await authedFetch('/api/account/placement', {
         method: 'POST',
         body: JSON.stringify({ programme: pathway, year: yearGroup }),
@@ -528,6 +539,8 @@ export default function SignupPage() {
               onInstitution={setJoinInstitution}
               onInviteCode={setInviteCode}
               onChildEmails={setChildEmail}
+              schoolName={schoolName}
+              onSchoolName={setSchoolName}
             />
           </div>
 

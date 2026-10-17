@@ -109,6 +109,16 @@ export interface UserProfile {
   studyDates?: string[];
   /** When false, the privacy-safe leaderboard omits this student. */
   shareBoard?: boolean;
+  /**
+   * School the student typed because it is not a registered institution.
+   * This is not a membership and does not set institutionId.
+   */
+  selfReportedSchool?: {
+    name: string;
+    key: string;
+    country: string;
+    state: string;
+  };
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -415,6 +425,8 @@ export interface Institution {
   state?: string;
   /** Super admin lists the academy for Independent vs institution signup. */
   listedForSelfJoin?: boolean;
+  /** Academy admin opts this name onto the public homepage school strip. */
+  showOnSchoolStrip?: boolean;
   plan?: 'starter' | 'team' | 'enterprise' | 'oem';
   /** Set on a sub-academy. Data stays in this institution's own subcollections. */
   parentInstitutionId?: string;

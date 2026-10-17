@@ -78,6 +78,8 @@ export interface AcademySettings {
   sessionTimeoutMinutes: number;
   ipAllowlist: string[];
   leaderboardVisible: 'academy' | 'group' | 'off';
+  /** Homepage school strip. Off until the academy admin opts in. */
+  showOnSchoolStrip: boolean;
   leaderboard: LeaderboardRow[];
   pages: AcademyPage[];
   mobileAppName: string;
@@ -144,6 +146,7 @@ export function blankAcademySettings(partial: Partial<AcademySettings> = {}): Ac
     passwordRequireSymbol: false,
     sessionTimeoutMinutes: 0,
     leaderboardVisible: 'academy',
+    showOnSchoolStrip: false,
     mobileAppName: '',
     mobileIconUrl: '',
     splashColor: '',
@@ -264,6 +267,7 @@ export function sanitiseAcademySettings(input: unknown): AcademySettings {
       .filter((entry) => entry.length > 0 && entry.length <= 64)
       .slice(0, 50),
     leaderboardVisible: oneOf(source.leaderboardVisible, ['academy', 'group', 'off'] as const, 'academy'),
+    showOnSchoolStrip: asBool(source.showOnSchoolStrip, false),
     leaderboard,
     pages,
     mobileAppName: asText(source.mobileAppName, 40),
@@ -365,6 +369,7 @@ export function publicTenantPatch(settings: AcademySettings) {
     sessionTimeoutMinutes: settings.sessionTimeoutMinutes,
     features: settings.features,
     leaderboardVisible: settings.leaderboardVisible,
+    showOnSchoolStrip: settings.showOnSchoolStrip === true,
     leaderboard: showBoard ? rankLeaderboard(settings.leaderboard) : [],
     publishedPages: settings.features.customPages
       ? settings.pages.filter((page) => page.published).map((page) => ({ slug: page.slug, title: page.title, body: page.body }))

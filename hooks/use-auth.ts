@@ -40,6 +40,12 @@ interface UserProfile {
   language?: string;
   /** YYYY-MM-DD days a lesson was opened, used for the study streak. */
   studyDates?: string[];
+  selfReportedSchool?: {
+    name: string;
+    key: string;
+    country: string;
+    state: string;
+  };
   /** When false, the privacy-safe leaderboard omits this student. */
   shareBoard?: boolean;
   accessTier?: number;

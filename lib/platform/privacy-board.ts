@@ -8,11 +8,14 @@ export interface BoardPerson {
   name?: string | null;
   score: number;
   shareBoard?: boolean | null;
+  /** Verified institution name, or a self-reported school when there is no membership. */
+  school?: string | null;
 }
 
 export interface BoardRow {
   id: string;
   label: string;
+  school: string;
   score: number;
   isYou: boolean;
 }
@@ -35,6 +38,7 @@ export function privacyBoard(people: readonly BoardPerson[], viewerId: string | 
     .map(person => ({
       id: person.id,
       label: person.id === viewerId ? 'You' : publicLabel(person.name),
+      school: (person.school ?? '').replace(/\s+/g, ' ').trim().slice(0, 80),
       score: person.score,
       isYou: person.id === viewerId,
     }));

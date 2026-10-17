@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useReadsT } from '@/lib/reads/i18n';
+import { publicDisplayName } from '@/lib/display-name';
 import { privacyBoard } from '@/lib/platform/leaderboard';
 import type { BoardPeriod, BoardScope } from '@/lib/reads/leaderboard';
 import { childHidden, setChildHidden } from '@/lib/shelf/storage';
@@ -59,7 +60,8 @@ export function LeaderboardView() {
         empty={t('reads.board.empty')}
         entries={rows.map(row => ({
           id: row.entry.id,
-          label: row.entry.nickname,
+          label: publicDisplayName(row.entry.nickname),
+          school: row.entry.school,
           score: row.minutes,
           scoreLabel: t('reads.board.minutes', { count: row.minutes }),
           isYou: row.entry.id === 'lighthouse',

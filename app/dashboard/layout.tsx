@@ -201,6 +201,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/admin/users', icon: UserCog, labelKey: 'nav.usersSparks' },
       { href: '/dashboard/admin/institutions', icon: Users, labelKey: 'nav.institutions' },
+      { href: '/dashboard/admin/schools', icon: GraduationCap, labelKey: 'nav.institutions', label: 'School leads', superOnly: true },
       { href: '/dashboard/admin/access', icon: Shield, labelKey: 'nav.accessConfig' },
       { href: '/dashboard/admin/allocations', icon: KeyRound, labelKey: 'nav.allocations' },
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
