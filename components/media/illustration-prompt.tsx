@@ -71,7 +71,7 @@ export function IllustrationPrompt({
           <p>This spends {sparksCost} Sparks to illustrate “{prompt.trim().slice(0, 140)}”.</p>
           <div className="mt-2 flex gap-2">
             <button type="button" className="h-9 rounded-full border border-[var(--ps-cyan-border)] px-3 font-semibold" onClick={() => setOpen(false)}>Cancel</button>
-            <button type="button" disabled={busy} className="h-9 rounded-full bg-[#203337] px-3 font-bold text-white" onClick={() => void run()}>{busy ? 'Working…' : 'Confirm spend'}</button>
+            <button type="button" disabled={busy} className="h-9 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-3 font-bold text-[var(--ps-cyan-ink)]" onClick={() => void run()}>{busy ? 'Working…' : 'Confirm spend'}</button>
           </div>
         </div>
       )}

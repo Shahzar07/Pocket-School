@@ -725,7 +725,7 @@ export function StudioView() {
                   {t('reads.studio.ageCheck')}
                 </button>
                 {book.coverBrief?.ageNote && (
-                  <p className={`text-sm ${book.coverBrief.ageOk ? 'text-emerald-800' : 'text-red-700'}`}>{book.coverBrief.ageNote}</p>
+                  <p className={`text-sm ${book.coverBrief.ageOk ? 'text-primary' : 'text-red-700'}`}>{book.coverBrief.ageNote}</p>
                 )}
               </div>
               <p className="text-xs text-muted-foreground">The author line is always ET AI. The picture itself has no lettering; the title is drawn on top.</p>
@@ -787,7 +787,7 @@ function ReadAloud({ text }: { text: string }) {
       {words.length > 0 && (
         <p className="mt-3 text-sm leading-relaxed">
           {words.map((token, index) => (
-            <span key={`${index}-${token}`} className={on && index === at ? 'rounded bg-[#E7C27D] px-0.5' : ''}>{token} </span>
+            <span key={`${index}-${token}`} className={on && index === at ? 'rounded bg-secondary px-0.5 text-foreground' : ''}>{token} </span>
           ))}
         </p>
       )}

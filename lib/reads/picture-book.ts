@@ -5,6 +5,7 @@
  */
 
 import type { AgeRating, Book, BookChapter } from '@/lib/reads/types';
+import { BRAND_COVER } from '@/lib/reads/cover';
 
 export const CHILDRENS_CATEGORY = 'childrens_stories' as const;
 export const CHILDRENS_GENRE = "Children's Stories";
@@ -185,7 +186,7 @@ export function blankChildrensStory(now = Date.now()): Book {
     title: 'Untitled story',
     author: 'ET AI',
     blurb: '',
-    cover: { from: '#F4C95D', to: '#1E6A83', accent: '#F7F1E1' },
+    cover: { ...BRAND_COVER },
     ...storyShape(band.id),
     curriculumTags: [{ programme: 'Primary', subject: 'English', year: band.label }],
     status: 'draft',

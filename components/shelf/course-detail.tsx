@@ -65,7 +65,7 @@ export function CourseCatalogueDetail({ seedKey }: { seedKey: string }) {
         </div>
       </div>
 
-      <section id="preview" className="rounded-[28px] border border-border bg-[#F7F1E6] p-6 text-[#2C241C] sm:p-10">
+      <section id="preview" className="rounded-[28px] border border-border bg-secondary p-6 text-foreground sm:p-10">
         <h2 className="font-heading text-[28px]">{t('reads.market.preview')}</h2>
         <p className="mt-4 max-w-[66ch] font-heading text-[19px] leading-[1.75]">{preview}</p>
       </section>

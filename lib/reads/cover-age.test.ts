@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { publishIssues, screenCoverAge } from './cover';
+import { BRAND_COVER, COVER_BRAND_PALETTE, publishIssues, screenCoverAge } from './cover';
 
 describe('cover age screen', () => {
   it('blocks a violent brief on a young title', () => {
@@ -32,5 +32,16 @@ describe('cover age screen', () => {
       chapters: [{ markdown: '![A harbour](pic)' }],
     });
     assert.deepEqual(ready, []);
+  });
+
+  it('asks the cover model for the blue palette and keeps light text on brand ink', () => {
+    assert.match(COVER_BRAND_PALETTE, /#1E6A83/);
+    assert.match(COVER_BRAND_PALETTE, /#2786A4/);
+    assert.match(COVER_BRAND_PALETTE, /#6FBBCE/);
+    assert.match(COVER_BRAND_PALETTE, /#3FE0D0/);
+    assert.match(COVER_BRAND_PALETTE, /No amber, mustard, gold, olive/);
+    assert.equal(BRAND_COVER.from, '#1E6A83');
+    assert.equal(BRAND_COVER.accent, '#E9F7FA');
+    assert.match(COVER_BRAND_PALETTE, /Do not use #3FE0D0 or #14B8A6 as text on a light background/);
   });
 });

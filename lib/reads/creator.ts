@@ -9,6 +9,7 @@ import type {
   AgeRating, Book, BookCategory, BookChapter, BookCraft, BookForm, ReadingLevel, SceneCard, StoryCharacter,
 } from '@/lib/reads/types';
 import { LANGUAGES } from '@/lib/languages';
+import { BRAND_COVER } from '@/lib/reads/cover';
 import { seedPricing } from '@/lib/pricing';
 import { storedBookPriceRM } from '@/lib/platform/pricing';
 import { chapterPlain } from '@/lib/reads/book-export';
@@ -365,7 +366,7 @@ export function blankCraftBook(kindId = 'fiction', now = Date.now()): Book {
     title: 'Untitled book',
     author: 'ET AI',
     blurb: '',
-    cover: { from: '#1E6A83', to: '#F4C95D', accent: '#F7F1E1' },
+    cover: { ...BRAND_COVER },
     ...kindShape(kind.id),
     curriculumTags: [{ programme: kind.category === 'academic' ? 'Academic' : 'General', subject: kind.genre, year: kind.pictureBook ? 'Ages 5–7' : kind.label }],
     status: 'draft',
