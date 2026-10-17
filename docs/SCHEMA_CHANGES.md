@@ -1532,7 +1532,7 @@ Amber alerts are a public safety and marketing tool. Receiving, viewing, and sha
 
 `users.emergencyOptIn` is the opt-in. Signup can set it, including when the person does not join a school. `POST /api/amber/opt-in` sets it for an existing account from a country (and optional state or city) with no institution and no subscription check. `homeCountry` is stored beside it. Both fields are self-service. A missing `emergencyOptIn` still means not opted in. Institution members of the school on the alert are included without this flag, as in the recipient matrix.
 
-The public page is `/amber/{id}`. It is a separate projection from `/alerts/{id}`. It shows the approved public details only:
+The public page is `/amber/{id}`. That URL is canonical: the page sets `<link rel="canonical">` to `/amber/{id}`. `/alerts/{id}`, `/alerts/{id}/opengraph-image`, and `/alerts/{id}/twitter-image` answer `301` to the matching `/amber` path and keep the query string. A missing-child alert uses the Amber projection. Another emergency type at the same URL keeps its own public details. It shows the approved public details only:
 
 - No reporter, publisher, or confirmer identity.
 - No hotline ticket, message, or category.
@@ -1541,7 +1541,7 @@ The public page is `/amber/{id}`. It is a separate projection from `/alerts/{id}
 
 A resolved, closed, retracted, `publicRedacted`, or consent-withdrawn alert renders the word `resolved` and drops those details, including the region and the authority reference. The page is noindex and sharing is off. The free join line stays.
 
-Open Graph and the Twitter share image use the blue hero gradient and the cyan accent `#3FE0D0` (`BRAND.cyan`). Both carry `Get free Amber alerts on Poket School` and the referral code. The code is the document id `referrals/{code}`, the same collection a free card uses. The join link is `/signup?amber=1&ref={code}`. Signup stores `referredBy` and, when the Amber box is ticked, `emergencyOptIn` and `homeCountry`. Creating an Amber draft calls `ensureAmberReferral`, which reuses the owner's `referrals/{code}` or creates one. Clients cannot read or write `referrals`. Rules are not deployed.
+Open Graph and the Twitter share image use the blue hero gradient. Cyan `#3FE0D0` is a fill and an accent on that blue. The join line is a cyan button with `#203337` text and a 1px `#1E6A83` border. The card has no amber, gold, or mustard. On the page, text on the light background is `#1E6A83` or `#203337`. Both images carry `Get free Amber alerts on Poket School` and the referral code. The code is the document id `referrals/{code}`, the same collection a free card uses. The join link is `/signup?amber=1&ref={code}`. Signup stores `referredBy` and, when the Amber box is ticked, `emergencyOptIn` and `homeCountry`. Creating an Amber draft calls `ensureAmberReferral`, which reuses the owner's `referrals/{code}` or creates one. Clients cannot read or write `referrals`. Rules are not deployed.
 
 Publishing an Amber alert (`missing_child`) requires verification tier 3 and staff post `principal`, or verification tier 4 (a partner). A missing `users.verification.tier` is 0, so a tier-0 principal cannot publish one. A super admin is not an exception. Other emergency types still use the existing verified principal or institution admin rule. The two-person confirm and the authority and consent gates are unchanged.
 

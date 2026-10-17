@@ -205,3 +205,15 @@ export function amberPushBody(page: AmberPage, region: Region): string {
 export function amberShareAccent(): string {
   return BRAND.cyan;
 }
+
+/**
+ * Old public URLs permanently move to /amber/{id}.
+ * Image routes move with the page so a cached share card resolves to the same id.
+ */
+export function amberCanonicalPath(pathname: string): string | null {
+  const path = pathname.split('?')[0] ?? '';
+  const match = path.match(/^\/alerts\/([^/]+)(\/(?:opengraph-image|twitter-image))?\/?$/);
+  const id = match?.[1];
+  if (!id || id === '.' || id === '..') return null;
+  return `/amber/${id}${match[2] ?? ''}`;
+}

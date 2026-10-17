@@ -6,6 +6,7 @@ import { CountrySelect } from '@/components/country-select';
 import { auth } from '@/lib/firebase';
 import { authedFetch } from '@/lib/api-client';
 import { AMBER_JOIN_CTA, amberJoinPath } from '@/lib/amber/public';
+import { BRAND } from '@/lib/brand';
 import { readGeoCountry } from '@/lib/countries';
 
 export function AmberJoin({ code, country }: { code: string; country: string }) {
@@ -37,14 +38,14 @@ export function AmberJoin({ code, country }: { code: string; country: string }) 
   };
 
   return (
-    <section className="grid gap-3 rounded-3xl border border-white/15 bg-white/10 p-4 text-white">
-      <h2 className="text-xl font-semibold">{AMBER_JOIN_CTA}</h2>
-      <p className="text-sm text-white/80">Free for every account, including people with no school.</p>
+    <section className="grid gap-3 rounded-3xl border bg-white p-4" style={{ color: BRAND.ink, borderColor: '#D5E3E7' }}>
+      <h2 className="text-xl font-semibold" style={{ color: BRAND.blueDeep }}>{AMBER_JOIN_CTA}</h2>
+      <p className="text-sm" style={{ color: BRAND.ink }}>Free for every account, including people with no school.</p>
       <CountrySelect value={place} onChange={setPlace} label="Country or home country" />
-      <label className="grid gap-1 text-sm font-semibold">State or city
-        <input className="h-12 rounded-xl border border-white/20 bg-white px-3 text-sm text-slate-900" value={state} onChange={event => setState(event.target.value)} aria-label="State or city" />
+      <label className="grid gap-1 text-sm font-semibold" style={{ color: BRAND.blueDeep }}>State or city
+        <input className="h-12 rounded-xl border bg-white px-3 text-sm" style={{ color: BRAND.ink, borderColor: BRAND.blueDeep }} value={state} onChange={event => setState(event.target.value)} aria-label="State or city" />
       </label>
-      <button type="button" disabled={busy} onClick={() => void join()} className="min-h-12 rounded-xl px-4 text-base font-bold" style={{ background: '#3FE0D0', color: '#1E6A83' }}>
+      <button type="button" disabled={busy} onClick={() => void join()} className="min-h-12 rounded-xl px-4 text-base font-bold" style={{ background: BRAND.cyan, color: BRAND.ink, border: `1px solid ${BRAND.blueDeep}` }}>
         {AMBER_JOIN_CTA}
       </button>
       {code ? <p className="text-sm">Referral code {code}</p> : null}

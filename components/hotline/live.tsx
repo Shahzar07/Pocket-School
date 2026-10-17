@@ -644,7 +644,7 @@ export function EmergencyLive({ sample = false }: { sample?: boolean }) {
         </section>
       ) : null}
       {note ? <AlertCard tone="good" title="Emergency" detail={note} /> : null}
-      <p className="text-sm text-muted-foreground">The public page is /alerts/{alertId || 'id'} with an OG image. Shares are logged from that page.</p>
+      <p className="text-sm text-muted-foreground">The public page is /amber/{alertId || 'id'} with an OG image. Shares are logged from that page.</p>
       <AuditBar kind="emergency" id={alertId} sample={sample} onNote={setNote} />
     </DashPage>
   );

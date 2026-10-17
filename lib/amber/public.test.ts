@@ -5,6 +5,7 @@ import { regionMatch, type EmergencyRecord } from '../emergency/policy';
 import {
   AMBER_JOIN_CTA,
   SAMPLE_AMBER_CODE,
+  amberCanonicalPath,
   amberJoinPath,
   amberOptInPatch,
   amberPage,
@@ -128,6 +129,16 @@ test('signup can opt in with no school, and the join link carries the code', () 
   assert.equal(amberOptInPatch({ country: ' ' }).ok, false);
   assert.equal(amberJoinPath(SAMPLE_AMBER_CODE), '/signup?amber=1&ref=POKETAMBER');
   assert.equal(amberShareAccent(), '#3FE0D0');
+});
+
+test('the old public URL permanently maps onto /amber', () => {
+  assert.equal(amberCanonicalPath('/alerts/sample'), '/amber/sample');
+  assert.equal(amberCanonicalPath('/alerts/sample/'), '/amber/sample');
+  assert.equal(amberCanonicalPath('/alerts/sample/opengraph-image'), '/amber/sample/opengraph-image');
+  assert.equal(amberCanonicalPath('/alerts/sample/twitter-image'), '/amber/sample/twitter-image');
+  assert.equal(amberCanonicalPath('/alerts/sample/opengraph-image?x=1'), '/amber/sample/opengraph-image');
+  assert.equal(amberCanonicalPath('/dashboard/admin/emergency'), null);
+  assert.equal(amberCanonicalPath('/alerts'), null);
 });
 
 test('a country code matches the region name used on an alert', () => {

@@ -88,7 +88,7 @@ export function isShareChannel(value: string): value is ShareChannel {
 }
 
 /** Where a logged share sends the visitor. Copy link returns to the alert page. */
-export function shareLocation(origin: string, id: string, channel: ShareChannel, pagePath = `/alerts/${id}`): string {
+export function shareLocation(origin: string, id: string, channel: ShareChannel, pagePath = `/amber/${id}`): string {
   const path = pagePath.startsWith('/') ? pagePath : `/${pagePath}`;
   const page = `${origin.replace(/\/$/, '')}${path}`;
   const text = encodeURIComponent(page);

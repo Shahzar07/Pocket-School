@@ -256,7 +256,7 @@ async function notifyPeople(record: EmergencyRecord, title: string, body: string
       category: 'emergency',
       title,
       body: body.slice(0, 140),
-      link: record.type === 'missing_child' ? `/amber/${record.id}` : `/alerts/${record.id}`,
+      link: `/amber/${record.id}`,
       force: true,
       sound: 'emergency',
     }, { store: adminPushStore(), send: sendToDevice });
