@@ -8,10 +8,14 @@ export type CoverPlacement = 'top' | 'center' | 'bottom';
  * (3.7:1), and #14B8A6 on white is 2.5:1, so neither is text on a light ground.
  * Text on a light ground stays #1E6A83 or #203337.
  *
- * TODO: when palette PR #128 lands the shared tokens, switch fills to
- * `--ps-cyan` (#3FE0D0), `--ps-cyan-strong` (#14B8A6, dark fills and icons
- * only), `--ps-cyan-text` (#1E6A83, not #0F766E), `--ps-cyan-ink` (#203337)
- * and `--ps-cyan-border` (#1E6A83). Do not fork those names here.
+ * TODO: palette PR #128 is still open and has not added these names, so they
+ * are not declared here. When they land, use the shared variables:
+ * `--ps-cyan` #3FE0D0, `--ps-cyan-strong` #14B8A6 (fills and icons on dark
+ * only), `--ps-cyan-soft`, `--ps-cyan-ink` #203337, `--ps-cyan-border` #1E6A83.
+ * `--ps-cyan-text` is #1E6A83, not #0F766E. Never use #14B8A6 as text on a
+ * light ground. Reads buttons then become a `--ps-cyan` fill, `--ps-cyan-ink`
+ * text, and a 1px `--ps-cyan-border`. `--ps-amber` is deprecated; Reads chrome
+ * already avoids it.
  */
 export const BRAND_COVER = {
   from: '#1E6A83',
