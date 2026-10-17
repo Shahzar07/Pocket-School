@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { CvStudio } from '@/components/portfolio/cv-builder';
 import { RecordPanels } from '@/components/portfolio/record-panels';
 import { JobTracker, LinkedInCopy } from '@/components/portfolio/linkedin-panels';
+import { AttendedSchoolPanel } from '@/components/alumni/claim-panel';
 import { DashHeader, DashPage, Panel } from '@/components/dash-ui';
 import { authedFetch } from '@/lib/api-client';
 import { DESTINATION_KINDS } from '@/lib/destinations';
@@ -186,6 +187,8 @@ export default function StudentPortfolioPage() {
           Add to portfolio
         </button>
       </Panel>
+
+      <AttendedSchoolPanel />
 
       <Panel>
         <h2 className="font-heading text-2xl text-[#1A3C34]">Sharing</h2>

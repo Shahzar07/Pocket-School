@@ -28,6 +28,8 @@ function leadFrom(id: string, data: FirebaseFirestore.DocumentData | undefined):
     country: text(data?.country).toUpperCase(),
     state: text(data?.state),
     count: Math.max(0, Math.round(Number(data?.count ?? 0))),
+    alumniCount: Math.max(0, Math.round(Number(data?.alumniCount ?? 0))),
+    registeredInstitutionId: text(data?.registeredInstitutionId),
     approvedForLanding: data?.approvedForLanding === true,
     mergedInto: text(data?.mergedInto),
   };
@@ -155,8 +157,10 @@ export async function mergeSchoolLeads(keepKey: string, dropKey: string): Promis
     const keepLead = leadFrom(keep, keepSnap.data());
     const dropLead = leadFrom(drop, dropSnap.data());
     const count = keepLead.count + dropLead.count;
+    const alumniCount = keepLead.alumniCount + dropLead.alumniCount;
     tx.set(keepRef, {
       count,
+      alumniCount,
       approvedForLanding: keepLead.approvedForLanding,
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
@@ -166,7 +170,7 @@ export async function mergeSchoolLeads(keepKey: string, dropKey: string): Promis
       mergedInto: keep,
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
-    return { ...keepLead, count };
+    return { ...keepLead, count, alumniCount };
   });
   const students = await db().collection('users').where('selfReportedSchool.key', '==', drop).get();
   const batchSize = 400;

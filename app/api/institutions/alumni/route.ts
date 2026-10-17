@@ -23,6 +23,7 @@ import {
   saveCampaign,
 } from '@/lib/server/alumni-network-store';
 import { callerOwnsInstitution } from '@/lib/server/institution-activate';
+import { listInstitutionAlumniClaims, reviewAlumniClaim } from '@/lib/server/alumni-claim-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,19 +39,20 @@ export async function GET(req: NextRequest) {
   if (isNextResponse(user)) return user;
   const institutionId = req.nextUrl.searchParams.get('institutionId')?.trim() ?? '';
   if (!institutionId) return NextResponse.json({ error: 'Choose an academy.' }, { status: 400 });
-  const claims = { role: user.role, adminRole: user.adminRole };
+  const staff = { role: user.role, adminRole: user.adminRole };
   const owns = await callerOwnsInstitution(user.uid, institutionId);
-  if (!owns && !(await callerIsAdmin(user.uid, user.email, claims))) {
+  if (!owns && !(await callerIsAdmin(user.uid, user.email, staff))) {
     return NextResponse.json({ error: 'This academy is not on your account.' }, { status: 403 });
   }
   const today = todayIso();
   await releaseScheduledAlumni(today, 10);
-  const [people, policy, academy, suggestions, network] = await Promise.all([
+  const [people, policy, academy, suggestions, network, claims] = await Promise.all([
     listAlumni(institutionId),
     loadAlumniPolicy(institutionId),
     adminDb().doc(`institutions/${institutionId}`).get(),
     recordGraduationSuggestions(institutionId, today),
     networkDesk(institutionId),
+    listInstitutionAlumniClaims(institutionId),
   ]);
   const stats = alumniStats(people);
   const name = typeof academy.get('name') === 'string' ? academy.get('name') : '';
@@ -59,7 +61,7 @@ export async function GET(req: NextRequest) {
       headers: { 'Content-Type': 'text/csv; charset=utf-8' },
     });
   }
-  return NextResponse.json({ people, policy, stats, name, suggestions: suggestions.people, network });
+  return NextResponse.json({ people, policy, stats, name, suggestions: suggestions.people, network, claims });
 }
 
 function readyPeople(body: Record<string, unknown>): ReadyGraduate[] {
@@ -172,6 +174,12 @@ export async function POST(req: NextRequest) {
   if (action === 'moderate-post') {
     const queueId = typeof body.queueId === 'string' ? body.queueId : '';
     const result = await moderateHeldPost({ institutionId, queueId, release: body.release !== false });
+    if ('error' in result) return NextResponse.json(result, { status: 400 });
+    return NextResponse.json(result);
+  }
+  if (action === 'review-claim') {
+    const studentId = typeof body.studentId === 'string' ? body.studentId : '';
+    const result = await reviewAlumniClaim(institutionId, studentId, body.approve !== false);
     if ('error' in result) return NextResponse.json(result, { status: 400 });
     return NextResponse.json(result);
   }

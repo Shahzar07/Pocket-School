@@ -75,6 +75,8 @@ export interface AlumniPerson {
   reason: LeaveReason;
   certificates: number;
   seatFreed: boolean;
+  /** An individual who asked to join. This never occupied a seat. */
+  claimedIndividual?: boolean;
   publicProfile: boolean;
   /** Last day an admin can restore the seat, inclusive. */
   undoUntil?: string;

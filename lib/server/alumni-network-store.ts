@@ -119,6 +119,8 @@ export async function rememberAttendance(input: {
   country: string;
   leftOn: string;
   destination?: string;
+  /** An individual who asked to join. This never occupies or frees a seat. */
+  claimedIndividual?: boolean;
 }): Promise<void> {
   const institutionId = safeId(input.institutionId);
   const studentId = safeId(input.studentId);
@@ -182,9 +184,10 @@ export async function rememberAttendance(input: {
     level,
     leftOn,
     graceEndsOn: leftOn,
-    reason: 'marked',
+    reason: input.claimedIndividual ? 'claimed' : 'marked',
     certificates: 0,
-    seatFreed: true,
+    claimedIndividual: input.claimedIndividual === true,
+    seatFreed: input.claimedIndividual === true ? false : true,
     seatCounted: false,
     publicProfile: false,
     ...profile,

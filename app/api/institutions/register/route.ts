@@ -7,6 +7,7 @@ import { adminAuth, adminDb, isAdminConfigured } from '@/lib/firebase-admin';
 import { validateInstitutionApplication } from '@/lib/institution-journey';
 import { parseOrganisationSize } from '@/lib/institution-self-serve';
 import { INSTITUTION_ADMIN_CODE_UNAVAILABLE } from '@/lib/institution-login';
+import { mergeUnregisteredAlumni } from '@/lib/server/alumni-claim-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -123,6 +124,14 @@ export async function POST(req: NextRequest) {
     });
     batch.set(adminDb().doc(`institutions/${institution.id}/settings/profile`), profile);
     await batch.commit();
+    await mergeUnregisteredAlumni({
+      institutionId: institution.id,
+      name: application.organisation,
+      country: application.country,
+      state: application.state,
+    }).catch((error: unknown) => {
+      console.error('Alumni group merge skipped', error instanceof Error ? error.message : 'unknown');
+    });
     return NextResponse.json({ institutionId: institution.id, uid });
   } catch (error) {
     if (uid) {

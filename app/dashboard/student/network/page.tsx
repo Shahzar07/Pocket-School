@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { authedFetch } from '@/lib/api-client';
 import { SEAT_NOTE, type AlumniConsent } from '@/lib/alumni-network';
+import { AttendedSchoolPanel } from '@/components/alumni/claim-panel';
 
 interface AttendedRow {
   institutionId: string;
@@ -117,8 +118,9 @@ export default function ClassNetworkPage() {
             </button>
           ))}
         </div>
-        {attended.length === 0 && <p className="mt-3 text-sm text-brand-forest">Your class groups appear here after you leave an academy. The history stays on this account.</p>}
+        {attended.length === 0 && <p className="mt-3 text-sm text-brand-forest">Add a school you attended, or your class groups appear here after you leave an academy. The history stays on this account.</p>}
       </section>
+      <AttendedSchoolPanel />
 
       {network && (
         <section className="space-y-3 rounded-3xl bg-white p-4 sm:p-6">

@@ -13,6 +13,8 @@ interface SchoolLead {
   country: string;
   state: string;
   count: number;
+  alumniCount?: number;
+  registeredInstitutionId?: string;
   approvedForLanding: boolean;
 }
 
@@ -91,7 +93,7 @@ export default function SchoolLeadsPage() {
         eyebrow="Super admin"
         title="School leads"
         accent="demand"
-        description="Students who typed a school that is not a registered institution. They are not members. Approve a name for the homepage only when you want it public."
+        description="Students who typed a school that is not a registered institution, and alumni who asked to join that name. They are not members. Approve a name for the homepage only when you want it public."
       />
       <Panel>
         <PanelHeader title="Homepage threshold" />
@@ -154,7 +156,11 @@ export default function SchoolLeadsPage() {
             <tbody>
               {leads.map((lead) => (
                 <tr key={lead.key} className="border-b border-border last:border-0">
-                  <td className="px-4 py-3 font-semibold text-[#1A3C34]">{lead.name}</td>
+                  <td className="px-4 py-3 font-semibold text-[#1A3C34]">
+                    {lead.name}
+                    {lead.alumniCount ? <span className="mt-1 block text-xs font-medium text-muted-foreground">{lead.alumniCount} alumni asked to join</span> : null}
+                    {lead.registeredInstitutionId ? <span className="mt-1 block text-xs font-medium text-muted-foreground">Now on Poket School</span> : null}
+                  </td>
                   <td className="px-4 py-3">{lead.country || '—'}</td>
                   <td className="px-4 py-3">{lead.state || '—'}</td>
                   <td className="px-4 py-3 tabular-nums">{lead.count}</td>

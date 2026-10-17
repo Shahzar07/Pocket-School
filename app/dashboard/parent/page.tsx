@@ -19,6 +19,7 @@ import { ChildExamPrep } from '@/components/study/child-exam-prep';
 import { DashPage, DashHeader } from '@/components/dash-ui';
 import { JoinByCode, type JoinStudentCard } from '@/components/join-by-code';
 import { FinalSummaryCard } from '@/components/alumni/record-panels';
+import { AttendedSchoolPanel } from '@/components/alumni/claim-panel';
 import { asAgeTier, isMinorTier } from '@/lib/age-tier';
 import { authedFetch } from '@/lib/api-client';
 import dynamic from 'next/dynamic';
@@ -271,6 +272,8 @@ export default function ParentDashboard() {
           </Link>
         }
       />
+
+      <AttendedSchoolPanel />
 
       <div id="link-child">
       <JoinByCode

@@ -36,6 +36,8 @@ export interface SchoolLead {
   country: string;
   state: string;
   count: number;
+  alumniCount: number;
+  registeredInstitutionId: string;
   approvedForLanding: boolean;
   mergedInto: string;
 }

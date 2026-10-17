@@ -214,7 +214,7 @@ export function AlumniBoard({
           <div key={person.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-brand-forest/10 px-4 py-3 text-sm last:border-0">
             <div>
               <p className="font-semibold">{person.name}</p>
-              <p className="text-xs text-brand-forest/70">{person.level} · left {person.leftOn} · {person.undoneOn ? 'seat restored' : person.seatFreed ? 'seat free · individual' : `seat free after ${person.graceEndsOn}`}</p>
+              <p className="text-xs text-brand-forest/70">{person.level} · left {person.leftOn} · {person.claimedIndividual ? 'joined · no seat' : person.undoneOn ? 'seat restored' : person.seatFreed ? 'seat free · individual' : `seat free after ${person.graceEndsOn}`}</p>
             </div>
             <div className="flex items-center gap-3">
               <span>{person.certificates} certificates</span>

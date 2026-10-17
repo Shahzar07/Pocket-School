@@ -1140,6 +1140,118 @@ Each new category has an account toggle on `users/{uid}.notificationPrefs` and t
 
 The palette is held while Harry confirms it. Poket School may move to a blue gradient. The current inks live in `lib/brand-theme.ts` and the `--brand-*` variables in `app/globals.css`. Alumni, yearbook, and graduation screens use `bg-brand-forest`, `bg-brand-gold`, `bg-brand-coral`, `bg-brand-blue`, `bg-brand-cream`, and `bg-brand-sand`. A palette change is those two files. The values are not changed in this update.
 
+## Individual alumni claims
+
+An individual learner can add a school they attended from the portfolio, the alumni network page, or a parent page. The control is “Add a school I attended”. The server writes every document below with the Admin SDK. Clients cannot write `seatCounted`, `parentApproved`, `studentNumber`, `ageTier`, `claimedIndividual`, or these claim documents. The default Firestore rule denies them.
+
+A verified claim does not set `users.institutionId` or `users.alumniOf`, and it does not occupy or free a licence. `releaseAlumniSeat` returns immediately when `claimedIndividual` is true. The seat-release sweep skips those rows. A later real graduation still runs if that person is currently enrolled at the academy (`users.institutionId` equals the academy).
+
+### `users/{uid}/alumni_claims/{id}`
+
+Document id is the institution id when the school is registered, or the school key when it is not.
+
+| Field | Type | Notes |
+|---|---|---|
+| `institutionId` | string | Set for a registered academy. Empty for a self-reported group until that school registers. |
+| `schoolKey` | string | `schoolKey(country, state, name)`. Empty for a registered claim. Format `CC\|state\|slug`, with no slash. |
+| `schoolName` | string | Academy name or the typed school name. |
+| `className` | string | Class the learner entered. |
+| `graduationYear` | string | Four digits, from 1950 through the current year. |
+| `status` | string | `needs_parent`, `pending`, `verified`, `unverified`, or `rejected`. |
+| `method` | string | `roster`, `domain`, `admin`, `peer`, or empty. |
+| `email` | string | Lower-case email copied at request time. |
+| `createdAt` | string | ISO time. |
+
+### `institutions/{id}/alumni_claims/{uid}`
+
+Same claim, plus `studentId` and `name`. The academy queue lists `pending` and `needs_parent` only. An admin can confirm or decline `pending`. `needs_parent` stays until a linked parent confirms.
+
+### Decision
+
+`decideAlumniClaim` in `lib/alumni-claim.ts`:
+
+| Case | Status | Method |
+|---|---|---|
+| Minor (`under13` or `teen`) and the parent has not confirmed | `needs_parent` | empty |
+| School is not registered | `unverified` | `peer` |
+| `settings/join` has `rosterMatch` and a `joinRoster` row matches the email, `role` is `student`, and `status` is not `leaver` | `verified` | `roster` |
+| Email domain matches `policy.emailDomains` (a leading `@` is ignored) | `verified` | `domain` |
+| Registered academy, no automatic match | `pending` | `admin` |
+
+A missing age tier fails closed as `under13`. An institution admin cannot file a claim. A learner who still has `users.institutionId` equal to that academy is told alumni opens when they leave or graduate. An existing `users/{uid}/attended/{institutionId}` returns already verified and does not write a second membership.
+
+### Verified placement
+
+`rememberAttendance` with `claimedIndividual: true` writes:
+
+- `users/{uid}/attended/{institutionId}` with `seatCounted: false` and `holdsSeat: false`.
+- `users/{uid}/alumni_consent/{institutionId}` if missing. Consent stays off. `messages` and `mentor` stay unavailable to a minor.
+- `institutions/{id}/alumni_groups/{groupId}` and `members/{uid}`. The group id uses the class name, or the level, plus the graduation year.
+- A yearbook page for that class and year.
+- `institutions/{id}/alumni/{uid}` only when that document is missing. Fields include `reason: claimed`, `claimedIndividual: true`, `seatFreed: false`, `seatCounted: false`, and `publicProfile: false`. An existing graduate document is not overwritten, so a real graduation keeps `seatFreed`.
+
+`seatFreed: false` keeps the row out of “seats freed” and blocks undo. The desk shows “joined · no seat”. Class networks, the yearbook, the wall, messaging, and the directory are the same surfaces institution-graduated alumni use. Directory, messages, and mentor stay opt-in. A minor cannot set `messages` or `mentor`, and `canDirectMessage` blocks a minor.
+
+### Unregistered group
+
+`unregistered_alumni/{schoolKey}`:
+
+| Field | Type | Notes |
+|---|---|---|
+| `name` | string | Display name. |
+| `country` | string | Two-letter country code. |
+| `state` | string | Region, as typed. |
+| `verified` | boolean | `false`. The badge is Unverified. |
+| `mergedInto` | string | Empty until the school registers. Then the institution id. |
+| `memberCount` | number | Incremented when a new member is added. |
+
+`unregistered_alumni/{schoolKey}/members/{uid}`: `studentId`, `name` (public name), `className`, `graduationYear`, `parentApproved` (`true` once a parent has confirmed, or immediately for an adult), `joinedOn`.
+
+`unregistered_alumni/{schoolKey}/posts/{id}`: `authorId`, `authorName`, `body` (max 500), `visible`, `queued`, `at`. `screenPost` blocks a threat. A minor’s note is held (`queued: true`, `visible: false`). Another adult member, not the author, can release it. There is no academy admin for this group.
+
+A minor’s request does not create the member until a parent confirms.
+
+### Sales lead
+
+`unregistered_schools/{schoolKey}` gains:
+
+| Field | Type | Notes |
+|---|---|---|
+| `alumniCount` | number | People who asked to join this name as alumni. |
+| `registeredInstitutionId` | string | Set when the group merges into a registered academy. |
+
+`unregistered_schools/{schoolKey}/alumni_leads/{uid}` is `{ at }` and is written once. `alumniCount` increments with that first write. `count` increments in the same write only when `users/{uid}.selfReportedSchool.key` is not already this key, so a student who already named the school is not counted twice. Super admin sees “N alumni asked to join” and, after registration, “Now on Poket School”. Merging two lead rows adds their `alumniCount` values.
+
+### Merge when the school registers
+
+`POST /api/institutions/register` calls `mergeUnregisteredAlumni` after the academy document is committed. The key is `schoolKey(country, state, organisation name)`, using the same two-letter country and state the registration form stores. A typed state that does not match that string will not merge.
+
+Members with `parentApproved === false` are skipped. Everyone else is placed with `claimedIndividual: true`. Their user claim becomes `status: verified`, `method: admin`, and `institutionId` is set. The group’s `mergedInto` and the lead’s `registeredInstitutionId` are set. A failure is logged and does not fail registration.
+
+A later request for that same school name follows the registered academy. A parent confirmation that arrives after the merge places the child in the official network instead of the old group. Posts to a merged group are refused.
+
+### Routes
+
+`GET /api/alumni/claim` requires a Firebase ID token.
+
+| Query | Response |
+|---|---|
+| `?q=` of at least two characters | `{ schools: [{ id, name, country, state }] }`. Registered academies whose name contains the query. Suspended academies are omitted. At most eight. |
+| none | `{ country, state, minor, mine, groups, children }`. `mine` is the caller’s claims. `groups` are unverified groups and their posts. `children` are linked `childIds` claims still on `needs_parent`. |
+
+`POST /api/alumni/claim`:
+
+| `action` | Body | Response |
+|---|---|---|
+| `request` (default) | `{ institutionId?, schoolName?, graduationYear, className, country?, state? }` | `{ status, message }`. `country` is required only when `institutionId` is empty, and it must be two letters. |
+| `approve-child` | `{ childId, claimId }` | `{ status, message }`. The caller’s `childIds` must include `childId`. The decision runs again with `parentApproved: true` and the child’s real age tier. |
+| `post` | `{ schoolKey, body }` | `{ id, visible, queued }`. |
+| `release` | `{ schoolKey, postId }` | `{ ok: true }`. |
+
+`GET /api/institutions/alumni` adds `claims: [{ studentId, name, className, graduationYear, status }]`. `POST` `{ action: "review-claim", institutionId, studentId, approve }` returns `{ status }` (`verified` or `rejected`). `approve` defaults to true. A `needs_parent` row returns “A parent confirms this learner first.”
+
+Parent confirmation notifies the parent in app with `skipPush`. A `pending` claim notifies the academy `adminId` with push preference `institution`. A verified learner is notified with the same preference. A minor still cannot open direct messages, and a minor’s posts on the official wall stay in `institutions/{id}/alumni_queue`.
+
 
 
 

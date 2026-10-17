@@ -59,6 +59,7 @@ function personFrom(id: string, data: Record<string, unknown> | undefined): Alum
     reason: data.reason === 'final_level' || data.reason === 'end_date' ? data.reason : 'marked',
     certificates: typeof data.certificates === 'number' ? data.certificates : 0,
     seatFreed: data.seatFreed === true,
+    claimedIndividual: data.claimedIndividual === true,
     publicProfile: data.publicProfile === true,
     undoUntil: text(data.undoUntil),
     undoneOn: text(data.undoneOn),
@@ -236,6 +237,12 @@ export async function beginAlumni(input: {
     input.studentId ? adminDb().doc(`institutions/${institutionId}/alumni/${input.studentId}`).get() : Promise.resolve(null),
   ]);
   const prior = existing?.exists ? personFrom(existing.id, existing.data()) : null;
+  if (prior?.claimedIndividual) {
+    const current = input.studentId
+      ? text((await adminDb().doc(`users/${input.studentId}`).get()).get('institutionId'))
+      : '';
+    if (current !== institutionId) return prior;
+  }
   if (prior && !prior.undoneOn) {
     await settleGraduate({
       institutionId,
@@ -333,6 +340,7 @@ export async function beginAlumni(input: {
 export async function releaseAlumniSeat(institutionId: string, studentId: string, today: string): Promise<void> {
   const ref = adminDb().doc(`institutions/${institutionId}/alumni/${studentId}`);
   const snap = await ref.get();
+  if (snap.get('claimedIndividual') === true) return;
   const person = personFrom(snap.id, snap.data());
   if (!person || person.seatFreed) return;
   await ref.set({ seatFreed: true, freedOn: today }, { merge: true });
@@ -367,6 +375,7 @@ export async function releaseDueAlumni(today: string): Promise<number> {
     const policy = await loadAlumniPolicy(academy.id);
     const snap = await academy.ref.collection('alumni').where('seatFreed', '==', false).limit(100).get();
     for (const doc of snap.docs) {
+      if (doc.get('claimedIndividual') === true) continue;
       const person = personFrom(doc.id, doc.data());
       if (!person || person.undoneOn) continue;
       await settleGraduate({
