@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     description: DESCRIPTION,
     images: ['/reads/offer/og.jpg'],
   },
-  robots: { index: true, follow: true },
+  robots: { index: false, follow: false },
 };
 
 export default function ReadsOfferPage() {

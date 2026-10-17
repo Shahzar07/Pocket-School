@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { BANNED_OFFER_COLOURS, OFFER_JACKETS, POKET_CYAN, POKET_CYAN_DEEP } from './reads-offer-media';
 import { readsOfferExcerpts } from './reads-offer-excerpts';
 import { LANGUAGES } from './languages';
 import { BOOKS } from './reads/seed';
@@ -119,4 +121,28 @@ test('the letter has a founder note and no invented reviews, guarantee or bonus'
   const json = JSON.stringify(readsOfferJsonLd());
   assert.equal(json.includes('"@type":"Review"'), false);
   assert.equal(json.includes('aggregateRating'), false);
+});
+
+test('sales-letter jackets use Poket blue and electric cyan', () => {
+  const used = JSON.stringify(OFFER_JACKETS).toUpperCase();
+  for (const colour of BANNED_OFFER_COLOURS) {
+    assert.equal(used.includes(colour), false);
+  }
+  assert.match(used, /#1E6A83/);
+  assert.match(used, /#2786A4/);
+  assert.match(used, /#6FBBCE/);
+  assert.match(used, new RegExp(POKET_CYAN));
+  assert.equal(used.includes(POKET_CYAN_DEEP), false);
+  const letter = readFileSync(new URL('../components/reads-offer/cta.tsx', import.meta.url), 'utf8');
+  const card = readFileSync(new URL('../components/offer/offer-landing.tsx', import.meta.url), 'utf8');
+  assert.match(letter, new RegExp(POKET_CYAN));
+  assert.match(letter, /text-\[#203337\]/);
+  assert.match(card, new RegExp(POKET_CYAN));
+  assert.equal(/#E2AF4D|#1F8A70|#1A3C34|#C8922A/i.test(letter + card), false);
+  const sitemap = readFileSync(new URL('../app/sitemap.ts', import.meta.url), 'utf8');
+  const robots = readFileSync(new URL('../app/robots.ts', import.meta.url), 'utf8');
+  const page = readFileSync(new URL('../app/reads/offer/page.tsx', import.meta.url), 'utf8');
+  assert.equal(sitemap.includes("'/reads/offer'"), false);
+  assert.match(robots, /\/reads\/offer/);
+  assert.match(page, /index:\s*false/);
 });
