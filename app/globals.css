@@ -156,6 +156,16 @@
     --ps-on-emerald: #FFFFFF;
     --ps-sky: #0369A1;
     --ps-on-sky: #FFFFFF;
+    /* Names the dashboard kit uses. Keep these in step with that kit. */
+    --ps-wash: #E9F7FA;
+    --ps-blue-deep: #1E6A83;
+    --ps-blue-bright: #6FBBCE;
+    --ps-amber-soft: #FFF6E4;
+    --ps-coral-soft: #FDECEA;
+    --ps-mint: #E5F6EF;
+    --ps-mint-ink: #0E7A62;
+    --ps-good: #1F8A70;
+    --ps-hero: linear-gradient(135deg, #1E6A83 0%, #2786A4 50%, #6FBBCE 100%);
     --ps-pattern-ink: rgba(255, 255, 255, 0.78);
     --medal-gold: #E8B84A;
     --medal-gold-ink: #3D2A06;
@@ -244,6 +254,15 @@
     --ps-on-emerald: #0B1417;
     --ps-sky: #7DD3FC;
     --ps-on-sky: #0B1417;
+    --ps-wash: #102028;
+    --ps-blue-deep: #8ED0DE;
+    --ps-blue-bright: #6FBBCE;
+    --ps-amber-soft: #2A2416;
+    --ps-coral-soft: #2C1C1A;
+    --ps-mint: #142824;
+    --ps-mint-ink: #8ED9C4;
+    --ps-good: #8ED9C4;
+    --ps-hero: linear-gradient(135deg, #0B1417 0%, #17282D 50%, #1E6A83 100%);
     --ps-pattern-ink: rgba(11, 20, 23, 0.55);
     --medal-gold: #F0C36A;
     --medal-gold-ink: #3D2A06;

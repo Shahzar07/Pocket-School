@@ -1424,6 +1424,8 @@ On graduation, linked parents receive the existing graduation letter plus one su
 
 Screens: `/dashboard/student/career`, `/dashboard/institution/career`, `/dashboard/teacher/references`.
 
+Those three screens use the app home in `components/career/app-surface.tsx`: brand-gradient header, rounded category tiles with badge counts, a collapsible icon rail on desktop, a 64px bottom tab bar on mobile, and the top three tasks one tap from home. Icons are lucide-react at 24px. Rings and charts use `--chart-1`. Solid buttons use `bg-primary` and `text-primary-foreground`. Tile radius is 18 and greeting cards are 24. Touch targets are at least 48px. Light and dark follow the kit tokens `--ps-wash`, `--ps-blue-deep`, `--ps-hero`, `--ps-mint`, `--ps-amber-soft`, and `--ps-coral-soft`. When `components/dashboard` lands, swap `CareerHome`, `CategoryIcon`, `ProgressRing`, and `StatCard` for the kit exports of the same names.
+
 
 
 

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { CareerHome, ProgressRing, fieldClass, primaryButton, quietButton } from '@/components/career/app-surface';
 import { authedFetch } from '@/lib/api-client';
 
 interface SkillRow { id: string; name: string; visible: boolean; evidence: { label: string; url: string }[] }
@@ -25,8 +26,15 @@ interface CareerDesk {
   note: string;
 }
 
+const empty: CareerDesk = {
+  interests: [], skills: [], endorsements: [], matches: [], openings: [], campaigns: [], reunions: [], talks: [],
+  bridge: { needsConsent: false, keepsPdf: false }, schools: [], note: '',
+};
+
 export default function StudentCareerPage() {
-  const [desk, setDesk] = useState<CareerDesk | null>(null);
+  const [desk, setDesk] = useState<CareerDesk>(empty);
+  const [ready, setReady] = useState(false);
+  const [section, setSection] = useState('home');
   const [interests, setInterests] = useState('');
   const [cvVersionId, setCvVersionId] = useState('');
   const [talkTitle, setTalkTitle] = useState('');
@@ -36,8 +44,9 @@ export default function StudentCareerPage() {
     authedFetch('/api/institutions/extras')
       .then((data) => {
         const next = data as unknown as CareerDesk;
-        setDesk(next);
+        setDesk({ ...empty, ...next, bridge: next.bridge ?? empty.bridge });
         setInterests((next.interests ?? []).join(', '));
+        setReady(true);
       })
       .catch((error: Error) => toast.error(error.message));
   }, []);
@@ -54,139 +63,167 @@ export default function StudentCareerPage() {
     }
   }
 
+  const giving = desk.campaigns[0]?.progress ?? 0;
+  const tiles = [
+    { id: 'skills', label: 'Skills', hint: 'Show or hide', category: 'learning' as const, badge: desk.skills.length },
+    { id: 'references', label: 'References', hint: 'Locked notes', category: 'people' as const, badge: desk.endorsements.length },
+    { id: 'matches', label: 'Matches', hint: 'ET AI list', category: 'careers' as const, badge: desk.matches.length },
+    { id: 'board', label: 'Board', hint: 'This academy', category: 'careers' as const, badge: desk.openings.length },
+    { id: 'giving', label: 'Giving', hint: 'Sandbox', category: 'payments' as const, badge: desk.campaigns.length },
+    { id: 'reunions', label: 'Reunions', hint: 'RSVP', category: 'community' as const, badge: desk.reunions.length },
+    { id: 'talks', label: 'Talks', hint: 'Approved', category: 'insights' as const, badge: desk.talks.length },
+  ];
+
   return (
-    <div className="mx-auto max-w-3xl space-y-6 px-4 py-8">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-deep">Poket School</p>
-        <h1 className="font-heading text-3xl text-ink">Career</h1>
-        <p className="mt-2 text-sm text-muted">{desk?.note || 'ET AI matches opportunities your academy entered. It does not invent one.'}</p>
-      </header>
+    <CareerHome
+      title="Career"
+      blurb={desk.note || 'ET AI matches opportunities your academy entered. It does not invent one.'}
+      active={section}
+      onActive={setSection}
+      tasks={[
+        { id: 'skills', label: 'Refresh skills', category: 'learning', onSelect: () => { setSection('skills'); void send('refresh-skills', {}); } },
+        { id: 'matches', label: 'Review matches', category: 'careers', onSelect: () => setSection('matches') },
+        desk.bridge.needsConsent
+          ? { id: 'parents', label: 'Share with parents', category: 'people', onSelect: () => setSection('parents') }
+          : { id: 'reunions', label: 'Reunion RSVP', category: 'community', onSelect: () => setSection('reunions') },
+      ]}
+      tiles={tiles}
+      stats={ready ? [
+        { label: 'Proven skills', value: String(desk.skills.filter((skill) => skill.visible).length), hint: 'Visible on your CV', ring: desk.skills.length ? Math.round((desk.skills.filter((skill) => skill.visible).length / desk.skills.length) * 100) : 0 },
+        { label: 'Matches', value: String(desk.matches.length), hint: 'From the entered list' },
+        { label: 'Giving', value: desk.campaigns.length ? `${giving}%` : 'Off', hint: 'Sandbox only', ring: giving },
+      ] : []}
+    >
+      {section === 'skills' ? (
+        <div className="space-y-3">
+          <h2 className="font-heading text-xl">Skills passport</h2>
+          <p className="text-sm text-muted-foreground">Proven skills come from verified lessons, unit tests, and badges. You can show or hide one. You cannot edit it.</p>
+          <button type="button" onClick={() => send('refresh-skills', {})} className={primaryButton}>Refresh from my record</button>
+          <ul className="divide-y divide-border">
+            {desk.skills.map((skill) => (
+              <li key={skill.id} className="flex min-h-12 items-center justify-between gap-3 py-3">
+                <div>
+                  <p className="font-semibold">{skill.name}</p>
+                  <p className="text-sm text-muted-foreground">{skill.evidence.map((item) => item.label).join(' · ') || 'Verified by Poket School'}</p>
+                </div>
+                <button type="button" onClick={() => send('hide-skill', { skillId: skill.id, visible: !skill.visible })} className={quietButton}>{skill.visible ? 'Hide' : 'Show'}</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
-      <section className="rounded-3xl bg-white p-5">
-        <h2 className="font-semibold text-ink">Skills passport</h2>
-        <p className="mt-1 text-sm text-muted">Proven skills come from verified lessons, unit tests, and badges. You can show or hide one. You cannot edit it.</p>
-        <button type="button" onClick={() => send('refresh-skills', {})} className="mt-3 h-10 rounded-full bg-blue-deep px-4 text-sm text-white">Refresh from my record</button>
-        <ul className="mt-4 space-y-3">
-          {(desk?.skills ?? []).map((skill) => (
-            <li key={skill.id} className="rounded-2xl bg-wash px-4 py-3">
-              <p className="font-semibold text-ink">{skill.name}</p>
-              <p className="text-sm text-muted">{skill.evidence.map((item) => item.label).join(' · ') || 'Verified by Poket School'}</p>
-              <button type="button" onClick={() => send('hide-skill', { skillId: skill.id, visible: !skill.visible })} className="mt-2 text-sm font-semibold text-blue-deep">
-                {skill.visible ? 'Hide on CV' : 'Show on CV'}
-              </button>
+      {section === 'references' ? (
+        <div className="space-y-3">
+          <h2 className="font-heading text-xl">Teacher references</h2>
+          <ul className="divide-y divide-border">
+            {desk.endorsements.map((note) => (
+              <li key={note.id} className="py-3">
+                <p className="text-sm">{note.body}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{note.teacherName} · Locked</p>
+                <button type="button" onClick={() => send('hide-endorsement', { id: note.id, visible: !note.visible })} className={`${quietButton} mt-2`}>{note.visible ? 'Hide' : 'Show'}</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {section === 'matches' ? (
+        <div className="space-y-3">
+          <h2 className="font-heading text-xl">ET AI matcher</h2>
+          <label className="block text-sm">Interests
+            <input value={interests} onChange={(event) => setInterests(event.target.value)} className={fieldClass} placeholder="biology, design" />
+          </label>
+          <label className="block text-sm">CV version
+            <input value={cvVersionId} onChange={(event) => setCvVersionId(event.target.value)} className={fieldClass} placeholder="Optional" />
+          </label>
+          <button type="button" onClick={() => send('interests', { interests: interests.split(',').map((item) => item.trim()).filter(Boolean) })} className={primaryButton}>Save interests</button>
+          <ul className="divide-y divide-border">
+            {desk.matches.map((row) => (
+              <li key={row.id} className="flex min-h-12 flex-wrap items-center justify-between gap-3 py-3">
+                <div>
+                  <p className="font-semibold">{row.title}</p>
+                  <p className="text-sm text-muted-foreground">{row.organisation} · {row.kind} · {row.deadline}</p>
+                </div>
+                <button type="button" onClick={() => send('save-match', { opportunityId: row.id, cvVersionId })} className={primaryButton}>Save to tracker</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {section === 'board' ? (
+        <ul className="divide-y divide-border">
+          {desk.openings.map((row) => (
+            <li key={row.id} className="flex min-h-12 flex-wrap items-center justify-between gap-3 py-3">
+              <div>
+                <p className="font-semibold">{row.title}</p>
+                <p className="text-sm text-muted-foreground">{row.employer} · {row.kind}{row.level ? ` · ${row.level}` : ''} · {row.deadline}</p>
+              </div>
+              <button type="button" onClick={() => send('apply-opening', { institutionId: row.institutionId, openingId: row.id, cvVersionId })} className={primaryButton}>Apply with this CV</button>
             </li>
           ))}
         </ul>
-      </section>
+      ) : null}
 
-      <section className="rounded-3xl bg-white p-5">
-        <h2 className="font-semibold text-ink">Teacher references</h2>
-        <ul className="mt-3 space-y-3">
-          {(desk?.endorsements ?? []).map((note) => (
-            <li key={note.id} className="rounded-2xl bg-wash px-4 py-3">
-              <p className="text-sm text-ink">{note.body}</p>
-              <p className="mt-1 text-xs text-muted">{note.teacherName} · Locked</p>
-              <button type="button" onClick={() => send('hide-endorsement', { id: note.id, visible: !note.visible })} className="mt-2 text-sm font-semibold text-blue-deep">
-                {note.visible ? 'Hide' : 'Show'}
-              </button>
-            </li>
+      {section === 'giving' ? (
+        <div className="space-y-3">
+          <h2 className="font-heading text-xl">Alumni giving</h2>
+          {desk.campaigns.length === 0 ? <p className="text-sm text-muted-foreground">This academy has not opened alumni giving.</p> : null}
+          {desk.campaigns.map((row) => (
+            <div key={row.id} className="flex min-h-12 items-center justify-between gap-3 py-3">
+              <div>
+                <p className="font-semibold">{row.title}</p>
+                <p className="text-sm text-muted-foreground">{row.kind} · sandbox</p>
+              </div>
+              <ProgressRing value={row.progress} label={`${row.title} ${row.progress}%`} />
+              <button type="button" onClick={() => send('give', { institutionId: row.institutionId, campaignId: row.id, amount: 10 })} className={primaryButton}>Give 10 {row.currency}</button>
+            </div>
           ))}
-        </ul>
-      </section>
+        </div>
+      ) : null}
 
-      <section className="rounded-3xl bg-white p-5">
-        <h2 className="font-semibold text-ink">ET AI matcher</h2>
-        <label className="mt-3 block text-sm text-ink">
-          Interests
-          <input value={interests} onChange={(event) => setInterests(event.target.value)} className="mt-1 h-11 w-full rounded-xl bg-wash px-3" placeholder="biology, design" />
-        </label>
-        <label className="mt-3 block text-sm text-ink">
-          CV version id
-          <input value={cvVersionId} onChange={(event) => setCvVersionId(event.target.value)} className="mt-1 h-11 w-full rounded-xl bg-wash px-3" placeholder="Optional" />
-        </label>
-        <button type="button" onClick={() => send('interests', { interests: interests.split(',').map((item) => item.trim()).filter(Boolean) })} className="mt-3 h-10 rounded-full bg-blue-deep px-4 text-sm text-white">Save interests</button>
-        <ul className="mt-4 space-y-3">
-          {(desk?.matches ?? []).map((row) => (
-            <li key={row.id} className="rounded-2xl bg-wash px-4 py-3">
-              <p className="font-semibold text-ink">{row.title}</p>
-              <p className="text-sm text-muted">{row.organisation} · {row.kind} · {row.deadline}</p>
-              <button type="button" onClick={() => send('save-match', { opportunityId: row.id, cvVersionId })} className="mt-2 text-sm font-semibold text-blue-deep">Save to tracker</button>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="rounded-3xl bg-white p-5">
-        <h2 className="font-semibold text-ink">School board</h2>
-        <ul className="mt-3 space-y-3">
-          {(desk?.openings ?? []).map((row) => (
-            <li key={row.id} className="rounded-2xl bg-wash px-4 py-3">
-              <p className="font-semibold text-ink">{row.title}</p>
-              <p className="text-sm text-muted">{row.employer} · {row.kind}{row.level ? ` · ${row.level}` : ''} · {row.deadline}</p>
-              <button type="button" onClick={() => send('apply-opening', { institutionId: row.institutionId, openingId: row.id, cvVersionId })} className="mt-2 text-sm font-semibold text-blue-deep">Apply with this CV</button>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="rounded-3xl bg-white p-5">
-        <h2 className="font-semibold text-ink">Alumni giving</h2>
-        {(desk?.campaigns ?? []).length === 0 ? <p className="mt-2 text-sm text-muted">This academy has not opened alumni giving.</p> : null}
-        <ul className="mt-3 space-y-3">
-          {(desk?.campaigns ?? []).map((row) => (
-            <li key={row.id} className="rounded-2xl bg-wash px-4 py-3">
-              <p className="font-semibold text-ink">{row.title}</p>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-white"><div className="h-full bg-blue-deep" style={{ width: `${Math.min(100, row.progress)}%` }} /></div>
-              <button type="button" onClick={() => send('give', { institutionId: row.institutionId, campaignId: row.id, amount: 10 })} className="mt-2 text-sm font-semibold text-blue-deep">Give 10 {row.currency} in sandbox</button>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="rounded-3xl bg-white p-5">
-        <h2 className="font-semibold text-ink">Reunions</h2>
-        <ul className="mt-3 space-y-3">
-          {(desk?.reunions ?? []).map((row) => (
-            <li key={row.id} className="rounded-2xl bg-wash px-4 py-3">
-              <p className="font-semibold text-ink">{row.title}</p>
-              <p className="text-sm text-muted">{row.when} · {row.place} · {row.publicRsvpCount === null ? 'RSVPs stay private until five people reply' : `${row.publicRsvpCount} going`}</p>
+      {section === 'reunions' ? (
+        <ul className="divide-y divide-border">
+          {desk.reunions.map((row) => (
+            <li key={row.id} className="py-3">
+              <p className="font-semibold">{row.title}</p>
+              <p className="text-sm text-muted-foreground">{row.when} · {row.place} · {row.publicRsvpCount === null ? 'RSVPs stay private until five people reply' : `${row.publicRsvpCount} going`}</p>
               <div className="mt-2 flex flex-wrap gap-2">
-                <button type="button" onClick={() => send('rsvp', { institutionId: row.institutionId, reunionId: row.id, going: true })} className="h-10 rounded-full bg-blue-deep px-4 text-sm text-white">RSVP</button>
-                {row.ticketed ? <button type="button" onClick={() => send('ticket', { institutionId: row.institutionId, reunionId: row.id })} className="h-10 rounded-full bg-white px-4 text-sm text-ink">Sandbox ticket</button> : null}
+                <button type="button" onClick={() => send('rsvp', { institutionId: row.institutionId, reunionId: row.id, going: true })} className={primaryButton}>RSVP</button>
+                {row.ticketed ? <button type="button" onClick={() => send('ticket', { institutionId: row.institutionId, reunionId: row.id })} className={quietButton}>Sandbox ticket</button> : null}
               </div>
             </li>
           ))}
         </ul>
-      </section>
-
-      <section className="rounded-3xl bg-white p-5">
-        <h2 className="font-semibold text-ink">Career talks</h2>
-        <ul className="mt-3 space-y-3">
-          {(desk?.talks ?? []).map((row) => (
-            <li key={row.id} className="rounded-2xl bg-wash px-4 py-3">
-              <p className="font-semibold text-ink">{row.title}</p>
-              <p className="text-sm text-muted">{row.format}{row.provider ? ` · ${row.provider}` : ''}{row.level ? ` · ${row.level}` : ''} · {row.when}</p>
-              {row.link ? <a href={row.link} className="mt-1 inline-block text-sm font-semibold text-blue-deep">Open the talk</a> : null}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="rounded-3xl bg-white p-5 space-y-3">
-        <h2 className="font-semibold text-ink">Offer a career talk</h2>
-        <p className="text-sm text-muted">An adult alumnus can offer a live Zoom, Meet, or Teams talk, or a recording. The academy approves it before students see it.</p>
-        <input value={talkTitle} onChange={(event) => setTalkTitle(event.target.value)} className="h-11 w-full rounded-xl bg-wash px-3" placeholder="Talk title" />
-        <input value={talkLink} onChange={(event) => setTalkLink(event.target.value)} className="h-11 w-full rounded-xl bg-wash px-3" placeholder="https://meet.google.com/..." />
-        <button type="button" onClick={() => send('propose-talk', { institutionId: desk?.schools[0] ?? '', title: talkTitle, format: 'live', provider: 'meet', link: talkLink, level: '' })} className="h-10 rounded-full bg-blue-deep px-4 text-sm text-white">Offer this talk</button>
-      </section>
-
-      {desk?.bridge.needsConsent ? (
-        <section className="rounded-3xl bg-white p-5">
-          <h2 className="font-semibold text-ink">Parent summary</h2>
-          <p className="mt-1 text-sm text-muted">You are 18 or over. Parents keep the achievement PDF only if you agree.</p>
-          <button type="button" onClick={() => send('parent-consent', { consent: true })} className="mt-3 h-10 rounded-full bg-blue-deep px-4 text-sm text-white">Share the PDF with my parents</button>
-        </section>
       ) : null}
-    </div>
+
+      {section === 'talks' ? (
+        <div className="space-y-3">
+          <ul className="divide-y divide-border">
+            {desk.talks.map((row) => (
+              <li key={row.id} className="min-h-12 py-3">
+                <p className="font-semibold">{row.title}</p>
+                <p className="text-sm text-muted-foreground">{row.format}{row.provider ? ` · ${row.provider}` : ''}{row.level ? ` · ${row.level}` : ''} · {row.when}</p>
+                {row.link ? <a href={row.link} className="mt-1 inline-flex min-h-12 items-center text-sm font-semibold text-primary">Open the talk</a> : null}
+              </li>
+            ))}
+          </ul>
+          <h2 className="font-heading text-xl">Offer a talk</h2>
+          <p className="text-sm text-muted-foreground">An adult alumnus can offer a live Zoom, Meet, or Teams talk. The academy approves it before students see it.</p>
+          <input value={talkTitle} onChange={(event) => setTalkTitle(event.target.value)} className={fieldClass} placeholder="Talk title" />
+          <input value={talkLink} onChange={(event) => setTalkLink(event.target.value)} className={fieldClass} placeholder="https://meet.google.com/..." />
+          <button type="button" onClick={() => send('propose-talk', { institutionId: desk.schools[0] ?? '', title: talkTitle, format: 'live', provider: 'meet', link: talkLink, level: '' })} className={primaryButton}>Offer this talk</button>
+        </div>
+      ) : null}
+
+      {section === 'parents' ? (
+        <div className="space-y-3">
+          <h2 className="font-heading text-xl">Parent summary</h2>
+          <p className="text-sm text-muted-foreground">You are 18 or over. Parents keep the achievement PDF only if you agree.</p>
+          <button type="button" onClick={() => send('parent-consent', { consent: true })} className={primaryButton}>Share the PDF with my parents</button>
+        </div>
+      ) : null}
+    </CareerHome>
   );
 }
