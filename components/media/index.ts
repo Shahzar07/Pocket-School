@@ -9,7 +9,8 @@
  * ```
  *
  * - `ImageLibrary` — drag-drop, paste, required alt, caption, full-bleed flag, crop, shared library
- * - `IllustrationPrompt` — prompt, style, Sparks confirm, then `onCreated`
+ * - `IllustrationPrompt` — prompt, style, Sparks confirm, then `onCreated`. Optional `defaultPrompt` and `defaultStyle`.
+ * - `MediaFigure` — the one full-width figure for a placed lesson or book picture
  * - `CoverArtPicker` — several text-free pictures from a brief and a style preset
  * - `generateIllustration` / `generateCoverArt` — `/api/media/illustrate` and `/api/media/cover`
  * - `storeMedia(scopeId, blob, name)` — Firebase Storage `media/{scopeId}/{name}`, else a data URL
@@ -29,3 +30,4 @@ export { generateCoverArt, generateIllustration } from './generate';
 export { ImageLibrary } from './image-library';
 export { IllustrationPrompt } from './illustration-prompt';
 export { CoverArtPicker } from './cover-art';
+export { MediaFigure } from './figure';

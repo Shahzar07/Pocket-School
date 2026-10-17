@@ -42,11 +42,14 @@ import {
 | `storeMedia(scopeId, blob, name)` | Uploads to Storage `media/{scopeId}/{name}`. A signed-out session or a rejected write returns a data URL. |
 | `recordMediaAsset(scopeId, asset)` | Writes `media_assets/{id}` so another lesson or chapter can reuse the picture. |
 | `listSharedMedia(scopeId)` | Reads that library. |
-| `IllustrationPrompt` | Prompt and style. Calls `confirmSparks({ cost, reason })` when the host passes it, otherwise `window.confirm`. `onCreated` receives the picture. |
+| `IllustrationPrompt` | Prompt and style. Calls `confirmSparks({ cost, reason })` when the host passes it, otherwise `window.confirm`. `onCreated` receives the picture. `defaultPrompt` fills an empty box. `defaultStyle` picks the first style. |
+| `MediaFigure` | Full-width responsive figure with caption. Lesson text and older side-by-side pictures both use it. |
 | `CoverArtPicker` | Several text-free covers from a brief and a style. Courses store the choice as `thumbnailUrl`. Books can use the same picker. |
 | `optimiseImage` | Longest edge 1600, JPEG. |
 
-Illustration Sparks in the course CMS are 15, charged after a successful picture. A stand-in (the note contains "stand-in") is not charged.
+The course Image block is `ImageLibrary`. The Illustration block is `IllustrationPrompt` (academic style, prompt taken from the lesson when it is long enough) plus the same library. Generated pictures are stored with `storeMedia`. Placing one writes markdown into the lesson body. An older `aiOutputs.image` or `aiOutputs.illustration` is shown in that library; placing it clears the old field.
+
+Illustration Sparks in the course CMS are 15, charged after a successful picture. A stand-in (the note contains "stand-in") is not charged. Uploading a picture does not spend Sparks.
 
 ## Who can use it
 

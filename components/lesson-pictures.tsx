@@ -3,6 +3,7 @@
 import { toast } from 'sonner';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { awardSparks, type LessonMediaAsset } from '@/lib/db';
+import { illustrationBrief } from '@/lib/lesson-body';
 import { IllustrationPrompt, ImageLibrary, optimiseImage, recordMediaAsset, storeMedia } from '@/components/media';
 import type { MediaAsset } from '@/components/media';
 
@@ -62,6 +63,7 @@ export function LessonIllustrationBlock({
   onInsert,
   sparksCost = ILLUSTRATION_SPARKS,
   showLibrary = true,
+  lessonText = '',
 }: {
   scopeId: string;
   images: LessonMediaAsset[];
@@ -70,6 +72,8 @@ export function LessonIllustrationBlock({
   sparksCost?: number;
   /** The teacher upload page already shows the Image block, so it can hide this second library. */
   showLibrary?: boolean;
+  /** When this is long enough, the prompt starts from the lesson instead of a blank box. */
+  lessonText?: string;
 }) {
   const { user, profile, fetchProfile } = useAuthSTORE();
 
@@ -77,6 +81,8 @@ export function LessonIllustrationBlock({
     <div className="space-y-3">
       <IllustrationPrompt
         sparksCost={sparksCost}
+        defaultPrompt={illustrationBrief(lessonText)}
+        defaultStyle="academic"
         confirmSparks={async ({ cost, reason }) => {
           const balance = profile?.sparksBalance ?? 0;
           if (!user) {
@@ -90,12 +96,16 @@ export function LessonIllustrationBlock({
           return window.confirm(`Spend ${cost} Sparks to illustrate “${reason.trim().slice(0, 140)}”?`);
         }}
         onCreated={(asset, note) => {
-          onChange([...images, toLessonMedia(asset)]);
-          toast.message(note);
-          if (!user || note.toLowerCase().includes('stand-in')) return;
-          void awardSparks(user.uid, -sparksCost, 'ai_studio', 'Lesson illustration')
-            .then(() => fetchProfile(user.uid))
-            .catch(() => toast.error('The picture was saved, but the Sparks charge did not go through.'));
+          void (async () => {
+            const saved = await persistGenerated(scopeId, asset);
+            onChange([...images, saved]);
+            void recordMediaAsset(scopeId, saved);
+            toast.message(note);
+            if (!user || note.toLowerCase().includes('stand-in')) return;
+            void awardSparks(user.uid, -sparksCost, 'ai_studio', 'Lesson illustration')
+              .then(() => fetchProfile(user.uid))
+              .catch(() => toast.error('The picture was saved, but the Sparks charge did not go through.'));
+          })();
         }}
       />
       {showLibrary && (
@@ -108,6 +118,30 @@ export function LessonIllustrationBlock({
       )}
     </div>
   );
+}
+
+/** Generated pictures go through the same Storage path as an upload. A rejected write keeps a data URL. */
+async function persistGenerated(scopeId: string, asset: MediaAsset): Promise<LessonMediaAsset> {
+  if (!asset.src.startsWith('data:')) return toLessonMedia(asset);
+  try {
+    const blob = await (await fetch(asset.src)).blob();
+    const svg = asset.src.startsWith('data:image/svg');
+    if (svg) {
+      const stored = await storeMedia(scopeId, blob, `${asset.id}.svg`);
+      return toLessonMedia({ ...asset, src: stored.src, storagePath: stored.storagePath });
+    }
+    const fitted = await optimiseImage(blob);
+    const stored = await storeMedia(scopeId, fitted.blob, `${asset.id}.jpg`);
+    return toLessonMedia({
+      ...asset,
+      src: stored.src,
+      width: fitted.width,
+      height: fitted.height,
+      storagePath: stored.storagePath,
+    });
+  } catch {
+    return toLessonMedia(asset);
+  }
 }
 
 function toLessonMedia(asset: MediaAsset): LessonMediaAsset {

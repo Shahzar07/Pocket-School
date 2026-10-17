@@ -1973,11 +1973,6 @@ components/lesson-manuscript.tsx	Version history
 components/lesson-pack-view.tsx	Exam highlight:
 components/lesson-pictures.tsx	Sign in to spend Sparks.
 components/lesson-pictures.tsx	The picture was saved, but the Sparks charge did not go through.
-components/lesson-visual.tsx	Add lesson text first — the picture is drawn from it.
-components/lesson-visual.tsx	After the lesson text
-components/lesson-visual.tsx	Alt text for students using a screen reader
-components/lesson-visual.tsx	Before the lesson text
-components/lesson-visual.tsx	Choose an image file.
 components/live-voice-session.tsx	End voice call
 components/live-voice-session.tsx	Interrupt — your turn to talk
 components/media/cover-art.tsx	Warmer light, no people, a harbour at dusk

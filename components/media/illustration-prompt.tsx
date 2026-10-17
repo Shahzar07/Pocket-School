@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { generateIllustration } from './generate';
 import { COVER_STYLES } from './types';
 import type { MediaAsset, SparksConfirm } from './types';
@@ -9,21 +9,32 @@ import type { MediaAsset, SparksConfirm } from './types';
  * AI illustration. The model is asked not to draw words.
  * Sparks are confirmed before the request. A host with a real balance can
  * replace the dialog via `confirmSparks`.
+ * `defaultPrompt` fills an empty box (the course CMS passes the lesson text)
+ * and does not replace a prompt the author has already typed.
  */
 export function IllustrationPrompt({
   sparksCost = 5,
   confirmSparks,
   onCreated,
+  defaultPrompt = '',
+  defaultStyle = COVER_STYLES[4].id,
 }: {
   sparksCost?: number;
   confirmSparks?: SparksConfirm;
   onCreated: (asset: MediaAsset, note: string) => void;
+  defaultPrompt?: string;
+  defaultStyle?: string;
 }) {
-  const [prompt, setPrompt] = useState('');
-  const [style, setStyle] = useState(COVER_STYLES[4].id);
+  const [prompt, setPrompt] = useState(defaultPrompt);
+  const [style, setStyle] = useState(defaultStyle);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const edited = useRef(false);
+
+  useEffect(() => {
+    if (!edited.current && defaultPrompt) setPrompt(defaultPrompt);
+  }, [defaultPrompt]);
 
   const confirmThenRun = async () => {
     if (!confirmSparks) return;
@@ -56,7 +67,7 @@ export function IllustrationPrompt({
   return (
     <div className="rounded-2xl border border-border p-3">
       <p className="text-sm font-semibold">AI illustration</p>
-      <textarea value={prompt} onChange={event => setPrompt(event.target.value)} rows={3} placeholder="Describe the scene. Do not ask for words in the picture." className="mt-2 w-full rounded-xl border border-border px-3 py-2 text-sm" />
+      <textarea value={prompt} onChange={event => { edited.current = true; setPrompt(event.target.value); }} rows={3} placeholder="Describe the scene. Do not ask for words in the picture." className="mt-2 w-full rounded-xl border border-border px-3 py-2 text-sm" />
       <label className="mt-2 block text-xs font-semibold">Style
         <select value={style} onChange={event => setStyle(event.target.value)} className="mt-1 h-9 w-full rounded-lg border border-border px-2 font-normal">
           {COVER_STYLES.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}

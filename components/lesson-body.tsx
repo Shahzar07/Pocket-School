@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { MathMarkdown } from '@/components/math-markdown';
+import { MediaFigure } from '@/components/media/figure';
 
 const IMAGE = /^(!full|!)\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)$/;
 
@@ -30,22 +31,11 @@ export function LessonBody({
         const src = image[3] || '';
         const caption = image[4] || '';
         return (
-          <figure key={index} className={full ? 'mx-[-1rem] sm:mx-[-2rem]' : 'mx-auto max-w-3xl'}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={src}
-              alt={alt}
-              className="h-auto w-full max-h-[70vh] rounded-2xl border border-border bg-muted/30 object-contain"
-            />
-            {caption && (
-              <figcaption className="mt-2 text-center text-sm leading-relaxed text-muted-foreground">
-                {caption}
-              </figcaption>
-            )}
+          <MediaFigure key={index} src={src} alt={alt} caption={caption} full={full}>
             {imageDownload && (
               <div className="mt-2 flex justify-center">{imageDownload({ src, alt: alt || caption || 'Illustration' })}</div>
             )}
-          </figure>
+          </MediaFigure>
         );
       })}
     </div>
