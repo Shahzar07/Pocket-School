@@ -156,7 +156,7 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
                           <span className="w-7 h-7 rounded-full bg-primary flex items-center justify-center">
                             <Play className="w-3 h-3 text-primary-foreground fill-current ml-0.5" />
                           </span>
-                          {user ? 'Click to talk to ' + teacher.name.split(' ')[0] : 'Sign in to talk live'}
+                          {user ? `Click to talk to ${teacher.name}` : 'Sign in to talk live'}
                         </button>
                       )}
                       {!isLive && (

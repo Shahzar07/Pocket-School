@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'motion/react';
 import {
-  ArrowRight, BookOpen, Calculator, CalendarDays, ClipboardList, GraduationCap, Library, PenLine, Search, Sparkles,
+  ArrowRight, BookOpen, Calculator, CalendarDays, ClipboardList, GraduationCap, Library, PenLine, Search, Sparkles, Users,
   type LucideIcon,
 } from 'lucide-react';
 import { useAuthSTORE } from '@/hooks/use-auth';
@@ -133,6 +133,16 @@ export const STUDIO_TOOLS: StudioTool[] = [
     links: [],
     flag: 'studyPlanner',
     studentsOnly: true,
+  },
+  {
+    href: '/dashboard/studio/teachers',
+    icon: Users,
+    name: 'AI Teachers',
+    kicker: 'Talk',
+    blurb: 'Talk with ET Maths, ET Science, and the rest. Type, send voice notes, or open a live voice and video session.',
+    well: 'bg-[#F3EEF8] text-[#5B3D8A] dark:bg-[#241C30] dark:text-[#D4C4EE]',
+    bar: 'bg-[#5B3D8A] dark:bg-[#C4B0E8]',
+    links: [],
   },
 ];
 

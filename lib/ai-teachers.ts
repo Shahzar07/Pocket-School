@@ -319,6 +319,28 @@ export const AI_TEACHERS: AiTeacher[] = [
   }),
 ];
 
+/** Floating tutor in the dashboard. Built by hand so it does not shift the catalog voices. */
+export const ET_AI_TUTOR: AiTeacher = {
+  id: 'et-ai',
+  name: 'ET AI',
+  title: 'Poket School tutor',
+  subjects: ['Any subject'],
+  category: 'Study Support',
+  status: 'live',
+  avatarUrl: dicebear('et-ai'),
+  accentColor: '#E8C15E',
+  iconKey: 'brain',
+  voice: 'Kore',
+  voiceStyle: 'Warm, clear, and patient. Short steps, then a check that the idea has landed.',
+  tagline: 'ET AI answers across subjects for Poket School.',
+  bio: [
+    'ET AI is the Poket School tutor students can open from any page.',
+    'Explanations stay on the question. Important answers should always be double-checked.',
+  ],
+  languages: ['English'],
+  specialties: ['Tutoring'],
+};
+
 export const TEACHER_CATEGORIES: TeacherCategory[] = [
   'Sciences',
   'Medicine',

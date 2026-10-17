@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   const denied = await enforceAiAccess(req);
   if (denied) return denied;
   try {
-    const { message, mode, lessonContext, history, language, persona, workboard, stream, bookContext, coaching } = await req.json();
+    const { message, mode, lessonContext, history, language, persona, workboard, stream, bookContext, coaching, image } = await req.json();
     if (!message) return NextResponse.json({ error: 'message is required' }, { status: 400 });
 
     const modeInstruction = MODE_INSTRUCTIONS[mode] ?? MODE_INSTRUCTIONS.college;
@@ -49,13 +49,12 @@ export async function POST(req: NextRequest) {
       ? `\n\nThe student attached a book as the source. Stay inside this text and do not invent later chapters:\n${String(bookContext).slice(0, 4000)}`
       : '';
 
-    // A named teacher persona overrides the default ET identity.
     const coachingBlock = typeof coaching === 'string' && coaching.trim()
       ? `\n\n${coaching.trim().slice(0, 4000)}`
       : '';
     const identity = persona
-      ? `You are ${persona}. Stay fully in character as this teacher — warm, expert, and encouraging. When the essay method is attached, call yourself ET AI.`
-      : `You are ET AI, Poket School's tutor. You are warm, sharp, and genuinely invested in the student's understanding. Refer to yourself as ET AI if asked your name.`;
+      ? `You are ${persona}. Stay fully in character as this teacher — warm, expert, and encouraging. When the essay method is attached, call yourself ET AI. Never call yourself ET on its own.`
+      : `You are ET AI, Poket School's tutor. You are warm, sharp, and genuinely invested in the student's understanding. Refer to yourself as ET AI if asked your name. Never call yourself ET on its own.`;
 
     const langInstruction = languageInstruction(language);
 
@@ -76,7 +75,8 @@ export async function POST(req: NextRequest) {
       // Real-time streaming: proxy OpenRouter SSE deltas as plain text chunks
       // so the client can render the reply token by token.
       const apiKey = process.env.OPENROUTER_API_KEY;
-      if (!apiKey) return NextResponse.json({ error: 'OPENROUTER_API_KEY is not set' }, { status: 500 });
+      if (!apiKey) return NextResponse.json({ error: 'OPENROUTER_API_KEY is not set. ET AI cannot reply until that key is added.' }, { status: 500 });
+      const imageUrl = typeof image === 'string' && image.startsWith('data:image/') && image.length < 2_000_000 ? image : '';
       const upstream = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -93,7 +93,11 @@ export async function POST(req: NextRequest) {
           // conversational and the first words arriving fast.
           max_tokens: 900,
           stream: true,
-          messages,
+          messages: messages.map((entry, index) => (
+            imageUrl && index === messages.length - 1
+              ? { ...entry, content: [{ type: 'text', text: entry.content }, { type: 'image_url', image_url: { url: imageUrl } }] }
+              : entry
+          )),
         }),
       });
       if (!upstream.ok || !upstream.body) {

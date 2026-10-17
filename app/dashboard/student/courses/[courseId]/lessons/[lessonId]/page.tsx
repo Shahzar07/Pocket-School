@@ -44,7 +44,10 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { resolveLessonCopy } from '@/lib/i18n/detect';
+import { ContentLanguageBar } from '@/components/content-language-bar';
 import { useContentTranslation } from '@/hooks/use-content-translation';
+import { useQuizCopy } from '@/hooks/use-quiz-copy';
+import { answersMatch, correctOptionId, optionId, optionIndex } from '@/lib/quiz';
 import { getLanguage } from '@/lib/languages';
 import {
   ArrowLeft, CheckCircle2, FileText, Headphones, FlipHorizontal,
@@ -57,18 +60,6 @@ const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
   visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1], delay: i * 0.08 } }),
 };
-
-/** Compares a selected quiz option to the stored answer, tolerating legacy
- * letter answers ("B") by mapping them to the option at that index. */
-function answersMatch(selected: string | undefined, answer: string | undefined, options: string[] = []): boolean {
-  const sel = (selected ?? '').trim().toLowerCase();
-  let ans = (answer ?? '').trim();
-  if (/^[A-D]$/i.test(ans)) {
-    const mapped = options[ans.toUpperCase().charCodeAt(0) - 65];
-    if (mapped != null) ans = mapped;
-  }
-  return sel !== '' && sel === ans.trim().toLowerCase();
-}
 
 // ─── Flashcard Component ─────────────────────────────────────
 function FlashcardViewer({ cards }: { cards: { question: string; answer: string }[] }) {
@@ -151,11 +142,13 @@ function QuizViewer({
   questions: { question: string; options: string[]; answer: string; explanation?: string }[];
   onComplete: (score: number, total: number, answers: { question: string; answer: string; correct: boolean }[]) => void;
 }) {
+  const { i18n } = useTranslation();
+  const { display, translation } = useQuizCopy(`course-quiz:${questions[0]?.question ?? 'quiz'}`, questions, i18n.language);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [graded, setGraded] = useState<Record<number, { correct: boolean; feedback: string }> | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (Object.keys(answers).length < questions.length) {
       toast.error('Please answer all questions before submitting.');
       return;
@@ -163,40 +156,28 @@ function QuizViewer({
     setLoading(true);
     const results: Record<number, { correct: boolean; feedback: string }> = {};
     let score = 0;
-
-    await Promise.all(questions.map(async (q, i) => {
-      try {
-        const res = await fetch('/api/ai/quiz-grade', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: q.question, correctAnswer: q.answer, studentAnswer: answers[i], explanation: q.explanation, options: q.options }),
-        });
-        if (!res.ok) throw new Error('grade failed');
-        const data = await res.json();
-        results[i] = { correct: data.correct, feedback: data.feedback };
-        if (data.correct) score++;
-      } catch {
-        const correct = answersMatch(answers[i], q.answer, q.options);
-        results[i] = { correct, feedback: correct ? 'Correct!' : `The answer is: ${q.answer}` };
-        if (correct) score++;
-      }
-    }));
-
+    questions.forEach((q, i) => {
+      const correct = answersMatch(answers[i], q.answer, q.options);
+      const answerIndex = optionIndex(correctOptionId(q.options, q.answer) ?? '', q.options.length);
+      const shown = display[i] ?? q;
+      const label = answerIndex >= 0 ? (shown.options[answerIndex] ?? q.options[answerIndex] ?? q.answer) : q.answer;
+      results[i] = { correct, feedback: correct ? 'Correct!' : `The answer is: ${label}` };
+      if (correct) score += 1;
+    });
     setGraded(results);
     setLoading(false);
-
-    const submissionAnswers = questions.map((q, i) => ({
+    onComplete(score, questions.length, questions.map((q, i) => ({
       question: q.question,
       answer: answers[i] ?? '',
       correct: results[i]?.correct ?? false,
-    }));
-    onComplete(score, questions.length, submissionAnswers);
+    })));
   };
 
   const percentage = graded ? Math.round(Object.values(graded).filter(r => r.correct).length / questions.length * 100) : 0;
 
   return (
-    <div className="max-w-2xl mx-auto py-6 space-y-6">
+    <div className="max-w-2xl mx-auto py-6 space-y-6" dir={translation.dir}>
+      <ContentLanguageBar status={translation.status} showOriginal={translation.showOriginal} notice={translation.notice} onToggle={translation.toggle} />
       {graded && (
         <div className={`rounded-3xl p-5 text-center border ${percentage >= 70 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'}`}>
           <p className="text-3xl font-extrabold">{percentage}%</p>
@@ -207,22 +188,28 @@ function QuizViewer({
         </div>
       )}
 
-      {questions.map((q, i) => (
+      {questions.map((q, i) => {
+        const shown = display[i] ?? q;
+        return (
         <div key={i} className="bg-card border border-border rounded-3xl p-5">
           <p className="font-semibold text-foreground mb-4 text-sm leading-relaxed">
-            <span className="text-primary font-bold">{i + 1}. </span>{q.question}
+            <span className="text-primary font-bold">{i + 1}. </span>{shown.question}
           </p>
           <div className="space-y-2">
-            {q.options.map(opt => {
-              const selected = answers[i] === opt;
-              const isCorrect = graded ? answersMatch(opt, q.answer, q.options) : null;
+            {q.options.map((opt, k) => {
+              const id = optionId(k);
+              const label = shown.options[k] ?? opt;
+              const selected = answers[i] === id;
+              const isCorrect = graded ? answersMatch(id, q.answer, q.options) : null;
               const isWrong = graded && selected && !graded[i]?.correct;
               return (
                 <button
-                  key={opt}
+                  key={id}
+                  type="button"
                   disabled={!!graded}
-                  onClick={() => !graded && setAnswers(a => ({ ...a, [i]: opt }))}
-                  className={`w-full text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
+                  aria-pressed={selected}
+                  onClick={() => !graded && setAnswers(a => ({ ...a, [i]: id }))}
+                  className={`w-full text-start min-h-12 px-4 py-3 rounded-xl border text-sm font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                     graded
                       ? isCorrect ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700'
                         : isWrong ? 'border-destructive/40 bg-destructive/10 text-destructive'
@@ -233,7 +220,7 @@ function QuizViewer({
                         : 'border-border hover:border-primary/50 hover:bg-muted/50 text-foreground'
                   }`}
                 >
-                  {opt}
+                  {label}
                   {graded && isCorrect && <span className="float-right text-emerald-600">✓</span>}
                   {graded && isWrong && <span className="float-right text-destructive">✗</span>}
                 </button>
@@ -246,13 +233,14 @@ function QuizViewer({
             </p>
           )}
         </div>
-      ))}
+      );
+      })}
 
       {!graded && (
         <Button onClick={handleSubmit} disabled={loading || Object.keys(answers).length < questions.length}
           className="w-full h-11 rounded-full font-bold bg-primary text-primary-foreground"
         >
-          {loading ? 'Grading with AI…' : `Submit Quiz (${Object.keys(answers).length}/${questions.length})`}
+          {loading ? 'Checking answers…' : `Submit Quiz (${Object.keys(answers).length}/${questions.length})`}
         </Button>
       )}
     </div>
@@ -278,8 +266,10 @@ function UnitQuizMode({
   onCertificate: (award: CertificateAward) => void;
 }) {
   const router = useRouter();
+  const { i18n } = useTranslation();
   const { user, profile, fetchProfile } = useAuthSTORE();
   const questions = Array.isArray(lesson.aiOutputs?.quiz) ? lesson.aiOutputs.quiz : [];
+  const { display, translation } = useQuizCopy(`unit-quiz:${lesson.id}`, questions, i18n.language);
   const threshold = unit.masteryThreshold ?? 70;
 
   const [phase, setPhase] = useState<'intro' | 'active' | 'result'>('intro');
@@ -510,7 +500,8 @@ function UnitQuizMode({
 
   // ── Active quiz ──
   return (
-    <div className="max-w-2xl mx-auto py-6 space-y-6">
+    <div className="max-w-2xl mx-auto py-6 space-y-6" dir={translation.dir}>
+      <ContentLanguageBar status={translation.status} showOriginal={translation.showOriginal} notice={translation.notice} onToggle={translation.toggle} />
       <div className="sticky top-0 z-10 bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <Timer className="w-4 h-4 text-primary" /> {formatTime(elapsed)}
@@ -520,33 +511,41 @@ function UnitQuizMode({
         </span>
       </div>
 
-      {questions.map((q, i) => (
+      {questions.map((q, i) => {
+        const shown = display[i] ?? q;
+        return (
         <div key={i} className="bg-card border border-border rounded-3xl p-5">
           <div className="flex items-start justify-between gap-2 mb-4">
             <p className="font-semibold text-foreground text-sm leading-relaxed">
-              <span className="text-primary font-bold">{i + 1}. </span>{q.question}
+              <span className="text-primary font-bold">{i + 1}. </span>{shown.question}
             </p>
             {q.objectiveCode && (
               <Badge variant="outline" className="text-[10px] font-mono rounded-full shrink-0">{q.objectiveCode}</Badge>
             )}
           </div>
           <div className="space-y-2">
-            {q.options.map(opt => (
+            {q.options.map((opt, k) => {
+              const id = optionId(k);
+              return (
               <button
-                key={opt}
-                onClick={() => setAnswers(a => ({ ...a, [i]: opt }))}
-                className={`w-full text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
-                  answers[i] === opt
+                key={id}
+                type="button"
+                aria-pressed={answers[i] === id}
+                onClick={() => setAnswers(a => ({ ...a, [i]: id }))}
+                className={`w-full text-start min-h-12 px-4 py-3 rounded-xl border text-sm font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+                  answers[i] === id
                     ? 'border-primary bg-primary/10 text-primary'
                     : 'border-border hover:border-primary/50 hover:bg-muted/50 text-foreground'
                 }`}
               >
-                {opt}
+                {shown.options[k] ?? opt}
               </button>
-            ))}
+              );
+            })}
           </div>
         </div>
-      ))}
+        );
+      })}
 
       <Button
         onClick={handleSubmit}
@@ -1081,7 +1080,7 @@ export default function LessonPage() {
           <p className="text-sm mt-1">Your teacher needs to publish this lesson from the teacher upload page.</p>
         </div>
       ) : !aiOutputs ? (
-        <div className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
+        <div className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow" dir={translation.dir}>
           {downloadFor('notes', copy.text, 'text')}
           <LessonBody
             markdown={copy.text}
@@ -1108,7 +1107,7 @@ export default function LessonPage() {
           {/* Text */}
           <TabsContent value="text">
             {gate('text',
-              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
+              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow" dir={translation.dir}>
                 {downloadFor('notes', copy.text, 'text')}
                 {aiOutputs.image?.placement === 'before' && <LessonFigure visual={aiOutputs.image} />}
                 {aiOutputs.illustration?.placement === 'before' && <LessonFigure visual={aiOutputs.illustration} />}

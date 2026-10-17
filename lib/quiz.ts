@@ -1,3 +1,22 @@
+import { correctIndex } from '@/lib/quiz-answer';
+
+/** Stable id for an option. Scoring uses this, never the translated label. */
+export function optionId(index: number): string {
+  return `opt:${index}`;
+}
+
+export function optionIndex(id: string | undefined, length: number): number {
+  const match = /^opt:(\d+)$/.exec((id ?? '').trim());
+  if (!match) return -1;
+  const index = Number(match[1]);
+  return Number.isInteger(index) && index >= 0 && index < length ? index : -1;
+}
+
+export function correctOptionId(options: readonly string[], answer: string | undefined): string | null {
+  const index = correctIndex([...options], answer ?? '');
+  return index >= 0 ? optionId(index) : null;
+}
+
 /** Fisher–Yates shuffle. Returns a new array; the input is left unchanged. */
 export function shuffle<T>(items: readonly T[], rng: () => number = Math.random): T[] {
   const copy = items.slice();
@@ -36,6 +55,8 @@ export function answersMatch(
   answer: string | undefined,
   options: readonly string[] = [],
 ): boolean {
+  const selectedIndex = optionIndex(selected, options.length);
+  if (selectedIndex >= 0) return optionId(selectedIndex) === correctOptionId(options, answer);
   const sel = (selected ?? '').trim().toLowerCase();
   let ans = (answer ?? '').trim();
   if (/^[A-D]$/i.test(ans)) {

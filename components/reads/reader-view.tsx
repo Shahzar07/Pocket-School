@@ -17,6 +17,7 @@ import { bookToShelf, visibleBooks } from '@/lib/shelf/catalogue';
 import { recommend } from '@/lib/shelf/recommend';
 import { useReadsT } from '@/lib/reads/i18n';
 import { chapterProgress, paginateChapter, sentencesOf } from '@/lib/reads/paginate';
+import { markdownForPageCount } from '@/lib/reads/page-count';
 import { isPictureBook, pictureSpreads, readerFontFamily, readerTypeface, wordsOf, type ReaderTypeface } from '@/lib/reads/picture-book';
 import { ChapterProse, proseForSpeech } from '@/components/reads/prose';
 import { QUIET_LABEL, isQuietHour } from '@/lib/reads/quiet';
@@ -24,11 +25,31 @@ import { bookById } from '@/lib/reads/seed';
 import { STUDIO_AUTOSAVE_KEY, usePublishedStudioBooks } from '@/components/reads/use-studio-shelf';
 import { readAutosave } from '@/components/editor/use-autosave';
 import type { Book, BookChapter, LanguageVersion } from '@/lib/reads/types';
-import { getLanguage } from '@/lib/languages';
+import { ContentLanguageBar } from '@/components/content-language-bar';
+import { useContentTranslation } from '@/hooks/use-content-translation';
+import { contentCacheKey } from '@/lib/i18n/content-translation';
+import { LANGUAGES, getLanguage, readLanguage, textDirection } from '@/lib/languages';
 import {
   addNote, addSessionSeconds, bookmarks, notesFor, progressMap, readerPrefs, saveProgress,
   saveReaderPrefs, toggleBookmark, type ReaderPrefs,
 } from '@/lib/shelf/storage';
+
+/** Page counts for a closed chapter use a translation already saved on this device. */
+function cachedChapterMarkdown(
+  id: string,
+  language: string,
+  fields: { title: string; markdown: string },
+): string | undefined {
+  if (typeof window === 'undefined' || !language || language === 'en') return undefined;
+  try {
+    const raw = window.localStorage.getItem(contentCacheKey(id, language, fields));
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw) as { markdown?: unknown };
+    return typeof parsed.markdown === 'string' && parsed.markdown.trim() ? parsed.markdown : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 const THEMES = {
   light: { bg: '#F7F6F3', fg: '#1C2422', muted: '#5E6B68', paper: '#FFFFFF' },
@@ -80,7 +101,13 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
     const stored = readerPrefs();
     if (initialLang) stored.lang = initialLang;
     setPrefs(stored);
-    setLang(stored.lang || initialLang || 'en');
+    setLang(stored.lang || initialLang || readLanguage());
+    const onLang = () => {
+      const current = readerPrefs();
+      if (!current.lang && !initialLang) setLang(readLanguage());
+    };
+    window.addEventListener('pocket-school-lang-change', onLang);
+    return () => window.removeEventListener('pocket-school-lang-change', onLang);
   }, [initialLang]);
 
   useEffect(() => {
@@ -109,15 +136,35 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
   }, [book, version]);
 
   const chapter = chapters[chapterIndex];
-  const picture = isPictureBook(book);
-  const spreads = useMemo(() => pictureSpreads(chapter?.markdown ?? ''), [chapter]);
-  const pages = useMemo(
-    () => (picture ? spreads.map(spread => spread.text) : paginateChapter(chapter?.markdown ?? '')),
-    [picture, spreads, chapter],
+  const machine = lang !== 'en' && !version;
+  const chapterTranslation = useContentTranslation(
+    `book:${book?.id ?? bookId}:${chapter?.id ?? 'chapter'}`,
+    { title: chapter?.title ?? '', markdown: chapter?.markdown ?? '' },
+    lang,
+    Boolean(machine && chapter),
   );
-  const page = pages[Math.min(pageIndex, pages.length - 1)] ?? '';
+  const readingTitle = machine ? (chapterTranslation.values.title || chapter?.title || '') : (chapter?.title ?? '');
+  const readingMarkdown = machine ? (chapterTranslation.values.markdown || chapter?.markdown || '') : (chapter?.markdown ?? '');
+  const endOnArrival = useRef(false);
+  const scriptDir = textDirection(chapterTranslation.showOriginal || !machine ? 'en' : lang);
+  const picture = isPictureBook(book);
+  const spreads = useMemo(() => pictureSpreads(readingMarkdown), [readingMarkdown]);
+  const pages = useMemo(
+    () => (picture ? spreads.map(spread => spread.text) : paginateChapter(readingMarkdown)),
+    [picture, spreads, readingMarkdown],
+  );
+  const page = pages[Math.min(pageIndex, Math.max(0, pages.length - 1))] ?? '';
   const spread = picture ? spreads[Math.min(pageIndex, Math.max(0, spreads.length - 1))] : null;
-  const pageCountOf = (markdown: string) => (picture ? pictureSpreads(markdown).length : paginateChapter(markdown).length);
+  const pageCountOf = (index: number) => {
+    const chapterAt = chapters[index];
+    const source = chapterAt?.markdown ?? '';
+    const fields = { title: chapterAt?.title ?? '', markdown: source };
+    const translated = index === chapterIndex
+      ? (chapterTranslation.showOriginal ? undefined : chapterTranslation.values.markdown)
+      : cachedChapterMarkdown(`book:${book?.id ?? bookId}:${chapterAt?.id ?? 'chapter'}`, lang, fields);
+    const markdown = markdownForPageCount(source, translated, machine);
+    return picture ? pictureSpreads(markdown).length : paginateChapter(markdown).length;
+  };
   const access = book && chapter ? decideBook(book, SAMPLE_READER, { ownedIds: SAMPLE_OWNED, chapter }) : null;
   const upNext = useMemo(() => {
     if (!book) return [];
@@ -134,9 +181,25 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
 
   const persist = useCallback((c: number, p: number) => {
     if (!book || !ready || !placed) return;
-    const nextPercent = chapterProgress(c, p, chapters.length, pageCountOf(chapters[c]?.markdown ?? ''));
+    const nextPercent = chapterProgress(c, p, chapters.length, pageCountOf(c));
     saveProgress(profile.id, book.id, { chapterIndex: c, pageIndex: p, percent: nextPercent, updatedAt: Date.now() });
-  }, [book, chapters, profile.id, ready, placed]);
+  }, [
+    book, chapters, chapterIndex, machine, picture, profile.id, ready, placed, lang,
+    chapterTranslation.showOriginal, chapterTranslation.values.markdown,
+  ]);
+
+  useEffect(() => {
+    if (endOnArrival.current) {
+      if (pages.length === 0) return;
+      if (machine && (chapterTranslation.status === 'loading' || chapterTranslation.status === 'source')) return;
+      endOnArrival.current = false;
+      const last = pages.length - 1;
+      setPageIndex(last);
+      persist(chapterIndex, last);
+      return;
+    }
+    if (pages.length > 0 && pageIndex >= pages.length) setPageIndex(pages.length - 1);
+  }, [chapterIndex, chapterTranslation.status, machine, pageIndex, pages.length, persist]);
 
   const go = (c: number, p: number, direction: 1 | -1) => {
     setDir(direction);
@@ -155,8 +218,9 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
   const prev = () => {
     if (pageIndex > 0) go(chapterIndex, pageIndex - 1, -1);
     else if (chapterIndex > 0) {
-      const prevPages = pageCountOf(chapters[chapterIndex - 1]?.markdown ?? '');
-      go(chapterIndex - 1, Math.max(0, prevPages - 1), -1);
+      endOnArrival.current = true;
+      const cachedPages = pageCountOf(chapterIndex - 1);
+      go(chapterIndex - 1, Math.max(0, cachedPages - 1), -1);
     }
   };
 
@@ -341,27 +405,34 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
   const highlighted = notes.some(n => page.includes(n.quote));
 
   return (
-    <div className="min-h-screen" style={{ background: theme.bg, color: theme.fg }}>
+    <div className="min-h-screen" dir={scriptDir} style={{ background: theme.bg, color: theme.fg }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500&display=swap" />
-      <header className="sticky top-0 z-20 flex items-center gap-2 px-3 py-3 sm:px-6" style={{ background: theme.bg }}>
-        <button type="button" onClick={() => router.push(`/reads/book/${book.id}`)} className="grid h-11 w-11 place-items-center rounded-full" aria-label={t('reads.nav.home')}>
+      <header className="sticky top-0 z-20 flex flex-wrap items-center gap-1 px-2 py-2 sm:gap-2 sm:px-6 sm:py-3" style={{ background: theme.bg }}>
+        <button type="button" onClick={() => router.push(`/reads/book/${book.id}`)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full" aria-label={t('reads.nav.home')}>
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 basis-40">
           <p className="truncate text-[13px] font-semibold">{version?.title ?? book.title}</p>
-          <p className="truncate text-[11px]" style={{ color: theme.muted }}>{chapter.title}</p>
+          <p className="truncate text-[11px]" style={{ color: theme.muted }}>{readingTitle}</p>
         </div>
         <span className="hidden text-[12px] font-semibold sm:inline" aria-live="polite">{timerLabel} · {formatClock(seconds)}{goalStatus ? ` · ${t('reads.reader.goal', { status: goalStatus })}` : ''}</span>
-        <Tool label={t('reads.reader.contents')} onClick={() => setPanel(panel === 'contents' ? 'none' : 'contents')}><List className="h-5 w-5" /></Tool>
-        <Tool label={t('reads.reader.font')} onClick={() => setPanel(panel === 'type' ? 'none' : 'type')}><Type className="h-5 w-5" /></Tool>
-        <Tool label={listening ? t('reads.reader.stop') : t('reads.reader.listen')} onClick={listen}><Headphones className="h-5 w-5" /></Tool>
-        <Tool label={t('reads.reader.ask')} onClick={() => setPanel(panel === 'ask' ? 'none' : 'ask')}><MessageCircle className="h-5 w-5" /></Tool>
+        <div className="ml-auto flex shrink-0 items-center">
+          <Tool label={t('reads.reader.contents')} onClick={() => setPanel(panel === 'contents' ? 'none' : 'contents')}><List className="h-5 w-5" /></Tool>
+          <Tool label={t('reads.reader.font')} onClick={() => setPanel(panel === 'type' ? 'none' : 'type')}><Type className="h-5 w-5" /></Tool>
+          <Tool label={listening ? t('reads.reader.stop') : t('reads.reader.listen')} onClick={listen}><Headphones className="h-5 w-5" /></Tool>
+          <Tool label={t('reads.reader.ask')} onClick={() => setPanel(panel === 'ask' ? 'none' : 'ask')}><MessageCircle className="h-5 w-5" /></Tool>
+        </div>
       </header>
       <div className="h-1 bg-black/5" aria-hidden>
         <div className="h-full bg-[#E7C27D]" style={{ width: `${Math.min(100, percent)}%` }} />
       </div>
 
       <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-28 lg:grid-cols-[1fr_280px] lg:px-6">
+        {machine && (
+          <div className="lg:col-span-2">
+            <ContentLanguageBar status={chapterTranslation.status} showOriginal={chapterTranslation.showOriginal} notice={chapterTranslation.notice} onToggle={chapterTranslation.toggle} />
+          </div>
+        )}
         <article
           key={`${chapterIndex}-${pageIndex}`}
           className="mx-auto w-full"
@@ -421,7 +492,7 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
             </div>
           ) : (
             <>
-              <h2 className="font-heading text-[34px] leading-tight tracking-[-0.03em]">{chapter.title}</h2>
+              <h2 className="font-heading text-[34px] leading-tight tracking-[-0.03em]">{readingTitle}</h2>
               <div
                 className="mt-6"
                 style={{
@@ -655,14 +726,14 @@ function TypePanel({
       </label>
       <div>
         <p className="mb-2 inline-flex items-center gap-1 font-semibold"><Languages className="h-4 w-4" /> {t('reads.detail.languages')}</p>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => onLang('en')} aria-pressed={lang === 'en'} className="rounded-full border px-3 py-1">English</button>
-          {(book.languageVersions ?? []).map(v => (
-            <button key={v.language} type="button" onClick={() => onLang(v.language)} aria-pressed={lang === v.language} className="rounded-full border px-3 py-1">
-              {getLanguage(v.language).label}
+        <div className="flex max-h-40 flex-wrap gap-2 overflow-y-auto">
+          {LANGUAGES.map(language => (
+            <button key={language.code} type="button" onClick={() => onLang(language.code)} aria-pressed={lang === language.code} className="rounded-full border px-3 py-1">
+              {language.label}
             </button>
           ))}
         </div>
+        <p className="text-xs font-normal">English is the original. Other languages are translated when you open a chapter.</p>
       </div>
     </div>
   );

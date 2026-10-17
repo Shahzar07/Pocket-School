@@ -4,7 +4,7 @@ import { walletChargeMethod } from '@/lib/payments/methods';
 import { startCheckout } from '@/lib/payments/server/engine';
 import { ActionError } from '@/lib/server/actions';
 
-interface WalletCheckoutBody {
+export interface WalletCheckoutBody {
   kind?: string;
   id?: string;
   interval?: string;

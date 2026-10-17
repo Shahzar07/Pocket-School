@@ -1,20 +1,18 @@
 import { NextResponse } from 'next/server';
-import { callOpenRouter, CONTENT_MODEL } from '@/lib/openrouter';
+import { translateContent } from '@/lib/i18n/content-cache';
+import { isSupportedLanguage } from '@/lib/languages';
 import { isPlatformAdmin } from '@/lib/reads/verify-admin';
 
 export const runtime = 'nodejs';
 
 /**
- * Returns a language version. It is not stored. The localisation PR owns
- * the review queue this should join.
+ * Admin preview of a Poket Reads language version. It is not stored.
+ * Each field goes through the shared content translator.
  */
 export async function POST(request: Request) {
   const admin = await isPlatformAdmin(request);
   if (!admin) {
     return NextResponse.json({ error: 'Sign in as a platform admin to translate.' }, { status: 401 });
-  }
-  if (!process.env.OPENROUTER_API_KEY) {
-    return NextResponse.json({ error: 'OPENROUTER_API_KEY is not set.' }, { status: 503 });
   }
 
   const body = await request.json().catch(() => null) as {
@@ -24,29 +22,48 @@ export async function POST(request: Request) {
     blurb?: string;
     chapters?: { id: string; title: string; markdown: string }[];
   } | null;
-  if (!body?.language || !body.title || !body.chapters?.length) {
+  if (!body?.language || !isSupportedLanguage(body.language) || !body.title || !body.chapters?.length) {
     return NextResponse.json({ error: 'Language, title and chapters are required.' }, { status: 400 });
   }
 
   try {
-    const raw = await callOpenRouter([
-      {
-        role: 'system',
-        content: 'Translate this Poket Reads book. Keep names, RM prices and curriculum terms accurate. Mark nothing as approved. Reply with JSON only: {"title": string, "blurb": string, "chapters": [{"id": string, "title": string, "markdown": string}]}. Same chapter ids, same order.',
-      },
-      { role: 'user', content: JSON.stringify({ language: body.language, title: body.title, blurb: body.blurb, chapters: body.chapters }) },
-    ], { model: CONTENT_MODEL, jsonMode: true, maxTokens: 4000 });
-    const parsed = JSON.parse(raw) as { title?: string; blurb?: string; chapters?: { id: string; title: string; markdown: string }[] };
+    const cover = await translateContent({
+      id: `reads-preview:${body.language}`,
+      language: body.language,
+      fields: { title: body.title, blurb: body.blurb ?? '' },
+    });
+    if (cover.unavailable) {
+      return NextResponse.json({ error: cover.error || 'OPENROUTER_API_KEY is not set.' }, { status: 503 });
+    }
+
+    const chapters = [];
+    for (const chapter of body.chapters) {
+      const translated = await translateContent({
+        id: `reads-preview:${body.language}:${chapter.id}`,
+        language: body.language,
+        fields: { title: chapter.title, markdown: chapter.markdown },
+      });
+      if (translated.unavailable) {
+        return NextResponse.json({ error: translated.error || 'OPENROUTER_API_KEY is not set.' }, { status: 503 });
+      }
+      chapters.push({
+        id: chapter.id,
+        title: translated.fields.title ?? chapter.title,
+        markdown: translated.fields.markdown ?? chapter.markdown,
+      });
+    }
+
     return NextResponse.json({
       language: body.language,
       sourceVersion: body.sourceVersion ?? 1,
       status: 'review',
       aiTranslated: true,
-      title: parsed.title ?? body.title,
-      blurb: parsed.blurb ?? body.blurb ?? '',
-      chapters: parsed.chapters ?? [],
+      title: cover.fields.title ?? body.title,
+      blurb: cover.fields.blurb ?? body.blurb ?? '',
+      chapters,
     });
-  } catch {
+  } catch (err) {
+    console.error('[reads/translate]', err);
     return NextResponse.json({ error: 'Translation failed.' }, { status: 502 });
   }
 }
