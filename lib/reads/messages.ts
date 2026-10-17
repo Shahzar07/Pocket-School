@@ -87,6 +87,9 @@ export const READS_EN = {
   'reads.detail.languages': 'Read in',
   'reads.detail.versionReview': 'AI translation · awaiting review',
   'reads.detail.versionApproved': 'AI translation · reviewed',
+  'reads.detail.machine': 'Machine translation',
+  'reads.detail.showOriginal': 'Show original',
+  'reads.detail.showTranslation': 'Show translation',
   'reads.detail.versionStale': 'Translation is older than this edition',
 
   'reads.library.title': 'My Library',

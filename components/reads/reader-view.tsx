@@ -10,6 +10,7 @@ import { useShelfProfile } from '@/components/shelf/profile-bar';
 import { bearerHeaders } from '@/lib/api-client';
 import { SAMPLE_OWNED, SAMPLE_READER } from '@/lib/reads/access';
 import { decideBook } from '@/lib/platform/allocation';
+import { editionFor } from '@/lib/platform/localization';
 import { awardReading } from '@/lib/platform/gamification';
 import { discussionSpace, suggestWinPost } from '@/lib/platform/community';
 import { localDateKey } from '@/lib/platform/reading';
@@ -24,7 +25,7 @@ import { QUIET_LABEL, isQuietHour } from '@/lib/reads/quiet';
 import { bookById } from '@/lib/reads/seed';
 import { STUDIO_AUTOSAVE_KEY, usePublishedStudioBooks } from '@/components/reads/use-studio-shelf';
 import { readAutosave } from '@/components/editor/use-autosave';
-import type { Book, BookChapter, LanguageVersion } from '@/lib/reads/types';
+import type { Book, BookChapter } from '@/lib/reads/types';
 import { ContentLanguageBar } from '@/components/content-language-bar';
 import { useContentTranslation } from '@/hooks/use-content-translation';
 import { contentCacheKey } from '@/lib/i18n/content-translation';
@@ -125,18 +126,18 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
     } catch { /* private mode */ }
   }, [ready, profile.id, book]);
 
-  const version: LanguageVersion | undefined = book?.languageVersions?.find(v => v.language === lang);
+  const edition = useMemo(() => (book ? editionFor(book, lang) : null), [book, lang]);
+  const savedEdition = Boolean(edition && !edition.machine && edition.locale !== 'en');
   const chapters: BookChapter[] = useMemo(() => {
-    if (!book) return [];
-    if (!version) return book.chapters;
+    if (!book || !edition) return [];
     return book.chapters.map(chapter => {
-      const translated = version.chapters.find(c => c.id === chapter.id);
+      const translated = edition.chapters.find(c => c.id === chapter.id);
       return translated ? { ...chapter, title: translated.title, markdown: translated.markdown } : chapter;
     });
-  }, [book, version]);
+  }, [book, edition]);
 
   const chapter = chapters[chapterIndex];
-  const machine = lang !== 'en' && !version;
+  const machine = Boolean(edition?.machine);
   const chapterTranslation = useContentTranslation(
     `book:${book?.id ?? bookId}:${chapter?.id ?? 'chapter'}`,
     { title: chapter?.title ?? '', markdown: chapter?.markdown ?? '' },
@@ -412,7 +413,7 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="min-w-0 flex-1 basis-40">
-          <p className="truncate text-[13px] font-semibold">{version?.title ?? book.title}</p>
+          <p className="truncate text-[13px] font-semibold">{savedEdition ? edition?.title : book.title}</p>
           <p className="truncate text-[11px]" style={{ color: theme.muted }}>{readingTitle}</p>
         </div>
         <span className="hidden text-[12px] font-semibold sm:inline" aria-live="polite">{timerLabel} · {formatClock(seconds)}{goalStatus ? ` · ${t('reads.reader.goal', { status: goalStatus })}` : ''}</span>
@@ -451,9 +452,10 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
           }}
           aria-label={chapter.title}
         >
-          {version && (
+          {savedEdition && edition && (
             <p className="mb-4 text-[12px] font-semibold" style={{ color: theme.muted }}>
-              {version.status === 'approved' ? t('reads.detail.versionApproved') : t('reads.detail.versionReview')}
+              {edition.status === 'approved' ? t('reads.detail.versionApproved') : t('reads.detail.versionReview')}
+              {edition.stale ? ` · ${t('reads.detail.versionStale')}` : ''}
             </p>
           )}
           {picture && !locked && spread ? (

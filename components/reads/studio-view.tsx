@@ -18,6 +18,7 @@ import { BOOKS } from '@/lib/reads/seed';
 import { publishIssues, screenCoverAge, type CoverBrief, type CoverFont, type CoverPlacement } from '@/lib/reads/cover';
 import { bookEpub, bookPdf, chapterPlain } from '@/lib/reads/book-export';
 import { blankCraftBook } from '@/lib/reads/creator';
+import { storedBookPriceRM } from '@/lib/platform/pricing';
 import { CreatorPanel } from '@/components/reads/creator-panel';
 import {
   AGE_BANDS, ageBand, blankChildrensStory, fallbackStory, isPictureBook, storyChapters, storyPublishIssues, storyShape, withPageIllustration, wordsOf,
@@ -417,7 +418,7 @@ export function StudioView() {
                 <label className="text-sm font-semibold">{t('reads.studio.price')}
                   <input type="number" value={book.priceUsd} onChange={e => {
                     const priceUsd = Number(e.target.value);
-                    update({ priceUsd, priceRM: Math.round(priceUsd * 4.7) });
+                    update({ priceUsd, priceRM: storedBookPriceRM(priceUsd) });
                   }} className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal" />
                 </label>
                 <label className="text-sm font-semibold">{t('reads.studio.tier')}

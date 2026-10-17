@@ -325,7 +325,7 @@ Shelf quotes go through `lib/pricing.ts`. `quotePrice` and `viewerCurrency` no l
 
 ### Language
 
-The reader language is `lib/languages.ts` (`pocket-school-lang`), applied by `I18nProvider`. Book editions still live on `languageVersions` and are chosen by `editionFor`. Reads UI strings stay in `lib/reads/i18n.ts` as English defaults for i18next. This main lists 23 languages. The open 53-language change is not part of this branch.
+The reader language is `lib/languages.ts` (`pocket-school-lang`), applied by `I18nProvider`. The list has 53 languages. `editionFor` keeps a saved `languageVersions` row, including a draft or review edition. When that row is missing, the reader and the book page call `useContentTranslation`, which posts to `/api/content/translate` and caches by source hash. `ContentLanguageBar` labels the machine text and offers show original. Machine text is not stored as an approved edition. `POST /api/reads/translate` is the admin preview and calls `translateContent` from `lib/i18n/content-cache.ts`. There is no second translator.
 
 ### library/{uid}/books/{bookId}
 
@@ -341,7 +341,9 @@ The parent path `library/{uid}` is the signed-in student. Clients do not write t
 
 ### Book targets
 
-A book document may include `targets`: role tokens (`students`, `teachers`, `parents`, `institutions`, `all`, `marketplace`) or a specific `user:`, `class:`, `parent:`, or `institution:` id. `lib/platform/allocation.ts` reads that list with `migrateAllocation`, the same expansion the server checks use. An explicit list is kept. An empty list becomes students and parents, plus institutions when `allocateLibrary` is set, plus marketplace when `allocateMarketplace` is set. Firestore `targetsHit` is the rule for a stored list. Seat `used` and `total` on the book are still the local cap. There is no seat-ledger collection on this branch.
+A book document may include `targets`: role tokens (`students`, `teachers`, `parents`, `institutions`, `all`, `marketplace`) or a specific `user:`, `class:`, `parent:`, or `institution:` id. `lib/platform/allocation.ts` reads that list with `migrateAllocation`, the same expansion the server checks use. An explicit list is kept. An empty list becomes students and parents, plus institutions when `allocateLibrary` is set, plus marketplace when `allocateMarketplace` is set. Firestore `targetsHit` is the rule for a stored list.
+
+Institution seats are not stored on the book. `decideBook` and `licenceOffer` read `seatCount`, `seatsUsed`, `licenceStartsOn`, and `licenceEndsOn`, and pass them through `licencePhase` in `lib/oem.ts`. A billing phase, when the caller supplies one, uses `learningOpen` in `lib/institution-membership.ts`: `active` and `grace` can read, and `pending_payment` and `suspended` cannot. A full seat cap still denies a new reader during grace. A quote for licensing books adds the `poket_reads` row from `VOLUME_ADDONS` via `quoteInstitution` (`quoteForInstitution` leaves add-ons empty). `book.seats` is ignored. A book's Sparks cost can be reserved on the institution pool with `coverBookSparks` (`allocateSparks`, row `book:{id}`). The shelf price in MYR is `storedBookPriceRM`, from the admin rate in `lib/pricing.ts`, not `Math.round(priceUsd * 4.7)`. Checkout goes through `lib/payments/wallet-checkout.ts`.
 
 ### daily_goals (reading)
 

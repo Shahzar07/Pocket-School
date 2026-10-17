@@ -11,7 +11,9 @@ import { SAMPLE_OWNED, SAMPLE_READER, planLabel } from '@/lib/reads/access';
 import { decideBook } from '@/lib/platform/allocation';
 import { discussionSpace, suggestWinPost } from '@/lib/platform/community';
 import { licenceOffer } from '@/lib/platform/licence';
-import { activeLocale, editionFor } from '@/lib/platform/localization';
+import { activeLocale, applyTranslatedFields, editionFor, editionSourceFields } from '@/lib/platform/localization';
+import { ContentLanguageBar } from '@/components/content-language-bar';
+import { useContentTranslation } from '@/hooks/use-content-translation';
 import { downloadBookOffline } from '@/lib/platform/offline';
 import { quotePrice, viewerCurrency } from '@/lib/platform/pricing';
 import { authedFetch, ApiError } from '@/lib/api-client';
@@ -19,7 +21,7 @@ import { useReadsT } from '@/lib/reads/i18n';
 import { bookById, publishedBooks } from '@/lib/reads/seed';
 import { usePublishedStudioBooks } from '@/components/reads/use-studio-shelf';
 import { myList, toggleList } from '@/lib/shelf/storage';
-import { getLanguage } from '@/lib/languages';
+import { LANGUAGES } from '@/lib/languages';
 
 export function BookDetail({ bookId }: { bookId: string }) {
   const t = useReadsT();
@@ -38,13 +40,27 @@ export function BookDetail({ bookId }: { bookId: string }) {
     setList(myList(profile.id));
     setCurrency(viewerCurrency());
     setLang(activeLocale());
+    const onLanguage = () => setLang(activeLocale());
+    window.addEventListener('pocket-school-lang-change', onLanguage);
+    return () => window.removeEventListener('pocket-school-lang-change', onLanguage);
   }, [ready, profile.id]);
 
-  if (!book || book.status !== 'published') {
+  const savedEdition = book && book.status === 'published' ? editionFor(book, lang) : null;
+  const previewChapterId = savedEdition?.chapters[0]?.id;
+  const machine = useContentTranslation(
+    book ? `book:${book.id}:preview` : 'book:none',
+    savedEdition ? editionSourceFields(savedEdition, previewChapterId) : { title: '' },
+    lang,
+    Boolean(savedEdition?.machine),
+  );
+  const edition = savedEdition
+    ? applyTranslatedFields(savedEdition, machine.values, machine.autoTranslated, previewChapterId)
+    : null;
+
+  if (!book || book.status !== 'published' || !edition) {
     return <p className="text-sm text-muted-foreground">This book is not on the shelf.</p>;
   }
 
-  const edition = editionFor(book, lang);
   const title = edition.title;
   const blurb = edition.blurb;
   const preview = edition.chapters[0]?.markdown ?? '';
@@ -139,19 +155,26 @@ export function BookDetail({ bookId }: { bookId: string }) {
           </p>
           <div className="mt-5">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{t('reads.detail.languages')}</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <LangButton active={lang === 'en'} onClick={() => setLang('en')}>English</LangButton>
-              {(book.languageVersions ?? []).map(v => (
-                <LangButton key={v.language} active={lang === v.language} onClick={() => setLang(v.language)}>
-                  {getLanguage(v.language).label}
+            <div className="mt-2 flex max-h-40 flex-wrap gap-2 overflow-y-auto">
+              {LANGUAGES.map(language => (
+                <LangButton key={language.code} active={lang === language.code} onClick={() => setLang(language.code)}>
+                  {language.label}
                 </LangButton>
               ))}
             </div>
-            {edition.locale !== 'en' && (
+            {edition.locale !== 'en' && !edition.machine && (
               <p className="mt-2 text-[12px] text-muted-foreground">
                 {edition.status === 'approved' ? t('reads.detail.versionApproved') : t('reads.detail.versionReview')}
                 {edition.stale ? ` · ${t('reads.detail.versionStale')}` : ''}
               </p>
+            )}
+            {edition.machine && (
+              <ContentLanguageBar
+                status={machine.status}
+                showOriginal={machine.showOriginal}
+                notice={machine.notice}
+                onToggle={machine.toggle}
+              />
             )}
           </div>
         </div>
@@ -159,7 +182,7 @@ export function BookDetail({ bookId }: { bookId: string }) {
 
       <section className="rounded-[28px] border border-border bg-[#F7F1E6] p-6 text-[#2C241C] sm:p-10">
         <h2 className="font-heading text-[28px]">{t('reads.detail.preview')}</h2>
-        <p className="mt-1 text-sm opacity-70">{book.chapters[0]?.title}</p>
+        <p className="mt-1 text-sm opacity-70">{edition.chapters[0]?.title}</p>
         <div className="mt-6 max-w-[66ch] space-y-4 font-['Instrument_Serif',Georgia,serif] text-[19px] leading-[1.75]">
           {preview.split(/\n{2,}/).slice(0, 4).map(p => <p key={p.slice(0, 24)}>{p}</p>)}
         </div>
