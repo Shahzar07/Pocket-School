@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { isBrandedLoginPath } from '@/lib/institution-login';
+import { isInstitutionJourneyPath } from '@/lib/institution-journey';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { Cookie, X } from 'lucide-react';
@@ -73,7 +74,7 @@ export function CookieConsent() {
   const acceptAll = () => persist({ functional: true, analytics: true, aiPerformance: true });
   const rejectAll = () => persist({ functional: false, analytics: false, aiPerformance: false });
 
-  if (isBrandedLoginPath(pathname)) return null;
+  if (isBrandedLoginPath(pathname) || isInstitutionJourneyPath(pathname)) return null;
 
   return (
     <AnimatePresence>

@@ -738,6 +738,11 @@ export const ONBOARDING_STEPS = [
   { id: 'classes', label: 'At least one class' },
   { id: 'people', label: 'Invite code, CSV, or self-join listing' },
   { id: 'sparks', label: 'Sparks pool checked for the plan' },
+  { id: 'brand', label: 'Branded login page' },
+  { id: 'coadmins', label: 'Invite co-admins, with an email code' },
+  { id: 'teachers', label: 'Add teachers' },
+  { id: 'students', label: 'Invite students with a code, a CSV, or a QR' },
+  { id: 'courses', label: 'Pick courses' },
 ] as const;
 
 export type OnboardingStepId = (typeof ONBOARDING_STEPS)[number]['id'];
@@ -801,7 +806,7 @@ export interface EmailDraft {
   text: string;
 }
 
-export function institutionEmail(kind: 'payment_link' | 'dunning' | 'suspended' | 'restored' | 'invoice' | 'invite' | 'join_approved' | 'join_rejected' | 'join_received', vars: {
+export function institutionEmail(kind: 'payment_link' | 'dunning' | 'suspended' | 'restored' | 'invoice' | 'invite' | 'join_approved' | 'join_rejected' | 'join_received' | 'academy_approved', vars: {
   institutionName: string;
   plan?: string;
   seats?: number;
@@ -842,6 +847,16 @@ export function institutionEmail(kind: 'payment_link' | 'dunning' | 'suspended' 
     return {
       subject: `${name} is active again`,
       text: `Payment received. ${name} is restored on Poket School. ET AI and the academy dashboard are open.`,
+    };
+  }
+  if (kind === 'academy_approved') {
+    return {
+      subject: `${name} is approved on Poket School`,
+      text: [
+        `${vars.personName || 'Hello'},`,
+        `${name} is approved. Sign in to finish setup, including the branded login page.`,
+        `Sign in: ${link}`,
+      ].join('\n'),
     };
   }
   if (kind === 'invite') {

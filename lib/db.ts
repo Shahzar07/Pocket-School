@@ -101,6 +101,8 @@ export interface UserProfile {
   dateOfBirth?: string;
   /** Male or female. Written through the insights sync so rules can stay unchanged. */
   gender?: 'male' | 'female';
+  /** Job title collected when someone registers an academy. */
+  jobTitle?: string;
   /** State or region the person chose. Coarse place only. */
   region?: string;
   /** When the person agreed to grouped demographic statistics. */
@@ -460,6 +462,11 @@ export interface Institution {
     faviconUrl?: string;
     loginHeadline?: string;
     loginBody?: string;
+    /**
+     * Public branded login. False hides it. True shows it.
+     * Absent keeps academies that already have a subdomain on their login page.
+     */
+    loginPublished?: boolean;
     inviteSubject?: string;
     inviteBody?: string;
     mobileAppName?: string;
@@ -482,6 +489,11 @@ export interface Institution {
   passwordRequireSymbol?: boolean;
   sessionTimeoutMinutes?: number;
   features?: Record<string, boolean>;
+  /**
+   * False while a newly approved admin is still on the setup checklist.
+   * Absent means an academy that predates the checklist and opens the dashboard.
+   */
+  setupComplete?: boolean;
   leaderboardVisible?: 'academy' | 'group' | 'off';
   leaderboard?: { rank: number; name: string; points: number }[];
   publishedPages?: { slug: string; title: string; body: string }[];
@@ -1924,7 +1936,7 @@ export async function getInstitutionMembers(institutionId: string): Promise<{ id
  */
 export async function setInstitutionAdmin(userId: string, institutionId: string | null) {
   await updateDoc(doc(db, 'users', userId), institutionId
-    ? { role: 'institution_admin', institutionId }
+    ? { role: 'institution_admin', institutionId, twoFactorEnabled: true }
     : { role: 'teacher', institutionId: null });
 }
 

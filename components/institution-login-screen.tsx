@@ -25,6 +25,7 @@ export function InstitutionLoginScreen({
   refused,
   emailForCode,
   signupPolicy,
+  embedded = false,
   onCredentials,
   onGoogle,
   onVerify,
@@ -38,13 +39,15 @@ export function InstitutionLoginScreen({
   headline: string;
   body: string;
   showPoweredBy: boolean;
-  status: 'loading' | 'missing' | 'paused' | 'ready';
+  status: 'loading' | 'missing' | 'paused' | 'unpublished' | 'ready';
   busy?: boolean;
   step: 'credentials' | 'code';
   error?: string;
   refused?: boolean;
   emailForCode?: string;
   signupPolicy?: 'open' | 'invite' | 'domain';
+  /** Fits inside the onboarding preview instead of filling the window. */
+  embedded?: boolean;
   onCredentials: (input: { email: string; password: string; tab: InstitutionLoginTab }) => void;
   onGoogle: (tab: InstitutionLoginTab) => void;
   onVerify: (code: string) => void;
@@ -61,8 +64,8 @@ export function InstitutionLoginScreen({
   const [code, setCode] = useState('');
 
   return (
-    <main className="min-h-screen bg-[#F6F1E7] text-[#1A3C34]" style={{ fontFamily: 'var(--font-institution), inherit' }}>
-      <div className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-5 py-12">
+    <main className={`${embedded ? 'bg-[#F6F1E7]' : 'min-h-screen'} text-[#1A3C34]`} style={{ fontFamily: 'var(--font-institution), inherit' }}>
+      <div className={`mx-auto flex max-w-lg flex-col justify-center px-5 py-12 ${embedded ? '' : 'min-h-screen'}`}>
         <section className="rounded-[28px] border border-[#1A3C34]/10 bg-white p-6 shadow-[0_24px_60px_-36px_rgba(26,60,52,0.45)] sm:p-8">
           <div className="flex items-center gap-3">
             {logo ? (
@@ -90,6 +93,13 @@ export function InstitutionLoginScreen({
           {status === 'paused' && (
             <div className="mt-8 space-y-3">
               <p className="text-sm leading-relaxed">{schoolName} is paused. Sign-in opens again when the academy is active.</p>
+              <a href={PLATFORM_LOGIN_URL} className="inline-flex text-sm font-semibold underline">Sign in at Poket School</a>
+            </div>
+          )}
+
+          {status === 'unpublished' && (
+            <div className="mt-8 space-y-3">
+              <p className="text-sm leading-relaxed">This branded login page is not published yet. The academy admin publishes it from the setup checklist.</p>
               <a href={PLATFORM_LOGIN_URL} className="inline-flex text-sm font-semibold underline">Sign in at Poket School</a>
             </div>
           )}

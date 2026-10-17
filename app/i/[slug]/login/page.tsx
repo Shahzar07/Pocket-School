@@ -18,6 +18,7 @@ import {
   type InstitutionLoginDecision,
   type InstitutionLoginTab,
 } from '@/lib/institution-login';
+import { loginPageIsLive } from '@/lib/institution-journey';
 import { reportActivity, reportFailedLogin } from '@/lib/audit/report';
 
 type Reauth = 'password' | 'google' | 'keep';
@@ -67,7 +68,7 @@ export default function InstitutionLoginPage() {
   const slug = typeof params.slug === 'string' ? params.slug : '';
   const router = useRouter();
   const [institution, setInstitution] = useState<Institution | null>(null);
-  const [status, setStatus] = useState<'loading' | 'missing' | 'paused' | 'ready'>('loading');
+  const [status, setStatus] = useState<'loading' | 'missing' | 'paused' | 'unpublished' | 'ready'>('loading');
   const [step, setStep] = useState<'credentials' | 'code'>('credentials');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -91,6 +92,7 @@ export default function InstitutionLoginPage() {
         setInstitution(found);
         if (!found) setStatus('missing');
         else if (found.status === 'suspended') setStatus('paused');
+        else if (!loginPageIsLive(found)) setStatus('unpublished');
         else setStatus('ready');
       })
       .catch(() => {
@@ -162,6 +164,8 @@ export default function InstitutionLoginPage() {
       storedMode: readActiveMode(),
       tab,
       platformStaff: resolveStaffRole({ email: address, role: actor.role, adminRole: actor.adminRole }) != null,
+      institutionStatus: institution.status,
+      setupComplete: institution.setupComplete,
     });
     if (!decision.allowed) {
       await refuse();

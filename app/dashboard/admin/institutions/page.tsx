@@ -109,9 +109,21 @@ export default function AdminInstitutions() {
             for (const id of ids) {
               if (action === 'delete') await removeInstitution(id);
               else await setInstitutionStatus(id, action === 'suspend' ? 'suspended' : 'active');
+              if (action === 'approve') {
+                const token = await user.getIdToken();
+                const res = await fetch('/api/institutions/approve', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                  body: JSON.stringify({ institutionId: id }),
+                });
+                const payload = await res.json().catch(() => ({})) as { emailed?: boolean; error?: string };
+                if (!res.ok || payload.emailed === false) {
+                  toast.message(payload.error || 'Approved. The approval email was not sent from this server.');
+                }
+              }
               await recordAudit(id, { ...actor(), action, target: id }).catch(() => undefined);
             }
-            toast.success(action === 'delete' ? 'Institutions deleted.' : 'Institutions updated.');
+            toast.success(action === 'delete' ? 'Institutions deleted.' : action === 'approve' ? 'Institutions approved.' : 'Institutions updated.');
             await reload();
           } catch (error) {
             toast.error(error instanceof Error ? error.message : 'That bulk action failed.');

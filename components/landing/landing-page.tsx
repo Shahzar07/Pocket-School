@@ -185,8 +185,8 @@ export function LandingPage() {
               <Link className={s.primary} href={startHref}>
                 {t('landing.hero.start')} <ArrowRight size={16} aria-hidden className="ps-dir-icon" />
               </Link>
-              <Link className={s.secondary} href="#schools">
-                {t('landing.hero.schools')}
+              <Link className={s.secondary} href="/institutions/register">
+                For Schools & Organisations
               </Link>
               <a className={s.quiet} href="#demo">
                 {t('landing.hero.demo')}
@@ -554,6 +554,12 @@ export function LandingPage() {
           <h3 className="text-2xl font-medium">{t('landing.schools.ctaTitle')}</h3>
           <p className="mt-3 max-w-2xl text-muted-foreground">{t('landing.schools.ctaBody')}</p>
           <div className="mt-6 flex flex-wrap items-center gap-4">
+            <Link
+              href="/institutions/register"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
+            >
+              For Schools & Organisations
+            </Link>
             <a className="text-sm font-semibold text-primary" href={DEMO}>{t('landing.schools.email')}</a>
             <a
               href="#demo"

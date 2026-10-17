@@ -7,6 +7,7 @@
  */
 
 import { heldRoles, landingPath, type AccountMode, type RoleSource } from './account-modes';
+import { institutionAdminDestination } from './institution-journey';
 import { normaliseCustomDomain } from './oem';
 import { normaliseSubdomain, PLATFORM_ROOT, stripAcademyPath, tenantFromRequest } from './tenant-host';
 
@@ -106,6 +107,9 @@ export function decideInstitutionLogin(
     storedMode?: string | null;
     tab?: InstitutionLoginTab;
     platformStaff?: boolean;
+    /** When set, a pending academy or a first-time admin leaves the dashboard path. */
+    institutionStatus?: string | null;
+    setupComplete?: boolean | null;
   },
 ): InstitutionLoginDecision {
   if (!belongsToInstitution(actor, institutionId)) return { allowed: false, reason: 'not_member' };
@@ -115,7 +119,13 @@ export function decideInstitutionLogin(
     return { allowed: false, reason: 'not_member' };
   }
   if (schoolAdmin) {
-    return { allowed: true, destination: '/dashboard/institution', needsEmailCode: true, mode: null };
+    const destination = options?.institutionStatus
+      ? institutionAdminDestination({
+          status: options.institutionStatus,
+          setupComplete: options.setupComplete,
+        })
+      : '/dashboard/institution';
+    return { allowed: true, destination, needsEmailCode: true, mode: null };
   }
   const tab = options?.tab;
   if (tab === 'teacher' && held.includes('teacher')) {
