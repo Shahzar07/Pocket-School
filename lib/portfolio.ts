@@ -9,7 +9,7 @@ import { BRAND, brandPdfRgb, brandRgbChannels } from './brand-theme';
 import { spanDates, type EducationSpan } from './lifelong';
 import { linkedInPack } from './linkedin';
 
-/** TODO_BRAND. Older portfolios stored forest, gold, or coral. */
+/** Older portfolios stored forest, gold, or coral. */
 export const CV_TEMPLATES = ['deep', 'mid', 'bright', 'classic'] as const;
 export type CvTemplate = (typeof CV_TEMPLATES)[number];
 
@@ -363,9 +363,9 @@ export function portfolioJson(input: {
 }
 
 const HEADER: Record<CvTemplate, [number, number, number]> = {
-  deep: brandRgbChannels(BRAND.ink),
-  mid: brandRgbChannels(BRAND.mid),
-  bright: brandRgbChannels(BRAND.bright),
+  deep: brandRgbChannels(BRAND.blueDeep),
+  mid: brandRgbChannels(BRAND.primary),
+  bright: brandRgbChannels(BRAND.blueBright),
   classic: brandRgbChannels(BRAND.ink),
 };
 

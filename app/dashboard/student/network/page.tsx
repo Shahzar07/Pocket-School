@@ -97,88 +97,88 @@ export default function ClassNetworkPage() {
       .catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not save that.'));
   }
 
-  if (!uid) return <p className="p-6 text-sm text-brand-ink">Sign in to open your class network.</p>;
+  if (!uid) return <p className="p-6 text-sm text-ink">Sign in to open your class network.</p>;
 
   const groupId = network?.groups[0]?.id ?? '';
 
   return (
     <div className="space-y-5">
-      <section className="rounded-3xl bg-brand-foam p-4 sm:p-6">
-        <h1 className="text-2xl font-semibold text-brand-ink">Class network</h1>
-        <p className="mt-1 text-sm text-brand-ink">{SEAT_NOTE}</p>
+      <section className="rounded-3xl bg-background p-4 sm:p-6">
+        <h1 className="text-2xl font-semibold text-ink">Class network</h1>
+        <p className="mt-1 text-sm text-ink">{SEAT_NOTE}</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {attended.map((row) => (
             <button
               key={row.institutionId}
               type="button"
               onClick={() => load(row.institutionId)}
-              className={`h-10 rounded-full px-4 text-sm font-semibold ${row.institutionId === institutionId ? 'bg-brand-ink text-white' : 'bg-white text-brand-ink'}`}
+              className={`h-10 rounded-full px-4 text-sm font-semibold ${row.institutionId === institutionId ? 'bg-blue-deep text-white' : 'bg-white text-ink'}`}
             >
               {row.institutionName || 'Academy'}
             </button>
           ))}
         </div>
-        {attended.length === 0 && <p className="mt-3 text-sm text-brand-ink">Add a school you attended, or your class groups appear here after you leave an academy. The history stays on this account.</p>}
+        {attended.length === 0 && <p className="mt-3 text-sm text-ink">Add a school you attended, or your class groups appear here after you leave an academy. The history stays on this account.</p>}
       </section>
       <AttendedSchoolPanel />
 
       {network && (
         <section className="space-y-3 rounded-3xl bg-white p-4 sm:p-6">
-          <h2 className="text-lg font-semibold text-brand-ink">Consent for this academy</h2>
+          <h2 className="text-lg font-semibold text-ink">Consent for this academy</h2>
           <div className="flex flex-wrap gap-2">
             {CONSENT_FIELDS.map((field) => (
               <button
                 key={field.key}
                 type="button"
                 onClick={() => send('consent', { consent: { ...network.consent, [field.key]: !network.consent[field.key] } }, 'Consent saved.')}
-                className={`h-10 rounded-full px-4 text-sm font-semibold ${network.consent[field.key] ? 'bg-brand-ink text-white' : 'bg-brand-mist text-brand-ink'}`}
+                className={`h-10 rounded-full px-4 text-sm font-semibold ${network.consent[field.key] ? 'bg-blue-deep text-white' : 'bg-wash text-ink'}`}
               >
                 {field.label}
               </button>
             ))}
           </div>
-          <p className="text-sm text-brand-ink">Unsubscribe stops email and push from this academy. The inbox choice stays separate.</p>
+          <p className="text-sm text-ink">Unsubscribe stops email and push from this academy. The inbox choice stays separate.</p>
         </section>
       )}
 
       {network && (
         <section className="grid gap-4 lg:grid-cols-2">
           <article className="space-y-3 rounded-3xl bg-white p-4 sm:p-6">
-            <h2 className="text-lg font-semibold text-brand-ink">{network.groups[0]?.name || 'Class group'}</h2>
+            <h2 className="text-lg font-semibold text-ink">{network.groups[0]?.name || 'Class group'}</h2>
             {network.directory.map((person) => (
-              <p key={`${person.name}-${person.className}`} className="rounded-2xl bg-brand-mist px-4 py-3 text-sm text-brand-ink">
+              <p key={`${person.name}-${person.className}`} className="rounded-2xl bg-wash px-4 py-3 text-sm text-ink">
                 {person.name}{person.destination ? ` · ${person.destination}` : ''}
               </p>
             ))}
             {network.posts.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-brand-foam px-4 py-3 text-sm text-brand-ink">
+              <div key={item.id} className="rounded-2xl border border-line px-4 py-3 text-sm text-ink">
                 <p className="font-semibold">{item.authorName}</p>
                 <p>{item.body}</p>
-                {item.queued && <p className="text-brand-mid">Held for an academy moderator.</p>}
-                <button type="button" onClick={() => send('report', { postId: item.id, reason: 'Please review this post.' }, 'The report is with the academy.')} className="mt-2 text-sm font-semibold text-brand-mid">Report</button>
+                {item.queued && <p className="text-blue-deep">Held for an academy moderator.</p>}
+                <button type="button" onClick={() => send('report', { postId: item.id, reason: 'Please review this post.' }, 'The report is with the academy.')} className="mt-2 text-sm font-semibold text-blue-deep">Report</button>
               </div>
             ))}
-            <textarea value={post} onChange={(event) => setPost(event.target.value)} placeholder="Share an achievement with the class." className="min-h-20 w-full rounded-2xl bg-brand-mist p-3 text-sm text-brand-ink" />
-            <button type="button" onClick={() => send('share-achievement', { groupId, body: post }, 'Shared with the class.')} className="h-11 rounded-full bg-brand-mid px-5 text-sm font-semibold text-white">Share</button>
+            <textarea value={post} onChange={(event) => setPost(event.target.value)} placeholder="Share an achievement with the class." className="min-h-20 w-full rounded-2xl bg-wash p-3 text-sm text-ink" />
+            <button type="button" onClick={() => send('share-achievement', { groupId, body: post }, 'Shared with the class.')} className="h-11 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white">Share</button>
           </article>
           <article className="space-y-3 rounded-3xl bg-white p-4 sm:p-6">
-            <h2 className="text-lg font-semibold text-brand-ink">Events</h2>
+            <h2 className="text-lg font-semibold text-ink">Events</h2>
             {network.events.map((event) => (
-              <div key={event.id} className="rounded-2xl bg-brand-mist px-4 py-3 text-sm text-brand-ink">
+              <div key={event.id} className="rounded-2xl bg-wash px-4 py-3 text-sm text-ink">
                 <p className="font-semibold">{event.title}</p>
                 <p>{event.when} {event.place}</p>
-                <button type="button" onClick={() => send('rsvp', { eventId: event.id, going: !event.going }, event.going ? 'RSVP cleared.' : 'You are going.')} className="mt-2 h-10 rounded-full bg-brand-ink px-4 text-sm font-semibold text-white">
+                <button type="button" onClick={() => send('rsvp', { eventId: event.id, going: !event.going }, event.going ? 'RSVP cleared.' : 'You are going.')} className="mt-2 h-10 rounded-full bg-blue-deep px-4 text-sm font-semibold text-white">
                   {event.going ? 'Going' : 'RSVP'}
                 </button>
               </div>
             ))}
-            <h2 className="text-lg font-semibold text-brand-ink">Direct message</h2>
-            <p className="text-sm text-brand-ink">{network.adult ? 'Messages go only to another adult who also opted in.' : 'Direct messages stay off until you are 18. Class posts wait for a moderator.'}</p>
-            <input value={otherId} onChange={(event) => setOtherId(event.target.value)} placeholder="Classmate id" className="h-11 w-full rounded-xl bg-brand-mist px-3 text-sm text-brand-ink" />
-            <textarea value={dm} onChange={(event) => setDm(event.target.value)} placeholder="A short note" className="min-h-16 w-full rounded-2xl bg-brand-mist p-3 text-sm text-brand-ink" />
+            <h2 className="text-lg font-semibold text-ink">Direct message</h2>
+            <p className="text-sm text-ink">{network.adult ? 'Messages go only to another adult who also opted in.' : 'Direct messages stay off until you are 18. Class posts wait for a moderator.'}</p>
+            <input value={otherId} onChange={(event) => setOtherId(event.target.value)} placeholder="Classmate id" className="h-11 w-full rounded-xl bg-wash px-3 text-sm text-ink" />
+            <textarea value={dm} onChange={(event) => setDm(event.target.value)} placeholder="A short note" className="min-h-16 w-full rounded-2xl bg-wash p-3 text-sm text-ink" />
             <div className="flex gap-2">
-              <button type="button" onClick={() => send('dm', { otherId, body: dm }, 'Sent.')} className="h-11 rounded-full bg-brand-mid px-5 text-sm font-semibold text-white">Send</button>
-              <button type="button" onClick={() => send('block', { otherId }, 'Blocked.')} className="h-11 rounded-full bg-brand-bright px-5 text-sm font-semibold text-white">Block</button>
+              <button type="button" onClick={() => send('dm', { otherId, body: dm }, 'Sent.')} className="h-11 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white">Send</button>
+              <button type="button" onClick={() => send('block', { otherId }, 'Blocked.')} className="h-11 rounded-full bg-blue-bright px-5 text-sm font-semibold text-ink">Block</button>
             </div>
           </article>
         </section>
@@ -187,19 +187,19 @@ export default function ClassNetworkPage() {
       {network && (
         <section className="grid gap-4 lg:grid-cols-2">
           <article className="space-y-3 rounded-3xl bg-white p-4 sm:p-6">
-            <h2 className="text-lg font-semibold text-brand-ink">Destination and contact</h2>
-            <input value={destination} onChange={(event) => setDestination(event.target.value)} placeholder="University, college, or workplace" className="h-11 w-full rounded-xl bg-brand-mist px-3 text-sm text-brand-ink" />
-            <input value={job} onChange={(event) => setJob(event.target.value)} placeholder="Role" className="h-11 w-full rounded-xl bg-brand-mist px-3 text-sm text-brand-ink" />
-            <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="Contact for this academy" className="h-11 w-full rounded-xl bg-brand-mist px-3 text-sm text-brand-ink" />
-            <button type="button" onClick={() => send('update-destination', { destination, job, contact, kind: 'work', shareWithSchools: false }, 'Destination saved.')} className="h-11 rounded-full bg-brand-ink px-5 text-sm font-semibold text-white">Save</button>
+            <h2 className="text-lg font-semibold text-ink">Destination and contact</h2>
+            <input value={destination} onChange={(event) => setDestination(event.target.value)} placeholder="University, college, or workplace" className="h-11 w-full rounded-xl bg-wash px-3 text-sm text-ink" />
+            <input value={job} onChange={(event) => setJob(event.target.value)} placeholder="Role" className="h-11 w-full rounded-xl bg-wash px-3 text-sm text-ink" />
+            <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="Contact for this academy" className="h-11 w-full rounded-xl bg-wash px-3 text-sm text-ink" />
+            <button type="button" onClick={() => send('update-destination', { destination, job, contact, kind: 'work', shareWithSchools: false }, 'Destination saved.')} className="h-11 rounded-full bg-blue-deep px-5 text-sm font-semibold text-white">Save</button>
           </article>
           <article className="space-y-3 rounded-3xl bg-white p-4 sm:p-6">
-            <h2 className="text-lg font-semibold text-brand-ink">Mentor a current student</h2>
-            <p className="text-sm text-brand-ink">The academy approves the match. A thread with a student under 18 stays readable by the academy.</p>
-            <input value={studentId} onChange={(event) => setStudentId(event.target.value)} placeholder="Current student id" className="h-11 w-full rounded-xl bg-brand-mist px-3 text-sm text-brand-ink" />
-            <button type="button" onClick={() => send('mentor-offer', { studentId }, 'The academy has the request.')} className="h-11 rounded-full bg-brand-mid px-5 text-sm font-semibold text-white">Offer mentorship</button>
+            <h2 className="text-lg font-semibold text-ink">Mentor a current student</h2>
+            <p className="text-sm text-ink">The academy approves the match. A thread with a student under 18 stays readable by the academy.</p>
+            <input value={studentId} onChange={(event) => setStudentId(event.target.value)} placeholder="Current student id" className="h-11 w-full rounded-xl bg-wash px-3 text-sm text-ink" />
+            <button type="button" onClick={() => send('mentor-offer', { studentId }, 'The academy has the request.')} className="h-11 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white">Offer mentorship</button>
             {network.mentors.map((row) => (
-              <p key={row.id} className="text-sm text-brand-ink">{row.mentorName} with {row.studentName} · {row.status}{row.moderated ? ' · moderated' : ''}</p>
+              <p key={row.id} className="text-sm text-ink">{row.mentorName} with {row.studentName} · {row.status}{row.moderated ? ' · moderated' : ''}</p>
             ))}
           </article>
         </section>
@@ -207,19 +207,19 @@ export default function ClassNetworkPage() {
 
       {inbox.length > 0 && (
         <section className="space-y-3 rounded-3xl bg-white p-4 sm:p-6">
-          <h2 className="text-lg font-semibold text-brand-ink">Inbox</h2>
+          <h2 className="text-lg font-semibold text-ink">Inbox</h2>
           {inbox.map((note) => (
-            <article key={note.id} className="rounded-2xl bg-brand-mist px-4 py-3 text-sm text-brand-ink">
+            <article key={note.id} className="rounded-2xl bg-wash px-4 py-3 text-sm text-ink">
               <p className="font-semibold">{note.subject}</p>
               <p>{note.body}</p>
-              <p className="text-brand-ink/70">{note.fromName}</p>
+              <p className="text-ink/70">{note.fromName}</p>
             </article>
           ))}
-          <textarea value={reply} onChange={(event) => setReply(event.target.value)} placeholder="Reply to the academy" className="min-h-16 w-full rounded-2xl bg-brand-mist p-3 text-sm text-brand-ink" />
+          <textarea value={reply} onChange={(event) => setReply(event.target.value)} placeholder="Reply to the academy" className="min-h-16 w-full rounded-2xl bg-wash p-3 text-sm text-ink" />
           <button
             type="button"
             onClick={() => send('reply', { campaignId: inbox.find((note) => note.institutionId === institutionId)?.campaignId || inbox[0]?.campaignId, body: reply }, 'Reply sent.')}
-            className="h-11 rounded-full bg-brand-mid px-5 text-sm font-semibold text-white"
+            className="h-11 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white"
           >
             Reply
           </button>

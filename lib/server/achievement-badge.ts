@@ -72,7 +72,7 @@ export async function achievementBadgePng(id: string, origin: string): Promise<B
     courseTitle: 'Poket School badge',
     issuerName: 'Poket School',
     standing: 'valid',
-    accent: BRAND.ink,
+    accent: BRAND.blueDeep,
     credentialId: badge.id,
   });
   return renderBadgePng(svg, [{ keyword: 'openbadges', text: badge.verifyUrl }]);

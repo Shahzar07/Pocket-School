@@ -14,7 +14,7 @@ export const WELCOME_SPARKS = 0;
 export const ONBOARDING_TRACKS = ['student', 'parent', 'teacher', 'institution', 'independent'] as const;
 export type OnboardingTrack = (typeof ONBOARDING_TRACKS)[number];
 
-/** TODO_BRAND. Stored lessons may still say forest, gold, coral, or blue. */
+/** Stored lessons may still say forest, gold, coral, or blue. */
 export const WELCOME_HUES = ['deep', 'mid', 'bright', 'mist'] as const;
 export type WelcomeHue = (typeof WELCOME_HUES)[number];
 

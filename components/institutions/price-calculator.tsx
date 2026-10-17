@@ -110,13 +110,13 @@ export function PriceCalculator({
         {catalogue.tiers.map((tier) => {
           const selected = highlighted?.id === tier.id;
           const onLight = tier.accent === 'mist' || tier.accent === 'foam' || tier.accent === 'bright';
-          const ink = onLight ? BRAND.ink : BRAND.on;
+          const ink = onLight ? BRAND.ink : BRAND.card;
           const prices = catalogue.items.map((entry) => tierUnitMonthly(tier, entry));
           const from = prices.length ? Math.min(...prices) : 0;
           return (
             <article
               key={tier.id}
-              className={`rounded-3xl p-4 shadow-sm ${onLight ? 'border border-brand-ink/15' : ''} ${selected ? 'ring-4 ring-brand-mid ring-offset-2 ring-offset-brand-foam' : ''}`}
+              className={`rounded-3xl p-4 shadow-sm ${onLight ? 'border border-line' : ''} ${selected ? 'ring-4 ring-blue-deep ring-offset-2 ring-offset-background' : ''}`}
               style={{ background: TIER_ACCENTS[tier.accent], color: ink }}
             >
               <button type="button" className="w-full text-left" onClick={() => pickTier(tier)}>

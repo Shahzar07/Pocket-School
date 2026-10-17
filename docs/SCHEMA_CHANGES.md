@@ -871,7 +871,7 @@ The learner reads and writes these through the portfolio API. The id matches `cv
 | `name` | The learner’s name for this CV, such as Company X - Analyst |
 | `shareToken` | Optional id of a `share_links` document this learner owns |
 | `template` | `classic`, `serif`, `compact`, `deep`, `mid`, `bright`, or `mist`. Older rows may still say `forest`, `gold`, `coral`, or `blue`. The server reads those as `deep`, `mid`, `bright`, and `bright`. |
-| `accent` | Hex colour. New colourful templates start from the TODO_BRAND blue gradient in `lib/brand-theme.ts`. |
+| `accent` | Hex colour. New colourful templates start from the confirmed tokens in `lib/brand-theme.ts`: `blueDeep`, `primary`, `blueBright`, and `wash`. |
 | `font` | `sans`, `serif`, or `mono` |
 | `layout` | `one` or `two` |
 | `photo` | Whether the CV shows a photo block |
@@ -1138,19 +1138,31 @@ Each new category has an account toggle on `users/{uid}.notificationPrefs` and t
 
 ### Brand colours
 
-Harry confirmed Poket School uses a blue gradient, the same family as the mobile mockup. Forest green `#1A3C34` and gold `#C8922A` are Rochford's school colours, not Poket School's. Exact hex values are still to come. Until then `lib/brand-theme.ts` and the `--brand-*` variables in `app/globals.css` hold a placeholder marked `TODO_BRAND`.
+Poket School brand colours are the confirmed blue gradient. Forest green `#1A3C34` and gold `#C8922A` are Rochford's school colours, not Poket School's. A platform pass sets the same token names site-wide. This branch keeps a local copy in `lib/brand-theme.ts` and `app/globals.css` so screens, PDFs, and cards match that palette.
 
-| Token | Class | Role |
+The hero gradient is `135deg`, from `#1E6A83` through `#2786A4` to `#6FBBCE`. Screens use `bg-hero`, which reads `--hero-gradient`.
+
+| Token | Value | Class |
 | --- | --- | --- |
-| `ink` | `bg-brand-ink` | Deep stop |
-| `mid` | `bg-brand-mid` | Middle stop |
-| `bright` | `bg-brand-bright` | Bright stop. Use dark ink text on it |
-| `mist` | `bg-brand-mist` | Pale card wash |
-| `foam` | `bg-brand-foam` | Softer surface |
-| `on` | `text-brand-on` | Text on the deep and middle stops |
-| gradient | `bg-brand-gradient` | The brand surface. It reads `--brand-gradient` |
+| `primary` | `#2786A4` | `bg-brand-primary` |
+| `blueDeep` | `#1E6A83` | `bg-blue-deep`, `text-blue-deep`. White text clears on this fill. Small accent text uses it, because primary on white is under 4.5:1 |
+| `blueBright` | `#6FBBCE` | `bg-blue-bright`. Use ink text on it |
+| `amber` | `#E2AF4D` | Warning and accent. Use ink text. Stored as `--amber`, not a Tailwind amber scale |
+| `coral` | `#D0553F` | Danger. Stored as `--coral` |
+| `good` | `#1F8A70` | Success |
+| `bg` | `#F4F6F6` | Page background. `bg-background` already matches |
+| `wash` | `#E9F7FA` | `bg-wash` |
+| `card` | `#FFFFFF` | Card, and text on the deep and primary stops |
+| `line` | `#E7EDED` | `border-line` |
+| `ink` | `#203337` | `text-ink` |
+| `muted` | `#5F7074` | Secondary text. `--muted-ink` |
+| `teacher` | `#E9F7FA` | Role wash |
+| `parent` | `#E5F6EF` | Role wash |
+| `admin` | `#F0F5F4` | Role wash |
 
-Swap the hex values in those two files together when the mockup numbers arrive. Institution white-label colours stay on each academy (`primaryColor` and `secondaryColor`). They are not this palette. Older stored yearbook templates, CV templates, pricing-card accents, and welcome hues named `forest`, `gold`, `coral`, `cream`, or `blue` still open. New writes use the token names above.
+Plus Jakarta Sans is the UI face and Instrument Sans is the display face. Radius steps are 12, 18, 24, 32, and pill (`--radius-12`, `--radius-18`, `--radius-24`, `--radius-32`, `--radius-pill`).
+
+Institution white-label colours stay on each academy (`primaryColor` and `secondaryColor`). They are not this palette. Older stored yearbook templates, CV templates, pricing-card accents, and welcome hues named `forest`, `gold`, `coral`, `cream`, or `blue` still open. New writes use `deep`, `mid`, `bright`, and `mist`.
 
 ## Individual alumni claims
 

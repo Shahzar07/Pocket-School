@@ -36,13 +36,13 @@ export interface CatalogueItem {
   overage: SeatOverage;
 }
 
-/** TODO_BRAND. Stored catalogues may still say cream, forest, gold, blue, or coral. */
+/** Stored catalogues may still say cream, forest, gold, blue, or coral. */
 export const TIER_ACCENTS = {
-  mist: BRAND.mist,
-  foam: BRAND.foam,
-  deep: BRAND.ink,
-  mid: BRAND.mid,
-  bright: BRAND.bright,
+  mist: BRAND.wash,
+  foam: BRAND.bg,
+  deep: BRAND.blueDeep,
+  mid: BRAND.primary,
+  bright: BRAND.blueBright,
 } as const;
 
 export type TierAccent = keyof typeof TIER_ACCENTS;

@@ -8,7 +8,7 @@ import { screenPost, type ScreenedPost } from './alumni-network';
 import { BRAND, brandPdfRgb } from './brand-theme';
 import { moderateText } from './community/moderation';
 
-/** TODO_BRAND stops. Older books stored forest, gold, coral, or blue. */
+/** Older books stored forest, gold, coral, or blue. */
 export const YEARBOOK_TEMPLATES = ['deep', 'mid', 'bright', 'mist'] as const;
 export type YearbookTemplate = (typeof YEARBOOK_TEMPLATES)[number];
 
@@ -18,7 +18,7 @@ export type YearbookField = (typeof YEARBOOK_FIELDS)[number];
 export const AUDIENCES = ['classmates', 'institution', 'alumni', 'public'] as const;
 export type YearbookAudience = (typeof AUDIENCES)[number];
 
-/** TODO_BRAND. Older notes stored leaf, gold, or coral. */
+/** Older notes stored leaf, gold, or coral. */
 export const STICKERS = ['star', 'spark', 'deep', 'mid', 'bright'] as const;
 export type YearbookSticker = (typeof STICKERS)[number];
 
@@ -28,10 +28,10 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const RANK: Record<YearbookAudience, number> = { classmates: 1, institution: 2, alumni: 3, public: 4 };
 
 const INK: Record<YearbookTemplate, string> = {
-  deep: brandPdfRgb(BRAND.ink),
-  mid: brandPdfRgb(BRAND.mid),
-  bright: brandPdfRgb(BRAND.bright),
-  mist: brandPdfRgb(BRAND.ink),
+  deep: brandPdfRgb(BRAND.blueDeep),
+  mid: brandPdfRgb(BRAND.primary),
+  bright: brandPdfRgb(BRAND.blueBright),
+  mist: brandPdfRgb(BRAND.wash),
 };
 
 const LEGACY_TEMPLATE: Record<string, YearbookTemplate> = {
@@ -240,7 +240,7 @@ export function yearbookPdf(input: { template: YearbookTemplate; academy: string
     const commands = [
       `${ink} rg`,
       '0 790 595 52 re f',
-      `${template === 'bright' ? brandPdfRgb(BRAND.ink) : '1 1 1'} rg`,
+      `${template === 'bright' || template === 'mist' ? brandPdfRgb(BRAND.ink) : '1 1 1'} rg`,
       'BT /F1 16 Tf 36 808 Td (Poket School) Tj ET',
       `${brandPdfRgb(BRAND.ink)} rg`,
       'BT /F1 12 Tf 16 TL 36 760 Td',

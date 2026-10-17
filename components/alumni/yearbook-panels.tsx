@@ -6,10 +6,10 @@ import { authedFetch } from '@/lib/api-client';
 import { AUDIENCES, COUNTRY_DOTS, STICKERS, YEARBOOK_TEMPLATES, type YearbookTemplate } from '@/lib/yearbook';
 
 const COVER: Record<YearbookTemplate, string> = {
-  deep: 'bg-brand-gradient',
-  mid: 'bg-brand-mid text-white',
-  bright: 'bg-brand-bright text-brand-ink',
-  mist: 'bg-brand-mist text-brand-ink',
+  deep: 'bg-hero',
+  mid: 'bg-brand-primary text-white',
+  bright: 'bg-blue-bright text-ink',
+  mist: 'bg-wash text-ink',
 };
 
 export interface FlipSheet {
@@ -31,7 +31,7 @@ export function YearbookFlipbook({
   const page = pages[Math.min(index, pages.length - 1)] ?? pages[0];
   return (
     <div className="mx-auto w-full max-w-sm">
-      <article className={`flex min-h-80 flex-col justify-between rounded-3xl p-5 shadow-sm ${index === 0 ? COVER[template] : 'bg-white text-brand-ink'}`}>
+      <article className={`flex min-h-80 flex-col justify-between rounded-3xl p-5 shadow-sm ${index === 0 ? COVER[template] : 'bg-white text-ink'}`}>
         <div>
           <p className="text-xs uppercase tracking-wide opacity-80">{academy || 'Poket School'}</p>
           <h2 className="mt-3 text-2xl font-semibold">{page?.heading}</h2>
@@ -42,8 +42,8 @@ export function YearbookFlipbook({
         <p className="text-xs opacity-70">{index + 1} of {pages.length}</p>
       </article>
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <button type="button" onClick={() => setIndex((value) => Math.max(0, value - 1))} className="h-12 rounded-full bg-white text-sm font-semibold text-brand-ink">Previous</button>
-        <button type="button" onClick={() => setIndex((value) => Math.min(pages.length - 1, value + 1))} className="h-12 rounded-full bg-brand-ink text-sm font-semibold text-white">Next</button>
+        <button type="button" onClick={() => setIndex((value) => Math.max(0, value - 1))} className="h-12 rounded-full bg-white text-sm font-semibold text-ink">Previous</button>
+        <button type="button" onClick={() => setIndex((value) => Math.min(pages.length - 1, value + 1))} className="h-12 rounded-full bg-blue-deep text-sm font-semibold text-white">Next</button>
       </div>
     </div>
   );
@@ -53,12 +53,12 @@ export function YearbookShowcase() {
   return (
     <div className="mx-auto max-w-sm space-y-4">
       <header>
-        <h1 className="text-2xl font-semibold text-brand-ink">Alumni yearbook</h1>
-        <p className="mt-1 text-sm text-brand-ink">Oak 2026 at North Academy. A parent agrees before an under-18 page can be submitted.</p>
+        <h1 className="text-2xl font-semibold text-ink">Alumni yearbook</h1>
+        <p className="mt-1 text-sm text-ink">Oak 2026 at North Academy. A parent agrees before an under-18 page can be submitted.</p>
       </header>
       <div className="flex flex-wrap gap-2">
         {YEARBOOK_TEMPLATES.map((item) => (
-          <span key={item} className={`inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold capitalize ${item === 'deep' ? COVER.deep : 'bg-white text-brand-ink'}`}>{item}</span>
+          <span key={item} className={`inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold capitalize ${item === 'deep' ? COVER.deep : 'bg-white text-ink'}`}>{item}</span>
         ))}
       </div>
       <YearbookFlipbook
@@ -69,7 +69,7 @@ export function YearbookShowcase() {
           { heading: 'Ada L.', lines: ['Quote: Keep asking.', 'Most likely to: Open a school', 'Clubs: Debate', 'Achievement: Graduate', 'Destination: Oxford'] },
         ]}
       />
-      <article className="space-y-2 rounded-3xl bg-white p-4 text-sm text-brand-ink">
+      <article className="space-y-2 rounded-3xl bg-white p-4 text-sm text-ink">
         <h2 className="text-lg font-semibold">Ada L.</h2>
         <p>Quote: Keep asking.</p>
         <p>Most likely to: Open a school</p>
@@ -77,7 +77,7 @@ export function YearbookShowcase() {
         <p>Achievement: Graduate</p>
         <p>Destination: Oxford</p>
       </article>
-      <article className="space-y-2 rounded-3xl bg-white p-4 text-sm text-brand-ink">
+      <article className="space-y-2 rounded-3xl bg-white p-4 text-sm text-ink">
         <p className="font-semibold">Teacher message</p>
         <p>Keep the library open.</p>
         <p className="font-semibold">Principal message</p>
@@ -85,21 +85,21 @@ export function YearbookShowcase() {
         <p>Class photo.</p>
         <p>Memory: The last assembly.</p>
       </article>
-      <article className="space-y-2 rounded-3xl bg-brand-foam p-4 text-sm text-brand-ink">
+      <article className="space-y-2 rounded-3xl bg-background p-4 text-sm text-ink">
         <p className="font-semibold">Signing wall</p>
         <p>Sam T. left a note. Held for an academy moderator.</p>
         <p>Class wall · mid sticker.</p>
         <p>Direct messages stay off for anyone under 18.</p>
       </article>
-      <article className="space-y-2 rounded-3xl bg-white p-4 text-sm text-brand-ink">
+      <article className="space-y-2 rounded-3xl bg-white p-4 text-sm text-ink">
         <p className="font-semibold">Alumni wall</p>
         <p>Reunion · RSVP 6</p>
         <p>Where they are now: Malaysia 6. One country stays hidden until five people share it.</p>
-        <div className="relative h-28 rounded-2xl bg-brand-ink">
-          <span className="absolute rounded-full bg-brand-mid" style={{ left: `${COUNTRY_DOTS.Malaysia.x}%`, top: `${COUNTRY_DOTS.Malaysia.y}%`, width: 12, height: 12 }} />
+        <div className="relative h-28 rounded-2xl bg-blue-deep">
+          <span className="absolute rounded-full bg-brand-primary" style={{ left: `${COUNTRY_DOTS.Malaysia.x}%`, top: `${COUNTRY_DOTS.Malaysia.y}%`, width: 12, height: 12 }} />
         </div>
       </article>
-      <article className="space-y-2 rounded-3xl bg-white p-4 text-sm text-brand-ink">
+      <article className="space-y-2 rounded-3xl bg-white p-4 text-sm text-ink">
         <p className="font-semibold">Find alumni</p>
         <p>Search by cohort, class, destination, industry, and country. Adults who opted in can connect.</p>
         <p>Ada L. asked to connect with Grace H.</p>
@@ -180,53 +180,53 @@ export function InstitutionYearbookDesk({ institutionId }: { institutionId: stri
   return (
     <section className="space-y-4 rounded-3xl bg-white p-4 sm:p-6">
       <div>
-        <h2 className="text-xl font-semibold text-brand-ink">Yearbook</h2>
-        <p className="mt-1 text-sm text-brand-ink">Approve pages, set the lock date, then release the book. A page never occupies a seat.</p>
+        <h2 className="text-xl font-semibold text-ink">Yearbook</h2>
+        <p className="mt-1 text-sm text-ink">Approve pages, set the lock date, then release the book. A page never occupies a seat.</p>
       </div>
-      <label className="block text-sm text-brand-ink">
+      <label className="block text-sm text-ink">
         Class book
-        <select value={bookId} onChange={(event) => setBookId(event.target.value)} className="mt-1 h-12 w-full rounded-2xl bg-brand-mist px-3">
+        <select value={bookId} onChange={(event) => setBookId(event.target.value)} className="mt-1 h-12 w-full rounded-2xl bg-wash px-3">
           {desk.books.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </select>
       </label>
       <div className="flex flex-wrap gap-2">
         {YEARBOOK_TEMPLATES.map((item) => (
-          <button key={item} type="button" onClick={() => setTemplate(item)} className={`h-10 rounded-full px-4 text-sm font-semibold capitalize ${template === item ? COVER[item] : 'bg-brand-mist text-brand-ink'}`}>{item}</button>
+          <button key={item} type="button" onClick={() => setTemplate(item)} className={`h-10 rounded-full px-4 text-sm font-semibold capitalize ${template === item ? COVER[item] : 'bg-wash text-ink'}`}>{item}</button>
         ))}
       </div>
-      <label className="block text-sm text-brand-ink">
+      <label className="block text-sm text-ink">
         Lock date
-        <input value={lockOn} onChange={(event) => setLockOn(event.target.value)} placeholder="YYYY-MM-DD" className="mt-1 h-12 w-full rounded-2xl bg-brand-mist px-3" />
+        <input value={lockOn} onChange={(event) => setLockOn(event.target.value)} placeholder="YYYY-MM-DD" className="mt-1 h-12 w-full rounded-2xl bg-wash px-3" />
       </label>
-      <textarea value={teacherMessage} onChange={(event) => setTeacherMessage(event.target.value)} placeholder="Teacher message" className="min-h-20 w-full rounded-2xl bg-brand-mist p-3 text-sm" />
-      <textarea value={principalMessage} onChange={(event) => setPrincipalMessage(event.target.value)} placeholder="Principal message" className="min-h-20 w-full rounded-2xl bg-brand-mist p-3 text-sm" />
+      <textarea value={teacherMessage} onChange={(event) => setTeacherMessage(event.target.value)} placeholder="Teacher message" className="min-h-20 w-full rounded-2xl bg-wash p-3 text-sm" />
+      <textarea value={principalMessage} onChange={(event) => setPrincipalMessage(event.target.value)} placeholder="Principal message" className="min-h-20 w-full rounded-2xl bg-wash p-3 text-sm" />
       <div className="grid grid-cols-2 gap-2">
-        <button type="button" onClick={() => send('staff', { template, lockOn, principalMessage, teacherMessage })} className="h-12 rounded-full bg-brand-ink text-sm font-semibold text-white">Save book</button>
-        <button type="button" onClick={() => send('release', {})} className="h-12 rounded-full bg-brand-mid text-sm font-semibold text-white">Release</button>
+        <button type="button" onClick={() => send('staff', { template, lockOn, principalMessage, teacherMessage })} className="h-12 rounded-full bg-blue-deep text-sm font-semibold text-white">Save book</button>
+        <button type="button" onClick={() => send('release', {})} className="h-12 rounded-full bg-brand-primary text-sm font-semibold text-white">Release</button>
       </div>
-      <button type="button" onClick={() => send('pdf', { viewer: 'classmates' })} className="h-12 w-full rounded-full bg-brand-mid text-sm font-semibold text-white">Download PDF</button>
-      <label className="block text-sm text-brand-ink">
+      <button type="button" onClick={() => send('pdf', { viewer: 'classmates' })} className="h-12 w-full rounded-full bg-brand-primary text-sm font-semibold text-white">Download PDF</button>
+      <label className="block text-sm text-ink">
         Class photo caption
-        <input value={caption} onChange={(event) => setCaption(event.target.value)} className="mt-1 h-12 w-full rounded-2xl bg-brand-mist px-3" />
+        <input value={caption} onChange={(event) => setCaption(event.target.value)} className="mt-1 h-12 w-full rounded-2xl bg-wash px-3" />
       </label>
-      <button type="button" onClick={() => send('gallery', { caption, imageUrl: '' })} className="h-12 rounded-full bg-white px-5 text-sm font-semibold text-brand-ink ring-1 ring-brand-ink">Add to gallery</button>
+      <button type="button" onClick={() => send('gallery', { caption, imageUrl: '' })} className="h-12 rounded-full bg-white px-5 text-sm font-semibold text-ink ring-1 ring-blue-deep">Add to gallery</button>
       <div className="space-y-2">
         {(book?.pages ?? []).map((page) => (
-          <div key={page.id} className="rounded-2xl bg-brand-mist px-4 py-3 text-sm text-brand-ink">
+          <div key={page.id} className="rounded-2xl bg-wash px-4 py-3 text-sm text-ink">
             <p className="font-semibold">{page.status}{page.parentApproved ? ' · parent agreed' : ''}</p>
             <p>{page.quote}</p>
             {page.status !== 'approved' && (
-              <button type="button" onClick={() => send('approve', { studentId: page.id })} className="mt-2 h-10 rounded-full bg-brand-ink px-4 text-sm font-semibold text-white">Approve</button>
+              <button type="button" onClick={() => send('approve', { studentId: page.id })} className="mt-2 h-10 rounded-full bg-blue-deep px-4 text-sm font-semibold text-white">Approve</button>
             )}
           </div>
         ))}
         {(book?.held ?? []).map((row) => (
-          <div key={row.id} className="rounded-2xl border border-brand-mid px-4 py-3 text-sm text-brand-ink">
+          <div key={row.id} className="rounded-2xl border border-blue-deep px-4 py-3 text-sm text-ink">
             <p className="font-semibold">{row.authorName}</p>
             <p>{row.body}</p>
             <div className="mt-2 flex gap-2">
-              <button type="button" onClick={() => send('moderate', { queueId: row.id, release: true })} className="h-10 rounded-full bg-brand-ink px-4 text-sm font-semibold text-white">Release</button>
-              <button type="button" onClick={() => send('moderate', { queueId: row.id, release: false })} className="h-10 rounded-full bg-white px-4 text-sm font-semibold text-brand-ink">Block</button>
+              <button type="button" onClick={() => send('moderate', { queueId: row.id, release: true })} className="h-10 rounded-full bg-blue-deep px-4 text-sm font-semibold text-white">Release</button>
+              <button type="button" onClick={() => send('moderate', { queueId: row.id, release: false })} className="h-10 rounded-full bg-white px-4 text-sm font-semibold text-ink">Block</button>
             </div>
           </div>
         ))}
@@ -238,7 +238,7 @@ export function InstitutionYearbookDesk({ institutionId }: { institutionId: stri
           sheets={(book.portraits ?? []).map((page) => ({ heading: page.initials, lines: page.lines }))}
         />
       )}
-      <p className="text-xs text-brand-ink/70">Audiences: {AUDIENCES.join(', ')}. Stickers: {STICKERS.join(', ')}.</p>
+      <p className="text-xs text-ink/70">Audiences: {AUDIENCES.join(', ')}. Stickers: {STICKERS.join(', ')}.</p>
     </section>
   );
 }

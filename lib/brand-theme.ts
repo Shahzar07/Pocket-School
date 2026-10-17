@@ -1,33 +1,62 @@
 /**
- * TODO_BRAND
- * Placeholder Poket School palette until Harry sends the mockup hex values.
- * The brand is a blue gradient. Forest green #1A3C34 and gold #C8922A are
- * Rochford's school colours, not Poket School's. Institution white-label
- * colours stay on each academy. Swap these values and the matching --brand-*
- * variables in app/globals.css together.
+ * Poket School brand tokens.
+ * A platform pass sets the same names site-wide. These values are the local
+ * copy for screens, PDFs, and cards on this branch. Forest green and gold
+ * are Rochford school colours, not this palette. Institution white-label
+ * colours stay on each academy.
+ *
+ * Plus Jakarta Sans is the UI face and Instrument Sans is the display face.
+ * Radius steps are 12, 18, 24, 32, and pill.
  */
 
-export const BRAND_PALETTE = 'TODO_BRAND' as const;
-
 export const BRAND = {
-  /** TODO_BRAND deep end of the gradient. */
-  ink: '#0B3A6E',
-  /** TODO_BRAND middle stop. */
-  mid: '#1B6FE0',
-  /** TODO_BRAND bright end. */
-  bright: '#4C9BFF',
-  /** TODO_BRAND pale card wash. */
-  mist: '#E8F2FF',
-  /** TODO_BRAND softer surface. */
-  foam: '#F5F9FF',
-  /** TODO_BRAND text on the deep and middle stops. */
-  on: '#FFFFFF',
+  /** Main brand blue. */
+  primary: '#2786A4',
+  /** Deep stop of the hero gradient. White text clears on this. */
+  blueDeep: '#1E6A83',
+  /** Bright stop. Use ink text on it. */
+  blueBright: '#6FBBCE',
+  /** Warning and accent. Use ink text on it. */
+  amber: '#E2AF4D',
+  /** Danger. */
+  coral: '#D0553F',
+  /** Success. */
+  good: '#1F8A70',
+  /** Page background. */
+  bg: '#F4F6F6',
+  /** Pale brand wash. */
+  wash: '#E9F7FA',
+  /** Card and text on the deep and primary stops. */
+  card: '#FFFFFF',
+  /** Hairline. */
+  line: '#E7EDED',
+  /** Body text. */
+  ink: '#203337',
+  /** Secondary text. */
+  muted: '#5F7074',
+  /** Role washes. */
+  teacher: '#E9F7FA',
+  parent: '#E5F6EF',
+  admin: '#F0F5F4',
 } as const;
 
-/** TODO_BRAND. Screens use the bg-brand-gradient utility, which reads --brand-gradient. */
-export const BRAND_GRADIENT = 'linear-gradient(135deg, #0B3A6E 0%, #1B6FE0 52%, #4C9BFF 100%)';
+/** Hero surface. Screens use the bg-hero utility, which reads --hero-gradient. */
+export const HERO_GRADIENT = 'linear-gradient(135deg, #1E6A83 0%, #2786A4 50%, #6FBBCE 100%)';
 
-export type BrandInk = keyof typeof BRAND;
+export const RADIUS = {
+  sm: 12,
+  md: 18,
+  lg: 24,
+  xl: 32,
+  pill: 999,
+} as const;
+
+export const FONT = {
+  sans: 'Plus Jakarta Sans',
+  display: 'Instrument Sans',
+} as const;
+
+export type BrandToken = keyof typeof BRAND;
 
 /** PDF colour operator. 1 stays `1` so a full channel matches the existing files. */
 export function brandPdfRgb(hex: string): string {

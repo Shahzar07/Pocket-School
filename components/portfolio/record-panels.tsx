@@ -62,7 +62,7 @@ export function RecordPanels({
       </div>
       <div className="mt-4 flex flex-wrap gap-2 text-xs">
         {CV_TEMPLATES.map((template) => (
-          <span key={template} className={`rounded-full px-3 py-1 ${consent.template === template ? 'bg-brand-ink text-white' : 'bg-brand-mist text-brand-ink'}`}>
+          <span key={template} className={`rounded-full px-3 py-1 ${consent.template === template ? 'bg-blue-deep text-white' : 'bg-wash text-ink'}`}>
             {template} CV
           </span>
         ))}

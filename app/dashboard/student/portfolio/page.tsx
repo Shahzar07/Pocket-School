@@ -144,11 +144,11 @@ export default function StudentPortfolioPage() {
         <LinkedInCopy name={record.name} studentNumber={record.studentNumber} items={sharedItems} />
         <JobTracker items={sharedItems} />
         </>
-      ) : <p className="text-sm text-brand-ink">Opening your record…</p>}
+      ) : <p className="text-sm text-ink">Opening your record…</p>}
 
       <Panel>
-        <h2 className="font-heading text-2xl text-brand-ink">Add an achievement</h2>
-        <p className="mt-1 text-sm text-brand-ink/80">Activities, awards, competitions, volunteering, sports, leadership, work, skills, languages, and links. These stay marked self-reported.</p>
+        <h2 className="font-heading text-2xl text-ink">Add an achievement</h2>
+        <p className="mt-1 text-sm text-ink/80">Activities, awards, competitions, volunteering, sports, leadership, work, skills, languages, and links. These stay marked self-reported.</p>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <label className="text-sm">Kind
             <select value={kind} onChange={(event) => setKind(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3">
@@ -165,10 +165,10 @@ export default function StudentPortfolioPage() {
             <input value={evidenceLink} onChange={(event) => setEvidenceLink(event.target.value)} placeholder="https://" className="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3" />
           </label>
         </div>
-        <p className="mt-2 text-xs text-brand-ink/70">A file stays in your portfolio folder under media, named for this item. The link, when you add one, starts with https.</p>
+        <p className="mt-2 text-xs text-ink/70">A file stays in your portfolio folder under media, named for this item. The link, when you add one, starts with https.</p>
         <button
           type="button"
-          className="mt-4 h-11 rounded-full bg-brand-ink px-5 text-sm font-semibold text-white"
+          className="mt-4 h-11 rounded-full bg-blue-deep px-5 text-sm font-semibold text-white"
           onClick={() => {
             void authedFetch('/api/portfolio', {
               method: 'POST',
@@ -191,7 +191,7 @@ export default function StudentPortfolioPage() {
       <AttendedSchoolPanel />
 
       <Panel>
-        <h2 className="font-heading text-2xl text-brand-ink">Sharing</h2>
+        <h2 className="font-heading text-2xl text-ink">Sharing</h2>
         <div className="mt-3 space-y-2 text-sm">
           <label className="flex items-center gap-2"><input type="checkbox" checked={consent.publicPortfolio} onChange={(event) => saveConsent({ publicPortfolio: event.target.checked })} /> Public portfolio</label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={consent.sharePortfolioWithSchools} onChange={(event) => saveConsent({ sharePortfolioWithSchools: event.target.checked })} /> Share the portfolio with former schools</label>
@@ -216,7 +216,7 @@ export default function StudentPortfolioPage() {
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           {CV_TEMPLATES.map((template) => (
-            <button key={template} type="button" onClick={() => saveConsent({ template })} className={`h-10 rounded-full px-4 text-sm ${consent.template === template ? 'bg-brand-ink text-white' : 'bg-brand-mist text-brand-ink'}`}>
+            <button key={template} type="button" onClick={() => saveConsent({ template })} className={`h-10 rounded-full px-4 text-sm ${consent.template === template ? 'bg-blue-deep text-white' : 'bg-wash text-ink'}`}>
               {template}
             </button>
           ))}
@@ -224,9 +224,9 @@ export default function StudentPortfolioPage() {
       </Panel>
 
       <Panel>
-        <h2 className="font-heading text-2xl text-brand-ink">Summary and downloads</h2>
+        <h2 className="font-heading text-2xl text-ink">Summary and downloads</h2>
         <div className="mt-4 flex flex-wrap gap-2">
-          <button type="button" className="h-11 rounded-full bg-brand-mid px-5 text-sm font-semibold text-white" onClick={() => {
+          <button type="button" className="h-11 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white" onClick={() => {
             void authedFetch('/api/portfolio', { method: 'POST', body: JSON.stringify({ action: 'summary' }) })
               .then((data) => {
                 setRecord((current) => current ? {
@@ -239,7 +239,7 @@ export default function StudentPortfolioPage() {
           }}>
             Draft with ET AI
           </button>
-          <button type="button" className="h-11 rounded-full border border-brand-ink px-5 text-sm font-semibold text-brand-ink" onClick={() => {
+          <button type="button" className="h-11 rounded-full border border-blue-deep px-5 text-sm font-semibold text-ink" onClick={() => {
             void authedFetch('/api/portfolio', { method: 'POST', body: JSON.stringify({ action: 'save-summary' }) })
               .then((data) => {
                 setRecord((current) => current ? {
@@ -254,7 +254,7 @@ export default function StudentPortfolioPage() {
             Save this wording
           </button>
           {(['cv', 'json', 'linkedin'] as const).map((format) => (
-            <button key={format} type="button" className="h-11 rounded-full bg-brand-ink px-5 text-sm font-semibold text-white" onClick={() => {
+            <button key={format} type="button" className="h-11 rounded-full bg-blue-deep px-5 text-sm font-semibold text-white" onClick={() => {
               void authedFetch('/api/portfolio', { method: 'POST', body: JSON.stringify({ action: 'export', format, template: consent.template }) })
                 .then((data) => {
                   const filename = typeof data.filename === 'string' ? data.filename : 'portfolio';
@@ -280,7 +280,7 @@ export default function StudentPortfolioPage() {
       </Panel>
 
       <Panel>
-        <h2 className="font-heading text-2xl text-brand-ink">Next step</h2>
+        <h2 className="font-heading text-2xl text-ink">Next step</h2>
         <p className="mt-1 text-sm leading-relaxed">Record a university, college, institution, or workplace. Former schools see a count. Your name is included only if you opt in.</p>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <label className="text-sm">Kind
@@ -306,7 +306,7 @@ export default function StudentPortfolioPage() {
           <label className="flex items-center gap-2"><input type="checkbox" checked={shareName} onChange={(event) => setShareName(event.target.checked)} /> Share my name with that school</label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={shareTestimonial} onChange={(event) => setShareTestimonial(event.target.checked)} /> Share this testimonial</label>
         </div>
-        <button type="button" className="mt-4 h-11 rounded-full bg-brand-ink px-5 text-sm font-semibold text-white" onClick={() => {
+        <button type="button" className="mt-4 h-11 rounded-full bg-blue-deep px-5 text-sm font-semibold text-white" onClick={() => {
           void authedFetch('/api/portfolio', {
             method: 'POST',
             body: JSON.stringify({

@@ -130,7 +130,7 @@ test('the yearbook download is a printable A4 PDF in the academy colour', () => 
   assert.equal(text.startsWith('%PDF-1.4'), true);
   assert.match(text, /\/Count 2/);
   assert.match(text, /0 0 595 842/);
-  assert.match(text, /0\.043 0\.227 0\.431/);
+  assert.match(text, /0\.118 0\.416 0\.514/);
   assert.match(text, /Oak 2026/);
   assert.match(text, /Ada L\./);
 });

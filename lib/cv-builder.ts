@@ -13,7 +13,7 @@ import {
 } from './portfolio';
 
 export const CLASSIC_TEMPLATES = ['classic', 'serif', 'compact'] as const;
-/** TODO_BRAND. Older versions stored forest, gold, coral, or blue. */
+/** Older versions stored forest, gold, coral, or blue. */
 export const COLOURFUL_TEMPLATES = ['deep', 'mid', 'bright', 'mist'] as const;
 export const CV_DESIGN_TEMPLATES = [...CLASSIC_TEMPLATES, ...COLOURFUL_TEMPLATES] as const;
 export type CvDesignTemplate = (typeof CV_DESIGN_TEMPLATES)[number];
@@ -29,10 +29,10 @@ const TEMPLATE_ACCENT: Record<CvDesignTemplate, string> = {
   classic: BRAND.ink,
   serif: BRAND.ink,
   compact: BRAND.ink,
-  deep: BRAND.ink,
-  mid: BRAND.mid,
-  bright: BRAND.bright,
-  mist: BRAND.mist,
+  deep: BRAND.blueDeep,
+  mid: BRAND.primary,
+  bright: BRAND.blueBright,
+  mist: BRAND.wash,
 };
 
 /** Stored CV versions may still name Rochford swatches. */

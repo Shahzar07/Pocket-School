@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit } from '@/lib/api-guard';
-import { BRAND } from '@/lib/brand-theme';
+import { BRAND, FONT } from '@/lib/brand-theme';
 import { isAdminConfigured } from '@/lib/firebase-admin';
 import { unsubscribeAlumni } from '@/lib/server/alumni-network-store';
 
 export const dynamic = 'force-dynamic';
 
 function page(title: string, message: string, status: number): NextResponse {
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title></head><body style="margin:0;background:${BRAND.foam};color:${BRAND.ink};font-family:Georgia,serif"><main style="max-width:36rem;margin:4rem auto;padding:1.5rem"><h1 style="font-size:1.6rem">${title}</h1><p>${message}</p></main></body></html>`;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title></head><body style="margin:0;background:${BRAND.bg};color:${BRAND.ink};font-family:${FONT.sans},${FONT.display},sans-serif"><main style="max-width:36rem;margin:4rem auto;padding:1.5rem"><h1 style="font-size:1.6rem;font-family:${FONT.display},sans-serif">${title}</h1><p>${message}</p></main></body></html>`;
   return new NextResponse(html, { status, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 }
 
