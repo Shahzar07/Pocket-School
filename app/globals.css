@@ -6,9 +6,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    /* Was 'Instrument Serif', which was never loaded — every `font-heading`
-     * fell back to a generic browser serif. */
-    --font-heading: var(--font-display), var(--font-sans), system-ui, sans-serif;
+    /* Headings are Plus Jakarta Sans ExtraBold, the same face as the body. */
+    --font-heading: var(--font-sans), system-ui, sans-serif;
     --font-sans: var(--font-sans);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
@@ -61,8 +60,8 @@
     --shadow-glow-hover: 0 0 0 1px rgba(30,106,131,0.25), 0 8px 40px rgba(30,106,131,0.18);
     /* Cooler and softer than a neutral drop — matches the homepage's
      * 0 3px 6px #23485812 card lift. */
-    --shadow-card: 0 1px 2px 0 rgba(35,72,88,0.04), 0 3px 10px 0 rgba(35,72,88,0.06);
-    --shadow-card-hover: 0 2px 6px 0 rgba(35,72,88,0.07), 0 14px 32px 0 rgba(35,72,88,0.10);
+    --shadow-card: 0 1px 2px rgba(32, 51, 55, 0.05), 0 14px 36px rgba(30, 106, 131, 0.14);
+    --shadow-card-hover: 0 2px 6px rgba(32, 51, 55, 0.06), 0 22px 48px rgba(30, 106, 131, 0.18);
 }
 
 /* ── Product palette ──────────────────────────────────────────
@@ -109,12 +108,16 @@
     --ps-cyan-soft: rgba(63, 224, 208, 0.15);
     --ps-cyan-ink: #203337;
     --ps-cyan-border: #1E6A83;
-    /* Deprecated mustard. Text aliases to brand blue so existing labels stay
-     * above 4.5:1. Fills alias to the cyan swatch. */
-    --ps-amber: var(--ps-cyan-text);
-    --ps-on-amber: var(--ps-cyan-ink);
-    --ps-amber-fill: var(--ps-cyan);
-    --ps-amber-soft: var(--ps-cyan-soft);
+    /* Primary buttons. Ink on the fill is about 6.7:1. White on it is about 2:1. */
+    --ps-amber: #E2AF4D;
+    --ps-on-amber: #3D2C08;
+    --ps-amber-fill: #E2AF4D;
+    --ps-amber-soft: rgba(226, 175, 77, 0.18);
+    --ps-glow: rgba(226, 175, 77, 0.45);
+    --ps-blob: rgba(111, 187, 206, 0.55);
+    --ps-blob-warm: rgba(226, 175, 77, 0.40);
+    --ps-glass: rgba(255, 255, 255, 0.78);
+    --ps-card-edge: #D5E6EA;
     /* Dashboard accents. Inks are AA text on white; on-fill is AA on the ink.
      * Coral brand swatch is a fill (--ps-coral-fill), not this ink. */
     --ps-teal: #1E6A83;
@@ -236,11 +239,16 @@
     --ps-cyan-soft: rgba(63, 224, 208, 0.15);
     --ps-cyan-ink: #203337;
     --ps-cyan-border: #1E6A83;
-    /* Deprecated mustard aliases. See :root. */
-    --ps-amber: var(--ps-cyan-text);
-    --ps-on-amber: var(--ps-cyan-ink);
-    --ps-amber-fill: var(--ps-cyan);
-    --ps-amber-soft: var(--ps-cyan-soft);
+    --ps-amber: #E2AF4D;
+    --ps-on-amber: #3D2C08;
+    --ps-amber-fill: #E2AF4D;
+    --ps-amber-soft: rgba(226, 175, 77, 0.22);
+    --ps-glow: rgba(111, 187, 206, 0.55);
+    --ps-blob: rgba(39, 134, 164, 0.65);
+    --ps-blob-warm: rgba(226, 175, 77, 0.32);
+    --ps-glass: rgba(18, 30, 34, 0.72);
+    --ps-card-edge: #2A4E5A;
+    --shadow-card: 0 0 0 1px #2A4E5A, 0 18px 42px rgba(111, 187, 206, 0.28);
     --ps-teal: #6FBBCE;
     --ps-on-teal: #0B1417;
     --ps-on-cyan: #203337;
@@ -383,7 +391,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .blob-1, .blob-2, .blob-3, .ps-skeleton, .marquee-track, .c5-animated-gradient { animation: none; }
+  .blob-1, .blob-2, .blob-3, .ps-blob, .ps-blob-warm, .ps-skeleton, .marquee-track, .c5-animated-gradient { animation: none; }
   .card-glow { transition: none; }
   html { scroll-behavior: auto; }
   *, *::before, *::after {
@@ -394,14 +402,94 @@
   }
 }
 
-/* Headings
- * The homepage's refinement comes from weight 500 with tight tracking rather
- * than a heavy weight, so `font-heading` carries the same treatment app-wide
- * and the product matches the marketing site. */
+/* Headings are Plus Jakarta Sans ExtraBold. */
 .font-heading {
   font-family: var(--font-heading);
-  font-weight: 500;
+  font-weight: 800;
   letter-spacing: -0.035em;
+}
+
+.ps-hero-panel {
+  position: relative;
+  overflow: hidden;
+  color: #ffffff;
+  background: #1E6A83;
+}
+
+.ps-hero-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.ps-hero-panel .ps-blob,
+.ps-hero-panel .ps-blob-warm {
+  z-index: 0;
+}
+
+.ps-hero-panel::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0 0 0 58%;
+  background: linear-gradient(90deg, transparent, #2786A4 45%, #6FBBCE);
+  pointer-events: none;
+}
+
+.dark .ps-hero-panel {
+  color: #E8EFEF;
+  background: var(--ps-hero);
+}
+
+.dark .ps-hero-panel::after {
+  background: linear-gradient(90deg, transparent, rgba(111, 187, 206, 0.55));
+}
+
+.ps-surface {
+  border: 1px solid var(--ps-card-edge);
+  border-radius: 24px;
+  background: var(--ps-glass);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(16px);
+}
+
+.ps-blob,
+.ps-blob-warm {
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+  filter: blur(24px);
+  animation: ps-blob-drift 14s ease-in-out infinite alternate;
+}
+
+.ps-blob {
+  width: 180px;
+  height: 180px;
+  background: var(--ps-blob);
+  inset-inline-end: -24px;
+  top: -48px;
+}
+
+.ps-blob-warm {
+  width: 150px;
+  height: 150px;
+  background: var(--ps-blob-warm);
+  inset-inline-start: 28%;
+  bottom: -56px;
+  animation-delay: -5s;
+}
+
+@keyframes ps-blob-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(12px, -16px, 0) scale(1.08); }
+}
+
+.ps-rise {
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.ps-rise:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-card-hover);
 }
 h1.font-heading, .font-heading.text-4xl, .font-heading.text-5xl {
   letter-spacing: -0.045em;

@@ -7,6 +7,7 @@
 .home h2,
 .home h3 {
   font-family: var(--font-heading), var(--font-sans), sans-serif;
+  font-weight: 800;
   letter-spacing: -0.045em;
 }
 
@@ -26,13 +27,19 @@
 
 .clouds {
   position: absolute;
-  inset: 0;
+  inset: -8%;
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(ellipse at 12% 20%, rgba(255, 255, 255, 0.35), transparent 42%),
-    radial-gradient(ellipse at 80% 10%, rgba(255, 255, 255, 0.2), transparent 36%),
-    radial-gradient(ellipse at 70% 80%, rgba(255, 255, 255, 0.16), transparent 40%);
+    radial-gradient(ellipse 42% 55% at 14% 22%, var(--ps-blob), transparent 70%),
+    radial-gradient(ellipse 48% 52% at 86% 74%, var(--ps-blob-warm), transparent 68%),
+    radial-gradient(ellipse at 70% 12%, rgba(255, 255, 255, 0.22), transparent 36%);
+  animation: drift 16s ease-in-out infinite alternate;
+}
+
+@keyframes drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(-2%, 3%, 0) scale(1.05); }
 }
 
 .primary,
@@ -51,19 +58,20 @@
 }
 
 .primary {
-  background: var(--ps-cyan);
-  color: var(--ps-cyan-ink);
-  border: 1px solid var(--ps-cyan-border);
+  background: var(--ps-amber);
+  color: var(--ps-on-amber);
+  border: 1px solid var(--ps-on-amber);
+  box-shadow: 0 10px 24px var(--ps-glow);
 }
 
 .primary:hover {
-  background: var(--ps-cyan-strong);
+  filter: brightness(0.97);
 }
 
 .secondary {
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  color: white;
-  background: rgba(255, 255, 255, 0.08);
+  border: 0;
+  color: var(--ps-blue-deep);
+  background: var(--ps-mist);
 }
 
 .secondary:hover {

@@ -77,17 +77,14 @@ export function HomeView({
 
   return (
     <div className="dash-kit space-y-5" data-dashboard-home={role}>
-      <header
-        className="relative overflow-hidden rounded-[24px] px-5 py-6 text-primary-foreground"
-        style={{
-          background: 'linear-gradient(100deg, color-mix(in srgb, var(--ps-blue-deep) 94%, transparent) 0%, color-mix(in srgb, var(--ps-blue-deep) 72%, transparent) 55%, color-mix(in srgb, var(--ps-blue-deep) 40%, transparent) 100%), var(--ps-hero)',
-        }}
-      >
-        <p className="text-sm font-medium">{greetingFor(hour)}</p>
-        <h1 className="font-heading text-3xl tracking-tight">{name}</h1>
-        <p className="mt-1 max-w-xl text-sm">{home.blurb}</p>
+      <header className="ps-hero-panel rounded-[24px] px-5 py-6 shadow-[var(--shadow-card)]">
+        <span className="ps-blob" style={{ insetInlineStart: 'auto' }} aria-hidden />
+        <span className="ps-blob-warm" style={{ insetInlineStart: 'auto', insetInlineEnd: '8%' }} aria-hidden />
+        <p className="relative text-sm font-medium">{greetingFor(hour)}</p>
+        <h1 className="relative font-heading text-4xl tracking-tight">{name}</h1>
+        <p className="relative mt-1 max-w-xl text-sm">{home.blurb}</p>
         {children.length > 0 ? (
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Your children">
+          <div className="relative mt-4 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Your children">
             {children.map(child => {
               const active = child.id === selected?.id;
               return (
@@ -106,7 +103,7 @@ export function HomeView({
             })}
           </div>
         ) : null}
-        <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+        <div className="relative mt-4 flex gap-2 overflow-x-auto pb-1">
           {home.tasks.map(task => (
             <Link
               key={task.id}
@@ -126,7 +123,7 @@ export function HomeView({
             New here? The onboarding course walks through these tiles. Start with the three tasks above.
           </p>
           <div className="flex gap-2">
-            <Link href="/onboarding" className="inline-flex min-h-12 items-center rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground">
+            <Link href="/onboarding" className="inline-flex min-h-12 items-center rounded-full border border-[var(--ps-on-amber)] bg-[var(--ps-amber)] px-4 text-sm font-semibold text-[var(--ps-on-amber)] shadow-[0_8px_22px_var(--ps-glow)]">
               Open the course
             </Link>
             <button type="button" onClick={onDismissCoach} className="inline-flex min-h-12 items-center rounded-full border border-border px-4 text-sm font-semibold">
@@ -202,7 +199,7 @@ export function HomeView({
         <div className="space-y-3">
           {showMap ? <InsightMap /> : null}
           {badges.length > 0 ? (
-            <section className="rounded-[24px] border border-border bg-card p-4">
+            <section className="ps-surface p-4">
               <h2 className="font-heading text-xl">Recognition</h2>
               <p className="mt-1 text-sm text-muted-foreground">Shown to you, and to your school when you have earned it. Never used to rank people.</p>
               <div className="mt-3 grid gap-2">

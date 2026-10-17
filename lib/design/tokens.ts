@@ -6,8 +6,10 @@
  * They stay off the Poket School brand. A white-label academy may set its
  * own `branding.primaryColor`.
  *
- * Cyan is the accent fill. It is not a text colour on white (1.64:1).
+ * Cyan is an accent fill. It is not a text colour on white (1.64:1).
  * Text and links on light backgrounds use brand blue `#1E6A83`.
+ * Primary buttons are amber `#E2AF4D` with ink `#3D2C08` (about 6.7:1).
+ * White on that amber is about 2:1, so it is never the label.
  */
 
 export interface RoleWash {
@@ -30,6 +32,31 @@ export const CYAN = {
   ink: '#203337',
   /** 1px edge. The fill alone is 1.64:1 against white. */
   border: '#1E6A83',
+} as const;
+
+/** Primary call-to-action. Ink on the fill clears WCAG AA. White does not. */
+export const AMBER = {
+  fill: '#E2AF4D',
+  ink: '#3D2C08',
+  soft: 'rgba(226, 175, 77, 0.18)',
+} as const;
+
+/** Mesh, glass, and card edge. These sit on the locked hero stops. */
+export const overlay = {
+  light: {
+    glow: 'rgba(226, 175, 77, 0.45)',
+    blob: 'rgba(111, 187, 206, 0.55)',
+    blobWarm: 'rgba(226, 175, 77, 0.40)',
+    glass: 'rgba(255, 255, 255, 0.78)',
+    cardEdge: '#D5E6EA',
+  },
+  dark: {
+    glow: 'rgba(111, 187, 206, 0.55)',
+    blob: 'rgba(39, 134, 164, 0.65)',
+    blobWarm: 'rgba(226, 175, 77, 0.32)',
+    glass: 'rgba(18, 30, 34, 0.72)',
+    cardEdge: '#2A4E5A',
+  },
 } as const;
 
 export interface Palette {
@@ -133,6 +160,7 @@ export function heroGradient(stops: readonly string[]): string {
   return `linear-gradient(${hero.angle}deg, ${stops[0]} 0%, ${stops[1]} 50%, ${stops[2]} 100%)`;
 }
 
+/** Cards use the 24px step. The app note says 22px; the website keeps 24. */
 export const radius = {
   sm: 12,
   md: 18,
@@ -143,7 +171,7 @@ export const radius = {
 
 export const font = {
   body: 'Plus Jakarta Sans',
-  display: 'Instrument Sans',
+  display: 'Plus Jakarta Sans',
 } as const;
 
 /** Rochford's International School. Not the Poket School brand. */

@@ -87,7 +87,7 @@ test('hero, radius, and brand fonts', () => {
   );
   assert.deepEqual(radius, { sm: 12, md: 18, lg: 24, xl: 32, pill: 999 });
   assert.equal(font.body, 'Plus Jakarta Sans');
-  assert.equal(font.display, 'Instrument Sans');
+  assert.equal(font.display, 'Plus Jakarta Sans');
 });
 
 test('Rochford school colours stay on the ROCHFORD constant', () => {
@@ -122,6 +122,7 @@ test('globals.css and the root layout publish the palette', () => {
 
   const layout = readFileSync(path.join(ROOT, 'app/layout.tsx'), 'utf8');
   assert.match(layout, /Plus_Jakarta_Sans/);
-  assert.match(layout, /Instrument_Sans/);
+  assert.match(layout, /weight: \['400', '500', '600', '700', '800'\]/);
+  assert.doesNotMatch(layout, /Instrument_Sans/);
   assert.doesNotMatch(layout, /Instrument_Serif/);
 });
