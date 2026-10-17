@@ -38,7 +38,7 @@ export default function InstitutionAlumniPage() {
       }}
       onMark={(email) => {
         void authedFetch('/api/institutions/alumni', { method: 'POST', body: JSON.stringify({ action: 'mark', institutionId, people: [{ email }] }) })
-          .then(() => toast.success('The leaver is on the alumni record. Academy access stays for the grace period.'))
+          .then(() => toast.success('The leaver is an alumnus on an individual account. The seat is free and the tier was reviewed.'))
           .catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not mark that person.'));
       }}
       onNewsletter={(note) => {

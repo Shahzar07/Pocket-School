@@ -9,11 +9,11 @@ const COURSES = [
 ];
 
 export default function AlumniShelfPreview() {
-  const shelf = completedShelf(COURSES, { subscriptionActive: false, institutionAccess: 'grace' });
+  const shelf = completedShelf(COURSES, { subscriptionActive: false, institutionAccess: 'ended' });
   const recommendations = recommendNext({
     level: 'IGCSE',
     finishedIds: ['igcse-maths'],
-    atInstitution: true,
+    atInstitution: false,
     options: [
       { id: 'alevel-maths', title: 'A-Level Mathematics', level: 'A-Level', programmeId: 'alevel', access: 'subscription' },
       { id: 'alevel-lab', title: 'A-Level lab pack', level: 'A-Level', programmeId: 'alevel', access: 'a_la_carte' },
@@ -25,7 +25,8 @@ export default function AlumniShelfPreview() {
         <CompletedShelf completed={shelf.completed} recommendations={recommendations} onOpen={() => undefined} onEnrol={() => undefined} onAsk={() => undefined} />
         <AlumniOfferCard
           name="Ada Lovelace"
-          graceEndsOn="16 November 2026"
+          graceEndsOn=""
+          reviewOpen={false}
           discount={0.15}
           studentNumber="PS-ABCD-2345"
           publicOn

@@ -19,9 +19,9 @@ export default function StudentAcademyPage() {
     try {
       const data = await authedFetch('/api/institutions/join', { method: 'POST', body: JSON.stringify({ action: 'leave' }) });
       if (user) await fetchProfile(user.uid);
-      toast.success(typeof data.graceEndsOn === 'string'
-        ? `You are an alumnus. Academy courses stay open until ${data.graceEndsOn}, then the seat is free. Your record stays.`
-        : 'You are an alumnus. Your record stays.');
+      toast.success(data.institutionAccess === 'grace' && typeof data.graceEndsOn === 'string'
+        ? `You are an alumnus on an individual account. The seat is free. Academy courses stay open to review until ${data.graceEndsOn}. Your records stay.`
+        : 'You are an alumnus on an individual account. The seat is free. Your profile, student number, certificates, badges, transcript, and progress stay.');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Could not leave the academy.');
     } finally {
@@ -34,12 +34,13 @@ export default function StudentAcademyPage() {
       <DashHeader
         eyebrow="Student"
         title="My academy"
-        description="An individual account can join an academy later. Progress stays. Leaving opens an alumni record: academy courses stay for the grace period, then the seat is free."
+        description="An individual account can join an academy later. Progress stays. Leaving moves academy courses to Completed, frees the seat, and keeps this account as an individual with the alumni offer."
       />
       {(profile?.alumniOf || profile?.institutionAccess === 'grace' || profile?.institutionAccess === 'ended') && (
         <AlumniOfferCard
           name={profile?.name ?? ''}
           graceEndsOn={profile?.alumniGraceEnds ?? ''}
+          reviewOpen={profile?.institutionAccess === 'grace'}
           discount={profile?.alumniDiscount ?? 0}
           studentNumber={profile?.studentNumber ?? ''}
           publicOn={profile?.alumniPublic === true}

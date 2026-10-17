@@ -9,6 +9,7 @@ import {
   defaultAlumniPolicy,
   dueToLeave,
   holderDeletion,
+  graduationOutcome,
   openAlumni,
   parentFinalSummary,
   publicAlumniView,
@@ -50,7 +51,8 @@ test('the next level can be enrolled or sent to the academy', () => {
   assert.equal(recommendNext({ level: 'Professional', finishedIds: [], atInstitution: false, options: recs.map((row) => ({ ...row, programmeId: '', access: 'subscription' as const })) }).length, 0);
 });
 
-test('leaving opens a 30-day alumni grace and then frees the seat', () => {
+test('graduation frees the seat today and keeps the record on an individual account', () => {
+  assert.equal(defaultAlumniPolicy().graceDays, 0);
   const person = openAlumni({
     policy: defaultAlumniPolicy(),
     today: '2026-10-17',
@@ -65,9 +67,32 @@ test('leaving opens a 30-day alumni grace and then frees the seat', () => {
     reason: 'final_level',
     certificates: 2,
   });
-  assert.equal(person.graceEndsOn, '2026-11-16');
-  assert.equal(alumniPhase(person, '2026-11-01'), 'grace');
-  assert.equal(seatReadyToFree(person, '2026-11-16'), true);
+  assert.equal(person.graceEndsOn, '2026-10-17');
+  assert.equal(person.seatFreed, true);
+  assert.equal(alumniPhase(person, '2026-10-17'), 'alumni');
+  assert.equal(seatReadyToFree(person), false);
+  const outcome = graduationOutcome({
+    today: '2026-10-17',
+    graceDays: 0,
+    institutionId: 'north',
+    courses: [
+      { courseId: 'igcse', institutionId: 'north', progress: 40 },
+      { courseId: 'done', institutionId: 'north', progress: 100 },
+      { courseId: 'personal', institutionId: '', progress: 20 },
+      { courseId: 'other', institutionId: 'south', progress: 10 },
+    ],
+  });
+  assert.equal(outcome.account, 'individual');
+  assert.equal(outcome.recordsKept, true);
+  assert.equal(outcome.seatFreed, true);
+  assert.equal(outcome.holdsSeat, false);
+  assert.equal(outcome.usedSeatDelta, -1);
+  assert.equal(outcome.institutionAccess, 'ended');
+  assert.deepEqual(outcome.coursesCompleted, ['igcse']);
+  const review = graduationOutcome({ today: '2026-10-17', graceDays: 10, institutionId: 'north', courses: [] });
+  assert.equal(review.institutionAccess, 'grace');
+  assert.equal(review.graceEndsOn, '2026-10-27');
+  assert.equal(review.holdsSeat, false);
   assert.equal(dueToLeave({ role: 'student', status: 'joined', level: 'Professional', endDate: '', today: '2026-10-17', yearEnd: true }).reason, 'final_level');
   assert.equal(dueToLeave({ role: 'student', status: 'joined', level: 'IGCSE', endDate: '2026-10-01', today: '2026-10-17', yearEnd: false }).reason, 'end_date');
   assert.equal(dueToLeave({ role: 'parent', status: 'joined', level: 'IGCSE', endDate: '2026-10-01', today: '2026-10-17', yearEnd: true }).leave, false);

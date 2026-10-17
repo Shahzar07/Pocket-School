@@ -83,6 +83,7 @@ export function CompletedShelf({
 export function AlumniOfferCard({
   name,
   graceEndsOn,
+  reviewOpen = false,
   discount,
   studentNumber,
   publicOn,
@@ -92,6 +93,7 @@ export function AlumniOfferCard({
 }: {
   name: string;
   graceEndsOn: string;
+  reviewOpen?: boolean;
   discount: number;
   studentNumber: string;
   publicOn: boolean;
@@ -106,8 +108,12 @@ export function AlumniOfferCard({
       <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8922A]">Alumni</p>
       <h2 className="font-heading text-3xl tracking-tight">Your record stays</h2>
       <p className="text-sm leading-relaxed">
-        {name ? `${name}, your` : 'Your'} account, student number, certificates, badges, transcript, and portfolio stay free.
-        Academy courses stay open until {graceEndsOn || 'the end of the grace period'}. The seat is then free for the next student.
+        {name ? `${name}, your` : 'Your'} account is an individual account. Your profile, student number, certificates, badges, transcript, and progress stay.
+        {reviewOpen
+          ? ` Academy courses stay open to review until ${graceEndsOn}.`
+          : ' Completed academy courses stay on your Completed shelf.'}
+        {' '}The academy seat is free.
+        {percent > 0 ? ` An alumni discount of ${percent}% is recorded for an individual plan.` : ''}
       </p>
       <div className="grid gap-2 sm:grid-cols-2">
         <a href="/dashboard/student/billing" className="flex h-11 items-center justify-center rounded-full bg-[#1A3C34] px-4 text-sm font-semibold text-white">
@@ -200,7 +206,7 @@ export function AlumniBoard({
           <div key={person.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1A3C34]/10 px-4 py-3 text-sm last:border-0">
             <div>
               <p className="font-semibold">{person.name}</p>
-              <p className="text-xs text-[#1A3C34]/70">{person.level} · left {person.leftOn} · seat {person.seatFreed ? 'free' : `held until ${person.graceEndsOn}`}</p>
+              <p className="text-xs text-[#1A3C34]/70">{person.level} · left {person.leftOn} · {person.seatFreed ? 'seat free · individual' : `seat free after ${person.graceEndsOn}`}</p>
             </div>
             <span>{person.certificates} certificates</span>
           </div>
@@ -214,6 +220,7 @@ export function AlumniBoard({
         <label className="rounded-2xl bg-white p-4 text-sm">
           Grace days
           <input value={graceDays} onChange={(event) => setGraceDays(Number(event.target.value))} type="number" min={0} max={365} className="mt-2 h-11 w-full rounded-xl border border-[#1A3C34]/15 px-3" />
+          <span className="mt-1 block text-xs text-[#1A3C34]/60">0 frees the seat today. A higher number keeps course review only.</span>
         </label>
         <label className="rounded-2xl bg-white p-4 text-sm">
           Alumni discount %

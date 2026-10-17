@@ -332,10 +332,11 @@ export async function attachJoin(input: {
   return { ...preview, credit, message: `${decision.message}${progress}${creditLine}` };
 }
 
-export async function leaveInstitution(uid: string): Promise<{ progressKept: true; institutionAccess: 'grace'; graceEndsOn: string } | { error: string }> {
+export async function leaveInstitution(uid: string): Promise<{ progressKept: true; account: 'individual'; institutionAccess: 'grace' | 'ended'; graceEndsOn: string } | { error: string }> {
   const snap = await adminDb().doc(`users/${uid}`).get();
   const institutionId = text(snap.get('institutionId')) || text(snap.get('alumniOf'));
   if (!institutionId || text(snap.get('institutionAccess')) === 'ended') return { error: 'This account is already an individual.' };
+  const today = todayIso();
   const person = await beginAlumni({
     institutionId,
     studentId: uid,
@@ -345,9 +346,14 @@ export async function leaveInstitution(uid: string): Promise<{ progressKept: tru
     studentNumber: text(snap.get('studentNumber')),
     level: text(snap.get('academyLevel')),
     reason: 'marked',
-    today: todayIso(),
+    today,
   });
-  return { progressKept: true, institutionAccess: 'grace', graceEndsOn: person.graceEndsOn };
+  return {
+    progressKept: true,
+    account: 'individual',
+    institutionAccess: person.graceEndsOn > today ? 'grace' : 'ended',
+    graceEndsOn: person.graceEndsOn,
+  };
 }
 
 export async function linkParentChild(uid: string, studentNumber: string, institutionId: string, name: string): Promise<ParentLink[] | { error: string }> {

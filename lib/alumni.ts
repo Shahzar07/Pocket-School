@@ -6,7 +6,7 @@
 
 import { nextLevel } from './institution-join';
 
-export const DEFAULT_ALUMNI_GRACE_DAYS = 30;
+export const DEFAULT_ALUMNI_GRACE_DAYS = 0;
 export const DEFAULT_ALUMNI_DISCOUNT = 0.15;
 export const HOLDER_REVOCATION = "revoked at holder's request";
 
@@ -209,8 +209,42 @@ export function openAlumni(input: {
     graceEndsOn: addDays(input.today, input.policy.graceDays),
     reason: input.reason,
     certificates: Math.max(0, Math.floor(input.certificates)),
-    seatFreed: false,
+    seatFreed: true,
     publicProfile: false,
+  };
+}
+
+export interface GraduationOutcome {
+  account: 'individual';
+  recordsKept: true;
+  seatFreed: true;
+  holdsSeat: false;
+  usedSeatDelta: -1;
+  institutionAccess: 'grace' | 'ended';
+  graceEndsOn: string;
+  /** Academy courses whose progress moves to 100. Other courses stay as they are. */
+  coursesCompleted: string[];
+}
+
+/** Graduation frees the seat today. Grace days only keep course review, and they default to 0. */
+export function graduationOutcome(input: {
+  today: string;
+  graceDays: number;
+  institutionId: string;
+  courses: readonly { courseId: string; institutionId: string; progress: number }[];
+}): GraduationOutcome {
+  const graceDays = Math.max(0, Math.min(365, Math.floor(Number.isFinite(input.graceDays) ? input.graceDays : 0)));
+  return {
+    account: 'individual',
+    recordsKept: true,
+    seatFreed: true,
+    holdsSeat: false,
+    usedSeatDelta: -1,
+    institutionAccess: graceDays > 0 ? 'grace' : 'ended',
+    graceEndsOn: addDays(input.today, graceDays),
+    coursesCompleted: input.courses
+      .filter((course) => course.institutionId === input.institutionId && course.progress < 100)
+      .map((course) => course.courseId),
   };
 }
 
@@ -220,8 +254,9 @@ export function alumniPhase(person: Pick<AlumniPerson, 'graceEndsOn' | 'seatFree
   return 'alumni';
 }
 
-export function seatReadyToFree(person: Pick<AlumniPerson, 'graceEndsOn' | 'seatFreed'>, today: string): boolean {
-  return !person.seatFreed && alumniPhase(person, today) === 'alumni';
+/** The occupied seat is free as soon as the alumni record exists. */
+export function seatReadyToFree(person: Pick<AlumniPerson, 'seatFreed'>): boolean {
+  return !person.seatFreed;
 }
 
 /** First name and last initial. Email, phone, and date of birth stay off the public page. */
@@ -335,15 +370,17 @@ export function alumniNewsletter(input: { institutionName: string; note: string 
   };
 }
 
-export function alumniWelcome(input: { institutionName: string; name: string; graceEndsOn: string; discount: number }): { subject: string; text: string } {
+export function alumniWelcome(input: { institutionName: string; name: string; graceEndsOn: string; discount: number; reviewOpen?: boolean }): { subject: string; text: string } {
   const percent = Math.round(input.discount * 100);
   return {
     subject: `You are an alumnus of ${input.institutionName}`,
     text: [
       `${input.name || 'Hello'},`,
-      `Your Poket School account, student number, certificates, badges, transcript, and portfolio stay.`,
-      `Academy courses stay open until ${input.graceEndsOn}. The seat is then free for the next student.`,
-      percent > 0 ? `An alumni discount of ${percent}% is on My academy for an individual plan.` : 'My academy can open an individual plan or another academy.',
+      'Your Poket School account is now an individual account. Your profile, student number, certificates, badges, transcript, and progress stay.',
+      input.reviewOpen
+        ? `Academy courses stay open to review until ${input.graceEndsOn}. The seat is already free.`
+        : 'Completed academy courses stay on your Completed shelf. The academy seat is free.',
+      percent > 0 ? `An alumni discount of ${percent}% is recorded for an individual plan.` : 'My academy can open an individual plan or another academy.',
     ].join('\n'),
   };
 }
@@ -358,7 +395,7 @@ export function parentFinalSummary(input: {
   const certificates = Math.max(0, Math.floor(input.certificates));
   return {
     title: `Final summary for ${child}`,
-    body: `${child} has finished at ${input.institutionName}${input.level ? ` on ${input.level}` : ''}. You can still open their certificates, badges, transcript, and portfolio. Academy course access ends after the grace period. This is the final Parent Explainer for this child. ${certificates} certificate${certificates === 1 ? '' : 's'} stay on the record.`,
+    body: `${child} has finished at ${input.institutionName}${input.level ? ` on ${input.level}` : ''}. You can still open their certificates, badges, transcript, and portfolio. The account is an individual account and the academy seat is free. This is the final Parent Explainer for this child. ${certificates} certificate${certificates === 1 ? '' : 's'} stay on the record.`,
   };
 }
 
