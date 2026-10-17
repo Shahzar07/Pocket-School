@@ -132,7 +132,7 @@ export default function StudentBillingPage() {
         )}
         {typeof profile?.alumniDiscount === 'number' && profile.alumniDiscount > 0 && (
           <p className="text-sm mt-3 max-w-2xl rounded-2xl border border-border bg-card px-4 py-3">
-            An alumni discount of {Math.round(profile.alumniDiscount * 100)}% applies when you move to an individual plan. Certificates and the transcript stay on this account.
+            This account has an alumni discount of {Math.round(profile.alumniDiscount * 100)}% recorded for an individual plan. Certificates and the transcript stay on this account.
           </p>
         )}
         {profile?.institutionId && (
