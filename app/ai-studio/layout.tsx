@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'AI Poket School — Studio',
-  description: 'Generate audio lessons, video scripts, flashcards, quizzes and more from any source.',
+  title: 'ET AI Studio · Poket School',
+  description: 'ET AI turns a topic into a lesson, quiz, flashcards, audio or video at Poket School.',
 };
 
 export default function AiStudioLayout({ children }: { children: React.ReactNode }) {

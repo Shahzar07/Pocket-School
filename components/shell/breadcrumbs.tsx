@@ -10,7 +10,7 @@ const LABELS: Record<string, string> = {
   parent: 'Family',
   admin: 'Admin',
   institution: 'School',
-  studio: 'AI Studio',
+  studio: 'ET AI Studio',
   goals: 'Goals',
   analytics: 'Insights',
   reports: 'Reports',

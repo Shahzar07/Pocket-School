@@ -11,13 +11,30 @@ import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { ArrowLeft, Plus, X, LineChart, Sigma, Puzzle, Star, Delete, CornerDownLeft, Share2 } from 'lucide-react';
 import { useAuthSTORE } from '@/hooks/use-auth';
+import dynamic from 'next/dynamic';
 import { DashPage, DashHeader, Panel, PanelHeader, Segmented } from '@/components/dash-ui';
-import { FunctionPlot, SERIES_COLORS } from '@/components/study/function-plot';
 import { MathMarkdown } from '@/components/math-markdown';
 import { compileFn, derivativeOf, exprToTex, findRoots } from '@/lib/study/math-expr';
 import { dailyEquation, isValidEquation, markGuess, LENGTH, GUESSES, type Mark } from '@/lib/study/equation-puzzle';
 import { isoDay } from '@/lib/study/schedule';
 import { recordStudyDay } from '@/lib/study/db';
+
+const SERIES_COLORS = ['#2786A4', '#E8A33D', '#8B5CF6', '#E5484D', '#30A46C'];
+const FunctionPlot = dynamic(() => import('@/components/study/function-plot').then(mod => mod.FunctionPlot), {
+  loading: () => <div className="h-[280px] animate-pulse rounded-2xl bg-muted sm:h-[440px]" role="status" aria-label="Loading the graph" />,
+});
+
+function usePlotHeight() {
+  const [height, setHeight] = useState(280);
+  useEffect(() => {
+    const query = window.matchMedia('(min-width: 640px)');
+    const apply = () => setHeight(query.matches ? 440 : 280);
+    apply();
+    query.addEventListener('change', apply);
+    return () => query.removeEventListener('change', apply);
+  }, []);
+  return height;
+}
 
 type Tool = 'graph' | 'analyse' | 'puzzle';
 
@@ -36,6 +53,7 @@ export default function MathsLabPage() {
 }
 
 function GraphingCalculator() {
+  const plotHeight = usePlotHeight();
   const [fns, setFns] = useState(['x^2 - 4', 'sin(x)*3', '']);
   const active = fns.filter(f => f.trim());
   return (
@@ -61,13 +79,14 @@ function GraphingCalculator() {
         <p className="text-[12px] text-muted-foreground mt-4">Try <span className="font-mono">x^3 - 3x</span>, <span className="font-mono">1/x</span>, <span className="font-mono">sqrt(x)</span>, <span className="font-mono">e^(-x^2)</span>, <span className="font-mono">|x - 2|</span>. Drag to pan, scroll to zoom.</p>
       </Panel>
       <div className="lg:col-span-8">
-        <FunctionPlot functions={active.length ? active : ['x']} height={440} />
+        <FunctionPlot functions={active.length ? active : ['x']} height={plotHeight} />
       </div>
     </div>
   );
 }
 
 function FunctionAnalysis() {
+  const plotHeight = usePlotHeight();
   const [input, setInput] = useState('x^3 - 6x^2 + 9x - 2');
   const [range, setRange] = useState<[number, number]>([-2, 6]);
   const analysis = useMemo(() => {
@@ -96,9 +115,9 @@ function FunctionAnalysis() {
         <input value={input} onChange={e => setInput(e.target.value)} className="w-full h-11 rounded-xl border border-border bg-background px-3 font-mono text-[15px] outline-none focus:border-primary" />
         <div className="flex items-center gap-2 mt-3 text-[13px]">
           <span className="text-muted-foreground">x from</span>
-          <input type="number" value={range[0]} onChange={e => setRange([Number(e.target.value), range[1]])} className="w-20 h-9 rounded-lg border border-border px-2" />
+          <input type="number" aria-label="x from" value={range[0]} onChange={e => setRange([Number(e.target.value), range[1]])} className="w-20 h-9 rounded-lg border border-border px-2" />
           <span className="text-muted-foreground">to</span>
-          <input type="number" value={range[1]} onChange={e => setRange([range[0], Number(e.target.value)])} className="w-20 h-9 rounded-lg border border-border px-2" />
+          <input type="number" aria-label="x to" value={range[1]} onChange={e => setRange([range[0], Number(e.target.value)])} className="w-20 h-9 rounded-lg border border-border px-2" />
         </div>
         {analysis.ok ? (
           <dl className="mt-5 space-y-3 text-[14px]">
@@ -117,7 +136,7 @@ function FunctionAnalysis() {
           <FunctionPlot
             functions={[input, analysis.d1, analysis.d2]}
             points={[...analysis.roots.map(x => ({ x, y: 0 })), ...analysis.stationary.map(p => ({ x: p.x, y: p.y, label: p.kind === 'Minimum' ? 'min' : p.kind === 'Maximum' ? 'max' : 'inflection' }))]}
-            xMin={range[0]} xMax={range[1]} height={440}
+            xMin={range[0]} xMax={range[1]} height={plotHeight}
           />
         )}
       </div>

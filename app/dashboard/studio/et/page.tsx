@@ -1,8 +1,13 @@
 'use client';
 
-import { AiStudio } from '@/app/ai-studio/page';
+import dynamic from 'next/dynamic';
+import { StudioBoot } from '@/components/studio/boot';
 
-/** ET AI chat, full page inside the dashboard frame. */
+const AiStudio = dynamic(() => import('@/components/studio/ai-studio').then(mod => mod.AiStudio), {
+  loading: () => <StudioBoot />,
+});
+
+/** ET AI, inside the dashboard shell rather than as its own app. */
 export default function StudioEt() {
   return (
     <div className="h-[calc(100dvh-3rem)] overflow-hidden">

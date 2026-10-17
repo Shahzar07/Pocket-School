@@ -8,14 +8,16 @@ import {
   ArrowLeft, Clock, Flag, Loader2, GraduationCap, CheckCircle2, XCircle, ChevronDown, Sparkles, Zap, Target, AlertTriangle, BookOpen, RotateCcw,
 } from 'lucide-react';
 import { useExamPrep } from '@/hooks/use-exam-prep';
+import dynamic from 'next/dynamic';
 import { DashPage, Panel, PanelHeader } from '@/components/dash-ui';
 import { MathMarkdown } from '@/components/math-markdown';
-import { HandwritingCapture } from '@/components/handwriting-capture';
 import { postJSON } from '@/lib/authed-fetch';
 import { assertSparks, chargeSparks, completeItem, blendMastery, saveAttempt, updatePrep, recordStudyDay, InsufficientSparks } from '@/lib/study/db';
 import { gradeFor } from '@/lib/study/grades';
 import { STUDY_COSTS } from '@/lib/sparks';
 import type { KnowledgeGap, MarkedAnswer, MockQuestion } from '@/lib/study/types';
+
+const HandwritingCapture = dynamic(() => import('@/components/handwriting-capture').then(mod => mod.HandwritingCapture), { ssr: false });
 
 type Phase = 'setup' | 'generating' | 'taking' | 'marking' | 'results';
 interface Result { marked: MarkedAnswer[]; score: number; max: number; percent: number; summary: string; gaps: KnowledgeGap[]; topicScores: Record<string, number> }
