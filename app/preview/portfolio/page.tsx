@@ -1,8 +1,10 @@
 'use client';
 
 import { useMemo } from 'react';
+import { CvStudio } from '@/components/portfolio/cv-builder';
 import { DestinationBoardView, RecordPanels } from '@/components/portfolio/record-panels';
 import { LinkedInCopy } from '@/components/portfolio/linkedin-panels';
+import { defaultCvDesign, readCvDesign } from '@/lib/cv-builder';
 import { destinationBoard, type DestinationRow } from '@/lib/destinations';
 import { canPublishPortfolio, defaultConsent, etSummary, portfolioNudges, selfItem, verifiedItems } from '@/lib/portfolio';
 import { linkedInCertificationUrl, shareLinks } from '@/lib/credentials/badge-model';
@@ -46,6 +48,35 @@ const items = [
   ...('error' in volunteering ? [] : [volunteering]),
 ];
 
+const cvItems = [
+  ...verifiedItems({
+    education: history,
+    courses: [{ title: 'IGCSE Mathematics', when: '2024-06-01' }],
+    scores: [{ title: 'IGCSE Mathematics', score: '86/100' }],
+    certificates: [{ id: 'cert-ada', title: 'IGCSE Mathematics', when: '2024-06-01' }],
+    badges: [{ title: 'Graduate' }],
+    projects: [{ title: 'Bridge model', detail: 'Studio project' }],
+    endorsements: [{ title: 'Lab report', detail: 'Teacher-endorsed' }],
+    includeScores: true,
+  }),
+  ...('error' in volunteering ? [] : [volunteering]),
+];
+const cvShare = shareTokenFrom(new Uint8Array(24).fill(7));
+const cvDesign = readCvDesign({
+  ...defaultCvDesign(),
+  template: 'forest',
+  font: 'serif',
+  layout: 'two',
+  photo: true,
+  pageSize: 'A4',
+  summary: 'Mathematics and a library club.',
+  showScores: true,
+  hiddenItems: ['score-IGCSE Mathematics'],
+  wording: 'error' in volunteering ? {} : {
+    [volunteering.id]: { title: 'Saturday library club', detail: 'Tuesday shelving' },
+  },
+  customSections: [{ id: 'custom-availability', title: 'Availability', body: 'Ready for a 2027 start.' }],
+});
 const draft = etSummary({ name: 'Ada Lovelace', items });
 const consent = {
   ...defaultConsent(),
@@ -114,6 +145,15 @@ export default function PortfolioPreview() {
   return (
     <main className="min-h-screen bg-[#F6F1E7] px-4 py-8">
       <div className="mx-auto grid max-w-5xl gap-6">
+        <CvStudio
+          localPreview
+          name="Ada Lovelace"
+          items={cvItems}
+          summary="Mathematics and a library club."
+          versions={[{ id: 'cv-company-x', name: 'Company X - Analyst', shareToken: cvShare, updatedAt: '2026-10-17T00:00:00.000Z', design: cvDesign }]}
+          links={[{ token: cvShare, label: 'Company X - Analyst' }]}
+          seed={{ design: cvDesign, name: 'Company X - Analyst', shareToken: cvShare }}
+        />
         <RecordPanels
           name="Ada L."
           studentNumber="PS-ABCD-2345"

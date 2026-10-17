@@ -3,6 +3,15 @@ import { isNextResponse, rateLimit, requireUser } from '@/lib/api-guard';
 import { isAdminConfigured } from '@/lib/firebase-admin';
 import { readTemplate } from '@/lib/portfolio';
 import {
+  deleteCvVersion,
+  exportCvFile,
+  listCvVersions,
+  listOwnedShareLinks,
+  saveCvVersion,
+  savePortfolioTheme,
+  translateCv,
+} from '@/lib/server/cv-store';
+import {
   buildPortfolio,
   deleteSelfItem,
   exportPortfolio,
@@ -35,8 +44,12 @@ export async function GET(req: NextRequest) {
   }
   const user = await requireUser(req);
   if (isNextResponse(user)) return user;
-  const portfolio = await buildPortfolio(user.uid);
-  return NextResponse.json({ portfolio });
+  const [portfolio, versions, links] = await Promise.all([
+    buildPortfolio(user.uid),
+    listCvVersions(user.uid),
+    listOwnedShareLinks(user.uid),
+  ]);
+  return NextResponse.json({ portfolio, versions, links });
 }
 
 export async function POST(req: NextRequest) {
@@ -103,6 +116,35 @@ export async function POST(req: NextRequest) {
   if (action === 'export') {
     const format = body.format === 'json' || body.format === 'linkedin' || body.format === 'cv' ? body.format : 'cv';
     const file = await exportPortfolio(user.uid, format, readTemplate(body.template));
+    return NextResponse.json(file);
+  }
+  if (action === 'save-version') {
+    const saved = await saveCvVersion(user.uid, {
+      id: body.id,
+      name: body.name,
+      shareToken: body.shareToken,
+      design: body.design,
+    });
+    if ('error' in saved) return NextResponse.json(saved, { status: 400 });
+    return NextResponse.json({ version: saved, versions: await listCvVersions(user.uid) });
+  }
+  if (action === 'delete-version') {
+    const removed = await deleteCvVersion(user.uid, body.id);
+    if ('error' in removed) return NextResponse.json(removed, { status: 400 });
+    return NextResponse.json({ ...removed, versions: await listCvVersions(user.uid) });
+  }
+  if (action === 'save-theme') {
+    const theme = await savePortfolioTheme(user.uid, body.design);
+    return NextResponse.json({ theme });
+  }
+  if (action === 'translate-cv') {
+    const translated = await translateCv(user.uid, { id: body.id, design: body.design });
+    if ('error' in translated) return NextResponse.json(translated, { status: 400 });
+    return NextResponse.json(translated);
+  }
+  if (action === 'export-cv') {
+    const file = await exportCvFile(user.uid, { format: body.format, id: body.id, design: body.design });
+    if ('error' in file) return NextResponse.json(file, { status: 400 });
     return NextResponse.json(file);
   }
   if (action === 'parent-approve') {

@@ -858,4 +858,44 @@ When the status is `hired` or `studying` and the learner already shares a destin
 
 Rules still need an owner deploy. These rules are not deployed from this change.
 
+## CV versions and the public portfolio theme
+
+A learner can keep more than one CV. Each version is presentation only. The Poket School record stays the source of the verified facts.
+
+## `users/{uid}/cv_versions/{id}`
+
+The learner reads and writes these through the portfolio API. The id matches `cv-` plus letters, numbers, and hyphens.
+
+| Field | Meaning |
+| --- | --- |
+| `name` | The learner’s name for this CV, such as Company X - Analyst |
+| `shareToken` | Optional id of a `share_links` document this learner owns |
+| `template` | `classic`, `serif`, `compact`, `forest`, `gold`, `coral`, or `blue` |
+| `accent` | Hex colour such as `#1A3C34` |
+| `font` | `sans`, `serif`, or `mono` |
+| `layout` | `one` or `two` |
+| `photo` | Whether the CV shows a photo block |
+| `pageSize` | `A4` or `Letter` |
+| `language` | A supported language code. English stays as written |
+| `sectionOrder` | Section ids, including custom ids |
+| `sectionTitles` | Renamed headings |
+| `hiddenSections`, `hiddenItems` | Lines and sections left off this version |
+| `customSections` | Up to eight `{ id, title, body }` blocks |
+| `wording` | Title and detail overrides for self-reported items only |
+| `summary` | Summary wording for this version |
+| `showScores` | Whether score lines are eligible for this version |
+| `updatedAt` | ISO time |
+
+`wording` is ignored for a verified item. Showing or hiding that item is the only choice, so the Verified mark stays honest. A language other than English is a display copy from content translation at download. The stored facts are not replaced. If `OPENROUTER_API_KEY` is unset, the download keeps the original wording and says so.
+
+PDF and DOCX are produced from the composed version. The photo block draws initials. It does not fetch a remote image into the file.
+
+## Public theme
+
+`users/{uid}/portfolio/profile.theme` and `portfolio_public/{studentNumber}.theme` store the same visual choices: template, accent, font, layout, photo, section order, renamed headings, hidden sections, custom sections, self-reported wording, and summary. The public page `/portfolio/{studentNumber}` renders that theme. A verified title in `portfolio_public` stays the recorded title.
+
+`photoUrl` is copied from the account avatar only when it is an `https` URL and photo is on. The public document still stores the public name, student number, and public items. It does not store an email address.
+
+This is a single-document read by student number, and a subcollection under the learner. No composite index is required. Rules still need an owner deploy. These rules are not deployed from this change.
+
 

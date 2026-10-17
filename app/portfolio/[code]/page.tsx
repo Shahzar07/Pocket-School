@@ -1,11 +1,16 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useMemo, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { sourceLabel, type ItemSource } from '@/lib/portfolio';
+import { CvDocument } from '@/components/portfolio/cv-builder';
+import { composeCv, designFromTheme, readPortfolioTheme, type PortfolioTheme } from '@/lib/cv-builder';
+import { sourceLabel, type ItemSource, type RecordItem } from '@/lib/portfolio';
 
 interface PublicItem {
+  id: string;
   source: ItemSource;
+  kind: string;
+  section: string;
   title: string;
   detail: string;
   when: string;
@@ -17,6 +22,7 @@ interface PublicPortfolio {
   studentNumber: string;
   summary: string;
   qrUrl: string;
+  theme?: PortfolioTheme;
   items: PublicItem[];
 }
 
@@ -31,28 +37,47 @@ export default function PublicPortfolioPage({ params }: { params: Promise<{ code
       .catch(() => setProfile(null));
   }, [code]);
 
+  const doc = useMemo(() => {
+    if (!profile) return null;
+    const theme = readPortfolioTheme(profile.theme);
+    const items: RecordItem[] = profile.items.map((item) => ({
+      id: item.id,
+      source: item.source,
+      kind: item.kind,
+      title: item.title,
+      detail: item.detail,
+      when: item.when,
+      verifyUrl: item.verifyUrl,
+      evidenceLink: '',
+      section: item.section,
+    }));
+    return composeCv({
+      name: profile.name,
+      items,
+      design: designFromTheme(theme, profile.summary),
+    });
+  }, [profile]);
+
   return (
     <main className="min-h-screen bg-[#F6F1E7] px-5 py-12 text-[#1A3C34]">
-      <article className="mx-auto max-w-xl rounded-[28px] border border-[#1A3C34]/10 bg-white p-8">
+      <article className="mx-auto max-w-3xl">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8922A]">Poket School portfolio</p>
         {profile === undefined ? <p className="mt-4 text-sm">Opening this portfolio…</p> : null}
         {profile === null ? <p className="mt-4 text-sm leading-relaxed">This portfolio is private. A learner under 18 stays private until a parent approves sharing.</p> : null}
-        {profile ? (
+        {profile && doc ? (
           <>
-            <h1 className="mt-2 font-heading text-4xl tracking-tight">{profile.name}</h1>
-            <p className="mt-1 font-mono text-xs">{profile.studentNumber}</p>
-            {profile.summary ? <p className="mt-4 text-sm leading-relaxed">{profile.summary}</p> : null}
-            <ul className="mt-4 space-y-3 text-sm">
-              {profile.items.map((item) => (
-                <li key={`${item.source}-${item.title}`}>
-                  <p className="font-medium">{item.title}</p>
-                  <p>{[item.detail, item.when].filter(Boolean).join(' · ')}</p>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#C8922A]">{sourceLabel(item.source)}</p>
-                  {item.verifyUrl ? <a href={item.verifyUrl} className="text-xs underline">{item.verifyUrl}</a> : null}
+            <div className="mt-4">
+              <CvDocument doc={doc} />
+            </div>
+            <p className="mt-3 text-xs">{profile.studentNumber}</p>
+            <ul className="mt-4 space-y-2 text-sm">
+              {profile.items.filter((item) => item.verifyUrl).map((item) => (
+                <li key={`${item.source}-${item.id}`}>
+                  <a href={item.verifyUrl} className="text-xs underline">{sourceLabel(item.source)} · {item.verifyUrl}</a>
                 </li>
               ))}
             </ul>
-            <div className="mt-6 inline-flex items-center gap-3">
+            <div className="mt-6 inline-flex items-center gap-3 rounded-[28px] bg-white px-4 py-3">
               <QRCodeSVG value={profile.qrUrl} size={88} fgColor="#1A3C34" bgColor="#ffffff" />
               <p className="text-xs">{profile.qrUrl}</p>
             </div>

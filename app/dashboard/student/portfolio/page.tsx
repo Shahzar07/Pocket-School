@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { CvStudio } from '@/components/portfolio/cv-builder';
 import { RecordPanels } from '@/components/portfolio/record-panels';
 import { JobTracker, LinkedInCopy } from '@/components/portfolio/linkedin-panels';
 import { DashHeader, DashPage, Panel } from '@/components/dash-ui';
 import { authedFetch } from '@/lib/api-client';
 import { DESTINATION_KINDS } from '@/lib/destinations';
+import { readCvDesign, type SavedCvVersion } from '@/lib/cv-builder';
 import {
   CV_TEMPLATES,
   defaultConsent,
@@ -26,6 +28,7 @@ interface PortfolioState {
   bullets: string[];
   nudges: string[];
   publication: { public: boolean; reason: string };
+  avatarUrl?: string;
 }
 
 function asPortfolio(data: Record<string, unknown>): PortfolioState | null {
@@ -57,12 +60,35 @@ export default function StudentPortfolioPage() {
   const [shareName, setShareName] = useState(false);
   const [testimonial, setTestimonial] = useState('');
   const [shareTestimonial, setShareTestimonial] = useState(false);
+  const [versions, setVersions] = useState<SavedCvVersion[]>([]);
+  const [links, setLinks] = useState<{ token: string; label: string }[]>([]);
 
   const load = useCallback(() => {
     authedFetch('/api/portfolio')
       .then((data) => {
         const next = asPortfolio(data);
         if (next) setRecord(next);
+        setVersions(Array.isArray(data.versions) ? data.versions.flatMap((entry) => {
+          if (!entry || typeof entry !== 'object') return [];
+          const row = entry as Record<string, unknown>;
+          const id = typeof row.id === 'string' ? row.id : '';
+          const versionName = typeof row.name === 'string' ? row.name : '';
+          if (!id || !versionName) return [];
+          return [{
+            id,
+            name: versionName,
+            shareToken: typeof row.shareToken === 'string' ? row.shareToken : '',
+            updatedAt: typeof row.updatedAt === 'string' ? row.updatedAt : '',
+            design: readCvDesign(row.design),
+          }];
+        }) : []);
+        setLinks(Array.isArray(data.links) ? data.links.flatMap((entry) => {
+          if (!entry || typeof entry !== 'object') return [];
+          const row = entry as Record<string, unknown>;
+          const token = typeof row.token === 'string' ? row.token : '';
+          if (!token) return [];
+          return [{ token, label: typeof row.label === 'string' ? row.label : 'Share link' }];
+        }) : []);
       })
       .catch(() => toast.error('Could not open the portfolio.'));
   }, []);
@@ -84,6 +110,7 @@ export default function StudentPortfolioPage() {
   };
 
   const consent = record?.consent ?? defaultConsent();
+  const sharedItems = (record?.items ?? []).filter((item) => consent.includeScores || item.kind !== 'score');
 
   return (
     <DashPage className="max-w-5xl">
@@ -94,18 +121,27 @@ export default function StudentPortfolioPage() {
       />
       {record ? (
         <>
+        <CvStudio
+          name={record.name}
+          items={record.items}
+          summary={record.summary}
+          avatarUrl={record.avatarUrl ?? ''}
+          versions={versions}
+          links={links}
+          onChanged={load}
+        />
         <RecordPanels
           name={record.name}
           studentNumber={record.studentNumber}
-          items={record.items}
+          items={sharedItems}
           summary={record.summary}
           bullets={record.bullets}
           nudges={record.nudges}
           reason={record.publication.reason}
           consent={consent}
         />
-        <LinkedInCopy name={record.name} studentNumber={record.studentNumber} items={record.items} />
-        <JobTracker items={record.items} />
+        <LinkedInCopy name={record.name} studentNumber={record.studentNumber} items={sharedItems} />
+        <JobTracker items={sharedItems} />
         </>
       ) : <p className="text-sm text-[#1A3C34]">Opening your record…</p>}
 

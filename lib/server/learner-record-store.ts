@@ -34,6 +34,7 @@ import {
   type PortfolioConsent,
   type RecordItem,
 } from '../portfolio';
+import { readPortfolioTheme, type PortfolioTheme } from '../cv-builder';
 import { logAutomation } from './automation-store';
 
 function text(value: unknown): string {
@@ -201,6 +202,8 @@ export interface BuiltPortfolio {
   bullets: string[];
   nudges: string[];
   publication: { public: boolean; reason: string };
+  avatarUrl: string;
+  theme: PortfolioTheme;
 }
 
 export async function buildPortfolio(uid: string): Promise<BuiltPortfolio> {
@@ -229,7 +232,7 @@ export async function buildPortfolio(uid: string): Promise<BuiltPortfolio> {
     certificateItems.push({ id: doc.id, title, when: whenOf(doc.get('issuedAt')) });
     if (!courseTitles.has(title)) courseTitles.set(title, whenOf(doc.get('issuedAt')));
   }
-  const scores = consent.includeScores ? await scoreLines(uid) : [];
+  const scores = await scoreLines(uid);
   const verified = verifiedItems({
     education,
     courses: [...courseTitles.entries()].map(([title, when]) => ({ title, when })),
@@ -247,7 +250,7 @@ export async function buildPortfolio(uid: string): Promise<BuiltPortfolio> {
       const title = text(doc.get('title')).trim();
       return title ? [{ title, detail: text(doc.get('detail')) }] : [];
     }),
-    includeScores: consent.includeScores,
+    includeScores: true,
   });
   const selfItems = selfSnap.docs.flatMap((doc) => {
     const item = itemFrom(doc.id, doc.data());
@@ -263,6 +266,7 @@ export async function buildPortfolio(uid: string): Promise<BuiltPortfolio> {
   );
   const ageTier = asAgeTier(user.get('ageTier'));
   const name = text(user.get('name'));
+  const avatar = text(user.get('avatarUrl'));
   return {
     name,
     studentNumber: text(user.get('studentNumber')).trim().toUpperCase(),
@@ -277,6 +281,8 @@ export async function buildPortfolio(uid: string): Promise<BuiltPortfolio> {
       wantsPublic: consent.publicPortfolio,
       parentApproved: consent.parentApproved,
     }),
+    avatarUrl: avatar.startsWith('https://') ? avatar.slice(0, 300) : '',
+    theme: readPortfolioTheme(profile.get('theme')),
   };
 }
 
@@ -300,7 +306,9 @@ async function syncPublic(uid: string, built: BuiltPortfolio): Promise<void> {
     studentNumber: view.studentNumber,
     summary: view.summary,
     qrUrl: view.qrUrl,
+    theme: built.theme,
     items: view.items.map((item) => ({
+      id: item.id,
       source: item.source,
       kind: item.kind,
       title: item.title,
@@ -317,25 +325,32 @@ export async function readPublicPortfolio(studentNumber: string): Promise<{
   studentNumber: string;
   summary: string;
   qrUrl: string;
-  items: { source: string; title: string; detail: string; when: string; verifyUrl: string }[];
+  theme: PortfolioTheme;
+  items: { id: string; source: string; kind: string; section: string; title: string; detail: string; when: string; verifyUrl: string }[];
 } | null> {
   const number = studentNumber.trim().toUpperCase();
   if (!number) return null;
   const snap = await adminDb().doc(`portfolio_public/${number}`).get();
   if (!snap.exists) return null;
   const items = Array.isArray(snap.get('items')) ? snap.get('items') : [];
+  const theme = readPortfolioTheme(snap.get('theme'));
   return {
     name: publicName(text(snap.get('name'))),
     studentNumber: number,
-    summary: text(snap.get('summary')).slice(0, 400),
+    summary: theme.summary.trim() || text(snap.get('summary')).slice(0, 400),
     qrUrl: `https://poketschool.ai/portfolio/${number}`,
+    theme,
     items: items.flatMap((item: unknown) => {
       if (!item || typeof item !== 'object') return [];
       const row = item as Record<string, unknown>;
       const title = text(row.title).trim();
       if (!title) return [];
+      const source = row.source === 'self_reported' ? 'self_reported' : 'verified';
       return [{
-        source: row.source === 'self_reported' ? 'self_reported' : 'verified',
+        id: text(row.id).trim().slice(0, 120) || `${source}-${title.slice(0, 40)}`,
+        source,
+        kind: text(row.kind).slice(0, 40),
+        section: text(row.section).slice(0, 40) || 'links',
         title: title.slice(0, 120),
         detail: text(row.detail).slice(0, 280),
         when: text(row.when).slice(0, 40),
