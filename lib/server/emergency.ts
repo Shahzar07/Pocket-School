@@ -8,7 +8,7 @@ import { adminDb } from '../firebase-admin';
 import { ActionError } from './actions';
 import { sendPush } from '../push';
 import { resolveRecipients } from '../alerts/recipients';
-import { peopleAtInstitution, peopleOptedIn, tierOf } from './alert-directory';
+import { peopleAtInstitution, peopleOptedIn } from './alert-directory';
 import { amberPage, amberPublishRefusal, amberPushBody, readApproval } from '../amber/public';
 import { ensureAmberReferral } from './amber';
 import { adminPushStore } from '../push-store';
@@ -81,11 +81,11 @@ interface Actor {
   institutionId: string;
   staffPost: string;
   verifiedStaff: boolean;
+  /** Verification tier. Amber publishing reads this, not the product access tier. */
   tier: number;
   country: string;
   state: string;
   city: string;
-  tier: number;
 }
 
 async function loadActor(uid: string): Promise<Actor> {
@@ -99,11 +99,10 @@ async function loadActor(uid: string): Promise<Actor> {
     institutionId: str(data.institutionId),
     staffPost: str(data.staffPost),
     verifiedStaff: data.verifiedStaff === true || str(data.role) === 'admin',
-    tier: tierOf(data),
+    tier: readVerification(data.verification).tier,
     country: str(data.country),
     state: str(data.state),
     city: str(data.city),
-    tier: readVerification(data.verification).tier,
   };
 }
 

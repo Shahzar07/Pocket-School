@@ -5,14 +5,60 @@ import { Menu, Plus } from 'lucide-react';
 import { roleHome, type DashRole } from '@/lib/dashboard/home';
 import { CategoryIcon } from '@/components/dashboard/icons';
 
-export type ShellRole = 'student' | 'teacher' | 'parent' | 'admin' | 'institution_admin';
+export type ShellRole = 'student' | 'teacher' | 'parent' | 'admin' | 'institution_admin' | 'partner_merchant';
 
-function dashRole(role: ShellRole): DashRole {
+function dashRole(role: Exclude<ShellRole, 'partner_merchant'>): DashRole {
   if (role === 'institution_admin') return 'institution';
   return role;
 }
 
 export function MobileNav({ role, onMore }: { role: ShellRole; onMore: () => void }) {
+  if (role === 'partner_merchant') {
+    return (
+      <nav
+        aria-label="Primary"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur-xl lg:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        <ul className="grid grid-cols-5">
+          <li>
+            <Link href="/dashboard/partner" className="flex h-16 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold text-foreground">
+              <CategoryIcon category="payments" className="h-6 w-6" />
+              Portal
+            </Link>
+          </li>
+          <li>
+            <Link href="/dashboard/card" className="flex h-16 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold text-foreground">
+              <CategoryIcon category="settings" className="h-6 w-6" />
+              Card
+            </Link>
+          </li>
+          <li>
+            <Link href="/partner" className="flex h-16 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold text-foreground">
+              <CategoryIcon category="people" className="h-6 w-6" />
+              Setup
+            </Link>
+          </li>
+          <li>
+            <Link href="/dashboard/profile" className="flex h-16 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold text-foreground">
+              <CategoryIcon category="settings" className="h-6 w-6" />
+              Profile
+            </Link>
+          </li>
+          <li>
+            <button
+              type="button"
+              onClick={onMore}
+              className="flex h-16 w-full flex-col items-center justify-center gap-0.5 text-[11px] font-semibold text-foreground"
+            >
+              <Menu className="h-6 w-6" aria-hidden="true" />
+              More
+            </button>
+          </li>
+        </ul>
+      </nav>
+    );
+  }
   const home = roleHome(dashRole(role));
   return (
     <nav
@@ -48,7 +94,9 @@ export function MobileNav({ role, onMore }: { role: ShellRole; onMore: () => voi
 }
 
 export function DashFab({ role }: { role: ShellRole }) {
-  const home = roleHome(dashRole(role));
+  const home = role === 'partner_merchant'
+    ? { fab: { href: '/dashboard/partner', label: 'Offers' } }
+    : roleHome(dashRole(role));
   return (
     <Link
       href={home.fab.href}

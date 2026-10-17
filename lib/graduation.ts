@@ -276,7 +276,7 @@ export function individualPlanSku(level: string): 'primary_secondary' | 'igcse_a
         ? 'professional'
         : 'igcse_alevel';
   const plan = seedPricing().plans.find((item) => item.id === wanted);
-  if (plan && plan.monthlyUsd > 0) return wanted;
+  if (plan && typeof plan.monthlyUsd === 'number' && plan.monthlyUsd > 0) return wanted;
   return 'professional';
 }
 

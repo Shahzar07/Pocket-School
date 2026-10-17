@@ -53,8 +53,6 @@ export interface UserProfile {
   /** Set for institution_admin (and optionally members) — scopes what they see. */
   institutionId?: string;
   avatarUrl?: string;
-  /** PS-XXXX-XXXX. Issued on signup and backfilled when a student profile loads. */
-  studentNumber?: string;
   /** Level name assigned by the academy, such as IGCSE or Primary. */
   academyLevel?: string;
   /** active while the academy pays, grace after leaving, ended when the seat is free. */
@@ -140,13 +138,12 @@ export interface UserProfile {
   verification?: { tier: number; method: string; verifiedAt: number; verifiedBy: string };
   /** Set with a tier 4 partner review. */
   partnerKind?: 'police' | 'ngo';
-  /** Shown on a confidential staff card when the school has recorded it. */
-  studentNumber?: string;
   /** YYYY-MM-DD days a lesson was opened, used for the study streak. */
   studyDates?: string[];
   /**
-   * Server-issued. `PSM-` is a Poket School member with no school.
-   * `PS-` is the institution student number. Clients cannot write it.
+   * Server-issued student number. `PSM-` is a Poket School member with no school.
+   * `PS-` is the institution student number, also shown on the staff card.
+   * Clients cannot write it.
    */
   studentNumber?: string;
   /** Server-issued code for `referrals/{code}`. Not a coupon and not a reward. */
@@ -3575,7 +3572,6 @@ export interface Certificate {
   showPoweredBy?: boolean;
   logoUrl?: string;
   certificateFooter?: string;
-  studentNumber?: string;
 }
 
 export async function getCertificatesForStudent(studentId: string): Promise<Certificate[]> {

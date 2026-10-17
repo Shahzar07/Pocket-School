@@ -42,12 +42,14 @@ export default function NotesPage() {
     <NotesBoard
       notes={notes}
       groups={groups}
-      onCreate={(input) => createNote(user.uid, {
-        text: input.text,
-        colour: input.colour,
-        board: input.board,
-        checklist: input.checklist ? [{ id: '1', text: input.text, done: false }] : [],
-      })}
+      onCreate={async (input) => {
+        await createNote(user.uid, {
+          text: input.text,
+          colour: input.colour,
+          board: input.board,
+          checklist: input.checklist ? [{ id: '1', text: input.text, done: false }] : [],
+        });
+      }}
       onPatch={(id, patch) => patchNote(user.uid, id, patch)}
       onReorder={(ids) => saveNoteOrder(user.uid, ids)}
       onAsk={async (action: NoteAction, noteIds) => {

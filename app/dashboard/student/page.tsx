@@ -170,7 +170,7 @@ export default function StudentDashboard() {
         name={firstName}
         stats={[
           { id: 'streak', label: 'Streak', value: `${studyStreak} days`, hint: 'Study days in a row', series: [Math.max(studyStreak - 2, 0), Math.max(studyStreak - 1, 0), studyStreak] },
-          { id: 'level', label: 'Level', value: `Level ${level}`, hint: `${Math.round(xpProgress)}% of this level`, ring: xpProgress },
+          { id: 'level', label: 'Level', value: `Level ${rank.level}`, hint: `${rank.progress}% of this level`, ring: rank.progress },
           { id: 'courses', label: 'In progress', value: String(inProgress.length), hint: `${completed.length} finished` },
         ]}
       />

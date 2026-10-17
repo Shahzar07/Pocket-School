@@ -2533,8 +2533,14 @@ service cloud.firestore {
       allow read: if isUser(userId) || isAdmin();
       allow write: if false;
     }
-    match /subscriptions/{userId} {
-      allow read: if isUser(userId) || isAdmin();
+    match /subscriptions/{subscriptionId} {
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || isUser(subscriptionId)
+        || resource.data.get('payerUid', '') == request.auth.uid
+        || resource.data.get('beneficiaryUids', []).hasAny([request.auth.uid])
+        || resource.data.get('userId', '') == request.auth.uid
+      );
       allow write: if false;
     }
     match /payouts/{id} {
@@ -2995,9 +3001,6 @@ service cloud.firestore {
     match /account_limits/{userId} {
       allow read, write: if false;
     }
-    match /safety_desk/{docId} {
-      allow read, write: if false;
-    }
     match /network_restricts/{pairId} {
       allow read, write: if false;
     }
@@ -3105,16 +3108,6 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
-    match /subscriptions/{subscriptionId} {
-      allow read: if isSignedIn() && (
-        isAdmin()
-        || resource.data.get('payerUid', '') == request.auth.uid
-        || resource.data.get('beneficiaryUids', []).hasAny([request.auth.uid])
-        || resource.data.get('userId', '') == request.auth.uid
-      );
-      allow create, update, delete: if false;
-    }
-
     match /billing_audit/{eventId} {
       allow read: if isSignedIn() && isAdmin();
       allow create, update, delete: if false;
@@ -3148,10 +3141,6 @@ service cloud.firestore {
     }
 
     match /card_audit_head/{headId} {
-      allow read, write: if false;
-    }
-
-    match /referrals/{code} {
       allow read, write: if false;
     }
 
