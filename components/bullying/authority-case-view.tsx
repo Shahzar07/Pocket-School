@@ -1,3 +1,4 @@
+import { SafetyDisclaimerFooter } from '@/components/safety/disclaimer';
 import { BRAND } from '@/lib/brand';
 import { DESK_NOT_EMERGENCY } from '@/lib/bullying/authority-referral';
 
@@ -59,6 +60,7 @@ export function AuthorityCaseView({
             <p>The reporter is not named in this message.</p>
           </article>
         ) : null}
+        <SafetyDisclaimerFooter emergencyNumber={emergency || '999'} />
       </div>
     </main>
   );

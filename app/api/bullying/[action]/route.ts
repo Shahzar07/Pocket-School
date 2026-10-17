@@ -17,6 +17,8 @@ import {
 } from '@/lib/server/bullying';
 import { authorityOptions, recordAuthorityDecision, recordAuthorityOutcome, sendAuthorityReferral } from '@/lib/server/authority-referral';
 import { grantSchoolNoticeConsent, listSchoolNotices, reviewSchoolNotice, searchSchools } from '@/lib/server/school-notice';
+import { requireSafetyTerms } from '@/lib/server/safety-terms';
+import { riskSeverity } from '@/lib/bullying/policy';
 import { runGet, runPost } from '@/lib/server/http';
 
 export const dynamic = 'force-dynamic';
@@ -33,6 +35,20 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
   const { action } = await ctx.params;
   return runPost(req, async (user, body) => {
     const input = { ...body, device: deviceFromHeaders(req.headers) };
+    const gated = action === 'evidence'
+      || action === 'restrict'
+      || action === 'mute'
+      || action === 'block'
+      || action === 'desk-restrict'
+      || action === 'referral'
+      || action === 'support'
+      || action === 'school-notice'
+      || action === 'school-consent'
+      || action === 'authority-decision'
+      || action === 'authority-send'
+      || action === 'authority-outcome';
+    const crisisChat = action === 'support' && riskSeverity(str(body.text)) === 'critical';
+    if (gated && !crisisChat) await requireSafetyTerms(user.uid);
     if (action === 'evidence') return storeEvidence(user.uid, input);
     if (action === 'restrict') return restrictPerson(user.uid, str(body.targetId));
     if (action === 'mute') return mutePerson(user.uid, str(body.targetId));

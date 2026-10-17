@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { caseCardHtml, caseCardSubject, caseCardText, type CaseCard } from './template';
+import { caseCardHtml, caseCardSms, caseCardSubject, caseCardText, type CaseCard } from './template';
 
 const card: CaseCard = {
   typeLabel: 'Danger now',
@@ -38,6 +38,12 @@ test('the confidential card names the child and tells staff not to forward it', 
   assert.match(html, /#2786A4/);
   assert.match(html, /https:\/\/poketschool\.ai\/photos\/aisha\.jpg/);
   assert.match(html, /Parents were not notified/);
+  assert.match(text, /\/safety-terms/);
+  assert.match(html, /\/safety-terms/);
+  const sms = caseCardSms(card);
+  assert.match(sms, /\/safety-terms/);
+  assert.match(sms, /Not an emergency service/);
+  assert.match(sms, /Confidential, do not forward|Safety Desk/);
 });
 
 test('an empty card stays confidential and does not invent a guardian', () => {

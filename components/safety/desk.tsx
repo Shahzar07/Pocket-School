@@ -5,6 +5,7 @@ import { Phone, Shield } from 'lucide-react';
 import { authedFetch, postJSON } from '@/lib/authed-fetch';
 import { emergencyNumber } from '@/lib/emergency/policy';
 import { SchoolField, type SchoolChoice } from '@/components/bullying/school-field';
+import { SafetyDisclaimerFooter, SafetyTermsNotice } from '@/components/safety/disclaimer';
 import { SAFETY_TYPE_OPTIONS, SupportCard, TrackerCard } from '@/components/safety/surfaces';
 import { DEFAULT_HELPLINES, WHERE_PLACES, type Helpline, type TrackerStage } from '@/lib/safety/policy';
 
@@ -71,6 +72,7 @@ export function SafetyDesk({
   const [victimSchool, setVictimSchool] = useState<SchoolChoice>(sample ? { id: '', name: 'Sample', onPoket: false } : EMPTY_SCHOOL);
   const [bullySchool, setBullySchool] = useState<SchoolChoice>(EMPTY_SCHOOL);
   const [schoolConsent, setSchoolConsent] = useState(false);
+  const [termsAcked, setTermsAcked] = useState(sample);
 
   useEffect(() => {
     if (sample) return;
@@ -95,6 +97,11 @@ export function SafetyDesk({
     if (sample) {
       setReports(current => [{ id: `sample-${type}`, safetyType: type, tracker: 'received', createdAt: Date.now(), flagged: false }, ...current]);
       setNote('Sent. The safeguarding lead has this.');
+      setBusy(false);
+      return;
+    }
+    if (!termsAcked) {
+      setNote('Read the safety terms and tap I understand. An emergency call does not wait for this.');
       setBusy(false);
       return;
     }
@@ -271,15 +278,17 @@ export function SafetyDesk({
           I&apos;m in danger now
         </button>
         {dangerNote ? <p className="text-sm font-semibold">{dangerNote}</p> : null}
+        <SafetyDisclaimerFooter emergencyNumber={number} />
       </form>
   );
 
   return (
     <div className="grid gap-4">
       {focus === 'danger' ? dangerForm : null}
+      <SafetyTermsNotice sample={sample} emergencyNumber={number} onAcked={() => setTermsAcked(true)} />
       {reportForm}
       {tracker}
-      <SupportCard lines={lines.length ? lines : undefined} />
+      <SupportCard lines={lines.length ? lines : undefined} emergencyNumber={number} />
       {focus === 'report' ? dangerForm : null}
     </div>
   );

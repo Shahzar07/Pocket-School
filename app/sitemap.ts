@@ -16,6 +16,8 @@ const ROUTES: { path: string; changeFrequency: MetadataRoute.Sitemap[number]['ch
   { path: '/login', changeFrequency: 'yearly', priority: 0.4 },
   { path: '/signup', changeFrequency: 'yearly', priority: 0.6 },
   { path: '/stand-up-to-bullying', changeFrequency: 'monthly', priority: 0.8 },
+  { path: '/safety-terms', changeFrequency: 'yearly', priority: 0.4 },
+  { path: '/community-partners', changeFrequency: 'monthly', priority: 0.6 },
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

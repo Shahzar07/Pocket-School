@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { WidenAllStaff } from '@/components/alerts/all-staff';
+import { SafetyDisclaimerFooter } from '@/components/safety/disclaimer';
 import { AuthorityDesk } from '@/components/bullying/authority-desk';
 import { InformSchool } from '@/components/bullying/inform-school';
 import { DashHeader, DashPage } from '@/components/dash-ui';
@@ -125,6 +126,7 @@ export default function SafetyNoticePage() {
         <AuthorityDesk reportId={id} country={notice.reporterCountry || 'Malaysia'} />
       ) : null}
       <WidenAllStaff source="case" sourceId={id} />
+      <SafetyDisclaimerFooter />
     </DashPage>
   );
 }

@@ -1,4 +1,5 @@
 import { AmberJoin } from '@/components/amber/join';
+import { GetInvolvedLink, SafetyDisclaimerFooter } from '@/components/safety/disclaimer';
 import { BRAND } from '@/lib/brand';
 import { AMBER_JOIN_CTA, type AmberPage } from '@/lib/amber/public';
 
@@ -19,6 +20,8 @@ export function PublicAmber({ view }: { view: AmberPage | null }) {
         <div className="mx-auto grid max-w-xl gap-4 p-6">
           <p>This alert is not available.</p>
           <AmberJoin code="" country="" />
+          <GetInvolvedLink />
+          <SafetyDisclaimerFooter emergencyNumber="999" />
         </div>
       </main>
     );
@@ -64,6 +67,8 @@ export function PublicAmber({ view }: { view: AmberPage | null }) {
         </a>
         <AmberJoin code={view.referralCode} country={view.country} />
         {!view.resolved ? <p className="text-sm" style={{ color: BRAND.blueDeep }}>{view.disclaimer}</p> : null}
+        <GetInvolvedLink />
+        <SafetyDisclaimerFooter emergencyNumber={view.emergencyNumber || '999'} />
       </div>
     </main>
   );

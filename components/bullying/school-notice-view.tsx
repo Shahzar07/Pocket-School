@@ -1,3 +1,4 @@
+import { SafetyDisclaimerFooter } from '@/components/safety/disclaimer';
 import { BRAND } from '@/lib/brand';
 import { AckForm } from './ack-form';
 
@@ -49,6 +50,7 @@ export function SchoolNoticeView({
             <a href={joinUrl} className="inline-flex min-h-12 items-center justify-center rounded-xl px-4 font-semibold" style={{ background: BRAND.cyan, color: BRAND.ink, border: `1px solid ${BRAND.blueDeep}` }}>Join Poket School for free safeguarding tools</a>
           </article>
         ) : null}
+        <SafetyDisclaimerFooter emergencyNumber="999" />
       </div>
     </main>
   );

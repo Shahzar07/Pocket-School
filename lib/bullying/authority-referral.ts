@@ -5,6 +5,7 @@
  */
 
 import type { AuthorityDecision } from '../authorities/policy';
+import { originFromUrl, safetyMessageFooter } from '../safety/disclaimer';
 
 export const REFERRED_TO_AUTHORITIES = 'Referred to authorities';
 export const DESK_NOT_EMERGENCY = 'The Safety Desk does not replace emergency services.';
@@ -191,7 +192,7 @@ export function authorityCaseMessage(input: {
   ];
   return {
     subject: `Confidential case for ${input.agency}`,
-    text: lines.join('\n'),
+    text: `${lines.join('\n')}\n\n${safetyMessageFooter('999', originFromUrl(input.caseUrl))}`,
   };
 }
 

@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { AlertCard, EmptyState, StatCard } from '@/components/dashboard';
 import { DashHeader, DashPage, Panel } from '@/components/dash-ui';
+import { SafetyDisclaimerFooter, SafetyTermsNotice } from '@/components/safety/disclaimer';
 import { authedFetch, postJSON } from '@/lib/authed-fetch';
 import { EMERGENCY_TYPES } from '@/lib/emergency/policy';
 import {
@@ -164,6 +165,7 @@ export function ParentHotlineLive({
   const [rating, setRating] = useState('5');
   const [busy, setBusy] = useState(false);
   const [auditId, setAuditId] = useState(sample ? SAMPLE_TICKETS[0].id : '');
+  const [termsAcked, setTermsAcked] = useState(sample);
 
   useEffect(() => {
     if (childIds[0]) setStudentId(childIds[0]);
@@ -201,6 +203,11 @@ export function ParentHotlineLive({
       setTickets(current => [created, ...current]);
       setAuditId(created.id);
       setNote('Sent to the school.');
+      setBusy(false);
+      return;
+    }
+    if (!termsAcked) {
+      setNote('Read the safety terms and tap I understand. An emergency call does not wait for this.');
       setBusy(false);
       return;
     }
@@ -266,6 +273,7 @@ export function ParentHotlineLive({
         title="School hotline"
         description="Write to your child’s school. Safeguarding notes go only to the principal or the safeguarding lead."
       />
+      <SafetyTermsNotice sample={sample} onAcked={() => setTermsAcked(true)} />
       <form onSubmit={event => void create(event)} className="grid gap-3 rounded-[24px] border border-border bg-card p-4">
         <h2 className="font-heading text-xl">New ticket</h2>
         {childIds.length > 1 ? (
@@ -436,6 +444,7 @@ export function StaffHotlineLive({ sample = false }: { sample?: boolean }) {
       ))}
       {note ? <AlertCard tone="good" title="Queue" detail={note} /> : null}
       <AuditBar kind="hotline" id={auditId} sample={sample} onNote={setNote} />
+      <SafetyDisclaimerFooter />
     </DashPage>
   );
 }
@@ -646,6 +655,7 @@ export function EmergencyLive({ sample = false }: { sample?: boolean }) {
       {note ? <AlertCard tone="good" title="Emergency" detail={note} /> : null}
       <p className="text-sm text-muted-foreground">The public page is /amber/{alertId || 'id'} with an OG image. Shares are logged from that page.</p>
       <AuditBar kind="emergency" id={alertId} sample={sample} onNote={setNote} />
+      <SafetyDisclaimerFooter />
     </DashPage>
   );
 }

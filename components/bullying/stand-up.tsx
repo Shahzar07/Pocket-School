@@ -1,3 +1,4 @@
+import { GetInvolvedLink, SafetyDisclaimerFooter } from '@/components/safety/disclaimer';
 import { BRAND } from '@/lib/brand';
 import {
   BULLYING_JOIN_CTA,
@@ -72,8 +73,10 @@ export function StandUp() {
           <p className="mt-3 text-sm" style={{ color: BRAND.blueDeep }}>Other countries stay blank until an official page is checked. This page does not invent a number.</p>
         </article>
         <a className="inline-flex min-h-12 items-center justify-center rounded-xl px-4 text-base font-bold" style={cyanButton} href={join}>{BULLYING_JOIN_CTA}</a>
+        <GetInvolvedLink />
         <p style={{ color: BRAND.ink }}>Referral code {SAMPLE_BULLYING_CODE}</p>
         <p className="text-sm" style={{ color: BRAND.blueDeep }}>This page shows no reports, names, or evidence.</p>
+        <SafetyDisclaimerFooter emergencyNumber="999" />
       </div>
     </main>
   );

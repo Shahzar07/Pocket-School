@@ -20,6 +20,7 @@ import {
 import { DESK_CONTACT, SAFETY_FROM } from '../bullying/school-notice';
 import { bullyingReceiveAllowed, guardianIdsFor } from '../bullying/policy';
 import { emergencyNumber } from '../emergency/policy';
+import { originFromUrl, safetyMessageFooter } from '../safety/disclaimer';
 import { GENESIS, emptyLegalHold, type ChainDevice } from '../ledger/chain';
 import { SERVER_DEVICE } from '../ledger/device';
 import { currentMailAdapter, sendWithBackoff } from '../mail';
@@ -388,6 +389,8 @@ export async function sendAuthorityReferral(uid: string, input: Record<string, u
     `Reference: ${reference}`,
     'The reporter is not named.',
     DESK_NOT_EMERGENCY,
+    '',
+    safetyMessageFooter(number, originFromUrl(caseUrl)),
   ].join('\n');
   return {
     id: ref.id,

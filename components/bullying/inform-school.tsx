@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { SafetyTermsNotice } from '@/components/safety/disclaimer';
 import { authedFetch, postJSON } from '@/lib/authed-fetch';
 import { BRAND } from '@/lib/brand';
 
@@ -44,6 +45,7 @@ export function InformSchool({
   const [overrideReason, setOverrideReason] = useState('');
   const [message, setMessage] = useState('');
   const [ackUrl, setAckUrl] = useState('');
+  const [termsAcked, setTermsAcked] = useState(sample);
   const [notices, setNotices] = useState<NoticeRow[]>(sample ? [{
     id: 'sample-notice',
     schoolName: victimSchoolName || 'Sample Off Platform School',
@@ -82,6 +84,10 @@ export function InformSchool({
       setMessage(emailSend ? 'Nothing was sent from this preview.' : 'Find contact. Nothing was sent.');
       return;
     }
+    if (!termsAcked) {
+      setMessage('Read the safety terms and tap I understand. An emergency call does not wait for this.');
+      return;
+    }
     setMessage('');
     try {
       const result = await postJSON<{ status: string; task?: string; ackUrl?: string }>('/api/bullying/school-notice', {
@@ -110,6 +116,7 @@ export function InformSchool({
   return (
     <section className="rounded-3xl border bg-white p-5 grid gap-3" style={{ color: BRAND.ink }}>
       <h2 className="text-2xl font-semibold" style={{ color: BRAND.blueDeep }}>Inform a school</h2>
+      <SafetyTermsNotice sample={sample} onAcked={() => setTermsAcked(true)} />
       <p>A Desk member reviews every notice. Nothing is sent until you send it. The reporter is not named.</p>
       {notices.map(notice => (
         <p key={notice.id} className="text-sm">

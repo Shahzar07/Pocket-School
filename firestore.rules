@@ -2814,6 +2814,22 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
+    // Community safety terms. The server writes legal/safetyTerms/versions/{version}.
+    // Signed-in clients may read that document. They cannot write it or its audit chain. Not deployed.
+    // Community partner applications. Server only. Applying grants nothing. Not deployed.
+    match /communityPartnerApplications/{applicationId} {
+      allow read, write: if false;
+    }
+    match /legal/safetyTerms {
+      allow read, write: if false;
+      match /versions/{version} {
+        allow get: if request.auth != null;
+        allow list, create, update, delete: if false;
+        match /audit/{entryId} {
+          allow read, write: if false;
+        }
+      }
+    }
 
     match /published_reports/{token} {
       allow get: if true;

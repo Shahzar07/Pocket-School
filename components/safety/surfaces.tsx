@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Phone, Shield } from 'lucide-react';
+import { SafetyDisclaimerFooter } from '@/components/safety/disclaimer';
 import { emergencyNumber } from '@/lib/emergency/policy';
 import { DEFAULT_HELPLINES, TRACKER_STAGES, type Helpline, type TrackerStage } from '@/lib/safety/policy';
 
@@ -58,7 +59,7 @@ export function SafetyShieldLink({ href = '/dashboard/student/safety' }: { href?
   );
 }
 
-export function SupportCard({ lines = DEFAULT_HELPLINES }: { lines?: Helpline[] }) {
+export function SupportCard({ lines = DEFAULT_HELPLINES, emergencyNumber = '999' }: { lines?: Helpline[]; emergencyNumber?: string }) {
   return (
     <section className="sf-card" aria-label="Support resources">
       <h2 style={{ margin: '0 0 8px', fontSize: 18 }}>Support resources</h2>
@@ -73,6 +74,9 @@ export function SupportCard({ lines = DEFAULT_HELPLINES }: { lines?: Helpline[] 
             <a className="sf-btn" href={`tel:${line.number.replace(/\s/g, '')}`}>{line.number}</a>
           </div>
         ))}
+      </div>
+      <div style={{ marginTop: 12 }}>
+        <SafetyDisclaimerFooter emergencyNumber={emergencyNumber} />
       </div>
     </section>
   );
@@ -121,6 +125,7 @@ export function DangerCard({
         I&apos;m in danger now
       </button>
       <p className="sf-note">{sent ? 'Your school has been told. Location is shared only if you chose it, and only once.' : 'Your school is told when you press this. Parents are told unless you say not to, or the concern is abuse.'}</p>
+      <SafetyDisclaimerFooter emergencyNumber={number} />
     </section>
   );
 }

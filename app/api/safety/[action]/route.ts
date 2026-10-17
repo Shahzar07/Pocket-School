@@ -18,6 +18,7 @@ import {
   safetyNotice,
   writeHelplines,
 } from '@/lib/server/safety';
+import { acknowledgeSafetyTerms, requireSafetyTerms, safetyTermsStatus } from '@/lib/server/safety-terms';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,8 +73,15 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
     try {
       const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
       const input = stamp(req, body);
-      const data = action === 'report' ? await fileSafetyReport(user.uid, input) : await raiseDanger(user.uid, input);
-      return NextResponse.json(data);
+      if (action === 'report') {
+        await requireSafetyTerms(user.uid);
+        const data = await fileSafetyReport(user.uid, input);
+        return NextResponse.json(data);
+      }
+      if (action === 'danger') {
+        const data = await raiseDanger(user.uid, input);
+        return NextResponse.json(data);
+      }
     } catch (error) {
       if (error instanceof ActionError) {
         const status = error.code === 'FORBIDDEN' ? 403 : error.code === 'NOT_FOUND' ? 404 : 400;
@@ -86,6 +94,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
   return runPost(req, async (user, body) => {
     const input = stamp(req, body);
     const device = deviceFromHeaders(req.headers);
+    if (action === 'terms-ack') return acknowledgeSafetyTerms(user.uid, device);
     if (action === 'ack') return acknowledgeDanger(user.uid, str(body.id), device);
     if (action === 'family') return recordFamilyDecision(user.uid, str(body.id), input);
     if (action === 'false-danger') return markDangerFalse(user.uid, str(body.id), device);
@@ -97,6 +106,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
 export async function GET(req: NextRequest, ctx: { params: Promise<{ action: string }> }) {
   const { action } = await ctx.params;
   return runGet(req, async (user) => {
+    if (action === 'terms') return safetyTermsStatus(user.uid);
     if (action === 'tracker') return listSafetyTracker(user.uid);
     if (action === 'helplines') return readHelplines(user.uid);
     if (action === 'notice') return safetyNotice(user.uid, req.nextUrl.searchParams.get('id') ?? '');

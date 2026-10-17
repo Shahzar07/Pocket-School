@@ -23,6 +23,7 @@ import {
   noticeTypeLabel,
   type NoticeKind,
 } from '../staff-notice/copy';
+import { originFromUrl, safetyDeskEmailText } from '../safety/disclaimer';
 import { caseCardHtml, caseCardSubject, caseCardText, type GuardianContact } from '../staff-notice/template';
 import { peopleAtInstitution } from './alert-directory';
 import { appendChain } from './ledger';
@@ -464,7 +465,7 @@ async function alertInstitutionAdmins(notice: BuiltNotice) {
       const sent = await sendWithBackoff(() => currentMailAdapter().send({
         to: email,
         subject: 'Confidential: a staff notice failed',
-        text: `A staff notice could not be delivered. Open the case: ${notice.caseUrl}\n\nConfidential, do not forward`,
+        text: safetyDeskEmailText(`A staff notice could not be delivered. Open the case: ${notice.caseUrl}\n\nConfidential, do not forward`, '999', originFromUrl(notice.caseUrl)),
         html: caseCardHtml({
           typeLabel: 'Staff notice failed',
           fullName: '',

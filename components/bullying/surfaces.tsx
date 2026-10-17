@@ -1,5 +1,6 @@
 import { AuthorityDesk } from '@/components/bullying/authority-desk';
 import { InformSchool } from '@/components/bullying/inform-school';
+import { GetInvolvedLink, SafetyDisclaimerFooter } from '@/components/safety/disclaimer';
 import { BRAND } from '@/lib/brand';
 import { DESK_SLA_MS, NOT_A_COUNSELLOR, evidenceHash, helpNearMe, helplinesForCountry } from '@/lib/bullying/policy';
 
@@ -32,6 +33,7 @@ export function HelpSurface() {
           <h2 className="text-2xl font-semibold" style={{ color: BRAND.blueDeep }}>ET AI support</h2>
           <p className="mt-2 font-semibold" style={{ color: BRAND.ink }}>{NOT_A_COUNSELLOR}</p>
           <p className="mt-2" style={{ color: BRAND.ink }}>A message about wanting to die goes to the Safety Desk as critical and shows helplines at once.</p>
+          <div className="mt-4"><SafetyDisclaimerFooter emergencyNumber="999" /></div>
         </article>
         <article className="rounded-3xl border bg-white p-5">
           <h2 className="text-2xl font-semibold" style={{ color: BRAND.blueDeep }}>Get help near me</h2>
@@ -41,6 +43,8 @@ export function HelpSurface() {
               <li key={line.name} style={{ color: BRAND.ink }}>{line.name} {line.number}</li>
             ))}
           </ul>
+          <div className="mt-4 flex flex-wrap gap-2"><GetInvolvedLink /></div>
+          <div className="mt-4"><SafetyDisclaimerFooter emergencyNumber={near?.emergencyNumber || '999'} /></div>
         </article>
         <article className="rounded-3xl border bg-white p-5">
           <h2 className="text-2xl font-semibold" style={{ color: BRAND.blueDeep }}>Evidence locker</h2>
@@ -119,6 +123,7 @@ export function DeskSurface() {
           bullyOnPoket
         />
         <AuthorityDesk sample reportId="sample" country="Malaysia" />
+        <SafetyDisclaimerFooter emergencyNumber="999" />
         <article className="rounded-3xl border bg-white p-5">
           <h2 className="text-2xl font-semibold" style={{ color: BRAND.blueDeep }}>False reports</h2>
           <p className="mt-2" style={{ color: BRAND.ink }}>Repeated false reports are flagged for a person to review. The reporter is not muted or restricted for that flag.</p>

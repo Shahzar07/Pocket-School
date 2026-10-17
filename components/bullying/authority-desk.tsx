@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { SafetyTermsNotice } from '@/components/safety/disclaimer';
 import { authedFetch, postJSON } from '@/lib/authed-fetch';
 import { BRAND } from '@/lib/brand';
 import { DESK_NOT_EMERGENCY, channelsFor, mandatoryReportingNote } from '@/lib/bullying/authority-referral';
@@ -65,7 +66,13 @@ export function AuthorityDesk({
   const [pack, setPack] = useState('');
   const [outcome, setOutcome] = useState('');
   const [message, setMessage] = useState('');
+  const [termsAcked, setTermsAcked] = useState(sample);
   const number = emergencyNumber(place);
+  const needsTerms = () => {
+    if (sample || termsAcked) return false;
+    setMessage('Read the safety terms and tap I understand. An emergency call does not wait for this.');
+    return true;
+  };
 
   useEffect(() => {
     if (sample || !reportId) return;
@@ -100,6 +107,7 @@ export function AuthorityDesk({
         : 'Not needed is saved only with a reason. Nothing was sent.');
       return;
     }
+    if (needsTerms()) return;
     setMessage('');
     try {
       await postJSON('/api/bullying/authority-decision', { reportId, decision, reason });
@@ -114,6 +122,7 @@ export function AuthorityDesk({
       setMessage('Nothing was sent from this preview.');
       return;
     }
+    if (needsTerms()) return;
     setMessage('');
     try {
       const result = await postJSON<{ status: string; id?: string; channel?: string; pack?: string }>('/api/bullying/authority-send', {
@@ -146,6 +155,7 @@ export function AuthorityDesk({
       setMessage('Send the referral before recording an outcome.');
       return;
     }
+    if (needsTerms()) return;
     setMessage('');
     try {
       await postJSON('/api/bullying/authority-outcome', { id: referralId, outcome });
@@ -160,6 +170,7 @@ export function AuthorityDesk({
       <h2 className="text-2xl font-semibold" style={{ color: BRAND.blueDeep }}>Refer to the authorities</h2>
       <p className="text-4xl font-extrabold">Call {number}</p>
       <p className="font-semibold">{DESK_NOT_EMERGENCY}</p>
+      <SafetyTermsNotice sample={sample} emergencyNumber={number} onAcked={() => setTermsAcked(true)} />
       <p>A Desk member sends this. Nothing is sent automatically. The reporter is not named.</p>
       {sample ? <p className="text-sm">Sample case. Nothing is sent from this preview.</p> : null}
       <div className="flex flex-wrap gap-2">

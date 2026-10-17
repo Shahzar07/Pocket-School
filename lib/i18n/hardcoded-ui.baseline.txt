@@ -2526,3 +2526,15 @@ components/bullying/school-field.tsx	Your school
 components/safety/desk.tsx	The Safety Desk does not replace emergency services.
 components/safety/surfaces.tsx	Referred to authorities
 components/safety/surfaces.tsx	The Safety Desk does not replace emergency services.
+app/safety-terms/page.tsx	POKET SCHOOL
+components/safety/disclaimer.tsx	Read the full terms
+app/community-partners/page.tsx	Community partners
+app/community-partners/page.tsx	POKET SCHOOL
+app/community-partners/page.tsx	Who can get involved
+app/safety-terms/page.tsx	Get involved
+components/community/partners-form.tsx	Applying grants nothing until an admin verifies the organisation.
+components/community/partners-form.tsx	Contact name
+components/community/partners-form.tsx	Partner type
+components/community/partners-form.tsx	Tell us about your organisation
+components/community/partners-form.tsx	https://
+components/safety/disclaimer.tsx	Get involved

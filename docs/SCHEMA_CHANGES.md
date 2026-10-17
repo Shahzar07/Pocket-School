@@ -1705,3 +1705,43 @@ The partner page is `/authority-case/{token}`. It is `noindex` and disallowed in
 | GET | `/authority-case/{token}` |
 
 Queries, single field, not a new composite index: `users.partnerKind`, `authorityReferrals.tokenHash`. Rules and indexes are not deployed. The desk sample is `/preview/bullying?view=desk`.
+
+## Community safety terms
+
+The draft wording lives in `lib/safety/disclaimer.ts` as version `2026-10-17`. The title keeps `DRAFT, pending legal review`. Clause 2.1 keeps the placeholder `[COMPANY LEGAL NAME]`. The public page `/safety-terms` is indexable and is in the sitemap. Its server HTML always includes the ten clauses so a crawler can read them. A signed-in under-13 account, including an account with no `ageTier`, sees the child sentence after the page loads and the long clauses are hidden in the browser. The child sentence is the one in the draft. This build does not add BM, ZH, or TA translations.
+
+The requested path `legal/safetyTerms/{version}` is stored as the document `legal/safetyTerms/versions/{version}` because a Firestore document path needs an even number of segments. The server creates that document in `ensureCurrentTerms` only when it is missing, with `chainSeq: 0`, `chainHead` set to the genesis hash, and an empty `legalHold`. A later write merges the draft text and does not reset the chain. Clients may get the version document when they are signed in. They cannot list, create, update, or delete it. The subcollection `legal/safetyTerms/versions/{version}/audit` is denied to clients. Rules are not deployed.
+
+Each acknowledgement is one `appendChain` entry on that audit subcollection. The action is `safety_terms_ack`. The entry stores `uid`, `version`, and `timestamp` in addition to the usual chain fields. The user document also stores `safetyTermsAckVersion` and `safetyTermsAckAt` so the next check is one read. Those two fields are not in `selfServiceFields()`, so a client cannot write them. A matching version is not written again. A different version asks for a new acknowledgement.
+
+`POST /api/safety/terms-ack` writes the acknowledgement. `GET /api/safety/terms` returns the current version, whether this account still needs to acknowledge it, and whether the account is under 13. Non-emergency safety writes call `requireSafetyTerms` at the route: a safety report, a hotline ticket, evidence, restrict, mute, block, desk restrict, a school referral, ET AI support chat, a school notice, school-notice consent, and an authority decision, send, or outcome. A support chat whose text is `critical` self-harm risk skips the acknowledgement so the report can still be filed. The check is not inside `fileSafetyReport` or `raiseDanger`.
+
+These actions never wait for the disclaimer or the acknowledgement: I'm in danger (`danger`), the danger acknowledgement (`ack`), emergency numbers, roll-call I'm safe and Need help (`check-in`), and an Amber receipt (`lib/server/emergency.ts` and the Amber opt-in route). The I'm in danger button stays above the short footer. The footer does not cover it.
+
+The short footer is the draft headline with the local emergency number, the goodwill sentence, and a link to `/safety-terms`. It is on `/amber/{id}`, the hotline and report pages, I'm in danger, `/stand-up-to-bullying`, the Safety Desk, ET AI support, Get help near me, school-notice pages, and authority case pages. School-notice email, the authority partner message, the authority referral pack, the staff case-card email, and the failed-notice email append the same footer. When the country is unknown the email uses `999`. The SMS body is `caseCardSms` and `safetyDeskSmsText`. This build has no SMS provider, so nothing is sent or logged as a failed SMS.
+
+| Method | Path |
+| --- | --- |
+| GET | `/safety-terms` |
+| GET | `/api/safety/terms` |
+| POST | `/api/safety/terms-ack` |
+
+The short footer and `/safety-terms` also say "Poket School's safety features are a free community service. We invite community partners to get involved." and link to `/community-partners`.
+
+## Community partners
+
+`/community-partners` is a public indexable page. It lists police, child-protection NGOs, schools, counsellors and mental-health organisations, helplines, businesses and sponsors, volunteers, and media. The interest form posts to `POST /api/community-partners`. The page itself does not call Firebase, so it still renders when the admin SDK is missing.
+
+`communityPartnerApplications/{id}` is written only by the server. Clients cannot read or write it. Rules are not deployed. The document is `{ orgName, type, country, region, contactName, email, phone, website, message, status, createdAt }`, plus `route`, `nextPath`, `reviewedAt`, and `reviewedBy` after a review. `status` starts as `pending`. A hidden honeypot field is dropped and is not stored. The route allows five applications an hour for one address. A website, when present, has to start with `https://`.
+
+If Firebase Admin is not configured, the form answers "Partner applications are coming soon." and writes nothing. If mail is not configured, the application is still saved and the review email is not treated as a crash. The review note goes to `SAFETY_ADMIN_EMAIL` or `safety@poketschool.ai`, from `Poket School <safety@poketschool.ai>`.
+
+`POST /api/community-partners/review` is admin only. Approve sets `route` and `nextPath` and does not change a user, a verification tier, `partnerKind`, or a merchant record. Police and child-protection NGOs are pointed at tier-4 verification (`/signup?partner=tier4`). Schools are pointed at institution onboarding (`/signup?help=school`). Businesses and sponsors are pointed at the partner merchant flow (`/signup?partner=merchant`). Other types wait for a person. Decline stores `declined` and grants nothing.
+
+Get involved links to `/community-partners` from `/stand-up-to-bullying`, `/amber/{id}`, Get help near me, the safety footer, school-notice email, and Safety Desk email.
+
+| Method | Path |
+| --- | --- |
+| GET | `/community-partners` |
+| POST | `/api/community-partners` |
+| POST | `/api/community-partners/review` |

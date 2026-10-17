@@ -4,6 +4,7 @@
  */
 
 import { DEFAULT_WORK, zonedClock, type WorkCalendar } from '../hotline/policy';
+import { originFromUrl, safetyMessageFooter } from '../safety/disclaimer';
 import { SAMPLE_BULLYING_CODE, bullyingJoinPath } from './policy';
 
 export const SAFETY_FROM = 'Poket School <safety@poketschool.ai>';
@@ -137,8 +138,9 @@ export function schoolNoticeMessage(input: {
     `Poket School safeguarding tools are free for schools: ${input.joinUrl}`,
     'The reporter is not named in this notice.',
   ].filter(Boolean);
-  const text = lines.join('\n');
-  const html = lines.map(line => `<p>${escapeHtml(line)}</p>`).join('');
+  const footer = safetyMessageFooter('999', originFromUrl(input.ackUrl));
+  const text = `${lines.join('\n')}\n\n${footer}`;
+  const html = `${lines.map(line => `<p>${escapeHtml(line)}</p>`).join('')}${footer.split('\n').map(line => `<p>${escapeHtml(line)}</p>`).join('')}`;
   return {
     subject: input.reminder ? `Reminder: confidential notice for ${schoolName}` : `Confidential notice for ${schoolName}`,
     text,
