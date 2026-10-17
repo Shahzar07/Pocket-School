@@ -9,7 +9,7 @@ import { DashHeader, DashPage, Panel } from '@/components/dash-ui';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { isSuperAdmin } from '@/lib/roles';
-import { SANDBOX_BANNER } from '@/lib/institution-self-serve';
+import { SANDBOX_BANNER, priceInstitutionOrder, programmesForCheckout } from '@/lib/institution-self-serve';
 import { periodStartFor, quoteForInstitution, type SubscriptionState } from '@/lib/institution-membership';
 import { loadCurrentBill } from '@/lib/institution-membership-store';
 import { seedInstitutionPricing, tierCliff, VOLUME_PLANS, type VolumeInterval, type VolumePlanId } from '@/lib/institution-pricing';
@@ -29,6 +29,8 @@ export default function InstitutionBillingPage() {
   const [interval, setInterval] = useState<VolumeInterval>('annual');
   const [email, setEmail] = useState('');
   const [linkText, setLinkText] = useState('');
+  const [programmeIds, setProgrammeIds] = useState<string[]>(['igcse']);
+  const offers = programmesForCheckout('subscription');
 
   useEffect(() => {
     fetch('/api/institutions/signup-config')
@@ -50,8 +52,26 @@ export default function InstitutionBillingPage() {
       setInterval(current.interval);
       if (current.payerEmail) setEmail(current.payerEmail);
     }).catch(() => undefined);
+    authedFetch(`/api/institutions/programme-access?institutionId=${institutionId}`)
+      .then((data) => {
+        const ids = Array.isArray(data.programmeIds) ? data.programmeIds.filter((id): id is string => typeof id === 'string') : [];
+        if (ids.length) setProgrammeIds(ids);
+      })
+      .catch(() => undefined);
   }, [institutionId]);
 
+  const hybrid = programmeIds.length
+    ? priceInstitutionOrder({
+      planId,
+      interval,
+      seats,
+      access: 'subscription',
+      programmeIds,
+      country: profile?.country || 'MY',
+      tender: 'card',
+      activeSeats: activeStudents,
+    })
+    : null;
   const quote = quoteForInstitution({ seats, planId, interval });
   const cliff = tierCliff(seedInstitutionPricing(), planId, interval);
   const periodStart = bill ? periodStartFor(bill.periodEnd, bill.interval) : '';
@@ -68,7 +88,7 @@ export default function InstitutionBillingPage() {
     try {
       const data = await authedFetch('/api/institutions/billing/change', {
         method: 'POST',
-        body: JSON.stringify({ institutionId, planId, interval, seats, confirmSandbox }),
+        body: JSON.stringify({ institutionId, planId, interval, seats, programmeIds, activeSeats: activeStudents, confirmSandbox }),
       });
       if (typeof data.url === 'string' && data.url) {
         window.location.href = data.url;
@@ -122,8 +142,18 @@ export default function InstitutionBillingPage() {
       {banner && <p role="status" className="rounded-2xl bg-[#F8E7C4] px-4 py-3 text-sm text-[#1A3C34]">{banner}</p>}
       {cancelOn && <p className="text-sm">Cancellation is set for {cancelOn}.</p>}
       <Panel>
-        <p className="text-2xl font-semibold tabular-nums">{quote.currency} {quote.total.toFixed(2)}</p>
-        <p className="text-sm text-muted-foreground">{quote.tierLabel} · {quote.seats} student seats · {interval}</p>
+        {hybrid && !('error' in hybrid) ? (
+          <>
+            <p className="text-2xl font-semibold tabular-nums">{hybrid.currency} {hybrid.total.toFixed(2)}</p>
+            <p className="text-sm text-muted-foreground">{hybrid.tierLabel} · {hybrid.uniqueStudents} unique students · {hybrid.programmeTitles.join(', ')}</p>
+            {hybrid.bundleDiscount > 0 && <p className="mt-2 text-sm">{hybrid.programmeCount} programmes include a {(hybrid.bundleDiscount * 100).toFixed(0)}% bundle discount.</p>}
+          </>
+        ) : (
+          <>
+            <p className="text-2xl font-semibold tabular-nums">{quote.currency} {quote.total.toFixed(2)}</p>
+            <p className="text-sm text-muted-foreground">{quote.tierLabel} · {quote.seats} student seats · {interval}</p>
+          </>
+        )}
         {cliff && <p className="mt-2 text-sm text-amber-800">The next band, {cliff.toLabel}, is cheaper than {cliff.fromLabel}. Banded pricing is there so a school is not pushed off a cliff.</p>}
         {bill && scaled && !('error' in scaled) && scaled.charge > 0 && <p className="mt-2 text-sm">Pro-rated charge for {seats - bill.seats} added seats, for the days left in this period: {bill.currency} {scaled.charge.toFixed(2)}.</p>}
         {bill && scaled && !('error' in scaled) && scaled.credit > 0 && <p className="mt-2 text-sm">Pro-rated credit for unused seats, for the days left in this period: {bill.currency} {scaled.credit.toFixed(2)}.</p>}
@@ -142,12 +172,27 @@ export default function InstitutionBillingPage() {
                 <option value="monthly">Monthly</option>
               </select>
             </label>
-            <label className="text-sm">Seats on the next bill
+            <label className="text-sm">Unique students
               <Input className="mt-1 h-11 rounded-xl" type="number" min={1} inputMode="numeric" value={seats} onChange={(event) => setSeats(Number(event.target.value))} />
             </label>
             <label className="text-sm">Active students now
               <Input className="mt-1 h-11 rounded-xl" type="number" min={0} inputMode="numeric" value={activeStudents} onChange={(event) => setActiveStudents(Number(event.target.value))} />
             </label>
+            <fieldset className="text-sm sm:col-span-2">
+              <legend>Programmes</legend>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                {offers.filter((item) => item.kind === 'programme').map((item) => (
+                  <label key={item.id} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={programmeIds.includes(item.id)}
+                      onChange={() => setProgrammeIds((current) => current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id])}
+                    />
+                    {item.title}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             <label className="text-sm sm:col-span-2">Billing email
               <Input className="mt-1 h-11 rounded-xl" type="email" autoComplete="email" inputMode="email" value={email} onChange={(event) => setEmail(event.target.value)} />
             </label>

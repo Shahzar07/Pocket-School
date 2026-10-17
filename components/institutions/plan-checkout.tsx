@@ -8,7 +8,7 @@ import {
   SEAT_MAX,
   SEAT_MIN,
   priceInstitutionOrder,
-  programmesForLevel,
+  programmesForCheckout,
   type OrderAccess,
 } from '@/lib/institution-self-serve';
 
@@ -61,16 +61,18 @@ export function PlanCheckout({
   const [wantsCobrand, setWantsCobrand] = useState(false);
   const [wantsMarketplace, setWantsMarketplace] = useState(false);
 
-  const programmes = useMemo(() => programmesForLevel(planId, access), [planId, access]);
+  const offers = useMemo(() => programmesForCheckout(access), [access]);
+  const programmes = offers.filter((item) => item.kind === 'programme');
+  const categories = offers.filter((item) => item.kind === 'category');
   const priced = useMemo(() => priceInstitutionOrder({
     planId,
     interval,
     seats,
     access,
-    programmeIds: programmeIds.filter((id) => programmes.some((item) => item.id === id)),
+    programmeIds: programmeIds.filter((id) => offers.some((item) => item.id === id)),
     country,
     tender,
-  }), [planId, interval, seats, access, programmeIds, programmes, country, tender]);
+  }), [planId, interval, seats, access, programmeIds, offers, country, tender]);
 
   const toggleProgramme = (id: string) => {
     setProgrammeIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
@@ -81,7 +83,7 @@ export function PlanCheckout({
     interval,
     seats,
     access,
-    programmeIds: programmeIds.filter((id) => programmes.some((item) => item.id === id)),
+    programmeIds: programmeIds.filter((id) => offers.some((item) => item.id === id)),
     tender,
     poNumber,
     wantsCustomDomain,
@@ -101,7 +103,7 @@ export function PlanCheckout({
 
       <label className="block text-sm font-medium">
         Plan
-        <select className={journeyField} value={planId} onChange={(event) => { setPlanId(event.target.value as VolumePlanId); setProgrammeIds([]); }}>
+        <select className={journeyField} value={planId} onChange={(event) => setPlanId(event.target.value as VolumePlanId)}>
           {VOLUME_PLANS.map((plan) => <option key={plan.id} value={plan.id}>{plan.name}</option>)}
         </select>
       </label>
@@ -113,7 +115,8 @@ export function PlanCheckout({
         </select>
       </label>
       <label className="block text-sm font-medium">
-        Student seats: {seats}
+        Unique students: {seats}
+        <span className="mt-1 block font-normal text-[#1A3C34]/70">This count picks Starter, Growth, Pro, or Enterprise. Each selected programme is billed for these students.</span>
         <input
           className="mt-2 w-full accent-[#C8922A]"
           type="range"
@@ -135,8 +138,21 @@ export function PlanCheckout({
         </label>
       </fieldset>
       <fieldset className="space-y-2">
-        <legend className="text-sm font-medium">Programmes on this level</legend>
+        <legend className="text-sm font-medium">Programmes</legend>
+        <p className="text-sm text-[#1A3C34]/70">Select every programme this academy needs. More than one is fine, including programmes from different levels.</p>
         {programmes.map((programme) => (
+          <label key={programme.id} className="flex items-center justify-between gap-3 text-sm">
+            <span className="flex items-center gap-2">
+              <input type="checkbox" checked={programmeIds.includes(programme.id)} onChange={() => toggleProgramme(programme.id)} />
+              {programme.title}
+            </span>
+            <span className="tabular-nums text-[#1A3C34]/70">USD {programme.perSeatMonthly.toFixed(2)} / seat{programme.placeholder ? ' · placeholder' : ''}</span>
+          </label>
+        ))}
+      </fieldset>
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium">Categories</legend>
+        {categories.map((programme) => (
           <label key={programme.id} className="flex items-center justify-between gap-3 text-sm">
             <span className="flex items-center gap-2">
               <input type="checkbox" checked={programmeIds.includes(programme.id)} onChange={() => toggleProgramme(programme.id)} />
@@ -173,7 +189,7 @@ export function PlanCheckout({
             {priced.placeholder && <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#C8922A]">Placeholder prices</p>}
             <p className="text-2xl font-semibold tabular-nums">{priced.currency} {priced.total.toFixed(2)}</p>
             <p className="mt-1 text-sm text-[#1A3C34]/75">
-              {priced.tierLabel}. {priced.currency} {priced.subtotal.toFixed(2)} plus {priced.currency} {priced.tax.toFixed(2)} tax
+              {priced.tierLabel} · {priced.uniqueStudents} unique students. {priced.currency} {priced.subtotal.toFixed(2)} plus {priced.currency} {priced.tax.toFixed(2)} tax
               {country.trim().toUpperCase() === 'MY' && tender !== 'invoice' ? ' (SST)' : ''}. {priced.sparks.toLocaleString('en')} Sparks.
             </p>
             <ul className="mt-2 space-y-1 text-sm">
@@ -184,6 +200,9 @@ export function PlanCheckout({
                 </li>
               ))}
             </ul>
+            {priced.bundleDiscount > 0 && (
+              <p className="mt-2 text-sm text-[#1A3C34]">{priced.programmeCount} programmes include a {(priced.bundleDiscount * 100).toFixed(0)}% bundle discount.</p>
+            )}
             {priced.quoteContact && (
               <p className="mt-2 text-sm text-[#1A3C34]">Custom pricing. Request a quote from Poket School{priced.selfServe ? ', or continue with self-serve checkout' : ''}.</p>
             )}

@@ -34,7 +34,13 @@ export function CatalogueEditor() {
   const save = async () => {
     setSaving(true);
     try {
-      const saved = { ...draft, placeholder: false, items: draft.items.map((item) => ({ ...item, placeholder: false })), tiers: draft.tiers.map((tier) => ({ ...tier, placeholder: false })) };
+      const saved = {
+        ...draft,
+        placeholder: false,
+        items: draft.items.map((item) => ({ ...item, placeholder: false })),
+        tiers: draft.tiers.map((tier) => ({ ...tier, placeholder: false })),
+        bundleRules: draft.bundleRules.map((rule) => ({ ...rule, placeholder: false })),
+      };
       const data = await authedFetch('/api/institutions/catalogue', { method: 'PUT', body: JSON.stringify(saved) });
       if (data.catalogue) setDraft(normalizeCatalogue(data.catalogue));
       toast.success('Institution prices saved.');
@@ -63,6 +69,22 @@ export function CatalogueEditor() {
         <label className="text-sm">Trial seat cap
           <Input className="mt-1" type="number" min={1} value={draft.trialSeatCap} onChange={(event) => setDraft({ ...draft, trialSeatCap: Number(event.target.value) })} />
         </label>
+      </div>
+      <div className="rounded-3xl border border-[#1A3C34]/10 bg-white p-4">
+        <h2 className="font-semibold text-[#1A3C34]">Bundle discount</h2>
+        <p className="mt-1 text-sm text-[#1A3C34]/70">Optional. When an academy selects enough programmes, the highest matching step comes off those programmes. Categories stay at their own price. Set a step to 0 to turn it off.</p>
+        <div className="mt-3 space-y-2">
+          {draft.bundleRules.map((rule) => (
+            <div key={rule.id} className="grid gap-3 sm:grid-cols-2">
+              <label className="text-sm">Programmes, at least
+                <Input className="mt-1" type="number" min={2} value={rule.minProgrammes} onChange={(event) => setDraft({ ...draft, bundleRules: draft.bundleRules.map((row) => row.id === rule.id ? { ...row, minProgrammes: Number(event.target.value) } : row) })} />
+              </label>
+              <label className="text-sm">Discount, 0 to 1
+                <Input className="mt-1" type="number" min={0} max={1} step="0.01" value={rule.discount} onChange={(event) => setDraft({ ...draft, bundleRules: draft.bundleRules.map((row) => row.id === rule.id ? { ...row, discount: Number(event.target.value) } : row) })} />
+              </label>
+            </div>
+          ))}
+        </div>
       </div>
       <div className="space-y-4">
         {draft.tiers.map((tier) => (

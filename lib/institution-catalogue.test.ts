@@ -132,6 +132,36 @@ describe('institution catalogue pricing', () => {
     assert.equal(quote.tax, 0);
   });
 
+  it('prices every selected programme and keeps the tier on unique students', () => {
+    const two = priceCatalogue({
+      itemIds: ['igcse', 'primary'],
+      purchasedSeats: 40,
+      interval: 'annual',
+      country: 'US',
+      tender: 'invoice',
+    });
+    assert.ok(!('error' in two));
+    if ('error' in two) return;
+    assert.equal(two.tierLabel, 'Starter');
+    assert.equal(two.uniqueStudents, 40);
+    assert.equal(two.programmeCount, 2);
+    assert.equal(two.bundleDiscount, 0.05);
+    assert.equal(two.lines[0]?.unit, 91.2);
+    assert.equal(two.lines[1]?.unit, 72.96);
+    assert.equal(two.subtotalUsd, 6566.4);
+    const three = priceCatalogue({
+      itemIds: ['igcse', 'primary', 'law-school'],
+      purchasedSeats: 40,
+      interval: 'monthly',
+      country: 'US',
+      tender: 'invoice',
+    });
+    assert.ok(!('error' in three));
+    if ('error' in three) return;
+    assert.equal(three.bundleDiscount, 0.1);
+    assert.equal(three.tierLabel, 'Starter');
+  });
+
   it('keeps a saved catalogue and falls back when the document is not a catalogue', () => {
     const seed = seedInstitutionCatalogue();
     const saved = normalizeCatalogue({ ...seed, annualDiscount: 0.25, placeholder: false, items: seed.items.map((entry) => ({ ...entry, placeholder: false })) });

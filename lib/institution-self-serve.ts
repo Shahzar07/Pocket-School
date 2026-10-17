@@ -144,6 +144,11 @@ export function isFreeEmailDomain(email: string): boolean {
   return FREE_EMAIL_DOMAINS.has(domain);
 }
 
+/** Every programme and category sold this way, across levels. Signup and checkout can select more than one. */
+export function programmesForCheckout(access: OrderAccess, catalogue: InstitutionCatalogue = seedInstitutionCatalogue()): ProgrammeOffer[] {
+  return programmeOffers(catalogue).filter((item) => item.access === 'both' || item.access === access);
+}
+
 export function programmesForLevel(planId: VolumePlanId, access: OrderAccess, catalogue: InstitutionCatalogue = seedInstitutionCatalogue()): ProgrammeOffer[] {
   const offers = new Map(programmeOffers(catalogue).map((item) => [item.id, item]));
   return catalogueItemsFor(catalogue, planId, access).map((entry) => offers.get(entry.id)!);
@@ -166,6 +171,9 @@ export interface PricedOrder {
   tender: InstitutionTender;
   lines: CatalogueLine[];
   tierLabel: string;
+  uniqueStudents: number;
+  programmeCount: number;
+  bundleDiscount: number;
   quoteContact: boolean;
   selfServe: boolean;
   placeholder: boolean;
@@ -236,6 +244,9 @@ export function priceInstitutionOrder(input: {
     tender: input.tender,
     lines: quote.lines,
     tierLabel: quote.tierLabel,
+    uniqueStudents: quote.uniqueStudents,
+    programmeCount: quote.programmeCount,
+    bundleDiscount: quote.bundleDiscount,
     quoteContact: quote.quoteContact,
     selfServe: quote.selfServe,
     placeholder: quote.placeholder,

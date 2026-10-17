@@ -78,6 +78,15 @@ export interface CatalogueCurrency {
   countries: string[];
 }
 
+export interface BundleRule {
+  id: string;
+  /** Applies when at least this many programmes are selected. Categories do not count. */
+  minProgrammes: number;
+  /** Fraction off each selected programme, for example 0.05 for 5%. */
+  discount: number;
+  placeholder: boolean;
+}
+
 export interface InstitutionCatalogue {
   placeholder: boolean;
   note: string;
@@ -88,6 +97,8 @@ export interface InstitutionCatalogue {
   trialDays: number;
   trialSeatCap: number;
   tiers: CatalogueTier[];
+  /** Optional. The highest matching rule applies. A zero discount turns that step off. */
+  bundleRules: BundleRule[];
   currencies: CatalogueCurrency[];
   items: CatalogueItem[];
 }
@@ -116,6 +127,10 @@ export interface CatalogueQuote {
   selfServe: boolean;
   features: string[];
   annualDiscount: number;
+  /** Students counted once, even when they take several programmes. This picks the tier. */
+  uniqueStudents: number;
+  programmeCount: number;
+  bundleDiscount: number;
   purchasedSeats: number;
   activeSeats: number;
   subtotalUsd: number;
@@ -257,6 +272,10 @@ export function seedInstitutionCatalogue(): InstitutionCatalogue {
     trialDays: 14,
     trialSeatCap: 25,
     tiers,
+    bundleRules: [
+      { id: 'two-programmes', minProgrammes: 2, discount: 0.05, placeholder: true },
+      { id: 'three-programmes', minProgrammes: 3, discount: 0.1, placeholder: true },
+    ],
     currencies: [
       { code: 'USD', rate: 1, enabled: true, placeholder: true, countries: [] },
       { code: 'MYR', rate: 4.7, enabled: true, placeholder: true, countries: ['MY'] },
@@ -269,6 +288,14 @@ export function seedInstitutionCatalogue(): InstitutionCatalogue {
 export function tierRangeLabel(tier: Pick<CatalogueTier, 'minSeats' | 'maxSeats'>): string {
   if (tier.maxSeats == null) return tier.minSeats === 501 ? '500+' : `${tier.minSeats}+`;
   return `${tier.minSeats}–${tier.maxSeats}`;
+}
+
+/** The strongest bundle whose programme minimum the selection meets. */
+export function bundleFor(catalogue: InstitutionCatalogue, programmeCount: number): BundleRule | null {
+  const matches = catalogue.bundleRules
+    .filter((rule) => programmeCount >= rule.minProgrammes && rule.discount > 0)
+    .sort((a, b) => b.minProgrammes - a.minProgrammes || b.discount - a.discount);
+  return matches[0] ?? null;
 }
 
 /** Per-seat monthly USD for one programme on a tier. A listed tier price wins. */
@@ -361,10 +388,17 @@ export function priceCatalogue(input: {
   const annual = input.interval === 'annual';
   const discount = Math.min(1, Math.max(0, tier.discount));
   const annualDiscount = Math.min(1, Math.max(0, catalogue.annualDiscount));
+  const programmeCount = selected.filter((entry) => entry.kind === 'programme').length;
+  const bundle = bundleFor(catalogue, programmeCount);
+  const bundleDiscount = bundle ? Math.min(1, Math.max(0, bundle.discount)) : 0;
   const notices: string[] = [];
+  if (bundle) {
+    notices.push(`${programmeCount} programmes: ${(bundleDiscount * 100).toFixed(0)}% bundle discount. The tier still follows ${purchased} unique students.`);
+  }
   const lines: CatalogueLine[] = selected.map((entry) => {
     const seats = billableSeats(entry, purchased, active);
-    const monthly = tierUnitMonthly(tier, entry);
+    const bundled = entry.kind === 'programme' ? (1 - bundleDiscount) : 1;
+    const monthly = tierUnitMonthly(tier, entry) * bundled;
     const unit = round2(annual ? monthly * 12 * (1 - annualDiscount) : monthly);
     const over = seatOverage(entry, purchased, active);
     if (over.status === 'prompt') {
@@ -403,6 +437,9 @@ export function priceCatalogue(input: {
     selfServe: tier.selfServe,
     features: tier.features,
     annualDiscount: annual ? annualDiscount : 0,
+    uniqueStudents: purchased,
+    programmeCount,
+    bundleDiscount,
     purchasedSeats: purchased,
     activeSeats: active,
     subtotalUsd,
@@ -437,6 +474,8 @@ export function catalogueDocumentLines(input: {
     `Seats purchased ${input.quote.purchasedSeats}`,
     `Active students ${input.quote.activeSeats}`,
     `Tier ${input.quote.tierLabel}`,
+    `Unique students ${input.quote.uniqueStudents}`,
+    input.quote.bundleDiscount > 0 ? `Bundle ${input.quote.programmeCount} programmes ${(input.quote.bundleDiscount * 100).toFixed(0)}%` : '',
     input.quote.quoteContact ? 'Custom pricing. Request a quote, or continue with self-serve checkout.' : '',
   ];
   for (const line of input.quote.lines) {
@@ -536,6 +575,13 @@ function finite(value: unknown, fallback: number): number {
 
 export function validateCatalogue(catalogue: InstitutionCatalogue): string | null {
   if (catalogue.annualDiscount < 0 || catalogue.annualDiscount > 1) return 'The annual discount is between 0 and 100%.';
+  const bundleMins = new Set<number>();
+  for (const rule of catalogue.bundleRules) {
+    if (!Number.isInteger(rule.minProgrammes) || rule.minProgrammes < 2) return 'A bundle discount starts at 2 programmes.';
+    if (bundleMins.has(rule.minProgrammes)) return 'Each bundle step needs its own programme count.';
+    bundleMins.add(rule.minProgrammes);
+    if (rule.discount < 0 || rule.discount > 1) return 'A bundle discount is between 0 and 100%.';
+  }
   if (!Number.isInteger(catalogue.trialDays) || catalogue.trialDays < 1 || catalogue.trialDays > 90) return 'Trial length is between 1 and 90 days.';
   if (!Number.isInteger(catalogue.trialSeatCap) || catalogue.trialSeatCap < 1) return 'The trial needs a seat cap.';
   if (!Number.isInteger(catalogue.quoteMinSeats) || catalogue.quoteMinSeats < 1) return 'The quote minimum is a whole number of seats.';
@@ -583,6 +629,20 @@ export function normalizeCatalogue(value: unknown): InstitutionCatalogue {
     quoteMinSeats: Math.floor(finite(raw.quoteMinSeats, seed.quoteMinSeats)),
     trialDays: Math.floor(finite(raw.trialDays, seed.trialDays)),
     trialSeatCap: Math.floor(finite(raw.trialSeatCap, seed.trialSeatCap)),
+    bundleRules: Array.isArray(raw.bundleRules)
+      ? raw.bundleRules.flatMap((row) => {
+        if (!row || typeof row !== 'object') return [];
+        const rule = row as Partial<BundleRule>;
+        const id = typeof rule.id === 'string' ? rule.id.trim() : '';
+        if (!id) return [];
+        return [{
+          id,
+          minProgrammes: Math.floor(finite(rule.minProgrammes, 2)),
+          discount: Math.min(1, Math.max(0, finite(rule.discount, 0))),
+          placeholder: rule.placeholder !== false,
+        }];
+      })
+      : seed.bundleRules,
     tiers: raw.tiers.flatMap((row) => {
       if (!row || typeof row !== 'object') return [];
       const tier = row as Partial<CatalogueTier>;

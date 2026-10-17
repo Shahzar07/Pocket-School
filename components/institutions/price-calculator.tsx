@@ -143,6 +143,7 @@ export function PriceCalculator({
         )}
         <fieldset>
           <legend className="text-sm font-semibold">Programmes</legend>
+          <p className="mt-1 text-sm text-[#1A3C34]/70">Select more than one. The price adds each programme’s seats times its per-seat price. The tier follows unique students.</p>
           <div className="mt-2 space-y-2">
             {programmes.map((item) => (
               <label key={item.id} className="flex items-center justify-between gap-3 text-sm">
@@ -171,7 +172,7 @@ export function PriceCalculator({
           </div>
         </fieldset>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <label className="text-sm font-medium">Purchased seats: {seats}
+          <label className="text-sm font-medium">Unique students: {seats}
             <input className="mt-2 w-full accent-[#C8922A]" type="range" min={1} max={800} value={seats} onChange={(event) => setSeats(Number(event.target.value))} />
           </label>
           <label className="text-sm font-medium">Active students
