@@ -2,7 +2,6 @@ import 'server-only';
 
 import { FieldValue } from 'firebase-admin/firestore';
 import { loadUser } from '@/lib/api-guard';
-import { certificateKey } from '@/lib/certificates';
 import { adminDb } from '@/lib/firebase-admin';
 import {
   ONBOARDING_COURSE_ID,
@@ -14,7 +13,9 @@ import {
   mergeOutline,
   recordsFromProfile,
   storedFromDoc,
+  trackComplete,
   trackForProfile,
+  welcomeBadge,
   welcomeCourseSeed,
   welcomeLessonSeeds,
   type OnboardingLesson,
@@ -23,7 +24,6 @@ import {
   type WelcomeProfile,
   type WelcomeState,
 } from '@/lib/onboarding-course';
-import { completeLesson } from '@/lib/server/actions';
 
 function firestore() {
   return adminDb();
@@ -119,28 +119,45 @@ async function enrollmentOf(uid: string): Promise<{ track: OnboardingTrack; skip
   };
 }
 
-async function certificateFor(uid: string, track: OnboardingTrack): Promise<string | null> {
-  const snap = await firestore().doc(`certificate_keys/${certificateKey(uid, ONBOARDING_COURSE_ID, track)}`).get();
-  const id = snap.exists ? snap.get('certificateId') : '';
-  return typeof id === 'string' && id ? id : null;
+async function awardWelcomeBadge(uid: string, track: OnboardingTrack): Promise<void> {
+  const badge = welcomeBadge(track);
+  const ref = firestore().doc(`badges/${uid}_${badge.type}`);
+  const snap = await ref.get();
+  if (snap.exists) return;
+  await ref.set({
+    userId: uid,
+    type: badge.type,
+    name: badge.name,
+    description: badge.description,
+    icon: badge.icon,
+    sparks: 0,
+    awardedAt: FieldValue.serverTimestamp(),
+  });
 }
 
 async function settleLessons(
   uid: string,
+  track: OnboardingTrack,
   lessons: readonly OnboardingLesson[],
   checks: ReadonlySet<string>,
   actions: ReadonlySet<string>,
   completed: Set<string>,
 ): Promise<void> {
-  for (const lesson of lessons) {
-    if (completed.has(lesson.id) || !checks.has(lesson.id) || !actionIsDone(lesson, actions)) continue;
-    try {
-      await completeLesson(uid, ONBOARDING_COURSE_ID, lesson.id, 0, false);
-      completed.add(lesson.id);
-    } catch {
-      // A missing lesson document keeps the check. The next visit tries again.
-    }
+  const fresh = lessons.filter((lesson) => !completed.has(lesson.id) && checks.has(lesson.id) && actionIsDone(lesson, actions));
+  for (const lesson of fresh) completed.add(lesson.id);
+  if (fresh.length > 0) {
+    const doneCount = lessons.filter((lesson) => completed.has(lesson.id)).length;
+    await firestore().doc(`courses/${ONBOARDING_COURSE_ID}/enrollments/${uid}`).set({
+      completedLessons: FieldValue.arrayUnion(...fresh.map((lesson) => lesson.id)),
+      progress: lessons.length ? Math.round((doneCount / lessons.length) * 100) : 0,
+    }, { merge: true });
   }
+  const rows = lessons.map((lesson) => ({
+    lessonId: lesson.id,
+    checkCorrect: checks.has(lesson.id) || completed.has(lesson.id),
+    actionDone: actionIsDone(lesson, actions) || completed.has(lesson.id),
+  }));
+  if (trackComplete(lessons, rows)) await awardWelcomeBadge(uid, track);
 }
 
 async function readState(uid: string, profile: WelcomeProfile, track: OnboardingTrack, skipped: boolean, checks: readonly string[], completed: readonly string[]): Promise<WelcomeState> {
@@ -153,7 +170,7 @@ async function readState(uid: string, profile: WelcomeProfile, track: Onboarding
     checkSet.add(lesson.id);
     if (lesson.action.id) actions.add(lesson.action.id);
   }
-  await settleLessons(uid, outline, checkSet, actions, completedSet);
+  await settleLessons(uid, track, outline, checkSet, actions, completedSet);
   for (const lesson of outline) {
     if (!completedSet.has(lesson.id)) continue;
     checkSet.add(lesson.id);
@@ -165,7 +182,6 @@ async function readState(uid: string, profile: WelcomeProfile, track: Onboarding
     checks: checkSet,
     actions,
     skipped,
-    certificateId: await certificateFor(uid, track),
   });
 }
 

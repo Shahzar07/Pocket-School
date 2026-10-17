@@ -131,17 +131,10 @@ export function WelcomeFinish({ state }: { state: WelcomeState }) {
       <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#F8E7C4]">Welcome star</p>
       <h2 className="mt-1 font-heading text-3xl">You finished {state.trackTitle}</h2>
       <p className="mt-2 max-w-xl text-sm text-white/80">
-        The badge is on your account. The certificate is ready to share. This course did not spend or award Sparks.
-        {state.track === 'student' || state.track === 'independent'
-          ? ' Your student number and QR are on the certificate.'
-          : ''}
+        The Welcome star is on your account. This course did not issue a certificate, and it did not spend or award Sparks.
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
-        {state.certificateId && (
-          <Link href={`/verify/${state.certificateId}`} className="inline-flex h-11 items-center rounded-full bg-[#C8922A] px-5 text-sm font-semibold text-[#1A3C34]">
-            Open certificate
-          </Link>
-        )}
+        <span className="inline-flex h-11 items-center rounded-full bg-[#C8922A] px-5 text-sm font-semibold text-[#1A3C34]">{state.badgeName}</span>
         <span className="inline-flex h-11 items-center rounded-full bg-white/10 px-4 text-sm">0 Sparks</span>
       </div>
     </section>

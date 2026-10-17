@@ -4,13 +4,11 @@ import {
   WELCOME_SPARKS,
   WELCOME_TRACKS,
   buildWelcomeState,
-  certificateIncludesStudentNumber,
   choiceCorrect,
   hrefMatches,
   lessonTranslationFields,
   mergeOutline,
   recordsFromProfile,
-  shouldStampStudentNumber,
   starsEarned,
   streakEarned,
   trackComplete,
@@ -86,15 +84,23 @@ describe('welcome course', () => {
     assert.equal(welcomeBadge('parent').name, 'Welcome star');
   });
 
-  it('puts the student number on student certificates only', () => {
-    assert.equal(certificateIncludesStudentNumber('student'), true);
-    assert.equal(certificateIncludesStudentNumber('independent'), true);
-    assert.equal(certificateIncludesStudentNumber('parent'), false);
-    assert.equal(certificateIncludesStudentNumber('teacher'), false);
-    assert.equal(certificateIncludesStudentNumber('institution'), false);
-    assert.equal(shouldStampStudentNumber({ courseId: 'onboarding-welcome', moduleId: 'parent', role: 'parent' }), false);
-    assert.equal(shouldStampStudentNumber({ courseId: 'onboarding-welcome', moduleId: 'student', role: 'student' }), true);
-    assert.equal(shouldStampStudentNumber({ courseId: 'other-course', role: 'parent' }), true);
+  it('awards a badge and does not issue a certificate', () => {
+    const lessons = WELCOME_TRACKS[0]!.lessons;
+    const done = buildWelcomeState({
+      track: 'student',
+      lessons,
+      checks: new Set(lessons.map((lesson) => lesson.id)),
+      actions: new Set(lessons.map((lesson) => lesson.action.id)),
+      skipped: false,
+    });
+    assert.equal(done.complete, true);
+    assert.equal(done.badgeName, 'Welcome star');
+    assert.equal('certificateId' in done, false);
+    assert.equal(welcomeBadge('student').sparks, 0);
+    assert.match(welcomeCourseSeed().description, /Welcome star badge/);
+    assert.doesNotMatch(welcomeCourseSeed().description, /awards a badge and a certificate|issues a certificate/i);
+    const sparks = JSON.stringify(WELCOME_TRACKS.flatMap((track) => track.lessons.filter((lesson) => lesson.id === 'sparks')));
+    assert.doesNotMatch(sparks, /when the certificate is issued|Only for the certificate/);
   });
 
   it('ticks a real page, and a linked child, without a fake checkbox', () => {
@@ -168,11 +174,10 @@ describe('welcome course', () => {
       checks: new Set(lessons.map((lesson) => lesson.id)),
       actions: new Set(lessons.map((lesson) => lesson.action.id)),
       skipped: false,
-      certificateId: 'cert',
     });
     assert.equal(done.complete, true);
     assert.equal(done.showCard, false);
-    assert.equal(done.certificateId, 'cert');
+    assert.equal(done.badgeName, 'Welcome star');
     const fields = lessonTranslationFields(open.lessons[0]!);
     assert.match(fields.body, /Poket School|checklist|academy/i);
     assert.equal(typeof fields.option0, 'string');

@@ -2,7 +2,8 @@
  * Free welcome course for every account.
  * English source lives here and is seeded once into a normal course document.
  * Super admins edit that document afterwards. This module does not overwrite it.
- * Completion never spends or awards Sparks.
+ * Finishing a track awards a Welcome star badge. Sparks stay at zero.
+ * This course does not issue a certificate.
  */
 
 import { certificateStudentNumber } from './certificates';
@@ -405,7 +406,7 @@ Open the login step. Publishing can wait until the preview is one you want to sh
     hue: 'coral',
     body: `The academy can hold a Sparks pool and share it with learners. This welcome course does not take from that pool. Open Sparks allocation so you can see what is already set aside.`,
     question: 'Does this welcome course spend the academy Sparks pool?',
-    options: ['No', 'Yes, one Spark per lesson', 'Yes, when the certificate is issued'],
+    options: ['No', 'Yes, one Spark per lesson', 'Yes, when the badge is awarded'],
     answer: 0,
     action: { id: 'institution_sparks', label: 'Open Sparks allocation', href: '/dashboard/institution/sparks' },
   }),
@@ -491,7 +492,7 @@ Open the course list.`,
     hue: 'gold',
     body: `Sparks pay for extra AI practice. You can study this welcome course with none. Finishing it does not grant a Sparks pack. Open the Sparks page to see the balance, even if it is empty.`,
     question: 'Is a Sparks pack required to finish this course?',
-    options: ['No', 'Yes', 'Only for the certificate'],
+    options: ['No', 'Yes', 'Only for the badge'],
     answer: 0,
     action: { id: 'open_sparks', label: 'Open Sparks', href: '/dashboard/student/sparks' },
   }),
@@ -599,23 +600,6 @@ export function trackForProfile(input: WelcomeProfile): OnboardingTrack {
   if (role === 'parent') return 'parent';
   if (role === 'teacher') return 'teacher';
   return input.institutionId ? 'student' : 'independent';
-}
-
-export function certificateIncludesStudentNumber(track: OnboardingTrack): boolean {
-  return track === 'student' || track === 'independent';
-}
-
-export function shouldStampStudentNumber(input: {
-  courseId: string;
-  moduleId?: string | null;
-  role?: string | null;
-  institutionId?: string | null;
-}): boolean {
-  if (input.courseId !== ONBOARDING_COURSE_ID) return true;
-  const track = isOnboardingTrack(input.moduleId)
-    ? input.moduleId
-    : trackForProfile({ role: input.role, institutionId: input.institutionId });
-  return certificateIncludesStudentNumber(track);
 }
 
 export function welcomeBadge(track: OnboardingTrack): WelcomeBadge {
@@ -849,7 +833,6 @@ export interface WelcomeState {
   streak: number;
   total: number;
   complete: boolean;
-  certificateId: string | null;
   badgeName: string;
   showCard: boolean;
   lessons: WelcomeLessonView[];
@@ -861,7 +844,6 @@ export function buildWelcomeState(input: {
   checks: ReadonlySet<string>;
   actions: ReadonlySet<string>;
   skipped: boolean;
-  certificateId?: string | null;
 }): WelcomeState {
   const rows: LessonProgress[] = input.lessons.map((lesson) => ({
     lessonId: lesson.id,
@@ -895,7 +877,6 @@ export function buildWelcomeState(input: {
     streak,
     total: input.lessons.length,
     complete,
-    certificateId: input.certificateId ?? null,
     badgeName: welcomeBadge(input.track).name,
     showCard: input.lessons.length > 0 && !input.skipped && !complete,
     lessons,
@@ -961,7 +942,7 @@ export function welcomeCourseSeed(): WelcomeCourseSeed {
     id: ONBOARDING_COURSE_ID,
     title: 'Welcome to Poket School',
     subtitle: 'A short first course for every account',
-    description: 'Five short tracks: student, parent, teacher, academy admin, and independent learner. Each lesson is a few minutes, with a quick check and a task that ticks when you do it in Poket School. Finishing awards a badge and a certificate. It does not use Sparks. Edit these lessons in the curriculum builder. English here is the source for translation.',
+    description: 'Five short tracks: student, parent, teacher, academy admin, and independent learner. Each lesson is a few minutes, with a quick check and a task that ticks when you do it in Poket School. Finishing awards a Welcome star badge. It does not issue a certificate and it does not use Sparks. Edit these lessons in the curriculum builder. English here is the source for translation.',
     ownerId: 'poket-school',
     ownerName: 'Poket School',
     status: 'published',

@@ -45,7 +45,6 @@ function readState(data: Record<string, unknown>): WelcomeState | null {
     streak: typeof data.streak === 'number' ? data.streak : 0,
     total: typeof data.total === 'number' ? data.total : lessons.length,
     complete: data.complete === true,
-    certificateId: typeof data.certificateId === 'string' ? data.certificateId : null,
     badgeName: typeof data.badgeName === 'string' ? data.badgeName : 'Welcome star',
     showCard: data.showCard === true,
     lessons,
