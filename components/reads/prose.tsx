@@ -49,7 +49,7 @@ function renderInline(text: string, quotes: string[]) {
   return parts.map((part, index) => (
     <span key={`${index}-${part.slice(0, 12)}`}>
       {formatInline(part)}
-      {hit && index < parts.length - 1 && <mark className="rounded bg-[#E7C27D] px-0.5 text-[#1C2422]">{hit}</mark>}
+      {hit && index < parts.length - 1 && <mark className="rounded bg-secondary px-0.5 text-foreground">{hit}</mark>}
     </span>
   ));
 }

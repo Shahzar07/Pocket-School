@@ -7,12 +7,12 @@ import type { ShelfBadge, ShelfItem } from '@/lib/shelf/types';
 import { BookCover } from './book-cover';
 
 const TONE: Record<ShelfBadge['tone'], string> = {
-  free: 'bg-emerald-700 text-white',
-  included: 'bg-[#E9F7FA] text-[#1E6A83]',
-  buy: 'bg-white/95 text-[#203337]',
-  owned: 'bg-[#203337] text-white',
-  locked: 'bg-white/90 text-[#5F7074]',
-  preview: 'bg-white/90 text-[#203337]',
+  free: 'bg-primary text-primary-foreground',
+  included: 'bg-secondary text-primary',
+  buy: 'bg-white text-[#203337]',
+  owned: 'bg-foreground text-background',
+  locked: 'bg-white text-[#203337]',
+  preview: 'bg-white text-[#203337]',
 };
 
 export function ShelfBadgePill({ badge }: { badge: ShelfBadge }) {
@@ -44,7 +44,7 @@ export function Poster({ item, rank }: { item: ShelfItem; rank?: number }) {
         )}
         {typeof item.progress === 'number' && item.progress > 0 && (
           <span className="absolute inset-x-0 bottom-0 h-1 bg-black/20">
-            <span className="block h-full bg-[#E7C27D]" style={{ width: `${Math.min(100, item.progress)}%` }} />
+            <span className="block h-full bg-primary" style={{ width: `${Math.min(100, item.progress)}%` }} />
           </span>
         )}
       </div>
@@ -95,23 +95,23 @@ export function Hero({
   visual: ReactNode;
 }) {
   return (
-    <section className="relative overflow-hidden rounded-[28px] border border-border bg-[#10262C] text-white shadow-[var(--shadow-card-hover)]">
+    <section className="relative overflow-hidden rounded-[28px] border border-border bg-primary text-primary-foreground shadow-[var(--shadow-card-hover)]">
       <div className="grid lg:grid-cols-[1.3fr_0.9fr]">
         <div className="relative z-10 flex flex-col justify-end p-6 sm:p-10 lg:min-h-[440px]">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#9ED4E2]">{eyebrow}</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-secondary">{eyebrow}</p>
           <h1 className="mt-3 max-w-xl font-heading text-[40px] leading-[0.98] tracking-[-0.04em] sm:text-[58px]">{title}</h1>
-          <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/75 sm:text-[15px]">{description}</p>
+          <p className="mt-4 max-w-lg text-sm leading-relaxed text-primary-foreground/90 sm:text-[15px]">{description}</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            {badges.map(b => <span key={b.label} className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white">{b.label}</span>)}
+            {badges.map(b => <span key={b.label} className="rounded-full bg-primary-foreground/10 px-2.5 py-1 text-[11px] font-semibold text-primary-foreground">{b.label}</span>)}
           </div>
           <div className="mt-6 flex flex-wrap gap-2">
-            <Link href={primary.href} className="inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-bold text-[#10262C]">
+            <Link href={primary.href} className="inline-flex h-11 items-center rounded-full border border-primary bg-white px-5 text-sm font-bold text-[#203337]">
               {primary.label}
             </Link>
             <button
               type="button"
               onClick={onToggleList}
-              className="inline-flex h-11 items-center gap-2 rounded-full border border-white/25 px-4 text-sm font-semibold text-white hover:bg-white/10"
+              className="inline-flex h-11 items-center gap-2 rounded-full border border-primary-foreground/30 px-4 text-sm font-semibold text-primary-foreground hover:bg-primary-foreground/10"
             >
               {listed ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
               {listed ? listedLabel : listLabel}

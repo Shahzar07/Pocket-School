@@ -425,7 +425,7 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
         </div>
       </header>
       <div className="h-1 bg-black/5" aria-hidden>
-        <div className="h-full bg-[#E7C27D]" style={{ width: `${Math.min(100, percent)}%` }} />
+        <div className="h-full bg-primary" style={{ width: `${Math.min(100, percent)}%` }} />
       </div>
 
       <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-28 lg:grid-cols-[1fr_280px] lg:px-6">
@@ -480,7 +480,7 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
                 }}
               >
                 {wordsOf(spread.text).map((token, index) => (
-                  <span key={`${index}-${token}`} className={listening && index === word ? 'rounded bg-[#E7C27D] px-0.5 text-[#1C2422]' : ''}>{token} </span>
+                  <span key={`${index}-${token}`} className={listening && index === word ? 'rounded bg-secondary px-0.5 text-foreground' : ''}>{token} </span>
                 ))}
               </p>
             </div>
@@ -505,7 +505,7 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
                 }}
               >
                 {listening ? sentences.map((s, i) => (
-                  <span key={i} style={{ background: i === sentence ? '#E7C27D' : undefined, color: i === sentence ? '#1C2422' : undefined }}>{s} </span>
+                  <span key={i} style={i === sentence ? { background: 'var(--secondary)', color: 'var(--foreground)' } : undefined}>{s} </span>
                 )) : (
                   <ChapterProse markdown={page} quotes={notes.map(n => n.quote)} />
                 )}

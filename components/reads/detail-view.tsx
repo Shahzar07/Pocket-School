@@ -180,7 +180,7 @@ export function BookDetail({ bookId }: { bookId: string }) {
         </div>
       </div>
 
-      <section className="rounded-[28px] border border-border bg-[#F7F1E6] p-6 text-[#2C241C] sm:p-10">
+      <section className="rounded-[28px] border border-border bg-secondary p-6 text-foreground sm:p-10">
         <h2 className="font-heading text-[28px]">{t('reads.detail.preview')}</h2>
         <p className="mt-1 text-sm opacity-70">{edition.chapters[0]?.title}</p>
         <div className="mt-6 max-w-[66ch] space-y-4 font-['Instrument_Serif',Georgia,serif] text-[19px] leading-[1.75]">

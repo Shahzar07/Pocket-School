@@ -67,10 +67,10 @@ export function IllustrationPrompt({
       </button>
       {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
       {open && (
-        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+        <div className="mt-3 rounded-xl border border-primary/25 bg-secondary p-3 text-sm text-foreground">
           <p>This spends {sparksCost} Sparks to illustrate “{prompt.trim().slice(0, 140)}”.</p>
           <div className="mt-2 flex gap-2">
-            <button type="button" className="h-9 rounded-full border border-amber-300 px-3 font-semibold" onClick={() => setOpen(false)}>Cancel</button>
+            <button type="button" className="h-9 rounded-full border border-border px-3 font-semibold" onClick={() => setOpen(false)}>Cancel</button>
             <button type="button" disabled={busy} className="h-9 rounded-full bg-[#203337] px-3 font-bold text-white" onClick={() => void run()}>{busy ? 'Working…' : 'Confirm spend'}</button>
           </div>
         </div>

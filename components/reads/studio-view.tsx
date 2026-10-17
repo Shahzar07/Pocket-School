@@ -312,7 +312,7 @@ export function StudioView() {
       <header>
         <h1 className="font-heading text-[40px] tracking-[-0.04em] sm:text-[52px]">{t('reads.studio.title')}</h1>
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">{t('reads.studio.lead')}</p>
-        <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-950">{t('reads.studio.preview')}</p>
+        <p className="mt-3 rounded-2xl border border-primary/25 bg-secondary px-4 py-3 text-[13px] text-foreground">{t('reads.studio.preview')}</p>
         <p className="mt-2 text-[13px] text-muted-foreground">{savedAt ? `${t('reads.studio.savedDevice')} · ${new Date(savedAt).toLocaleTimeString()}` : t('reads.studio.pending')}</p>
       </header>
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
@@ -725,7 +725,7 @@ export function StudioView() {
                   {t('reads.studio.ageCheck')}
                 </button>
                 {book.coverBrief?.ageNote && (
-                  <p className={`text-sm ${book.coverBrief.ageOk ? 'text-emerald-800' : 'text-red-700'}`}>{book.coverBrief.ageNote}</p>
+                  <p className={`text-sm ${book.coverBrief.ageOk ? 'text-primary' : 'text-red-700'}`}>{book.coverBrief.ageNote}</p>
                 )}
               </div>
               <p className="text-xs text-muted-foreground">The author line is always ET AI. The picture itself has no lettering; the title is drawn on top.</p>
@@ -787,7 +787,7 @@ function ReadAloud({ text }: { text: string }) {
       {words.length > 0 && (
         <p className="mt-3 text-sm leading-relaxed">
           {words.map((token, index) => (
-            <span key={`${index}-${token}`} className={on && index === at ? 'rounded bg-[#E7C27D] px-0.5' : ''}>{token} </span>
+            <span key={`${index}-${token}`} className={on && index === at ? 'rounded bg-secondary px-0.5 text-foreground' : ''}>{token} </span>
           ))}
         </p>
       )}
