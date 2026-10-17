@@ -237,6 +237,12 @@ export async function completeLesson(
       console.error('[gamification] lesson.first_complete', error);
     });
   }
+  try {
+    const { noteLearner } = await import('../alerts/progress-server');
+    await noteLearner(uid, courseId);
+  } catch {
+    /* A progress note must not block lesson completion. */
+  }
   return result;
 }
 

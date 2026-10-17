@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isAdminConfigured } from '@/lib/firebase-admin';
 import { refreshActiveSnapshots, runMissedGoalAlerts, runDueSchedules, runWeeklyDigest } from '@/lib/server/insights-jobs';
 import { processMyInvoisQueue } from '@/lib/payments/server/myinvois-queue';
+import { runDailyProgressAlerts } from '@/lib/alerts/progress-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,5 +26,11 @@ export async function GET(req: NextRequest) {
   const schedules = await runDueSchedules(now);
   const snapshots = await refreshActiveSnapshots(now);
   const myInvois = await processMyInvoisQueue(now.getTime());
-  return NextResponse.json({ ok: true, missed, digest, schedules, snapshots, myInvois, at: now.toISOString() });
+  let progress: { checked: number; opened: number; resolved: number; error?: string } = { checked: 0, opened: 0, resolved: 0 };
+  try {
+    progress = await runDailyProgressAlerts(now.getTime());
+  } catch (error) {
+    progress = { checked: 0, opened: 0, resolved: 0, error: error instanceof Error ? error.message : 'Progress alerts failed' };
+  }
+  return NextResponse.json({ ok: true, missed, digest, schedules, snapshots, myInvois, progress, at: now.toISOString() });
 }

@@ -2,6 +2,7 @@
 
 import { CensusPanel } from '@/components/insights/census-panel';
 import { ProgrammeRevenue } from '@/components/insights/programme-revenue';
+import { ProgressScreen } from '@/components/progress/progress-screen';
 
 export default function AdminInsightsPage() {
   return (
@@ -10,6 +11,14 @@ export default function AdminInsightsPage() {
       <div className="mx-auto max-w-[1400px] px-4">
         <ProgrammeRevenue />
       </div>
+      <ProgressScreen
+        scope="platform"
+        mode="admin"
+        eyebrow="Insights"
+        title="Progress alerts"
+        description="Platform view of learning-progress alerts. Levels with fewer than five learners stay off the aggregate."
+        settingsId="platform"
+      />
     </div>
   );
 }

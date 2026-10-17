@@ -717,6 +717,95 @@ Rules still need an owner deploy.
 
 Sparks amounts for goals live only in `lib/sparks.ts` (`GOAL_ON_TIME_BONUS`, `GOAL_STREAK_BONUS`). The ledger type is `earn`.
 
+## Institutions
+
+`institutions/{id}` is the academy. The mobile app reads it. It does not invent a second school record.
+
+| Field | Meaning |
+| --- | --- |
+| `name`, `domain`, `adminId` | Display name, email domain, and the institution admin |
+| `studentCount`, `teacherCount` | Counts shown on the academy |
+| `status` | `active`, `pending`, or `suspended` |
+| `type` | `school`, `university`, `corporate`, or `government` |
+| `country`, `state` | ISO country and the subdivision used by self-join |
+| `listedForSelfJoin` | Super admin lists the academy for Independent vs institution signup |
+| `plan` | `starter`, `team`, `enterprise`, or `oem` |
+| `parentInstitutionId`, `isolateData` | A sub-academy. Its data stays in its own subcollections |
+| `subdomain`, `previousSubdomains`, `customDomain`, `customDomainStatus`, `customDomainMessage` | Host label and an optional school-owned hostname |
+| `branding` | White-label name, logo, colours, certificate issuer, invite copy, and mobile icon. Absent values fall back to Poket School |
+| `signupPolicy`, `allowedEmailDomains` | `open`, `invite`, or `domain` |
+| `catalogueVisibility`, `publicCatalogueIds` | `private`, `curated`, or `public` |
+| `defaultLocale`, `require2fa`, `passwordMinLength`, `passwordRequireSymbol`, `sessionTimeoutMinutes` | Academy sign-in policy |
+| `features` | Optional flag map |
+| `leaderboardVisible` | `academy`, `group`, or `off`. `leaderboard` is a small display list |
+| `publishedPages` | `{ slug, title, body }[]` for the academy site |
+
+`users.yearGroup` and `courses.yearGroup` stay the stored field names. The app shows them as a level (Primary, Lower Secondary, IGCSE, A-Level). They are not a year number.
+
+`institutions/{id}/email_templates/{kind}` holds the institution’s letters. `kind` is `otp`, `notification`, `invoice`, or `welcome`. Fields are `subject` and `body`, with `{{name}}` style placeholders. The institution admin saves them through `POST /api/institution/email-templates`. Clients do not write this subcollection. WhatsApp uses its own Cloud API templates (`poket_otp`, `poket_notice`) and falls back to this email when WhatsApp is unset or fails.
+
+`institutions/{id}/billing/current` is the subscription state. `institutions/{id}/sparks_pool/current` is below.
+
+`activity_log` may include optional `institutionId`. The institution screen reads `GET /api/audit?scope=institution`. The query is a single equality on `institutionId` (no composite index). Clients cannot write `activity_log`.
+
+`courses.placement` is optional: `marketplace` (`hidden|pending|approved|rejected`), `featured`, `core`, `levels` (`primary_secondary`, `igcse_alevel`, `professional`), and `institutionIds`. `featured` on the course is the featured-spot flag. `allocatedInstitutionIds` lists the same institutions. A core programme needs a level. An institution course is not listed on the public marketplace until that institution has approved it for the library. The super admin sets this on `/dashboard/admin/placement`.
+
+Rules for these paths are unchanged. Email templates, the activity log, and help articles are written with the Admin SDK.
+
+## Sparks pools
+
+`institutions/{id}/sparks_pool/current` stores `topUps` and `allocated`, both numbers. The pool is shared by that school. A missing document reads as zeros.
+
+Sparks are learning credits. They cannot buy a marketplace course. Goal bonuses stay in `lib/sparks.ts`. This note does not change how Sparks are earned.
+
+## AI teachers
+
+The catalogue is code in `lib/ai-teachers.ts`, not a Firestore collection. Routes are `/ai-teachers` and `/ai-teachers/{teacherId}/session`. Studio uses `/dashboard/studio/teachers` and `/dashboard/studio/teachers/{teacherId}`.
+
+| Field | Meaning |
+| --- | --- |
+| `id`, `name`, `title`, `subjects`, `category` | Who the teacher is |
+| `status` | `live` or `coming-soon` |
+| `iframeUrl`, `avatarUrl`, `accentColor`, `iconKey` | Session frame and portrait |
+| `voice`, `voiceStyle` | Gemini TTS voice and delivery |
+| `tagline`, `bio`, `education`, `teachingStyle`, `languages`, `specialties`, `sampleQuestions`, `trainedOn` | Profile copy |
+| `yearsExperience` | Years spent teaching. Show it as experience. The level names stay Primary, Lower Secondary, IGCSE, and A-Level |
+
+## Translation
+
+`content_translations/{id}` is written by the server. The id is the first 40 hex characters of the sha256 of the cache key. Fields:
+
+| Field | Meaning |
+| --- | --- |
+| `contentId` | Source content id |
+| `language` | Target language code |
+| `fields` | Map of string field name to translated string |
+| `updatedAt` | Milliseconds |
+
+Clients do not read or write this collection. The app asks the server, which returns the translated strings. Quiz scoring uses option ids (`lib/quiz.ts`), not the translated label, so a language change cannot change a mark.
+
+## Studio tools
+
+ET AI Studio desk tools are requested at `POST /api/ai/studio-desk`. There is no new client-writable studio collection. Sparks are spent on the user’s `sparksBalance` and recorded in `users/{uid}/spark_transactions`.
+
+| Tool | Sparks |
+| --- | --- |
+| `teacher-toolkit` | 15 |
+| `parent-explainer` | 8 |
+| `research-helper` | 10 |
+
+Toolkit kinds are `pack`, `lesson-plan`, `worksheet`, `rubric`, `differentiated`, and `exit-ticket`. Research Helper summarises sources. It does not write the assignment, the essay, or the answers.
+
+Desk routes live under `/dashboard/studio` (including ET Maths, exam prep, and essays). Those existing collections are unchanged.
+
+## Help articles and MyInvois
+
+`help_articles/{id}` is Admin SDK only. Fields are `title`, `body`, `published`, `updatedAt`, and `updatedBy`. The public site reads published articles through `GET /api/help`. ET AI answers from those articles at `POST /api/help/ask` and does not call a model. A weak match tells the person to open the existing `support_tickets` helpdesk ticket. Clients do not write `help_articles`.
+
+`myinvois_queue/{invoiceId}` is Admin SDK only. A paid invoice is queued from the payment engine. Status is `not_configured`, `queued`, `submitted`, `retry`, or `failed`. `not_configured` is the clear no-op when `MYINVOIS_CLIENT_ID`, `MYINVOIS_CLIENT_SECRET`, or `TIN` (or `MYINVOIS_TIN`) is unset: nothing is sent to LHDN. `MYINVOIS_ENV=production` uses the live host. Anything else uses the sandbox. The daily insights cron retries `retry` rows, up to five attempts. Clients cannot write this collection.
+
+WhatsApp Cloud API uses `WHATSAPP_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID`. OTP and notifications try the template first and fall back to email. Push adds the FCM v1 path above beside Expo and Web Push. None of these collections need a new client rule. Rules still need an owner deploy only for changes that already said so. This note does not deploy rules or indexes.
+
 ## Unit tests and visual blocks
 
 For the mobile app. Rules and indexes are listed here and in `firestore.indexes.json`. They are not deployed by this change.
@@ -2755,89 +2844,144 @@ Get involved links to `/community-partners` from `/stand-up-to-bullying`, `/ambe
 
 ## Institutions
 
-`institutions/{id}` is the academy. The mobile app reads it. It does not invent a second school record.
+## Learning progress alerts
 
-| Field | Meaning |
-| --- | --- |
-| `name`, `domain`, `adminId` | Display name, email domain, and the institution admin |
-| `studentCount`, `teacherCount` | Counts shown on the academy |
-| `status` | `active`, `pending`, or `suspended` |
-| `type` | `school`, `university`, `corporate`, or `government` |
-| `country`, `state` | ISO country and the subdivision used by self-join |
-| `listedForSelfJoin` | Super admin lists the academy for Independent vs institution signup |
-| `plan` | `starter`, `team`, `enterprise`, or `oem` |
-| `parentInstitutionId`, `isolateData` | A sub-academy. Its data stays in its own subcollections |
-| `subdomain`, `previousSubdomains`, `customDomain`, `customDomainStatus`, `customDomainMessage` | Host label and an optional school-owned hostname |
-| `branding` | White-label name, logo, colours, certificate issuer, invite copy, and mobile icon. Absent values fall back to Poket School |
-| `signupPolicy`, `allowedEmailDomains` | `open`, `invite`, or `domain` |
-| `catalogueVisibility`, `publicCatalogueIds` | `private`, `curated`, or `public` |
-| `defaultLocale`, `require2fa`, `passwordMinLength`, `passwordRequireSymbol`, `sessionTimeoutMinutes` | Academy sign-in policy |
-| `features` | Optional flag map |
-| `leaderboardVisible` | `academy`, `group`, or `off`. `leaderboard` is a small display list |
-| `publishedPages` | `{ slug, title, body }[]` for the academy site |
+Early-warning alerts for learning progress. Severity is `low`, `medium`, `high`, or `critical`. The shared shape lives in `lib/alerts/model.ts` (`type` is `safety` or `progress`). Safeguarding work on the network branch should import that module and set `type: 'safety'` rather than declaring a second severity enum.
 
-`users.yearGroup` and `courses.yearGroup` stay the stored field names. The app shows them as a level (Primary, Lower Secondary, IGCSE, A-Level). They are not a year number.
+The web app computes progress alerts on the server. Clients do not write them. Rules and indexes below are in the repo only. This change does not deploy them.
 
-`institutions/{id}/email_templates/{kind}` holds the institution’s letters. `kind` is `otp`, `notification`, `invoice`, or `welcome`. Fields are `subject` and `body`, with `{{name}}` style placeholders. The institution admin saves them through `POST /api/institution/email-templates`. Clients do not write this subcollection. WhatsApp uses its own Cloud API templates (`poket_otp`, `poket_notice`) and falls back to this email when WhatsApp is unset or fails.
+### `progress_alerts/{alertId}`
 
-`institutions/{id}/billing/current` is the subscription state. `institutions/{id}/sparks_pool/current` is below.
+Concern id: `progress_{studentId}_{courseId}`. Positive id: `progress_positive_{studentId}_{kind}_{yyyy-mm-dd}`. One concern document per student and course is updated in place.
 
-`activity_log` may include optional `institutionId`. The institution screen reads `GET /api/audit?scope=institution`. The query is a single equality on `institutionId` (no composite index). Clients cannot write `activity_log`.
+| Field | Type | Notes |
+|---|---|---|
+| `type` | string | Always `progress`. |
+| `polarity` | string | `concern` or `positive`. |
+| `severity` | string | `low`, `medium`, `high`, or `critical`. |
+| `status` | string | `open`, `acknowledged`, `assigned`, or `resolved`. |
+| `studentId` | string | |
+| `studentName` | string | |
+| `adult` | bool | Independent adults and adult learners. Parents are never notified, and parent reads are denied when this is true. |
+| `independent` | bool | Adult with no institution. Self-alerts only. |
+| `level` | string | Named level: Primary, Lower Secondary, IGCSE, or A-Level. |
+| `courseId` | string | `general` when the learner has no course on record. |
+| `courseTitle` | string | |
+| `institutionId` | string or null | |
+| `teacherIds` | string[] | |
+| `title` | string | |
+| `summary` | string | Staff and parent copy. The student view uses `plan.studentIntro`. |
+| `signals` | array | `{ id, severity, detail }`. Signal ids include `failed_unit_test`, `failed_retake`, `score_drop`, `behind_pace`, `inactivity`, `broken_streak`, `overdue_assignment`, `low_mastery`, `time_anomaly`, `repeated_lesson_failure`, `final_at_risk`, `engagement_collapse`. |
+| `plan` | map | ET AI recovery plan from recorded lessons only: `studentIntro`, `review`, `targeted`, `visuals` (`revisionPoster` or `mindmapImage`), `retake`, `parentGuide`, `teacherActions`. |
+| `safeguardingCaseId` | string or null | Set when an open `safeguarding_cases` row exists, otherwise an open wellbeing `concern_flags` row. |
+| `assigneeId` | string or null | |
+| `notes` | array | `{ at, authorId, authorName, text }`. |
+| `audit` | array | `{ at, actorId, action, detail }`. Actions: `opened`, `acknowledged`, `assigned`, `note`, `resolved`, `auto_resolved`, `notified`. |
+| `badge` | string or null | `comeback` on a positive alert. This is not a gamification badge. |
+| `positive` | string or null | `recovered`, `streak_restored`, `improvement`, or `comeback`. |
+| `createdAt` | number | Milliseconds. |
+| `updatedAt` | number | Milliseconds. |
+| `resolvedAt` | number or null | |
+| `autoResolved` | bool | True when the metrics recover. |
+| `lastNotifiedSeverity` | string or null | Stops a repeat push at the same severity. |
+| `held` | bool | True when a non-critical notice is waiting for quiet hours to end. Critical is never held. |
 
-`courses.placement` is optional: `marketplace` (`hidden|pending|approved|rejected`), `featured`, `core`, `levels` (`primary_secondary`, `igcse_alevel`, `professional`), and `institutionIds`. `featured` on the course is the featured-spot flag. `allocatedInstitutionIds` lists the same institutions. A core programme needs a level. An institution course is not listed on the public marketplace until that institution has approved it for the library. The super admin sets this on `/dashboard/admin/placement`.
+Read: the student, a linked parent when `adult != true`, a teacher in `teacherIds`, the assignee, the institution admin for that institution, or a platform admin. Create, update, and delete: denied for clients.
 
-Rules for these paths are unchanged. Email templates, the activity log, and help articles are written with the Admin SDK.
+Indexes (not deployed by this change):
 
-## Sparks pools
+- `progress_alerts`: `institutionId` ASC, `status` ASC, `updatedAt` DESC
+- `progress_alerts`: `studentId` ASC, `updatedAt` DESC
+- `events`: `studentId` ASC, `name` ASC (used to find courses after `lesson.first_complete`)
 
-`institutions/{id}/sparks_pool/current` stores `topUps` and `allocated`, both numbers. The pool is shared by that school. A missing document reads as zeros.
+### `progress_alert_settings/{id}`
 
-Sparks are learning credits. They cannot buy a marketplace course. Goal bonuses stay in `lib/sparks.ts`. This note does not change how Sparks are earned.
+`platform` holds the super-admin defaults. `{institutionId}` overrides them for one institution when the document exists.
 
-## AI teachers
+| Field | Type | Notes |
+|---|---|---|
+| `thresholds` | map | Day counts for inactivity (`inactiveLowDays` 3, `inactiveMediumDays` 7, `inactiveHighDays` 14, `inactiveCriticalDays` 30), `scoreDropPercent` 15, `finalAtRiskPercent` 70, `paceBehindRatio` 0.5, `bloomLowPercent` 50, `timeAnomalyRatio` 3, `repeatedFails` 2, `multipleUnitsFailed` 2. |
+| `parentAlertLevel` | string | Parents of non-adult learners are notified from this severity upward. |
+| `quietStart` | string | `HH:MM`, default `21:00`. Compared in UTC. |
+| `quietEnd` | string | `HH:MM`, default `07:00`. Critical bypasses the window. |
+| `automationEnabled` | bool | When false, alerts are still recorded and no push or email is sent. |
+| `academicLeadIds` | string[] | Extra recipients beside users with role `institution_admin` for that institution. |
+| `updatedAt` | number | |
+| `updatedBy` | string | |
 
-The catalogue is code in `lib/ai-teachers.ts`, not a Firestore collection. Routes are `/ai-teachers` and `/ai-teachers/{teacherId}/session`. Studio uses `/dashboard/studio/teachers` and `/dashboard/studio/teachers/{teacherId}`.
+Read: platform admin, or the institution admin for their own id and for `platform`. Writes: denied for clients. `GET` and `POST /api/progress-alerts/settings`.
 
-| Field | Meaning |
-| --- | --- |
-| `id`, `name`, `title`, `subjects`, `category` | Who the teacher is |
-| `status` | `live` or `coming-soon` |
-| `iframeUrl`, `avatarUrl`, `accentColor`, `iconKey` | Session frame and portrait |
-| `voice`, `voiceStyle` | Gemini TTS voice and delivery |
-| `tagline`, `bio`, `education`, `teachingStyle`, `languages`, `specialties`, `sampleQuestions`, `trainedOn` | Profile copy |
-| `yearsExperience` | Years spent teaching. Show it as experience. The level names stay Primary, Lower Secondary, IGCSE, and A-Level |
+### `progress_alert_trends/{institutionId}_{yyyy-mm-dd}`
 
-## Translation
+Daily counts `{ institutionId, day, low, medium, high, critical, total, at }`. The platform row uses institution id `platform`. Aggregate level tables hide a level with fewer than five open alerts. Client writes denied.
 
-`content_translations/{id}` is written by the server. The id is the first 40 hex characters of the sha256 of the cache key. Fields:
+### `progress_alert_state/{studentId}`
 
-| Field | Meaning |
-| --- | --- |
-| `contentId` | Source content id |
-| `language` | Target language code |
-| `fields` | Map of string field name to translated string |
-| `updatedAt` | Milliseconds |
+Server-only streak memory: `streakDays`, `lastPositiveKind`, `lastPositiveAt`, `updatedAt`. Client read and write denied.
 
-Clients do not read or write this collection. The app asks the server, which returns the translated strings. Quiz scoring uses option ids (`lib/quiz.ts`), not the translated label, so a language change cannot change a mark.
+### Events that recompute an alert
 
-## Studio tools
+| Trigger | Where |
+|---|---|
+| Unit test marked | `POST /api/unit-tests/mark` after the attempt is stored. Version A and Version B both count. |
+| Lesson first completed | `lesson.first_complete` from `completeLesson`. |
+| Sign-in | `POST /api/audit` with `auth.login` when the actor role is `student`. Inactivity is days since the last lesson, so a sign-in does not clear it. |
+| Daily job | `GET /api/cron/insights` with `Authorization: Bearer CRON_SECRET`. The JSON adds `progress: { checked, opened, resolved }`. |
 
-ET AI Studio desk tools are requested at `POST /api/ai/studio-desk`. There is no new client-writable studio collection. Sparks are spent on the user’s `sparksBalance` and recorded in `users/{uid}/spark_transactions`.
+### Workflow
 
-| Tool | Sparks |
-| --- | --- |
-| `teacher-toolkit` | 15 |
-| `parent-explainer` | 8 |
-| `research-helper` | 10 |
+`POST /api/progress-alerts` with `{ id, action, assigneeId?, note? }`. `action` is `acknowledge`, `assign`, `note`, or `resolve`. The student may acknowledge their own alert. A parent of a non-adult learner may add a note. Assign and resolve are staff (teacher, assignee, institution admin, platform admin). The same actions are written to `activity_log` as `progress.acknowledge`, `progress.assign`, `progress.note`, `progress.resolve`, and `progress.settings`.
 
-Toolkit kinds are `pack`, `lesson-plan`, `worksheet`, `rubric`, `differentiated`, and `exit-ticket`. Research Helper summarises sources. It does not write the assignment, the essay, or the answers.
+`GET /api/progress-alerts?scope=student|child|class|institution|platform`. `scope=child` also takes `childId`. An adult learner is omitted from the parent scope.
 
-Desk routes live under `/dashboard/studio` (including ET Maths, exam prep, and essays). Those existing collections are unchanged.
+### Push category `progress`
 
-## Help articles and MyInvois
+`deviceTokens.prefs.progress` follows the other categories: a missing key stays on, `false` opts that device out. Senders pass category `progress`. In-app `notifications` still use `type: "general"` and `link` `/dashboard/student/progress`, `/dashboard/parent/progress`, `/dashboard/teacher/progress`, or `/dashboard/institution/progress`.
 
-`help_articles/{id}` is Admin SDK only. Fields are `title`, `body`, `published`, `updatedAt`, and `updatedBy`. The public site reads published articles through `GET /api/help`. ET AI answers from those articles at `POST /api/help/ask` and does not call a model. A weak match tells the person to open the existing `support_tickets` helpdesk ticket. Clients do not write `help_articles`.
+Routing:
 
-`myinvois_queue/{invoiceId}` is Admin SDK only. A paid invoice is queued from the payment engine. Status is `not_configured`, `queued`, `submitted`, `retry`, or `failed`. `not_configured` is the clear no-op when `MYINVOIS_CLIENT_ID`, `MYINVOIS_CLIENT_SECRET`, or `TIN` (or `MYINVOIS_TIN`) is unset: nothing is sent to LHDN. `MYINVOIS_ENV=production` uses the live host. Anything else uses the sandbox. The daily insights cron retries `retry` rows, up to five attempts. Clients cannot write this collection.
+- Low: weekly parent digest on Monday, plus an ET AI nudge to the student. Quiet hours hold the digest.
+- Medium: same-day push to parent and teacher.
+- High: immediate push to parent, teacher, and the institution academic lead.
+- Critical: push and email to the academic lead, teacher, and parents. Quiet hours do not hold it. The alert stores `safeguardingCaseId` when a case file exists.
+- Independent adult learners: student nudge only.
+- Parents are never told about adult learners.
 
 WhatsApp Cloud API uses `WHATSAPP_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID`. OTP and notifications try the template first and fall back to email. Push adds the FCM v1 path above beside Expo and Web Push. None of these collections need a new client rule. Rules still need an owner deploy only for changes that already said so. This note does not deploy rules or indexes.
+### Accountability
+
+The same ownership block is the shared model for safeguarding alerts (`type: 'safety'`). Import `lib/alerts/accountability.ts` and `lib/alerts/model.ts` on the network branch. Do not declare a second checklist or due-time rule.
+
+`progress_alerts.accountability`:
+
+| Field | Type | Notes |
+|---|---|---|
+| `ownerId` / `ownerName` | string | Teacher by default for medium, high, and critical. |
+| `coOwnerId` / `coOwnerName` | string | A linked parent for a minor. Empty for an adult learner. |
+| `delegateId` | string or null | Another linked guardian. Parent workflow `delegate`. |
+| `dueAt` | number or null | Acknowledgement due time. Medium 48 hours, high 24 hours, critical 2 hours. Null for low. |
+| `acknowledgedAt` | number or null | Owner acknowledgement. |
+| `actedAt` / `staffAction` | number / string | Checklist: `spoke_to_student`, `contacted_parent`, `assigned_recovery_plan`, `scheduled_extra_session`, `referred_to_academic_lead`. |
+| `parentSeenAt` | number or null | Family confirmed “I've seen this”. |
+| `parentActedAt` / `parentAction` | number / string | `talked_with_child`, `set_study_time`, `will_attend_meeting`. |
+| `teacherStep` | number | 0 owner, 1 academic lead, 2 institution admin. |
+| `parentStep` | number | 0 waiting, 1 reminder push, 2 email, 3 teacher asked to call. |
+| `teacherPausedMs` / `teacherPauseFrom` | number | Teacher `users.leaveUntil` or `users.onLeaveUntil` pauses the clock. Critical does not pause. |
+| `parentPausedMs` / `parentPauseFrom` | number | Parent quiet hours pause the family clock. Critical does not pause. |
+| `tasks` | array | Shared plan. `{ id, who: student\|parent\|teacher, text, dueAt, doneAt }`. Text is taken from lessons already on the record. |
+| `agenda` | string | ET AI meeting agenda from the course, level, signals, and projected result on record. |
+| `meeting` | map or null | `{ provider: zoom\|meet\|teams, url, at, agenda }`. The url is an existing `live_classes.joinUrl` or a link the teacher saves. Other hosts are refused. |
+| `checkIns` | array | `{ at, authorName, text }`. |
+| `recognition` | string[] | `rapid_responder` or `engaged_parent`. Shown to the person and the institution, not to the student. |
+
+Audit actions added on the same `audit` array: `acted`, `parent_seen`, `parent_acted`, `escalated`, `delegated`, `check_in`, `meeting`. Each entry has `at`, `actorId`, `action`, and `detail`.
+
+`progress_alert_settings.sla`: `mediumHours` 48, `highHours` 24, `criticalHours` 2, `criticalEscalationMinutes` 15. Institutions can replace these numbers.
+
+Workflow `POST /api/progress-alerts` also accepts `act`, `seen`, `parent_act`, `delegate`, `check_in`, and `meeting`. `act` and `parent_act` send `checklist`. `meeting` sends `meetingUrl`. `delegate` sends `assigneeId` of another guardian whose `childIds` include the learner.
+
+`progress_alert_recognition/{userId}` stores `{ userId, institutionId, badges, updatedAt }`. The person, a platform admin, or the institution admin can read it. Clients cannot write it.
+
+`progress_alert_wins/{institutionId}_{week}` stores `{ institutionId, week, lines, sent }`. The Monday cron sends one supportive summary and sets `sent`.
+
+`GET /api/progress-alerts` adds `stats` (open, overdue, average response, recovered, parent engagement, intervention success) and `levelStats`. Engagement and success rates are omitted when the group has fewer than five learners. The institution and Insights screens can filter the named list by class and level.

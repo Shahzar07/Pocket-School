@@ -2995,6 +2995,56 @@ service cloud.firestore {
       }
     }
 
+    // Learning-progress alerts. Clients read. The server writes through the API.
+    // Parents cannot read an adult learner's alert. Deploy with the owner toolchain.
+    match /progress_alerts/{alertId} {
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || resource.data.studentId == request.auth.uid
+        || (linkedTo(resource.data.studentId) && resource.data.adult != true)
+        || resource.data.get('teacherIds', []).hasAny([request.auth.uid])
+        || resource.data.get('assigneeId', '') == request.auth.uid
+        || (isInstitutionAdmin() && resource.data.get('institutionId', '') == myInstitution())
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /progress_alert_settings/{settingsId} {
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || (isInstitutionAdmin() && (settingsId == myInstitution() || settingsId == 'platform'))
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /progress_alert_trends/{trendId} {
+      allow read: if isSignedIn() && (isAdmin() || isInstitutionAdmin());
+      allow create, update, delete: if false;
+    }
+
+    match /progress_alert_state/{studentId} {
+      allow read, write: if false;
+    }
+
+    // Private recognition for responsive teachers and engaged parents.
+    // The person and their institution can read it. Students cannot.
+    match /progress_alert_recognition/{userId} {
+      allow read: if isSignedIn() && (
+        request.auth.uid == userId
+        || isAdmin()
+        || (isInstitutionAdmin() && resource.data.get('institutionId', '') == myInstitution())
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /progress_alert_wins/{winId} {
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || (isInstitutionAdmin() && resource.data.get('institutionId', '') == myInstitution())
+      );
+      allow create, update, delete: if false;
+    }
+
     match /published_reports/{token} {
       allow get: if true;
       allow list: if false;

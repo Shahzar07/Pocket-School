@@ -24,9 +24,11 @@ export type PushPref =
   | 'reports'
   | 'alumni'
   | 'institution'
-  | 'achievements';
+  | 'achievements'
+  | 'progress';
 
 function categoryFor(pref: PushPref): PushCategory {
+  if (pref === 'progress') return 'progress';
   if (pref === 'attendance') return 'attendance';
   if (pref === 'integrity') return 'flags';
   if (pref === 'digest' || pref === 'reports') return 'digests';

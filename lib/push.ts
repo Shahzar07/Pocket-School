@@ -16,6 +16,7 @@ export const PUSH_CATEGORIES = [
   'grades',
   'assignments',
   'general',
+  'progress',
   'alumni',
   'institution',
   'achievements',

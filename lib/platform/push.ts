@@ -1,5 +1,5 @@
 /** Categories the shared push sender accepts. Reading notices use `goals`. */
-export const PUSH_CATEGORIES = ['goals', 'flags', 'attendance', 'digests', 'grades', 'assignments', 'general', 'alumni', 'institution', 'achievements', 'network', 'safety', 'hotline', 'emergency'] as const;
+export const PUSH_CATEGORIES = ['goals', 'flags', 'attendance', 'digests', 'grades', 'assignments', 'general', 'progress', 'alumni', 'institution', 'achievements', 'network', 'safety', 'hotline', 'emergency'] as const;
 export type PushCategory = (typeof PUSH_CATEGORIES)[number];
 
 export interface PushRequest {

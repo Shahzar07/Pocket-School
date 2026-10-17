@@ -160,5 +160,13 @@ export async function POST(req: NextRequest) {
     before: body.before,
     after: body.after,
   });
+  if (action === 'auth.login' && role === 'student') {
+    try {
+      const { noteLearner } = await import('@/lib/alerts/progress-server');
+      await noteLearner(user.uid);
+    } catch {
+      /* Sign-in still succeeds when a progress check cannot run. */
+    }
+  }
   return NextResponse.json({ ok: true });
 }
