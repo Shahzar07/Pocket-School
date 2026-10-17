@@ -45,6 +45,7 @@ const HIDDEN_PREFIXES = [
   "/reads",
   "/studio",
   "/preview/design",
+  "/alerts",
 ];
 
 /** /offer ships its own footer, including the operating-company line. */

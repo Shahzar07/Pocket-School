@@ -2282,3 +2282,30 @@ app/community-guidelines/page.tsx	You get a short note that says why, without sh
 app/community-guidelines/page.tsx	Young members
 app/community-guidelines/page.tsx	Your report still matters
 components/network/automation-panel.tsx	Network automation
+app/alerts/[id]/opengraph-image.tsx	POKET SCHOOL
+components/hotline/surfaces.tsx	A principal drafts the alert. A second verified staff member confirms it before anyone else sees it.
+components/hotline/surfaces.tsx	A worry about the week
+components/hotline/surfaces.tsx	Attendance · Medium · To the class teacher
+components/hotline/surfaces.tsx	Bus was late twice
+components/hotline/surfaces.tsx	Confirm and publish
+components/hotline/surfaces.tsx	Due within one working day. The class teacher has the ticket.
+components/hotline/surfaces.tsx	Emergency desk
+components/hotline/surfaces.tsx	Escalates to the academic lead, then the principal.
+components/hotline/surfaces.tsx	Filter the desk. Bullying and safeguarding tickets stay with the principal and the safeguarding lead.
+components/hotline/surfaces.tsx	High priority. Four working hours. Only the safeguarding lead can see this.
+components/hotline/surfaces.tsx	Homework load this week
+components/hotline/surfaces.tsx	Hotline queue
+components/hotline/surfaces.tsx	In progress
+components/hotline/surfaces.tsx	Keep in view
+components/hotline/surfaces.tsx	Late pickup on Thursday
+components/hotline/surfaces.tsx	Missing child · draft
+components/hotline/surfaces.tsx	New ticket
+components/hotline/surfaces.tsx	Pending · low
+components/hotline/surfaces.tsx	Poket School
+components/hotline/surfaces.tsx	Region comes from the school, not a home address. Police reference PDRM-2026-1044 is on the draft.
+components/hotline/surfaces.tsx	Safeguarding tickets are hidden from this desk.
+components/hotline/surfaces.tsx	School hotline
+components/hotline/surfaces.tsx	Send to the school
+components/hotline/surfaces.tsx	Three working days. Assigned to the class teacher.
+components/hotline/surfaces.tsx	Views 0 · Shares 0
+components/hotline/surfaces.tsx	Write to your child’s school. Safeguarding notes go only to the principal or the safeguarding lead.

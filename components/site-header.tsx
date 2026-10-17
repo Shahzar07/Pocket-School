@@ -28,6 +28,7 @@ const HIDDEN_PREFIXES = [
   "/ai-teachers",
   "/reads",
   "/preview",
+  "/alerts",
   "/mode-preview",
   "/payments-preview",
   "/account-preview",

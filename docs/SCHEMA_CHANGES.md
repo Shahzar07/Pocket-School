@@ -1046,3 +1046,102 @@ Push for group activity reuses `network`. Critical safety on a group post uses `
 `network` and `safety`, on both `lib/push.ts` and `lib/platform/push.ts`. The reject string is `category must be goals, flags, attendance, digests, grades, assignments, general, achievements, network, or safety.`
 
 Account toggles: `notificationPrefs.network`, `notificationPrefs.safety`, `notificationPrefs.networkDigest`.
+
+## Hotline
+
+Parent-to-school tickets. The website shape here is canonical. Client writes are denied. Do not deploy these rules from this branch.
+
+`hotline_tickets/{id}`
+
+| Field | Notes |
+| --- | --- |
+| `institutionId`, `studentId`, `parentUid` | The parent must have `studentId` in `users.childIds`. |
+| `addressedTo` | `teacher`, `academic_lead`, `principal`, `safeguarding_lead`. |
+| `assigneeUid` | Staff member, or empty. |
+| `category` | `academic`, `attendance`, `fees`, `transport`, `wellbeing`, `bullying`, `safeguarding`, `technical`, `feedback`, `other`. Fees and billing use `fees`. |
+| `priority` | `low`, `medium`, `high`. Maps onto the shared severity in `lib/alerts/model.ts` (`low`, `medium`, `high`). Hotline has no critical priority. |
+| `status` | `pending`, `in_progress`, `kiv`, `solved`, `closed`. |
+| `kivReason`, `kivFollowUpAt` | Required together when status is `kiv`. |
+| `slaDueAt` | Working hours in the institution timezone. High is 4 working hours, medium is 1 working day, low is 3 working days. Default window is Monday to Friday, 08:00 to 17:00, `Asia/Kuala_Lumpur`, plus `institutions/{id}.holidays`. |
+| `escalationLevel` | `GET /api/cron/hotline` with `Authorization: Bearer CRON_SECRET` moves an overdue ticket to teacher, then academic lead, then principal. Bullying and safeguarding never leave the safeguarding lead and the principal. |
+| `reopenUntil`, `solvedAt` | A parent can reopen within 7 days of `solved`. |
+| `satisfaction` | `{ rating: 1–5, comment }` after the parent rates. |
+| `body`, `safeguardingCaseId` | Sensitive categories open `safeguarding_cases/{id}` with `source: hotline`. Other staff cannot read those tickets. |
+| `createdAt`, `updatedAt` | Milliseconds. |
+
+`hotline_tickets/{id}/comments/{commentId}`: `authorId`, `authorName`, `body`, `internal` (staff-only when true), `parentId` for a thread, `at`.
+
+`hotline_tickets/{id}/events/{eventId}`: `kind` is `created`, `assigned`, `status_change`, `escalated`, `reopened`, or `rated`. `actorId`, `at`, `detail`.
+
+| Method | Path |
+| --- | --- |
+| POST | `/api/hotline/create` |
+| GET | `/api/hotline/list` |
+| GET | `/api/hotline/get?id=` |
+| POST | `/api/hotline/comment` |
+| POST | `/api/hotline/assign` |
+| POST | `/api/hotline/status` |
+| POST | `/api/hotline/reopen` |
+| POST | `/api/hotline/rate` |
+| GET | `/api/hotline/analytics` |
+| GET | `/api/cron/hotline` |
+
+Analytics hide any group under 5: category counts, SLA compliance, average resolution time, satisfaction, and the overdue count. The parent desk is `/dashboard/parent/hotline`. Staff queues are `/dashboard/teacher/hotline`, `/dashboard/admin/hotline`, and `/dashboard/institution/hotline`.
+
+Push category `hotline`. It can be muted with `notificationPrefs.hotline`.
+
+## Emergency alerts
+
+Amber and other emergency alerts. Publishing is server-only. A verified principal or admin creates a draft. A different verified staff member confirms it, and only then is it public. Do not deploy these rules from this branch.
+
+`emergency_alerts/{id}`
+
+| Field | Notes |
+| --- | --- |
+| `institutionId` | School that owns the alert. |
+| `type` | `missing_child`, `lockdown`, `weather`, `medical`, `general`. Severity uses `lib/alerts/model.ts`: missing child, lockdown, and medical are `critical`; weather is `high`; general is `medium`. |
+| `title`, `description`, `subjectName` | `subjectName` is removed when the alert is resolved. |
+| `region` | `{ country, state, city }` copied from `institutions/{id}`. A home address is never stored. |
+| `photoUrl`, `guardianConsent`, `consentId` | The photo is stored only when `guardianConsent` is true and `consentId` is set. |
+| `authoritiesInformed` | `{ agency, referenceNumber, informedAt }`. Required before public share, and required before a missing-child draft is saved. |
+| `status` | `draft` until the second staff member confirms, then `active`, `updated`, `resolved`, or `closed`. Closed alerts are archived. |
+| `publishedBy`, `publishedAt` | The creator. `publishedAt` is set at confirmation. |
+| `confirmedBy`, `confirmedAt` | Must be a different verified staff member. |
+| `resolved` | `{ by, at, outcome, authoritiesClosed }`. |
+| `publicShareEnabled` | Stays false without an authority record. Cleared on resolve. |
+| `ogVersion` | Incremented on resolve so share URLs can drop a cached card (`?v=`). |
+| `counts` | `{ views, shares }`. |
+| `createdAt` | Milliseconds. |
+
+`emergency_alerts/{id}/updates/{updateId}`: `body`, `actorId`, `at`.
+
+`emergency_alerts/{id}/audit/{auditId}`: `created`, `confirmed`, `updated`, `resolved`, `closed`.
+
+`emergency_rate/{uid}_{YYYY-MM-DD}`: at most 3 drafts a day.
+
+A confirmed alert writes a pinned `network_posts` document (`kind: emergency`) for the school page and the feed. Resolve updates that post, clears the name and photo from the public view and the OG image, disables share buttons, sets the page to `noindex`, and increments `ogVersion`.
+
+Public page: `/alerts/[id]`. OG image: `/alerts/[id]/opengraph-image`. The card is a brand frame with type, region, and time. A photo is named on the card only when consent is on and the alert is still open. The page shows `If you have information, contact {agency} {reference}` and the public emergency number (999 in Malaysia). It does not show school staff numbers. It is not a replacement for emergency services.
+
+| Method | Path |
+| --- | --- |
+| POST | `/api/emergency/create` |
+| POST | `/api/emergency/confirm` |
+| POST | `/api/emergency/update` |
+| POST | `/api/emergency/resolve` |
+| POST | `/api/emergency/close` |
+| GET | `/api/emergency/public?id=` |
+| POST | `/api/emergency/share` |
+| GET | `/api/emergency/stats?id=` |
+
+Push category `emergency`. It is targeted to institution members and to profiles whose country, state, and city match `region`. Delivery sets `force` and `sound: emergency`, so quiet hours and a muted preference do not apply. There is no mute toggle for it.
+
+Admin desks: `/dashboard/admin/emergency` and `/dashboard/institution/emergency`.
+
+Retention: on resolve, the name and photo are cleared from the public document. The audit subcollection remains for the school. Closed alerts stay archived and are not indexed.
+
+## Push categories added
+
+`hotline` and `emergency`, on both `lib/push.ts` and `lib/platform/push.ts`. The reject string is `category must be goals, flags, attendance, digests, grades, assignments, general, achievements, network, safety, hotline, or emergency.`
+
+Account toggle: `notificationPrefs.hotline`. Emergency alerts are not a preference.

@@ -577,6 +577,39 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "institutionId", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "hotline_tickets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "slaDueAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "hotline_tickets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "parentUid", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "emergency_alerts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "publishedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "emergency_alerts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

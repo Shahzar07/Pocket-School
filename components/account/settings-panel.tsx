@@ -492,6 +492,7 @@ export function SettingsPanel({
             ['achievements', 'Achievements'],
             ['network', 'Network'],
             ['safety', 'Safety'],
+            ['hotline', 'Hotline'],
             ['networkDigest', 'Network email digest'],
           ]}
           value={notes}

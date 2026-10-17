@@ -19,6 +19,8 @@ export const PUSH_CATEGORIES = [
   'achievements',
   'network',
   'safety',
+  'hotline',
+  'emergency',
 ] as const;
 
 export type PushCategory = (typeof PUSH_CATEGORIES)[number];
@@ -44,8 +46,10 @@ export interface PushMessage {
   title: string;
   body: string;
   link?: string;
-  /** Critical safeguarding is delivered even when the device muted `safety`. */
+  /** Critical safeguarding and every emergency alert are delivered even when muted. */
   force?: boolean;
+  /** Emergency alerts use a distinct sound. Expo receives this name. */
+  sound?: string;
 }
 
 export interface PushStore {
