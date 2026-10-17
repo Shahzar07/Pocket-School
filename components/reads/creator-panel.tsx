@@ -356,7 +356,7 @@ export function CreatorPanel({
               <button type="button" onClick={() => revise('shorten')} className="h-9 rounded-full border border-border px-3 text-sm font-semibold">Shorten · {SPARK_COSTS.suggestion} Sparks</button>
             </div>
             {suggestion && (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm">
+              <div className="rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] p-3 text-sm">
                 <p className="font-semibold">ET AI suggestion</p>
                 <p className="mt-1 whitespace-pre-wrap">{suggestion}</p>
                 <button type="button" onClick={accept} className="mt-2 h-9 rounded-full bg-foreground px-3 text-sm font-bold text-background">Accept into the chapter</button>
@@ -372,7 +372,7 @@ export function CreatorPanel({
       <section className="space-y-2">
         <h3 className="font-heading text-[22px]">Continuity</h3>
         <ul className="space-y-1 text-sm">
-          {notes.map(note => <li key={note.message} className={note.tone === 'warn' ? 'text-amber-900' : 'text-emerald-800'}>{note.message}</li>)}
+          {notes.map(note => <li key={note.message} className={note.tone === 'warn' ? 'text-[var(--ps-cyan-text)]' : 'text-emerald-800'}>{note.message}</li>)}
         </ul>
       </section>
 

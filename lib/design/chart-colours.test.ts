@@ -54,11 +54,14 @@ test('dashboard accents and medals clear WCAG AA for text', () => {
 test('globals.css carries the same accent and medal hexes', () => {
   const css = readFileSync(path.join(ROOT, 'app/globals.css'), 'utf8');
   for (const id of ACCENT_IDS) {
-    assert.match(css, new RegExp(`--ps-${id}:\\s*${LIGHT_INKS[id].ink}`, 'i'));
+    const inkVar = id === 'cyan' ? '--ps-cyan-text' : `--ps-${id}`;
+    assert.match(css, new RegExp(`${inkVar}:\\s*${LIGHT_INKS[id].ink}`, 'i'));
     assert.match(css, new RegExp(`--ps-on-${id}:\\s*${LIGHT_INKS[id].onFill}`, 'i'));
-    assert.match(css, new RegExp(`--ps-${id}:\\s*${DARK_INKS[id].ink}`, 'i'));
+    assert.match(css, new RegExp(`${inkVar}:\\s*${DARK_INKS[id].ink}`, 'i'));
     assert.match(css, new RegExp(`--ps-on-${id}:\\s*${DARK_INKS[id].onFill}`, 'i'));
   }
+  assert.match(css, /--ps-cyan:\s*#3FE0D0/i);
+  assert.doesNotMatch(css, /#0F766E/i);
   for (const id of MEDAL_IDS) {
     assert.match(css, new RegExp(`--medal-${id}:\\s*${LIGHT_MEDALS[id].fill}`, 'i'));
     assert.match(css, new RegExp(`--medal-${id}-ink:\\s*${LIGHT_MEDALS[id].ink}`, 'i'));

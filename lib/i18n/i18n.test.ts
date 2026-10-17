@@ -207,12 +207,12 @@ test('interpolation tokens survive every catalog', () => {
 
 test('faq catalogs match current plans and stay translated', () => {
   const en = catalogFor('en').landing.faq;
-  assert.match(en.a1, /\$19/);
   assert.match(en.a1, /\$79/);
-  assert.match(en.a1, /\$99/);
-  assert.match(en.a1, /\$171/);
   assert.match(en.a1, /\$708/);
-  assert.match(en.a1, /\$888/);
+  assert.match(en.a1, /\$9/);
+  assert.match(en.a1, /\$15/);
+  assert.doesNotMatch(en.a1, /\$19/);
+  assert.doesNotMatch(en.a1, /\$99/);
   assert.match(en.a2, /University of London/);
   assert.match(en.a2, /MBBS/);
   assert.match(en.a2, /Engineering/);
@@ -224,9 +224,11 @@ test('faq catalogs match current plans and stay translated', () => {
     const faq = catalogFor(code).landing.faq;
     const blob = Object.values(faq).join('\n');
     assert.equal(banned.test(blob), false, `${code} ${blob.match(banned)?.[0] ?? ''}`);
-    assert.match(faq.a1, /\$19/, code);
+    if (code === 'en') {
+      assert.doesNotMatch(faq.a1, /\$19/, code);
+      assert.doesNotMatch(faq.a1, /\$99/, code);
+    }
     assert.match(faq.a1, /\$708/, code);
-    assert.match(faq.a1, /\$888/, code);
     assert.ok(faq.a4.includes('{{count}}'), code);
     assert.ok(faq.a4.includes('ET AI Essay Writer'), code);
     assert.ok(faq.a4.includes('ET AI Live'), code);

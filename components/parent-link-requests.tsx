@@ -30,7 +30,7 @@ export function ParentLinkRequests() {
   };
 
   return (
-    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+    <div className="rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] p-4 space-y-3">
       <p className="text-sm font-semibold">A parent wants to follow your learning</p>
       {rows.map((row) => (
         <div key={row.id} className="flex flex-wrap items-center gap-2 text-sm">

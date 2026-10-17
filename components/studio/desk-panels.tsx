@@ -271,6 +271,16 @@ export function ParentExplainerView({ note }: { note: ParentExplainer }) {
         <h3 className="font-semibold">Gaps</h3>
         <p className="mt-2 text-sm leading-relaxed">{note.gaps}</p>
       </section>
+      {note.badges.length > 0 && (
+        <section className="rounded-2xl border border-border bg-card p-4">
+          <h3 className="font-semibold">Badges</h3>
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {note.badges.map(badge => (
+              <li key={badge} className="rounded-full border border-border px-3 py-1 text-sm">{badge}</li>
+            ))}
+          </ul>
+        </section>
+      )}
       <section className="rounded-2xl border border-border bg-card p-4">
         <h3 className="font-semibold">How to help at home</h3>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
@@ -294,6 +304,7 @@ const SAMPLE_NOTE = parentExplainerFromFacts({
   courses: [{ label: 'Mathematics', progress: 48 }],
   goalTitles: ['Finish the fractions goal'],
   misconceptions: ['place value'],
+  badges: ['First lesson'],
 });
 
 export function ParentExplainerPanel({ sample = false }: { sample?: boolean }) {

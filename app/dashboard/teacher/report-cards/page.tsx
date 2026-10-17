@@ -37,8 +37,8 @@ function letterGrade(pct: number) {
 const GRADE_COLORS: Record<string, string> = {
   A: 'bg-emerald-500/10 text-emerald-600',
   B: 'bg-sky-500/10 text-sky-600',
-  C: 'bg-amber-500/10 text-amber-600',
-  D: 'bg-orange-500/10 text-orange-600',
+  C: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
+  D: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
   F: 'bg-red-500/10 text-red-600',
 };
 
@@ -170,10 +170,10 @@ export default function ReportCardsPage() {
       });
       const issued = Array.isArray(result.issued) ? result.issued as { moduleTitle?: string; id?: string }[] : [];
       if (issued.length === 0) {
-        toast.message('No finished module to award yet. A certificate is issued when every published lesson in a module is complete.');
+        toast.message('No certificate yet. It is issued when the course final assessment is passed and every unit is passed.');
       } else {
         const names = issued.map((row) => row.moduleTitle).filter(Boolean).join(', ');
-        toast.success(names ? `Awarded: ${names}` : `Awarded ${issued.length} module certificate${issued.length === 1 ? '' : 's'}.`);
+        toast.success(names ? `Awarded: ${names}` : `Awarded ${issued.length} certificate${issued.length === 1 ? '' : 's'}.`);
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Could not award a certificate.';
@@ -195,7 +195,7 @@ export default function ReportCardsPage() {
   if (loadError) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12">
       <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
-        <FileBarChart className="w-10 h-10 mx-auto text-amber-500" />
+        <FileBarChart className="w-10 h-10 mx-auto text-[var(--ps-cyan-text)]" />
         <p className="font-heading text-2xl text-foreground">Couldn&apos;t load your courses</p>
         <p className="text-sm text-muted-foreground">Something went wrong while fetching your data. Please try again.</p>
         <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={loadCourses}>Retry</Button>
@@ -393,10 +393,10 @@ export default function ReportCardsPage() {
                 size="sm"
                 onClick={() => handleIssueCert(r)}
                 disabled={issuingCert === r.studentId}
-                className="print:hidden rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white gap-1.5 text-xs font-bold"
+                className="print:hidden rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)] gap-1.5 text-xs font-bold"
               >
                 {issuingCert === r.studentId ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Award className="w-3.5 h-3.5" />}
-                Award finished modules
+                Check course certificate
               </Button>
             </div>
           </motion.div>

@@ -551,20 +551,20 @@ function AdminLoginForm() {
   };
 
   return (
-    <main className="min-h-screen bg-[#f4f7f8] text-slate-900 flex items-center justify-center px-4 py-12">
+    <main className="min-h-screen bg-background text-foreground flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="flex items-center gap-3 mb-8">
-          <span className="w-11 h-11 rounded-2xl bg-[#2786A4] text-white grid place-items-center">
+          <span className="w-11 h-11 rounded-2xl bg-primary text-primary-foreground grid place-items-center">
             <ShieldCheck className="w-5 h-5" />
           </span>
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#2786A4]">Poket School</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">Poket School</p>
             <h1 className="text-2xl font-semibold tracking-tight">Admin sign-in</h1>
           </div>
         </div>
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
           {timedOut && step === 'credentials' && (
-            <p className="mb-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-2xl px-3 py-2">
+            <p className="mb-4 text-sm text-[var(--ps-cyan-text)] bg-[var(--ps-cyan-soft)] border border-[var(--ps-cyan-border)] rounded-2xl px-3 py-2">
               Your admin session closed after 30 minutes of inactivity.
             </p>
           )}
@@ -602,7 +602,7 @@ function AdminLoginForm() {
               <Button type="submit" disabled={loading} className="w-full h-11 rounded-xl font-semibold">
                 {loading ? 'Checking…' : 'Sign in'}
               </Button>
-              <button type="button" className="text-sm font-semibold text-[#2786A4]" onClick={() => void resetToCredentials()}>
+              <button type="button" className="text-sm font-semibold text-primary" onClick={() => void resetToCredentials()}>
                 Sign out
               </button>
             </form>
@@ -616,8 +616,7 @@ function AdminLoginForm() {
                 type="button"
                 disabled={factorBusy !== null}
                 onClick={() => void confirmWithGoogle()}
-                className="w-full h-11 rounded-xl font-semibold text-white disabled:opacity-60"
-                style={{ backgroundColor: '#2786A4' }}
+                className="w-full h-11 rounded-xl bg-primary font-semibold text-primary-foreground disabled:opacity-60"
               >
                 {factorBusy === 'google' ? 'Opening Google…' : 'Confirm with Google'}
               </button>
@@ -625,12 +624,11 @@ function AdminLoginForm() {
                 type="button"
                 disabled={factorBusy !== null}
                 onClick={() => void startTotp()}
-                className="w-full h-11 rounded-xl font-semibold disabled:opacity-60"
-                style={{ backgroundColor: '#ffffff', color: '#2786A4', border: '2px solid #2786A4' }}
+                className="w-full h-11 rounded-xl border-2 border-primary bg-card font-semibold text-primary disabled:opacity-60"
               >
                 {factorBusy === 'totp' ? 'Starting authenticator…' : 'Enrol an authenticator app'}
               </button>
-              <button type="button" className="text-sm font-semibold text-[#2786A4]" onClick={() => void resetToCredentials()}>
+              <button type="button" className="text-sm font-semibold text-primary" onClick={() => void resetToCredentials()}>
                 Sign out
               </button>
             </div>
@@ -656,7 +654,7 @@ function AdminLoginForm() {
               <Button type="submit" disabled={loading} className="w-full h-11 rounded-xl font-semibold">
                 {loading ? 'Checking…' : 'Confirm authenticator'}
               </Button>
-              <button type="button" className="text-sm font-semibold text-[#2786A4]" onClick={() => {
+              <button type="button" className="text-sm font-semibold text-primary" onClick={() => {
                 void (async () => {
                   try { await signOut(auth); } catch { /* already signed out */ }
                   clearAdminMfaPending();
@@ -677,7 +675,7 @@ function AdminLoginForm() {
               <Button type="submit" disabled={loading} className="w-full h-11 rounded-xl font-semibold">
                 {loading ? 'Checking…' : 'Sign in'}
               </Button>
-              <button type="button" className="text-sm font-semibold text-[#2786A4]" onClick={() => void resetToCredentials()}>
+              <button type="button" className="text-sm font-semibold text-primary" onClick={() => void resetToCredentials()}>
                 Sign out
               </button>
             </form>
@@ -690,7 +688,7 @@ function AdminLoginForm() {
 
 export default function AdminLoginPage() {
   return (
-    <Suspense fallback={<main className="min-h-screen bg-[#f4f7f8]" />}>
+    <Suspense fallback={<main className="min-h-screen bg-background" />}>
       <AdminLoginForm />
     </Suspense>
   );

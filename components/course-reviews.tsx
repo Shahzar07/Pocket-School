@@ -56,7 +56,7 @@ export function CourseReviews({
   return (
     <section className="space-y-4">
       <div className="flex items-center gap-2">
-        <Star className="w-4 h-4 text-amber-500" />
+        <Star className="w-4 h-4 text-[var(--ps-cyan-text)]" />
         <h2 className="font-heading text-2xl">{mean === null ? 'No reviews yet' : `${mean} · ${reviews.length} review${reviews.length === 1 ? '' : 's'}`}</h2>
       </div>
       <ul className="space-y-3">

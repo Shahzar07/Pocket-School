@@ -28,6 +28,8 @@ import { usePricing } from '@/hooks/use-pricing';
 import { formatMoney } from '@/lib/money';
 import { defaultChildControls, strictestControls, type ChildControls, type PaymentMethod } from '@/lib/parent-controls';
 import { removeStoredMedia } from '@/components/media';
+import { ProfileBadgeShelf } from '@/components/gamification/profile-shelf';
+import { readVerification } from '@/lib/verification/policy';
 import {
   normalisePayout,
   profilePatch,
@@ -68,6 +70,9 @@ import {
 } from '@/lib/db';
 import { actionLabel } from '@/lib/audit/model';
 import { reportActivity } from '@/lib/audit/report';
+import { StudentPassCard } from '@/components/student-pass-card';
+import { useEnsureStudentNumber } from '@/components/use-student-number';
+import { learnerLevelLabel } from '@/lib/student-number';
 import {
   EMPTY_PAYOUT,
   SettingsPanel,
@@ -119,6 +124,7 @@ function authMessage(error: unknown, fallback: string): string {
 export default function ProfilePage() {
   const router = useRouter();
   const { user, profile, fetchProfile } = useAuthSTORE();
+  useEnsureStudentNumber();
   const { mode, ready } = useAccountMode();
   const { config } = usePricing();
   const [view, setView] = useState<SettingsView | null>(null);
@@ -197,6 +203,11 @@ export default function ProfilePage() {
               ageTier: row.data.ageTier,
               bio: row.data.bio,
               avatarUrl: row.data.avatarUrl,
+              gender: row.data.gender,
+              level: row.data.yearGroup || row.data.level || '',
+              country: row.data.country ?? '',
+              region: row.data.region ?? '',
+              dateOfBirth: row.data.dateOfBirth ?? '',
               controls: controls ?? defaultChildControls(row.id),
             };
           })),
@@ -258,6 +269,9 @@ export default function ProfilePage() {
           level: profile.level ?? '',
           learningStyle: profile.learningStyle ?? '',
           yearGroup: profile.yearGroup ?? '',
+          region: profile.region ?? '',
+          gender: profile.gender ?? '',
+          demographicConsent: Boolean(profile.demographicConsentAt),
           notificationPrefs: profile.notificationPrefs,
           privacy: {
             shareBoard: profile.privacy?.shareBoard ?? profile.shareBoard !== false,
@@ -281,6 +295,7 @@ export default function ProfilePage() {
         receipts,
         purchases,
         studentLimits,
+        verificationTier: readVerification(profile.verification).tier,
       });
     };
     void load();
@@ -296,6 +311,10 @@ export default function ProfilePage() {
 
   const saveProfile = async (draft: ProfileDraft) => {
     try {
+      if (draft.gender && !draft.demographicConsent) {
+        toast.error('Confirm the demographic statistics notice.');
+        return;
+      }
       const patch = profilePatch(draft, sectionRole);
       if (sectionRole === 'student') {
         await authedFetch('/api/account/placement', {
@@ -304,6 +323,17 @@ export default function ProfilePage() {
         });
       }
       await updateUser(user.uid, patch as Partial<UserProfile>);
+      await authedFetch('/api/insights/sync', {
+        method: 'POST',
+        body: JSON.stringify({
+          gender: draft.gender || '',
+          demographicConsent: draft.demographicConsent === true,
+          country: draft.country,
+          region: draft.region || '',
+          level: draft.level,
+          yearGroup: draft.yearGroup,
+        }),
+      });
       applyAppLanguage(draft.language, { explicit: true });
       writeCurrencyChoice(draft.currency, true);
       await updateProfile(user, { displayName: draft.displayName.trim() || draft.name.trim(), photoURL: draft.avatarUrl || null });
@@ -333,6 +363,11 @@ export default function ProfilePage() {
   const currencies = enabledCurrencies(config ?? seedPricing()).map(item => item.code);
 
   return (
+    <div className="space-y-5">
+    {profile?.role === 'student' && (
+      <StudentPassCard name={profile.name} level={learnerLevelLabel(profile)} code={profile.studentNumber ?? ''} />
+    )}
+    {user ? <ProfileBadgeShelf userId={user.uid} /> : null}
     <SettingsPanel
       view={view}
       currencies={currencies.length ? currencies : ['USD']}
@@ -341,6 +376,11 @@ export default function ProfilePage() {
       onPhoto={onPhoto}
       onChangeEmail={async (email, password) => {
         try {
+          const { automationEnabled } = await import('@/lib/automation-status');
+          if (!(await automationEnabled('email_change'))) {
+            toast.error('A super admin changes email addresses at the moment.');
+            return;
+          }
           await reauthenticate(password);
           await verifyBeforeUpdateEmail(user, email);
           toast.success('Check the new inbox. The email changes after you open the link.');
@@ -445,6 +485,11 @@ export default function ProfilePage() {
         toast.success('Privacy settings saved.');
       }}
       onExport={async () => {
+        const { automationEnabled } = await import('@/lib/automation-status');
+        if (!(await automationEnabled('data_export'))) {
+          toast.error('A super admin prepares data exports at the moment.');
+          return;
+        }
         const body = {
           exportedAt: new Date().toISOString(),
           account: {
@@ -477,6 +522,11 @@ export default function ProfilePage() {
       }}
       onRequestDeletion={async () => {
         try {
+          const { automationEnabled } = await import('@/lib/automation-status');
+          if (!(await automationEnabled('account_deletion'))) {
+            toast.error('A super admin handles account deletion at the moment.');
+            return;
+          }
           const request: DeletionRequest = scheduleDeletion(Date.now());
           await updateUser(user.uid, { deletionRequest: request });
           await refresh();
@@ -601,13 +651,15 @@ export default function ProfilePage() {
       }}
       onSaveDob={async date => {
         try {
-          const data = await authedFetch('/api/community/dob', { method: 'POST', body: JSON.stringify({ dateOfBirth: date }) });
-          toast.success(`Age tier set to ${String(data.ageTier ?? 'saved')}.`);
+          await authedFetch('/api/insights/sync', { method: 'POST', body: JSON.stringify({ dateOfBirth: date }) });
+          await authedFetch('/api/community/dob', { method: 'POST', body: JSON.stringify({ dateOfBirth: date }) }).catch(() => undefined);
+          toast.success('Date of birth saved.');
           await refresh();
         } catch (error) {
           toast.error(authMessage(error, 'Could not save the date of birth.'));
         }
       }}
     />
+    </div>
   );
 }

@@ -32,6 +32,8 @@ describe('dashboard role guard', () => {
     assert.equal(decideDashboardAccess('/dashboard/student/courses', student, 'student').allowed, true);
     assert.equal(decideDashboardAccess('/dashboard/teacher/gradebook', teacher, 'teacher').allowed, true);
     assert.equal(decideDashboardAccess('/dashboard/institution', teacher, 'teacher').allowed, false);
+    assert.equal(decideDashboardAccess('/dashboard/partner', student, 'student').allowed, false);
+    assert.equal(decideDashboardAccess('/dashboard/partner', { role: 'partner_merchant' }).allowed, true);
   });
 
   it('keeps platform admin pages to platform admins and the audit log to super admins', () => {

@@ -131,7 +131,7 @@ export function AudioPlayer({ script, title }: { script: string; title?: string 
           {sentences.map((s, i) => (
             <span
               key={i}
-              className={i === currentSentence ? 'bg-amber-100 text-amber-900 rounded px-0.5' : undefined}
+              className={i === currentSentence ? 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] rounded px-0.5' : undefined}
             >
               {s}{' '}
             </span>

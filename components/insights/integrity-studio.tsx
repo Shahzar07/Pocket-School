@@ -61,7 +61,7 @@ export function IntegrityStudio({ side }: { side: DeskSide }) {
       </section>
 
       {side !== 'student' && (
-        <section className="rounded-3xl border border-border p-5 space-y-2" data-section="inbox" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-amber) 12%, var(--card)), var(--card) 72%)' }}>
+        <section className="rounded-3xl border border-border p-5 space-y-2" data-section="inbox" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-cyan-text) 12%, var(--card)), var(--card) 72%)' }}>
           <p className="font-semibold">Flags inbox</p>
           <p className="text-sm text-muted-foreground">Quiet hours {DEFAULT_NOTIFY_SETTINGS.quietStart}–{DEFAULT_NOTIFY_SETTINGS.quietEnd}. Push waits. The inbox still updates.</p>
           <ul className="text-sm space-y-1">

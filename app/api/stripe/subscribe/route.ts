@@ -63,8 +63,8 @@ export async function POST(req: NextRequest) {
   }
   const def = tierDefinition(tier as AccessTier);
   const pricing = seedPricing();
-  const monthly = planById(pricing, def.id)?.monthlyUsd ?? 0;
-  if (monthly <= 0) return NextResponse.json({ error: 'That plan has no price.' }, { status: 400 });
+  const monthly = planById(pricing, def.id)?.monthlyUsd ?? null;
+  if (monthly == null || monthly <= 0) return NextResponse.json({ error: 'That plan has no price.' }, { status: 400 });
   const origin = req.nextUrl.origin;
   const Stripe = (await import('stripe')).default;
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);

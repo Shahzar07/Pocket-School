@@ -1,6 +1,6 @@
 'use client';
 
-import { ACCENT_IDS, ACCENT_PATTERN, patternId, type AccentId } from '@/lib/design/chart-colours';
+import { ACCENT_IDS, ACCENT_PATTERN, accentFillVar, patternId, type AccentId } from '@/lib/design/chart-colours';
 
 /** Hidden pattern tiles. Chart fills reference these ids so each hue also has a texture. */
 export function ChartPatternDefs() {
@@ -9,7 +9,7 @@ export function ChartPatternDefs() {
       <defs>
         {ACCENT_IDS.map(id => (
           <pattern key={id} id={patternId(id)} width="8" height="8" patternUnits="userSpaceOnUse">
-            <rect width="8" height="8" fill={`var(--ps-${id})`} />
+            <rect width="8" height="8" fill={`var(${accentFillVar(id)})`} />
             <PatternMark id={id} />
           </pattern>
         ))}

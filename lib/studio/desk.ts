@@ -79,6 +79,8 @@ export interface ChildActivityFacts {
   courses: { label: string; progress: number }[];
   goalTitles: string[];
   misconceptions: string[];
+  /** Badge names already awarded. Empty when none are saved. */
+  badges: string[];
 }
 
 export interface ParentExplainer {
@@ -89,6 +91,7 @@ export interface ParentExplainer {
   gaps: string;
   helpAtHome: string[];
   empty: boolean;
+  badges: string[];
 }
 
 const WRITE_REQUEST = /\b(write|draft|complete|do|finish)\b[\s\S]{0,40}\b(my |the |an |this )?(essay|assignment|coursework|answer|paragraphs?)\b/i;
@@ -450,6 +453,7 @@ export function factsFromSnapshot(
   childName: string,
   snapshot: Record<string, unknown> | null | undefined,
   goalTitles: string[] = [],
+  badgeNames: string[] = [],
 ): ChildActivityFacts {
   const metrics = snapshot?.metrics && typeof snapshot.metrics === 'object'
     ? snapshot.metrics as Record<string, unknown>
@@ -485,13 +489,14 @@ export function factsFromSnapshot(
     courses,
     goalTitles: goalTitles.map(title => title.trim()).filter(Boolean).slice(0, 6),
     misconceptions,
+    badges: (badgeNames.length ? badgeNames : stringList(snapshot?.badges, 8)).slice(0, 8),
   };
 }
 
 export function hasChildActivity(facts: ChildActivityFacts): boolean {
   if (facts.studyMinutes || facts.quizAverage !== null || facts.mastery !== null) return true;
   if (facts.lessonsCompleted || facts.goalsMet || facts.goalsMissed) return true;
-  return facts.strengths.length + facts.gaps.length + facts.courses.length + facts.goalTitles.length + facts.misconceptions.length > 0;
+  return facts.strengths.length + facts.gaps.length + facts.courses.length + facts.goalTitles.length + facts.misconceptions.length + facts.badges.length > 0;
 }
 
 function joinList(items: string[]): string {
@@ -511,6 +516,7 @@ export function parentExplainerFromFacts(facts: ChildActivityFacts): ParentExpla
       gaps: 'Nothing is saved yet, so there is no gap to report.',
       helpAtHome: ['Ask them what they opened in Poket School, then check again after they study.'],
       empty: true,
+      badges: facts.badges,
     };
   }
   const learnedBits: string[] = [];
@@ -520,6 +526,7 @@ export function parentExplainerFromFacts(facts: ChildActivityFacts): ParentExpla
   if (facts.courses.length) {
     learnedBits.push(facts.courses.map(course => `${course.label} at ${course.progress}%`).join('; '));
   }
+  if (facts.badges.length) learnedBits.push(`badges ${joinList(facts.badges)}`);
   const learned = learnedBits.length
     ? `This week ${name} has ${learnedBits.join(', ')}.`
     : `${name} has saved activity, but the weekly totals are still thin.`;
@@ -546,11 +553,12 @@ export function parentExplainerFromFacts(facts: ChildActivityFacts): ParentExpla
     gaps: cleanProse(gaps),
     helpAtHome: help.map(cleanProse),
     empty: false,
+    badges: facts.badges,
   };
 }
 
 export function parentFactText(explainer: ParentExplainer): string {
-  return [explainer.learned, explainer.strengths, explainer.gaps, ...explainer.helpAtHome].join('\n');
+  return [explainer.learned, explainer.strengths, explainer.gaps, ...explainer.helpAtHome, ...explainer.badges].join('\n');
 }
 
 export function acceptParentTranslation(
@@ -636,6 +644,7 @@ export function explainerLines(explainer: ParentExplainer): string[] {
     '',
     'How to help at home',
     ...explainer.helpAtHome.map(item => `• ${item}`),
+    ...(explainer.badges.length ? ['', 'Badges', ...explainer.badges.map(item => `• ${item}`)] : []),
   ];
 }
 

@@ -1,7 +1,7 @@
 /**
  * Shared push delivery. Every sender loads `deviceTokens` where
  * `userId == recipientUid`, then sends through Expo or Web Push from
- * `provider`. A token whose prefs set the category to false is skipped.
+ * `provider`. Expo, Web Push, and FCM are all sent. A token whose prefs set the category to false is skipped.
  * Invalid tokens are deleted.
  *
  * Clients cannot read this collection. Callers pass a store that uses
@@ -16,7 +16,18 @@ export const PUSH_CATEGORIES = [
   'grades',
   'assignments',
   'general',
+  'progress',
+  'alumni',
+  'institution',
+  'achievements',
+  'network',
+  'safety',
+  'hotline',
+  'emergency',
 ] as const;
+
+/** Account toggles. A missing key stays on. `alumni` covers reunions, the wall, yearbook release, and alumni messages. Badge pushes use `achievements`. `grades` stays a category for unit tests and is not an account toggle. */
+export const USER_PUSH_TOGGLES = ['alumni', 'institution', 'achievements', 'network', 'safety', 'hotline'] as const;
 
 export type PushCategory = (typeof PUSH_CATEGORIES)[number];
 
@@ -41,6 +52,10 @@ export interface PushMessage {
   title: string;
   body: string;
   link?: string;
+  /** Critical safeguarding and every emergency alert are delivered even when muted. */
+  force?: boolean;
+  /** Emergency alerts use a distinct sound. Expo receives this name. */
+  sound?: string;
 }
 
 export interface PushStore {
@@ -75,6 +90,20 @@ export function wantsCategory(token: DeviceToken, category: PushCategory): boole
   return token.prefs?.[category] !== false;
 }
 
+/** Account toggle. `push: false` stops every category. A missing category key stays on. */
+export function userWantsPush(prefs: unknown, category: PushCategory): boolean {
+  if (!prefs || typeof prefs !== 'object') return true;
+  const record = prefs as Record<string, unknown>;
+  if (record.push === false) return false;
+  if ((USER_PUSH_TOGGLES as readonly string[]).includes(category) && record[category] === false) return false;
+  return true;
+}
+
+/** Emergency alerts, including an all-staff alert, ignore quiet hours and a muted category. */
+export function pushBypassesQuietHours(category: PushCategory): boolean {
+  return category === 'emergency';
+}
+
 export function tokensForRecipient(tokens: readonly DeviceToken[], userId: string): DeviceToken[] {
   return tokens.filter(token => token.userId === userId && token.token.trim().length > 0);
 }
@@ -87,11 +116,12 @@ async function deliver(message: PushMessage, deps: PushDeps): Promise<PushReport
   let skipped = 0;
 
   for (const token of tokens) {
-    if (!wantsCategory(token, message.category)) {
+    const deliverAnyway = message.force === true || pushBypassesQuietHours(message.category);
+    if (!deliverAnyway && !wantsCategory(token, message.category)) {
       skipped += 1;
       continue;
     }
-    if (token.provider !== 'expo' && token.provider !== 'webpush') {
+    if (token.provider !== 'expo' && token.provider !== 'webpush' && token.provider !== 'fcm') {
       skipped += 1;
       continue;
     }

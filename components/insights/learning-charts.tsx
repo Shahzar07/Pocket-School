@@ -163,7 +163,7 @@ export function LearningCharts({
         <Frame
           title="Quiz scores"
           summary={snapshot.quizTrend.map(row => `${row.label.slice(5)} ${row.average}%`).join(', ') || 'No quizzes in this range.'}
-          legend={[{ id: 'amber', label: 'Grades' }]}
+          legend={[{ id: 'cyan', label: 'Grades' }]}
           table={{ headers: ['Day', 'Average'], rows: snapshot.quizTrend.map(row => [row.label, String(row.average)]) }}
         >
           <ResponsiveContainer width="100%" height="100%">
@@ -172,7 +172,7 @@ export function LearningCharts({
               <XAxis dataKey="label" tick={tick} tickFormatter={value => String(value).slice(5)} />
               <YAxis domain={[0, 100]} tick={tick} />
               <Tooltip />
-              <Line type="monotone" dataKey="average" name="Score %" stroke="var(--ps-amber)" strokeWidth={2} />
+              <Line type="monotone" dataKey="average" name="Score %" stroke="var(--ps-cyan-text)" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </Frame>
@@ -221,7 +221,7 @@ export function LearningCharts({
           <Frame
             title="Sparks earned and spent"
             summary={`${snapshot.metrics.sparks_earned ?? 0} earned, ${snapshot.sparksSpent} spent.`}
-            legend={[{ id: 'coral', label: 'Sparks earned' }, { id: 'amber', label: 'Sparks spent' }]}
+            legend={[{ id: 'coral', label: 'Sparks earned' }, { id: 'cyan', label: 'Sparks spent' }]}
             table={{ headers: ['Kind', 'Sparks'], rows: [['Earned', String(snapshot.metrics.sparks_earned ?? 0)], ['Spent', String(snapshot.sparksSpent)]] }}
           >
             <ResponsiveContainer width="100%" height="100%">
@@ -238,7 +238,7 @@ export function LearningCharts({
                   label={({ name, value }) => `${name} ${value}`}
                 >
                   <Cell fill={patternFill('coral')} />
-                  <Cell fill={patternFill('amber')} />
+                  <Cell fill={patternFill('cyan')} />
                 </Pie>
                 <Tooltip />
               </PieChart>
@@ -272,7 +272,7 @@ export function LearningCharts({
           summary={snapshot.bloomTopics.map(row => row.topic).join(', ')}
           legend={[
             { id: 'teal', label: 'Remember' },
-            { id: 'amber', label: 'Understand' },
+            { id: 'cyan', label: 'Understand' },
             { id: 'coral', label: 'Apply' },
             { id: 'violet', label: 'Analyse' },
             { id: 'emerald', label: 'Evaluate' },

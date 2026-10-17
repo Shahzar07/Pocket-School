@@ -139,8 +139,11 @@ service cloud.firestore {
               'institutionId', 'adminSparksGrantedAt', 'accountStatus',
               'adminRole', 'statusReason', 'deletedAt', 'cohortIds',
               'ageTier', 'dateOfBirth', 'emailVerified', 'phoneVerified',
+              'verification', 'partnerKind',
               'sparksBalance', 'sparksMonthlyAllowance', 'sparksGrantedAt',
-              'sparksWelcomeGrantedAt', 'xp', 'stripeCustomerId', 'stripeAccountId'];
+              'sparksWelcomeGrantedAt', 'xp', 'stripeCustomerId', 'stripeAccountId',
+              'studentNumber', 'referralCode', 'cardShareId', 'cardIndexed', 'cardSharing',
+              'studentStatus', 'partnerId'];
     }
 
     // Profile & settings. Keep this list aligned with SELF_SERVICE_FIELDS
@@ -153,7 +156,13 @@ service cloud.firestore {
               'notificationPrefs', 'privacy', 'instructor',
               'twoFactorEnabled', 'sessionsRevokedAt', 'deletionRequest',
               'email', 'updatedAt', 'onboardedAt', 'studyDates',
-              'lastActiveAt', 'region', 'parentContacts'];
+              'lastActiveAt', 'region', 'parentContacts',
+              'emergencyOptIn', 'currentCountry', 'homeCountry',
+              'dashboardTileOrder', 'dashboardCoachSeen'];
+    }
+
+    function verificationUntouched() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['verification', 'partnerKind']);
     }
 
     function deletionRequestOk() {
@@ -172,6 +181,12 @@ service cloud.firestore {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(selfServiceFields())
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['email'])
             || incoming().get('email', '') == request.auth.token.email)
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['emergencyOptIn'])
+            || incoming().emergencyOptIn is bool)
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['homeCountry'])
+            || incoming().homeCountry is string)
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['currentCountry'])
+            || incoming().currentCountry is string)
         && deletionRequestOk();
     }
 
@@ -417,8 +432,10 @@ service cloud.firestore {
       allow read: if isSignedIn();
       // Signup may store dateOfBirth. ageTier and Stripe ids are server-only, including on create.
       allow create: if isUser(userId)
-        && !incoming().keys().hasAny(['ageTier', 'stripeAccountId', 'stripeCustomerId']);
-      allow update: if (isAdmin() && staffWriteAllowed())
+        && !incoming().keys().hasAny(['ageTier', 'stripeAccountId', 'stripeCustomerId', 'verification', 'partnerKind', 'studentNumber', 'referralCode', 'cardShareId', 'cardIndexed', 'cardSharing', 'studentStatus', 'partnerId']);
+      allow update: if verificationUntouched()
+        && ((isAdmin() && staffWriteAllowed()
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['studentNumber', 'referralCode', 'cardShareId', 'cardIndexed', 'cardSharing', 'studentStatus', 'partnerId']))
         || (isUser(userId) && selfProfileUpdate())
         || (isUser(userId) && walletProgressUpdate())
         || parentUnlink(userId)
@@ -440,7 +457,7 @@ service cloud.firestore {
         || (isUser(userId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['institutionId'])
             && incoming().institutionId is string
-            && exists(/databases/$(database)/documents/institutions/$(incoming().institutionId)/invites/$(request.auth.token.email)));
+            && exists(/databases/$(database)/documents/institutions/$(incoming().institutionId)/invites/$(request.auth.token.email))));
       allow delete: if isAdmin();
 
       // Payout details and the payment method. The user document itself is
@@ -1269,6 +1286,96 @@ service cloud.firestore {
         allow write: if isAdmin();
       }
 
+      // Import roster. Owner deploy only. Harry approves the deploy.
+      // joinRoster remains the seat ledger and is not this collection.
+      match /rosters/{rosterId} {
+        allow read: if isAdmin()
+          || (isInstitutionAdmin() && myInstitution() == institutionId)
+          || (hasRole('teacher') && myInstitution() == institutionId)
+          || (isSignedIn() && resource.data.matchedUid == request.auth.uid);
+        allow create, update: if isAdmin()
+          || (isInstitutionAdmin()
+              && myInstitution() == institutionId
+              && incoming().email is string
+              && incoming().email.size() > 3
+              && incoming().email.size() < 200
+              && incoming().firstName is string
+              && incoming().firstName.size() > 0
+              && incoming().firstName.size() < 80
+              && incoming().lastName is string
+              && incoming().lastName.size() > 0
+              && incoming().lastName.size() < 80
+              && incoming().level is string
+              && incoming().level.size() > 0
+              && incoming().level.size() < 40
+              && incoming().gender in ['male', 'female']
+              && incoming().role in ['student', 'parent']
+              && incoming().status in ['pending', 'matched', 'invited']
+              && incoming().importedAt is string
+              && incoming().importBatchId is string
+              && incoming().importBatchId.size() > 0
+              && incoming().importBatchId.size() < 80
+              && (!incoming().keys().hasAny(['studentNumber']) || (incoming().studentNumber is string && incoming().studentNumber.size() < 40))
+              && (!incoming().keys().hasAny(['classId']) || (incoming().classId is string && incoming().classId.size() < 80))
+              && (!incoming().keys().hasAny(['matchedUid']) || (incoming().matchedUid is string && incoming().matchedUid.size() < 128))
+              && incoming().keys().hasOnly([
+                'email', 'studentNumber', 'firstName', 'lastName', 'level', 'classId',
+                'gender', 'role', 'status', 'matchedUid', 'importedAt', 'importBatchId'
+              ]));
+        allow delete: if isAdmin() || (isInstitutionAdmin() && myInstitution() == institutionId);
+      }
+
+      // Career extras. Owner deploy only. The Admin SDK writes these.
+      match /openings/{openingId} {
+        allow read: if isAdmin()
+          || (isInstitutionAdmin() && myInstitution() == institutionId)
+          || (isSignedIn()
+              && resource.data.status == 'published'
+              && (resource.data.institutionId == myInstitution()
+                  || resource.data.institutionId == userData().get('alumniOf', '')));
+        allow write: if false;
+      }
+
+      match /campaigns/{campaignId} {
+        allow read: if isAdmin()
+          || (isSignedIn() && (myInstitution() == institutionId || userData().get('alumniOf', '') == institutionId));
+        allow write: if false;
+        match /gifts/{giftId} {
+          allow read: if isAdmin()
+            || (isInstitutionAdmin() && myInstitution() == institutionId)
+            || (isSignedIn() && resource.data.uid == request.auth.uid);
+          allow write: if false;
+        }
+      }
+
+      match /reunions/{reunionId} {
+        allow read: if isAdmin()
+          || (isSignedIn() && (myInstitution() == institutionId || userData().get('alumniOf', '') == institutionId));
+        allow write: if false;
+        match /rsvps/{uid} {
+          allow read: if isAdmin() || (isInstitutionAdmin() && myInstitution() == institutionId) || isUser(uid);
+          allow write: if false;
+        }
+        match /album/{photoId} {
+          allow read: if isSignedIn() && resource.data.visible == true
+            && (myInstitution() == institutionId || userData().get('alumniOf', '') == institutionId || isAdmin());
+          allow write: if false;
+        }
+        match /tickets/{uid} {
+          allow read: if isAdmin() || isUser(uid) || (isInstitutionAdmin() && myInstitution() == institutionId);
+          allow write: if false;
+        }
+      }
+
+      match /talks/{talkId} {
+        allow read: if isAdmin()
+          || (isInstitutionAdmin() && myInstitution() == institutionId)
+          || (isSignedIn() && resource.data.status == 'approved'
+              && (myInstitution() == institutionId || userData().get('alumniOf', '') == institutionId))
+          || (isSignedIn() && resource.data.alumniId == request.auth.uid);
+        allow write: if false;
+      }
+
       // A person asks to join. Only an activated, listed academy accepts the request.
       // The institution admin decides it. The requester cannot approve themselves.
       match /join_requests/{requestId} {
@@ -1617,6 +1724,49 @@ service cloud.firestore {
       }
     }
 
+    // Sticky notes. Private to the owner. Sharing is written by the server.
+    function noteShape() {
+      return incoming().text is string
+        && incoming().text.size() <= 2000
+        && incoming().colour in ['cyan', 'sky', 'coral', 'success', 'lilac', 'white']
+        && incoming().pinned is bool
+        && incoming().order is number
+        && incoming().board is string
+        && incoming().board.size() > 0
+        && incoming().board.size() <= 80
+        && incoming().linkedTo is map
+        && incoming().linkedTo.type in ['lesson', 'course', 'assignment', 'exam', 'none']
+        && incoming().linkedTo.id is string
+        && incoming().createdAt is number
+        && incoming().updatedAt is number;
+    }
+
+    match /users/{userId}/notes/{noteId} {
+      allow read: if isUser(userId);
+      allow create: if isUser(userId)
+        && noteShape()
+        && !incoming().keys().hasAny(['share'])
+        && (!incoming().keys().hasAny(['remindedAt']) || incoming().remindedAt == 0);
+      allow update: if isUser(userId)
+        && noteShape()
+        && incoming().get('share', null) == resource.data.get('share', null)
+        && (
+          incoming().get('remindedAt', 0) == 0
+          || incoming().get('remindedAt', 0) == resource.data.get('remindedAt', 0)
+        );
+      allow delete: if false;
+    }
+
+    match /note_shares/{shareId} {
+      allow read: if isSignedIn()
+        && resource.data.status == 'live'
+        && (
+          resource.data.ownerId == request.auth.uid
+          || canSeeSpaceData(spaceDoc(resource.data.spaceId))
+        );
+      allow write: if false;
+    }
+
     // A classmate can read a shared plan's content to start their own copy;
     // only the person who shared it can change or withdraw it.
     match /shared_preps/{shareId} {
@@ -1728,6 +1878,41 @@ service cloud.firestore {
     // Public get so /verify/{id} works without a login. The Admin SDK writes
     // these after it has checked published-lesson completion. A signed-in
     // teacher or student must not mint one from the browser.
+    match /skill_maps/{mapId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /opportunities/{opportunityId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /users/{userId}/proven_skills/{skillId} {
+      allow read: if isUser(userId) || linkedTo(userId) || isAdmin();
+      allow write: if false;
+    }
+
+    match /users/{userId}/endorsements/{endorsementId} {
+      allow read: if isUser(userId) || linkedTo(userId) || isTeacherOrAdmin() || isAdmin();
+      allow write: if false;
+    }
+
+    match /users/{userId}/parent_bridge/{docId} {
+      allow read: if isUser(userId) || linkedTo(userId) || isAdmin();
+      allow write: if false;
+    }
+
+    match /users/{userId}/career/{docId} {
+      allow read: if isUser(userId) || isAdmin();
+      allow write: if false;
+    }
+
+    match /users/{userId}/applications/{applicationId} {
+      allow read: if isUser(userId) || isAdmin();
+      allow write: if false;
+    }
+
     match /certificates/{certId} {
       allow get: if true;
       allow list: if isSignedIn() && (
@@ -1736,6 +1921,22 @@ service cloud.firestore {
         || linkedTo(resource.data.studentId)
       );
       allow create, update, delete: if false;
+    }
+
+    // Server-written gamification and house boards. Owner deploy only.
+    match /gamification/{userId} {
+      allow read: if isSignedIn() && (isUser(userId) || isAdmin() || linkedTo(userId));
+      allow write: if false;
+    }
+
+    match /gamification_config/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /leaderboard_entries/{entryId} {
+      allow read: if resource.data.shareBoard == true;
+      allow write: if false;
     }
 
     match /certificate_keys/{keyId} {
@@ -1968,6 +2169,12 @@ service cloud.firestore {
       allow get: if isSignedIn() && (docId == 'feature_flags' || isAdmin());
       allow list: if isAdmin();
       allow write: if isAdmin();
+      // Emergency numbers live at platform_settings/emergency_numbers/catalog/{countryCode}.
+      // The editor is the API. Clients, including admins, cannot write the catalog.
+      match /catalog/{countryCode} {
+        allow read: if true;
+        allow write: if false;
+      }
     }
 
     // ── Public pricing (admin-managed). Deploy with the rest of these rules.
@@ -2318,6 +2525,7 @@ service cloud.firestore {
     match /checkouts/{id} { allow read, write: if false; }
     match /transactions/{id} { allow read, write: if false; }
     match /coupons/{id} { allow read, write: if false; }
+    match /referrals/{code} { allow read, write: if false; }
     match /affiliate_ledger/{id} { allow read, write: if false; }
     match /refund_requests/{id} { allow read: if isAdmin(); allow write: if false; }
     match /disputes/{id} { allow read: if isAdmin(); allow write: if false; }
@@ -2325,8 +2533,14 @@ service cloud.firestore {
       allow read: if isUser(userId) || isAdmin();
       allow write: if false;
     }
-    match /subscriptions/{userId} {
-      allow read: if isUser(userId) || isAdmin();
+    match /subscriptions/{subscriptionId} {
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || isUser(subscriptionId)
+        || resource.data.get('payerUid', '') == request.auth.uid
+        || resource.data.get('beneficiaryUids', []).hasAny([request.auth.uid])
+        || resource.data.get('userId', '') == request.auth.uid
+      );
       allow write: if false;
     }
     match /payouts/{id} {
@@ -2572,6 +2786,396 @@ service cloud.firestore {
         && incoming().status in ['draft', 'scheduled', 'published']
         && incoming().sample == false;
       allow delete: if callerIsSuper();
+    }
+
+    // Professional network, founders, groups, and safeguarding.
+    // Clients may read. Writes stay on the API so ET AI can screen them.
+    // In the repo only. Do not deploy these rules from this change.
+    match /network_profiles/{userId} {
+      allow read: if isSignedIn() && (
+        isUser(userId)
+        || isAdmin()
+        || (resource.data.ageTier == 'adult' && resource.data.visibility == 'public')
+        || (resource.data.ageTier == 'adult' && resource.data.visibility == 'network' && callerAgeTier() == 'adult')
+        || (resource.data.ageTier != 'adult' && resource.data.institutionId == myInstitution())
+      );
+      allow create, update, delete: if false;
+    }
+    match /network_posts/{postId} {
+      allow read: if isSignedIn() && (
+        resource.data.authorId == request.auth.uid
+        || isAdmin()
+        || (resource.data.moderation == 'allow' && resource.data.ageTier == 'adult' && callerAgeTier() == 'adult')
+        || (resource.data.moderation == 'allow' && resource.data.institutionId != '' && resource.data.institutionId == myInstitution())
+      );
+      allow create, update, delete: if false;
+    }
+    match /network_comments/{commentId} {
+      allow read: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin() || resource.data.moderation == 'allow');
+      allow create, update, delete: if false;
+    }
+    match /network_messages/{messageId} {
+      allow read: if isSignedIn() && (resource.data.fromId == request.auth.uid || resource.data.toId == request.auth.uid || isAdmin());
+      allow create, update, delete: if false;
+    }
+    match /network_orgs/{orgId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if false;
+    }
+    match /founder_profiles/{userId} {
+      allow read: if isSignedIn() && resource.data.ageTier == 'adult' && resource.data.optIn == true && callerAgeTier() == 'adult';
+      allow create, update, delete: if false;
+    }
+    match /startups/{startupId} {
+      allow read: if isSignedIn() && callerAgeTier() == 'adult';
+      allow create, update, delete: if false;
+    }
+    match /groups/{groupId} {
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || (resource.data.visibility != 'secret' && (resource.data.schoolOnly != true || resource.data.institutionId == myInstitution()))
+      );
+      allow create, update, delete: if false;
+    }
+    match /group_posts/{postId} {
+      allow read: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin() || resource.data.moderation == 'allow');
+      allow create, update, delete: if false;
+    }
+    match /safeguarding_cases/{caseId} {
+      allow read: if resource.data.source != 'student_safety_report'
+        && resource.data.source != 'danger_now'
+        && (isAdmin() || (isInstitutionAdmin() && resource.data.institutionId == myInstitution()));
+      allow create, update, delete: if false;
+    }
+    match /safeguarding_alerts/{alertId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create, update, delete: if false;
+    }
+    match /moderation_audit/{itemId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+    match /moderation_strikes/{userId} {
+      allow read: if isUser(userId) || isAdmin();
+      allow create, update, delete: if false;
+    }
+    match /moderation_appeals/{appealId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create, update, delete: if false;
+    }
+    match /alumni_wall_posts/{postId} {
+      allow read: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin() || (resource.data.moderation == 'allow' && callerAgeTier() == 'adult'));
+      allow create, update, delete: if false;
+    }
+    match /yearbook_notes/{noteId} {
+      allow read: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin() || (resource.data.moderation == 'allow' && resource.data.institutionId == myInstitution()));
+      allow create, update, delete: if false;
+    }
+
+    // Hotline and emergency alerts. Client writes are false.
+    // Two-person publish is enforced in lib/server/emergency.ts. Do not deploy from this branch.
+    match /hotline_tickets/{ticketId} {
+      // Student safety reports and danger alerts are not client-readable.
+      // The API returns a tracker or a notice. Identity stays off this path.
+      allow get: if isSignedIn()
+        && resource.data.source != 'student_safety_report'
+        && resource.data.source != 'danger_now'
+        && (resource.data.parentUid == request.auth.uid || isAdmin());
+      allow list: if false;
+      allow create, update, delete: if false;
+      match /comments/{commentId} {
+        allow read: if isSignedIn()
+          && get(/databases/$(database)/documents/hotline_tickets/$(ticketId)).data.source != 'student_safety_report'
+          && get(/databases/$(database)/documents/hotline_tickets/$(ticketId)).data.source != 'danger_now'
+          && (
+            isAdmin()
+            || (resource.data.internal != true && get(/databases/$(database)/documents/hotline_tickets/$(ticketId)).data.parentUid == request.auth.uid)
+          );
+        allow create, update, delete: if false;
+      }
+      // Append-only. update and delete are false for every role, admin included.
+      match /events/{eventId} {
+        allow read: if isAdmin()
+          && get(/databases/$(database)/documents/hotline_tickets/$(ticketId)).data.source != 'student_safety_report'
+          && get(/databases/$(database)/documents/hotline_tickets/$(ticketId)).data.source != 'danger_now';
+        allow create: if false;
+        allow update, delete: if false;
+      }
+      match /attachments/{fileId} {
+        allow read, write: if false;
+      }
+    }
+    match /emergency_alerts/{alertId} {
+      allow read: if false;
+      allow create, update, delete: if false;
+      // Append-only. update and delete are false for every role, admin included.
+      match /updates/{updateId} {
+        allow read: if false;
+        allow create: if false;
+        allow update, delete: if false;
+      }
+      match /audit/{auditId} {
+        allow read: if isAdmin();
+        allow create: if false;
+        allow update, delete: if false;
+      }
+      match /attachments/{fileId} {
+        allow read, write: if false;
+      }
+      match /recipients/{recipientId} {
+        allow read, write: if false;
+      }
+      // Consent versions are append-only. update and delete are false for every role, admin included.
+      match /consent/{consentId} {
+        allow read: if isAdmin();
+        allow create: if false;
+        allow update, delete: if false;
+      }
+    }
+    match /emergency_rate/{rateId} {
+      allow read, write: if false;
+    }
+    match /safety_helplines/{docId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if false;
+    }
+    match /safety_flags/{userId} {
+      allow read, write: if false;
+    }
+    match /safety_rate/{rateId} {
+      allow read, write: if false;
+    }
+    match /mail_deliveries/{deliveryId} {
+      allow read, write: if false;
+    }
+    match /all_staff_alerts/{alertId} {
+      allow read, write: if false;
+      match /checkins/{staffId} {
+        allow read, write: if false;
+      }
+      match /audit/{auditId} {
+        allow read: if false;
+        allow create: if false;
+        allow update, delete: if false;
+      }
+    }
+    match /all_staff_open/{institutionId} {
+      allow read, write: if false;
+    }
+    match /all_staff_instructions/{institutionId} {
+      allow read, write: if false;
+    }
+    match /safety_desk/{docId} {
+      allow read, write: if false;
+    }
+    match /verification_reviews/{reviewId} {
+      allow read, write: if false;
+    }
+    match /guardian_link_codes/{code} {
+      allow read, write: if false;
+    }
+    match /alert_reports/{reportId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+    match /alert_report_rate/{rateId} {
+      allow read, write: if false;
+    }
+    match /alert_report_bans/{userId} {
+      allow read: if isAdmin() || isUser(userId);
+      allow create, update, delete: if false;
+    }
+
+    // Anti-bullying. Client reads and writes are false. Not deployed.
+    match /evidence_locker/{itemId} {
+      allow read, write: if false;
+      match /events/{eventId} {
+        allow read: if false;
+        allow create: if false;
+        allow update, delete: if false;
+      }
+    }
+    match /school_referrals/{referralId} {
+      allow read, write: if false;
+    }
+    match /account_limits/{userId} {
+      allow read, write: if false;
+    }
+    match /network_restricts/{pairId} {
+      allow read, write: if false;
+    }
+    match /network_mutes/{pairId} {
+      allow read, write: if false;
+    }
+    // Off-platform school notices. Append-only on the server. Not deployed.
+    match /schoolNotices/{noticeId} {
+      allow read, write: if false;
+      match /events/{eventId} {
+        allow read: if false;
+        allow create: if false;
+        allow update, delete: if false;
+      }
+    }
+    match /schools/{schoolId} {
+      allow read, write: if false;
+    }
+    // Authority referrals. Append-only on the server. Not deployed.
+    match /authorityReferrals/{referralId} {
+      allow read, write: if false;
+      match /events/{eventId} {
+        allow read: if false;
+        allow create: if false;
+        allow update, delete: if false;
+      }
+    }
+    // Community safety terms. The server writes legal/safetyTerms/versions/{version}.
+    // Signed-in clients may read that document. They cannot write it or its audit chain. Not deployed.
+    // Community partner applications. Server only. Applying grants nothing. Not deployed.
+    match /communityPartnerApplications/{applicationId} {
+      allow read, write: if false;
+    }
+    match /legal/safetyTerms {
+      allow read, write: if false;
+      match /versions/{version} {
+        allow get: if request.auth != null;
+        allow list, create, update, delete: if false;
+        match /audit/{entryId} {
+          allow read, write: if false;
+        }
+      }
+    }
+
+    // Learning-progress alerts. Clients read. The server writes through the API.
+    // Parents cannot read an adult learner's alert. Deploy with the owner toolchain.
+    match /progress_alerts/{alertId} {
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || resource.data.studentId == request.auth.uid
+        || (linkedTo(resource.data.studentId) && resource.data.adult != true)
+        || resource.data.get('teacherIds', []).hasAny([request.auth.uid])
+        || resource.data.get('assigneeId', '') == request.auth.uid
+        || (isInstitutionAdmin() && resource.data.get('institutionId', '') == myInstitution())
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /progress_alert_settings/{settingsId} {
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || (isInstitutionAdmin() && (settingsId == myInstitution() || settingsId == 'platform'))
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /progress_alert_trends/{trendId} {
+      allow read: if isSignedIn() && (isAdmin() || isInstitutionAdmin());
+      allow create, update, delete: if false;
+    }
+
+    match /progress_alert_state/{studentId} {
+      allow read, write: if false;
+    }
+
+    // Private recognition for responsive teachers and engaged parents.
+    // The person and their institution can read it. Students cannot.
+    match /progress_alert_recognition/{userId} {
+      allow read: if isSignedIn() && (
+        request.auth.uid == userId
+        || isAdmin()
+        || (isInstitutionAdmin() && resource.data.get('institutionId', '') == myInstitution())
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /progress_alert_wins/{winId} {
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || (isInstitutionAdmin() && resource.data.get('institutionId', '') == myInstitution())
+      );
+      allow create, update, delete: if false;
+    }
+
+    // Subscriptions and entitlements. The server writes them. A person can read
+    // their own row. A linked parent can read a child's entitlement. Deploy with
+    // the owner toolchain. This change is not deployed from the agent.
+    match /entitlements/{uid} {
+      allow read: if isSignedIn() && (
+        request.auth.uid == uid
+        || isAdmin()
+        || linkedTo(uid)
+        || resource.data.get('payerUid', '') == request.auth.uid
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /billing_audit/{eventId} {
+      allow read: if isSignedIn() && isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /billing_audit_head/{headId} {
+      allow read, write: if false;
+    }
+
+    match /billing_events/{eventId} {
+      allow read, write: if false;
+    }
+
+    // Member numbers, share links, and the referral stub. The server writes
+    // these with the Admin SDK. The card is free, so these rules do not look
+    // at a plan or an entitlement.
+    match /student_numbers/{numberId} {
+      allow read, write: if false;
+    }
+
+    match /number_sequences/{sequenceId} {
+      allow read, write: if false;
+    }
+
+    match /card_shares/{shareId} {
+      allow read, write: if false;
+    }
+
+    match /card_audit/{eventId} {
+      allow read, write: if false;
+    }
+
+    match /card_audit_head/{headId} {
+      allow read, write: if false;
+    }
+
+    // Student ID, partner perks, and redemption audit. The server writes
+    // these with the Admin SDK. Clients cannot read redemption rows.
+    match /student_codes/{codeId} {
+      allow read, write: if false;
+    }
+
+    match /student_code_limits/{uid} {
+      allow read, write: if false;
+    }
+
+    match /student_code_attempts/{actorId} {
+      allow read, write: if false;
+    }
+
+    match /partners/{partnerId} {
+      allow read, write: if false;
+    }
+
+    match /offers/{offerId} {
+      allow read, write: if false;
+    }
+
+    match /redemptions/{redemptionId} {
+      allow read, write: if false;
+    }
+
+    match /perk_audit/{eventId} {
+      allow read, write: if false;
+    }
+
+    match /perk_audit_head/{headId} {
+      allow read, write: if false;
     }
 
     match /published_reports/{token} {

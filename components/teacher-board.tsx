@@ -77,7 +77,7 @@ export function ProblemCard({ item, accent, onCheck }: { item: ProblemItem; acce
           </button>
         )}
       </div>
-      {hintShown && item.hint && <p className="mt-2 text-xs text-amber-200/80 border-l-2 border-amber-400/50 pl-3">{item.hint}</p>}
+      {hintShown && item.hint && <p className="mt-2 text-xs text-[var(--ps-cyan-text)]/80 border-l-2 border-[var(--ps-cyan-border)]/50 pl-3">{item.hint}</p>}
     </div>
   );
 }

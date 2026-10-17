@@ -16,6 +16,8 @@ import { textDocument } from '@/lib/documents/packet';
 import type { Deliverable } from '@/lib/documents/delivery';
 import { Timestamp } from 'firebase/firestore';
 import { canonicalStatus, slaDue, statusLabel, ticketNumber, TICKET_STATUSES } from '@/lib/tickets';
+import { authedFetch } from '@/lib/api-client';
+import { WelcomeHelpLink } from '@/components/onboarding/welcome-session';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -23,7 +25,7 @@ const fadeUp: Record<string, any> = {
 };
 
 const STATUS_STYLES: Record<string, string> = {
-  open: 'bg-amber-500/10 text-amber-600 border border-amber-500/20',
+  open: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border border-[var(--ps-cyan-border)]/20',
   pending: 'bg-primary/10 text-primary border border-primary/20',
   in_progress: 'bg-primary/10 text-primary border border-primary/20',
   kiv: 'bg-violet-500/10 text-violet-700 border border-violet-500/20',
@@ -50,7 +52,7 @@ function ticketDocument(ticket: SupportTicket): Deliverable {
 const PRIORITY_STYLES: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
   normal: 'bg-primary/10 text-primary border border-primary/20',
-  high: 'bg-amber-500/10 text-amber-600 border border-amber-500/20',
+  high: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border border-[var(--ps-cyan-border)]/20',
   urgent: 'bg-destructive/10 text-destructive border border-destructive/20',
 };
 
@@ -65,6 +67,9 @@ export default function HelpdeskPage() {
   const [note, setNote] = useState('');
   const [assignee, setAssignee] = useState('');
   const [form, setForm] = useState<{ subject: string; description: string; priority: SupportTicket['priority'] }>({ subject: '', description: '', priority: 'normal' });
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer] = useState('');
+  const [asking, setAsking] = useState(false);
 
   const isAdmin = profile?.role === 'admin';
 
@@ -147,7 +152,7 @@ export default function HelpdeskPage() {
             {isAdmin ? 'Support' : 'Help &'} <span className="gradient-text italic">{isAdmin ? 'tickets' : 'support'}</span>
           </h1>
           <p className="text-muted-foreground mt-2 text-[15px]">
-            {isAdmin ? 'Manage student and parent support requests.' : 'Submit a ticket and our team will help you.'}
+            {isAdmin ? 'Manage student and parent support requests.' : 'Ask ET first. A ticket opens only when that answer is not enough.'}
           </p>
         </div>
         {!isAdmin && (
@@ -158,6 +163,54 @@ export default function HelpdeskPage() {
           </Button>
         )}
       </motion.header>
+
+      <WelcomeHelpLink />
+
+      {!isAdmin && (
+        <section className="rounded-3xl border border-border bg-card p-5">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E6A83]">ET</p>
+          <h2 className="mt-1 font-heading text-2xl">Ask a common question</h2>
+          <form className="mt-3 flex flex-col gap-3 sm:flex-row" onSubmit={(event) => {
+            event.preventDefault();
+            void (async () => {
+              if (question.trim().length < 3) {
+                toast.error('Ask a question in a sentence.');
+                return;
+              }
+              setAsking(true);
+              try {
+                const result = await authedFetch('/api/support/ask', { method: 'POST', body: JSON.stringify({ question }) });
+                if (result.matched) {
+                  setAnswer(typeof result.answer === 'string' ? result.answer : '');
+                  return;
+                }
+                await createSupportTicket({
+                  userId: user?.uid ?? '',
+                  userName: profile?.name ?? 'User',
+                  userRole: profile?.role ?? 'student',
+                  subject: question.trim().slice(0, 80),
+                  description: question.trim(),
+                  priority: 'normal',
+                  category: 'general',
+                  status: 'open',
+                  createdAt: Timestamp.now(),
+                });
+                setAnswer(typeof result.answer === 'string' ? result.answer : 'A ticket is open.');
+                setQuestion('');
+                await load();
+              } catch {
+                toast.error('ET could not take that question.');
+              } finally {
+                setAsking(false);
+              }
+            })();
+          }}>
+            <Input value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Password, refund, certificate, parent link…" className="h-11 rounded-xl" />
+            <Button type="submit" disabled={asking} className="h-11 rounded-full">{asking ? 'Asking…' : 'Ask ET'}</Button>
+          </form>
+          {answer && <p className="mt-3 text-sm leading-relaxed">{answer}</p>}
+        </section>
+      )}
       {tickets.length > 0 && (
         <DocumentDelivery
           documents={tickets.map(ticketDocument)}

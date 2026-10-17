@@ -9,14 +9,21 @@ import {
   UserProfile, Course, Enrollment, DailyGoal, Certificate,
 } from '@/lib/db';
 import { UnitReportCard, UnitReportData } from '@/components/unit-report-card';
+import { resolvePassMark } from '@/lib/unit-test';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Zap, BookOpen, MessageSquare, Trophy, UserRound, FileBarChart, TrendingUp, Target, Clock, ShieldCheck, CheckCircle2, Loader2, Award } from 'lucide-react';
-import { certificateStatus, formatCertificateDate, type CertificateFace } from '@/lib/certificates';
+import { certificateStatus, certificateStudentNumber, formatCertificateDate, type CertificateFace } from '@/lib/certificates';
 import Link from 'next/link';
 import { ChildExamPrep } from '@/components/study/child-exam-prep';
 import { DashPage, DashHeader } from '@/components/dash-ui';
+import { JoinByCode, type JoinStudentCard } from '@/components/join-by-code';
+import { FinalSummaryCard } from '@/components/alumni/record-panels';
+import { AttendedSchoolPanel } from '@/components/alumni/claim-panel';
+import { asAgeTier, isMinorTier } from '@/lib/age-tier';
+import { authedFetch } from '@/lib/api-client';
+import { DashboardHome } from '@/components/dashboard';
 import dynamic from 'next/dynamic';
 import { SeeMore } from '@/components/shell/see-more';
 import { friendlyError } from '@/lib/design/system';
@@ -34,10 +41,10 @@ interface ChildData {
   profile: UserProfile;
   enrollments: { course: Course; enrollment: Enrollment }[];
   unitReports: UnitReportData[];
-  certificates: CertificateFace[];
+  certificates: (CertificateFace & { level?: string; score?: number })[];
 }
 
-function certificateFace(cert: Certificate): CertificateFace {
+function certificateFace(cert: Certificate, fallbackNumber?: string): CertificateFace & { level?: string; score?: number } {
   return {
     id: cert.id ?? '',
     studentName: cert.studentName,
@@ -52,6 +59,9 @@ function certificateFace(cert: Certificate): CertificateFace {
     showPoweredBy: cert.showPoweredBy,
     logoUrl: cert.logoUrl,
     certificateFooter: cert.certificateFooter,
+    level: cert.level,
+    score: cert.score,
+    studentNumber: certificateStudentNumber(cert.studentNumber) || certificateStudentNumber(fallbackNumber),
   };
 }
 
@@ -71,7 +81,7 @@ const GOAL_STATUS_META: Record<string, { label: string; pill: string }> = {
   in_progress: { label: 'In progress', pill: 'bg-primary/10 text-primary' },
   completed: { label: 'Completed', pill: 'bg-emerald-500/10 text-emerald-600' },
   overdue: { label: 'Overdue', pill: 'bg-destructive/10 text-destructive' },
-  excused: { label: 'Excused', pill: 'bg-amber-500/10 text-amber-600' },
+  excused: { label: 'Excused', pill: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]' },
 };
 
 /** Deadline ('HH:mm') resolved against the goal's own dateKey. */
@@ -127,7 +137,7 @@ async function buildUnitReports(
         courseTitle: course?.title ?? 'Course',
         unitId,
         unitTitle: unit?.module.title ?? 'Unit',
-        masteryThreshold: unit?.module.masteryThreshold ?? 70,
+        masteryThreshold: resolvePassMark(course, unit?.module),
         attempts: unitAttempts,
         reviewLessons: (latest.recommendedLessonIds ?? [])
           .map(id => lessonById.get(id))
@@ -168,6 +178,11 @@ export default function ParentDashboard() {
 
   useEffect(() => { loadGoals(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('link') !== '1') return;
+    document.getElementById('link-child')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
   // Keep the feed and its countdowns fresh without a full page reload.
   useEffect(() => {
     const tick = setInterval(() => setGoalsNow(Date.now()), 30_000);
@@ -205,7 +220,7 @@ export default function ParentDashboard() {
             buildUnitReports(id, enrollments).catch(() => [] as UnitReportData[]),
             getCertificatesForStudent(id).catch(() => [] as Certificate[]),
           ]);
-          return { id, profile: data, enrollments, unitReports, certificates: certificateRows.map(certificateFace) };
+          return { id, profile: data, enrollments, unitReports, certificates: certificateRows.map((cert) => certificateFace(cert, data.studentNumber)) };
         })
       );
       setChildren(data);
@@ -220,9 +235,30 @@ export default function ParentDashboard() {
   }, [user]);
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const [linkCard, setLinkCard] = useState<JoinStudentCard | null>(null);
+  const [linkMessage, setLinkMessage] = useState('');
+  const [linkBusy, setLinkBusy] = useState(false);
+
+  const requestLink = async (code: string) => {
+    setLinkBusy(true);
+    try {
+      const data = await authedFetch('/api/join', { method: 'POST', body: JSON.stringify({ action: 'parent', code }) });
+      setLinkMessage(typeof data.message === 'string' ? data.message : 'Request sent.');
+      const found = await authedFetch('/api/join', { method: 'POST', body: JSON.stringify({ action: 'lookup', code }) });
+      if (found.card && typeof found.card === 'object') setLinkCard(found.card as JoinStudentCard);
+    } catch (error) {
+      setLinkCard(null);
+      setLinkMessage(error instanceof Error ? error.message : 'Could not send that request.');
+    } finally {
+      setLinkBusy(false);
+    }
+  };
+
+  const parentName = profile?.name?.split(' ')[0] ?? 'Parent';
 
   if (loading) return (
     <div className="max-w-5xl mx-auto px-0 sm:px-2 py-2 space-y-5">
+      <DashboardHome role="parent" name={parentName} loading />
       <div className="h-24 bg-muted animate-pulse rounded-2xl" />
       {[1, 2].map(i => <div key={i} className="h-64 bg-muted animate-pulse rounded-2xl" />)}
     </div>
@@ -230,6 +266,11 @@ export default function ParentDashboard() {
 
   return (
     <DashPage>
+      <DashboardHome
+        role="parent"
+        name={parentName}
+        stats={[{ id: 'children', label: 'Children', value: String(children.length), hint: 'Linked to you' }]}
+      />
       <DashHeader
         eyebrow={`Family overview · ${today}`}
         title="Your family's"
@@ -243,6 +284,45 @@ export default function ParentDashboard() {
           </Link>
         }
       />
+
+      <AttendedSchoolPanel />
+
+      <div id="link-child">
+      <JoinByCode
+        title="Link your child"
+        body="Scan the QR on their student pass or type the student number. They confirm the link. A learner under 13 is confirmed by their institution admin. After that, progress stays on this page and Parent Explainer can summarise the week."
+        actionLabel={linkBusy ? 'Sending…' : 'Request link'}
+        onResolve={(code) => { void requestLink(code); }}
+        card={linkCard}
+        message={linkMessage}
+        busy={linkBusy}
+        extra={<Link href="/ai-studio?mode=parent-explainer" className="inline-flex text-sm font-semibold text-[#203337] underline">Open Parent Explainer</Link>}
+      />
+      </div>
+
+      {children.filter((child) => child.profile.alumniOf || child.profile.institutionAccess === 'grace' || child.profile.institutionAccess === 'ended').map((child) => (
+        <FinalSummaryCard
+          key={child.id}
+          institutionName={child.profile.alumniName || 'their academy'}
+          childName={child.profile.name || 'Your child'}
+          level={child.profile.academyLevel || (typeof child.profile.level === 'string' ? child.profile.level : '')}
+          certificates={child.certificates.length}
+        />
+      ))}
+      {children.filter((child) => isMinorTier(asAgeTier(child.profile.ageTier))).map((child) => (
+        <button
+          key={child.id}
+          type="button"
+          className="rounded-full bg-[#203337] px-4 py-2 text-sm font-semibold text-white"
+          onClick={() => {
+            void authedFetch('/api/portfolio', { method: 'POST', body: JSON.stringify({ action: 'parent-approve', studentId: child.id }) })
+              .then(() => toast.success('The public portfolio can be turned on.'))
+              .catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not approve the portfolio.'));
+          }}
+        >
+          Approve public portfolio for {child.profile.name || 'your child'}
+        </button>
+      ))}
 
       {/* ── Today's Goals ── */}
       <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={0.5} className="space-y-4">
@@ -286,7 +366,7 @@ export default function ParentDashboard() {
                     </div>
                     {total > 0 && (
                       <div className="text-right shrink-0">
-                        <p className={`text-[26px] font-semibold tracking-[-0.03em] leading-none tabular-nums ${pct === 100 ? 'text-emerald-600' : pct >= 50 ? 'text-amber-600' : 'text-destructive'}`}>{pct}%</p>
+                        <p className={`text-[26px] font-semibold tracking-[-0.03em] leading-none tabular-nums ${pct === 100 ? 'text-emerald-600' : pct >= 50 ? 'text-[var(--ps-cyan-text)]' : 'text-destructive'}`}>{pct}%</p>
                       </div>
                     )}
                   </div>
@@ -311,7 +391,7 @@ export default function ParentDashboard() {
                           return (
                             <div key={goal.id} className="bg-muted/50 border border-border rounded-xl p-3.5 flex flex-wrap items-center gap-x-3 gap-y-2">
                               {st === 'completed' ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                                : st === 'excused' ? <ShieldCheck className="w-4 h-4 text-amber-500 shrink-0" />
+                                : st === 'excused' ? <ShieldCheck className="w-4 h-4 text-[var(--ps-cyan-text)] shrink-0" />
                                 : <Clock className={`w-4 h-4 shrink-0 ${st === 'overdue' ? 'text-destructive' : 'text-muted-foreground'}`} />}
                               <p className="text-sm font-semibold text-foreground flex-1 min-w-[8rem] truncate">{goal.title}</p>
                               <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${meta.pill}`}>
@@ -333,7 +413,7 @@ export default function ParentDashboard() {
                                 </Button>
                               )}
                               {goal.status === 'excused' && goal.excuseReason && (
-                                <p className="w-full text-xs text-amber-600">Excused by {goal.excusedBy || 'you'}: {goal.excuseReason}</p>
+                                <p className="w-full text-xs text-[var(--ps-cyan-text)]">Excused by {goal.excusedBy || 'you'}: {goal.excuseReason}</p>
                               )}
                             </div>
                           );
@@ -352,8 +432,8 @@ export default function ParentDashboard() {
         <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
           className="relative text-center py-20 bg-card rounded-2xl border border-border shadow-[var(--shadow-card)] overflow-hidden"
         >
-          <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-amber-500/8 blur-[80px]" />
-          <UserRound className="w-12 h-12 mx-auto mb-5 text-amber-600/40" />
+          <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-[var(--ps-cyan-soft)] blur-[80px]" />
+          <UserRound className="w-12 h-12 mx-auto mb-5 text-[var(--ps-cyan-text)]/40" />
           <h3 className="font-heading text-2xl text-foreground mb-2">No linked children yet</h3>
           <p className="text-sm text-muted-foreground max-w-sm mx-auto">
             Link your child's account via profile settings or during onboarding to see their progress here.
@@ -406,9 +486,9 @@ export default function ParentDashboard() {
                     <p className="text-[28px] font-semibold tracking-[-0.03em] mt-2 leading-none tabular-nums" style={{ color: 'var(--ps-teal)' }}>{enrollments.length}</p>
                     <p className="text-[11px] text-muted-foreground mt-1.5 font-semibold uppercase tracking-wider">Enrolled</p>
                   </div>
-                  <div className="rounded-2xl border border-border p-4" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-amber) 16%, var(--card)), var(--card))' }}>
-                    <TrendingUp className="w-4 h-4" style={{ color: 'var(--ps-amber)' }} />
-                    <p className="text-[28px] font-semibold tracking-[-0.03em] mt-2 leading-none tabular-nums" style={{ color: 'var(--ps-amber)' }}>{inProgress.length}</p>
+                  <div className="rounded-2xl border border-border p-4" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-cyan-text) 16%, var(--card)), var(--card))' }}>
+                    <TrendingUp className="w-4 h-4" style={{ color: 'var(--ps-cyan-text)' }} />
+                    <p className="text-[28px] font-semibold tracking-[-0.03em] mt-2 leading-none tabular-nums" style={{ color: 'var(--ps-cyan-text)' }}>{inProgress.length}</p>
                     <p className="text-[11px] mt-1.5 font-semibold uppercase tracking-wider inline-flex items-center gap-1" style={{ color: inProgress.length ? 'var(--ps-emerald)' : 'var(--muted-foreground)' }}>
                       {inProgress.length ? '↑ In progress' : 'In progress'}
                     </p>
@@ -445,25 +525,29 @@ export default function ParentDashboard() {
                 <div id={ci === 0 ? 'certificates' : undefined} className="p-6 sm:p-7 border-b border-border space-y-4">
                   <div className="flex items-center gap-2">
                     <Award className="w-4 h-4 text-primary" />
-                    <h3 className="font-heading text-xl text-foreground">Module certificates</h3>
+                    <h3 className="font-heading text-xl text-foreground">Certificates</h3>
                   </div>
                   {certificates.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No module certificates yet. One is awarded when every published lesson in a module is complete.</p>
+                    <p className="text-sm text-muted-foreground">No certificates yet. One is awarded when the course final assessment is passed and every unit is passed.</p>
                   ) : (
                     <ul className="space-y-3">
                       {certificates.map((cert) => (
                         <li key={cert.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold text-foreground truncate">{cert.moduleTitle || cert.courseTitle}</p>
+                            <p className="text-sm font-semibold text-foreground truncate">{cert.courseTitle}</p>
                             <p className="text-xs text-muted-foreground truncate">
-                              {cert.moduleTitle ? `${cert.courseTitle} · ` : ''}{formatCertificateDate(cert.issuedAt)}
+                              {[cert.level, typeof cert.score === 'number' ? `${Math.round(cert.score)}%` : '', formatCertificateDate(cert.issuedAt)].filter(Boolean).join(' · ')}
                             </p>
+                            {cert.studentNumber ? <p className="font-mono text-[11px] text-foreground mt-1">{cert.studentNumber}</p> : null}
                             <p className="font-mono text-[11px] text-muted-foreground break-all mt-1">{cert.id}</p>
                             <p className={`text-[11px] font-bold uppercase tracking-wider mt-1 ${certificateStatus(cert.status) === 'revoked' ? 'text-[#9B1C1C]' : 'text-[#0F6E56]'}`}>
                               {certificateStatus(cert.status) === 'revoked' ? 'Revoked' : 'Valid'}
                             </p>
                           </div>
-                          <Link href={`/verify/${cert.id}`} className="text-sm font-bold text-primary shrink-0">Verify</Link>
+                          <span className="flex gap-3 shrink-0">
+                            <a href={`/api/certificates/${encodeURIComponent(cert.id)}/pdf`} className="text-sm font-bold text-primary">PDF</a>
+                            <Link href={`/verify/${cert.id}`} className="text-sm font-bold text-primary">Verify</Link>
+                          </span>
                         </li>
                       ))}
                     </ul>

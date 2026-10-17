@@ -11,7 +11,7 @@ import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { compileFn, exprToTex, type CompiledFn } from '@/lib/study/math-expr';
 import { MathMarkdown } from '@/components/math-markdown';
 
-export const SERIES_COLORS = ['var(--ps-teal)', 'var(--ps-amber)', 'var(--ps-violet)', 'var(--ps-coral)', 'var(--ps-emerald)', 'var(--ps-sky)'];
+export const SERIES_COLORS = ['var(--ps-teal)', 'var(--ps-cyan-text)', 'var(--ps-violet)', 'var(--ps-coral)', 'var(--ps-emerald)', 'var(--ps-sky)'];
 
 export interface PlotPoint { x: number; y: number; label?: string }
 

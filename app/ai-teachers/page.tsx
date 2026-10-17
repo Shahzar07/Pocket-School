@@ -22,6 +22,7 @@ import {
 import { AiTeacherModal } from '@/components/ai-teacher-modal';
 import { teacherPortrait } from '@/lib/teacher-portrait';
 import {
+  accentOnLight,
   AI_TEACHERS,
   CEFR_BANNER,
   CEFR_LEVELS,
@@ -67,15 +68,15 @@ export default function AiTeachersPage() {
     <div className="min-h-screen bg-white">
       {/* ── Hero ───────────────────────────────────────────────── */}
       <section className="relative pt-14 lg:pt-20 pb-12 bg-gradient-to-b from-[#E9F7FA] via-[#F5F1FF] to-[#F8F4EE] overflow-hidden">
-        <div className="absolute -top-20 -left-20 w-96 h-96 rounded-full bg-[#2786A4]/10 blur-3xl" />
-        <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[#E2AF4D]/10 blur-3xl" />
+        <div className="absolute -top-20 -left-20 w-96 h-96 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[var(--ps-cyan-soft)] blur-3xl" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 text-center">
-          <p className="text-xs font-bold tracking-[0.25em] text-[#2786A4] mb-5">AI TEACHERS LIBRARY</p>
+          <p className="text-xs font-bold tracking-[0.25em] text-primary mb-5">AI TEACHERS LIBRARY</p>
           <h1 className="font-heading text-4xl sm:text-5xl lg:text-7xl tracking-tight text-[#203337] leading-[0.95] mb-6 max-w-4xl mx-auto">
             Your 24/7 Faculty.
             <br />
-            <span className="bg-gradient-to-r from-[#2786A4] via-[#1E3A8A] to-[#2786A4] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[var(--ps-primary)] via-[#1E3A8A] to-[var(--ps-primary)] bg-clip-text text-transparent">
               Always Available.
             </span>
           </h1>
@@ -91,11 +92,11 @@ export default function AiTeachersPage() {
               30+ AVAILABLE NOW
             </span>
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-md border border-black/[0.04]">
-              <Sparkles className="w-3.5 h-3.5 text-[#E2AF4D]" />
+              <Sparkles className="w-3.5 h-3.5 text-[var(--ps-cyan-text)]" />
               30+ SUBJECTS
             </span>
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-md border border-black/[0.04]">
-              <Mic className="w-3.5 h-3.5 text-[#2786A4]" />
+              <Mic className="w-3.5 h-3.5 text-primary" />
               VOICE + TEXT
             </span>
           </div>
@@ -107,7 +108,7 @@ export default function AiTeachersPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="mb-10 flex items-end justify-between flex-wrap gap-4">
             <div>
-              <p className="text-xs font-bold tracking-[0.2em] text-[#2786A4] mb-3">EXPLORE THE FACULTY</p>
+              <p className="text-xs font-bold tracking-[0.2em] text-primary mb-3">EXPLORE THE FACULTY</p>
               <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#203337] leading-[1.05]">
                 Meet every teacher on the bench.
               </h2>
@@ -128,7 +129,7 @@ export default function AiTeachersPage() {
                   className={`text-xs font-bold px-4 py-2 rounded-full transition-all ${
                     active
                       ? 'bg-[#203337] text-white shadow-md'
-                      : 'bg-white text-slate-700 border border-slate-200 hover:border-[#2786A4] hover:text-[#2786A4]'
+                      : 'bg-white text-slate-700 border border-slate-200 hover:border-primary hover:text-primary'
                   }`}
                 >
                   {c}
@@ -147,13 +148,13 @@ export default function AiTeachersPage() {
           </div>
 
           {showCefr && (
-            <div className="mt-8 rounded-3xl border border-[#2786A4]/20 bg-white px-5 py-5 sm:px-7">
-              <p className="text-xs font-bold tracking-[0.18em] text-[#2786A4] mb-3">CEFR · LANGUAGES</p>
+            <div className="mt-8 rounded-3xl border border-primary/20 bg-white px-5 py-5 sm:px-7">
+              <p className="text-xs font-bold tracking-[0.18em] text-primary mb-3">CEFR · LANGUAGES</p>
               <div className="flex flex-wrap gap-2 mb-3">
                 {CEFR_LEVELS.map((level) => (
                   <span key={level.code} className="inline-flex items-center gap-1.5 rounded-full bg-[#E9F7FA] px-3 py-1.5 text-xs font-bold text-[#1E6A83]">
                     {level.code}
-                    <span className="font-semibold text-[#2786A4]">{level.label}</span>
+                    <span className="font-semibold text-primary">{level.label}</span>
                   </span>
                 ))}
               </div>
@@ -173,11 +174,11 @@ export default function AiTeachersPage() {
       <section className="py-20 lg:py-28 bg-[#203337] relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(39,134,164,0.25),transparent)]" />
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
-          <p className="text-xs font-bold tracking-[0.25em] text-[#2786A4] mb-5">JOIN THE FACULTY</p>
+          <p className="text-xs font-bold tracking-[0.25em] text-primary mb-5">JOIN THE FACULTY</p>
           <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-white leading-[1.05] mb-5">
             Know a great educator?
             <br />
-            <span className="bg-gradient-to-r from-[#2786A4] via-[#6FBBCE] to-[#E2AF4D] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[var(--ps-primary)] via-[#6FBBCE] to-[#3FE0D0] bg-clip-text text-transparent">
               Help us train the next AI teacher.
             </span>
           </h2>
@@ -190,7 +191,7 @@ export default function AiTeachersPage() {
           </p>
           <a
             href="mailto:educators@poketschool.ai?subject=Partner%20Educator%20Enquiry"
-            className="inline-flex items-center justify-center gap-2 rounded-full h-12 px-7 text-sm font-bold bg-[#2786A4] hover:bg-[#1E6A83] text-white shadow-xl shadow-[#2786A4]/40 transition-colors"
+            className="inline-flex items-center justify-center gap-2 rounded-full h-12 px-7 text-sm font-bold bg-primary text-primary-foreground hover:brightness-110 shadow-xl shadow-primary/40 transition-colors"
           >
             Become a partner educator <ArrowRight className="w-4 h-4" />
           </a>
@@ -229,7 +230,7 @@ function TeacherCard({
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: index * 0.04 }}
       whileHover={{ y: -4 }}
       onClick={onOpen}
-      className="group text-left bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-[#2786A4]/40 hover:shadow-[0_20px_50px_-20px_rgba(39,134,164,0.25)] transition-all flex flex-col"
+      className="group text-left bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-primary/40 hover:shadow-[0_20px_50px_-20px_color-mix(in_srgb,var(--ps-primary)_25%,transparent)] transition-all flex flex-col"
     >
       {/* Portrait pane — a full-bleed illustration rather than a small tile */}
       <div className="relative h-64 overflow-hidden">
@@ -250,8 +251,8 @@ function TeacherCard({
           </div>
         )}
         {!isLive && (
-          <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-amber-400 shadow-sm">
-            <span className="text-[9px] font-bold tracking-widest text-amber-950">COMING SOON</span>
+          <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-[var(--ps-cyan)] shadow-sm">
+            <span className="text-[9px] font-bold tracking-widest text-[var(--ps-cyan-ink)]">COMING SOON</span>
           </div>
         )}
       </div>
@@ -266,7 +267,7 @@ function TeacherCard({
             <span
               key={s}
               className="text-[10px] font-bold px-2 py-0.5 rounded"
-              style={{ backgroundColor: `${teacher.accentColor}15`, color: teacher.accentColor }}
+              style={{ backgroundColor: `${teacher.accentColor}15`, color: accentOnLight(teacher.accentColor) }}
             >
               {s}
             </span>
@@ -275,7 +276,7 @@ function TeacherCard({
 
         <p className="text-xs text-slate-600 leading-relaxed mb-4 flex-1 line-clamp-2">{teacher.tagline}</p>
 
-        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#203337] group-hover:text-[#2786A4] transition-colors">
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#203337] group-hover:text-primary transition-colors">
           {isLive ? 'Start conversation' : 'See details'}
           <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
         </span>

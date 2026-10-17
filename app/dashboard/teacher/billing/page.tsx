@@ -16,6 +16,7 @@ import { formatMoney } from '@/lib/pricing';
 import { DocumentDelivery } from '@/components/document-delivery';
 import { billingDocument } from '@/lib/documents/packet';
 import { PAYER_NOTE } from '@/lib/billing-model';
+import { ManageSubscription } from '@/components/billing/manage-subscription';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -154,7 +155,7 @@ export default function TeacherBillingPage() {
   if (loadError) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 pt-10">
       <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
-        <CreditCard className="w-10 h-10 mx-auto text-amber-500" />
+        <CreditCard className="w-10 h-10 mx-auto text-[var(--ps-cyan-text)]" />
         <p className="font-heading text-2xl text-foreground">Couldn&apos;t load invoices</p>
         <p className="text-sm text-muted-foreground">Something went wrong while fetching your billing data. Please try again.</p>
         <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={() => { setLoading(true); load(); }}>Retry</Button>
@@ -182,6 +183,9 @@ export default function TeacherBillingPage() {
           <p className="text-sm text-muted-foreground mt-2">
             {PAYER_NOTE} Issued copies also appear in admin finance.
           </p>
+          <div className="mt-4">
+            <ManageSubscription returnPath="/dashboard/teacher/billing" />
+          </div>
           {invoices.length > 0 && (
             <div className="mt-4">
               <DocumentDelivery
@@ -217,7 +221,7 @@ export default function TeacherBillingPage() {
         {[
           { label: 'Total Invoiced', value: totalStr, accent: 'bg-emerald-500' },
           { label: 'Collected', value: collectedStr, accent: 'bg-green-500' },
-          { label: 'Outstanding', value: outstandingStr, accent: 'bg-amber-500' },
+          { label: 'Outstanding', value: outstandingStr, accent: 'bg-[var(--ps-cyan)]' },
         ].map((s, idx) => (
           <div
             key={s.label}

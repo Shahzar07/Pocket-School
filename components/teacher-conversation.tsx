@@ -565,7 +565,7 @@ export function TeacherConversation({
       </header>
 
       {notices.length > 0 && (
-        <div role="status" className="px-3 py-2 bg-amber-500/10 text-amber-100 text-xs space-y-1 shrink-0">
+        <div role="status" className="px-3 py-2 bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] text-xs space-y-1 shrink-0">
           {notices.map(note => <p key={note}>{note}</p>)}
         </div>
       )}
@@ -634,7 +634,7 @@ export function TeacherConversation({
             <div ref={endRef} />
           </div>
           <div className="border-t border-white/10 p-2 shrink-0">
-            {noteStatus && <p role="status" className="text-xs text-amber-100 px-2 pb-1">{noteStatus}</p>}
+            {noteStatus && <p role="status" className="text-xs text-[var(--ps-cyan-text)] px-2 pb-1">{noteStatus}</p>}
             <div className="flex gap-1 overflow-x-auto pb-2">
               {TEACHER_QUICK_PROMPTS.map(action => (
                 <button key={action.id} type="button" disabled={thinking} onClick={() => send(action.prompt)} className="shrink-0 text-[11px] border border-white/10 rounded-full px-3 py-1 inline-flex items-center gap-1">

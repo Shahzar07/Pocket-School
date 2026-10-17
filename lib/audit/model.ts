@@ -33,6 +33,10 @@ export const ACTIVITY_ACTIONS = [
   'certificate.bulk',
   'retention.set',
   'retention.purge',
+  'card.created',
+  'card.revoked',
+  'card.regenerated',
+  'card.channel',
 ] as const;
 
 export type ActivityAction = (typeof ACTIVITY_ACTIONS)[number];
@@ -45,7 +49,8 @@ export type ActivityCategory =
   | 'admin'
   | 'impersonation'
   | 'certificate'
-  | 'retention';
+  | 'retention'
+  | 'card';
 
 export interface DiffRow {
   path: string;
@@ -68,6 +73,8 @@ export interface ActivityEvent {
   before: unknown;
   after: unknown;
   diff: DiffRow[];
+  /** Set when the action belongs to one institution. Platform rows omit it. */
+  institutionId?: string;
 }
 
 export interface ActivityDraft {
@@ -83,6 +90,7 @@ export interface ActivityDraft {
   before?: unknown;
   after?: unknown;
   at?: number;
+  institutionId?: string;
 }
 
 const PUBLIC_ACTIONS = new Set<string>(['auth.login_failed', 'auth.two_factor_failed']);
@@ -119,7 +127,9 @@ export function categoryFor(action: string): ActivityCategory {
   if (action.startsWith('content.')) return 'content';
   if (action.startsWith('impersonation.')) return 'impersonation';
   if (action.startsWith('certificate.')) return 'certificate';
+  if (action.startsWith('card.')) return 'card';
   if (action.startsWith('retention.')) return 'retention';
+  if (action.startsWith('progress.')) return 'admin';
   if (action === 'admin.action') return 'admin';
   return 'settings';
 }
@@ -172,6 +182,21 @@ export function actionLabel(action: string): string {
     'certificate.bulk': 'Bulk certificates',
     'retention.set': 'Retention updated',
     'retention.purge': 'Retention purge',
+    'card.created': 'Card share created',
+    'card.revoked': 'Card share revoked',
+    'card.regenerated': 'Card share regenerated',
+    'card.channel': 'Card shared',
+    'progress.acknowledge': 'Progress alert acknowledged',
+    'progress.assign': 'Progress alert assigned',
+    'progress.note': 'Progress alert note',
+    'progress.resolve': 'Progress alert resolved',
+    'progress.settings': 'Progress alert settings',
+    'progress.act': 'Progress action logged',
+    'progress.seen': 'Progress alert seen by family',
+    'progress.parent_act': 'Family progress action',
+    'progress.delegate': 'Progress alert delegated',
+    'progress.check_in': 'Progress check-in',
+    'progress.meeting': 'Progress meeting saved',
   };
   return labels[action] ?? action;
 }
@@ -234,6 +259,7 @@ export function activityDocument(input: ActivityDraft): ActivityEvent {
     before,
     after,
     diff: diffRecords(before, after),
+    ...(input.institutionId?.trim() ? { institutionId: input.institutionId.trim().slice(0, 128) } : {}),
   };
 }
 

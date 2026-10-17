@@ -373,7 +373,7 @@ export function postWallet(balance: number, movement: { kind: WalletKind; amount
 
 export function pdpaGate(input: { terms: boolean; privacy: boolean; minor: boolean; parentalVerified: boolean }): { ok: true } | { error: string } {
   if (!input.terms || !input.privacy) {
-    return { error: 'Accept the Terms and the Privacy Policy. Poket School processes personal data under the Malaysian PDPA.' };
+    return { error: 'Accept the Terms and the Privacy Policy before creating an account.' };
   }
   if (input.minor && !input.parentalVerified) {
     return { error: 'A parent or guardian must approve this account before a learner under 18 can join.' };

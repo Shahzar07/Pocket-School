@@ -53,6 +53,21 @@ export interface UserProfile {
   /** Set for institution_admin (and optionally members) — scopes what they see. */
   institutionId?: string;
   avatarUrl?: string;
+  /** Level name assigned by the academy, such as IGCSE or Primary. */
+  academyLevel?: string;
+  /** active while the academy pays, grace after leaving, ended when the seat is free. */
+  institutionAccess?: 'active' | 'grace' | 'ended';
+  /** Academy this person graduated or left. The account stays. */
+  alumniOf?: string;
+  alumniName?: string;
+  alumniGraceEnds?: string;
+  /** Day the academy seat was freed. */
+  alumniLeftOn?: string;
+  /** Fraction off the individual plan, for example 0.15. */
+  alumniDiscount?: number;
+  alumniPublic?: boolean;
+  /** Children linked from a parent account, including children at other academies. */
+  parentLinks?: { studentNumber: string; institutionId: string; name: string }[];
   /** Storage path for the profile photo, under media/{uid}/. */
   photoStoragePath?: string;
   level?: string;
@@ -97,16 +112,64 @@ export interface UserProfile {
   ageTier?: 'under13' | 'teen' | 'adult';
   /** YYYY-MM-DD. Server-set. Clients cannot write it. */
   dateOfBirth?: string;
+  /** Male or female. Written through the insights sync so rules can stay unchanged. */
+  gender?: 'male' | 'female';
+  /** Job title collected when someone registers an academy. */
+  jobTitle?: string;
+  /** State or region the person chose. Coarse place only. */
+  region?: string;
+  /** When the person agreed to grouped demographic statistics. */
+  demographicConsentAt?: number;
+  /** Form teacher notified by "I'm in danger now". Server reads it. */
+  formTeacherUid?: string;
+  /** Class used to find a form teacher when formTeacherUid is empty. */
+  classId?: string;
   lastActiveAt?: Timestamp;
   sparksBalance?: number;
   sparksMonthlyAllowance?: number;
   sparksGrantedAt?: Timestamp;
   /** Preferred UI and lesson language. A short code from `lib/languages.ts`. */
   language?: string;
+  /** ISO-like code for where the person is now. */
+  currentCountry?: string;
+  /** ISO-like code used for alert targeting when they are away. */
+  homeCountry?: string;
+  /** Server-written. Clients cannot change it. */
+  verification?: { tier: number; method: string; verifiedAt: number; verifiedBy: string };
+  /** Set with a tier 4 partner review. */
+  partnerKind?: 'police' | 'ngo';
   /** YYYY-MM-DD days a lesson was opened, used for the study streak. */
   studyDates?: string[];
+  /**
+   * Server-issued student number. `PSM-` is a Poket School member with no school.
+   * `PS-` is the institution student number, also shown on the staff card.
+   * Clients cannot write it.
+   */
+  studentNumber?: string;
+  /** Server-issued code for `referrals/{code}`. Not a coupon and not a reward. */
+  referralCode?: string;
+  /** Current public card id. Empty after revoke. Server-only. */
+  cardShareId?: string;
+  /** Adult choice for search indexing. Under-18 cards stay noindex. */
+  cardIndexed?: boolean;
+  /** Verified parent switch required before an under-13 card can be shared. */
+  cardSharing?: boolean;
+  /** Server-only standing for the student ID. Clients cannot write it. */
+  studentStatus?: { status: 'verified' | 'member'; verifiedAt: number | null; validUntil: number };
+  /** Set when an admin approves a partner merchant application. */
+  partnerId?: string;
   /** When false, the privacy-safe leaderboard omits this student. */
   shareBoard?: boolean;
+  /**
+   * School the student typed because it is not a registered institution.
+   * This is not a membership and does not set institutionId.
+   */
+  selfReportedSchool?: {
+    name: string;
+    key: string;
+    country: string;
+    state: string;
+  };
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -182,6 +245,15 @@ export interface Course {
   publishScope?: 'institution' | 'public' | 'marketplace';
   institutionId?: string;
   marketplaceApproved?: boolean;
+  /** Super admin placement. Featured spots are a subset of an approved marketplace listing. */
+  featured?: boolean;
+  placement?: {
+    marketplace: 'hidden' | 'pending' | 'approved' | 'rejected';
+    featured: boolean;
+    core: boolean;
+    levels: string[];
+    institutionIds: string[];
+  };
   libraryApproved?: boolean;
   /** subscription, a_la_carte, or both. Absent keeps the older catalogue rules. */
   accessMode?: 'subscription' | 'a_la_carte' | 'both';
@@ -212,6 +284,8 @@ export interface Course {
    * Absent follows tier and allocation. true forces downloads on. false forces them off.
    */
   downloadsEnabled?: boolean;
+  /** Unit test pass mark for every module in this course. Default 70. A module can override it. */
+  unitTestPassMark?: number;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -227,6 +301,8 @@ export interface Module {
   unitNumber?: number;
   term?: string;
   masteryThreshold?: number;
+  /** Overrides the course unit-test pass mark for this module only. */
+  unitTestPassMark?: number;
   estimatedHours?: number;
   sparkBudget?: number;
 }
@@ -256,7 +332,9 @@ export interface Lesson {
   reviewedAt?: Timestamp;
   createdAt?: Timestamp;
   // ── Content Builder fields (all optional; older docs unaffected) ──
-  lessonType?: 'lesson' | 'video' | 'assignment' | 'assessment' | 'live' | 'resource';
+  lessonType?: 'lesson' | 'video' | 'assignment' | 'assessment' | 'live' | 'resource' | 'unit_test';
+  /** Course final assessment. A pass here can award a certificate only when every unit is also passed. */
+  finalAssessment?: boolean;
   bloomsLevel?: string;
   durationMinutes?: number;
   marks?: number;
@@ -264,7 +342,13 @@ export interface Lesson {
   activity?: {
     title?: string; type?: string; instructions?: string;
     marks?: number; bloom?: string; modelAnswer?: string;
+    /** Optional multiple-intelligence tag. */
+    intelligence?: string;
   };
+  /** Version A and Version B papers for a unit test lesson. */
+  unitTest?: import('./unit-test').UnitTestContent;
+  /** Mind map, comic, infographic, revision poster, gallery, and audio chant blocks. */
+  visualBlocks?: import('./visual-blocks').VisualBlock[];
   assignmentConfig?: {
     title?: string; submissionType?: string; dueInDays?: number;
     totalMarks?: number; passMark?: number; latePolicy?: string; brief?: string;
@@ -372,6 +456,12 @@ export interface Enrollment {
   /** Last lesson the learner opened, so My Courses can resume it. */
   lastLessonId?: string;
   bookmarkedLessons?: string[];
+  /** lessonId -> millis when the learner last completed that lesson, including a review. */
+  lessonCompletedAt?: Record<string, number>;
+  /** unitId -> pass recorded by the server after a unit test. */
+  unitProgress?: Record<string, { passed: boolean; score: number; lessonId: string; passedAt: number }>;
+  /** Next module ids unlocked by a passed unit test. */
+  unlockedUnitIds?: string[];
 }
 
 export interface Badge {
@@ -413,6 +503,8 @@ export interface Institution {
   state?: string;
   /** Super admin lists the academy for Independent vs institution signup. */
   listedForSelfJoin?: boolean;
+  /** Academy admin opts this name onto the public homepage school strip. */
+  showOnSchoolStrip?: boolean;
   plan?: 'starter' | 'team' | 'enterprise' | 'oem';
   /** Set on a sub-academy. Data stays in this institution's own subcollections. */
   parentInstitutionId?: string;
@@ -440,6 +532,11 @@ export interface Institution {
     faviconUrl?: string;
     loginHeadline?: string;
     loginBody?: string;
+    /**
+     * Public branded login. False hides it. True shows it.
+     * Absent keeps academies that already have a subdomain on their login page.
+     */
+    loginPublished?: boolean;
     inviteSubject?: string;
     inviteBody?: string;
     mobileAppName?: string;
@@ -454,6 +551,10 @@ export interface Institution {
   previousSubdomains?: string[];
   signupPolicy?: 'open' | 'invite' | 'domain';
   allowedEmailDomains?: string[];
+  /** Hosts that match an email for domain join. A leading @ is stripped. */
+  domains?: string[];
+  /** Single verification mode. Absent keeps the combined roster, code, and domain checks. */
+  joinPolicy?: 'open' | 'invite' | 'domain' | 'code' | 'roster' | 'manual';
   catalogueVisibility?: 'private' | 'curated' | 'public';
   publicCatalogueIds?: string[];
   defaultLocale?: string;
@@ -462,6 +563,19 @@ export interface Institution {
   passwordRequireSymbol?: boolean;
   sessionTimeoutMinutes?: number;
   features?: Record<string, boolean>;
+  /**
+   * False while a newly approved admin is still on the setup checklist.
+   * Absent means an academy that predates the checklist and opens the dashboard.
+   */
+  setupComplete?: boolean;
+  /** pending_payment sends a new admin back to checkout until the academy is paid or held. */
+  billingPhase?: 'pending_payment' | 'active' | 'grace' | 'suspended';
+  reviewHold?: boolean;
+  reviewReasons?: string[];
+  organisationSize?: string;
+  planId?: string;
+  accessMode?: 'subscription' | 'a_la_carte';
+  programmeIds?: string[];
   leaderboardVisible?: 'academy' | 'group' | 'off';
   leaderboard?: { rank: number; name: string; points: number }[];
   publishedPages?: { slug: string; title: string; body: string }[];
@@ -522,16 +636,28 @@ export interface UnitQuizAttempt {
   attemptNumber: number;
   score: number;
   total: number;
+  /** Marks available. Same value as `marksMax` and `total` on a unit test. */
+  maxScore?: number;
   percentage: number;
   passed: boolean;
   timeTakenSeconds: number;
+  /** Set on a unit test attempt. Mastery quizzes omit it. */
+  kind?: 'unit_test';
+  /** A on attempt 1, B on attempt 2, then alternating. */
+  version?: 'A' | 'B';
+  marksAwarded?: number;
+  marksMax?: number;
   responses: {
     questionIndex: number;
     question: string;
     objectiveCode?: string;
     sourceLessonId?: string;
+    lessonId?: string;
     selected: string;
     correct: boolean;
+    marks?: number;
+    marksAwarded?: number;
+    bloom?: string;
   }[];
   weakestObjective?: string;
   recommendedLessonIds?: string[];
@@ -714,8 +840,8 @@ export async function createLesson(courseId: string, moduleId: string, data: Omi
   return ref.id;
 }
 
-export async function updateUnit(courseId: string, unitId: string, data: Partial<Module>): Promise<void> {
-  await updateDoc(doc(db, 'courses', courseId, 'modules', unitId), omitUndefined(data) as Record<string, unknown>);
+export async function updateUnit(courseId: string, unitId: string, data: Partial<Module> | Record<string, unknown>): Promise<void> {
+  await updateDoc(doc(db, 'courses', courseId, 'modules', unitId), omitUndefined(data as Record<string, unknown>) as Record<string, unknown>);
 }
 
 export async function updateLesson(courseId: string, moduleId: string, lessonId: string, data: Partial<Lesson>): Promise<void> {
@@ -873,7 +999,7 @@ export async function countProgrammeSubjects(programmeId: string): Promise<numbe
  *
  * Refuses while subjects still reference it — deleting anyway would leave
  * those subjects pointing at a programme that no longer exists, and they would
- * silently vanish from every year-group listing with no way to find them again.
+ * silently vanish from every level listing with no way to find them again.
  * Move or delete the subjects first.
  */
 export class ProgrammeInUseError extends Error {
@@ -903,7 +1029,7 @@ export async function deleteProgramme(id: string): Promise<void> {
 }
 
 /** Curriculum "Modules" are Course docs with kind === 'curriculum' (one subject for one
- * year group). Optionally filter to a specific year group for the student dashboard. */
+ * level). Optionally filter to a specific level for the student dashboard. */
 export async function getCurriculumModules(yearGroup?: string): Promise<Course[]> {
   const clauses = [where('kind', '==', 'curriculum'), where('status', '==', 'published')];
   if (yearGroup) clauses.push(where('yearGroup', '==', yearGroup));
@@ -960,7 +1086,7 @@ export async function enrollStudent(studentId: string, courseId: string, opts?: 
   });
 }
 
-/** Enrols a student in every published curriculum module for their year group. */
+/** Enrols a student in every published curriculum module for their level. */
 export async function getEnrollment(studentId: string, courseId: string): Promise<Enrollment | null> {
   const snap = await getDoc(doc(db, 'courses', courseId, 'enrollments', studentId));
   return snap.exists() ? (snap.data() as Enrollment) : null;
@@ -1146,6 +1272,7 @@ export async function saveUnitQuizAttempt(
 ): Promise<UnitQuizAttempt> {
   // attemptNumber = previous attempts on this quiz lesson + 1
   let attemptNumber = 1;
+  let previous: UnitQuizAttempt[] = [];
   try {
     const prevQ = query(
       collection(db, 'unit_quiz_attempts'),
@@ -1154,7 +1281,17 @@ export async function saveUnitQuizAttempt(
     );
     const prev = await getDocs(prevQ);
     attemptNumber = prev.size + 1;
+    previous = prev.docs.map(d => ({ id: d.id, ...d.data() } as UnitQuizAttempt));
   } catch { /* first attempt */ }
+
+  let version = data.version;
+  if (data.kind === 'unit_test') {
+    const { reviewGate, toAttemptSnapshot, versionForAttempt } = await import('./unit-test');
+    const enrollment = await getEnrollment(data.studentId, data.courseId);
+    const gate = reviewGate(previous.map(toAttemptSnapshot), enrollment?.lessonCompletedAt, data.lessonId);
+    if (gate.locked) throw new Error('Review these lessons before the unit test unlocks.');
+    version = versionForAttempt(attemptNumber);
+  }
 
   // Tally wrong answers per objective, and collect source lessons to revisit
   const wrongByObjective: Record<string, number> = {};
@@ -1175,6 +1312,7 @@ export async function saveUnitQuizAttempt(
 
   const ref = await addDoc(collection(db, 'unit_quiz_attempts'), {
     ...data,
+    ...(version ? { version } : {}),
     attemptNumber,
     ...(weakestObjective ? { weakestObjective } : {}),
     recommendedLessonIds,
@@ -1189,6 +1327,7 @@ export async function saveUnitQuizAttempt(
   return {
     ...data,
     id: ref.id,
+    ...(version ? { version } : {}),
     attemptNumber,
     weakestObjective,
     recommendedLessonIds,
@@ -1499,6 +1638,10 @@ export interface AcademyClass {
   programmeIds: string[];
   memberIds: string[];
   kind?: 'class' | 'department' | 'campus' | 'group';
+  /** When false, class and school leaderboards hide this class. Missing means on. */
+  leaderboardEnabled?: boolean;
+  /** House competitions stay off until a teacher or the school turns them on. */
+  competitionsEnabled?: boolean;
 }
 
 export async function listAcademyClasses(institutionId: string): Promise<AcademyClass[]> {
@@ -1521,6 +1664,11 @@ export interface AcademyInvite {
   name: string;
   role: 'student' | 'teacher';
   academyRole?: string;
+  gender?: 'male' | 'female';
+  level?: string;
+  country?: string;
+  state?: string;
+  dateOfBirth?: string;
 }
 
 export async function saveAcademyInvites(institutionId: string, rows: AcademyInvite[]): Promise<void> {
@@ -1899,7 +2047,7 @@ export async function getInstitutionMembers(institutionId: string): Promise<{ id
  */
 export async function setInstitutionAdmin(userId: string, institutionId: string | null) {
   await updateDoc(doc(db, 'users', userId), institutionId
-    ? { role: 'institution_admin', institutionId }
+    ? { role: 'institution_admin', institutionId, twoFactorEnabled: true }
     : { role: 'teacher', institutionId: null });
 }
 
@@ -3394,16 +3542,32 @@ export interface Certificate {
   id?: string;
   studentId: string;
   studentName: string;
+  /** Same value as `studentName`. */
+  name?: string;
   courseId: string;
   courseTitle: string;
+  /** Same value as `courseTitle`. */
+  course?: string;
+  /** Public verify path, `/verify/{id}`. */
+  verifyUrl?: string;
+  /** QR payload. Same string as `verifyUrl`. */
+  qr?: string;
+  /** Institution student number, when the server had one at issuance. */
+  studentNumber?: string;
   moduleId?: string;
   moduleTitle?: string;
   issuedAt: Timestamp;
   issuedBy: string;
   issuedByName: string;
-  kind?: 'module';
+  kind?: 'module' | 'course';
+  /** Named level. Never a year number. */
+  level?: string;
+  /** Final assessment percentage. */
+  score?: number;
   status?: 'valid' | 'revoked';
   revokedAt?: Timestamp;
+  /** Set when the holder asks for deletion. The verify page stays up. */
+  revocationReason?: string;
   accent?: string;
   showPoweredBy?: boolean;
   logoUrl?: string;

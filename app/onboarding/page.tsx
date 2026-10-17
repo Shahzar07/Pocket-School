@@ -153,8 +153,8 @@ export default function OnboardingPage() {
           className="w-full max-w-lg"
         >
           <div className="text-center mb-10">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <Users className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <Users className="w-8 h-8 text-[var(--ps-cyan-ink)]" />
             </div>
             <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Welcome, {profile.name}!</h1>
             <p className="text-muted-foreground mt-2 text-base">Ask your child to approve a link, or share an invite code from settings.</p>
@@ -197,7 +197,7 @@ export default function OnboardingPage() {
               Skip for now
             </Button>
             <Button
-              className="flex-1 rounded-full h-11 bg-gradient-to-r from-amber-500 to-orange-500 text-white"
+              className="flex-1 rounded-full h-11 border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)]"
               onClick={completeParentOnboarding}
             >
               Go to Dashboard <ArrowRight className="ml-2 w-4 h-4" />

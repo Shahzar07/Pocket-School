@@ -549,7 +549,7 @@ export function EssaysDesk() {
                   <h2 className="text-sm font-semibold">Inline suggestions</h2>
                   <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">
                     {placed.map((part, index) => part.suggestion ? (
-                      <mark key={index} className="bg-amber-100 text-foreground" title={part.suggestion}>{part.text}</mark>
+                      <mark key={index} className="bg-[var(--ps-cyan-soft)] text-foreground" title={part.suggestion}>{part.text}</mark>
                     ) : <span key={index}>{part.text}</span>)}
                   </p>
                 </section>

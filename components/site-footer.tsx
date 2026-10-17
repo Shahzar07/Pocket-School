@@ -14,6 +14,8 @@
 
 import Link from "next/link";
 import { useWhiteLabel } from "@/components/white-label-provider";
+import { isBrandedLoginPath } from "@/lib/institution-login";
+import { isInstitutionJourneyPath } from "@/lib/institution-journey";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
 import {
@@ -45,12 +47,15 @@ const HIDDEN_PREFIXES = [
   "/reads",
   "/studio",
   "/preview/design",
+  "/alerts",
 ];
 
 /** /offer ships its own footer, including the operating-company line. */
 function hidesSiteFooter(pathname: string): boolean {
   return (
     HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix)) ||
+    isBrandedLoginPath(pathname) ||
+    isInstitutionJourneyPath(pathname) ||
     pathname === "/offer" ||
     pathname.startsWith("/offer/")
   );
@@ -80,6 +85,7 @@ const LEGAL_LINKS = [
   { labelKey: "footer.terms", href: "/legal?doc=terms" },
   { labelKey: "footer.cookies", href: "/legal?doc=cookies" },
   { labelKey: "footer.aup", href: "/legal?doc=aup" },
+  { labelKey: "footer.help", href: "/help" },
   { labelKey: "footer.contact", href: "mailto:hello@poketschool.ai" },
 ];
 
@@ -228,7 +234,7 @@ export function SiteFooter() {
                 {t("footer.blurb")}
               </p>
               <div className="mt-5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[11px] font-semibold text-white/70">
-                <Sparkles className="w-3 h-3 text-[#E2AF4D]" />
+                <Sparkles className="w-3 h-3 text-[#3FE0D0]" />
                 {t("footer.badge")}
               </div>
             </div>

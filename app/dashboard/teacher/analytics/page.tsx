@@ -112,7 +112,7 @@ export default function TeacherAnalytics() {
         <StatCard icon={Users} label="Total students" value={totalStudents} tone="sky" index={0} />
         <StatCard icon={ClipboardList} label="Submissions" value={totalSubmissions} tone="violet" index={1} trend={totalSubmissions > 0 ? { direction: 'up', label: 'Handed in' } : { direction: 'flat', label: 'None yet' }} />
         <StatCard icon={CheckCircle2} label="Graded" value={totalGraded} tone="emerald" index={2} trend={totalGraded > 0 ? { direction: 'up', label: 'Marked' } : { direction: 'flat', label: 'None yet' }} />
-        <StatCard icon={BarChart3} label="Avg quiz score" value={overallAvg !== null ? `${overallAvg}%` : '—'} tone="amber" index={3} trend={overallAvg != null && overallAvg >= 70 ? { direction: 'up', label: 'Strong' } : overallAvg != null ? { direction: 'down', label: 'Needs practice' } : { direction: 'flat', label: 'No quizzes' }} />
+        <StatCard icon={BarChart3} label="Avg quiz score" value={overallAvg !== null ? `${overallAvg}%` : '—'} tone="cyan" index={3} trend={overallAvg != null && overallAvg >= 70 ? { direction: 'up', label: 'Strong' } : overallAvg != null ? { direction: 'down', label: 'Needs practice' } : { direction: 'flat', label: 'No quizzes' }} />
       </div>
 
       <ClassCharts rows={courseStats.map(row => ({
@@ -150,7 +150,7 @@ export default function TeacherAnalytics() {
                       <p className="text-xs text-muted-foreground mt-0.5">{cs.course.subject}</p>
                     </div>
                   </div>
-                  <Badge className={`rounded-full text-[10px] shrink-0 font-bold ${cs.course.status === 'published' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 border-amber-500/20'}`}>
+                  <Badge className={`rounded-full text-[10px] shrink-0 font-bold ${cs.course.status === 'published' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20'}`}>
                     {cs.course.status}
                   </Badge>
                 </div>
@@ -195,11 +195,11 @@ export default function TeacherAnalytics() {
                 </div>
                 <div className="text-right shrink-0">
                   {sub.score !== undefined ? (
-                    <span className={`text-sm font-bold ${(sub.score / sub.maxScore) >= 0.7 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                    <span className={`text-sm font-bold ${(sub.score / sub.maxScore) >= 0.7 ? 'text-emerald-600' : 'text-[var(--ps-cyan-text)]'}`}>
                       {sub.score}/{sub.maxScore}
                     </span>
                   ) : (
-                    <Badge className="rounded-full bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px] font-bold">Needs grading</Badge>
+                    <Badge className="rounded-full bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20 text-[10px] font-bold">Needs grading</Badge>
                   )}
                 </div>
               </motion.div>

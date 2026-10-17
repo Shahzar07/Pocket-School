@@ -26,7 +26,7 @@ test('standalone modules show the shared header', () => {
 });
 
 test('pages that already have site or dashboard navigation stay clear', () => {
-  for (const path of ['/', '/courses', '/pricing', '/dashboard', '/dashboard/student', '/login', '/admin/login']) {
+  for (const path of ['/', '/courses', '/pricing', '/dashboard', '/dashboard/student', '/login', '/admin/login', '/a/kolej-utama/login', '/i/north/login', '/institutions/register', '/preview/institution-pending', '/preview/institution-onboarding']) {
     assert.equal(showsModuleHeader(path), false, path);
   }
 });

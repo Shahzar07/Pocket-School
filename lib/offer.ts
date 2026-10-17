@@ -136,8 +136,8 @@ export function offerPlans(extras: boolean = OFFER_BUNDLE_EXTRAS): OfferPlan[] {
     {
       id: 'primary',
       name: 'Primary & Lower Secondary',
-      price: '$19/mo',
-      priceNote: '$171/yr',
+      price: 'Not set',
+      priceNote: 'A super admin sets this',
       tagline: 'Strong foundations, every day.',
       features: [
         'ET AI teachers for core subjects',
@@ -162,8 +162,8 @@ export function offerPlans(extras: boolean = OFFER_BUNDLE_EXTRAS): OfferPlan[] {
     {
       id: 'professional',
       name: 'Professional & Degrees',
-      price: '$99/mo',
-      priceNote: '$888/yr ($74/mo)',
+      price: 'Not set',
+      priceNote: 'A super admin sets this',
       tagline: 'Degree-level study with ET AI.',
       features: [
         'MBBS Medicine',

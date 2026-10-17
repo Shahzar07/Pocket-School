@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { buildXlsx } from '@/lib/insights/xlsx';
 import { certificateBrandLine, licencePhase, type OemLicence } from '@/lib/oem';
 import { brandedInvite } from '@/lib/oem';
+import { institutionLoginLinks } from '@/lib/institution-login';
+import { InstitutionLoginShare } from '@/components/institution-login-share';
 import { institutionOrigin } from '@/lib/white-label';
 import {
   ACADEMY_ROLES, BRAND_FONTS, GROUP_KINDS, INSTITUTION_PLANS, INSTITUTION_TYPES, INTEGRATION_ENV,
@@ -24,6 +26,7 @@ import type {
   ApiKeyItem, CatalogueItem, ComplianceItem, InvoiceItem, LearningPathItem, SkillItem, WebhookItem,
 } from '@/lib/institution-store';
 import type { AcademyClass, AcademyInvite, AcademyMember, Programme } from '@/lib/db';
+import { DemographicConsent, GenderSelect, LevelNameSelect } from '@/components/account/demographic-fields';
 import { InstitutionSettings } from '@/components/institutions/settings-panel';
 import { VolumeQuote } from '@/components/institutions/volume-quote';
 import type { AcademySettings } from '@/lib/academy-settings';
@@ -45,6 +48,7 @@ export type WorkspaceAction =
   | { type: 'verify-domain' }
   | { type: 'privacy-erase' }
   | { type: 'status'; status: InstitutionStatus }
+  | { type: 'refund' }
   | { type: 'delete' }
   | { type: 'invite'; csv: string }
   | { type: 'group'; name: string; kind: GroupKind; programmeIds: string[] }
@@ -163,6 +167,9 @@ export function InstitutionWorkspace({
             {superAdmin && status !== 'suspended' && (
               <Button type="button" variant="outline" className="rounded-full" disabled={busy} onClick={() => void onAction({ type: 'status', status: 'suspended' })}>Suspend</Button>
             )}
+            {superAdmin && (
+              <Button type="button" variant="outline" className="rounded-full" disabled={busy} onClick={() => void onAction({ type: 'refund' })}>Refund</Button>
+            )}
             {superAdmin && status !== 'active' && (
               <Button type="button" variant="outline" className="rounded-full" disabled={busy} onClick={() => void onAction({ type: 'status', status: 'active' })}>Activate</Button>
             )}
@@ -190,7 +197,7 @@ export function InstitutionWorkspace({
         <ProfileTab name={name} profile={profile} busy={busy} superAdmin={superAdmin} onAction={onAction} />
       )}
       {tab === 'people' && (
-        <PeopleTab invites={invites} members={members} groups={groups} programmes={programmes} branding={branding} subdomain={subdomain} busy={busy} onAction={onAction} />
+        <PeopleTab invites={invites} members={members} groups={groups} programmes={programmes} branding={branding} subdomain={subdomain} customDomain={customDomain} busy={busy} onAction={onAction} />
       )}
       {tab === 'white-label' && (
         <BrandTab name={name} plan={profile.plan} subdomain={subdomain} customDomain={customDomain} domain={domain} branding={branding} busy={busy} superAdmin={superAdmin} onAction={onAction} />
@@ -312,6 +319,10 @@ function ProfileTab({
   );
 }
 
+function csvCell(value: string): string {
+  return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+}
+
 function SinglePerson({
   busy,
   onInvite,
@@ -322,19 +333,46 @@ function SinglePerson({
   const [email, setEmail] = useState('');
   const [person, setPerson] = useState('');
   const [role, setRole] = useState<AcademyRole>('learner');
+  const [gender, setGender] = useState('');
+  const [level, setLevel] = useState('');
+  const [country, setCountry] = useState('');
+  const [state, setState] = useState('');
+  const [dob, setDob] = useState('');
+  const [consent, setConsent] = useState(false);
   return (
-    <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
-      <Input aria-label="Person email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@school.example" className="h-11 rounded-xl" />
-      <Input aria-label="Person name" value={person} onChange={(event) => setPerson(event.target.value)} placeholder="Name" className="h-11 rounded-xl" />
-      <select aria-label="Person role" value={role} onChange={(event) => setRole(event.target.value as AcademyRole)} className="h-11 rounded-xl border border-border bg-background px-3 capitalize">
-        {ACADEMY_ROLES.map((item) => <option key={item} value={item}>{item.replace('_', ' ')}</option>)}
-      </select>
+    <div className="space-y-3">
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Input aria-label="Person email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@school.example" className="h-11 rounded-xl" />
+        <Input aria-label="Person name" value={person} onChange={(event) => setPerson(event.target.value)} placeholder="Name" className="h-11 rounded-xl" />
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <select aria-label="Person role" value={role} onChange={(event) => setRole(event.target.value as AcademyRole)} className="h-11 rounded-xl border border-border bg-background px-3 capitalize">
+          {ACADEMY_ROLES.map((item) => <option key={item} value={item}>{item.replace('_', ' ')}</option>)}
+        </select>
+        <GenderSelect id="invite-gender" value={gender} onChange={setGender} />
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <LevelNameSelect id="invite-level" value={level} onChange={setLevel} />
+        <CountrySelect label="Country" value={country} onChange={(next) => { setCountry(next); setState(''); }} />
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <label className="block space-y-1.5 text-sm font-medium">State / region
+          <select aria-label="Invite state" value={state} onChange={(event) => setState(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm">
+            <option value="">Choose a state / region</option>
+            {statesForCountry(country).map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+        </label>
+        <label className="block space-y-1.5 text-sm font-medium">Date of birth
+          <Input aria-label="Invite date of birth" type="date" value={dob} onChange={(event) => setDob(event.target.value)} className="mt-1 h-11 rounded-xl" />
+        </label>
+      </div>
+      <DemographicConsent checked={consent} onChange={setConsent} />
       <Button
         type="button"
         variant="outline"
         className="rounded-full"
-        disabled={busy}
-        onClick={() => onInvite(`${email},${person},${role}`)}
+        disabled={busy || (Boolean(gender) && !consent)}
+        onClick={() => onInvite([email, person, role, gender, level, country, state, dob].map(csvCell).join(','))}
       >
         Add person
       </Button>
@@ -343,7 +381,7 @@ function SinglePerson({
 }
 
 function PeopleTab({
-  invites, members, groups, programmes, branding, subdomain, busy, onAction,
+  invites, members, groups, programmes, branding, subdomain, customDomain, busy, onAction,
 }: {
   invites: AcademyInvite[];
   members: AcademyMember[];
@@ -351,10 +389,12 @@ function PeopleTab({
   programmes: Pick<Programme, 'id' | 'name'>[];
   branding: NonNullable<Institution['branding']>;
   subdomain: string;
+  customDomain: string;
   busy?: boolean;
   onAction: (action: WorkspaceAction) => Promise<void>;
 }) {
-  const [csv, setCsv] = useState('email,name,role\n');
+  const [csv, setCsv] = useState('email,name,role,gender,level,country,state,dateOfBirth\n');
+  const [censusConsent, setCensusConsent] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [kind, setKind] = useState<GroupKind>('class');
   const [programmeIds, setProgrammeIds] = useState<string[]>([]);
@@ -362,15 +402,20 @@ function PeopleTab({
   const preview = brandedInvite({
     displayName: branding.displayName || 'Academy',
     emailFromName: branding.emailFromName,
-  }, 'JOINCODE', origin, { subject: branding.inviteSubject, text: branding.inviteBody });
+  }, 'JOINCODE', origin, {
+    subject: branding.inviteSubject,
+    text: branding.inviteBody,
+    loginUrl: institutionLoginLinks({ slug: subdomain, customDomain }).share,
+  });
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <section className="rounded-3xl border border-border p-5 space-y-3">
         <h2 className="font-semibold">Add people</h2>
-        <p className="text-sm text-muted-foreground">Add one person, or paste a CSV. Roles: institution admin, manager, teacher, learner, parent. Email and join-link invites copy a message. SSO and SCIM stay on the integrations tab and stay off until the platform keys exist. HRIS and SIS lists use this same CSV.</p>
+        <p className="text-sm text-muted-foreground">Add one person, or paste a CSV. Roles: institution admin, manager, teacher, learner, parent. Optional columns are gender (male or female), level (a level name such as IGCSE, never a year number), country, state, and dateOfBirth. Gender needs the demographic notice below. Email and join-link invites copy a message. SSO and SCIM stay on the integrations tab and stay off until the platform keys exist. HRIS and SIS lists use this same CSV.</p>
         <SinglePerson onInvite={(line) => void onAction({ type: 'invite', csv: line })} busy={busy} />
         <textarea aria-label="Invite CSV" className="min-h-28 w-full rounded-xl border border-border p-3 text-sm" value={csv} onChange={(event) => setCsv(event.target.value)} />
-        <Button type="button" className="rounded-full" disabled={busy} onClick={() => void onAction({ type: 'invite', csv })}>Save invites and copy the email</Button>
+        <DemographicConsent checked={censusConsent} onChange={setCensusConsent} />
+        <Button type="button" className="rounded-full" disabled={busy || (/\b(male|female|m|f)\b/i.test(csv) && !censusConsent)} onClick={() => void onAction({ type: 'invite', csv })}>Save invites and copy the email</Button>
         <p className="text-xs text-muted-foreground">{invites.length} invites waiting · {members.length} members</p>
         <ul className="text-sm space-y-1">
           {members.slice(0, 8).map((member) => (
@@ -424,7 +469,7 @@ function BrandTab({
     tagline: branding.tagline ?? '',
     logoUrl: branding.logoUrl ?? '',
     primaryColor: branding.primaryColor ?? '#1E6A83',
-    secondaryColor: branding.secondaryColor ?? '#E2AF4D',
+    secondaryColor: branding.secondaryColor ?? '#3FE0D0',
     fontId: branding.fontId ?? 'system',
     faviconUrl: branding.faviconUrl ?? '',
     loginHeadline: branding.loginHeadline ?? '',
@@ -488,6 +533,11 @@ function BrandTab({
           <Input value={draft.customDomain} disabled={!domainAllowed && !superAdmin} onChange={(event) => setDraft({ ...draft, customDomain: event.target.value })} className="mt-1 h-11 rounded-xl" placeholder="learn.school.example" />
         </label>
         {!domainAllowed && <p className="text-xs text-muted-foreground">Custom domains open on the enterprise and OEM plans. This academy keeps its Poket School subdomain.</p>}
+        <InstitutionLoginShare
+          slug={draft.subdomain}
+          customDomain={domainAllowed || superAdmin ? draft.customDomain : customDomain}
+          schoolName={draft.displayName || name}
+        />
         <div className="grid sm:grid-cols-2 gap-3">
           <label className="text-sm">Display name<Input value={draft.displayName} onChange={(event) => setDraft({ ...draft, displayName: event.target.value })} className="mt-1 h-11 rounded-xl" /></label>
           <label className="text-sm">Logo URL<Input value={draft.logoUrl} onChange={(event) => setDraft({ ...draft, logoUrl: event.target.value })} className="mt-1 h-11 rounded-xl" /></label>

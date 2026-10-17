@@ -158,12 +158,12 @@ export function LessonLanguagePanel({
       </label>
 
       {!canAfford && (
-        <p className="text-xs text-amber-700">{t('cms.insufficient', { cost: costLabel })}</p>
+        <p className="text-xs text-[var(--ps-cyan-text)]">{t('cms.insufficient', { cost: costLabel })}</p>
       )}
 
       {confirming && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 space-y-2">
-          <p className="text-sm text-amber-900">
+        <div className="rounded-xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] px-3 py-3 space-y-2">
+          <p className="text-sm text-[var(--ps-cyan-text)]">
             {t('cms.confirmBody', { language: langLabel, cost: costLabel })}
           </p>
           <div className="flex flex-wrap gap-2">

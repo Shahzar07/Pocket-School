@@ -50,13 +50,13 @@ const ROLE_BADGE: Record<string, string> = {
   institution_admin: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20',
   teacher: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
   student: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
-  parent: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  parent: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20',
 };
 
 const STATUS_BADGE: Record<AccountStatus, string> = {
   active: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
   suspended: 'bg-red-500/10 text-red-600 border-red-500/20',
-  pending: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  pending: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20',
   inactive: 'bg-muted text-muted-foreground border-border',
   banned: 'bg-red-500/10 text-red-700 border-red-500/20',
   deleted: 'bg-muted text-muted-foreground border-border',
@@ -304,7 +304,7 @@ export default function AdminUsersPage() {
   const exportCsv = () => {
     const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const csv = [
-      ['Name', 'Email', 'Role', 'Staff role', 'Status', 'Year group', 'Sparks', 'Tier', 'Institution', 'Country', 'Joined'],
+      ['Name', 'Email', 'Role', 'Staff role', 'Status', 'Level', 'Sparks', 'Tier', 'Institution', 'Country', 'Joined'],
       ...sorted.map(r => [
         r.data.name, r.data.email, ROLE_LABELS[(r.data.role ?? 'student') as Role],
         resolveStaffRole({ ...r.data, id: r.id }) ?? '',
@@ -331,7 +331,7 @@ export default function AdminUsersPage() {
   if (error) return (
     <div className="max-w-2xl mx-auto pt-16 px-4">
       <div className="bg-card border border-border rounded-3xl p-8 text-center card-glow">
-        <UsersIcon className="w-10 h-10 mx-auto text-amber-500 mb-3" />
+        <UsersIcon className="w-10 h-10 mx-auto text-[var(--ps-cyan-text)] mb-3" />
         <p className="font-heading text-2xl text-foreground mb-2">Couldn&apos;t load users</p>
         <p className="text-sm text-muted-foreground mb-6 break-words">{error}</p>
         <Button onClick={load} className="rounded-full h-11 px-6 font-bold">Retry</Button>
@@ -371,7 +371,7 @@ export default function AdminUsersPage() {
           { label: 'Total users', value: stats.total, accent: 'bg-primary' },
           { label: 'Students', value: stats.students, accent: 'bg-emerald-500' },
           { label: 'Suspended', value: stats.suspended, accent: 'bg-red-500' },
-          { label: 'Sparks in circulation', value: stats.sparks.toLocaleString(), accent: 'bg-amber-500' },
+          { label: 'Sparks in circulation', value: stats.sparks.toLocaleString(), accent: 'bg-[var(--ps-cyan)]' },
         ].map(s => (
           <div key={s.label} className="bg-card border border-border rounded-3xl p-5 relative overflow-hidden card-glow">
             <span className={`absolute top-0 left-6 right-6 h-[3px] rounded-b-full ${s.accent} opacity-80`} />
@@ -506,7 +506,7 @@ export default function AdminUsersPage() {
                     {label}{sortField === f && <span className="ml-1">{sortDir === 'asc' ? '▲' : '▼'}</span>}
                   </th>
                 ))}
-                <th className="px-4 py-3 font-bold">Year group</th>
+                <th className="px-4 py-3 font-bold">Level</th>
                 <th className="px-4 py-3 font-bold cursor-pointer select-none hover:text-foreground"
                   onClick={() => sort('joined')}>
                   Joined{sortField === 'joined' && <span className="ml-1">{sortDir === 'asc' ? '▲' : '▼'}</span>}
@@ -565,7 +565,7 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-3 text-muted-foreground tabular-nums">{fmtDate(r.data.createdAt)}</td>
                     <td className="px-4 py-3">
                       <span className="inline-flex items-center gap-1.5 font-bold text-foreground tabular-nums">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                        <Sparkles className="w-3.5 h-3.5 text-[var(--ps-cyan-text)]" />
                         {(r.data.sparksBalance ?? 0).toLocaleString()}
                       </span>
                     </td>
@@ -632,7 +632,7 @@ export default function AdminUsersPage() {
                                 <KeyRound className="w-4 h-4 text-muted-foreground" /> Send password reset
                               </DropdownMenuItem>
                               <DropdownMenuItem className="rounded-xl px-3 py-2 gap-2.5" onClick={() => { void signOutSessions(r); }}>
-                                <ShieldOff className="w-4 h-4 text-amber-600" /> Sign out sessions
+                                <ShieldOff className="w-4 h-4 text-[var(--ps-cyan-text)]" /> Sign out sessions
                               </DropdownMenuItem>
                             </>
                           )}
@@ -640,7 +640,7 @@ export default function AdminUsersPage() {
                             <DropdownMenuItem className="rounded-xl px-3 py-2 gap-2.5" onClick={() => setProfileFor(r)}>
                               {status === 'suspended'
                                 ? <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                                : <ShieldOff className="w-4 h-4 text-amber-600" />}
+                                : <ShieldOff className="w-4 h-4 text-[var(--ps-cyan-text)]" />}
                               Suspend, ban, or restore
                             </DropdownMenuItem>
                           )}

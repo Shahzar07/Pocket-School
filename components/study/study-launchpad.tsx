@@ -45,7 +45,7 @@ export function StudyLaunchpad() {
             <p className="font-heading text-[26px] leading-tight mt-1.5 line-clamp-1">{next.title}</p>
             <div className="mt-4 flex items-center gap-5 text-[13px] text-white/80">
               <span className="inline-flex items-center gap-1.5"><CalendarDays className="w-4 h-4" /> {due ? `${due} to do today` : 'Today done ✓'}</span>
-              <span className="inline-flex items-center gap-1.5"><Flame className="w-4 h-4 text-orange-300" /> {next.streak ?? 0} day streak</span>
+              <span className="inline-flex items-center gap-1.5"><Flame className="w-4 h-4 text-[var(--ps-cyan-text)]" /> {next.streak ?? 0} day streak</span>
             </div>
             <div className="mt-4 relative h-2 rounded-full bg-white/15">
               <div className="absolute inset-y-0 left-0 rounded-full bg-white" style={{ width: `${mastery}%` }} />

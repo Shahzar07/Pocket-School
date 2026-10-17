@@ -1,6 +1,6 @@
 import { TIERS } from '../entitlements';
 import { PLATFORM_CURRENCY } from '../money';
-import { seedPricing } from '../pricing';
+import { seedPricing, type PricingConfig } from '../pricing';
 import type { CheckoutKind, PricedItem } from './quote';
 
 export const SPARK_PACKS: readonly { id: string; sparks: number; usd: number; title: string }[] = [
@@ -11,11 +11,12 @@ export const SPARK_PACKS: readonly { id: string; sparks: number; usd: number; ti
 
 export const WALLET_TOPUPS = [10, 25, 50, 100] as const;
 
-export function subscriptionItem(tierId: string, interval: 'month' | 'year'): PricedItem | null {
+export function subscriptionItem(tierId: string, interval: 'month' | 'year', config: PricingConfig = seedPricing()): PricedItem | null {
   const tier = TIERS.find((item) => item.id === tierId);
-  const plan = seedPricing().plans.find((item) => item.id === tierId);
-  if (!tier || !plan || plan.monthlyUsd <= 0 || tier.tier >= 5) return null;
+  const plan = config.plans.find((item) => item.id === tierId);
+  if (!tier || !plan || plan.monthlyUsd == null || plan.monthlyUsd <= 0 || tier.tier >= 5) return null;
   const amount = interval === 'year' ? plan.annualUsd : plan.monthlyUsd;
+  if (amount == null || amount <= 0) return null;
   return {
     kind: 'subscription',
     sku: tier.id,

@@ -5,10 +5,12 @@ import Link from 'next/link';
 import { X } from 'lucide-react';
 import type { Role } from '@/lib/roles';
 
+type ChecklistRole = Role | 'partner_merchant';
+
 const DISMISS = 'poket-checklist-dismissed';
 const DONE = 'poket-checklist-done';
 
-const STEPS: Record<Role, { id: string; href: string; label: string; hint: string }[]> = {
+const STEPS: Record<ChecklistRole, { id: string; href: string; label: string; hint: string }[]> = {
   student: [
     { id: 'course', href: '/courses', label: 'Find a course', hint: 'Open the marketplace and enrol in one course.' },
     { id: 'goal', href: '/dashboard/student/goals?add=1', label: 'Add today’s goal', hint: 'One goal beside Resume learning is enough to start.' },
@@ -34,6 +36,10 @@ const STEPS: Record<Role, { id: string; href: string; label: string; hint: strin
     { id: 'reports', href: '/dashboard/reports', label: 'Open school reports', hint: 'School reports hide individual wellbeing notes.' },
     { id: 'cards', href: '/dashboard/institution/templates', label: 'Set the report card', hint: 'The school template is what teachers publish from.' },
   ],
+  partner_merchant: [
+    { id: 'portal', href: '/dashboard/partner', label: 'Open the partner portal', hint: 'Offers and redemptions live here.' },
+    { id: 'card', href: '/dashboard/card', label: 'Open your member card', hint: 'The card is free for every account.' },
+  ],
 };
 
 function readMap(key: string): Record<string, boolean> {
@@ -45,7 +51,7 @@ function readMap(key: string): Record<string, boolean> {
   }
 }
 
-export function RoleChecklist({ role }: { role: Role }) {
+export function RoleChecklist({ role }: { role: ChecklistRole }) {
   const [open, setOpen] = useState(false);
   const [done, setDone] = useState<Record<string, boolean>>({});
   const steps = STEPS[role];

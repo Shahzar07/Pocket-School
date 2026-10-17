@@ -17,6 +17,9 @@ import {
   type ProfileDraft,
 } from '@/lib/account-settings';
 import { CountrySelect, PhoneField } from '@/components/country-select';
+import { DemographicConsent, GenderSelect, LevelNameSelect } from '@/components/account/demographic-fields';
+import { statesForCountry } from '@/lib/institution-states';
+import { VerificationBadge } from '@/components/verification/badge';
 import { readGeoCountry, resolveCountryCode } from '@/lib/countries';
 import { ProfilePhoto } from '@/components/account/profile-photo';
 import {
@@ -70,6 +73,7 @@ export interface SettingsView {
   receipts: ReceiptRow[];
   purchases: PurchaseRow[];
   studentLimits: StudentLimits | null;
+  verificationTier: number;
 }
 
 const EMPTY_PAYOUT: PayoutDetails = { method: 'none', email: '', accountName: '', bankName: '', accountLast4: '' };
@@ -141,6 +145,9 @@ export function blankDraft(partial: Partial<ProfileDraft> = {}): ProfileDraft {
     level: '',
     learningStyle: '',
     yearGroup: '',
+    region: '',
+    gender: '',
+    demographicConsent: false,
     notificationPrefs: { ...DEFAULT_NOTIFICATIONS, ...partial.notificationPrefs },
     privacy: { ...DEFAULT_PRIVACY, ...partial.privacy },
     twoFactorEnabled: false,
@@ -255,6 +262,7 @@ export function SettingsPanel({
       <header className="pt-2">
         <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">Account</p>
         <h1 className="mt-3 font-heading text-4xl tracking-tight sm:text-5xl">My profile & settings</h1>
+        <VerificationBadge tier={view.verificationTier} />
         <p className="mt-2 text-[15px] text-muted-foreground">
           {view.role === 'teacher' && 'Your account, your public instructor profile, and payout details.'}
           {view.role === 'parent' && 'Your account, your linked children, and the limits you set for them.'}
@@ -266,7 +274,7 @@ export function SettingsPanel({
       </header>
 
       {view.deletion && (
-        <section className="rounded-3xl border border-amber-500/40 bg-amber-500/10 p-5">
+        <section className="rounded-3xl border border-[var(--ps-cyan-border)]/40 bg-[var(--ps-cyan-soft)] p-5">
           <h2 className="font-heading text-xl">Deletion scheduled</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             This account closes on {formatDeletionDate(view.deletion)} unless you cancel. You can keep using Poket School until then.
@@ -313,6 +321,24 @@ export function SettingsPanel({
             onChange={phone => setDraft({ ...draft, phone })}
           />
         </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="State / region">
+            <select
+              aria-label="State or region"
+              value={draft.region ?? ''}
+              onChange={event => setDraft({ ...draft, region: event.target.value })}
+              className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+            >
+              <option value="">Choose a state / region</option>
+              {statesForCountry(draft.country).map(item => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </Field>
+          <GenderSelect value={draft.gender ?? ''} onChange={gender => setDraft({ ...draft, gender })} />
+        </div>
+        {view.role === 'teacher' && (
+          <LevelNameSelect value={draft.level} onChange={level => setDraft({ ...draft, level })} />
+        )}
+        <DemographicConsent checked={draft.demographicConsent === true} onChange={checked => setDraft({ ...draft, demographicConsent: checked })} />
         <Field label="Timezone">
           <Input value={zoneQuery} onChange={event => setZoneQuery(event.target.value)} placeholder="Search timezones" aria-label="Search timezones" className="mb-2 h-10 rounded-xl" />
           <select
@@ -489,6 +515,13 @@ export function SettingsPanel({
             ['messages', 'Messages'],
             ['announcements', 'Announcements'],
             ['product', 'Product updates'],
+            ['alumni', 'Alumni'],
+            ['institution', 'Institution'],
+            ['achievements', 'Achievements'],
+            ['network', 'Network'],
+            ['safety', 'Safety'],
+            ['hotline', 'Hotline'],
+            ['networkDigest', 'Network email digest'],
           ]}
           value={notes}
           onChange={key => setNotes({ ...notes, [key]: !notes[key] })}
@@ -512,6 +545,7 @@ export function SettingsPanel({
         <div className="flex flex-wrap gap-2">
           <Button type="button" className="rounded-full" onClick={() => void onSavePrivacy(privacy)}>Save privacy</Button>
           <Button type="button" variant="outline" className="rounded-full" onClick={() => void onExport()}>Download my data</Button>
+          <p className="text-xs text-muted-foreground">Your copy under the Malaysian PDPA and the GDPR. Deletion is scheduled from this page and can be cancelled for 14 days.</p>
         </div>
       </Section>
 

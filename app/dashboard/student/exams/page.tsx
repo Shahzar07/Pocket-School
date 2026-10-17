@@ -11,6 +11,7 @@ import { PenSquare, CheckCircle2, Clock, Loader2, ChevronRight, Trophy } from 'l
 import { IntegrityNotice } from '@/components/insights/integrity-notice';
 import { applyCapture, captureToSignals, emptyCapture } from '@/lib/insights/integrity-capture';
 import { authedFetch } from '@/lib/api-client';
+import { NoteDock } from '@/components/notes/note-dock';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -278,6 +279,7 @@ export default function StudentExamsPage() {
             {submitting ? 'Grading...' : 'Submit Exam'}
           </Button>
         </motion.div>
+        <NoteDock link={{ type: 'exam', id: activeExam.id ?? '' }} title={activeExam.title} />
       </div>
     );
   }
@@ -393,7 +395,7 @@ export default function StudentExamsPage() {
                   className="bg-card border border-border rounded-2xl p-4 flex items-center justify-between gap-4 card-glow"
                 >
                   <div className="flex items-center gap-3">
-                    <Trophy className={`w-5 h-5 shrink-0 ${passed ? 'text-amber-500' : 'text-muted-foreground'}`} />
+                    <Trophy className={`w-5 h-5 shrink-0 ${passed ? 'text-[var(--ps-cyan-text)]' : 'text-muted-foreground'}`} />
                     <div>
                       <p className="font-semibold text-foreground">{item.exam.title}</p>
                       <Badge className={`rounded-full text-[10px] mt-1 ${passed ? 'bg-emerald-500/10 text-emerald-600' : 'bg-destructive/10 text-destructive'}`}>
@@ -411,6 +413,7 @@ export default function StudentExamsPage() {
           </div>
         </section>
       )}
+      <NoteDock link={{ type: 'exam', id: '' }} match="type" title="Exams" />
     </div>
   );
 }

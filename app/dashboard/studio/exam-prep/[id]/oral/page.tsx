@@ -185,7 +185,7 @@ export default function OralExamPage({ params }: { params: Promise<{ id: string 
             <div className="flex gap-2">
               {[3, 5, 8].map(n => <button key={n} onClick={() => setTotal(n)} className={`h-11 flex-1 rounded-xl border text-[14px] font-semibold ${total === n ? 'border-primary bg-primary/10 text-primary' : 'border-border'}`}>{n}</button>)}
             </div>
-            {!canListen && <p className="mt-4 text-[13px] rounded-xl bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2">This browser can&apos;t transcribe speech — you&apos;ll type your answers. Chrome, Edge or Safari support speaking.</p>}
+            {!canListen && <p className="mt-4 text-[13px] rounded-xl bg-[var(--ps-cyan-soft)] border border-[var(--ps-cyan-border)] text-[var(--ps-cyan-text)] px-3 py-2">This browser can&apos;t transcribe speech — you&apos;ll type your answers. Chrome, Edge or Safari support speaking.</p>}
             <button onClick={start} className="mt-6 w-full h-12 rounded-full bg-primary text-primary-foreground font-semibold inline-flex items-center justify-center gap-2">
               <Sparkles className="w-4 h-4" /> Begin the exam <span className="text-[12px] opacity-80 inline-flex items-center gap-0.5"><Zap className="w-3 h-3" />{STUDY_COSTS.oral}</span>
             </button>
@@ -295,7 +295,7 @@ export default function OralExamPage({ params }: { params: Promise<{ id: string 
                 </div>
                 <div>
                   <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-rose-600 mb-2">Work on</p>
-                  <ul className="space-y-2">{grade.gaps.map((g, i) => <li key={i} className="flex gap-2 text-[14px]"><AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" /><span><span className="font-semibold">{g.topic}:</span> {g.fix}</span></li>)}</ul>
+                  <ul className="space-y-2">{grade.gaps.map((g, i) => <li key={i} className="flex gap-2 text-[14px]"><AlertTriangle className="w-4 h-4 text-[var(--ps-cyan-text)] shrink-0 mt-0.5" /><span><span className="font-semibold">{g.topic}:</span> {g.fix}</span></li>)}</ul>
                 </div>
               </div>
             </Panel>

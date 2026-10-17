@@ -62,11 +62,12 @@ test('the board hides people who opted out and shortens other names', () => {
   assert.equal(publicLabel('Ada Lovelace'), 'Ada L.');
   assert.equal(publicLabel('ada@school.test'), 'Learner');
   const rows = privacyBoard([
-    { id: 'a', name: 'Ada Lovelace', score: 10, shareBoard: true },
-    { id: 'b', name: 'secret@school.test', score: 50, shareBoard: false },
-    { id: 'c', name: 'Bo', score: 3 },
+    { id: 'a', name: 'Ada Lovelace', score: 10, shareBoard: true, school: 'North Academy' },
+    { id: 'b', name: 'secret@school.test', score: 50, shareBoard: false, school: 'Hidden' },
+    { id: 'c', name: 'Bo', score: 3, school: 'Harbour Tuition' },
   ], 'c');
   assert.deepEqual(rows.map(row => row.label), ['Ada L.', 'You']);
+  assert.deepEqual(rows.map(row => row.school), ['North Academy', 'Harbour Tuition']);
 });
 
 test('feature flags default off except the books hook and the study planner', () => {

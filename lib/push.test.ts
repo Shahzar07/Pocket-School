@@ -3,12 +3,15 @@ import test from 'node:test';
 import { coerceDailyGoal } from './goals';
 import {
   expoShouldPrune,
+  isPushCategory,
   sendAttendanceAlert,
   sendDigest,
   sendFlagAlert,
   sendGoalParentAlert,
+  sendPush,
   tokensForRecipient,
   wantsCategory,
+  userWantsPush,
   webPushShouldPrune,
   type DeviceToken,
   type PushDeps,
@@ -91,6 +94,14 @@ test('prefs opt out a device and invalid tokens are pruned', async () => {
   assert.deepEqual(dead.pruned, ['gone']);
 });
 
+test('an fcm token is sent with the other providers', async () => {
+  const fcm = deps([token({ provider: 'fcm', deviceId: 'fcm-1', token: 'fcm-token', platform: 'android' })]);
+  const report = await sendPush(message(), fcm.store);
+  assert.equal(fcm.sent[0]?.provider, 'fcm');
+  assert.equal(report.sent, 1);
+  assert.equal(report.skipped, 0);
+});
+
 test('provider errors that mean the token is dead are pruned', () => {
   assert.equal(expoShouldPrune({ data: { status: 'error', details: { error: 'DeviceNotRegistered' } } }), true);
   assert.equal(expoShouldPrune({ data: { status: 'ok' } }), false);
@@ -98,7 +109,19 @@ test('provider errors that mean the token is dead are pruned', () => {
   assert.equal(webPushShouldPrune(404), true);
   assert.equal(webPushShouldPrune(500), false);
   assert.equal(wantsCategory(token({ prefs: { digests: false } }), 'digests'), false);
+  assert.equal(wantsCategory(token({ prefs: { achievements: false } }), 'achievements'), false);
+  assert.equal(wantsCategory(token(), 'achievements'), true);
   assert.equal(wantsCategory(token(), 'attendance'), true);
+  assert.equal(wantsCategory(token({ prefs: { alumni: false } }), 'alumni'), false);
+  assert.equal(userWantsPush({ push: true, alumni: false }, 'alumni'), false);
+  assert.equal(userWantsPush({ push: false, alumni: true }, 'alumni'), false);
+  assert.equal(userWantsPush({}, 'achievements'), true);
+  assert.equal(userWantsPush({}, 'grades'), true);
+  assert.equal(userWantsPush(null, 'alumni'), true);
+  assert.equal(isPushCategory('grades'), true);
+  assert.equal(isPushCategory('reunions'), false);
+  assert.equal(wantsCategory(token({ prefs: { safety: false } }), 'safety'), false);
+  assert.equal(wantsCategory(token(), 'network'), true);
   assert.equal(tokensForRecipient([token({ userId: 'a' }), token({ userId: 'b' })], 'a').length, 1);
 });
 

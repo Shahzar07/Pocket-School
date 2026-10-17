@@ -152,7 +152,7 @@ export function DocumentDelivery({
             placeholder="Optional message"
             className="min-h-16 w-full rounded-xl border border-border px-3 py-2 text-sm"
           />
-          {configured === false && <p className="text-sm text-amber-700">{SMTP_MISSING}</p>}
+          {configured === false && <p className="text-sm text-[var(--ps-cyan-text)]">{SMTP_MISSING}</p>}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => saveFiles(many ? chosen : documents)}>Download PDF</Button>
             <Button type="button" disabled={configured === false || sending || (chosen.length === 0 && !csv)} onClick={() => void send()}>

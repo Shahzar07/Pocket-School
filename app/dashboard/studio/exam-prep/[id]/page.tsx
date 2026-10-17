@@ -160,7 +160,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
               meta={day === today && stats.todays.length ? <span className="text-[13px] font-semibold tabular-nums text-muted-foreground">{stats.todayDone}/{stats.todays.length} done</span> : undefined}
             />
             {day === today && stats.overdue > 0 && (
-              <p className="mb-3 text-[13px] rounded-xl bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 inline-flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> {stats.overdue} item{stats.overdue === 1 ? '' : 's'} carried over from earlier days.</p>
+              <p className="mb-3 text-[13px] rounded-xl bg-[var(--ps-cyan-soft)] border border-[var(--ps-cyan-border)] text-[var(--ps-cyan-text)] px-3 py-2 inline-flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> {stats.overdue} item{stats.overdue === 1 ? '' : 's'} carried over from earlier days.</p>
             )}
             {showItems.length === 0 ? (
               <div className="text-center py-10">
@@ -216,12 +216,12 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
                 <Link href={`/dashboard/studio/exam-prep/${prep.id}/topic/${t.id}`} className="block h-full bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] p-5 hover:border-primary/40 transition-colors">
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-[11px] font-bold text-muted-foreground tabular-nums">TOPIC {i + 1}</span>
-                    <span className="text-amber-400 text-[12px] tracking-tight" aria-label={`Weight ${t.weight}`}>{'★'.repeat(t.weight)}<span className="text-muted-foreground/30">{'★'.repeat(5 - t.weight)}</span></span>
+                    <span className="text-[var(--ps-cyan-text)] text-[12px] tracking-tight" aria-label={`Weight ${t.weight}`}>{'★'.repeat(t.weight)}<span className="text-muted-foreground/30">{'★'.repeat(5 - t.weight)}</span></span>
                   </div>
                   <p className="font-semibold text-[16px] text-foreground mt-1 leading-snug">{t.title}</p>
                   <p className="text-[13px] text-muted-foreground mt-1 line-clamp-2">{t.summary}</p>
                   <div className="mt-4 flex items-center gap-2">
-                    <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden"><div className={`h-full rounded-full ${m >= prep.targetScore ? 'bg-emerald-500' : m >= 40 ? 'bg-primary' : 'bg-amber-400'}`} style={{ width: `${m}%` }} /></div>
+                    <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden"><div className={`h-full rounded-full ${m >= prep.targetScore ? 'bg-emerald-500' : m >= 40 ? 'bg-primary' : 'bg-[var(--ps-cyan)]'}`} style={{ width: `${m}%` }} /></div>
                     <span className="text-[12px] font-semibold tabular-nums w-9 text-right">{m}%</span>
                   </div>
                 </Link>
@@ -303,7 +303,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
                   {attempts[0].gaps!.slice(0, 3).map((g, i) => (
                     <li key={i}>
                       <Link href={`/dashboard/studio/exam-prep/${prep.id}/topic/${g.topicId}`} className="block rounded-xl border border-border px-3 py-2 hover:border-primary/40">
-                        <span className={`text-[11px] font-bold uppercase ${g.severity === 'weakest' ? 'text-rose-600' : g.severity === 'attention' ? 'text-amber-600' : 'text-muted-foreground'}`}>{g.severity === 'weakest' ? 'Weakest area' : g.severity === 'attention' ? 'Needs attention' : 'Minor gap'}</span>
+                        <span className={`text-[11px] font-bold uppercase ${g.severity === 'weakest' ? 'text-rose-600' : g.severity === 'attention' ? 'text-[var(--ps-cyan-text)]' : 'text-muted-foreground'}`}>{g.severity === 'weakest' ? 'Weakest area' : g.severity === 'attention' ? 'Needs attention' : 'Minor gap'}</span>
                         <span className="block text-[14px] font-semibold text-foreground">{g.topic}</span>
                         <span className="block text-[12px] text-muted-foreground">{g.fix}</span>
                       </Link>
@@ -322,7 +322,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
 }
 
 function Pill({ icon: I, value, label, tone }: { icon: typeof Flame; value: string | number; label: string; tone: 'orange' | 'rose' | 'primary' }) {
-  const cls = tone === 'orange' ? 'text-orange-500' : tone === 'rose' ? 'text-rose-500' : 'text-primary';
+  const cls = tone === 'orange' ? 'text-[var(--ps-cyan-text)]' : tone === 'rose' ? 'text-rose-500' : 'text-primary';
   return (
     <div className="rounded-2xl border border-border bg-card px-3.5 py-2 text-center min-w-[78px]">
       <p className="font-heading text-[22px] leading-none text-foreground inline-flex items-center gap-1"><I className={`w-4 h-4 ${cls}`} />{value}</p>

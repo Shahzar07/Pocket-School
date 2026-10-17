@@ -37,7 +37,7 @@ export function CourseStudentPreview({
 }) {
   return (
     <div className="space-y-6" data-student-preview>
-      <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-foreground">
+      <div className="rounded-2xl border border-[var(--ps-cyan-border)]/30 bg-[var(--ps-cyan-soft)] px-4 py-3 text-sm text-foreground">
         Preview as a student. Your sign-in stays the teacher account.
       </div>
       <div className="overflow-hidden rounded-3xl border border-border bg-card">

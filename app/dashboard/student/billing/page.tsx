@@ -16,10 +16,16 @@ import {
 } from '@/components/ui/dialog';
 import { CreditCard, Printer, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 import Link from 'next/link';
+import { individualOffer } from '@/lib/graduation';
 import { formatMoney } from '@/lib/pricing';
 import { DocumentDelivery } from '@/components/document-delivery';
 import { billingDocument } from '@/lib/documents/packet';
 import { PAYER_NOTE } from '@/lib/billing-model';
+import { authedFetch } from '@/lib/api-client';
+import { automationEnabled } from '@/lib/automation-status';
+import { toast } from 'sonner';
+import { AskParent } from '@/components/billing/family-board';
+import { ManageSubscription } from '@/components/billing/manage-subscription';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -50,6 +56,8 @@ export default function StudentBillingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [payDialogInvoice, setPayDialogInvoice] = useState<Invoice | null>(null);
+  const [receiptsOpen, setReceiptsOpen] = useState(true);
+  const [alumniLink, setAlumniLink] = useState(false);
 
   const load = async () => {
     if (!user) return;
@@ -68,6 +76,10 @@ export default function StudentBillingPage() {
   };
 
   useEffect(() => { load(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    automationEnabled('invoice_download').then(setReceiptsOpen).catch(() => setReceiptsOpen(true));
+    setAlumniLink(new URLSearchParams(window.location.search).get('alumni') === '1');
+  }, []);
 
   // Online card payment is not live yet — be honest about it instead of faking
   // a checkout. The Pay button opens an informational dialog with the invoice
@@ -110,12 +122,44 @@ export default function StudentBillingPage() {
           <span className="gradient-text italic">Billing</span>
         </h1>
         <p className="text-sm text-muted-foreground mt-2 max-w-2xl">{PAYER_NOTE}</p>
+        {!profile?.institutionId && (
+          <Button
+            variant="outline"
+            className="mt-3 h-11 rounded-full"
+            onClick={() => {
+              void authedFetch('/api/account/plan', { method: 'POST', body: JSON.stringify({ action: 'cancel', interval: 'month' }) })
+                .then((data) => toast.success(typeof data.cancelOn === 'string' ? `Your plan ends on ${data.cancelOn}.` : 'Cancellation scheduled.'))
+                .catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not cancel the plan.'));
+            }}
+          >
+            Cancel at period end
+          </Button>
+        )}
+        {typeof profile?.alumniDiscount === 'number' && profile.alumniDiscount > 0 && !profile.institutionId && (() => {
+          const offer = individualOffer(profile.academyLevel ?? '', profile.alumniDiscount ?? 0);
+          return (
+            <div id="alumni-upgrade" className={`mt-3 max-w-2xl rounded-2xl border bg-card px-4 py-3 ${alumniLink ? 'border-[#1E6A83] ring-2 ring-[#1E6A83]' : 'border-border'}`}>
+              <p className="text-sm text-[#203337]">
+                Alumni discount of {offer.percent}% on the individual plan. The list price is {formatMoney(offer.listMonthly, 'USD')} a month. Checkout applies the discount when you continue, so the plan is {formatMoney(offer.monthly, 'USD')} a month before tax. Certificates and the transcript stay on this account.
+              </p>
+              <Link href={offer.href} className="mt-3 inline-flex h-11 items-center rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-5 text-sm font-semibold text-[#203337]">
+                Continue with the alumni discount
+              </Link>
+            </div>
+          );
+        })()}
+        <div className="mt-4 flex flex-wrap gap-3">
+          <ManageSubscription returnPath="/dashboard/student/billing" />
+        </div>
+        <div className="mt-4">
+          <AskParent adult={profile?.ageTier === 'adult'} />
+        </div>
         {profile?.institutionId && (
           <p className="text-sm mt-3 max-w-2xl rounded-2xl border border-border bg-card px-4 py-3">
             Your institution pays this seat. Poket School does not charge you for it. Marketplace courses are a separate purchase with a card or the wallet. Sparks cannot buy them.
           </p>
         )}
-        {user && invoices.length > 0 && (
+        {user && invoices.length > 0 && receiptsOpen && (
           <div className="mt-4">
             <DocumentDelivery
               documents={invoices.map(inv => billingDocument({
@@ -142,7 +186,7 @@ export default function StudentBillingPage() {
           custom={1}
           className="bg-card border border-border rounded-3xl p-6 card-glow relative overflow-hidden flex items-center justify-between gap-4"
         >
-          <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-amber-500 opacity-80" />
+          <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-[var(--ps-cyan)] opacity-80" />
           <div>
             <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
               Outstanding Balance
@@ -291,13 +335,26 @@ export default function StudentBillingPage() {
                   <Badge className={`rounded-full text-[10px] ${STATUS_STYLES[inv.status]}`}>
                     {inv.status}
                   </Badge>
+                  {inv.status === 'paid' && (
+                    <Button
+                      variant="outline"
+                      className="h-9 rounded-full px-3 text-xs"
+                      onClick={() => {
+                        void authedFetch('/api/account/refund-request', { method: 'POST', body: JSON.stringify({ invoiceId: inv.id }) })
+                          .then((data) => toast.success(typeof data.reason === 'string' ? data.reason : 'Refund updated.'))
+                          .catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not request a refund.'));
+                      }}
+                    >
+                      Request refund
+                    </Button>
+                  )}
                   <button
                     onClick={() => window.print()}
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <Printer className="w-4 h-4" />
                   </button>
-                  <DocumentDelivery
+                  {receiptsOpen && <DocumentDelivery
                     compact
                     documents={[billingDocument({
                       id: inv.id,
@@ -309,7 +366,7 @@ export default function StudentBillingPage() {
                       holderEmail: user?.email ?? undefined,
                     })]}
                     studentIds={[user?.uid || inv.studentId]}
-                  />
+                  />}
                 </div>
               </motion.div>
             ))}

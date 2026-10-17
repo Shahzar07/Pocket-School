@@ -195,7 +195,7 @@ export default function TeacherAssignmentsPage() {
   if (loadError) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12">
       <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
-        <AlertTriangle className="w-10 h-10 mx-auto text-amber-500" />
+        <AlertTriangle className="w-10 h-10 mx-auto text-[var(--ps-cyan-text)]" />
         <p className="font-heading text-2xl text-foreground">Couldn&apos;t load your courses</p>
         <p className="text-sm text-muted-foreground">Something went wrong while fetching your data. Please try again.</p>
         <Button onClick={loadCourses} variant="outline" className="rounded-full h-11 px-5 font-semibold">Retry</Button>

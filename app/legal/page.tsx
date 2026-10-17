@@ -38,7 +38,7 @@ function Block({ block }: { block: LegalBlock }) {
     case 'callout': {
       const tone =
         block.tone === 'danger' ? 'bg-red-50 border-red-500 text-red-900 dark:bg-red-950/30 dark:text-red-200'
-        : block.tone === 'warn' ? 'bg-amber-50 border-amber-500 text-amber-900 dark:bg-amber-950/30 dark:text-amber-200'
+        : block.tone === 'warn' ? 'bg-[var(--ps-cyan-soft)] border-[var(--ps-cyan-border)] text-[var(--ps-cyan-text)] dark:bg-[var(--ps-cyan-soft)] dark:text-[var(--ps-cyan-text)]'
         : 'bg-blue-50 border-blue-500 text-blue-900 dark:bg-blue-950/30 dark:text-blue-200';
       return (
         <div className={`border-l-4 rounded-r-xl px-5 py-4 mb-4 ${tone}`}>

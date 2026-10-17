@@ -11,6 +11,7 @@ import { getAllUsers, getPlatformSettings, savePlatformSettings } from '@/lib/db
 import { AdminPricingPanel } from '@/components/admin-pricing-panel';
 import { VolumePricingEditor } from '@/components/institutions/volume-pricing-editor';
 import { FlagToggles } from '@/components/scope-c/flag-toggles';
+import { NetworkAutomationPanel } from '@/components/network/automation-panel';
 import { SMTP_PRESETS, smtpPreset } from '@/lib/smtp-presets';
 import { useAuthSTORE } from '@/hooks/use-auth';
 
@@ -117,7 +118,7 @@ export default function AdminSystemSettings() {
   if (loadError) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 pt-2">
       <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
-        <Globe className="w-10 h-10 mx-auto text-amber-500" />
+        <Globe className="w-10 h-10 mx-auto text-[var(--ps-cyan-text)]" />
         <p className="font-heading text-2xl text-foreground">Couldn&apos;t load platform settings</p>
         <p className="text-sm text-muted-foreground">Something went wrong while fetching settings. Please try again.</p>
         <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={load}>Retry</Button>
@@ -152,6 +153,7 @@ export default function AdminSystemSettings() {
 
       <div className="space-y-5">
         {show('flags features') && <FlagToggles />}
+        {show('network founders recruiter') && <NetworkAutomationPanel />}
         {/* General */}
         {show('general name support email') && <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
           className="bg-card border border-border rounded-3xl p-6 sm:p-7 relative overflow-hidden card-glow"

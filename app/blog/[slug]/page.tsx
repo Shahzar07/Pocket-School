@@ -53,7 +53,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(articleJsonLd(post)) }} />
       {faq ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(faq) }} /> : null}
       <article className="mx-auto max-w-3xl px-4 pb-20 pt-10 sm:px-6">
-        <p className="text-xs font-bold tracking-[0.18em] text-[#2786A4]">
+        <p className="text-xs font-bold tracking-[0.18em] text-primary">
           <Link href="/blog">Blog</Link>
           <span> · {post.category}</span>
         </p>

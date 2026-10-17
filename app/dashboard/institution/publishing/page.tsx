@@ -7,16 +7,36 @@ import { DashHeader, DashPage, Panel } from '@/components/dash-ui';
 import { Button } from '@/components/ui/button';
 import { AccessBadge } from '@/components/institutions/commerce-panels';
 import { approveInstitutionCourse, listInstitutionCourses, type InstitutionCourseRow } from '@/lib/institution-membership-store';
+import { institutionLibraryIncludes, normalizeCatalogue, seedInstitutionCatalogue, type InstitutionCatalogue } from '@/lib/institution-catalogue';
+import { authedFetch } from '@/lib/api-client';
 
 export default function PublishingPage() {
   const { user, profile } = useAuthSTORE();
   const institutionId = profile?.institutionId ?? '';
   const [rows, setRows] = useState<InstitutionCourseRow[]>([]);
+  const [paidIds, setPaidIds] = useState<string[] | null>(null);
+  const [catalogue, setCatalogue] = useState<InstitutionCatalogue>(seedInstitutionCatalogue());
 
   useEffect(() => {
     if (!institutionId) return;
     listInstitutionCourses(institutionId).then(setRows).catch(() => toast.error('Could not load institution courses.'));
+    authedFetch(`/api/institutions/programme-access?institutionId=${institutionId}`)
+      .then((data) => {
+        const ids = Array.isArray(data.programmeIds) ? data.programmeIds.filter((id): id is string => typeof id === 'string') : [];
+        setPaidIds(ids);
+      })
+      .catch(() => setPaidIds(null));
+    fetch('/api/institutions/catalogue')
+      .then((res) => res.json())
+      .then((data: { catalogue?: unknown }) => {
+        if (data.catalogue) setCatalogue(normalizeCatalogue(data.catalogue));
+      })
+      .catch(() => undefined);
   }, [institutionId]);
+
+  const visible = paidIds && paidIds.length
+    ? rows.filter((row) => institutionLibraryIncludes(catalogue, paidIds, row))
+    : rows;
 
   const decide = async (row: InstitutionCourseRow, approved: boolean) => {
     if (!user) return;
@@ -31,10 +51,10 @@ export default function PublishingPage() {
 
   return (
     <DashPage className="max-w-3xl">
-      <DashHeader eyebrow="Institution" title="Course library" description="Teachers can create a course. It appears here after you approve it. Listing on the Poket School marketplace needs a super admin." />
-      {rows.length === 0 && <Panel><p className="text-sm text-muted-foreground">No institution courses yet.</p></Panel>}
+      <DashHeader eyebrow="Institution" title="Course library" description="A teacher course that passes the content check goes into this library on its own. This page is the override when that rule is off, or when you want to return a course. The public marketplace still needs a super admin unless that rule is turned on." />
+      {visible.length === 0 && <Panel><p className="text-sm text-muted-foreground">No institution courses yet for the programmes this academy has selected.</p></Panel>}
       <ul className="space-y-3">
-        {rows.map((row) => (
+        {visible.map((row) => (
           <li key={row.id}>
           <Panel>
             <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">

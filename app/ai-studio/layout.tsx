@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { WelcomePing } from '@/components/onboarding/welcome-ping';
 
 export const metadata: Metadata = {
   title: 'ET AI Studio · Poket School',
@@ -8,6 +9,7 @@ export const metadata: Metadata = {
 export default function AiStudioLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <WelcomePing />
       {children}
     </div>
   );

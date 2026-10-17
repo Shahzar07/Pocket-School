@@ -38,6 +38,11 @@ export const SELF_SERVICE_FIELDS = [
   'lastActiveAt',
   'region',
   'parentContacts',
+  'emergencyOptIn',
+  'currentCountry',
+  'homeCountry',
+  'dashboardTileOrder',
+  'dashboardCoachSeen',
 ] as const;
 
 /** A signed-in person must not be able to set these on their own document. */
@@ -61,6 +66,15 @@ export const PRIVILEGED_PROFILE_FIELDS = [
   'sparksMonthlyAllowance',
   'sparksGrantedAt',
   'xp',
+  'verification',
+  'partnerKind',
+  'studentNumber',
+  'referralCode',
+  'cardShareId',
+  'cardIndexed',
+  'cardSharing',
+  'studentStatus',
+  'partnerId',
 ] as const;
 
 export interface NotificationPrefs {
@@ -69,6 +83,18 @@ export interface NotificationPrefs {
   messages: boolean;
   announcements: boolean;
   product: boolean;
+  alumni: boolean;
+  institution: boolean;
+  /** Badges, level-ups, and quests. Missing stays on. */
+  achievements: boolean;
+  /** Connections, comments, mentions, messages, and group activity. */
+  network: boolean;
+  /** Safeguarding alerts. Critical alerts are delivered even when this is off. */
+  safety: boolean;
+  /** School hotline replies. Emergency alerts are not in this list and cannot be muted. */
+  hotline: boolean;
+  /** Weekly network email. Off until the person opts in. */
+  networkDigest: boolean;
 }
 
 export interface PrivacySettings {
@@ -104,6 +130,13 @@ export const DEFAULT_NOTIFICATIONS: NotificationPrefs = {
   messages: true,
   announcements: true,
   product: true,
+  alumni: true,
+  institution: true,
+  achievements: true,
+  network: true,
+  safety: true,
+  hotline: true,
+  networkDigest: false,
 };
 
 export const DEFAULT_PRIVACY: PrivacySettings = {
@@ -198,6 +231,9 @@ export interface ProfileDraft {
   level: string;
   learningStyle: string;
   yearGroup: string;
+  region?: string;
+  gender?: '' | 'male' | 'female';
+  demographicConsent?: boolean;
   notificationPrefs: NotificationPrefs;
   privacy: PrivacySettings;
   twoFactorEnabled: boolean;
@@ -222,6 +258,7 @@ export function profilePatch(draft: ProfileDraft, role: string): Record<string, 
     shareBoard: draft.privacy.shareBoard,
     twoFactorEnabled: draft.twoFactorEnabled,
   };
+  if (draft.region?.trim()) patch.region = draft.region.trim();
   if (draft.avatarUrl) patch.avatarUrl = draft.avatarUrl;
   if (draft.photoStoragePath) patch.photoStoragePath = draft.photoStoragePath;
   if (role === 'student') {

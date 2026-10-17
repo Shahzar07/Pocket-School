@@ -8,11 +8,14 @@ import { canDirectMessage } from '../community/policy';
 import { asAgeTier, isAgeTier } from '../age-tier';
 import { accessTierFor, freePreviewCount, tierDefinition, type AccessTier } from '../entitlements';
 import { answersMatch } from '../quiz';
+import { resolvePassMark } from '../unit-test';
 import { countCompleted, isPublishedLesson, progressPercent } from '../progress';
-import { certificateKey, certificateStatus, certificateStudentName, moduleIsComplete } from '../certificates';
-import { issueInTransaction, issuerFromInstitution } from './module-certificates';
-import { attachOpenBadge } from './badge-issue';
+import { certificateStatus, certificateStudentName } from '../certificates';
+import { issueCourseCertificate } from '../certificates/issue';
+import { LESSON_FIRST_COMPLETE } from '../events';
 import { recordActivity } from '@/lib/audit/server';
+import { LEARNING_EVENTS } from '@/lib/events';
+import { emitLearningEvent } from '@/lib/server/learning-events';
 import {
   ADMIN_SPARKS_GRANT,
   FORMAT_COSTS,
@@ -149,19 +152,18 @@ export async function completeLesson(
   }
   const lessons = publishedFlat(course, allLessons);
   const publishedIds = lessons.map((lesson) => lesson.id);
-  const modulePublishedIds = lessons.filter((lesson) => lesson.moduleId === hit.moduleId).map((lesson) => lesson.id);
-  const mod = await db().doc(`courses/${courseId}/modules/${hit.moduleId}`).get();
-  const moduleTitle = ((mod.data()?.title as string) || '').trim() || 'Module';
-  const courseTitle = ((course.title as string) || '').trim() || 'Course';
   // A passed unit quiz pays UNIT_PASS_REWARD on its own. Completing that quiz
   // lesson must not also pay the ordinary lesson reward.
   const sparksReward = grantLessonSparks && course.kind === 'curriculum' ? LESSON_COMPLETE_REWARD : 0;
   const userRef = db().doc(`users/${uid}`);
   const enrollRef = db().doc(`courses/${courseId}/enrollments/${uid}`);
-  const keyRef = db().doc(`certificate_keys/${certificateKey(uid, courseId, hit.moduleId)}`);
+
+  const { loadAutomation } = await import('./automation-store');
+  const { defaultAutomation } = await import('../site-automation');
+  const issueCertificates = (await loadAutomation().catch(() => defaultAutomation())).rules.certificate_issue;
 
   const result = await db().runTransaction(async (tx) => {
-    const [userSnap, enrollSnap, keySnap] = await Promise.all([tx.get(userRef), tx.get(enrollRef), tx.get(keyRef)]);
+    const [userSnap, enrollSnap] = await Promise.all([tx.get(userRef), tx.get(enrollRef)]);
     if (!userSnap.exists) throw new ActionError('USER_NOT_FOUND');
     if (!enrollSnap.exists) throw new ActionError('NOT_ENROLLED');
     const enrollment = enrollSnap.data() ?? {};
@@ -173,13 +175,19 @@ export async function completeLesson(
     const xpBefore = (userSnap.data()?.xp as number) ?? 0;
     const balance = already ? balanceBefore : balanceBefore + sparksReward;
     const xp = already ? xpBefore : xpBefore + xpReward;
-    const institutionId = typeof userSnap.data()?.institutionId === 'string' ? userSnap.data()?.institutionId as string : '';
-    const instSnap = institutionId ? await tx.get(db().doc(`institutions/${institutionId}`)) : null;
-    const issuer = issuerFromInstitution(instSnap?.data() as Record<string, unknown> | undefined);
+    const reviewedAt = Date.now();
     if (!already) {
+      tx.set(db().collection('events').doc(), {
+        name: LESSON_FIRST_COMPLETE,
+        studentId: uid,
+        courseId,
+        lessonId,
+        at: FieldValue.serverTimestamp(),
+      });
       tx.update(enrollRef, {
         completedLessons: FieldValue.arrayUnion(lessonId),
         progress,
+        [`lessonCompletedAt.${lessonId}`]: reviewedAt,
       });
       tx.update(userRef, {
         xp,
@@ -197,26 +205,13 @@ export async function completeLesson(
           createdAt: FieldValue.serverTimestamp(),
         });
       }
-    } else if ((enrollment.progress as number | undefined) !== progress) {
-      tx.update(enrollRef, { progress });
+    } else {
+      tx.update(enrollRef, {
+        [`lessonCompletedAt.${lessonId}`]: reviewedAt,
+        ...((enrollment.progress as number | undefined) !== progress ? { progress } : {}),
+      });
     }
     const studentName = certificateStudentName(userSnap.data()?.name);
-    const certificate = issueInTransaction(tx, db(), keySnap.exists, {
-      studentId: uid,
-      studentName,
-      courseId,
-      courseTitle,
-      moduleId: hit.moduleId,
-      moduleTitle,
-      publishedIds: modulePublishedIds,
-      completedIds: next,
-      fresh: !already && moduleIsComplete(modulePublishedIds, next),
-      issuerName: issuer.issuerName,
-      showPoweredBy: issuer.showPoweredBy,
-      accent: issuer.accent,
-      logoUrl: issuer.logoUrl,
-      certificateFooter: issuer.certificateFooter,
-    });
     return {
       accepted: true,
       already,
@@ -225,16 +220,28 @@ export async function completeLesson(
       progress,
       name: studentName,
       role: (userSnap.data()?.role as string) ?? 'student',
-      certificate,
+      certificate: null,
     };
   });
 
-  if (result.certificate) {
-    await attachOpenBadge(result.certificate, { id: uid, role: result.role ?? 'student' });
-  }
   if (!result.already) {
     await writePublicXp(uid, result.name ?? '', result.xp, result.role ?? 'student');
     await awardBadges(uid, result.xp);
+    await emitLearningEvent({
+      uid,
+      event: LEARNING_EVENTS.lessonFirstComplete,
+      day: new Date().toISOString().slice(0, 10),
+      eventId: `lesson-first:${uid}`,
+      payload: { courseId, lessonId },
+    }).catch(error => {
+      console.error('[gamification] lesson.first_complete', error);
+    });
+  }
+  try {
+    const { noteLearner } = await import('../alerts/progress-server');
+    await noteLearner(uid, courseId);
+  } catch {
+    /* A progress note must not block lesson completion. */
   }
   return result;
 }
@@ -259,6 +266,10 @@ async function awardBadges(uid: string, xp: number) {
   }
 }
 
+export async function grantUnitPassReward(uid: string, note: string) {
+  return addSparks(uid, UNIT_PASS_REWARD, 'earn', note);
+}
+
 async function addSparks(uid: string, amount: number, type: string, note: string, extra: Record<string, unknown> = {}) {
   const userRef = db().doc(`users/${uid}`);
   const balance = await db().runTransaction(async (tx) => {
@@ -275,6 +286,12 @@ async function addSparks(uid: string, amount: number, type: string, note: string
     });
     return balanceAfter;
   });
+  try {
+    const { recordLearning } = await import('./insight-counters');
+    await recordLearning(uid, { sparks: amount });
+  } catch (error) {
+    console.error('insight sparks counter skipped', error);
+  }
   return balance;
 }
 
@@ -429,6 +446,28 @@ export async function sendNotification(userId: string, title: string, message: s
     read: false,
     createdAt: FieldValue.serverTimestamp(),
   });
+  try {
+    const user = await db().doc(`users/${userId}`).get();
+    const phone = typeof user.data()?.phone === 'string' ? user.data()?.phone as string : '';
+    const email = typeof user.data()?.email === 'string' ? user.data()?.email as string : '';
+    const name = typeof user.data()?.name === 'string' ? user.data()?.name as string : '';
+    if (!phone && !email) return;
+    const { deliverWithEmailFallback } = await import('../messaging/whatsapp');
+    const { renderEmailTemplate, defaultEmailTemplate } = await import('../institution-email');
+    const letter = renderEmailTemplate(defaultEmailTemplate('notification'), { name, title, message });
+    await deliverWithEmailFallback({
+      phone,
+      template: 'poket_notice',
+      params: [title, message],
+      sendEmail: async () => {
+        if (!email.includes('@')) return;
+        const { sendPlainEmail } = await import('../messaging/plain-email');
+        await sendPlainEmail(email, letter.subject, letter.text);
+      },
+    });
+  } catch (error) {
+    console.error('Notification delivery skipped', error);
+  }
 }
 
 export async function enrollFromPayment(opts: {
@@ -481,6 +520,14 @@ export async function enrollFromPayment(opts: {
     permissions: FieldValue.arrayUnion(`alloc:marketplace:${courseId}`),
     updatedAt: FieldValue.serverTimestamp(),
   }, { merge: true });
+  if (!existing.exists) {
+    try {
+      const { recordLearning } = await import('./insight-counters');
+      await recordLearning(studentId, { enrolments: 1 });
+    } catch (error) {
+      console.error('insight enrolment counter skipped', error);
+    }
+  }
 }
 
 interface QuizRow {
@@ -519,13 +566,28 @@ export async function recordUnitQuiz(uid: string, body: {
   timeTakenSeconds?: number;
   studentName?: string;
 }) {
+  const course = await loadCourse(body.courseId);
+  const mod = await db().doc(`courses/${body.courseId}/modules/${body.unitId}`).get();
+  const threshold = resolvePassMark(
+    course as { unitTestPassMark?: number },
+    mod.data() as { unitTestPassMark?: number; masteryThreshold?: number } | undefined,
+  );
+  const hit = await findLesson(body.courseId, body.lessonId);
+  // Deprecated for unit tests. The canonical marker is POST /api/unit-tests/mark.
+  if (hit?.data.lessonType === 'unit_test' && hit.data.unitTest) {
+    const { markUnitTestAttempt } = await import('./mark-unit-test');
+    return markUnitTestAttempt(uid, {
+      courseId: body.courseId,
+      unitId: body.unitId,
+      lessonId: body.lessonId,
+      responses: body.responses,
+      timeTakenSeconds: body.timeTakenSeconds,
+    });
+  }
   const graded = await gradeQuiz(body.courseId, body.lessonId, body.responses.map((r) => ({ question: r.question, selected: r.selected })));
   const total = graded.length;
   const score = graded.filter((g) => g.correct).length;
   const percentage = total ? Math.round((score / total) * 100) : 0;
-  const course = await loadCourse(body.courseId);
-  const mod = await db().doc(`courses/${body.courseId}/modules/${body.unitId}`).get();
-  const threshold = (mod.data()?.masteryThreshold as number) ?? 70;
   const passed = percentage >= threshold;
   const responses = body.responses.map((r, i) => ({
     questionIndex: i,
@@ -666,7 +728,7 @@ export async function courseOutlineFor(courseId: string) {
   if (!courseSnap.exists) throw new ActionError('NOT_FOUND', 'Course not found');
   const course = { id: courseSnap.id, ...courseSnap.data() };
   const lessons = await listLessons(courseId);
-  const byModule = new Map<string, { id: string; title: string; order: number; status?: string; isUnitQuiz?: boolean }[]>();
+  const byModule = new Map<string, { id: string; title: string; order: number; status?: string; isUnitQuiz?: boolean; lessonType?: string }[]>();
   for (const lesson of lessons) {
     const list = byModule.get(lesson.moduleId) ?? [];
     list.push({
@@ -674,7 +736,8 @@ export async function courseOutlineFor(courseId: string) {
       title: (lesson.data.title as string) ?? 'Lesson',
       order: (lesson.data.order as number) ?? 0,
       status: lesson.data.status as string | undefined,
-      isUnitQuiz: lesson.data.isUnitQuiz === true,
+      isUnitQuiz: lesson.data.isUnitQuiz === true || lesson.data.lessonType === 'unit_test',
+      lessonType: lesson.data.lessonType as string | undefined,
     });
     byModule.set(lesson.moduleId, list);
   }
@@ -756,6 +819,15 @@ export async function respondParentLink(studentUid: string, studentEmail: string
     read: false,
     createdAt: FieldValue.serverTimestamp(),
   });
+  try {
+    const { reconcileUser } = await import('./insight-counters');
+    const pending = parent.data()?.pendingChild as { email?: string } | undefined;
+    if (pending && String(pending.email ?? '').toLowerCase() === email) {
+      await reconcileUser(studentUid, pending as Record<string, unknown>);
+    }
+  } catch (error) {
+    console.error('pending child demographics skipped', error);
+  }
   return { status: 'approved' };
 }
 
@@ -870,16 +942,12 @@ async function assertCanAward(callerId: string, studentId: string, courseId?: st
   throw new ActionError('FORBIDDEN', 'You cannot award certificates.');
 }
 
-/** Issues any module certificates the student has already earned. Never trusts a client name or a client "complete" flag. */
+/** Issues a course certificate the student has already earned. Lesson completion does not qualify. */
 export async function syncModuleCertificates(callerId: string, studentId: string, courseId?: string) {
   const target = studentId || callerId;
   await assertCanAward(callerId, target, courseId);
   const user = await db().doc(`users/${target}`).get();
   if (!user.exists) throw new ActionError('USER_NOT_FOUND');
-  const studentName = certificateStudentName(user.data()?.name);
-  const institutionId = typeof user.data()?.institutionId === 'string' ? user.data()?.institutionId as string : '';
-  const instSnap = institutionId ? await db().doc(`institutions/${institutionId}`).get() : null;
-  const issuer = issuerFromInstitution(instSnap?.data() as Record<string, unknown> | undefined);
   const enrollSnaps = courseId
     ? [await db().doc(`courses/${courseId}/enrollments/${target}`).get()].filter((snap) => snap.exists)
     : (await db().collectionGroup('enrollments').where('studentId', '==', target).get()).docs;
@@ -905,41 +973,8 @@ export async function syncModuleCertificates(callerId: string, studentId: string
     if ((enrollSnap.data()?.progress as number | undefined) !== progress) {
       await enrollSnap.ref.update({ progress });
     }
-    const byModule = new Map<string, string[]>();
-    for (const lesson of published) {
-      const ids = byModule.get(lesson.moduleId) ?? [];
-      ids.push(lesson.id);
-      byModule.set(lesson.moduleId, ids);
-    }
-    for (const [moduleId, publishedIds] of byModule) {
-      if (!moduleIsComplete(publishedIds, completed)) continue;
-      const mod = await db().doc(`courses/${thisCourseId}/modules/${moduleId}`).get();
-      const keyRef = db().doc(`certificate_keys/${certificateKey(target, thisCourseId, moduleId)}`);
-      const award = await db().runTransaction(async (tx) => {
-        const [keySnap, freshEnroll] = await Promise.all([tx.get(keyRef), tx.get(enrollSnap.ref)]);
-        const done: string[] = Array.isArray(freshEnroll.data()?.completedLessons) ? freshEnroll.data()!.completedLessons : completed;
-        return issueInTransaction(tx, db(), keySnap.exists, {
-          studentId: target,
-          studentName,
-          courseId: thisCourseId,
-          courseTitle: ((course.title as string) || '').trim() || 'Course',
-          moduleId,
-          moduleTitle: ((mod.data()?.title as string) || '').trim() || 'Module',
-          publishedIds,
-          completedIds: done,
-          fresh: true,
-          issuerName: issuer.issuerName,
-          showPoweredBy: issuer.showPoweredBy,
-          accent: issuer.accent,
-          logoUrl: issuer.logoUrl,
-          certificateFooter: issuer.certificateFooter,
-        });
-      });
-      if (award) {
-        await attachOpenBadge(award, { id: callerId, role: callerId === target ? 'student' : 'teacher' });
-        issued.push(award);
-      }
-    }
+    const award = await issueCourseCertificate(target, thisCourseId);
+    if (award) issued.push(award);
   }
   return { issued };
 }

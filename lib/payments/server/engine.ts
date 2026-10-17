@@ -11,6 +11,7 @@ import {
   sendNotification,
 } from '../../server/actions';
 import { fixedPriceItem, sparkPackItem, subscriptionItem, walletTopUpItem } from '../catalog';
+import { alumniCheckoutCoupon } from '../../graduation';
 import { couponRejection, normaliseCode, referralCode, type Coupon } from '../coupons';
 import { parsePromo, promoLive, type PromoDraft } from '../../promos';
 import { summariseFinance, reconcile } from '../finance';
@@ -19,11 +20,12 @@ import { eventDocId, claimDecision } from '../idempotency';
 import { toMinor } from '../minor';
 import { canonicalMethod, methodsFor, stripeTypesForCharge, type MethodId } from '../methods';
 import { buildQuote, type CheckoutKind, type PricedItem, type Quote } from '../quote';
-import { quoteCourse } from '../../pricing';
+import { quoteCourse, readsPriceUsd } from '../../pricing';
 import { loadPricingConfig } from '../../pricing-store';
 import { quoteCheckout } from '../../platform/wallet';
 import { readsBookItem, readsPlanItem } from '../reads';
 import { buildMyInvois } from '../tax';
+import { purchaseGate } from '../../billing/model';
 import { gatewayMode, providerForMethod, stripeMode, type GatewayVendor, type ProviderMode } from '../providers';
 import { ipay88Amount, ipay88Signature } from '../signatures';
 import { missingRequired } from '../secrets';
@@ -72,6 +74,9 @@ export interface CheckoutInput {
   /** Relative path Stripe or the gateway sends the buyer back to. */
   successPath?: string;
   cancelPath?: string;
+  /** Parent-paid plans. One line per child. Prices come from pricing config. */
+  familyLines?: { uid: string; tierId: string }[];
+  acknowledgeWarning?: boolean;
 }
 
 interface CheckoutDoc {
@@ -171,7 +176,7 @@ async function resolveItem(input: CheckoutInput, settings: PaymentsSettings, pay
   const interval = input.interval === 'year' ? 'year' : 'month';
 
   if (kind === 'subscription') {
-    const item = subscriptionItem(sku, interval);
+    const item = subscriptionItem(sku, interval, await loadPricingConfig());
     if (!item) throw new ActionError('INVALID', 'That plan is not sold online.');
     return item;
   }
@@ -186,7 +191,7 @@ async function resolveItem(input: CheckoutInput, settings: PaymentsSettings, pay
     return item;
   }
   if (kind === 'reads') {
-    const item = readsPlanItem(sku, interval);
+    const item = readsPlanItem(sku, interval, readsPriceUsd(await loadPricingConfig(), sku));
     if (!item) throw new ActionError('INVALID', 'Choose Poket Reads or Poket Reads Family.');
     return item;
   }
@@ -279,7 +284,10 @@ async function quoted(input: CheckoutInput): Promise<{ quote: Quote; settings: P
   const settings = await loadSettings();
   const payer = await profileOf(input.uid);
   const item = await resolveItem(input, settings, payer);
-  const coupon = await loadCoupon(input.coupon, item.currency, settings);
+  const coupon = await loadCoupon(input.coupon, item.currency, settings)
+    ?? (item.kind === 'subscription'
+      ? alumniCheckoutCoupon(typeof payer.alumniDiscount === 'number' ? payer.alumniDiscount : 0)
+      : null);
   const country = (input.country || 'MY').trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(country)) throw new ActionError('INVALID', 'Choose a country.');
   const quote = buildQuote({
@@ -313,7 +321,15 @@ async function gatewaySecrets() {
 }
 
 export async function startCheckout(input: CheckoutInput) {
+  if (input.familyLines && input.familyLines.length > 0) return startFamilyCheckout(input);
   const { quote, settings, payer } = await quoted(input);
+  const gate = purchaseGate({
+    ageTier: payer.ageTier,
+    role: payer.role,
+    dateOfBirth: payer.dateOfBirth,
+    now: new Date(),
+  });
+  if (!gate.ok) throw new ActionError('MINOR', gate.reason);
   const country = (input.country || 'MY').toUpperCase();
   const method = canonicalMethod(input.method || 'card') as MethodId;
   const available = methodsFor({ country, currency: quote.currency, overrides: settings.flags });
@@ -420,12 +436,122 @@ export async function startCheckout(input: CheckoutInput) {
   return { checkoutId: id, mode, url, postUrl, fields, sandbox: mode === 'mock', alreadyPaid: false, amount: quote.total, currency: quote.currency };
 }
 
+async function startFamilyCheckout(input: CheckoutInput) {
+  const lines = (input.familyLines ?? []).filter((line) => line.uid && line.tierId);
+  if (lines.length === 0 || lines.length > 6) throw new ActionError('INVALID', 'Choose between 1 and 6 children.');
+  const payer = await profileOf(input.uid);
+  const gate = purchaseGate({ ageTier: payer.ageTier, role: payer.role, dateOfBirth: payer.dateOfBirth, now: new Date() });
+  if (!gate.ok) throw new ActionError('MINOR', gate.reason);
+  const {
+    assertGuardian, loadFamilyRates, loadPlanPrice, seatCoverage,
+  } = await import('../../billing/store');
+  const { quoteFamily, parentPayDecision, withinSpendingCap } = await import('../../billing/model');
+  await assertGuardian(input.uid, lines.map((line) => line.uid));
+  const interval = input.interval === 'year' ? 'year' : 'month';
+  const priced = [];
+  for (const line of lines) {
+    const price = await loadPlanPrice(line.tierId, interval);
+    if (!price) throw new ActionError('INVALID', 'That plan has no config price yet.');
+    const seat = await seatCoverage(line.uid);
+    const decision = parentPayDecision({ seatActive: seat.seatActive, seatTier: seat.seatTier, requestedTier: price.accessTier });
+    if (decision.action === 'block') throw new ActionError('DUPLICATE_SEAT', decision.reason);
+    if (decision.action === 'warn' && !input.acknowledgeWarning) throw new ActionError('DUPLICATE_WARN', decision.reason);
+    priced.push({ uid: line.uid, tierId: line.tierId, accessTier: price.accessTier, listUsd: price.listUsd });
+  }
+  const family = quoteFamily(priced, await loadFamilyRates());
+  const sub = await db().doc(`subscriptions/sub_${input.uid}`).get();
+  const spendingCap = typeof sub.data()?.spendingCapUsd === 'number' ? sub.data()?.spendingCapUsd as number : null;
+  if (!withinSpendingCap(family.subtotalUsd, spendingCap)) {
+    throw new ActionError('SPENDING_CAP', 'This checkout is above the spending cap.');
+  }
+  const country = (input.country || 'MY').toUpperCase();
+  const item: PricedItem = {
+    kind: 'subscription',
+    sku: 'family',
+    title: `Poket School family plan`,
+    unitAmount: family.subtotalUsd,
+    currency: 'USD',
+    interval,
+    accessTier: Math.max(...family.lines.map((line) => line.accessTier)),
+  };
+  const settings = await loadSettings();
+  const quote = buildQuote({ item, seats: 1, country, tax: taxFrom(settings) });
+  const method = canonicalMethod(input.method || 'card') as MethodId;
+  const available = methodsFor({ country, currency: quote.currency, overrides: settings.flags });
+  if (!available.some((row) => row.id === method)) throw new ActionError('INVALID', 'That payment method is not available for this country and currency.');
+  const provider = providerForMethod(method);
+  if (!provider || provider === 'wallet') throw new ActionError('INVALID', 'Choose card, FPX, or Touch \'n Go.');
+  const id = checkoutIdFor(input.uid, input.idempotencyKey || `family:${lines.map((line) => line.uid).join(',')}:${interval}`);
+  const buyerName = str(payer.name) || 'Parent';
+  const done = safeReturn(input.origin, input.successPath, '/dashboard/parent/billing?paid=1');
+  const cancel = safeReturn(input.origin, input.cancelPath, '/dashboard/parent/billing');
+  const secrets = await gatewaySecrets();
+  const stripeSecret = await secretValue('stripe_secret');
+  let mode: ProviderMode = 'mock';
+  let url: string | undefined;
+  const extraMetadata = {
+    kind: 'family_plan',
+    checkoutId: id,
+    uid: input.uid,
+    payerUid: input.uid,
+    beneficiary_uids: lines.map((line) => line.uid).join(','),
+    beneficiaries: lines.map((line) => line.uid).join(','),
+  };
+  if (provider === 'stripe') {
+    mode = stripeMode(stripeSecret);
+    if (mode !== 'mock' && stripeSecret) {
+      url = await stripeSession({
+        secret: stripeSecret,
+        quote,
+        checkoutId: id,
+        email: input.email,
+        method,
+        uid: input.uid,
+        done,
+        cancel,
+        extraMetadata,
+        forcePayment: method !== 'card',
+      });
+    }
+  } else {
+    mode = gatewayMode(settings.gateway, secrets, settings.gatewayExplicit);
+    if (mode !== 'mock') {
+      const hosted = await gatewaySession({
+        vendor: settings.gateway, secrets, quote, checkoutId: id, method, email: input.email,
+        name: buyerName, origin: input.origin, mode, done,
+      });
+      url = hosted.url;
+    }
+  }
+  if (mode === 'mock') {
+    return { checkoutId: id, mode, sandbox: false, available: false, alreadyPaid: false, amount: quote.total, currency: quote.currency, message: 'Payments are coming soon.' };
+  }
+  await db().doc(`checkouts/${id}`).set({
+    userId: input.uid,
+    email: input.email ?? '',
+    buyerName,
+    quote,
+    method,
+    provider,
+    providerMode: mode,
+    status: 'pending',
+    childIds: lines.map((line) => line.uid),
+    familyLines: family.lines,
+    familyPlaceholder: true,
+    url: url ?? null,
+    createdAt: FieldValue.serverTimestamp(),
+  });
+  return { checkoutId: id, mode, url, sandbox: false, alreadyPaid: false, amount: quote.total, currency: quote.currency, placeholderDiscount: true };
+}
+
 async function stripeSession(input: {
   secret: string; quote: Quote; checkoutId: string; email?: string; method: string; uid: string; done: string; cancel: string;
+  extraMetadata?: Record<string, string>;
+  forcePayment?: boolean;
 }): Promise<string> {
   const Stripe = (await import('stripe')).default;
   const stripe = new Stripe(input.secret);
-  const subscription = input.quote.kind === 'subscription' || input.quote.kind === 'reads';
+  const subscription = !input.forcePayment && (input.quote.kind === 'subscription' || input.quote.kind === 'reads');
   const types = stripeTypesForCharge(input.method, input.quote.currency, input.quote.kind);
   const session = await stripe.checkout.sessions.create({
     mode: subscription ? 'subscription' : 'payment',
@@ -444,13 +570,14 @@ async function stripeSession(input: {
     }],
     metadata: {
       checkoutId: input.checkoutId,
-      kind: input.quote.kind === 'reads' ? 'plan' : input.quote.kind,
+      kind: input.extraMetadata?.kind || (input.quote.kind === 'reads' ? 'plan' : input.quote.kind),
       id: input.quote.sku,
       bookId: input.quote.shelf ? input.quote.sku : '',
       studentId: input.uid,
       uid: input.uid,
+      ...input.extraMetadata,
     },
-    ...(subscription ? { subscription_data: { metadata: { checkoutId: input.checkoutId, uid: input.uid, accessTier: String(input.quote.accessTier ?? '') } } } : {}),
+    ...(subscription ? { subscription_data: { metadata: { checkoutId: input.checkoutId, uid: input.uid, accessTier: String(input.quote.accessTier ?? ''), ...input.extraMetadata } } } : {}),
     ...(!subscription ? { payment_intent_data: { metadata: { checkoutId: input.checkoutId } } } : {}),
     ...(types !== 'dynamic' && !subscription
       ? { payment_method_types: types as Array<'card' | 'fpx' | 'grabpay'> }
@@ -616,7 +743,15 @@ async function finishClaim(provider: string, eventId: string, status: 'processed
   await db().doc(`payment_events/${eventDocId(provider, eventId)}`).set({ status, at: Date.now() }, { merge: true });
 }
 
-export async function fulfillCheckout(checkoutId: string, source: { eventId: string; provider: string; providerRef?: string; paymentIntentId?: string }) {
+export async function fulfillCheckout(checkoutId: string, source: {
+  eventId: string;
+  provider: string;
+  providerRef?: string;
+  paymentIntentId?: string;
+  currentPeriodEnd?: number;
+  customerId?: string;
+  subscriptionId?: string;
+}) {
   const decision = await claim(source.provider, source.eventId);
   if (decision === 'skip') return { duplicate: true };
   try {
@@ -628,7 +763,28 @@ export async function fulfillCheckout(checkoutId: string, source: { eventId: str
       return { duplicate: true };
     }
     const plan = fulfillmentFrom(checkout, source.provider, source.providerRef);
-    for (const grant of planGrants(plan)) await applyGrant(grant, checkout, false);
+    const familyLines = Array.isArray(snap.data()?.familyLines) ? snap.data()?.familyLines as {
+      uid: string; tierId: string; accessTier: number; listUsd: number; chargeUsd: number; off: number;
+    }[] : [];
+    if (familyLines.length > 0) {
+      const { applyFamilyPurchase } = await import('../../billing/store');
+      const { periodEndFrom } = await import('../../billing/model');
+      const interval = checkout.quote.interval === 'year' ? 'year' : 'month';
+      await applyFamilyPurchase({
+        payerUid: checkout.userId,
+        lines: familyLines,
+        source: 'stripe',
+        externalId: source.subscriptionId || source.providerRef || checkout.id,
+        currentPeriodEnd: source.currentPeriodEnd || periodEndFrom(Date.now(), interval),
+        stripeCustomerId: source.customerId,
+        checkoutId: checkout.id,
+        currency: checkout.quote.currency,
+        total: checkout.quote.total,
+        interval,
+      });
+    } else {
+      for (const grant of planGrants(plan)) await applyGrant(grant, checkout, false);
+    }
     const invoiceId = plan.kind === 'invoice' ? plan.sku : checkoutId;
     if (plan.kind !== 'invoice') await writePaidInvoice(checkout, invoiceId);
     await db().doc(`transactions/${checkoutId}`).set({
@@ -687,6 +843,12 @@ async function writePaidInvoice(checkout: CheckoutDoc, invoiceId: string) {
     createdBy: quote.ownerId || 'platform',
     createdAt: FieldValue.serverTimestamp(),
   }, { merge: true });
+  try {
+    const { enqueuePaidInvoice } = await import('./myinvois-queue');
+    await enqueuePaidInvoice(invoiceId, myInvois);
+  } catch (error) {
+    console.error('MyInvois queue skipped', error);
+  }
 }
 
 async function applyGrant(grant: PlannedGrant, checkout: CheckoutDoc, reversing: boolean): Promise<void> {

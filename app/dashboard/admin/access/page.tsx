@@ -120,7 +120,7 @@ export default function AdminAccessConfig() {
               { role: 'Institution Admin', key: 'institution_admin', color: 'text-indigo-600', items: ['Runs one institution only', 'Its courses, grades & attendance', 'Its report cards & reporting', 'White-label branding & subdomain'] },
               { role: 'Teacher', key: 'teacher', color: 'text-blue-600', items: ['Create & upload courses', 'Grade submissions & exams', 'Attendance, behaviour, billing', 'Live classes & report cards'] },
               { role: 'Student', key: 'student', color: 'text-emerald-600', items: ['Enrol & learn', 'Take quizzes, exams, assignments', 'Earn & spend Sparks', 'ET AI Studio'] },
-              { role: 'Parent', key: 'parent', color: 'text-amber-600', items: ['View linked children', 'Progress & report cards', 'Due dates & reminders', 'Message teachers'] },
+              { role: 'Parent', key: 'parent', color: 'text-[var(--ps-cyan-text)]', items: ['View linked children', 'Progress & report cards', 'Due dates & reminders', 'Message teachers'] },
             ].map(r => (
               <div key={r.role} className="rounded-2xl border border-border bg-muted/20 p-4">
                 <p className={`text-sm font-bold mb-1 ${r.color}`}>{r.role}</p>
@@ -144,7 +144,7 @@ export default function AdminAccessConfig() {
       {/* Subscription & Sparks */}
       <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={5}>
         <div className="mb-5">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-amber-600">Institution admin</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--ps-cyan-text)]">Institution admin</p>
           <h2 className="font-heading text-3xl text-foreground mt-1.5">Assign a school admin</h2>
           <p className="text-sm text-muted-foreground mt-2 max-w-xl">
             People, Sparks, status, and subscriptions are edited in{' '}
@@ -155,10 +155,10 @@ export default function AdminAccessConfig() {
           </p>
         </div>
         <div className="bg-card border border-border rounded-3xl p-6 sm:p-7 relative overflow-hidden card-glow">
-          <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-amber-500 opacity-80" />
+          <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-[var(--ps-cyan)] opacity-80" />
           <div className="flex items-center gap-3 mb-5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-md">
-              <Sparkles className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] flex items-center justify-center shadow-md">
+              <Sparkles className="w-5 h-5 text-[var(--ps-cyan-ink)]" />
             </div>
             <div>
               <p className="font-heading text-xl text-foreground">Find the person</p>
@@ -190,7 +190,7 @@ export default function AdminAccessConfig() {
                   {foundUser.data.yearGroup && (
                     <Badge variant="outline" className="gap-1 rounded-full text-[10px]"><GraduationCap className="w-3 h-3" />{foundUser.data.yearGroup}</Badge>
                   )}
-                  <Badge className={`rounded-full text-[10px] ${foundUser.data.subscriptionTier === 'academic' ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20' : 'bg-muted text-muted-foreground'}`}>
+                  <Badge className={`rounded-full text-[10px] ${foundUser.data.subscriptionTier === 'academic' ? 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border border-[var(--ps-cyan-border)]/20' : 'bg-muted text-muted-foreground'}`}>
                     {foundUser.data.subscriptionTier === 'academic' ? 'Academic' : 'Free'}
                   </Badge>
                 </div>

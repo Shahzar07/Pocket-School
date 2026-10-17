@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAdminConfigured } from '@/lib/firebase-admin';
 import { refreshActiveSnapshots, runMissedGoalAlerts, runDueSchedules, runWeeklyDigest } from '@/lib/server/insights-jobs';
+import { processMyInvoisQueue } from '@/lib/payments/server/myinvois-queue';
+import { runDailyProgressAlerts } from '@/lib/alerts/progress-server';
+import { runRenewalReminders } from '@/lib/billing/store';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,5 +26,18 @@ export async function GET(req: NextRequest) {
   const digest = await runWeeklyDigest(now);
   const schedules = await runDueSchedules(now);
   const snapshots = await refreshActiveSnapshots(now);
-  return NextResponse.json({ ok: true, missed, digest, schedules, snapshots, at: now.toISOString() });
+  const myInvois = await processMyInvoisQueue(now.getTime());
+  let progress: { checked: number; opened: number; resolved: number; error?: string } = { checked: 0, opened: 0, resolved: 0 };
+  try {
+    progress = await runDailyProgressAlerts(now.getTime());
+  } catch (error) {
+    progress = { checked: 0, opened: 0, resolved: 0, error: error instanceof Error ? error.message : 'Progress alerts failed' };
+  }
+  let renewals: { checked: number; reminded: number; error?: string } = { checked: 0, reminded: 0 };
+  try {
+    renewals = await runRenewalReminders(now.getTime());
+  } catch (error) {
+    renewals = { checked: 0, reminded: 0, error: error instanceof Error ? error.message : 'Renewal reminders failed' };
+  }
+  return NextResponse.json({ ok: true, missed, digest, schedules, snapshots, myInvois, progress, renewals, at: now.toISOString() });
 }

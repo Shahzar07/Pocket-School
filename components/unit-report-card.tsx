@@ -1,6 +1,8 @@
 'use client';
 
 import { UnitQuizAttempt } from '@/lib/db';
+import { parentExplainer } from '@/lib/unit-test';
+import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Trophy, AlertTriangle, Clock, RotateCcw, Target, ArrowRight, BookOpen } from 'lucide-react';
@@ -36,7 +38,7 @@ export function UnitReportCard({ report }: { report: UnitReportData }) {
   return (
     <div className="bg-card border border-border rounded-2xl overflow-hidden">
       <div className={`px-5 py-3.5 flex items-center justify-between gap-3 border-b ${
-        passed ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'
+        passed ? 'bg-emerald-50 border-emerald-100' : 'bg-[var(--ps-cyan-soft)] border-[var(--ps-cyan-border)]'
       }`}>
         <div className="min-w-0">
           <p className="font-bold text-foreground text-sm truncate">{report.unitTitle}</p>
@@ -45,7 +47,7 @@ export function UnitReportCard({ report }: { report: UnitReportData }) {
         <Badge className={`rounded-full gap-1 shrink-0 ${
           passed
             ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-            : 'bg-amber-100 text-amber-700 border-amber-200'
+            : 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]'
         }`}>
           {passed ? <Trophy className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
           {passed ? 'Mastered' : 'In progress'}
@@ -57,7 +59,7 @@ export function UnitReportCard({ report }: { report: UnitReportData }) {
         <div>
           <div className="flex items-baseline justify-between mb-1.5">
             <span className="text-xs text-muted-foreground">Best quiz score</span>
-            <span className={`text-2xl font-extrabold ${passed ? 'text-emerald-600' : 'text-amber-600'}`}>
+            <span className={`text-2xl font-extrabold ${passed ? 'text-emerald-600' : 'text-[var(--ps-cyan-text)]'}`}>
               {best.percentage}%
             </span>
           </div>
@@ -91,9 +93,24 @@ export function UnitReportCard({ report }: { report: UnitReportData }) {
           </div>
         </div>
 
+        <div className="bg-muted/40 rounded-xl p-3.5 space-y-1">
+          <p className="text-xs font-bold text-foreground">Parent explainer</p>
+          {parentExplainer({
+            unitTitle: report.unitTitle,
+            percentage: latest.percentage,
+            passed,
+            passMark: report.masteryThreshold,
+            version: latest.version,
+            reviewTitles: report.reviewLessons.map(lesson => lesson.title),
+            timeTakenSeconds: latest.timeTakenSeconds,
+          }).map(line => (
+            <p key={line} className="text-xs text-muted-foreground">{line}</p>
+          ))}
+        </div>
+
         {/* Recommended next steps */}
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-3.5">
-          <p className="text-xs font-bold text-blue-900 mb-1.5">Recommended next steps</p>
+          <p className="text-xs font-bold text-blue-900 mb-1.5">{passed ? 'Next module' : 'Review these lessons'}</p>
           {passed ? (
             <p className="text-xs text-blue-800 flex items-center gap-1.5">
               <ArrowRight className="w-3.5 h-3.5 shrink-0" />
@@ -104,12 +121,14 @@ export function UnitReportCard({ report }: { report: UnitReportData }) {
               {report.reviewLessons.map(l => (
                 <li key={l.id} className="text-xs text-blue-800 flex items-center gap-1.5">
                   <BookOpen className="w-3.5 h-3.5 shrink-0" />
-                  Revisit {l.lessonNumber ? `L${l.lessonNumber}: ` : ''}{l.title}
+                  <Link href={`/dashboard/student/courses/${report.courseId}/lessons/${l.id}`} className="underline">
+                    {l.lessonNumber ? `L${l.lessonNumber}: ` : ''}{l.title}
+                  </Link>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-xs text-blue-800">Retake the mastery quiz to reach {report.masteryThreshold}%.</p>
+            <p className="text-xs text-blue-800">Retake the unit test to reach {report.masteryThreshold}%.</p>
           )}
         </div>
       </div>

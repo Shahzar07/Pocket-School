@@ -223,7 +223,7 @@ function PeoplePanel({ courses }: { courses: Course[] }) {
               ))}
             </div>
             {found.data.role === 'admin' && (
-              <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3">
+              <p className="text-[11px] text-[var(--ps-cyan-text)] bg-[var(--ps-cyan-soft)] border border-[var(--ps-cyan-border)] rounded-lg px-3 py-2 mt-3">
                 This account is a platform admin — every entitlement check passes for it regardless of tier.
               </p>
             )}
@@ -535,7 +535,7 @@ function CouponPanel({ courses, adminName }: { courses: Course[]; adminName: str
                           expired || spent
                             ? 'bg-muted text-muted-foreground border-border'
                             : c.active === false
-                              ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                              ? 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20'
                               : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
                         }`}>
                           {expired ? 'Expired' : spent ? 'Fully used' : c.active === false ? 'Paused' : 'Active'}

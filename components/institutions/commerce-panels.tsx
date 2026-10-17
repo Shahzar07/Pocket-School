@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { accessBadge, checkoutChoices, type CourseAccessMode } from '@/lib/institution-commerce';
 
 const chip = 'min-h-11 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
@@ -62,7 +63,7 @@ export function FeeSummary() {
   );
 }
 
-export function OnboardingList({ steps }: { steps: { id: string; label: string; done: boolean }[] }) {
+export function OnboardingList({ steps }: { steps: { id: string; label: string; done: boolean; href?: string }[] }) {
   const done = steps.filter((step) => step.done).length;
   return (
     <section className="space-y-3">
@@ -71,7 +72,7 @@ export function OnboardingList({ steps }: { steps: { id: string; label: string; 
         {steps.map((step) => (
           <li key={step.id} className="flex min-h-11 items-center gap-3 rounded-xl border border-border px-3 py-2 text-sm">
             <span aria-hidden className={`h-2.5 w-2.5 shrink-0 rounded-full ${step.done ? 'bg-emerald-500' : 'bg-muted'}`} />
-            <span>{step.label}</span>
+            {step.href ? <Link href={step.href} className="font-medium underline-offset-2 hover:underline">{step.label}</Link> : <span>{step.label}</span>}
             <span className="sr-only">{step.done ? ', done' : ', not done'}</span>
           </li>
         ))}

@@ -17,12 +17,13 @@ import {
   certificateDocumentHtml,
   certificateHeader,
   certificateStatus,
+  certificateStudentNumber,
   certificateVerifyPath,
   certificateVerifyUrl,
   displayLogoUrl,
   formatCertificateDate,
 } from '@/lib/certificates';
-import { linkedInCertificationUrl } from '@/lib/credentials/badge-model';
+import { linkedInCertificationUrl, shareLinks } from '@/lib/credentials/badge-model';
 
 function origin(): string | undefined {
   if (typeof window === 'undefined') return undefined;
@@ -94,15 +95,25 @@ export function CertificateDocument({
   compact?: boolean;
 }) {
   const moduleTitle = certificate.moduleTitle?.trim();
+  const studentNumber = certificateStudentNumber(certificate.studentNumber);
   const path = certificateVerifyPath(certificate.id);
   const status = certificateStatus(certificate.status);
   const header = certificateHeader(certificate);
   const accent = certificateAccent(certificate.accent) ?? '#1E6A83';
   const logo = displayLogoUrl(certificate.logoUrl);
   const [verify, setVerify] = useState(() => certificateVerifyUrl(certificate.id));
+  const [organizationId, setOrganizationId] = useState('');
   useEffect(() => {
     setVerify(`${window.location.origin}${path}`);
   }, [path]);
+  useEffect(() => {
+    fetch('/api/auth/linkedin')
+      .then((response) => response.json())
+      .then((data: { organizationId?: string }) => {
+        if (typeof data.organizationId === 'string') setOrganizationId(data.organizationId);
+      })
+      .catch(() => undefined);
+  }, []);
   return (
     <div className={compact ? '' : 'bg-card border border-border rounded-3xl overflow-hidden card-glow'}>
       <div className="bg-white text-[#1c2b30] border-[10px] m-3 sm:m-4 rounded-sm" style={{ borderColor: accent }}>
@@ -117,6 +128,12 @@ export function CertificateDocument({
           </p>
           <p className="text-sm text-[#526066] mt-4">This is to certify that</p>
           <p className="font-heading text-3xl italic mt-2" style={{ color: accent }}>{certificate.studentName}</p>
+          {studentNumber ? (
+            <p className="mt-3 text-sm text-[#1c2b30]">
+              <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-[#526066]">Student number</span>
+              <span className="font-mono text-lg tracking-wide">{studentNumber}</span>
+            </p>
+          ) : null}
           <p className="text-sm text-[#526066] mt-4">has completed the module</p>
           <p className="font-heading text-2xl mt-1">{moduleTitle || certificate.courseTitle}</p>
           {moduleTitle ? <p className="text-sm text-[#526066] mt-1">{certificate.courseTitle}</p> : null}
@@ -137,7 +154,13 @@ export function CertificateDocument({
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#526066] mt-1">Scan to verify</p>
             </div>
             <div className="text-left min-w-0 max-w-sm">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#526066]">Certificate ID</p>
+              {studentNumber ? (
+                <>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#526066]">Student number</p>
+                  <p className="font-mono text-sm text-[#1c2b30]">{studentNumber}</p>
+                </>
+              ) : null}
+              <p className={`text-[10px] font-bold uppercase tracking-[0.16em] text-[#526066] ${studentNumber ? 'mt-3' : ''}`}>Certificate ID</p>
               <p className="font-mono text-sm break-all text-[#1c2b30]">{certificate.id}</p>
               <p className="text-[11px] text-[#526066] mt-2">Scanning the QR code opens</p>
               <p className="font-mono text-[11px] break-all text-[#1E6A83] mt-1">{verify}</p>
@@ -164,6 +187,7 @@ export function CertificateDocument({
             className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'rounded-full font-bold')}
             href={linkedInCertificationUrl({
               name: moduleTitle || certificate.courseTitle,
+              organizationId,
               issuedAt: issuedIso(certificate.issuedAt),
               certUrl: verify,
               certId: certificate.id,
@@ -172,6 +196,14 @@ export function CertificateDocument({
             rel="noreferrer"
           >
             Add to LinkedIn
+          </a>
+          <a
+            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'rounded-full font-bold')}
+            href={shareLinks(verify, moduleTitle || certificate.courseTitle).linkedin}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Share to LinkedIn
           </a>
           <a className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'rounded-full font-bold')} href={`/api/credentials/${encodeURIComponent(certificate.id)}/image`}>
             Download badge

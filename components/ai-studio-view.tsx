@@ -67,7 +67,7 @@ type Turn =
 
 interface Chat { id: number; title: string; turns: Turn[] }
 
-/* Warm charcoal palette with a soothing golden-yellow accent */
+/* Charcoal studio. The accent is the cyan fill, which stays readable on this dark canvas. */
 const C = {
   bg: 'bg-[#1A1918]',
   surface: 'bg-[#242220]',
@@ -78,8 +78,8 @@ const C = {
   text: 'text-[#EDEAE4]',
   dim: 'text-[#A8A296]',
   faint: 'text-[#6E695F]',
-  accent: '#E8C15E',
-  accentInk: '#1A1918',
+  accent: '#3FE0D0',
+  accentInk: '#203337',
 };
 
 /* Rotating status lines ET AI shows while working. */
@@ -349,7 +349,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: 'spring', damping: 14 }}
             className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-6"
-            style={{ background: C.accent, boxShadow: '0 0 48px rgba(232,193,94,0.35)' }}
+            style={{ background: C.accent, boxShadow: '0 0 48px rgba(63,224,208,0.35)' }}
           >
             <Asterisk className="w-8 h-8" style={{ color: C.accentInk }} />
           </motion.div>
@@ -524,7 +524,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                       animate={{ scale: 1, opacity: 1, rotate: 0 }}
                       transition={{ type: 'spring', damping: 14 }}
                       className="w-14 h-14 rounded-full flex items-center justify-center mb-6"
-                      style={{ background: C.accent, boxShadow: '0 0 48px rgba(232,193,94,0.35)' }}
+                      style={{ background: C.accent, boxShadow: '0 0 48px rgba(63,224,208,0.35)' }}
                     >
                       <Asterisk className="w-8 h-8 text-[#1A1918]" />
                     </motion.div>
@@ -557,7 +557,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                           <div key={i} className="flex justify-end">
                             <div className={`max-w-[85%] rounded-2xl rounded-br-md px-4 py-3 ${C.raised}`}>
                               {t.skill && (
-                                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-1.5 px-2 py-0.5 rounded-full" style={{ background: 'rgba(232,193,94,0.18)', color: C.accent }}>
+                                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-1.5 px-2 py-0.5 rounded-full" style={{ background: 'rgba(63,224,208,0.15)', color: C.accent }}>
                                   {FORMATS.find(f => f.id === t.skill)?.icon}
                                   {FORMATS.find(f => f.id === t.skill)?.label}
                                 </span>
@@ -574,7 +574,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                           </div>
                           <div className="flex-1 min-w-0">
                             {t.kind === 'chat' ? (
-                              <div className="prose prose-sm prose-invert max-w-none prose-headings:font-heading prose-p:text-[#D8D4CC] prose-p:text-[15px] prose-p:leading-relaxed prose-strong:text-white prose-li:text-[#D8D4CC] prose-a:text-[#EAD28A] prose-code:text-[#F0DCA0]">
+                              <div className="prose prose-sm prose-invert max-w-none prose-headings:font-heading prose-p:text-[#D8D4CC] prose-p:text-[15px] prose-p:leading-relaxed prose-strong:text-white prose-li:text-[#D8D4CC] prose-a:text-[#3FE0D0] prose-code:text-[#3FE0D0]">
                                 <MathMarkdown>{t.text}</MathMarkdown>
                               </div>
                             ) : (
@@ -622,11 +622,11 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
             {/* ── Composer ── */}
             <div className="shrink-0 px-4 sm:px-6 pb-5 pt-2">
               <div className="max-w-3xl mx-auto">
-                <div className={`rounded-3xl border ${C.border} ${C.surface} shadow-[0_8px_40px_rgba(0,0,0,0.35)] focus-within:border-[#E8C15E]/50 transition-colors`}>
+                <div className={`rounded-3xl border ${C.border} ${C.surface} shadow-[0_8px_40px_rgba(0,0,0,0.35)] focus-within:border-[#3FE0D0]/50 transition-colors`}>
                   {/* Selected skill chip */}
                   {activeFormat && (
                     <div className="px-4 pt-3 -mb-1">
-                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(232,193,94,0.18)', color: C.accent }}>
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(63,224,208,0.15)', color: C.accent }}>
                         {activeFormat.icon} {activeFormat.label}
                         <button onClick={() => setSkill(null)} className="hover:text-white ml-0.5" title="Back to chat mode"><X className="w-3 h-3" /></button>
                       </span>
@@ -824,7 +824,7 @@ function LibraryView({ user, library, loading, onDelete, onNew }: {
 
 /* ─── Generation output renderer ───────────────────────────── */
 
-const PROSE_CLASSES = 'prose prose-sm prose-invert max-w-none prose-headings:font-heading prose-headings:text-white prose-p:text-[#D8D4CC] prose-strong:text-white prose-li:text-[#D8D4CC] prose-a:text-[#EAD28A] prose-blockquote:border-l-[#E8C15E] prose-blockquote:text-[#A8A296] prose-hr:border-[#3A3733] prose-code:text-[#F0DCA0]';
+const PROSE_CLASSES = 'prose prose-sm prose-invert max-w-none prose-headings:font-heading prose-headings:text-white prose-p:text-[#D8D4CC] prose-strong:text-white prose-li:text-[#D8D4CC] prose-a:text-[#3FE0D0] prose-blockquote:border-l-[#3FE0D0] prose-blockquote:text-[#A8A296] prose-hr:border-[#3A3733] prose-code:text-[#3FE0D0]';
 
 function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
   if (format === 'flashcards' && Array.isArray(data)) {
@@ -832,7 +832,7 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
       <div className="grid sm:grid-cols-2 gap-3">
         {data.map((card: any, i: number) => (
           <div key={i} className="rounded-xl bg-[#1F1E1C] border border-[#2E2B28] p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#EAD28A' }}>Question</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#3FE0D0' }}>Question</p>
             <p className="text-sm text-white mb-3">{card.question}</p>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-400 mb-2">Answer</p>
             <p className="text-sm text-[#D8D4CC]">{card.answer}</p>
@@ -869,7 +869,7 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
             <h3 className="font-heading text-2xl text-white mb-3">{slide.title}</h3>
             <ul className="space-y-2">
               {slide.bullets?.map((b: string, j: number) => (
-                <li key={j} className="text-sm text-[#D8D4CC] flex gap-2"><ChevronRight className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#E8C15E' }} />{b}</li>
+                <li key={j} className="text-sm text-[#D8D4CC] flex gap-2"><ChevronRight className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#3FE0D0' }} />{b}</li>
               ))}
             </ul>
           </div>
@@ -882,7 +882,7 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
       <div className="space-y-2">
         {data.map((g: any, i: number) => (
           <div key={i} className="rounded-xl bg-[#1F1E1C] border border-[#2E2B28] p-4">
-            <p className="text-sm font-bold mb-1" style={{ color: '#F0DCA0' }}>{g.term}</p>
+            <p className="text-sm font-bold mb-1" style={{ color: '#3FE0D0' }}>{g.term}</p>
             <p className="text-xs text-[#D8D4CC]">{g.definition}</p>
           </div>
         ))}

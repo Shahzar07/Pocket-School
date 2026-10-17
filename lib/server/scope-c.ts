@@ -7,7 +7,9 @@ import {
   canDirectMessage, canExplore, canFollow, canReadChannel, canSeeSpace, isStaffRole,
   matchesQuery, visibleToViewer, type CommunityChannel, type CommunityPerson, type CommunitySpace,
 } from '../community/policy';
-import { mergeModeration, moderateText, parseAiModeration, type ModerationResult } from '../community/moderation';
+import { type ModerationResult } from '../community/moderation';
+import { type ModerationSurface } from '../moderation/screen';
+import { callOpenRouter, FAST_MODEL } from '../openrouter';
 import { isWithinQuietHours, nextVisibleAt, parseClock } from '../community/quiet-hours';
 import { mockStillOpen, predictedGrade, scoreAttempt, type PaperQuestion } from '../community/grades';
 import { guidanceFor } from '../community/guidance';
@@ -15,13 +17,13 @@ import { explainQuestion, snapGate } from '../community/snap';
 import { suggestReply } from '../community/reply';
 import { DEFAULT_COMMISSION_BPS, getWallet, quoteSession } from '../wallet';
 import { allocResource } from '../entitlements';
-import { callOpenRouter, FAST_MODEL } from '../openrouter';
 import { isSupportedLanguage, LANGUAGE_NAMES } from '../languages';
 import { bookingFitsSlot, normaliseSlots } from '../community/availability';
 import { canSeeResource, normaliseAudiences } from '../community/store-access';
 import { sendPush } from '../push';
 import { adminPushStore } from '../push-store';
 import { sendToDevice } from '../push-transport';
+import { networkAllowed, readVerification } from '../verification/policy';
 
 function db(): Firestore {
   return adminDb();
@@ -46,6 +48,7 @@ function pack(id: string, data: FirebaseFirestore.DocumentData | undefined): Fir
 export interface Member extends CommunityPerson {
   name: string;
   childIds: string[];
+  verificationTier: number;
 }
 
 export async function requireFlag(flag: FeatureFlag): Promise<void> {
@@ -68,7 +71,14 @@ export async function loadMember(uid: string): Promise<Member> {
     subjects: strList(data.subjects),
     name: str(data.name) || 'Member',
     childIds: strList(data.childIds),
+    verificationTier: readVerification(data.verification).tier,
   };
+}
+
+function assertDmTier(person: Member) {
+  if (!networkAllowed(person.verificationTier)) {
+    throw new ActionError('FORBIDDEN', 'Verify your email and phone before using the network.');
+  }
 }
 
 function asSpace(id: string, data: FirebaseFirestore.DocumentData): CommunitySpace {
@@ -134,39 +144,40 @@ async function notifyUser(userId: string, title: string, message: string, link: 
   }
 }
 
-async function moderate(surface: string, author: Member, text: string, subjectPath: string): Promise<ModerationResult & { queueId?: string }> {
-  const local = moderateText(text);
-  let ai: ModerationResult | null = null;
-  if (local.decision !== 'block' && process.env.OPENROUTER_API_KEY) {
-    try {
-      const raw = await callOpenRouter(
-        [{
-          role: 'user',
-          content: 'You moderate a school community. Reply with JSON {"decision":"allow"|"hold"|"block","reasons":["..."]}. '
-            + 'Block sexual content involving minors, self-harm encouragement, and threats. Hold harassment and contact details. '
-            + `Surface: ${surface}. Text:\n${text.slice(0, 2000)}`,
-        }],
-        { model: FAST_MODEL, temperature: 0, maxTokens: 200, jsonMode: true },
-      );
-      ai = parseAiModeration(raw);
-    } catch (error) {
-      console.error('moderation model skipped', error);
-    }
-  }
-  const result = mergeModeration(local, ai);
-  if (result.decision === 'allow') return result;
-  const ref = await db().collection('moderation_queue').add({
-    surface,
+async function moderate(
+  surface: string,
+  author: Member,
+  text: string,
+  subjectPath: string,
+  extra?: { institutionId?: string; spaceKind?: string; teacherIds?: string[] },
+): Promise<ModerationResult & { queueId?: string; authorMessage?: string }> {
+  const mapped: ModerationSurface = surface === 'lesson_qa'
+    ? 'lesson_qa'
+    : extra?.spaceKind === 'class'
+      ? 'class_space'
+      : surface === 'comment'
+        ? 'community_comment'
+        : surface === 'message'
+          ? 'channel_message'
+          : 'community_post';
+  const { reviewText } = await import('./et-moderation');
+  const result = await reviewText({
+    surface: mapped,
     authorId: author.id,
+    authorName: author.name,
     ageTier: author.ageTier,
-    text: text.slice(0, 2000),
+    text,
+    subjectPath,
+    institutionId: extra?.institutionId,
+    teacherIds: extra?.teacherIds,
+    spaceLabel: extra?.spaceKind === 'class' ? 'the class space' : 'the community',
+  });
+  return {
     decision: result.decision,
     reasons: result.reasons,
-    status: 'open',
-    subjectPath,
-    createdAtMs: Date.now(),
-  });
-  return { ...result, queueId: ref.id };
+    queueId: result.queueId ?? undefined,
+    authorMessage: result.authorMessage,
+  };
 }
 
 /** Shared moderation entry for both clients. Write routes call the same helper. */
@@ -301,8 +312,12 @@ export async function createPost(uid: string, input: { spaceId: string; kind: st
   if (!canSeeSpace(person, space).ok) throw new ActionError('FORBIDDEN', 'You cannot post in this space.');
   const kind = input.kind === 'question' ? 'question' : 'win';
   const ref = db().collection('posts').doc();
-  const mod = await moderate('post', person, input.body, `posts/${ref.id}`);
-  if (mod.decision === 'block') throw new ActionError('FORBIDDEN', 'That post cannot be published.');
+  const mod = await moderate('post', person, input.body, `posts/${ref.id}`, {
+    spaceKind: space.kind,
+    institutionId: str(spaceSnap.data()?.institutionId),
+    teacherIds: space.staffIds,
+  });
+  if (mod.decision === 'block') throw new ActionError('FORBIDDEN', mod.authorMessage || 'That post cannot be published.');
   await ref.set({
     spaceId: space.id,
     authorId: uid,
@@ -328,8 +343,12 @@ export async function createComment(uid: string, input: { postId: string; body: 
   const space = asSpace(spaceSnap.id, spaceSnap.data() ?? {});
   if (!canSeeSpace(person, space).ok) throw new ActionError('FORBIDDEN', 'You cannot comment here.');
   const ref = db().collection('comments').doc();
-  const mod = await moderate('comment', person, input.body, `comments/${ref.id}`);
-  if (mod.decision === 'block') throw new ActionError('FORBIDDEN', 'That comment cannot be published.');
+  const mod = await moderate('comment', person, input.body, `comments/${ref.id}`, {
+    spaceKind: space.kind,
+    institutionId: str(spaceSnap.data()?.institutionId),
+    teacherIds: space.staffIds,
+  });
+  if (mod.decision === 'block') throw new ActionError('FORBIDDEN', mod.authorMessage || 'That comment cannot be published.');
   await ref.set({
     postId: post.id,
     spaceId: space.id,
@@ -509,6 +528,7 @@ export async function createChannel(uid: string, input: {
     ? input.kind : 'class';
   const memberIds = [...new Set(strList(input.memberIds))].slice(0, 200);
   if (kind === 'dm') {
+    assertDmTier(person);
     if (memberIds.length !== 1) throw new ActionError('VALIDATION', 'A direct message needs one other person.');
     const other = await loadMember(memberIds[0]);
     const decision = canDirectMessage(person, other);
@@ -598,13 +618,18 @@ export async function sendChannelMessage(uid: string, input: { channelId: string
   const channel = asChannel(channelSnap.data() ?? {});
   if (!canReadChannel(person, channel).ok) throw new ActionError('FORBIDDEN', 'You cannot write in this channel.');
   if (channel.kind === 'dm' && channel.memberIds.length === 2) {
+    assertDmTier(person);
     const otherId = channel.memberIds.find((id) => id !== uid) ?? '';
     const other = await loadMember(otherId);
     if (!canDirectMessage(person, other).ok) throw new ActionError('FORBIDDEN', 'You cannot message that person.');
   }
   const ref = channelSnap.ref.collection('messages').doc();
-  const mod = await moderate('message', person, input.body, `channels/${channelSnap.id}/messages/${ref.id}`);
-  if (mod.decision === 'block') throw new ActionError('FORBIDDEN', 'That message cannot be sent.');
+  const mod = await moderate('message', person, input.body, `channels/${channelSnap.id}/messages/${ref.id}`, {
+    spaceKind: channel.kind,
+    institutionId: str(channelSnap.data()?.institutionId),
+    teacherIds: channel.staffIds,
+  });
+  if (mod.decision === 'block') throw new ActionError('FORBIDDEN', mod.authorMessage || 'That message cannot be sent.');
   let visibleAtMs = Date.now();
   for (const memberId of channel.memberIds) {
     if (memberId === uid) continue;
@@ -1111,7 +1136,7 @@ export async function askLesson(uid: string, input: { courseId: string; lessonId
   await assertCommunityOpen(person);
   const ref = db().collection('lesson_questions').doc();
   const mod = await moderate('lesson_qa', person, input.body, `lesson_questions/${ref.id}`);
-  if (mod.decision === 'block') throw new ActionError('FORBIDDEN', 'That question cannot be posted.');
+  if (mod.decision === 'block') throw new ActionError('FORBIDDEN', mod.authorMessage || 'That question cannot be posted.');
   let aiSuggestedReply = suggestReply({ question: input.body, lessonTitle: input.lessonTitle });
   if (mod.decision === 'allow' && process.env.OPENROUTER_API_KEY) {
     try {
@@ -1183,11 +1208,16 @@ export async function publishLessonReply(uid: string, questionId: string, reply:
 export async function listQueue(actorId: string) {
   await requireFlag('community');
   const actor = await loadMember(actorId);
-  if (actor.role !== 'admin') throw new ActionError('FORBIDDEN', 'Only an admin can open the queue.');
+  const user = await db().doc(`users/${actorId}`).get();
+  const institutionId = str(user.data()?.institutionId);
+  if (actor.role !== 'admin' && actor.role !== 'institution_admin') {
+    throw new ActionError('FORBIDDEN', 'Only an admin can open the queue.');
+  }
   const snap = await db().collection('moderation_queue').where('status', '==', 'open').limit(50).get();
-  return {
-    items: snap.docs.map((doc) => pack(doc.id, doc.data())).sort((a, b) => num(b.createdAtMs) - num(a.createdAtMs)),
-  };
+  const items = snap.docs.map((doc) => pack(doc.id, doc.data()))
+    .filter((item) => actor.role === 'admin' || item.institutionId === institutionId)
+    .sort((a, b) => num(b.createdAtMs) - num(a.createdAtMs));
+  return { items };
 }
 
 export async function resolveQueue(actorId: string, itemId: string, approve: boolean) {

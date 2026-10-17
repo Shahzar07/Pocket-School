@@ -10,11 +10,11 @@ import { buildXlsx } from '@/lib/insights/xlsx';
 import type { AnalyticsSnapshot } from '@/lib/insights/aggregate';
 import type { DrillRecord, Kpi } from '@/lib/insights/reports';
 import { Info, ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
-import { accentForIndex, type AccentId, type TrendDirection } from '@/lib/design/chart-colours';
+import { accentFillVar, accentForIndex, accentVar, type AccentId, type TrendDirection } from '@/lib/design/chart-colours';
 
 const METRIC_TONE: Record<string, AccentId> = {
   study_time: 'teal',
-  quiz_average: 'amber',
+  quiz_average: 'cyan',
   mastery: 'violet',
   exam_readiness: 'sky',
   understanding: 'violet',
@@ -24,7 +24,7 @@ const METRIC_TONE: Record<string, AccentId> = {
   consistency: 'emerald',
   focus_adherence: 'teal',
   cramming: 'coral',
-  procrastination: 'amber',
+  procrastination: 'cyan',
 };
 
 function toneForMetric(id: string, index: number): AccentId {
@@ -38,14 +38,14 @@ function MetricTile({ id, index, value, trend }: { id: string; index: number; va
   return (
     <div
       className="relative overflow-hidden rounded-2xl border border-border p-4"
-      style={{ background: `linear-gradient(160deg, color-mix(in srgb, var(--ps-${tone}) 16%, var(--card)), var(--card) 70%)` }}
+      style={{ background: `linear-gradient(160deg, color-mix(in srgb, var(${accentFillVar(tone)}) 16%, var(--card)), var(--card) 70%)` }}
     >
-      <span aria-hidden className="absolute inset-x-0 top-0 h-1" style={{ background: `var(--ps-${tone})` }} />
+      <span aria-hidden className="absolute inset-x-0 top-0 h-1" style={{ background: `var(${accentFillVar(tone)})` }} />
       <p className="text-[12px] text-muted-foreground flex items-center gap-1">
-        <span className="h-2 w-2 rounded-sm" style={{ background: `var(--ps-${tone})` }} aria-hidden />
+        <span className="h-2 w-2 rounded-sm" style={{ background: `var(${accentFillVar(tone)})` }} aria-hidden />
         {metricById(id)?.label} <GlossaryTip id={id} />
       </p>
-      <p className="text-2xl font-semibold tabular-nums mt-1" style={{ color: `var(--ps-${tone})` }}>{value ?? '—'}</p>
+      <p className="text-2xl font-semibold tabular-nums mt-1" style={{ color: `var(${accentVar(tone)})` }}>{value ?? '—'}</p>
       <p className="text-[10px] text-muted-foreground">{metricById(id)?.unit}</p>
       {trend && (
         <p className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold" style={{ color: trendColour }}>
@@ -194,7 +194,7 @@ export function AnalyticsBoard({ snapshot, live }: { snapshot: AnalyticsSnapshot
             <div key={row.level} className="flex items-center gap-2 mb-2">
               <span className="w-24 text-xs">{BLOOM_LABELS[row.level as BloomLevel]}</span>
               <span className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                <span className="block h-full" style={{ width: `${row.score ?? 0}%`, background: `var(--ps-${accentForIndex(index)})` }} />
+                <span className="block h-full" style={{ width: `${row.score ?? 0}%`, background: `var(${accentFillVar(accentForIndex(index))})` }} />
               </span>
               <span className="text-xs tabular-nums w-8">{row.score ?? '—'}</span>
             </div>

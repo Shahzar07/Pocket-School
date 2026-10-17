@@ -52,7 +52,7 @@ export interface MyInvoisParty {
 
 export interface MyInvoisDocument {
   version: '1.0';
-  /** Ready to submit. This build does not call LHDN. */
+  /** Ready to submit. Building the document does not call LHDN; the queue does. */
   status: 'ready' | 'missing_supplier';
   typeCode: '01';
   currency: string;

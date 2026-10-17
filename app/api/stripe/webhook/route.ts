@@ -36,8 +36,17 @@ export async function POST(req: NextRequest) {
     });
 
     if (parsed.type === 'institution_paid') {
-      const { markInstitutionPaid } = await import('@/lib/server/institution-billing');
-      await markInstitutionPaid(parsed.institutionId, parsed.interval);
+      if (parsed.selfServe) {
+        const { settleInstitutionOrder } = await import('@/lib/server/institution-activate');
+        await settleInstitutionOrder(parsed.institutionId, {
+          interval: parsed.interval,
+          providerRef: parsed.eventId,
+          paymentIntentId: parsed.paymentIntentId,
+        });
+      } else {
+        const { markInstitutionPaid } = await import('@/lib/server/institution-billing');
+        await markInstitutionPaid(parsed.institutionId, parsed.interval);
+      }
     } else if (parsed.type === 'individual_paid') {
       const { markIndividualPaid } = await import('@/lib/server/institution-billing');
       await markIndividualPaid(parsed.uid, parsed.planId, parsed.interval);
@@ -77,9 +86,22 @@ export async function POST(req: NextRequest) {
       await recordDispute(parsed);
     } else if (parsed.type === 'refund' && parsed.checkoutId) {
       await applyReversal(parsed.checkoutId, parsed.eventId);
+    } else if (parsed.type === 'family_paid') {
+      await fulfillCheckout(parsed.checkoutId, {
+        eventId: parsed.eventId,
+        provider: 'stripe',
+        providerRef: parsed.providerRef,
+        paymentIntentId: parsed.paymentIntentId,
+        currentPeriodEnd: parsed.currentPeriodEnd,
+        customerId: parsed.customerId,
+        subscriptionId: parsed.subscriptionId,
+      });
     } else if (parsed.type === 'subscription_ended') {
       await endSubscription(parsed.uid, parsed.subscriptionId);
     }
+
+    const { syncStripeEntitlement } = await import('@/lib/billing/stripe-sync');
+    await syncStripeEntitlement(parsed);
 
     await noteWebhook('stripe', true, event.type).catch(() => undefined);
     return NextResponse.json({ received: true });

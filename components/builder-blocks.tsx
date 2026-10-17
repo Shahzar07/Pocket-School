@@ -65,6 +65,13 @@ export const BLOCK_DEFS: BlockDef[] = [
   { id: 'glossary', icon: '📚', label: 'Glossary', sparks: 5 },
   { id: 'image', icon: '🖼️', label: 'Image', sparks: 10 },
   { id: 'illustration', icon: '🎨', label: 'Illustration', sparks: 15 },
+  { id: 'unitTest', icon: '🧪', label: 'Unit Test' },
+  { id: 'mindmapImage', icon: '🗺️', label: 'Mind Map image' },
+  { id: 'comic', icon: '💬', label: 'Comic strip' },
+  { id: 'infographicImage', icon: '📊', label: 'Infographic' },
+  { id: 'revisionPoster', icon: '🖼️', label: 'Unit revision poster' },
+  { id: 'gallery', icon: '🎠', label: 'Gallery' },
+  { id: 'audioChant', icon: '🎵', label: 'Audio chant' },
 ];
 
 export type AiRunOptions = {
@@ -301,7 +308,7 @@ export function VideoBlock({ lesson, videoConfig, onConfig, script, onScriptChan
             }`}
           >
             {t.label}
-            {t.sparks > 0 && <span className="ml-1.5 text-amber-500">⚡{t.sparks}</span>}
+            {t.sparks > 0 && <span className="ml-1.5 text-[var(--ps-cyan-text)]">⚡{t.sparks}</span>}
             {!t.available && <span className="ml-1.5 text-[9px] uppercase">soon</span>}
           </button>
         ))}
@@ -383,7 +390,7 @@ function VideoEmbed({ url }: { url: string }) {
   if (/\.(mp4|webm|ogg)(\?|$)/i.test(url)) {
     return <video src={url} controls className="w-full aspect-video rounded-xl bg-black" />;
   }
-  return <p className="text-xs text-amber-600 flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Unrecognised video URL — use YouTube, Vimeo or a direct MP4 link.</p>;
+  return <p className="text-xs text-[var(--ps-cyan-text)] flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Unrecognised video URL — use YouTube, Vimeo or a direct MP4 link.</p>;
 }
 
 /* ── Lesson text ────────────────────────────────────────────── */
@@ -499,6 +506,13 @@ export function ActivityBlock({ value, onChange }: {
         <select value={value.bloom ?? 'Apply'} onChange={e => onChange({ ...value, bloom: e.target.value })}
           className="h-9 rounded-xl border border-border bg-card px-3 text-sm">
           {BLOOMS.map(b => <option key={b}>{b}</option>)}
+        </select>
+        <select value={value.intelligence ?? ''} onChange={e => onChange({ ...value, intelligence: e.target.value || undefined })}
+          className="h-9 rounded-xl border border-border bg-card px-3 text-sm sm:col-span-2">
+          <option value="">Multiple intelligence (optional)</option>
+          {['Linguistic', 'Logical-Mathematical', 'Spatial', 'Bodily-Kinaesthetic', 'Musical', 'Interpersonal', 'Intrapersonal', 'Naturalistic'].map(tag => (
+            <option key={tag} value={tag}>{tag}</option>
+          ))}
         </select>
       </div>
       <Textarea value={value.modelAnswer ?? ''} onChange={e => onChange({ ...value, modelAnswer: e.target.value })}
@@ -710,7 +724,7 @@ export function AssessmentBlock({ value, onChange, ai, generating, onDraftSectio
         <Input type="number" value={value.attempts ?? ''} onChange={e => onChange({ ...value, attempts: e.target.value ? Number(e.target.value) : undefined })} placeholder="Attempts" className="h-9 rounded-xl text-sm" />
         <label className="flex items-center gap-2 text-xs cursor-pointer">
           <input type="checkbox" checked={value.certificateOnPass ?? false} onChange={e => onChange({ ...value, certificateOnPass: e.target.checked })} className="accent-teal-500" />
-          Certificate on pass
+          Course final assessment
         </label>
       </div>
 

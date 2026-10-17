@@ -22,8 +22,20 @@ interface UserProfile {
   statusReason?: string;
   adminRole?: 'super_admin' | 'admin' | 'content_editor' | 'support' | 'finance';
   avatarUrl?: string;
+  /** PS-XXXX-XXXX. Issued on signup and backfilled when a student profile loads. */
+  studentNumber?: string;
   photoStoragePath?: string;
   level?: string;
+  /** Level name assigned by the academy, such as IGCSE or Primary. */
+  academyLevel?: string;
+  institutionAccess?: 'active' | 'grace' | 'ended';
+  alumniOf?: string;
+  alumniName?: string;
+  alumniGraceEnds?: string;
+  /** Day the academy seat was freed. */
+  alumniLeftOn?: string;
+  alumniDiscount?: number;
+  alumniPublic?: boolean;
   learningStyle?: string;
   interests?: string[];
   xp?: number;
@@ -38,12 +50,20 @@ interface UserProfile {
   language?: string;
   /** YYYY-MM-DD days a lesson was opened, used for the study streak. */
   studyDates?: string[];
+  selfReportedSchool?: {
+    name: string;
+    key: string;
+    country: string;
+    state: string;
+  };
   /** When false, the privacy-safe leaderboard omits this student. */
   shareBoard?: boolean;
   accessTier?: number;
   permissions?: string[];
   phone?: string;
   country?: string;
+  gender?: 'male' | 'female';
+  demographicConsentAt?: number;
   timezone?: string;
   currency?: string;
   notificationPrefs?: NotificationPrefs;
@@ -61,6 +81,10 @@ interface UserProfile {
   ageTier?: 'under13' | 'teen' | 'adult';
   /** YYYY-MM-DD. Server-set. */
   dateOfBirth?: string;
+  currentCountry?: string;
+  homeCountry?: string;
+  /** Server-written verification tier. Clients cannot change it. */
+  verification?: { tier: number; method: string; verifiedAt: number; verifiedBy: string };
 }
 
 interface AuthState {

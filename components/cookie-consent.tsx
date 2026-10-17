@@ -9,6 +9,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { isBrandedLoginPath } from '@/lib/institution-login';
+import { isInstitutionJourneyPath } from '@/lib/institution-journey';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { Cookie, X } from 'lucide-react';
@@ -48,6 +51,7 @@ const CATEGORIES = [
 
 export function CookieConsent() {
   const { t } = useTranslation();
+  const pathname = usePathname() || '';
   const [open, setOpen] = useState(false);
   const [managing, setManaging] = useState(false);
   const [prefs, setPrefs] = useState({ functional: true, analytics: false, aiPerformance: false });
@@ -70,6 +74,8 @@ export function CookieConsent() {
   const acceptAll = () => persist({ functional: true, analytics: true, aiPerformance: true });
   const rejectAll = () => persist({ functional: false, analytics: false, aiPerformance: false });
 
+  if (isBrandedLoginPath(pathname) || isInstitutionJourneyPath(pathname)) return null;
+
   return (
     <AnimatePresence>
       {open && (
@@ -85,8 +91,8 @@ export function CookieConsent() {
           <div className="max-w-4xl mx-auto rounded-3xl border border-border bg-card shadow-2xl overflow-hidden">
             <div className="p-5 sm:p-6">
               <div className="flex items-start gap-3">
-                <span className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center shrink-0">
-                  <Cookie className="w-4.5 h-4.5 text-amber-600" />
+                <span className="w-9 h-9 rounded-xl bg-[var(--ps-cyan-soft)] dark:bg-[var(--ps-cyan-soft)] flex items-center justify-center shrink-0">
+                  <Cookie className="w-4.5 h-4.5 text-[var(--ps-cyan-text)]" />
                 </span>
                 <div className="flex-1 min-w-0">
                   <h2 className="font-bold text-foreground text-sm mb-1">{t('cookie.title')}</h2>

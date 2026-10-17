@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { brandedMailHtml, mailBrandFromInstitution, mailFromHeader } from '@/lib/academy-mail';
 import { callerIsAdmin, isNextResponse, loadUser, requireUser } from '@/lib/api-guard';
 import { adminDb } from '@/lib/firebase-admin';
+import { institutionLoginLinks } from '@/lib/institution-login';
 import { brandedInvite } from '@/lib/oem';
 import { institutionOrigin } from '@/lib/white-label';
 
@@ -33,12 +34,17 @@ export async function POST(req: NextRequest) {
   const brand = mailBrandFromInstitution(data);
   const branding = data.branding && typeof data.branding === 'object' ? data.branding as { inviteSubject?: string; inviteBody?: string; emailFromName?: string; displayName?: string } : {};
   const subdomain = typeof data.subdomain === 'string' ? data.subdomain : '';
+  const customDomain = typeof data.customDomain === 'string' ? data.customDomain : '';
   const origin = subdomain ? institutionOrigin(subdomain) : (process.env.NEXT_PUBLIC_APP_URL || 'https://poketschool.ai');
   const message = brandedInvite({
     displayName: brand?.name || 'Poket School',
     emailFromName: brand?.fromName,
     logoUrl: brand?.logoUrl,
-  }, code, origin, { subject: branding.inviteSubject, text: branding.inviteBody });
+  }, code, origin, {
+    subject: branding.inviteSubject,
+    text: branding.inviteBody,
+    loginUrl: institutionLoginLinks({ slug: subdomain, customDomain }).share,
+  });
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
     return NextResponse.json({ emailed: false, subject: message.subject, text: message.text });
   }

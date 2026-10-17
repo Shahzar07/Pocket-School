@@ -22,7 +22,7 @@ function BehaviourPreviewBody() {
 
   return (
     <main className="max-w-6xl mx-auto px-4 py-8 space-y-4">
-      <p className="text-sm rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-amber-950">
+      <p className="text-sm rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] px-4 py-3 text-[var(--ps-cyan-text)]">
         Sample data for review. These figures are the seeded behaviour board, not a live account. {role}.
       </p>
       <h1 className="font-heading text-3xl">Behaviour</h1>

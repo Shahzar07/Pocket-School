@@ -7,6 +7,7 @@ import {
   acceptTeacherPack,
   canUseDeskTool,
   DESK_SPARK_COSTS,
+  explainerLines,
   factsFromSnapshot,
   hasChildActivity,
   ownsChild,
@@ -159,6 +160,17 @@ test('research helper cites sources and refuses to write the assignment', () => 
 
 test('a research reply with no source is refused', () => {
   assert.equal(acceptResearchPack({ sources: [{ summary: 'No title' }] }, { question: 'Cells', refusedWriting: false }), null);
+});
+
+test('a parent note names saved badges', () => {
+  const facts = factsFromSnapshot('Mina', {
+    metrics: { study_time: 15 },
+  }, [], ['First lesson', 'Linked & involved']);
+  const note = parentExplainerFromFacts(facts);
+  assert.equal(note.empty, false);
+  assert.deepEqual(note.badges, ['First lesson', 'Linked & involved']);
+  assert.match(note.learned, /First lesson/);
+  assert.match(explainerLines(note).join('\n'), /Badges/);
 });
 
 test('sparks costs are set for every desk tool', () => {

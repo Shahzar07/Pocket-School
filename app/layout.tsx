@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { Plus_Jakarta_Sans, Instrument_Sans, Noto_Sans_Arabic, Noto_Sans_Hebrew } from "next/font/google";
+import { Plus_Jakarta_Sans, Noto_Sans_Arabic, Noto_Sans_Hebrew } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { AuthProvider } from '@/components/auth-provider';
 import { I18nProvider } from '@/components/i18n-provider';
@@ -18,22 +18,6 @@ const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
   variable: '--font-sans',
   weight: ['400', '500', '600', '700', '800'],
-  display: 'swap',
-});
-
-/**
- * Display face for headings.
- *
- * --font-heading previously pointed at 'Instrument Serif', which was never
- * actually loaded — so all 60 files using `font-heading` were rendering in
- * whatever generic serif the browser had. Instrument Sans is loaded properly
- * here and sits naturally beside Plus Jakarta: same geometric skeleton, a
- * little more editorial, and it takes the tight tracking the homepage uses.
- */
-const instrumentSans = Instrument_Sans({
-  subsets: ['latin'],
-  variable: '--font-display',
-  weight: ['400', '500', '600', '700'],
   display: 'swap',
 });
 
@@ -80,7 +64,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={cn("font-sans antialiased", plusJakarta.variable, instrumentSans.variable, notoArabic.variable, notoHebrew.variable)} suppressHydrationWarning>
+    <html lang="en" className={cn("font-sans antialiased", plusJakarta.variable, notoArabic.variable, notoHebrew.variable)} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans text-foreground" suppressHydrationWarning>
         <ThemeProvider>
         <AuthProvider>

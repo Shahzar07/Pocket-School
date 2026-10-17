@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { getTeacherCourses, getSubmissionsForTeacher, listInstructorActivity, Course, Submission, CourseQuestion, CourseReview } from '@/lib/db';
+import { getTeacherCourses, getSubmissionsForTeacher, listAcademyClasses, listInstructorActivity, Course, Submission, CourseQuestion, CourseReview, type AcademyClass } from '@/lib/db';
 import { instructorSnapshot } from '@/lib/course-builder';
 import { formatMoney } from '@/lib/pricing';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,9 @@ import Link from 'next/link';
 import {
   DashPage, DashHeader, Panel, PanelHeader, StatCard, ListRow, Initials, EmptyState,
 } from '@/components/dash-ui';
+import { DashboardHome } from '@/components/dashboard';
 import { SeeMore } from '@/components/shell/see-more';
+import { ClassBoardControls } from '@/components/gamification/class-boards';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -23,7 +25,7 @@ const fadeUp: Record<string, any> = {
 const COURSE_GRADIENTS = [
   'from-emerald-500 to-teal-600',
   'from-primary to-primary',
-  'from-amber-500 to-orange-600',
+  'from-[var(--ps-cyan)] to-[var(--ps-cyan-border)]',
   'from-rose-500 to-pink-600',
 ];
 
@@ -38,6 +40,7 @@ export default function TeacherDashboard() {
   const router = useRouter();
   const { user, profile } = useAuthSTORE();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [classes, setClasses] = useState<AcademyClass[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [reviews, setReviews] = useState<CourseReview[]>([]);
   const [questions, setQuestions] = useState<CourseQuestion[]>([]);
@@ -59,6 +62,11 @@ export default function TeacherDashboard() {
   };
 
   useEffect(() => { load(); }, [user]);
+  useEffect(() => {
+    const institutionId = profile?.institutionId;
+    if (!institutionId) return;
+    listAcademyClasses(institutionId).then(setClasses).catch(() => setClasses([]));
+  }, [profile?.institutionId]);
 
   const ungraded = submissions.filter(s => s.score === undefined);
   const published = courses.filter(c => c.status === 'published');
@@ -73,7 +81,7 @@ export default function TeacherDashboard() {
   if (loadError) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12">
       <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
-        <BookOpen className="w-10 h-10 mx-auto text-amber-500" />
+        <BookOpen className="w-10 h-10 mx-auto text-[var(--ps-cyan-text)]" />
         <p className="font-heading text-2xl text-foreground">Couldn&apos;t load your dashboard</p>
         <p className="text-sm text-muted-foreground">Something went wrong while fetching your data. Please try again.</p>
         <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={load}>Retry</Button>
@@ -83,6 +91,7 @@ export default function TeacherDashboard() {
 
   if (loading) return (
     <DashPage>
+      <DashboardHome role="teacher" name={firstName} loading />
       <div className="h-16 bg-muted animate-pulse rounded-2xl" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[0, 1, 2, 3].map(i => <div key={i} className="h-36 bg-muted animate-pulse rounded-2xl" />)}
@@ -93,6 +102,15 @@ export default function TeacherDashboard() {
 
   return (
     <DashPage>
+      <DashboardHome
+        role="teacher"
+        name={firstName}
+        stats={[
+          { id: 'courses', label: 'Courses', value: String(courses.length), hint: 'You teach' },
+          { id: 'marking', label: 'To mark', value: String(ungraded.length), hint: 'Waiting on you' },
+          { id: 'returned', label: 'Marked', value: String(Math.max(submissions.length - ungraded.length, 0)), hint: 'Returned' },
+        ]}
+      />
       <DashHeader
         eyebrow={`${greeting()} · ${today}`}
         title="Your classroom,"
@@ -108,6 +126,13 @@ export default function TeacherDashboard() {
           </Button>
         }
       />
+
+      {profile?.institutionId ? (
+        <Panel>
+          <PanelHeader title="Class boards" meta={<span className="text-[12px] text-muted-foreground">Leaderboards and houses</span>} />
+          <ClassBoardControls institutionId={profile.institutionId} classes={classes} />
+        </Panel>
+      ) : null}
 
       <Panel>
         <PanelHeader title="Today" meta={<span className="text-[12px] text-muted-foreground">{today}</span>} />
@@ -152,8 +177,8 @@ export default function TeacherDashboard() {
       <SeeMore label="Enrolments, reviews, and questions">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard index={4} icon={GraduationCap} label="Enrolments" value={insight.enrollments} tone="violet" href="/dashboard/teacher/courses" hrefLabel="Courses" />
-        <StatCard index={5} icon={Wallet} label="Recorded revenue" value={revenueLabel} tone="amber" href="/dashboard/teacher/courses" hrefLabel="Pricing" />
-        <StatCard index={6} icon={Star} label="Rating" value={insight.average ?? '—'} tone="amber" badge={insight.reviewCount ? `${insight.reviewCount} reviews` : undefined} />
+        <StatCard index={5} icon={Wallet} label="Recorded revenue" value={revenueLabel} tone="cyan" href="/dashboard/teacher/courses" hrefLabel="Pricing" />
+        <StatCard index={6} icon={Star} label="Rating" value={insight.average ?? '—'} tone="cyan" badge={insight.reviewCount ? `${insight.reviewCount} reviews` : undefined} />
         <StatCard index={7} icon={MessageSquare} label="Open questions" value={insight.openQuestions} tone="sky" href="/dashboard/teacher/courses" hrefLabel="Studio" trend={insight.openQuestions > 0 ? { direction: 'down', label: 'Waiting' } : { direction: 'up', label: 'Clear' }} />
       </div>
 

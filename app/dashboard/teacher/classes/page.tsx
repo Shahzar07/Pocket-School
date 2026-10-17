@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Users, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { resolvePassMark } from '@/lib/unit-test';
+import { UnitTestAnalysis } from '@/components/unit-test-analysis';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -100,7 +102,7 @@ export default function TeacherClassesPage() {
   if (loadError) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12">
       <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
-        <BookOpen className="w-10 h-10 mx-auto text-amber-500" />
+        <BookOpen className="w-10 h-10 mx-auto text-[var(--ps-cyan-text)]" />
         <p className="font-heading text-2xl text-foreground">Couldn&apos;t load subjects</p>
         <p className="text-sm text-muted-foreground">Something went wrong while fetching curriculum subjects. Please try again.</p>
         <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={loadModules}>Retry</Button>
@@ -201,7 +203,7 @@ export default function TeacherClassesPage() {
                     <th key={u.module.id} className="text-center text-[11px] font-bold uppercase tracking-[0.22em] text-foreground px-4 py-3.5 min-w-36">
                       <span className="block">{u.module.unitNumber ? `Module ${u.module.unitNumber}` : u.module.title}</span>
                       <span className="block text-[10px] font-medium text-muted-foreground normal-case tracking-normal">
-                        {u.module.term ?? ''} · pass ≥{u.module.masteryThreshold ?? 70}%
+                        {u.module.term ?? ''} · pass ≥{resolvePassMark(modules.find(course => course.id === selectedId), u.module)}%
                       </span>
                     </th>
                   ))}
@@ -217,7 +219,7 @@ export default function TeacherClassesPage() {
                     {units.map(u => {
                       const attempt = bestAttempt(s.studentId, u.module.id);
                       const lessonsDone = u.lessons.filter(l => s.completedLessons.includes(l.id)).length;
-                      const threshold = u.module.masteryThreshold ?? 70;
+                      const threshold = resolvePassMark(modules.find(course => course.id === selectedId), u.module);
                       return (
                         <td key={u.module.id} className="px-4 py-3.5 text-center">
                           {attempt ? (
@@ -241,6 +243,11 @@ export default function TeacherClassesPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+          <div className="px-5 py-4 border-t border-border space-y-3">
+            <h2 className="font-heading text-lg text-foreground">Unit test item analysis</h2>
+            <p className="text-xs text-muted-foreground">Every attempt is kept. This table counts correct answers and marks for each question and version.</p>
+            <UnitTestAnalysis attempts={attempts} />
           </div>
           <div className="px-5 py-3 border-t border-border bg-muted/20 flex items-center gap-4 text-[11px] text-muted-foreground">
             <span className="flex items-center gap-1.5">

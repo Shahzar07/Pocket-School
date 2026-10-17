@@ -208,11 +208,11 @@ export function FormatPreview({ format, outputs }: { format: string; outputs: Ai
     const slides = normalizeSlides(value);
     if (!slides) {
       return (
-        <div className="rounded-xl border border-amber-300/60 bg-amber-50 dark:bg-amber-500/10 dark:border-amber-500/30 p-4 space-y-2">
-          <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+        <div className="rounded-xl border border-[var(--ps-cyan-border)]/60 bg-[var(--ps-cyan-soft)] dark:bg-[var(--ps-cyan-soft)] dark:border-[var(--ps-cyan-border)]/30 p-4 space-y-2">
+          <p className="text-sm font-semibold text-[var(--ps-cyan-text)] dark:text-[var(--ps-cyan-text)]">
             We couldn&apos;t parse these slides.
           </p>
-          <p className="text-xs text-amber-700/80 dark:text-amber-200/70">
+          <p className="text-xs text-[var(--ps-cyan-text)]/80 dark:text-[var(--ps-cyan-text)]/70">
             The generated slide data wasn&apos;t in the expected format. Regenerate this format to fix it — the raw output is below.
           </p>
           <pre className="text-[11px] whitespace-pre-wrap text-muted-foreground max-h-56 overflow-auto">

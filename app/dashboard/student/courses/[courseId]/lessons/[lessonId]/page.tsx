@@ -27,6 +27,7 @@ import { recordStudyDay, streakFromDates, toggleBookmark } from '@/lib/learning'
 import { rememberOfflineLesson } from '@/components/offline-banner';
 import { FORMAT_COSTS, FORMAT_LABELS, LESSON_COMPLETE_REWARD, UNIT_PASS_REWARD } from '@/lib/sparks';
 import type { CertificateAward } from '@/lib/certificates';
+import { authedFetch } from '@/lib/api-client';
 import { CertificateCelebration } from '@/components/certificate-celebration';
 import { SmartAudioPlayer } from '@/components/smart-audio-player';
 import { VideoPlayer } from '@/components/video-player';
@@ -47,6 +48,11 @@ import { resolveLessonCopy } from '@/lib/i18n/detect';
 import { ContentLanguageBar } from '@/components/content-language-bar';
 import { useContentTranslation } from '@/hooks/use-content-translation';
 import { useQuizCopy } from '@/hooks/use-quiz-copy';
+import { VisualBlockView } from '@/components/visual-blocks';
+import { NoteDock } from '@/components/notes/note-dock';
+import {
+  applyReviewLock, questionsForVersion, resolvePassMark, reviewGate, toAttemptSnapshot,
+} from '@/lib/unit-test';
 import { answersMatch, correctOptionId, optionId, optionIndex } from '@/lib/quiz';
 import { getLanguage } from '@/lib/languages';
 import {
@@ -179,9 +185,9 @@ function QuizViewer({
     <div className="max-w-2xl mx-auto py-6 space-y-6" dir={translation.dir}>
       <ContentLanguageBar status={translation.status} showOriginal={translation.showOriginal} notice={translation.notice} onToggle={translation.toggle} />
       {graded && (
-        <div className={`rounded-3xl p-5 text-center border ${percentage >= 70 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'}`}>
+        <div className={`rounded-3xl p-5 text-center border ${percentage >= 70 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-[var(--ps-cyan-soft)] border-[var(--ps-cyan-border)]/20'}`}>
           <p className="text-3xl font-extrabold">{percentage}%</p>
-          <p className={`text-sm font-semibold mt-1 ${percentage >= 70 ? 'text-emerald-600' : 'text-amber-600'}`}>
+          <p className={`text-sm font-semibold mt-1 ${percentage >= 70 ? 'text-emerald-600' : 'text-[var(--ps-cyan-text)]'}`}>
             {Object.values(graded).filter(r => r.correct).length}/{questions.length} correct
             {percentage >= 70 ? ' — Great work! 🎉' : ' — Keep studying! 📚'}
           </p>
@@ -228,7 +234,7 @@ function QuizViewer({
             })}
           </div>
           {graded?.[i] && (
-            <p className={`mt-3 text-xs px-3 py-2 rounded-lg ${graded[i].correct ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'}`}>
+            <p className={`mt-3 text-xs px-3 py-2 rounded-lg ${graded[i].correct ? 'bg-emerald-500/10 text-emerald-600' : 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]'}`}>
               {graded[i].feedback}
             </p>
           )}
@@ -255,22 +261,37 @@ function formatTime(seconds: number) {
 }
 
 function UnitQuizMode({
-  courseId, lesson, unit, unitLessons, attempts, onAttemptSaved, onCertificate,
+  courseId, lesson, unit, unitLessons, attempts, lessonCompletedAt, course, onAttemptSaved, onCertificate,
 }: {
   courseId: string;
   lesson: Lesson;
   unit: Module;
   unitLessons: Lesson[];
   attempts: UnitQuizAttempt[];
+  lessonCompletedAt?: Record<string, number>;
+  course: Course | null;
   onAttemptSaved: (attempt: UnitQuizAttempt) => void;
   onCertificate: (award: CertificateAward) => void;
 }) {
   const router = useRouter();
   const { i18n } = useTranslation();
   const { user, profile, fetchProfile } = useAuthSTORE();
-  const questions = Array.isArray(lesson.aiOutputs?.quiz) ? lesson.aiOutputs.quiz : [];
-  const { display, translation } = useQuizCopy(`unit-quiz:${lesson.id}`, questions, i18n.language);
-  const threshold = unit.masteryThreshold ?? 70;
+  const unitMode = lesson.lessonType === 'unit_test';
+  const gate = reviewGate(attempts.map(toAttemptSnapshot), lessonCompletedAt, lesson.id);
+  const paper = unitMode ? questionsForVersion(lesson.unitTest, gate.nextVersion) : [];
+  const questions = unitMode
+    ? paper.map(q => ({
+      question: q.prompt,
+      options: q.options.map(option => option.text),
+      answer: q.answerId,
+      objectiveCode: q.bloom,
+      sourceLessonId: q.lessonId,
+      id: q.id,
+    }))
+    : (Array.isArray(lesson.aiOutputs?.quiz) ? lesson.aiOutputs.quiz : []);
+  const { display, translation } = useQuizCopy(`unit-quiz:${lesson.id}:${gate.nextVersion}`, questions, i18n.language);
+  const threshold = resolvePassMark(course, unit);
+  const paperName = unitMode ? 'Unit Test' : 'Mastery Quiz';
 
   const [phase, setPhase] = useState<'intro' | 'active' | 'result'>('intro');
   const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -306,22 +327,60 @@ function UnitQuizMode({
     setSubmitting(true);
     const timeTakenSeconds = Math.floor((Date.now() - startedAtRef.current) / 1000);
 
-    // Deterministic option-match grading — no AI calls for the mastery gate.
-    const responses = questions.map((q, i) => ({
-      questionIndex: i,
-      question: q.question,
-      ...(q.objectiveCode ? { objectiveCode: q.objectiveCode } : {}),
-      ...(q.sourceLessonId ? { sourceLessonId: q.sourceLessonId } : {}),
-      selected: answers[i] ?? '',
-      correct: answersMatch(answers[i], q.answer, q.options),
-    }));
-    const score = responses.filter(r => r.correct).length;
-    const total = questions.length;
-    const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
-    const passed = percentage >= threshold;
+    const saveMarkedUnitTest = async (): Promise<UnitQuizAttempt> => {
+      const marked = await authedFetch('/api/unit-tests/mark', {
+        method: 'POST',
+        body: JSON.stringify({
+          courseId,
+          unitId: unit.id,
+          lessonId: lesson.id,
+          answers: paper.map((question, index) => ({ questionId: question.id, selected: answers[index] ?? '' })),
+          timeTakenSeconds,
+        }),
+      });
+      const lessonIds = Array.isArray(marked.lessonIds) ? marked.lessonIds.filter((id): id is string => typeof id === 'string') : [];
+      const responses = Array.isArray(marked.responses) ? marked.responses as UnitQuizAttempt['responses'] : [];
+      const certificate = marked.certificate && typeof marked.certificate === 'object'
+        ? marked.certificate as CertificateAward
+        : null;
+      return {
+        id: typeof marked.attemptId === 'string' ? marked.attemptId : '',
+        studentId: user.uid,
+        studentName: profile?.name ?? '',
+        courseId,
+        unitId: unit.id,
+        lessonId: lesson.id,
+        kind: 'unit_test',
+        version: marked.version === 'B' ? 'B' : 'A',
+        attemptNumber: Number(marked.attemptNumber) || 1,
+        score: Number(marked.score) || 0,
+        total: Number(marked.maxScore) || 0,
+        marksAwarded: Number(marked.score) || 0,
+        marksMax: Number(marked.maxScore) || 0,
+        percentage: Number(marked.percentage) || 0,
+        passed: marked.passed === true,
+        counted: marked.counted !== false,
+        timeTakenSeconds,
+        responses,
+        recommendedLessonIds: lessonIds,
+        ...(typeof marked.weakestObjective === 'string' ? { weakestObjective: marked.weakestObjective } : {}),
+        ...(certificate ? { certificate } : {}),
+      };
+    };
 
-    try {
-      const saved = await saveUnitQuizAttempt({
+    const saveLegacyQuiz = async (): Promise<UnitQuizAttempt> => {
+      const responses = questions.map((q, i) => ({
+        questionIndex: i,
+        question: q.question,
+        ...(q.objectiveCode ? { objectiveCode: q.objectiveCode } : {}),
+        ...(q.sourceLessonId ? { sourceLessonId: q.sourceLessonId } : {}),
+        selected: answers[i] ?? '',
+        correct: answersMatch(answers[i], q.answer, q.options),
+      }));
+      const score = responses.filter(r => r.correct).length;
+      const total = questions.length;
+      const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
+      return saveUnitQuizAttempt({
         studentId: user.uid,
         studentName: profile?.name ?? '',
         courseId,
@@ -330,23 +389,29 @@ function UnitQuizMode({
         score,
         total,
         percentage,
-        passed,
+        passed: percentage >= threshold,
         timeTakenSeconds,
         responses,
         startedAt: Timestamp.fromMillis(startedAtRef.current),
       });
+    };
+
+    try {
+      const saved = unitMode
+        ? await saveMarkedUnitTest()
+        : await saveLegacyQuiz();
       setResult(saved);
       setPhase('result');
       onAttemptSaved(saved);
       if (saved.certificate?.fresh) {
         await fetchProfile(user.uid);
         onCertificate(saved.certificate);
-      } else if (passed && saved.counted !== false) {
+      } else if (saved.passed && saved.counted !== false) {
         await fetchProfile(user.uid);
         toast.success(`Module passed! +${UNIT_PASS_REWARD}⚡ earned 🏆`, { duration: 5000 });
       }
-    } catch {
-      toast.error('Could not save your attempt. Please try again.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not save your attempt. Please try again.');
     }
     setSubmitting(false);
   };
@@ -359,12 +424,12 @@ function UnitQuizMode({
           <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-white/10 blur-2xl" />
           <div className="absolute -bottom-20 -left-10 w-56 h-56 rounded-full bg-white/5 blur-3xl" />
           <div className="relative">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary-foreground/70 mb-3">Mastery Challenge</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary-foreground/70 mb-3">{unitMode ? 'Unit Test' : 'Mastery Challenge'}</p>
             <Trophy className="w-10 h-10 mx-auto mb-3 text-primary-foreground" />
-            <h2 className="font-heading text-3xl mb-2">{unit.title} — Mastery Quiz</h2>
+            <h2 className="font-heading text-3xl mb-2">{unit.title} — {paperName}{unitMode ? ` ${gate.nextVersion}` : ''}</h2>
             <p className="text-primary-foreground/80 text-sm max-w-md mx-auto">
-              {questions.length} questions covering every lesson in this module.
-              Score {threshold}% or higher to pass and unlock the next module.
+              {questions.length} questions. Score {threshold}% or higher to pass and unlock the next module.
+              {unitMode ? ' Marks are weighted, and a retake uses the other version.' : ''}
             </p>
           </div>
         </div>
@@ -384,12 +449,37 @@ function UnitQuizMode({
           </div>
         </div>
 
-        <Button onClick={startQuiz} className="w-full h-12 rounded-full font-bold bg-primary text-primary-foreground text-base gap-2">
-          <Timer className="w-4 h-4" />
-          {attempts.length ? 'Retake quiz' : 'Start quiz'} — your time will be recorded
-        </Button>
+        {unitMode && gate.locked ? (
+          <div className="bg-primary/5 border border-primary/20 rounded-3xl p-5">
+            <h3 className="font-bold text-foreground text-sm mb-1">Review these lessons</h3>
+            <p className="text-xs text-muted-foreground mb-3">The unit test stays locked until you complete them again. The retake will be Version {gate.nextVersion}.</p>
+            <div className="space-y-2">
+              {gate.pendingLessonIds.map(id => {
+                const item = lessonTitleById.get(id);
+                return (
+                  <button
+                    key={id}
+                    onClick={() => router.push(`/dashboard/student/courses/${courseId}/lessons/${id}`)}
+                    className="w-full flex items-center gap-3 p-3 rounded-2xl bg-card border border-primary/20 text-left"
+                  >
+                    <BookOpen className="w-4 h-4 text-primary shrink-0" />
+                    <span className="text-sm font-semibold text-foreground flex-1">{item?.title ?? 'Lesson'}</span>
+                    <ArrowRight className="w-4 h-4 text-primary/60 shrink-0" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <Button onClick={startQuiz} disabled={unitMode && questions.length === 0} className="w-full h-12 rounded-full font-bold bg-primary text-primary-foreground text-base gap-2">
+            <Timer className="w-4 h-4" />
+            {attempts.length ? `Retake ${paperName}` : `Start ${paperName}`}{unitMode ? ` ${gate.nextVersion}` : ''} — your time will be recorded
+          </Button>
+        )}
         <p className="text-xs text-muted-foreground text-center mt-3">
-          Unlimited attempts. If you score below {threshold}%, we&apos;ll show you exactly which lessons (units) to review.
+          {unitMode
+            ? `Pass mark ${threshold}%. A score below that lists the lessons to review and locks the retake until you finish them.`
+            : `If you score below ${threshold}%, we will show which lessons to review.`}
         </p>
       </motion.div>
     );
@@ -413,19 +503,19 @@ function UnitQuizMode({
         <div className={`relative overflow-hidden rounded-3xl p-8 text-center border ${
           result.passed
             ? 'bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-emerald-500/20'
-            : 'bg-gradient-to-br from-amber-500/10 to-destructive/5 border-amber-500/20'
+            : 'bg-gradient-to-br from-[var(--ps-cyan)]/10 to-destructive/5 border-[var(--ps-cyan-border)]/20'
         }`}>
           {result.passed
             ? <Trophy className="w-10 h-10 mx-auto mb-3 text-emerald-600" />
-            : <AlertTriangle className="w-10 h-10 mx-auto mb-3 text-amber-600" />}
+            : <AlertTriangle className="w-10 h-10 mx-auto mb-3 text-[var(--ps-cyan-text)]" />}
           <p className="text-5xl font-extrabold text-foreground">{result.percentage}%</p>
-          <p className={`text-sm font-semibold mt-2 ${result.passed ? 'text-emerald-600' : 'text-amber-600'}`}>
-            {result.score}/{result.total} correct · {formatTime(result.timeTakenSeconds)} · attempt #{result.attemptNumber}
+          <p className={`text-sm font-semibold mt-2 ${result.passed ? 'text-emerald-600' : 'text-[var(--ps-cyan-text)]'}`}>
+            {result.marksAwarded ?? result.score}/{result.marksMax ?? result.total} marks · {formatTime(result.timeTakenSeconds)} · attempt #{result.attemptNumber}{result.version ? ` · Version ${result.version}` : ''}
           </p>
-          <p className={`text-base font-bold mt-3 ${result.passed ? 'text-emerald-600' : 'text-amber-600'}`}>
+          <p className={`text-base font-bold mt-3 ${result.passed ? 'text-emerald-600' : 'text-[var(--ps-cyan-text)]'}`}>
             {result.passed
-              ? `Module mastered! +${UNIT_PASS_REWARD}⚡ — the next module is now unlocked. 🎉`
-              : `Not quite — you need ${threshold}% to pass. Review the lessons (units) below and try again.`}
+              ? `Passed! +${UNIT_PASS_REWARD}⚡ — the next module is now unlocked.`
+              : `Not yet — you need ${threshold}% to pass. Review these lessons, then the unit test unlocks on Version ${result.version === 'A' ? 'B' : 'A'}.`}
           </p>
         </div>
 
@@ -460,8 +550,8 @@ function UnitQuizMode({
         {/* Adaptive review */}
         {!result.passed && reviewLessons.length > 0 && (
           <div className="bg-primary/5 border border-primary/20 rounded-3xl p-5">
-            <h3 className="font-bold text-foreground text-sm mb-1">Review these lessons (units) before your next attempt</h3>
-            <p className="text-xs text-primary mb-3">Based on the questions you missed:</p>
+            <h3 className="font-bold text-foreground text-sm mb-1">Review these lessons</h3>
+            <p className="text-xs text-primary mb-3">Complete them again to unlock the retake:</p>
             <div className="space-y-2">
               {reviewLessons.map(l => (
                 <button
@@ -481,9 +571,9 @@ function UnitQuizMode({
         )}
 
         <div className="flex gap-3">
-          {!result.passed && (
+          {!result.passed && (result.recommendedLessonIds?.length ?? 0) === 0 && (
             <Button onClick={startQuiz} variant="outline" className="flex-1 h-11 rounded-full font-bold gap-2">
-              <RotateCcw className="w-4 h-4" /> Retake quiz
+              <RotateCcw className="w-4 h-4" /> Retake
             </Button>
           )}
           <Button
@@ -552,7 +642,7 @@ function UnitQuizMode({
         disabled={submitting || Object.keys(answers).length < questions.length}
         className="w-full h-12 rounded-full font-bold bg-primary text-primary-foreground"
       >
-        {submitting ? 'Saving attempt…' : `Submit Mastery Quiz (${Object.keys(answers).length}/${questions.length})`}
+        {submitting ? 'Saving attempt…' : `Submit ${paperName} (${Object.keys(answers).length}/${questions.length})`}
       </Button>
     </div>
   );
@@ -570,11 +660,11 @@ function FormatLockCard({
       initial="hidden" animate="visible" variants={fadeUp}
       className="relative overflow-hidden bg-card border border-border rounded-3xl p-10 text-center max-w-md mx-auto my-8 card-glow"
     >
-      <div className="absolute -top-16 -right-16 w-44 h-44 rounded-full bg-amber-500/10 blur-2xl" />
+      <div className="absolute -top-16 -right-16 w-44 h-44 rounded-full bg-[var(--ps-cyan-soft)] blur-2xl" />
       <div className="relative">
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-amber-600 mb-3">Premium Format</p>
-        <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
-          <Lock className="w-6 h-6 text-amber-600" />
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--ps-cyan-text)] mb-3">Premium Format</p>
+        <div className="w-14 h-14 rounded-2xl bg-[var(--ps-cyan-soft)] flex items-center justify-center mx-auto mb-4">
+          <Lock className="w-6 h-6 text-[var(--ps-cyan-text)]" />
         </div>
         <h3 className="font-heading text-2xl text-foreground mb-1">
           Unlock {FORMAT_LABELS[format] ?? format}
@@ -582,16 +672,16 @@ function FormatLockCard({
         <p className="text-sm text-muted-foreground mb-2">
           Unlock this format for this lesson — yours forever once unlocked.
         </p>
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 mb-5">
-          <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
-          <span className="text-base font-extrabold text-amber-600">⚡{cost}</span>
-          <span className="text-xs font-semibold text-amber-600/80">Sparks</span>
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-[var(--ps-cyan-soft)] px-3 py-1 mb-5">
+          <Zap className="w-4 h-4 text-[var(--ps-cyan-text)] fill-[var(--ps-cyan-text)]" />
+          <span className="text-base font-extrabold text-[var(--ps-cyan-text)]">⚡{cost}</span>
+          <span className="text-xs font-semibold text-[var(--ps-cyan-text)]/80">Sparks</span>
         </div>
         <div>
           <Button
             onClick={onUnlock}
             disabled={!canAfford || unlocking}
-            className="rounded-full h-11 px-6 font-bold gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white"
+            className="rounded-full h-11 px-6 font-bold gap-2 border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)]"
           >
             <Zap className="w-4 h-4 fill-white" />
             {unlocking ? 'Unlocking…' : `Unlock for ⚡${cost}`}
@@ -667,7 +757,7 @@ export default function LessonPage() {
       let unitIndex = 0;
       let enroll: Enrollment | null = null;
 
-      if (courseDoc?.kind === 'curriculum') {
+      if (courseDoc?.kind === 'curriculum' || result.lesson.lessonType === 'unit_test' || result.lesson.isUnitQuiz) {
         const [allUnits, enrollDoc, quizAttempts] = await Promise.all([
           getModulesWithLessons(courseId),
           getEnrollment(user.uid, courseId),
@@ -682,11 +772,19 @@ export default function LessonPage() {
         // Lock guard — direct URLs can't bypass unit/lesson progression
         if (unitIndex >= 0) {
           const statuses = getUnitStatuses(units, enrollDoc, quizAttempts);
-          const lessonStatus = getCurriculumLessonStatus(
-            result.lesson, units[unitIndex].lessons, statuses[unitIndex].state, completedIds
+          const baseStatus = getCurriculumLessonStatus(
+            result.lesson, units[unitIndex].lessons, statuses[unitIndex].state, completedIds,
+          );
+          const lessonStatus = applyReviewLock(
+            baseStatus,
+            result.lesson,
+            quizAttempts,
+            enrollDoc?.lessonCompletedAt,
           );
           if (lessonStatus === 'locked') {
-            toast.error(t('lesson.locked'));
+            toast.error(baseStatus !== 'locked' && result.lesson.lessonType === 'unit_test'
+              ? 'Review these lessons before the unit test unlocks.'
+              : t('lesson.locked'));
             router.replace(`/dashboard/student/courses/${courseId}`);
             return;
           }
@@ -751,7 +849,7 @@ export default function LessonPage() {
   }, [user, courseId, lessonId, reloadKey]);
 
   const isCurriculum = course?.kind === 'curriculum';
-  const isUnitQuiz = isCurriculum && !!lesson?.isUnitQuiz;
+  const isUnitQuiz = lesson?.lessonType === 'unit_test' || (isCurriculum && !!lesson?.isUnitQuiz);
   const unlockedFormats = enrollment?.unlockedFormats?.[lessonId] ?? [];
   const balance = profile?.sparksBalance ?? 0;
 
@@ -909,7 +1007,7 @@ export default function LessonPage() {
 
   if (loadError) return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-24 text-center">
-      <AlertTriangle className="w-10 h-10 mx-auto mb-4 text-amber-500" />
+      <AlertTriangle className="w-10 h-10 mx-auto mb-4 text-[var(--ps-cyan-text)]" />
       <p className="font-semibold text-foreground mb-1">{t('lesson.loadFailed')}</p>
       <p className="text-sm text-muted-foreground mb-6">{loadError}</p>
       <Button onClick={() => setReloadKey(k => k + 1)} className="rounded-full px-6 font-bold gap-2">
@@ -945,12 +1043,14 @@ export default function LessonPage() {
       </button>
     </p>
   ) : sourceCopy.fellBack ? (
-    <p className="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+    <p className="mt-2 text-xs text-[var(--ps-cyan-text)] bg-[var(--ps-cyan-soft)] border border-[var(--ps-cyan-border)] rounded-xl px-3 py-2">
       {translation.status === 'unavailable'
         ? t('lesson.unavailable')
         : t('lesson.fallback', { language: getLanguage(i18n.language).label })}
     </p>
   ) : null;
+
+  const hasUnitPaper = (lesson.unitTest?.versionA?.length ?? 0) + (lesson.unitTest?.versionB?.length ?? 0) > 0;
 
   // ── Unit mastery quiz takes over the whole page ──
   if (isUnitQuiz && unit) {
@@ -972,13 +1072,16 @@ export default function LessonPage() {
             </Badge>
           )}
         </div>
-        {quiz.length > 0 ? (
+        <VisualBlockView blocks={lesson.visualBlocks} />
+        {(lesson.lessonType === 'unit_test' ? hasUnitPaper : quiz.length > 0) ? (
           <UnitQuizMode
             courseId={courseId}
             lesson={lesson}
             unit={unit}
             unitLessons={unitLessons}
             attempts={attempts}
+            lessonCompletedAt={enrollment?.lessonCompletedAt}
+            course={course}
             onAttemptSaved={(a) => {
               setAttempts(prev => [a, ...prev]);
               if (a.passed && a.counted !== false) setCompleted(true);
@@ -1043,7 +1146,7 @@ export default function LessonPage() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {studyStreak > 0 && (
-            <span className="hidden sm:inline text-xs font-semibold text-amber-700">{studyStreak}-day streak</span>
+            <span className="hidden sm:inline text-xs font-semibold text-[var(--ps-cyan-text)]">{studyStreak}-day streak</span>
           )}
           <Button
             size="sm"
@@ -1073,6 +1176,7 @@ export default function LessonPage() {
         </div>
       </motion.div>
 
+      <VisualBlockView blocks={lesson.visualBlocks} />
       {!aiOutputs && !copy.text.trim() ? (
         <div className="text-center py-20 text-muted-foreground bg-muted/30 rounded-3xl border border-dashed border-border">
           <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-30" />
@@ -1096,7 +1200,7 @@ export default function LessonPage() {
               <TabsTrigger key={t.id} value={t.id} className="rounded-full h-8 px-3.5 text-xs font-semibold gap-1.5 text-muted-foreground hover:text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
                 {t.icon}{t.label}
                 {isFormatLocked(t.format) && (
-                  <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-600">
+                  <span className="flex items-center gap-0.5 text-[10px] font-bold text-[var(--ps-cyan-text)]">
                     <Lock className="w-2.5 h-2.5" />⚡{FORMAT_COSTS[t.format!]}
                   </span>
                 )}
@@ -1206,7 +1310,7 @@ export default function LessonPage() {
           {/* Study Notes */}
           <TabsContent value="notes">
             {gate('notes',
-              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-amber-500/10 dark:bg-amber-900/10 border border-amber-500/20 rounded-3xl p-6 sm:p-8">
+              <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-[var(--ps-cyan-soft)] dark:bg-[var(--ps-cyan-soft)] border border-[var(--ps-cyan-border)]/20 rounded-3xl p-6 sm:p-8">
                 {downloadFor('notes', aiOutputs.notes ?? '', 'notes')}
                 <MathMarkdown>{aiOutputs.notes ?? ''}</MathMarkdown>
               </motion.div>
@@ -1306,6 +1410,7 @@ export default function LessonPage() {
         </Tabs>
       )}
       <LessonQa courseId={courseId} lessonId={lessonId} lessonTitle={lesson.title} inAssessment={activeTab === 'quiz'} />
+      <NoteDock link={{ type: 'lesson', id: lessonId }} title={copy.title} />
     </div>
   );
 }

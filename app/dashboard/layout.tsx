@@ -10,9 +10,9 @@ import {
   ClipboardList, Presentation, Shield, BarChart, Settings, FileText, KeyRound, ChevronsUpDown, Target,
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
-  GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
+  GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X, Phone, Siren,
   Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked, Compass, Camera, Newspaper,
-  Wallet, Gift, Landmark, Plug, PieChart, Search,
+  Wallet, Gift, Landmark, Plug, PieChart, Search, Briefcase, IdCard, Tag, StickyNote,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -23,12 +23,15 @@ import { LanguageSwitcher } from '@/components/language-switcher';
 import { CurrencySwitcher } from '@/components/currency-switcher';
 import { SparksChip } from '@/components/sparks-chip';
 import { upsertUserSession, accountStatusOf, clearUserFields, updateUser } from '@/lib/db';
+import { authedFetch } from '@/lib/api-client';
 import { deletionClosed, formatDeletionDate, sessionRevoked } from '@/lib/account-settings';
 import { AccountMenu } from '@/components/account/account-menu';
 import { ModeSwitch } from '@/components/account/mode-switch';
 import { Breadcrumbs } from '@/components/shell/breadcrumbs';
 import { ModuleHeader } from '@/components/module-header';
-import { MobileNav } from '@/components/shell/mobile-nav';
+import { DashFab, MobileNav } from '@/components/shell/mobile-nav';
+import { CommandPalette } from '@/components/dashboard/command-palette';
+import type { DashRole } from '@/lib/dashboard/home';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useAccountMode } from '@/hooks/use-account-mode';
 import { homeForMode, learnerSpaceRoles, modeRedirect, MODE_NAMES, type AccountMode } from '@/lib/account-modes';
@@ -39,8 +42,10 @@ import { adminMfaPending } from '@/lib/admin-mfa-pending';
 import { AdminViewAsBanner, clearViewAs, useAdminIdle, useViewAs } from '@/components/admin-session';
 import { isSuperAdmin, ROLE_LABELS } from '@/lib/roles';
 import { PipGuide } from '@/components/pip-guide';
+import { AllStaffBanner } from '@/components/alerts/all-staff';
 import { OfflineBanner } from '@/components/offline-banner';
 import { RoleChecklist } from '@/components/role-checklist';
+import { WelcomeResume } from '@/components/onboarding/welcome-session';
 import { PagePurpose } from '@/components/page-purpose';
 import dynamic from 'next/dynamic';
 import type { TourRole } from '@/lib/tour-steps';
@@ -51,14 +56,15 @@ import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { AcademySession } from '@/components/academy-session';
 
-type Role = 'student' | 'teacher' | 'parent' | 'admin' | 'institution_admin';
+type Role = 'student' | 'teacher' | 'parent' | 'admin' | 'institution_admin' | 'partner_merchant';
 
-const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string }> = {
-  student: { icon: 'text-primary', bar: 'bg-primary', chip: 'from-primary to-primary' },
-  teacher: { icon: 'text-emerald-400', bar: 'bg-emerald-400', chip: 'from-emerald-500 to-teal-600' },
-  parent:  { icon: 'text-amber-400',  bar: 'bg-amber-400',  chip: 'from-amber-500 to-orange-600' },
-  admin:   { icon: 'text-violet-400', bar: 'bg-violet-400', chip: 'from-violet-500 to-fuchsia-600' },
-  institution_admin: { icon: 'text-sky-400', bar: 'bg-sky-400', chip: 'from-sky-500 to-cyan-600' },
+const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string; wash: string }> = {
+  student: { icon: 'text-primary', bar: 'bg-primary', chip: 'from-primary to-[var(--ps-blue-bright)]', wash: 'var(--ps-role-student)' },
+  teacher: { icon: 'text-[var(--ps-emerald)]', bar: 'bg-[var(--ps-emerald)]', chip: 'from-[var(--ps-mint-ink)] to-[var(--ps-emerald)]', wash: 'var(--ps-role-teacher)' },
+  parent:  { icon: 'text-[var(--ps-cyan-text)]', bar: 'bg-[var(--ps-cyan)]', chip: 'from-[var(--ps-cyan)] to-[var(--ps-cyan-text)]', wash: 'var(--ps-role-parent)' },
+  admin:   { icon: 'text-[var(--ps-violet)]', bar: 'bg-[var(--ps-violet)]', chip: 'from-[var(--ps-violet)] to-[var(--ps-sky)]', wash: 'var(--ps-role-admin)' },
+  institution_admin: { icon: 'text-[var(--ps-sky)]', bar: 'bg-[var(--ps-sky)]', chip: 'from-[var(--ps-sky)] to-[var(--ps-teal)]', wash: 'var(--ps-role-admin)' },
+  partner_merchant: { icon: 'text-[var(--ps-cyan-text)]', bar: 'bg-[var(--ps-cyan)]', chip: 'from-[var(--ps-cyan)] to-[var(--ps-cyan-text)]', wash: 'var(--ps-role-student)' },
 };
 
 interface NavEntry { href: string; icon: React.ElementType; labelKey: string; label?: string; flag?: FeatureFlag; superOnly?: boolean }
@@ -68,6 +74,8 @@ const NAV: Record<Role, NavGroup[]> = {
   student: [
     { items: [
       { href: '/dashboard/student', icon: Home, labelKey: 'nav.dashboard' },
+      { href: '/dashboard/student/perks', icon: Tag, labelKey: 'nav.marketplace', label: 'Perks' },
+      { href: '/dashboard/notes', icon: StickyNote, labelKey: 'nav.notes', label: 'Notes' },
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/ai-teachers', icon: Users, labelKey: 'nav.aiTeachers' },
       { href: '/dashboard/student/learning', icon: GraduationCap, labelKey: 'nav.myLearning' },
@@ -78,7 +86,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
       { href: '/dashboard/student/achievements', icon: CheckCircle, labelKey: 'nav.achievements' },
     ]},
-    { sectionKey: 'nav.section.academics', items: [
+    { sectionKey: 'nav.section.academics', sectionLabel: 'Progress', items: [
       { href: '/dashboard/student/assignments', icon: ClipboardList, labelKey: 'nav.assignments' },
       { href: '/dashboard/student/exams', icon: PenSquare, labelKey: 'nav.exams' },
       { href: '/dashboard/student/transcript', icon: GraduationCap, labelKey: 'nav.transcript' },
@@ -86,29 +94,36 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/student/certificates', icon: Award, labelKey: 'nav.certificates' },
       { href: '/dashboard/student/tasks', icon: ListTodo, labelKey: 'nav.dailyGoals' },
       { href: '/dashboard/student/analytics', icon: Activity, labelKey: 'nav.insights' },
+      { href: '/dashboard/student/progress', icon: Activity, labelKey: 'nav.insights', label: 'My progress' },
       { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
       { href: '/dashboard/student/integrity', icon: Shield, labelKey: 'nav.integrity' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
     ]},
-    { sectionKey: 'nav.section.finance', items: [
+    { sectionKey: 'nav.section.finance', sectionLabel: 'Payments', items: [
       { href: '/dashboard/student/billing', icon: CreditCard, labelKey: 'nav.billing' },
+      { href: '/dashboard/student/academy', icon: GraduationCap, labelKey: 'nav.academy', label: 'My academy' },
+      { href: '/dashboard/student/network', icon: Users, labelKey: 'nav.academy', label: 'Class network' },
+      { href: '/dashboard/student/yearbook', icon: BookOpen, labelKey: 'nav.academy', label: 'Yearbook' },
+      { href: '/dashboard/student/career', icon: Award, labelKey: 'nav.academy', label: 'Career' },
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
     ]},
-    { sectionKey: 'nav.section.community', items: [
+    { sectionKey: 'nav.section.community', sectionLabel: 'Community', items: [
       { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
+      { href: '/dashboard/network', icon: Users, labelKey: 'nav.community', label: 'Network' },
       { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
       { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.examCentre', flag: 'examCentre' },
       { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
       { href: '/dashboard/studio/maths', icon: Camera, labelKey: 'nav.snapSolve', label: 'ET Maths', flag: 'snapAndSolve' },
     ]},
-    { sectionKey: 'nav.section.school', items: [
+    { sectionKey: 'nav.section.school', sectionLabel: 'Messages', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
       { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
       { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
-    { sectionKey: 'nav.section.account', items: [
+    { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -124,11 +139,14 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
+      { href: '/dashboard/teacher/hotline', icon: Phone, labelKey: 'nav.messages', label: 'Hotline' },
       { href: '/dashboard/teacher/analytics', icon: Activity, labelKey: 'nav.analytics' },
       { href: '/dashboard/teacher/insights', icon: BarChart, labelKey: 'nav.insights' },
+      { href: '/dashboard/teacher/progress', icon: AlertTriangle, labelKey: 'nav.insights', label: 'Class risk' },
       { href: '/dashboard/teacher/goals', icon: Target, labelKey: 'nav.goals' },
+      { href: '/dashboard/teacher/references', icon: Award, labelKey: 'nav.academy', label: 'References' },
     ]},
-    { sectionKey: 'nav.section.academics', items: [
+    { sectionKey: 'nav.section.academics', sectionLabel: 'Learning', items: [
       { href: '/dashboard/teacher/gradebook', icon: ClipboardList, labelKey: 'nav.gradebook' },
       { href: '/dashboard/teacher/assignments', icon: FileText, labelKey: 'nav.assignments' },
       { href: '/dashboard/teacher/exams', icon: PenSquare, labelKey: 'nav.examBuilder' },
@@ -143,18 +161,20 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher/behaviour', icon: Star, labelKey: 'nav.merits' },
     ]},
     // Billing and Helpdesk are institution-admin responsibilities, not teachers'.
-    { sectionKey: 'nav.section.community', items: [
+    { sectionKey: 'nav.section.community', sectionLabel: 'Community', items: [
       { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
+      { href: '/dashboard/network', icon: Users, labelKey: 'nav.community', label: 'Network' },
       { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
       { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.examCentre', flag: 'examCentre' },
       { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
     ]},
-    { sectionKey: 'nav.section.school', items: [
+    { sectionKey: 'nav.section.school', sectionLabel: 'Messages', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
       { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
       { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
     ]},
-    { sectionKey: 'nav.section.account', items: [
+    { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -166,26 +186,29 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
+      { href: '/dashboard/parent/hotline', icon: Phone, labelKey: 'nav.mailbox', label: 'Hotline' },
       { href: '/dashboard/parent/communications', icon: Mail, labelKey: 'nav.mailbox' },
       { href: '/dashboard/parent/duedates', icon: Clock, labelKey: 'nav.dueDates' },
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
       { href: '/dashboard/parent/goals', icon: Target, labelKey: 'nav.goals' },
       { href: '/dashboard/parent/analytics', icon: Activity, labelKey: 'nav.insights' },
+      { href: '/dashboard/parent/progress', icon: Activity, labelKey: 'nav.insights', label: 'Child progress' },
       { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
       { href: '/dashboard/parent/integrity', icon: Shield, labelKey: 'nav.integrity' },
       { href: '/dashboard/parent/reports', icon: FileBarChart, labelKey: 'nav.reportCards' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
     ]},
-    { sectionKey: 'nav.section.family', items: [
+    { sectionKey: 'nav.section.family', sectionLabel: 'Safety', items: [
       { href: '/dashboard/parent/controls', icon: Shield, labelKey: 'nav.controls', flag: 'community' },
     ]},
-    { sectionKey: 'nav.section.school', items: [
+    { sectionKey: 'nav.section.school', sectionLabel: 'Messages', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
       { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
-    { sectionKey: 'nav.section.account', items: [
+    { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -195,47 +218,64 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/admin/blog', icon: Newspaper, labelKey: 'nav.blog', label: 'Blog', superOnly: true },
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/dashboard/admin/courses', icon: Presentation, labelKey: 'nav.allCourses' },
+      { href: '/dashboard/admin/placement', icon: Layers, labelKey: 'nav.placement', label: 'Course placement', superOnly: true },
+      { href: '/dashboard/admin/help', icon: HelpCircle, labelKey: 'nav.helpArticles', label: 'Help articles' },
       { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' },
       { href: '/dashboard/admin/books', icon: BookOpen, labelKey: 'nav.books', label: 'Book Studio' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/admin/users', icon: UserCog, labelKey: 'nav.usersSparks' },
       { href: '/dashboard/admin/institutions', icon: Users, labelKey: 'nav.institutions' },
+      { href: '/dashboard/admin/schools', icon: GraduationCap, labelKey: 'nav.institutions', label: 'School leads', superOnly: true },
+      { href: '/dashboard/admin/insights', icon: PieChart, labelKey: 'nav.analytics', label: 'Insights', superOnly: true },
+      { href: '/dashboard/admin/automation', icon: Sparkles, labelKey: 'nav.dashboard', label: 'Automation', superOnly: true },
       { href: '/dashboard/admin/access', icon: Shield, labelKey: 'nav.accessConfig' },
       { href: '/dashboard/admin/allocations', icon: KeyRound, labelKey: 'nav.allocations' },
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
       { href: '/dashboard/admin/settings', icon: Settings, labelKey: 'nav.systemSettings' },
       { href: '/dashboard/admin/verifications', icon: ShieldCheck, labelKey: 'nav.verifications' },
+      { href: '/dashboard/admin/partners', icon: Tag, labelKey: 'nav.verifications', label: 'Partner perks' },
       { href: '/dashboard/admin/activity', icon: ClipboardList, labelKey: 'nav.dashboard', label: 'Activity log', superOnly: true },
+      { href: '/dashboard/admin/insights', icon: Activity, labelKey: 'nav.insights', label: 'Insights' },
       { href: '/dashboard/admin/certificates', icon: Award, labelKey: 'nav.certificates', label: 'Certificates' },
+      { href: '/dashboard/admin/badges', icon: Award, labelKey: 'nav.certificates', label: 'Badges', superOnly: true },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
+      { href: '/dashboard/admin/hotline', icon: Phone, labelKey: 'nav.moderation', label: 'Hotline' },
+      { href: '/dashboard/admin/emergency', icon: Siren, labelKey: 'nav.moderation', label: 'Emergency alerts' },
       { href: '/dashboard/admin/moderation', icon: Shield, labelKey: 'nav.moderation', flag: 'community' },
       { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
+      { href: '/dashboard/network', icon: Users, labelKey: 'nav.community', label: 'Network' },
       { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
       { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
     ]},
-    { sectionKey: 'nav.section.money', items: [
+    { sectionKey: 'nav.section.money', sectionLabel: 'Payments', items: [
       { href: '/dashboard/admin/payments', icon: Landmark, labelKey: 'nav.payments', superOnly: true },
       { href: '/dashboard/admin/integrations', icon: Plug, labelKey: 'nav.integrations', superOnly: true },
       { href: '/dashboard/admin/finance', icon: PieChart, labelKey: 'nav.finance', superOnly: true },
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
     ]},
-    { sectionKey: 'nav.section.platform', items: [
+    { sectionKey: 'nav.section.platform', sectionLabel: 'Settings', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
       { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
       { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
       { href: '/dashboard/teacher/billing', icon: CreditCard, labelKey: 'nav.billing' },
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
-    { sectionKey: 'nav.section.account', items: [
+    { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
   institution_admin: [
     { items: [
       { href: '/dashboard/institution', icon: GraduationCap, labelKey: 'nav.myClasses' },
+      { href: '/dashboard/institution/insights', icon: PieChart, labelKey: 'nav.analytics', label: 'Insights' },
       { href: '/dashboard/institution/approvals', icon: ShieldCheck, labelKey: 'nav.approvals', label: 'Approvals' },
+      { href: '/dashboard/institution/join', icon: Users, labelKey: 'nav.join', label: 'Join settings' },
+      { href: '/dashboard/institution/alumni', icon: Award, labelKey: 'nav.alumni', label: 'Alumni' },
+      { href: '/dashboard/institution/career', icon: Briefcase, labelKey: 'nav.academy', label: 'Career desk' },
+      { href: '/dashboard/institution/verify', icon: Camera, labelKey: 'nav.verifyStudent', label: 'Verify student' },
       { href: '/dashboard/institution/publishing', icon: Library, labelKey: 'nav.library', label: 'Course library' },
       { href: '/dashboard/institution/sparks', icon: Sparkles, labelKey: 'nav.sparks', label: 'Sparks pool' },
       { href: '/dashboard/institution/billing', icon: CreditCard, labelKey: 'nav.billing', label: 'Billing' },
@@ -249,13 +289,28 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
       { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
       { href: '/dashboard/institution/templates', icon: FileText, labelKey: 'nav.reportStudio' },
+      { href: '/dashboard/institution/activity', icon: Activity, labelKey: 'nav.activityLog', label: 'Activity log' },
+      { href: '/dashboard/institution/progress', icon: AlertTriangle, labelKey: 'nav.insights', label: 'At-risk learners' },
       { href: '/dashboard/institution/certificates', icon: Award, labelKey: 'nav.certificates', label: 'Certificates' },
+      { href: '/dashboard/institution/hotline', icon: Phone, labelKey: 'nav.moderation', label: 'Hotline' },
+      { href: '/dashboard/institution/emergency', icon: Siren, labelKey: 'nav.moderation', label: 'Emergency alerts' },
     ]},
-    { sectionKey: 'nav.section.school', items: [
+    { sectionKey: 'nav.section.school', sectionLabel: 'Messages', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
       { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
     ]},
-    { sectionKey: 'nav.section.account', items: [
+    { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
+      { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
+    ]},
+  ],
+  partner_merchant: [
+    { items: [
+      { href: '/dashboard/partner', icon: Tag, labelKey: 'nav.marketplace', label: 'Partner portal' },
+      { href: '/partner', icon: Store, labelKey: 'nav.onboarding', label: 'Onboarding' },
+    ]},
+    { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -267,30 +322,33 @@ function isNavActive(href: string, pathname: string): boolean {
   return pathname === href || pathname.startsWith(href + '/');
 }
 
-const NavItem = ({ entry, role, pathname, onClick, router }: {
-  entry: NavEntry; role: Role; pathname: string; onClick: () => void; router: ReturnType<typeof useRouter>;
+const NavItem = ({ entry, pathname, onClick, router, compact }: {
+  entry: NavEntry; pathname: string; onClick: () => void; router: ReturnType<typeof useRouter>; compact: boolean;
 }) => {
   const { t } = useTranslation();
   const active = isNavActive(entry.href, pathname);
   const Icon = entry.icon;
+  const label = entry.label ?? t(entry.labelKey);
 
   return (
     <button
       type="button"
       onClick={() => { onClick(); router.push(entry.href); }}
       aria-current={active ? 'page' : undefined}
-      className={`relative w-full px-3 h-9 rounded-xl flex items-center gap-3 cursor-pointer transition-colors text-start text-[13px] ${
+      title={label}
+      className={`relative w-full min-h-12 px-3 rounded-[18px] flex items-center gap-3 cursor-pointer transition-colors text-start text-[13px] ${
+        compact ? 'justify-center' : ''
+      } ${
         active
           ? 'bg-muted text-foreground font-semibold shadow-[var(--shadow-card)]'
           : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground font-medium'
       }`}
     >
-      {/* Active marker sits in the gutter, as in the reference design. */}
-      {active && (
+      {active && !compact && (
         <span data-nav-marker className="absolute -start-3 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full bg-primary" />
       )}
-      <Icon className={`w-[17px] h-[17px] shrink-0 ${active ? 'text-primary' : ''}`} />
-      <span className="truncate">{entry.label ?? t(entry.labelKey)}</span>
+      <Icon className={`h-6 w-6 shrink-0 ${active ? 'text-primary' : ''}`} />
+      {compact ? <span className="sr-only">{label}</span> : <span className="truncate">{label}</span>}
     </button>
   );
 };
@@ -353,6 +411,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [user, loading, router]);
 
   useEffect(() => {
+    if (!user || !profile || !deletionClosed(profile.deletionRequest, Date.now())) return;
+    void authedFetch('/api/alumni', { method: 'POST', body: JSON.stringify({ action: 'honour-deletion' }) }).catch(() => undefined);
+  }, [user, profile]);
+
+  useEffect(() => {
     if (loading || user) return;
     // Closing a preview tab can make Firebase report a signed-out user for a
     // moment. Wait, then redirect only if the session is still gone.
@@ -387,6 +450,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
     }).catch(() => {});
   }, [user, router, pathname]);
+
+  useEffect(() => {
+    if (!user || adminMfaPending(user.uid)) return;
+    void authedFetch('/api/insights/pulse', { method: 'POST', body: '{}' }).catch(() => undefined);
+  }, [user]);
 
   useEffect(() => {
     if (!profile || !user || adminMfaPending(user.uid)) return;
@@ -448,7 +516,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="flex justify-center gap-2">
             <button
               type="button"
-              className="h-10 rounded-full bg-[#203337] px-4 text-sm font-semibold text-white"
+              className="h-10 rounded-full bg-foreground px-4 text-sm font-semibold text-background"
               onClick={() => {
                 void clearUserFields(user.uid, ['deletionRequest']).then(() => fetchProfile(user.uid));
               }}
@@ -545,15 +613,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
   }).filter(group => group.items.length > 0);
   const accent = ROLE_ACCENT[role];
+  const dashRole: DashRole = role === 'institution_admin' ? 'institution' : role === 'partner_merchant' ? 'student' : role;
+  const compactNav = !sidebarOpen;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen overflow-hidden" data-dashboard-role={role} style={{ background: accent.wash }}>
       <AcademySession />
       <a href="#dashboard-main" className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-xl focus:bg-card focus:px-3 focus:py-2">
         Skip to content
       </a>
       {/* ── Sidebar — light, profile-led, grouped ── */}
-      <aside data-tour="sidebar" className={`relative bg-sidebar border-e border-sidebar-border flex flex-col transition-all duration-300 shrink-0 ${sidebarOpen ? 'w-[264px]' : 'w-0 opacity-0 overflow-hidden'}`}>
+      <aside data-tour="sidebar" className={`relative bg-sidebar border-e border-sidebar-border flex flex-col motion-safe:transition-all motion-safe:duration-300 motion-reduce:transition-none shrink-0 max-lg:fixed max-lg:inset-y-0 max-lg:z-50 ${sidebarOpen ? 'w-[264px]' : 'lg:w-[76px] w-0 max-lg:overflow-hidden'}`}>
 
         {/* Who you are, at the top — the reference design leads with identity
             rather than a logo lockup. */}
@@ -575,15 +645,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {profile.name?.charAt(0)?.toUpperCase() ?? 'U'}
                 </AvatarFallback>
               </Avatar>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[13.5px] font-semibold text-foreground truncate leading-tight">
-                  {profile.displayName || profile.name || 'User'}
+              {compactNav ? null : (
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13.5px] font-semibold text-foreground truncate leading-tight">
+                    {profile.displayName || profile.name || 'User'}
+                  </span>
+                  <span className="block text-[11px] text-muted-foreground truncate mt-0.5">
+                    {roleLabel}
+                  </span>
                 </span>
-                <span className="block text-[11px] text-muted-foreground truncate mt-0.5">
-                  {roleLabel}
-                </span>
-              </span>
-              <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              )}
+              {compactNav ? null : <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
             </span>
           </AccountMenu>
         </div>
@@ -592,13 +664,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <nav className="relative flex-1 overflow-y-auto px-3 pb-2 space-y-0.5 [scrollbar-width:thin]">
           {nav.map((group, gi) => (
             <div key={gi} className="space-y-0.5">
-              {(group.sectionLabel || group.sectionKey) && (
+              {(group.sectionLabel || group.sectionKey) && !compactNav && (
                 <p className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-[0.14em] px-3 pt-5 pb-1.5">
                   {group.sectionLabel ?? t(group.sectionKey!)}
                 </p>
               )}
               {group.items.map(entry => (
-                <NavItem key={entry.href} entry={entry} role={role} pathname={pathname} onClick={handleNavClick} router={router} />
+                <NavItem key={entry.href} entry={entry} pathname={pathname} onClick={handleNavClick} router={router} compact={compactNav} />
               ))}
             </div>
           ))}
@@ -610,7 +682,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             href="/dashboard/helpdesk"
             className="flex items-center gap-3 px-3 h-9 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
-            <HelpCircle className="w-[17px] h-[17px] shrink-0" /> {t('nav.helpCenter')}
+            <HelpCircle className="h-6 w-6 shrink-0" /> {compactNav ? <span className="sr-only">{t('nav.helpCenter')}</span> : t('nav.helpCenter')}
           </Link>
           <button
             onClick={() => {
@@ -624,7 +696,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             }}
             className="w-full flex items-center gap-3 px-3 h-9 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
           >
-            <LogOut className="w-[17px] h-[17px] shrink-0" /> {t('nav.signOut')}
+            <LogOut className="h-6 w-6 shrink-0" /> {compactNav ? <span className="sr-only">{t('nav.signOut')}</span> : t('nav.signOut')}
           </button>
         </div>
       </aside>
@@ -688,12 +760,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* New device warning banner */}
         {newDevice && (
-          <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 flex items-center justify-between gap-3 text-sm text-amber-700 dark:text-amber-400 shrink-0">
+          <div className="bg-[var(--ps-cyan-soft)] border-b border-[var(--ps-cyan-border)]/20 px-4 py-2.5 flex items-center justify-between gap-3 text-sm text-[var(--ps-cyan-text)] dark:text-[var(--ps-cyan-text)] shrink-0">
             <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+              <ShieldCheck className="w-4 h-4 text-[var(--ps-cyan-text)] shrink-0" />
               <span><strong>New device detected.</strong> If this wasn't you, change your password immediately in My Profile.</span>
             </div>
-            <button onClick={() => setNewDevice(false)} className="text-amber-600 hover:text-amber-800 shrink-0">
+            <button onClick={() => setNewDevice(false)} className="text-[var(--ps-cyan-text)] hover:text-[var(--ps-cyan-text)] shrink-0">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -713,14 +785,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {ACCESS_DENIED_MESSAGE}
               </div>
             )}
+            <WelcomeResume />
             <RoleChecklist role={role} />
             <PagePurpose pathname={pathname} />
+            {role === 'teacher' || role === 'institution_admin' || role === 'admin' ? <AllStaffBanner /> : null}
             {children}
           </div>
         </main>
       </div>
 
       <MobileNav role={role} onMore={() => setSidebarOpen(true)} />
+      <DashFab role={role} />
+      <CommandPalette role={dashRole} />
       {viewAs ? null : <AITutor />}
     </div>
   );

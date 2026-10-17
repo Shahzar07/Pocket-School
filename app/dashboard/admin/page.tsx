@@ -15,6 +15,7 @@ import Link from 'next/link';
 import {
   DashPage, DashHeader, Panel, PanelHeader, StatCard, ListRow, Initials, EmptyState,
 } from '@/components/dash-ui';
+import { DashboardHome } from '@/components/dashboard';
 import { SeeMore } from '@/components/shell/see-more';
 import { friendlyError } from '@/lib/design/system';
 
@@ -89,8 +90,11 @@ export default function AdminDashboard() {
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
+  const adminName = profile?.name?.split(' ')[0] ?? 'Admin';
+
   if (loading) return (
     <DashPage>
+      <DashboardHome role="admin" name={adminName} loading />
       <div className="h-16 bg-muted animate-pulse rounded-2xl" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[0, 1, 2, 3].map(i => <div key={i} className="h-36 bg-muted animate-pulse rounded-2xl" />)}
@@ -101,6 +105,16 @@ export default function AdminDashboard() {
 
   return (
     <DashPage>
+      <DashboardHome
+        role="admin"
+        name={adminName}
+        showMap
+        stats={[
+          { id: 'students', label: 'Students', value: stats.students.toLocaleString(), hint: 'Platform' },
+          { id: 'schools', label: 'Institutions', value: String(institutions.length), hint: 'Schools' },
+          { id: 'courses', label: 'Courses', value: stats.courses.toLocaleString(), hint: 'On the platform' },
+        ]}
+      />
       <DashHeader
         eyebrow={`Platform · ${today}`}
         title="Control"
@@ -140,7 +154,7 @@ export default function AdminDashboard() {
           href="/dashboard/admin/courses" hrefLabel="All courses"
         />
         <StatCard
-          index={3} icon={Building2} label="Institutions" value={institutions.length.toLocaleString()} tone="amber"
+          index={3} icon={Building2} label="Institutions" value={institutions.length.toLocaleString()} tone="cyan"
           href="/dashboard/admin/institutions" hrefLabel="View institutions"
         />
       </div>
@@ -148,12 +162,12 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard size="compact" index={0} icon={Users} tone="sky" label="Signups, 30 days" value={kpis.signups30.toLocaleString()} trend={kpis.signups30 > 0 ? { direction: 'up', label: 'New accounts' } : { direction: 'flat', label: 'Quiet' }} />
         <StatCard size="compact" index={1} icon={Activity} tone="emerald" label="Active, 7 days" value={kpis.active7.toLocaleString()} trend={kpis.active7 > 0 ? { direction: 'up', label: 'On the platform' } : { direction: 'flat', label: 'Quiet' }} />
-        <StatCard size="compact" index={2} icon={BarChart3} tone="amber" label="Revenue recorded" value={`$${kpis.revenue.toLocaleString()}`} />
+        <StatCard size="compact" index={2} icon={BarChart3} tone="cyan" label="Revenue recorded" value={`$${kpis.revenue.toLocaleString()}`} />
         <StatCard size="compact" index={3} icon={Sparkles} tone="coral" label="Sparks in circulation" value={(kpis.sparksIssued - kpis.sparksSpent).toLocaleString()} />
         <StatCard size="compact" index={4} icon={Sparkles} tone="coral" label="Sparks spent" value={kpis.sparksSpent.toLocaleString()} trend={kpis.sparksSpent > 0 ? { direction: 'down', label: 'Used' } : { direction: 'flat', label: 'None spent' }} />
         <StatCard size="compact" index={5} icon={CheckCircle2} tone="emerald" label="Course completions" value={kpis.completions.toLocaleString()} trend={kpis.completions > 0 ? { direction: 'up', label: 'Finished' } : { direction: 'flat', label: 'None yet' }} />
         <StatCard size="compact" index={6} icon={LifeBuoy} tone="violet" label="Open tickets" value={kpis.openTickets.toLocaleString()} trend={kpis.openTickets > 0 ? { direction: 'down', label: 'Needs a reply' } : { direction: 'up', label: 'Clear' }} />
-        <StatCard size="compact" index={7} icon={Sparkles} tone="amber" label="Sparks issued" value={kpis.sparksIssued.toLocaleString()} />
+        <StatCard size="compact" index={7} icon={Sparkles} tone="cyan" label="Sparks issued" value={kpis.sparksIssued.toLocaleString()} />
       </div>
 
       <Panel>
@@ -221,7 +235,10 @@ export default function AdminDashboard() {
           <div className="space-y-2">
             {[
               { href: '/dashboard/admin/curriculum', icon: Layers, title: 'CMS', sub: 'Programmes, subjects and lessons' },
+              { href: '/dashboard/admin/placement', icon: Layers, title: 'Course placement', sub: 'Marketplace, featured spots, and levels' },
+              { href: '/dashboard/admin/help', icon: LifeBuoy, title: 'Help articles', sub: 'What ET AI answers from' },
               { href: '/dashboard/admin/settings', icon: BarChart3, title: 'Pricing', sub: 'Plans, add-ons and currency' },
+              { href: '/dashboard/admin/institution-pricing', icon: Building2, title: 'Institution prices', sub: 'Programmes, seats and tiers' },
               { href: '/dashboard/admin/allocations', icon: Shield, title: 'Allocation', sub: 'Tiers, access and codes' },
               { href: '/dashboard/admin/institutions', icon: Building2, title: 'Institutions', sub: 'Schools and OEM' },
               { href: '/dashboard/helpdesk', icon: LifeBuoy, title: 'Helpdesk', sub: 'Support tickets' },

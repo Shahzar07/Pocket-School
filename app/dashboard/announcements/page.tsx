@@ -26,14 +26,14 @@ const fadeUp: Record<string, any> = {
 
 const PRIORITY_STYLES: Record<string, string> = {
   urgent: 'bg-destructive/10 text-destructive border border-destructive/20',
-  high: 'bg-amber-500/10 text-amber-600 border border-amber-500/20',
+  high: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border border-[var(--ps-cyan-border)]/20',
   normal: 'bg-primary/10 text-primary border border-primary/20',
   low: 'bg-muted text-muted-foreground',
 };
 
 const PRIORITY_BORDER: Record<string, string> = {
   urgent: 'border-l-destructive',
-  high: 'border-l-amber-500',
+  high: 'border-l-[var(--ps-cyan-border)]',
   normal: 'border-l-primary',
   low: 'border-l-border',
 };
@@ -211,7 +211,7 @@ export default function AnnouncementsPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-2">
-                    {ann.pinned && <Pin className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+                    {ann.pinned && <Pin className="w-3.5 h-3.5 text-[var(--ps-cyan-text)] shrink-0" />}
                     <h3 className="font-bold text-foreground">{ann.title}</h3>
                     <Badge className={`rounded-full text-[10px] ${PRIORITY_STYLES[ann.priority]}`}>{ann.priority}</Badge>
                     <Badge className="rounded-full text-[10px] bg-muted text-muted-foreground">{describeTargets(ann.targets?.length ? ann.targets : [ann.audience])}</Badge>
@@ -225,7 +225,7 @@ export default function AnnouncementsPage() {
                 </div>
                 {canCreate && (
                   <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => togglePin(ann)} className={`p-1.5 rounded-lg hover:bg-muted transition-colors ${ann.pinned ? 'text-amber-500' : 'text-muted-foreground'}`}>
+                    <button onClick={() => togglePin(ann)} className={`p-1.5 rounded-lg hover:bg-muted transition-colors ${ann.pinned ? 'text-[var(--ps-cyan-text)]' : 'text-muted-foreground'}`}>
                       <Pin className="w-4 h-4" />
                     </button>
                     <button onClick={() => handleDelete(ann.id!)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-destructive transition-colors">

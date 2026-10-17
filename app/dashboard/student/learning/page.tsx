@@ -10,6 +10,7 @@ import {
   Course, Module, Lesson, Enrollment, UnitQuizAttempt, Programme,
 } from '@/lib/db';
 import { getUnitStatuses, getCurriculumLessonStatus, UnitStatus } from '@/lib/curriculum';
+import { applyReviewLock, resolvePassMark } from '@/lib/unit-test';
 import { productAccess, viewerFromProfile } from '@/lib/allocation';
 import { visibleStudentLessons } from '@/lib/course-review';
 import { usePricing } from '@/hooks/use-pricing';
@@ -266,7 +267,7 @@ export default function MyLearningPage() {
                             <Badge className={`text-[10px] rounded-full ${
                               status.state === 'passed'
                                 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                                : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                                : 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20'
                             }`}>
                               Quiz best: {status.bestQuizPercentage}%
                             </Badge>
@@ -274,8 +275,8 @@ export default function MyLearningPage() {
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {locked
-                            ? `Pass the previous module's mastery quiz (≥${unit.module.masteryThreshold ?? 70}%) to unlock`
-                            : `${status.completedLessons}/${status.totalLessons} lessons (units) complete`}
+                            ? `Pass the previous module's unit test (≥${resolvePassMark(tree.course, tree.units[tree.unitStatuses.indexOf(status) - 1]?.module)}%) to unlock`
+                            : `${status.completedLessons}/${status.totalLessons} lessons complete`}
                         </p>
                       </div>
                       {!locked && (isExpanded
@@ -286,7 +287,12 @@ export default function MyLearningPage() {
                     {isExpanded && !locked && (
                       <div className="border-t border-border divide-y divide-border bg-muted/20">
                         {unit.lessons.map(lesson => {
-                          const lessonStatus = getCurriculumLessonStatus(lesson, unit.lessons, status.state, completedIds);
+                          const lessonStatus = applyReviewLock(
+                            getCurriculumLessonStatus(lesson, unit.lessons, status.state, completedIds),
+                            lesson,
+                            tree.attempts,
+                            tree.enrollment?.lessonCompletedAt,
+                          );
                           return (
                             <button
                               key={lesson.id}
@@ -301,7 +307,7 @@ export default function MyLearningPage() {
                                 lessonStatus === 'available' ? 'bg-primary/10' : 'bg-muted'
                               }`}>
                                 {lessonStatus === 'completed' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-                                {lessonStatus === 'available' && (lesson.isUnitQuiz
+                                {lessonStatus === 'available' && (lesson.isUnitQuiz || lesson.lessonType === 'unit_test'
                                   ? <Trophy className="w-4 h-4 text-primary" />
                                   : <PlayCircle className="w-4 h-4 text-primary" />)}
                                 {lessonStatus === 'locked' && <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
@@ -311,11 +317,15 @@ export default function MyLearningPage() {
                                   {lesson.lessonNumber ? `L${lesson.lessonNumber} · ` : ''}{lesson.title}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                  {lesson.isUnitQuiz
-                                    ? `Mastery quiz · pass at ${unit.module.masteryThreshold ?? 70}% to unlock the next module`
-                                    : lessonStatus === 'completed' ? '✓ Completed'
-                                    : lessonStatus === 'available' ? 'Start lesson (unit) · +50 XP · ⚡10'
-                                    : lesson.isUnitQuiz ? 'Complete all lessons first' : 'Complete the previous lesson (unit) to unlock'}
+                                  {lesson.lessonType === 'unit_test'
+                                    ? lessonStatus === 'locked'
+                                      ? 'Review these lessons, or finish the lessons in this module'
+                                      : `Unit test · pass at ${resolvePassMark(tree.course, unit.module)}%`
+                                    : lesson.isUnitQuiz
+                                    ? `Mastery quiz · pass at ${resolvePassMark(tree.course, unit.module)}% to unlock the next module`
+                                    : lessonStatus === 'completed' ? 'Completed'
+                                    : lessonStatus === 'available' ? 'Start lesson · +50 XP · ⚡10'
+                                    : 'Complete the previous lesson to unlock'}
                                 </p>
                               </div>
                               {lessonStatus !== 'locked' && <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}

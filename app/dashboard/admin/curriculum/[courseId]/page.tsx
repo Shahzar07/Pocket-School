@@ -49,6 +49,10 @@ import { jobUpdate, visibleJob } from '@/lib/generation-jobs';
 import { filesToAssets, LessonIllustrationBlock, LessonImageBlock } from '@/components/lesson-pictures';
 import type { ImportResult } from '@/components/editor';
 import { LessonLanguagePanel } from '@/components/lesson-language-panel';
+import { VisualBlockEditor } from '@/components/visual-blocks';
+import { UnitTestEditor } from '@/components/unit-test-editor';
+import { emptyVisualBlock, isVisualBlockId, upsertVisualBlock, visualPublishErrors } from '@/lib/visual-blocks';
+import { emptyUnitTest, resolvePassMark } from '@/lib/unit-test';
 import { AllocationPanel } from '@/components/allocation-panel';
 import { AllocationPicker } from '@/components/allocation-picker';
 import { allocationFields, migrateAllocation } from '@/lib/allocation-targets';
@@ -72,6 +76,7 @@ const LESSON_TYPES = [
   { id: 'assessment', icon: '🏅', label: 'Assessment / Test' },
   { id: 'live', icon: '📡', label: 'Live Session' },
   { id: 'resource', icon: '📁', label: 'Resource Pack' },
+  { id: 'unit_test', icon: '🧪', label: 'Unit Test' },
 ] as const;
 
 const TYPE_ICON: Record<string, string> = Object.fromEntries(LESSON_TYPES.map(t => [t.id, t.icon]));
@@ -79,14 +84,14 @@ const TYPE_ICON: Record<string, string> = Object.fromEntries(LESSON_TYPES.map(t 
 const STATUS_DOT: Record<string, string> = {
   published: 'bg-emerald-500',
   approved: 'bg-blue-500',
-  in_review: 'bg-amber-500',
+  in_review: 'bg-[var(--ps-cyan)]',
   draft: 'bg-slate-300',
   archived: 'bg-red-300',
 };
 
 const STATUS_CARD: Record<string, { bg: string; label: string }> = {
   draft: { bg: 'bg-slate-100 text-slate-700 border-slate-200', label: 'Draft' },
-  in_review: { bg: 'bg-amber-50 text-amber-700 border-amber-200', label: 'In Review' },
+  in_review: { bg: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]', label: 'In Review' },
   approved: { bg: 'bg-blue-50 text-blue-700 border-blue-200', label: 'Approved' },
   published: { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: 'Published' },
   archived: { bg: 'bg-red-50 text-red-600 border-red-200', label: 'Archived' },
@@ -758,7 +763,15 @@ export default function ContentBuilderPage() {
 
   /* ── Publish confirmation (responsibility disclaimer) ── */
 
-  const openPublishModal = () => { setPublishAccepted(false); setPublishOpen(true); };
+  const openPublishModal = () => {
+    const missing = visualPublishErrors(draftRef.current);
+    if (missing.length) {
+      toast.error(missing[0]);
+      return;
+    }
+    setPublishAccepted(false);
+    setPublishOpen(true);
+  };
 
   const confirmPublish = async () => {
     if (!publishAccepted) return;
@@ -805,6 +818,20 @@ export default function ContentBuilderPage() {
       toast.success(`"${unit.title}" deleted.`);
       await load(true);
     } catch (e: any) { toast.error(e?.message || 'Failed to delete unit.'); }
+  };
+
+  const addUnitTest = async (unitId: string, count: number) => {
+    try {
+      const id = await createLesson(courseId, unitId, {
+        title: 'Unit Test', moduleId: unitId, courseId,
+        order: count + 1, lessonNumber: count + 1, status: 'draft',
+        lessonType: 'unit_test', isUnitQuiz: true, blocksOrder: ['unitTest'],
+        unitTest: emptyUnitTest(), marks: 0,
+      });
+      await load(true);
+      selectLesson(unitId, id);
+      toast.success('Unit test added.');
+    } catch (e: any) { toast.error(e?.message || 'Failed.'); }
   };
 
   const addLesson = async (unitId: string, count: number) => {
@@ -1046,11 +1073,31 @@ export default function ContentBuilderPage() {
           <ChevronRight className="w-3 h-3 shrink-0" />
           <span className="font-semibold text-foreground shrink-0">Content Builder</span>
         </nav>
+        <label className="hidden lg:flex items-center gap-1 text-[11px] text-muted-foreground">
+          Unit test pass
+          <input
+            type="number"
+            min={1}
+            max={100}
+            defaultValue={course.unitTestPassMark ?? 70}
+            key={course.unitTestPassMark ?? 70}
+            onBlur={(event) => {
+              const unitTestPassMark = Math.min(100, Math.max(1, Number(event.target.value) || 70));
+              event.target.value = String(unitTestPassMark);
+              if (unitTestPassMark === (course.unitTestPassMark ?? 70)) return;
+              void updateCourse(course.id, { unitTestPassMark }).then(() => {
+                setCourse(current => current ? { ...current, unitTestPassMark } : current);
+              }).catch(() => toast.error('Could not save the pass mark.'));
+            }}
+            className="h-8 w-14 rounded-lg border border-border bg-card px-1 text-xs text-foreground"
+          />
+          %
+        </label>
         <span className="flex-1" />
         {/* Save status */}
         <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground max-w-sm" role="status" aria-live="polite" data-save-state={saveState}>
           <span className={`w-2 h-2 rounded-full shrink-0 ${
-            saveState === 'saved' ? 'bg-emerald-500' : saveState === 'error' ? 'bg-red-500' : 'bg-amber-400 animate-pulse'
+            saveState === 'saved' ? 'bg-emerald-500' : saveState === 'error' ? 'bg-red-500' : 'bg-[var(--ps-cyan)] animate-pulse'
           }`} />
           {saveState === 'saved' && 'All changes saved'}
           {saveState === 'saving' && 'Saving…'}
@@ -1110,6 +1157,7 @@ export default function ContentBuilderPage() {
                 onSelect={(lid) => selectLesson(u.module.id, lid)}
                 onRename={() => renameUnit(u.module)}
                 onAddLesson={() => addLesson(u.module.id, u.lessons.length)}
+                onAddUnitTest={() => addUnitTest(u.module.id, u.lessons.length)}
                 onDeleteUnit={() => removeUnit(u.module, u.lessons.length)}
                 onDeleteLesson={(l) => removeLesson(u.module.id, l)}
                 onDuplicateLesson={(l) => copyLesson(u.module.id, l)}
@@ -1148,7 +1196,19 @@ export default function ContentBuilderPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <select
                     value={draft.lessonType ?? 'lesson'}
-                    onChange={e => patchDraft({ lessonType: e.target.value as Lesson['lessonType'] })}
+                    onChange={e => {
+                      const lessonType = e.target.value as Lesson['lessonType'];
+                      patchDraft(lessonType === 'unit_test'
+                        ? {
+                          lessonType,
+                          isUnitQuiz: true,
+                          unitTest: draft.unitTest ?? emptyUnitTest(),
+                          blocksOrder: (draft.blocksOrder ?? DEFAULT_BLOCKS).includes('unitTest')
+                            ? draft.blocksOrder
+                            : [...(draft.blocksOrder ?? DEFAULT_BLOCKS), 'unitTest'],
+                        }
+                        : { lessonType });
+                    }}
                     className="h-8 rounded-lg border border-border bg-card px-2 text-xs font-medium"
                   >
                     {LESSON_TYPES.map(t => <option key={t.id} value={t.id}>{t.icon} {t.label}</option>)}
@@ -1330,6 +1390,20 @@ export default function ContentBuilderPage() {
                       onImport={result => { void applyManuscript(result); }}
                       onPasteImages={files => { void takePastedImages(files); }}
                       courseId={courseId}
+                      siblingLessons={(units.find(u => u.module.id === draft.moduleId)?.lessons) ?? []}
+                      coursePassMark={resolvePassMark(course, null)}
+                      unitPassMark={units.find(u => u.module.id === draft.moduleId)?.module.unitTestPassMark}
+                      onUnitPassMark={(value) => {
+                        const unitId = draft.moduleId;
+                        void updateUnit(courseId, unitId, value == null
+                          ? { unitTestPassMark: deleteField() }
+                          : { unitTestPassMark: value },
+                        ).then(() => {
+                          setUnits(prev => prev.map(u => u.module.id === unitId
+                            ? { ...u, module: { ...u.module, unitTestPassMark: value ?? undefined } }
+                            : u));
+                        }).catch(() => toast.error('Could not save the unit pass mark.'));
+                      }}
                     />
                     {blockId === 'objectives' && <DurationPanel draft={draft} patch={patchDraft} />}
                   </div>
@@ -1360,7 +1434,14 @@ export default function ContentBuilderPage() {
                           event.dataTransfer.effectAllowed = 'copy';
                           event.dataTransfer.setData('text/plain', `block:${def.id}`);
                         }}
-                        onClick={() => patchDraft({ blocksOrder: [...blocksOrder, def.id] })}
+                        onClick={() => {
+                          const visual = isVisualBlockId(def.id) ? emptyVisualBlock(def.id) : null;
+                          patchDraft({
+                            blocksOrder: [...blocksOrder, def.id],
+                            ...(visual ? { visualBlocks: upsertVisualBlock(draft.visualBlocks, visual) } : {}),
+                            ...(def.id === 'unitTest' ? { lessonType: 'unit_test' as const, isUnitQuiz: true, unitTest: draft.unitTest ?? emptyUnitTest() } : {}),
+                          });
+                        }}
                         className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left text-xs font-semibold transition-all ${
                           added
                             ? 'border-border/50 text-muted-foreground/40 cursor-not-allowed'
@@ -1369,7 +1450,7 @@ export default function ContentBuilderPage() {
                       >
                         <span className="text-base">{def.icon}</span>
                         <span className="flex-1">{def.label}</span>
-                        {def.sparks && !added && <span className="text-[10px] text-amber-500">⚡{def.sparks}</span>}
+                        {def.sparks && !added && <span className="text-[10px] text-[var(--ps-cyan-text)]">⚡{def.sparks}</span>}
                         {added && <CheckCircle2 className="w-3 h-3" />}
                       </button>
                     );
@@ -1439,8 +1520,8 @@ export default function ContentBuilderPage() {
               className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl bg-card border border-border shadow-2xl"
             >
               <div className="flex items-start gap-3 px-5 py-4 border-b border-border">
-                <span className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
-                  <AlertTriangle className="w-4.5 h-4.5 text-amber-600" />
+                <span className="w-9 h-9 rounded-xl bg-[var(--ps-cyan-soft)] border border-[var(--ps-cyan-border)] flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-4.5 h-4.5 text-[var(--ps-cyan-text)]" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <h2 id="publish-disclaimer-title" className="font-heading text-lg text-foreground leading-tight">
@@ -1559,11 +1640,11 @@ function DurationPanel({ draft, patch }: { draft: Lesson; patch: (p: Partial<Les
 /* ── Tree unit ──────────────────────────────────────────────── */
 
 function TreeUnit({
-  unit, lessons, unitIndex, unitCount, activeLessonId, onSelect, onRename, onAddLesson, onDeleteUnit, onDeleteLesson,
+  unit, lessons, unitIndex, unitCount, activeLessonId, onSelect, onRename, onAddLesson, onAddUnitTest, onDeleteUnit, onDeleteLesson,
   onDuplicateLesson, onRenameLesson, onAddSubLesson, onReorder, onMoveUnit, onReceiveLesson,
 }: {
   unit: Module; lessons: Lesson[]; unitIndex: number; unitCount: number; activeLessonId: string | null;
-  onSelect: (lessonId: string) => void; onRename: () => void; onAddLesson: () => void;
+  onSelect: (lessonId: string) => void; onRename: () => void; onAddLesson: () => void; onAddUnitTest: () => void;
   onDeleteUnit: () => void;
   onDeleteLesson: (l: Lesson) => void; onDuplicateLesson: (l: Lesson) => void;
   onRenameLesson: (l: Lesson, title: string) => void;
@@ -1610,6 +1691,9 @@ function TreeUnit({
         <button onClick={onAddLesson} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-muted text-muted-foreground" title="Add lesson">
           <Plus className="w-3 h-3" />
         </button>
+        <button onClick={onAddUnitTest} className="opacity-0 group-hover:opacity-100 px-1 rounded hover:bg-muted text-[10px] font-bold text-muted-foreground" title="Add unit test">
+          Test
+        </button>
         <button onClick={onDeleteUnit} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-muted text-muted-foreground hover:text-destructive" title="Delete unit">
           <Trash2 className="w-3 h-3" />
         </button>
@@ -1650,7 +1734,7 @@ function TreeUnit({
                 className={`group flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer text-xs transition-colors ${
                   sub ? 'ml-4' : ''
                 } ${dropId === l.id ? 'ring-2 ring-teal-400' : ''} ${dragId === l.id ? 'opacity-40' : ''} ${
-                  active ? 'bg-amber-100/80 text-amber-900 font-semibold' : 'hover:bg-muted/60 text-foreground'
+                  active ? 'border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)] font-semibold' : 'hover:bg-muted/60 text-foreground'
                 }`}
                 onClick={() => !editing && onSelect(l.id)}
               >
@@ -1714,6 +1798,7 @@ function TreeUnit({
 function BuilderBlock({
   blockId, draft, selected, onSelect, onDelete, onMoveUp, onMoveDown, patch, ai, aiBusy,
   etBusy, onSuggestObjectives, onImproveText, onDraftAssessment, onImport, onPasteImages, courseId,
+  siblingLessons, coursePassMark, unitPassMark, onUnitPassMark,
 }: {
   blockId: string; draft: Lesson; selected: boolean;
   onSelect: () => void; onDelete: () => void;
@@ -1728,6 +1813,10 @@ function BuilderBlock({
   onImport?: (result: ImportResult) => void;
   onPasteImages?: (files: File[]) => void;
   courseId: string;
+  siblingLessons: Lesson[];
+  coursePassMark: number;
+  unitPassMark?: number;
+  onUnitPassMark: (value: number | null) => void;
 }) {
   const def: BlockDef = BLOCK_DEFS.find(d => d.id === blockId) ?? { id: blockId, icon: '📄', label: blockId };
   const outputs = draft.aiOutputs ?? {};
@@ -1868,6 +1957,34 @@ function BuilderBlock({
           generating={aiBusy === 'quiz'}
           onDraftSections={onDraftAssessment}
           draftingSections={etBusy === 'assessment'}
+        />
+      );
+    case 'unitTest':
+      return shell(
+        <UnitTestEditor
+          value={draft.unitTest}
+          lessons={siblingLessons}
+          coursePassMark={coursePassMark}
+          unitPassMark={unitPassMark}
+          finalAssessment={draft.finalAssessment}
+          onChange={unitTest => patch({ unitTest, lessonType: 'unit_test', isUnitQuiz: true })}
+          onUnitPassMark={onUnitPassMark}
+          onFinalAssessment={finalAssessment => patch({ finalAssessment })}
+        />
+      );
+    case 'mindmapImage':
+    case 'comic':
+    case 'infographicImage':
+    case 'revisionPoster':
+    case 'gallery':
+    case 'audioChant':
+      return shell(
+        <VisualBlockEditor
+          kind={blockId as 'mindmapImage' | 'comic' | 'infographicImage' | 'revisionPoster' | 'gallery' | 'audioChant'}
+          block={(draft.visualBlocks ?? []).find(item => item.kind === blockId)}
+          courseId={courseId}
+          lessonId={draft.id}
+          onChange={next => patch({ visualBlocks: upsertVisualBlock(draft.visualBlocks, next) })}
         />
       );
     case 'audio':
@@ -2025,7 +2142,7 @@ function PropertiesTab({
         <div className="flex items-baseline justify-between gap-2">
           <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">AI generation (per format)</p>
           {isCurriculumCourse && (
-            <span className="text-[10px] font-semibold text-amber-600 shrink-0">
+            <span className="text-[10px] font-semibold text-[var(--ps-cyan-text)] shrink-0">
               {unlockAllCost} ⚡ to unlock all
             </span>
           )}
@@ -2062,7 +2179,7 @@ function PropertiesTab({
                   : <Sparkles className="w-3 h-3 shrink-0" />}
                 <span className="truncate flex-1">{f.label}{status ? ` · ${status}` : ''}</span>
                 {isCurriculumCourse && (
-                  <span className="text-[10px] font-bold text-amber-600 shrink-0 tabular-nums">
+                  <span className="text-[10px] font-bold text-[var(--ps-cyan-text)] shrink-0 tabular-nums">
                     {getFormatCost(f.id)}
                   </span>
                 )}
@@ -2296,7 +2413,7 @@ function AllocateTab({ course, institutions, patchCourse }: {
 
       <section className="space-y-1.5">
         <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Student groups</p>
-        <p className="text-[10px] text-muted-foreground">Year groups, separate from the audience above.</p>
+        <p className="text-[10px] text-muted-foreground">Levels, separate from the audience above.</p>
         {STUDENT_GROUPS.map(g => (
           <label key={g} className="flex items-center justify-between text-xs py-1 cursor-pointer">
             <span className="font-semibold text-foreground">{g}</span>

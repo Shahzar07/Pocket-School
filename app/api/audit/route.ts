@@ -14,6 +14,7 @@ import {
 import {
   getRetentionDays,
   listActivity,
+  listInstitutionActivity,
   listOwnAuth,
   purgeExpiredActivity,
   recordActivity,
@@ -49,6 +50,21 @@ export async function GET(req: NextRequest) {
   const user = await requireUser(req);
   if (isNextResponse(user)) return user;
   const scope = req.nextUrl.searchParams.get('scope') ?? 'mine';
+  if (scope === 'institution') {
+    const profile = await loadUser(user.uid);
+    const role = typeof profile?.role === 'string' ? profile.role : '';
+    const ownInstitution = typeof profile?.institutionId === 'string' ? profile.institutionId : '';
+    const requested = req.nextUrl.searchParams.get('institutionId') || ownInstitution;
+    const platform = role === 'admin' || await superAdmin(user);
+    if (!platform && role !== 'institution_admin') {
+      return NextResponse.json({ error: 'This activity log is for the institution.', code: 'FORBIDDEN' }, { status: 403 });
+    }
+    if (!requested || (!platform && requested !== ownInstitution)) {
+      return NextResponse.json({ error: 'That activity log is for another institution.', code: 'FORBIDDEN' }, { status: 403 });
+    }
+    const events = await listInstitutionActivity(requested);
+    return NextResponse.json({ events, institutionId: requested });
+  }
   if (scope !== 'all') {
     const events = await listOwnAuth(user.uid);
     return NextResponse.json({ events });
@@ -144,5 +160,13 @@ export async function POST(req: NextRequest) {
     before: body.before,
     after: body.after,
   });
+  if (action === 'auth.login' && role === 'student') {
+    try {
+      const { noteLearner } = await import('@/lib/alerts/progress-server');
+      await noteLearner(user.uid);
+    } catch {
+      /* Sign-in still succeeds when a progress check cannot run. */
+    }
+  }
   return NextResponse.json({ ok: true });
 }

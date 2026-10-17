@@ -36,8 +36,18 @@
   align-items: center;
   gap: 10px;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 800;
   white-space: nowrap;
+}
+.mark {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 10px;
+  background: #1E6A83;
+  color: #fff;
+  box-shadow: 0 0 0 3px #6FBBCE, 0 8px 18px var(--ps-glow);
 }
 .brand small {
   font-weight: 400;
@@ -69,8 +79,14 @@
   gap: 10px;
   align-items: center;
   font-size: 12px;
-  text-decoration: underline;
-  text-underline-offset: 5px;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--ps-cyan-ink);
+  background: var(--ps-cyan);
+  border: 1px solid var(--ps-cyan-border);
+  border-radius: 999px;
+  padding: 8px 14px;
+  box-shadow: 0 8px 18px var(--ps-glow);
 }
 .headerTools {
   display: flex;
@@ -90,7 +106,7 @@
 .header a:focus-visible,
 .header button:focus-visible,
 .footer a:focus-visible {
-  outline: 3px solid #e2af4d;
+  outline: 3px solid var(--ps-cyan-border);
   outline-offset: 5px;
 }
 .scrolled {
@@ -114,8 +130,8 @@
   display: none;
 }
 .footer {
-  background: #f2f5f4;
-  color: #293d40;
+  background: var(--ps-bg);
+  color: var(--ps-ink);
   font-family: var(--font-sans), Arial, sans-serif;
   padding: 55px max(24px, calc((100% - 1132px) / 2)) 0;
   overflow: hidden;
@@ -142,7 +158,7 @@
   margin: 12px 0;
 }
 .footerGrid a:hover {
-  color: #2186a4;
+  color: var(--primary);
 }
 .contactCard {
   background: #ecefee;
@@ -327,45 +343,45 @@
 }
 
 :global(.dark) .scrolled {
-  background: #0e191d;
-  color: #e8efef;
+  background: var(--ps-bg);
+  color: var(--ps-ink);
   box-shadow: 0 3px 20px #00000055;
 }
 
 :global(.dark) .scrolled .desktopNav {
-  background: #17282d;
-  border-color: #1e3238;
+  background: var(--ps-mist);
+  border-color: var(--ps-line);
 }
 
 :global(.dark) .scrolled .desktopNav a {
-  color: #e8efef;
+  color: var(--ps-ink);
 }
 
 :global(.dark) .mobileNav {
-  background: #121e22;
-  color: #e8efef;
+  background: var(--ps-card);
+  color: var(--ps-ink);
 }
 
 :global(.dark) .mobileNav a {
-  border-bottom-color: #1e3238;
+  border-bottom-color: var(--ps-line);
 }
 
 :global(.dark) .footer {
-  background: #0e191d;
-  color: #e8efef;
+  background: var(--ps-bg);
+  color: var(--ps-ink);
 }
 
 :global(.dark) .footerGrid p,
 :global(.dark) .footerLegal {
-  color: #93a7ab;
+  color: var(--ps-muted);
 }
 
 :global(.dark) .contactCard {
-  background: #17282d;
+  background: var(--ps-mist);
 }
 
 :global(.dark) .legalLinks {
-  border-top-color: #1e3238;
+  border-top-color: var(--ps-line);
 }
 
 :global(.dark) .footerWordmark {

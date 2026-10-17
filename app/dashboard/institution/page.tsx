@@ -6,9 +6,11 @@ import { toast } from 'sonner';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
   getInstitution, listAcademyClasses, listAcademyInvites, listAcademyMembers, listOemLicences,
-  saveAcademyClass, saveAcademyInvites, saveJoinCode, updateInstitution, type Institution,
+  saveAcademyClass, saveAcademyInvites, saveJoinCode, updateInstitution, type AcademyClass, type Institution,
 } from '@/lib/db';
 import { brandedInvite, licencePhase, makeJoinCode, parseInviteCsv, seatsRemaining, type OemLicence } from '@/lib/oem';
+import { institutionLoginLinks } from '@/lib/institution-login';
+import { InstitutionLoginShare } from '@/components/institution-login-share';
 import { PROGRAMMES, allocationYearsFor } from '@/lib/programmes';
 import { AllocationPicker } from '@/components/allocation-picker';
 import { describeTargets } from '@/lib/allocation-targets';
@@ -16,10 +18,12 @@ import { institutionOrigin } from '@/lib/white-label';
 import { Mail, Ticket, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashPage, DashHeader, Panel, StatCard } from '@/components/dash-ui';
+import { DashboardHome } from '@/components/dashboard';
 import { authedFetch } from '@/lib/api-client';
 import { friendlyError } from '@/lib/design/system';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ClassBoardControls } from '@/components/gamification/class-boards';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -35,6 +39,7 @@ export default function InstitutionAcademyPage() {
   const [className, setClassName] = useState('');
   const [classProgrammes, setClassProgrammes] = useState<string[]>([]);
   const [classCount, setClassCount] = useState(0);
+  const [classes, setClasses] = useState<AcademyClass[]>([]);
   const [displayName, setDisplayName] = useState('');
 
   useEffect(() => {
@@ -51,6 +56,7 @@ export default function InstitutionAcademyPage() {
       setMembers(people.length);
       setInvites(pending.length);
       setClassCount(classes.length);
+      setClasses(classes);
       setDisplayName(inst?.branding?.displayName ?? inst?.name ?? '');
     }).catch(() => toast.error('Could not load the academy.'));
   }, [institutionId]);
@@ -73,10 +79,15 @@ export default function InstitutionAcademyPage() {
       const code = joinCode || makeJoinCode();
       setJoinCode(code);
       await saveJoinCode(institutionId, code);
+      const origin = institution.subdomain ? institutionOrigin(institution.subdomain) : 'https://poketschool.ai';
       const message = brandedInvite({
         displayName: institution.branding?.displayName || institution.name,
         emailFromName: institution.branding?.emailFromName,
-      }, code, institution.subdomain ? institutionOrigin(institution.subdomain) : 'https://poketschool.ai');
+      }, code, origin, {
+        subject: institution.branding?.inviteSubject,
+        text: institution.branding?.inviteBody,
+        loginUrl: institutionLoginLinks({ slug: institution.subdomain, customDomain: institution.customDomain }).share,
+      });
       setInvites(count => count + parsed.rows.length);
       const sent = await authedFetch('/api/institutions/invites/send', {
         method: 'POST',
@@ -125,6 +136,15 @@ export default function InstitutionAcademyPage() {
 
   return (
     <DashPage className="max-w-3xl">
+      <DashboardHome
+        role="institution"
+        name={institution?.branding?.displayName || institution?.name || profile?.name || 'Your academy'}
+        stats={[
+          { id: 'seats', label: 'Seats left', value: String(seats), hint: 'Licences' },
+          { id: 'joins', label: 'Invites', value: String(invites), hint: 'Waiting' },
+          { id: 'classes', label: 'Classes', value: String(classCount), hint: 'On the timetable' },
+        ]}
+      />
       <DashHeader
         eyebrow="Today"
         title={institution?.branding?.displayName || institution?.name || 'Your academy'}
@@ -150,7 +170,7 @@ export default function InstitutionAcademyPage() {
 
       <section className="grid sm:grid-cols-3 gap-3">
         <StatCard icon={Users} label="People" value={members} tone="sky" index={0} />
-        <StatCard icon={Mail} label="Invites waiting" value={invites} tone="amber" index={1} trend={invites > 0 ? { direction: 'up', label: 'To send' } : { direction: 'flat', label: 'None waiting' }} />
+        <StatCard icon={Mail} label="Invites waiting" value={invites} tone="cyan" index={1} trend={invites > 0 ? { direction: 'up', label: 'To send' } : { direction: 'flat', label: 'None waiting' }} />
         <StatCard icon={Ticket} label="Seats left" value={seats} tone="emerald" index={2} trend={seats > 0 ? { direction: 'up', label: 'Open seats' } : { direction: 'down', label: 'Full' }} />
       </section>
 
@@ -162,6 +182,14 @@ export default function InstitutionAcademyPage() {
         </div>
         <p className="text-xs text-muted-foreground">Logo, colours, domain and certificate name are set with the platform admin. Invitations and certificates use the name saved here.</p>
       </section>
+
+      {institution && (
+        <InstitutionLoginShare
+          slug={institution.subdomain}
+          customDomain={institution.customDomain}
+          schoolName={institution.branding?.displayName || institution.name || 'Your academy'}
+        />
+      )}
 
       <section id="academy-invite" className="rounded-3xl border border-border bg-card p-5 space-y-3">
         <h2 className="font-semibold">Invite teachers and students</h2>
@@ -192,6 +220,12 @@ export default function InstitutionAcademyPage() {
           <p className="text-sm text-muted-foreground">Level: {allocationYearsFor(classProgrammes).join(', ') || 'Not applicable'}</p>
         )}
         <Button onClick={() => void addClass()} className="rounded-full" disabled={!live.length}>Add class</Button>
+        {institutionId ? (
+          <div className="pt-2">
+            <h3 className="font-semibold mb-2">Leaderboards and houses</h3>
+            <ClassBoardControls institutionId={institutionId} classes={classes} />
+          </div>
+        ) : null}
       </section>
 
       {ownCourses && (

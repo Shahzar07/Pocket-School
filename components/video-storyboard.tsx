@@ -207,11 +207,11 @@ export function VideoStoryboard({ script, dark }: { script: string; dark?: boole
   const numBg = dark ? 'bg-red-500/20 text-red-400' : 'bg-red-500/15 text-red-600';
   const titleColor = dark ? 'text-white' : 'text-foreground';
   const visualBg = dark ? 'bg-white/[0.02] border-white/5' : 'bg-muted/50 border-border/50';
-  const visualLabel = dark ? 'text-cyan-400' : 'text-cyan-600';
+  const visualLabel = dark ? 'text-[var(--ps-cyan)]' : 'text-[var(--ps-cyan-text)]';
   const narrationColor = dark ? 'text-slate-300' : 'text-muted-foreground';
-  const bannerBg = dark ? 'bg-amber-500/5 border-amber-500/20' : 'bg-amber-50 border-amber-200';
-  const bannerText = dark ? 'text-amber-300' : 'text-amber-700';
-  const bannerIcon = dark ? 'text-amber-400' : 'text-amber-500';
+  const bannerBg = dark ? 'bg-[var(--ps-cyan-soft)] border-[var(--ps-cyan-border)]/20' : 'bg-[var(--ps-cyan-soft)] border-[var(--ps-cyan-border)]';
+  const bannerText = dark ? 'text-[var(--ps-cyan)]' : 'text-[var(--ps-cyan-text)]';
+  const bannerIcon = dark ? 'text-[var(--ps-cyan)]' : 'text-[var(--ps-cyan-text)]';
   const labelColor = dark ? 'text-slate-400' : 'text-muted-foreground';
 
   return (

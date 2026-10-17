@@ -317,6 +317,28 @@ describe('age tiers', () => {
     await assertFails(updateDoc(doc(db, 'users/child1'), { ageTier: 'adult' }));
     await assertFails(updateDoc(doc(db, 'users/child1'), { ageTier: 'teen' }));
     await assertFails(updateDoc(doc(db, 'users/child1'), { dateOfBirth: '1990-01-01' }));
+    await assertFails(updateDoc(doc(db, 'users/child1'), { studentNumber: 'PSM-0001' }));
+    await assertFails(updateDoc(doc(db, 'users/child1'), { studentStatus: { status: 'verified', verifiedAt: 1, validUntil: 2 } }));
+    await assertFails(setDoc(doc(db, 'offers/offer1'), { title: 'Drink', status: 'live' }));
+    await assertFails(setDoc(doc(db, 'redemptions/red1'), { offerId: 'offer1', uid: 'child1', partnerId: 'cafe', at: 1, method: 'scan' }));
+    const note = {
+      text: 'Revise photosynthesis',
+      colour: 'cyan',
+      pinned: false,
+      order: 1,
+      board: 'My board',
+      linkedTo: { type: 'lesson', id: 'l1' },
+      createdAt: 1,
+      updatedAt: 1,
+    };
+    await assertSucceeds(setDoc(doc(db, 'users/child1/notes/n1'), note));
+    await assertFails(getDoc(doc(dbFor('adult1'), 'users/child1/notes/n1')));
+    await assertFails(setDoc(doc(db, 'users/child1/notes/n2'), { ...note, share: { spaceId: 'class-1', status: 'live' } }));
+    await assertFails(deleteDoc(doc(db, 'users/child1/notes/n1')));
+    await assertFails(setDoc(doc(db, 'note_shares/child1_n1'), { ownerId: 'child1', spaceId: 'class-1', status: 'live', text: 'Revise' }));
+    await assertFails(setDoc(doc(db, 'referrals/AB12CD34'), { inviterUid: 'child1', createdAt: 1, redeemedBy: [] }));
+    await assertFails(setDoc(doc(db, 'card_shares/shareidshareidshare'), { uid: 'child1', revoked: false }));
+    await assertFails(setDoc(doc(db, 'card_audit/evt1'), { type: 'view', uid: 'child1' }));
     const teen = dbFor('teen1');
     await assertFails(updateDoc(doc(teen, 'users/teen1'), { ageTier: 'adult' }));
     await assertSucceeds(updateDoc(doc(teen, 'users/teen1'), { yearGroup: 'Year 10' }));
@@ -970,7 +992,7 @@ describe('admin catalogue and settings writes', () => {
       ['institution_pricing/tiers', { seats: 10 }],
       ['admin_invites/editor@poketschool.ai', { staffRole: 'content_editor' }],
       ['platform_signals/health', { ok: false }],
-      ['badges/gold', { userId: 'parent1', name: 'Gold' }],
+      ['badges/first', { userId: 'parent1', name: 'First' }],
       ['moderation_queue/forged', { status: 'open' }],
       ['audit_settings/retention', { days: 1 }],
     ];
@@ -987,7 +1009,7 @@ describe('admin catalogue and settings writes', () => {
     await assertSucceeds(setDoc(doc(dbFor('admin1'), 'pricing_config/main'), { currency: 'USD' }));
     await assertSucceeds(setDoc(doc(dbFor('admin1'), 'institution_pricing/tiers'), { seats: 10 }));
     await assertSucceeds(setDoc(doc(dbFor('admin1'), 'admin_invites/editor@poketschool.ai'), { staffRole: 'content_editor' }));
-    await assertSucceeds(setDoc(doc(dbFor('admin1'), 'badges/gold'), { userId: 'adult1', name: 'Gold' }));
+    await assertSucceeds(setDoc(doc(dbFor('admin1'), 'badges/first'), { userId: 'adult1', name: 'First' }));
     await assertFails(setDoc(doc(dbFor('admin1'), 'platform_signals/health'), { ok: true }));
     await assertFails(setDoc(doc(dbFor('admin1'), 'moderation_queue/forged'), { status: 'open' }));
     await assertFails(setDoc(doc(dbFor('admin1'), 'audit_settings/retention'), { days: 1 }));

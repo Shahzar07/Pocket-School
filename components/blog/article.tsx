@@ -31,7 +31,7 @@ function inline(text: string, key: string): ReactNode[] {
 }
 
 function TextLink({ href, children }: { href: string; children: ReactNode }) {
-  const className = 'font-semibold text-[#2786A4] underline-offset-2 hover:underline';
+  const className = 'font-semibold text-primary underline-offset-2 hover:underline';
   if (isAffiliateToken(href)) {
     return <a href={href} rel={AFFILIATE_REL} className={className}>{children}</a>;
   }
@@ -87,7 +87,7 @@ export function ArticleBody({ post }: { post: BlogPost }) {
         index += 1;
       }
       blocks.push(
-        <blockquote key={key} className="border-l-4 border-[#E2AF4D] pl-4 text-[#203337]/80">
+        <blockquote key={key} className="border-l-4 border-[var(--ps-cyan-border)] pl-4 text-[#203337]/80">
           {quote.map((part, quoteIndex) => <p key={`${key}-${quoteIndex}`}>{inline(part, `${key}-${quoteIndex}`)}</p>)}
         </blockquote>,
       );
@@ -133,7 +133,7 @@ export function ArticleBody({ post }: { post: BlogPost }) {
 export function AffiliateNote({ post }: { post: BlogPost }) {
   if (!post.affiliate && post.category !== 'Book Reviews') return null;
   return (
-    <p className="mt-6 rounded-2xl border border-[#E2AF4D]/60 bg-[#E2AF4D]/15 px-4 py-3 text-sm leading-6 text-[#203337]">
+    <p className="mt-6 rounded-2xl border border-[var(--ps-cyan-border)]/60 bg-[var(--ps-cyan-soft)] px-4 py-3 text-sm leading-6 text-[#203337]">
       <strong>Disclosure. </strong>{AFFILIATE_DISCLOSURE}
     </p>
   );
@@ -141,7 +141,7 @@ export function AffiliateNote({ post }: { post: BlogPost }) {
 
 function CtaLink({ link, primary }: { link: BlogLink; primary: boolean }) {
   const className = primary
-    ? 'inline-flex min-h-11 items-center rounded-full bg-[#E2AF4D] px-5 text-sm font-bold text-[#203337]'
+    ? 'inline-flex min-h-11 items-center rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-5 text-sm font-bold text-[#203337]'
     : 'inline-flex min-h-11 items-center rounded-full border border-white/25 px-5 text-sm font-bold';
   if (isAffiliateToken(link.href)) {
     return <a href={link.href} rel={AFFILIATE_REL} className={className}>{link.label}</a>;
@@ -181,6 +181,6 @@ export function Cover({ post, className = '' }: { post: BlogPost; className?: st
     );
   }
   return (
-    <div className={`bg-gradient-to-br from-[#2786A4] via-[#1E3A8A] to-[#203337] ${className}`} aria-hidden />
+    <div className={className} style={{ background: 'var(--ps-hero)' }} aria-hidden />
   );
 }

@@ -7,7 +7,6 @@ import { SeeMore } from '@/components/shell/see-more';
 import { MobileNav, type ShellRole } from '@/components/shell/mobile-nav';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SparksNote } from '@/components/shell/sparks-note';
-import type { Role } from '@/lib/roles';
 
 const COPY: Record<ShellRole, { title: string; accent: string; action: string; today: string }> = {
   student: {
@@ -40,12 +39,27 @@ const COPY: Record<ShellRole, { title: string; accent: string; action: string; t
     action: 'Invite people',
     today: '12 seats left and 2 invites waiting. Invite teachers and students first.',
   },
+  partner_merchant: {
+    title: 'Partner',
+    accent: 'portal',
+    action: 'Open offers',
+    today: 'Redemptions and offers live in the partner portal. The member card stays free.',
+  },
+};
+
+const ROLE_WASH: Record<ShellRole, string> = {
+  student: 'var(--ps-role-student)',
+  teacher: 'var(--ps-role-teacher)',
+  parent: 'var(--ps-role-parent)',
+  admin: 'var(--ps-role-admin)',
+  institution_admin: 'var(--ps-role-admin)',
+  partner_merchant: 'var(--ps-role-student)',
 };
 
 export function DesignDesk({ role }: { role: ShellRole }) {
   const copy = COPY[role] ?? COPY.student;
   return (
-    <div className="min-h-screen bg-background text-foreground" data-design-desk={role}>
+    <div className="min-h-screen text-foreground" data-design-desk={role} style={{ background: ROLE_WASH[role] }}>
       <div className="flex min-h-screen">
         <aside className="hidden w-[264px] shrink-0 border-e border-sidebar-border bg-sidebar p-4 lg:block" aria-label="Sidebar">
           <p className="text-[13px] font-semibold">Poket School</p>
@@ -67,7 +81,7 @@ export function DesignDesk({ role }: { role: ShellRole }) {
             </div>
           </header>
           <DashPage>
-            <RoleChecklist role={role as Role} />
+            <RoleChecklist role={role} />
             <DashHeader
               eyebrow="Today"
               title={copy.title}

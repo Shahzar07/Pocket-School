@@ -61,7 +61,7 @@ export function AdminViewAsBanner() {
   const target = useViewAs();
   if (!target) return null;
   return (
-    <div className="bg-amber-400 text-amber-950 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-sm shrink-0">
+    <div className="border-b border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)] px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-sm shrink-0">
       <p>
         <strong>Viewing as {target.name || 'this user'}</strong>
         {target.email ? ` (${target.email})` : ''}. This session is read-only.

@@ -18,6 +18,7 @@ export interface CertificateAward {
   moduleTitle: string;
   issuedAt: string;
   issuedByName: string;
+  studentNumber?: string;
 }
 
 export type CertificateStatus = 'valid' | 'revoked';
@@ -45,6 +46,8 @@ export interface CertificateFace {
   logoUrl?: string | null;
   /** Printed under the disclaimer. Stored on the academy brand. */
   certificateFooter?: string | null;
+  /** PS-XXXX-XXXX. Printed on the certificate and on the public verification page. */
+  studentNumber?: string | null;
 }
 
 export function safeLogoUrl(value: string | null | undefined): string | null {
@@ -87,6 +90,16 @@ export function certificateHeader(face: Pick<CertificateFace, 'issuedByName' | '
     brand: name.toUpperCase(),
     poweredBy: !own && face.showPoweredBy !== false,
   };
+}
+
+const STUDENT_NUMBER_RE = /^PS-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
+
+/** A student number safe to print. Anything else is left off the certificate. */
+export function certificateStudentNumber(value: unknown): string {
+  const compact = (typeof value === 'string' ? value : '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (!compact.startsWith('PS') || compact.length !== 10) return '';
+  const code = `PS-${compact.slice(2, 6)}-${compact.slice(6, 10)}`;
+  return STUDENT_NUMBER_RE.test(code) ? code : '';
 }
 
 /** Profile names are stored as written. Blank names stay a person, not an empty line. */
@@ -136,8 +149,21 @@ export function certificateVerifyPath(id: string): string {
   return `/verify/${encodeURIComponent(id)}`;
 }
 
+/** Public site origin. Clients prefix this onto a stored `/verify/{id}` path. */
+export function publicSiteOrigin(): string {
+  return (process.env.NEXT_PUBLIC_SITE_URL || 'https://poketschool.ai').replace(/\/$/, '');
+}
+
 export function certificateVerifyUrl(id: string, origin = 'https://poketschool.ai'): string {
   return `${origin.replace(/\/$/, '')}${certificateVerifyPath(id)}`;
+}
+
+/** Absolute verify URL for an API response. Stored certificates keep the path only. */
+export function absoluteVerifyUrl(path: string): string {
+  const trimmed = path.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  const suffix = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return `${publicSiteOrigin()}${suffix}`;
 }
 
 /** Issue year from the certificate date, so a download keeps the year it was awarded. */
@@ -210,6 +236,7 @@ function pdfQrCommands(value: string, x: number, y: number, sizePt: number): str
 export function buildCertificatePdf(face: CertificateFace, origin?: string): Uint8Array {
   const moduleTitle = face.moduleTitle?.trim() || face.courseTitle;
   const verify = certificateVerifyUrl(face.id, origin);
+  const studentNumber = certificateStudentNumber(face.studentNumber);
   const status = certificateStatus(face.status);
   const header = certificateHeader(face);
   const lines: { text: string; size: number; gap: number }[] = [
@@ -217,7 +244,8 @@ export function buildCertificatePdf(face: CertificateFace, origin?: string): Uin
     ...(certificateRecognition(face) ? [{ text: certificateRecognition(face) as string, size: 11, gap: 20 }] : []),
     { text: 'Certificate of Achievement', size: 28, gap: 36 },
     { text: 'This is to certify that', size: 12, gap: 28 },
-    { text: face.studentName, size: 24, gap: 32 },
+    { text: face.studentName, size: 24, gap: 28 },
+    ...(studentNumber ? [{ text: `Student number  ${studentNumber}`, size: 13, gap: 24 }] : []),
     { text: 'has completed the module', size: 12, gap: 26 },
     { text: moduleTitle, size: 18, gap: 22 },
     { text: face.moduleTitle ? face.courseTitle : 'Poket School', size: 13, gap: 28 },
@@ -274,6 +302,7 @@ export function buildCertificatePdf(face: CertificateFace, origin?: string): Uin
 export function certificateDocumentHtml(face: CertificateFace, origin?: string): string {
   const moduleTitle = face.moduleTitle?.trim() || '';
   const verify = certificateVerifyUrl(face.id, origin);
+  const studentNumber = certificateStudentNumber(face.studentNumber);
   const date = formatCertificateDate(face.issuedAt);
   const status = certificateStatus(face.status);
   const statusLabel = status === 'revoked' ? 'Revoked' : 'Valid';
@@ -314,6 +343,7 @@ export function certificateDocumentHtml(face: CertificateFace, origin?: string):
     <h1>Certificate of Achievement</h1>
     <p class="lead">This is to certify that</p>
     <div class="name">${escapeHtml(face.studentName)}</div>
+    ${studentNumber ? `<div class="id">Student number<br>${escapeHtml(studentNumber)}</div>` : ''}
     <p class="lead">has completed the module</p>
     <div class="module">${escapeHtml(moduleTitle || face.courseTitle)}</div>
     ${moduleTitle ? `<div class="course">${escapeHtml(face.courseTitle)}</div>` : ''}
