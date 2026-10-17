@@ -12,6 +12,7 @@ import {
   type Recommendation,
   type ShelfCourse,
 } from '@/lib/alumni';
+import { canUndoGraduation } from '@/lib/graduation';
 import { documentPdf } from '@/lib/institution-pricing';
 
 function reviewLabel(review: ShelfCourse['review']): string {
@@ -143,14 +144,18 @@ export function AlumniBoard({
   policy,
   onSave,
   onMark,
+  onUndo,
   onNewsletter,
+  today = '',
 }: {
   schoolName: string;
   people: readonly AlumniPerson[];
   policy: AlumniPolicy;
   onSave?: (policy: AlumniPolicy) => void;
   onMark?: (email: string) => void;
+  onUndo?: (alumniId: string) => void;
   onNewsletter?: (note: string) => void;
+  today?: string;
 }) {
   const [graceDays, setGraceDays] = useState(policy.graceDays);
   const [discount, setDiscount] = useState(Math.round(policy.discount * 100));
@@ -164,6 +169,7 @@ export function AlumniBoard({
     return all;
   }, {});
   const certificates = people.reduce((sum, person) => sum + person.certificates, 0);
+  const seatsFreed = people.filter((person) => person.seatFreed && !person.undoneOn).length;
   const download = () => {
     const bytes = documentPdf([
       `${schoolName} alumni`,
@@ -199,16 +205,22 @@ export function AlumniBoard({
         {Object.entries(byYear).map(([year, count]) => (
           <span key={year} className="rounded-full bg-white px-3 py-1">{year}: {count} graduate{count === 1 ? '' : 's'}</span>
         ))}
-        <span className="rounded-full bg-[#F8E7C4] px-3 py-1">{certificates} certificates</span>
+        <span className="rounded-full bg-[#F8E7C4] px-3 py-1">{seatsFreed} seat{seatsFreed === 1 ? '' : 's'} freed</span>
+        <span className="rounded-full bg-white px-3 py-1">{certificates} certificates</span>
       </div>
       <div className="overflow-hidden rounded-2xl bg-white">
         {people.map((person) => (
           <div key={person.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1A3C34]/10 px-4 py-3 text-sm last:border-0">
             <div>
               <p className="font-semibold">{person.name}</p>
-              <p className="text-xs text-[#1A3C34]/70">{person.level} · left {person.leftOn} · {person.seatFreed ? 'seat free · individual' : `seat free after ${person.graceEndsOn}`}</p>
+              <p className="text-xs text-[#1A3C34]/70">{person.level} · left {person.leftOn} · {person.undoneOn ? 'seat restored' : person.seatFreed ? 'seat free · individual' : `seat free after ${person.graceEndsOn}`}</p>
             </div>
-            <span>{person.certificates} certificates</span>
+            <div className="flex items-center gap-3">
+              <span>{person.certificates} certificates</span>
+              {onUndo && canUndoGraduation({ leftOn: person.leftOn, today, undoneOn: person.undoneOn, seatFreed: person.seatFreed }) ? (
+                <button type="button" onClick={() => onUndo(person.id)} className="h-9 rounded-full border border-[#1A3C34]/15 px-3 text-xs font-semibold">Undo</button>
+              ) : null}
+            </div>
           </div>
         ))}
       </div>

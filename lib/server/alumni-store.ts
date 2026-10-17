@@ -2,7 +2,6 @@ import 'server-only';
 
 import { FieldValue } from 'firebase-admin/firestore';
 import {
-  alumniWelcome,
   defaultAlumniPolicy,
   dueToLeave,
   holderDeletion,
@@ -16,8 +15,22 @@ import {
   type PublicAlumniView,
 } from '../alumni';
 import { certificateStudentNumber } from '../certificates';
+import {
+  achievementLines,
+  alumniUpgradeUrl,
+  canUndoGraduation,
+  graduationLetter,
+  graduationSuggestions,
+  previewGraduationBill,
+  undoUntil,
+  type GraduationBillPreview,
+  type GraduationCandidate,
+  type ReadyGraduate,
+} from '../graduation';
 import { adminDb } from '../firebase-admin';
+import { blankSubscription, periodStartFor, readSubscription } from '../institution-membership';
 import { loadAutomation, logAutomation } from './automation-store';
+import { countInstitutionStudents, loadInstitutionCatalogue } from './institution-catalogue';
 import { sendInstitutionMail } from './institution-mail';
 import { reviewInstitutionTier } from './institution-tier';
 
@@ -45,6 +58,8 @@ function personFrom(id: string, data: Record<string, unknown> | undefined): Alum
     certificates: typeof data.certificates === 'number' ? data.certificates : 0,
     seatFreed: data.seatFreed === true,
     publicProfile: data.publicProfile === true,
+    undoUntil: text(data.undoUntil),
+    undoneOn: text(data.undoneOn),
   };
 }
 
@@ -93,7 +108,13 @@ async function completeInstitutionCourses(studentId: string, institutionId: stri
     if (!enrollment.exists) continue;
     const progress = typeof enrollment.get('progress') === 'number' ? enrollment.get('progress') : 0;
     if (progress >= 100) continue;
-    await enrollment.ref.set({ progress: 100, shelf: 'completed', studentId }, { merge: true });
+    const before = enrollment.get('progressBeforeShelf');
+    await enrollment.ref.set({
+      progress: 100,
+      shelf: 'completed',
+      studentId,
+      ...(typeof before === 'number' ? {} : { progressBeforeShelf: progress }),
+    }, { merge: true });
   }
 }
 
@@ -103,6 +124,15 @@ async function dropUsedLicence(institutionId: string): Promise<void> {
   const used = profile.get('seatsUsed');
   if (typeof used === 'number' && used >= 1) {
     await profileRef.set({ seatsUsed: Math.floor(used) - 1 }, { merge: true });
+  }
+}
+
+async function raiseUsedLicence(institutionId: string): Promise<void> {
+  const profileRef = adminDb().doc(`institutions/${institutionId}/settings/profile`);
+  const profile = await profileRef.get();
+  const used = profile.get('seatsUsed');
+  if (typeof used === 'number' && used >= 0) {
+    await profileRef.set({ seatsUsed: Math.floor(used) + 1 }, { merge: true });
   }
 }
 
@@ -124,16 +154,30 @@ async function settleGraduate(input: {
   await adminDb().doc(`institutions/${institutionId}/alumni/${person.id}`).set({
     seatFreed: true,
     freedOn: input.today,
+    undoUntil: undoUntil(person.leftOn || input.today),
+    undoneOn: FieldValue.delete(),
   }, { merge: true });
   if (input.email) {
-    await adminDb().doc(`institutions/${institutionId}/joinRoster/${rosterKey(input.email)}`).set({
+    const rosterRef = adminDb().doc(`institutions/${institutionId}/joinRoster/${rosterKey(input.email)}`);
+    const roster = await rosterRef.get();
+    const className = text(roster.get('className'));
+    const savedClass = text(roster.get('classNameBefore'));
+    await rosterRef.set({
       status: 'leaver',
       className: '',
       graceEndsOn: FieldValue.delete(),
+      ...(savedClass || !className ? {} : { classNameBefore: className }),
     }, { merge: true });
   }
   if (!input.studentId) return false;
   await completeInstitutionCourses(input.studentId, institutionId);
+  await adminDb().doc(`badges/${input.studentId}_graduate`).set({
+    userId: input.studentId,
+    type: 'graduate',
+    name: 'Graduate',
+    institutionId,
+    awardedAt: input.today,
+  }, { merge: true });
   const userRef = adminDb().doc(`users/${input.studentId}`);
   const user = await userRef.get();
   const currentInstitution = text(user.get('institutionId'));
@@ -143,6 +187,7 @@ async function settleGraduate(input: {
     alumniOf: institutionId,
     alumniName: person.institutionName,
     alumniGraceEnds: person.graceEndsOn,
+    alumniLeftOn: person.leftOn,
     alumniDiscount: input.discount,
     institutionAccess: reviewOpen ? 'grace' : 'ended',
     ...(counted || !currentInstitution ? { institutionId: FieldValue.delete() } : {}),
@@ -150,6 +195,7 @@ async function settleGraduate(input: {
   if (!counted) return false;
   await dropUsedLicence(institutionId);
   await reviewInstitutionTier(institutionId, input.today);
+  await adminDb().doc(`institutions/${institutionId}/alumni/${person.id}`).set({ seatCounted: true }, { merge: true });
   return true;
 }
 
@@ -171,7 +217,7 @@ export async function beginAlumni(input: {
     input.studentId ? adminDb().doc(`institutions/${institutionId}/alumni/${input.studentId}`).get() : Promise.resolve(null),
   ]);
   const prior = existing?.exists ? personFrom(existing.id, existing.data()) : null;
-  if (prior) {
+  if (prior && !prior.undoneOn) {
     await settleGraduate({
       institutionId,
       studentId: input.studentId,
@@ -214,14 +260,35 @@ export async function beginAlumni(input: {
     today: input.today,
     discount: policy.discount,
   });
+  const upgradeUrl = alumniUpgradeUrl(person.level);
+  const reviewOpen = outcome.institutionAccess === 'grace';
   if (input.studentId && input.email) {
-    await sendInstitutionMail(input.email, alumniWelcome({
+    await sendInstitutionMail(input.email, graduationLetter({
+      audience: 'student',
       institutionName: person.institutionName,
-      name: person.name,
-      graceEndsOn: person.graceEndsOn,
+      studentName: person.name,
       discount: policy.discount,
-      reviewOpen: outcome.institutionAccess === 'grace',
+      reviewOpen,
+      graceEndsOn: person.graceEndsOn,
+      upgradeUrl,
     }));
+  }
+  if (input.studentId) {
+    const parents = await adminDb().collection('users').where('childIds', 'array-contains', input.studentId).limit(20).get();
+    const parentLetter = graduationLetter({
+      audience: 'parent',
+      institutionName: person.institutionName,
+      studentName: person.name,
+      discount: policy.discount,
+      reviewOpen,
+      graceEndsOn: person.graceEndsOn,
+      upgradeUrl,
+    });
+    for (const parent of parents.docs) {
+      const email = text(parent.get('email')).toLowerCase();
+      if (!email || email === input.email.toLowerCase()) continue;
+      await sendInstitutionMail(email, parentLetter);
+    }
   }
   const reviewLine = outcome.institutionAccess === 'grace'
     ? ` Course review stays until ${person.graceEndsOn}.`
@@ -236,7 +303,7 @@ export async function beginAlumni(input: {
   await logAutomation({
     rule: 'alumni_rollover',
     outcome: 'auto',
-    summary: `${person.name} is an alumnus of ${person.institutionName}. The seat is free and the account is individual.`,
+    summary: `${person.name} is an alumnus of ${person.institutionName}. The seat is free and the account is individual. Letters explain what stays free and the alumni discount.`,
     actorId: input.studentId || 'system',
     refId: institutionId,
   });
@@ -282,7 +349,7 @@ export async function releaseDueAlumni(today: string): Promise<number> {
     const snap = await academy.ref.collection('alumni').where('seatFreed', '==', false).limit(100).get();
     for (const doc of snap.docs) {
       const person = personFrom(doc.id, doc.data());
-      if (!person) continue;
+      if (!person || person.undoneOn) continue;
       await settleGraduate({
         institutionId: academy.id,
         studentId: person.studentId,
@@ -444,6 +511,236 @@ export async function honourHolderDeletion(uid: string): Promise<number> {
     updated += 1;
   }
   return updated;
+}
+
+async function rosterCandidates(institutionId: string): Promise<GraduationCandidate[]> {
+  const roster = await adminDb().collection(`institutions/${institutionId}/joinRoster`).where('status', '==', 'joined').limit(200).get();
+  const rows: GraduationCandidate[] = [];
+  for (const row of roster.docs) {
+    rows.push({
+      role: text(row.get('role')) || 'student',
+      status: 'joined',
+      level: text(row.get('level')),
+      studentId: '',
+      schoolStudentId: text(row.get('studentId')),
+      name: text(row.get('name')),
+      email: text(row.get('email')).toLowerCase(),
+      studentNumber: '',
+    });
+  }
+  const ready = graduationSuggestions(rows);
+  const people: GraduationCandidate[] = [];
+  for (const row of ready) {
+    const user = row.email
+      ? await adminDb().collection('users').where('email', '==', row.email).limit(1).get()
+      : null;
+    const doc = user?.docs[0];
+    people.push({
+      ...row,
+      studentId: doc?.id ?? '',
+      name: row.name || text(doc?.get('name')),
+      studentNumber: text(doc?.get('studentNumber')),
+    });
+  }
+  return people;
+}
+
+function asReady(row: GraduationCandidate): ReadyGraduate {
+  return {
+    studentId: row.studentId,
+    schoolStudentId: row.schoolStudentId,
+    name: row.name,
+    email: row.email,
+    studentNumber: row.studentNumber,
+    level: row.level,
+  };
+}
+
+/** Once a day, note final-level students. Confirming still waits for an admin. */
+export async function recordGraduationSuggestions(institutionId: string, today: string): Promise<{ count: number; people: ReadyGraduate[]; logged: boolean }> {
+  const people = (await rosterCandidates(institutionId)).map(asReady);
+  if (people.length === 0) return { count: 0, people, logged: false };
+  const automation = await loadAutomation();
+  if (!automation.rules.alumni_rollover) return { count: people.length, people, logged: false };
+  const noticeRef = adminDb().doc(`institutions/${institutionId}/settings/graduation_notice`);
+  const logged = await adminDb().runTransaction(async (tx) => {
+    const notice = await tx.get(noticeRef);
+    if (notice.get('on') === today) return false;
+    tx.set(noticeRef, { on: today, count: people.length });
+    return true;
+  });
+  if (!logged) return { count: people.length, people, logged: false };
+  await logAutomation({
+    rule: 'alumni_rollover',
+    outcome: 'held',
+    summary: `${people.length} students are at the final level. Confirm graduation to free ${people.length} seats.`,
+    actorId: 'system',
+    refId: institutionId,
+  });
+  return { count: people.length, people, logged: true };
+}
+
+export async function noteGraduationSuggestions(today: string): Promise<number> {
+  const automation = await loadAutomation();
+  if (!automation.rules.alumni_rollover) return 0;
+  const academies = await adminDb().collection('institutions').limit(80).get();
+  let noted = 0;
+  for (const academy of academies.docs) {
+    const result = await recordGraduationSuggestions(academy.id, today);
+    if (result.logged) noted += result.count;
+  }
+  return noted;
+}
+
+export async function previewBulkGraduation(institutionId: string, today: string, people?: readonly ReadyGraduate[]): Promise<GraduationBillPreview & { people: ReadyGraduate[] }> {
+  const ready = people && people.length > 0 ? [...people] : (await rosterCandidates(institutionId)).map(asReady);
+  const academy = await adminDb().doc(`institutions/${institutionId}`).get();
+  const billing = await academy.ref.collection('billing').doc('current').get();
+  const raw = (billing.data() ?? {}) as Record<string, unknown>;
+  const state = readSubscription(raw, blankSubscription('institution', today));
+  const programmeIds = Array.isArray(raw.programmeIds)
+    ? raw.programmeIds.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+    : [];
+  const students = await countInstitutionStudents(institutionId);
+  const preview = previewGraduationBill({
+    graduating: ready.length,
+    currentStudents: students,
+    currentSeats: state.seats,
+    currentTotal: state.total,
+    currentTierId: typeof raw.tierId === 'string' ? raw.tierId : '',
+    itemIds: programmeIds,
+    interval: state.interval === 'annual' ? 'annual' : 'monthly',
+    country: text(academy.get('country')) || 'US',
+    periodStart: periodStartFor(state.periodEnd, state.interval),
+    periodEnd: state.periodEnd,
+    today,
+    billingActive: billing.exists && state.phase === 'active' && programmeIds.length > 0,
+    catalogue: await loadInstitutionCatalogue(),
+  });
+  return { ...preview, people: ready };
+}
+
+export async function confirmGraduations(institutionId: string, people: readonly ReadyGraduate[], today: string, actorId: string): Promise<number> {
+  let marked = 0;
+  for (const person of people.slice(0, 100)) {
+    if (!person.email && !person.studentId) continue;
+    await beginAlumni({
+      institutionId,
+      studentId: person.studentId,
+      schoolStudentId: person.schoolStudentId,
+      name: person.name,
+      email: person.email,
+      studentNumber: person.studentNumber,
+      level: person.level,
+      reason: 'final_level',
+      today,
+    });
+    marked += 1;
+  }
+  if (marked > 0) {
+    await logAutomation({
+      rule: 'alumni_rollover',
+      outcome: 'auto',
+      summary: `Confirmed graduation for ${marked}. Seats are free and the bill was reviewed.`,
+      actorId,
+      refId: institutionId,
+    });
+  }
+  return marked;
+}
+
+async function restoreShelvedCourses(studentId: string, institutionId: string): Promise<void> {
+  const courses = await adminDb().collection('courses').where('institutionId', '==', institutionId).limit(200).get();
+  for (const course of courses.docs) {
+    const enrollment = await course.ref.collection('enrollments').doc(studentId).get();
+    if (!enrollment.exists) continue;
+    const before = enrollment.get('progressBeforeShelf');
+    if (typeof before !== 'number') continue;
+    await enrollment.ref.set({
+      progress: before,
+      shelf: before >= 100 ? 'completed' : FieldValue.delete(),
+      progressBeforeShelf: FieldValue.delete(),
+    }, { merge: true });
+  }
+}
+
+/** Restores the seat and academy access. Certificates, the student number, and other records stay. */
+export async function undoGraduation(institutionId: string, alumniId: string, today: string, actorId: string): Promise<{ restored: true } | { error: string }> {
+  const ref = adminDb().doc(`institutions/${institutionId}/alumni/${alumniId}`);
+  const snap = await ref.get();
+  const person = personFrom(snap.id, snap.data());
+  if (!person) return { error: 'That alumni record was not found.' };
+  if (!canUndoGraduation({ leftOn: person.leftOn, today, undoneOn: person.undoneOn, seatFreed: person.seatFreed })) {
+    return { error: person.undoneOn ? 'This graduation is already undone.' : 'Undo is open for 7 days after graduation.' };
+  }
+  const studentId = person.studentId;
+  if (studentId) {
+    const userRef = adminDb().doc(`users/${studentId}`);
+    const user = await userRef.get();
+    const current = text(user.get('institutionId'));
+    if (current && current !== institutionId) return { error: 'This student is with another academy.' };
+    await userRef.set({
+      institutionId,
+      institutionAccess: 'active',
+    }, { merge: true });
+    await restoreShelvedCourses(studentId, institutionId);
+    await adminDb().doc(`badges/${studentId}_graduate`).delete().catch(() => undefined);
+  }
+  if (person.email) {
+    const rosterRef = adminDb().doc(`institutions/${institutionId}/joinRoster/${rosterKey(person.email)}`);
+    const roster = await rosterRef.get();
+    const className = text(roster.get('classNameBefore'));
+    await rosterRef.set({
+      status: 'joined',
+      ...(className ? { className } : {}),
+      classNameBefore: FieldValue.delete(),
+    }, { merge: true });
+  }
+  const counted = snap.get('seatCounted') === true;
+  await ref.set({ seatFreed: false, undoneOn: today, seatCounted: false }, { merge: true });
+  if (counted) await raiseUsedLicence(institutionId);
+  await reviewInstitutionTier(institutionId, today);
+  await logAutomation({
+    rule: 'alumni_rollover',
+    outcome: 'override',
+    summary: `${person.name} returned to ${person.institutionName || 'the academy'}. The seat and academy access are restored.`,
+    actorId,
+    refId: institutionId,
+  });
+  return { restored: true };
+}
+
+export async function achievementFor(uid: string): Promise<string[]> {
+  const user = await adminDb().doc(`users/${uid}`).get();
+  const institutionId = text(user.get('alumniOf'));
+  const certificates = await certificateCount(uid);
+  const courses: string[] = [];
+  if (institutionId) {
+    const snap = await adminDb().collection('courses').where('institutionId', '==', institutionId).limit(40).get();
+    for (const course of snap.docs) {
+      const enrollment = await course.ref.collection('enrollments').doc(uid).get();
+      if (!enrollment.exists) continue;
+      const progress = enrollment.get('progress');
+      if (typeof progress === 'number' && progress >= 100) {
+        courses.push(text(course.get('title')) || 'Completed course');
+      }
+    }
+  }
+  const badge = await adminDb().doc(`badges/${uid}_graduate`).get();
+  const studentNumber = text(user.get('studentNumber'));
+  const discount = user.get('alumniDiscount');
+  return achievementLines({
+    name: text(user.get('name')),
+    studentNumber,
+    institutionName: text(user.get('alumniName')) || 'Poket School',
+    level: text(user.get('academyLevel')),
+    graduatedOn: text(user.get('alumniLeftOn')),
+    badge: badge.exists ? 'Graduate' : '',
+    courses,
+    certificates: certificates.titles,
+    discount: typeof discount === 'number' ? discount : 0,
+    verifyUrl: studentNumber ? `https://poketschool.ai/p/${encodeURIComponent(studentNumber)}` : '',
+  });
 }
 
 export { defaultAlumniPolicy };

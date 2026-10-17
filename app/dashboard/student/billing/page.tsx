@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { CreditCard, Printer, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 import Link from 'next/link';
+import { individualOffer } from '@/lib/graduation';
 import { formatMoney } from '@/lib/pricing';
 import { DocumentDelivery } from '@/components/document-delivery';
 import { billingDocument } from '@/lib/documents/packet';
@@ -54,6 +55,7 @@ export default function StudentBillingPage() {
   const [error, setError] = useState<string | null>(null);
   const [payDialogInvoice, setPayDialogInvoice] = useState<Invoice | null>(null);
   const [receiptsOpen, setReceiptsOpen] = useState(true);
+  const [alumniLink, setAlumniLink] = useState(false);
 
   const load = async () => {
     if (!user) return;
@@ -74,6 +76,7 @@ export default function StudentBillingPage() {
   useEffect(() => { load(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     automationEnabled('invoice_download').then(setReceiptsOpen).catch(() => setReceiptsOpen(true));
+    setAlumniLink(new URLSearchParams(window.location.search).get('alumni') === '1');
   }, []);
 
   // Online card payment is not live yet — be honest about it instead of faking
@@ -130,11 +133,19 @@ export default function StudentBillingPage() {
             Cancel at period end
           </Button>
         )}
-        {typeof profile?.alumniDiscount === 'number' && profile.alumniDiscount > 0 && (
-          <p className="text-sm mt-3 max-w-2xl rounded-2xl border border-border bg-card px-4 py-3">
-            This account has an alumni discount of {Math.round(profile.alumniDiscount * 100)}% recorded for an individual plan. Certificates and the transcript stay on this account.
-          </p>
-        )}
+        {typeof profile?.alumniDiscount === 'number' && profile.alumniDiscount > 0 && !profile.institutionId && (() => {
+          const offer = individualOffer(profile.academyLevel ?? '', profile.alumniDiscount ?? 0);
+          return (
+            <div id="alumni-upgrade" className={`mt-3 max-w-2xl rounded-2xl border bg-card px-4 py-3 ${alumniLink ? 'border-[#C8922A] ring-2 ring-[#C8922A]' : 'border-border'}`}>
+              <p className="text-sm">
+                Alumni discount of {offer.percent}% on the individual plan. The list price is {formatMoney(offer.listMonthly, 'USD')} a month. Checkout applies the discount when you continue, so the plan is {formatMoney(offer.monthly, 'USD')} a month before tax. Certificates and the transcript stay on this account.
+              </p>
+              <Link href={offer.href} className="mt-3 inline-flex h-11 items-center rounded-full bg-[#1A3C34] px-5 text-sm font-semibold text-white">
+                Continue with the alumni discount
+              </Link>
+            </div>
+          );
+        })()}
         {profile?.institutionId && (
           <p className="text-sm mt-3 max-w-2xl rounded-2xl border border-border bg-card px-4 py-3">
             Your institution pays this seat. Poket School does not charge you for it. Marketplace courses are a separate purchase with a card or the wallet. Sparks cannot buy them.

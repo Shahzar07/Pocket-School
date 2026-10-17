@@ -10,7 +10,7 @@ import { alumniStats } from '@/lib/alumni';
 
 export default function InstitutionInsightsPage() {
   const institutionId = useAuthSTORE((state) => state.profile?.institutionId ?? '');
-  const [stats, setStats] = useState<{ alumni: number; certificates: number; byYear: { year: string; graduates: number; certificates: number }[] } | null>(null);
+  const [stats, setStats] = useState<{ alumni: number; certificates: number; seatsFreed: number; byYear: { year: string; graduates: number; certificates: number; seatsFreed: number }[] } | null>(null);
   useEffect(() => {
     if (!institutionId) return;
     authedFetch(`/api/institutions/alumni?institutionId=${institutionId}`)
@@ -29,10 +29,10 @@ export default function InstitutionInsightsPage() {
         <section className="mx-auto max-w-[1400px] px-4">
           <div className="rounded-3xl border border-[#1A3C34]/10 bg-white p-5 text-[#1A3C34]">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8922A]">Alumni</p>
-            <h2 className="font-heading text-2xl">{stats.alumni} alumni · {stats.certificates} certificates</h2>
+            <h2 className="font-heading text-2xl">{stats.alumni} alumni · {stats.seatsFreed} seats freed · {stats.certificates} certificates</h2>
             <div className="mt-3 flex flex-wrap gap-2 text-sm">
               {stats.byYear.map((row) => (
-                <span key={row.year} className="rounded-full bg-[#F6F1E7] px-3 py-1">{row.year}: {row.graduates} graduate{row.graduates === 1 ? '' : 's'}, {row.certificates} certificates</span>
+                <span key={row.year} className="rounded-full bg-[#F6F1E7] px-3 py-1">{row.year}: {row.graduates} graduate{row.graduates === 1 ? '' : 's'} · {row.seatsFreed} seat{row.seatsFreed === 1 ? '' : 's'} freed</span>
               ))}
             </div>
           </div>

@@ -63,6 +63,8 @@ export interface UserProfile {
   alumniOf?: string;
   alumniName?: string;
   alumniGraceEnds?: string;
+  /** Day the academy seat was freed. */
+  alumniLeftOn?: string;
   /** Fraction off the individual plan, for example 0.15. */
   alumniDiscount?: number;
   alumniPublic?: boolean;

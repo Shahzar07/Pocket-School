@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { transcriptLines } from '@/lib/alumni';
 import { isNextResponse, rateLimit, requireUser } from '@/lib/api-guard';
 import { deletionClosed } from '@/lib/account-settings';
 import { isAdminConfigured, adminDb } from '@/lib/firebase-admin';
-import { askSchool, findCountBySlug, honourHolderDeletion, readPublicAlumni, setAlumniPublic } from '@/lib/server/alumni-store';
+import { achievementFor, askSchool, findCountBySlug, honourHolderDeletion, readPublicAlumni, setAlumniPublic } from '@/lib/server/alumni-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,22 +58,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(await askSchool(user.uid, title));
   }
   if (action === 'transcript') {
-    const snap = await adminDb().doc(`users/${user.uid}`).get();
-    const rows = Array.isArray(body.rows) ? body.rows.flatMap((row) => {
-      if (!row || typeof row !== 'object') return [];
-      const item = row as { title?: unknown; status?: unknown };
-      const title = typeof item.title === 'string' ? item.title.trim().slice(0, 80) : '';
-      if (!title) return [];
-      return [{ title, status: typeof item.status === 'string' ? item.status.trim().slice(0, 40) : 'Completed' }];
-    }).slice(0, 24) : [];
-    const studentNumber = typeof snap.get('studentNumber') === 'string' ? snap.get('studentNumber') as string : '';
-    const lines = transcriptLines({
-      name: typeof snap.get('name') === 'string' ? snap.get('name') as string : '',
-      studentNumber,
-      institutionName: typeof snap.get('alumniName') === 'string' ? snap.get('alumniName') as string : 'Poket School',
-      rows,
-      verifyUrl: `https://poketschool.ai/p/${encodeURIComponent(studentNumber)}`,
-    });
+    const lines = await achievementFor(user.uid);
     return NextResponse.json({ lines });
   }
   if (action === 'honour-deletion') {

@@ -32,6 +32,8 @@ interface UserProfile {
   alumniOf?: string;
   alumniName?: string;
   alumniGraceEnds?: string;
+  /** Day the academy seat was freed. */
+  alumniLeftOn?: string;
   alumniDiscount?: number;
   alumniPublic?: boolean;
   learningStyle?: string;

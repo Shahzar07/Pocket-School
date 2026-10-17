@@ -76,6 +76,9 @@ export interface AlumniPerson {
   certificates: number;
   seatFreed: boolean;
   publicProfile: boolean;
+  /** Last day an admin can restore the seat, inclusive. */
+  undoUntil?: string;
+  undoneOn?: string;
 }
 
 export function defaultAlumniPolicy(): AlumniPolicy {
@@ -306,25 +309,36 @@ export function alumniPrice(listMonthly: number, discount: number): { monthly: n
   return { monthly: Math.round(listMonthly * (1 - rate) * 100) / 100, discount: rate };
 }
 
-export function alumniStats(people: readonly Pick<AlumniPerson, 'leftOn' | 'certificates'>[]): {
+export function alumniStats(people: readonly {
+  leftOn: string;
+  certificates: number;
+  seatFreed?: boolean;
+  undoneOn?: string;
+}[]): {
   alumni: number;
   certificates: number;
-  byYear: { year: string; graduates: number; certificates: number }[];
+  seatsFreed: number;
+  byYear: { year: string; graduates: number; certificates: number; seatsFreed: number }[];
 } {
-  const byYear = new Map<string, { year: string; graduates: number; certificates: number }>();
+  const byYear = new Map<string, { year: string; graduates: number; certificates: number; seatsFreed: number }>();
   let certificates = 0;
+  let seatsFreed = 0;
   for (const person of people) {
     const count = Math.max(0, person.certificates);
     certificates += count;
+    const freed = person.seatFreed === true && !person.undoneOn;
+    if (freed) seatsFreed += 1;
     const year = DATE.test(person.leftOn) ? person.leftOn.slice(0, 4) : 'Undated';
-    const row = byYear.get(year) ?? { year, graduates: 0, certificates: 0 };
+    const row = byYear.get(year) ?? { year, graduates: 0, certificates: 0, seatsFreed: 0 };
     row.graduates += 1;
     row.certificates += count;
+    if (freed) row.seatsFreed += 1;
     byYear.set(year, row);
   }
   return {
     alumni: people.length,
     certificates,
+    seatsFreed,
     byYear: [...byYear.values()].sort((a, b) => a.year.localeCompare(b.year)),
   };
 }

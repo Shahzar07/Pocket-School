@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { GraduationCelebration } from '@/components/alumni/graduation-panels';
 import { AlumniOfferCard } from '@/components/alumni/record-panels';
+import { graduationCard } from '@/lib/graduation';
 import { DashHeader, DashPage, Panel } from '@/components/dash-ui';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { authedFetch } from '@/lib/api-client';
@@ -36,6 +38,17 @@ export default function StudentAcademyPage() {
         title="My academy"
         description="An individual account can join an academy later. Progress stays. Leaving moves academy courses to Completed, frees the seat, and keeps this account as an individual with the alumni offer."
       />
+      {profile?.alumniOf && !joined && (
+        <GraduationCelebration
+          card={graduationCard({
+            name: profile.name ?? '',
+            institutionName: profile.alumniName ?? 'Poket School',
+            level: profile.academyLevel ?? '',
+            studentNumber: profile.studentNumber ?? '',
+            graduatedOn: profile.alumniLeftOn ?? '',
+          })}
+        />
+      )}
       {(profile?.alumniOf || profile?.institutionAccess === 'grace' || profile?.institutionAccess === 'ended') && (
         <AlumniOfferCard
           name={profile?.name ?? ''}
