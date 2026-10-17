@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
         price_data: {
           currency: opened.currency.toLowerCase(),
           unit_amount: Math.round(opened.total * 100),
-          product_data: { name: `Poket School — ${planName(planId as VolumePlanId)} · ${seats} student seats` },
+          product_data: { name: `Poket School — ${planName(planId as VolumePlanId)} · ${seats} student seats · Poket Reads` },
         },
       }],
       metadata: {

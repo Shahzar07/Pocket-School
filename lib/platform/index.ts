@@ -1,51 +1,50 @@
 /**
  * Seams between Poket Reads and the shared platform.
  *
- * PR #52 (`cursor/clarity-security-sparks-f0ff`) is the base of this branch.
- * It provides USD formatting (`lib/money.ts`), programme names (`lib/programmes.ts`),
- * allocation permission strings (`allocFree`, `allocPaid`, `allocMarketplace`,
- * `allocInstitution`, `allocCoupon` in `lib/entitlements.ts`), signed-in search
- * (`app/api/search`), dashboard nav, parent notifications, and white-label.
+ * Wired on this branch: display prices (`lib/pricing.ts`), the reader language
+ * (`lib/languages.ts` and `I18nProvider`), reading pushes (`lib/push` and
+ * `POST /api/push`), and book targets (`migrateAllocation`, the same list the
+ * Firestore `targetsHit` rule uses).
  *
- * It does not yet provide the richer systems Harry described. Each file here
- * is the function to replace when that system lands. Do not format money,
- * decide book access, translate a book, or rank a board anywhere else.
+ * Still local: the daily FX feed, the privacy leaderboard (`privacyBoard`),
+ * server-side notification fan-out, XP and badges, and `users.roles[]`.
+ * Badge work in the open PR #127 stays unwired so this XP stub can adopt it later.
  *
- * | Seam | File | Replace with |
+ * | Seam | File | Status |
  * | --- | --- | --- |
- * | Price | pricing.ts `quotePrice` | Display conversion. Charged amounts use `lib/pricing.ts` on checkout. |
- * | Allocation | allocation.ts `bookAllocation`, `decideBook` | Product allocator. Kind is `book`. Grants use the existing `alloc:*` strings. |
- * | Institution licence | licence.ts `licenceOffer` | Academy seats and licensed programmes. |
- * | Translation | localization.ts `editionFor` | Geo i18n review record. `LanguageVersion` matches it field for field. |
- * | Board | leaderboard.ts `privacyBoard` | Shared privacy-safe leaderboard. |
- * | Notices | notifications.ts `readingNotices` | Notifications centre. Shape is `{ title, message, href }`. |
- * | Search | search.ts `searchBooks` | Merged into `GET /api/search` as `books`, and shown in dashboard search. Replace the function when a shared index owns book documents. |
- * | CMS order | cms.ts `moveItem` | Drag-and-drop curriculum CMS. Chapter reorder uses this, not a second helper. |
- * | Editor | `components/editor` | Shared source. `writeAutosave` matches the stack. API in `docs/EDITOR_MEDIA.md`. |
- * | Media | `components/media` | Shared source, including `media_assets` via `recordMediaAsset`. Book overlay stays in Book Studio. |
- * | Wallet | wallet.ts `quoteCheckout` | `POST /api/stripe/create-checkout` and `POST /api/payments/checkout` charge plans, add-ons, courses, books, and Reads. Touch 'n Go is the Malaysian gateway method `tng`. |
- * | Goals | `lib/goals.ts`, reading.ts `readingGoal` | Shared `daily_goals` contract. Category `reading`. Sessions return the document. The ledger write is still pending. |
- * | Roles | roles.ts `readAccountMode` | Local mode switch until `users.roles[]` exists. |
- * | Awards | gamification.ts `awardReading` | Local XP, `book-finished`, and `streak`. Replace with the shared XP service. |
- * | Push | push.ts `parsePushRequest` | `POST /api/push` sends through `lib/push`. This parser only checks the body. |
- * | Community | community.ts `discussionSpace`, `suggestWinPost` | Local suggestion. Adult and minor rooms are separate. No community collection yet. |
- * | Studio | studio-commands.ts `parseBookCommand` | `/book` in AI Studio. The tutor accepts `bookContext`. |
+ * | Price | pricing.ts `quotePrice`, `storedBookPriceRM` | `lib/pricing.ts`. `dailyFxRate` is null. |
+ * | Allocation | allocation.ts `bookAllocation`, `decideBook` | `book.targets` via `migrateAllocation`. Seats come from the institution profile. |
+ * | Institution licence | licence.ts `licenceOffer`, `institutionReadsBill` | Seat phase from `lib/oem.ts`. Billing phase from `learningOpen`. The school bill adds `poket_reads` on the existing billing page. |
+ * | Translation | localization.ts `editionFor` | Saved editions win. Machine text uses `useContentTranslation` and `/api/content/translate`. |
+ * | Board | leaderboard.ts `privacyBoard` | Local rows. The shelf renders `LeaderboardPodium`. |
+ * | Notices | notifications.ts `readingNotices`, `postReadingNotice` | On-screen list, and `POST /api/push` with category `goals`. |
+ * | Search | search.ts `searchBooks` | Catalogue filter until a shared book index exists. |
+ * | CMS order | cms.ts `moveItem` | Shared chapter reorder. |
+ * | Editor | `components/editor` | Shared source. Book overlay stays in Book Studio. |
+ * | Media | `components/media` | Shared source. Book overlay stays in Book Studio. |
+ * | Wallet | wallet.ts `quoteCheckout` | Reads plan amounts come from `seedPricing()`. Subscriptions stay USD on card. |
+ * | Goals | reading.ts `readingGoal` | Shared `daily_goals` shape. The ledger write is still pending. |
+ * | Roles | roles.ts `readAccountMode` | Local mode switch. `users.roles[]` is not read. |
+ * | Awards | gamification.ts `awardReading` | Local XP, `book-finished`, and streak. |
+ * | Push | push.ts `deliverReadingGoal` | `sendGoalParentAlert` in `lib/push`. |
+ * | Community | community.ts | Local suggestion. Adult and minor rooms stay apart. |
+ * | Studio | studio-commands.ts `parseBookCommand` | `/book` in AI Studio. |
  * | Offline | offline.ts `downloadBookOffline` | Cache API `poket-reads-v1`. |
- * | Reports | reports.ts `parentReadingReport` | Reading minutes and books finished on the parent report. |
+ * | Reports | reports.ts `parentReadingReport` | Reading minutes and books finished. |
  */
-export { quotePrice, viewerCurrency, FX_AS_OF, FX_PER_USD } from './pricing';
+export { quotePrice, viewerCurrency, dailyFxRate, storedBookPriceRM } from './pricing';
 export { bookAllocation, decideBook } from './allocation';
-export { licenceOffer } from './licence';
+export { licenceOffer, quoteBookLicence, institutionReadsBill, seatsFromInstitution, coverBookSparks } from './licence';
 export { editionFor, activeLocale } from './localization';
 export { privacyBoard } from './leaderboard';
-export { readingNotices } from './notifications';
+export { readingNotices, postReadingNotice } from './notifications';
 export { searchBooks } from './search';
 export { moveItem } from './cms';
 export { quoteCheckout } from './wallet';
 export { readingGoal } from './reading';
 export { readAccountMode, writeAccountMode } from './roles';
 export { awardReading, readAwards } from './gamification';
-export { parsePushRequest } from './push';
+export { parsePushRequest, deliverReadingGoal, readingGoalMessage } from './push';
 export { discussionSpace, suggestWinPost } from './community';
 export { parseBookCommand } from './studio-commands';
 export { downloadBookOffline } from './offline';

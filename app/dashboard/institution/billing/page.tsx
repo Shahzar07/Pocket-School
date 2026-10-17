@@ -8,7 +8,8 @@ import { DashHeader, DashPage, Panel } from '@/components/dash-ui';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { isSuperAdmin } from '@/lib/roles';
-import { periodStartFor, quoteForInstitution, type SubscriptionState } from '@/lib/institution-membership';
+import { periodStartFor, type SubscriptionState } from '@/lib/institution-membership';
+import { institutionReadsBill } from '@/lib/platform/licence';
 import { loadCurrentBill } from '@/lib/institution-membership-store';
 import { seedInstitutionPricing, tierCliff, VOLUME_PLANS, type VolumeInterval, type VolumePlanId } from '@/lib/institution-pricing';
 import { scaleSeats } from '@/lib/institution-commerce';
@@ -38,7 +39,7 @@ export default function InstitutionBillingPage() {
     }).catch(() => undefined);
   }, [institutionId]);
 
-  const quote = quoteForInstitution({ seats, planId, interval });
+  const quote = institutionReadsBill({ seats, planId, interval });
   const cliff = tierCliff(seedInstitutionPricing(), planId, interval);
   const periodStart = bill ? periodStartFor(bill.periodEnd, bill.interval) : '';
   const scaled = bill && periodStart ? scaleSeats({
@@ -70,7 +71,8 @@ export default function InstitutionBillingPage() {
       <DashHeader eyebrow="Institution" title="Billing" description={`Phase: ${bill?.phase ?? 'pending_payment'}. Institutions pay per student seat. Teachers and parents are not seats. A failed payment has a 7-day grace, then the academy suspends until it is paid.`} />
       <Panel>
         <p className="text-2xl font-semibold tabular-nums">{quote.currency} {quote.total.toFixed(2)}</p>
-        <p className="text-sm text-muted-foreground">{quote.tierLabel} · {quote.seats} student seats · {interval}</p>
+        <p className="text-sm text-muted-foreground">{quote.seats.tierLabel} · {quote.seats.seats} student seats · {interval}</p>
+        <p className="mt-2 text-sm">Poket Reads add-on {quote.currency} {quote.reads.addonTotal.toFixed(2)}. Licensed books sit on this same bill. Students on a seat are not charged again.</p>
         {cliff && <p className="mt-2 text-sm text-amber-800">The next band, {cliff.toLabel}, is cheaper than {cliff.fromLabel}. Banded pricing is there so a school is not pushed off a cliff.</p>}
         {bill && scaled && !('error' in scaled) && scaled.charge > 0 && <p className="mt-2 text-sm">Pro-rated charge for {activeStudents - bill.seats} added seats, for the days left in this period: {bill.currency} {scaled.charge.toFixed(2)}.</p>}
         {bill && scaled && !('error' in scaled) && scaled.credit > 0 && <p className="mt-2 text-sm">Pro-rated credit for unused seats, for the days left in this period: {bill.currency} {scaled.credit.toFixed(2)}.</p>}

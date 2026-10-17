@@ -5,6 +5,7 @@ import { CheckoutPanel } from '@/components/payments/checkout-panel';
 import { DashHeader, DashPage, DataTable, Panel, PanelHeader, StatCard } from '@/components/dash-ui';
 import { FEATURE_FLAGS } from '@/lib/payments/flags';
 import { formatMoney } from '@/lib/money';
+import { storedBookPriceRM } from '@/lib/platform/pricing';
 import { quoteCheckout } from '@/lib/platform/wallet';
 import { seedPricing } from '@/lib/pricing';
 import { fixedPriceItem, subscriptionItem } from '@/lib/payments/catalog';
@@ -30,7 +31,7 @@ export default function PaymentsPreviewPage() {
         kind: 'book',
         sku: 'harbour-light',
         title: quoted?.name ?? 'The Harbour Light',
-        amount: quoted?.amount ?? 23.99,
+        amount: quoted?.amount ?? storedBookPriceRM(seedPricing().defaultBookUsd),
         currency: 'MYR',
       });
       return buildQuote({ item: { ...item!, shelf: true }, country, tax: DEFAULT_TAX });

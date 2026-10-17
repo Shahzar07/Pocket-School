@@ -1,13 +1,17 @@
 /**
  * Idea-to-book tools for the existing Book Studio.
  * Every category can start from one line. The desk shows the tools that
- * category actually uses. Prices are not read or written here.
+ * category actually uses. The writing tools do not set a price. A new book
+ * starts at the shared buy-to-own default, and the author can change it.
  */
 
 import type {
   AgeRating, Book, BookCategory, BookChapter, BookCraft, BookForm, ReadingLevel, SceneCard, StoryCharacter,
 } from '@/lib/reads/types';
 import { LANGUAGES } from '@/lib/languages';
+import { BRAND_COVER } from '@/lib/reads/cover';
+import { seedPricing } from '@/lib/pricing';
+import { storedBookPriceRM } from '@/lib/platform/pricing';
 import { chapterPlain } from '@/lib/reads/book-export';
 
 export type CraftTool = 'characters' | 'world' | 'plot' | 'syllabus' | 'glossary' | 'references' | 'quiz' | 'exercises';
@@ -362,15 +366,15 @@ export function blankCraftBook(kindId = 'fiction', now = Date.now()): Book {
     title: 'Untitled book',
     author: 'ET AI',
     blurb: '',
-    cover: { from: '#1E6A83', to: '#F4C95D', accent: '#F7F1E1' },
+    cover: { ...BRAND_COVER },
     ...kindShape(kind.id),
     curriculumTags: [{ programme: kind.category === 'academic' ? 'Academic' : 'General', subject: kind.genre, year: kind.pictureBook ? 'Ages 5–7' : kind.label }],
     status: 'draft',
     version: 1,
-    accessMode: 'subscription',
+    accessMode: 'both',
     minTier: 1,
-    priceUsd: 0,
-    priceRM: 0,
+    priceUsd: seedPricing().defaultBookUsd,
+    priceRM: storedBookPriceRM(seedPricing().defaultBookUsd),
     licensable: false,
     programme: kind.category === 'academic' ? 'Academic' : 'General',
     allocateLibrary: false,

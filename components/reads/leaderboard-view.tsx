@@ -67,9 +67,9 @@ export function LeaderboardView() {
           rankDelta: movement.get(row.entry.id) ?? 0,
         }))}
       />
-      <aside className="rounded-3xl border border-border bg-[#10262C] p-6 text-white">
+      <aside className="rounded-3xl border border-primary bg-primary p-6 text-primary-foreground">
         <h2 className="font-heading text-[26px]">{t('reads.board.safety')}</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">{t('reads.board.safetyBody')}</p>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-primary-foreground/90">{t('reads.board.safetyBody')}</p>
         {(profile.kind === 'parent' || profile.kind === 'reader') && (
           <label className="mt-4 flex items-center gap-2 text-sm font-semibold">
             <input

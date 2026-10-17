@@ -1,9 +1,10 @@
+import { BRAND_FILLS } from '@/lib/reads/cover';
+
 /** Drawn stand-in when the image model is unavailable. No letters are painted into the picture. */
 export function proceduralArt(styleId: string, seed: string, variant = 0): string {
-  const hue = Math.abs(hash(seed + styleId) + variant * 28) % 360;
-  const accent = `hsl(${hue} 62% 46%)`;
-  const paper = `hsl(${(hue + 40) % 360} 45% 92%)`;
-  const ink = `hsl(${hue} 30% 18%)`;
+  const accent = BRAND_FILLS[(hash(seed + styleId) + variant) % BRAND_FILLS.length] ?? '#1E6A83';
+  const paper = '#E9F7FA';
+  const ink = '#203337';
   const shape = shapeFor(styleId, accent, ink, variant);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200" viewBox="0 0 800 1200"><rect width="800" height="1200" fill="${paper}"/>${shape}<circle cx="${140 + variant * 30}" cy="180" r="${70 + variant * 8}" fill="${accent}" opacity="0.85"/></svg>`;
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;

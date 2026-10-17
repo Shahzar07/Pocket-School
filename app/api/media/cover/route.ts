@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { enforceAiAccess } from '@/lib/api-guard';
+import { COVER_BRAND_PALETTE } from '@/lib/reads/cover';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest) {
     STYLE[styleId] ?? STYLE.novel,
     `Subject: ${brief}.`,
     refine ? `Also: ${refine}.` : '',
+    COVER_BRAND_PALETTE,
     'Do not paint any letters, words, numbers, logos, or watermarks.',
   ].filter(Boolean).join(' ');
 

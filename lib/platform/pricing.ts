@@ -1,24 +1,18 @@
-import { formatMoney, PLATFORM_CURRENCY } from '@/lib/money';
+import {
+  formatMoney,
+  quoteCourse,
+  readCurrencyChoice,
+  resolveDisplayCurrency,
+  seedPricing,
+} from '@/lib/pricing';
 
 /**
- * USD is the stored price. Local currency is a display conversion.
- *
- * FX_PER_USD is a dated table, not a live feed. Swap `rate()` for the
- * admin-managed daily rate when that service exists. `formatMoney` from
- * lib/money.ts prints the figures, including the USD default.
+ * Shelf display prices. Amounts and rates come from `lib/pricing.ts`
+ * (`pricing_config/current`, or `seedPricing()` when that document is absent).
+ * Checkout uses the same table. There is no daily FX feed: `dailyFxRate`
+ * stays empty until an admin rate service publishes one.
  */
-export const FX_AS_OF = '2026-10-15';
-
-/** How many units of this currency equal 1 USD on FX_AS_OF. */
-export const FX_PER_USD: Record<string, number> = {
-  USD: 1,
-  MYR: 4.7,
-  GBP: 0.78,
-  EUR: 0.92,
-  SGD: 1.35,
-  INR: 84,
-  AUD: 1.53,
-};
+export const ADMIN_RATES = 'admin';
 
 export interface PriceQuote {
   usd: number;
@@ -27,58 +21,83 @@ export interface PriceQuote {
   usdLabel: string;
   localLabel: string;
   combined: string;
+  /** `admin` while rates come from the pricing document, not a dated feed. */
   asOf: string;
 }
 
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
+/** A daily feed is not connected. Callers keep using the admin rate table. */
+export function dailyFxRate(_currency: string): null {
+  return null;
 }
 
 function codeOf(currency: string | null | undefined): string {
-  const code = (currency || PLATFORM_CURRENCY).toUpperCase();
+  const code = (currency || 'USD').trim().toUpperCase();
   return code === 'RM' ? 'MYR' : code;
 }
 
-export function toUsd(amount: number, currency: string): number {
-  const code = codeOf(currency);
-  const per = FX_PER_USD[code] ?? 1;
-  if (code === 'USD') return round2(amount);
-  return round2(amount / per);
-}
-
-/** Browser hint only. The first paint stays USD so server and client match. */
+/**
+ * The reader's saved currency. Server render stays USD.
+ * A stored code counts only when the reader chose it (`poket-currency-source` = user).
+ */
 export function viewerCurrency(): string {
   if (typeof window === 'undefined') return 'USD';
-  const saved = window.localStorage.getItem('poket-currency');
-  if (saved && FX_PER_USD[saved.toUpperCase()]) return saved.toUpperCase();
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-  if (tz.includes('Kuala_Lumpur')) return 'MYR';
-  if (tz.includes('Singapore')) return 'SGD';
-  if (tz.startsWith('Europe/London')) return 'GBP';
-  if (tz.startsWith('Europe/')) return 'EUR';
-  if (tz.includes('Kolkata') || tz.includes('Calcutta')) return 'INR';
-  if (tz.startsWith('Australia/')) return 'AUD';
-  return 'USD';
+  const choice = readCurrencyChoice();
+  return resolveDisplayCurrency(seedPricing(), {
+    stored: choice.code,
+    source: choice.source,
+  });
+}
+
+/**
+ * MYR figure stored beside a USD book price.
+ * Uses the admin rate in `lib/pricing.ts` (seed MYR is 4.7 with charm rounding).
+ */
+export function storedBookPriceRM(priceUsd: number, config = seedPricing()): number {
+  if (!(priceUsd > 0)) return 0;
+  return quoteCourse(config, priceUsd, 'USD', 'MYR').amount;
+}
+
+/**
+ * USD to charge for a buy-to-own book.
+ * A stored price wins, including zero, which means the book is not sold separately.
+ * A missing stored price uses the catalogue price, then the shared default.
+ */
+export function bookChargeUsd(input: {
+  storedUsd?: number | null;
+  catalogueUsd?: number | null;
+  defaultUsd: number;
+}): number | null {
+  if (typeof input.storedUsd === 'number' && Number.isFinite(input.storedUsd)) {
+    return input.storedUsd > 0 ? input.storedUsd : null;
+  }
+  if (typeof input.catalogueUsd === 'number' && input.catalogueUsd > 0) return input.catalogueUsd;
+  return input.defaultUsd > 0 ? input.defaultUsd : null;
 }
 
 export function quotePrice(amount: number | null | undefined, currency = 'USD', local = 'USD'): PriceQuote {
-  const value = amount ?? 0;
-  if (value <= 0) {
+  const shown = codeOf(local);
+  if (!(amount && amount > 0)) {
     return {
       usd: 0,
       localAmount: 0,
-      localCurrency: local,
+      localCurrency: shown,
       usdLabel: 'Free',
       localLabel: 'Free',
       combined: 'Free',
-      asOf: FX_AS_OF,
+      asOf: ADMIN_RATES,
     };
   }
-  const usd = toUsd(value, currency);
-  const localCode = FX_PER_USD[local] ? local : 'USD';
-  const localAmount = localCode === 'USD' ? usd : round2(usd * FX_PER_USD[localCode]);
-  const usdLabel = formatMoney(usd, 'USD');
-  const localLabel = localCode === 'USD' ? usdLabel : formatMoney(localAmount, localCode);
-  const combined = localCode === 'USD' || localLabel === usdLabel ? usdLabel : `${localLabel} · ${usdLabel}`;
-  return { usd, localAmount, localCurrency: localCode, usdLabel, localLabel, combined, asOf: FX_AS_OF };
+  const money = quoteCourse(seedPricing(), amount, codeOf(currency), shown);
+  const usdLabel = formatMoney(money.usd, 'USD');
+  const localLabel = formatMoney(money.amount, money.currency);
+  const combined = money.currency === 'USD' || localLabel === usdLabel ? usdLabel : `${localLabel} · ${usdLabel}`;
+  return {
+    usd: money.usd,
+    localAmount: money.amount,
+    localCurrency: money.currency,
+    usdLabel,
+    localLabel,
+    combined,
+    asOf: ADMIN_RATES,
+  };
 }

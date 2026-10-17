@@ -18,6 +18,8 @@ import { BOOKS } from '@/lib/reads/seed';
 import { publishIssues, screenCoverAge, type CoverBrief, type CoverFont, type CoverPlacement } from '@/lib/reads/cover';
 import { bookEpub, bookPdf, chapterPlain } from '@/lib/reads/book-export';
 import { blankCraftBook } from '@/lib/reads/creator';
+import { storedBookPriceRM } from '@/lib/platform/pricing';
+import { snapToStorePricePoint } from '@/lib/pricing';
 import { CreatorPanel } from '@/components/reads/creator-panel';
 import {
   AGE_BANDS, ageBand, blankChildrensStory, fallbackStory, isPictureBook, storyChapters, storyPublishIssues, storyShape, withPageIllustration, wordsOf,
@@ -52,6 +54,7 @@ export function StudioView() {
   const [chapterId, setChapterId] = useState('mm-1');
   const [dragFrom, setDragFrom] = useState<number | null>(null);
   const [replaceImport, setReplaceImport] = useState(false);
+  const [priceDraft, setPriceDraft] = useState<string | null>(null);
   const [revisions, setRevisions] = useState<ContentRevision<Book>[]>([]);
   const book = books.find(item => item.id === id) ?? books[0];
   const chapter = book.chapters.find(item => item.id === chapterId) ?? book.chapters[0];
@@ -63,6 +66,10 @@ export function StudioView() {
     const saved = readAutosave<Book[]>(AUTOSAVE_KEY);
     if (saved && saved.length > 0) setBooks(saved);
   }, []);
+
+  useEffect(() => {
+    setPriceDraft(null);
+  }, [book.id]);
 
   useEffect(() => {
     if (!savedAt) return;
@@ -305,7 +312,7 @@ export function StudioView() {
       <header>
         <h1 className="font-heading text-[40px] tracking-[-0.04em] sm:text-[52px]">{t('reads.studio.title')}</h1>
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">{t('reads.studio.lead')}</p>
-        <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-950">{t('reads.studio.preview')}</p>
+        <p className="mt-3 rounded-2xl border border-primary/25 bg-secondary px-4 py-3 text-[13px] text-foreground">{t('reads.studio.preview')}</p>
         <p className="mt-2 text-[13px] text-muted-foreground">{savedAt ? `${t('reads.studio.savedDevice')} · ${new Date(savedAt).toLocaleTimeString()}` : t('reads.studio.pending')}</p>
       </header>
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
@@ -415,10 +422,26 @@ export function StudioView() {
               </label>
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="text-sm font-semibold">{t('reads.studio.price')}
-                  <input type="number" value={book.priceUsd} onChange={e => {
-                    const priceUsd = Number(e.target.value);
-                    update({ priceUsd, priceRM: Math.round(priceUsd * 4.7) });
-                  }} className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal" />
+                  <input
+                    type="number"
+                    min={0}
+                    step="any"
+                    inputMode="decimal"
+                    value={priceDraft ?? book.priceUsd}
+                    onFocus={() => setPriceDraft(String(book.priceUsd))}
+                    onChange={event => setPriceDraft(event.target.value)}
+                    onBlur={() => {
+                      const typed = priceDraft?.trim() ?? '';
+                      setPriceDraft(null);
+                      if (typed === '') return;
+                      const raw = Number(typed);
+                      if (!Number.isFinite(raw) || raw === book.priceUsd) return;
+                      const priceUsd = snapToStorePricePoint(raw);
+                      update({ priceUsd, priceRM: storedBookPriceRM(priceUsd) });
+                    }}
+                    className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal"
+                  />
+                  <span className="mt-1 block font-normal text-muted-foreground">{t('reads.studio.priceHint')}</span>
                 </label>
                 <label className="text-sm font-semibold">{t('reads.studio.tier')}
                   <input type="number" min={0} max={6} value={book.minTier} onChange={e => update({ minTier: Number(e.target.value) as Book['minTier'] })} className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal" />
@@ -702,7 +725,7 @@ export function StudioView() {
                   {t('reads.studio.ageCheck')}
                 </button>
                 {book.coverBrief?.ageNote && (
-                  <p className={`text-sm ${book.coverBrief.ageOk ? 'text-emerald-800' : 'text-red-700'}`}>{book.coverBrief.ageNote}</p>
+                  <p className={`text-sm ${book.coverBrief.ageOk ? 'text-primary' : 'text-red-700'}`}>{book.coverBrief.ageNote}</p>
                 )}
               </div>
               <p className="text-xs text-muted-foreground">The author line is always ET AI. The picture itself has no lettering; the title is drawn on top.</p>
@@ -764,7 +787,7 @@ function ReadAloud({ text }: { text: string }) {
       {words.length > 0 && (
         <p className="mt-3 text-sm leading-relaxed">
           {words.map((token, index) => (
-            <span key={`${index}-${token}`} className={on && index === at ? 'rounded bg-[#E7C27D] px-0.5' : ''}>{token} </span>
+            <span key={`${index}-${token}`} className={on && index === at ? 'rounded bg-secondary px-0.5 text-foreground' : ''}>{token} </span>
           ))}
         </p>
       )}
