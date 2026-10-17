@@ -106,6 +106,8 @@ export interface OfferPlan {
   href: string;
   external?: boolean;
   popular?: boolean;
+  /** Electric cyan is the Reads call to action. Other plans stay on the shared blue. */
+  ctaTone?: 'cyan';
 }
 
 const ALL_IN_FEATURES = [
@@ -231,6 +233,7 @@ export function offerPlans(extras: boolean = OFFER_BUNDLE_EXTRAS): OfferPlan[] {
       ],
       cta: 'Get Poket Reads',
       href: OFFER_ROUTES.reads,
+      ctaTone: 'cyan',
     },
     {
       id: 'institutions',

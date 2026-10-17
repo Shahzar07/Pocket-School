@@ -31,7 +31,7 @@ function Cta({
   href: string;
   external?: boolean;
   children: ReactNode;
-  tone: 'solid' | 'ghost' | 'ink' | 'line';
+  tone: 'solid' | 'ghost' | 'ink' | 'line' | 'cyan';
   className?: string;
 }) {
   const tones = {
@@ -39,8 +39,9 @@ function Cta({
     ghost: 'border border-white/70 text-white hover:bg-white/10',
     ink: 'bg-[#1E6A83] text-white hover:bg-[#18586e]',
     line: 'border border-[#1E6A83]/30 text-[#1E6A83] hover:bg-[#E9F7FA] dark:border-[#6FBBCE]/40 dark:text-[#A7D9E5] dark:hover:bg-white/5',
+    cyan: 'border border-[#1E6A83] bg-[#3FE0D0] text-[#203337] hover:bg-[#14B8A6]',
   } as const;
-  const classNames = `inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E2AF4D] ${tones[tone]} ${className}`;
+  const classNames = `inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1E6A83] ${tones[tone]} ${className}`;
   if (external) {
     return (
       <a href={href} className={classNames}>
@@ -86,7 +87,7 @@ function PlanCard({ plan }: { plan: OfferPlan }) {
       <Cta
         href={plan.href}
         external={plan.external}
-        tone={plan.popular ? 'ink' : 'line'}
+        tone={plan.ctaTone === 'cyan' ? 'cyan' : plan.popular ? 'ink' : 'line'}
         className="mt-6 w-full"
       >
         {plan.cta}

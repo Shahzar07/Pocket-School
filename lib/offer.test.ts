@@ -50,6 +50,7 @@ test('bundle extras follow OFFER_BUNDLE_EXTRAS and default on', () => {
   assert.equal(reads?.tagline, ownOrReadLine());
   assert.equal(reads?.href, '/reads/offer');
   assert.equal(reads?.href, OFFER_ROUTES.reads);
+  assert.equal(reads?.ctaTone, 'cyan');
   assert.equal(reads?.features.includes(booksVersusUnlimitedLine()), true);
   assert.equal(reads?.features.includes(`Reads Family $${familyMonth.unitAmount.toFixed(2)}/mo or $${familyYear.unitAmount.toFixed(2)}/yr`), true);
   assert.equal(reads?.price.includes('Coming soon'), false);

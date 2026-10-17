@@ -1,8 +1,8 @@
 /**
  * Builds the Poket Reads sales-letter stills.
  *
- * Covers use the published seed colours (or the yellow-window stand-in art)
- * and draw the title as real text, the same idea as Book Studio's cover compose.
+ * Covers use the Poket blue jackets in lib/reads-offer-media.ts and draw the
+ * title as real text, the same idea as Book Studio's cover compose.
  * Device frames are filled from screenshots in /tmp/reads-shots when those files exist.
  *
  *   npx tsx scripts/build-reads-offer-assets.ts
@@ -10,7 +10,6 @@
 import { mkdir, access } from 'node:fs/promises';
 import path from 'node:path';
 import sharp from 'sharp';
-import { proceduralArt } from '../components/media/fallback-art';
 import {
   BOOK_3D_HEIGHT,
   BOOK_3D_WIDTH,
@@ -22,11 +21,13 @@ import {
   FAN_WIDTH,
   LAPTOP_HEIGHT,
   LAPTOP_WIDTH,
+  OFFER_JACKETS,
   PHONE_HEIGHT,
   PHONE_WIDTH,
   TABLET_HEIGHT,
   TABLET_WIDTH,
 } from '../lib/reads-offer-media';
+import { ownOrReadLine } from '../lib/reads-offer';
 import { publishedBooks } from '../lib/reads/seed';
 
 const ROOT = path.join(process.cwd(), 'public/reads/offer');
@@ -124,20 +125,23 @@ function letteringSvg(title: string, author: string, kicker: string, accent: str
 </svg>`;
 }
 
+function kidsShape(accent: string): string {
+  return `<rect x="180" y="430" width="280" height="220" rx="28" fill="${accent}" opacity="0.95"/>
+  <rect x="220" y="470" width="200" height="140" rx="12" fill="#F4F6F6"/>
+  <circle cx="280" cy="530" r="16" fill="#143E4E"/>
+  <circle cx="360" cy="530" r="16" fill="#143E4E"/>`;
+}
+
 async function renderCover(id: string): Promise<Buffer> {
   const book = publishedBooks().find(item => item.id === id);
-  if (!book) throw new Error(`Missing published book ${id}`);
-  let base: Buffer;
-  if (book.cover.image?.startsWith('data:image/svg+xml,')) {
-    const svg = decodeURIComponent(book.cover.image.slice('data:image/svg+xml,'.length));
-    base = await sharp(Buffer.from(svg)).resize(COVER_WIDTH, COVER_HEIGHT, { fit: 'cover' }).png().toBuffer();
-  } else if (book.id === 'yellow-window') {
-    const svg = decodeURIComponent(proceduralArt('illustrated-kids', 'yellow window cover', 0).slice('data:image/svg+xml,'.length));
-    base = await sharp(Buffer.from(svg)).resize(COVER_WIDTH, COVER_HEIGHT, { fit: 'cover' }).png().toBuffer();
-  } else {
-    base = await sharp(Buffer.from(gradientSvg(book.cover.from, book.cover.to, book.cover.accent))).png().toBuffer();
-  }
-  const letters = Buffer.from(letteringSvg(book.title, book.author, KICKER[id] ?? 'POKET READS', book.cover.accent));
+  const jacket = OFFER_JACKETS[id as keyof typeof OFFER_JACKETS];
+  if (!book || !jacket) throw new Error(`Missing published book ${id}`);
+  const picture = id === 'yellow-window' ? kidsShape(jacket.accent) : '';
+  const svg = gradientSvg(jacket.from, jacket.to, jacket.accent).replace('</svg>', `${picture}</svg>`);
+  const base = await sharp(Buffer.from(svg)).png().toBuffer();
+  const top = jacket.from.toUpperCase();
+  const kickerFill = top === '#6FBBCE' ? '#203337' : top === '#2786A4' ? '#FFFFFF' : '#3FE0D0';
+  const letters = Buffer.from(letteringSvg(book.title, book.author, KICKER[id] ?? 'POKET READS', kickerFill));
   return sharp(base).composite([{ input: letters, top: 0, left: 0 }]).png().toBuffer();
 }
 
@@ -223,12 +227,20 @@ async function og(covers: Buffer[]): Promise<Buffer> {
   const thumbs = await Promise.all(covers.slice(0, 4).map(cover => sharp(cover).resize(168, 252).png().toBuffer()));
   const board = Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">
-  <rect width="1200" height="630" fill="#203337"/>
-  <text x="72" y="210" fill="#8ec4d4" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="22" font-weight="700" letter-spacing="3">POKET READS</text>
+  <defs>
+    <linearGradient id="og" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1E6A83"/>
+      <stop offset="0.55" stop-color="#2786A4"/>
+      <stop offset="1" stop-color="#6FBBCE"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#og)"/>
+  <rect x="72" y="164" width="84" height="8" rx="4" fill="#3FE0D0"/>
+  <text x="72" y="210" fill="#ffffff" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="22" font-weight="700" letter-spacing="3">POKET READS</text>
   <text x="72" y="300" fill="#ffffff" font-family="Liberation Serif, DejaVu Serif, serif" font-size="64" font-weight="700">Books you can</text>
   <text x="72" y="376" fill="#ffffff" font-family="Liberation Serif, DejaVu Serif, serif" font-size="64" font-weight="700">subscribe to</text>
   <text x="72" y="452" fill="#ffffff" font-family="Liberation Serif, DejaVu Serif, serif" font-size="64" font-weight="700">from Malaysia.</text>
-  <text x="72" y="530" fill="#c5d5d8" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="26">From 9 US dollars a month, or buy a book and keep it.</text>
+  <text x="72" y="530" fill="#ffffff" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="26">${escapeXml(ownOrReadLine())}.</text>
 </svg>`);
   let image = sharp(board);
   const composites = thumbs.map((input, index) => ({ input, left: 760 + (index % 2) * 188, top: 70 + Math.floor(index / 2) * 270 }));
