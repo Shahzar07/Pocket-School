@@ -33,6 +33,7 @@ import { loadAutomation, logAutomation } from './automation-store';
 import { countInstitutionStudents, loadInstitutionCatalogue } from './institution-catalogue';
 import { sendInstitutionMail } from './institution-mail';
 import { reviewInstitutionTier } from './institution-tier';
+import { rememberAttendance } from './alumni-network-store';
 import { closeEducationSpan, unpublishLearnerRecord } from './learner-record-store';
 
 function text(value: unknown): string {
@@ -158,16 +159,18 @@ async function settleGraduate(input: {
     undoUntil: undoUntil(person.leftOn || input.today),
     undoneOn: FieldValue.delete(),
   }, { merge: true });
+  let className = '';
   if (input.email) {
     const rosterRef = adminDb().doc(`institutions/${institutionId}/joinRoster/${rosterKey(input.email)}`);
     const roster = await rosterRef.get();
-    const className = text(roster.get('className'));
+    const liveClass = text(roster.get('className'));
     const savedClass = text(roster.get('classNameBefore'));
+    className = savedClass || liveClass;
     await rosterRef.set({
       status: 'leaver',
       className: '',
       graceEndsOn: FieldValue.delete(),
-      ...(savedClass || !className ? {} : { classNameBefore: className }),
+      ...(savedClass || !liveClass ? {} : { classNameBefore: liveClass }),
     }, { merge: true });
   }
   if (!input.studentId) return false;
@@ -186,6 +189,16 @@ async function settleGraduate(input: {
   }, { merge: true });
   const userRef = adminDb().doc(`users/${input.studentId}`);
   const user = await userRef.get();
+  await rememberAttendance({
+    institutionId,
+    studentId: input.studentId,
+    institutionName: person.institutionName,
+    level: person.level,
+    className,
+    programme: text(user.get('programme')),
+    country: text(user.get('country')),
+    leftOn: person.leftOn || input.today,
+  });
   const currentInstitution = text(user.get('institutionId'));
   if (currentInstitution && currentInstitution !== institutionId) return false;
   const counted = currentInstitution === institutionId;
@@ -511,16 +524,18 @@ export async function transferFromAcademy(fromId: string, uid: string, email: st
   if (text(user.get('institutionId')) !== fromId) return;
   const academy = await adminDb().doc(`institutions/${fromId}`).get();
   const academyName = text(academy.get('name')) || 'the academy';
+  let className = '';
   if (email) {
     const rosterRef = adminDb().doc(`institutions/${fromId}/joinRoster/${rosterKey(email)}`);
     const roster = await rosterRef.get();
-    const className = text(roster.get('className'));
+    const liveClass = text(roster.get('className'));
     const savedClass = text(roster.get('classNameBefore'));
+    className = savedClass || liveClass;
     await rosterRef.set({
       status: 'leaver',
       className: '',
       graceEndsOn: FieldValue.delete(),
-      ...(savedClass || !className ? {} : { classNameBefore: className }),
+      ...(savedClass || !liveClass ? {} : { classNameBefore: liveClass }),
     }, { merge: true });
   }
   await userRef.set({
@@ -533,6 +548,16 @@ export async function transferFromAcademy(fromId: string, uid: string, email: st
     institutionName: academyName,
     level: text(user.get('academyLevel')),
     studentNumber: text(user.get('studentNumber')),
+  });
+  await rememberAttendance({
+    institutionId: fromId,
+    studentId: uid,
+    institutionName: academyName,
+    level: text(user.get('academyLevel')),
+    className,
+    programme: text(user.get('programme')),
+    country: text(user.get('country')),
+    leftOn: today,
   });
   await logAutomation({
     rule: 'learner_record',

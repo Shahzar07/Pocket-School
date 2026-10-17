@@ -898,4 +898,83 @@ PDF and DOCX are produced from the composed version. The photo block draws initi
 
 This is a single-document read by student number, and a subcollection under the learner. No composite index is required. Rules still need an owner deploy. These rules are not deployed from this change.
 
+## Alumni communications and class networks
+
+An alumnus stays linked to every academy they attended, including after the account is Individual. The link is history. It does not occupy a seat.
+
+## `users/{uid}/attended/{institutionId}`
+
+Written by the server when someone graduates or transfers. Mobile clients read it. They do not write `seatCounted` or `holdsSeat`.
+
+| Field | Meaning |
+| --- | --- |
+| `institutionId`, `institutionName` | The academy |
+| `level`, `className`, `programme`, `country` | The class or cohort they left |
+| `leftOn` | The day the span closed, `YYYY-MM-DD` |
+| `destination`, `job`, `contact` | What the alumnus later told that academy. Contact is not shown in the directory |
+| `seatCounted` | Always `false` |
+| `holdsSeat` | Always `false` |
+
+If `institutions/{id}/alumni/{uid}` is missing, the server creates it with `seatFreed: true` and `seatCounted: false` so the academy can reach them. An existing alumni document keeps its graduation seat fields. This change does not rewrite `seatFreed`, `seatCounted`, or `undoneOn` on a graduation that already happened.
+
+## `users/{uid}/alumni_consent/{institutionId}`
+
+One consent record per academy. Email and push default off. Inbox defaults on. Directory, direct messages, and mentorship default off.
+
+| Field | Meaning |
+| --- | --- |
+| `email`, `inbox`, `push` | Channels. Unsubscribe stops email and push. Inbox stays on its own flag |
+| `directory` | Opt in to the classmate directory. The directory shows a first name and last initial, never an email |
+| `messages` | Opt in to 1:1 notes. Both adults must opt in |
+| `mentor` | Opt in to mentor a current student. The academy still approves the match |
+| `unsubscribed` | Stops email and push from this academy |
+| `unsubscribeToken` | 32 hex characters. The public unsubscribe page reads `alumni_unsubscribes/{token}` |
+
+`alumni_unsubscribes/{token}` stores `studentId` and `institutionId` so the email link is one document read.
+
+## `alumni_outbox/{id}`
+
+Top-level, so a scheduled send is `where('status', '==', 'scheduled')`. The academy list is `where('institutionId', '==', id)`. Status is filtered in memory. No composite index.
+
+| Field | Meaning |
+| --- | --- |
+| `institutionId` | The sender |
+| `kind` | `reunion`, `newsletter`, `event`, `fundraising`, or `survey` |
+| `subject`, `body` | Rendered from the template plus the academy's note |
+| `filter` | Optional cohort year, level, programme, class, country, and destination. An empty field means everyone |
+| `sendOn` | `YYYY-MM-DD`. A future date waits for the daily cron |
+| `status` | `scheduled`, `sending`, or `sent` |
+| `reached`, `opened`, `clicked`, `replies` | Counts. Opens and clicks are unique per alumnus |
+| `createdAt`, `sentAt` | ISO times |
+
+`alumni_outbox/{id}/receipts/{studentId}` stores `opened`, `clicked`, `emailed`, and a 32-hex `token`. `alumni_receipts/{token}` points back at the campaign so the view link and the event link can record one open or click. There is no tracking pixel.
+
+`alumni_outbox/{id}/replies` stores `studentId`, `body`, `decision`, and `at`. The alumnus can reply to the academy.
+
+`users/{uid}/inbox/{campaignId}` is the in-app copy: `institutionId`, `subject`, `body`, `fromName`, `at`. Push uses the existing device token store and is skipped when push consent is off.
+
+The older academy newsletter toggle is unchanged. These campaigns are separate and follow the per-person consent above.
+
+## Class groups, events, and safety
+
+`institutions/{id}/alumni_groups/{groupId}` is created for the class, or for the level cohort when there is no class name. `memberCount` is a number. Members live in `members/{uid}` with `studentId`, `joinedOn`, and `directoryName` (empty until they opt in).
+
+Posts live in `alumni_groups/{groupId}/posts/{postId}`: `authorId`, `authorName`, `body`, `decision` (`allow`, `hold`, or `block`), `visible`, `queued`, `at`. A minor's post is held even when the safety filter would allow it. An adult post that is held (contact details, harassment, or an off-platform app) waits too. A blocked post is not stored.
+
+`institutions/{id}/alumni_queue/{postId}` is the moderator list: `status` `held`, `released`, or `blocked`, plus `kind` `post` or `mentor`. The held query is a single field.
+
+`institutions/{id}/alumni_events/{eventId}` stores `title`, `when`, `place`, `rsvpCount`, and `at`. RSVPs are `rsvps/{uid}` with `going` and `at`.
+
+`users/{uid}/blocks/{otherId}` is a block. `institutions/{id}/alumni_reports` stores `reporterId`, `targetId`, `postId`, `reason`, `status: open`, and `at`.
+
+Direct messages exist only between two adults who both opted in and have not blocked each other. They are stored at `users/{uid}/alumni_threads/{otherId}` and `messages/{id}`. A minor cannot open a direct message.
+
+## Mentorship
+
+`institutions/{id}/mentorships/{id}` and a mirror at `users/{uid}/mentorships/{id}`: `mentorId`, `studentId`, `mentorName`, `studentName`, `status` (`pending`, `approved`, `closed`), `moderated`, `institutionId`, `at`.
+
+The mentor is an adult alumnus who opted in. The student is a current student of that academy. Messages stay closed until the academy sets `approved`. `moderated` is true when the student is under 18, and the academy can read `mentorships/{id}/messages`. A minor's message in that thread is held for the same moderator queue.
+
+These are single-document reads, subcollections, or one-field queries. No composite index and no collection-group query. Rules still need an owner deploy. These rules are not deployed from this change. Mobile clients do not write seat counts.
+
 

@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { GraduationDesk } from '@/components/alumni/graduation-panels';
+import { InstitutionNetworkDesk, type NetworkDeskData } from '@/components/alumni/network-panels';
 import { AlumniBoard } from '@/components/alumni/record-panels';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { authedFetch } from '@/lib/api-client';
 import { defaultAlumniPolicy, type AlumniPerson, type AlumniPolicy } from '@/lib/alumni';
+import { emptyNetworkStats, SEAT_NOTE, type MessageKind } from '@/lib/alumni-network';
 import type { GraduationBillPreview, ReadyGraduate } from '@/lib/graduation';
 
 function todayIso(): string {
@@ -21,6 +23,14 @@ export default function InstitutionAlumniPage() {
   const [suggestions, setSuggestions] = useState<ReadyGraduate[]>([]);
   const [preview, setPreview] = useState<GraduationBillPreview | null>(null);
   const [today, setToday] = useState(todayIso());
+  const [network, setNetwork] = useState<NetworkDeskData>({
+    stats: emptyNetworkStats(),
+    campaigns: [],
+    groups: [],
+    held: [],
+    mentors: [],
+    seatNote: SEAT_NOTE,
+  });
 
   const load = useCallback(() => {
     if (!institutionId) return;
@@ -30,6 +40,7 @@ export default function InstitutionAlumniPage() {
         if (data.policy) setPolicy(data.policy as AlumniPolicy);
         if (typeof data.name === 'string' && data.name) setSchoolName(data.name);
         if (Array.isArray(data.suggestions)) setSuggestions(data.suggestions as ReadyGraduate[]);
+        if (data.network && typeof data.network === 'object') setNetwork(data.network as NetworkDeskData);
         setToday(todayIso());
       })
       .catch(() => toast.error('Could not open the alumni list.'));
@@ -104,6 +115,53 @@ export default function InstitutionAlumniPage() {
           void authedFetch('/api/institutions/alumni', { method: 'POST', body: JSON.stringify({ action: 'newsletter', institutionId, note }) })
             .then((data) => toast.success(typeof data.sent === 'number' && data.sent > 0 ? 'The alumni note is on its way.' : 'The note is ready. Email sends when mail is configured and the newsletter is on.'))
             .catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not send the note.'));
+        }}
+      />
+      <InstitutionNetworkDesk
+        desk={network}
+        onCampaign={(input: { kind: MessageKind; note: string; sendOn: string; filter: Record<string, string> }) => {
+          void authedFetch('/api/institutions/alumni', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'campaign', institutionId, ...input }),
+          })
+            .then(() => {
+              toast.success(input.sendOn ? 'The note is scheduled.' : 'The note is on its way to alumni who consented.');
+              load();
+            })
+            .catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not send the note.'));
+        }}
+        onEvent={(input) => {
+          void authedFetch('/api/institutions/alumni', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'event', institutionId, ...input }),
+          })
+            .then(() => {
+              toast.success('The event is open for RSVPs.');
+              load();
+            })
+            .catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not publish the event.'));
+        }}
+        onModerate={(queueId, release) => {
+          void authedFetch('/api/institutions/alumni', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'moderate-post', institutionId, queueId, release }),
+          })
+            .then(() => {
+              toast.success(release ? 'The post is visible to the class.' : 'The post stays hidden.');
+              load();
+            })
+            .catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not moderate that post.'));
+        }}
+        onApprove={(mentorshipId) => {
+          void authedFetch('/api/institutions/alumni', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'approve-mentor', institutionId, mentorshipId }),
+          })
+            .then(() => {
+              toast.success('The mentorship is approved.');
+              load();
+            })
+            .catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not approve that match.'));
         }}
       />
     </div>

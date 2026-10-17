@@ -14,6 +14,14 @@ import {
   sendAlumniLetters,
   undoGraduation,
 } from '@/lib/server/alumni-store';
+import {
+  approveMentorship,
+  createAlumniEvent,
+  moderateHeldPost,
+  networkDesk,
+  releaseScheduledAlumni,
+  saveCampaign,
+} from '@/lib/server/alumni-network-store';
 import { callerOwnsInstitution } from '@/lib/server/institution-activate';
 
 export const dynamic = 'force-dynamic';
@@ -35,11 +43,14 @@ export async function GET(req: NextRequest) {
   if (!owns && !(await callerIsAdmin(user.uid, user.email, claims))) {
     return NextResponse.json({ error: 'This academy is not on your account.' }, { status: 403 });
   }
-  const [people, policy, academy, suggestions] = await Promise.all([
+  const today = todayIso();
+  await releaseScheduledAlumni(today, 10);
+  const [people, policy, academy, suggestions, network] = await Promise.all([
     listAlumni(institutionId),
     loadAlumniPolicy(institutionId),
     adminDb().doc(`institutions/${institutionId}`).get(),
-    recordGraduationSuggestions(institutionId, todayIso()),
+    recordGraduationSuggestions(institutionId, today),
+    networkDesk(institutionId),
   ]);
   const stats = alumniStats(people);
   const name = typeof academy.get('name') === 'string' ? academy.get('name') : '';
@@ -48,7 +59,7 @@ export async function GET(req: NextRequest) {
       headers: { 'Content-Type': 'text/csv; charset=utf-8' },
     });
   }
-  return NextResponse.json({ people, policy, stats, name, suggestions: suggestions.people });
+  return NextResponse.json({ people, policy, stats, name, suggestions: suggestions.people, network });
 }
 
 function readyPeople(body: Record<string, unknown>): ReadyGraduate[] {
@@ -135,6 +146,40 @@ export async function POST(req: NextRequest) {
     const note = typeof body.note === 'string' ? body.note : '';
     const sent = await sendAlumniLetters(institutionId, note, user.uid);
     return NextResponse.json({ sent });
+  }
+  if (action === 'campaign') {
+    const saved = await saveCampaign({
+      institutionId,
+      kind: body.kind,
+      note: body.note,
+      filter: body.filter,
+      sendOn: body.sendOn,
+      today: todayIso(),
+    });
+    if ('error' in saved) return NextResponse.json(saved, { status: 400 });
+    return NextResponse.json(saved);
+  }
+  if (action === 'event') {
+    const created = await createAlumniEvent({
+      institutionId,
+      title: body.title,
+      when: body.when,
+      place: body.place,
+    });
+    if ('error' in created) return NextResponse.json(created, { status: 400 });
+    return NextResponse.json(created);
+  }
+  if (action === 'moderate-post') {
+    const queueId = typeof body.queueId === 'string' ? body.queueId : '';
+    const result = await moderateHeldPost({ institutionId, queueId, release: body.release !== false });
+    if ('error' in result) return NextResponse.json(result, { status: 400 });
+    return NextResponse.json(result);
+  }
+  if (action === 'approve-mentor') {
+    const mentorshipId = typeof body.mentorshipId === 'string' ? body.mentorshipId : '';
+    const result = await approveMentorship(institutionId, mentorshipId);
+    if ('error' in result) return NextResponse.json(result, { status: 400 });
+    return NextResponse.json(result);
   }
   return NextResponse.json({ error: 'Choose a step.' }, { status: 400 });
 }
