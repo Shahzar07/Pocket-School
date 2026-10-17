@@ -203,4 +203,9 @@ test('plan copy uses levels and leaves Primary and Professional unset', () => {
   assert.match((igcse?.programmes ?? []).join('\n'), /ET AI Studio, ET Maths and ET Exams/);
   assert.match(lines, /ET AI Live add-on/);
   assert.match(plans, /53 languages/);
+  const preview = TIERS.find(tier => tier.id === 'preview');
+  const freeLines = (preview?.programmes ?? []).join('\n');
+  assert.match(freeLines, /Free digital student card/);
+  assert.match(freeLines, /Free Amber alerts/);
+  assert.match(page, /\[\.\.\.planProgrammes\(plan\.id\), \.\.\.plan\.features\]/);
 });

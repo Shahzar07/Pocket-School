@@ -1340,7 +1340,7 @@ A person with no school sees the title **Poket School member card**. A person wi
 
 ## Card share
 
-`card_shares/{shareId}` is `{ uid, createdAt, revoked, revokedAt?, viewCount }`. `shareId` is a random base64url string of 16 to 64 URL-safe characters. The user field `cardShareId` points at the live share. Creating a new share revokes the previous document. Revoke sets `revoked` and deletes `cardShareId`. Regenerate issues a new id. The public page is `/card/[shareId]`. The image is `opengraph-image.tsx` on that route: the branded blue gradient, first name, level name, and badges or streak, plus **Join Poket School**. The page link is `/signup?ref={code}`. A preview that does not need the server account is `/preview/card`.
+`card_shares/{shareId}` is `{ uid, createdAt, revoked, revokedAt?, viewCount }`. `shareId` is a random base64url string of 16 to 64 URL-safe characters. The user field `cardShareId` points at the live share. Creating a new share revokes the previous document. Revoke sets `revoked` and deletes `cardShareId`. Regenerate issues a new id. The public page is `/card/[shareId]`. Two images sit on that route and both use the same public card: `opengraph-image.tsx` (1200×630) and `/card/[shareId]/story` (1080×1920). Each shows the branded blue gradient, first name, level name, and badges or streak, plus **Join Poket School**. Neither image reads a plan. The page link is `/signup?ref={code}`. A preview that does not need the server account is `/preview/card`.
 
 The public card never includes the student number, a QR code, or a date of birth. `schoolName` is sent only when the person is an adult and has an institution. Under-18 cards omit the school name.
 

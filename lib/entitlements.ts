@@ -54,6 +54,8 @@ export const TIERS: TierDefinition[] = [
       'First lesson of any course',
       'Certificate verification',
       '53 languages',
+      'Free digital student card',
+      'Free Amber alerts',
     ],
   },
   {
