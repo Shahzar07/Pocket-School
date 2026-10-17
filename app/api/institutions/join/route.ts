@@ -15,6 +15,7 @@ import {
   offboardJoin,
   previewJoin,
   rolloverJoin,
+  saveImportRoster,
   saveJoinSettings,
   uploadJoinRoster,
 } from '@/lib/server/institution-join-store';
@@ -76,6 +77,8 @@ export async function GET(req: NextRequest) {
     name: academy.name,
     slug: academy.slug,
     policy: config.policy,
+    domains: config.policy.emailDomains,
+    joinPolicy: config.policy.verification ?? null,
     codes: config.codes.map((code) => ({ code: code.code, level: code.level, className: code.className })),
     overage: config.overage,
   });
@@ -151,6 +154,11 @@ export async function POST(req: NextRequest) {
   if (action === 'save') {
     const saved = await saveJoinSettings(institutionId, readJoinConfig(body.config), user.uid);
     return NextResponse.json({ config: saved });
+  }
+  if (action === 'importRoster') {
+    const saved = await saveImportRoster(institutionId, body.roster ?? body);
+    if ('error' in saved) return NextResponse.json(saved, { status: 400 });
+    return NextResponse.json(saved);
   }
   if (action === 'roster') {
     const csv = typeof body.csv === 'string' ? body.csv.slice(0, 200_000) : '';

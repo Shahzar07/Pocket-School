@@ -102,7 +102,7 @@ async function ageOf(uid: string) {
   };
 }
 
-async function ping(uid: string, institutionId: string, title: string, message: string, link: string, pref: 'reunions' | 'wall' | 'yearbook' | 'alumni_messages') {
+async function ping(uid: string, institutionId: string, title: string, message: string, link: string, pref: 'alumni') {
   const consent = readConsent((await adminDb().doc(`users/${uid}/alumni_consent/${institutionId}`).get()).data());
   if (!channelOpen(consent, 'inbox') && !channelOpen(consent, 'push')) return;
   await notifyUser({
@@ -238,7 +238,7 @@ export async function releaseYearbook(institutionId: string, bookId: string): Pr
   const pages = await bookRef.collection('pages').limit(80).get();
   let notified = 0;
   for (const page of pages.docs) {
-    await ping(page.id, institutionId, `${text(book.get('name')) || 'Yearbook'} is open`, 'The yearbook is ready to read.', '/dashboard/student/yearbook', 'yearbook');
+    await ping(page.id, institutionId, `${text(book.get('name')) || 'Yearbook'} is open`, 'The yearbook is ready to read.', '/dashboard/student/yearbook', 'alumni');
     notified += 1;
   }
   return { notified };
@@ -295,7 +295,7 @@ export async function signYearbook(input: {
       at: new Date().toISOString(),
     });
   } else if (toId !== 'wall' && toId !== input.uid) {
-    await ping(toId, input.institutionId, `A note from ${publicName(profile.name)}`, 'Someone signed your yearbook page.', '/dashboard/student/yearbook', 'wall');
+    await ping(toId, input.institutionId, `A note from ${publicName(profile.name)}`, 'Someone signed your yearbook page.', '/dashboard/student/yearbook', 'alumni');
   }
   return { id, visible: screened.visible, queued: screened.queued };
 }
@@ -582,7 +582,7 @@ export async function postAlumniUpdate(input: {
     const people = await adminDb().collection(`institutions/${input.institutionId}/alumni`).limit(40).get();
     for (const person of people.docs) {
       if (person.id === input.uid) continue;
-      await ping(person.id, input.institutionId, title || 'A reunion', 'A reunion is open for RSVPs.', '/dashboard/student/yearbook', 'reunions');
+      await ping(person.id, input.institutionId, title || 'A reunion', 'A reunion is open for RSVPs.', '/dashboard/student/yearbook', 'alumni');
     }
   }
   return { id };
@@ -772,7 +772,7 @@ export async function requestConnection(input: { uid: string; institutionId: str
   const payload = { status: 'pending', institutionId: input.institutionId, at: new Date().toISOString() };
   await adminDb().doc(`users/${input.uid}/connections/${otherId}`).set({ ...payload, name: publicName(them.name) });
   await adminDb().doc(`users/${otherId}/connections/${input.uid}`).set({ ...payload, name: publicName(me.name) });
-  await ping(otherId, input.institutionId, `A request from ${publicName(me.name)}`, 'An adult alumnus asked to connect.', '/dashboard/student/yearbook', 'alumni_messages');
+  await ping(otherId, input.institutionId, `A request from ${publicName(me.name)}`, 'An adult alumnus asked to connect.', '/dashboard/student/yearbook', 'alumni');
   return { ok: true };
 }
 

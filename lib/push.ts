@@ -16,16 +16,13 @@ export const PUSH_CATEGORIES = [
   'grades',
   'assignments',
   'general',
-  'reunions',
-  'wall',
-  'yearbook',
-  'alumni_messages',
+  'alumni',
   'institution',
   'achievements',
 ] as const;
 
-/** Account toggles. A missing key stays on. Badge pushes use `achievements` (PR #127). */
-export const USER_PUSH_TOGGLES = ['reunions', 'wall', 'yearbook', 'alumni_messages', 'institution', 'achievements'] as const;
+/** Account toggles. A missing key stays on. `alumni` covers reunions, the wall, yearbook release, and alumni messages. Badge pushes use `achievements`. `grades` stays a category for unit tests and is not an account toggle. */
+export const USER_PUSH_TOGGLES = ['alumni', 'institution', 'achievements'] as const;
 
 export type PushCategory = (typeof PUSH_CATEGORIES)[number];
 

@@ -618,6 +618,56 @@
         { "fieldPath": "level", "order": "ASCENDING" },
         { "fieldPath": "gender", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "leaderboard_entries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "scope", "order": "ASCENDING" },
+        { "fieldPath": "scopeId", "order": "ASCENDING" },
+        { "fieldPath": "period", "order": "ASCENDING" },
+        { "fieldPath": "xp", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "rosters",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "email", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "rosters",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "importBatchId", "order": "ASCENDING" },
+        { "fieldPath": "importedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "rosters",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "studentNumber", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "certificates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "studentId", "order": "ASCENDING" },
+        { "fieldPath": "issuedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "badges",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "awardedAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

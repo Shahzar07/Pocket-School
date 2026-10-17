@@ -69,10 +69,7 @@ export interface NotificationPrefs {
   messages: boolean;
   announcements: boolean;
   product: boolean;
-  reunions: boolean;
-  wall: boolean;
-  yearbook: boolean;
-  alumni_messages: boolean;
+  alumni: boolean;
   institution: boolean;
   achievements: boolean;
 }
@@ -110,10 +107,7 @@ export const DEFAULT_NOTIFICATIONS: NotificationPrefs = {
   messages: true,
   announcements: true,
   product: true,
-  reunions: true,
-  wall: true,
-  yearbook: true,
-  alumni_messages: true,
+  alumni: true,
   institution: true,
   achievements: true,
 };

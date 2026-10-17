@@ -49,6 +49,8 @@ export interface AcademySettings {
   supportEmail: string;
   signupPolicy: SignupPolicy;
   allowedEmailDomains: string[];
+  /** Same hosts as allowedEmailDomains. This is the name stored on the institution. */
+  domains?: string[];
   roleGrants: Record<AcademyRole, AcademyPermission[]>;
   defaultLocale: string;
   locales: string[];
@@ -179,7 +181,8 @@ export function normalisePageSlug(input: string): string | null {
 export function sanitiseAcademySettings(input: unknown): AcademySettings {
   const source = input && typeof input === 'object' ? input as Partial<AcademySettings> : {};
   const base = blankAcademySettings();
-  const domains = (Array.isArray(source.allowedEmailDomains) ? source.allowedEmailDomains : [])
+  const domainSource = Array.isArray(source.domains) ? source.domains : source.allowedEmailDomains;
+  const domains = (Array.isArray(domainSource) ? domainSource : [])
     .map((domain) => cleanDomain(String(domain)))
     .filter((domain): domain is string => !!domain)
     .slice(0, 20);
@@ -361,6 +364,7 @@ export function publicTenantPatch(settings: AcademySettings) {
   return {
     signupPolicy: settings.signupPolicy,
     allowedEmailDomains: settings.allowedEmailDomains,
+    domains: settings.allowedEmailDomains,
     catalogueVisibility: settings.catalogueVisibility,
     defaultLocale: settings.defaultLocale,
     require2fa: settings.require2fa,

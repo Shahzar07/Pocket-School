@@ -14,6 +14,7 @@ import {
   overlapCredit,
   parseJoinRoster,
   programmesForLevel,
+  applyInstitutionJoin,
   readJoinConfig,
   rollRoster,
   bulkMove,
@@ -30,6 +31,7 @@ import { beginAlumni, releaseAlumniSeat, transferFromAcademy } from './alumni-st
 import { closeEducationSpan, noteDetectedDestination, openEducationSpan } from './learner-record-store';
 import { loadAutomation, logAutomation } from './automation-store';
 import { sendInstitutionMail } from './institution-mail';
+import { importRosterAsJoinEntry, readImportRoster, type ImportRoster } from '../institution-roster';
 import { syncWelcome } from './onboarding-store';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -96,25 +98,37 @@ export async function findInstitutionBySlug(slug: string): Promise<{ id: string;
 }
 
 export async function loadJoinConfig(institutionId: string): Promise<JoinConfig> {
-  const snap = await adminDb().doc(`institutions/${institutionId}/settings/join`).get();
-  return readJoinConfig(snap.data());
+  const [snap, academy] = await Promise.all([
+    adminDb().doc(`institutions/${institutionId}/settings/join`).get(),
+    adminDb().doc(`institutions/${institutionId}`).get(),
+  ]);
+  const config = readJoinConfig(snap.data());
+  config.policy = applyInstitutionJoin(config.policy, academy.data());
+  return config;
 }
 
 async function rosterHits(institutionId: string, attempt: JoinAttempt): Promise<RosterEntry[]> {
-  const col = adminDb().collection(`institutions/${institutionId}/joinRoster`);
+  const ledger = adminDb().collection(`institutions/${institutionId}/joinRoster`);
+  const imported = adminDb().collection(`institutions/${institutionId}/rosters`);
   const email = attempt.email.trim().toLowerCase();
+  const studentId = attempt.studentId.trim();
   const snaps = await Promise.all([
-    email ? col.where('email', '==', email).limit(1).get() : Promise.resolve(null),
-    attempt.studentId.trim() ? col.where('studentId', '==', attempt.studentId.trim()).limit(1).get() : Promise.resolve(null),
-    DATE.test(attempt.dob) ? col.where('dob', '==', attempt.dob).limit(20).get() : Promise.resolve(null),
+    email ? ledger.where('email', '==', email).limit(1).get() : Promise.resolve(null),
+    studentId ? ledger.where('studentId', '==', studentId).limit(1).get() : Promise.resolve(null),
+    DATE.test(attempt.dob) ? ledger.where('dob', '==', attempt.dob).limit(20).get() : Promise.resolve(null),
+    email ? imported.where('email', '==', email).limit(5).get() : Promise.resolve(null),
+    studentId ? imported.where('studentNumber', '==', studentId).limit(5).get() : Promise.resolve(null),
   ]);
   const rows: RosterEntry[] = [];
-  for (const snap of snaps) {
-    snap?.docs.forEach((doc) => {
-      const row = entryFrom(doc.data());
-      if (row && !rows.some((item) => item.email === row.email)) rows.push(row);
-    });
-  }
+  const push = (row: RosterEntry | null) => {
+    if (row && !rows.some((item) => item.email === row.email)) rows.push(row);
+  };
+  snaps.slice(0, 3).forEach((snap) => snap?.docs.forEach((doc) => push(entryFrom(doc.data()))));
+  snaps.slice(3).forEach((snap) => snap?.docs.forEach((doc) => {
+    const parsed = readImportRoster(doc.data());
+    if ('error' in parsed) return;
+    push(importRosterAsJoinEntry(parsed));
+  }));
   return rows;
 }
 
@@ -407,6 +421,28 @@ export async function saveJoinSettings(institutionId: string, config: JoinConfig
   await adminDb().doc(`institutions/${institutionId}/settings/join`).set(saved);
   await logAutomation({ rule: 'institution_join', outcome: 'auto', summary: 'Join rules saved.', actorId, refId: institutionId });
   return saved;
+}
+
+export async function saveImportRoster(institutionId: string, raw: unknown): Promise<{ id: string; row: ImportRoster } | { error: string }> {
+  const row = readImportRoster(raw);
+  if ('error' in row) return row;
+  const id = rosterId(row.email);
+  const stored: ImportRoster = { ...row, matchedUid: row.matchedUid };
+  await adminDb().doc(`institutions/${institutionId}/rosters/${id}`).set({
+    email: stored.email,
+    firstName: stored.firstName,
+    lastName: stored.lastName,
+    level: stored.level,
+    gender: stored.gender,
+    role: stored.role,
+    status: stored.status,
+    importedAt: stored.importedAt,
+    importBatchId: stored.importBatchId,
+    ...(stored.studentNumber ? { studentNumber: stored.studentNumber } : {}),
+    ...(stored.classId ? { classId: stored.classId } : {}),
+    ...(stored.matchedUid ? { matchedUid: stored.matchedUid } : {}),
+  }, { merge: true });
+  return { id, row: stored };
 }
 
 export async function uploadJoinRoster(institutionId: string, csv: string, origin: string, slug: string, institutionName: string): Promise<{ rows: RosterEntry[]; errors: string[]; claims: { email: string; sms: string; emailed: boolean }[] }> {

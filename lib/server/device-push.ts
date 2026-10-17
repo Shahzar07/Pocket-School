@@ -22,10 +22,7 @@ export type PushPref =
   | 'integrity'
   | 'behaviour'
   | 'reports'
-  | 'reunions'
-  | 'wall'
-  | 'yearbook'
-  | 'alumni_messages'
+  | 'alumni'
   | 'institution'
   | 'achievements';
 
@@ -34,7 +31,7 @@ function categoryFor(pref: PushPref): PushCategory {
   if (pref === 'integrity') return 'flags';
   if (pref === 'digest' || pref === 'reports') return 'digests';
   if (pref === 'goals' || pref === 'streaks' || pref === 'focus') return 'goals';
-  if (pref === 'reunions' || pref === 'wall' || pref === 'yearbook' || pref === 'alumni_messages' || pref === 'institution' || pref === 'achievements') {
+  if (pref === 'alumni' || pref === 'institution' || pref === 'achievements') {
     return pref;
   }
   return 'general';

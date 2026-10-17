@@ -5,11 +5,11 @@ import { asAgeTier, isMinorTier } from '../age-tier';
 import { publicName } from '../alumni';
 import {
   decideAlumniClaim,
-  emailDomainMatches,
   readAlumniClaim,
   rosterCountsForAlumni,
   type AlumniClaimStatus,
 } from '../alumni-claim';
+import { alumniSignals } from '../institution-join';
 import { screenPost } from '../alumni-network';
 import { adminDb } from '../firebase-admin';
 import { loadJoinConfig } from './institution-join-store';
@@ -149,6 +149,19 @@ async function writeUserClaim(uid: string, id: string, fields: Record<string, un
   await adminDb().doc(`users/${uid}/alumni_claims/${id}`).set(fields, { merge: true });
 }
 
+async function rosterRowForAlumni(institutionId: string, email: string): Promise<{ role?: string; status?: string } | undefined> {
+  if (!email) return undefined;
+  const [ledger, imported] = await Promise.all([
+    adminDb().collection(`institutions/${institutionId}/joinRoster`).where('email', '==', email).limit(1).get(),
+    adminDb().collection(`institutions/${institutionId}/rosters`).where('email', '==', email).limit(1).get(),
+  ]);
+  const ledgerRow = ledger.docs[0]?.data() as { role?: string; status?: string } | undefined;
+  if (rosterCountsForAlumni(ledgerRow)) return ledgerRow;
+  const importedRow = imported.docs[0]?.data() as { role?: string; status?: string } | undefined;
+  if (rosterCountsForAlumni(importedRow)) return importedRow;
+  return ledgerRow ?? importedRow;
+}
+
 export async function requestAlumniSchool(uid: string, raw: Record<string, unknown>): Promise<{ status: AlumniClaimStatus; message: string } | { error: string }> {
   const todayYear = new Date().getUTCFullYear();
   const fields = readAlumniClaim({ ...raw, todayYear });
@@ -169,14 +182,11 @@ export async function requestAlumniSchool(uid: string, raw: Record<string, unkno
     const attended = await adminDb().doc(`users/${uid}/attended/${academy.id}`).get();
     if (attended.exists) return { status: 'verified', message: 'You are already in this alumni network.' };
     const config = await loadJoinConfig(academy.id);
-    const roster = email
-      ? await adminDb().collection(`institutions/${academy.id}/joinRoster`).where('email', '==', email).limit(1).get()
-      : null;
-    const rosterRow = roster?.docs[0]?.data() as { role?: string; status?: string } | undefined;
+    const signals = alumniSignals(config.policy, await rosterRowForAlumni(academy.id, email), email);
     const decision = decideAlumniClaim({
       registered: true,
-      rosterMatch: config.policy.rosterMatch && rosterCountsForAlumni(rosterRow),
-      domainMatch: emailDomainMatches(email, config.policy.emailDomains),
+      rosterMatch: signals.rosterMatch,
+      domainMatch: signals.domainMatch,
       ageTier,
       parentApproved,
     });
@@ -365,13 +375,11 @@ async function finishChildClaim(childId: string, claimId: string): Promise<{ sta
   const academy = await adminDb().doc(`institutions/${institutionId}`).get();
   const config = await loadJoinConfig(institutionId);
   const email = text(user.get('email')).toLowerCase();
-  const roster = email
-    ? await adminDb().collection(`institutions/${institutionId}/joinRoster`).where('email', '==', email).limit(1).get()
-    : null;
+  const signals = alumniSignals(config.policy, await rosterRowForAlumni(institutionId, email), email);
   const decision = decideAlumniClaim({
     registered: true,
-    rosterMatch: config.policy.rosterMatch && rosterCountsForAlumni(roster?.docs[0]?.data() as { role?: string; status?: string } | undefined),
-    domainMatch: emailDomainMatches(email, config.policy.emailDomains),
+    rosterMatch: signals.rosterMatch,
+    domainMatch: signals.domainMatch,
     ageTier: asAgeTier(user.get('ageTier')),
     parentApproved: true,
   });

@@ -496,6 +496,10 @@ export interface Institution {
   previousSubdomains?: string[];
   signupPolicy?: 'open' | 'invite' | 'domain';
   allowedEmailDomains?: string[];
+  /** Hosts that match an email for domain join. A leading @ is stripped. */
+  domains?: string[];
+  /** Single verification mode. Absent keeps the combined roster, code, and domain checks. */
+  joinPolicy?: 'open' | 'invite' | 'domain' | 'code' | 'roster' | 'manual';
   catalogueVisibility?: 'private' | 'curated' | 'public';
   publicCatalogueIds?: string[];
   defaultLocale?: string;

@@ -512,10 +512,7 @@ export function SettingsPanel({
             ['messages', 'Messages'],
             ['announcements', 'Announcements'],
             ['product', 'Product updates'],
-            ['reunions', 'Reunions'],
-            ['wall', 'Yearbook wall'],
-            ['yearbook', 'Yearbook release'],
-            ['alumni_messages', 'Alumni messages'],
+            ['alumni', 'Alumni'],
             ['institution', 'Institution'],
             ['achievements', 'Achievements'],
           ]}

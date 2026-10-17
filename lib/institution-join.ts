@@ -25,6 +25,10 @@ const NEXT_LEVEL: Record<string, string> = {
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
+export const JOIN_VERIFICATIONS = ['open', 'invite', 'domain', 'code', 'roster', 'manual'] as const;
+
+export type JoinVerification = (typeof JOIN_VERIFICATIONS)[number];
+
 export interface JoinPolicy {
   /** Auto-approve when the email is on one of these domains, such as school.edu.my. */
   emailDomains: string[];
@@ -32,6 +36,11 @@ export interface JoinPolicy {
   rosterMatch: boolean;
   /** When no automatic check matches, the admin queue decides. */
   manualFallback: boolean;
+  /**
+   * Set only when the academy stored `joinPolicy`. Absent keeps the combined
+   * roster, code, and domain checks. `signupPolicy` is not this field.
+   */
+  verification?: JoinVerification;
 }
 
 export interface ClassCode {
@@ -81,7 +90,7 @@ export interface JoinAttempt {
 
 export interface JoinDecision {
   status: 'approved' | 'pending' | 'needs_consent' | 'waiting_for_seat' | 'rejected';
-  method: 'domain' | 'code' | 'roster' | 'manual' | '';
+  method: 'domain' | 'code' | 'roster' | 'manual' | 'open' | '';
   level: string;
   className: string;
   programmeId: string;
@@ -166,20 +175,70 @@ export function programmesForLevel(
     .map((item) => ({ id: item.id, title: item.title }));
 }
 
+export function isJoinVerification(value: string): value is JoinVerification {
+  return (JOIN_VERIFICATIONS as readonly string[]).includes(value);
+}
+
+function domainList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === 'string')
+    .map(normalDomain)
+    .filter(Boolean);
+}
+
 export function readJoinPolicy(value: unknown): JoinPolicy {
   const policy = defaultJoinPolicy();
   if (!value || typeof value !== 'object') return policy;
-  const raw = value as Partial<JoinPolicy>;
-  if (Array.isArray(raw.emailDomains)) {
-    policy.emailDomains = raw.emailDomains
-      .filter((item): item is string => typeof item === 'string')
-      .map(normalDomain)
-      .filter(Boolean);
-  }
+  const raw = value as Partial<JoinPolicy> & { domains?: unknown; joinPolicy?: unknown; verification?: unknown };
+  const listed = Array.isArray(raw.domains) ? domainList(raw.domains) : domainList(raw.emailDomains);
+  if (Array.isArray(raw.domains) || Array.isArray(raw.emailDomains)) policy.emailDomains = listed;
   if (typeof raw.acceptInviteCode === 'boolean') policy.acceptInviteCode = raw.acceptInviteCode;
   if (typeof raw.rosterMatch === 'boolean') policy.rosterMatch = raw.rosterMatch;
   if (typeof raw.manualFallback === 'boolean') policy.manualFallback = raw.manualFallback;
+  const mode = typeof raw.joinPolicy === 'string' ? raw.joinPolicy : typeof raw.verification === 'string' ? raw.verification : '';
+  if (isJoinVerification(mode)) policy.verification = mode;
   return policy;
+}
+
+/**
+ * `institution.domains` is the domain list when it has entries.
+ * `institution.joinPolicy` selects one verification mode.
+ * An older `signupPolicy` is ignored so a default of `invite` does not turn off roster and code.
+ */
+export function applyInstitutionJoin(
+  policy: JoinPolicy,
+  institution: {
+    domains?: unknown;
+    joinPolicy?: unknown;
+    allowedEmailDomains?: unknown;
+    signupPolicy?: unknown;
+  } | null | undefined,
+): JoinPolicy {
+  if (!institution) return policy;
+  const next: JoinPolicy = { ...policy, emailDomains: [...policy.emailDomains] };
+  const domains = domainList(institution.domains);
+  if (domains.length > 0) next.emailDomains = domains;
+  else if (next.emailDomains.length === 0) next.emailDomains = domainList(institution.allowedEmailDomains);
+  if (typeof institution.joinPolicy === 'string' && isJoinVerification(institution.joinPolicy)) {
+    next.verification = institution.joinPolicy;
+  }
+  return next;
+}
+
+/** Alumni auto-verify follows the same domains and joinPolicy. Other modes wait for an admin. */
+export function alumniSignals(
+  policy: JoinPolicy,
+  row: { role?: string; status?: string } | null | undefined,
+  email: string,
+): { rosterMatch: boolean; domainMatch: boolean } {
+  const rosterHit = Boolean(row && row.role === 'student' && row.status !== 'leaver');
+  const domain = domainHit(policy, email);
+  const mode = policy.verification;
+  if (mode === 'roster') return { rosterMatch: rosterHit, domainMatch: false };
+  if (mode === 'domain') return { rosterMatch: false, domainMatch: domain };
+  if (mode) return { rosterMatch: false, domainMatch: false };
+  return { rosterMatch: policy.rosterMatch && rosterHit, domainMatch: domain };
 }
 
 function normalDomain(value: string): string {
@@ -298,24 +357,41 @@ export function decideJoin(input: {
   let level = input.attempt.level;
   let className = '';
   let programmeId = input.attempt.programmeId;
-  if (input.policy.rosterMatch && roster) {
+  const takeRoster = () => {
+    if (!roster) return;
     method = 'roster';
     level = roster.level || level;
     className = roster.className;
     programmeId = roster.programmeId || programmeId;
-  } else if (input.policy.acceptInviteCode && (code || genericCode)) {
+  };
+  const takeCode = (classOnly: boolean) => {
+    if (classOnly ? !code : !(code || genericCode)) return;
     method = 'code';
     if (code) {
       level = code.level || level;
       className = code.className;
       programmeId = code.programmeId || programmeId;
     }
-  } else if (input.policy.emailDomains.length > 0 && domainHit(input.policy, email)) {
-    method = 'domain';
+  };
+  const mode = input.policy.verification;
+  if (mode === 'open') {
+    method = 'open';
+  } else if (mode === 'roster') {
+    takeRoster();
+  } else if (mode === 'invite') {
+    takeCode(false);
+  } else if (mode === 'code') {
+    takeCode(true);
+  } else if (mode === 'domain') {
+    if (domainHit(input.policy, email)) method = 'domain';
+  } else if (!mode) {
+    if (input.policy.rosterMatch && roster) takeRoster();
+    else if (input.policy.acceptInviteCode && (code || genericCode)) takeCode(false);
+    else if (input.policy.emailDomains.length > 0 && domainHit(input.policy, email)) method = 'domain';
   }
   const automatic = input.automationOn !== false && method !== '';
   if (!automatic) {
-    if (input.policy.manualFallback) {
+    if (mode === 'manual' || input.policy.manualFallback) {
       return {
         status: 'pending',
         method: 'manual',

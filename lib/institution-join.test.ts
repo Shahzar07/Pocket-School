@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
+  applyInstitutionJoin,
   bulkMove,
   claimRosterRow,
   claimTokenFor,
@@ -179,4 +180,54 @@ test('a student sees the programmes for their level, and a paused rule waits', (
   });
   assert.equal(held.status, 'pending');
   assert.equal(held.method, 'manual');
+});
+
+test('joinPolicy selects one check and institution.domains supplies the hosts', () => {
+  const open = decideJoin({
+    policy: { ...defaultJoinPolicy(), verification: 'open', emailDomains: [], rosterMatch: false, acceptInviteCode: false, manualFallback: false },
+    attempt: attempt({ email: 'ada@gmail.com' }),
+    seats: seats(),
+  });
+  assert.equal(open.status, 'approved');
+  assert.equal(open.method, 'open');
+
+  const domainPolicy = applyInstitutionJoin(
+    { ...defaultJoinPolicy(), emailDomains: ['old.example'], rosterMatch: true, acceptInviteCode: true },
+    { domains: ['@school.edu.my'], joinPolicy: 'domain', signupPolicy: 'invite' },
+  );
+  assert.deepEqual(domainPolicy.emailDomains, ['school.edu.my']);
+  assert.equal(domainPolicy.verification, 'domain');
+  const domainOnly = decideJoin({
+    policy: domainPolicy,
+    attempt: attempt({ inviteCode: 'IGCSE1' }),
+    roster,
+    codes: [{ code: 'IGCSE1', level: 'IGCSE', className: 'North', programmeId: 'igcse' }],
+    seats: seats(),
+  });
+  assert.equal(domainOnly.method, 'domain');
+  const wrongHost = decideJoin({
+    policy: domainPolicy,
+    attempt: attempt({ email: 'ada@gmail.com', inviteCode: 'IGCSE1' }),
+    roster,
+    codes: [{ code: 'IGCSE1', level: 'IGCSE', className: 'North', programmeId: 'igcse' }],
+    seats: seats(),
+  });
+  assert.equal(wrongHost.status, 'pending');
+  assert.equal(wrongHost.method, 'manual');
+
+  const legacy = applyInstitutionJoin(
+    { ...defaultJoinPolicy(), emailDomains: ['school.edu.my'] },
+    { signupPolicy: 'invite', allowedEmailDomains: ['other.example'] },
+  );
+  assert.equal(legacy.verification, undefined);
+  assert.deepEqual(legacy.emailDomains, ['school.edu.my']);
+
+  const manual = decideJoin({
+    policy: { ...defaultJoinPolicy(), verification: 'manual', emailDomains: ['school.edu.my'], manualFallback: false },
+    attempt: attempt(),
+    roster,
+    seats: seats(),
+  });
+  assert.equal(manual.status, 'pending');
+  assert.equal(manual.method, 'manual');
 });
