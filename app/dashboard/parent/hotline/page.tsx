@@ -1,7 +1,9 @@
-import { ParentHotline } from '@/components/hotline/surfaces';
+'use client';
 
-export const dynamic = 'force-dynamic';
+import { ParentHotlineLive } from '@/components/hotline/live';
+import { useAuthSTORE } from '@/hooks/use-auth';
 
 export default function ParentHotlinePage() {
-  return <ParentHotline />;
+  const { profile } = useAuthSTORE();
+  return <ParentHotlineLive childIds={profile?.childIds ?? []} />;
 }

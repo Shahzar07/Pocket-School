@@ -1,7 +1,7 @@
-import { EmergencyDesk } from '@/components/hotline/surfaces';
+import { EmergencyLive } from '@/components/hotline/live';
 
 export const dynamic = 'force-dynamic';
 
 export default function AdminEmergencyPage() {
-  return <EmergencyDesk />;
+  return <EmergencyLive />;
 }

@@ -148,7 +148,8 @@ function schoolLead(actor: Actor): boolean {
 export async function createTicket(uid: string, input: Record<string, unknown>) {
   const actor = await loadActor(uid);
   const studentId = str(input.studentId);
-  const category = str(input.category);
+  const rawCategory = str(input.category) === 'fees_billing' ? 'fees' : str(input.category);
+  const category = rawCategory;
   const body = str(input.body).slice(0, 4000);
   const priority = str(input.priority) as HotlinePriority;
   if (!parentOwns(actor, studentId)) throw new ActionError('FORBIDDEN', 'A parent opens a hotline ticket for their own child.');
@@ -157,7 +158,11 @@ export async function createTicket(uid: string, input: Record<string, unknown>) 
     throw new ActionError('BAD_REQUEST', 'Choose a priority.');
   }
   if (body.length < 3) throw new ActionError('BAD_REQUEST', 'Describe what the school should know.');
-  const authorities = initialAuthorities(str(input.authoritiesRequired) || 'unsure', str(input.authoritiesReason));
+  const authority = input.authority && typeof input.authority === 'object' ? input.authority as Record<string, unknown> : null;
+  const authorities = initialAuthorities(
+    str(input.authoritiesRequired) || str(authority?.required) || 'unsure',
+    str(input.authoritiesReason) || str(authority?.reason),
+  );
   if ('error' in authorities) throw new ActionError('BAD_REQUEST', authorities.error);
   const student = await db().doc(`users/${studentId}`).get();
   const institutionId = str(student.data()?.institutionId) || actor.institutionId;

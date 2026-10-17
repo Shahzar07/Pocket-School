@@ -5,7 +5,7 @@ import { Phone, Shield } from 'lucide-react';
 import { authedFetch, postJSON } from '@/lib/authed-fetch';
 import { emergencyNumber } from '@/lib/emergency/policy';
 import { SAFETY_TYPE_OPTIONS, SupportCard, TrackerCard } from '@/components/safety/surfaces';
-import type { Helpline, TrackerStage } from '@/lib/safety/policy';
+import { DEFAULT_HELPLINES, WHERE_PLACES, type Helpline, type TrackerStage } from '@/lib/safety/policy';
 
 interface TrackerItem {
   id: string;
@@ -22,7 +22,22 @@ async function fileAsBase64(file: File): Promise<string> {
   return btoa(binary);
 }
 
-export function SafetyDesk({ country = 'Malaysia' }: { country?: string }) {
+const WHERE_LABEL: Record<(typeof WHERE_PLACES)[number], string> = {
+  in_school: 'At school',
+  online: 'Online',
+  transport: 'On the way',
+  other: 'Somewhere else',
+};
+
+export function SafetyDesk({
+  country = 'Malaysia',
+  sample = false,
+  focus = 'report',
+}: {
+  country?: string;
+  sample?: boolean;
+  focus?: 'report' | 'danger';
+}) {
   const number = emergencyNumber(country);
   const [description, setDescription] = useState('');
   const [who, setWho] = useState('');
@@ -30,17 +45,19 @@ export function SafetyDesk({ country = 'Malaysia' }: { country?: string }) {
   const [when, setWhen] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [reports, setReports] = useState<TrackerItem[]>([]);
-  const [lines, setLines] = useState<Helpline[]>([]);
+  const [lines, setLines] = useState<Helpline[]>(sample ? DEFAULT_HELPLINES : []);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [dangerNote, setDangerNote] = useState('');
   const [dontTell, setDontTell] = useState(false);
-  const [shareLocation, setShareLocation] = useState(false);
+  const [shareLocation, setShareLocation] = useState(focus === 'danger');
+  const [place, setPlace] = useState(focus === 'danger' ? 'School gate' : '');
   const [dangerType, setDangerType] = useState('');
   const [concernRole, setConcernRole] = useState('');
   const [concernWho, setConcernWho] = useState('');
 
   useEffect(() => {
+    if (sample) return;
     let gone = false;
     void (async () => {
       const [trackerRes, helpRes] = await Promise.all([
@@ -54,11 +71,17 @@ export function SafetyDesk({ country = 'Malaysia' }: { country?: string }) {
       if (Array.isArray(help.lines)) setLines(help.lines as Helpline[]);
     })();
     return () => { gone = true; };
-  }, []);
+  }, [sample]);
 
   const send = async (type: string) => {
     setBusy(true);
     setNote('');
+    if (sample) {
+      setReports(current => [{ id: `sample-${type}`, safetyType: type, tracker: 'received', createdAt: Date.now(), flagged: false }, ...current]);
+      setNote('Sent. The safeguarding lead has this.');
+      setBusy(false);
+      return;
+    }
     try {
       const created = await postJSON<{ id: string; tracker: TrackerStage; flagged: boolean }>('/api/safety/report', {
         type,
@@ -94,26 +117,21 @@ export function SafetyDesk({ country = 'Malaysia' }: { country?: string }) {
     event.preventDefault();
     setDangerNote(`Call ${number}. Telling your school now.`);
     setBusy(true);
+    if (sample) {
+      setDangerNote(dontTell
+        ? `Call ${number}. Your school has been told. Parents were not notified.`
+        : `Call ${number}. Your school and your linked parents have been told.`);
+      setBusy(false);
+      return;
+    }
     try {
-      let lat: number | undefined;
-      let lng: number | undefined;
-      if (shareLocation && typeof navigator !== 'undefined' && navigator.geolocation) {
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: false, maximumAge: 0, timeout: 8000 });
-        }).catch(() => null);
-        if (position) {
-          lat = position.coords.latitude;
-          lng = position.coords.longitude;
-        }
-      }
       const created = await postJSON<{ parentsExcluded: boolean; locationShared: boolean }>('/api/safety/danger', {
         type: dangerType,
         dontTellParents: dontTell,
         concernRole,
         who: concernWho,
         shareLocation,
-        lat,
-        lng,
+        place: shareLocation ? place : '',
       });
       setDangerNote(created.parentsExcluded
         ? `Call ${number}. Your school has been told. Parents were not notified.`
@@ -126,8 +144,7 @@ export function SafetyDesk({ country = 'Malaysia' }: { country?: string }) {
     }
   };
 
-  return (
-    <div className="grid gap-4">
+  const reportForm = (
       <section className="rounded-2xl border border-border bg-card p-4 grid gap-3">
         <h2 className="text-lg font-bold flex items-center gap-2"><Shield aria-hidden="true" /> What is happening?</h2>
         <div className="flex flex-wrap gap-2">
@@ -153,7 +170,10 @@ export function SafetyDesk({ country = 'Malaysia' }: { country?: string }) {
             <input className="min-h-12 rounded-xl border border-border px-3 font-normal" value={who} onChange={event => setWho(event.target.value)} aria-label="Who" />
           </label>
           <label className="grid gap-1 text-sm font-semibold">Where
-            <input className="min-h-12 rounded-xl border border-border px-3 font-normal" value={where} onChange={event => setWhere(event.target.value)} aria-label="Where" />
+            <select className="min-h-12 rounded-xl border border-border px-3 font-normal" value={where} onChange={event => setWhere(event.target.value)} aria-label="Where this happened">
+              <option value="">Not sure</option>
+              {WHERE_PLACES.map(placeId => <option key={placeId} value={placeId}>{WHERE_LABEL[placeId]}</option>)}
+            </select>
           </label>
           <label className="grid gap-1 text-sm font-semibold">When
             <input className="min-h-12 rounded-xl border border-border px-3 font-normal" value={when} onChange={event => setWhen(event.target.value)} aria-label="When" />
@@ -165,17 +185,18 @@ export function SafetyDesk({ country = 'Malaysia' }: { country?: string }) {
         </label>
         {note ? <p className="text-sm">{note}</p> : null}
       </section>
+  );
 
-      {reports.length === 0 ? (
+  const tracker = reports.length === 0 ? (
         <section className="rounded-2xl border border-border bg-card p-4">
           <h2 className="text-lg font-bold">Your report</h2>
           <p className="text-sm text-muted-foreground">Nothing sent yet. Staff notes are never shown here.</p>
         </section>
-      ) : reports.map(report => <TrackerCard key={report.id} stage={report.tracker} />)}
+      ) : reports.map(report => <TrackerCard key={report.id} stage={report.tracker} />);
 
-      <SupportCard lines={lines.length ? lines : undefined} />
+  const dangerForm = (
+      <form id="danger-now" onSubmit={event => void onDanger(event)} className="rounded-2xl border border-border bg-card p-4 grid gap-3">
 
-      <form onSubmit={event => void onDanger(event)} className="rounded-2xl border border-border bg-card p-4 grid gap-3">
         <p className="text-xs font-bold tracking-widest text-[#D0553F]">EMERGENCY</p>
         <p className="text-4xl font-extrabold">Call {number}</p>
         <p className="text-sm text-muted-foreground">This is the emergency number for your country. Call it now if you can.</p>
@@ -202,14 +223,28 @@ export function SafetyDesk({ country = 'Malaysia' }: { country?: string }) {
         </label>
         <label className="min-h-12 flex items-center gap-2 font-semibold">
           <input type="checkbox" checked={shareLocation} onChange={event => setShareLocation(event.target.checked)} />
-          Share my location once
+          Share a place once
         </label>
+        {shareLocation ? (
+          <label className="grid gap-1 text-sm font-semibold">Place
+            <input className="min-h-12 rounded-xl border border-border px-3 font-normal" value={place} onChange={event => setPlace(event.target.value)} aria-label="Place to share once" placeholder="Classroom, gate, or bus stop" />
+          </label>
+        ) : null}
         <button type="submit" disabled={busy} className="min-h-12 rounded-xl bg-[#D0553F] text-white font-bold inline-flex items-center justify-center gap-2">
           <Phone aria-hidden="true" />
           I&apos;m in danger now
         </button>
         {dangerNote ? <p className="text-sm font-semibold">{dangerNote}</p> : null}
       </form>
+  );
+
+  return (
+    <div className="grid gap-4">
+      {focus === 'danger' ? dangerForm : null}
+      {reportForm}
+      {tracker}
+      <SupportCard lines={lines.length ? lines : undefined} />
+      {focus === 'report' ? dangerForm : null}
     </div>
   );
 }

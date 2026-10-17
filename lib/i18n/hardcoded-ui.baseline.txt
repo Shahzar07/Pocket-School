@@ -2348,3 +2348,58 @@ components/safety/surfaces.tsx	This is the emergency number for your country. Ca
 components/safety/surfaces.tsx	What is happening?
 components/safety/surfaces.tsx	You can see where it stands. Staff notes stay with the safeguarding lead.
 components/safety/surfaces.tsx	Your report
+components/dashboard/cards.tsx	1 && typeof ring !== 'number' ?
+components/dashboard/cards.tsx	Nothing waiting
+components/dashboard/cards.tsx	Sample map of active regions
+components/dashboard/cards.tsx	Sample regions. A school’s own map uses only the region it has saved.
+components/dashboard/cards.tsx	Where learners are active
+components/dashboard/command-palette.tsx	Nothing matches that.
+components/dashboard/command-palette.tsx	Search the dashboard
+components/dashboard/command-palette.tsx	Search this home
+components/dashboard/home-view.tsx	At a glance
+components/dashboard/home-view.tsx	Loading your home
+components/dashboard/home-view.tsx	Shown to you, and to your school when you have earned it. Never used to rank people.
+components/dashboard/home-view.tsx	Start here
+components/dashboard/home-view.tsx	Your children
+components/dashboard/shell.tsx	Search this home
+components/dashboard/shell.tsx	⌘K
+components/hotline/live.tsx	Alert description
+components/hotline/live.tsx	Alert id
+components/hotline/live.tsx	Alert title
+components/hotline/live.tsx	Alert type
+components/hotline/live.tsx	Audit log
+components/hotline/live.tsx	Authority contact
+components/hotline/live.tsx	Authority reference
+components/hotline/live.tsx	Confirm and publish
+components/hotline/live.tsx	Create a draft
+components/hotline/live.tsx	Emergency desk
+components/hotline/live.tsx	Guardian consent
+components/hotline/live.tsx	Guardian name
+components/hotline/live.tsx	Hotline queue
+components/hotline/live.tsx	New ticket
+components/hotline/live.tsx	No tickets yet
+components/hotline/live.tsx	Not required
+components/hotline/live.tsx	Not sure yet
+components/hotline/live.tsx	Nothing in this filter
+components/hotline/live.tsx	Paste the draft id. You cannot confirm an alert you created.
+components/hotline/live.tsx	Public sharing stays off until the authority is informed.
+components/hotline/live.tsx	Re-confirm for 24 hours
+components/hotline/live.tsx	Record consent
+components/hotline/live.tsx	Retract this alert
+components/hotline/live.tsx	Retraction reason
+components/hotline/live.tsx	Review is every 24 hours. A missing child draft needs the authority before it is saved.
+components/hotline/live.tsx	Save draft
+components/hotline/live.tsx	Save status
+components/hotline/live.tsx	School hotline
+components/hotline/live.tsx	Second person confirms
+components/hotline/live.tsx	Send reply
+components/hotline/live.tsx	Send to
+components/hotline/live.tsx	Send to the school
+components/hotline/live.tsx	Signature kind
+components/hotline/live.tsx	To be informed
+components/hotline/live.tsx	Type the guardian name as the signature
+components/hotline/live.tsx	Verify integrity checks the hash chain. Export is CSV or PDF for a school lead.
+components/hotline/live.tsx	What should the school know
+components/safety/desk.tsx	Classroom, gate, or bus stop
+components/safety/desk.tsx	Place to share once
+components/safety/desk.tsx	Where this happened

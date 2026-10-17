@@ -1,7 +1,7 @@
-import { StaffQueue } from '@/components/hotline/surfaces';
+import { StaffHotlineLive } from '@/components/hotline/live';
 
 export const dynamic = 'force-dynamic';
 
 export default function AdminHotlinePage() {
-  return <StaffQueue />;
+  return <StaffHotlineLive />;
 }

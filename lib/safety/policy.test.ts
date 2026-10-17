@@ -8,7 +8,7 @@ import {
   dangerRepeatFlag,
   DANGER_ACK_MS,
   helplinesFor,
-  locationOnce,
+  placeOnce,
   needsUrgentLeadNotice,
   parentsExcluded,
   safetyRateFlag,
@@ -107,22 +107,21 @@ test('reporter identity is limited to the lead, the principal, and the super adm
   assert.equal(safetyView({ id: 'parent-a', role: 'parent', staffPost: '' }, { ...danger, parentsExcluded: true, notifiedParentUids: ['parent-a'] }), 'hidden');
 });
 
-test('location is one snapshot, and a missed staff ack escalates at five minutes', () => {
-  assert.equal(locationOnce(false, 3.1, 101.7, 10), null);
-  assert.equal(locationOnce(true, Number.NaN, 1, 10), null);
-  assert.equal(locationOnce(true, 91, 0, 10), null);
-  assert.deepEqual(locationOnce(true, 3.15, 101.7, 10), { lat: 3.15, lng: 101.7, at: 10 });
+test('a place is typed once, and a missed staff ack escalates after five minutes', () => {
+  assert.equal(placeOnce(false, 'the library', 10), null);
+  assert.equal(placeOnce(true, '  ', 10), null);
+  assert.deepEqual(placeOnce(true, ' the library ', 10), { place: 'the library', at: 10 });
   const created = 1_000;
-  assert.equal(dangerNeedsEscalation(created, 0, 0, created + DANGER_ACK_MS - 1), false);
-  assert.equal(dangerNeedsEscalation(created, 0, 0, created + DANGER_ACK_MS), true);
-  assert.equal(dangerNeedsEscalation(created, 50, 0, created + DANGER_ACK_MS), false);
-  assert.equal(dangerNeedsEscalation(created, 0, 50, created + DANGER_ACK_MS), false);
+  assert.equal(dangerNeedsEscalation(created, 0, 0, created + DANGER_ACK_MS), false);
+  assert.equal(dangerNeedsEscalation(created, 0, 0, created + DANGER_ACK_MS + 1), true);
+  assert.equal(dangerNeedsEscalation(created, 50, 0, created + DANGER_ACK_MS + 1), false);
+  assert.equal(dangerNeedsEscalation(created, 0, 50, created + DANGER_ACK_MS + 1), false);
 });
 
 test('helplines fall back to Malaysia and reject a bad catalogue', () => {
   const lines = helplinesFor('Malaysia', []);
   assert.equal(lines.some(line => line.number === '15999'), true);
-  assert.equal(lines.some(line => line.name === 'Befrienders'), true);
+  assert.equal(lines.some(line => line.name === 'Befrienders KL' && line.number === '+603-7627 2929'), true);
   assert.equal(helplinesFor('my', []).length, lines.length);
   assert.equal(cleanHelplines([{ country: 'Singapore', name: 'SOS', number: '1767', note: '' }])?.[0]?.number, '1767');
   assert.equal(cleanHelplines([]), null);

@@ -22,10 +22,12 @@ import {
   dangerFanOut,
   dangerNeedsEscalation,
   dangerRepeatFlag,
+  familyContactChoice,
   helplinesFor,
   isSafetyType,
-  locationOnce,
+  isWherePlace,
   needsUrgentLeadNotice,
+  placeOnce,
   safetyRateFlag,
   safetyView,
   trackerFor,
@@ -250,7 +252,8 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
   if (!isSafetyType(safetyType)) throw new ActionError('BAD_REQUEST', 'Choose a report type.');
   const description = str(input.description).slice(0, 4000);
   const who = str(input.who).slice(0, 200);
-  const where = str(input.where).slice(0, 200);
+  const where = str(input.where).slice(0, 40);
+  if (where && !isWherePlace(where)) throw new ActionError('BAD_REQUEST', 'Choose where this happened.');
   const when = str(input.when).slice(0, 200);
   const now = Date.now();
   const prior = await db().collection('hotline_tickets')
@@ -265,6 +268,7 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
   const ref = db().collection('hotline_tickets').doc();
   await caseRef.set({
     source: 'student_safety_report',
+    category: 'safeguarding',
     severity: 'high',
     ticketId: ref.id,
     institutionId: actor.institutionId,
@@ -313,10 +317,17 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
     updatedAt: now,
   };
   await ref.set(ticket);
+  const device = deviceOf(input);
   await logEvent(ref.id, actor, 'created', {
     before: {},
     after: { source: 'student_safety_report', safetyType, status: 'pending', flagged: rate.flagged, description, who, where, when },
-  }, deviceOf(input));
+  }, device);
+  if (rate.flagged) {
+    await logEvent(ref.id, { id: 'system', role: 'system' }, 'safety_report_flagged', {
+      before: {},
+      after: { flagged: true, throttled: true, flagReason: 'rate' },
+    }, device);
+  }
 
   const ageTier = knownAgeTier(actor);
   if (needsUrgentLeadNotice(ageTier)) {
@@ -358,7 +369,7 @@ export async function raiseDanger(uid: string, input: Record<string, unknown>) {
   const staffUids = [...leads.map(row => row.id), ...principals.map(row => row.id), teacher].filter(Boolean);
   const fan = dangerFanOut({ type, who, concernRole, dontTellParents, links, staffUids });
   const share = input.shareLocation === true;
-  const location = locationOnce(share, input.lat, input.lng, now);
+  const location = placeOnce(share, input.place, now);
   const authorities = initialAuthorities('unsure', '');
   if ('error' in authorities) throw new ActionError('BAD_REQUEST', authorities.error);
   const calendar = await calendarFor(actor.institutionId);
@@ -366,9 +377,11 @@ export async function raiseDanger(uid: string, input: Record<string, unknown>) {
   const ref = db().collection('hotline_tickets').doc();
   await caseRef.set({
     source: 'danger_now',
+    category: 'safeguarding',
     severity: 'critical',
     status: 'open',
     ticketId: ref.id,
+    dangerId: ref.id,
     institutionId: actor.institutionId,
     studentId: actor.id,
     createdAt: now,
@@ -499,10 +512,8 @@ export async function recordFamilyDecision(uid: string, id: string, input: Recor
   const data = snap.data() ?? {};
   if (viewOf(actor, data) !== 'full') throw new ActionError('FORBIDDEN', 'The safeguarding lead records this decision.');
   if (data.parentsExcluded !== true) throw new ActionError('BAD_REQUEST', 'Parents were already included in this alert.');
-  const contact = str(input.contact);
-  if (contact !== 'now' && contact !== 'later' && contact !== 'not_now') {
-    throw new ActionError('BAD_REQUEST', 'Choose whether to contact the family.');
-  }
+  const contact = familyContactChoice(str(input.contact));
+  if (!contact) throw new ActionError('BAD_REQUEST', 'Choose whether to contact the family.');
   const reason = str(input.reason).slice(0, 500);
   if (reason.length < 3) throw new ActionError('BAD_REQUEST', 'Record why this decision was made.');
   const when = str(input.when).slice(0, 120);
@@ -539,7 +550,7 @@ export async function escalateUnackedDanger(now = Date.now()) {
       continue;
     }
     await db().doc(`hotline_tickets/${doc.id}`).set({ dangerEscalatedAt: now, updatedAt: now }, { merge: true });
-    await logEvent(doc.id, { id: 'system', role: 'system' }, 'escalated', {
+    await logEvent(doc.id, { id: 'system', role: 'system' }, 'danger_escalated', {
       before: { dangerEscalatedAt: 0 },
       after: { dangerEscalatedAt: now, reason: 'no staff acknowledgement in 5 minutes' },
     }, SERVER_DEVICE);

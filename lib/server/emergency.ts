@@ -287,7 +287,7 @@ export async function createAlert(uid: string, input: Record<string, unknown>) {
   if (!canCreate(actor.role, actor.staffPost, actor.verifiedStaff)) {
     throw new ActionError('FORBIDDEN', 'A verified principal or admin creates an emergency alert.');
   }
-  const type = str(input.type);
+  const type = str(input.type) === 'missing' ? 'missing_child' : str(input.type);
   if (!isEmergencyType(type)) throw new ActionError('BAD_REQUEST', 'Choose an alert type.');
   const title = str(input.title).slice(0, 120);
   const description = str(input.description).slice(0, 2000);
@@ -323,7 +323,11 @@ export async function createAlert(uid: string, input: Record<string, unknown>) {
     throw new ActionError('BAD_REQUEST', 'A missing child alert needs the authority, a contact, and a reference before it can be drafted.');
   }
   const region = await institutionRegion(actor.institutionId);
-  const reviewEveryMs = clampReviewEvery(Number(input.reviewEveryMs));
+  const reviewEveryMs = clampReviewEvery(
+    typeof input.reconfirmHours === 'number'
+      ? input.reconfirmHours * 60 * 60 * 1000
+      : Number(input.reviewEveryMs),
+  );
   const ref = db().collection('emergency_alerts').doc();
   await ref.set({
     institutionId: actor.institutionId,

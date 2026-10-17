@@ -30,9 +30,12 @@ export interface Helpline {
   note: string;
 }
 
+export const WHERE_PLACES = ['in_school', 'online', 'transport', 'other'] as const;
+export type WherePlace = (typeof WHERE_PLACES)[number];
+
 export const DEFAULT_HELPLINES: Helpline[] = [
   { country: 'Malaysia', name: 'Talian Kasih', number: '15999', note: '24 hours' },
-  { country: 'Malaysia', name: 'Befrienders', number: '03-7627 2929', note: 'Emotional support' },
+  { country: 'Malaysia', name: 'Befrienders KL', number: '+603-7627 2929', note: '24 hours, free and confidential' },
 ];
 
 export function isSafetyType(value: string): value is SafetyType {
@@ -89,17 +92,29 @@ export function dangerAudience(input: { excluded: boolean; parentUids: string[];
   return [...new Set([...input.parentUids.filter(Boolean), ...staff])];
 }
 
-export function locationOnce(share: boolean, lat: unknown, lng: unknown, at: number): { lat: number; lng: number; at: number } | null {
+export function isWherePlace(value: string): value is WherePlace {
+  return (WHERE_PLACES as readonly string[]).includes(value);
+}
+
+/** One typed place. There is no GPS and no continuous tracking. */
+export function placeOnce(share: boolean, place: unknown, at: number): { place: string; at: number } | null {
   if (!share) return null;
-  if (typeof lat !== 'number' || typeof lng !== 'number') return null;
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
-  return { lat, lng, at };
+  if (typeof place !== 'string') return null;
+  const text = place.trim().slice(0, 160);
+  if (text.length < 2) return null;
+  return { place: text, at };
+}
+
+export function familyContactChoice(value: string): 'now' | 'later' | 'not_now' | null {
+  if (value === 'now' || value === 'contact') return 'now';
+  if (value === 'later') return 'later';
+  if (value === 'not_now' || value === 'do_not_contact') return 'not_now';
+  return null;
 }
 
 export function dangerNeedsEscalation(createdAt: number, staffAckAt: number, escalatedAt: number, now: number): boolean {
   if (staffAckAt > 0 || escalatedAt > 0) return false;
-  return now - createdAt >= DANGER_ACK_MS;
+  return now - createdAt > DANGER_ACK_MS;
 }
 
 export function helplinesFor(country: string, lines: Helpline[]): Helpline[] {
