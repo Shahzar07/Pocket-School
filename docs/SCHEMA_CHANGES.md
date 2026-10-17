@@ -42,7 +42,7 @@ deviceTokens where userId == recipientUid
 
 That is a single-field equality. Firestore maintains that index automatically.
 
-Senders (goals parent alerts, integrity flags, attendance, digests, and the inbox categories grades, assignments, and general) all load that query, skip a device whose `prefs[category] === false`, and post to Expo (`https://exp.host/--/api/v2/push/send`) or Web Push from `provider`. Web Push needs `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT`. The Admin SDK needs `FIREBASE_SERVICE_ACCOUNT` (JSON) or Application Default Credentials.
+Senders (goals parent alerts, integrity flags, attendance, digests, grades, assignments, general, and achievements) all load that query, skip a device whose `prefs[category] === false`, and post to Expo (`https://exp.host/--/api/v2/push/send`) or Web Push from `provider`. Web Push needs `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT`. The Admin SDK needs `FIREBASE_SERVICE_ACCOUNT` (JSON) or Application Default Credentials.
 
 Invalid tokens are deleted by the server:
 
@@ -104,7 +104,7 @@ Signed-in clients can still read user documents under the existing rules. The sh
 
 ## notifications (unchanged)
 
-`notifications` stays the in-app inbox: `userId`, `title`, `message`, `type`, `link`, `read`, `createdAt`. Push category is not stored on the document. Creating a notification also asks `/api/push` to deliver it. `type: grade` maps to prefs `grades`, `type: assignment` maps to `assignments`, and other types map to `general` unless the caller sets a category (`goals`, `flags`, `attendance`, `digests`).
+`notifications` stays the in-app inbox: `userId`, `title`, `message`, `type`, `link`, `read`, `createdAt`. Push category is not stored on the document. Creating a notification also asks `/api/push` to deliver it. `type: grade` maps to prefs `grades`, `type: assignment` maps to `assignments`, and other types map to `general` unless the caller sets a category (`goals`, `flags`, `attendance`, `digests`, `achievements`). Badges, level-ups, and quests use `achievements`, not `grades`.
 
 ## Other senders
 
@@ -116,6 +116,7 @@ Signed-in clients can still read user documents under the existing rules. The sh
 | Digest | The recipient passed to `sendDigest` | `digests` |
 | Assignment graded | The student | `grades` |
 | Parent due-date reminder | The signed-in parent | `assignments` |
+| Badge, level-up, or quest | The learner | `achievements` |
 
 Email digests are not sent from this change. The push digest sender is the hook a later scheduler can call.
 

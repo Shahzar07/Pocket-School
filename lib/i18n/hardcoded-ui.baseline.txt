@@ -2243,3 +2243,23 @@ lib/email-otp.ts	Poket School
 components/document-delivery.tsx	Optional message
 components/document-delivery.tsx	Other addresses, separated by commas
 components/document-delivery.tsx	Other email addresses
+app/dashboard/admin/badges/page.tsx	Badge settings saved.
+app/dashboard/admin/badges/page.tsx	Names, icon, criteria, tier, and who the badge is for. Sparks for a milestone stay off until you set a small amount.
+app/dashboard/admin/badges/page.tsx	Poket School
+app/dashboard/admin/badges/page.tsx	Sparks rewards
+app/dashboard/admin/badges/page.tsx	Super admin access required.
+app/dashboard/institution/page.tsx	Leaderboards and houses
+app/dashboard/teacher/page.tsx	Class boards
+app/dashboard/teacher/page.tsx	Leaderboards and houses
+app/preview/badges/page.tsx	Badges and levels
+app/preview/badges/page.tsx	Poket School
+app/preview/badges/page.tsx	This week
+components/gamification/badge-card.tsx	Poket School
+components/gamification/badge-share.tsx	Add to Profile
+components/gamification/badge-share.tsx	Share on LinkedIn
+app/badges/[awardId]/page.tsx	Poket School
+app/badges/[awardId]/opengraph-image.tsx	POKET SCHOOL
+components/gamification/class-boards.tsx	Add a class before choosing leaderboards or house competitions.
+components/gamification/class-boards.tsx	Class board updated.
+components/gamification/house-board.tsx	House competitions are off for this class.
+components/gamification/house-board.tsx	No house scores yet this week.

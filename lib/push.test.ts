@@ -100,6 +100,8 @@ test('provider errors that mean the token is dead are pruned', () => {
   assert.equal(webPushShouldPrune(404), true);
   assert.equal(webPushShouldPrune(500), false);
   assert.equal(wantsCategory(token({ prefs: { digests: false } }), 'digests'), false);
+  assert.equal(wantsCategory(token({ prefs: { achievements: false } }), 'achievements'), false);
+  assert.equal(wantsCategory(token(), 'achievements'), true);
   assert.equal(wantsCategory(token(), 'attendance'), true);
   assert.equal(wantsCategory(token({ prefs: { alumni: false } }), 'alumni'), false);
   assert.equal(userWantsPush({ push: true, alumni: false }, 'alumni'), false);

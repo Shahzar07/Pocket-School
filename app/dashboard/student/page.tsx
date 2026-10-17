@@ -6,7 +6,7 @@ import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { createDailyGoal, getEnrolledCourses, getUserBadges, goalDateKey, subscribeDailyGoals, Course, Enrollment, Badge, type DailyGoal } from '@/lib/db';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ArrowUpRight, BookOpen, Zap, Trophy, Target, TrendingUp, Sparkles, Users, GraduationCap, Play } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, BookOpen, Zap, Target, TrendingUp, Sparkles, Users, GraduationCap, Play } from 'lucide-react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { StudyLaunchpad } from '@/components/study/study-launchpad';
@@ -20,6 +20,8 @@ const LearningCharts = dynamic(
 import { readSnapshot } from '@/lib/insights/client';
 import type { AnalyticsSnapshot } from '@/lib/insights/aggregate';
 import { streakFromDates } from '@/lib/learning';
+import { levelForXp, STARTER_BADGES } from '@/lib/gamification/catalog';
+import { BadgeShelf } from '@/components/gamification/badge-shelf';
 import { canBecomeInstructor, forLearnerView, hasAccountRole } from '@/lib/account-modes';
 import {
   DashPage, DashHeader, Panel, PanelHeader, StatCard, ProgressBar,
@@ -119,9 +121,8 @@ export default function StudentDashboard() {
   useEffect(() => { load(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const xp = profile?.xp ?? 0;
-  const xpToNextLevel = 1000;
-  const level = Math.floor(xp / xpToNextLevel) + 1;
-  const xpProgress = Math.min((xp % xpToNextLevel) / xpToNextLevel * 100, 100);
+  const rank = levelForXp(xp);
+  const earnedBadgeIds = badges.map(badge => badge.type);
   const inProgress = enrolled.filter(e => e.enrollment.progress > 0 && e.enrollment.progress < 100);
   const notStarted = enrolled.filter(e => e.enrollment.progress === 0);
   const completed = enrolled.filter(e => e.enrollment.progress === 100);
@@ -291,8 +292,8 @@ export default function StudentDashboard() {
           trend={completed.length > 0 ? { direction: 'up', label: 'Finished' } : { direction: 'flat', label: 'None yet' }}
         />
         <StatCard
-          index={3} icon={Zap} label="Level" value={`Lv ${level}`} tone="coral"
-          progress={xpProgress} progressLabel={`${xp.toLocaleString()} XP`}
+          index={3} icon={Zap} label="Level" value={rank.name} tone="coral"
+          progress={rank.progress} progressLabel={`${xp.toLocaleString()} XP`}
           trend={studyStreak > 0 ? { direction: 'up', label: `${studyStreak} day streak` } : { direction: 'flat', label: 'Start a streak' }}
         />
       </div>
@@ -392,14 +393,10 @@ export default function StudentDashboard() {
                 Finish a lesson or a daily goal to earn your first badge.
               </p>
             ) : (
-              <div className="flex flex-wrap gap-2">
-                {badges.slice(0, 8).map(b => (
-                  <span key={b.id}
-                    className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-xl border border-border text-[12px] font-medium text-foreground">
-                    <Trophy className="w-3.5 h-3.5 text-primary" />{b.name ?? 'Badge'}
-                  </span>
-                ))}
-              </div>
+              <BadgeShelf
+                definitions={STARTER_BADGES.filter(badge => earnedBadgeIds.includes(badge.id)).slice(0, 4)}
+                earnedIds={earnedBadgeIds}
+              />
             )}
           </Panel>
         </div>

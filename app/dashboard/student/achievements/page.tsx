@@ -8,12 +8,28 @@ import { db } from '@/lib/firebase';
 import { getUserBadges, getTopStudentsByXp, updateUser, Badge, UserProfile } from '@/lib/db';
 import { leaderboardSchool } from '@/lib/self-reported-school';
 import { privacyBoard } from '@/lib/platform/privacy-board';
-import { Badge as BadgeUI } from '@/components/ui/badge';
+import { BadgeArt } from '@/components/gamification/badge-art';
 import { Zap, Star, Crown } from 'lucide-react';
 import { LeaderboardPodium } from '@/components/leaderboard/podium';
 import { streakFromDates } from '@/lib/learning';
 import { Progress } from '@/components/ui/progress';
+import { Badge as BadgeUI } from '@/components/ui/badge';
 import { linkedInCertificationUrl, shareLinks } from '@/lib/credentials/badge-model';
+import { STARTER_BADGES, levelForXp } from '@/lib/gamification/catalog';
+import { BadgeShelf } from '@/components/gamification/badge-shelf';
+import { BadgeShareLinks } from '@/components/gamification/badge-share';
+import { ProgressRing } from '@/components/gamification/progress-ring';
+import { QuestList } from '@/components/gamification/quest-list';
+import { isoWeekKey } from '@/lib/gamification/engine';
+import { authedFetch } from '@/lib/api-client';
+
+const ALL_BADGES = [
+  { type: 'first_steps', name: 'First Steps', description: 'Earn your first 100 XP', icon: '🌱', threshold: 100 },
+  { type: 'rising_star', name: 'Rising Star', description: 'Earn 500 XP', icon: '⭐', threshold: 500 },
+  { type: 'knowledge_seeker', name: 'Knowledge Seeker', description: 'Earn 1,000 XP', icon: '📚', threshold: 1000 },
+  { type: 'scholar', name: 'Scholar', description: 'Earn 5,000 XP', icon: '🎓', threshold: 5000 },
+  { type: 'master', name: 'Master Learner', description: 'Earn 10,000 XP', icon: '👑', threshold: 10000 },
+];
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -24,20 +40,15 @@ const fadeUp: Record<string, any> = {
   }),
 };
 
-const ALL_BADGES = [
-  { type: 'first_steps', name: 'First Steps', description: 'Earn your first 100 XP', icon: '🌱', threshold: 100 },
-  { type: 'rising_star', name: 'Rising Star', description: 'Earn 500 XP', icon: '⭐', threshold: 500 },
-  { type: 'knowledge_seeker', name: 'Knowledge Seeker', description: 'Earn 1,000 XP', icon: '📚', threshold: 1000 },
-  { type: 'scholar', name: 'Scholar', description: 'Earn 5,000 XP', icon: '🎓', threshold: 5000 },
-  { type: 'master', name: 'Master Learner', description: 'Earn 10,000 XP', icon: '👑', threshold: 10000 },
-];
-
 export default function AchievementsPage() {
   const { user, profile, setProfile } = useAuthSTORE();
   const [badges, setBadges] = useState<Badge[]>([]);
   const [leaderboard, setLeaderboard] = useState<{ id: string; data: UserProfile; school: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [organizationId, setOrganizationId] = useState('');
+  const [quests, setQuests] = useState<Record<string, number>>({});
+  const [questsDone, setQuestsDone] = useState<string[]>([]);
+  const [freezes, setFreezes] = useState(0);
 
   useEffect(() => {
     if (!user) return;
@@ -61,6 +72,11 @@ export default function AchievementsPage() {
       })));
       setLoading(false);
     });
+    authedFetch('/api/gamification/state').then(data => {
+      if (data.quests && typeof data.quests === 'object') setQuests(data.quests as Record<string, number>);
+      if (Array.isArray(data.questsDone)) setQuestsDone(data.questsDone.filter((item): item is string => typeof item === 'string'));
+      if (typeof data.freezes === 'number') setFreezes(data.freezes);
+    }).catch(() => undefined);
   }, [user]);
 
   useEffect(() => {
@@ -74,8 +90,11 @@ export default function AchievementsPage() {
 
   const xp = profile?.xp ?? 0;
   const earnedTypes = new Set(badges.map(b => b.type));
-  const nextBadge = ALL_BADGES.find(b => !earnedTypes.has(b.type));
-  const nextBadgeProgress = nextBadge ? Math.min((xp / nextBadge.threshold) * 100, 100) : 100;
+  const rank = levelForXp(xp);
+  const today = new Date().toISOString().slice(0, 10);
+  const shelf = STARTER_BADGES.filter(badge => badge.audience === 'student');
+  const nextBadge = shelf.find(badge => !earnedTypes.has(badge.id) && badge.criteria.type === 'xp');
+  const nextBadgeProgress = nextBadge && nextBadge.criteria.type === 'xp' ? Math.min((xp / nextBadge.criteria.atLeast) * 100, 100) : 100;
   const board = privacyBoard(
     leaderboard.map(({ id, data, school }) => ({
       id,
@@ -175,11 +194,11 @@ export default function AchievementsPage() {
           <h2 className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">Next Badge</h2>
           <p className="font-heading text-3xl text-foreground mt-1.5 mb-4">Up Next</p>
           <div className="flex items-center gap-4">
-            <div className="text-4xl">{nextBadge.icon}</div>
+            <BadgeArt icon={nextBadge.icon} size={56} title={nextBadge.name} />
             <div className="flex-1">
               <p className="font-heading text-lg text-foreground">{nextBadge.name}</p>
               <p className="text-xs text-muted-foreground mb-2">
-                {nextBadge.description} ({xp.toLocaleString()} / {nextBadge.threshold.toLocaleString()} XP)
+                {nextBadge.description} ({xp.toLocaleString()} XP)
               </p>
               <Progress value={nextBadgeProgress} className="h-2" />
             </div>
@@ -241,6 +260,25 @@ export default function AchievementsPage() {
                 </div>
               );
             })}
+          </div>
+          <ProgressRing value={rank.progress} label={rank.name} sub={rank.nextName ? `Next is ${rank.nextName}` : 'Top level'} />
+          <div className="mt-4">
+            <BadgeShelf definitions={shelf} earnedIds={[...earnedTypes]} />
+          </div>
+          {user && (
+            <ul className="mt-4 space-y-3">
+              {shelf.filter(badge => earnedTypes.has(badge.id)).map(badge => (
+                <li key={badge.id} className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-sm font-semibold">{badge.name}</span>
+                  <BadgeShareLinks awardId={`${user.uid}_${badge.id}`} name={badge.name} />
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="mt-6">
+            <h3 className="font-heading text-2xl mb-3">Quests</h3>
+            <QuestList progress={quests} done={questsDone} periodDay={today} periodWeek={isoWeekKey(today)} />
+            <p className="text-xs text-muted-foreground mt-3">{freezes} streak freeze earned. A freeze is earned, not bought.</p>
           </div>
         </div>
 

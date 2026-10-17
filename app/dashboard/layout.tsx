@@ -218,6 +218,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/admin/verifications', icon: ShieldCheck, labelKey: 'nav.verifications' },
       { href: '/dashboard/admin/activity', icon: ClipboardList, labelKey: 'nav.dashboard', label: 'Activity log', superOnly: true },
       { href: '/dashboard/admin/certificates', icon: Award, labelKey: 'nav.certificates', label: 'Certificates' },
+      { href: '/dashboard/admin/badges', icon: Award, labelKey: 'nav.certificates', label: 'Badges', superOnly: true },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
       { href: '/dashboard/admin/moderation', icon: Shield, labelKey: 'nav.moderation', flag: 'community' },
       { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },

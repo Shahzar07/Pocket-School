@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { getTeacherCourses, getSubmissionsForTeacher, listInstructorActivity, Course, Submission, CourseQuestion, CourseReview } from '@/lib/db';
+import { getTeacherCourses, getSubmissionsForTeacher, listAcademyClasses, listInstructorActivity, Course, Submission, CourseQuestion, CourseReview, type AcademyClass } from '@/lib/db';
 import { instructorSnapshot } from '@/lib/course-builder';
 import { formatMoney } from '@/lib/pricing';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import {
   DashPage, DashHeader, Panel, PanelHeader, StatCard, ListRow, Initials, EmptyState,
 } from '@/components/dash-ui';
 import { SeeMore } from '@/components/shell/see-more';
+import { ClassBoardControls } from '@/components/gamification/class-boards';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -38,6 +39,7 @@ export default function TeacherDashboard() {
   const router = useRouter();
   const { user, profile } = useAuthSTORE();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [classes, setClasses] = useState<AcademyClass[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [reviews, setReviews] = useState<CourseReview[]>([]);
   const [questions, setQuestions] = useState<CourseQuestion[]>([]);
@@ -59,6 +61,11 @@ export default function TeacherDashboard() {
   };
 
   useEffect(() => { load(); }, [user]);
+  useEffect(() => {
+    const institutionId = profile?.institutionId;
+    if (!institutionId) return;
+    listAcademyClasses(institutionId).then(setClasses).catch(() => setClasses([]));
+  }, [profile?.institutionId]);
 
   const ungraded = submissions.filter(s => s.score === undefined);
   const published = courses.filter(c => c.status === 'published');
@@ -108,6 +115,13 @@ export default function TeacherDashboard() {
           </Button>
         }
       />
+
+      {profile?.institutionId ? (
+        <Panel>
+          <PanelHeader title="Class boards" meta={<span className="text-[12px] text-muted-foreground">Leaderboards and houses</span>} />
+          <ClassBoardControls institutionId={profile.institutionId} classes={classes} />
+        </Panel>
+      ) : null}
 
       <Panel>
         <PanelHeader title="Today" meta={<span className="text-[12px] text-muted-foreground">{today}</span>} />

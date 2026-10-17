@@ -141,10 +141,11 @@ async function childActivity(childId: string) {
   start.setDate(today.getDate() - 6);
   const from = localDay(start);
   const to = localDay(today);
-  const [child, snapshot, goals] = await Promise.all([
+  const [child, snapshot, goals, badgeSnap] = await Promise.all([
     db.doc(`users/${childId}`).get(),
     db.doc(`analytics_snapshots/student_${childId}`).get(),
     db.collection('daily_goals').where('studentId', '==', childId).limit(40).get(),
+    db.collection('badges').where('userId', '==', childId).limit(12).get(),
   ]);
   const name = typeof child.data()?.name === 'string' && child.data()?.name
     ? String(child.data()?.name)
@@ -157,7 +158,11 @@ async function childActivity(childId: string) {
     return [title];
   });
   const stored = snapshot.exists ? snapshot.data() as Record<string, unknown> : null;
-  return factsFromSnapshot(name, stored, titles);
+  const badgeNames = badgeSnap.docs.flatMap(row => {
+    const value = row.data().name;
+    return typeof value === 'string' && value.trim() ? [value.trim()] : [];
+  });
+  return factsFromSnapshot(name, stored, titles, badgeNames);
 }
 
 export async function POST(req: NextRequest) {

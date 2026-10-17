@@ -1601,6 +1601,10 @@ export interface AcademyClass {
   programmeIds: string[];
   memberIds: string[];
   kind?: 'class' | 'department' | 'campus' | 'group';
+  /** When false, class and school leaderboards hide this class. Missing means on. */
+  leaderboardEnabled?: boolean;
+  /** House competitions stay off until a teacher or the school turns them on. */
+  competitionsEnabled?: boolean;
 }
 
 export async function listAcademyClasses(institutionId: string): Promise<AcademyClass[]> {

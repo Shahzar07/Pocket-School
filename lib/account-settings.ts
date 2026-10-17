@@ -71,6 +71,7 @@ export interface NotificationPrefs {
   product: boolean;
   alumni: boolean;
   institution: boolean;
+  /** Badges, level-ups, and quests. Missing stays on. */
   achievements: boolean;
 }
 

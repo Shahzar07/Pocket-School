@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
   getInstitution, listAcademyClasses, listAcademyInvites, listAcademyMembers, listOemLicences,
-  saveAcademyClass, saveAcademyInvites, saveJoinCode, updateInstitution, type Institution,
+  saveAcademyClass, saveAcademyInvites, saveJoinCode, updateInstitution, type AcademyClass, type Institution,
 } from '@/lib/db';
 import { brandedInvite, licencePhase, makeJoinCode, parseInviteCsv, seatsRemaining, type OemLicence } from '@/lib/oem';
 import { institutionLoginLinks } from '@/lib/institution-login';
@@ -22,6 +22,7 @@ import { authedFetch } from '@/lib/api-client';
 import { friendlyError } from '@/lib/design/system';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ClassBoardControls } from '@/components/gamification/class-boards';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -37,6 +38,7 @@ export default function InstitutionAcademyPage() {
   const [className, setClassName] = useState('');
   const [classProgrammes, setClassProgrammes] = useState<string[]>([]);
   const [classCount, setClassCount] = useState(0);
+  const [classes, setClasses] = useState<AcademyClass[]>([]);
   const [displayName, setDisplayName] = useState('');
 
   useEffect(() => {
@@ -53,6 +55,7 @@ export default function InstitutionAcademyPage() {
       setMembers(people.length);
       setInvites(pending.length);
       setClassCount(classes.length);
+      setClasses(classes);
       setDisplayName(inst?.branding?.displayName ?? inst?.name ?? '');
     }).catch(() => toast.error('Could not load the academy.'));
   }, [institutionId]);
@@ -207,6 +210,12 @@ export default function InstitutionAcademyPage() {
           <p className="text-sm text-muted-foreground">Level: {allocationYearsFor(classProgrammes).join(', ') || 'Not applicable'}</p>
         )}
         <Button onClick={() => void addClass()} className="rounded-full" disabled={!live.length}>Add class</Button>
+        {institutionId ? (
+          <div className="pt-2">
+            <h3 className="font-semibold mb-2">Leaderboards and houses</h3>
+            <ClassBoardControls institutionId={institutionId} classes={classes} />
+          </div>
+        ) : null}
       </section>
 
       {ownCourses && (

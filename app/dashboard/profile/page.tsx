@@ -28,6 +28,7 @@ import { usePricing } from '@/hooks/use-pricing';
 import { formatMoney } from '@/lib/money';
 import { defaultChildControls, strictestControls, type ChildControls, type PaymentMethod } from '@/lib/parent-controls';
 import { removeStoredMedia } from '@/components/media';
+import { ProfileBadgeShelf } from '@/components/gamification/profile-shelf';
 import {
   normalisePayout,
   profilePatch,
@@ -364,6 +365,7 @@ export default function ProfilePage() {
     {profile?.role === 'student' && (
       <StudentPassCard name={profile.name} level={learnerLevelLabel(profile)} code={profile.studentNumber ?? ''} />
     )}
+    {user ? <ProfileBadgeShelf userId={user.uid} /> : null}
     <SettingsPanel
       view={view}
       currencies={currencies.length ? currencies : ['USD']}

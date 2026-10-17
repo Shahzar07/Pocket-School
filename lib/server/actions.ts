@@ -14,6 +14,8 @@ import { certificateStatus, certificateStudentName } from '../certificates';
 import { issueCourseCertificate } from '../certificates/issue';
 import { LESSON_FIRST_COMPLETE } from '../events';
 import { recordActivity } from '@/lib/audit/server';
+import { LEARNING_EVENTS } from '@/lib/events';
+import { emitLearningEvent } from '@/lib/server/learning-events';
 import {
   ADMIN_SPARKS_GRANT,
   FORMAT_COSTS,
@@ -225,6 +227,15 @@ export async function completeLesson(
   if (!result.already) {
     await writePublicXp(uid, result.name ?? '', result.xp, result.role ?? 'student');
     await awardBadges(uid, result.xp);
+    await emitLearningEvent({
+      uid,
+      event: LEARNING_EVENTS.lessonFirstComplete,
+      day: new Date().toISOString().slice(0, 10),
+      eventId: `lesson-first:${uid}`,
+      payload: { courseId, lessonId },
+    }).catch(error => {
+      console.error('[gamification] lesson.first_complete', error);
+    });
   }
   return result;
 }
