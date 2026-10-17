@@ -148,54 +148,37 @@ export const READS_OFFER_FAQ: OfferFaq[] = [
     answer: `A person reviews a new title before it is published. Poket Reads speaks ${READS_OFFER_LANGUAGE_COUNT} languages, and a book can be translated rather than replaced.`,
   },
   {
-    question: 'Is there a guarantee or a bonus?',
-    answer: 'Not yet. The guarantee and the bonuses on this page are placeholders. They are not an offer until Harry replaces them with terms he has confirmed.',
-  },
-  {
     question: 'Does the yearly price expire?',
     answer: 'No. There is no countdown. The yearly price is ten times the monthly price, which means two months are not billed. That is the ordinary price.',
   },
 ];
 
-export interface OfferPlaceholder {
+/**
+ * Founder's note. Edit the paragraphs here. They are Harry's words on the
+ * page, in the first person, and they only restate facts already in the product.
+ */
+export const READS_OFFER_FOUNDER = {
+  name: 'Harry Seggu',
+  role: 'Founder, Poket School',
+  paragraphs: [
+    'I am Harry Seggu, founder of Poket School.',
+    'Poket Reads is a shelf we sell on its own, from Malaysia. Kindle Unlimited is not sold here. Amazon Kids+ is not sold here. A household can subscribe, or buy one published book and keep it.',
+    'The figures on this page are the prices in the product. Reads is nine US dollars a month, or ninety for the year. Reads Family is fifteen US dollars a month, or one hundred and fifty for the year. The subscription opens Primary and Lower Secondary, plus general fiction, non-fiction and children’s stories on that shelf. IGCSE, A-Level and LLB titles can be sampled and bought. They are not included in that monthly price.',
+    'The lines under Read a page are the openings of published chapters. I have not put a customer’s words on this page. We do not have them yet.',
+  ],
+} as const;
+
+/** Real reader reviews. Leave this empty until a reader has given words and permission. */
+export interface OfferTestimonial {
   id: string;
-  kind: 'testimonial' | 'guarantee' | 'bonus';
-  label: string;
-  note: string;
+  quote: string;
+  name: string;
+  detail: string;
 }
 
-export const READS_OFFER_PLACEHOLDERS: OfferPlaceholder[] = [
-  {
-    id: 'testimonial-1',
-    kind: 'testimonial',
-    label: 'Testimonial placeholder',
-    note: 'Not a customer quote. Replace with a real parent or student, their words, and permission to use them. Do not invent a name, a rating or a result.',
-  },
-  {
-    id: 'testimonial-2',
-    kind: 'testimonial',
-    label: 'Testimonial placeholder',
-    note: 'Not a customer quote. A second real voice belongs here, or the slot should be removed before the page is advertised.',
-  },
-  {
-    id: 'testimonial-3',
-    kind: 'testimonial',
-    label: 'Testimonial placeholder',
-    note: 'Not a customer quote. Leave this empty of fiction. No star rating and no “joined by thousands”.',
-  },
-  {
-    id: 'guarantee',
-    kind: 'guarantee',
-    label: 'Guarantee placeholder',
-    note: 'Harry must confirm this before it is a promise. Decide the number of days, whether the first subscription payment is refunded, and whether a book bought outright is included. Until this box is replaced, Poket Reads is sold without a money-back guarantee stated on this page.',
-  },
-  {
-    id: 'bonuses',
-    kind: 'bonus',
-    label: 'Bonus placeholder',
-    note: 'Harry must confirm this before it is advertised. No bonus ships with Poket Reads unless it is named here in plain terms. Do not leave a suggested bonus looking like it is included.',
-  },
-];
+export const READS_OFFER_TESTIMONIALS: readonly OfferTestimonial[] = [];
+
+export const READS_OFFER_REVIEW_MAIL = 'hello@poketschool.ai';
 
 export function readsOfferJsonLd() {
   const productOffers = READS_OFFER_CHECKOUTS.map(item => ({
