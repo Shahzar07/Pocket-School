@@ -15,7 +15,7 @@ test('300 Sparks is the primary allowance and a full lesson is 100', () => {
   const fullLesson = Object.values(FORMAT_COSTS).reduce((sum, cost) => sum + cost, 0);
   assert.equal(fullLesson, 100);
   assert.equal(CONTENT_MIN_TIER.BOOK, 0);
-  assert.equal(READS_PLANS[0]?.usd, 9);
+  assert.equal(READS_PLANS[0]?.monthlyUsd, 4.99);
 });
 
 test('the proposal answers both packaging questions without changing numbers', () => {

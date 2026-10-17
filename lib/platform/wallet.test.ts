@@ -5,8 +5,8 @@ import { quoteCheckout } from './wallet';
 test('converts a one-time book with the admin MYR rate and flags Touch ’n Go', () => {
   const quote = quoteCheckout({ kind: 'book', id: 'harbour-light', currency: 'MYR' });
   assert.ok(quote);
-  assert.equal(quote.usd, 5);
-  assert.equal(quote.amount, 23.99);
+  assert.equal(quote.usd, 1.99);
+  assert.equal(quote.amount, 9.99);
   assert.equal(quote.currency, 'MYR');
   assert.equal(quote.mode, 'payment');
   assert.deepEqual(quote.stripeMethods, ['card', 'fpx', 'grabpay']);
@@ -22,7 +22,7 @@ test('keeps Reads subscriptions on card, in USD', () => {
     methods: ['card', 'fpx', 'grabpay', 'touchngo'],
   });
   assert.ok(quote);
-  assert.equal(quote.amount, 150);
+  assert.equal(quote.amount, 79.99);
   assert.equal(quote.currency, 'USD');
   assert.equal(quote.mode, 'subscription');
   assert.deepEqual(quote.stripeMethods, ['card']);

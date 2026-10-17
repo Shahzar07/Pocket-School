@@ -1,4 +1,5 @@
 import { ADDONS, TIERS } from '@/lib/entitlements';
+import { READS_PLANS, readsPlanItem } from '@/lib/payments/reads';
 import { BOOKS } from '@/lib/reads/seed';
 import {
   quoteAddon,
@@ -51,11 +52,6 @@ export interface CheckoutQuote {
   recurring: 'month' | 'year' | null;
 }
 
-const READS_PLANS = [
-  { id: 'reads', name: 'Poket Reads', usd: 9 },
-  { id: 'reads-family', name: 'Poket Reads Family', usd: 15 },
-] as const;
-
 export function isCheckoutKind(value: string): value is CheckoutKind {
   return (CHECKOUT_KINDS as readonly string[]).includes(value);
 }
@@ -79,10 +75,9 @@ export function quoteCheckout(
   }
 
   if (request.kind === 'reads' || (request.kind === 'plan' && READS_PLANS.some(plan => plan.id === request.id))) {
-    const plan = READS_PLANS.find(item => item.id === request.id);
-    if (!plan) return null;
-    const amount = interval === 'annual' ? plan.usd * 10 : plan.usd;
-    return finish(amount, amount, 'USD', plan.name, 'subscription', interval === 'annual', requested, false);
+    const item = readsPlanItem(request.id, interval === 'annual' ? 'year' : 'month');
+    if (!item) return null;
+    return finish(item.unitAmount, item.unitAmount, 'USD', item.title, 'subscription', interval === 'annual', requested, false);
   }
 
   if (request.kind === 'plan') {

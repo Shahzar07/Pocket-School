@@ -22,10 +22,14 @@ import {
   READS_OFFER_REVIEW_MAIL,
   READS_OFFER_TESTIMONIALS,
   bookCheckoutHref,
+  booksVersusUnlimitedLine,
+  ownOrReadLine,
   readsCheckoutHref,
+  readsDailyUsd,
   readsMonthlyUsd,
   readsYearlyUsd,
 } from '@/lib/reads-offer';
+import { READS_BOOK_USD } from '@/lib/payments/reads';
 
 const focus =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
@@ -65,9 +69,9 @@ export function ReadsOfferLetter() {
           Amazon Kids+ will not either. Poket Reads is the shelf you subscribe to from here, or the single book you buy once and keep.
         </p>
         <p className="mt-6 text-[17px] leading-[1.7] text-muted-foreground">
-          Poket Reads is {readsMoneyWords(readsMonthlyUsd('reads'))} a month, or {readsMoneyWords(readsYearlyUsd('reads'))} a year.
+          {ownOrReadLine()} ({readsMoneyWords(readsYearlyUsd('reads'))} a year).
           Reads Family, for more than one profile, is {readsMoneyWords(readsMonthlyUsd('reads-family'))} a month or {readsMoneyWords(readsYearlyUsd('reads-family'))} a year.
-          The figure on the cards below follows the currency you choose. US dollars are the price we store.
+          {booksVersusUnlimitedLine()}. The monthly price is less than a coffee. The figure on the cards below follows the currency you choose. US dollars are the price we store.
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <OfferCta href={readsCheckoutHref('reads', 'month')} id="hero-reads">Get Poket Reads</OfferCta>
@@ -247,7 +251,7 @@ export function ReadsOfferLetter() {
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">What you are buying</p>
           <h2 id="stack-title" className="mt-3 font-heading text-4xl tracking-[-0.04em] sm:text-5xl">The books and the shelf, priced only where we have a price.</h2>
           <p className="mt-4 text-[17px] leading-[1.7]">
-            Four books you can buy outright today come to {ownedTotal} US dollars if you purchase each of them once. That is not a “value of the subscription”. The subscription does not include the LLB book or the IGCSE book. It is the cost of owning those files. The shelf beside them is a different line.
+            Every book on this list is {readsMoneyWords(READS_BOOK_USD)} to buy and keep. {booksVersusUnlimitedLine()}. Those books together come to {readsMoneyWords(ownedTotal)} if you purchase each of them once. That is the cost of owning those files, not a value of the subscription. The subscription does not include the LLB book or the IGCSE book.
           </p>
           <ul className="mt-8 divide-y divide-border rounded-3xl border border-border bg-background">
             {READS_OFFER_BOOKS.map(book => (
@@ -292,7 +296,7 @@ export function ReadsOfferLetter() {
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">The price</p>
           <h2 id="price-title" className="mt-3 font-heading text-4xl tracking-[-0.04em] sm:text-5xl">Four ways to pay. No clock in the corner.</h2>
           <p className="mt-4 text-[17px] leading-[1.7] text-muted-foreground">
-            The yearly price is ten times the monthly price. That is two months not billed, and it is the ordinary price. It does not expire tonight. Choose a currency above if you want the local figure. Checkout uses the same pricing library.
+            {ownOrReadLine()}. {booksVersusUnlimitedLine()}. Spread over 30 days, the monthly price is about {readsMoneyWords(readsDailyUsd('reads'))} a day. The yearly price is the figure on the yearly card. It does not expire tonight. Choose a currency above if you want the local figure. Checkout uses the same pricing library.
           </p>
         </div>
         <ul className="mt-10 grid gap-4 sm:grid-cols-2">
@@ -375,7 +379,7 @@ export function ReadsOfferLetter() {
           <OfferCta href="/reads" id="close-shelf" variant="quiet">Browse the shelf</OfferCta>
         </div>
         <p className="mt-10 text-[17px] leading-[1.7]">
-          <strong>P.S.</strong> Kindle Unlimited and Amazon Kids+ are still not sold in Malaysia. The yearly price on this page is not a launch timer. It is ten months, written down as the year.
+          <strong>P.S.</strong> Kindle Unlimited and Amazon Kids+ are still not sold in Malaysia. The yearly price on this page is not a launch timer. It is the yearly price on the card.
         </p>
         <p className="mt-4 text-[17px] leading-[1.7]">
           <strong>P.P.S.</strong> A book you buy stays after the subscription ends. The first chapter of a published book is free to read before you pay anyone.
@@ -433,8 +437,7 @@ function ReadPageCallout({ excerpts }: { excerpts: ReturnType<typeof readsOfferE
 }
 
 function readsMoneyWords(usd: number): string {
-  const names: Record<number, string> = { 9: 'nine US dollars', 15: 'fifteen US dollars', 90: 'ninety US dollars', 150: 'one hundred and fifty US dollars' };
-  return names[usd] ?? `${usd} US dollars`;
+  return `${usd.toFixed(2)} US dollars`;
 }
 
 function ExcerptList({ items, named }: { items: ReturnType<typeof readsOfferExcerpts>; named: 'academic' | 'stories' }) {
