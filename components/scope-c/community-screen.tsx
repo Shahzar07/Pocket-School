@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { Compass, MessageCircle, Search } from 'lucide-react';
 import { DashHeader, DashPage, EmptyState, ListRow, Panel, PanelHeader, Segmented } from '@/components/dash-ui';
+import { SafetyShieldLink } from '@/components/safety/surfaces';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -56,6 +57,7 @@ export function CommunityScreen({
         eyebrow={explore ? 'Explore · adults' : 'Your school'}
         title="Community"
         accent={ageTier === 'adult' ? 'adult' : 'school'}
+        actions={<SafetyShieldLink />}
         description={explore
           ? 'Adult spaces, public profiles, and opt-in messages. Minors and minor spaces stay out of Explore.'
           : 'Wins and questions with people in your age tier. Student-to-student direct messages stay off.'}

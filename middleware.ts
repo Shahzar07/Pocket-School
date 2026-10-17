@@ -8,6 +8,7 @@ import {
   verifyDashboardSession,
 } from '@/lib/dashboard-session';
 import { institutionLoginRewrite } from '@/lib/institution-login';
+import { amberCanonicalPath } from '@/lib/amber/public';
 import { GEO_COUNTRY_COOKIE, GEO_REGION_COOKIE } from '@/lib/languages';
 import { stripAcademyPath, TENANT_HEADER, tenantFromRequest } from '@/lib/tenant-host';
 
@@ -57,6 +58,13 @@ async function roleGate(request: NextRequest): Promise<NextResponse | null> {
 }
 
 export async function middleware(request: NextRequest) {
+  const canonical = amberCanonicalPath(stripAcademyPath(request.nextUrl.pathname));
+  if (canonical) {
+    const url = request.nextUrl.clone();
+    url.pathname = canonical;
+    return NextResponse.redirect(url, 301);
+  }
+
   const gated = await roleGate(request);
   if (gated) return gated;
 

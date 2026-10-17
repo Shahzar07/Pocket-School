@@ -1,0 +1,48 @@
+import { type EmergencyRecord } from './policy';
+
+/** Fixed sample for /alerts/sample. No child photograph. */
+export const SAMPLE_ALERT: EmergencyRecord = {
+  id: 'sample',
+  institutionId: 'north-academy',
+  type: 'missing_child',
+  title: 'Missing child',
+  description: 'Last seen after school near the north gate. Clothes: a blue school shirt and dark trousers.',
+  subjectName: 'A student',
+  publicDescription: 'Last seen after school near the north gate. Clothes: a blue school shirt and dark trousers.',
+  publicApproval: { name: false, photo: false, description: true },
+  referralCode: 'POKETAMBER',
+  region: { country: 'Malaysia', state: 'Kuala Lumpur', city: 'Kuala Lumpur' },
+  photoUrl: '',
+  guardianConsent: false,
+  consentId: '',
+  authoritiesInformed: {
+    agency: 'Royal Malaysia Police',
+    referenceNumber: 'PDRM-2026-1044',
+    informedAt: Date.UTC(2026, 9, 17, 1, 15),
+  },
+  authorities: {
+    required: 'yes',
+    reason: '',
+    status: 'informed',
+    informed: {
+      agency: 'Royal Malaysia Police',
+      contact: '999',
+      reference: 'PDRM-2026-1044',
+      at: Date.UTC(2026, 9, 17, 1, 15),
+      by: 'principal',
+    },
+  },
+  status: 'active',
+  publishedBy: 'principal',
+  publishedAt: Date.UTC(2026, 9, 17, 1, 30),
+  confirmedBy: 'safeguarding-lead',
+  confirmedAt: Date.UTC(2026, 9, 17, 1, 36),
+  resolved: null,
+  publicShareEnabled: true,
+  sharePaused: false,
+  reviewEveryMs: 24 * 60 * 60 * 1000,
+  reviewDueAt: Date.UTC(2026, 9, 18, 1, 36),
+  retractedReason: '',
+  ogVersion: 1,
+  counts: { views: 128, shares: 14 },
+};

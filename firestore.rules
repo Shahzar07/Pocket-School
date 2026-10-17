@@ -153,7 +153,8 @@ service cloud.firestore {
               'notificationPrefs', 'privacy', 'instructor',
               'twoFactorEnabled', 'sessionsRevokedAt', 'deletionRequest',
               'email', 'updatedAt', 'onboardedAt', 'studyDates',
-              'lastActiveAt', 'region', 'parentContacts'];
+              'lastActiveAt', 'region', 'parentContacts',
+              'emergencyOptIn', 'homeCountry'];
     }
 
     function deletionRequestOk() {
@@ -172,6 +173,10 @@ service cloud.firestore {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(selfServiceFields())
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['email'])
             || incoming().get('email', '') == request.auth.token.email)
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['emergencyOptIn'])
+            || incoming().emergencyOptIn is bool)
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['homeCountry'])
+            || incoming().homeCountry is string)
         && deletionRequestOk();
     }
 
@@ -2459,6 +2464,7 @@ service cloud.firestore {
     match /checkouts/{id} { allow read, write: if false; }
     match /transactions/{id} { allow read, write: if false; }
     match /coupons/{id} { allow read, write: if false; }
+    match /referrals/{code} { allow read, write: if false; }
     match /affiliate_ledger/{id} { allow read, write: if false; }
     match /refund_requests/{id} { allow read: if isAdmin(); allow write: if false; }
     match /disputes/{id} { allow read: if isAdmin(); allow write: if false; }
@@ -2769,7 +2775,9 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
     match /safeguarding_cases/{caseId} {
-      allow read: if isAdmin() || (isInstitutionAdmin() && resource.data.institutionId == myInstitution());
+      allow read: if resource.data.source != 'student_safety_report'
+        && resource.data.source != 'danger_now'
+        && (isAdmin() || (isInstitutionAdmin() && resource.data.institutionId == myInstitution()));
       allow create, update, delete: if false;
     }
     match /safeguarding_alerts/{alertId} {
@@ -2794,6 +2802,111 @@ service cloud.firestore {
     }
     match /yearbook_notes/{noteId} {
       allow read: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin() || (resource.data.moderation == 'allow' && resource.data.institutionId == myInstitution()));
+      allow create, update, delete: if false;
+    }
+
+    // Hotline and emergency alerts. Client writes are false.
+    // Two-person publish is enforced in lib/server/emergency.ts. Do not deploy from this branch.
+    match /hotline_tickets/{ticketId} {
+      // Student safety reports and danger alerts are not client-readable.
+      // The API returns a tracker or a notice. Identity stays off this path.
+      allow get: if isSignedIn()
+        && resource.data.source != 'student_safety_report'
+        && resource.data.source != 'danger_now'
+        && (resource.data.parentUid == request.auth.uid || isAdmin());
+      allow list: if false;
+      allow create, update, delete: if false;
+      match /comments/{commentId} {
+        allow read: if isSignedIn()
+          && get(/databases/$(database)/documents/hotline_tickets/$(ticketId)).data.source != 'student_safety_report'
+          && get(/databases/$(database)/documents/hotline_tickets/$(ticketId)).data.source != 'danger_now'
+          && (
+            isAdmin()
+            || (resource.data.internal != true && get(/databases/$(database)/documents/hotline_tickets/$(ticketId)).data.parentUid == request.auth.uid)
+          );
+        allow create, update, delete: if false;
+      }
+      // Append-only. update and delete are false for every role, admin included.
+      match /events/{eventId} {
+        allow read: if isAdmin()
+          && get(/databases/$(database)/documents/hotline_tickets/$(ticketId)).data.source != 'student_safety_report'
+          && get(/databases/$(database)/documents/hotline_tickets/$(ticketId)).data.source != 'danger_now';
+        allow create: if false;
+        allow update, delete: if false;
+      }
+      match /attachments/{fileId} {
+        allow read, write: if false;
+      }
+    }
+    match /emergency_alerts/{alertId} {
+      allow read: if false;
+      allow create, update, delete: if false;
+      // Append-only. update and delete are false for every role, admin included.
+      match /updates/{updateId} {
+        allow read: if false;
+        allow create: if false;
+        allow update, delete: if false;
+      }
+      match /audit/{auditId} {
+        allow read: if isAdmin();
+        allow create: if false;
+        allow update, delete: if false;
+      }
+      match /attachments/{fileId} {
+        allow read, write: if false;
+      }
+      match /recipients/{recipientId} {
+        allow read, write: if false;
+      }
+      // Consent versions are append-only. update and delete are false for every role, admin included.
+      match /consent/{consentId} {
+        allow read: if isAdmin();
+        allow create: if false;
+        allow update, delete: if false;
+      }
+    }
+    match /emergency_rate/{rateId} {
+      allow read, write: if false;
+    }
+    match /safety_helplines/{docId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if false;
+    }
+    match /safety_flags/{userId} {
+      allow read, write: if false;
+    }
+    match /safety_rate/{rateId} {
+      allow read, write: if false;
+    }
+    match /mail_deliveries/{deliveryId} {
+      allow read, write: if false;
+    }
+    match /all_staff_alerts/{alertId} {
+      allow read, write: if false;
+      match /checkins/{staffId} {
+        allow read, write: if false;
+      }
+      match /audit/{auditId} {
+        allow read: if false;
+        allow create: if false;
+        allow update, delete: if false;
+      }
+    }
+    match /all_staff_open/{institutionId} {
+      allow read, write: if false;
+    }
+    match /all_staff_instructions/{institutionId} {
+      allow read, write: if false;
+    }
+    match /alert_reports/{reportId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+    match /alert_report_rate/{rateId} {
+      allow read, write: if false;
+    }
+    match /alert_report_bans/{userId} {
+      allow read: if isAdmin() || isUser(userId);
       allow create, update, delete: if false;
     }
 

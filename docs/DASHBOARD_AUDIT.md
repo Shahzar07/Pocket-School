@@ -1068,6 +1068,60 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Institution admins act on their own school. A super admin can see every school.
 - **Owner keys:** None.
 
+### School hotline
+
+- **Route:** `/dashboard/parent/hotline`
+- **Audience:** parent
+- **Purpose:** Parents open a ticket to a teacher, academic lead, principal, or safeguarding lead.
+- **Overlaps:** Helpdesk and messages.
+- **Decision:** Safeguarding and bullying tickets stay with the principal or safeguarding lead.
+- **Owner keys:** None.
+
+### Hotline queue
+
+- **Route:** `/dashboard/teacher/hotline`
+- **Audience:** teacher
+- **Purpose:** Teachers work parent tickets, with filters for status and overdue items.
+- **Overlaps:** The admin hotline queue.
+- **Decision:** Sensitive categories are hidden from teachers who are not the safeguarding lead.
+- **Owner keys:** None.
+
+### Hotline analytics
+
+- **Route:** `/dashboard/admin/hotline`
+- **Audience:** admin
+- **Purpose:** Volume, SLA, resolution time, satisfaction, and overdue tickets. Groups under five are hidden.
+- **Overlaps:** The teacher queue.
+- **Decision:** Keep for platform and school admins.
+- **Owner keys:** None.
+
+### Emergency alerts
+
+- **Route:** `/dashboard/admin/emergency`
+- **Audience:** admin
+- **Purpose:** Create, confirm, update, resolve, and close an alert. A second staff member confirms before it is public.
+- **Overlaps:** Safeguarding cases.
+- **Decision:** Publishing is server-only and two-person. Emergency push cannot be muted.
+- **Owner keys:** None.
+
+### School hotline
+
+- **Route:** `/dashboard/institution/hotline`
+- **Audience:** institution
+- **Purpose:** The institution queue for parent tickets, including escalation to the principal.
+- **Overlaps:** The teacher hotline queue.
+- **Decision:** Institution leads see their own school. Sensitive tickets stay restricted.
+- **Owner keys:** None.
+
+### School emergency alerts
+
+- **Route:** `/dashboard/institution/emergency`
+- **Audience:** institution
+- **Purpose:** A verified principal drafts an alert. Another verified staff member confirms it.
+- **Overlaps:** The admin emergency desk.
+- **Decision:** The region comes from the school, never a home address.
+- **Owner keys:** None.
+
 ### Dashboard session
 
 - **Route:** `/dashboard/session`

@@ -10,7 +10,7 @@ import {
   ClipboardList, Presentation, Shield, BarChart, Settings, FileText, KeyRound, ChevronsUpDown, Target,
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
-  GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
+  GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X, Phone, Siren,
   Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked, Compass, Camera, Newspaper,
   Wallet, Gift, Landmark, Plug, PieChart, Search, Briefcase,
 } from 'lucide-react';
@@ -40,6 +40,7 @@ import { adminMfaPending } from '@/lib/admin-mfa-pending';
 import { AdminViewAsBanner, clearViewAs, useAdminIdle, useViewAs } from '@/components/admin-session';
 import { isSuperAdmin, ROLE_LABELS } from '@/lib/roles';
 import { PipGuide } from '@/components/pip-guide';
+import { AllStaffBanner } from '@/components/alerts/all-staff';
 import { OfflineBanner } from '@/components/offline-banner';
 import { RoleChecklist } from '@/components/role-checklist';
 import { WelcomeResume } from '@/components/onboarding/welcome-session';
@@ -131,6 +132,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
+      { href: '/dashboard/teacher/hotline', icon: Phone, labelKey: 'nav.messages', label: 'Hotline' },
       { href: '/dashboard/teacher/analytics', icon: Activity, labelKey: 'nav.analytics' },
       { href: '/dashboard/teacher/insights', icon: BarChart, labelKey: 'nav.insights' },
       { href: '/dashboard/teacher/goals', icon: Target, labelKey: 'nav.goals' },
@@ -175,6 +177,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
+      { href: '/dashboard/parent/hotline', icon: Phone, labelKey: 'nav.mailbox', label: 'Hotline' },
       { href: '/dashboard/parent/communications', icon: Mail, labelKey: 'nav.mailbox' },
       { href: '/dashboard/parent/duedates', icon: Clock, labelKey: 'nav.dueDates' },
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
@@ -222,6 +225,8 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/admin/certificates', icon: Award, labelKey: 'nav.certificates', label: 'Certificates' },
       { href: '/dashboard/admin/badges', icon: Award, labelKey: 'nav.certificates', label: 'Badges', superOnly: true },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
+      { href: '/dashboard/admin/hotline', icon: Phone, labelKey: 'nav.moderation', label: 'Hotline' },
+      { href: '/dashboard/admin/emergency', icon: Siren, labelKey: 'nav.moderation', label: 'Emergency alerts' },
       { href: '/dashboard/admin/moderation', icon: Shield, labelKey: 'nav.moderation', flag: 'community' },
       { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
       { href: '/dashboard/network', icon: Users, labelKey: 'nav.community', label: 'Network' },
@@ -269,6 +274,8 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
       { href: '/dashboard/institution/templates', icon: FileText, labelKey: 'nav.reportStudio' },
       { href: '/dashboard/institution/certificates', icon: Award, labelKey: 'nav.certificates', label: 'Certificates' },
+      { href: '/dashboard/institution/hotline', icon: Phone, labelKey: 'nav.moderation', label: 'Hotline' },
+      { href: '/dashboard/institution/emergency', icon: Siren, labelKey: 'nav.moderation', label: 'Emergency alerts' },
     ]},
     { sectionKey: 'nav.section.school', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
@@ -745,6 +752,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <WelcomeResume />
             <RoleChecklist role={role} />
             <PagePurpose pathname={pathname} />
+            {role === 'teacher' || role === 'institution_admin' || role === 'admin' ? <AllStaffBanner /> : null}
             {children}
           </div>
         </main>

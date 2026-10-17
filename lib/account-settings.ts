@@ -38,6 +38,8 @@ export const SELF_SERVICE_FIELDS = [
   'lastActiveAt',
   'region',
   'parentContacts',
+  'emergencyOptIn',
+  'homeCountry',
 ] as const;
 
 /** A signed-in person must not be able to set these on their own document. */
@@ -77,6 +79,8 @@ export interface NotificationPrefs {
   network: boolean;
   /** Safeguarding alerts. Critical alerts are delivered even when this is off. */
   safety: boolean;
+  /** School hotline replies. Emergency alerts are not in this list and cannot be muted. */
+  hotline: boolean;
   /** Weekly network email. Off until the person opts in. */
   networkDigest: boolean;
 }
@@ -119,6 +123,7 @@ export const DEFAULT_NOTIFICATIONS: NotificationPrefs = {
   achievements: true,
   network: true,
   safety: true,
+  hotline: true,
   networkDigest: false,
 };
 

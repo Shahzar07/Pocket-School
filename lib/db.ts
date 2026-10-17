@@ -122,6 +122,10 @@ export interface UserProfile {
   region?: string;
   /** When the person agreed to grouped demographic statistics. */
   demographicConsentAt?: number;
+  /** Form teacher notified by "I'm in danger now". Server reads it. */
+  formTeacherUid?: string;
+  /** Class used to find a form teacher when formTeacherUid is empty. */
+  classId?: string;
   lastActiveAt?: Timestamp;
   sparksBalance?: number;
   sparksMonthlyAllowance?: number;

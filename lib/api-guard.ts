@@ -32,7 +32,7 @@ export function isNextResponse(value: unknown): value is NextResponse {
 
 export async function requireUser(
   req: NextRequest,
-  opts?: { limit?: number; windowMs?: number },
+  opts?: { limit?: number; windowMs?: number; enforceRateLimit?: boolean },
 ): Promise<AuthedUser | NextResponse> {
   if (!isAdminConfigured()) {
     return NextResponse.json(
@@ -52,7 +52,7 @@ export async function requireUser(
     const decoded = await adminAuth().verifyIdToken(token);
     const limit = opts?.limit ?? 60;
     const windowMs = opts?.windowMs ?? 60_000;
-    if (!rateLimit(`${decoded.uid}:${req.nextUrl.pathname}`, limit, windowMs)) {
+    if (opts?.enforceRateLimit !== false && !rateLimit(`${decoded.uid}:${req.nextUrl.pathname}`, limit, windowMs)) {
       return NextResponse.json(
         { error: 'Too many requests. Please wait a moment and try again.', code: 'RATE_LIMIT' },
         { status: 429 },

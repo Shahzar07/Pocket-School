@@ -7,6 +7,7 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { createDailyGoal, getEnrolledCourses, getUserBadges, goalDateKey, subscribeDailyGoals, Course, Enrollment, Badge, type DailyGoal } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ArrowUpRight, BookOpen, Zap, Target, TrendingUp, Sparkles, Users, GraduationCap, Play } from 'lucide-react';
+import { SafetyShieldLink } from '@/components/safety/surfaces';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { StudyLaunchpad } from '@/components/study/study-launchpad';
@@ -173,6 +174,7 @@ export default function StudentDashboard() {
           : ''}`}
         actions={(
           <div className="flex flex-wrap gap-2">
+            <SafetyShieldLink />
             {resumeCourse ? (
               <Button
                 onClick={() => router.push(

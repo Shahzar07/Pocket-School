@@ -2282,3 +2282,146 @@ app/community-guidelines/page.tsx	You get a short note that says why, without sh
 app/community-guidelines/page.tsx	Young members
 app/community-guidelines/page.tsx	Your report still matters
 components/network/automation-panel.tsx	Network automation
+app/alerts/[id]/opengraph-image.tsx	POKET SCHOOL
+components/hotline/surfaces.tsx	A principal drafts the alert. A second verified staff member confirms it before anyone else sees it.
+components/hotline/surfaces.tsx	A worry about the week
+components/hotline/surfaces.tsx	Attendance · Medium · To the class teacher
+components/hotline/surfaces.tsx	Bus was late twice
+components/hotline/surfaces.tsx	Confirm and publish
+components/hotline/surfaces.tsx	Due within one working day. The class teacher has the ticket.
+components/hotline/surfaces.tsx	Emergency desk
+components/hotline/surfaces.tsx	Escalates to the academic lead, then the principal.
+components/hotline/surfaces.tsx	Filter the desk. Bullying and safeguarding tickets stay with the principal and the safeguarding lead.
+components/hotline/surfaces.tsx	High priority. Four working hours. Only the safeguarding lead can see this.
+components/hotline/surfaces.tsx	Homework load this week
+components/hotline/surfaces.tsx	Hotline queue
+components/hotline/surfaces.tsx	In progress
+components/hotline/surfaces.tsx	Keep in view
+components/hotline/surfaces.tsx	Late pickup on Thursday
+components/hotline/surfaces.tsx	Missing child · draft
+components/hotline/surfaces.tsx	New ticket
+components/hotline/surfaces.tsx	Pending · low
+components/hotline/surfaces.tsx	Poket School
+components/hotline/surfaces.tsx	Region comes from the school, not a home address. Police reference PDRM-2026-1044 is on the draft.
+components/hotline/surfaces.tsx	Safeguarding tickets are hidden from this desk.
+components/hotline/surfaces.tsx	School hotline
+components/hotline/surfaces.tsx	Send to the school
+components/hotline/surfaces.tsx	Three working days. Assigned to the class teacher.
+components/hotline/surfaces.tsx	Views 0 · Shares 0
+components/hotline/surfaces.tsx	Write to your child’s school. Safeguarding notes go only to the principal or the safeguarding lead.
+
+components/hotline/surfaces.tsx	Attach a photo, a medical certificate, or a PDF. Location data is removed before it is stored.
+components/hotline/surfaces.tsx	Authorities: to be informed. A ticket cannot close until that is recorded.
+components/hotline/surfaces.tsx	Photo shared with consent
+components/hotline/surfaces.tsx	Re-confirm every 24 hours or public sharing pauses. Retract needs a reason. Guardian consent is recorded before a missing child alert is published.
+components/hotline/surfaces.tsx	Report this alert
+components/hotline/surfaces.tsx	Retracted. This page is no longer shared.
+components/hotline/surfaces.tsx	Three working days. Assigned to the class teacher. Authorities reminder after four hours.
+components/hotline/surfaces.tsx	Verify integrity
+components/hotline/surfaces.tsx	Copy link
+app/dashboard/safety/[id]/page.tsx	Contact the family
+app/dashboard/safety/[id]/page.tsx	Family contact decision
+app/dashboard/safety/[id]/page.tsx	Not now
+app/dashboard/safety/[id]/page.tsx	Reason for the family decision
+app/dashboard/safety/[id]/page.tsx	Save decision
+app/dashboard/safety/[id]/page.tsx	When to contact the family
+app/dashboard/student/safety/page.tsx	Report a safety concern
+components/safety/desk.tsx	Concern role
+components/safety/desk.tsx	Danger type
+components/safety/desk.tsx	I need help now
+components/safety/desk.tsx	Not sure
+components/safety/desk.tsx	Nothing sent yet. Staff notes are never shown here.
+components/safety/desk.tsx	Tap a type to send. A description, who, where, when, and evidence are optional.
+components/safety/desk.tsx	This is the emergency number for your country. Call it now if you can.
+components/safety/desk.tsx	What is happening?
+components/safety/desk.tsx	Who is involved
+components/safety/desk.tsx	Your report
+components/safety/surfaces.tsx	Aisha needs help now
+components/safety/surfaces.tsx	Family contact decision
+components/safety/surfaces.tsx	I have seen this
+components/safety/surfaces.tsx	Report tracker
+components/safety/surfaces.tsx	Sent at 09:41. Location was not shared. Parents were not notified.
+components/safety/surfaces.tsx	Support resources
+components/safety/surfaces.tsx	Tap a type to send. A description, who, where, when, and evidence are optional.
+components/safety/surfaces.tsx	These lines are there if you want to talk to someone outside school. A super admin can change them.
+components/safety/surfaces.tsx	This is the emergency number for your country. Call it now if you can. Poket School is not a replacement for emergency services.
+components/safety/surfaces.tsx	What is happening?
+components/safety/surfaces.tsx	You can see where it stands. Staff notes stay with the safeguarding lead.
+components/safety/surfaces.tsx	Your report
+components/dashboard/cards.tsx	1 && typeof ring !== 'number' ?
+components/dashboard/cards.tsx	Nothing waiting
+components/dashboard/cards.tsx	Sample map of active regions
+components/dashboard/cards.tsx	Sample regions. A school’s own map uses only the region it has saved.
+components/dashboard/cards.tsx	Where learners are active
+components/dashboard/command-palette.tsx	Nothing matches that.
+components/dashboard/command-palette.tsx	Search the dashboard
+components/dashboard/command-palette.tsx	Search this home
+components/dashboard/home-view.tsx	At a glance
+components/dashboard/home-view.tsx	Loading your home
+components/dashboard/home-view.tsx	Shown to you, and to your school when you have earned it. Never used to rank people.
+components/dashboard/home-view.tsx	Start here
+components/dashboard/home-view.tsx	Your children
+components/dashboard/shell.tsx	Search this home
+components/dashboard/shell.tsx	⌘K
+components/hotline/live.tsx	Alert description
+components/hotline/live.tsx	Alert id
+components/hotline/live.tsx	Alert title
+components/hotline/live.tsx	Alert type
+components/hotline/live.tsx	Audit log
+components/hotline/live.tsx	Authority contact
+components/hotline/live.tsx	Authority reference
+components/hotline/live.tsx	Confirm and publish
+components/hotline/live.tsx	Create a draft
+components/hotline/live.tsx	Emergency desk
+components/hotline/live.tsx	Guardian consent
+components/hotline/live.tsx	Guardian name
+components/hotline/live.tsx	Hotline queue
+components/hotline/live.tsx	New ticket
+components/hotline/live.tsx	No tickets yet
+components/hotline/live.tsx	Not required
+components/hotline/live.tsx	Not sure yet
+components/hotline/live.tsx	Nothing in this filter
+components/hotline/live.tsx	Paste the draft id. You cannot confirm an alert you created.
+components/hotline/live.tsx	Public sharing stays off until the authority is informed.
+components/hotline/live.tsx	Re-confirm for 24 hours
+components/hotline/live.tsx	Record consent
+components/hotline/live.tsx	Retract this alert
+components/hotline/live.tsx	Retraction reason
+components/hotline/live.tsx	Review is every 24 hours. A missing child draft needs the authority before it is saved.
+components/hotline/live.tsx	Save draft
+components/hotline/live.tsx	Save status
+components/hotline/live.tsx	School hotline
+components/hotline/live.tsx	Second person confirms
+components/hotline/live.tsx	Send reply
+components/hotline/live.tsx	Send to
+components/hotline/live.tsx	Send to the school
+components/hotline/live.tsx	Signature kind
+components/hotline/live.tsx	To be informed
+components/hotline/live.tsx	Type the guardian name as the signature
+components/hotline/live.tsx	Verify integrity checks the hash chain. Export is CSV or PDF for a school lead.
+components/hotline/live.tsx	What should the school know
+components/safety/desk.tsx	Classroom, gate, or bus stop
+components/safety/desk.tsx	Place to share once
+components/safety/desk.tsx	Where this happened
+app/preview/all-staff/page.tsx	Staff are checking in
+components/alerts/all-staff.tsx	All-staff alert type
+components/alerts/all-staff.tsx	Block B, first floor
+components/alerts/all-staff.tsx	Description staff may see
+components/alerts/all-staff.tsx	I am safe
+components/alerts/all-staff.tsx	Location in school
+components/alerts/all-staff.tsx	Location in school: Block B, first floor. Reason recorded in the audit.
+components/alerts/all-staff.tsx	Need help
+components/alerts/all-staff.tsx	No all-staff alert
+components/alerts/all-staff.tsx	One tap tells every staff member. Private report details stay off the staff banner.
+components/alerts/all-staff.tsx	Reason for widening
+components/alerts/all-staff.tsx	Staff roll-call
+components/alerts/all-staff.tsx	Widen to all staff
+components/amber/join.tsx	Free for every account, including people with no school.
+components/amber/join.tsx	State or city
+components/amber/public-alert.tsx	Amber alert
+components/amber/public-alert.tsx	Copy link
+components/amber/public-alert.tsx	POKET SCHOOL
+components/amber/public-alert.tsx	Photo shared with consent
+components/amber/public-alert.tsx	This alert is not available.
+components/hotline/live.tsx	A child name, photo, and this description stay off the public page until you approve them.
+components/hotline/live.tsx	Public description

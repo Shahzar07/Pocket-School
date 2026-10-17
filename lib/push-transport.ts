@@ -21,6 +21,7 @@ export async function sendExpo(token: DeviceToken, message: PushMessage): Promis
       title: message.title,
       body: message.body,
       data: { url: message.link ?? '', category: message.category },
+      ...(message.sound ? { sound: message.sound, channelId: message.category } : {}),
     }),
   });
   const body: unknown = await response.json().catch(() => null);

@@ -10,5 +10,15 @@ service firebase.storage {
         && request.resource.contentType.matches('image/.*');
       allow delete: if request.auth != null && request.auth.uid == userId;
     }
+
+    // Hotline and emergency files. Clients cannot read or write these paths.
+    // The server strips location data, scans the bytes, and returns a signed URL.
+    // Do not deploy from this branch.
+    match /institutions/{institutionId}/hotline/{ticketId}/{fileName} {
+      allow read, write: if false;
+    }
+    match /institutions/{institutionId}/alerts/{alertId}/{fileName} {
+      allow read, write: if false;
+    }
   }
 }

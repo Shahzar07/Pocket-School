@@ -21,10 +21,12 @@ export const PUSH_CATEGORIES = [
   'achievements',
   'network',
   'safety',
+  'hotline',
+  'emergency',
 ] as const;
 
 /** Account toggles. A missing key stays on. `alumni` covers reunions, the wall, yearbook release, and alumni messages. Badge pushes use `achievements`. `grades` stays a category for unit tests and is not an account toggle. */
-export const USER_PUSH_TOGGLES = ['alumni', 'institution', 'achievements', 'network', 'safety'] as const;
+export const USER_PUSH_TOGGLES = ['alumni', 'institution', 'achievements', 'network', 'safety', 'hotline'] as const;
 
 export type PushCategory = (typeof PUSH_CATEGORIES)[number];
 
@@ -49,8 +51,10 @@ export interface PushMessage {
   title: string;
   body: string;
   link?: string;
-  /** Critical safeguarding is delivered even when the device muted `safety`. */
+  /** Critical safeguarding and every emergency alert are delivered even when muted. */
   force?: boolean;
+  /** Emergency alerts use a distinct sound. Expo receives this name. */
+  sound?: string;
 }
 
 export interface PushStore {
@@ -94,6 +98,11 @@ export function userWantsPush(prefs: unknown, category: PushCategory): boolean {
   return true;
 }
 
+/** Emergency alerts, including an all-staff alert, ignore quiet hours and a muted category. */
+export function pushBypassesQuietHours(category: PushCategory): boolean {
+  return category === 'emergency';
+}
+
 export function tokensForRecipient(tokens: readonly DeviceToken[], userId: string): DeviceToken[] {
   return tokens.filter(token => token.userId === userId && token.token.trim().length > 0);
 }
@@ -106,7 +115,8 @@ async function deliver(message: PushMessage, deps: PushDeps): Promise<PushReport
   let skipped = 0;
 
   for (const token of tokens) {
-    if (!message.force && !wantsCategory(token, message.category)) {
+    const deliverAnyway = message.force === true || pushBypassesQuietHours(message.category);
+    if (!deliverAnyway && !wantsCategory(token, message.category)) {
       skipped += 1;
       continue;
     }
