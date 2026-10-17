@@ -35,8 +35,9 @@ test('refuses an unknown Reads plan', () => {
 });
 
 test('prices a named school plan from the admin pricing table', () => {
-  const quote = quoteCheckout({ kind: 'plan', id: 'primary_secondary', interval: 'monthly' });
-  assert.equal(quote?.amount, 19);
+  assert.equal(quoteCheckout({ kind: 'plan', id: 'primary_secondary', interval: 'monthly' }), null);
+  const quote = quoteCheckout({ kind: 'plan', id: 'igcse_alevel', interval: 'monthly' });
+  assert.equal(quote?.amount, 79);
   assert.equal(quote?.currency, 'USD');
   assert.equal(quote?.mode, 'subscription');
 });

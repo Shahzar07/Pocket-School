@@ -5,6 +5,7 @@ import { startCheckout } from '@/lib/payments/server/engine';
 import { canTakeOverBilling, parentPayDecision, quoteFamily } from '@/lib/billing/model';
 import {
   createAsk,
+  loadFamilyRates,
   loadPlanPrice,
   readFamily,
   respondAsk,
@@ -57,7 +58,8 @@ export async function POST(req: NextRequest) {
         if (decision.action === 'warn') warnings.push({ uid: line.uid, reason: decision.reason });
         priced.push({ uid: line.uid, tierId: line.tierId, accessTier: price.accessTier, listUsd: price.listUsd });
       }
-      return NextResponse.json({ ...quoteFamily(priced), warnings, placeholder: true });
+      const rates = await loadFamilyRates();
+      return NextResponse.json({ ...quoteFamily(priced, rates), warnings });
     }
 
     if (action === 'checkout') {
@@ -162,7 +164,7 @@ export async function POST(req: NextRequest) {
       const lines = Array.isArray(data.lines) ? data.lines.filter((line: { uid?: string }) => line.uid !== childUid) : [];
       await ref.set({ beneficiaryUids: beneficiaries, lines, updatedAt: Date.now() }, { merge: true });
       if (courseUnlockUids(user.uid, [childUid]).includes(childUid)) await applyStripeSubscription(childUid, 0);
-      await adminDb().doc(`entitlements/${childUid}`).set({ status: 'canceled', accessTier: 0, updatedAt: Date.now() }, { merge: true });
+      await adminDb().doc(`entitlements/${childUid}`).set({ status: 'cancelled', tier: 0, accessTier: 0, updatedAt: Date.now() }, { merge: true });
       await appendBillingAudit({
         type: 'cancelled',
         payerUid: user.uid,

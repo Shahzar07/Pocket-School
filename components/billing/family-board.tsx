@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { authedFetch } from '@/lib/api-client';
 import { EmptyState, ListCard, StatCard } from '@/components/dashboard';
 import { ManageSubscription } from './manage-subscription';
-import { FAMILY_BUNDLE_DISCOUNT } from '@/lib/billing/discount';
+import { familyDiscountLabel } from '@/lib/billing/discount';
 
 const PLANS = [
   { id: 'primary_secondary', name: 'Primary & Lower Secondary' },
@@ -55,6 +55,7 @@ interface FamilyPayload {
   requests: AskRow[];
   invoices: InvoiceRow[];
   placeholderDiscount?: boolean;
+  discountLabel?: string;
 }
 
 function when(value: number | null | undefined): string {
@@ -115,7 +116,7 @@ export function FamilyBoard({ preview }: { preview?: FamilyPayload }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-xl text-sm text-muted-foreground">{FAMILY_BUNDLE_DISCOUNT.label}</p>
+        <p className="max-w-xl text-sm text-muted-foreground">{data?.discountLabel || familyDiscountLabel(null)}</p>
         <ManageSubscription returnPath="/dashboard/parent/billing" />
       </div>
       <div className="grid gap-3 sm:grid-cols-3">

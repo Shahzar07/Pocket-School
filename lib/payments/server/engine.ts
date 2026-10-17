@@ -19,7 +19,7 @@ import { eventDocId, claimDecision } from '../idempotency';
 import { toMinor } from '../minor';
 import { canonicalMethod, methodsFor, stripeTypesForCharge, type MethodId } from '../methods';
 import { buildQuote, type CheckoutKind, type PricedItem, type Quote } from '../quote';
-import { quoteCourse } from '../../pricing';
+import { quoteCourse, readsPriceUsd } from '../../pricing';
 import { loadPricingConfig } from '../../pricing-store';
 import { quoteCheckout } from '../../platform/wallet';
 import { readsBookItem, readsPlanItem } from '../reads';
@@ -175,7 +175,7 @@ async function resolveItem(input: CheckoutInput, settings: PaymentsSettings, pay
   const interval = input.interval === 'year' ? 'year' : 'month';
 
   if (kind === 'subscription') {
-    const item = subscriptionItem(sku, interval);
+    const item = subscriptionItem(sku, interval, await loadPricingConfig());
     if (!item) throw new ActionError('INVALID', 'That plan is not sold online.');
     return item;
   }
@@ -190,7 +190,7 @@ async function resolveItem(input: CheckoutInput, settings: PaymentsSettings, pay
     return item;
   }
   if (kind === 'reads') {
-    const item = readsPlanItem(sku, interval);
+    const item = readsPlanItem(sku, interval, readsPriceUsd(await loadPricingConfig(), sku));
     if (!item) throw new ActionError('INVALID', 'Choose Poket Reads or Poket Reads Family.');
     return item;
   }
@@ -439,7 +439,7 @@ async function startFamilyCheckout(input: CheckoutInput) {
   const gate = purchaseGate({ ageTier: payer.ageTier, role: payer.role, dateOfBirth: payer.dateOfBirth, now: new Date() });
   if (!gate.ok) throw new ActionError('MINOR', gate.reason);
   const {
-    assertGuardian, loadPlanPrice, seatCoverage,
+    assertGuardian, loadFamilyRates, loadPlanPrice, seatCoverage,
   } = await import('../../billing/store');
   const { quoteFamily, parentPayDecision, withinSpendingCap } = await import('../../billing/model');
   await assertGuardian(input.uid, lines.map((line) => line.uid));
@@ -454,7 +454,7 @@ async function startFamilyCheckout(input: CheckoutInput) {
     if (decision.action === 'warn' && !input.acknowledgeWarning) throw new ActionError('DUPLICATE_WARN', decision.reason);
     priced.push({ uid: line.uid, tierId: line.tierId, accessTier: price.accessTier, listUsd: price.listUsd });
   }
-  const family = quoteFamily(priced);
+  const family = quoteFamily(priced, await loadFamilyRates());
   const sub = await db().doc(`subscriptions/sub_${input.uid}`).get();
   const spendingCap = typeof sub.data()?.spendingCapUsd === 'number' ? sub.data()?.spendingCapUsd as number : null;
   if (!withinSpendingCap(family.subtotalUsd, spendingCap)) {
@@ -490,6 +490,7 @@ async function startFamilyCheckout(input: CheckoutInput) {
     checkoutId: id,
     uid: input.uid,
     payerUid: input.uid,
+    beneficiary_uids: lines.map((line) => line.uid).join(','),
     beneficiaries: lines.map((line) => line.uid).join(','),
   };
   if (provider === 'stripe') {

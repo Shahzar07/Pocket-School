@@ -14,7 +14,7 @@ export { FAMILY_BUNDLE_DISCOUNT };
 export const BILLING_SOURCES = ['stripe', 'apple', 'google'] as const;
 export type BillingSource = (typeof BILLING_SOURCES)[number];
 
-export const ENTITLEMENT_STATUSES = ['active', 'grace', 'past_due', 'canceled', 'expired'] as const;
+export const ENTITLEMENT_STATUSES = ['active', 'grace', 'billing_retry', 'expired', 'cancelled'] as const;
 export type EntitlementStatus = (typeof ENTITLEMENT_STATUSES)[number];
 
 export const AUDIT_TYPES = [
@@ -40,7 +40,7 @@ export const APPLE_MANAGE_URL = 'https://apps.apple.com/account/subscriptions';
 export const GOOGLE_MANAGE_URL = 'https://play.google.com/store/account/subscriptions';
 
 /** RevenueCat subscriber attribute. Value is a comma-separated list of child uids. */
-export const BENEFICIARY_ATTRIBUTE = 'beneficiaries';
+export const BENEFICIARY_ATTRIBUTE = 'beneficiary_uids';
 
 export interface SponsoredBy {
   payerUid: string;
@@ -49,7 +49,6 @@ export interface SponsoredBy {
 }
 
 export interface FamilyRate {
-  placeholder: boolean;
   secondChildOff: number;
   furtherChildOff: number;
 }
@@ -66,10 +65,13 @@ export interface QuotedChild {
 
 /** Store product id → tier. No prices live here. */
 export const REVENUECAT_PRODUCTS: Record<string, { tierId: string; accessTier: AccessTier }> = {
+  poket_primary_secondary: { tierId: 'primary_secondary', accessTier: 1 },
   poket_primary_secondary_monthly: { tierId: 'primary_secondary', accessTier: 1 },
   poket_primary_secondary_annual: { tierId: 'primary_secondary', accessTier: 1 },
+  poket_igcse_alevel: { tierId: 'igcse_alevel', accessTier: 2 },
   poket_igcse_alevel_monthly: { tierId: 'igcse_alevel', accessTier: 2 },
   poket_igcse_alevel_annual: { tierId: 'igcse_alevel', accessTier: 2 },
+  poket_professional: { tierId: 'professional', accessTier: 3 },
   poket_professional_monthly: { tierId: 'professional', accessTier: 3 },
   poket_professional_annual: { tierId: 'professional', accessTier: 3 },
 };
@@ -147,10 +149,11 @@ export function courseUnlockUids(payerUid: string, beneficiaryUids: readonly str
 
 export function quoteFamily(
   lines: readonly { uid: string; tierId: string; accessTier: number; listUsd: number }[],
-  rates: FamilyRate = FAMILY_BUNDLE_DISCOUNT,
-): { lines: QuotedChild[]; subtotalUsd: number; placeholder: true } {
+  rates: FamilyRate | null = FAMILY_BUNDLE_DISCOUNT,
+): { lines: QuotedChild[]; subtotalUsd: number; placeholder: boolean } {
   const quoted: QuotedChild[] = lines.map((line, index) => {
-    const off = index === 0 ? 0 : index === 1 ? rates.secondChildOff : rates.furtherChildOff;
+    const raw = !rates || index === 0 ? 0 : index === 1 ? rates.secondChildOff : rates.furtherChildOff;
+    const off = Math.min(1, Math.max(0, raw));
     const listMinor = Math.round(line.listUsd * 100);
     const chargeMinor = Math.round(listMinor * (1 - off));
     return {
@@ -164,7 +167,7 @@ export function quoteFamily(
     };
   });
   const subtotalMinor = quoted.reduce((sum, line) => sum + Math.round(line.chargeUsd * 100), 0);
-  return { lines: quoted, subtotalUsd: subtotalMinor / 100, placeholder: true };
+  return { lines: quoted, subtotalUsd: subtotalMinor / 100, placeholder: rates == null };
 }
 
 export function withinSpendingCap(totalUsd: number, capUsd: number | null | undefined): boolean {
@@ -200,7 +203,7 @@ export function reminderDue(input: {
   status: string;
 }): boolean {
   if (input.currentPeriodEnd == null) return false;
-  if (input.status !== 'active' && input.status !== 'grace' && input.status !== 'past_due') return false;
+  if (!['active', 'grace', 'billing_retry', 'cancelled', 'past_due', 'canceled'].includes(input.status)) return false;
   if (input.reminderSentFor === input.currentPeriodEnd) return false;
   return input.now >= input.currentPeriodEnd - REMINDER_LEAD_MS && input.now < input.currentPeriodEnd;
 }
@@ -208,7 +211,7 @@ export function reminderDue(input: {
 export function manageDestination(source: BillingSource | string, portalUrl: string | null): { kind: 'portal' | 'store'; url: string } {
   if (source === 'apple') return { kind: 'store', url: APPLE_MANAGE_URL };
   if (source === 'google') return { kind: 'store', url: GOOGLE_MANAGE_URL };
-  return { kind: 'portal', url: portalUrl || '/dashboard' };
+  return { kind: 'portal', url: portalUrl || '/pay/fix' };
 }
 
 export function payerRenewalCopy(renewsOn: string): { title: string; message: string } {
@@ -228,7 +231,7 @@ export function payerFailedCopy(): { title: string; message: string } {
 /** Shown to the child. No amounts, card digits, or store receipts. */
 export function childAccessCopy(): { title: string; message: string } {
   return {
-    title: 'Course access may pause',
+    title: 'Access may pause',
     message: 'A parent payment needs attention. Your courses may pause if it is not updated. You do not need to enter any payment details.',
   };
 }
@@ -323,7 +326,10 @@ export function mapRevenueCatEvent(event: RevenueCatEvent): { ok: true; decision
 
   const productId = typeof event.product_id === 'string' ? event.product_id : '';
   const mapped = productId ? productTier(productId) : null;
-  const beneficiaries = parseBeneficiaryList(attributeValue(event.subscriber_attributes, BENEFICIARY_ATTRIBUTE));
+  const beneficiaries = parseBeneficiaryList(
+    attributeValue(event.subscriber_attributes, BENEFICIARY_ATTRIBUTE)
+      ?? attributeValue(event.subscriber_attributes, 'beneficiaries'),
+  );
   const beneficiaryUids = beneficiaries.length > 0 ? beneficiaries : [payerUid];
   const expiration = typeof event.expiration_at_ms === 'number' ? event.expiration_at_ms : null;
   const externalId = typeof event.original_transaction_id === 'string' && event.original_transaction_id
@@ -350,13 +356,13 @@ export function mapRevenueCatEvent(event: RevenueCatEvent): { ok: true; decision
   }
 
   if (eventType === 'INITIAL_PURCHASE') {
-    return { ok: true, decision: { ...base, status: 'active', cancelAtPeriodEnd: false, dropAccess: false, audit: ['purchase'], notify: 'none' } };
+    return { ok: true, decision: { ...base, status: 'active', cancelAtPeriodEnd: false, dropAccess: false, audit: ['renewal'], notify: 'none' } };
   }
   if (eventType === 'RENEWAL') {
     return { ok: true, decision: { ...base, status: 'active', cancelAtPeriodEnd: false, dropAccess: false, audit: ['renewal'], notify: 'none' } };
   }
   if (eventType === 'CANCELLATION') {
-    return { ok: true, decision: { ...base, status: 'active', cancelAtPeriodEnd: true, dropAccess: false, audit: ['cancelled'], notify: 'none' } };
+    return { ok: true, decision: { ...base, status: 'cancelled', cancelAtPeriodEnd: true, dropAccess: false, audit: ['cancelled'], notify: 'none' } };
   }
   if (eventType === 'UNCANCELLATION') {
     return { ok: true, decision: { ...base, status: 'active', cancelAtPeriodEnd: false, dropAccess: false, audit: ['uncancelled'], notify: 'none' } };
@@ -365,7 +371,7 @@ export function mapRevenueCatEvent(event: RevenueCatEvent): { ok: true; decision
     return { ok: true, decision: { ...base, status: 'expired', cancelAtPeriodEnd: false, dropAccess: true, accessTier: 0, audit: ['expired'], notify: 'none' } };
   }
   if (eventType === 'BILLING_ISSUE') {
-    return { ok: true, decision: { ...base, status: 'grace', cancelAtPeriodEnd: false, dropAccess: false, audit: ['renewal_failed', 'grace_period'], notify: 'failed' } };
+    return { ok: true, decision: { ...base, status: 'billing_retry', cancelAtPeriodEnd: false, dropAccess: false, audit: ['renewal_failed'], notify: 'failed' } };
   }
   if (eventType === 'PRODUCT_CHANGE') {
     return { ok: true, decision: { ...base, status: 'active', cancelAtPeriodEnd: false, dropAccess: false, audit: ['product_change'], notify: 'none' } };

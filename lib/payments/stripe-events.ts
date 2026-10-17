@@ -179,7 +179,7 @@ export function parseStripeEvent(event: StripeEventLike): ParsedStripeEvent {
       currentPeriodEnd: endSeconds > 0 ? endSeconds * 1000 : null,
       cancelAtPeriodEnd: object.cancel_at_period_end === true,
       customerId: str(object.customer) || undefined,
-      beneficiaryUids: (metadata.beneficiaries || '').split(',').map((id) => id.trim()).filter(Boolean),
+      beneficiaryUids: (metadata.beneficiary_uids || metadata.beneficiaries || '').split(',').map((id) => id.trim()).filter(Boolean),
       tierId: metadata.tierId || undefined,
     };
   }

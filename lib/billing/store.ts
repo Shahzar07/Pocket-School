@@ -11,6 +11,7 @@ import { claimDecision, eventDocId } from '../payments/idempotency';
 import { parentLinkId } from '../parent-controls';
 import { TIERS, tierDefinition, type AccessTier } from '../entitlements';
 import { seedPricing } from '../pricing';
+import { familyDiscountLabel, type FamilyBundleRates } from './discount';
 import { sendMail } from '../mail';
 import { buildMyInvois } from '../payments/tax';
 import {
@@ -122,17 +123,19 @@ export async function applyEntitlementDecision(decision: EntitlementDecision, no
   const cancelAtPeriodEnd = decision.cancelAtPeriodEnd;
   const source = decision.source;
 
+  const externalId = decision.externalId;
   await db().doc(`subscriptions/${subscriptionId}`).set({
     payerUid,
     beneficiaryUids: beneficiaries,
+    plan: tierId || null,
+    tier: accessTier,
     tierId: tierId || null,
     accessTier,
-    plan: tierId || null,
     status,
     currentPeriodEnd,
     cancelAtPeriodEnd,
     source,
-    externalId: decision.externalId,
+    externalId,
     productId: decision.productId || null,
     updatedAt: now,
   }, { merge: true });
@@ -141,13 +144,14 @@ export async function applyEntitlementDecision(decision: EntitlementDecision, no
     payerUid,
     beneficiaryUids: beneficiaries,
     plan: tierId || null,
+    tier: accessTier,
     tierId: tierId || null,
     accessTier,
     status,
     currentPeriodEnd,
     cancelAtPeriodEnd,
     source,
-    externalId: decision.externalId,
+    externalId,
     updatedAt: now,
   };
 
@@ -163,7 +167,7 @@ export async function applyEntitlementDecision(decision: EntitlementDecision, no
       ...shared,
       uid,
       accessTier: accessTier ?? 0,
-      sponsoredBy: { payerUid, subscriptionId, source },
+      sponsoredBy: { payerUid, subscriptionId: externalId, source },
     }, { merge: true });
   }
 
@@ -213,14 +217,14 @@ export async function mirrorSelfEntitlement(input: {
     beneficiaryUids: [input.uid],
     tierId: input.tierId || tier?.id || null,
     accessTier: input.accessTier,
-    status: input.status ?? (input.accessTier > 0 ? 'active' : 'canceled'),
+    status: input.status ?? (input.accessTier > 0 ? 'active' : 'expired'),
     cancelAtPeriodEnd: input.cancelAtPeriodEnd ?? false,
     currentPeriodEnd: input.currentPeriodEnd ?? null,
     source: input.source,
     externalId: input.externalId,
     productId: input.tierId || '',
     dropAccess: input.accessTier <= 0,
-    audit: input.accessTier > 0 ? ['purchase'] : ['expired'],
+    audit: input.accessTier > 0 ? ['renewal'] : ['expired'],
     notify: 'none',
     nextPayerUid: null,
   }, now);
@@ -294,6 +298,7 @@ export async function applyFamilyPurchase(input: {
       payerUid: input.payerUid,
       beneficiaryUids: beneficiaries,
       plan: line.tierId,
+      tier: line.accessTier,
       tierId: line.tierId,
       accessTier: line.accessTier,
       status: 'active',
@@ -301,7 +306,7 @@ export async function applyFamilyPurchase(input: {
       cancelAtPeriodEnd: false,
       source: input.source,
       externalId: input.externalId,
-      sponsoredBy: line.uid === input.payerUid ? null : { payerUid: input.payerUid, subscriptionId, source: input.source },
+      sponsoredBy: line.uid === input.payerUid ? null : { payerUid: input.payerUid, subscriptionId: input.externalId, source: input.source },
       updatedAt: now,
     }, { merge: true });
     if (learners.includes(line.uid)) await applyStripeSubscription(line.uid, asTier(line.accessTier));
@@ -347,7 +352,7 @@ export async function refreshFamilyPeriod(input: {
   for (const uid of people) {
     await db().doc(`entitlements/${uid}`).set({ ...patch, status }, { merge: true });
   }
-  if (status === 'expired' || status === 'canceled') {
+  if (status === 'expired') {
     const lines = Array.isArray(data.lines) ? data.lines : [];
     const learners = lines.length
       ? courseUnlockUids(input.payerUid, beneficiaries)
@@ -370,7 +375,7 @@ export async function notifyPaymentProblem(input: {
   beneficiaryUids: string[];
   source: BillingSource | string;
 }): Promise<void> {
-  const destination = manageDestination(input.source, '/dashboard/parent/billing');
+  const destination = manageDestination(input.source, '/pay/fix');
   const payer = payerFailedCopy();
   await notifyUser({
     userId: input.payerUid,
@@ -390,7 +395,7 @@ export async function notifyPaymentProblem(input: {
       message: child.message,
       type: 'general',
       pref: 'general',
-      link: '/dashboard/student',
+      link: '/home',
     });
   }
 }
@@ -403,7 +408,7 @@ async function emailUser(uid: string, subject: string, text: string): Promise<vo
 }
 
 export async function runRenewalReminders(now: number): Promise<{ checked: number; reminded: number }> {
-  const snap = await db().collection('subscriptions').where('status', 'in', ['active', 'grace', 'past_due']).limit(400).get();
+  const snap = await db().collection('subscriptions').where('status', 'in', ['active', 'grace', 'billing_retry', 'cancelled', 'past_due', 'canceled']).limit(400).get();
   let reminded = 0;
   for (const doc of snap.docs) {
     const data = doc.data();
@@ -418,7 +423,7 @@ export async function runRenewalReminders(now: number): Promise<{ checked: numbe
     const source = typeof data.source === 'string' ? data.source : 'stripe';
     const renewsOn = new Date(currentPeriodEnd ?? now).toISOString().slice(0, 10);
     const copy = payerRenewalCopy(renewsOn);
-    const destination = manageDestination(source, '/dashboard/parent/billing');
+    const destination = manageDestination(source, '/pay/fix');
     await notifyUser({
       userId: payerUid,
       title: copy.title,
@@ -437,7 +442,7 @@ export async function runRenewalReminders(now: number): Promise<{ checked: numbe
         message: child.message,
         type: 'general',
         pref: 'general',
-        link: '/dashboard/student',
+        link: '/home',
       });
     }
     await doc.ref.set({ reminderSentFor: currentPeriodEnd }, { merge: true });
@@ -453,6 +458,16 @@ export async function runRenewalReminders(now: number): Promise<{ checked: numbe
     reminded += 1;
   }
   return { checked: snap.size, reminded };
+}
+
+export async function loadFamilyRates(): Promise<FamilyBundleRates | null> {
+  const stored = await db().doc('pricing_config/current').get();
+  const raw = stored.data()?.familyBundleDiscount;
+  if (raw == null || typeof raw !== 'object') return null;
+  const second = Number((raw as { secondChildOff?: unknown }).secondChildOff);
+  const further = Number((raw as { furtherChildOff?: unknown }).furtherChildOff);
+  if (![second, further].every((rate) => Number.isFinite(rate) && rate >= 0 && rate <= 1)) return null;
+  return { secondChildOff: second, furtherChildOff: further };
 }
 
 export async function loadPlanPrice(tierId: string, interval: 'month' | 'year'): Promise<{ listUsd: number; accessTier: number } | null> {
@@ -530,6 +545,8 @@ export async function transferSponsorship(input: {
   await db().doc(`subscriptions/${fromId}`).set({ beneficiaryUids: remaining, lines, updatedAt: now }, { merge: true });
   const toId = subscriptionDocId(input.nextPayerUid);
   const source = (typeof data.source === 'string' ? data.source : 'stripe') as BillingSource;
+  const externalId = typeof data.externalId === 'string' ? data.externalId : '';
+  const takeover = input.nextPayerUid === input.childUid;
   await db().doc(`subscriptions/${toId}`).set({
     payerUid: input.nextPayerUid,
     beneficiaryUids: FieldValue.arrayUnion(input.childUid),
@@ -543,7 +560,7 @@ export async function transferSponsorship(input: {
   }, { merge: true });
   await db().doc(`entitlements/${input.childUid}`).set({
     payerUid: input.nextPayerUid,
-    sponsoredBy: { payerUid: input.nextPayerUid, subscriptionId: toId, source },
+    sponsoredBy: takeover ? null : { payerUid: input.nextPayerUid, subscriptionId: externalId, source },
     status: data.status ?? 'active',
     currentPeriodEnd: data.currentPeriodEnd ?? null,
     updatedAt: now,
@@ -591,7 +608,7 @@ export async function createAsk(input: {
       : 'Your child asked you to pay for a plan. You can approve and pay, or decline. They cannot enter payment details.',
     type: 'general',
     pref: 'general',
-    link: '/dashboard/parent/billing',
+    link: '/pay/ask',
   });
   await appendBillingAudit({
     type: 'ask',
@@ -669,7 +686,8 @@ export async function readFamily(payerUid: string): Promise<{
   children: Record<string, unknown>[];
   requests: Record<string, unknown>[];
   invoices: Record<string, unknown>[];
-  placeholderDiscount: true;
+  placeholderDiscount: boolean;
+  discountLabel: string;
 }> {
   const sub = await db().doc(`subscriptions/${subscriptionDocId(payerUid)}`).get();
   const data = sub.exists ? sub.data() ?? {} : null;
@@ -712,6 +730,7 @@ export async function readFamily(payerUid: string): Promise<{
       });
     }
   }
+  const rates = await loadFamilyRates();
   return {
     subscription: data ? {
       id: sub.id,
@@ -728,7 +747,8 @@ export async function readFamily(payerUid: string): Promise<{
     children,
     requests,
     invoices,
-    placeholderDiscount: true,
+    placeholderDiscount: rates == null,
+    discountLabel: familyDiscountLabel(rates),
   };
 }
 

@@ -29,7 +29,7 @@ describe('RevenueCat events land on the shared entitlement', () => {
     expiration_at_ms: 1_900_000_000_000,
     store: 'APP_STORE',
     original_transaction_id: 'txn_9',
-    subscriber_attributes: { beneficiaries: { value: 'child_a,child_b' } },
+    subscriber_attributes: { beneficiary_uids: { value: 'child_a,child_b' } },
   };
 
   it('maps a purchase onto the children and keeps the price out of the product table', () => {
@@ -41,7 +41,8 @@ describe('RevenueCat events land on the shared entitlement', () => {
     assert.equal(mapped.decision.source, 'apple');
     assert.equal(mapped.decision.accessTier, 2);
     assert.deepEqual(mapped.decision.beneficiaryUids, ['child_a', 'child_b']);
-    assert.deepEqual(mapped.decision.audit, ['purchase']);
+    assert.deepEqual(mapped.decision.audit, ['renewal']);
+    assert.equal(productTier('poket_igcse_alevel')?.accessTier, 2);
     assert.deepEqual(unlockUids('parent_1', mapped.decision.beneficiaryUids), ['child_a', 'child_b']);
     assert.deepEqual(courseUnlockUids('parent_1', ['parent_1', 'child_a']), ['child_a']);
     assert.deepEqual(courseUnlockUids('adult_1', ['adult_1']), ['adult_1']);
@@ -52,14 +53,16 @@ describe('RevenueCat events land on the shared entitlement', () => {
     assert.equal(renewal.ok && renewal.decision.audit[0], 'renewal');
     assert.equal(renewal.ok && renewal.decision.source, 'google');
     const cancel = mapRevenueCatEvent({ ...base, type: 'CANCELLATION' });
+    assert.equal(cancel.ok && cancel.decision.status, 'cancelled');
     assert.equal(cancel.ok && cancel.decision.cancelAtPeriodEnd, true);
     assert.equal(cancel.ok && cancel.decision.dropAccess, false);
     const expired = mapRevenueCatEvent({ ...base, type: 'EXPIRATION' });
     assert.equal(expired.ok && expired.decision.status, 'expired');
     assert.equal(expired.ok && expired.decision.dropAccess, true);
     const failed = mapRevenueCatEvent({ ...base, type: 'BILLING_ISSUE' });
+    assert.equal(failed.ok && failed.decision.status, 'billing_retry');
     assert.equal(failed.ok && failed.decision.notify, 'failed');
-    assert.deepEqual(failed.ok && failed.decision.audit, ['renewal_failed', 'grace_period']);
+    assert.deepEqual(failed.ok && failed.decision.audit, ['renewal_failed']);
     const changed = mapRevenueCatEvent({ ...base, type: 'PRODUCT_CHANGE', product_id: 'poket_professional_annual' });
     assert.equal(changed.ok && changed.decision.accessTier, 3);
     const refunded = mapRevenueCatEvent({ ...base, type: 'REFUND' });
@@ -80,18 +83,24 @@ describe('RevenueCat events land on the shared entitlement', () => {
 });
 
 describe('family plans, guardians and age', () => {
-  it('marks the bundle discount as a placeholder and discounts the 2nd and 3rd child', () => {
-    assert.equal(FAMILY_BUNDLE_DISCOUNT.placeholder, true);
-    const quote = quoteFamily([
+  it('charges list price until a super admin sets a family discount', () => {
+    assert.equal(FAMILY_BUNDLE_DISCOUNT, null);
+    const lines = [
       { uid: 'a', tierId: 'primary_secondary', accessTier: 1, listUsd: 30 },
       { uid: 'b', tierId: 'igcse_alevel', accessTier: 2, listUsd: 80 },
       { uid: 'c', tierId: 'igcse_alevel', accessTier: 2, listUsd: 80 },
-    ]);
+    ];
+    const quote = quoteFamily(lines);
     assert.equal(quote.lines[0].chargeUsd, 30);
-    assert.equal(quote.lines[1].chargeUsd, 72);
-    assert.equal(quote.lines[2].chargeUsd, 68);
-    assert.equal(quote.subtotalUsd, 170);
+    assert.equal(quote.lines[1].chargeUsd, 80);
+    assert.equal(quote.lines[2].chargeUsd, 80);
+    assert.equal(quote.subtotalUsd, 190);
     assert.equal(quote.placeholder, true);
+    const discounted = quoteFamily(lines, { secondChildOff: 0.1, furtherChildOff: 0.15 });
+    assert.equal(discounted.lines[1].chargeUsd, 72);
+    assert.equal(discounted.lines[2].chargeUsd, 68);
+    assert.equal(discounted.subtotalUsd, 170);
+    assert.equal(discounted.placeholder, false);
   });
 
   it('lets only an approved guardian pay', () => {
@@ -137,16 +146,20 @@ describe('renewals, store links and the audit chain', () => {
     assert.equal(reminderDue({ currentPeriodEnd: end, now: lead, reminderSentFor: null, status: 'active' }), true);
     assert.equal(reminderDue({ currentPeriodEnd: end, now: lead, reminderSentFor: end, status: 'active' }), false);
     assert.equal(reminderDue({ currentPeriodEnd: end, now: end, reminderSentFor: null, status: 'active' }), false);
+    assert.equal(reminderDue({ currentPeriodEnd: end, now: lead, reminderSentFor: null, status: 'cancelled' }), true);
+    assert.equal(reminderDue({ currentPeriodEnd: end, now: lead, reminderSentFor: null, status: 'billing_retry' }), true);
   });
 
   it('sends Apple and Google subscribers to the store', () => {
     assert.equal(manageDestination('apple', 'https://billing.example').kind, 'store');
     assert.match(manageDestination('google', null).url, /play\.google\.com/);
     assert.equal(manageDestination('stripe', 'https://billing.stripe.com/p/session').url, 'https://billing.stripe.com/p/session');
+    assert.equal(manageDestination('stripe', null).url, '/pay/fix');
   });
 
   it('keeps payment details out of the child notice', () => {
     const copy = childAccessCopy();
+    assert.equal(copy.title, 'Access may pause');
     assert.doesNotMatch(copy.message, /card|invoice|\$|MYR|last4/i);
     assert.match(copy.message, /do not need to enter any payment details/i);
   });

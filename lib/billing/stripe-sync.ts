@@ -5,7 +5,6 @@ import type { ParsedStripeEvent } from '../payments/stripe-events';
 import { tierFromId } from '../server/actions';
 import type { AccessTier } from '../entitlements';
 import {
-  appendBillingAudit,
   claimBillingEvent,
   finishBillingEvent,
   mirrorSelfEntitlement,
@@ -45,17 +44,16 @@ export async function syncStripeEntitlement(parsed: ParsedStripeEvent): Promise<
     } else if (parsed.type === 'subscription_sync' || parsed.type === 'subscription_renewed') {
       const payerUid = await payerFor(parsed.uid, parsed.checkoutId);
       if (payerUid) {
-        const existing = await adminDb().doc(`subscriptions/sub_${payerUid}`).get();
         const cancel = parsed.type === 'subscription_sync' ? parsed.cancelAtPeriodEnd : false;
         const ended = parsed.type === 'subscription_sync' && (parsed.status === 'canceled' || parsed.status === 'unpaid' || parsed.status === 'incomplete_expired');
         await refreshFamilyPeriod({
           payerUid,
           currentPeriodEnd: parsed.currentPeriodEnd,
-          cancelAtPeriodEnd: cancel,
-          status: ended ? 'canceled' : 'active',
+          cancelAtPeriodEnd: cancel && !ended,
+          status: ended ? 'expired' : cancel ? 'cancelled' : 'active',
           externalId: parsed.subscriptionId,
           stripeCustomerId: parsed.customerId,
-          audit: ended ? 'expired' : parsed.type === 'subscription_renewed' ? 'renewal' : cancel ? 'cancelled' : existing.exists ? 'renewal' : 'purchase',
+          audit: ended ? 'expired' : cancel ? 'cancelled' : 'renewal',
         });
       }
     } else if (parsed.type === 'subscription_payment_failed' || parsed.type === 'individual_payment_failed') {
@@ -66,20 +64,11 @@ export async function syncStripeEntitlement(parsed: ParsedStripeEvent): Promise<
         await refreshFamilyPeriod({
           payerUid,
           currentPeriodEnd: typeof snap.data()?.currentPeriodEnd === 'number' ? snap.data()?.currentPeriodEnd as number : null,
-          status: 'grace',
+          status: 'billing_retry',
           externalId: parsed.type === 'subscription_payment_failed' ? parsed.subscriptionId : undefined,
           audit: 'renewal_failed',
         });
         await notifyPaymentProblem({ payerUid, beneficiaryUids: beneficiaries, source: 'stripe' });
-        await appendBillingAudit({
-          type: 'grace_period',
-          payerUid,
-          beneficiaryUids: beneficiaries,
-          subscriptionId: `sub_${payerUid}`,
-          at: Date.now(),
-          detail: parsed.eventId,
-          source: 'stripe',
-        });
       }
     } else if (parsed.type === 'subscription_ended') {
       const payerUid = await payerFor(parsed.uid, undefined);

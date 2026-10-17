@@ -1188,68 +1188,73 @@ Tile order is a preference. The web app keeps it in `localStorage` (`poket-dash-
 
 ## Subscriptions & renewals
 
-Web checkout stays on Stripe, Touch ’n Go, and FPX. The iOS and Android apps use RevenueCat. Both writers store the same entitlement fields, so the web and the app show the same status. Charged prices stay in `pricing_config/current` (fallback `seedPricing()`). Do not hardcode a Primary & Lower Secondary price.
+Reconciled with the app payments schema (test mode). The website owns Stripe (`POST /api/stripe/create-checkout`, `POST /api/payments/checkout`, and the Stripe webhook). Touch ’n Go is gateway method `tng`, not a Stripe flag. The iOS and Android apps use RevenueCat and do not write entitlements. Prices live in `pricing_config/current` (fallback `seedPricing()`). That path is website canonical. The app’s `platform_settings/pricing` name is not used.
 
-`/workspace-shared/docs/PAYMENTS_SCHEMA.md` was not in this workspace. This section is the contract to mirror.
+Primary (`primary_secondary`) and Professional (`professional`) `monthlyUsd` and `annualUsd` stay null until a super admin sets them. IGCSE & A-Level stays monthly USD 79 and annual USD 708. Poket Reads stays $9 and Poket Reads Family $15, on the same document as `reads[]`, and a super admin can change them. A null plan price makes `quotePlan` return null and checkout refuses it. The public pricing page shows “Not set” and does not treat that as free. Preview stays $0. A `pricing_config/current` document that already stored 19 or 99 keeps those numbers until a super admin clears the field.
+
+`familyBundleDiscount` on that document is null until a super admin saves `{ secondChildOff, furtherChildOff }` as fractions from 0 to 1. Null charges list price. Ten percent and fifteen percent are an example, not the seed.
 
 ### Entitlement fields
 
-`subscriptions/sub_{payerUid}` is the paying record. `entitlements/{uid}` is what each person reads. Older `subscriptions/{userId}` rows from course checkout remain. Clients cannot write either collection.
+Server-written. Clients cannot write them. `subscriptions/sub_{payerUid}` is the paying record. `entitlements/{uid}` is what each person reads. The document id stays `sub_{payerUid}`.
 
 | Field | Type | Notes |
 |---|---|---|
-| `plan` / `tierId` | string | `primary_secondary`, `igcse_alevel`, `professional`, or `family` on the payer. |
-| `accessTier` | number | 0–4. Written onto the learner’s `users.accessTier`. |
-| `status` | string | `active`, `grace`, `past_due`, `canceled`, `expired`. |
+| `plan` | string | Tier id from config. `tierId` is the same string, also written. |
+| `tier` | number | Numeric TIERS value. `accessTier` is the same number, also written, and `users.accessTier` is still what the Stripe path updates. |
+| `status` | string | `active`, `grace`, `billing_retry`, `expired`, or `cancelled`. |
 | `currentPeriodEnd` | number or null | Unix milliseconds. |
 | `cancelAtPeriodEnd` | boolean | Access stays until `currentPeriodEnd`. |
 | `source` | string | `stripe`, `apple`, or `google`. |
-| `externalId` | string | Stripe subscription id or RevenueCat transaction id. |
+| `externalId` | string | Stripe subscription id or RevenueCat event / store transaction id. |
 | `payerUid` | string | Account that pays. |
 | `beneficiaryUids` | string[] | Learners covered by this payment. |
-| `stripeCustomerId` | string | Present for Stripe portal sessions. |
-| `spendingCapUsd` | number or null | Parent cap. Null means no cap. |
+| `stripeCustomerId` | string | Present for Stripe portal sessions. Website field. |
+| `spendingCapUsd` | number or null | Parent cap. Null means no cap. Website field. |
 | `reminderSentFor` | number | `currentPeriodEnd` once the 3-day reminder has been sent. |
+
+`users.subscriptionTier` and `users.sparksMonthlyAllowance` stay the fields the Stripe webhook already writes. The app does not write them.
 
 ### RevenueCat webhook
 
 `POST /api/webhooks/revenuecat`. Server only. `Authorization` must equal `REVENUECAT_WEBHOOK_SECRET` or `Bearer <secret>`. Compared with a hash so a timing leak on the length is avoided. Optional `REVENUECAT_API_KEY` is not required for the webhook.
 
-`app_user_id` is the Firebase uid of the payer. Product ids map to tiers in `REVENUECAT_PRODUCTS` inside `lib/billing/model.ts`. That map has no prices.
+`app_user_id` is the Firebase uid of the payer. The subscriber attribute `beneficiary_uids` is a comma-separated list of child uids. The previous name `beneficiaries` is still read if `beneficiary_uids` is absent. Product ids map to tiers in `REVENUECAT_PRODUCTS`. That map has no prices. Unknown product ids do not guess a tier. Unsuffixed ids (`poket_igcse_alevel`, `poket_primary_secondary`, `poket_professional`) and the monthly/annual suffixed ids both map.
 
-| RevenueCat `type` | Entitlement | Audit |
+| RevenueCat `type` | Status | Audit |
 |---|---|---|
-| `INITIAL_PURCHASE` | `active`, `cancelAtPeriodEnd` false, `currentPeriodEnd` from `expiration_at_ms` | `purchase` |
-| `RENEWAL` | same, period extended | `renewal` |
-| `CANCELLATION` | stays `active` until the period ends, `cancelAtPeriodEnd` true | `cancelled` |
-| `UNCANCELLATION` | `cancelAtPeriodEnd` false | `uncancelled` |
+| `INITIAL_PURCHASE`, `RENEWAL` | `active` | `renewal` |
+| `BILLING_ISSUE` | `billing_retry` | `renewal_failed` |
+| `CANCELLATION` | `cancelled`, `cancelAtPeriodEnd` true, access kept | `cancelled` |
+| `UNCANCELLATION` | `active`, `cancelAtPeriodEnd` false | `uncancelled` |
 | `EXPIRATION` | `expired`, learner tier dropped to 0 | `expired` |
-| `BILLING_ISSUE` | `grace` | `renewal_failed` and `grace_period` |
-| `PRODUCT_CHANGE` | new tier from the product map | `product_change` |
-| `TRANSFER` | `payerUid` becomes `transferred_to` | `transfer` |
+| `PRODUCT_CHANGE` | `active`, new tier from the product map | `product_change` |
+| `TRANSFER` | `active`, `payerUid` becomes `transferred_to` | `transfer` |
 | `REFUND` | `expired`, access dropped | `refunded` |
 
-Store `APP_STORE` → `apple`, `PLAY_STORE` → `google`, anything else → `stripe`. Idempotency key is `billing_events/revenuecat:{eventId}`. A processed event is not applied again.
+A distinct `grace` status and `grace_period` audit exist for a later grace signal. `BILLING_ISSUE` does not write them. Store `APP_STORE` → `apple`, `PLAY_STORE` → `google`, anything else → `stripe`. Idempotency key is `billing_events/revenuecat:{eventId}`.
 
-Stripe writes the same fields from `legacy_subscription`, `customer.subscription.created/updated`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.deleted`, and `charge.refunded`.
+Stripe writes the same fields from `legacy_subscription`, `customer.subscription.created/updated`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.deleted`, and `charge.refunded`. A Stripe subscription whose status is `canceled`, `unpaid`, or `incomplete_expired` becomes entitlement `expired`. `cancel_at_period_end` becomes `cancelled` and keeps access. A failed invoice becomes `billing_retry`.
 
 ### Renewal reminders and failed payments
 
-`GET /api/cron/insights` (Bearer `CRON_SECRET`) adds `renewals: { checked, reminded }`. A subscription in `active`, `grace`, or `past_due` is reminded once when `now` is inside the 3 days before `currentPeriodEnd`. The push category is `general`.
+`GET /api/cron/insights` (Bearer `CRON_SECRET`) adds `renewals: { checked, reminded }`. A subscription in `active`, `grace`, `billing_retry`, or `cancelled` is reminded once when `now` is inside the 3 days before `currentPeriodEnd`. Older rows in `past_due` or `canceled` are included in that scan. The push category is `general`.
 
-The payer gets the renewal or failed-payment notice. The fix link is the Stripe portal for `stripe`, `https://apps.apple.com/account/subscriptions` for Apple, and `https://play.google.com/store/account/subscriptions` for Google. Email uses `lib/mail.ts` (`RESEND_API_KEY` and `RESEND_FROM`). If those are unset the send is skipped and the webhook still succeeds.
+The payer gets the renewal or failed-payment notice. Apple opens `https://apps.apple.com/account/subscriptions`. Google opens `https://play.google.com/store/account/subscriptions`. Stripe opens `/pay/fix`, which calls `POST /api/billing/portal`. Email uses `lib/mail.ts` (`RESEND_API_KEY` and `RESEND_FROM`). If those are unset the send is skipped and the webhook still succeeds.
 
-`billing_audit/{id}` is append-only and hash-chained. `billing_audit_head/current` stores `{ seq, hash, at }`. Each row has `seq`, `prevHash`, `hash`, `type`, `payerUid`, `beneficiaryUids`, `subscriptionId`, `at`, `detail`, `source`, `actorUid`. Types include `renewal`, `renewal_failed`, `grace_period`, `expired`, `refunded`, and `cancelled`. Nothing deletes these rows.
+`billing_audit/{id}` is append-only and hash-chained. `billing_audit_head/current` stores `{ seq, hash, at }`. Each row has `seq`, `prevHash`, `hash`, `type`, `payerUid`, `beneficiaryUids`, `subscriptionId`, `at`, `detail`, `source`, `actorUid`. The app’s audit types are `renewal`, `renewal_failed`, `grace_period`, `expired`, `refunded`, and `cancelled`. The website also writes `uncancelled`, `product_change`, `transfer`, `ask`, `decline`, `cap`, and `purchase` for the parent web checkout. Nothing deletes these rows.
 
 ### Manage subscription
 
-`POST /api/billing/portal` with the signed-in user’s token. `return_url` is the dashboard (`returnPath` must start with `/dashboard`). An institution admin may pass `institutionId` for that academy’s customer. Apple and Google return the store links above and do not open a Stripe portal. The button is on the student, parent, teacher, and institution billing pages.
+`POST /api/billing/portal` with the signed-in user’s token. `return_url` is a dashboard path (`returnPath` must start with `/dashboard`). An institution admin may pass `institutionId` for that academy’s customer. Apple and Google return the store links above and do not open a Stripe portal. The button is on the student, parent, teacher, and institution billing pages, and on `/pay/fix`.
+
+Restore purchases, proration previews, and `externalPurchaseEnabled` are app-only. A null config price already refuses a website quote. The website does not collect a cancel reason.
 
 Environment: `REVENUECAT_WEBHOOK_SECRET`, optional `REVENUECAT_API_KEY`, existing `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`. Rules for `entitlements`, `subscriptions`, `billing_audit`, `billing_audit_head`, and `billing_events` are in the repo and are not deployed by this work.
 
 ## Parent-paid plans
 
-A parent pays. The child studies. Course access is written on the child’s `users.accessTier`, not the parent’s, unless the adult is the only beneficiary.
+A parent pays. The child studies. Course access is written on the child’s account, not the parent’s, unless the adult is the only beneficiary.
 
 ### Fields
 
@@ -1259,45 +1264,65 @@ On the child only:
 
 | Field | Type | Notes |
 |---|---|---|
-| `sponsoredBy.payerUid` | string | Paying parent or the learner after they take over. |
-| `sponsoredBy.subscriptionId` | string | `sub_{payerUid}`. |
+| `sponsoredBy.payerUid` | string | Paying guardian. |
+| `sponsoredBy.subscriptionId` | string | Same `externalId` as the payer subscription. Not the Firestore document id. |
 | `sponsoredBy.source` | string | `stripe`, `apple`, or `google`. |
+
+Taking over billing at 18 clears `sponsoredBy`. Moving sponsorship to another guardian sets `sponsoredBy` to that guardian and keeps `subscriptionId` equal to the existing `externalId`.
 
 `subscriptions/sub_{payerUid}.lines[]` is `{ uid, tierId, accessTier, listUsd, chargeUsd, off, seat }` for web checkout, one plan per child.
 
 ### Who may pay
 
-An approved `parent_links/{parentId}_{childId}` is the verified guardian. That approved link is what “tier 2 guardian” means here. It is not access tier 2 (IGCSE). If the link also stores numeric `guardianTier`, it must be at least 2. Pending or rejected links cannot be paid for, added, removed, or used as a transfer target.
+An approved `parent_links/{parentId}_{childId}` is the verified guardian on the website. `parent_links` does not store a numeric verification tier. If a row does store `guardianTier` and it is below 2, payment is refused. Pending or rejected links cannot be paid for, added, removed, or used as a transfer target.
 
-Under-18s cannot start checkout (`POST /api/stripe/checkout`, `POST /api/payments/checkout`, or family checkout). A missing age on a student fails closed. Parents, teachers, and admins can pay. Children never receive card fields.
+Under-18s cannot start checkout (`POST /api/stripe/checkout`, `POST /api/payments/checkout`, family checkout, or a RevenueCat purchase with no child beneficiaries). A missing age on a student fails closed. Parents, teachers, and admins can pay. Children never receive card fields.
 
 ### Web checkout
 
-`POST /api/billing/family` with `action: "checkout"`, `lines: [{ uid, tierId }]`, `method` `card`, `fpx`, or `tng`, and `interval` `month` or `year`. Card uses a Stripe subscription. FPX uses a Stripe one-time payment. Touch ’n Go uses the Malaysian gateway. The result is still the entitlement fields above.
-
-The bundle discount is a placeholder in `FAMILY_BUNDLE_DISCOUNT`: second child 10% off, third and later 15% off, applied to the config plan price. `placeholder: true` is returned on the quote. It is not a locked price. A spending cap on the subscription blocks a checkout above it.
+`POST /api/billing/family` with `action: "checkout"`, `lines: [{ uid, tierId }]`, `method` `card`, `fpx`, or `tng`, and `interval` `month` or `year`. Card uses a Stripe subscription. FPX uses a Stripe one-time payment. Touch ’n Go uses the Malaysian gateway (`POST /api/payments/checkout` for other one-time charges). The result is still the entitlement fields above. A null plan price is refused. `familyBundleDiscount` is applied only when a super admin has saved it. `spendingCapUsd` blocks a checkout above the cap.
 
 ### App checkout
 
-The parent purchases in RevenueCat under their `app_user_id`. Set the subscriber attribute `beneficiaries` to a comma-separated list of child uids. The webhook grants or revokes those children’s entitlements after checking each approved parent link. One RevenueCat product applies one tier to every beneficiary on that event. The web’s per-child lines and this attribute write the same `entitlements` documents.
+The parent purchases in RevenueCat under their `app_user_id`. Set the subscriber attribute `beneficiary_uids` to a comma-separated list of child uids. The webhook grants or revokes those children’s entitlements after checking each approved parent link. One RevenueCat product applies one tier to every beneficiary on that event. The web’s per-child lines and this attribute write the same `entitlements` documents.
 
 ### Family dashboard
 
-`/dashboard/parent/billing` uses the dashboard kit. `GET /api/billing/family` returns each child’s plan, renewal, and status, pending requests, and invoices with `receiptNumber` and `myInvois` (`version`, `status`, `typeCode`, supplier and buyer). Actions on `POST /api/billing/family`: `quote`, `checkout`, `cap`, `transfer`, `remove`, `ask`, `respond`. Manage subscription uses the portal route or the store link.
+`/dashboard/parent/billing` uses the dashboard kit. `GET /api/billing/family` returns each child’s plan, renewal, and status, pending requests, the discount label, and invoices with `receiptNumber` and `myInvois` (`version`, `status`, `typeCode`, supplier and buyer). Actions on `POST /api/billing/family`: `quote`, `checkout`, `cap`, `transfer`, `takeover`, `remove`, `ask`, `respond`. Manage subscription uses the portal route or the store link. A public preview is at `/preview/billing`.
 
 ### Ask a parent
 
-A child posts `action: "ask"` with `parentUid` and either `kind: "plan"` plus `tierId` or `kind: "course"` plus `courseId`. The row is `purchase_requests/{id}` with `status: pending`. The parent gets a `general` push and email with no card data. `action: "respond"` with `decision: "approved"` starts the parent checkout. `rejected` notifies the child that nothing was charged.
+A child posts `action: "ask"` with `parentUid` and either `kind: "plan"` plus `tierId` or `kind: "course"` plus `courseId`. The row is `purchase_requests/{id}` with `status: pending`. The parent gets a `general` push to `/pay/ask` and an email with no card data. `action: "respond"` with `decision: "approved"` starts the parent checkout. `rejected` notifies the child that nothing was charged.
 
 ### School seats and graduation
 
-If the child’s `enrolPath` or `membership` is `institution` and the academy `billingPhase` is `active` or `grace`, and that seat’s plan tier is at least the requested tier, checkout returns `409 DUPLICATE_SEAT`. A higher plan returns `400 DUPLICATE_WARN` until `acknowledgeWarning` is true. `graduating: true` on the quote allows the parent to switch the learner onto an individual plan. Entitlement history and `billing_audit` are kept. Access is not wiped before the new period is written.
+If the child’s `enrolPath` or `membership` is `institution` and the academy `billingPhase` is `active` or `grace`, and that seat’s plan tier is at least the requested tier, checkout returns `409 DUPLICATE_SEAT`. A higher plan returns `400 DUPLICATE_WARN` until `acknowledgeWarning` is true. `graduating: true` on the quote allows the parent to switch the learner onto an individual plan. Entitlement history and `billing_audit` are kept. Access is not wiped before the new period is written. Institution `billingPhase: grace` is the academy seat clock. It is not the entitlement status `grace`.
 
 ### Notices and transfers
 
-Renewal and failed-payment pushes go to the payer. Each child gets a soft `general` notice that access may pause, with no amount, card, or receipt. The link for the child is `/dashboard/student`.
+Renewal and failed-payment pushes go to the payer, with the fix link above. Each child gets a soft `general` notice titled “Access may pause”, with no amount, card, or receipt. The child link is `/home`, which redirects to `/dashboard`.
 
-`action: "transfer"` moves one child to `nextPayerUid` after both guardian links are approved. The child’s `sponsoredBy` follows. Records stay. `action: "takeover"` lets the learner do that for themselves when `ageTier` is `adult` or their date of birth says 18. The current payer uid is required so the previous sponsorship is closed without a gap in the audit.
+`action: "transfer"` moves one child to `nextPayerUid` after both guardian links are approved. `action: "takeover"` lets the learner do that for themselves when `ageTier` is `adult` or their date of birth says 18, and clears `sponsoredBy`. Removing a child (`action: "remove"`) sets that child’s status to `cancelled` and drops their access immediately. A store `CANCELLATION` keeps access until `currentPeriodEnd`.
 
-Every purchase, renewal, failure, grace, expiry, refund, cancellation, ask, decline, cap change, and transfer is an audit row with `payerUid` and `beneficiaryUids`.
+Every renewal, failure, expiry, refund, cancellation, ask, decline, cap change, and transfer is an audit row with `payerUid` and `beneficiaryUids`.
+
+### Still different from the app schema
+
+These stay website canonical. Relay them to the app:
+
+- Price document path is `pricing_config/current`, not `platform_settings/pricing`.
+- Entitlements write `tier` and `accessTier` (same number) and `plan` and `tierId` (same id). The website also writes `users.accessTier`, `users.subscriptionTier`, and `users.sparksMonthlyAllowance`. The app must not write those user fields.
+- Firestore subscription document id is `sub_{payerUid}`. `sponsoredBy.subscriptionId` equals `externalId`.
+- Extra audit types: `uncancelled`, `product_change`, `transfer`, `ask`, `decline`, `cap`, `purchase`.
+- Extra routes: `POST` and `GET /api/billing/family`, `/pay/fix`, `/pay/ask`, `/home` (redirect to `/dashboard`), `/preview/billing`.
+- Older `subscriptions/{userId}` rows still use status `canceled` and `family`. New entitlement documents use `cancelled`.
+- `guardianTier` is not required. An approved `parent_links` row is the verified guardian. A stored `guardianTier` below 2 is rejected.
+- Removing a child drops that child’s access immediately. A store cancellation keeps access until `currentPeriodEnd`.
+- There is no cancel-reason field. `CANCELLATION` audit `detail` is the event type.
+- `externalPurchaseEnabled`, restore purchases, and proration previews are not website features.
+- `familyBundleDiscount` is `{ secondChildOff, furtherChildOff } | null`. The 10% / 15% example is not stored.
+- `spendingCapUsd` is the cap field on `subscriptions/sub_{payerUid}`.
+- One web checkout can assign a different plan per child. One RevenueCat product applies one tier to every `beneficiary_uids` entry.
+- FPX on a family plan is a one-time Stripe payment. Card is a Stripe subscription. `tng` is the Malaysian gateway.
+- Translated FAQ drafts outside English may still quote the old $19 and $99 amounts. English copy and `pricing_config` do not. Checkout uses the config.
 
