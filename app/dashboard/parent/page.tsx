@@ -17,6 +17,8 @@ import { certificateStatus, formatCertificateDate, type CertificateFace } from '
 import Link from 'next/link';
 import { ChildExamPrep } from '@/components/study/child-exam-prep';
 import { DashPage, DashHeader } from '@/components/dash-ui';
+import { JoinByCode, type JoinStudentCard } from '@/components/join-by-code';
+import { authedFetch } from '@/lib/api-client';
 import dynamic from 'next/dynamic';
 import { SeeMore } from '@/components/shell/see-more';
 import { friendlyError } from '@/lib/design/system';
@@ -220,6 +222,24 @@ export default function ParentDashboard() {
   }, [user]);
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const [linkCard, setLinkCard] = useState<JoinStudentCard | null>(null);
+  const [linkMessage, setLinkMessage] = useState('');
+  const [linkBusy, setLinkBusy] = useState(false);
+
+  const requestLink = async (code: string) => {
+    setLinkBusy(true);
+    try {
+      const data = await authedFetch('/api/join', { method: 'POST', body: JSON.stringify({ action: 'parent', code }) });
+      setLinkMessage(typeof data.message === 'string' ? data.message : 'Request sent.');
+      const found = await authedFetch('/api/join', { method: 'POST', body: JSON.stringify({ action: 'lookup', code }) });
+      if (found.card && typeof found.card === 'object') setLinkCard(found.card as JoinStudentCard);
+    } catch (error) {
+      setLinkCard(null);
+      setLinkMessage(error instanceof Error ? error.message : 'Could not send that request.');
+    } finally {
+      setLinkBusy(false);
+    }
+  };
 
   if (loading) return (
     <div className="max-w-5xl mx-auto px-0 sm:px-2 py-2 space-y-5">
@@ -242,6 +262,17 @@ export default function ParentDashboard() {
             <MessageSquare className="w-3.5 h-3.5" /> Message teachers
           </Link>
         }
+      />
+
+      <JoinByCode
+        title="Link your child"
+        body="Scan the QR on their student pass or type the student number. They confirm the link. A learner under 13 is confirmed by their institution admin. After that, progress stays on this page and Parent Explainer can summarise the week."
+        actionLabel={linkBusy ? 'Sending…' : 'Request link'}
+        onResolve={(code) => { void requestLink(code); }}
+        card={linkCard}
+        message={linkMessage}
+        busy={linkBusy}
+        extra={<Link href="/ai-studio?mode=parent-explainer" className="inline-flex text-sm font-semibold text-[#1A3C34] underline">Open Parent Explainer</Link>}
       />
 
       {/* ── Today's Goals ── */}
@@ -371,7 +402,7 @@ export default function ParentDashboard() {
                 className="bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] overflow-hidden shadow-[0_8px_40px_-12px_rgba(15,23,42,0.08)]"
               >
                 {/* Child hero band */}
-                <div className="relative bg-[#203337] p-7 sm:p-8 text-white overflow-hidden">
+                <div className="relative bg-[#1A3C34] p-7 sm:p-8 text-white overflow-hidden">
                   <div className="pointer-events-none absolute inset-0">
                     <div className="absolute -top-20 -left-16 w-72 h-72 rounded-full bg-primary/25 blur-[80px]" />
                     <div className="absolute -bottom-24 -right-10 w-72 h-72 rounded-full bg-[#1E6A83]/20 blur-[80px]" />

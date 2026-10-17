@@ -2296,7 +2296,7 @@ function AllocateTab({ course, institutions, patchCourse }: {
 
       <section className="space-y-1.5">
         <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Student groups</p>
-        <p className="text-[10px] text-muted-foreground">Year groups, separate from the audience above.</p>
+        <p className="text-[10px] text-muted-foreground">Levels, separate from the audience above.</p>
         {STUDENT_GROUPS.map(g => (
           <label key={g} className="flex items-center justify-between text-xs py-1 cursor-pointer">
             <span className="font-semibold text-foreground">{g}</span>

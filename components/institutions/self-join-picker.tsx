@@ -14,6 +14,7 @@ export function SelfJoinPicker({
   inviteCode,
   childEmails,
   showChildren,
+  student = false,
   tone = 'inverse',
   onPath,
   onCountry,
@@ -30,6 +31,8 @@ export function SelfJoinPicker({
   inviteCode: string;
   childEmails: string;
   showChildren: boolean;
+  /** Student signup always shows country, state, and the registered-institution list. */
+  student?: boolean;
   tone?: 'inverse' | 'default';
   onPath: (path: 'independent' | 'institution') => void;
   onCountry: (country: string) => void;
@@ -45,10 +48,16 @@ export function SelfJoinPicker({
     ? 'w-full h-12 rounded-2xl bg-white/5 border border-white/10 text-white px-4 text-sm outline-none'
     : 'w-full h-11 rounded-xl border border-border bg-background px-3 text-sm';
   const states = statesForCountry(country);
+  const showDirectory = student || path === 'institution';
   return (
     <div className="space-y-3">
-      <p id={pathLabelId} className={label}>How are you joining?</p>
-      <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2" role="group" aria-labelledby={pathLabelId}>
+      {student && (
+        <p className="rounded-2xl border border-[#C8922A]/50 bg-[#1A3C34] px-4 py-3 text-sm leading-relaxed text-[#F8E7C4]">
+          You can only join an institution that is registered on Poket School. If yours isn&apos;t listed, sign up as an independent learner and ask your school to register.
+        </p>
+      )}
+      {!student && <p id={pathLabelId} className={label}>How are you joining?</p>}
+      {!student && <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2" role="group" aria-labelledby={pathLabelId}>
         {(['independent', 'institution'] as const).map((item) => (
           <button
             key={item}
@@ -66,31 +75,40 @@ export function SelfJoinPicker({
             {item === 'independent' ? 'Independent' : 'From an institution'}
           </button>
         ))}
-      </div>
-      {path === 'independent' && (
+      </div>}
+      {!student && path === 'independent' && (
         <p className={inverse ? 'text-xs text-white/45' : 'text-sm text-muted-foreground'}>
           You pay online. Students pay their level plan. Parents are free, and a second child is 30% off. Independent teachers pay the Teacher plan. If your school is not listed, this is the path to use.
         </p>
       )}
-      {path === 'institution' && (
+      {showDirectory && (
         <div className="space-y-3">
           <CountrySelect tone={tone} label="Country" value={country} onChange={onCountry} />
           <label className="block space-y-1.5">
-            <span className={label}>State</span>
-            <select className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6FBBCE]`} value={state} onChange={(event) => onState(event.target.value)} aria-label="State">
+            <span className={label}>State / region</span>
+            <select className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8922A]`} value={state} onChange={(event) => onState(event.target.value)} aria-label="State or region">
+              <option value="" className="bg-[#0B0F1A]">Choose a state / region</option>
               {states.map((item) => <option key={item} value={item} className="bg-[#0B0F1A]">{item}</option>)}
             </select>
           </label>
           <label className="block space-y-1.5">
             <span className={label}>Institution</span>
-            <select className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6FBBCE]`} value={institutionId} onChange={(event) => onInstitution(event.target.value)} aria-label="Institution">
-              <option value="" className="bg-[#0B0F1A]">Choose a listed institution</option>
+            <select
+              className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8922A]`}
+              value={institutionId}
+              onChange={(event) => {
+                onInstitution(event.target.value);
+                if (student) onPath(event.target.value ? 'institution' : 'independent');
+              }}
+              aria-label="Institution"
+            >
+              <option value="" className="bg-[#0B0F1A]">{student ? 'Independent learner' : 'Choose a listed institution'}</option>
               {institutions.map((item) => <option key={item.id} value={item.id} className="bg-[#0B0F1A]">{item.name}</option>)}
             </select>
           </label>
-          {institutions.length === 0 && country && state && (
-            <p className={inverse ? 'text-xs text-amber-200' : 'text-sm text-amber-700'}>
-              No listed institution in that state. Continue as Independent and pay online.
+          {country && state && institutions.length === 0 && (
+            <p className={inverse ? 'text-xs text-[#F8E7C4]' : 'text-sm text-[#1A3C34]'}>
+              No registered institution in that state or region. Continue as an independent learner and ask your school to register.
             </p>
           )}
           <label className="block space-y-1.5">

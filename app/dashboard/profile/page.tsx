@@ -68,6 +68,9 @@ import {
 } from '@/lib/db';
 import { actionLabel } from '@/lib/audit/model';
 import { reportActivity } from '@/lib/audit/report';
+import { StudentPassCard } from '@/components/student-pass-card';
+import { useEnsureStudentNumber } from '@/components/use-student-number';
+import { learnerLevelLabel } from '@/lib/student-number';
 import {
   EMPTY_PAYOUT,
   SettingsPanel,
@@ -119,6 +122,7 @@ function authMessage(error: unknown, fallback: string): string {
 export default function ProfilePage() {
   const router = useRouter();
   const { user, profile, fetchProfile } = useAuthSTORE();
+  useEnsureStudentNumber();
   const { mode, ready } = useAccountMode();
   const { config } = usePricing();
   const [view, setView] = useState<SettingsView | null>(null);
@@ -333,6 +337,10 @@ export default function ProfilePage() {
   const currencies = enabledCurrencies(config ?? seedPricing()).map(item => item.code);
 
   return (
+    <div className="space-y-5">
+    {profile?.role === 'student' && (
+      <StudentPassCard name={profile.name} level={learnerLevelLabel(profile)} code={profile.studentNumber ?? ''} />
+    )}
     <SettingsPanel
       view={view}
       currencies={currencies.length ? currencies : ['USD']}
@@ -609,5 +617,6 @@ export default function ProfilePage() {
         }
       }}
     />
+    </div>
   );
 }

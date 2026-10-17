@@ -22,6 +22,8 @@ interface UserProfile {
   statusReason?: string;
   adminRole?: 'super_admin' | 'admin' | 'content_editor' | 'support' | 'finance';
   avatarUrl?: string;
+  /** PS-XXXX-XXXX. Issued on signup and backfilled when a student profile loads. */
+  studentNumber?: string;
   photoStoragePath?: string;
   level?: string;
   learningStyle?: string;

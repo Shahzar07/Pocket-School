@@ -379,7 +379,7 @@ export function YearPlanner({
               <label className="block">Class
                 <Input value={selected.classId ?? ''} disabled={!canEdit} onChange={event => patchSelected({ classId: event.target.value || undefined })} />
               </label>
-              <label className="block">Year group
+              <label className="block">Level
                 <Input value={selected.yearGroup ?? ''} disabled={!canEdit} onChange={event => patchSelected({ yearGroup: event.target.value || undefined })} />
               </label>
             </div>

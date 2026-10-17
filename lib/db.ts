@@ -53,6 +53,8 @@ export interface UserProfile {
   /** Set for institution_admin (and optionally members) — scopes what they see. */
   institutionId?: string;
   avatarUrl?: string;
+  /** PS-XXXX-XXXX. Issued on signup and backfilled when a student profile loads. */
+  studentNumber?: string;
   /** Storage path for the profile photo, under media/{uid}/. */
   photoStoragePath?: string;
   level?: string;

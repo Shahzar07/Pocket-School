@@ -65,9 +65,9 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [country, setCountry] = useState('');
+  const [country, setCountry] = useState('MY');
   useEffect(() => {
-    setCountry((current) => current || readGeoCountry());
+    setCountry((current) => current || readGeoCountry() || 'MY');
   }, []);
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('student');
@@ -78,15 +78,16 @@ export default function SignupPage() {
   const [inviteCode, setInviteCode] = useState('');
   useEffect(() => {
     const states = statesForCountry(country);
-    setJoinState((current) => (states as readonly string[]).includes(current) ? current : states[0] ?? '');
+    setJoinState((current) => (states as readonly string[]).includes(current) ? current : '');
   }, [country]);
   useEffect(() => {
-    if (joinPath !== 'institution' || !country || !joinState) {
+    const wantsList = role === 'student' || joinPath === 'institution';
+    if (!wantsList || !country || !joinState) {
       setListed([]);
       return;
     }
     listSelfJoinInstitutions(country, joinState).then(setListed).catch(() => setListed([]));
-  }, [joinPath, country, joinState]);
+  }, [role, joinPath, country, joinState]);
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get('role');
     if (requested === 'student' || requested === 'teacher' || requested === 'parent') setRole(requested);
@@ -204,12 +205,14 @@ export default function SignupPage() {
           consentAcceptedAt: serverTimestamp(),
           ...(dob ? { dateOfBirth: dob } : {}),
           ...(country ? { country } : {}),
+          ...(joinState ? { region: joinState } : {}),
           ...(phone.trim() ? { phone: phone.trim() } : {}),
           ...roleProfileFields(),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
         if (role === 'student') {
+          await authedFetch('/api/account/student-number', { method: 'POST', body: '{}' }).catch(() => undefined);
           await authedFetch('/api/account/placement', {
             method: 'POST',
             body: JSON.stringify({ programme: pathway, year: yearGroup }),
@@ -316,6 +319,7 @@ export default function SignupPage() {
         guardianConsentAt: serverTimestamp(),
       } : {}),
       ...(country ? { country } : {}),
+      ...(joinState ? { region: joinState } : {}),
       ...(phone.trim() ? { phone: phone.trim() } : {}),
       ...roleProfileFields(),
       createdAt: serverTimestamp(),
@@ -332,6 +336,7 @@ export default function SignupPage() {
       toast.message(t('signup.confirmLink'));
     }
     if (role === 'student') {
+      await authedFetch('/api/account/student-number', { method: 'POST', body: '{}' }).catch(() => undefined);
       await authedFetch('/api/account/placement', {
         method: 'POST',
         body: JSON.stringify({ programme: pathway, year: yearGroup }),
@@ -495,7 +500,7 @@ export default function SignupPage() {
                   disabled={loading}
                   className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all text-sm font-semibold ${
                     role === r.id
-                      ? 'border-[#2786A4] bg-[#2786A4]/15 text-[#6FBBCE]'
+                      ? 'border-[#C8922A] bg-[#1A3C34] text-[#F8E7C4]'
                       : 'border-white/10 bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/70 hover:border-white/20'
                   }`}
                 >
@@ -516,6 +521,7 @@ export default function SignupPage() {
               inviteCode={inviteCode}
               childEmails={childEmail}
               showChildren={false}
+              student={role === 'student'}
               onPath={setJoinPath}
               onCountry={setCountry}
               onState={setJoinState}
