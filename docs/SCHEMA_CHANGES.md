@@ -1736,7 +1736,9 @@ The short footer and `/safety-terms` also say "Poket School's safety features ar
 
 If Firebase Admin is not configured, the form answers "Partner applications are coming soon." and writes nothing. If mail is not configured, the application is still saved and the review email is not treated as a crash. The review note goes to `SAFETY_ADMIN_EMAIL` or `safety@poketschool.ai`, from `Poket School <safety@poketschool.ai>`.
 
-`POST /api/community-partners/review` is admin only. Approve sets `route` and `nextPath` and does not change a user, a verification tier, `partnerKind`, or a merchant record. Police and child-protection NGOs are pointed at tier-4 verification (`/signup?partner=tier4`). Schools are pointed at institution onboarding (`/signup?help=school`). Businesses and sponsors are pointed at the partner merchant flow (`/signup?partner=merchant`). Other types wait for a person. Decline stores `declined` and grants nothing.
+`POST /api/community-partners/review` is admin only. Approve sets `route` and `nextPath` and does not change a user, a verification tier, `partnerKind`, or a merchant record. Police and child-protection NGOs are pointed at tier-4 verification (`/signup?partner=tier4`). Schools are pointed at the existing institution onboarding page (`/dashboard/institution/onboarding`). Businesses and sponsors are pointed at the partner merchant flow (`/signup?partner=merchant`). Other types wait for a person. Decline stores `declined` and grants nothing.
+
+An approval also emails the contact the absolute next link, from `Poket School <safety@poketschool.ai>`. The letter says the approval does not grant access. A missing mail key, a bad address, or a send failure leaves the approval in place and does not throw. Signup does not read `partner`. The school link is the onboarding page an institution admin already uses. The tier-4 and merchant links name those routes. They do not raise `verification.tier`, set `partnerKind`, or create a merchant record.
 
 Get involved links to `/community-partners` from `/stand-up-to-bullying`, `/amber/{id}`, Get help near me, the safety footer, school-notice email, and Safety Desk email.
 

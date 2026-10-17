@@ -7,7 +7,8 @@ import { randomBytes } from 'node:crypto';
 import { type Firestore } from 'firebase-admin/firestore';
 import { adminDb, isAdminConfigured } from '../firebase-admin';
 import { DESK_CONTACT, SAFETY_FROM } from '../bullying/school-notice';
-import { approvalRoute, cleanPartnerApplication, type PartnerApplicationInput } from '../community/partners';
+import { approvalLetter, approvalRoute, cleanPartnerApplication, type PartnerApplicationInput } from '../community/partners';
+import { originFromUrl } from '../safety/disclaimer';
 import { currentMailAdapter, sendWithBackoff } from '../mail';
 import { ActionError } from './actions';
 
@@ -63,12 +64,18 @@ export async function reviewPartnerApplication(actorUid: string, id: string, dec
     reviewedAt: now,
     reviewedBy: actorUid,
   }, { merge: true });
+  const email = typeof data.email === 'string' ? data.email : '';
+  const orgName = typeof data.orgName === 'string' ? data.orgName : '';
+  const applicantMailed = decision === 'approved'
+    ? await notifyApplicant(email, orgName, type).catch(() => false)
+    : false;
   return {
     ok: true as const,
     status: decision,
     route: route?.route ?? '',
     nextPath: route?.nextPath ?? '',
     granted: false as const,
+    applicantMailed,
   };
 }
 
@@ -96,4 +103,22 @@ async function notifyReviewQueue(id: string, value: PartnerApplicationInput): Pr
     html: text.split('\n').map(line => `<p>${line.replace(/</g, '')}</p>`).join(''),
   }));
   return sent.ok;
+}
+
+async function notifyApplicant(email: string, orgName: string, type: string): Promise<boolean> {
+  const letter = approvalLetter({ orgName, type, origin: siteOrigin() });
+  if (!letter || !/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(email)) return false;
+  const sent = await sendWithBackoff(() => currentMailAdapter().send({
+    to: email,
+    from: SAFETY_FROM,
+    subject: letter.subject,
+    text: letter.text,
+    html: letter.text.split('\n').map(line => `<p>${line.replace(/</g, '')}</p>`).join(''),
+  }));
+  return sent.ok;
+}
+
+function siteOrigin(): string {
+  const raw = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || 'https://poketschool.ai';
+  return originFromUrl(raw.startsWith('http') ? raw : `https://${raw}`);
 }

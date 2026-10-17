@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { approvalRoute, cleanPartnerApplication, partnerType } from './partners';
+import { approvalLetter, approvalRoute, cleanPartnerApplication, partnerType } from './partners';
 import { COMMUNITY_PARTNERS_LINE, safetyMessageFooter } from '../safety/disclaimer';
 
 test('an application is checked and a honeypot is not stored as a real request', () => {
@@ -31,7 +31,14 @@ test('approval names an onboarding path and does not verify the organisation', (
   assert.equal(approvalRoute('police')?.route, 'tier4');
   assert.equal(approvalRoute('child_protection')?.route, 'tier4');
   assert.equal(approvalRoute('school')?.route, 'institution');
+  assert.equal(approvalRoute('school')?.nextPath, '/dashboard/institution/onboarding');
   assert.equal(approvalRoute('business')?.route, 'partner_merchant');
+  const school = approvalLetter({ orgName: 'River School', type: 'school', origin: 'https://poketschool.ai' });
+  assert.match(school?.text ?? '', /does not grant access/);
+  assert.match(school?.url ?? '', /https:\/\/poketschool\.ai\/dashboard\/institution\/onboarding/);
+  const police = approvalLetter({ orgName: 'City Police', type: 'police', origin: 'https://poketschool.ai/' });
+  assert.match(police?.text ?? '', /tier-4 verification/);
+  assert.equal(approvalLetter({ orgName: 'Nope', type: 'nope', origin: 'https://poketschool.ai' }), null);
   assert.equal(partnerType('school')?.label.includes('School'), true);
   assert.equal(approvalRoute('nope'), null);
 });

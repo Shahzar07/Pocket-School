@@ -6,7 +6,7 @@
 export const PARTNER_TYPES = [
   { id: 'police', label: 'Police', route: 'tier4', nextPath: '/signup?partner=tier4' },
   { id: 'child_protection', label: 'Child-protection NGO', route: 'tier4', nextPath: '/signup?partner=tier4' },
-  { id: 'school', label: 'School', route: 'institution', nextPath: '/signup?help=school' },
+  { id: 'school', label: 'School', route: 'institution', nextPath: '/dashboard/institution/onboarding' },
   { id: 'counsellor', label: 'Counsellor or mental-health organisation', route: 'review', nextPath: '/signup?partner=counsellor' },
   { id: 'helpline', label: 'Helpline', route: 'review', nextPath: '/signup?partner=helpline' },
   { id: 'business', label: 'Business or sponsor', route: 'partner_merchant', nextPath: '/signup?partner=merchant' },
@@ -77,6 +77,31 @@ export function approvalRoute(type: string): { route: string; nextPath: string }
   const found = partnerType(type);
   if (!found) return null;
   return { route: found.route, nextPath: found.nextPath };
+}
+
+/** The note an approved applicant receives. It names the next page and grants nothing. */
+export function approvalLetter(input: { orgName: string; type: string; origin: string }): { subject: string; text: string; url: string } | null {
+  const route = approvalRoute(input.type);
+  if (!route) return null;
+  const origin = input.origin.replace(/\/$/, '') || 'https://poketschool.ai';
+  const url = `${origin}${route.nextPath}`;
+  const step = route.route === 'institution'
+    ? `Open institution onboarding: ${url}`
+    : route.route === 'tier4'
+      ? `Create an account, then wait for tier-4 verification: ${url}`
+      : route.route === 'partner_merchant'
+        ? `Open the partner merchant flow: ${url}`
+        : `A person will follow up. You can create an account here: ${url}`;
+  const orgName = input.orgName.trim() || 'Your organisation';
+  return {
+    subject: `Poket School: next step for ${orgName}`,
+    url,
+    text: [
+      `${orgName} can take the next step.`,
+      'This approval does not grant access. An admin still has to verify the organisation.',
+      step,
+    ].join('\n'),
+  };
 }
 
 function clip(value: unknown, max: number): string {
