@@ -1427,10 +1427,13 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // One wallet. The balance moves from the server. Sparks are not a tender.
+    // One wallet. The owner and an admin can read it. The balance moves from
+    // the server, or from an admin. Sparks are not a tender. Ledger rows are
+    // server-only.
     match /wallets/{userId} {
       allow read: if isAdmin() || isUser(userId);
       allow write: if isAdmin();
+      match /ledger/{entryId} { allow read, write: if false; }
     }
 
     match /wallet_entries/{entryId} {
@@ -2018,13 +2021,6 @@ service cloud.firestore {
       );
     }
 
-    // Admin action history. Super admins read it. Any platform admin can append.
-    match /admin_audit/{entryId} {
-      allow read: if callerIsSuper();
-      allow create: if isAdmin() && incoming().actorId == request.auth.uid;
-      allow update, delete: if false;
-    }
-
     match /admin_invites/{emailId} {
       allow read: if isAdmin();
       allow create, update: if isAdmin() && callerIsSuper()
@@ -2320,10 +2316,6 @@ service cloud.firestore {
     match /payment_events/{id} { allow read, write: if false; }
     match /payment_links/{id} { allow read, write: if false; }
     match /checkouts/{id} { allow read, write: if false; }
-    match /wallets/{userId} {
-      allow read, write: if false;
-      match /ledger/{entryId} { allow read, write: if false; }
-    }
     match /transactions/{id} { allow read, write: if false; }
     match /coupons/{id} { allow read, write: if false; }
     match /affiliate_ledger/{id} { allow read, write: if false; }
