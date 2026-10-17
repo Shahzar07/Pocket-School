@@ -3,8 +3,10 @@
  *
  * Poket Reads on the All-In plan, and the 1-week ET AI Live taster, render as
  * ordinary included items only while OFFER_BUNDLE_EXTRAS is true.
- * Standalone Poket Reads has no public price.
+ * Standalone Poket Reads uses the shared shelf price and links to /reads/offer.
  */
+
+import { booksVersusUnlimitedLine, ownOrReadLine, readsPlanItem } from './payments/reads';
 
 export const OFFER_BUNDLE_EXTRAS = true;
 
@@ -16,7 +18,8 @@ export const OFFER_ROUTES = {
   primary: '/dashboard/checkout?kind=subscription&sku=primary_secondary',
   professional: '/dashboard/checkout?kind=subscription&sku=professional',
   family: '/signup?role=parent',
-  reads: '/reads',
+  /** Standalone Poket Reads sales letter. */
+  reads: '/reads/offer',
   institutions: 'mailto:institutions@poketschool.ai?subject=Poket%20School%20for%20institutions',
 } as const;
 
@@ -103,6 +106,8 @@ export interface OfferPlan {
   href: string;
   external?: boolean;
   popular?: boolean;
+  /** Electric cyan is the Reads call to action. Other plans stay on the shared blue. */
+  ctaTone?: 'cyan';
 }
 
 const ALL_IN_FEATURES = [
@@ -117,7 +122,29 @@ const BUNDLE_EXTRAS = [
   '1-week ET AI Live taster',
 ] as const;
 
+function shelfUsd(amount: number): string {
+  return `$${amount.toFixed(2)}`;
+}
+
+function readsShelfPrice(): { price: string; priceNote: string; family: string; choice: string; compare: string } {
+  const month = readsPlanItem('reads', 'month');
+  const year = readsPlanItem('reads', 'year');
+  const familyMonth = readsPlanItem('reads-family', 'month');
+  const familyYear = readsPlanItem('reads-family', 'year');
+  if (!month || !year || !familyMonth || !familyYear) {
+    throw new Error('Reads price is missing from the shared shelf.');
+  }
+  return {
+    price: `${shelfUsd(month.unitAmount)}/mo`,
+    priceNote: `${shelfUsd(year.unitAmount)}/yr`,
+    family: `Reads Family ${shelfUsd(familyMonth.unitAmount)}/mo or ${shelfUsd(familyYear.unitAmount)}/yr`,
+    choice: ownOrReadLine(),
+    compare: booksVersusUnlimitedLine(),
+  };
+}
+
 export function offerPlans(extras: boolean = OFFER_BUNDLE_EXTRAS): OfferPlan[] {
+  const reads = readsShelfPrice();
   return [
     {
       id: 'preview',
@@ -193,10 +220,12 @@ export function offerPlans(extras: boolean = OFFER_BUNDLE_EXTRAS): OfferPlan[] {
     {
       id: 'reads',
       name: 'Poket Reads',
-      price: 'Coming soon',
-      priceNote: 'Standalone access',
-      tagline: 'A library that reads with you.',
+      price: reads.price,
+      priceNote: reads.priceNote,
+      tagline: reads.choice,
       features: [
+        reads.compare,
+        reads.family,
         'Books and audiobooks',
         'Children’s illustrated stories',
         'ET AI book studio',
@@ -204,6 +233,7 @@ export function offerPlans(extras: boolean = OFFER_BUNDLE_EXTRAS): OfferPlan[] {
       ],
       cta: 'Get Poket Reads',
       href: OFFER_ROUTES.reads,
+      ctaTone: 'cyan',
     },
     {
       id: 'institutions',

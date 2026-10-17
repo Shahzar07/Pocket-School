@@ -2,16 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Plus_Jakarta_Sans, Instrument_Sans, Noto_Sans_Arabic, Noto_Sans_Hebrew } from "next/font/google";
 import { cn } from "@/lib/utils";
-import { AuthProvider } from '@/components/auth-provider';
-import { I18nProvider } from '@/components/i18n-provider';
-import { WhiteLabelProvider } from '@/components/white-label-provider';
-import { TenantChrome } from '@/components/tenant-chrome';
-import { Toaster } from "@/components/ui/sonner"
-import { SiteHeader } from '@/components/site-header';
-import { ModuleHeader } from '@/components/module-header';
-import { SiteFooter } from '@/components/site-footer';
-import { CookieConsent } from '@/components/cookie-consent';
-import { ThemeProvider } from '@/components/theme-provider';
+import { AppChrome } from '@/components/app-chrome';
 
 /** Body and UI. The homepage is built on this, so it stays the base face. */
 const plusJakarta = Plus_Jakarta_Sans({
@@ -37,11 +28,13 @@ const instrumentSans = Instrument_Sans({
   display: 'swap',
 });
 
+/** Loaded for Arabic and Hebrew. Not preloaded, so an English page does not pay for them. */
 const notoArabic = Noto_Sans_Arabic({
   subsets: ['arabic'],
   variable: '--font-arabic',
   weight: ['400', '600', '700'],
   display: 'swap',
+  preload: false,
 });
 
 const notoHebrew = Noto_Sans_Hebrew({
@@ -49,6 +42,7 @@ const notoHebrew = Noto_Sans_Hebrew({
   variable: '--font-hebrew',
   weight: ['400', '600', '700'],
   display: 'swap',
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -82,21 +76,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={cn("font-sans antialiased", plusJakarta.variable, instrumentSans.variable, notoArabic.variable, notoHebrew.variable)} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans text-foreground" suppressHydrationWarning>
-        <ThemeProvider>
-        <AuthProvider>
-          <I18nProvider>
-          <WhiteLabelProvider>
-            <SiteHeader />
-            <TenantChrome />
-            <ModuleHeader />
-            <div id="content">{children}</div>
-            <SiteFooter />
-            <CookieConsent />
-            <Toaster />
-          </WhiteLabelProvider>
-          </I18nProvider>
-        </AuthProvider>
-        </ThemeProvider>
+        <AppChrome>{children}</AppChrome>
       </body>
     </html>
   );

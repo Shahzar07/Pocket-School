@@ -1,6 +1,11 @@
 import { proceduralArt } from '@/components/media/fallback-art';
+import { READS_BOOK_USD, readsOwnBookAmount } from '@/lib/payments/reads';
 import { fullPageImage } from '@/lib/reads/picture-book';
 import type { Book } from './types';
+
+/** Every catalogue book uses the shared own-forever price. */
+const OWN_USD = READS_BOOK_USD;
+const OWN_RM = readsOwnBookAmount('MYR').amount;
 
 const HARBOUR_1 = `The jetty smelled of rain and warm rope. Aisha stopped where the boards turned dark and watched the lighthouse take its turn: a slow white sweep, then nothing, then the sweep again. Behind her, the night market was packing up. Someone dropped a crate of mangoes and laughed. The sound did not reach the water.
 
@@ -203,8 +208,8 @@ export const BOOKS: Book[] = [
     version: 1,
     accessMode: 'both',
     minTier: 1,
-    priceUsd: 5,
-    priceRM: 24,
+    priceUsd: OWN_USD,
+    priceRM: OWN_RM,
     licensable: true,
     sparksCost: 80,
     seats: { total: 120, used: 0 },
@@ -284,10 +289,10 @@ export const BOOKS: Book[] = [
     curriculumTags: [{ programme: 'Primary', subject: 'English', year: 'Primary' }],
     status: 'published',
     version: 1,
-    accessMode: 'subscription',
+    accessMode: 'both',
     minTier: 1,
-    priceUsd: 0,
-    priceRM: 0,
+    priceUsd: OWN_USD,
+    priceRM: OWN_RM,
     licensable: true,
     sparksCost: 0,
     seats: { total: 80, used: 0 },
@@ -318,8 +323,8 @@ export const BOOKS: Book[] = [
     version: 1,
     accessMode: 'both',
     minTier: 2,
-    priceUsd: 8,
-    priceRM: 36,
+    priceUsd: OWN_USD,
+    priceRM: OWN_RM,
     licensable: true,
     sparksCost: 100,
     seats: { total: 40, used: 0 },
@@ -363,8 +368,8 @@ export const BOOKS: Book[] = [
     version: 1,
     accessMode: 'both',
     minTier: 1,
-    priceUsd: 4,
-    priceRM: 18,
+    priceUsd: OWN_USD,
+    priceRM: OWN_RM,
     licensable: true,
     sparksCost: 60,
     seats: { total: 40, used: 0 },
@@ -395,8 +400,8 @@ export const BOOKS: Book[] = [
     version: 1,
     accessMode: 'both',
     minTier: 4,
-    priceUsd: 10,
-    priceRM: 49,
+    priceUsd: OWN_USD,
+    priceRM: OWN_RM,
     licensable: true,
     sparksCost: 140,
     seats: { total: 30, used: 0 },
@@ -432,10 +437,10 @@ export const BOOKS: Book[] = [
     curriculumTags: [{ programme: 'Primary', subject: 'English', year: 'Ages 5–7' }],
     status: 'published',
     version: 1,
-    accessMode: 'subscription',
+    accessMode: 'both',
     minTier: 1,
-    priceUsd: 0,
-    priceRM: 0,
+    priceUsd: OWN_USD,
+    priceRM: OWN_RM,
     licensable: false,
     programme: 'Primary',
     allocateLibrary: true,
@@ -481,8 +486,8 @@ export const BOOKS: Book[] = [
     version: 1,
     accessMode: 'both',
     minTier: 1,
-    priceUsd: 5,
-    priceRM: 22,
+    priceUsd: OWN_USD,
+    priceRM: OWN_RM,
     licensable: true,
     sparksCost: 70,
     seats: { total: 40, used: 0 },

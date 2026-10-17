@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { readerSerif } from '@/components/reads/reader-font';
 import { RelatedReads } from '@/components/shelf/related-reads';
 import { useShelfProfile } from '@/components/shelf/profile-bar';
 import { ShelfBadgePill } from '@/components/shelf/ui';
@@ -67,7 +68,7 @@ export function CourseCatalogueDetail({ seedKey }: { seedKey: string }) {
 
       <section id="preview" className="rounded-[28px] border border-border bg-[#F7F1E6] p-6 text-[#2C241C] sm:p-10">
         <h2 className="font-heading text-[28px]">{t('reads.market.preview')}</h2>
-        <p className="mt-4 max-w-[66ch] font-['Instrument_Serif',Georgia,serif] text-[19px] leading-[1.75]">{preview}</p>
+        <p className={`${readerSerif.className} mt-4 max-w-[66ch] text-[19px] leading-[1.75]`}>{preview}</p>
       </section>
 
       <section>
