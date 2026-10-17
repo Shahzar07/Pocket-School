@@ -113,6 +113,29 @@ export function sectionForKind(kind: string): string {
   return 'links';
 }
 
+export function provenSkillItems(skills: readonly {
+  id: string;
+  name: string;
+  evidence: readonly { label: string; url: string }[];
+}[]): RecordItem[] {
+  return skills.flatMap((skill) => {
+    const name = skill.name.trim();
+    if (!name) return [];
+    const link = skill.evidence.find((item) => item.url.startsWith('https://') || item.url.startsWith('/'))?.url ?? '';
+    return [{
+      id: `skill-${skill.id}`,
+      source: 'verified' as const,
+      kind: 'proven_skill',
+      title: name,
+      detail: skill.evidence.map((item) => item.label).filter(Boolean).slice(0, 4).join(' · '),
+      when: '',
+      verifyUrl: link.startsWith('https://') ? link : '',
+      evidenceLink: link,
+      section: 'skills',
+    }];
+  });
+}
+
 export function verifiedItems(input: {
   education: readonly EducationSpan[];
   courses: readonly { title: string; when?: string }[];

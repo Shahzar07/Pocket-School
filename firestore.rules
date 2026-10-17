@@ -1308,6 +1308,57 @@ service cloud.firestore {
         allow delete: if isAdmin() || (isInstitutionAdmin() && myInstitution() == institutionId);
       }
 
+      // Career extras. Owner deploy only. The Admin SDK writes these.
+      match /openings/{openingId} {
+        allow read: if isAdmin()
+          || (isInstitutionAdmin() && myInstitution() == institutionId)
+          || (isSignedIn()
+              && resource.data.status == 'published'
+              && (resource.data.institutionId == myInstitution()
+                  || resource.data.institutionId == userData().get('alumniOf', '')));
+        allow write: if false;
+      }
+
+      match /campaigns/{campaignId} {
+        allow read: if isAdmin()
+          || (isSignedIn() && (myInstitution() == institutionId || userData().get('alumniOf', '') == institutionId));
+        allow write: if false;
+        match /gifts/{giftId} {
+          allow read: if isAdmin()
+            || (isInstitutionAdmin() && myInstitution() == institutionId)
+            || (isSignedIn() && resource.data.uid == request.auth.uid);
+          allow write: if false;
+        }
+      }
+
+      match /reunions/{reunionId} {
+        allow read: if isAdmin()
+          || (isSignedIn() && (myInstitution() == institutionId || userData().get('alumniOf', '') == institutionId));
+        allow write: if false;
+        match /rsvps/{uid} {
+          allow read: if isAdmin() || (isInstitutionAdmin() && myInstitution() == institutionId) || isUser(uid);
+          allow write: if false;
+        }
+        match /album/{photoId} {
+          allow read: if isSignedIn() && resource.data.visible == true
+            && (myInstitution() == institutionId || userData().get('alumniOf', '') == institutionId || isAdmin());
+          allow write: if false;
+        }
+        match /tickets/{uid} {
+          allow read: if isAdmin() || isUser(uid) || (isInstitutionAdmin() && myInstitution() == institutionId);
+          allow write: if false;
+        }
+      }
+
+      match /talks/{talkId} {
+        allow read: if isAdmin()
+          || (isInstitutionAdmin() && myInstitution() == institutionId)
+          || (isSignedIn() && resource.data.status == 'approved'
+              && (myInstitution() == institutionId || userData().get('alumniOf', '') == institutionId))
+          || (isSignedIn() && resource.data.alumniId == request.auth.uid);
+        allow write: if false;
+      }
+
       // A person asks to join. Only an activated, listed academy accepts the request.
       // The institution admin decides it. The requester cannot approve themselves.
       match /join_requests/{requestId} {
@@ -1767,6 +1818,41 @@ service cloud.firestore {
     // Public get so /verify/{id} works without a login. The Admin SDK writes
     // these after it has checked published-lesson completion. A signed-in
     // teacher or student must not mint one from the browser.
+    match /skill_maps/{mapId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /opportunities/{opportunityId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /users/{userId}/proven_skills/{skillId} {
+      allow read: if isUser(userId) || linkedTo(userId) || isAdmin();
+      allow write: if false;
+    }
+
+    match /users/{userId}/endorsements/{endorsementId} {
+      allow read: if isUser(userId) || linkedTo(userId) || isTeacherOrAdmin() || isAdmin();
+      allow write: if false;
+    }
+
+    match /users/{userId}/parent_bridge/{docId} {
+      allow read: if isUser(userId) || linkedTo(userId) || isAdmin();
+      allow write: if false;
+    }
+
+    match /users/{userId}/career/{docId} {
+      allow read: if isUser(userId) || isAdmin();
+      allow write: if false;
+    }
+
+    match /users/{userId}/applications/{applicationId} {
+      allow read: if isUser(userId) || isAdmin();
+      allow write: if false;
+    }
+
     match /certificates/{certId} {
       allow get: if true;
       allow list: if isSignedIn() && (

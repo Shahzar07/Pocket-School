@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   canConnect,
   canEditYearbook,
+  wallAcceptsNotes,
   canSubmitPage,
   defaultAudiences,
   fieldVisible,
@@ -133,4 +134,10 @@ test('the yearbook download is a printable A4 PDF in the academy colour', () => 
   assert.match(text, /0\.118 0\.416 0\.514/);
   assert.match(text, /Oak 2026/);
   assert.match(text, /Ada L\./);
+});
+
+test('a reunion date reopens the signing wall after the yearbook locks', () => {
+  assert.equal(wallAcceptsNotes('2026-12-01', '2026-08-01', ''), false);
+  assert.equal(wallAcceptsNotes('2026-12-01', '2026-08-01', '2026-12-12'), true);
+  assert.equal(canEditYearbook('2026-12-01', '2026-08-01'), false);
 });

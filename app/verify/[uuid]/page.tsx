@@ -59,6 +59,7 @@ export default function VerifyCertificate({ params }: { params: Promise<{ uuid: 
   const [loading, setLoading] = useState(false);
   const [revoking, setRevoking] = useState(false);
   const [checksOpen, setChecksOpen] = useState(true);
+  const [portfolioUrl, setPortfolioUrl] = useState('');
 
   useEffect(() => {
     automationEnabled('certificate_verify').then(setChecksOpen).catch(() => setChecksOpen(true));
@@ -85,6 +86,13 @@ export default function VerifyCertificate({ params }: { params: Promise<{ uuid: 
       const filled = cert ? await withStudentNumber(cert) : null;
       setVerified(!!filled);
       setCertData(filled);
+      if (filled?.id) {
+        const response = await fetch(`/api/verify/${encodeURIComponent(filled.id)}`);
+        const data = response.ok ? await response.json() as { portfolioUrl?: string } : {};
+        setPortfolioUrl(typeof data.portfolioUrl === 'string' && data.portfolioUrl.startsWith('https://') ? data.portfolioUrl : '');
+      } else {
+        setPortfolioUrl('');
+      }
     } catch {
       setVerified(false);
       setCertData(null);
@@ -121,6 +129,12 @@ export default function VerifyCertificate({ params }: { params: Promise<{ uuid: 
         </div>}
 
         {verified === true && certData && (
+          <>
+          {portfolioUrl ? (
+            <p className="mb-4 text-center text-sm">
+              <Link href={portfolioUrl} className="font-semibold text-[#1E6A83]">Public portfolio</Link>
+            </p>
+          ) : null}
           <VerificationRecord
             certificate={certData}
             canRevoke={profile?.role === 'admin' && !!user}
@@ -142,6 +156,7 @@ export default function VerifyCertificate({ params }: { params: Promise<{ uuid: 
               }
             }}
           />
+          </>
         )}
 
         {verified === false && (

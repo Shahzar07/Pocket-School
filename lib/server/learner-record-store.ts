@@ -23,6 +23,7 @@ import {
   linkedInText,
   portfolioJson,
   portfolioNudges,
+  provenSkillItems,
   publicPortfolioView,
   readTemplate,
   sectionForKind,
@@ -208,7 +209,7 @@ export interface BuiltPortfolio {
 
 export async function buildPortfolio(uid: string): Promise<BuiltPortfolio> {
   const userRef = adminDb().doc(`users/${uid}`);
-  const [user, education, profile, selfSnap, certificates, badges, projects, endorsements] = await Promise.all([
+  const [user, education, profile, selfSnap, certificates, badges, projects, endorsements, provenSkills] = await Promise.all([
     userRef.get(),
     loadEducation(uid),
     adminDb().doc(`users/${uid}/portfolio/profile`).get(),
@@ -217,6 +218,7 @@ export async function buildPortfolio(uid: string): Promise<BuiltPortfolio> {
     adminDb().collection('badges').where('userId', '==', uid).limit(100).get(),
     adminDb().collection(`users/${uid}/studio_projects`).limit(20).get(),
     adminDb().collection(`users/${uid}/endorsements`).limit(20).get(),
+    adminDb().collection(`users/${uid}/proven_skills`).limit(40).get(),
   ]);
   const consent = consentFrom(profile.data());
   const savedSummary = text(profile.get('summary'));
@@ -247,8 +249,10 @@ export async function buildPortfolio(uid: string): Promise<BuiltPortfolio> {
       return title ? [{ title, detail: text(doc.get('detail')) }] : [];
     }),
     endorsements: endorsements.docs.flatMap((doc) => {
-      const title = text(doc.get('title')).trim();
-      return title ? [{ title, detail: text(doc.get('detail')) }] : [];
+      if (doc.get('revoked') === true || doc.get('visible') === false) return [];
+      const title = text(doc.get('teacherName')).trim() || text(doc.get('title')).trim();
+      const detail = text(doc.get('body')).trim() || text(doc.get('detail')).trim();
+      return title && detail ? [{ title, detail }] : title ? [{ title, detail }] : [];
     }),
     includeScores: true,
   });
@@ -256,7 +260,18 @@ export async function buildPortfolio(uid: string): Promise<BuiltPortfolio> {
     const item = itemFrom(doc.id, doc.data());
     return item ? [item] : [];
   });
-  const items = [...verified, ...selfItems];
+  const skillItems = provenSkillItems(provenSkills.docs.flatMap((doc) => {
+    if (doc.get('visible') === false) return [];
+    const name = text(doc.get('name')).trim();
+    if (!name) return [];
+    const evidence = Array.isArray(doc.get('evidence')) ? doc.get('evidence').flatMap((item: unknown) => {
+      if (!item || typeof item !== 'object') return [];
+      const row = item as Record<string, unknown>;
+      return [{ label: text(row.label), url: text(row.url) }];
+    }) : [];
+    return [{ id: doc.id, name, evidence }];
+  }));
+  const items = [...verified, ...skillItems, ...selfItems];
   const selfTitles = new Set(selfItems.map((item) => item.title.toLowerCase()));
   const nudges = portfolioNudges(
     verified

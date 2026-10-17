@@ -12,7 +12,7 @@ import {
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
   Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked, Compass, Camera, Newspaper,
-  Wallet, Gift, Landmark, Plug, PieChart, Search,
+  Wallet, Gift, Landmark, Plug, PieChart, Search, Briefcase,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -97,6 +97,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/student/academy', icon: GraduationCap, labelKey: 'nav.academy', label: 'My academy' },
       { href: '/dashboard/student/network', icon: Users, labelKey: 'nav.academy', label: 'Class network' },
       { href: '/dashboard/student/yearbook', icon: BookOpen, labelKey: 'nav.academy', label: 'Yearbook' },
+      { href: '/dashboard/student/career', icon: Award, labelKey: 'nav.academy', label: 'Career' },
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
     ]},
@@ -132,6 +133,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher/analytics', icon: Activity, labelKey: 'nav.analytics' },
       { href: '/dashboard/teacher/insights', icon: BarChart, labelKey: 'nav.insights' },
       { href: '/dashboard/teacher/goals', icon: Target, labelKey: 'nav.goals' },
+      { href: '/dashboard/teacher/references', icon: Award, labelKey: 'nav.academy', label: 'References' },
     ]},
     { sectionKey: 'nav.section.academics', items: [
       { href: '/dashboard/teacher/gradebook', icon: ClipboardList, labelKey: 'nav.gradebook' },
@@ -247,6 +249,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/institution/approvals', icon: ShieldCheck, labelKey: 'nav.approvals', label: 'Approvals' },
       { href: '/dashboard/institution/join', icon: Users, labelKey: 'nav.join', label: 'Join settings' },
       { href: '/dashboard/institution/alumni', icon: Award, labelKey: 'nav.alumni', label: 'Alumni' },
+      { href: '/dashboard/institution/career', icon: Briefcase, labelKey: 'nav.academy', label: 'Career desk' },
       { href: '/dashboard/institution/verify', icon: Camera, labelKey: 'nav.verifyStudent', label: 'Verify student' },
       { href: '/dashboard/institution/publishing', icon: Library, labelKey: 'nav.library', label: 'Course library' },
       { href: '/dashboard/institution/sparks', icon: Sparkles, labelKey: 'nav.sparks', label: 'Sparks pool' },
