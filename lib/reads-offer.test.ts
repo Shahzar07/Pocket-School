@@ -6,8 +6,9 @@ import { READS_BOOKS, READS_PLANS } from './payments/reads';
 import {
   READS_OFFER_CHECKOUTS,
   READS_OFFER_FAQ,
+  READS_OFFER_FOUNDER,
   READS_OFFER_LANGUAGE_COUNT,
-  READS_OFFER_PLACEHOLDERS,
+  READS_OFFER_TESTIMONIALS,
   bookCheckoutHref,
   readsCheckoutHref,
   readsMonthlyUsd,
@@ -66,14 +67,19 @@ test('language count follows the catalogue, and the letter does not invent socia
   assert.match(blob, /"price":"150.00"/);
 });
 
-test('guarantee, bonuses and testimonials are placeholders, not offers', () => {
-  const kinds = READS_OFFER_PLACEHOLDERS.map(item => item.kind);
-  assert.ok(kinds.includes('guarantee'));
-  assert.ok(kinds.includes('bonus'));
-  assert.equal(kinds.filter(kind => kind === 'testimonial').length, 3);
-  const guarantee = READS_OFFER_FAQ.find(item => item.question.includes('guarantee'));
-  assert.match(guarantee?.answer ?? '', /not an offer/i);
-  const faqBlob = READS_OFFER_FAQ.map(item => item.answer).join(' ');
+test('the letter has a founder note and no invented reviews, guarantee or bonus', () => {
+  assert.equal(READS_OFFER_TESTIMONIALS.length, 0);
+  assert.equal(READS_OFFER_FOUNDER.name, 'Harry Seggu');
+  assert.match(READS_OFFER_FOUNDER.paragraphs[0], /^I am Harry Seggu/);
+  const faqBlob = READS_OFFER_FAQ.map(item => `${item.question} ${item.answer}`).join(' ');
+  const founderBlob = READS_OFFER_FOUNDER.paragraphs.join(' ');
+  assert.equal(/guarantee/i.test(faqBlob), false);
+  assert.equal(/bonus/i.test(faqBlob), false);
+  assert.equal(/guarantee/i.test(founderBlob), false);
+  assert.equal(/bonus/i.test(founderBlob), false);
   assert.equal(/30-day/i.test(faqBlob), false);
   assert.equal(/thousand/i.test(faqBlob), false);
+  const json = JSON.stringify(readsOfferJsonLd());
+  assert.equal(json.includes('"@type":"Review"'), false);
+  assert.equal(json.includes('aggregateRating'), false);
 });

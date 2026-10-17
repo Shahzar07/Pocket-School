@@ -10,14 +10,17 @@ import {
   OFFER_EBOOKS,
   OFFER_FAN,
 } from '@/lib/reads-offer-media';
+import { OfferTestimonials } from '@/components/reads-offer/testimonials';
 import {
   READS_OFFER_BOOKS,
   READS_OFFER_CHECKOUTS,
   READS_OFFER_COMPANY_NO,
   READS_OFFER_ENTITY,
   READS_OFFER_FAQ,
+  READS_OFFER_FOUNDER,
   READS_OFFER_LANGUAGE_COUNT,
-  READS_OFFER_PLACEHOLDERS,
+  READS_OFFER_REVIEW_MAIL,
+  READS_OFFER_TESTIMONIALS,
   bookCheckoutHref,
   readsCheckoutHref,
   readsMonthlyUsd,
@@ -26,17 +29,6 @@ import {
 
 const focus =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
-
-function Placeholder({ id }: { id: string }) {
-  const item = READS_OFFER_PLACEHOLDERS.find(entry => entry.id === id);
-  if (!item) return null;
-  return (
-    <aside className="rounded-2xl border border-dashed border-border bg-muted px-5 py-4" aria-label={item.label}>
-      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">{item.label}</p>
-      <p className="mt-2 text-sm leading-relaxed text-foreground">{item.note}</p>
-    </aside>
-  );
-}
 
 export function ReadsOfferLetter() {
   const excerpts = readsOfferExcerpts();
@@ -253,7 +245,7 @@ export function ReadsOfferLetter() {
       <section className="bg-card" aria-labelledby="stack-title">
         <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24">
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">What you are buying</p>
-          <h2 id="stack-title" className="mt-3 font-heading text-4xl tracking-[-0.04em] sm:text-5xl">The stack, priced only where we have a price.</h2>
+          <h2 id="stack-title" className="mt-3 font-heading text-4xl tracking-[-0.04em] sm:text-5xl">The books and the shelf, priced only where we have a price.</h2>
           <p className="mt-4 text-[17px] leading-[1.7]">
             Four books you can buy outright today come to {ownedTotal} US dollars if you purchase each of them once. That is not a “value of the subscription”. The subscription does not include the LLB book or the IGCSE book. It is the cost of owning those files. The shelf beside them is a different line.
           </p>
@@ -323,31 +315,37 @@ export function ReadsOfferLetter() {
         </ul>
       </section>
 
-      <section className="bg-muted" aria-labelledby="guarantee-title">
-        <div className="mx-auto max-w-3xl space-y-6 px-4 py-16 sm:px-6 sm:py-24">
-          <h2 id="guarantee-title" className="font-heading text-4xl tracking-[-0.04em] sm:text-5xl">The guarantee is not written yet.</h2>
-          <p className="text-[17px] leading-[1.7]">
-            A risk reversal only belongs here when the terms are real. This box is waiting for Harry. It is not a 30-day trial, and it is not a refund you can claim.
-          </p>
-          <Placeholder id="guarantee" />
-          <h2 className="pt-6 font-heading text-4xl tracking-[-0.04em] sm:text-5xl">Bonuses are not included.</h2>
-          <p className="text-[17px] leading-[1.7]">
-            Nothing extra is bundled with the price above. If a bonus is added later, it will be named in full. Until then, you are buying the subscription or the book, and that is all.
-          </p>
-          <Placeholder id="bonuses" />
+      <section className="bg-muted" aria-labelledby="founder-title">
+        <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Founder&apos;s note</p>
+          <h2 id="founder-title" className="mt-3 font-heading text-4xl tracking-[-0.04em] sm:text-5xl">A note from {READS_OFFER_FOUNDER.name}.</h2>
+          <div className="mt-6 space-y-5 text-[17px] leading-[1.7]">
+            {READS_OFFER_FOUNDER.paragraphs.map(paragraph => (
+              <p key={paragraph.slice(0, 48)}>{paragraph}</p>
+            ))}
+          </div>
+          <p className="mt-8 text-sm font-semibold text-foreground">{READS_OFFER_FOUNDER.name}</p>
+          <p className="text-sm text-muted-foreground">{READS_OFFER_FOUNDER.role}</p>
         </div>
       </section>
 
-      <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24" aria-labelledby="words-title">
-        <h2 id="words-title" className="font-heading text-4xl tracking-[-0.04em] sm:text-5xl">In their words, once we have them.</h2>
+      <ReadPageCallout excerpts={excerpts} />
+
+      <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24" aria-labelledby="first-title">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Reviews</p>
+        <h2 id="first-title" className="mt-3 font-heading text-4xl tracking-[-0.04em] sm:text-5xl">Be one of our first readers.</h2>
         <p className="mt-4 text-[17px] leading-[1.7] text-muted-foreground">
-          There are no testimonials on this page. These slots are empty on purpose. A star rating would be a fiction.
+          There are no reader reviews on this page. If you subscribe, or you buy a book, write and tell us what you thought. A review we can publish, in your words and with your permission, can be added here. Until then, this list stays empty.
         </p>
-        <div className="mt-8 space-y-4">
-          <Placeholder id="testimonial-1" />
-          <Placeholder id="testimonial-2" />
-          <Placeholder id="testimonial-3" />
+        <div className="mt-8">
+          <a
+            href={`mailto:${READS_OFFER_REVIEW_MAIL}?subject=${encodeURIComponent('Poket Reads review')}`}
+            className={`inline-flex min-h-12 items-center justify-center rounded-full border border-border bg-card px-5 text-center text-sm font-bold text-foreground ${focus}`}
+          >
+            Write to {READS_OFFER_REVIEW_MAIL}
+          </a>
         </div>
+        <OfferTestimonials items={READS_OFFER_TESTIMONIALS} />
       </section>
 
       <section className="bg-card" aria-labelledby="faq-title">
@@ -396,6 +394,41 @@ export function ReadsOfferLetter() {
         </div>
       </footer>
     </article>
+  );
+}
+
+function firstSentence(paragraph: string): string {
+  const match = paragraph.match(/^[\s\S]*?[.!?](?=\s|$)/);
+  return (match ? match[0] : paragraph).trim();
+}
+
+function ReadPageCallout({ excerpts }: { excerpts: ReturnType<typeof readsOfferExcerpts> }) {
+  const pulls = ['cells-to-systems', 'harbour-light']
+    .map(id => excerpts.find(item => item.id === id))
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+  return (
+    <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24" aria-labelledby="callout-title">
+      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Read a page</p>
+      <h2 id="callout-title" className="mt-3 font-heading text-4xl tracking-[-0.04em] sm:text-5xl">A line from the book, before you take our word for it.</h2>
+      <p className="mt-4 text-[17px] leading-[1.7] text-muted-foreground">
+        One academic opening and one story. Each line is the first sentence of a published chapter.
+      </p>
+      <ul className="mt-8 space-y-6">
+        {pulls.map(item => (
+          <li key={item.id} className="rounded-3xl border border-border bg-card px-6 py-5">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">{item.kicker}</p>
+            <blockquote className="mt-3 text-[17px] leading-[1.7]">“{firstSentence(item.paragraphs[0] ?? '')}”</blockquote>
+            <p className="mt-3 text-sm text-muted-foreground">{item.title}. {item.chapter}.</p>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-8">
+        <a href="#read" className={`inline-flex min-h-12 items-center justify-center rounded-full border border-border bg-card px-5 text-sm font-bold text-foreground ${focus}`}>
+          Read the openings
+        </a>
+      </div>
+    </section>
   );
 }
 
