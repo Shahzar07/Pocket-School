@@ -596,6 +596,30 @@
       ]
     },
     {
+      "collectionGroup": "hotline_tickets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "reporterUid", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "hotline_tickets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "source", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" },
+        { "fieldPath": "staffPost", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "emergency_alerts",
       "queryScope": "COLLECTION",
       "fields": [

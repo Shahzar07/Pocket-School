@@ -97,6 +97,10 @@ export interface UserProfile {
   ageTier?: 'under13' | 'teen' | 'adult';
   /** YYYY-MM-DD. Server-set. Clients cannot write it. */
   dateOfBirth?: string;
+  /** Form teacher notified by "I'm in danger now". Server reads it. */
+  formTeacherUid?: string;
+  /** Class used to find a form teacher when formTeacherUid is empty. */
+  classId?: string;
   lastActiveAt?: Timestamp;
   sparksBalance?: number;
   sparksMonthlyAllowance?: number;

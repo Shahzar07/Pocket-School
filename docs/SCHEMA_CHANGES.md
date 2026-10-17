@@ -1067,6 +1067,9 @@ Parent-to-school tickets. The website shape here is canonical. Client writes are
 | `reopenUntil`, `solvedAt` | A parent can reopen within 7 days of `solved`. |
 | `satisfaction` | `{ rating: 1–5, comment }` after the parent rates. |
 | `body`, `safeguardingCaseId` | Sensitive categories open `safeguarding_cases/{id}` with `source: hotline`. Other staff cannot read those tickets. |
+| `source` | Empty for a parent hotline ticket. `student_safety_report` and `danger_now` are student safeguarding tickets. See [Student safety reports](#student-safety-reports). |
+| `reporterUid`, `reporterName`, `safetyType` | Set on student reports. The API returns the reporter only to a super admin, the principal, or the safeguarding lead at that school. Peers, teachers, and institution admins receive neither the id nor the name, except the danger notice which carries the student's name to the form teacher and to parents who were actually notified. |
+| `flagged`, `throttled`, `flagReason` | A soft cap flags a report. It never refuses one. |
 | `authorities` | `{ required: yes \| no \| unsure, reason, status, informed }`. `no` needs a reason. `status` is `not_required`, `to_be_informed`, `informed`, `acknowledged`, or `closed_by_authority`. `informed` is `{ agency, contact, reference, at, by }`. |
 | `authoritiesRemindedAt` | A ticket in `to_be_informed` is reminded after 4 hours. It cannot be solved or closed while the status is still `to_be_informed`. |
 | `createdAt`, `updatedAt` | Milliseconds. |
@@ -1105,7 +1108,7 @@ Storage path: `institutions/{institutionId}/hotline/{ticketId}/{fileId}-{name}`.
 
 Analytics hide any group under 5: category counts, SLA compliance, average resolution time, satisfaction, and the overdue count. The parent desk is `/dashboard/parent/hotline`. Staff queues are `/dashboard/teacher/hotline`, `/dashboard/admin/hotline`, and `/dashboard/institution/hotline`.
 
-Push category `hotline`. It can be muted with `notificationPrefs.hotline`.
+Push category `hotline`. It can be muted with `notificationPrefs.hotline`. Student safety reports from someone under 13 also send a `safety` push with `force` so a muted preference does not delay it, plus an email when SMTP is set. The email names the student and does not include the report.
 
 ## Emergency alerts
 
@@ -1187,9 +1190,85 @@ Public page: `/alerts/[id]`. OG image: `/alerts/[id]/opengraph-image`. The card 
 
 Push category `emergency`. It is targeted to institution members and to profiles whose country, state, and city match `region`. Delivery sets `force` and `sound: emergency`, so quiet hours and a muted preference do not apply. There is no mute toggle for it.
 
+A student's **I'm in danger now** action is not one of these published alerts. It is a `hotline_tickets` document with `source: danger_now` and a linked `safeguarding_cases` document at severity `critical`. The push is still category `emergency`, with `force` and `sound: emergency`, and the body is the student's name and the time. Recipients are the approved `parent_links`, the safeguarding lead, the principal, and the form teacher, unless the parent-exclusion rule removes every parent link. See [Student safety reports](#student-safety-reports).
+
 Admin desks: `/dashboard/admin/emergency` and `/dashboard/institution/emergency`.
 
 The public page has a report-this-alert button. Storage rules deny client access to `institutions/{id}/hotline/...` and `institutions/{id}/alerts/...`. `docs/HOTLINE_ALERTS_SCHEMA.md` is not on a branch, so this website section is canonical.
+
+## Student safety reports
+
+A student can send a safety report, or tap **I'm in danger now**, without a parent opening a hotline ticket. The website shape here is canonical. `docs/HOTLINE_ALERTS_SCHEMA.md` is not on a branch. Client writes are denied. Do not deploy these rules from this branch.
+
+The shield is one tap on the student home (`/dashboard/student`) and in Community. The form is `/dashboard/student/safety`. A parent or staff notice is `/dashboard/safety/{ticketId}`.
+
+### Report
+
+`POST /api/safety/report`. The type alone is enough. Optional fields are `description`, `who`, `where`, `when`, and evidence through the existing hotline attachment rules (`label: evidence`). Types: `bullying`, `cyberbullying`, `harassment`, `abuse`, `self_harm_concern`, `discrimination`, `unsafe_other`.
+
+Each report is a `hotline_tickets` document:
+
+| Field | Notes |
+| --- | --- |
+| `source` | `student_safety_report`. |
+| `category`, `priority`, `addressedTo` | `safeguarding`, `high`, `safeguarding_lead`. |
+| `authorities.required` | `unsure`. |
+| `reporterUid`, `studentId` | The signed-in student. `parentUid` stays empty. |
+| `chainSeq`, `chainHead`, `legalHold` | Same append-only hash chain and legal hold as other tickets. |
+
+It also opens `safeguarding_cases/{id}` with `source: student_safety_report`. Firestore rules deny client reads of that case, of the ticket, and of its `events` and `comments`, including for a super admin using the client SDK. The Admin SDK is the writer. API responses are projected:
+
+| Viewer | Response |
+| --- | --- |
+| Super admin, principal, or safeguarding lead at the school | Full ticket, including the reporter. |
+| The reporter | Tracker only: `received`, `being_looked_at`, `action_taken`, `closed`. No staff notes, events, comments, or assignee. |
+| Anyone else | Hidden. |
+
+`users.ageTier` or a computed tier from `users.dateOfBirth` decides the under-13 notice. A missing tier is not treated as under 13. When the reporter is under 13, each safeguarding lead gets an immediate `safety` push with `force` and an email if `SMTP_HOST`, `SMTP_USER`, and `SMTP_PASS` are set. If mail cannot be sent, the chain records `email: skipped` and the report still exists.
+
+The third report from the same student on a UTC day, and every report after it, sets `throttled` and `flagged` with `flagReason: rate`. `POST /api/safety/report` and `POST /api/safety/danger` do not use the generic API rate limit, so a burst cannot return 429. Nothing in this path returns a refusal because of volume.
+
+`GET /api/safety/tracker` is the student's list. `GET /api/safety/helplines` returns the lines for the student's country, or Malaysia when the country has none. Defaults include Talian Kasih `15999` and Befrienders `03-7627 2929`. A super admin (`role: admin`) replaces the catalogue with `POST /api/safety/helplines`. Stored at `safety_helplines/catalog` as `{ lines: [{ country, name, number, note }] }`. Signed-in clients may read it. They cannot write it.
+
+### I'm in danger now
+
+`POST /api/safety/danger`. The screen shows the country's emergency number immediately (999 in Malaysia) from `emergencyNumber`. The server then creates a `danger_now` ticket and a safeguarding case with `severity: critical`. Hotline priority stays `high`, because hotline has no critical priority.
+
+Location is optional. The student opts in once. The server stores `{ lat, lng, at }` only when `shareLocation` is true and the coordinates are finite and in range. There is no later location update and no continuous tracking.
+
+Parent exclusion is `dangerFanOut` in `lib/safety/policy.ts`. Parents are left out when the type is `abuse`, `concernRole` is `parent` or `guardian`, `who` names a parent or guardian, or `dontTellParents` is true. The fan-out result then contains no `parent_links` uid. Only the safeguarding lead, the principal, and the form teacher are pushed. `lib/safety/policy.test.ts` covers that exclusion. The lead records `familyDecision: { contact: now | later | not_now, when, reason, by, at }` with `POST /api/safety/family`. That action is an audit entry. It does not message parents.
+
+`users.formTeacherUid` is the form teacher. If it is empty, the server looks for a teacher at the school whose `classId` or `classIds` matches the student's `classId`.
+
+`POST /api/safety/ack` writes `acknowledged` on the chain and sets `staffAckAt` or `parentAckAt`. A parent can acknowledge only when they are in `notifiedParentUids`. `GET /api/cron/hotline` calls `escalateUnackedDanger`. If `staffAckAt` is still empty five minutes after `createdAt`, it sets `dangerEscalatedAt` once and pushes the stored `staffUids` again. It is not a new cron entry.
+
+`POST /api/safety/false-danger` increments `safety_flags/{uid}.falseDanger`. Two earlier false triggers flag the next danger alert with `flagReason: repeat_false`. The alert is still created and still sent. Clients cannot read or write `safety_flags`.
+
+### Rules and indexes
+
+Not deployed.
+
+`hotline_tickets` get stays available to the parent or a super admin only when `source` is neither `student_safety_report` nor `danger_now`. List stays false. `events` and `comments` on those sources are not client-readable. `safeguarding_cases` with those sources are not client-readable. `safety_helplines` is signed-in read, write false. `safety_flags` and `safety_rate` are read and write false.
+
+Indexes, not deployed:
+
+- `hotline_tickets`: `reporterUid` ASC, `createdAt` DESC
+- `hotline_tickets`: `source` ASC, `status` ASC
+- `users`: `institutionId` ASC, `staffPost` ASC
+
+| Method | Path |
+| --- | --- |
+| POST | `/api/safety/report` |
+| POST | `/api/safety/danger` |
+| GET | `/api/safety/tracker` |
+| GET | `/api/safety/helplines` |
+| POST | `/api/safety/helplines` |
+| GET | `/api/safety/notice?id=` |
+| POST | `/api/safety/ack` |
+| POST | `/api/safety/family` |
+| POST | `/api/safety/false-danger` |
+
+The dashboard kit on PR #131 is not in this stack. The shield uses the current student home and Community header.
 
 ## Tamper-evident logs
 

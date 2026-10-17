@@ -85,12 +85,14 @@ export interface AttachmentViewInput {
   addressedTo: string;
   category: string;
   parentUid: string;
+  reporterUid?: string;
   label: string;
   internal: boolean;
 }
 
 /** Medical certificates and safeguarding evidence stay with the staff assigned to the ticket. */
 export function canViewAttachment(input: AttachmentViewInput): boolean {
+  if (input.reporterUid && input.actorId === input.reporterUid && !input.internal) return true;
   const sensitive = isSafeguarding(input.category);
   const seesTicket = input.role === 'admin' || (
     input.role !== 'parent'

@@ -2319,3 +2319,32 @@ components/hotline/surfaces.tsx	Retracted. This page is no longer shared.
 components/hotline/surfaces.tsx	Three working days. Assigned to the class teacher. Authorities reminder after four hours.
 components/hotline/surfaces.tsx	Verify integrity
 components/hotline/surfaces.tsx	Copy link
+app/dashboard/safety/[id]/page.tsx	Contact the family
+app/dashboard/safety/[id]/page.tsx	Family contact decision
+app/dashboard/safety/[id]/page.tsx	Not now
+app/dashboard/safety/[id]/page.tsx	Reason for the family decision
+app/dashboard/safety/[id]/page.tsx	Save decision
+app/dashboard/safety/[id]/page.tsx	When to contact the family
+app/dashboard/student/safety/page.tsx	Report a safety concern
+components/safety/desk.tsx	Concern role
+components/safety/desk.tsx	Danger type
+components/safety/desk.tsx	I need help now
+components/safety/desk.tsx	Not sure
+components/safety/desk.tsx	Nothing sent yet. Staff notes are never shown here.
+components/safety/desk.tsx	Tap a type to send. A description, who, where, when, and evidence are optional.
+components/safety/desk.tsx	This is the emergency number for your country. Call it now if you can.
+components/safety/desk.tsx	What is happening?
+components/safety/desk.tsx	Who is involved
+components/safety/desk.tsx	Your report
+components/safety/surfaces.tsx	Aisha needs help now
+components/safety/surfaces.tsx	Family contact decision
+components/safety/surfaces.tsx	I have seen this
+components/safety/surfaces.tsx	Report tracker
+components/safety/surfaces.tsx	Sent at 09:41. Location was not shared. Parents were not notified.
+components/safety/surfaces.tsx	Support resources
+components/safety/surfaces.tsx	Tap a type to send. A description, who, where, when, and evidence are optional.
+components/safety/surfaces.tsx	These lines are there if you want to talk to someone outside school. A super admin can change them.
+components/safety/surfaces.tsx	This is the emergency number for your country. Call it now if you can. Poket School is not a replacement for emergency services.
+components/safety/surfaces.tsx	What is happening?
+components/safety/surfaces.tsx	You can see where it stands. Staff notes stay with the safeguarding lead.
+components/safety/surfaces.tsx	Your report

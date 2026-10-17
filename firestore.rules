@@ -2628,7 +2628,9 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
     match /safeguarding_cases/{caseId} {
-      allow read: if isAdmin() || (isInstitutionAdmin() && resource.data.institutionId == myInstitution());
+      allow read: if resource.data.source != 'student_safety_report'
+        && resource.data.source != 'danger_now'
+        && (isAdmin() || (isInstitutionAdmin() && resource.data.institutionId == myInstitution()));
       allow create, update, delete: if false;
     }
     match /safeguarding_alerts/{alertId} {
@@ -2659,19 +2661,29 @@ service cloud.firestore {
     // Hotline and emergency alerts. Client writes are false.
     // Two-person publish is enforced in lib/server/emergency.ts. Do not deploy from this branch.
     match /hotline_tickets/{ticketId} {
-      allow get: if isSignedIn() && (resource.data.parentUid == request.auth.uid || isAdmin());
+      // Student safety reports and danger alerts are not client-readable.
+      // The API returns a tracker or a notice. Identity stays off this path.
+      allow get: if isSignedIn()
+        && resource.data.source != 'student_safety_report'
+        && resource.data.source != 'danger_now'
+        && (resource.data.parentUid == request.auth.uid || isAdmin());
       allow list: if false;
       allow create, update, delete: if false;
       match /comments/{commentId} {
-        allow read: if isSignedIn() && (
-          isAdmin()
-          || (resource.data.internal != true && get(/databases/$(database)/documents/hotline_tickets/$(ticketId)).data.parentUid == request.auth.uid)
-        );
+        allow read: if isSignedIn()
+          && get(/databases/$(database)/documents/hotline_tickets/$(ticketId)).data.source != 'student_safety_report'
+          && get(/databases/$(database)/documents/hotline_tickets/$(ticketId)).data.source != 'danger_now'
+          && (
+            isAdmin()
+            || (resource.data.internal != true && get(/databases/$(database)/documents/hotline_tickets/$(ticketId)).data.parentUid == request.auth.uid)
+          );
         allow create, update, delete: if false;
       }
       // Append-only. update and delete are false for every role, admin included.
       match /events/{eventId} {
-        allow read: if isAdmin();
+        allow read: if isAdmin()
+          && get(/databases/$(database)/documents/hotline_tickets/$(ticketId)).data.source != 'student_safety_report'
+          && get(/databases/$(database)/documents/hotline_tickets/$(ticketId)).data.source != 'danger_now';
         allow create: if false;
         allow update, delete: if false;
       }
@@ -2707,6 +2719,16 @@ service cloud.firestore {
       }
     }
     match /emergency_rate/{rateId} {
+      allow read, write: if false;
+    }
+    match /safety_helplines/{docId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if false;
+    }
+    match /safety_flags/{userId} {
+      allow read, write: if false;
+    }
+    match /safety_rate/{rateId} {
       allow read, write: if false;
     }
     match /alert_reports/{reportId} {

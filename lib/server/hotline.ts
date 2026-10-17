@@ -51,6 +51,7 @@ import {
   type TicketStat,
   type WorkCalendar,
 } from '../hotline/policy';
+import { isSafetySource, safetyView, trackerFor, type SafetyView } from '../safety/policy';
 
 function db(): Firestore {
   return adminDb();
@@ -219,28 +220,87 @@ async function loadTicket(id: string) {
   return { id: snap.id, data: snap.data() ?? {} };
 }
 
+function stringList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && item.length > 0) : [];
+}
+
+function safetyTicketView(actor: Actor, data: FirebaseFirestore.DocumentData): SafetyView | null {
+  if (!isSafetySource(str(data.source))) return null;
+  return safetyView(
+    { id: actor.id, role: actor.role, staffPost: actor.staffPost, institutionId: actor.institutionId },
+    {
+      source: str(data.source),
+      reporterUid: str(data.reporterUid),
+      formTeacherUid: str(data.formTeacherUid),
+      institutionId: str(data.institutionId),
+      parentsExcluded: data.parentsExcluded === true,
+      notifiedParentUids: stringList(data.notifiedParentUids),
+    },
+  );
+}
+
+function trackerProjection(id: string, data: FirebaseFirestore.DocumentData) {
+  return {
+    id,
+    source: str(data.source),
+    safetyType: str(data.safetyType),
+    tracker: trackerFor(str(data.status)),
+    createdAt: Number(data.createdAt) || 0,
+    flagged: data.flagged === true,
+  };
+}
+
+function noticeProjection(id: string, data: FirebaseFirestore.DocumentData) {
+  return {
+    id,
+    source: str(data.source),
+    safetyType: str(data.safetyType),
+    studentName: str(data.reporterName),
+    createdAt: Number(data.createdAt) || 0,
+    tracker: trackerFor(str(data.status)),
+    location: data.location && typeof data.location === 'object' ? data.location : null,
+    flagged: data.flagged === true,
+  };
+}
+
 function canRead(actor: Actor, data: FirebaseFirestore.DocumentData): boolean {
+  const view = safetyTicketView(actor, data);
+  if (view) return view !== 'hidden';
   if (data.parentUid === actor.id) return true;
   if (data.institutionId !== actor.institutionId && actor.role !== 'admin') return false;
   return staffCanSee(actor.role, actor.staffPost, str(data.category));
 }
 
+function listedRow(actor: Actor, id: string, data: FirebaseFirestore.DocumentData) {
+  const view = safetyTicketView(actor, data);
+  if (view === 'hidden') return null;
+  if (view === 'tracker') return trackerProjection(id, data);
+  if (view === 'notice') return noticeProjection(id, data);
+  if (view === null && !canRead(actor, data)) return null;
+  return { id, ...data };
+}
+
 export async function listTickets(uid: string, status: string) {
   const actor = await loadActor(uid);
-  const query = actor.role === 'parent'
-    ? db().collection('hotline_tickets').where('parentUid', '==', actor.id).limit(50)
-    : db().collection('hotline_tickets').where('institutionId', '==', actor.institutionId).limit(80);
+  const query = actor.role === 'student'
+    ? db().collection('hotline_tickets').where('reporterUid', '==', actor.id).orderBy('createdAt', 'desc').limit(30)
+    : actor.role === 'parent'
+      ? db().collection('hotline_tickets').where('parentUid', '==', actor.id).limit(50)
+      : db().collection('hotline_tickets').where('institutionId', '==', actor.institutionId).limit(80);
   const snap = await query.get();
   return snap.docs
-    .map(doc => ({ id: doc.id, ...doc.data() }) as FirebaseFirestore.DocumentData & { id: string })
-    .filter(row => canRead(actor, row))
-    .filter(row => !status || row.status === status);
+    .map(doc => listedRow(actor, doc.id, doc.data()))
+    .filter((row): row is NonNullable<typeof row> => row !== null)
+    .filter(row => !status || ('status' in row && row.status === status));
 }
 
 export async function getTicket(uid: string, id: string) {
   const actor = await loadActor(uid);
   const ticket = await loadTicket(id);
   if (!canRead(actor, ticket.data)) throw new ActionError('FORBIDDEN', 'You cannot open this ticket.');
+  const view = safetyTicketView(actor, ticket.data);
+  if (view === 'tracker') return trackerProjection(id, ticket.data);
+  if (view === 'notice') return noticeProjection(id, ticket.data);
   const [comments, events] = await Promise.all([
     ticket.id ? db().collection(`hotline_tickets/${id}/comments`).orderBy('at', 'asc').limit(100).get() : Promise.resolve(null),
     db().collection(`hotline_tickets/${id}/events`).orderBy('seq', 'asc').limit(200).get(),
@@ -273,9 +333,12 @@ export async function commentTicket(uid: string, id: string, input: Record<strin
   const actor = await loadActor(uid);
   const ticket = await loadTicket(id);
   if (!canRead(actor, ticket.data)) throw new ActionError('FORBIDDEN', 'You cannot comment on this ticket.');
+  if (safetyTicketView(actor, ticket.data) !== null && safetyTicketView(actor, ticket.data) !== 'full') {
+    throw new ActionError('FORBIDDEN', 'Safety reports do not show a staff thread here.');
+  }
   const text = str(input.body).slice(0, 4000);
   if (text.length < 1) throw new ActionError('BAD_REQUEST', 'Write a comment.');
-  const internal = input.internal === true && actor.role !== 'parent';
+  const internal = input.internal === true && actor.role !== 'parent' && actor.role !== 'student';
   const now = Date.now();
   const ref = await db().collection(`hotline_tickets/${id}/comments`).add({
     authorId: actor.id,
@@ -436,6 +499,7 @@ function viewInput(actor: Actor, data: FirebaseFirestore.DocumentData, label: st
     addressedTo: str(data.addressedTo),
     category: str(data.category),
     parentUid: str(data.parentUid),
+    reporterUid: str(data.reporterUid),
     label,
     internal,
   };
@@ -452,7 +516,7 @@ export async function attachTicket(uid: string, id: string, input: Record<string
   const prepared = await prepareAttachment({ declaredMime: str(input.mime), label, bytes });
   if (!prepared.ok) throw new ActionError('BAD_REQUEST', prepared.error);
   const stored = await imagePass(prepared.file.bytes, prepared.file.mime);
-  const internal = input.internal === true && actor.role !== 'parent';
+  const internal = input.internal === true && actor.role !== 'parent' && actor.id !== str(ticket.data.reporterUid);
   const fileRef = db().collection(`hotline_tickets/${id}/attachments`).doc();
   const storagePath = hotlineStoragePath(str(ticket.data.institutionId), id, fileRef.id, str(input.fileName) || 'file');
   await saveObject(storagePath, stored, prepared.file.mime);
