@@ -42,10 +42,18 @@ const COPY: Record<ShellRole, { title: string; accent: string; action: string; t
   },
 };
 
+const ROLE_WASH: Record<ShellRole, string> = {
+  student: 'var(--ps-role-student)',
+  teacher: 'var(--ps-role-teacher)',
+  parent: 'var(--ps-role-parent)',
+  admin: 'var(--ps-role-admin)',
+  institution_admin: 'var(--ps-role-admin)',
+};
+
 export function DesignDesk({ role }: { role: ShellRole }) {
   const copy = COPY[role] ?? COPY.student;
   return (
-    <div className="min-h-screen bg-background text-foreground" data-design-desk={role}>
+    <div className="min-h-screen text-foreground" data-design-desk={role} style={{ background: ROLE_WASH[role] }}>
       <div className="flex min-h-screen">
         <aside className="hidden w-[264px] shrink-0 border-e border-sidebar-border bg-sidebar p-4 lg:block" aria-label="Sidebar">
           <p className="text-[13px] font-semibold">Poket School</p>

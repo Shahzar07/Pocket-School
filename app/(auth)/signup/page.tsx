@@ -39,9 +39,9 @@ const ROLES = [
 ];
 
 const INPUT_CLASS =
-  'h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-[#2786A4] focus:ring-[#2786A4]/20 transition-all';
+  'h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-primary focus:ring-primary/20 transition-all';
 const SELECT_CLASS =
-  'w-full h-12 rounded-2xl bg-white/5 border border-white/10 text-white px-4 text-sm outline-none focus:border-[#2786A4] transition-all';
+  'w-full h-12 rounded-2xl bg-white/5 border border-white/10 text-white px-4 text-sm outline-none focus:border-primary transition-all';
 const LABEL_CLASS = 'text-white/60 text-xs font-semibold uppercase tracking-wider';
 
 function ageFromDob(dob: string): number | null {
@@ -495,7 +495,7 @@ export default function SignupPage() {
                   disabled={loading}
                   className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all text-sm font-semibold ${
                     role === r.id
-                      ? 'border-[#2786A4] bg-[#2786A4]/15 text-[#6FBBCE]'
+                      ? 'border-primary bg-primary/15 text-primary'
                       : 'border-white/10 bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/70 hover:border-white/20'
                   }`}
                 >
@@ -697,7 +697,7 @@ export default function SignupPage() {
                 checked={agreed}
                 onChange={e => setAgreed(e.target.checked)}
                 disabled={loading}
-                className="mt-0.5 w-4 h-4 shrink-0 accent-[#2786A4]"
+                className="mt-0.5 w-4 h-4 shrink-0 accent-primary"
               />
               <span className="text-xs text-white/60 leading-relaxed">
                 {t('signup.agree')}{' '}
@@ -711,7 +711,7 @@ export default function SignupPage() {
 
             <Button
               type="submit"
-              className="w-full h-12 rounded-2xl bg-[#2786A4] hover:bg-[#1E6A83] text-white font-semibold text-base shadow-lg shadow-blue-900/30 transition-all mt-1"
+              className="w-full h-12 rounded-2xl bg-primary text-primary-foreground hover:brightness-110 font-semibold text-base shadow-lg shadow-blue-900/30 transition-all mt-1"
               disabled={loading || tooYoung}
             >
               {loading ? t('signup.working') : isMinor ? t('signup.requestGuardian') : t('signup.createAccount')}
@@ -731,12 +731,12 @@ export default function SignupPage() {
             <Label htmlFor="consentCode" className={LABEL_CLASS}>{t('signup.consentCode')}</Label>
             <Input
               id="consentCode" type="text" inputMode="numeric" maxLength={6} placeholder="123456"
-              className="h-14 rounded-2xl bg-white/5 border-white/10 text-white text-center text-2xl tracking-[0.5em] font-bold placeholder:text-white/20 focus:border-[#2786A4]"
+              className="h-14 rounded-2xl bg-white/5 border-white/10 text-white text-center text-2xl tracking-[0.5em] font-bold placeholder:text-white/20 focus:border-primary"
               value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} disabled={loading}
             />
           </div>
           <Button type="submit" disabled={loading}
-            className="w-full h-12 rounded-2xl bg-[#2786A4] hover:bg-[#1E6A83] text-white font-semibold text-base transition-all">
+            className="w-full h-12 rounded-2xl bg-primary text-primary-foreground hover:brightness-110 font-semibold text-base transition-all">
             {loading ? t('signup.verifying') : t('signup.confirmConsent')}
           </Button>
           <button type="button" onClick={() => setStep('form')} disabled={loading}
@@ -758,12 +758,12 @@ export default function SignupPage() {
             <Label htmlFor="code" className={LABEL_CLASS}>{t('signup.code')}</Label>
             <Input
               id="code" type="text" inputMode="numeric" maxLength={6} placeholder="123456"
-              className="h-14 rounded-2xl bg-white/5 border-white/10 text-white text-center text-2xl tracking-[0.5em] font-bold placeholder:text-white/20 focus:border-[#2786A4]"
+              className="h-14 rounded-2xl bg-white/5 border-white/10 text-white text-center text-2xl tracking-[0.5em] font-bold placeholder:text-white/20 focus:border-primary"
               value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} disabled={loading}
             />
           </div>
           <Button type="submit" disabled={loading}
-            className="w-full h-12 rounded-2xl bg-[#2786A4] hover:bg-[#1E6A83] text-white font-semibold text-base transition-all">
+            className="w-full h-12 rounded-2xl bg-primary text-primary-foreground hover:brightness-110 font-semibold text-base transition-all">
             {loading ? t('signup.creating') : t('signup.verifyCreate')}
           </Button>
           <button type="button" onClick={() => setStep('form')} disabled={loading}

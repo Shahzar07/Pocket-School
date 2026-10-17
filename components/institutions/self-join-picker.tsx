@@ -57,7 +57,7 @@ export function SelfJoinPicker({
             onClick={() => onPath(item)}
             className={`min-h-12 rounded-2xl border px-3 py-3 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6FBBCE] ${
               path === item
-                ? 'border-[#2786A4] bg-[#2786A4]/15 text-[#6FBBCE]'
+                ? 'border-primary bg-primary/15 text-primary'
                 : inverse
                   ? 'border-white/10 bg-white/5 text-white/50'
                   : 'border-border bg-card text-muted-foreground'

@@ -1,15 +1,15 @@
 /**
  * Poket School dashboard colour system.
  *
- * One palette for student, parent, teacher, institution, and admin screens.
- * Light inks clear WCAG AA (4.5:1) on white and on the page. Dark inks clear
- * 4.5:1 on the dark canvas and on cards. Solid fills pair with `--ps-on-*`
- * so text sitting on a fill also clears 4.5:1.
+ * Hues come from `./tokens`. Text inks are the same colours when they clear
+ * WCAG AA, and a darker step of the same hue when the brand swatch does not
+ * (light amber `#E2AF4D` and light coral `#D0553F` are fills, not small text).
  *
- * Charts use the same six hues, each with a different pattern, so a colour
- * blind reader can still tell series apart. Labels name the series as well.
- * Primary brand teal stays #1E6A83 in light and #6FBBCE in dark.
+ * Charts use six hues, each with a different pattern, so a colour blind
+ * reader can still tell series apart. Labels name the series as well.
  */
+
+import { dark, light } from './tokens';
 
 export const ACCENT_IDS = ['teal', 'amber', 'coral', 'violet', 'emerald', 'sky'] as const;
 export type AccentId = (typeof ACCENT_IDS)[number];
@@ -34,22 +34,40 @@ export interface AccentInk {
   onFill: string;
 }
 
+/** Brand swatches for fills and washes. Text uses `LIGHT_INKS` / `DARK_INKS`. */
+export const BRAND_SWATCH = {
+  light: {
+    primary: light.primary,
+    amber: light.amber,
+    coral: light.coral,
+    good: light.good,
+    mint: light.mint,
+  },
+  dark: {
+    primary: dark.primary,
+    amber: dark.amber,
+    coral: dark.coral,
+    good: dark.good,
+    mint: dark.mint,
+  },
+} as const;
+
 export const LIGHT_INKS: Record<AccentId, AccentInk> = {
-  teal: { ink: '#1E6A83', onFill: '#FFFFFF' },
-  amber: { ink: '#9A5B00', onFill: '#FFFFFF' },
-  coral: { ink: '#C23B2E', onFill: '#FFFFFF' },
-  violet: { ink: '#6D28D9', onFill: '#FFFFFF' },
-  emerald: { ink: '#047857', onFill: '#FFFFFF' },
-  sky: { ink: '#0369A1', onFill: '#FFFFFF' },
+  teal: { ink: light.blueDeep, onFill: light.onPrimary },
+  amber: { ink: '#9A5B00', onFill: light.onPrimary },
+  coral: { ink: '#C23B2E', onFill: light.onPrimary },
+  violet: { ink: '#6D28D9', onFill: light.onPrimary },
+  emerald: { ink: light.mintInk, onFill: light.onPrimary },
+  sky: { ink: '#0369A1', onFill: light.onPrimary },
 };
 
 export const DARK_INKS: Record<AccentId, AccentInk> = {
-  teal: { ink: '#6FBBCE', onFill: '#0B1417' },
-  amber: { ink: '#F0C36A', onFill: '#0B1417' },
-  coral: { ink: '#F0A090', onFill: '#0B1417' },
-  violet: { ink: '#C4B5FD', onFill: '#0B1417' },
-  emerald: { ink: '#6EE7B7', onFill: '#0B1417' },
-  sky: { ink: '#7DD3FC', onFill: '#0B1417' },
+  teal: { ink: dark.primary, onFill: dark.onPrimary },
+  amber: { ink: dark.amber, onFill: dark.onPrimary },
+  coral: { ink: dark.coral, onFill: dark.onPrimary },
+  violet: { ink: '#C4B5FD', onFill: dark.onPrimary },
+  emerald: { ink: dark.good, onFill: dark.onPrimary },
+  sky: { ink: '#7DD3FC', onFill: dark.onPrimary },
 };
 
 export const ACCENT_LABEL: Record<AccentId, string> = {
@@ -102,10 +120,10 @@ export const DARK_MEDALS: Record<MedalId, MedalInk> = {
   bronze: { fill: '#E8B07A', ink: '#3A2412', label: 'Bronze', place: '3rd' },
 };
 
-export const LIGHT_CANVAS = '#FFFFFF';
-export const LIGHT_PAGE = '#F4F6F6';
-export const DARK_CANVAS = '#0B1417';
-export const DARK_CARD = '#121E22';
+export const LIGHT_CANVAS = light.card;
+export const LIGHT_PAGE = light.bg;
+export const DARK_CANVAS = dark.bg;
+export const DARK_CARD = dark.card;
 
 export function accentVar(id: AccentId): string {
   return `--ps-${id}`;

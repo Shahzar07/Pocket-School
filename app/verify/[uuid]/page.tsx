@@ -86,7 +86,7 @@ export default function VerifyCertificate({ params }: { params: Promise<{ uuid: 
             placeholder="Certificate ID"
             className="flex-1 h-12 rounded-xl bg-white font-mono text-sm"
           />
-          <Button onClick={() => handleVerify()} disabled={loading || !uuid.trim()} className="h-12 rounded-xl bg-[#1E6A83] hover:bg-[#2786A4] px-5">
+          <Button onClick={() => handleVerify()} disabled={loading || !uuid.trim()} className="h-12 rounded-xl bg-primary px-5 text-primary-foreground hover:brightness-110">
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
           </Button>
         </div>

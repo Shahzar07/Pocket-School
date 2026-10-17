@@ -42,7 +42,7 @@ export function ModePreview({
           <button
             type="button"
             aria-label="Account menu"
-            className="grid h-9 w-9 place-items-center rounded-full bg-[#2786A4] text-sm font-bold text-white"
+            className="grid h-9 w-9 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground"
             onClick={() => setOpen(value => !value)}
           >
             S

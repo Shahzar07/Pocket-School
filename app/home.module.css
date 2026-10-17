@@ -11,7 +11,7 @@
 }
 
 .home :focus-visible {
-  outline: 3px solid #e2af4d;
+  outline: 3px solid var(--ps-amber-fill);
   outline-offset: 3px;
 }
 
@@ -20,12 +20,8 @@
   isolation: isolate;
   overflow: clip;
   color: white;
-  background: linear-gradient(165deg, #1d6f8c 0%, #2786a4 46%, #8ecbda 100%);
+  background: var(--ps-hero);
   padding: 128px 20px 72px;
-}
-
-:global(.dark) .hero {
-  background: linear-gradient(165deg, #07161b 0%, #123844 52%, #1d6a84 100%);
 }
 
 .clouds {
@@ -56,11 +52,11 @@
 
 .primary {
   background: white;
-  color: #1e6a83;
+  color: var(--ps-blue-deep);
 }
 
 .primary:hover {
-  background: #e9f7fa;
+  background: var(--ps-wash);
 }
 
 .secondary {
@@ -85,11 +81,7 @@
   isolation: isolate;
   overflow: clip;
   color: white;
-  background: linear-gradient(160deg, #1a627c 0%, #2786a4 70%);
-}
-
-:global(.dark) .band {
-  background: linear-gradient(160deg, #0c242c 0%, #1a5568 80%);
+  background: var(--ps-band);
 }
 
 @media (prefers-reduced-motion: reduce) {

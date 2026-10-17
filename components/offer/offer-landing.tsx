@@ -126,7 +126,7 @@ export function OfferLanding() {
       </header>
 
       <main id="offer-main">
-        <section className="bg-gradient-to-b from-[#1E6A83] via-[#2786A4] to-[#4f9bb3] text-white">
+        <section className="text-white" style={{ background: 'var(--ps-hero)' }}>
           <div className="mx-auto max-w-6xl px-4 pb-16 pt-10 sm:px-6 sm:pb-20 sm:pt-14">
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/80">{offerCopy.hero.eyebrow}</p>
             <h1 className="mt-4 max-w-3xl font-heading text-4xl leading-[1.05] tracking-tight sm:text-6xl">

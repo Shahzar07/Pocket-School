@@ -31,7 +31,7 @@ function inline(text: string, key: string): ReactNode[] {
 }
 
 function TextLink({ href, children }: { href: string; children: ReactNode }) {
-  const className = 'font-semibold text-[#2786A4] underline-offset-2 hover:underline';
+  const className = 'font-semibold text-primary underline-offset-2 hover:underline';
   if (isAffiliateToken(href)) {
     return <a href={href} rel={AFFILIATE_REL} className={className}>{children}</a>;
   }
@@ -181,6 +181,6 @@ export function Cover({ post, className = '' }: { post: BlogPost; className?: st
     );
   }
   return (
-    <div className={`bg-gradient-to-br from-[#2786A4] via-[#1E3A8A] to-[#203337] ${className}`} aria-hidden />
+    <div className={className} style={{ background: 'var(--ps-hero)' }} aria-hidden />
   );
 }

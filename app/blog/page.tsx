@@ -47,7 +47,7 @@ export default async function BlogIndex({
     <main id="content" className="min-h-screen bg-[#F8F4EE] text-[#203337]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(blogLd) }} />
       <section className="mx-auto max-w-6xl px-4 pb-16 pt-10 sm:px-6">
-        <p className="text-xs font-bold tracking-[0.22em] text-[#2786A4]">POKET SCHOOL</p>
+        <p className="text-xs font-bold tracking-[0.22em] text-primary">POKET SCHOOL</p>
         <h1 className="mt-3 max-w-3xl font-heading text-4xl tracking-tight sm:text-6xl">The journal</h1>
         <p className="mt-4 max-w-2xl text-base leading-7 text-[#203337]/75">
           Notes on learning with ET AI. Pathways stay named Primary, Secondary, IGCSE, and A-Level.
@@ -60,10 +60,10 @@ export default async function BlogIndex({
             name="q"
             defaultValue={query}
             placeholder="Search essays"
-            className="min-h-12 flex-1 rounded-full border border-[#203337]/15 bg-white px-5 text-sm outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2786A4]"
+            className="min-h-12 flex-1 rounded-full border border-[#203337]/15 bg-white px-5 text-sm outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
           />
           {category !== 'All' ? <input type="hidden" name="category" value={category} /> : null}
-          <button type="submit" className="min-h-12 rounded-full bg-[#2786A4] px-6 text-sm font-bold text-white">
+          <button type="submit" className="min-h-12 rounded-full bg-primary px-6 text-sm font-bold text-primary-foreground">
             Search
           </button>
         </form>
@@ -89,12 +89,12 @@ export default async function BlogIndex({
           <article className="mt-8 overflow-hidden rounded-[2rem] bg-white shadow-[0_24px_60px_-36px_rgba(32,51,55,0.45)]">
             <Cover post={featured} className="h-56 sm:h-72" />
             <div className="p-6 sm:p-8">
-              <p className="text-xs font-bold tracking-[0.18em] text-[#2786A4]">FEATURED · {featured.category}</p>
+              <p className="text-xs font-bold tracking-[0.18em] text-primary">FEATURED · {featured.category}</p>
               <h2 className="mt-2 font-heading text-3xl tracking-tight sm:text-4xl">
                 <Link href={`/blog/${featured.slug}`}>{featured.title}</Link>
               </h2>
               <p className="mt-3 max-w-2xl text-[#203337]/75">{featured.excerpt}</p>
-              <Link href={`/blog/${featured.slug}`} className="mt-5 inline-flex min-h-11 items-center text-sm font-bold text-[#2786A4]">
+              <Link href={`/blog/${featured.slug}`} className="mt-5 inline-flex min-h-11 items-center text-sm font-bold text-primary">
                 Read the essay
               </Link>
             </div>
@@ -113,7 +113,7 @@ export default async function BlogIndex({
           {rest.map((post) => (
             <li key={post.slug}>
               <article className="h-full rounded-3xl bg-white p-5">
-                <p className="text-xs font-bold tracking-wider text-[#2786A4]">{post.category}</p>
+                <p className="text-xs font-bold tracking-wider text-primary">{post.category}</p>
                 <h2 className="mt-2 font-heading text-2xl tracking-tight">
                   <Link href={`/blog/${post.slug}`}>{post.title}</Link>
                 </h2>
@@ -126,9 +126,9 @@ export default async function BlogIndex({
           <p className="mt-8 text-sm text-[#203337]/70">No published essay matches that search.</p>
         ) : null}
         <p className="mt-10 text-sm">
-          <Link href="/blog/feed.xml" className="font-semibold text-[#2786A4]">RSS</Link>
+          <Link href="/blog/feed.xml" className="font-semibold text-primary">RSS</Link>
           <span className="text-[#203337]/50"> · </span>
-          <Link href="/offer" className="font-semibold text-[#2786A4]">The offer</Link>
+          <Link href="/offer" className="font-semibold text-primary">The offer</Link>
         </p>
       </section>
     </main>

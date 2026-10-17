@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -48,13 +47,14 @@
     --color-google-teal: #00897B;
     --color-google-amber: #F9AB00;
 
-    --radius-sm: calc(var(--radius) * 0.5);
-    --radius-md: calc(var(--radius) * 0.75);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.5);
-    --radius-2xl: calc(var(--radius) * 2);
-    --radius-3xl: calc(var(--radius) * 3);
-    --radius-4xl: calc(var(--radius) * 4);
+    --radius-sm: 12px;
+    --radius-md: 18px;
+    --radius-lg: 24px;
+    --radius-xl: 32px;
+    --radius-2xl: 32px;
+    --radius-3xl: 32px;
+    --radius-4xl: 32px;
+    --radius-full: 999px;
 
     --shadow-google-soft: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
     --shadow-google-hover: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
@@ -67,16 +67,12 @@
 }
 
 /* ── Product palette ──────────────────────────────────────────
- * Taken from the homepage (app/home.module.css) so the marketing site
- * and the product read as one thing: ink #203337, primary teal #1E6A83
- * (light) / #6FBBCE (dark), a warm off-white page and hairline #E7EDED
- * borders. #1E6A83 is the light primary because #2786A4 is only 4.2:1 on
- * white, under the 4.5:1 text minimum. Dark primary stays the lighter
- * #6FBBCE so it clears 4.5:1 on #0B1417 and #121E22, with dark text on it.
- *
- * Every component already consumes these tokens (bg-card, border-border,
- * text-foreground, bg-primary), so the palette is changed here once rather
- * than edited into hundreds of components.
+ * Single source of truth: lib/design/tokens.ts (the web copy of the mobile
+ * src/theme/tokens.ts). Named --ps-* variables below are those hexes.
+ * Shadcn --primary in light mode stays blueDeep #1E6A83, because brand
+ * primary #2786A4 is 4.17:1 on white. Dark --primary is #6FBBCE with
+ * on-primary #0B1417. Chart text inks live on --ps-teal/amber/coral/…;
+ * brand fills that fail as small text live on --ps-*-fill.
  */
 :root {
     --background: #F4F6F6;
@@ -90,8 +86,8 @@
     --secondary: #E9F7FA;
     --secondary-foreground: #1E6A83;
     --muted: #F0F5F4;
-    /* Dark enough for WCAG AA body text on the page and on white cards. */
-    --muted-foreground: #3E5257;
+    /* Brand muted #5F7074 is 5.18:1 on white and 4.77:1 on the page. */
+    --muted-foreground: #5F7074;
     --accent: #E9F7FA;
     --accent-foreground: #1E6A83;
     --destructive: #B23B2E;
@@ -103,9 +99,10 @@
     --chart-2: #9A5B00;
     --chart-3: #C23B2E;
     --chart-4: #6D28D9;
-    --chart-5: #047857;
+    --chart-5: #0E7A62;
     --chart-6: #0369A1;
-    /* Dashboard accents. Inks are AA text on white; on-fill is AA on the ink. */
+    /* Dashboard accents. Inks are AA text on white; on-fill is AA on the ink.
+     * Amber and coral brand swatches are fills (--ps-*-fill), not these inks. */
     --ps-teal: #1E6A83;
     --ps-on-teal: #FFFFFF;
     --ps-amber: #9A5B00;
@@ -114,10 +111,36 @@
     --ps-on-coral: #FFFFFF;
     --ps-violet: #6D28D9;
     --ps-on-violet: #FFFFFF;
-    --ps-emerald: #047857;
+    --ps-emerald: #0E7A62;
     --ps-on-emerald: #FFFFFF;
     --ps-sky: #0369A1;
     --ps-on-sky: #FFFFFF;
+    --ps-bg: #F4F6F6;
+    --ps-wash: #E9F7FA;
+    --ps-mist: #E9F7FA;
+    --ps-card: #FFFFFF;
+    --ps-line: #E7EDED;
+    --ps-ink: #203337;
+    --ps-muted: #5F7074;
+    --ps-faint: #8AA0A6;
+    --ps-primary: #2786A4;
+    --ps-blue-deep: #1E6A83;
+    --ps-blue-bright: #6FBBCE;
+    --ps-on-primary: #FFFFFF;
+    --ps-amber-fill: #E2AF4D;
+    --ps-amber-soft: #FFF6E4;
+    --ps-coral-fill: #D0553F;
+    --ps-coral-soft: #FDECEA;
+    --ps-good: #1F8A70;
+    --ps-mint: #E5F6EF;
+    --ps-mint-ink: #0E7A62;
+    --ps-role-student: #E9F7FA;
+    --ps-role-teacher: #E9F7FA;
+    --ps-role-parent: #E5F6EF;
+    --ps-role-admin: #F0F5F4;
+    --ps-dark-bg: #0B1417;
+    --ps-hero: linear-gradient(135deg, #1E6A83 0%, #2786A4 50%, #6FBBCE 100%);
+    --ps-band: linear-gradient(135deg, #1E6A83 0%, #2786A4 100%);
     --ps-pattern-ink: rgba(255, 255, 255, 0.78);
     --medal-gold: #E8B84A;
     --medal-gold-ink: #3D2A06;
@@ -125,12 +148,9 @@
     --medal-silver-ink: #1F2933;
     --medal-bronze: #E0A15A;
     --medal-bronze-ink: #3A2412;
-    /* The whole radius ladder above derives from this one value, so it sets
-     * the roundness of every card in the app. 0.5rem lands the ladder on
-     * 8 / 12 / 16 / 24px — the homepage's own range. It was 1rem, which made
-     * the `rounded-3xl` cards used across the dashboard 48px: far rounder
-     * than anything on the homepage. */
-    --radius: 0.5rem;
+    /* lg. Components that read var(--radius) directly follow the 24px step.
+     * The Tailwind ladder is set explicitly above: 12 / 18 / 24 / 32, pill 999. */
+    --radius: 24px;
     --space-1: 4px;
     --space-2: 8px;
     --space-3: 12px;
@@ -189,23 +209,49 @@
     --input: #1E3238;
     --ring: #6FBBCE;
     --chart-1: #6FBBCE;
-    --chart-2: #F0C36A;
-    --chart-3: #F0A090;
+    --chart-2: #E2AF4D;
+    --chart-3: #E88976;
     --chart-4: #C4B5FD;
-    --chart-5: #6EE7B7;
+    --chart-5: #8ED9C4;
     --chart-6: #7DD3FC;
     --ps-teal: #6FBBCE;
     --ps-on-teal: #0B1417;
-    --ps-amber: #F0C36A;
+    --ps-amber: #E2AF4D;
     --ps-on-amber: #0B1417;
-    --ps-coral: #F0A090;
+    --ps-coral: #E88976;
     --ps-on-coral: #0B1417;
     --ps-violet: #C4B5FD;
     --ps-on-violet: #0B1417;
-    --ps-emerald: #6EE7B7;
+    --ps-emerald: #8ED9C4;
     --ps-on-emerald: #0B1417;
     --ps-sky: #7DD3FC;
     --ps-on-sky: #0B1417;
+    --ps-bg: #0B1417;
+    --ps-wash: #102028;
+    --ps-mist: #17282D;
+    --ps-card: #121E22;
+    --ps-line: #1E3238;
+    --ps-ink: #E8EFEF;
+    --ps-muted: #93A7AB;
+    --ps-faint: #6E848A;
+    --ps-primary: #6FBBCE;
+    --ps-blue-deep: #8ED0DE;
+    --ps-blue-bright: #6FBBCE;
+    --ps-on-primary: #0B1417;
+    --ps-amber-fill: #E2AF4D;
+    --ps-amber-soft: #2A2416;
+    --ps-coral-fill: #E88976;
+    --ps-coral-soft: #2C1C1A;
+    --ps-good: #8ED9C4;
+    --ps-mint: #142824;
+    --ps-mint-ink: #8ED9C4;
+    --ps-role-student: #102028;
+    --ps-role-teacher: #121E22;
+    --ps-role-parent: #101C18;
+    --ps-role-admin: #10181E;
+    --ps-dark-bg: #0B1417;
+    --ps-hero: linear-gradient(135deg, #0B1417 0%, #17282D 50%, #1E6A83 100%);
+    --ps-band: linear-gradient(135deg, #17282D 0%, #1E6A83 100%);
     --ps-pattern-ink: rgba(11, 20, 23, 0.55);
     --medal-gold: #F0C36A;
     --medal-gold-ink: #3D2A06;
@@ -213,7 +259,7 @@
     --medal-silver-ink: #1F2933;
     --medal-bronze: #E8B07A;
     --medal-bronze-ink: #3A2412;
-    --sidebar: #0E191D;
+    --sidebar: #121E22;
     --sidebar-foreground: #E8EFEF;
     --sidebar-primary: #6FBBCE;
     --sidebar-primary-foreground: #0B1417;

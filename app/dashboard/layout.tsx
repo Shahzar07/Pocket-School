@@ -53,12 +53,12 @@ import { AcademySession } from '@/components/academy-session';
 
 type Role = 'student' | 'teacher' | 'parent' | 'admin' | 'institution_admin';
 
-const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string }> = {
-  student: { icon: 'text-primary', bar: 'bg-primary', chip: 'from-primary to-primary' },
-  teacher: { icon: 'text-emerald-400', bar: 'bg-emerald-400', chip: 'from-emerald-500 to-teal-600' },
-  parent:  { icon: 'text-amber-400',  bar: 'bg-amber-400',  chip: 'from-amber-500 to-orange-600' },
-  admin:   { icon: 'text-violet-400', bar: 'bg-violet-400', chip: 'from-violet-500 to-fuchsia-600' },
-  institution_admin: { icon: 'text-sky-400', bar: 'bg-sky-400', chip: 'from-sky-500 to-cyan-600' },
+const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string; wash: string }> = {
+  student: { icon: 'text-primary', bar: 'bg-primary', chip: 'from-primary to-[var(--ps-blue-bright)]', wash: 'var(--ps-role-student)' },
+  teacher: { icon: 'text-[var(--ps-emerald)]', bar: 'bg-[var(--ps-emerald)]', chip: 'from-[var(--ps-mint-ink)] to-[var(--ps-emerald)]', wash: 'var(--ps-role-teacher)' },
+  parent:  { icon: 'text-[var(--ps-amber)]', bar: 'bg-[var(--ps-amber-fill)]', chip: 'from-[var(--ps-amber-fill)] to-[var(--ps-amber)]', wash: 'var(--ps-role-parent)' },
+  admin:   { icon: 'text-[var(--ps-violet)]', bar: 'bg-[var(--ps-violet)]', chip: 'from-[var(--ps-violet)] to-[var(--ps-sky)]', wash: 'var(--ps-role-admin)' },
+  institution_admin: { icon: 'text-[var(--ps-sky)]', bar: 'bg-[var(--ps-sky)]', chip: 'from-[var(--ps-sky)] to-[var(--ps-teal)]', wash: 'var(--ps-role-admin)' },
 };
 
 interface NavEntry { href: string; icon: React.ElementType; labelKey: string; label?: string; flag?: FeatureFlag; superOnly?: boolean }
@@ -451,7 +451,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="flex justify-center gap-2">
             <button
               type="button"
-              className="h-10 rounded-full bg-[#203337] px-4 text-sm font-semibold text-white"
+              className="h-10 rounded-full bg-foreground px-4 text-sm font-semibold text-background"
               onClick={() => {
                 void clearUserFields(user.uid, ['deletionRequest']).then(() => fetchProfile(user.uid));
               }}
@@ -550,7 +550,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const accent = ROLE_ACCENT[role];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen overflow-hidden" data-dashboard-role={role} style={{ background: accent.wash }}>
       <AcademySession />
       <a href="#dashboard-main" className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-xl focus:bg-card focus:px-3 focus:py-2">
         Skip to content
