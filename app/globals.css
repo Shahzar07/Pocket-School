@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -328,6 +327,12 @@
   font-family: var(--font-heading);
   font-weight: 500;
   letter-spacing: -0.035em;
+}
+/* The sales letter is text-first. A system face paints with the CSS,
+   instead of waiting on a web font under a slow connection. */
+#top,
+#top .font-heading {
+  font-family: ui-sans-serif, system-ui, sans-serif;
 }
 h1.font-heading, .font-heading.text-4xl, .font-heading.text-5xl {
   letter-spacing: -0.045em;
