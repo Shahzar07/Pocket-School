@@ -777,6 +777,30 @@ Poket School's verified network. The mobile app calls the HTTP routes. It does n
 
 Under-18 profiles are `visibility: school`, `searchable: false`, and never appear in recruiter or public founder search. A missing `users.ageTier` still fails closed as `under13`.
 
+### Screen plan
+
+The app screen plan matches this website policy. No new network screens were added for that plan.
+
+- Under-18 visibility is forced to `school` and `searchable` is false.
+- Two adults may connect.
+- A minor and an adult may connect only when one role is `teacher` or `staff` and they share an institution. `admin` and `institution_admin` are not that exception. Do not widen it.
+- Two minors connect only when they share a school and a class.
+- Direct messages require both people to be adults and already connected.
+- Recruiter email and phone stay blank unless `shareContact` is true.
+- Feed rank: connection +50, followed organisation +30, same institution +20, same class +20, shared skill +10.
+- Defaults match `platform_settings/network` above, including inmail Pro at 20 and prices at 0.
+- Insights hide groups under 5.
+
+These differences remain. The website value is the one to follow.
+
+| Topic | Website | App plan |
+| --- | --- | --- |
+| Adult visibility `school` | Stored as `network` by `forcedVisibility`. | Not the same stored value. |
+| Minor connection | `teacher` or `staff` only. Search of a minor at the same school also allows `admin`, and that search exception is not a connection. | Do not treat `admin` or `institution_admin` as a connection exception. |
+| Rank | Also adds a recency bonus `max(0, 5 - weeks)` in `rankFeed`. | The five weights only. |
+| Push | The server sends category `network`. The app should receive that payload. | The app does not send a network push, and it should not invent a second one. |
+| Direct messages | `canDirectMessage` requires `connected`. The reason text mentions a message request, and there is no request path. | A message request is not a way around the connection. |
+
 ### network_profiles/{uid}
 
 `handle`, `headline`, `about`, `selfReported` (owner text), `visibility` (`public`, `network`, `private`, `school`), `searchable`, `ageTier`, `role`, `institutionId`, `openToWork` (`no`, `everyone`, `recruiters`), `availability` (`open`, `internship`, `part_time`, `closed`), `location`, `shareContact`, `recruiterOptIn`, `verified` (badges and skills passport entries, shown or hidden, never edited by the member), `showVerified`, `consent` (`pdpa`, `gdpr`, `child`, `atMs`), `moderation`.
