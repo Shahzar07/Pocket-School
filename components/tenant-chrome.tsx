@@ -4,12 +4,15 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AcademyLockup } from '@/components/academy-lockup';
 import { useWhiteLabel } from '@/components/white-label-provider';
+import { isBrandedLoginPath } from '@/lib/institution-login';
+import { isInstitutionJourneyPath } from '@/lib/institution-journey';
 
 /** A slim academy bar on public pages. The dashboard keeps its own shell. */
 export function TenantChrome() {
   const pathname = usePathname() || '/';
   const { branding, institution, hrefFor } = useWhiteLabel();
   if (!institution || !branding.isWhiteLabel) return null;
+  if (isBrandedLoginPath(pathname) || isInstitutionJourneyPath(pathname)) return null;
   if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) return null;
   if (pathname === '/') return null;
   return (

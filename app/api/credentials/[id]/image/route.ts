@@ -8,10 +8,11 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
   const { id } = await ctx.params;
   const png = await badgeImage(id, req.nextUrl.origin);
   if (!png) return NextResponse.json({ error: 'No matching certificate.', code: 'NOT_FOUND' }, { status: 404 });
+  const inline = req.nextUrl.searchParams.get('download') === '0';
   return new NextResponse(new Uint8Array(png), {
     headers: {
       'Content-Type': 'image/png',
-      'Content-Disposition': `attachment; filename="poket-school-${id}.png"`,
+      'Content-Disposition': inline ? 'inline' : `attachment; filename="poket-school-${id}.png"`,
       'Cache-Control': 'public, max-age=300',
     },
   });

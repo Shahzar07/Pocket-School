@@ -48,6 +48,14 @@ test('join codes and branded messages use the academy name', () => {
   const mail = brandedInvite({ displayName: 'Kolej Utama', emailFromName: 'Kolej Office' }, 'ABCD2345', 'https://kolej.example');
   assert.match(mail.subject, /Kolej Utama/);
   assert.match(mail.text, /ABCD2345/);
+  assert.equal(mail.text.includes('Sign in at'), false);
+  const withLogin = brandedInvite(
+    { displayName: 'Kolej Utama' },
+    'ABCD2345',
+    'https://kolej.example',
+    { loginUrl: 'https://kolej.poketschool.ai/login' },
+  );
+  assert.match(withLogin.text, /https:\/\/kolej\.poketschool\.ai\/login/);
   assert.equal(certificateBrandLine({ displayName: 'Kolej Utama', certificateIssuer: 'Kolej Utama Academy' }), 'Kolej Utama Academy');
   assert.equal(normaliseCustomDomain('https://learn.kolej.example/path'), 'learn.kolej.example');
   assert.equal(normaliseCustomDomain('kolej.poketschool.ai'), null);

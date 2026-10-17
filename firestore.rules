@@ -1269,6 +1269,45 @@ service cloud.firestore {
         allow write: if isAdmin();
       }
 
+      // Import roster. Owner deploy only. Harry approves the deploy.
+      // joinRoster remains the seat ledger and is not this collection.
+      match /rosters/{rosterId} {
+        allow read: if isAdmin()
+          || (isInstitutionAdmin() && myInstitution() == institutionId)
+          || (hasRole('teacher') && myInstitution() == institutionId)
+          || (isSignedIn() && resource.data.matchedUid == request.auth.uid);
+        allow create, update: if isAdmin()
+          || (isInstitutionAdmin()
+              && myInstitution() == institutionId
+              && incoming().email is string
+              && incoming().email.size() > 3
+              && incoming().email.size() < 200
+              && incoming().firstName is string
+              && incoming().firstName.size() > 0
+              && incoming().firstName.size() < 80
+              && incoming().lastName is string
+              && incoming().lastName.size() > 0
+              && incoming().lastName.size() < 80
+              && incoming().level is string
+              && incoming().level.size() > 0
+              && incoming().level.size() < 40
+              && incoming().gender in ['male', 'female']
+              && incoming().role in ['student', 'parent']
+              && incoming().status in ['pending', 'matched', 'invited']
+              && incoming().importedAt is string
+              && incoming().importBatchId is string
+              && incoming().importBatchId.size() > 0
+              && incoming().importBatchId.size() < 80
+              && (!incoming().keys().hasAny(['studentNumber']) || (incoming().studentNumber is string && incoming().studentNumber.size() < 40))
+              && (!incoming().keys().hasAny(['classId']) || (incoming().classId is string && incoming().classId.size() < 80))
+              && (!incoming().keys().hasAny(['matchedUid']) || (incoming().matchedUid is string && incoming().matchedUid.size() < 128))
+              && incoming().keys().hasOnly([
+                'email', 'studentNumber', 'firstName', 'lastName', 'level', 'classId',
+                'gender', 'role', 'status', 'matchedUid', 'importedAt', 'importBatchId'
+              ]));
+        allow delete: if isAdmin() || (isInstitutionAdmin() && myInstitution() == institutionId);
+      }
+
       // A person asks to join. Only an activated, listed academy accepts the request.
       // The institution admin decides it. The requester cannot approve themselves.
       match /join_requests/{requestId} {
@@ -1736,6 +1775,22 @@ service cloud.firestore {
         || linkedTo(resource.data.studentId)
       );
       allow create, update, delete: if false;
+    }
+
+    // Server-written gamification and house boards. Owner deploy only.
+    match /gamification/{userId} {
+      allow read: if isSignedIn() && (isUser(userId) || isAdmin() || linkedTo(userId));
+      allow write: if false;
+    }
+
+    match /gamification_config/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /leaderboard_entries/{entryId} {
+      allow read: if resource.data.shareBoard == true;
+      allow write: if false;
     }
 
     match /certificate_keys/{keyId} {

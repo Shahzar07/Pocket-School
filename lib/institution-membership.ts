@@ -197,6 +197,8 @@ export interface JoinDirectoryRow {
   listedForSelfJoin: boolean;
   /** Absent on academies created before automated billing. */
   billingPhase?: BillingPhase | '';
+  /** Branded join page at /i/{slug}/join when the academy has published a subdomain. */
+  slug?: string;
 }
 
 export function institutionsForSelfJoin(
@@ -738,6 +740,11 @@ export const ONBOARDING_STEPS = [
   { id: 'classes', label: 'At least one class' },
   { id: 'people', label: 'Invite code, CSV, or self-join listing' },
   { id: 'sparks', label: 'Sparks pool checked for the plan' },
+  { id: 'brand', label: 'Branded login page' },
+  { id: 'coadmins', label: 'Invite co-admins, with an email code' },
+  { id: 'teachers', label: 'Add teachers' },
+  { id: 'students', label: 'Invite students with a code, a CSV, or a QR' },
+  { id: 'courses', label: 'Pick courses' },
 ] as const;
 
 export type OnboardingStepId = (typeof ONBOARDING_STEPS)[number]['id'];
@@ -801,13 +808,18 @@ export interface EmailDraft {
   text: string;
 }
 
-export function institutionEmail(kind: 'payment_link' | 'dunning' | 'suspended' | 'restored' | 'invoice' | 'invite' | 'join_approved' | 'join_rejected' | 'join_received', vars: {
+export function institutionEmail(kind: 'payment_link' | 'dunning' | 'suspended' | 'restored' | 'invoice' | 'invite' | 'join_approved' | 'join_rejected' | 'join_received' | 'academy_approved' | 'welcome_receipt' | 'under_review' | 'tier_upgrade' | 'tier_renewal', vars: {
   institutionName: string;
   plan?: string;
   seats?: number;
   total?: string;
+  tax?: string;
+  sparks?: number;
+  tender?: string;
+  reasons?: string;
   link?: string;
   graceEnds?: string;
+  renewalOn?: string;
   code?: string;
   personName?: string;
 }): EmailDraft {
@@ -842,6 +854,63 @@ export function institutionEmail(kind: 'payment_link' | 'dunning' | 'suspended' 
     return {
       subject: `${name} is active again`,
       text: `Payment received. ${name} is restored on Poket School. ET AI and the academy dashboard are open.`,
+    };
+  }
+  if (kind === 'academy_approved') {
+    return {
+      subject: `${name} is approved on Poket School`,
+      text: [
+        `${vars.personName || 'Hello'},`,
+        `${name} is approved. Sign in to finish setup, including the branded login page.`,
+        `Sign in: ${link}`,
+      ].join('\n'),
+    };
+  }
+  if (kind === 'welcome_receipt') {
+    return {
+      subject: `Welcome to Poket School — ${name}`,
+      text: [
+        `${vars.personName || 'Hello'},`,
+        `${name} is open. The next page is the setup checklist, including the branded login page.`,
+        vars.plan ? `Plan: ${vars.plan}.` : '',
+        typeof vars.seats === 'number' ? `Seats: ${vars.seats}.` : '',
+        typeof vars.sparks === 'number' ? `Sparks allowance: ${vars.sparks}.` : '',
+        vars.tender ? `Payment: ${vars.tender}.` : '',
+        vars.tax ? `Tax: ${vars.tax}.` : '',
+        vars.total ? `Receipt total: ${vars.total}.` : '',
+        `Sign in: ${link}`,
+      ].filter(Boolean).join('\n'),
+    };
+  }
+  if (kind === 'tier_upgrade') {
+    return {
+      subject: `${name} moved to ${vars.plan || 'the next tier'}`,
+      text: [
+        `${name} now has ${vars.seats ?? ''} unique students, so the tier is ${vars.plan || 'the next tier'}.`,
+        vars.total ? `Prorated charge for the days left: ${vars.total}.` : 'The new tier applies for the days left in this period.',
+        'The per-seat price on this tier is lower. Billing shows the new total.',
+      ].join('\n'),
+    };
+  }
+  if (kind === 'tier_renewal') {
+    return {
+      subject: `${vars.plan || 'A lower tier'} is ready for ${name} at renewal`,
+      text: [
+        `${name} has ${vars.seats ?? ''} unique students.`,
+        `At renewal on ${vars.renewalOn || 'the next renewal'}, ${vars.plan || 'the lower tier'} matches that count.`,
+        vars.total ? `That tier is ${vars.total} less for the period.` : '',
+      ].filter(Boolean).join(' '),
+    };
+  }
+  if (kind === 'under_review') {
+    return {
+      subject: `${name} is waiting for a review`,
+      text: [
+        `${vars.personName || 'Hello'},`,
+        `Payment for ${name} is recorded. Poket School will check it before the academy opens.`,
+        vars.reasons || '',
+        `Status: ${link}`,
+      ].filter(Boolean).join('\n'),
     };
   }
   if (kind === 'invite') {

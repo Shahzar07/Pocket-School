@@ -38,6 +38,7 @@
     "date-fns": "^4.1.0",
     "firebase": "^12.12.1",
     "firebase-admin": "^14.5.0",
+    "i18n-iso-countries": "^7.14.0",
     "i18next": "^26.0.8",
     "jose": "^6.2.12",
     "jszip": "^3.10.2",
@@ -68,8 +69,10 @@
     "sonner": "^2.0.7",
     "stripe": "^22.1.1",
     "tailwind-merge": "^3.5.0",
+    "topojson-client": "^3.1.0",
     "unpdf": "^1.8.1",
     "web-push": "^3.6.7",
+    "world-atlas": "^2.0.2",
     "zustand": "^5.0.12"
   },
   "devDependencies": {

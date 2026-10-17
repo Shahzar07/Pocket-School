@@ -44,7 +44,7 @@ export function InstitutionDirectory({
   busy?: boolean;
   onOpen: (id: string) => void;
   onCreate: (input: { name: string; profile: ReturnType<typeof blankProfile> }) => Promise<void>;
-  onBulk: (ids: string[], action: 'suspend' | 'restore' | 'delete') => Promise<void>;
+  onBulk: (ids: string[], action: 'approve' | 'suspend' | 'restore' | 'delete') => Promise<void>;
   onLead: (id: string, status: LeadStatus) => Promise<void>;
   onExport?: () => void;
 }) {
@@ -127,6 +127,7 @@ export function InstitutionDirectory({
         </div>
 
         <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" className="rounded-full" disabled={!selected.length || busy || !superAdmin} onClick={() => void onBulk(selected, 'approve')}>Approve</Button>
           <Button type="button" variant="outline" className="rounded-full" disabled={!selected.length || busy || !superAdmin} onClick={() => void onBulk(selected, 'suspend')}>Suspend</Button>
           <Button type="button" variant="outline" className="rounded-full" disabled={!selected.length || busy || !superAdmin} onClick={() => void onBulk(selected, 'restore')}>Restore</Button>
           <Button type="button" variant="outline" className="rounded-full" disabled={!selected.length || busy || !superAdmin} onClick={() => void onBulk(selected, 'delete')}>Delete</Button>

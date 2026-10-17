@@ -31,6 +31,7 @@ function rowFrom(id: string, data: Record<string, unknown>): JoinDirectoryRow {
     status: typeof data.status === 'string' ? data.status : '',
     listedForSelfJoin: data.listedForSelfJoin === true,
     billingPhase: phase === 'pending_payment' || phase === 'active' || phase === 'grace' || phase === 'suspended' || phase === '' ? phase : undefined,
+    slug: typeof data.subdomain === 'string' && data.subdomain.trim() ? data.subdomain.trim().toLowerCase() : undefined,
   };
 }
 
@@ -200,6 +201,10 @@ export interface InstitutionCourseRow {
   title: string;
   libraryApproved: boolean;
   accessMode: CourseAccessMode;
+  category?: string;
+  level?: string;
+  subject?: string;
+  tags?: string[];
 }
 
 export async function listInstitutionCourses(institutionId: string): Promise<InstitutionCourseRow[]> {
@@ -210,12 +215,16 @@ export async function listInstitutionCourses(institutionId: string): Promise<Ins
   );
   return snap.docs
     .map((item) => {
-      const data = item.data() as { title?: string; libraryApproved?: boolean; accessMode?: unknown };
+      const data = item.data() as { title?: string; libraryApproved?: boolean; accessMode?: unknown; category?: string; level?: string; subject?: string; tags?: unknown };
       return {
         id: item.id,
         title: data.title || 'Course',
         libraryApproved: data.libraryApproved === true,
         accessMode: asAccessMode(data.accessMode),
+        category: typeof data.category === 'string' ? data.category : undefined,
+        level: typeof data.level === 'string' ? data.level : undefined,
+        subject: typeof data.subject === 'string' ? data.subject : undefined,
+        tags: Array.isArray(data.tags) ? data.tags.filter((tag): tag is string => typeof tag === 'string') : undefined,
       };
     })
     .sort((a, b) => a.title.localeCompare(b.title));

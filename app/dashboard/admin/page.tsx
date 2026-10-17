@@ -222,6 +222,7 @@ export default function AdminDashboard() {
             {[
               { href: '/dashboard/admin/curriculum', icon: Layers, title: 'CMS', sub: 'Programmes, subjects and lessons' },
               { href: '/dashboard/admin/settings', icon: BarChart3, title: 'Pricing', sub: 'Plans, add-ons and currency' },
+              { href: '/dashboard/admin/institution-pricing', icon: Building2, title: 'Institution prices', sub: 'Programmes, seats and tiers' },
               { href: '/dashboard/admin/allocations', icon: Shield, title: 'Allocation', sub: 'Tiers, access and codes' },
               { href: '/dashboard/admin/institutions', icon: Building2, title: 'Institutions', sub: 'Schools and OEM' },
               { href: '/dashboard/helpdesk', icon: LifeBuoy, title: 'Helpdesk', sub: 'Support tickets' },

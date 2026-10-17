@@ -23,6 +23,7 @@ import { LanguageSwitcher } from '@/components/language-switcher';
 import { CurrencySwitcher } from '@/components/currency-switcher';
 import { SparksChip } from '@/components/sparks-chip';
 import { upsertUserSession, accountStatusOf, clearUserFields, updateUser } from '@/lib/db';
+import { authedFetch } from '@/lib/api-client';
 import { deletionClosed, formatDeletionDate, sessionRevoked } from '@/lib/account-settings';
 import { AccountMenu } from '@/components/account/account-menu';
 import { ModeSwitch } from '@/components/account/mode-switch';
@@ -41,6 +42,7 @@ import { isSuperAdmin, ROLE_LABELS } from '@/lib/roles';
 import { PipGuide } from '@/components/pip-guide';
 import { OfflineBanner } from '@/components/offline-banner';
 import { RoleChecklist } from '@/components/role-checklist';
+import { WelcomeResume } from '@/components/onboarding/welcome-session';
 import { PagePurpose } from '@/components/page-purpose';
 import dynamic from 'next/dynamic';
 import type { TourRole } from '@/lib/tour-steps';
@@ -92,6 +94,9 @@ const NAV: Record<Role, NavGroup[]> = {
     ]},
     { sectionKey: 'nav.section.finance', items: [
       { href: '/dashboard/student/billing', icon: CreditCard, labelKey: 'nav.billing' },
+      { href: '/dashboard/student/academy', icon: GraduationCap, labelKey: 'nav.academy', label: 'My academy' },
+      { href: '/dashboard/student/network', icon: Users, labelKey: 'nav.academy', label: 'Class network' },
+      { href: '/dashboard/student/yearbook', icon: BookOpen, labelKey: 'nav.academy', label: 'Yearbook' },
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
     ]},
@@ -201,6 +206,9 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/admin/users', icon: UserCog, labelKey: 'nav.usersSparks' },
       { href: '/dashboard/admin/institutions', icon: Users, labelKey: 'nav.institutions' },
+      { href: '/dashboard/admin/schools', icon: GraduationCap, labelKey: 'nav.institutions', label: 'School leads', superOnly: true },
+      { href: '/dashboard/admin/insights', icon: PieChart, labelKey: 'nav.analytics', label: 'Insights', superOnly: true },
+      { href: '/dashboard/admin/automation', icon: Sparkles, labelKey: 'nav.dashboard', label: 'Automation', superOnly: true },
       { href: '/dashboard/admin/access', icon: Shield, labelKey: 'nav.accessConfig' },
       { href: '/dashboard/admin/allocations', icon: KeyRound, labelKey: 'nav.allocations' },
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
@@ -235,7 +243,11 @@ const NAV: Record<Role, NavGroup[]> = {
   institution_admin: [
     { items: [
       { href: '/dashboard/institution', icon: GraduationCap, labelKey: 'nav.myClasses' },
+      { href: '/dashboard/institution/insights', icon: PieChart, labelKey: 'nav.analytics', label: 'Insights' },
       { href: '/dashboard/institution/approvals', icon: ShieldCheck, labelKey: 'nav.approvals', label: 'Approvals' },
+      { href: '/dashboard/institution/join', icon: Users, labelKey: 'nav.join', label: 'Join settings' },
+      { href: '/dashboard/institution/alumni', icon: Award, labelKey: 'nav.alumni', label: 'Alumni' },
+      { href: '/dashboard/institution/verify', icon: Camera, labelKey: 'nav.verifyStudent', label: 'Verify student' },
       { href: '/dashboard/institution/publishing', icon: Library, labelKey: 'nav.library', label: 'Course library' },
       { href: '/dashboard/institution/sparks', icon: Sparkles, labelKey: 'nav.sparks', label: 'Sparks pool' },
       { href: '/dashboard/institution/billing', icon: CreditCard, labelKey: 'nav.billing', label: 'Billing' },
@@ -353,6 +365,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [user, loading, router]);
 
   useEffect(() => {
+    if (!user || !profile || !deletionClosed(profile.deletionRequest, Date.now())) return;
+    void authedFetch('/api/alumni', { method: 'POST', body: JSON.stringify({ action: 'honour-deletion' }) }).catch(() => undefined);
+  }, [user, profile]);
+
+  useEffect(() => {
     if (loading || user) return;
     // Closing a preview tab can make Firebase report a signed-out user for a
     // moment. Wait, then redirect only if the session is still gone.
@@ -387,6 +404,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
     }).catch(() => {});
   }, [user, router, pathname]);
+
+  useEffect(() => {
+    if (!user || adminMfaPending(user.uid)) return;
+    void authedFetch('/api/insights/pulse', { method: 'POST', body: '{}' }).catch(() => undefined);
+  }, [user]);
 
   useEffect(() => {
     if (!profile || !user || adminMfaPending(user.uid)) return;
@@ -713,6 +735,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {ACCESS_DENIED_MESSAGE}
               </div>
             )}
+            <WelcomeResume />
             <RoleChecklist role={role} />
             <PagePurpose pathname={pathname} />
             {children}

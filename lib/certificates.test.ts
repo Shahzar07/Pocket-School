@@ -12,6 +12,7 @@ import {
   certificateKey,
   certificateStatus,
   certificateStudentName,
+  certificateStudentNumber,
   certificateVerifyUrl,
   moduleIsComplete,
   publishedProgress,
@@ -137,6 +138,10 @@ describe('module completion', () => {
     expect(certificateKey('stu', 'course', 'mod')).toBe('stu__course__mod');
     expect(certificateStudentName('  Aisha   Rahman ')).toBe('Aisha Rahman');
     expect(certificateStudentName('')).toBe('Student');
+    expect(certificateStudentNumber('ps-k7np-4r2c')).toBe('PS-K7NP-4R2C');
+    expect(certificateStudentNumber('PS K7NP 4R2C')).toBe('PS-K7NP-4R2C');
+    expect(certificateStudentNumber('not-a-code')).toBe('');
+    expect(certificateStudentNumber('PS-IIII-OOOO')).toBe('');
   });
 });
 
@@ -226,5 +231,29 @@ describe('certificate document', () => {
     const revokedPdf = new TextDecoder().decode(buildCertificatePdf({ ...face, status: 'revoked' }));
     expect(revokedPdf).toContain('Status  Revoked');
     expect(revokedPdf).toContain(face.id);
+    expect(html).not.toContain('Student number');
+  });
+
+  it('prints the student number on co-branded certificates and keeps the QR on the verification page', () => {
+    const verify = certificateVerifyUrl(face.id);
+    const numbered = {
+      ...face,
+      studentNumber: 'ps-k7np-4r2c',
+      issuedByName: 'North Academy',
+      logoUrl: '/preview-assets/north.svg',
+      certificateFooter: 'Awarded by North Academy',
+      showPoweredBy: true,
+    };
+    const html = certificateDocumentHtml(numbered);
+    const pdf = new TextDecoder().decode(buildCertificatePdf(numbered));
+    expect(html).toContain('PS-K7NP-4R2C');
+    expect(html).toContain('Student number');
+    expect(html).toContain('NORTH ACADEMY');
+    expect(html).toContain('Awarded by North Academy');
+    expect(decodeSvg(html.match(/<svg[\s\S]*?<\/svg>/)?.[0] ?? '')).toBe(verify);
+    expect(pdf).toContain('PS-K7NP-4R2C');
+    expect(pdf).toContain('Student number  PS-K7NP-4R2C');
+    expect(pdf).toContain('NORTH ACADEMY');
+    expect(decodePdfQr(pdf)).toBe(verify);
   });
 });

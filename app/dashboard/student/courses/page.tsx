@@ -7,6 +7,10 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { getEnrolledCourses, getAllPublishedCourses, enrollStudent, Course, Enrollment } from '@/lib/db';
 import { productAccess, viewerFromProfile } from '@/lib/allocation';
 import { asVolumePlanId, canSeeCourse, type AccessViewer } from '@/lib/institution-membership';
+import { studentSeesPaidCourse, type ProgrammeGrant } from '@/lib/institution-catalogue';
+import { completedShelf, recommendNext, type FinishedCourse } from '@/lib/alumni';
+import { CompletedShelf } from '@/components/alumni/record-panels';
+import { authedFetch } from '@/lib/api-client';
 import { forLearnerView } from '@/lib/account-modes';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -78,7 +82,29 @@ export default function CoursesPage() {
       setEnrolled(mine);
       const enrolledIds = new Set(mine.map(e => e.course.id));
       const viewer = viewerFromProfile(profile, { userId: user.uid });
-      setAvailable(all.filter(c => !enrolledIds.has(c.id) && productAccess(c, viewer).listed && memberCanSee(c, profile, user.uid)).sort((a, b) => a.title.localeCompare(b.title)));
+      let gate: { paidIds: string[]; grants: ProgrammeGrant[] } | null = null;
+      if (profile?.institutionId && profile.role === 'student') {
+        try {
+          const data = await authedFetch(`/api/institutions/programme-access?institutionId=${profile.institutionId}`);
+          const paidIds = Array.isArray(data.programmeIds) ? data.programmeIds.filter((id): id is string => typeof id === 'string') : [];
+          const grants = Array.isArray(data.grants) ? data.grants as ProgrammeGrant[] : [];
+          if (paidIds.length) gate = { paidIds, grants };
+        } catch {
+          gate = null;
+        }
+      }
+      const levelName = profile?.academyLevel || (typeof profile?.level === 'string' ? profile.level : '');
+      setAvailable(all.filter(c => {
+        if (enrolledIds.has(c.id) || !productAccess(c, viewer).listed || !memberCanSee(c, profile, user.uid)) return false;
+        if (!gate) return true;
+        return studentSeesPaidCourse({
+          paidIds: gate.paidIds,
+          grants: gate.grants,
+          studentId: user.uid,
+          studentLevel: levelName,
+          course: { category: c.category, level: c.level, subject: c.subject, tags: c.tags },
+        });
+      }).sort((a, b) => a.title.localeCompare(b.title)));
     } catch (e: any) {
       setError(e?.message ?? 'Something went wrong.');
     } finally {
@@ -107,6 +133,37 @@ export default function CoursesPage() {
     p > 0 ? 'bg-primary/10 text-primary border-primary/20' :
     'bg-muted text-muted-foreground border-border';
   const statusLabel = (p: number) => p === 100 ? 'Completed' : p > 0 ? 'In progress' : 'Not started';
+  const levelName = profile?.academyLevel || (typeof profile?.level === 'string' ? profile.level : '');
+  const institutionAccess = profile?.institutionAccess === 'grace' || profile?.institutionAccess === 'ended' || profile?.institutionAccess === 'active'
+    ? profile.institutionAccess
+    : profile?.institutionId ? 'active' : '';
+  const finishedCourses: FinishedCourse[] = enrolled.map(({ course, enrollment }) => ({
+    courseId: course.id,
+    title: course.title,
+    level: typeof course.level === 'string' ? course.level : '',
+    programmeId: course.programmeId ?? '',
+    access: course.accessMode === 'a_la_carte' || course.accessMode === 'both' || course.accessMode === 'subscription' ? course.accessMode : '',
+    progress: enrollment.progress,
+    passedFinal: false,
+    institutionPaid: Boolean(profile?.institutionId && course.institutionId === profile.institutionId),
+  }));
+  const shelf = completedShelf(finishedCourses, {
+    subscriptionActive: profile?.subscriptionTier === 'academic',
+    institutionAccess,
+  });
+  const recommendations = recommendNext({
+    level: levelName,
+    finishedIds: shelf.completed.map((course) => course.courseId),
+    atInstitution: Boolean(profile?.institutionId),
+    options: available.map((course) => ({
+      id: course.id,
+      title: course.title,
+      level: typeof course.level === 'string' ? course.level : '',
+      programmeId: course.programmeId ?? '',
+      access: course.accessMode === 'a_la_carte' || course.accessMode === 'both' ? course.accessMode : 'subscription',
+    })),
+  });
+  const learning = enrolled.filter((row) => row.enrollment.progress < 100);
 
   if (loading) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10 pt-10">
@@ -152,7 +209,7 @@ export default function CoursesPage() {
       </motion.header>
 
       {/* Enrolled Section */}
-      {enrolled.length > 0 && (
+      {learning.length > 0 && (
         <motion.section
           variants={fadeUp}
           initial="hidden"
@@ -165,7 +222,7 @@ export default function CoursesPage() {
             <h2 className="font-heading text-3xl text-foreground tracking-tight">Enrolled</h2>
           </div>
           <div className="space-y-4">
-            {enrolled.map(({ course, enrollment }, i) => (
+            {learning.map(({ course, enrollment }, i) => (
               <motion.div
                 key={course.id}
                 variants={fadeUp}
@@ -217,6 +274,18 @@ export default function CoursesPage() {
           </div>
         </motion.section>
       )}
+
+      <CompletedShelf
+        completed={shelf.completed}
+        recommendations={recommendations}
+        onOpen={(courseId) => router.push(`/dashboard/student/courses/${courseId}`)}
+        onEnrol={(courseId) => void handleEnroll(courseId)}
+        onAsk={(title) => {
+          void authedFetch('/api/alumni', { method: 'POST', body: JSON.stringify({ action: 'ask', title }) })
+            .then(() => toast.success(`Asked your academy about ${title}.`))
+            .catch(() => toast.error('Could not send that request.'));
+        }}
+      />
 
       {/* Available Section */}
       {available.length > 0 && (

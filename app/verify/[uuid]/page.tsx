@@ -11,9 +11,11 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CertificateDocument } from '@/components/certificate-document';
-import { CERTIFICATE_DISCLAIMER, certificateStatus, formatCertificateDate, type CertificateFace } from '@/lib/certificates';
+import { verifyStatusText } from '@/lib/alumni';
+import { CERTIFICATE_DISCLAIMER, certificateStatus, certificateStudentNumber, formatCertificateDate, type CertificateFace } from '@/lib/certificates';
 import { CredentialPanel } from '@/components/credentials/credential-panel';
 import { copyrightLine } from '@/lib/insights/copyright';
+import { automationEnabled } from '@/lib/automation-status';
 
 function toFace(cert: Certificate): CertificateFace {
   const issued = cert.issuedAt instanceof Timestamp ? cert.issuedAt.toDate() : cert.issuedAt;
@@ -31,7 +33,21 @@ function toFace(cert: Certificate): CertificateFace {
     showPoweredBy: cert.showPoweredBy,
     logoUrl: cert.logoUrl,
     certificateFooter: cert.certificateFooter,
+    studentNumber: cert.studentNumber,
   };
+}
+
+async function withStudentNumber(cert: Certificate): Promise<Certificate> {
+  if (certificateStudentNumber(cert.studentNumber)) return cert;
+  try {
+    const response = await fetch(`/api/verify/${encodeURIComponent(cert.id ?? '')}`);
+    if (!response.ok) return cert;
+    const data = await response.json() as { studentNumber?: string };
+    const studentNumber = certificateStudentNumber(data.studentNumber);
+    return studentNumber ? { ...cert, studentNumber } : cert;
+  } catch {
+    return cert;
+  }
 }
 
 export default function VerifyCertificate({ params }: { params: Promise<{ uuid: string }> }) {
@@ -42,6 +58,11 @@ export default function VerifyCertificate({ params }: { params: Promise<{ uuid: 
   const [certData, setCertData] = useState<Certificate | null>(null);
   const [loading, setLoading] = useState(false);
   const [revoking, setRevoking] = useState(false);
+  const [checksOpen, setChecksOpen] = useState(true);
+
+  useEffect(() => {
+    automationEnabled('certificate_verify').then(setChecksOpen).catch(() => setChecksOpen(true));
+  }, []);
 
   useEffect(() => {
     if (resolvedParams.uuid && resolvedParams.uuid !== 'new') {
@@ -54,11 +75,16 @@ export default function VerifyCertificate({ params }: { params: Promise<{ uuid: 
   const handleVerify = async (id?: string) => {
     const target = (id ?? uuid).trim();
     if (!target) return;
+    if (!(await automationEnabled('certificate_verify'))) {
+      setChecksOpen(false);
+      return;
+    }
     setLoading(true);
     try {
       const cert = await getCertificateByUUID(target);
-      setVerified(!!cert);
-      setCertData(cert);
+      const filled = cert ? await withStudentNumber(cert) : null;
+      setVerified(!!filled);
+      setCertData(filled);
     } catch {
       setVerified(false);
       setCertData(null);
@@ -75,10 +101,13 @@ export default function VerifyCertificate({ params }: { params: Promise<{ uuid: 
             <Award className="w-4 h-4" /> POKET SCHOOL
           </Link>
           <h1 className="font-heading text-4xl text-[#1c2b30] mt-3">Verify a certificate</h1>
-          <p className="text-sm text-[#526066] mt-2">Anyone can check a certificate ID. The record is issued by Poket School.</p>
+          <p className="text-sm text-[#526066] mt-2">Anyone can confirm a certificate. This page shows the student number, name, course and issue date.</p>
         </div>
+        {!checksOpen && (
+          <p className="rounded-2xl border border-[#1A3C34]/10 bg-white px-4 py-4 text-sm text-center">Certificate checks are with a super admin at the moment.</p>
+        )}
 
-        <div className="flex gap-2 mb-8 max-w-xl mx-auto">
+        {checksOpen && <div className="flex gap-2 mb-8 max-w-xl mx-auto">
           <Input
             value={uuid}
             onChange={(e) => setUuid(e.target.value)}
@@ -89,7 +118,7 @@ export default function VerifyCertificate({ params }: { params: Promise<{ uuid: 
           <Button onClick={() => handleVerify()} disabled={loading || !uuid.trim()} className="h-12 rounded-xl bg-[#1E6A83] hover:bg-[#2786A4] px-5">
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
           </Button>
-        </div>
+        </div>}
 
         {verified === true && certData && (
           <VerificationRecord
@@ -145,13 +174,15 @@ function VerificationRecord({
   const status = certificateStatus(face.status);
   const revoked = status === 'revoked';
   const moduleTitle = face.moduleTitle?.trim();
+  const studentNumber = certificateStudentNumber(face.studentNumber);
   const rows = [
+    { label: 'Student number', value: studentNumber || 'Not recorded' },
     { label: 'Student name', value: face.studentName },
     { label: 'Module', value: moduleTitle || face.courseTitle },
     { label: 'Course', value: face.courseTitle },
     { label: 'Issue date', value: formatCertificateDate(face.issuedAt) },
     { label: 'Certificate ID', value: face.id },
-    { label: 'Status', value: revoked ? 'Revoked' : 'Valid' },
+    { label: 'Status', value: verifyStatusText(face.status, certificate.revocationReason) },
   ];
   return (
     <div className="space-y-4">
@@ -164,7 +195,7 @@ function VerificationRecord({
           {rows.map((row) => (
             <div key={row.label} className="flex justify-between gap-4 px-4 py-3 text-sm">
               <dt className="text-[#526066] shrink-0">{row.label}</dt>
-              <dd className={`font-semibold text-right break-all ${row.label === 'Certificate ID' ? 'font-mono text-xs sm:text-sm' : ''} ${row.label === 'Status' ? (revoked ? 'text-[#9B1C1C]' : 'text-[#0F6E56]') : 'text-[#1c2b30]'}`}>
+              <dd className={`font-semibold text-right break-all ${row.label === 'Certificate ID' || row.label === 'Student number' ? 'font-mono text-xs sm:text-sm' : ''} ${row.label === 'Status' ? (revoked ? 'text-[#9B1C1C]' : 'text-[#0F6E56]') : 'text-[#1c2b30]'}`}>
                 {row.value}
               </dd>
             </div>

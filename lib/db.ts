@@ -53,6 +53,23 @@ export interface UserProfile {
   /** Set for institution_admin (and optionally members) — scopes what they see. */
   institutionId?: string;
   avatarUrl?: string;
+  /** PS-XXXX-XXXX. Issued on signup and backfilled when a student profile loads. */
+  studentNumber?: string;
+  /** Level name assigned by the academy, such as IGCSE or Primary. */
+  academyLevel?: string;
+  /** active while the academy pays, grace after leaving, ended when the seat is free. */
+  institutionAccess?: 'active' | 'grace' | 'ended';
+  /** Academy this person graduated or left. The account stays. */
+  alumniOf?: string;
+  alumniName?: string;
+  alumniGraceEnds?: string;
+  /** Day the academy seat was freed. */
+  alumniLeftOn?: string;
+  /** Fraction off the individual plan, for example 0.15. */
+  alumniDiscount?: number;
+  alumniPublic?: boolean;
+  /** Children linked from a parent account, including children at other academies. */
+  parentLinks?: { studentNumber: string; institutionId: string; name: string }[];
   /** Storage path for the profile photo, under media/{uid}/. */
   photoStoragePath?: string;
   level?: string;
@@ -97,6 +114,14 @@ export interface UserProfile {
   ageTier?: 'under13' | 'teen' | 'adult';
   /** YYYY-MM-DD. Server-set. Clients cannot write it. */
   dateOfBirth?: string;
+  /** Male or female. Written through the insights sync so rules can stay unchanged. */
+  gender?: 'male' | 'female';
+  /** Job title collected when someone registers an academy. */
+  jobTitle?: string;
+  /** State or region the person chose. Coarse place only. */
+  region?: string;
+  /** When the person agreed to grouped demographic statistics. */
+  demographicConsentAt?: number;
   lastActiveAt?: Timestamp;
   sparksBalance?: number;
   sparksMonthlyAllowance?: number;
@@ -107,6 +132,16 @@ export interface UserProfile {
   studyDates?: string[];
   /** When false, the privacy-safe leaderboard omits this student. */
   shareBoard?: boolean;
+  /**
+   * School the student typed because it is not a registered institution.
+   * This is not a membership and does not set institutionId.
+   */
+  selfReportedSchool?: {
+    name: string;
+    key: string;
+    country: string;
+    state: string;
+  };
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -413,6 +448,8 @@ export interface Institution {
   state?: string;
   /** Super admin lists the academy for Independent vs institution signup. */
   listedForSelfJoin?: boolean;
+  /** Academy admin opts this name onto the public homepage school strip. */
+  showOnSchoolStrip?: boolean;
   plan?: 'starter' | 'team' | 'enterprise' | 'oem';
   /** Set on a sub-academy. Data stays in this institution's own subcollections. */
   parentInstitutionId?: string;
@@ -440,6 +477,11 @@ export interface Institution {
     faviconUrl?: string;
     loginHeadline?: string;
     loginBody?: string;
+    /**
+     * Public branded login. False hides it. True shows it.
+     * Absent keeps academies that already have a subdomain on their login page.
+     */
+    loginPublished?: boolean;
     inviteSubject?: string;
     inviteBody?: string;
     mobileAppName?: string;
@@ -454,6 +496,10 @@ export interface Institution {
   previousSubdomains?: string[];
   signupPolicy?: 'open' | 'invite' | 'domain';
   allowedEmailDomains?: string[];
+  /** Hosts that match an email for domain join. A leading @ is stripped. */
+  domains?: string[];
+  /** Single verification mode. Absent keeps the combined roster, code, and domain checks. */
+  joinPolicy?: 'open' | 'invite' | 'domain' | 'code' | 'roster' | 'manual';
   catalogueVisibility?: 'private' | 'curated' | 'public';
   publicCatalogueIds?: string[];
   defaultLocale?: string;
@@ -462,6 +508,19 @@ export interface Institution {
   passwordRequireSymbol?: boolean;
   sessionTimeoutMinutes?: number;
   features?: Record<string, boolean>;
+  /**
+   * False while a newly approved admin is still on the setup checklist.
+   * Absent means an academy that predates the checklist and opens the dashboard.
+   */
+  setupComplete?: boolean;
+  /** pending_payment sends a new admin back to checkout until the academy is paid or held. */
+  billingPhase?: 'pending_payment' | 'active' | 'grace' | 'suspended';
+  reviewHold?: boolean;
+  reviewReasons?: string[];
+  organisationSize?: string;
+  planId?: string;
+  accessMode?: 'subscription' | 'a_la_carte';
+  programmeIds?: string[];
   leaderboardVisible?: 'academy' | 'group' | 'off';
   leaderboard?: { rank: number; name: string; points: number }[];
   publishedPages?: { slug: string; title: string; body: string }[];
@@ -1521,6 +1580,11 @@ export interface AcademyInvite {
   name: string;
   role: 'student' | 'teacher';
   academyRole?: string;
+  gender?: 'male' | 'female';
+  level?: string;
+  country?: string;
+  state?: string;
+  dateOfBirth?: string;
 }
 
 export async function saveAcademyInvites(institutionId: string, rows: AcademyInvite[]): Promise<void> {
@@ -1899,7 +1963,7 @@ export async function getInstitutionMembers(institutionId: string): Promise<{ id
  */
 export async function setInstitutionAdmin(userId: string, institutionId: string | null) {
   await updateDoc(doc(db, 'users', userId), institutionId
-    ? { role: 'institution_admin', institutionId }
+    ? { role: 'institution_admin', institutionId, twoFactorEnabled: true }
     : { role: 'teacher', institutionId: null });
 }
 
@@ -3404,10 +3468,13 @@ export interface Certificate {
   kind?: 'module';
   status?: 'valid' | 'revoked';
   revokedAt?: Timestamp;
+  /** Set when the holder asks for deletion. The verify page stays up. */
+  revocationReason?: string;
   accent?: string;
   showPoweredBy?: boolean;
   logoUrl?: string;
   certificateFooter?: string;
+  studentNumber?: string;
 }
 
 export async function getCertificatesForStudent(studentId: string): Promise<Certificate[]> {

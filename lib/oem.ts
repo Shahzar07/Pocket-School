@@ -102,24 +102,27 @@ export function brandedInvite(
   brand: AcademyBrand,
   joinCode: string,
   origin: string,
-  template?: { subject?: string; text?: string },
+  template?: { subject?: string; text?: string; loginUrl?: string },
 ): { subject: string; text: string } {
   const school = brand.displayName || 'Poket School';
+  const login = template?.loginUrl?.trim() ?? '';
   const vars: Record<string, string> = {
     school,
     code: joinCode,
     origin,
     from: brand.emailFromName || school,
+    login,
   };
-  const fill = (value: string) => value.replace(/\{\{\s*(school|code|origin|from)\s*\}\}/g, (_, key: string) => vars[key] ?? '');
+  const fill = (value: string) => value.replace(/\{\{\s*(school|code|origin|from|login)\s*\}\}/g, (_, key: string) => vars[key] ?? '');
   const subject = template?.subject?.trim() ? fill(template.subject) : `${school} invited you`;
-  const text = template?.text?.trim()
+  const body = template?.text?.trim()
     ? fill(template.text)
     : [
       `${brand.emailFromName || school} invited you to ${school}.`,
       `Join at ${origin} with the code ${joinCode}.`,
       'Poket School runs the academy. Your school chose the programmes.',
     ].join('\n');
+  const text = login && !body.includes(login) ? `${body}\nSign in at ${login}.` : body;
   return { subject, text };
 }
 

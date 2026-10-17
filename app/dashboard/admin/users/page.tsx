@@ -304,7 +304,7 @@ export default function AdminUsersPage() {
   const exportCsv = () => {
     const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const csv = [
-      ['Name', 'Email', 'Role', 'Staff role', 'Status', 'Year group', 'Sparks', 'Tier', 'Institution', 'Country', 'Joined'],
+      ['Name', 'Email', 'Role', 'Staff role', 'Status', 'Level', 'Sparks', 'Tier', 'Institution', 'Country', 'Joined'],
       ...sorted.map(r => [
         r.data.name, r.data.email, ROLE_LABELS[(r.data.role ?? 'student') as Role],
         resolveStaffRole({ ...r.data, id: r.id }) ?? '',
@@ -506,7 +506,7 @@ export default function AdminUsersPage() {
                     {label}{sortField === f && <span className="ml-1">{sortDir === 'asc' ? '▲' : '▼'}</span>}
                   </th>
                 ))}
-                <th className="px-4 py-3 font-bold">Year group</th>
+                <th className="px-4 py-3 font-bold">Level</th>
                 <th className="px-4 py-3 font-bold cursor-pointer select-none hover:text-foreground"
                   onClick={() => sort('joined')}>
                   Joined{sortField === 'joined' && <span className="ml-1">{sortDir === 'asc' ? '▲' : '▼'}</span>}

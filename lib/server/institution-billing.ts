@@ -19,6 +19,8 @@ import {
   type SubscriptionState,
 } from '../institution-membership';
 import type { VolumeInterval, VolumePlanId } from '../institution-pricing';
+import { scheduledCancellation } from '../institution-self-serve';
+import { reviewInstitutionTier } from './institution-tier';
 
 function todayIso(date = new Date()): string {
   return date.toISOString().slice(0, 10);
@@ -130,16 +132,36 @@ export async function advanceOpenBills(on = todayIso()): Promise<{ institutions:
   for (const academy of academies.docs) {
     const billing = await academy.ref.collection('billing').doc('current').get();
     if (!billing.exists) continue;
-    const state = readSubscription(billing.data() as Record<string, unknown>, blankSubscription('institution', on));
+    const raw = billing.data() as Record<string, unknown>;
+    const state = readSubscription(raw, blankSubscription('institution', on));
+    const cancelOn = typeof raw.cancelOn === 'string' ? raw.cancelOn : '';
+    if (scheduledCancellation({ phase: state.phase, cancelOn, today: on })) {
+      await billing.ref.set({ phase: 'suspended', suspendedOn: on, cancelOn: '' }, { merge: true });
+      await academy.ref.set({ billingPhase: 'suspended', status: 'suspended' }, { merge: true });
+      await academy.ref.collection('notifications').add({
+        kind: 'suspend',
+        title: `${String(academy.data().name ?? 'Your institution')} subscription ended`,
+        body: 'The subscription was cancelled and the paid period has ended.',
+        audience: 'admins',
+        at: on,
+      });
+      institutions += 1;
+      continue;
+    }
     const next = cycleSubscription(state, on);
-    if (!billingMoved(state, next)) continue;
-    await billing.ref.set(next.state);
-    const patch: { billingPhase: string; status?: string } = { billingPhase: next.state.phase };
-    if (next.state.phase === 'suspended') patch.status = 'suspended';
-    if (next.state.phase === 'active') patch.status = 'active';
-    await academy.ref.set(patch, { merge: true });
-    await writeNotices(academy.id, next.notices, String(academy.data().name ?? 'Your institution'));
-    institutions += 1;
+    const moved = billingMoved(state, next);
+    if (moved) {
+      await billing.ref.set(next.state, { merge: true });
+      const patch: { billingPhase: string; status?: string } = { billingPhase: next.state.phase };
+      if (next.state.phase === 'suspended') patch.status = 'suspended';
+      if (next.state.phase === 'active') patch.status = 'active';
+      await academy.ref.set(patch, { merge: true });
+      await writeNotices(academy.id, next.notices, String(academy.data().name ?? 'Your institution'));
+      institutions += 1;
+    }
+    if ((moved ? next.state.phase : state.phase) === 'active') {
+      await reviewInstitutionTier(academy.id, on);
+    }
   }
   const people = await db.collection('subscriber_billing').where('phase', 'in', ['active', 'grace']).limit(200).get();
   let individuals = 0;

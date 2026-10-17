@@ -9,7 +9,7 @@ import { asAgeTier, isAgeTier } from '../age-tier';
 import { accessTierFor, freePreviewCount, tierDefinition, type AccessTier } from '../entitlements';
 import { answersMatch } from '../quiz';
 import { countCompleted, isPublishedLesson, progressPercent } from '../progress';
-import { certificateKey, certificateStatus, certificateStudentName, moduleIsComplete } from '../certificates';
+import { certificateKey, certificateStatus, certificateStudentName, certificateStudentNumber, moduleIsComplete } from '../certificates';
 import { issueInTransaction, issuerFromInstitution } from './module-certificates';
 import { attachOpenBadge } from './badge-issue';
 import { recordActivity } from '@/lib/audit/server';
@@ -160,6 +160,10 @@ export async function completeLesson(
   const enrollRef = db().doc(`courses/${courseId}/enrollments/${uid}`);
   const keyRef = db().doc(`certificate_keys/${certificateKey(uid, courseId, hit.moduleId)}`);
 
+  const { loadAutomation } = await import('./automation-store');
+  const { defaultAutomation } = await import('../site-automation');
+  const issueCertificates = (await loadAutomation().catch(() => defaultAutomation())).rules.certificate_issue;
+
   const result = await db().runTransaction(async (tx) => {
     const [userSnap, enrollSnap, keySnap] = await Promise.all([tx.get(userRef), tx.get(enrollRef), tx.get(keyRef)]);
     if (!userSnap.exists) throw new ActionError('USER_NOT_FOUND');
@@ -204,13 +208,14 @@ export async function completeLesson(
     const certificate = issueInTransaction(tx, db(), keySnap.exists, {
       studentId: uid,
       studentName,
+      studentNumber: certificateStudentNumber(userSnap.data()?.studentNumber),
       courseId,
       courseTitle,
       moduleId: hit.moduleId,
       moduleTitle,
       publishedIds: modulePublishedIds,
       completedIds: next,
-      fresh: !already && moduleIsComplete(modulePublishedIds, next),
+      fresh: issueCertificates && !already && moduleIsComplete(modulePublishedIds, next),
       issuerName: issuer.issuerName,
       showPoweredBy: issuer.showPoweredBy,
       accent: issuer.accent,
@@ -229,6 +234,18 @@ export async function completeLesson(
     };
   });
 
+  if (result.certificate && !certificateStudentNumber(result.certificate.studentNumber)) {
+    try {
+      const { ensureStudentNumber } = await import('./student-pass');
+      const studentNumber = certificateStudentNumber(await ensureStudentNumber(uid));
+      if (studentNumber) {
+        await db().doc(`certificates/${result.certificate.id}`).set({ studentNumber }, { merge: true });
+        result.certificate.studentNumber = studentNumber;
+      }
+    } catch {
+      // The public verification page stamps the number the next time the certificate is opened.
+    }
+  }
   if (result.certificate) {
     await attachOpenBadge(result.certificate, { id: uid, role: result.role ?? 'student' });
   }
@@ -275,6 +292,12 @@ async function addSparks(uid: string, amount: number, type: string, note: string
     });
     return balanceAfter;
   });
+  try {
+    const { recordLearning } = await import('./insight-counters');
+    await recordLearning(uid, { sparks: amount });
+  } catch (error) {
+    console.error('insight sparks counter skipped', error);
+  }
   return balance;
 }
 
@@ -481,6 +504,14 @@ export async function enrollFromPayment(opts: {
     permissions: FieldValue.arrayUnion(`alloc:marketplace:${courseId}`),
     updatedAt: FieldValue.serverTimestamp(),
   }, { merge: true });
+  if (!existing.exists) {
+    try {
+      const { recordLearning } = await import('./insight-counters');
+      await recordLearning(studentId, { enrolments: 1 });
+    } catch (error) {
+      console.error('insight enrolment counter skipped', error);
+    }
+  }
 }
 
 interface QuizRow {
@@ -756,6 +787,15 @@ export async function respondParentLink(studentUid: string, studentEmail: string
     read: false,
     createdAt: FieldValue.serverTimestamp(),
   });
+  try {
+    const { reconcileUser } = await import('./insight-counters');
+    const pending = parent.data()?.pendingChild as { email?: string } | undefined;
+    if (pending && String(pending.email ?? '').toLowerCase() === email) {
+      await reconcileUser(studentUid, pending as Record<string, unknown>);
+    }
+  } catch (error) {
+    console.error('pending child demographics skipped', error);
+  }
   return { status: 'approved' };
 }
 
@@ -877,6 +917,15 @@ export async function syncModuleCertificates(callerId: string, studentId: string
   const user = await db().doc(`users/${target}`).get();
   if (!user.exists) throw new ActionError('USER_NOT_FOUND');
   const studentName = certificateStudentName(user.data()?.name);
+  let studentNumber = certificateStudentNumber(user.data()?.studentNumber);
+  if (!studentNumber) {
+    try {
+      const { ensureStudentNumber } = await import('./student-pass');
+      studentNumber = certificateStudentNumber(await ensureStudentNumber(target));
+    } catch {
+      studentNumber = '';
+    }
+  }
   const institutionId = typeof user.data()?.institutionId === 'string' ? user.data()?.institutionId as string : '';
   const instSnap = institutionId ? await db().doc(`institutions/${institutionId}`).get() : null;
   const issuer = issuerFromInstitution(instSnap?.data() as Record<string, unknown> | undefined);
@@ -921,6 +970,7 @@ export async function syncModuleCertificates(callerId: string, studentId: string
         return issueInTransaction(tx, db(), keySnap.exists, {
           studentId: target,
           studentName,
+          studentNumber,
           courseId: thisCourseId,
           courseTitle: ((course.title as string) || '').trim() || 'Course',
           moduleId,

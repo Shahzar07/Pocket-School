@@ -101,6 +101,7 @@ describe('completing a module as a test student', { skip: !emulatorReady }, () =
       assert.equal(saved.data()?.moduleId, moduleId);
       assert.equal(saved.data()?.brand, 'Poket School');
       assert.equal(saved.data()?.status, 'valid');
+      assert.match(String(saved.data()?.studentNumber ?? ''), /^PS-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
       assert.equal(saved.data()?.issuedBy, 'poket-school');
       assert.equal(typeof saved.data()?.disclaimer, 'string');
 

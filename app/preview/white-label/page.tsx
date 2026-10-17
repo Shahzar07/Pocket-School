@@ -18,6 +18,7 @@ const certificate: CertificateFace = {
   showPoweredBy: true,
   logoUrl: LOGO,
   certificateFooter: 'Awarded by North Academy. Poket School remains the platform.',
+  studentNumber: 'PS-K7NP-4R2C',
 };
 
 /** Static academy brand. The live login and bar use the same lockup when a host resolves. */

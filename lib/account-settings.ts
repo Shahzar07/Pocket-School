@@ -69,6 +69,9 @@ export interface NotificationPrefs {
   messages: boolean;
   announcements: boolean;
   product: boolean;
+  alumni: boolean;
+  institution: boolean;
+  achievements: boolean;
 }
 
 export interface PrivacySettings {
@@ -104,6 +107,9 @@ export const DEFAULT_NOTIFICATIONS: NotificationPrefs = {
   messages: true,
   announcements: true,
   product: true,
+  alumni: true,
+  institution: true,
+  achievements: true,
 };
 
 export const DEFAULT_PRIVACY: PrivacySettings = {
@@ -198,6 +204,9 @@ export interface ProfileDraft {
   level: string;
   learningStyle: string;
   yearGroup: string;
+  region?: string;
+  gender?: '' | 'male' | 'female';
+  demographicConsent?: boolean;
   notificationPrefs: NotificationPrefs;
   privacy: PrivacySettings;
   twoFactorEnabled: boolean;
@@ -222,6 +231,7 @@ export function profilePatch(draft: ProfileDraft, role: string): Record<string, 
     shareBoard: draft.privacy.shareBoard,
     twoFactorEnabled: draft.twoFactorEnabled,
   };
+  if (draft.region?.trim()) patch.region = draft.region.trim();
   if (draft.avatarUrl) patch.avatarUrl = draft.avatarUrl;
   if (draft.photoStoragePath) patch.photoStoragePath = draft.photoStoragePath;
   if (role === 'student') {

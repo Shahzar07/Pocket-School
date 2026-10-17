@@ -161,6 +161,7 @@ export function badgeStanding(input: {
 
 export function linkedInCertificationUrl(input: {
   name: string;
+  organizationId?: string;
   organizationName?: string;
   issuedAt: string;
   expiresAt?: string | null;
@@ -168,15 +169,17 @@ export function linkedInCertificationUrl(input: {
   certId: string;
 }): string {
   const issued = new Date(input.issuedAt);
+  const organizationId = (input.organizationId ?? '').trim();
   const params = new URLSearchParams({
     startTask: 'CERTIFICATION_NAME',
     name: input.name,
-    organizationName: input.organizationName || CERTIFICATE_ISSUER_NAME,
     issueYear: String(issued.getUTCFullYear()),
     issueMonth: String(issued.getUTCMonth() + 1),
     certUrl: input.certUrl,
     certId: input.certId,
   });
+  if (organizationId) params.set('organizationId', organizationId);
+  else params.set('organizationName', input.organizationName || CERTIFICATE_ISSUER_NAME);
   if (input.expiresAt) {
     const expires = new Date(input.expiresAt);
     if (!Number.isNaN(expires.getTime())) {

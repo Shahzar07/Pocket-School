@@ -13,10 +13,15 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Zap, BookOpen, MessageSquare, Trophy, UserRound, FileBarChart, TrendingUp, Target, Clock, ShieldCheck, CheckCircle2, Loader2, Award } from 'lucide-react';
-import { certificateStatus, formatCertificateDate, type CertificateFace } from '@/lib/certificates';
+import { certificateStatus, certificateStudentNumber, formatCertificateDate, type CertificateFace } from '@/lib/certificates';
 import Link from 'next/link';
 import { ChildExamPrep } from '@/components/study/child-exam-prep';
 import { DashPage, DashHeader } from '@/components/dash-ui';
+import { JoinByCode, type JoinStudentCard } from '@/components/join-by-code';
+import { FinalSummaryCard } from '@/components/alumni/record-panels';
+import { AttendedSchoolPanel } from '@/components/alumni/claim-panel';
+import { asAgeTier, isMinorTier } from '@/lib/age-tier';
+import { authedFetch } from '@/lib/api-client';
 import dynamic from 'next/dynamic';
 import { SeeMore } from '@/components/shell/see-more';
 import { friendlyError } from '@/lib/design/system';
@@ -37,7 +42,7 @@ interface ChildData {
   certificates: CertificateFace[];
 }
 
-function certificateFace(cert: Certificate): CertificateFace {
+function certificateFace(cert: Certificate, fallbackNumber?: string): CertificateFace {
   return {
     id: cert.id ?? '',
     studentName: cert.studentName,
@@ -52,6 +57,7 @@ function certificateFace(cert: Certificate): CertificateFace {
     showPoweredBy: cert.showPoweredBy,
     logoUrl: cert.logoUrl,
     certificateFooter: cert.certificateFooter,
+    studentNumber: certificateStudentNumber(cert.studentNumber) || certificateStudentNumber(fallbackNumber),
   };
 }
 
@@ -168,6 +174,11 @@ export default function ParentDashboard() {
 
   useEffect(() => { loadGoals(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('link') !== '1') return;
+    document.getElementById('link-child')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
   // Keep the feed and its countdowns fresh without a full page reload.
   useEffect(() => {
     const tick = setInterval(() => setGoalsNow(Date.now()), 30_000);
@@ -205,7 +216,7 @@ export default function ParentDashboard() {
             buildUnitReports(id, enrollments).catch(() => [] as UnitReportData[]),
             getCertificatesForStudent(id).catch(() => [] as Certificate[]),
           ]);
-          return { id, profile: data, enrollments, unitReports, certificates: certificateRows.map(certificateFace) };
+          return { id, profile: data, enrollments, unitReports, certificates: certificateRows.map((cert) => certificateFace(cert, data.studentNumber)) };
         })
       );
       setChildren(data);
@@ -220,6 +231,24 @@ export default function ParentDashboard() {
   }, [user]);
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const [linkCard, setLinkCard] = useState<JoinStudentCard | null>(null);
+  const [linkMessage, setLinkMessage] = useState('');
+  const [linkBusy, setLinkBusy] = useState(false);
+
+  const requestLink = async (code: string) => {
+    setLinkBusy(true);
+    try {
+      const data = await authedFetch('/api/join', { method: 'POST', body: JSON.stringify({ action: 'parent', code }) });
+      setLinkMessage(typeof data.message === 'string' ? data.message : 'Request sent.');
+      const found = await authedFetch('/api/join', { method: 'POST', body: JSON.stringify({ action: 'lookup', code }) });
+      if (found.card && typeof found.card === 'object') setLinkCard(found.card as JoinStudentCard);
+    } catch (error) {
+      setLinkCard(null);
+      setLinkMessage(error instanceof Error ? error.message : 'Could not send that request.');
+    } finally {
+      setLinkBusy(false);
+    }
+  };
 
   if (loading) return (
     <div className="max-w-5xl mx-auto px-0 sm:px-2 py-2 space-y-5">
@@ -243,6 +272,45 @@ export default function ParentDashboard() {
           </Link>
         }
       />
+
+      <AttendedSchoolPanel />
+
+      <div id="link-child">
+      <JoinByCode
+        title="Link your child"
+        body="Scan the QR on their student pass or type the student number. They confirm the link. A learner under 13 is confirmed by their institution admin. After that, progress stays on this page and Parent Explainer can summarise the week."
+        actionLabel={linkBusy ? 'Sending…' : 'Request link'}
+        onResolve={(code) => { void requestLink(code); }}
+        card={linkCard}
+        message={linkMessage}
+        busy={linkBusy}
+        extra={<Link href="/ai-studio?mode=parent-explainer" className="inline-flex text-sm font-semibold text-[#1A3C34] underline">Open Parent Explainer</Link>}
+      />
+      </div>
+
+      {children.filter((child) => child.profile.alumniOf || child.profile.institutionAccess === 'grace' || child.profile.institutionAccess === 'ended').map((child) => (
+        <FinalSummaryCard
+          key={child.id}
+          institutionName={child.profile.alumniName || 'their academy'}
+          childName={child.profile.name || 'Your child'}
+          level={child.profile.academyLevel || (typeof child.profile.level === 'string' ? child.profile.level : '')}
+          certificates={child.certificates.length}
+        />
+      ))}
+      {children.filter((child) => isMinorTier(asAgeTier(child.profile.ageTier))).map((child) => (
+        <button
+          key={child.id}
+          type="button"
+          className="rounded-full bg-[#1A3C34] px-4 py-2 text-sm font-semibold text-white"
+          onClick={() => {
+            void authedFetch('/api/portfolio', { method: 'POST', body: JSON.stringify({ action: 'parent-approve', studentId: child.id }) })
+              .then(() => toast.success('The public portfolio can be turned on.'))
+              .catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not approve the portfolio.'));
+          }}
+        >
+          Approve public portfolio for {child.profile.name || 'your child'}
+        </button>
+      ))}
 
       {/* ── Today's Goals ── */}
       <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={0.5} className="space-y-4">
@@ -371,7 +439,7 @@ export default function ParentDashboard() {
                 className="bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] overflow-hidden shadow-[0_8px_40px_-12px_rgba(15,23,42,0.08)]"
               >
                 {/* Child hero band */}
-                <div className="relative bg-[#203337] p-7 sm:p-8 text-white overflow-hidden">
+                <div className="relative bg-[#1A3C34] p-7 sm:p-8 text-white overflow-hidden">
                   <div className="pointer-events-none absolute inset-0">
                     <div className="absolute -top-20 -left-16 w-72 h-72 rounded-full bg-primary/25 blur-[80px]" />
                     <div className="absolute -bottom-24 -right-10 w-72 h-72 rounded-full bg-[#1E6A83]/20 blur-[80px]" />
@@ -458,6 +526,7 @@ export default function ParentDashboard() {
                             <p className="text-xs text-muted-foreground truncate">
                               {cert.moduleTitle ? `${cert.courseTitle} · ` : ''}{formatCertificateDate(cert.issuedAt)}
                             </p>
+                            {cert.studentNumber ? <p className="font-mono text-[11px] text-foreground mt-1">{cert.studentNumber}</p> : null}
                             <p className="font-mono text-[11px] text-muted-foreground break-all mt-1">{cert.id}</p>
                             <p className={`text-[11px] font-bold uppercase tracking-wider mt-1 ${certificateStatus(cert.status) === 'revoked' ? 'text-[#9B1C1C]' : 'text-[#0F6E56]'}`}>
                               {certificateStatus(cert.status) === 'revoked' ? 'Revoked' : 'Valid'}
