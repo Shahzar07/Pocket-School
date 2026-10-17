@@ -88,8 +88,9 @@ export function isShareChannel(value: string): value is ShareChannel {
 }
 
 /** Where a logged share sends the visitor. Copy link returns to the alert page. */
-export function shareLocation(origin: string, id: string, channel: ShareChannel): string {
-  const page = `${origin.replace(/\/$/, '')}/alerts/${id}`;
+export function shareLocation(origin: string, id: string, channel: ShareChannel, pagePath = `/alerts/${id}`): string {
+  const path = pagePath.startsWith('/') ? pagePath : `/${pagePath}`;
+  const page = `${origin.replace(/\/$/, '')}${path}`;
   const text = encodeURIComponent(page);
   if (channel === 'whatsapp') return `https://wa.me/?text=${text}`;
   if (channel === 'facebook') return `https://www.facebook.com/sharer/sharer.php?u=${text}`;

@@ -8,7 +8,9 @@ import { adminDb } from '../firebase-admin';
 import { ActionError } from './actions';
 import { sendPush } from '../push';
 import { resolveRecipients } from '../alerts/recipients';
-import { peopleAtInstitution, peopleOptedIn } from './alert-directory';
+import { peopleAtInstitution, peopleOptedIn, tierOf } from './alert-directory';
+import { amberPage, amberPublishRefusal, amberPushBody, readApproval } from '../amber/public';
+import { ensureAmberReferral } from './amber';
 import { adminPushStore } from '../push-store';
 import { sendToDevice } from '../push-transport';
 import { createHash } from 'crypto';
@@ -77,6 +79,7 @@ interface Actor {
   institutionId: string;
   staffPost: string;
   verifiedStaff: boolean;
+  tier: number;
   country: string;
   state: string;
   city: string;
@@ -93,6 +96,7 @@ async function loadActor(uid: string): Promise<Actor> {
     institutionId: str(data.institutionId),
     staffPost: str(data.staffPost),
     verifiedStaff: data.verifiedStaff === true || str(data.role) === 'admin',
+    tier: tierOf(data),
     country: str(data.country),
     state: str(data.state),
     city: str(data.city),
@@ -212,6 +216,9 @@ function asRecord(id: string, data: FirebaseFirestore.DocumentData): EmergencyRe
     title: str(data.title),
     description: str(data.description),
     subjectName: str(data.subjectName),
+    publicDescription: str(data.publicDescription),
+    publicApproval: readApproval(data.publicApproval as { name?: boolean; photo?: boolean; description?: boolean } | undefined),
+    referralCode: str(data.referralCode),
     region: { country: str(region.country), state: str(region.state), city: str(region.city) },
     photoUrl: str(data.photoUrl),
     guardianConsent: data.guardianConsent === true,
@@ -249,7 +256,7 @@ async function notifyPeople(record: EmergencyRecord, title: string, body: string
       category: 'emergency',
       title,
       body: body.slice(0, 140),
-      link: `/alerts/${record.id}`,
+      link: record.type === 'missing_child' ? `/amber/${record.id}` : `/alerts/${record.id}`,
       force: true,
       sound: 'emergency',
     }, { store: adminPushStore(), send: sendToDevice });
@@ -276,8 +283,16 @@ async function storeRecipients(alertId: string, uids: string[], now: number) {
   }
 }
 
+function notifyCopy(record: EmergencyRecord): { title: string; body: string } {
+  if (record.type !== 'missing_child') return { title: record.title, body: record.description };
+  const page = amberPage(record);
+  const body = page ? amberPushBody(page, record.region) : 'Missing child alert';
+  return { title: 'Missing child', body };
+}
+
 async function notifyRegion(record: EmergencyRecord) {
-  const sent = await notifyPeople(record, record.title, record.description, await audience(record));
+  const copy = notifyCopy(record);
+  const sent = await notifyPeople(record, copy.title, copy.body, await audience(record));
   await storeRecipients(record.id, sent, Date.now());
 }
 
@@ -288,16 +303,20 @@ export async function renotifyAlert(alertId: string): Promise<{ recipients: numb
   if (record.status === 'draft' || record.status === 'retracted' || record.status === 'closed' || record.status === 'resolved') {
     return { recipients: 0, failed: 0, skipped: true };
   }
-  const sent = await notifyPeople(record, record.title, record.description, await audience(record));
+  const copy = notifyCopy(record);
+  const sent = await notifyPeople(record, copy.title, copy.body, await audience(record));
   return { recipients: sent.length, failed: 0 };
 }
 
 export async function createAlert(uid: string, input: Record<string, unknown>) {
   const actor = await loadActor(uid);
-  if (!canCreate(actor.role, actor.staffPost, actor.verifiedStaff)) {
+  const type = str(input.type) === 'missing' ? 'missing_child' : str(input.type);
+  if (type === 'missing_child') {
+    const refusal = amberPublishRefusal({ tier: actor.tier, staffPost: actor.staffPost });
+    if (refusal) throw new ActionError('FORBIDDEN', refusal);
+  } else if (!canCreate(actor.role, actor.staffPost, actor.verifiedStaff)) {
     throw new ActionError('FORBIDDEN', 'A verified principal or admin creates an emergency alert.');
   }
-  const type = str(input.type) === 'missing' ? 'missing_child' : str(input.type);
   if (!isEmergencyType(type)) throw new ActionError('BAD_REQUEST', 'Choose an alert type.');
   const title = str(input.title).slice(0, 120);
   const description = str(input.description).slice(0, 2000);
@@ -338,6 +357,14 @@ export async function createAlert(uid: string, input: Record<string, unknown>) {
       ? input.reconfirmHours * 60 * 60 * 1000
       : Number(input.reviewEveryMs),
   );
+  const referral = type === 'missing_child' ? await ensureAmberReferral(actor.id, actor.name) : '';
+  const approval = type === 'missing_child'
+    ? readApproval({
+      name: input.approveName === true,
+      photo: input.approvePhoto === true,
+      description: input.approveDescription === true,
+    })
+    : readApproval(undefined);
   const ref = db().collection('emergency_alerts').doc();
   await ref.set({
     institutionId: actor.institutionId,
@@ -345,6 +372,9 @@ export async function createAlert(uid: string, input: Record<string, unknown>) {
     title,
     description,
     subjectName: str(input.subjectName).slice(0, 80),
+    publicDescription: type === 'missing_child' ? str(input.publicDescription).slice(0, 500) : '',
+    publicApproval: approval,
+    referralCode: referral,
     region,
     photoUrl: '',
     guardianConsent: false,
@@ -510,6 +540,22 @@ export async function closeAlert(uid: string, id: string, device: ChainDevice = 
   return { ok: true };
 }
 
+export async function openAmberPage(id: string, countView: boolean): Promise<ReturnType<typeof amberPage>> {
+  const snap = await db().doc(`emergency_alerts/${id}`).get();
+  if (!snap.exists) return null;
+  const record = asRecord(snap.id, snap.data() ?? {});
+  const view = amberPage(record);
+  if (view && countView) {
+    await snap.ref.set({
+      counts: {
+        views: (Number(snap.data()?.counts?.views) || 0) + 1,
+        shares: Number(snap.data()?.counts?.shares) || 0,
+      },
+    }, { merge: true });
+  }
+  return view;
+}
+
 export async function peekPublicAlert(id: string): Promise<ReturnType<typeof publicView>> {
   const snap = await db().doc(`emergency_alerts/${id}`).get();
   if (!snap.exists) return null;
@@ -626,10 +672,11 @@ export async function setAlertAuthorities(uid: string, id: string, input: Record
 
 export async function recordConsent(uid: string, id: string, input: Record<string, unknown>, meta: { ip: string; device: string }) {
   const actor = await loadActor(uid);
-  if (!canCreate(actor.role, actor.staffPost, actor.verifiedStaff)) {
+  const { snap, record } = await loadAlert(id);
+  const amberPublisher = record.type === 'missing_child' && amberPublishRefusal({ tier: actor.tier, staffPost: actor.staffPost }) === null;
+  if (!canCreate(actor.role, actor.staffPost, actor.verifiedStaff) && !amberPublisher) {
     throw new ActionError('FORBIDDEN', 'A verified principal or admin records guardian consent.');
   }
-  const { snap, record } = await loadAlert(id);
   const regions = Array.isArray(input.regions) ? input.regions.filter((item): item is string => typeof item === 'string').slice(0, 8) : [];
   const channels = Array.isArray(input.channels) ? input.channels.filter((item): item is string => typeof item === 'string').slice(0, 8) : [];
   const consent: GuardianConsent = {

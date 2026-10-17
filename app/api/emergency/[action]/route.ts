@@ -38,7 +38,9 @@ async function shareRedirect(req: NextRequest, id: string, channel: string) {
   if (!isShareChannel(channel)) {
     return NextResponse.json({ error: 'Choose a share channel.' }, { status: 400 });
   }
-  const target = shareLocation(req.nextUrl.origin, id, channel);
+  const surface = req.nextUrl.searchParams.get('surface');
+  const path = surface === 'amber' ? `/amber/${id}` : `/alerts/${id}`;
+  const target = shareLocation(req.nextUrl.origin, id, channel, path);
   if (id === 'sample') return NextResponse.redirect(target);
   if (!isAdminConfigured()) return NextResponse.json({ error: 'Server is not configured.' }, { status: 503 });
   let actorUid = '';

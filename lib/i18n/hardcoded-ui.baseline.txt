@@ -2416,3 +2416,12 @@ components/alerts/all-staff.tsx	One tap tells every staff member. Private report
 components/alerts/all-staff.tsx	Reason for widening
 components/alerts/all-staff.tsx	Staff roll-call
 components/alerts/all-staff.tsx	Widen to all staff
+components/amber/join.tsx	Free for every account, including people with no school.
+components/amber/join.tsx	State or city
+components/amber/public-alert.tsx	Amber alert
+components/amber/public-alert.tsx	Copy link
+components/amber/public-alert.tsx	POKET SCHOOL
+components/amber/public-alert.tsx	Photo shared with consent
+components/amber/public-alert.tsx	This alert is not available.
+components/hotline/live.tsx	A child name, photo, and this description stay off the public page until you approve them.
+components/hotline/live.tsx	Public description

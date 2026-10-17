@@ -1525,3 +1525,33 @@ Web: the case page `/dashboard/safety/{id}` and an emergency desk opened with `?
 | POST | `/api/all-staff/instructions` |
 
 Index, not deployed: `all_staff_alerts` on `institutionId` ASC, `status` ASC. The open pointer is the read the banner uses, so the desk works before that index is deployed.
+
+## Amber alerts are free
+
+Amber alerts are a public safety and marketing tool. Receiving, viewing, and sharing them is free for every account, including an account with no school. They are not gated by `accessTier`, `subscriptionTier`, or any other entitlement. `amberReceiveAllowed` is always true. Publishing is not free.
+
+`users.emergencyOptIn` is the opt-in. Signup can set it, including when the person does not join a school. `POST /api/amber/opt-in` sets it for an existing account from a country (and optional state or city) with no institution and no subscription check. `homeCountry` is stored beside it. Both fields are self-service. A missing `emergencyOptIn` still means not opted in. Institution members of the school on the alert are included without this flag, as in the recipient matrix.
+
+The public page is `/amber/{id}`. It is a separate projection from `/alerts/{id}`. It shows the approved public details only:
+
+- No reporter, publisher, or confirmer identity.
+- No hotline ticket, message, or category.
+- For a child, the name, the photo, and the public description appear only when the publishing principal or partner set `publicApproval.name`, `publicApproval.photo`, or `publicApproval.description`. The photo also needs guardian consent on file. The internal `description` is not the public text. `publicDescription` is.
+- Region, the authority agency, and the authority reference stay on an open alert so people know who to call. Staff phone numbers are not shown.
+
+A resolved, closed, retracted, `publicRedacted`, or consent-withdrawn alert renders the word `resolved` and drops those details, including the region and the authority reference. The page is noindex and sharing is off. The free join line stays.
+
+Open Graph and the Twitter share image use the blue hero gradient and the cyan accent `#3FE0D0` (`BRAND.cyan`). Both carry `Get free Amber alerts on Poket School` and the referral code. The code is the document id `referrals/{code}`, the same collection a free card uses. The join link is `/signup?amber=1&ref={code}`. Signup stores `referredBy` and, when the Amber box is ticked, `emergencyOptIn` and `homeCountry`. Creating an Amber draft calls `ensureAmberReferral`, which reuses the owner's `referrals/{code}` or creates one. Clients cannot read or write `referrals`. Rules are not deployed.
+
+Publishing an Amber alert (`missing_child`) requires verification tier 3 and staff post `principal`, or verification tier 4 (a partner). A missing `users.verification.tier` is 0, so a tier-0 principal cannot publish one. A super admin is not an exception. Other emergency types still use the existing verified principal or institution admin rule. The two-person confirm and the authority and consent gates are unchanged.
+
+The community push for an Amber alert links to `/amber/{id}`. The body is the approved public description, or a place line when nothing was approved. It does not include the internal description or an unapproved name.
+
+| Method | Path |
+| --- | --- |
+| GET | `/amber/{id}` |
+| GET | `/amber/{id}/opengraph-image` |
+| GET | `/amber/{id}/twitter-image` |
+| POST | `/api/amber/opt-in` |
+
+Samples: `/amber/sample` and `/amber/sample-resolved`. The sample referral code is `POKETAMBER` (`referrals/POKETAMBER`).

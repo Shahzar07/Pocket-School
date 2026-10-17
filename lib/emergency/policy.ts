@@ -48,6 +48,12 @@ export interface EmergencyRecord {
   confirmedBy: string;
   confirmedAt: number | null;
   resolved: { by: string; at: number; outcome: string; authoritiesClosed: boolean } | null;
+  /** Text a principal or partner approved for the public Amber page. */
+  publicDescription?: string;
+  /** Under-18 details stay off /amber until these are true. */
+  publicApproval?: { name: boolean; photo: boolean; description: boolean };
+  /** referrals/{code} carried on the free join link. */
+  referralCode?: string;
   publicShareEnabled: boolean;
   sharePaused: boolean;
   reviewEveryMs: number;
@@ -155,9 +161,22 @@ export function shareAllowed(input: {
   return authorityShareReady(input.authorityStatus);
 }
 
+function countrySame(left: string, right: string): boolean {
+  const key = (value: string) => {
+    const text = value.trim().toLowerCase();
+    if (text === 'my' || text === 'malaysia') return 'my';
+    if (text === 'us' || text === 'usa' || text === 'united states' || text === 'united states of america') return 'us';
+    if (text === 'gb' || text === 'uk' || text === 'united kingdom' || text === 'great britain') return 'gb';
+    return text;
+  };
+  const a = key(left);
+  const b = key(right);
+  return a.length > 0 && a === b;
+}
+
 export function regionMatch(profile: Region, region: Region): boolean {
   const same = (left: string, right: string) => left.trim().toLowerCase() === right.trim().toLowerCase();
-  if (!region.country || !same(profile.country, region.country)) return false;
+  if (!region.country || !countrySame(profile.country, region.country)) return false;
   if (region.state && !same(profile.state, region.state)) return false;
   if (region.city && !same(profile.city, region.city)) return false;
   return true;

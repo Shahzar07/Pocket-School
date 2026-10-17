@@ -31,6 +31,7 @@ import { SelfJoinPicker } from '@/components/institutions/self-join-picker';
 import { listSelfJoinInstitutions, redeemInviteCode, submitSelfJoin } from '@/lib/institution-membership-store';
 import type { JoinDirectoryRow, JoinRole } from '@/lib/institution-membership';
 import { statesForCountry } from '@/lib/institution-states';
+import { amberSignupFields } from '@/lib/amber/public';
 
 const ROLES = [
   { id: 'student', titleKey: 'signup.student', icon: <GraduationCap className="w-5 h-5" /> },
@@ -88,11 +89,19 @@ export default function SignupPage() {
     listSelfJoinInstitutions(country, joinState).then(setListed).catch(() => setListed([]));
   }, [joinPath, country, joinState]);
   useEffect(() => {
-    const requested = new URLSearchParams(window.location.search).get('role');
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get('role');
     if (requested === 'student' || requested === 'teacher' || requested === 'parent') setRole(requested);
+    if (params.get('amber') === '1') setAmberOptIn(true);
+    const ref = params.get('ref');
+    if (ref) setReferral(ref);
+    const place = params.get('country');
+    if (place) setCountry(place);
   }, []);
   const [dob, setDob] = useState('');
   const [agreed, setAgreed] = useState(false);
+  const [amberOptIn, setAmberOptIn] = useState(false);
+  const [referral, setReferral] = useState('');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -205,6 +214,7 @@ export default function SignupPage() {
           ...(dob ? { dateOfBirth: dob } : {}),
           ...(country ? { country } : {}),
           ...(phone.trim() ? { phone: phone.trim() } : {}),
+          ...amberSignupFields({ optIn: amberOptIn, country, state: joinState, referral }),
           ...roleProfileFields(),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
@@ -317,6 +327,7 @@ export default function SignupPage() {
       } : {}),
       ...(country ? { country } : {}),
       ...(phone.trim() ? { phone: phone.trim() } : {}),
+      ...amberSignupFields({ optIn: amberOptIn, country, state: joinState, referral }),
       ...roleProfileFields(),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -689,6 +700,19 @@ export default function SignupPage() {
                 value={password} onChange={e => setPassword(e.target.value)} disabled={loading} />
               <p className="text-xs text-white/25">{t('signup.passwordHint')}</p>
             </div>
+
+            <label className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={amberOptIn}
+                onChange={e => setAmberOptIn(e.target.checked)}
+                disabled={loading}
+                className="mt-0.5 w-4 h-4 shrink-0 accent-[#3FE0D0]"
+              />
+              <span className="text-xs text-white/70 leading-relaxed">
+                Send me free Amber alerts for my country. No school and no subscription.
+              </span>
+            </label>
 
             {/* ── Consent checkbox (PDPA requirement) ── */}
             <label className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 cursor-pointer hover:bg-white/[0.05] transition-colors">

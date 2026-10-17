@@ -5,6 +5,8 @@ export const BRAND = {
   primary: '#2786A4',
   blueDeep: '#1E6A83',
   blueBright: '#6FBBCE',
+  /** Cyan accent on the blue gradient. Amber share cards use this. */
+  cyan: '#3FE0D0',
   amber: '#E2AF4D',
   coral: '#D0553F',
   good: '#1F8A70',

@@ -451,6 +451,10 @@ export function EmergencyLive({ sample = false }: { sample?: boolean }) {
   const [title, setTitle] = useState(sample ? 'Missing child near the school gate' : '');
   const [description, setDescription] = useState(sample ? 'Last seen at the gate after dismissal. Police reference is on the draft.' : '');
   const [subjectName, setSubjectName] = useState('');
+  const [publicDescription, setPublicDescription] = useState(sample ? 'Last seen at the gate after dismissal. Clothes: a blue shirt.' : '');
+  const [approveName, setApproveName] = useState(false);
+  const [approvePhoto, setApprovePhoto] = useState(false);
+  const [approveDescription, setApproveDescription] = useState(sample);
   const [agency, setAgency] = useState(sample ? 'PDRM' : '');
   const [contact, setContact] = useState(sample ? '999' : '');
   const [referenceNumber, setReferenceNumber] = useState(sample ? 'PDRM-2026-1044' : '');
@@ -500,6 +504,10 @@ export function EmergencyLive({ sample = false }: { sample?: boolean }) {
             title,
             description,
             subjectName,
+            publicDescription: type === 'missing_child' ? publicDescription : '',
+            approveName: type === 'missing_child' && approveName,
+            approvePhoto: type === 'missing_child' && approvePhoto,
+            approveDescription: type === 'missing_child' && approveDescription,
             agency,
             contact,
             referenceNumber,
@@ -531,7 +539,18 @@ export function EmergencyLive({ sample = false }: { sample?: boolean }) {
             <input className={fieldClass()} value={referenceNumber} onChange={event => setReferenceNumber(event.target.value)} aria-label="Authority reference" />
           </label>
         </div>
-        <p className="text-sm text-muted-foreground">Review is every 24 hours. A missing child draft needs the authority before it is saved.</p>
+        <p className="text-sm text-muted-foreground">Review is every 24 hours. A missing child draft needs the authority before it is saved. Receiving and sharing an Amber alert is free. Publishing stays with a tier 3 principal or a tier 4 partner.</p>
+        {type === 'missing_child' ? (
+          <div className="grid gap-2">
+            <label className="grid gap-1 text-sm font-semibold">Public description
+              <textarea className="min-h-24 rounded-xl border border-border p-3 font-normal" value={publicDescription} onChange={event => setPublicDescription(event.target.value)} aria-label="Public description" />
+            </label>
+            <p className="text-sm text-muted-foreground">A child name, photo, and this description stay off the public page until you approve them.</p>
+            <label className="flex min-h-12 items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={approveName} onChange={event => setApproveName(event.target.checked)} /> Approve the name</label>
+            <label className="flex min-h-12 items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={approvePhoto} onChange={event => setApprovePhoto(event.target.checked)} /> Approve the photo</label>
+            <label className="flex min-h-12 items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={approveDescription} onChange={event => setApproveDescription(event.target.checked)} /> Approve the public description</label>
+          </div>
+        ) : null}
         <button type="submit" disabled={busy} className="min-h-12 rounded-xl bg-primary px-4 font-semibold text-primary-foreground">Save draft</button>
       </form>
 
