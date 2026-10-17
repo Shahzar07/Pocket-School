@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { createDailyGoal, getAttendanceForStudent, getGradesForStudent, goalDateKey, subscribeDailyGoals, type DailyGoal } from '@/lib/db';
+import { createDailyGoal, getAttendanceForStudent, getGradesForStudent, getUnitQuizAttempts, goalDateKey, subscribeDailyGoals, type DailyGoal, type UnitQuizAttempt } from '@/lib/db';
+import { quizPointsFromAttempt } from '@/lib/unit-test';
 import { authedFetch } from '@/lib/api-client';
 import { DashHeader, DashPage, Panel, PanelHeader } from '@/components/dash-ui';
 import { AnalyticsBoard, BehaviourBoard, ExportBar, snapshotKpis } from '@/components/insights/boards';
@@ -18,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-function liveSnapshot(studentId: string, goals: DailyGoal[], grades: { percentage?: number; score?: number; maxScore?: number; gradedAt?: { toDate?: () => Date } }[], attendance: { date?: { toDate?: () => Date }; records?: { studentId: string; status: 'present' | 'absent' | 'late' | 'excused' }[] }[]): AnalyticsSnapshot {
+function liveSnapshot(studentId: string, goals: DailyGoal[], grades: { percentage?: number; score?: number; maxScore?: number; gradedAt?: { toDate?: () => Date } }[], attendance: { date?: { toDate?: () => Date }; records?: { studentId: string; status: 'present' | 'absent' | 'late' | 'excused' }[] }[], unitAttempts: UnitQuizAttempt[] = []): AnalyticsSnapshot {
   const now = new Date();
   const end = isoDateKey(now);
   return buildSnapshot({
@@ -28,11 +29,14 @@ function liveSnapshot(studentId: string, goals: DailyGoal[], grades: { percentag
     rangeStart: addDays(end, -27),
     rangeEnd: end,
     studyEvents: [],
-    quizzes: grades.map(g => ({
-      at: g.gradedAt?.toDate?.()?.toISOString() ?? end,
-      score: g.percentage ?? g.score ?? 0,
-      max: g.percentage != null ? 100 : (g.maxScore || 1),
-    })),
+    quizzes: [
+      ...grades.map(g => ({
+        at: g.gradedAt?.toDate?.()?.toISOString() ?? end,
+        score: g.percentage ?? g.score ?? 0,
+        max: g.percentage != null ? 100 : (g.maxScore || 1),
+      })),
+      ...unitAttempts.flatMap(attempt => quizPointsFromAttempt(attempt, end)),
+    ],
     goals: goals.map(g => ({ dateKey: g.dateKey, title: g.title, status: g.status, deadline: g.deadline })),
     attendance: attendance.flatMap(record => (record.records ?? []).filter(row => row.studentId === studentId).map(row => ({
       dateKey: record.date?.toDate ? isoDateKey(record.date.toDate()) : end,
@@ -71,12 +75,13 @@ export default function StudentAnalyticsPage() {
       readSnapshot(user.uid).catch(() => null),
       getGradesForStudent(user.uid).catch(() => []),
       getAttendanceForStudent(user.uid).catch(() => []),
-    ]).then(([stored, grades, attendance]) => {
+      getUnitQuizAttempts(user.uid).catch(() => []),
+    ]).then(([stored, grades, attendance, unitAttempts]) => {
       if (stored && stored.metrics) {
         setSnapshot(stored as AnalyticsSnapshot);
         setLive(false);
       } else {
-        setSnapshot(liveSnapshot(user.uid, goals, grades as never, attendance as never));
+        setSnapshot(liveSnapshot(user.uid, goals, grades as never, attendance as never, unitAttempts as UnitQuizAttempt[]));
         setLive(true);
       }
     });

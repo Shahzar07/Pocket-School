@@ -65,7 +65,7 @@ describe('completing a module as a test student', { skip: !emulatorReady }, () =
       await Promise.all(keys.docs.map((doc) => doc.ref.delete()));
     });
 
-    it('awards one verifiable certificate when the last published lesson is finished', async () => {
+    it('records progress when the last published lesson is finished and does not award a certificate', async () => {
       const draft = await completeLesson(studentId, courseId, 'draft-b', 50, true);
       assert.equal(draft.accepted, false);
       assert.equal(draft.certificate, null);
@@ -88,26 +88,12 @@ describe('completing a module as a test student', { skip: !emulatorReady }, () =
 
       const done = await completeLesson(studentId, courseId, 'pub-c', 50, true);
       assert.equal(done.progress, 100);
-      assert.equal(done.certificate?.fresh, true);
-      assert.equal(done.certificate?.studentName, 'Aisha Rahman');
-      assert.equal(done.certificate?.moduleTitle, 'Cells and organisation');
-      assert.equal(done.certificate?.courseTitle, 'Biology');
-      assert.equal(done.certificate?.issuedByName, 'Poket School');
-      assert.match(done.certificate?.id ?? '', /^[0-9a-f-]{36}$/);
-
-      const saved = await firestore.doc(`certificates/${done.certificate?.id}`).get();
-      assert.equal(saved.exists, true);
-      assert.equal(saved.data()?.studentId, studentId);
-      assert.equal(saved.data()?.moduleId, moduleId);
-      assert.equal(saved.data()?.brand, 'Poket School');
-      assert.equal(saved.data()?.status, 'valid');
-      assert.equal(saved.data()?.issuedBy, 'poket-school');
-      assert.equal(typeof saved.data()?.disclaimer, 'string');
+      assert.equal(done.certificate, null);
 
       const again = await completeLesson(studentId, courseId, 'pub-c', 50, true);
       assert.equal(again.certificate, null);
       const all = await firestore.collection('certificates').where('studentId', '==', studentId).get();
-      assert.equal(all.size, 1);
+      assert.equal(all.size, 0);
 
       const enrollment = await firestore.doc(`courses/${courseId}/enrollments/${studentId}`).get();
       assert.equal(enrollment.data()?.progress, 100);
@@ -122,7 +108,7 @@ describe('completing a module as a test student', { skip: !emulatorReady }, () =
 
       const synced = await syncModuleCertificates(studentId, studentId, courseId);
       assert.deepEqual(synced.issued, []);
-      const stillOne = await firestore.collection('certificates').where('studentId', '==', studentId).get();
-      assert.equal(stillOne.size, 1);
+      const stillNone = await firestore.collection('certificates').where('studentId', '==', studentId).get();
+      assert.equal(stillNone.size, 0);
     });
 });

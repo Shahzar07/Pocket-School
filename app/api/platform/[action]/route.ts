@@ -62,6 +62,8 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
         return revokeCertificate(user.uid, user.email, str(body.certificateId), str(body.reason), user);
       }
       case 'unit-quiz':
+        // Deprecated for unit tests. POST /api/unit-tests/mark is the marker.
+        // A unit test on this path still delegates to that marker. Mastery quizzes stay here.
         return recordUnitQuiz(user.uid, {
           courseId: str(body.courseId),
           unitId: str(body.unitId),

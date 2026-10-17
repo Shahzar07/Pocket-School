@@ -1,6 +1,8 @@
 'use client';
 
 import { UnitQuizAttempt } from '@/lib/db';
+import { parentExplainer } from '@/lib/unit-test';
+import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Trophy, AlertTriangle, Clock, RotateCcw, Target, ArrowRight, BookOpen } from 'lucide-react';
@@ -91,9 +93,24 @@ export function UnitReportCard({ report }: { report: UnitReportData }) {
           </div>
         </div>
 
+        <div className="bg-muted/40 rounded-xl p-3.5 space-y-1">
+          <p className="text-xs font-bold text-foreground">Parent explainer</p>
+          {parentExplainer({
+            unitTitle: report.unitTitle,
+            percentage: latest.percentage,
+            passed,
+            passMark: report.masteryThreshold,
+            version: latest.version,
+            reviewTitles: report.reviewLessons.map(lesson => lesson.title),
+            timeTakenSeconds: latest.timeTakenSeconds,
+          }).map(line => (
+            <p key={line} className="text-xs text-muted-foreground">{line}</p>
+          ))}
+        </div>
+
         {/* Recommended next steps */}
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-3.5">
-          <p className="text-xs font-bold text-blue-900 mb-1.5">Recommended next steps</p>
+          <p className="text-xs font-bold text-blue-900 mb-1.5">{passed ? 'Next module' : 'Review these lessons'}</p>
           {passed ? (
             <p className="text-xs text-blue-800 flex items-center gap-1.5">
               <ArrowRight className="w-3.5 h-3.5 shrink-0" />
@@ -104,12 +121,14 @@ export function UnitReportCard({ report }: { report: UnitReportData }) {
               {report.reviewLessons.map(l => (
                 <li key={l.id} className="text-xs text-blue-800 flex items-center gap-1.5">
                   <BookOpen className="w-3.5 h-3.5 shrink-0" />
-                  Revisit {l.lessonNumber ? `L${l.lessonNumber}: ` : ''}{l.title}
+                  <Link href={`/dashboard/student/courses/${report.courseId}/lessons/${l.id}`} className="underline">
+                    {l.lessonNumber ? `L${l.lessonNumber}: ` : ''}{l.title}
+                  </Link>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-xs text-blue-800">Retake the mastery quiz to reach {report.masteryThreshold}%.</p>
+            <p className="text-xs text-blue-800">Retake the unit test to reach {report.masteryThreshold}%.</p>
           )}
         </div>
       </div>
