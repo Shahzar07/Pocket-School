@@ -21,6 +21,7 @@ import { chapterProgress, paginateChapter, sentencesOf } from '@/lib/reads/pagin
 import { markdownForPageCount } from '@/lib/reads/page-count';
 import { isPictureBook, pictureSpreads, readerFontFamily, readerTypeface, wordsOf, type ReaderTypeface } from '@/lib/reads/picture-book';
 import { ChapterProse, proseForSpeech } from '@/components/reads/prose';
+import { readerSerif } from '@/components/reads/reader-font';
 import { QUIET_LABEL, isQuietHour } from '@/lib/reads/quiet';
 import { bookById } from '@/lib/reads/seed';
 import { STUDIO_AUTOSAVE_KEY, usePublishedStudioBooks } from '@/components/reads/use-studio-shelf';
@@ -50,6 +51,12 @@ function cachedChapterMarkdown(
   } catch {
     return undefined;
   }
+}
+
+function proseFace(prefs: ReaderPrefs, typeface: ReaderTypeface = readerTypeface(prefs)): string {
+  const stack = readerFontFamily(typeface);
+  if (typeface !== 'serif') return stack;
+  return `${readerSerif.style.fontFamily}, ${stack}`;
 }
 
 const THEMES = {
@@ -406,7 +413,7 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
   const highlighted = notes.some(n => page.includes(n.quote));
 
   return (
-    <div className="min-h-screen" dir={scriptDir} style={{ background: theme.bg, color: theme.fg }}>
+    <div className={`min-h-screen ${readerSerif.className}`} dir={scriptDir} style={{ background: theme.bg, color: theme.fg }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500&display=swap" />
       <header className="sticky top-0 z-20 flex flex-wrap items-center gap-1 px-2 py-2 sm:gap-2 sm:px-6 sm:py-3" style={{ background: theme.bg }}>
         <button type="button" onClick={() => router.push(`/reads/book/${book.id}`)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full" aria-label={t('reads.nav.home')}>
@@ -473,7 +480,7 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
               <p
                 className="text-center"
                 style={{
-                  fontFamily: readerFontFamily(readerTypeface(prefs)),
+                  fontFamily: proseFace(prefs),
                   fontSize: Math.max(prefs.font, 22),
                   lineHeight: readerTypeface(prefs) === 'dyslexia' ? Math.max(prefs.spacing, 1.85) : prefs.spacing,
                   letterSpacing: readerTypeface(prefs) === 'dyslexia' ? '0.02em' : undefined,
@@ -498,7 +505,7 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
               <div
                 className="mt-6"
                 style={{
-                  fontFamily: readerFontFamily(readerTypeface(prefs)),
+                  fontFamily: proseFace(prefs),
                   fontSize: prefs.font,
                   lineHeight: readerTypeface(prefs) === 'dyslexia' ? Math.max(prefs.spacing, 1.85) : prefs.spacing,
                   letterSpacing: readerTypeface(prefs) === 'dyslexia' ? '0.02em' : undefined,
@@ -700,7 +707,7 @@ function TypePanel({
               aria-pressed={readerTypeface(prefs) === typeface}
               onClick={() => onChange({ ...prefs, typeface: typeface as ReaderTypeface, dyslexia: typeface === 'dyslexia' })}
               className="h-10 flex-1 rounded-full border px-2 text-xs font-semibold"
-              style={{ fontFamily: readerFontFamily(typeface), borderColor: readerTypeface(prefs) === typeface ? 'currentColor' : undefined }}
+              style={{ fontFamily: proseFace(prefs, typeface), borderColor: readerTypeface(prefs) === typeface ? 'currentColor' : undefined }}
             >
               {t(key)}
             </button>
