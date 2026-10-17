@@ -9,6 +9,7 @@ const ROUTES: { path: string; changeFrequency: MetadataRoute.Sitemap[number]['ch
   { path: '/ai-studio', changeFrequency: 'weekly', priority: 0.9 },
   { path: '/ai-teachers', changeFrequency: 'weekly', priority: 0.8 },
   { path: '/pricing', changeFrequency: 'monthly', priority: 0.8 },
+  { path: '/offer', changeFrequency: 'monthly', priority: 0.7 },
   { path: '/legal', changeFrequency: 'yearly', priority: 0.3 },
   { path: '/login', changeFrequency: 'yearly', priority: 0.4 },
   { path: '/signup', changeFrequency: 'yearly', priority: 0.6 },
