@@ -398,6 +398,7 @@ export async function escalateUnacked(now = Date.now()) {
   return { escalated };
 }
 
+/** Deletes expired social moderation logs only. Hotline and emergency records are never purged. */
 export async function purgeAudit(now = Date.now()) {
   const snap = await db().collection('moderation_audit').where('purgeAtMs', '<=', now).limit(50).get();
   for (const doc of snap.docs) await doc.ref.delete();

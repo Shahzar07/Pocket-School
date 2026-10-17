@@ -1070,6 +1070,9 @@ Parent-to-school tickets. The website shape here is canonical. Client writes are
 | `authorities` | `{ required: yes \| no \| unsure, reason, status, informed }`. `no` needs a reason. `status` is `not_required`, `to_be_informed`, `informed`, `acknowledged`, or `closed_by_authority`. `informed` is `{ agency, contact, reference, at, by }`. |
 | `authoritiesRemindedAt` | A ticket in `to_be_informed` is reminded after 4 hours. It cannot be solved or closed while the status is still `to_be_informed`. |
 | `createdAt`, `updatedAt` | Milliseconds. |
+| `chainSeq`, `chainHead` | Next event is `chainSeq + 1`. `chainHead` is the hash of the latest event, or 64 zeroes before the first event. |
+| `legalHold` | `{ on, by, at, reason }`. Only `role: admin` (super admin) or `staffPost: principal` can set or clear it. Both actions are audited. While `on` is true, internal redaction is blocked. |
+| `internalRedacted` | A separate staff action may blank `body` only when no legal hold is on. The previous body stays in the event diff. |
 
 `hotline_tickets/{id}/comments/{commentId}`: `authorId`, `authorName`, `body`, `internal` (staff-only when true), `parentId` for a thread, `at`.
 
@@ -1077,7 +1080,7 @@ Parent-to-school tickets. The website shape here is canonical. Client writes are
 
 Storage path: `institutions/{institutionId}/hotline/{ticketId}/{fileId}-{name}`. Clients cannot read or write it. `GET /api/hotline/file` returns a signed URL and writes a `viewed` event.
 
-`hotline_tickets/{id}/events/{eventId}`: `kind` is `created`, `assigned`, `status_change`, `escalated`, `reopened`, `rated`, `uploaded`, `viewed`, `authorities`, or `authority_reminder`. `actorId`, `at`, `detail`.
+`hotline_tickets/{id}/events/{eventId}` is append-only. See [Tamper-evident logs](#tamper-evident-logs). Actions include `created`, `assigned`, `status_change`, `escalated`, `reopened`, `rated`, `uploaded`, `viewed`, `authorities`, `authority_reminder`, `legal_hold_set`, `legal_hold_cleared`, `internal_redacted`, and `exported`.
 
 | Method | Path |
 | --- | --- |
@@ -1093,6 +1096,11 @@ Storage path: `institutions/{institutionId}/hotline/{ticketId}/{fileId}-{name}`.
 | POST | `/api/hotline/authorities` |
 | GET | `/api/hotline/file?ticketId=&attachmentId=` |
 | GET | `/api/hotline/analytics` |
+| GET | `/api/hotline/verify?id=` |
+| GET | `/api/hotline/export?id=&format=csv\|pdf` |
+| POST | `/api/hotline/legal-hold` |
+| POST | `/api/hotline/redact-internal` |
+| GET, POST | `/api/hotline/share` refuses. Hotline tickets cannot be shared. |
 | GET | `/api/cron/hotline` |
 
 Analytics hide any group under 5: category counts, SLA compliance, average resolution time, satisfaction, and the overdue count. The parent desk is `/dashboard/parent/hotline`. Staff queues are `/dashboard/teacher/hotline`, `/dashboard/admin/hotline`, and `/dashboard/institution/hotline`.
@@ -1109,9 +1117,9 @@ Amber and other emergency alerts. Publishing is server-only. A verified principa
 | --- | --- |
 | `institutionId` | School that owns the alert. |
 | `type` | `missing_child`, `lockdown`, `weather`, `medical`, `general`. Severity uses `lib/alerts/model.ts`: missing child, lockdown, and medical are `critical`; weather is `high`; general is `medium`. |
-| `title`, `description`, `subjectName` | `subjectName` is removed when the alert is resolved. |
+| `title`, `description`, `subjectName` | Resolve, retract, and withdrawn consent keep `subjectName` on the document. Public and OG views hide it. |
 | `region` | `{ country, state, city }` copied from `institutions/{id}`. A home address is never stored. |
-| `photoUrl`, `guardianConsent`, `consentId`, `consentWithdrawn` | A public photo is `attachment:{fileId}` only when guardian consent is true and that consent record id is set. Withdrawing consent clears the name and photo and turns sharing off. |
+| `photoUrl`, `guardianConsent`, `consentId`, `consentWithdrawn`, `publicRedacted` | A public photo is `attachment:{fileId}` only when guardian consent is true and that consent record id is set. Withdrawing consent sets `consentWithdrawn` and `publicRedacted`, turns sharing off, and sets each public attachment to `public: false`. The stored name, photo URL, and file bytes stay. |
 | `authorities` | Same shape as a hotline ticket. Public share needs `informed`, `acknowledged`, or `closed_by_authority`. A missing-child draft needs that record before it is saved. |
 | `authoritiesInformed` | Legacy mirror of `authorities.informed`: `{ agency, referenceNumber, informedAt }`. |
 | `authoritiesRemindedAt` | Staff are reminded after 1 hour while the status is `to_be_informed`. |
@@ -1123,18 +1131,21 @@ Amber and other emergency alerts. Publishing is server-only. A verified principa
 | `reviewEveryMs`, `reviewDueAt`, `lastReviewBy`, `lastReviewAt` | Default review is 24 hours. The interval is configurable and capped at 48 hours. `GET /api/cron/emergency` pauses public sharing and notifies admins when the review is overdue. |
 | `retractedReason` | Required for `retracted`. The public page is noindex, the OG version increments, share is disabled, a correction is posted on the wall and the feed, and a correction push goes to the stored recipient list. |
 | `ogVersion` | Incremented on resolve, retract, review pause, and consent withdrawal so share URLs can drop a cached card (`?v=`). |
-| `counts` | `{ views, shares }`. |
+| `counts` | `{ views, shares }`. A share count increases only after a logged share of an active public alert. |
+| `chainSeq`, `chainHead` | One chain covers `audit`, `updates`, and `consent`. |
+| `legalHold` | `{ on, by, at, reason }`. Only a super admin or the principal can set or clear it. Public redaction still happens while a hold is on. Internal redaction does not. |
+| `internalRedacted` | Staff may blank `subjectName` and `photoUrl` on the parent only when no legal hold is on, after those values are written into the chain diff. |
 | `createdAt` | Milliseconds. |
 
-`emergency_alerts/{id}/updates/{updateId}`: `body`, `actorId`, `at`.
+`emergency_alerts/{id}/updates/{updateId}` is an append-only chain entry with `action: updated` and `body`.
 
 `emergency_alerts/{id}/attachments/{fileId}`: same file shape as a hotline attachment, plus `updateId`, `guardianConsent`, `consentRecordId`, and `public`. Only a photo with guardian consent and a consent record can be public. Storage path: `institutions/{institutionId}/alerts/{alertId}/{fileId}-{name}`, served by a signed URL.
 
 `emergency_alerts/{id}/recipients/{uid}`: the people who received the original push. A retraction notifies this list.
 
-`emergency_alerts/{id}/consent/{consentId}`: immutable versions. `details`, `photo`, `regions`, `channels`, `disclaimer`, `guardianName`, `relation`, `signature`, `signatureKind` (`drawn` or `typed`), `at`, `ip`, `device`, `version`. A missing-child alert cannot be published without one. The server creates a version and never updates it.
+`emergency_alerts/{id}/consent/{consentId}` is an append-only chain entry (`action: consent`). Fields: `details`, `photo`, `regions`, `channels`, `disclaimer`, `guardianName`, `relation`, `signature`, `signatureKind` (`drawn` or `typed`), `at`, `ip`, `clientDevice` (the user agent), `version`. The chain `device` object is separate and stores only `platform`, `appVersion`, and `ipHash`. A missing-child alert cannot be published without one. The server creates a version and never updates it.
 
-`emergency_alerts/{id}/audit/{auditId}`: `created`, `confirmed`, `updated`, `resolved`, `closed`, `uploaded`, `viewed`, `authorities`, `authority_reminder`, `consent`, `consent_withdrawn`, `reviewed`, `review_paused`, `retracted`, `reported`.
+`emergency_alerts/{id}/audit/{auditId}` is an append-only chain entry. Actions include `created`, `confirmed`, `resolved`, `closed`, `uploaded`, `viewed`, `authorities`, `authority_reminder`, `consent_withdrawn`, `reviewed`, `review_paused`, `retracted`, `reported`, `shared`, `legal_hold_set`, `legal_hold_cleared`, `internal_redacted`, and `exported`. An update lives on `updates`, and a consent version lives on `consent`. They share `chainSeq` with `audit`.
 
 `alert_reports/{id}`: `alertId`, `reporterId` (empty for an anonymous visitor, and visible to staff only), `reason`, `falseReport`, `flaggedBy`, `at`, `day`. Three reports per user or anonymous visitor per day. A second false report sets `alert_report_bans/{uid}.banned`. Anonymous reports are rate limited, and they require a captcha when `CAPTCHA_SECRET` is set. Each report is copied to `moderation_queue` with `surface: emergency_alert`.
 
@@ -1142,7 +1153,7 @@ Amber and other emergency alerts. Publishing is server-only. A verified principa
 
 `emergency_rate/{uid}_{YYYY-MM-DD}`: at most 3 drafts a day.
 
-A confirmed alert writes a pinned `network_posts` document (`kind: emergency`) for the school page and the feed. Resolve updates that post, clears the name and photo from the public view and the OG image, disables share buttons, sets the page to `noindex`, and increments `ogVersion`.
+A confirmed alert writes a pinned `network_posts` document (`kind: emergency`) for the school page and the feed. Resolve updates that post. The public view and the OG image hide the name and photo, sharing turns off, the page is `noindex`, and `ogVersion` increments. The stored name and photo stay on the alert.
 
 Public page: `/alerts/[id]`. OG image: `/alerts/[id]/opengraph-image`. The card is a brand frame with type, region, and time. A photo is named on the card only when consent is on and the alert is still open. The page shows `If you have information, contact {agency} {reference}` and the public emergency number (999 in Malaysia). It does not show school staff numbers. It is not a replacement for emergency services.
 
@@ -1163,7 +1174,12 @@ Public page: `/alerts/[id]`. OG image: `/alerts/[id]/opengraph-image`. The card 
 | POST | `/api/emergency/report-false` |
 | GET | `/api/emergency/public?id=` |
 | GET | `/api/emergency/public-file?id=&attachmentId=` |
+| GET | `/api/emergency/share?id=&channel=whatsapp\|facebook\|x\|copy` |
 | POST | `/api/emergency/share` |
+| GET | `/api/emergency/verify?id=` |
+| GET | `/api/emergency/export?id=&format=csv\|pdf` |
+| POST | `/api/emergency/legal-hold` |
+| POST | `/api/emergency/redact-internal` |
 | GET | `/api/emergency/stats?id=` |
 | GET | `/api/emergency/reports?id=` |
 | GET | `/api/emergency/file?alertId=&attachmentId=` |
@@ -1175,7 +1191,59 @@ Admin desks: `/dashboard/admin/emergency` and `/dashboard/institution/emergency`
 
 The public page has a report-this-alert button. Storage rules deny client access to `institutions/{id}/hotline/...` and `institutions/{id}/alerts/...`. `docs/HOTLINE_ALERTS_SCHEMA.md` is not on a branch, so this website section is canonical.
 
-Retention: on resolve, retract, or withdrawn consent, the name and photo are cleared from the public document and public photo objects are deleted. The audit subcollection and consent versions remain for the school. Closed alerts stay archived and are not indexed. Retracted alerts are noindex.
+## Tamper-evident logs
+
+Hotline events and emergency `audit`, `updates`, and `consent` are permanent. Firestore rules set `allow update, delete: if false` on those subcollections for every role, admin included. Clients cannot create them either. The Admin SDK bypasses rules, so the server is the only writer, and it only creates these documents inside a transaction (`lib/server/ledger.ts`). It never updates or deletes them. `lib/ledger/chain.test.ts` fails if a server file updates, deletes, or `.add()`s those paths.
+
+Nothing in hotline or emergency is hard-deleted. Resolve, retract, and withdrawn consent set flags (`publicRedacted`, `consentWithdrawn`, `publicShareEnabled: false`) and mark public attachments `public: false`. Public pages, OG cards, and share links hide the name and photo. The internal document, the file bytes, and the log stay. A separate redact-internal action may blank the parent fields only when `legalHold.on` is false, and only after the previous values are in the chain diff. That overrides any earlier retention or purge rule for these records. The 90-day purge in `purgeAudit` deletes `moderation_audit` only.
+
+### Audit entry
+
+| Field | Notes |
+| --- | --- |
+| `seq` | Starts at 1. One sequence per ticket (`events`) or per alert (`audit` + `updates` + `consent`). |
+| `actorUid` | The signed-in user, `system`, or `public`. A share stores `sha256(uid)` or the marker `anonymous`. |
+| `actorRole` | Account role, `system`, `public`, `member`, or `anonymous`. |
+| `action` | What happened. |
+| `diff` | `{ before, after }` for the fields that changed. JSON values only. |
+| `serverTimestamp` | Milliseconds from `Date.now()` inside the transaction. This is not `FieldValue.serverTimestamp()`, because a sentinel cannot be hashed. `at` is the same number. |
+| `device` | `{ platform, appVersion, ipHash }`. `ipHash` is SHA-256 of the forwarded IP, or of `server` for cron. |
+| `prevHash` | Previous entry hash. The first entry uses 64 zeroes. |
+| `hash` | See below. |
+| `stream` | `events`, `audit`, `updates`, or `consent`. |
+
+The transaction reads `chainSeq` and `chainHead` on the parent, creates the next entry, then updates only those two parent fields. A retry cannot fork the chain.
+
+### Hash
+
+Canonical JSON sorts object keys, keeps array order, omits `undefined`, and omits the `hash` field. Then:
+
+`hash = SHA-256(prevHash + canonicalJson(entry))`
+
+`verifyChain` sorts by `seq`, requires `1..n` with no gaps, checks `prevHash`, recomputes each hash, and checks the parent `chainHead`. Staff call `GET /api/hotline/verify` or `GET /api/emergency/verify`. The queue and the emergency desk show **Verify integrity**.
+
+### Legal hold
+
+`legalHold` is `{ on: boolean, by: uid, at: milliseconds, reason: string }` on the ticket and on the alert. It starts `{ on: false, by: '', at: 0, reason: '' }`. Only a super admin (`role === 'admin'`) or a principal (`staffPost === 'principal'`) can set or clear it. Setting and clearing are both chain entries (`legal_hold_set`, `legal_hold_cleared`) with the before and after object. While `on` is true, redact-internal returns forbidden. Public redaction still runs.
+
+### Export
+
+School leads (`admin`, `institution_admin`, or principal) download the full log:
+
+- CSV columns: `seq,actorUid,actorRole,action,serverTimestamp,prevHash,hash,stream,diff,device`, then a `chainHead,<head>` line, then `verificationHash,<sha256>`.
+- PDF is a text rendering of the same lines, with `verificationHash <sha256>` last.
+
+The verification hash is SHA-256 of the export text before the `verificationHash` line. For a PDF, hash that text prefix. Do not hash the PDF xref bytes. The chain head in the file is the head before the export entry. The export itself is then logged as `exported`, including that verification hash.
+
+### Shares
+
+WhatsApp, Facebook, X, and copy link are logged with `channel`, time, and a hashed actor or `anonymous`. Sharing works only for an `active` or `updated` alert whose public share is enabled, through `/alerts/{id}`. `GET /api/emergency/share` writes the log and redirects. Copy link redirects back to the alert page. Hotline has no share control. `GET` and `POST /api/hotline/share` return 403 and write nothing.
+
+### Off-site backup
+
+`GET /api/cron/firestore-backup` is a scheduled-export stub. It is disabled unless `FIRESTORE_BACKUP_ENABLED=true` and `FIRESTORE_BACKUP_BUCKET` are both set. Neither is set. It is not listed in `vercel.json`. Enabling it needs the Firebase Blaze plan and a locked bucket with a retention policy. Pending Harry's approval. Until then the route returns 503 with `pendingApproval: true` and `plan: blaze`, and it does not call the Google export API.
+
+Retention: closed alerts stay archived and are not indexed. Retracted alerts are noindex. Public views drop the name and photo. Internal copies and the hash chain stay.
 
 ## Push categories added
 

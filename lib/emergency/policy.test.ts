@@ -129,4 +129,11 @@ test('a resolved alert drops the name and photo and turns sharing off', () => {
     publicShareEnabled: true,
   }));
   assert.equal(waiting?.shareEnabled, false);
+  const withdrawn = record({ consentWithdrawn: true, publicRedacted: true, guardianConsent: false, publicShareEnabled: false });
+  const hidden = publicView(withdrawn);
+  assert.equal(hidden?.subjectName, '');
+  assert.equal(hidden?.photoUrl, '');
+  assert.equal(hidden?.shareEnabled, false);
+  assert.equal(withdrawn.subjectName, 'A student');
+  assert.equal(withdrawn.photoUrl.includes('photo'), true);
 });

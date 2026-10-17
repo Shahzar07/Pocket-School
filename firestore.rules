@@ -2669,9 +2669,11 @@ service cloud.firestore {
         );
         allow create, update, delete: if false;
       }
+      // Append-only. update and delete are false for every role, admin included.
       match /events/{eventId} {
         allow read: if isAdmin();
-        allow create, update, delete: if false;
+        allow create: if false;
+        allow update, delete: if false;
       }
       match /attachments/{fileId} {
         allow read, write: if false;
@@ -2680,12 +2682,16 @@ service cloud.firestore {
     match /emergency_alerts/{alertId} {
       allow read: if false;
       allow create, update, delete: if false;
+      // Append-only. update and delete are false for every role, admin included.
       match /updates/{updateId} {
-        allow read, write: if false;
+        allow read: if false;
+        allow create: if false;
+        allow update, delete: if false;
       }
       match /audit/{auditId} {
         allow read: if isAdmin();
-        allow create, update, delete: if false;
+        allow create: if false;
+        allow update, delete: if false;
       }
       match /attachments/{fileId} {
         allow read, write: if false;
@@ -2693,10 +2699,11 @@ service cloud.firestore {
       match /recipients/{recipientId} {
         allow read, write: if false;
       }
-      // Consent versions are immutable. The server creates them and never updates them.
+      // Consent versions are append-only. update and delete are false for every role, admin included.
       match /consent/{consentId} {
         allow read: if isAdmin();
-        allow create, update, delete: if false;
+        allow create: if false;
+        allow update, delete: if false;
       }
     }
     match /emergency_rate/{rateId} {

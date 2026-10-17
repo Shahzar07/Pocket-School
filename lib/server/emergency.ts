@@ -45,7 +45,21 @@ import {
   type EmergencyType,
   type Region,
 } from '../emergency/policy';
-import { bytesFromBase64, imagePass, removeObject, saveObject, signedRead } from './files';
+import { bytesFromBase64, imagePass, saveObject, signedRead } from './files';
+import {
+  GENESIS,
+  canManageLegalHold,
+  emptyLegalHold,
+  internalRedactionBlocked,
+  isShareChannel,
+  shareRefusal,
+  type ChainDevice,
+  type ChainDiff,
+  type LegalHold,
+} from '../ledger/chain';
+import { SERVER_DEVICE, hashActor } from '../ledger/device';
+import { exportCsv, exportPdf, type ExportFile } from '../ledger/export';
+import { appendChain, readChain, verifyStoredChain } from './ledger';
 
 function db(): Firestore {
   return adminDb();
@@ -98,13 +112,42 @@ function dayKey(now: number): string {
   return new Date(now).toISOString().slice(0, 10);
 }
 
-async function audit(alertId: string, actorId: string, action: string, detail: string) {
-  await db().collection(`emergency_alerts/${alertId}/audit`).add({
-    actorId,
+function deviceOf(input: Record<string, unknown> | undefined): ChainDevice {
+  const raw = input?.device;
+  if (!raw || typeof raw !== 'object') return SERVER_DEVICE;
+  const device = raw as Partial<ChainDevice>;
+  if (typeof device.platform !== 'string' || typeof device.appVersion !== 'string' || typeof device.ipHash !== 'string') {
+    return SERVER_DEVICE;
+  }
+  return { platform: device.platform.slice(0, 40), appVersion: device.appVersion.slice(0, 40), ipHash: device.ipHash };
+}
+
+async function audit(
+  alertId: string,
+  actor: { id: string; role: string },
+  action: string,
+  diff: ChainDiff,
+  device: ChainDevice = SERVER_DEVICE,
+) {
+  await appendChain({
+    parentPath: `emergency_alerts/${alertId}`,
+    collection: 'audit',
+    actorUid: actor.id,
+    actorRole: actor.role,
     action,
-    detail,
-    at: Date.now(),
+    diff,
+    device,
   });
+}
+
+function holdOf(value: unknown): LegalHold {
+  const raw = (value ?? {}) as Partial<LegalHold>;
+  return {
+    on: raw.on === true,
+    by: str(raw.by),
+    at: Number(raw.at) || 0,
+    reason: str(raw.reason),
+  };
 }
 
 function statusOf(value: string): EmergencyStatus {
@@ -172,6 +215,8 @@ function asRecord(id: string, data: FirebaseFirestore.DocumentData): EmergencyRe
     photoUrl: str(data.photoUrl),
     guardianConsent: data.guardianConsent === true,
     consentId: str(data.consentId),
+    consentWithdrawn: data.consentWithdrawn === true,
+    publicRedacted: data.publicRedacted === true,
     authoritiesInformed: authorities && str(authorities.agency) ? authorities : null,
     authorities: authoritiesFrom(data),
     status: statusOf(str(data.status) || 'draft'),
@@ -306,14 +351,22 @@ export async function createAlert(uid: string, input: Record<string, unknown>) {
     retractedReason: '',
     ogVersion: 1,
     counts: { views: 0, shares: 0 },
+    chainSeq: 0,
+    chainHead: GENESIS,
+    legalHold: emptyLegalHold(),
+    publicRedacted: false,
+    internalRedacted: false,
     createdAt: now,
   });
   await rateRef.set({ count: count + 1, uid, day: dayKey(now) }, { merge: true });
-  await audit(ref.id, actor.id, 'created', type);
+  await audit(ref.id, actor, 'created', {
+    before: {},
+    after: { type, title, status: 'draft', subjectName: str(input.subjectName).slice(0, 80) },
+  }, deviceOf(input));
   return { id: ref.id, status: 'draft' };
 }
 
-export async function confirmAlert(uid: string, id: string) {
+export async function confirmAlert(uid: string, id: string, device: ChainDevice = SERVER_DEVICE) {
   const actor = await loadActor(uid);
   const snap = await db().doc(`emergency_alerts/${id}`).get();
   if (!snap.exists) throw new ActionError('NOT_FOUND', 'Alert not found.');
@@ -343,7 +396,10 @@ export async function confirmAlert(uid: string, id: string) {
     sharePaused: false,
     publicShareEnabled: true,
   }, { merge: true });
-  await audit(id, actor.id, 'confirmed', '');
+  await audit(id, actor, 'confirmed', {
+    before: { status: 'draft' },
+    after: { status: 'active', confirmedBy: actor.id },
+  }, device);
   await db().collection('network_posts').add({
     kind: 'emergency',
     alertId: id,
@@ -370,10 +426,21 @@ export async function updateAlert(uid: string, id: string, input: Record<string,
   }
   const text = str(input.body).slice(0, 2000);
   if (text.length < 3) throw new ActionError('BAD_REQUEST', 'Write an update.');
-  const now = Date.now();
-  await db().collection(`emergency_alerts/${id}/updates`).add({ body: text, actorId: actor.id, at: now });
+  const nextStatus = record.status === 'active' ? 'updated' : record.status;
   if (record.status === 'active') await snap.ref.set({ status: 'updated' }, { merge: true });
-  await audit(id, actor.id, 'updated', text.slice(0, 140));
+  await appendChain({
+    parentPath: `emergency_alerts/${id}`,
+    collection: 'updates',
+    actorUid: actor.id,
+    actorRole: actor.role,
+    action: 'updated',
+    diff: {
+      before: { status: record.status },
+      after: { status: nextStatus, body: text },
+    },
+    device: deviceOf(input),
+    extra: { body: text },
+  });
   return { ok: true };
 }
 
@@ -388,8 +455,7 @@ export async function resolveAlert(uid: string, id: string, input: Record<string
   const record = asRecord(snap.id, snap.data() ?? {});
   await snap.ref.set({
     status: 'resolved',
-    subjectName: '',
-    photoUrl: '',
+    publicRedacted: true,
     publicShareEnabled: false,
     ogVersion: record.ogVersion + 1,
     resolved: {
@@ -403,18 +469,30 @@ export async function resolveAlert(uid: string, id: string, input: Record<string
   for (const post of posts.docs) {
     await post.ref.set({ body: 'Resolved. Personal details have been removed.', pinned: false }, { merge: true });
   }
-  await audit(id, actor.id, 'resolved', outcome);
+  await audit(id, actor, 'resolved', {
+    before: { status: record.status, publicRedacted: record.publicRedacted === true },
+    after: { status: 'resolved', publicRedacted: true, outcome },
+  }, deviceOf(input));
   return { ok: true, ogVersion: record.ogVersion + 1 };
 }
 
-export async function closeAlert(uid: string, id: string) {
+export async function closeAlert(uid: string, id: string, device: ChainDevice = SERVER_DEVICE) {
   const actor = await loadActor(uid);
   if (actor.role !== 'admin' && actor.staffPost !== 'principal') {
     throw new ActionError('FORBIDDEN', 'A principal or admin archives an alert.');
   }
+  const { record } = await loadAlert(id);
   const now = Date.now();
-  await db().doc(`emergency_alerts/${id}`).set({ status: 'closed', publicShareEnabled: false, updatedAt: now }, { merge: true });
-  await audit(id, actor.id, 'closed', 'archived');
+  await db().doc(`emergency_alerts/${id}`).set({
+    status: 'closed',
+    publicRedacted: true,
+    publicShareEnabled: false,
+    updatedAt: now,
+  }, { merge: true });
+  await audit(id, actor, 'closed', {
+    before: { status: record.status },
+    after: { status: 'closed', publicRedacted: true },
+  }, device);
   return { ok: true };
 }
 
@@ -439,15 +517,31 @@ export async function readPublicAlert(id: string): Promise<ReturnType<typeof pub
   return view;
 }
 
-export async function recordShare(id: string) {
+export async function recordShare(id: string, channel: string, actorUid: string, device: ChainDevice = SERVER_DEVICE) {
+  if (!isShareChannel(channel)) throw new ActionError('BAD_REQUEST', 'Choose a share channel.');
   const snap = await db().doc(`emergency_alerts/${id}`).get();
-  if (!snap.exists) return { ok: false };
-  const view = publicView(asRecord(snap.id, snap.data() ?? {}));
-  if (!view?.shareEnabled) return { ok: false };
+  if (!snap.exists) throw new ActionError('NOT_FOUND', 'Alert not found.');
+  const record = asRecord(snap.id, snap.data() ?? {});
+  const view = publicView(record);
+  const refusal = shareRefusal('alert', record.status, view?.shareEnabled === true);
+  if (refusal) throw new ActionError('FORBIDDEN', refusal);
   const shares = Number(snap.data()?.counts?.shares) || 0;
   const views = Number(snap.data()?.counts?.views) || 0;
+  const at = Date.now();
+  await appendChain({
+    parentPath: `emergency_alerts/${id}`,
+    collection: 'audit',
+    actorUid: hashActor(actorUid),
+    actorRole: actorUid ? 'member' : 'anonymous',
+    action: 'shared',
+    diff: {
+      before: { shares },
+      after: { shares: shares + 1, channel, at },
+    },
+    device,
+  });
   await snap.ref.set({ counts: { views, shares: shares + 1 } }, { merge: true });
-  return { ok: true };
+  return { ok: true, channel };
 }
 
 export async function alertStats(uid: string, id: string) {
@@ -482,10 +576,8 @@ async function redactPhotos(id: string) {
   const files = await db().collection(`emergency_alerts/${id}/attachments`).limit(40).get();
   for (const file of files.docs) {
     const data = file.data();
-    if (data.label !== 'photo' && data.public !== true) continue;
-    const storagePath = str(data.storagePath);
-    await removeObject(storagePath);
-    await file.ref.set({ public: false, storagePath: '', photoRedacted: true }, { merge: true });
+    if (data.public !== true) continue;
+    await file.ref.set({ public: false }, { merge: true });
   }
 }
 
@@ -511,7 +603,10 @@ export async function setAlertAuthorities(uid: string, id: string, input: Record
     publicShareEnabled: share,
     authoritiesRemindedAt: next.decision.status === 'to_be_informed' ? 0 : now,
   }, { merge: true });
-  await audit(id, actor.id, 'authorities', next.decision.status);
+  await audit(id, actor, 'authorities', {
+    before: { status: record.authorities.status },
+    after: { status: next.decision.status, agency: next.decision.informed?.agency ?? '' },
+  }, deviceOf(input));
   return { status: next.decision.status };
 }
 
@@ -540,37 +635,49 @@ export async function recordConsent(uid: string, id: string, input: Record<strin
   const problem = consentProblems(consent);
   if (problem) throw new ActionError('BAD_REQUEST', problem);
   const version = (await db().collection(`emergency_alerts/${id}/consent`).limit(20).get()).size + 1;
-  const ref = db().collection(`emergency_alerts/${id}/consent`).doc();
-  await ref.create({ ...consent, version });
+  const created = await appendChain({
+    parentPath: `emergency_alerts/${id}`,
+    collection: 'consent',
+    actorUid: actor.id,
+    actorRole: actor.role,
+    action: 'consent',
+    diff: {
+      before: { consentId: record.consentId, guardianConsent: record.guardianConsent },
+      after: { version, photo: consent.photo, guardianName: consent.guardianName },
+    },
+    device: deviceOf(input),
+    extra: { ...consent, clientDevice: consent.device, version },
+  });
   await snap.ref.set({
-    consentId: ref.id,
+    consentId: created.id,
     guardianConsent: consent.photo,
     consentWithdrawn: false,
     subjectName: str(input.subjectName).slice(0, 80) || record.subjectName,
   }, { merge: true });
-  await audit(id, actor.id, 'consent', `version ${version}`);
-  return { id: ref.id, version };
+  return { id: created.id, version };
 }
 
-export async function withdrawConsent(uid: string, id: string) {
+export async function withdrawConsent(uid: string, id: string, device: ChainDevice = SERVER_DEVICE) {
   const actor = await loadActor(uid);
   if (!lead(actor)) throw new ActionError('FORBIDDEN', 'Verified staff withdraw guardian consent.');
   const { snap, record } = await loadAlert(id);
   const now = Date.now();
   await redactPhotos(id);
   await snap.ref.set({
-    subjectName: '',
-    photoUrl: '',
     guardianConsent: false,
     consentWithdrawn: true,
+    publicRedacted: true,
     publicShareEnabled: false,
     ogVersion: record.ogVersion + 1,
   }, { merge: true });
-  await audit(id, actor.id, 'consent_withdrawn', '');
+  await audit(id, actor, 'consent_withdrawn', {
+    before: { consentWithdrawn: record.consentWithdrawn === true, publicShareEnabled: record.publicShareEnabled },
+    after: { consentWithdrawn: true, publicRedacted: true, publicShareEnabled: false },
+  }, device);
   return { ok: true, at: now };
 }
 
-export async function reviewAlert(uid: string, id: string) {
+export async function reviewAlert(uid: string, id: string, device: ChainDevice = SERVER_DEVICE) {
   const actor = await loadActor(uid);
   if (!lead(actor)) throw new ActionError('FORBIDDEN', 'Verified staff re-confirm an alert.');
   const { snap, record } = await loadAlert(id);
@@ -590,7 +697,10 @@ export async function reviewAlert(uid: string, id: string) {
     sharePaused: false,
     publicShareEnabled: share,
   }, { merge: true });
-  await audit(id, actor.id, 'reviewed', '');
+  await audit(id, actor, 'reviewed', {
+    before: { reviewDueAt: record.reviewDueAt, sharePaused: record.sharePaused },
+    after: { reviewDueAt, sharePaused: false, publicShareEnabled: share },
+  }, device);
   return { reviewDueAt };
 }
 
@@ -606,8 +716,7 @@ export async function retractAlert(uid: string, id: string, input: Record<string
   await snap.ref.set({
     status: 'retracted',
     retractedReason: reason,
-    subjectName: '',
-    photoUrl: '',
+    publicRedacted: true,
     publicShareEnabled: false,
     sharePaused: true,
     ogVersion: record.ogVersion + 1,
@@ -630,7 +739,10 @@ export async function retractAlert(uid: string, id: string, input: Record<string
   });
   const recipients = await db().collection(`emergency_alerts/${id}/recipients`).limit(400).get();
   await notifyPeople(record, 'Correction', reason, recipients.docs.map(doc => doc.id));
-  await audit(id, actor.id, 'retracted', reason);
+  await audit(id, actor, 'retracted', {
+    before: { status: record.status },
+    after: { status: 'retracted', publicRedacted: true, reason },
+  }, deviceOf(input));
   return { ok: true, ogVersion: record.ogVersion + 1 };
 }
 
@@ -679,7 +791,10 @@ export async function attachAlert(uid: string, id: string, input: Record<string,
   if (wantsPublic) {
     await db().doc(`emergency_alerts/${id}`).set({ photoUrl: `attachment:${fileRef.id}` }, { merge: true });
   }
-  await audit(id, actor.id, 'uploaded', fileRef.id);
+  await audit(id, actor, 'uploaded', {
+    before: {},
+    after: { attachmentId: fileRef.id, label, public: wantsPublic },
+  }, deviceOf(input));
   return { id: fileRef.id, public: wantsPublic };
 }
 
@@ -693,11 +808,14 @@ export async function publicAlertFile(id: string, attachmentId: string) {
   if (!file.exists || file.data()?.public !== true) return null;
   const storagePath = str(file.data()?.storagePath);
   if (!storagePath || str(file.data()?.consentRecordId) !== record.consentId) return null;
-  await audit(id, 'public', 'viewed', attachmentId);
+  await audit(id, { id: 'public', role: 'public' }, 'viewed', {
+    before: {},
+    after: { attachmentId },
+  });
   return signedRead(storagePath);
 }
 
-export async function viewAlertFile(uid: string, id: string, attachmentId: string) {
+export async function viewAlertFile(uid: string, id: string, attachmentId: string, device: ChainDevice = SERVER_DEVICE) {
   const actor = await loadActor(uid);
   if (!lead(actor)) throw new ActionError('FORBIDDEN', 'Verified staff open alert files.');
   const file = await db().doc(`emergency_alerts/${id}/attachments/${attachmentId}`).get();
@@ -705,7 +823,10 @@ export async function viewAlertFile(uid: string, id: string, attachmentId: strin
   const storagePath = str(file.data()?.storagePath);
   if (!storagePath) throw new ActionError('NOT_FOUND', 'This file has been removed.');
   const signed = await signedRead(storagePath);
-  await audit(id, actor.id, 'viewed', attachmentId);
+  await audit(id, actor, 'viewed', {
+    before: {},
+    after: { attachmentId },
+  }, device);
   return signed;
 }
 
@@ -760,7 +881,17 @@ export async function reportAlert(input: {
     institutionId: str(snap.data()?.institutionId),
     createdAtMs: now,
   });
-  await audit(input.alertId, input.reporterUid || 'anonymous', 'reported', '');
+  await audit(input.alertId, {
+    id: input.reporterUid || 'anonymous',
+    role: input.reporterUid ? 'reporter' : 'anonymous',
+  }, 'reported', {
+    before: {},
+    after: { reportId: ref.id },
+  }, {
+    platform: 'web',
+    appVersion: 'web',
+    ipHash: createHash('sha256').update(input.ip || 'unknown').digest('hex'),
+  });
   return { id: ref.id };
 }
 
@@ -803,7 +934,10 @@ export async function runAlertMaintenance(now = Date.now()) {
       const record = asRecord(doc.id, doc.data());
       if (record.sharePaused || !reviewExpired(record.reviewDueAt, now, record.status)) continue;
       await doc.ref.set({ publicShareEnabled: false, sharePaused: true, ogVersion: record.ogVersion + 1 }, { merge: true });
-      await audit(doc.id, 'system', 'review_paused', '');
+      await audit(doc.id, { id: 'system', role: 'system' }, 'review_paused', {
+        before: { sharePaused: false, publicShareEnabled: record.publicShareEnabled },
+        after: { sharePaused: true, publicShareEnabled: false },
+      });
       const admins = await db().collection('users').where('institutionId', '==', record.institutionId).limit(30).get();
       for (const person of admins.docs.filter(item => item.data().role === 'admin' || item.data().role === 'institution_admin' || item.data().staffPost === 'principal').slice(0, 8)) {
         await notifyPeople(record, 'Alert sharing paused', 'Re-confirm this alert to share it again.', [person.id]);
@@ -820,9 +954,78 @@ export async function runAlertMaintenance(now = Date.now()) {
         continue;
       }
       await doc.ref.set({ authoritiesRemindedAt: now }, { merge: true });
-      await audit(doc.id, 'system', 'authority_reminder', '1h');
+      await audit(doc.id, { id: 'system', role: 'system' }, 'authority_reminder', {
+        before: { authoritiesRemindedAt: Number(data.authoritiesRemindedAt) || 0 },
+        after: { authoritiesRemindedAt: now },
+      });
       reminded += 1;
     }
   }
   return { paused, reminded };
+}
+
+export async function setAlertLegalHold(uid: string, id: string, input: Record<string, unknown>) {
+  const actor = await loadActor(uid);
+  if (!canManageLegalHold(actor.role, actor.staffPost)) {
+    throw new ActionError('FORBIDDEN', 'Only a super admin or the principal can set a legal hold.');
+  }
+  const { snap } = await loadAlert(id);
+  const current = holdOf(snap.data()?.legalHold);
+  const on = input.on === true;
+  const reason = str(input.reason).slice(0, 500);
+  if (reason.length < 3) throw new ActionError('BAD_REQUEST', 'A legal hold needs a reason.');
+  const now = Date.now();
+  const next: LegalHold = { on, by: actor.id, at: now, reason };
+  await snap.ref.set({ legalHold: next }, { merge: true });
+  await audit(id, actor, on ? 'legal_hold_set' : 'legal_hold_cleared', {
+    before: { legalHold: current },
+    after: { legalHold: next },
+  }, deviceOf(input));
+  return { legalHold: next };
+}
+
+export async function redactAlertInternal(uid: string, id: string, input: Record<string, unknown>) {
+  const actor = await loadActor(uid);
+  if (!lead(actor)) throw new ActionError('FORBIDDEN', 'Verified staff redact an internal copy.');
+  const { snap, record } = await loadAlert(id);
+  if (internalRedactionBlocked(holdOf(snap.data()?.legalHold))) {
+    throw new ActionError('FORBIDDEN', 'A legal hold blocks redaction of the internal copy.');
+  }
+  const before = { subjectName: record.subjectName, photoUrl: record.photoUrl };
+  await audit(id, actor, 'internal_redacted', {
+    before,
+    after: { subjectName: '', photoUrl: '' },
+  }, deviceOf(input));
+  await snap.ref.set({ subjectName: '', photoUrl: '', internalRedacted: true }, { merge: true });
+  return { ok: true };
+}
+
+export async function verifyAlert(uid: string, id: string) {
+  const actor = await loadActor(uid);
+  if (!lead(actor)) throw new ActionError('FORBIDDEN', 'Staff verify this alert.');
+  await loadAlert(id);
+  return verifyStoredChain('alert', id);
+}
+
+export async function exportAlertLog(uid: string, id: string, format: string, device: ChainDevice = SERVER_DEVICE): Promise<ExportFile> {
+  const actor = await loadActor(uid);
+  if (format !== 'csv' && format !== 'pdf') throw new ActionError('BAD_REQUEST', 'Choose csv or pdf.');
+  if (actor.role !== 'admin' && actor.role !== 'institution_admin' && actor.staffPost !== 'principal') {
+    throw new ActionError('FORBIDDEN', 'School leads can export an alert log.');
+  }
+  const snap = await db().doc(`emergency_alerts/${id}`).get();
+  if (!snap.exists) throw new ActionError('NOT_FOUND', 'Alert not found.');
+  if (actor.role !== 'admin' && str(snap.data()?.institutionId) !== actor.institutionId) {
+    throw new ActionError('FORBIDDEN', 'School leads can export an alert log.');
+  }
+  const loaded = await readChain('alert', id);
+  const entries = [...loaded.entries].sort((left, right) => left.seq - right.seq);
+  const file = format === 'pdf'
+    ? exportPdf(id, 'alert', entries, loaded.head)
+    : exportCsv(id, 'alert', entries, loaded.head);
+  await audit(id, actor, 'exported', {
+    before: {},
+    after: { format: file.filename.endsWith('.pdf') ? 'pdf' : 'csv', verificationHash: file.verificationHash, chainHead: loaded.head },
+  }, device);
+  return file;
 }

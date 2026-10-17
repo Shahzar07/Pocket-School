@@ -21,6 +21,18 @@ import { canViewAttachment, hotlineStoragePath, isAttachmentLabel } from '../att
 import { prepareAttachment } from '../attachments/prepare';
 import { bytesFromBase64, imagePass, saveObject, signedRead } from './files';
 import {
+  GENESIS,
+  canManageLegalHold,
+  emptyLegalHold,
+  internalRedactionBlocked,
+  type ChainDevice,
+  type ChainDiff,
+  type LegalHold,
+} from '../ledger/chain';
+import { SERVER_DEVICE } from '../ledger/device';
+import { exportCsv, exportPdf, type ExportFile } from '../ledger/export';
+import { appendChain, readChain, verifyStoredChain } from './ledger';
+import {
   DEFAULT_WORK,
   escalationTarget,
   isHotlineCategory,
@@ -100,6 +112,38 @@ function parentOwns(actor: Actor, studentId: string): boolean {
   return actor.role === 'parent' && actor.childIds.includes(studentId);
 }
 
+function deviceOf(input: Record<string, unknown> | undefined): ChainDevice {
+  const raw = input?.device;
+  if (!raw || typeof raw !== 'object') return SERVER_DEVICE;
+  const device = raw as Partial<ChainDevice>;
+  if (typeof device.platform !== 'string' || typeof device.appVersion !== 'string' || typeof device.ipHash !== 'string') {
+    return SERVER_DEVICE;
+  }
+  return { platform: device.platform.slice(0, 40), appVersion: device.appVersion.slice(0, 40), ipHash: device.ipHash };
+}
+
+async function logEvent(
+  ticketId: string,
+  actor: { id: string; role: string },
+  action: string,
+  diff: ChainDiff,
+  device: ChainDevice = SERVER_DEVICE,
+) {
+  await appendChain({
+    parentPath: `hotline_tickets/${ticketId}`,
+    collection: 'events',
+    actorUid: actor.id,
+    actorRole: actor.role,
+    action,
+    diff,
+    device,
+  });
+}
+
+function schoolLead(actor: Actor): boolean {
+  return actor.role === 'admin' || actor.role === 'institution_admin' || actor.staffPost === 'principal';
+}
+
 export async function createTicket(uid: string, input: Record<string, unknown>) {
   const actor = await loadActor(uid);
   const studentId = str(input.studentId);
@@ -154,11 +198,18 @@ export async function createTicket(uid: string, input: Record<string, unknown>) 
     safeguardingCaseId,
     authorities: authorities.decision,
     authoritiesRemindedAt: 0,
+    chainSeq: 0,
+    chainHead: GENESIS,
+    legalHold: emptyLegalHold(),
+    internalRedacted: false,
     createdAt: now,
     updatedAt: now,
   };
   await ref.set(ticket);
-  await ref.collection('events').add({ kind: 'created', actorId: actor.id, at: now, detail: category });
+  await logEvent(ref.id, actor, 'created', {
+    before: {},
+    after: { category, priority, status: 'pending', addressedTo, body },
+  }, deviceOf(input));
   return { id: ref.id, addressedTo, slaDueAt: ticket.slaDueAt, safeguardingCaseId };
 }
 
@@ -192,7 +243,7 @@ export async function getTicket(uid: string, id: string) {
   if (!canRead(actor, ticket.data)) throw new ActionError('FORBIDDEN', 'You cannot open this ticket.');
   const [comments, events] = await Promise.all([
     ticket.id ? db().collection(`hotline_tickets/${id}/comments`).orderBy('at', 'asc').limit(100).get() : Promise.resolve(null),
-    db().collection(`hotline_tickets/${id}/events`).orderBy('at', 'asc').limit(100).get(),
+    db().collection(`hotline_tickets/${id}/events`).orderBy('seq', 'asc').limit(200).get(),
   ]);
   const staff = actor.role !== 'parent';
   const files = await db().collection(`hotline_tickets/${id}/attachments`).limit(40).get();
@@ -241,15 +292,19 @@ export async function commentTicket(uid: string, id: string, input: Record<strin
   return { id: ref.id };
 }
 
-export async function assignTicket(uid: string, id: string, assigneeUid: string) {
+export async function assignTicket(uid: string, id: string, assigneeUid: string, device: ChainDevice = SERVER_DEVICE) {
   const actor = await loadActor(uid);
   const ticket = await loadTicket(id);
   if (!staffCanSee(actor.role, actor.staffPost, str(ticket.data.category))) {
     throw new ActionError('FORBIDDEN', 'You cannot assign this ticket.');
   }
   const now = Date.now();
+  const previous = str(ticket.data.assigneeUid);
   await db().doc(`hotline_tickets/${id}`).set({ assigneeUid, updatedAt: now }, { merge: true });
-  await db().collection(`hotline_tickets/${id}/events`).add({ kind: 'assigned', actorId: actor.id, at: now, detail: assigneeUid });
+  await logEvent(id, actor, 'assigned', {
+    before: { assigneeUid: previous },
+    after: { assigneeUid },
+  }, device);
   await notify(assigneeUid, 'A hotline ticket is yours', str(ticket.data.category), `/dashboard/teacher/hotline`);
   return { ok: true };
 }
@@ -281,12 +336,15 @@ export async function setTicketStatus(uid: string, id: string, input: Record<str
     patch.reopenUntil = reopenUntil(now);
   }
   await db().doc(`hotline_tickets/${id}`).set(patch, { merge: true });
-  await db().collection(`hotline_tickets/${id}/events`).add({ kind: 'status_change', actorId: actor.id, at: now, detail: status });
+  await logEvent(id, actor, 'status_change', {
+    before: { status: str(ticket.data.status) },
+    after: { status, kivReason: patch.kivReason ?? '', kivFollowUpAt: patch.kivFollowUpAt ?? 0 },
+  }, deviceOf(input));
   await notify(str(ticket.data.parentUid), 'Hotline update', `Status: ${status.replace('_', ' ')}`, '/dashboard/parent/hotline');
   return { ok: true };
 }
 
-export async function reopenTicket(uid: string, id: string) {
+export async function reopenTicket(uid: string, id: string, device: ChainDevice = SERVER_DEVICE) {
   const actor = await loadActor(uid);
   const ticket = await loadTicket(id);
   if (ticket.data.parentUid !== actor.id && actor.role !== 'admin') {
@@ -298,7 +356,10 @@ export async function reopenTicket(uid: string, id: string) {
   }
   const now = Date.now();
   await db().doc(`hotline_tickets/${id}`).set({ status: 'pending', updatedAt: now }, { merge: true });
-  await db().collection(`hotline_tickets/${id}/events`).add({ kind: 'reopened', actorId: actor.id, at: now, detail: '' });
+  await logEvent(id, actor, 'reopened', {
+    before: { status: str(ticket.data.status) },
+    after: { status: 'pending' },
+  }, device);
   return { ok: true };
 }
 
@@ -311,7 +372,10 @@ export async function rateTicket(uid: string, id: string, input: Record<string, 
   const now = Date.now();
   const satisfaction = { rating, comment: str(input.comment).slice(0, 500) };
   await db().doc(`hotline_tickets/${id}`).set({ satisfaction, updatedAt: now }, { merge: true });
-  await db().collection(`hotline_tickets/${id}/events`).add({ kind: 'rated', actorId: actor.id, at: now, detail: String(rating) });
+  await logEvent(id, actor, 'rated', {
+    before: { satisfaction: ticket.data.satisfaction ?? null },
+    after: { satisfaction },
+  }, deviceOf(input));
   return { ok: true };
 }
 
@@ -347,7 +411,10 @@ export async function escalateDueTickets(now = Date.now()) {
     const next = escalationTarget(level, isSensitiveCategory(str(data.category)));
     if (!next) continue;
     await doc.ref.set({ addressedTo: next, escalationLevel: level + 1, updatedAt: now }, { merge: true });
-    await doc.ref.collection('events').add({ kind: 'escalated', actorId: 'system', at: now, detail: next });
+    await logEvent(doc.id, { id: 'system', role: 'system' }, 'escalated', {
+      before: { addressedTo: str(data.addressedTo), escalationLevel: level },
+      after: { addressedTo: next, escalationLevel: level + 1 },
+    });
     const staff = await db().collection('users')
       .where('institutionId', '==', str(data.institutionId))
       .limit(40)
@@ -405,16 +472,14 @@ export async function attachTicket(uid: string, id: string, input: Record<string
     scanDetail: prepared.file.scan.detail,
     exifStripped: true,
   });
-  await db().collection(`hotline_tickets/${id}/events`).add({
-    kind: 'uploaded',
-    actorId: actor.id,
-    at: now,
-    detail: fileRef.id,
-  });
+  await logEvent(id, actor, 'uploaded', {
+    before: {},
+    after: { attachmentId: fileRef.id, label, kind: prepared.file.kind },
+  }, deviceOf(input));
   return { id: fileRef.id, kind: prepared.file.kind };
 }
 
-export async function viewTicketFile(uid: string, id: string, attachmentId: string) {
+export async function viewTicketFile(uid: string, id: string, attachmentId: string, device: ChainDevice = SERVER_DEVICE) {
   const actor = await loadActor(uid);
   const ticket = await loadTicket(id);
   const file = await db().doc(`hotline_tickets/${id}/attachments/${attachmentId}`).get();
@@ -426,12 +491,10 @@ export async function viewTicketFile(uid: string, id: string, attachmentId: stri
   const storagePath = str(data.storagePath);
   if (!storagePath) throw new ActionError('NOT_FOUND', 'This file has been removed.');
   const signed = await signedRead(storagePath);
-  await db().collection(`hotline_tickets/${id}/events`).add({
-    kind: 'viewed',
-    actorId: actor.id,
-    at: Date.now(),
-    detail: attachmentId,
-  });
+  await logEvent(id, actor, 'viewed', {
+    before: {},
+    after: { attachmentId },
+  }, device);
   return signed;
 }
 
@@ -458,12 +521,10 @@ export async function setTicketAuthorities(uid: string, id: string, input: Recor
     authoritiesRemindedAt: next.decision.status === 'to_be_informed' ? 0 : now,
     updatedAt: now,
   }, { merge: true });
-  await db().collection(`hotline_tickets/${id}/events`).add({
-    kind: 'authorities',
-    actorId: actor.id,
-    at: now,
-    detail: next.decision.status,
-  });
+  await logEvent(id, actor, 'authorities', {
+    before: { status: str(current.status) },
+    after: { status: next.decision.status, agency: next.decision.informed?.agency ?? '' },
+  }, deviceOf(input));
   return { status: next.decision.status };
 }
 
@@ -477,12 +538,96 @@ export async function remindAuthorityTickets(now = Date.now()) {
       continue;
     }
     await doc.ref.set({ authoritiesRemindedAt: now, updatedAt: now }, { merge: true });
-    await doc.ref.collection('events').add({ kind: 'authority_reminder', actorId: 'system', at: now, detail: '4h' });
+    await logEvent(doc.id, { id: 'system', role: 'system' }, 'authority_reminder', {
+      before: { authoritiesRemindedAt: Number(data.authoritiesRemindedAt) || 0 },
+      after: { authoritiesRemindedAt: now },
+    });
     const target = str(data.assigneeUid);
     if (target) await notify(target, 'Authorities still to be informed', 'This hotline ticket has waited four hours.', '/dashboard/teacher/hotline');
     reminded += 1;
   }
   return { reminded };
+}
+
+function holdOf(value: unknown): LegalHold {
+  const raw = (value ?? {}) as Partial<LegalHold>;
+  return {
+    on: raw.on === true,
+    by: str(raw.by),
+    at: Number(raw.at) || 0,
+    reason: str(raw.reason),
+  };
+}
+
+export async function setTicketLegalHold(uid: string, id: string, input: Record<string, unknown>) {
+  const actor = await loadActor(uid);
+  if (!canManageLegalHold(actor.role, actor.staffPost)) {
+    throw new ActionError('FORBIDDEN', 'Only a super admin or the principal can set a legal hold.');
+  }
+  const ticket = await loadTicket(id);
+  if (!canRead(actor, ticket.data)) throw new ActionError('FORBIDDEN', 'You cannot update this ticket.');
+  const current = holdOf(ticket.data.legalHold);
+  const on = input.on === true;
+  const reason = str(input.reason).slice(0, 500);
+  if (reason.length < 3) throw new ActionError('BAD_REQUEST', 'A legal hold needs a reason.');
+  const now = Date.now();
+  const next: LegalHold = { on, by: actor.id, at: now, reason };
+  await db().doc(`hotline_tickets/${id}`).set({ legalHold: next, updatedAt: now }, { merge: true });
+  await logEvent(id, actor, on ? 'legal_hold_set' : 'legal_hold_cleared', {
+    before: { legalHold: current },
+    after: { legalHold: next },
+  }, deviceOf(input));
+  return { legalHold: next };
+}
+
+export async function redactTicketInternal(uid: string, id: string, input: Record<string, unknown>) {
+  const actor = await loadActor(uid);
+  const ticket = await loadTicket(id);
+  if (!canRead(actor, ticket.data) || actor.role === 'parent') {
+    throw new ActionError('FORBIDDEN', 'Staff redact an internal copy.');
+  }
+  if (internalRedactionBlocked(holdOf(ticket.data.legalHold))) {
+    throw new ActionError('FORBIDDEN', 'A legal hold blocks redaction of the internal copy.');
+  }
+  const before = { body: str(ticket.data.body) };
+  await logEvent(id, actor, 'internal_redacted', {
+    before,
+    after: { body: '' },
+  }, deviceOf(input));
+  await db().doc(`hotline_tickets/${id}`).set({
+    body: '',
+    internalRedacted: true,
+    updatedAt: Date.now(),
+  }, { merge: true });
+  return { ok: true };
+}
+
+export async function verifyTicket(uid: string, id: string) {
+  const actor = await loadActor(uid);
+  const ticket = await loadTicket(id);
+  if (actor.role === 'parent' || !canRead(actor, ticket.data)) {
+    throw new ActionError('FORBIDDEN', 'Staff verify this ticket.');
+  }
+  return verifyStoredChain('ticket', id);
+}
+
+export async function exportTicketLog(uid: string, id: string, format: string, device: ChainDevice = SERVER_DEVICE): Promise<ExportFile> {
+  const actor = await loadActor(uid);
+  const ticket = await loadTicket(id);
+  if (format !== 'csv' && format !== 'pdf') throw new ActionError('BAD_REQUEST', 'Choose csv or pdf.');
+  if (!schoolLead(actor) || !canRead(actor, ticket.data)) {
+    throw new ActionError('FORBIDDEN', 'School leads can export a ticket log.');
+  }
+  const loaded = await readChain('ticket', id);
+  const entries = [...loaded.entries].sort((left, right) => left.seq - right.seq);
+  const file = format === 'pdf'
+    ? exportPdf(id, 'ticket', entries, loaded.head)
+    : exportCsv(id, 'ticket', entries, loaded.head);
+  await logEvent(id, actor, 'exported', {
+    before: {},
+    after: { format: file.filename.endsWith('.pdf') ? 'pdf' : 'csv', verificationHash: file.verificationHash, chainHead: loaded.head },
+  }, device);
+  return file;
 }
 
 export type { HotlineCategory };

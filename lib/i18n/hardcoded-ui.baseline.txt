@@ -2317,3 +2317,5 @@ components/hotline/surfaces.tsx	Re-confirm every 24 hours or public sharing paus
 components/hotline/surfaces.tsx	Report this alert
 components/hotline/surfaces.tsx	Retracted. This page is no longer shared.
 components/hotline/surfaces.tsx	Three working days. Assigned to the class teacher. Authorities reminder after four hours.
+components/hotline/surfaces.tsx	Verify integrity
+components/hotline/surfaces.tsx	Copy link

@@ -37,6 +37,9 @@ export interface EmergencyRecord {
   photoUrl: string;
   guardianConsent: boolean;
   consentId: string;
+  /** Public views hide the name and photo. The stored document keeps both. */
+  consentWithdrawn?: boolean;
+  publicRedacted?: boolean;
   authoritiesInformed: AuthorityNotice | null;
   authorities: AuthorityDecision;
   status: EmergencyStatus;
@@ -164,7 +167,8 @@ export function publicView(record: EmergencyRecord): PublicEmergency | null {
   if (record.status === 'draft') return null;
   const closed = record.status === 'resolved' || record.status === 'closed';
   const retracted = record.status === 'retracted';
-  const redacted = closed || retracted;
+  const heldBack = record.consentWithdrawn === true || record.publicRedacted === true;
+  const redacted = closed || retracted || heldBack;
   const country = record.region.country;
   const notice = record.authorities.informed;
   let description = record.description;

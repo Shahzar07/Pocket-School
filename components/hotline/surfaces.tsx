@@ -59,6 +59,7 @@ const CSS = `
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  text-decoration: none;
 }
 .hk-btn.ghost { background: #fff; color: #17343C; border: 1px solid #D5E3E7; }
 .hk-chip { min-height: 48px; }
@@ -131,7 +132,10 @@ export function StaffQueue() {
           </div>
           <h2>Homework load this week</h2>
           <p>Three working days. Assigned to the class teacher. Authorities reminder after four hours.</p>
-          <button type="button" className="hk-btn">Open</button>
+          <div className="hk-row">
+            <button type="button" className="hk-btn">Open</button>
+            <button type="button" className="hk-btn ghost">Verify integrity</button>
+          </div>
         </article>
         <article className="hk-card">
           <div className="hk-row">
@@ -185,9 +189,10 @@ export function PublicAlert({ view }: { view: PublicEmergency | null }) {
         ) : null}
         {view.shareEnabled ? (
           <div className="hk-row">
-            <button type="button" className="hk-btn"><Share2 size={24} strokeWidth={2} aria-hidden /> WhatsApp</button>
-            <button type="button" className="hk-btn ghost">Facebook</button>
-            <button type="button" className="hk-btn ghost">X</button>
+            <a className="hk-btn" href={`/api/emergency/share?id=${view.id}&channel=whatsapp`}><Share2 size={24} strokeWidth={2} aria-hidden /> WhatsApp</a>
+            <a className="hk-btn ghost" href={`/api/emergency/share?id=${view.id}&channel=facebook`}>Facebook</a>
+            <a className="hk-btn ghost" href={`/api/emergency/share?id=${view.id}&channel=x`}>X</a>
+            <a className="hk-btn ghost" href={`/api/emergency/share?id=${view.id}&channel=copy`}>Copy link</a>
           </div>
         ) : null}
         <button type="button" className="hk-btn ghost">Report this alert</button>
@@ -215,6 +220,7 @@ export function EmergencyDesk() {
             <button type="button" className="hk-btn"><Check size={24} strokeWidth={2} aria-hidden /> Confirm and publish</button>
             <button type="button" className="hk-btn ghost">Resolve</button>
             <button type="button" className="hk-btn ghost">Retract</button>
+            <button type="button" className="hk-btn ghost">Verify integrity</button>
           </div>
           <p>Views 0 · Shares 0</p>
         </article>
