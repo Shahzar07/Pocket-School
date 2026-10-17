@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isNextResponse, requireUser } from '@/lib/api-guard';
+import { isNextResponse, loadUser, requireUser } from '@/lib/api-guard';
 import { adminDb } from '@/lib/firebase-admin';
 import { PLATFORM_CURRENCY } from '@/lib/money';
+import { purchaseGate } from '@/lib/billing/model';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Card payments are not switched on yet.', code: 'STRIPE_NOT_CONFIGURED' }, { status: 503 });
   }
   const body = await req.json().catch(() => ({})) as { courseId?: string };
+  const profile = await loadUser(user.uid);
+  const gate = purchaseGate({
+    ageTier: profile?.ageTier,
+    role: profile?.role,
+    dateOfBirth: profile?.dateOfBirth,
+    now: new Date(),
+  });
+  if (!gate.ok) return NextResponse.json({ error: gate.reason, code: 'MINOR' }, { status: 403 });
   if (!body.courseId) return NextResponse.json({ error: 'Choose a course first.' }, { status: 400 });
   const snap = await adminDb().doc(`courses/${body.courseId}`).get();
   if (!snap.exists) return NextResponse.json({ error: 'Course not found.' }, { status: 404 });

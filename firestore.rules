@@ -2625,6 +2625,42 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Subscriptions and entitlements. The server writes them. A person can read
+    // their own row. A linked parent can read a child's entitlement. Deploy with
+    // the owner toolchain. This change is not deployed from the agent.
+    match /entitlements/{uid} {
+      allow read: if isSignedIn() && (
+        request.auth.uid == uid
+        || isAdmin()
+        || linkedTo(uid)
+        || resource.data.get('payerUid', '') == request.auth.uid
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /subscriptions/{subscriptionId} {
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || resource.data.get('payerUid', '') == request.auth.uid
+        || resource.data.get('beneficiaryUids', []).hasAny([request.auth.uid])
+        || resource.data.get('userId', '') == request.auth.uid
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /billing_audit/{eventId} {
+      allow read: if isSignedIn() && isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /billing_audit_head/{headId} {
+      allow read, write: if false;
+    }
+
+    match /billing_events/{eventId} {
+      allow read, write: if false;
+    }
+
     match /published_reports/{token} {
       allow get: if true;
       allow list: if false;

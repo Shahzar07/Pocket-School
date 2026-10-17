@@ -9,6 +9,7 @@ import { DocumentDelivery } from '@/components/document-delivery';
 import { billingDocument } from '@/lib/documents/packet';
 import { PAYER_NOTE } from '@/lib/billing-model';
 import { authedFetch } from '@/lib/api-client';
+import { FamilyBoard } from '@/components/billing/family-board';
 
 export default function ParentBillingPage() {
   const { user, profile } = useAuthSTORE();
@@ -35,7 +36,8 @@ export default function ParentBillingPage() {
     <div className="max-w-3xl mx-auto space-y-6 pb-12">
       <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-amber-600">Billing</p>
       <h1 className="font-heading text-4xl">Invoices</h1>
-      <p className="text-sm text-muted-foreground">{PAYER_NOTE} This list is for your account and for children who have approved a link. Card details stay on your profile settings, and only the last four digits are kept.</p>
+      <p className="text-sm text-muted-foreground">{PAYER_NOTE} This list is for your account and for children who have approved a link. Card details stay on your profile settings, and only the last four digits are kept. Courses unlock on the child&apos;s account.</p>
+      <FamilyBoard />
       {rows.length > 0 && (
         <DocumentDelivery
           documents={rows.map(inv => billingDocument({

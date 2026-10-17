@@ -20,6 +20,8 @@ import { formatMoney } from '@/lib/pricing';
 import { DocumentDelivery } from '@/components/document-delivery';
 import { billingDocument } from '@/lib/documents/packet';
 import { PAYER_NOTE } from '@/lib/billing-model';
+import { AskParent } from '@/components/billing/family-board';
+import { ManageSubscription } from '@/components/billing/manage-subscription';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -110,6 +112,12 @@ export default function StudentBillingPage() {
           <span className="gradient-text italic">Billing</span>
         </h1>
         <p className="text-sm text-muted-foreground mt-2 max-w-2xl">{PAYER_NOTE}</p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <ManageSubscription returnPath="/dashboard/student/billing" />
+        </div>
+        <div className="mt-4">
+          <AskParent adult={profile?.ageTier === 'adult'} />
+        </div>
         {profile?.institutionId && (
           <p className="text-sm mt-3 max-w-2xl rounded-2xl border border-border bg-card px-4 py-3">
             Your institution pays this seat. Poket School does not charge you for it. Marketplace courses are a separate purchase with a card or the wallet. Sparks cannot buy them.

@@ -12,6 +12,7 @@ import { periodStartFor, quoteForInstitution, type SubscriptionState } from '@/l
 import { loadCurrentBill } from '@/lib/institution-membership-store';
 import { seedInstitutionPricing, tierCliff, VOLUME_PLANS, type VolumeInterval, type VolumePlanId } from '@/lib/institution-pricing';
 import { scaleSeats } from '@/lib/institution-commerce';
+import { ManageSubscription } from '@/components/billing/manage-subscription';
 
 export default function InstitutionBillingPage() {
   const { profile } = useAuthSTORE();
@@ -68,6 +69,7 @@ export default function InstitutionBillingPage() {
   return (
     <DashPage className="max-w-3xl">
       <DashHeader eyebrow="Institution" title="Billing" description={`Phase: ${bill?.phase ?? 'pending_payment'}. Institutions pay per student seat. Teachers and parents are not seats. A failed payment has a 7-day grace, then the academy suspends until it is paid.`} />
+      <ManageSubscription returnPath="/dashboard/institution/billing" institutionId={institutionId || undefined} />
       <Panel>
         <p className="text-2xl font-semibold tabular-nums">{quote.currency} {quote.total.toFixed(2)}</p>
         <p className="text-sm text-muted-foreground">{quote.tierLabel} · {quote.seats} student seats · {interval}</p>
