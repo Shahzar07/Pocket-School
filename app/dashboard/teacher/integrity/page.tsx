@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { AlertTriangle, CheckCircle2, Shield, Loader2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Shield, Loader2, ShieldCheck } from 'lucide-react';
+import { StatCard } from '@/components/dash-ui';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 
@@ -126,18 +127,10 @@ export default function IntegrityPage() {
         custom={1}
         className="grid grid-cols-2 md:grid-cols-4 gap-4"
       >
-        {[
-          { label: 'Total Reports', value: stats.total, accent: 'bg-emerald-500' },
-          { label: 'Clean', value: stats.clean, accent: 'bg-green-500' },
-          { label: 'Suspicious', value: stats.suspicious, accent: 'bg-amber-500' },
-          { label: 'Violations', value: stats.violation, accent: 'bg-red-500' },
-        ].map(s => (
-          <div key={s.label} className="bg-card border border-border rounded-3xl p-5 sm:p-6 relative overflow-hidden card-glow text-center">
-            <div className={`absolute top-0 left-0 right-0 h-1 ${s.accent}`} />
-            <p className="text-3xl font-bold text-foreground">{s.value}</p>
-            <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
-          </div>
-        ))}
+        <StatCard icon={Shield} label="Total reports" value={stats.total} tone="violet" index={0} />
+        <StatCard icon={ShieldCheck} label="Clean" value={stats.clean} tone="emerald" index={1} trend={stats.clean > 0 ? { direction: 'up', label: 'Clear work' } : { direction: 'flat', label: 'None yet' }} />
+        <StatCard icon={AlertTriangle} label="Suspicious" value={stats.suspicious} tone="amber" index={2} trend={stats.suspicious > 0 ? { direction: 'down', label: 'Needs a look' } : { direction: 'up', label: 'None waiting' }} />
+        <StatCard icon={AlertTriangle} label="Violations" value={stats.violation} tone="coral" index={3} trend={stats.violation > 0 ? { direction: 'down', label: 'Open' } : { direction: 'up', label: 'None open' }} />
       </motion.div>
 
       {reports.length === 0 && (

@@ -171,8 +171,7 @@ export default function StudentAttendancePage() {
           {courseMap.map((ca, i) => {
             const summary = summaryFor(ca);
             const rate = summary.rate ?? 0;
-            const rateColor = rate >= 80 ? 'text-emerald-500' : rate >= 60 ? 'text-amber-500' : 'text-destructive';
-            const barColor = rate >= 80 ? 'bg-emerald-500' : rate >= 60 ? 'bg-amber-500' : 'bg-destructive';
+            const rateTone = rate >= 80 ? 'emerald' : rate >= 60 ? 'amber' : 'coral';
             return (
               <motion.div
                 key={ca.courseId}
@@ -196,7 +195,7 @@ export default function StudentAttendancePage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className={`font-heading text-4xl ${rateColor}`}>{rate}%</p>
+                    <p className="font-heading text-4xl" style={{ color: `var(--ps-${rateTone})` }}>{rate}%</p>
                     <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mt-1">
                       attendance rate
                     </p>
@@ -211,8 +210,8 @@ export default function StudentAttendancePage() {
                 <div className="px-5 sm:px-6 pt-4 pb-2">
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div
-                      className={`h-full ${barColor} rounded-full transition-all duration-500`}
-                      style={{ width: `${rate}%` }}
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${rate}%`, background: `var(--ps-${rateTone})` }}
                     />
                   </div>
                 </div>

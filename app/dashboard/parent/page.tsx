@@ -396,18 +396,26 @@ export default function ParentDashboard() {
                 </div>
 
                 {/* Stats band */}
-                <div className="grid grid-cols-3 divide-x divide-border border-b border-border bg-muted/40">
-                  {[
-                    { label: 'Enrolled', value: enrollments.length, icon: BookOpen, accent: 'text-primary' },
-                    { label: 'In Progress', value: inProgress.length, icon: TrendingUp, accent: 'text-amber-600' },
-                    { label: 'Completed', value: completed.length, icon: Trophy, accent: 'text-emerald-600' },
-                  ].map((s) => (
-                    <div key={s.label} className="p-5 text-center">
-                      <s.icon className={`w-4 h-4 mx-auto ${s.accent}`} />
-                      <p className="text-[28px] font-semibold tracking-[-0.03em] text-foreground mt-2 leading-none tabular-nums">{s.value}</p>
-                      <p className="text-[11px] text-muted-foreground mt-1.5 font-semibold uppercase tracking-wider">{s.label}</p>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 border-b border-border">
+                  <div className="rounded-2xl border border-border p-4" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-teal) 16%, var(--card)), var(--card))' }}>
+                    <BookOpen className="w-4 h-4" style={{ color: 'var(--ps-teal)' }} />
+                    <p className="text-[28px] font-semibold tracking-[-0.03em] mt-2 leading-none tabular-nums" style={{ color: 'var(--ps-teal)' }}>{enrollments.length}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1.5 font-semibold uppercase tracking-wider">Enrolled</p>
+                  </div>
+                  <div className="rounded-2xl border border-border p-4" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-amber) 16%, var(--card)), var(--card))' }}>
+                    <TrendingUp className="w-4 h-4" style={{ color: 'var(--ps-amber)' }} />
+                    <p className="text-[28px] font-semibold tracking-[-0.03em] mt-2 leading-none tabular-nums" style={{ color: 'var(--ps-amber)' }}>{inProgress.length}</p>
+                    <p className="text-[11px] mt-1.5 font-semibold uppercase tracking-wider inline-flex items-center gap-1" style={{ color: inProgress.length ? 'var(--ps-emerald)' : 'var(--muted-foreground)' }}>
+                      {inProgress.length ? '↑ In progress' : 'In progress'}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-border p-4" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-emerald) 16%, var(--card)), var(--card))' }}>
+                    <Trophy className="w-4 h-4" style={{ color: 'var(--ps-emerald)' }} />
+                    <p className="text-[28px] font-semibold tracking-[-0.03em] mt-2 leading-none tabular-nums" style={{ color: 'var(--ps-emerald)' }}>{completed.length}</p>
+                    <p className="text-[11px] mt-1.5 font-semibold uppercase tracking-wider inline-flex items-center gap-1" style={{ color: completed.length ? 'var(--ps-emerald)' : 'var(--muted-foreground)' }}>
+                      {completed.length ? '↑ Completed' : 'Completed'}
+                    </p>
+                  </div>
                 </div>
 
                 {snapshots[id] && (

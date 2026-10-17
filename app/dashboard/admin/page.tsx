@@ -128,39 +128,32 @@ export default function AdminDashboard() {
       {/* ── Platform stats ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          index={0} icon={Users} label="Students" value={stats.students.toLocaleString()}
+          index={0} icon={Users} label="Students" value={stats.students.toLocaleString()} tone="sky"
           href="/dashboard/admin/users" hrefLabel="Manage users"
         />
         <StatCard
-          index={1} icon={Shield} label="Teachers" value={stats.teachers.toLocaleString()}
+          index={1} icon={Shield} label="Teachers" value={stats.teachers.toLocaleString()} tone="violet"
           href="/dashboard/admin/users" hrefLabel="Manage users"
         />
         <StatCard
-          index={2} icon={BookOpen} label="Courses" value={stats.courses.toLocaleString()}
+          index={2} icon={BookOpen} label="Courses" value={stats.courses.toLocaleString()} tone="teal"
           href="/dashboard/admin/courses" hrefLabel="All courses"
         />
         <StatCard
-          index={3} icon={Building2} label="Institutions" value={institutions.length.toLocaleString()}
+          index={3} icon={Building2} label="Institutions" value={institutions.length.toLocaleString()} tone="amber"
           href="/dashboard/admin/institutions" hrefLabel="View institutions"
         />
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          ['Signups, 30 days', kpis.signups30.toLocaleString()],
-          ['Active, 7 days', kpis.active7.toLocaleString()],
-          ['Revenue recorded', `$${kpis.revenue.toLocaleString()}`],
-          ['Sparks in circulation', (kpis.sparksIssued - kpis.sparksSpent).toLocaleString()],
-          ['Sparks spent', kpis.sparksSpent.toLocaleString()],
-          ['Course completions', kpis.completions.toLocaleString()],
-          ['Open tickets', kpis.openTickets.toLocaleString()],
-          ['Sparks issued', kpis.sparksIssued.toLocaleString()],
-        ].map(([label, value]) => (
-          <div key={label} className="bg-card border border-border rounded-2xl p-4">
-            <p className="text-xl font-bold tabular-nums">{value}</p>
-            <p className="text-xs text-muted-foreground mt-1">{label}</p>
-          </div>
-        ))}
+        <StatCard size="compact" index={0} icon={Users} tone="sky" label="Signups, 30 days" value={kpis.signups30.toLocaleString()} trend={kpis.signups30 > 0 ? { direction: 'up', label: 'New accounts' } : { direction: 'flat', label: 'Quiet' }} />
+        <StatCard size="compact" index={1} icon={Activity} tone="emerald" label="Active, 7 days" value={kpis.active7.toLocaleString()} trend={kpis.active7 > 0 ? { direction: 'up', label: 'On the platform' } : { direction: 'flat', label: 'Quiet' }} />
+        <StatCard size="compact" index={2} icon={BarChart3} tone="amber" label="Revenue recorded" value={`$${kpis.revenue.toLocaleString()}`} />
+        <StatCard size="compact" index={3} icon={Sparkles} tone="coral" label="Sparks in circulation" value={(kpis.sparksIssued - kpis.sparksSpent).toLocaleString()} />
+        <StatCard size="compact" index={4} icon={Sparkles} tone="coral" label="Sparks spent" value={kpis.sparksSpent.toLocaleString()} trend={kpis.sparksSpent > 0 ? { direction: 'down', label: 'Used' } : { direction: 'flat', label: 'None spent' }} />
+        <StatCard size="compact" index={5} icon={CheckCircle2} tone="emerald" label="Course completions" value={kpis.completions.toLocaleString()} trend={kpis.completions > 0 ? { direction: 'up', label: 'Finished' } : { direction: 'flat', label: 'None yet' }} />
+        <StatCard size="compact" index={6} icon={LifeBuoy} tone="violet" label="Open tickets" value={kpis.openTickets.toLocaleString()} trend={kpis.openTickets > 0 ? { direction: 'down', label: 'Needs a reply' } : { direction: 'up', label: 'Clear' }} />
+        <StatCard size="compact" index={7} icon={Sparkles} tone="amber" label="Sparks issued" value={kpis.sparksIssued.toLocaleString()} />
       </div>
 
       <Panel>

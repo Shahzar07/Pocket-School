@@ -79,9 +79,9 @@ export default function FinancePage() {
       />
       {notice && <p className="text-sm">{notice}</p>}
       <div className="grid sm:grid-cols-3 gap-4">
-        <StatCard icon={Landmark} label="MRR" value={formatMoney(summary?.mrr ?? 0)} index={0} />
-        <StatCard icon={Landmark} label="ARR" value={formatMoney(summary?.arr ?? 0)} index={1} />
-        <StatCard icon={Landmark} label="ARPU" value={formatMoney(summary?.arpu ?? 0)} badge={`${summary?.activeSubscribers ?? 0} active`} index={2} />
+        <StatCard icon={Landmark} label="MRR" value={formatMoney(summary?.mrr ?? 0)} index={0} tone="teal" />
+        <StatCard icon={Landmark} label="ARR" value={formatMoney(summary?.arr ?? 0)} index={1} tone="amber" />
+        <StatCard icon={Landmark} label="ARPU" value={formatMoney(summary?.arpu ?? 0)} badge={`${summary?.activeSubscribers ?? 0} active`} index={2} tone="emerald" />
       </div>
       <Panel>
         <PanelHeader title="Invoices" meta={<span className="text-xs text-muted-foreground">{reconciliation.matched} matched · {reconciliation.unmatched} open</span>} />

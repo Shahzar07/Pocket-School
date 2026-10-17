@@ -28,6 +28,20 @@ export default function StudentIntegrityPage() {
         description="This page stays. It shows the check, the evidence, and the teacher’s decision for you, your teacher, and an admin. A mark is never changed from here. You can appeal."
       />
       <IntegrityNotice />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-border p-4" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-violet) 16%, var(--card)), var(--card))' }}>
+          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ps-violet)' }}>Open reviews</p>
+          <p className="mt-1 text-3xl font-semibold tabular-nums">{cases.length}</p>
+        </div>
+        <div className="rounded-2xl border border-border p-4" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-emerald) 16%, var(--card)), var(--card))' }}>
+          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ps-emerald)' }}>Appeals sent</p>
+          <p className="mt-1 text-3xl font-semibold tabular-nums">{cases.filter(item => item.appealStatus === 'submitted').length}</p>
+        </div>
+        <div className="rounded-2xl border border-border p-4" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-amber) 16%, var(--card)), var(--card))' }}>
+          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ps-amber)' }}>Waiting</p>
+          <p className="mt-1 text-3xl font-semibold tabular-nums">{cases.filter(item => item.decision === 'pending' || item.decision == null).length}</p>
+        </div>
+      </div>
       {cases.length === 0 && <p className="text-sm text-muted-foreground">No open reviews.</p>}
       {cases.map(item => {
         const evidence = Array.isArray(item.evidence) ? item.evidence as { label: string; detail: string }[] : [];

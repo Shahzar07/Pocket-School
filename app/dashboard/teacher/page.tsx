@@ -129,30 +129,32 @@ export default function TeacherDashboard() {
       {/* ── Stat row ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          index={0} icon={BookOpen} label="Your courses" value={courses.length}
+          index={0} icon={BookOpen} label="Your courses" value={courses.length} tone="teal"
           badge={published.length ? `${published.length} live` : undefined}
           href="/dashboard/teacher/courses" hrefLabel="Manage courses"
         />
         <StatCard
-          index={1} icon={ClipboardList} label="Awaiting marking" value={ungraded.length}
+          index={1} icon={ClipboardList} label="Awaiting marking" value={ungraded.length} tone="coral"
           href="/dashboard/teacher/gradebook" hrefLabel="Open gradebook"
+          trend={ungraded.length > 0 ? { direction: 'down', label: 'Needs a mark' } : { direction: 'up', label: 'All marked' }}
         />
         <StatCard
-          index={2} icon={CheckCircle2} label="Marked" value={submissions.length - ungraded.length}
+          index={2} icon={CheckCircle2} label="Marked" value={submissions.length - ungraded.length} tone="emerald"
           href="/dashboard/teacher/report-cards" hrefLabel="Report cards"
+          trend={(submissions.length - ungraded.length) > 0 ? { direction: 'up', label: 'Returned' } : { direction: 'flat', label: 'None yet' }}
         />
         <StatCard
-          index={3} icon={GraduationCap} label="Published" value={published.length}
+          index={3} icon={GraduationCap} label="Published" value={published.length} tone="sky"
           href="/dashboard/teacher/analytics" hrefLabel="Analytics"
         />
       </div>
 
       <SeeMore label="Enrolments, reviews, and questions">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard index={4} icon={GraduationCap} label="Enrolments" value={insight.enrollments} href="/dashboard/teacher/courses" hrefLabel="Courses" />
-        <StatCard index={5} icon={Wallet} label="Recorded revenue" value={revenueLabel} href="/dashboard/teacher/courses" hrefLabel="Pricing" />
-        <StatCard index={6} icon={Star} label="Rating" value={insight.average ?? '—'} badge={insight.reviewCount ? `${insight.reviewCount} reviews` : undefined} />
-        <StatCard index={7} icon={MessageSquare} label="Open questions" value={insight.openQuestions} href="/dashboard/teacher/courses" hrefLabel="Studio" />
+        <StatCard index={4} icon={GraduationCap} label="Enrolments" value={insight.enrollments} tone="violet" href="/dashboard/teacher/courses" hrefLabel="Courses" />
+        <StatCard index={5} icon={Wallet} label="Recorded revenue" value={revenueLabel} tone="amber" href="/dashboard/teacher/courses" hrefLabel="Pricing" />
+        <StatCard index={6} icon={Star} label="Rating" value={insight.average ?? '—'} tone="amber" badge={insight.reviewCount ? `${insight.reviewCount} reviews` : undefined} />
+        <StatCard index={7} icon={MessageSquare} label="Open questions" value={insight.openQuestions} tone="sky" href="/dashboard/teacher/courses" hrefLabel="Studio" trend={insight.openQuestions > 0 ? { direction: 'down', label: 'Waiting' } : { direction: 'up', label: 'Clear' }} />
       </div>
 
       {reviews.length > 0 && (

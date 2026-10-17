@@ -9,7 +9,53 @@ import { buildPdf } from '@/lib/insights/pdf';
 import { buildXlsx } from '@/lib/insights/xlsx';
 import type { AnalyticsSnapshot } from '@/lib/insights/aggregate';
 import type { DrillRecord, Kpi } from '@/lib/insights/reports';
-import { Info } from 'lucide-react';
+import { Info, ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
+import { accentForIndex, type AccentId, type TrendDirection } from '@/lib/design/chart-colours';
+
+const METRIC_TONE: Record<string, AccentId> = {
+  study_time: 'teal',
+  quiz_average: 'amber',
+  mastery: 'violet',
+  exam_readiness: 'sky',
+  understanding: 'violet',
+  retention_forecast: 'sky',
+  goal_completion: 'emerald',
+  sparks_earned: 'coral',
+  consistency: 'emerald',
+  focus_adherence: 'teal',
+  cramming: 'coral',
+  procrastination: 'amber',
+};
+
+function toneForMetric(id: string, index: number): AccentId {
+  return METRIC_TONE[id] ?? accentForIndex(index);
+}
+
+function MetricTile({ id, index, value, trend }: { id: string; index: number; value: number | null; trend?: { direction: TrendDirection; label: string } }) {
+  const tone = toneForMetric(id, index);
+  const TrendIcon = trend?.direction === 'up' ? ArrowUpRight : trend?.direction === 'down' ? ArrowDownRight : Minus;
+  const trendColour = trend?.direction === 'up' ? 'var(--ps-emerald)' : trend?.direction === 'down' ? 'var(--ps-coral)' : 'var(--muted-foreground)';
+  return (
+    <div
+      className="relative overflow-hidden rounded-2xl border border-border p-4"
+      style={{ background: `linear-gradient(160deg, color-mix(in srgb, var(--ps-${tone}) 16%, var(--card)), var(--card) 70%)` }}
+    >
+      <span aria-hidden className="absolute inset-x-0 top-0 h-1" style={{ background: `var(--ps-${tone})` }} />
+      <p className="text-[12px] text-muted-foreground flex items-center gap-1">
+        <span className="h-2 w-2 rounded-sm" style={{ background: `var(--ps-${tone})` }} aria-hidden />
+        {metricById(id)?.label} <GlossaryTip id={id} />
+      </p>
+      <p className="text-2xl font-semibold tabular-nums mt-1" style={{ color: `var(--ps-${tone})` }}>{value ?? '—'}</p>
+      <p className="text-[10px] text-muted-foreground">{metricById(id)?.unit}</p>
+      {trend && (
+        <p className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold" style={{ color: trendColour }}>
+          <TrendIcon className="h-3.5 w-3.5" aria-hidden />
+          {trend.label}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export function GlossaryTip({ id }: { id: string }) {
   const metric = metricById(id);
@@ -116,12 +162,18 @@ export function AnalyticsBoard({ snapshot, live }: { snapshot: AnalyticsSnapshot
     <div className="space-y-4">
       <Freshness at={snapshot.computedAt} live={live} />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {['study_time', 'quiz_average', 'mastery', 'exam_readiness', 'understanding', 'retention_forecast', 'goal_completion', 'sparks_earned'].map(id => (
-          <div key={id} className="rounded-2xl border border-border p-4">
-            <p className="text-[12px] text-muted-foreground flex items-center gap-1">{metricById(id)?.label} <GlossaryTip id={id} /></p>
-            <p className="text-2xl font-semibold tabular-nums mt-1">{snapshot.metrics[id] ?? '—'}</p>
-            <p className="text-[10px] text-muted-foreground">{metricById(id)?.unit}</p>
-          </div>
+        {['study_time', 'quiz_average', 'mastery', 'exam_readiness', 'understanding', 'retention_forecast', 'goal_completion', 'sparks_earned'].map((id, index) => (
+          <MetricTile
+            key={id}
+            id={id}
+            index={index}
+            value={snapshot.metrics[id] ?? null}
+            trend={id === 'goal_completion' && snapshot.metrics.streak != null
+              ? { direction: (snapshot.metrics.streak ?? 0) > 0 ? 'up' : 'flat', label: `${snapshot.metrics.streak ?? 0} day streak` }
+              : id === 'sparks_earned'
+                ? { direction: (snapshot.metrics.sparks_earned ?? 0) >= (snapshot.sparksSpent ?? 0) ? 'up' : 'down', label: `${snapshot.sparksSpent} spent` }
+                : undefined}
+          />
         ))}
       </div>
       <div className="rounded-2xl border border-border p-4">
@@ -138,11 +190,11 @@ export function AnalyticsBoard({ snapshot, live }: { snapshot: AnalyticsSnapshot
         </div>
         <div className="rounded-2xl border border-border p-4">
           <p className="text-sm font-semibold mb-3">Mastery by Bloom level</p>
-          {snapshot.radar.map(row => (
+          {snapshot.radar.map((row, index) => (
             <div key={row.level} className="flex items-center gap-2 mb-2">
               <span className="w-24 text-xs">{BLOOM_LABELS[row.level as BloomLevel]}</span>
               <span className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                <span className="block h-full bg-primary" style={{ width: `${row.score ?? 0}%` }} />
+                <span className="block h-full" style={{ width: `${row.score ?? 0}%`, background: `var(--ps-${accentForIndex(index)})` }} />
               </span>
               <span className="text-xs tabular-nums w-8">{row.score ?? '—'}</span>
             </div>
@@ -179,11 +231,16 @@ export function BehaviourBoard({
     <div className="space-y-4">
       <Freshness at={snapshot.computedAt} live />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {(['consistency', 'focus_adherence', 'cramming', 'procrastination'] as const).map(id => (
-          <div key={id} className="rounded-2xl border border-border p-4">
-            <p className="text-[12px] text-muted-foreground flex items-center gap-1">{metricById(id)?.label} <GlossaryTip id={id} /></p>
-            <p className="text-2xl font-semibold tabular-nums">{snapshot.metrics[id] ?? '—'}%</p>
-          </div>
+        {(['consistency', 'focus_adherence', 'cramming', 'procrastination'] as const).map((id, index) => (
+          <MetricTile
+            key={id}
+            id={id}
+            index={index}
+            value={snapshot.metrics[id] ?? null}
+            trend={id === 'cramming' || id === 'procrastination'
+              ? { direction: (snapshot.metrics[id] ?? 0) > 25 ? 'down' : 'up', label: (snapshot.metrics[id] ?? 0) > 25 ? 'Worth a look' : 'In a good range' }
+              : { direction: (snapshot.metrics[id] ?? 0) >= 70 ? 'up' : 'flat', label: (snapshot.metrics[id] ?? 0) >= 70 ? 'Strong' : 'Building' }}
+          />
         ))}
       </div>
       <div className="rounded-2xl border border-border p-4">

@@ -265,21 +265,25 @@ export default function StudentDashboard() {
       {/* ── Stat row ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          index={0} icon={BookOpen} label="Enrolled courses" value={enrolled.length}
+          index={0} icon={BookOpen} label="Enrolled courses" value={enrolled.length} tone="teal"
           badge={inProgress.length ? 'Active' : undefined}
           progress={overallProgress} progressLabel="Overall progress"
+          trend={overallProgress > 0 ? { direction: 'up', label: `${Math.round(overallProgress)}% through` } : { direction: 'flat', label: 'Just starting' }}
         />
         <StatCard
-          index={1} icon={TrendingUp} label="In progress" value={inProgress.length}
+          index={1} icon={TrendingUp} label="In progress" value={inProgress.length} tone="sky"
           href="/dashboard/student/courses" hrefLabel="View all"
+          trend={inProgress.length > 0 ? { direction: 'up', label: 'Still going' } : { direction: 'flat', label: 'None open' }}
         />
         <StatCard
-          index={2} icon={GraduationCap} label="Completed" value={completed.length}
+          index={2} icon={GraduationCap} label="Completed" value={completed.length} tone="emerald"
           href="/dashboard/student/transcript" hrefLabel="View transcript"
+          trend={completed.length > 0 ? { direction: 'up', label: 'Finished' } : { direction: 'flat', label: 'None yet' }}
         />
         <StatCard
-          index={3} icon={Zap} label="Level" value={`Lv ${level}`}
+          index={3} icon={Zap} label="Level" value={`Lv ${level}`} tone="coral"
           progress={xpProgress} progressLabel={`${xp.toLocaleString()} XP`}
+          trend={studyStreak > 0 ? { direction: 'up', label: `${studyStreak} day streak` } : { direction: 'flat', label: 'Start a streak' }}
         />
       </div>
 

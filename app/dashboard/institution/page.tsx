@@ -13,8 +13,9 @@ import { PROGRAMMES, allocationYearsFor } from '@/lib/programmes';
 import { AllocationPicker } from '@/components/allocation-picker';
 import { describeTargets } from '@/lib/allocation-targets';
 import { institutionOrigin } from '@/lib/white-label';
+import { Mail, Ticket, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DashPage, DashHeader, Panel } from '@/components/dash-ui';
+import { DashPage, DashHeader, Panel, StatCard } from '@/components/dash-ui';
 import { friendlyError } from '@/lib/design/system';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -134,16 +135,9 @@ export default function InstitutionAcademyPage() {
       </Panel>
 
       <section className="grid sm:grid-cols-3 gap-3">
-        {[
-          ['People', members],
-          ['Invites waiting', invites],
-          ['Seats left', seats],
-        ].map(([label, value]) => (
-          <div key={String(label)} className="rounded-2xl border border-border p-4">
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className="font-heading text-3xl">{value}</p>
-          </div>
-        ))}
+        <StatCard icon={Users} label="People" value={members} tone="sky" index={0} />
+        <StatCard icon={Mail} label="Invites waiting" value={invites} tone="amber" index={1} trend={invites > 0 ? { direction: 'up', label: 'To send' } : { direction: 'flat', label: 'None waiting' }} />
+        <StatCard icon={Ticket} label="Seats left" value={seats} tone="emerald" index={2} trend={seats > 0 ? { direction: 'up', label: 'Open seats' } : { direction: 'down', label: 'Full' }} />
       </section>
 
       <section className="rounded-3xl border border-border p-5 space-y-3">
