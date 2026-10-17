@@ -972,6 +972,15 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     ownerKeys: 'None. The server stamps actor, time, and IP.',
   },
   {
+    path: '/dashboard/admin/badges',
+    title: 'Badges',
+    purpose: 'Super admins edit badge names, art, criteria, tier, audience, and the small Sparks reward.',
+    audience: ['admin'],
+    overlaps: 'Certificates stay the signed course credential. These are learning badges.',
+    decision: 'Keep as the badge catalogue. Awards are written by the server.',
+    ownerKeys: 'OPEN_BADGE_PRIVATE_KEY is optional and only signs an export.',
+  },
+  {
     path: '/dashboard/admin/certificates',
     title: 'Certificates',
     purpose: 'Design the Open Badge and issue it to a school list. Each badge is a signed credential with a public verify page.',

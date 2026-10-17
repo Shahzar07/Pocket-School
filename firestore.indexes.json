@@ -527,6 +527,16 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "leaderboard_entries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "scope", "order": "ASCENDING" },
+        { "fieldPath": "scopeId", "order": "ASCENDING" },
+        { "fieldPath": "period", "order": "ASCENDING" },
+        { "fieldPath": "xp", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

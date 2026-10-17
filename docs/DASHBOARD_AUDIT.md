@@ -987,6 +987,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Keep. This is the platform log. Academy settings keep their own audit.
 - **Owner keys:** None. The server stamps actor, time, and IP.
 
+### Badges
+
+- **Route:** `/dashboard/admin/badges`
+- **Audience:** admin
+- **Purpose:** Super admins edit badge names, art, criteria, tier, audience, and the small Sparks reward.
+- **Overlaps:** Certificates stay the signed course credential. These are learning badges.
+- **Decision:** Keep as the badge catalogue. Awards are written by the server.
+- **Owner keys:** OPEN_BADGE_PRIVATE_KEY is optional and only signs an export.
+
 ### Certificates
 
 - **Route:** `/dashboard/admin/certificates`

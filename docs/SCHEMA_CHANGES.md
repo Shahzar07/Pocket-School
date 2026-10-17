@@ -715,3 +715,53 @@ Further optional fields: `priority` (`low|medium|high`), `reminderTime` (`HH:mm`
 Rules still need an owner deploy.
 
 Sparks amounts for goals live only in `lib/sparks.ts` (`GOAL_ON_TIME_BONUS`, `GOAL_STREAK_BONUS`). The ledger type is `earn`.
+
+## Badges and gamification
+
+The mobile app can read awards and boards. It should not invent XP. Send the shared event names in `lib/events.ts` to `POST /api/gamification/event` with a Firebase ID token. A repeated `eventId` is a no-op. Badge document ids stay `badges/{userId}_{badgeId}`.
+
+`badges/{userId}_{badgeId}` (existing collection, extra fields):
+
+| Field | Type | Notes |
+|---|---|---|
+| `userId` | string | Auth uid. |
+| `type` | string | Same as the badge id, for example `first-lesson` or `first_steps`. |
+| `name` | string | Display name. |
+| `description` | string | |
+| `icon` | string | Art key such as `flame` or `book`. |
+| `tier` | string | `bronze`, `silver`, or `gold`. |
+| `audience` | string | `student`, `parent`, `teacher`, or `institution`. |
+| `awardedAt` | timestamp | Server time. Missing on older star badges. |
+
+Query the app already uses: `badges where userId == uid`. That single-field index is automatic. Do not deploy a new index for it.
+
+`gamification/{userId}` is server-written progress: `xp`, `awarded` (badge ids), `counts`, `dailyXp`, `weeklyXp`, `passedUnits`, `streak`, `freezes`, `quests`, `questsDone`. Clients do not write it. `GET /api/gamification/state` returns the summary.
+
+`gamification_config/settings` is the super-admin catalogue (`badges`) and Sparks rewards (`sparks.enabled`, `sparks.amount` clamped to 0–5, `sparks.badgeIds`). The default is off and zero.
+
+`leaderboard_entries/{userId}_{scope}_{period}`:
+
+| Field | Type | Notes |
+|---|---|---|
+| `userId` | string | |
+| `scope` | string | `class`, `institution`, or `house`. |
+| `scopeId` | string | Class id, institution id, or house id. |
+| `period` | string | `all`, or an ISO week such as `2026-W42`. A new week is a new row, which is the weekly reset. |
+| `xp` | number | All-time XP, or XP earned in that week. |
+| `label` | string | First name, last initial, and school name. |
+| `schoolName` | string | |
+| `shareBoard` | boolean | Rows are omitted when the student opts out. |
+
+Listed index, not deployed:
+
+```
+leaderboard_entries: scope ASC, scopeId ASC, period ASC, xp DESC
+```
+
+Optional user fields the board reads: `classId` or the first `cohortIds` entry, `institutionId`, `houseId`, `schoolName`, `shareBoard`. House competitions stay off until `institutions/{institutionId}/classes/{classId}.competitionsEnabled` is true. `leaderboardEnabled` defaults on. Teachers and institution admins set both through `POST /api/gamification/class`.
+
+Level names from XP are Seedling, Explorer, Pathfinder, Scholar, Mentor, Luminary, and Steward. Programme names stay separate.
+
+`GET /api/gamification/export?badge={id}` returns an Open Badges 3.0 credential. It is signed only when `OPEN_BADGE_PRIVATE_KEY` is set. `GET /api/gamification/card` returns an SVG card.
+
+Parent Explainer reads `badges` for the linked child and names them in the weekly note. No rules or index deploy is part of this change.
