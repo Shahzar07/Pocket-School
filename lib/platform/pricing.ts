@@ -48,6 +48,15 @@ export function viewerCurrency(): string {
   });
 }
 
+/**
+ * MYR figure stored beside a USD book price.
+ * Uses the admin rate in `lib/pricing.ts` (seed MYR is 4.7 with charm rounding).
+ */
+export function storedBookPriceRM(priceUsd: number, config = seedPricing()): number {
+  if (!(priceUsd > 0)) return 0;
+  return quoteCourse(config, priceUsd, 'USD', 'MYR').amount;
+}
+
 export function quotePrice(amount: number | null | undefined, currency = 'USD', local = 'USD'): PriceQuote {
   const shown = codeOf(local);
   if (!(amount && amount > 0)) {
