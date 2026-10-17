@@ -1360,3 +1360,33 @@ Every share is an append-only hash-chain row in `card_audit`, headed by `card_au
 
 Signup reads `?ref=code`, keeps it in `sessionStorage` for the OTP steps, and sends it with `action: "issue"`. A known code appends `{ uid, at }` to `redeemedBy`. Signing up with your own code is rejected. A second redeem is `already`. An unknown code does not fail signup. There is no rewards logic yet.
 
+## Student ID for partner discounts
+
+The free digital card is also a student ID that partner businesses can scan. It is never paywalled. Issuing a QR or a checkout code does not read a plan in order to refuse the card. `CARD_TOKEN_SECRET` (at least 16 characters) signs the token. It is in `.env.example`. Rules and indexes for the collections below are in the repo only.
+
+### Verification
+
+`GET /api/student-id` returns a stateless HMAC token, `ps1.{payload}.{sig}`, and a 6-digit checkout code. The token payload is the uid and a 30-second window. It does not contain the student number or a date of birth. The previous window still resolves as expired so a slow scan can show that state. The code is valid for two minutes. Five issues per minute, and five failed checks, lock the caller for 15 minutes. Only a hash of the code is stored.
+
+`student_codes/{hash}` is `{ uid, validUntil, attempts, lockedUntil }`. `student_code_limits/{uid}` stores issue times. `student_code_attempts/{actor}` stores failures. Clients cannot read or write them.
+
+`/verify/[token]` is `noindex` and `no-store` when the token starts with `ps1.`. It shows only a photo or an avatar (avatar only for under-13s), the first name, **Verified Poket School student** or **Member**, active or expired, `validUntil`, and an age band (`<18` or `18+`). It never shows a date of birth, and it does not show a school name or a student number. Certificate checks stay on the same route for ids that are not `ps1.` tokens.
+
+### Student status
+
+`users/{uid}.studentStatus` is `{ status, verifiedAt, validUntil }`. `status` is `verified` or `member`. The server writes it when a proof is issued. **Verified student** requires access tier at least 1 and either an active school seat or a course enrolment. Otherwise the face says **Member**. Clients cannot write `studentStatus` or `partnerId`.
+
+### Partners, offers, redemptions
+
+`partners/{id}` is `{ name, logo, categories, countries, verified, contact, ownerUid, status }`. `status` is `pending`, `approved`, or `rejected`.
+
+`offers/{id}` is `{ partnerId, title, discount, terms, codeType, ageMin, countries, cities, startsAt, endsAt, status, category, staticCode }`. `codeType` is `static`, `unique`, or `scan`. `status` is `review`, `live`, or `rejected`. `category` is the perk group. A partner creates an offer in `review`. An admin approves it before it is `live`.
+
+`redemptions/{id}` is `{ offerId, uid, partnerId, at, method }`. It is append-only. Each redemption also appends `perk_audit`, headed by `perk_audit_head/current`, using the same SHA-256 `chainHash` as the card audit. The chain payload is sequence, previous hash, type `redeemed`, offer, uid, partner, time, and method. Clients cannot read redemption rows. The partner portal returns counts only.
+
+Offers with `ageMin` above 0 are hidden on the server from anyone who is not an adult. Alcohol, vape, tobacco, gambling, and adult categories are hidden from under-18s, and admin review rejects them unless `ageMin` is at least 18. A new live perk sends a push with category `general` and title **New perk**.
+
+### Partner merchants
+
+`partner_merchant` is a role of its own. It is not the tier-4 police or NGO partner, and `canPublishAmberAlerts` is false for it. Onboarding is `/partner`. Admin review is `/dashboard/admin/partners`. The portal is `/dashboard/partner`. Students use `/dashboard/student/perks`. Approval sets `users.role` to `partner_merchant` and `partnerId`.
+

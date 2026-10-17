@@ -118,6 +118,10 @@ export interface UserProfile {
   cardIndexed?: boolean;
   /** Verified parent switch required before an under-13 card can be shared. */
   cardSharing?: boolean;
+  /** Server-only standing for the student ID. Clients cannot write it. */
+  studentStatus?: { status: 'verified' | 'member'; verifiedAt: number | null; validUntil: number };
+  /** Set when an admin approves a partner merchant application. */
+  partnerId?: string;
   /** When false, the privacy-safe leaderboard omits this student. */
   shareBoard?: boolean;
   createdAt?: Timestamp;

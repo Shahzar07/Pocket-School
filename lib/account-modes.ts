@@ -160,6 +160,7 @@ export function homeForMode(mode: AccountMode): string {
 export function landingPath(source: RoleSource | null | undefined, stored: string | null | undefined): string {
   if (source?.role === 'institution_admin') return '/dashboard/institution';
   if (source?.role === 'admin') return '/dashboard/admin';
+  if (source?.role === 'partner_merchant') return '/dashboard/partner';
   const mode = activeMode(source, stored);
   return mode ? homeForMode(mode) : '/dashboard/student';
 }

@@ -12,7 +12,7 @@ import {
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X,
   Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked, Compass, Camera, Newspaper,
-  Wallet, Gift, Landmark, Plug, PieChart, Search, IdCard,
+  Wallet, Gift, Landmark, Plug, PieChart, Search, IdCard, Tag,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -53,7 +53,7 @@ import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { AcademySession } from '@/components/academy-session';
 
-type Role = 'student' | 'teacher' | 'parent' | 'admin' | 'institution_admin';
+type Role = 'student' | 'teacher' | 'parent' | 'admin' | 'institution_admin' | 'partner_merchant';
 
 const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string; wash: string }> = {
   student: { icon: 'text-primary', bar: 'bg-primary', chip: 'from-primary to-[var(--ps-blue-bright)]', wash: 'var(--ps-role-student)' },
@@ -61,6 +61,7 @@ const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string; wash:
   parent:  { icon: 'text-[var(--ps-cyan-text)]', bar: 'bg-[var(--ps-cyan)]', chip: 'from-[var(--ps-cyan)] to-[var(--ps-cyan-text)]', wash: 'var(--ps-role-parent)' },
   admin:   { icon: 'text-[var(--ps-violet)]', bar: 'bg-[var(--ps-violet)]', chip: 'from-[var(--ps-violet)] to-[var(--ps-sky)]', wash: 'var(--ps-role-admin)' },
   institution_admin: { icon: 'text-[var(--ps-sky)]', bar: 'bg-[var(--ps-sky)]', chip: 'from-[var(--ps-sky)] to-[var(--ps-teal)]', wash: 'var(--ps-role-admin)' },
+  partner_merchant: { icon: 'text-[var(--ps-cyan-text)]', bar: 'bg-[var(--ps-cyan)]', chip: 'from-[var(--ps-cyan)] to-[var(--ps-cyan-text)]', wash: 'var(--ps-role-student)' },
 };
 
 interface NavEntry { href: string; icon: React.ElementType; labelKey: string; label?: string; flag?: FeatureFlag; superOnly?: boolean }
@@ -70,6 +71,7 @@ const NAV: Record<Role, NavGroup[]> = {
   student: [
     { items: [
       { href: '/dashboard/student', icon: Home, labelKey: 'nav.dashboard' },
+      { href: '/dashboard/student/perks', icon: Tag, labelKey: 'nav.marketplace', label: 'Perks' },
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/ai-teachers', icon: Users, labelKey: 'nav.aiTeachers' },
       { href: '/dashboard/student/learning', icon: GraduationCap, labelKey: 'nav.myLearning' },
@@ -216,6 +218,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
       { href: '/dashboard/admin/settings', icon: Settings, labelKey: 'nav.systemSettings' },
       { href: '/dashboard/admin/verifications', icon: ShieldCheck, labelKey: 'nav.verifications' },
+      { href: '/dashboard/admin/partners', icon: Tag, labelKey: 'nav.verifications', label: 'Partner perks' },
       { href: '/dashboard/admin/activity', icon: ClipboardList, labelKey: 'nav.dashboard', label: 'Activity log', superOnly: true },
       { href: '/dashboard/admin/insights', icon: Activity, labelKey: 'nav.insights', label: 'Insights' },
       { href: '/dashboard/admin/certificates', icon: Award, labelKey: 'nav.certificates', label: 'Certificates' },
@@ -268,6 +271,16 @@ const NAV: Record<Role, NavGroup[]> = {
     { sectionKey: 'nav.section.school', sectionLabel: 'Messages', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
       { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
+    ]},
+    { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
+      { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
+    ]},
+  ],
+  partner_merchant: [
+    { items: [
+      { href: '/dashboard/partner', icon: Tag, labelKey: 'nav.marketplace', label: 'Partner portal' },
+      { href: '/partner', icon: Store, labelKey: 'nav.onboarding', label: 'Onboarding' },
     ]},
     { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
       { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
@@ -563,7 +576,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
   }).filter(group => group.items.length > 0);
   const accent = ROLE_ACCENT[role];
-  const dashRole: DashRole = role === 'institution_admin' ? 'institution' : role;
+  const dashRole: DashRole = role === 'institution_admin' ? 'institution' : role === 'partner_merchant' ? 'student' : role;
   const compactNav = !sidebarOpen;
 
   return (

@@ -318,6 +318,9 @@ describe('age tiers', () => {
     await assertFails(updateDoc(doc(db, 'users/child1'), { ageTier: 'teen' }));
     await assertFails(updateDoc(doc(db, 'users/child1'), { dateOfBirth: '1990-01-01' }));
     await assertFails(updateDoc(doc(db, 'users/child1'), { studentNumber: 'PSM-0001' }));
+    await assertFails(updateDoc(doc(db, 'users/child1'), { studentStatus: { status: 'verified', verifiedAt: 1, validUntil: 2 } }));
+    await assertFails(setDoc(doc(db, 'offers/offer1'), { title: 'Drink', status: 'live' }));
+    await assertFails(setDoc(doc(db, 'redemptions/red1'), { offerId: 'offer1', uid: 'child1', partnerId: 'cafe', at: 1, method: 'scan' }));
     await assertFails(setDoc(doc(db, 'referrals/AB12CD34'), { inviterUid: 'child1', createdAt: 1, redeemedBy: [] }));
     await assertFails(setDoc(doc(db, 'card_shares/shareidshareidshare'), { uid: 'child1', revoked: false }));
     await assertFails(setDoc(doc(db, 'card_audit/evt1'), { type: 'view', uid: 'child1' }));

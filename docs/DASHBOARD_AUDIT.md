@@ -942,6 +942,33 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Sparks are the learning token inside this wallet, not a second product.
 - **Owner keys:** Payment provider keys in Integrations for cash top-ups.
 
+### Perks
+
+- **Route:** `/dashboard/student/perks`
+- **Audience:** student
+- **Purpose:** Partner discounts on the free student card, grouped by category. Age-restricted offers are hidden on the server.
+- **Overlaps:** Member card and the partner portal.
+- **Decision:** Keep. Students redeem here. Merchants never see this list of people.
+- **Owner keys:** CARD_TOKEN_SECRET for the QR and checkout code. The card itself stays free.
+
+### Partner portal
+
+- **Route:** `/dashboard/partner`
+- **Audience:** everyone
+- **Purpose:** Approved merchants create offers and see redemption counts. No student personal data.
+- **Overlaps:** Admin partner review.
+- **Decision:** Keep. The partner_merchant role cannot publish Amber alerts.
+- **Owner keys:** None. Admin approval writes the role.
+
+### Partner perks
+
+- **Route:** `/dashboard/admin/partners`
+- **Audience:** admin
+- **Purpose:** Approve merchant applications and offers. Blocked categories are refused for under-18s.
+- **Overlaps:** Partner portal.
+- **Decision:** Keep. Offers stay in review until an admin approves them.
+- **Owner keys:** None.
+
 ### Member card
 
 - **Route:** `/dashboard/card`
