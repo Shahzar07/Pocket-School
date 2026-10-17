@@ -12,6 +12,7 @@ import { streakFromDates } from '@/lib/learning';
 import { Progress } from '@/components/ui/progress';
 import { STARTER_BADGES, levelForXp } from '@/lib/gamification/catalog';
 import { BadgeShelf } from '@/components/gamification/badge-shelf';
+import { BadgeShareLinks } from '@/components/gamification/badge-share';
 import { ProgressRing } from '@/components/gamification/progress-ring';
 import { QuestList } from '@/components/gamification/quest-list';
 import { isoWeekKey } from '@/lib/gamification/engine';
@@ -154,7 +155,7 @@ export default function AchievementsPage() {
           <h2 className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">Next Badge</h2>
           <p className="font-heading text-3xl text-foreground mt-1.5 mb-4">Up Next</p>
           <div className="flex items-center gap-4">
-            <BadgeArt art={nextBadge.art} size={56} title={nextBadge.name} />
+            <BadgeArt icon={nextBadge.icon} size={56} title={nextBadge.name} />
             <div className="flex-1">
               <p className="font-heading text-lg text-foreground">{nextBadge.name}</p>
               <p className="text-xs text-muted-foreground mb-2">
@@ -177,6 +178,16 @@ export default function AchievementsPage() {
           <div className="mt-4">
             <BadgeShelf definitions={shelf} earnedIds={[...earnedTypes]} />
           </div>
+          {user && (
+            <ul className="mt-4 space-y-3">
+              {shelf.filter(badge => earnedTypes.has(badge.id)).map(badge => (
+                <li key={badge.id} className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-sm font-semibold">{badge.name}</span>
+                  <BadgeShareLinks awardId={`${user.uid}_${badge.id}`} name={badge.name} />
+                </li>
+              ))}
+            </ul>
+          )}
           <div className="mt-6">
             <h3 className="font-heading text-2xl mb-3">Quests</h3>
             <QuestList progress={quests} done={questsDone} periodDay={today} periodWeek={isoWeekKey(today)} />

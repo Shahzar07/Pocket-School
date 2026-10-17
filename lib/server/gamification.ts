@@ -1,8 +1,13 @@
 import 'server-only';
 
 import { FieldValue } from 'firebase-admin/firestore';
-import { adminDb } from '@/lib/firebase-admin';
+import { adminDb, isAdminConfigured } from '@/lib/firebase-admin';
+import { LEARNING_EVENTS } from '@/lib/events';
 import { isSuperAdminEmail } from '@/lib/roles';
+import { adminPushStore } from '@/lib/push-store';
+import { sendPush } from '@/lib/push';
+import { sendToDevice } from '@/lib/push-transport';
+import { onLearningEvent, type LearningEmission } from '@/lib/server/learning-events';
 import {
   boardLabel,
   classBoards,
@@ -12,6 +17,7 @@ import {
   isoWeekKey,
   sparksFromConfig,
   type ClassBoardSettings,
+  type Evaluation,
   type GameEvent,
   type GameState,
 } from '@/lib/gamification/engine';
@@ -54,25 +60,79 @@ function asState(raw: FirebaseFirestore.DocumentData | undefined, xp: number): G
 }
 
 export async function readGameSummary(uid: string) {
-  const snap = await adminDb().doc(`gamification/${uid}`).get();
-  const data = snap.data() ?? {};
-  const list = (value: unknown) => Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
-  const map = (value: unknown): Record<string, number> => {
-    if (!value || typeof value !== 'object') return {};
-    const out: Record<string, number> = {};
-    for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
-      if (typeof item === 'number' && Number.isFinite(item)) out[key] = item;
-    }
-    return out;
-  };
+  const db = adminDb();
+  const [snap, userSnap] = await Promise.all([
+    db.doc(`gamification/${uid}`).get(),
+    db.doc(`users/${uid}`).get(),
+  ]);
+  const profileXp = userSnap.data()?.xp;
+  const state = asState(snap.data(), typeof profileXp === 'number' ? profileXp : 0);
   return {
-    xp: typeof data.xp === 'number' ? data.xp : 0,
-    awarded: list(data.awarded),
-    quests: map(data.quests),
-    questsDone: list(data.questsDone),
-    freezes: typeof data.freezes === 'number' ? data.freezes : 0,
-    streak: typeof data.streak === 'number' ? data.streak : 0,
+    xp: state.xp,
+    awarded: state.awarded,
+    counts: state.counts,
+    dailyXp: state.dailyXp,
+    weeklyXp: state.weeklyXp,
+    passedUnits: state.passedUnits,
+    streak: state.streak,
+    freezes: state.freezes,
+    quests: state.quests,
+    questsDone: state.questsDone,
   };
+}
+
+function achievementsPushAllowed(user: FirebaseFirestore.DocumentData): boolean {
+  const prefs = user.notificationPrefs;
+  if (!prefs || typeof prefs !== 'object') return true;
+  const row = prefs as { push?: unknown; achievements?: unknown };
+  return row.push !== false && row.achievements !== false;
+}
+
+async function notifyAchievements(uid: string, user: FirebaseFirestore.DocumentData, result: Evaluation) {
+  const notes: { title: string; message: string; link: string }[] = [];
+  for (const badge of result.badges) {
+    notes.push({
+      title: 'New badge',
+      message: badge.name,
+      link: `/badges/${uid}_${badge.id}`,
+    });
+  }
+  if (result.leveledUp) {
+    notes.push({
+      title: 'Level up',
+      message: result.levelName,
+      link: '/dashboard/student/achievements',
+    });
+  }
+  for (const quest of result.questsCompleted) {
+    notes.push({
+      title: 'Quest complete',
+      message: quest.title,
+      link: '/dashboard/student/achievements',
+    });
+  }
+  if (!notes.length) return;
+  const pushOn = achievementsPushAllowed(user);
+  const db = adminDb();
+  for (const note of notes) {
+    await db.collection('notifications').add({
+      userId: uid,
+      title: note.title,
+      message: note.message,
+      type: 'general',
+      link: note.link,
+      read: false,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    if (!pushOn) continue;
+    await sendPush({
+      recipientUid: uid,
+      category: 'achievements',
+      title: note.title,
+      body: note.message,
+      link: note.link,
+    }, { store: adminPushStore(), send: sendToDevice });
+  }
 }
 
 export async function applyLearningEvent(uid: string, input: GameEvent) {
@@ -99,7 +159,8 @@ export async function applyLearningEvent(uid: string, input: GameEvent) {
       type: badge.id,
       name: badge.name,
       description: badge.description,
-      icon: badge.art,
+      icon: badge.icon,
+      art: FieldValue.delete(),
       tier: badge.tier,
       audience: badge.audience,
       awardedAt: FieldValue.serverTimestamp(),
@@ -120,12 +181,19 @@ export async function applyLearningEvent(uid: string, input: GameEvent) {
     });
   }
   await writeBoards(uid, user, result.state, input.day);
+  if (!result.skipped) {
+    try {
+      await notifyAchievements(uid, user, result);
+    } catch (error) {
+      console.error('[gamification] achievements push', error);
+    }
+  }
   return {
     xpGained: result.xpGained,
     xp: result.state.xp,
     levelName: result.levelName,
     leveledUp: result.leveledUp,
-    badges: result.badges.map(badge => ({ id: badge.id, name: badge.name, art: badge.art, tier: badge.tier })),
+    badges: result.badges.map(badge => ({ id: badge.id, name: badge.name, icon: badge.icon, tier: badge.tier })),
     questsCompleted: result.questsCompleted.map(quest => quest.id),
     sparks: result.sparks,
     freezes: result.state.freezes,
@@ -133,6 +201,24 @@ export async function applyLearningEvent(uid: string, input: GameEvent) {
     celebrate: result.celebrate,
     skipped: result.skipped,
   };
+}
+
+let serverEventsListening = false;
+
+/** Applies events the server emits. Clients never post `lesson.first_complete`. */
+export function listenForServerEvents(): void {
+  if (serverEventsListening) return;
+  serverEventsListening = true;
+  onLearningEvent(async (emission: LearningEmission) => {
+    if (emission.event !== LEARNING_EVENTS.lessonFirstComplete) return;
+    if (!isAdminConfigured()) return;
+    await applyLearningEvent(emission.uid, {
+      event: emission.event,
+      day: emission.day,
+      eventId: emission.eventId ?? `lesson-first:${emission.uid}`,
+      payload: emission.payload ?? {},
+    });
+  });
 }
 
 async function writeBoards(

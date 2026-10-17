@@ -489,6 +489,7 @@ export function SettingsPanel({
             ['messages', 'Messages'],
             ['announcements', 'Announcements'],
             ['product', 'Product updates'],
+            ['achievements', 'Achievements'],
           ]}
           value={notes}
           onChange={key => setNotes({ ...notes, [key]: !notes[key] })}

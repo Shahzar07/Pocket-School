@@ -23,7 +23,7 @@ export function BadgeShelf({
         const body = (
           <>
             <span className={has ? '' : 'grayscale opacity-60'}>
-              <BadgeArt art={badge.art} size={64} title={badge.name} />
+              <BadgeArt icon={badge.icon} size={64} title={badge.name} />
             </span>
             <span className="font-heading text-sm text-foreground">{badge.name}</span>
             <span className="text-[11px] text-muted-foreground leading-snug">{badge.description}</span>

@@ -23,7 +23,7 @@ Fields the app writes:
 | `provider` | string | `expo` or `webpush`. |
 | `deviceId` | string | Same id as the document id. |
 | `keys` | map | Web Push subscription keys: `p256dh`, `auth`. Omit for Expo. |
-| `prefs` | map | Optional booleans. A missing key stays on. `false` opts that device out. Keys: `goals`, `flags`, `attendance`, `digests`, `grades`, `assignments`, `general`. |
+| `prefs` | map | Optional booleans. A missing key stays on. `false` opts that device out. Keys: `goals`, `flags`, `attendance`, `digests`, `grades`, `assignments`, `general`, `achievements`. |
 | `app` | string | Which client registered the device. |
 | `updatedAt` | timestamp | Last registration write. |
 
@@ -42,7 +42,7 @@ deviceTokens where userId == recipientUid
 
 That is a single-field equality. Firestore maintains that index automatically.
 
-Senders (goals parent alerts, integrity flags, attendance, digests, and the inbox categories grades, assignments, and general) all load that query, skip a device whose `prefs[category] === false`, and post to Expo (`https://exp.host/--/api/v2/push/send`) or Web Push from `provider`. Web Push needs `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT`. The Admin SDK needs `FIREBASE_SERVICE_ACCOUNT` (JSON) or Application Default Credentials.
+Senders (goals parent alerts, integrity flags, attendance, digests, grades, assignments, general, and achievements) all load that query, skip a device whose `prefs[category] === false`, and post to Expo (`https://exp.host/--/api/v2/push/send`) or Web Push from `provider`. Web Push needs `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT`. The Admin SDK needs `FIREBASE_SERVICE_ACCOUNT` (JSON) or Application Default Credentials.
 
 Invalid tokens are deleted by the server:
 
@@ -104,7 +104,7 @@ Signed-in clients can still read user documents under the existing rules. The sh
 
 ## notifications (unchanged)
 
-`notifications` stays the in-app inbox: `userId`, `title`, `message`, `type`, `link`, `read`, `createdAt`. Push category is not stored on the document. Creating a notification also asks `/api/push` to deliver it. `type: grade` maps to prefs `grades`, `type: assignment` maps to `assignments`, and other types map to `general` unless the caller sets a category (`goals`, `flags`, `attendance`, `digests`).
+`notifications` stays the in-app inbox: `userId`, `title`, `message`, `type`, `link`, `read`, `createdAt`. Push category is not stored on the document. Creating a notification also asks `/api/push` to deliver it. `type: grade` maps to prefs `grades`, `type: assignment` maps to `assignments`, and other types map to `general` unless the caller sets a category (`goals`, `flags`, `attendance`, `digests`, `achievements`). Badges, level-ups, and quests use `achievements`, not `grades`.
 
 ## Other senders
 
@@ -116,6 +116,7 @@ Signed-in clients can still read user documents under the existing rules. The sh
 | Digest | The recipient passed to `sendDigest` | `digests` |
 | Assignment graded | The student | `grades` |
 | Parent due-date reminder | The signed-in parent | `assignments` |
+| Badge, level-up, or quest | The learner | `achievements` |
 
 Email digests are not sent from this change. The push digest sender is the hook a later scheduler can call.
 
@@ -718,7 +719,7 @@ Sparks amounts for goals live only in `lib/sparks.ts` (`GOAL_ON_TIME_BONUS`, `GO
 
 ## Badges and gamification
 
-The mobile app can read awards and boards. It should not invent XP. Send the shared event names in `lib/events.ts` to `POST /api/gamification/event` with a Firebase ID token. A repeated `eventId` is a no-op. Badge document ids stay `badges/{userId}_{badgeId}`.
+The mobile app can read awards and boards. It should not invent XP. Send the shared event names in `lib/events.ts` to `POST /api/gamification/event` with a Firebase ID token. A repeated `eventId` is a no-op. `lesson.first_complete` is the exception: the server emits it from `completeLesson` when a lesson is finished for the first time, and the gamification listener applies it. Clients that post that name receive HTTP 400 `SERVER_EVENT`. Badge document ids stay `badges/{userId}_{badgeId}`.
 
 `badges/{userId}_{badgeId}` (existing collection, extra fields):
 
@@ -728,14 +729,14 @@ The mobile app can read awards and boards. It should not invent XP. Send the sha
 | `type` | string | Same as the badge id, for example `first-lesson` or `first_steps`. |
 | `name` | string | Display name. |
 | `description` | string | |
-| `icon` | string | Art key such as `flame` or `book`. |
+| `icon` | string | Image key such as `flame` or `book`. Older rows may say `art`. Reads accept `art` when `icon` is missing. The next award or catalogue save writes `icon` and drops `art`. |
 | `tier` | string | `bronze`, `silver`, or `gold`. |
 | `audience` | string | `student`, `parent`, `teacher`, or `institution`. |
 | `awardedAt` | timestamp | Server time. Missing on older star badges. |
 
 Query the app already uses: `badges where userId == uid`. That single-field index is automatic. Do not deploy a new index for it.
 
-`gamification/{userId}` is server-written progress: `xp`, `awarded` (badge ids), `counts`, `dailyXp`, `weeklyXp`, `passedUnits`, `streak`, `freezes`, `quests`, `questsDone`. Clients do not write it. `GET /api/gamification/state` returns the summary.
+`gamification/{userId}` is server-written progress: `xp`, `awarded` (badge ids), `counts`, `dailyXp`, `weeklyXp`, `passedUnits`, `streak`, `freezes`, `quests`, `questsDone`. Clients do not write it. `GET /api/gamification/state` returns those fields: `xp`, `awarded`, `counts`, `dailyXp`, `weeklyXp`, `passedUnits`, `streak`, `freezes`, `quests`, `questsDone`.
 
 `gamification_config/settings` is the super-admin catalogue (`badges`) and Sparks rewards (`sparks.enabled`, `sparks.amount` clamped to 0–5, `sparks.badgeIds`). The default is off and zero.
 
@@ -762,6 +763,8 @@ Optional user fields the board reads: `classId` or the first `cohortIds` entry, 
 
 Level names from XP are Seedling, Explorer, Pathfinder, Scholar, Mentor, Luminary, and Steward. Programme names stay separate.
 
-`GET /api/gamification/export?badge={id}` returns an Open Badges 3.0 credential. It is signed only when `OPEN_BADGE_PRIVATE_KEY` is set. `GET /api/gamification/card` returns an SVG card.
+`GET /api/gamification/export?badge={id}` returns an Open Badges 3.0 credential. It is signed only when `OPEN_BADGE_PRIVATE_KEY` is set. Sharing does not need that key. `GET /badges/{awardId}` is a public page (`awardId` is `{userId}_{badgeId}`) with an Open Graph image at `/badges/{awardId}/opengraph-image`. LinkedIn share-offsite uses that page URL. Add to Profile uses the same URL as `certUrl` and the award id as `certId`. `GET /api/gamification/card` still returns an SVG card.
+
+Account `notificationPrefs.achievements` is the web toggle for badge, level-up, and quest pushes. A missing value stays on. `false` skips the push. Device `prefs.achievements` does the same for that device. Assignment grades stay on `grades`.
 
 Parent Explainer reads `badges` for the linked child and names them in the weekly note. No rules or index deploy is part of this change.

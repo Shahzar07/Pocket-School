@@ -29,8 +29,8 @@ const ACCENTS: Record<string, string> = {
   crown: '#FFD166',
 };
 
-function scene(art: string, accent: string) {
-  switch (art) {
+function scene(icon: string, accent: string) {
+  switch (icon) {
     case 'door':
       return <><rect x="30" y="24" width="20" height="28" rx="3" fill={accent} /><circle cx="46" cy="38" r="1.6" fill={GOLD} /></>;
     case 'lesson':
@@ -76,9 +76,9 @@ function scene(art: string, accent: string) {
   }
 }
 
-export function BadgeArt({ art, size = 72, title }: { art: string; size?: number; title?: string }) {
+export function BadgeArt({ icon, size = 72, title }: { icon: string; size?: number; title?: string }) {
   const raw = useId().replace(/:/g, '');
-  const accent = ACCENTS[art] ?? '#3DB7E4';
+  const accent = ACCENTS[icon] ?? '#3DB7E4';
   return (
     <svg width={size} height={size} viewBox="0 0 80 80" role={title ? 'img' : 'presentation'} aria-label={title} aria-hidden={title ? undefined : true}>
       <defs>
@@ -90,7 +90,7 @@ export function BadgeArt({ art, size = 72, title }: { art: string; size?: number
       <circle cx="40" cy="40" r="36" fill={`url(#${raw}-face)`} />
       <circle cx="40" cy="40" r="31" fill="none" stroke={GOLD} strokeWidth="3" />
       <circle cx="40" cy="40" r="27" fill="none" stroke={accent} strokeWidth="1.5" opacity="0.9" />
-      {scene(art, accent)}
+      {scene(icon, accent)}
     </svg>
   );
 }

@@ -10,6 +10,7 @@ import {
   levelForXp,
   mergeDefinitions,
   type BadgeDefinition,
+  type BadgeDefinitionInput,
   type QuestDefinition,
   type SparksRewardConfig,
 } from '@/lib/gamification/catalog';
@@ -454,7 +455,7 @@ export function classBoards(value: { leaderboardEnabled?: boolean | null; compet
 export function definitionsFromConfig(raw: unknown): BadgeDefinition[] {
   if (!raw || typeof raw !== 'object') return mergeDefinitions([]);
   const badges = (raw as { badges?: unknown }).badges;
-  return mergeDefinitions(Array.isArray(badges) ? badges as Partial<BadgeDefinition>[] : []);
+  return mergeDefinitions(Array.isArray(badges) ? badges as BadgeDefinitionInput[] : []);
 }
 
 export function sparksFromConfig(raw: unknown): SparksRewardConfig {

@@ -95,7 +95,7 @@ export default function BadgeAdminPage() {
       <header>
         <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#C8922A]">Poket School</p>
         <h1 className="font-heading text-4xl mt-1">Badges</h1>
-        <p className="text-sm text-muted-foreground mt-2">Names, art, criteria, tier, and who the badge is for. Sparks for a milestone stay off until you set a small amount.</p>
+        <p className="text-sm text-muted-foreground mt-2">Names, icon, criteria, tier, and who the badge is for. Sparks for a milestone stay off until you set a small amount.</p>
       </header>
       <section className="rounded-3xl border border-border p-5 space-y-3">
         <h2 className="font-heading text-2xl">Sparks rewards</h2>
@@ -123,8 +123,8 @@ export default function BadgeAdminPage() {
               <Input value={badge.name} onChange={event => patch(badge.id, { name: event.target.value })} className="mt-1" />
             </label>
             <label className="text-sm">
-              Art
-              <Input value={badge.art} onChange={event => patch(badge.id, { art: event.target.value })} className="mt-1" />
+              Icon
+              <Input value={badge.icon} onChange={event => patch(badge.id, { icon: event.target.value })} className="mt-1" />
             </label>
             <label className="text-sm">
               Tier

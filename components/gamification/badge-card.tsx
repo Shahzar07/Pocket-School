@@ -20,7 +20,7 @@ export function BadgeCard({
     >
       <p className="text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: '#C8922A' }}>Poket School</p>
       <div className="mt-4 flex justify-center">
-        <BadgeArt art={badge.art} size={120} title={badge.name} />
+        <BadgeArt icon={badge.icon} size={120} title={badge.name} />
       </div>
       <h2 className="font-heading text-3xl mt-4">{badge.name}</h2>
       <p className="text-sm mt-2 text-white/80">{badge.description}</p>

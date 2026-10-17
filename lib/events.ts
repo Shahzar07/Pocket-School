@@ -7,6 +7,9 @@
  * Send a signed-in POST to `/api/gamification/event`:
  * `{ event, eventId?, payload? }`.
  * `eventId` makes a retry a no-op. Awards are also idempotent per badge.
+ *
+ * `lesson.first_complete` is the exception. The server emits it when a lesson
+ * is completed. Clients must not post it.
  */
 
 export const LEARNING_EVENTS = {
@@ -39,4 +42,9 @@ const EVENT_SET = new Set<string>(Object.values(LEARNING_EVENTS));
 
 export function isLearningEvent(value: string | null | undefined): value is LearningEventName {
   return typeof value === 'string' && EVENT_SET.has(value);
+}
+
+/** Events a signed-in client may post. First-lesson completion is server-only. */
+export function isClientLearningEvent(value: string | null | undefined): value is LearningEventName {
+  return isLearningEvent(value) && value !== LEARNING_EVENTS.lessonFirstComplete;
 }

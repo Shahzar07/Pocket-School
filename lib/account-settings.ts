@@ -69,6 +69,8 @@ export interface NotificationPrefs {
   messages: boolean;
   announcements: boolean;
   product: boolean;
+  /** Badges, level-ups, and quests. Missing stays on. */
+  achievements: boolean;
 }
 
 export interface PrivacySettings {
@@ -104,6 +106,7 @@ export const DEFAULT_NOTIFICATIONS: NotificationPrefs = {
   messages: true,
   announcements: true,
   product: true,
+  achievements: true,
 };
 
 export const DEFAULT_PRIVACY: PrivacySettings = {

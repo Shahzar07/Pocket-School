@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { LEARNING_EVENTS } from '@/lib/events';
-import { DEFAULT_SPARKS, levelForXp } from '@/lib/gamification/catalog';
+import { LEARNING_EVENTS, isClientLearningEvent } from '@/lib/events';
+import { DEFAULT_SPARKS, badgeIcon, levelForXp, mergeDefinitions } from '@/lib/gamification/catalog';
+import { linkedInAddToProfile, linkedInShareOffsite, publicBadgeUrl } from '@/lib/gamification/share';
 import {
   boardLabel,
   classBoards,
@@ -203,12 +204,45 @@ test('class competitions stay off until turned on', () => {
   assert.equal(isoWeekKey('2026-01-01').startsWith('2026-W'), true);
 });
 
+test('catalogue icon replaces a legacy art field', () => {
+  assert.equal(badgeIcon({ art: 'flame' }), 'flame');
+  assert.equal(badgeIcon({ icon: 'book', art: 'flame' }), 'book');
+  const merged = mergeDefinitions([{ id: 'first-lesson', art: 'flame' }]);
+  const badge = merged.find(item => item.id === 'first-lesson');
+  assert.equal(badge?.icon, 'flame');
+  assert.equal('art' in (badge ?? {}), false);
+});
+
+test('clients cannot post the first-lesson event', () => {
+  assert.equal(isClientLearningEvent(LEARNING_EVENTS.lessonFirstComplete), false);
+  assert.equal(isClientLearningEvent(LEARNING_EVENTS.unitTestPass), true);
+});
+
+test('LinkedIn share points at the public badge page', () => {
+  const page = publicBadgeUrl('learner_first-lesson');
+  assert.equal(page, 'https://poketschool.ai/badges/learner_first-lesson');
+  assert.equal(
+    linkedInShareOffsite(page),
+    'https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fpoketschool.ai%2Fbadges%2Flearner_first-lesson',
+  );
+  const add = linkedInAddToProfile({
+    name: 'First lesson',
+    awardId: 'learner_first-lesson',
+    pageUrl: page,
+    issuedAt: '2026-10-16T00:00:00.000Z',
+  });
+  assert.equal(add.includes('linkedin.com/profile/add'), true);
+  assert.equal(add.includes('organizationName=Poket+School'), true);
+  assert.equal(add.includes('certUrl='), true);
+  assert.equal(add.includes('OPEN_BADGE'), false);
+});
+
 test('Open Badges export stays unsigned without a private key', () => {
   const badge = {
     id: 'first-lesson',
     name: 'First lesson',
     description: 'Finish your first lesson.',
-    art: 'lesson',
+    icon: 'lesson',
     tier: 'bronze' as const,
     audience: 'student' as const,
     criteria: { type: 'once' as const, event: LEARNING_EVENTS.lessonFirstComplete },
