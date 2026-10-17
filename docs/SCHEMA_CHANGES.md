@@ -1067,11 +1067,17 @@ Parent-to-school tickets. The website shape here is canonical. Client writes are
 | `reopenUntil`, `solvedAt` | A parent can reopen within 7 days of `solved`. |
 | `satisfaction` | `{ rating: 1–5, comment }` after the parent rates. |
 | `body`, `safeguardingCaseId` | Sensitive categories open `safeguarding_cases/{id}` with `source: hotline`. Other staff cannot read those tickets. |
+| `authorities` | `{ required: yes \| no \| unsure, reason, status, informed }`. `no` needs a reason. `status` is `not_required`, `to_be_informed`, `informed`, `acknowledged`, or `closed_by_authority`. `informed` is `{ agency, contact, reference, at, by }`. |
+| `authoritiesRemindedAt` | A ticket in `to_be_informed` is reminded after 4 hours. It cannot be solved or closed while the status is still `to_be_informed`. |
 | `createdAt`, `updatedAt` | Milliseconds. |
 
 `hotline_tickets/{id}/comments/{commentId}`: `authorId`, `authorName`, `body`, `internal` (staff-only when true), `parentId` for a thread, `at`.
 
-`hotline_tickets/{id}/events/{eventId}`: `kind` is `created`, `assigned`, `status_change`, `escalated`, `reopened`, or `rated`. `actorId`, `at`, `detail`.
+`hotline_tickets/{id}/attachments/{fileId}`: `label` is `evidence`, `mc`, `report`, `photo`, or `other`. `internal` hides the file from the parent. `kind` is `photo`, `mc`, `pdf`, `screenshot`, or `video`. `mime`, `bytes`, `storagePath`, `commentId`, `uploadedBy`, `at`, `scanEngine`, `scanDetail`, `exifStripped`. Medical certificates (`mc`) and safeguarding evidence are returned only to the assigned staff. The server strips EXIF and GPS even when the client already did, checks the MIME against the bytes, and runs the malware scan hook. Limits are 10 MB for images, 15 MB for PDF, and 50 MB for video.
+
+Storage path: `institutions/{institutionId}/hotline/{ticketId}/{fileId}-{name}`. Clients cannot read or write it. `GET /api/hotline/file` returns a signed URL and writes a `viewed` event.
+
+`hotline_tickets/{id}/events/{eventId}`: `kind` is `created`, `assigned`, `status_change`, `escalated`, `reopened`, `rated`, `uploaded`, `viewed`, `authorities`, or `authority_reminder`. `actorId`, `at`, `detail`.
 
 | Method | Path |
 | --- | --- |
@@ -1083,6 +1089,9 @@ Parent-to-school tickets. The website shape here is canonical. Client writes are
 | POST | `/api/hotline/status` |
 | POST | `/api/hotline/reopen` |
 | POST | `/api/hotline/rate` |
+| POST | `/api/hotline/attach` |
+| POST | `/api/hotline/authorities` |
+| GET | `/api/hotline/file?ticketId=&attachmentId=` |
 | GET | `/api/hotline/analytics` |
 | GET | `/api/cron/hotline` |
 
@@ -1102,20 +1111,34 @@ Amber and other emergency alerts. Publishing is server-only. A verified principa
 | `type` | `missing_child`, `lockdown`, `weather`, `medical`, `general`. Severity uses `lib/alerts/model.ts`: missing child, lockdown, and medical are `critical`; weather is `high`; general is `medium`. |
 | `title`, `description`, `subjectName` | `subjectName` is removed when the alert is resolved. |
 | `region` | `{ country, state, city }` copied from `institutions/{id}`. A home address is never stored. |
-| `photoUrl`, `guardianConsent`, `consentId` | The photo is stored only when `guardianConsent` is true and `consentId` is set. |
-| `authoritiesInformed` | `{ agency, referenceNumber, informedAt }`. Required before public share, and required before a missing-child draft is saved. |
-| `status` | `draft` until the second staff member confirms, then `active`, `updated`, `resolved`, or `closed`. Closed alerts are archived. |
+| `photoUrl`, `guardianConsent`, `consentId`, `consentWithdrawn` | A public photo is `attachment:{fileId}` only when guardian consent is true and that consent record id is set. Withdrawing consent clears the name and photo and turns sharing off. |
+| `authorities` | Same shape as a hotline ticket. Public share needs `informed`, `acknowledged`, or `closed_by_authority`. A missing-child draft needs that record before it is saved. |
+| `authoritiesInformed` | Legacy mirror of `authorities.informed`: `{ agency, referenceNumber, informedAt }`. |
+| `authoritiesRemindedAt` | Staff are reminded after 1 hour while the status is `to_be_informed`. |
+| `status` | `draft` until the second staff member confirms, then `active`, `updated`, `resolved`, `closed`, or `retracted`. Closed alerts are archived. |
 | `publishedBy`, `publishedAt` | The creator. `publishedAt` is set at confirmation. |
 | `confirmedBy`, `confirmedAt` | Must be a different verified staff member. |
 | `resolved` | `{ by, at, outcome, authoritiesClosed }`. |
-| `publicShareEnabled` | Stays false without an authority record. Cleared on resolve. |
-| `ogVersion` | Incremented on resolve so share URLs can drop a cached card (`?v=`). |
+| `publicShareEnabled`, `sharePaused` | Sharing stays off until the authorities are informed. It pauses when the review window lapses, on retract, and when consent is withdrawn. |
+| `reviewEveryMs`, `reviewDueAt`, `lastReviewBy`, `lastReviewAt` | Default review is 24 hours. The interval is configurable and capped at 48 hours. `GET /api/cron/emergency` pauses public sharing and notifies admins when the review is overdue. |
+| `retractedReason` | Required for `retracted`. The public page is noindex, the OG version increments, share is disabled, a correction is posted on the wall and the feed, and a correction push goes to the stored recipient list. |
+| `ogVersion` | Incremented on resolve, retract, review pause, and consent withdrawal so share URLs can drop a cached card (`?v=`). |
 | `counts` | `{ views, shares }`. |
 | `createdAt` | Milliseconds. |
 
 `emergency_alerts/{id}/updates/{updateId}`: `body`, `actorId`, `at`.
 
-`emergency_alerts/{id}/audit/{auditId}`: `created`, `confirmed`, `updated`, `resolved`, `closed`.
+`emergency_alerts/{id}/attachments/{fileId}`: same file shape as a hotline attachment, plus `updateId`, `guardianConsent`, `consentRecordId`, and `public`. Only a photo with guardian consent and a consent record can be public. Storage path: `institutions/{institutionId}/alerts/{alertId}/{fileId}-{name}`, served by a signed URL.
+
+`emergency_alerts/{id}/recipients/{uid}`: the people who received the original push. A retraction notifies this list.
+
+`emergency_alerts/{id}/consent/{consentId}`: immutable versions. `details`, `photo`, `regions`, `channels`, `disclaimer`, `guardianName`, `relation`, `signature`, `signatureKind` (`drawn` or `typed`), `at`, `ip`, `device`, `version`. A missing-child alert cannot be published without one. The server creates a version and never updates it.
+
+`emergency_alerts/{id}/audit/{auditId}`: `created`, `confirmed`, `updated`, `resolved`, `closed`, `uploaded`, `viewed`, `authorities`, `authority_reminder`, `consent`, `consent_withdrawn`, `reviewed`, `review_paused`, `retracted`, `reported`.
+
+`alert_reports/{id}`: `alertId`, `reporterId` (empty for an anonymous visitor, and visible to staff only), `reason`, `falseReport`, `flaggedBy`, `at`, `day`. Three reports per user or anonymous visitor per day. A second false report sets `alert_report_bans/{uid}.banned`. Anonymous reports are rate limited, and they require a captcha when `CAPTCHA_SECRET` is set. Each report is copied to `moderation_queue` with `surface: emergency_alert`.
+
+`alert_report_rate/{id}` and `alert_report_bans/{uid}` back the limits. Do not deploy these rules from this branch.
 
 `emergency_rate/{uid}_{YYYY-MM-DD}`: at most 3 drafts a day.
 
@@ -1130,15 +1153,29 @@ Public page: `/alerts/[id]`. OG image: `/alerts/[id]/opengraph-image`. The card 
 | POST | `/api/emergency/update` |
 | POST | `/api/emergency/resolve` |
 | POST | `/api/emergency/close` |
+| POST | `/api/emergency/authorities` |
+| POST | `/api/emergency/review` |
+| POST | `/api/emergency/retract` |
+| POST | `/api/emergency/attach` |
+| POST | `/api/emergency/consent` |
+| POST | `/api/emergency/withdraw-consent` |
+| POST | `/api/emergency/report` |
+| POST | `/api/emergency/report-false` |
 | GET | `/api/emergency/public?id=` |
+| GET | `/api/emergency/public-file?id=&attachmentId=` |
 | POST | `/api/emergency/share` |
 | GET | `/api/emergency/stats?id=` |
+| GET | `/api/emergency/reports?id=` |
+| GET | `/api/emergency/file?alertId=&attachmentId=` |
+| GET | `/api/cron/emergency` |
 
 Push category `emergency`. It is targeted to institution members and to profiles whose country, state, and city match `region`. Delivery sets `force` and `sound: emergency`, so quiet hours and a muted preference do not apply. There is no mute toggle for it.
 
 Admin desks: `/dashboard/admin/emergency` and `/dashboard/institution/emergency`.
 
-Retention: on resolve, the name and photo are cleared from the public document. The audit subcollection remains for the school. Closed alerts stay archived and are not indexed.
+The public page has a report-this-alert button. Storage rules deny client access to `institutions/{id}/hotline/...` and `institutions/{id}/alerts/...`. `docs/HOTLINE_ALERTS_SCHEMA.md` is not on a branch, so this website section is canonical.
+
+Retention: on resolve, retract, or withdrawn consent, the name and photo are cleared from the public document and public photo objects are deleted. The audit subcollection and consent versions remain for the school. Closed alerts stay archived and are not indexed. Retracted alerts are noindex.
 
 ## Push categories added
 

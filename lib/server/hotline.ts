@@ -10,6 +10,17 @@ import { sendPush } from '../push';
 import { adminPushStore } from '../push-store';
 import { sendToDevice } from '../push-transport';
 import {
+  applyAuthorityUpdate,
+  authorityOverdue,
+  canCloseTicket,
+  initialAuthorities,
+  TICKET_AUTHORITY_REMINDER_MS,
+  type AuthorityDecision,
+} from '../authorities/policy';
+import { canViewAttachment, hotlineStoragePath, isAttachmentLabel } from '../attachments/policy';
+import { prepareAttachment } from '../attachments/prepare';
+import { bytesFromBase64, imagePass, saveObject, signedRead } from './files';
+import {
   DEFAULT_WORK,
   escalationTarget,
   isHotlineCategory,
@@ -101,6 +112,8 @@ export async function createTicket(uid: string, input: Record<string, unknown>) 
     throw new ActionError('BAD_REQUEST', 'Choose a priority.');
   }
   if (body.length < 3) throw new ActionError('BAD_REQUEST', 'Describe what the school should know.');
+  const authorities = initialAuthorities(str(input.authoritiesRequired) || 'unsure', str(input.authoritiesReason));
+  if ('error' in authorities) throw new ActionError('BAD_REQUEST', authorities.error);
   const student = await db().doc(`users/${studentId}`).get();
   const institutionId = str(student.data()?.institutionId) || actor.institutionId;
   if (!institutionId) throw new ActionError('BAD_REQUEST', 'This child is not linked to a school.');
@@ -139,6 +152,8 @@ export async function createTicket(uid: string, input: Record<string, unknown>) 
     satisfaction: null,
     body,
     safeguardingCaseId,
+    authorities: authorities.decision,
+    authoritiesRemindedAt: 0,
     createdAt: now,
     updatedAt: now,
   };
@@ -180,12 +195,25 @@ export async function getTicket(uid: string, id: string) {
     db().collection(`hotline_tickets/${id}/events`).orderBy('at', 'asc').limit(100).get(),
   ]);
   const staff = actor.role !== 'parent';
+  const files = await db().collection(`hotline_tickets/${id}/attachments`).limit(40).get();
   return {
     id,
     ...ticket.data,
     comments: (comments?.docs ?? [])
       .map(doc => ({ id: doc.id, ...doc.data() }) as FirebaseFirestore.DocumentData & { id: string })
       .filter(row => staff || row.internal !== true),
+    attachments: files.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }) as FirebaseFirestore.DocumentData & { id: string })
+      .filter(row => canViewAttachment(viewInput(actor, ticket.data, str(row.label), row.internal === true)))
+      .map(row => ({
+        id: row.id,
+        label: row.label,
+        internal: row.internal === true,
+        kind: row.kind,
+        mime: row.mime,
+        commentId: row.commentId ?? '',
+        at: row.at,
+      })),
     events: events.docs.map(doc => ({ id: doc.id, ...doc.data() })),
   };
 }
@@ -234,6 +262,10 @@ export async function setTicketStatus(uid: string, id: string, input: Record<str
   }
   const status = str(input.status);
   if (!isHotlineStatus(status)) throw new ActionError('BAD_REQUEST', 'Choose a status.');
+  const authorityStatus = str((ticket.data.authorities as { status?: string } | undefined)?.status);
+  if ((status === 'solved' || status === 'closed') && !canCloseTicket(authorityStatus)) {
+    throw new ActionError('BAD_REQUEST', 'Tell the authorities, or record that they are not required, before this ticket is solved or closed.');
+  }
   const now = Date.now();
   const patch: Record<string, unknown> = { status, updatedAt: now };
   if (status === 'kiv') {
@@ -326,6 +358,131 @@ export async function escalateDueTickets(now = Date.now()) {
     escalated += 1;
   }
   return { escalated };
+}
+
+function viewInput(actor: Actor, data: FirebaseFirestore.DocumentData, label: string, internal: boolean) {
+  return {
+    role: actor.role,
+    staffPost: actor.staffPost,
+    actorId: actor.id,
+    assigneeUid: str(data.assigneeUid),
+    addressedTo: str(data.addressedTo),
+    category: str(data.category),
+    parentUid: str(data.parentUid),
+    label,
+    internal,
+  };
+}
+
+export async function attachTicket(uid: string, id: string, input: Record<string, unknown>) {
+  const actor = await loadActor(uid);
+  const ticket = await loadTicket(id);
+  if (!canRead(actor, ticket.data)) throw new ActionError('FORBIDDEN', 'You cannot attach a file to this ticket.');
+  const label = str(input.label);
+  if (!isAttachmentLabel(label)) throw new ActionError('BAD_REQUEST', 'Choose a file label.');
+  const bytes = bytesFromBase64(str(input.dataBase64));
+  if (!bytes) throw new ActionError('BAD_REQUEST', 'Attach the file.');
+  const prepared = await prepareAttachment({ declaredMime: str(input.mime), label, bytes });
+  if (!prepared.ok) throw new ActionError('BAD_REQUEST', prepared.error);
+  const stored = await imagePass(prepared.file.bytes, prepared.file.mime);
+  const internal = input.internal === true && actor.role !== 'parent';
+  const fileRef = db().collection(`hotline_tickets/${id}/attachments`).doc();
+  const storagePath = hotlineStoragePath(str(ticket.data.institutionId), id, fileRef.id, str(input.fileName) || 'file');
+  await saveObject(storagePath, stored, prepared.file.mime);
+  const now = Date.now();
+  await fileRef.set({
+    label,
+    internal,
+    mime: prepared.file.mime,
+    kind: prepared.file.kind,
+    bytes: stored.byteLength,
+    storagePath,
+    fileName: str(input.fileName).slice(0, 120),
+    commentId: str(input.commentId),
+    uploadedBy: actor.id,
+    at: now,
+    scanEngine: prepared.file.scan.engine,
+    scanDetail: prepared.file.scan.detail,
+    exifStripped: true,
+  });
+  await db().collection(`hotline_tickets/${id}/events`).add({
+    kind: 'uploaded',
+    actorId: actor.id,
+    at: now,
+    detail: fileRef.id,
+  });
+  return { id: fileRef.id, kind: prepared.file.kind };
+}
+
+export async function viewTicketFile(uid: string, id: string, attachmentId: string) {
+  const actor = await loadActor(uid);
+  const ticket = await loadTicket(id);
+  const file = await db().doc(`hotline_tickets/${id}/attachments/${attachmentId}`).get();
+  if (!file.exists) throw new ActionError('NOT_FOUND', 'File not found.');
+  const data = file.data() ?? {};
+  if (!canViewAttachment(viewInput(actor, ticket.data, str(data.label), data.internal === true))) {
+    throw new ActionError('FORBIDDEN', 'You cannot open this file.');
+  }
+  const storagePath = str(data.storagePath);
+  if (!storagePath) throw new ActionError('NOT_FOUND', 'This file has been removed.');
+  const signed = await signedRead(storagePath);
+  await db().collection(`hotline_tickets/${id}/events`).add({
+    kind: 'viewed',
+    actorId: actor.id,
+    at: Date.now(),
+    detail: attachmentId,
+  });
+  return signed;
+}
+
+export async function setTicketAuthorities(uid: string, id: string, input: Record<string, unknown>) {
+  const actor = await loadActor(uid);
+  const ticket = await loadTicket(id);
+  if (!staffCanSee(actor.role, actor.staffPost, str(ticket.data.category))) {
+    throw new ActionError('FORBIDDEN', 'You cannot update this ticket.');
+  }
+  const current = (ticket.data.authorities ?? { required: 'unsure', reason: '', status: 'to_be_informed', informed: null }) as AuthorityDecision;
+  const next = applyAuthorityUpdate(current, {
+    status: str(input.status),
+    reason: str(input.reason),
+    agency: str(input.agency),
+    contact: str(input.contact),
+    reference: str(input.reference),
+    by: actor.id,
+    at: Date.now(),
+  });
+  if ('error' in next) throw new ActionError('BAD_REQUEST', next.error);
+  const now = Date.now();
+  await db().doc(`hotline_tickets/${id}`).set({
+    authorities: next.decision,
+    authoritiesRemindedAt: next.decision.status === 'to_be_informed' ? 0 : now,
+    updatedAt: now,
+  }, { merge: true });
+  await db().collection(`hotline_tickets/${id}/events`).add({
+    kind: 'authorities',
+    actorId: actor.id,
+    at: now,
+    detail: next.decision.status,
+  });
+  return { status: next.decision.status };
+}
+
+export async function remindAuthorityTickets(now = Date.now()) {
+  const snap = await db().collection('hotline_tickets').where('status', 'in', ['pending', 'in_progress', 'kiv']).limit(100).get();
+  let reminded = 0;
+  for (const doc of snap.docs) {
+    const data = doc.data();
+    const status = str((data.authorities as { status?: string } | undefined)?.status);
+    if (!authorityOverdue(Number(data.createdAt) || 0, status, now, TICKET_AUTHORITY_REMINDER_MS, Number(data.authoritiesRemindedAt) || 0)) {
+      continue;
+    }
+    await doc.ref.set({ authoritiesRemindedAt: now, updatedAt: now }, { merge: true });
+    await doc.ref.collection('events').add({ kind: 'authority_reminder', actorId: 'system', at: now, detail: '4h' });
+    const target = str(data.assigneeUid);
+    if (target) await notify(target, 'Authorities still to be informed', 'This hotline ticket has waited four hours.', '/dashboard/teacher/hotline');
+    reminded += 1;
+  }
+  return { reminded };
 }
 
 export type { HotlineCategory };

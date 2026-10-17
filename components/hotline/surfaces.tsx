@@ -82,6 +82,8 @@ export function ParentHotline() {
             <strong>New ticket</strong>
           </div>
           <p>Attendance · Medium · To the class teacher</p>
+          <p>Attach a photo, a medical certificate, or a PDF. Location data is removed before it is stored.</p>
+          <p>Authorities: to be informed. A ticket cannot close until that is recorded.</p>
           <button type="button" className="hk-btn">Send to the school</button>
         </section>
         <article className="hk-card">
@@ -128,7 +130,7 @@ export function StaffQueue() {
             <span className="hk-pill">Pending · low</span>
           </div>
           <h2>Homework load this week</h2>
-          <p>Three working days. Assigned to the class teacher.</p>
+          <p>Three working days. Assigned to the class teacher. Authorities reminder after four hours.</p>
           <button type="button" className="hk-btn">Open</button>
         </article>
         <article className="hk-card">
@@ -177,6 +179,10 @@ export function PublicAlert({ view }: { view: PublicEmergency | null }) {
           <strong>If you have information, contact {view.agency} {view.referenceNumber}</strong>
           <p>Call {view.emergencyNumber}. This page does not show school staff numbers.</p>
         </section>
+        {view.status === 'retracted' ? <p className="hk-warn">Retracted. This page is no longer shared.</p> : null}
+        {view.photoUrl.startsWith('attachment:') ? (
+          <img src={`/api/emergency/public-file?id=${view.id}&attachmentId=${view.photoUrl.slice('attachment:'.length)}`} alt="Photo shared with consent" />
+        ) : null}
         {view.shareEnabled ? (
           <div className="hk-row">
             <button type="button" className="hk-btn"><Share2 size={24} strokeWidth={2} aria-hidden /> WhatsApp</button>
@@ -184,6 +190,7 @@ export function PublicAlert({ view }: { view: PublicEmergency | null }) {
             <button type="button" className="hk-btn ghost">X</button>
           </div>
         ) : null}
+        <button type="button" className="hk-btn ghost">Report this alert</button>
         <p className="hk-warn">{view.disclaimer || disclaimerFor(view.region.country)}</p>
       </div>
     </main>
@@ -203,9 +210,11 @@ export function EmergencyDesk() {
         <article className="hk-card">
           <h2>Missing child · draft</h2>
           <p>Region comes from the school, not a home address. Police reference PDRM-2026-1044 is on the draft.</p>
+          <p>Re-confirm every 24 hours or public sharing pauses. Retract needs a reason. Guardian consent is recorded before a missing child alert is published.</p>
           <div className="hk-row">
             <button type="button" className="hk-btn"><Check size={24} strokeWidth={2} aria-hidden /> Confirm and publish</button>
             <button type="button" className="hk-btn ghost">Resolve</button>
+            <button type="button" className="hk-btn ghost">Retract</button>
           </div>
           <p>Views 0 · Shares 0</p>
         </article>

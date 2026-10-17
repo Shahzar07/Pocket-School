@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAdminConfigured } from '@/lib/firebase-admin';
-import { escalateDueTickets } from '@/lib/server/hotline';
+import { escalateDueTickets, remindAuthorityTickets } from '@/lib/server/hotline';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +15,8 @@ export async function GET(req: NextRequest) {
   if (!isAdminConfigured()) {
     return NextResponse.json({ error: 'Server is not configured.', code: 'ADMIN_NOT_CONFIGURED' }, { status: 503 });
   }
-  const result = await escalateDueTickets(Date.now());
-  return NextResponse.json({ ok: true, ...result });
+  const now = Date.now();
+  const result = await escalateDueTickets(now);
+  const reminders = await remindAuthorityTickets(now);
+  return NextResponse.json({ ok: true, ...result, ...reminders });
 }

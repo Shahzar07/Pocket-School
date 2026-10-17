@@ -2309,3 +2309,11 @@ components/hotline/surfaces.tsx	Send to the school
 components/hotline/surfaces.tsx	Three working days. Assigned to the class teacher.
 components/hotline/surfaces.tsx	Views 0 · Shares 0
 components/hotline/surfaces.tsx	Write to your child’s school. Safeguarding notes go only to the principal or the safeguarding lead.
+
+components/hotline/surfaces.tsx	Attach a photo, a medical certificate, or a PDF. Location data is removed before it is stored.
+components/hotline/surfaces.tsx	Authorities: to be informed. A ticket cannot close until that is recorded.
+components/hotline/surfaces.tsx	Photo shared with consent
+components/hotline/surfaces.tsx	Re-confirm every 24 hours or public sharing pauses. Retract needs a reason. Guardian consent is recorded before a missing child alert is published.
+components/hotline/surfaces.tsx	Report this alert
+components/hotline/surfaces.tsx	Retracted. This page is no longer shared.
+components/hotline/surfaces.tsx	Three working days. Assigned to the class teacher. Authorities reminder after four hours.

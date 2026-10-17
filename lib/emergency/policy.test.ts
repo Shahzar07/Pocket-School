@@ -24,6 +24,12 @@ function record(overrides: Partial<EmergencyRecord> = {}): EmergencyRecord {
     guardianConsent: true,
     consentId: 'consent-1',
     authoritiesInformed: { agency: 'Royal Malaysia Police', referenceNumber: 'PDRM-1044', informedAt: 1 },
+    authorities: {
+      required: 'yes',
+      reason: '',
+      status: 'informed',
+      informed: { agency: 'Royal Malaysia Police', contact: '999', reference: 'PDRM-1044', at: 1, by: 'principal-1' },
+    },
     status: 'active',
     publishedBy: 'principal-1',
     publishedAt: 1,
@@ -31,6 +37,10 @@ function record(overrides: Partial<EmergencyRecord> = {}): EmergencyRecord {
     confirmedAt: 2,
     resolved: null,
     publicShareEnabled: true,
+    sharePaused: false,
+    reviewEveryMs: 24 * 60 * 60 * 1000,
+    reviewDueAt: 3,
+    retractedReason: '',
     ogVersion: 1,
     counts: { views: 0, shares: 0 },
     ...overrides,
@@ -47,6 +57,7 @@ test('a second verified staff member confirms, and a missing child needs the pol
     confirmerVerified: true,
     type: 'missing_child',
     authorities: true,
+    consentOnFile: true,
   }), 'A second staff member has to confirm this alert.');
   assert.equal(canConfirm({
     publisherId: 'principal-1',
@@ -54,6 +65,7 @@ test('a second verified staff member confirms, and a missing child needs the pol
     confirmerVerified: true,
     type: 'missing_child',
     authorities: false,
+    consentOnFile: true,
   }), 'Tell the authorities before a missing child alert is published.');
   assert.equal(canConfirm({
     publisherId: 'principal-1',
@@ -61,6 +73,15 @@ test('a second verified staff member confirms, and a missing child needs the pol
     confirmerVerified: true,
     type: 'missing_child',
     authorities: true,
+    consentOnFile: false,
+  }), 'A guardian consent record is required before this alert is published.');
+  assert.equal(canConfirm({
+    publisherId: 'principal-1',
+    confirmerId: 'lead-1',
+    confirmerVerified: true,
+    type: 'missing_child',
+    authorities: true,
+    consentOnFile: true,
   }), null);
 });
 
@@ -94,4 +115,18 @@ test('a resolved alert drops the name and photo and turns sharing off', () => {
   assert.equal(closed?.noindex, true);
   assert.match(closed?.disclaimer ?? '', /999/);
   assert.equal(publicView(record({ status: 'draft' })), null);
+  const paused = publicView(record({ sharePaused: true, publicShareEnabled: false }));
+  assert.equal(paused?.shareEnabled, false);
+  assert.equal(paused?.noindex, false);
+  const retracted = publicView(record({ status: 'retracted', retractedReason: 'Wrong school' }));
+  assert.equal(retracted?.subjectName, '');
+  assert.equal(retracted?.photoUrl, '');
+  assert.equal(retracted?.shareEnabled, false);
+  assert.equal(retracted?.noindex, true);
+  assert.match(retracted?.description ?? '', /retracted/);
+  const waiting = publicView(record({
+    authorities: { required: 'yes', reason: '', status: 'to_be_informed', informed: null },
+    publicShareEnabled: true,
+  }));
+  assert.equal(waiting?.shareEnabled, false);
 });

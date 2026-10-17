@@ -4,11 +4,12 @@
  */
 
 import { type AlertSeverity } from '../alerts/model';
+import { authorityShareReady, type AuthorityDecision } from '../authorities/policy';
 
 export const EMERGENCY_TYPES = ['missing_child', 'lockdown', 'weather', 'medical', 'general'] as const;
 export type EmergencyType = (typeof EMERGENCY_TYPES)[number];
 
-export const EMERGENCY_STATUSES = ['draft', 'active', 'updated', 'resolved', 'closed'] as const;
+export const EMERGENCY_STATUSES = ['draft', 'active', 'updated', 'resolved', 'closed', 'retracted'] as const;
 export type EmergencyStatus = (typeof EMERGENCY_STATUSES)[number];
 
 export const DAILY_PUBLISH_CAP = 3;
@@ -37,6 +38,7 @@ export interface EmergencyRecord {
   guardianConsent: boolean;
   consentId: string;
   authoritiesInformed: AuthorityNotice | null;
+  authorities: AuthorityDecision;
   status: EmergencyStatus;
   publishedBy: string;
   publishedAt: number | null;
@@ -44,6 +46,10 @@ export interface EmergencyRecord {
   confirmedAt: number | null;
   resolved: { by: string; at: number; outcome: string; authoritiesClosed: boolean } | null;
   publicShareEnabled: boolean;
+  sharePaused: boolean;
+  reviewEveryMs: number;
+  reviewDueAt: number | null;
+  retractedReason: string;
   ogVersion: number;
   counts: { views: number; shares: number };
 }
@@ -117,6 +123,7 @@ export function canConfirm(input: {
   confirmerVerified: boolean;
   type: EmergencyType;
   authorities: boolean;
+  consentOnFile: boolean;
 }): string | null {
   if (!input.confirmerVerified) return 'A verified staff member confirms an alert.';
   if (!input.publisherId || input.publisherId === input.confirmerId) {
@@ -125,11 +132,24 @@ export function canConfirm(input: {
   if (input.type === 'missing_child' && !input.authorities) {
     return 'Tell the authorities before a missing child alert is published.';
   }
+  if (input.type === 'missing_child' && !input.consentOnFile) {
+    return 'A guardian consent record is required before this alert is published.';
+  }
+  if (!input.authorities) return 'Inform the authorities before this alert is shared.';
   return null;
 }
 
-export function shareAllowed(authorities: boolean, enabled: boolean): boolean {
-  return enabled && authorities;
+export function shareAllowed(input: {
+  authorityStatus: string;
+  enabled: boolean;
+  paused: boolean;
+  status: string;
+}): boolean {
+  if (!input.enabled || input.paused) return false;
+  if (input.status === 'draft' || input.status === 'resolved' || input.status === 'closed' || input.status === 'retracted') {
+    return false;
+  }
+  return authorityShareReady(input.authorityStatus);
 }
 
 export function regionMatch(profile: Region, region: Region): boolean {
@@ -143,21 +163,32 @@ export function regionMatch(profile: Region, region: Region): boolean {
 export function publicView(record: EmergencyRecord): PublicEmergency | null {
   if (record.status === 'draft') return null;
   const closed = record.status === 'resolved' || record.status === 'closed';
+  const retracted = record.status === 'retracted';
+  const redacted = closed || retracted;
   const country = record.region.country;
+  const notice = record.authorities.informed;
+  let description = record.description;
+  if (retracted) description = 'This alert was retracted. A correction has been posted.';
+  else if (closed) description = 'This alert has been closed. Personal details have been removed.';
   return {
     id: record.id,
     type: record.type,
     title: record.title,
-    description: closed ? 'This alert has been closed. Personal details have been removed.' : record.description,
-    subjectName: closed ? '' : record.subjectName,
+    description,
+    subjectName: redacted ? '' : record.subjectName,
     region: record.region,
-    photoUrl: !closed && record.guardianConsent ? record.photoUrl : '',
+    photoUrl: !redacted && record.guardianConsent ? record.photoUrl : '',
     status: record.status,
     publishedAt: record.publishedAt,
-    agency: record.authoritiesInformed?.agency ?? '',
-    referenceNumber: record.authoritiesInformed?.referenceNumber ?? '',
-    shareEnabled: !closed && shareAllowed(Boolean(record.authoritiesInformed), record.publicShareEnabled),
-    noindex: closed,
+    agency: notice?.agency || record.authoritiesInformed?.agency || '',
+    referenceNumber: notice?.reference || record.authoritiesInformed?.referenceNumber || '',
+    shareEnabled: shareAllowed({
+      authorityStatus: record.authorities.status,
+      enabled: record.publicShareEnabled,
+      paused: record.sharePaused || redacted,
+      status: record.status,
+    }),
+    noindex: redacted,
     emergencyNumber: emergencyNumber(country),
     disclaimer: disclaimerFor(country),
     ogVersion: record.ogVersion,
