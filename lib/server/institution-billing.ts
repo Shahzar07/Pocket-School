@@ -12,13 +12,13 @@ import {
   institutionEmail,
   onPaymentFailed,
   openSubscription,
-  quoteForInstitution,
   readSubscription,
   recordPayment,
   type BillingNotice,
   type SubscriptionState,
 } from '../institution-membership';
 import type { VolumeInterval, VolumePlanId } from '../institution-pricing';
+import { institutionReadsBill } from '../platform/licence';
 
 function todayIso(date = new Date()): string {
   return date.toISOString().slice(0, 10);
@@ -52,8 +52,8 @@ export async function openInstitutionBill(input: {
   interval: VolumeInterval;
   seats: number;
   payerEmail: string;
-}): Promise<{ state: SubscriptionState; notices: BillingNotice[]; total: number; currency: string }> {
-  const quote = quoteForInstitution({ seats: input.seats, planId: input.planId, interval: input.interval });
+}): Promise<{ state: SubscriptionState; notices: BillingNotice[]; total: number; currency: string; addonTotal: number }> {
+  const quote = institutionReadsBill({ seats: input.seats, planId: input.planId, interval: input.interval });
   const opened = openSubscription({
     subject: 'institution',
     planId: input.planId,
@@ -69,7 +69,7 @@ export async function openInstitutionBill(input: {
     billingPhase: opened.state.phase,
   }, { merge: true });
   await writeNotices(input.institutionId, opened.notices, input.institutionName);
-  return { ...opened, total: quote.total, currency: quote.currency };
+  return { ...opened, total: quote.total, currency: quote.currency, addonTotal: quote.reads.addonTotal };
 }
 
 export async function markInstitutionPaid(institutionId: string, interval: VolumeInterval, paidOn = todayIso()): Promise<BillingNotice[]> {

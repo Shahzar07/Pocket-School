@@ -2,14 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { blankProfile } from '../enterprise';
 import { seedInstitutionPricing } from '../institution-pricing';
-import { buildSparkPool } from '../institution-membership';
+import { buildSparkPool, quoteForInstitution } from '../institution-membership';
 import { parseModelFields } from '../i18n/content-translation';
 import { LANGUAGES } from '../languages';
 import { quoteCourse, seedPricing } from '../pricing';
 import { bookById } from '../reads/seed';
 import type { Book } from '../reads/types';
 import { bookAllocation, decideBook } from './allocation';
-import { coverBookSparks, licenceOffer, quoteBookLicence, seatsFromInstitution } from './licence';
+import { coverBookSparks, institutionReadsBill, licenceOffer, quoteBookLicence, seatsFromInstitution } from './licence';
 import { applyTranslatedFields, editionFor } from './localization';
 import { storedBookPriceRM } from './pricing';
 
@@ -91,6 +91,25 @@ test('quoting a book licence adds the poket_reads add-on', () => {
   assert.equal(offer.addonId, 'poket_reads');
   assert.equal(offer.seats?.total, 40);
   assert.equal(offer.grant('sch'), 'alloc:institution:sch:plain-contract');
+});
+
+test('the school bill keeps the seat quote and adds poket_reads', () => {
+  const seatOnly = quoteForInstitution({ seats: 40, planId: 'igcse_alevel', interval: 'annual' });
+  const seedBill = institutionReadsBill({ seats: 40, planId: 'igcse_alevel', interval: 'annual' });
+  assert.equal(seedBill.seats.total, seatOnly.total);
+  assert.equal(seedBill.reads.addonTotal, 0);
+  assert.equal(seedBill.total, seatOnly.total);
+  assert.equal(seedBill.addonId, 'poket_reads');
+
+  const schedule = seedInstitutionPricing();
+  const addon = schedule.addons.find(item => item.id === 'poket_reads');
+  assert.ok(addon);
+  addon.flatAnnual = 12;
+  const quoted = institutionReadsBill({ seats: 40, planId: 'igcse_alevel', interval: 'annual', schedule });
+  const seatsOnSchedule = quoteForInstitution({ seats: 40, planId: 'igcse_alevel', interval: 'annual', schedule });
+  assert.equal(quoted.seats.total, seatsOnSchedule.total);
+  assert.equal(quoted.reads.addonTotal, 12);
+  assert.equal(quoted.total, seatsOnSchedule.total + 12);
 });
 
 test('a saved edition wins over machine translation across the language list', () => {
