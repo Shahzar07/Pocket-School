@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { isSuperAdmin } from '@/lib/roles';
 import { SANDBOX_BANNER, priceInstitutionOrder, programmesForCheckout } from '@/lib/institution-self-serve';
 import { periodStartFor, quoteForInstitution, type SubscriptionState } from '@/lib/institution-membership';
+import { institutionReadsBill } from '@/lib/platform/licence';
 import { loadCurrentBill } from '@/lib/institution-membership-store';
 import { seedInstitutionPricing, tierCliff, VOLUME_PLANS, type VolumeInterval, type VolumePlanId } from '@/lib/institution-pricing';
 import { scaleSeats } from '@/lib/institution-commerce';
@@ -75,6 +76,7 @@ export default function InstitutionBillingPage() {
     })
     : null;
   const quote = quoteForInstitution({ seats, planId, interval });
+  const readsBill = institutionReadsBill({ seats, planId, interval });
   const cliff = tierCliff(seedInstitutionPricing(), planId, interval);
   const periodStart = bill ? periodStartFor(bill.periodEnd, bill.interval) : '';
   const today = new Date().toISOString().slice(0, 10);
@@ -186,6 +188,7 @@ export default function InstitutionBillingPage() {
             <p className="text-sm text-muted-foreground">{quote.tierLabel} · {quote.seats} student seats · {interval}</p>
           </>
         )}
+        <p className="mt-2 text-sm">Poket Reads add-on {readsBill.currency} {readsBill.reads.addonTotal.toFixed(2)}. Licensed books sit on this same bill. Students on a seat are not charged again.</p>
         {cliff && <p className="mt-2 text-sm text-[#1E6A83]">The next band, {cliff.toLabel}, is cheaper than {cliff.fromLabel}. Banded pricing is there so a school is not pushed off a cliff.</p>}
         {tierNote && !('error' in tierNote) && tierNote.action === 'upgrade' && <p className="mt-2 text-sm">{tierNote.message}</p>}
         {tierNote && !('error' in tierNote) && tierNote.action === 'suggest_downgrade' && <p className="mt-2 text-sm">{tierNote.message}</p>}

@@ -14,7 +14,7 @@
  * | --- | --- | --- |
  * | Price | pricing.ts `quotePrice`, `storedBookPriceRM` | `lib/pricing.ts`. `dailyFxRate` is null. |
  * | Allocation | allocation.ts `bookAllocation`, `decideBook` | `book.targets` via `migrateAllocation`. Seats come from the institution profile. |
- * | Institution licence | licence.ts `licenceOffer`, `quoteBookLicence` | Seat phase from `lib/oem.ts`. Billing phase from `learningOpen`. `poket_reads` add-on. |
+ * | Institution licence | licence.ts `licenceOffer`, `institutionReadsBill` | Seat phase from `lib/oem.ts`. Billing phase from `learningOpen`. The school bill adds `poket_reads` on the existing billing page. |
  * | Translation | localization.ts `editionFor` | Saved editions win. Machine text uses `useContentTranslation` and `/api/content/translate`. |
  * | Board | leaderboard.ts `privacyBoard` | Local rows. The shelf renders `LeaderboardPodium`. |
  * | Notices | notifications.ts `readingNotices`, `postReadingNotice` | On-screen list, and `POST /api/push` with category `goals`. |
@@ -34,7 +34,7 @@
  */
 export { quotePrice, viewerCurrency, dailyFxRate, storedBookPriceRM } from './pricing';
 export { bookAllocation, decideBook } from './allocation';
-export { licenceOffer, quoteBookLicence, seatsFromInstitution, coverBookSparks } from './licence';
+export { licenceOffer, quoteBookLicence, institutionReadsBill, seatsFromInstitution, coverBookSparks } from './licence';
 export { editionFor, activeLocale } from './localization';
 export { privacyBoard } from './leaderboard';
 export { readingNotices, postReadingNotice } from './notifications';

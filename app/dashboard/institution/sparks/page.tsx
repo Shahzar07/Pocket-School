@@ -60,7 +60,7 @@ export default function InstitutionSparksPage() {
 
   return (
     <DashPage className="max-w-3xl">
-      <DashHeader eyebrow="Institution" title="Sparks pool" description="A finite monthly allowance per student seat. There is no unlimited plan. Sparks cannot buy marketplace courses." />
+      <DashHeader eyebrow="Institution" title="Sparks pool" description="A finite monthly allowance per student seat. There is no unlimited plan. Sparks cannot buy marketplace courses. Poket Reads reserves a book's cost on this same pool, and reserving that book again replaces the row." />
       <Panel>
         <div className="grid sm:grid-cols-3 gap-3">
           <label className="text-sm">Student seats

@@ -12,6 +12,7 @@ import {
 import {
   allocateSparks,
   chargeFor,
+  quoteForInstitution,
   type SparkAllocation,
   type SparkPool,
 } from '@/lib/institution-membership';
@@ -23,7 +24,8 @@ import { bookAllocation, institutionReadingOpen, licenceDay, type InstitutionSea
  * (`seatCount`, `seatsUsed`, `licenceStartsOn`, `licenceEndsOn`).
  * The book does not keep a second seat ledger.
  * A quote for that licence includes the `poket_reads` volume add-on.
- * `quoteForInstitution` leaves add-ons empty, so a book licence does not call it.
+ * `quoteForInstitution` leaves add-ons empty. `institutionReadsBill` adds the
+ * Poket Reads line on top of that seat quote for the existing billing page.
  *
  * Billing follows `learningOpen`: `active` and `grace` can read; `pending_payment`
  * and `suspended` cannot. A full seat cap still denies a new reader during grace.
@@ -104,4 +106,41 @@ export function quoteBookLicence(input: {
     },
   });
   return { ...quote, addonId: 'poket_reads' };
+}
+
+/**
+ * Seat bill from `quoteForInstitution`, plus the Poket Reads add-on.
+ * The seat quote stays free of add-ons. The payable total is the sum.
+ */
+export function institutionReadsBill(input: {
+  seats: number;
+  planId: VolumePlanId;
+  interval: VolumeInterval;
+  schedule?: InstitutionVolumeSchedule;
+}): {
+  seats: VolumeQuote;
+  reads: VolumeQuote & { addonId: 'poket_reads' };
+  total: number;
+  currency: string;
+  addonId: 'poket_reads';
+} {
+  const seatsQuote = quoteForInstitution({
+    schedule: input.schedule,
+    seats: input.seats,
+    planId: input.planId,
+    interval: input.interval,
+  });
+  const reads = quoteBookLicence({
+    seats: input.seats,
+    schedule: input.schedule,
+    interval: input.interval,
+    planId: input.planId,
+  });
+  return {
+    seats: seatsQuote,
+    reads,
+    total: reads.total,
+    currency: reads.currency,
+    addonId: 'poket_reads',
+  };
 }
