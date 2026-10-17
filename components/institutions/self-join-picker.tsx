@@ -62,7 +62,7 @@ export function SelfJoinPicker({
   return (
     <div className="space-y-3">
       {student && (
-        <p className="rounded-2xl border border-[#C8922A]/50 bg-[#1A3C34] px-4 py-3 text-sm leading-relaxed text-[#F8E7C4]">
+        <p className="rounded-2xl border border-[#1E6A83]/50 bg-[#203337] px-4 py-3 text-sm leading-relaxed text-[#E9F7FA]">
           You can only join an institution that is registered on Poket School. If yours isn&apos;t listed, sign up as an independent learner and ask your school to register.
         </p>
       )}
@@ -96,7 +96,7 @@ export function SelfJoinPicker({
           <CountrySelect tone={tone} label="Country" value={country} onChange={onCountry} />
           <label className="block space-y-1.5">
             <span className={label}>State / region</span>
-            <select className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8922A]`} value={state} onChange={(event) => onState(event.target.value)} aria-label="State or region">
+            <select className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1E6A83]`} value={state} onChange={(event) => onState(event.target.value)} aria-label="State or region">
               <option value="" className="bg-[#0B0F1A]">Choose a state / region</option>
               {states.map((item) => <option key={item} value={item} className="bg-[#0B0F1A]">{item}</option>)}
             </select>
@@ -104,7 +104,7 @@ export function SelfJoinPicker({
           <label className="block space-y-1.5">
             <span className={label}>{student || place ? 'School / institution' : 'Institution'}</span>
             <select
-              className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8922A]`}
+              className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1E6A83]`}
               value={institutionId}
               onChange={(event) => {
                 onInstitution(event.target.value);

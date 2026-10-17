@@ -108,7 +108,7 @@ export default function InstitutionOnboardingPage() {
         </div>
       </Panel>
       {note && <p role="alert" className="text-sm">{note}</p>}
-      <button type="button" onClick={() => void openAcademy()} className="h-11 rounded-full bg-[#1A3C34] px-5 text-sm font-semibold text-white">
+      <button type="button" onClick={() => void openAcademy()} className="h-11 rounded-full bg-[#203337] px-5 text-sm font-semibold text-white">
         Open the academy
       </button>
     </DashPage>

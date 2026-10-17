@@ -79,14 +79,14 @@ export default function StudentAcademyPage() {
           }}
         />
       )}
-      <a href="/dashboard/student/portfolio" className="inline-flex h-11 items-center rounded-full bg-[#C8922A] px-5 text-sm font-semibold text-[#1A3C34]">
+      <a href="/dashboard/student/portfolio" className="inline-flex h-11 items-center rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-5 text-sm font-semibold text-[#203337]">
         CV and portfolio
       </a>
       {joined ? (
         <Panel>
           <p className="text-sm leading-relaxed">You are with your academy{profile?.academyLevel ? ` on ${profile.academyLevel}` : ''}.</p>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Joining another academy keeps this student number and the earlier history. The seat here is freed. Courses, badges, and certificates stay on this account.</p>
-          <button type="button" disabled={busy} onClick={() => void leave()} className="mt-4 h-11 rounded-full bg-[#1A3C34] px-5 text-sm font-semibold text-white disabled:opacity-60">
+          <button type="button" disabled={busy} onClick={() => void leave()} className="mt-4 h-11 rounded-full bg-[#203337] px-5 text-sm font-semibold text-white disabled:opacity-60">
             {busy ? 'Leaving…' : 'Leave the academy'}
           </button>
         </Panel>
@@ -97,7 +97,7 @@ export default function StudentAcademyPage() {
             Academy link name
             <input value={slug} onChange={(event) => setSlug(event.target.value.toLowerCase())} placeholder="north" className="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3" />
           </label>
-          <a href={slug.trim() ? `/i/${slug.trim()}/join` : '/signup'} className="mt-4 inline-flex h-11 items-center rounded-full bg-[#1A3C34] px-5 text-sm font-semibold text-white">
+          <a href={slug.trim() ? `/i/${slug.trim()}/join` : '/signup'} className="mt-4 inline-flex h-11 items-center rounded-full bg-[#203337] px-5 text-sm font-semibold text-white">
             Join with my school
           </a>
         </Panel>

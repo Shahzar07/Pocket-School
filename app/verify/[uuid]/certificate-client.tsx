@@ -111,7 +111,7 @@ export function CertificateVerify({ initialId }: { initialId: string }) {
           <p className="text-sm text-[#526066] mt-2">Anyone can confirm a certificate. This page shows the student number, name, course and issue date.</p>
         </div>
         {!checksOpen && (
-          <p className="rounded-2xl border border-[#1A3C34]/10 bg-white px-4 py-4 text-sm text-center">Certificate checks are with a super admin at the moment.</p>
+          <p className="rounded-2xl border border-[#203337]/10 bg-white px-4 py-4 text-sm text-center">Certificate checks are with a super admin at the moment.</p>
         )}
 
         {checksOpen && <div className="flex gap-2 mb-8 max-w-xl mx-auto">

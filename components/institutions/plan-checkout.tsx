@@ -94,12 +94,12 @@ export function PlanCheckout({
   return (
     <div className="space-y-4">
       {banner && (
-        <p role="status" className="rounded-2xl bg-[#F8E7C4] px-4 py-3 text-sm">
+        <p role="status" className="rounded-2xl bg-[#E9F7FA] px-4 py-3 text-sm">
           {banner}
         </p>
       )}
       {paidNotice && <p className="rounded-2xl bg-[#F6F1E7] px-4 py-3 text-sm">{paidNotice}</p>}
-      {error && <p role="alert" className="rounded-2xl bg-[#F8E7C4] px-4 py-3 text-sm">{error}</p>}
+      {error && <p role="alert" className="rounded-2xl bg-[#E9F7FA] px-4 py-3 text-sm">{error}</p>}
 
       <label className="block text-sm font-medium">
         Plan
@@ -116,9 +116,9 @@ export function PlanCheckout({
       </label>
       <label className="block text-sm font-medium">
         Unique students: {seats}
-        <span className="mt-1 block font-normal text-[#1A3C34]/70">This count picks Micro, Starter, Growth, Pro, or Enterprise. Each selected programme is billed for these students, and a larger tier has a lower per-seat price.</span>
+        <span className="mt-1 block font-normal text-[#203337]/70">This count picks Micro, Starter, Growth, Pro, or Enterprise. Each selected programme is billed for these students, and a larger tier has a lower per-seat price.</span>
         <input
-          className="mt-2 w-full accent-[#C8922A]"
+          className="mt-2 w-full accent-[#1E6A83]"
           type="range"
           min={SEAT_MIN}
           max={SEAT_MAX}
@@ -139,14 +139,14 @@ export function PlanCheckout({
       </fieldset>
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">Programmes</legend>
-        <p className="text-sm text-[#1A3C34]/70">Select every programme this academy needs. More than one is fine, including programmes from different levels.</p>
+        <p className="text-sm text-[#203337]/70">Select every programme this academy needs. More than one is fine, including programmes from different levels.</p>
         {programmes.map((programme) => (
           <label key={programme.id} className="flex items-center justify-between gap-3 text-sm">
             <span className="flex items-center gap-2">
               <input type="checkbox" checked={programmeIds.includes(programme.id)} onChange={() => toggleProgramme(programme.id)} />
               {programme.title}
             </span>
-            <span className="tabular-nums text-[#1A3C34]/70">USD {programme.perSeatMonthly.toFixed(2)} / seat{programme.placeholder ? ' · placeholder' : ''}</span>
+            <span className="tabular-nums text-[#203337]/70">USD {programme.perSeatMonthly.toFixed(2)} / seat{programme.placeholder ? ' · placeholder' : ''}</span>
           </label>
         ))}
       </fieldset>
@@ -158,7 +158,7 @@ export function PlanCheckout({
               <input type="checkbox" checked={programmeIds.includes(programme.id)} onChange={() => toggleProgramme(programme.id)} />
               {programme.title}
             </span>
-            <span className="tabular-nums text-[#1A3C34]/70">USD {programme.perSeatMonthly.toFixed(2)} / seat{programme.placeholder ? ' · placeholder' : ''}</span>
+            <span className="tabular-nums text-[#203337]/70">USD {programme.perSeatMonthly.toFixed(2)} / seat{programme.placeholder ? ' · placeholder' : ''}</span>
           </label>
         ))}
       </fieldset>
@@ -186,9 +186,9 @@ export function PlanCheckout({
           <p className="text-sm">{priced.error}</p>
         ) : (
           <>
-            {priced.placeholder && <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#C8922A]">Placeholder prices</p>}
+            {priced.placeholder && <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#1E6A83]">Placeholder prices</p>}
             <p className="text-2xl font-semibold tabular-nums">{priced.currency} {priced.total.toFixed(2)}</p>
-            <p className="mt-1 text-sm text-[#1A3C34]/75">
+            <p className="mt-1 text-sm text-[#203337]/75">
               {priced.tierLabel} · {priced.uniqueStudents} unique students. {priced.currency} {priced.subtotal.toFixed(2)} plus {priced.currency} {priced.tax.toFixed(2)} tax
               {country.trim().toUpperCase() === 'MY' && tender !== 'invoice' ? ' (SST)' : ''}. {priced.sparks.toLocaleString('en')} Sparks.
             </p>
@@ -201,12 +201,12 @@ export function PlanCheckout({
               ))}
             </ul>
             {priced.bundleDiscount > 0 && (
-              <p className="mt-2 text-sm text-[#1A3C34]">{priced.programmeCount} programmes include a {(priced.bundleDiscount * 100).toFixed(0)}% bundle discount.</p>
+              <p className="mt-2 text-sm text-[#203337]">{priced.programmeCount} programmes include a {(priced.bundleDiscount * 100).toFixed(0)}% bundle discount.</p>
             )}
             {priced.quoteContact && (
-              <p className="mt-2 text-sm text-[#1A3C34]">Custom pricing. Request a quote from Poket School{priced.selfServe ? ', or continue with self-serve checkout' : ''}.</p>
+              <p className="mt-2 text-sm text-[#203337]">Custom pricing. Request a quote from Poket School{priced.selfServe ? ', or continue with self-serve checkout' : ''}.</p>
             )}
-            <p className="mt-1 text-sm text-[#1A3C34]/75">{email}</p>
+            <p className="mt-1 text-sm text-[#203337]/75">{email}</p>
           </>
         )}
       </div>
@@ -217,7 +217,7 @@ export function PlanCheckout({
         </button>
         <button
           type="button"
-          className="h-11 rounded-full border border-[#1A3C34]/15 px-5 text-sm font-semibold"
+          className="h-11 rounded-full border border-[#203337]/15 px-5 text-sm font-semibold"
           disabled={busy}
           onClick={() => onTrial?.({ planId, seats, programmeIds: draft().programmeIds })}
         >

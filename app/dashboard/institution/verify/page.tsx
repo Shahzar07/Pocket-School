@@ -89,24 +89,24 @@ export default function VerifyStudentPage() {
         busy={busy}
         extra={card && card.membership !== 'member' && card.membership !== 'elsewhere' ? (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <label className="block flex-1 text-sm font-medium text-[#1A3C34]">Level
-              <select className="mt-1 h-11 w-full rounded-xl border border-[#1A3C34]/20 bg-background px-3" value={level} onChange={(event) => setLevel(event.target.value as VolumePlanId)} aria-label="Level">
+            <label className="block flex-1 text-sm font-medium text-[#203337]">Level
+              <select className="mt-1 h-11 w-full rounded-xl border border-[#203337]/20 bg-background px-3" value={level} onChange={(event) => setLevel(event.target.value as VolumePlanId)} aria-label="Level">
                 {VOLUME_PLANS.map((plan) => <option key={plan.id} value={plan.id}>{plan.name}</option>)}
               </select>
             </label>
-            <button type="button" onClick={() => void approve()} disabled={busy} className="h-11 rounded-full bg-[#C8922A] px-5 text-sm font-semibold text-[#1A3C34]">Approve membership</button>
+            <button type="button" onClick={() => void approve()} disabled={busy} className="h-11 rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-5 text-sm font-semibold text-[#203337]">Approve membership</button>
           </div>
         ) : null}
       />
       <section className="rounded-3xl border border-[#3C8DFF]/30 bg-[#E8F2FF] p-5">
-        <h2 className="font-heading text-xl text-[#1A3C34]">Parent links for learners under 13</h2>
-        <p className="mt-1 text-sm text-[#1A3C34]/70">The student confirms their own link from age 13. Younger learners wait for you.</p>
-        {requests.length === 0 ? <p className="mt-3 text-sm text-[#1A3C34]/70">No parent link requests.</p> : (
+        <h2 className="font-heading text-xl text-[#203337]">Parent links for learners under 13</h2>
+        <p className="mt-1 text-sm text-[#203337]/70">The student confirms their own link from age 13. Younger learners wait for you.</p>
+        {requests.length === 0 ? <p className="mt-3 text-sm text-[#203337]/70">No parent link requests.</p> : (
           <ul className="mt-3 space-y-2">
             {requests.map((row) => (
               <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-white px-4 py-3">
-                <span className="text-sm text-[#1A3C34]">{row.parentName} wants to follow {row.studentName} · {row.studentNumber}</span>
-                <button type="button" onClick={() => void confirmLink(row.id)} className="h-9 rounded-full bg-[#1A3C34] px-4 text-xs font-semibold text-white">Confirm link</button>
+                <span className="text-sm text-[#203337]">{row.parentName} wants to follow {row.studentName} · {row.studentNumber}</span>
+                <button type="button" onClick={() => void confirmLink(row.id)} className="h-9 rounded-full bg-[#203337] px-4 text-xs font-semibold text-white">Confirm link</button>
               </li>
             ))}
           </ul>

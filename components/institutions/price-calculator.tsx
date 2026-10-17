@@ -141,20 +141,20 @@ export function PriceCalculator({
     <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
       <section className="rounded-3xl bg-white p-5 shadow-sm">
         {catalogue.placeholder && (
-          <p className="mb-4 rounded-2xl bg-[#F8E7C4] px-4 py-3 text-sm text-[#1A3C34]">{catalogue.note}</p>
+          <p className="mb-4 rounded-2xl bg-[#E9F7FA] px-4 py-3 text-sm text-[#203337]">{catalogue.note}</p>
         )}
         <fieldset>
           <legend className="text-sm font-semibold">Programmes</legend>
-          <p className="mt-1 text-sm text-[#1A3C34]/70">Select more than one. The price adds each programme. Micro, Starter, Growth, Pro, and Enterprise follow unique students, and the per-seat price steps down as the tier grows.</p>
+          <p className="mt-1 text-sm text-[#203337]/70">Select more than one. The price adds each programme. Micro, Starter, Growth, Pro, and Enterprise follow unique students, and the per-seat price steps down as the tier grows.</p>
           <div className="mt-2 space-y-2">
             {programmes.map((item) => (
               <label key={item.id} className="flex items-center justify-between gap-3 text-sm">
                 <span className="flex items-center gap-2">
                   <input type="checkbox" checked={ids.includes(item.id)} onChange={() => toggle(item.id)} />
                   {item.title}
-                  <span className="text-[#1A3C34]/60">{item.level}</span>
+                  <span className="text-[#203337]/60">{item.level}</span>
                 </span>
-                <span className="tabular-nums text-[#1A3C34]/70">USD {(highlighted ? tierUnitMonthly(highlighted, item) : item.perSeatMonthly).toFixed(2)} / seat{item.placeholder ? ' · placeholder' : ''}</span>
+                <span className="tabular-nums text-[#203337]/70">USD {(highlighted ? tierUnitMonthly(highlighted, item) : item.perSeatMonthly).toFixed(2)} / seat{item.placeholder ? ' · placeholder' : ''}</span>
               </label>
             ))}
           </div>
@@ -168,26 +168,26 @@ export function PriceCalculator({
                   <input type="checkbox" checked={ids.includes(item.id)} onChange={() => toggle(item.id)} />
                   {item.title}
                 </span>
-                <span className="tabular-nums text-[#1A3C34]/70">USD {(highlighted ? tierUnitMonthly(highlighted, item) : item.perSeatMonthly).toFixed(2)} / seat{item.placeholder ? ' · placeholder' : ''}</span>
+                <span className="tabular-nums text-[#203337]/70">USD {(highlighted ? tierUnitMonthly(highlighted, item) : item.perSeatMonthly).toFixed(2)} / seat{item.placeholder ? ' · placeholder' : ''}</span>
               </label>
             ))}
           </div>
         </fieldset>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <label className="text-sm font-medium">Unique students: {seats}
-            <input className="mt-2 w-full accent-[#C8922A]" type="range" min={1} max={800} value={seats} onChange={(event) => setSeats(Number(event.target.value))} />
+            <input className="mt-2 w-full accent-[#1E6A83]" type="range" min={1} max={800} value={seats} onChange={(event) => setSeats(Number(event.target.value))} />
           </label>
           <label className="text-sm font-medium">Active students
-            <input className="mt-2 h-11 w-full rounded-xl border border-[#1A3C34]/15 px-3" type="number" min={0} value={active} onChange={(event) => setActive(Number(event.target.value))} />
+            <input className="mt-2 h-11 w-full rounded-xl border border-[#203337]/15 px-3" type="number" min={0} value={active} onChange={(event) => setActive(Number(event.target.value))} />
           </label>
           <label className="text-sm font-medium">Billing
-            <select className="mt-2 h-11 w-full rounded-xl border border-[#1A3C34]/15 px-3" value={interval} onChange={(event) => setInterval(event.target.value as 'monthly' | 'annual')}>
+            <select className="mt-2 h-11 w-full rounded-xl border border-[#203337]/15 px-3" value={interval} onChange={(event) => setInterval(event.target.value as 'monthly' | 'annual')}>
               <option value="annual">Annual</option>
               <option value="monthly">Monthly</option>
             </select>
           </label>
           <label className="text-sm font-medium">Country
-            <select className="mt-2 h-11 w-full rounded-xl border border-[#1A3C34]/15 px-3" value={country} onChange={(event) => setCountry(event.target.value)}>
+            <select className="mt-2 h-11 w-full rounded-xl border border-[#203337]/15 px-3" value={country} onChange={(event) => setCountry(event.target.value)}>
               <option value="MY">Malaysia</option>
               <option value="GB">United Kingdom</option>
               <option value="US">United States</option>
@@ -195,8 +195,8 @@ export function PriceCalculator({
           </label>
         </div>
       </section>
-      <section className="rounded-3xl bg-[#1A3C34] p-5 text-white" aria-live="polite">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#F8E7C4]">Live price</p>
+      <section className="rounded-3xl bg-[#203337] p-5 text-white" aria-live="polite">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#E9F7FA]">Live price</p>
         {'error' in quote ? (
           <p className="mt-3 text-sm">{quote.error}</p>
         ) : (
@@ -204,7 +204,7 @@ export function PriceCalculator({
             <p className="mt-2 font-heading text-4xl tabular-nums">{quote.currency} {quote.total.toFixed(2)}</p>
             <p className="mt-1 text-sm text-white/75">{quote.tierLabel} · {quote.purchasedSeats} purchased seats · {quote.activeSeats} active</p>
             {quote.quoteContact && (
-              <p className="mt-3 rounded-2xl bg-[#F8E7C4] px-3 py-2 text-sm text-[#1A3C34]">
+              <p className="mt-3 rounded-2xl bg-[#E9F7FA] px-3 py-2 text-sm text-[#203337]">
                 Custom pricing. Request a quote{quote.selfServe ? ', or continue with self-serve checkout' : ''}.
               </p>
             )}
@@ -222,7 +222,7 @@ export function PriceCalculator({
             ))}
             {seats >= catalogue.quoteMinSeats && (
               <div className="mt-4 flex flex-wrap gap-2">
-                <button type="button" className="inline-flex h-11 items-center rounded-full bg-[#C8922A] px-5 text-sm font-semibold text-[#1A3C34]" onClick={() => pdf('quote')}>
+                <button type="button" className="inline-flex h-11 items-center rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-5 text-sm font-semibold text-[#203337]" onClick={() => pdf('quote')}>
                   Download quote PDF
                 </button>
                 <button type="button" className="inline-flex h-11 items-center rounded-full border border-white/30 px-5 text-sm font-semibold" onClick={() => pdf('invoice')}>
@@ -233,7 +233,7 @@ export function PriceCalculator({
             {onApply && highlighted?.selfServe !== false && (
               <button
                 type="button"
-                className="mt-3 inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-[#1A3C34]"
+                className="mt-3 inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-[#203337]"
                 onClick={() => onApply({ itemIds: ids, seats, active, interval })}
               >
                 Update this academy

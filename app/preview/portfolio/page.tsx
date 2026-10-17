@@ -165,18 +165,18 @@ export default function PortfolioPreview() {
           consent={consent}
         />
         <LinkedInCopy name="Ada L." studentNumber="PS-ABCD-2345" items={items} />
-        <section className="rounded-[28px] border border-[#1A3C34]/10 bg-white p-6 text-[#1A3C34]">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8922A]">Job application</p>
+        <section className="rounded-[28px] border border-[#203337]/10 bg-white p-6 text-[#203337]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E6A83]">Job application</p>
           <h2 className="mt-1 font-heading text-3xl tracking-tight">Company X - Analyst</h2>
           <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold">
-            <a className="rounded-full bg-[#1A3C34] px-4 py-2 text-white" href={addToLinkedIn}>Add to LinkedIn</a>
-            <a className="rounded-full border border-[#1A3C34] px-4 py-2" href={shareLinks('https://poketschool.ai/verify/cert-ada', 'IGCSE Mathematics').linkedin}>Share to LinkedIn</a>
+            <a className="rounded-full bg-[#203337] px-4 py-2 text-white" href={addToLinkedIn}>Add to LinkedIn</a>
+            <a className="rounded-full border border-[#203337] px-4 py-2" href={shareLinks('https://poketschool.ai/verify/cert-ada', 'IGCSE Mathematics').linkedin}>Share to LinkedIn</a>
           </div>
           {'error' in application ? null : (
             <p className="mt-4 text-sm">{application.company} · {application.role} · {application.status} · {application.date}</p>
           )}
           {'error' in application || !reminderDue({ status: application.status, reminderOn: application.reminderOn, today: '2026-10-17' }) ? null : (
-            <p className="mt-2 rounded-2xl bg-[#F8E7C4] px-3 py-2 text-sm">Reminder: Company X · Analyst · {application.reminderOn}</p>
+            <p className="mt-2 rounded-2xl bg-[#E9F7FA] px-3 py-2 text-sm">Reminder: Company X · Analyst · {application.reminderOn}</p>
           )}
           <p className="mt-4 text-sm">Share link Company X - Analyst · {tracker.total} views · latest {tracker.latest.slice(0, 10)}</p>
           <ul className="mt-1 text-sm">

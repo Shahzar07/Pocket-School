@@ -81,9 +81,9 @@
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
-  color: var(--ps-on-amber);
-  background: var(--ps-amber);
-  border: 1px solid var(--ps-on-amber);
+  color: var(--ps-cyan-ink);
+  background: var(--ps-cyan);
+  border: 1px solid var(--ps-cyan-border);
   border-radius: 999px;
   padding: 8px 14px;
   box-shadow: 0 8px 18px var(--ps-glow);

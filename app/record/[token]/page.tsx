@@ -37,15 +37,15 @@ export default function SharedRecordPage({ params }: { params: Promise<{ token: 
   }
 
   return (
-    <main className="min-h-screen bg-[#F6F1E7] px-5 py-12 text-[#1A3C34]">
-      <article className="mx-auto max-w-2xl rounded-[28px] border border-[#1A3C34]/10 bg-white p-8">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8922A]">Verified record</p>
+    <main className="min-h-screen bg-[#F6F1E7] px-5 py-12 text-[#203337]">
+      <article className="mx-auto max-w-2xl rounded-[28px] border border-[#203337]/10 bg-white p-8">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E6A83]">Verified record</p>
         <h1 className="mt-2 font-heading text-4xl tracking-tight">Poket School record</h1>
         <p className="mt-2 text-sm leading-relaxed">This page shows the learner’s verified record. You can add your name or team. Poket School does not collect anything else about you.</p>
         <label className="mt-4 block text-sm">Your name or team
-          <input value={visitor} onChange={(event) => setVisitor(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-[#1A3C34]/15 px-3" />
+          <input value={visitor} onChange={(event) => setVisitor(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-[#203337]/15 px-3" />
         </label>
-        <button type="button" className="mt-3 h-11 rounded-full bg-[#1A3C34] px-5 text-sm font-semibold text-white" onClick={() => openRecord()}>
+        <button type="button" className="mt-3 h-11 rounded-full bg-[#203337] px-5 text-sm font-semibold text-white" onClick={() => openRecord()}>
           Open record
         </button>
         {record && !record.open ? <p className="mt-4 text-sm">{record.reason}</p> : null}
@@ -55,10 +55,10 @@ export default function SharedRecordPage({ params }: { params: Promise<{ token: 
             <p className="mt-1 font-mono text-sm">{record.studentNumber}</p>
             <ul className="mt-4 space-y-3 text-sm">
               {(record.items ?? []).map((item) => (
-                <li key={item.id} className="rounded-xl border border-[#1A3C34]/10 px-3 py-2">
+                <li key={item.id} className="rounded-xl border border-[#203337]/10 px-3 py-2">
                   <p className="font-medium">{item.title}</p>
                   <p>{[item.detail, item.when].filter(Boolean).join(' · ')}</p>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#C8922A]">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#1E6A83]">
                     {item.source === 'verified' ? 'Verified by Poket School' : 'Self-reported'}
                     {item.confirmation === 'learner' ? ' · Confirmed by the learner' : ''}
                     {item.confirmation === 'school' ? ' · Confirmed by the school' : ''}
@@ -78,7 +78,7 @@ export default function SharedRecordPage({ params }: { params: Promise<{ token: 
                         .then((data: { error?: string }) => setMessage(data.error ?? 'The learner and their school can confirm this item.'))
                         .catch(() => setMessage('Could not send the request.'));
                     }}>
-                      <input value={note} onChange={(event) => setNote(event.target.value)} placeholder="What should they confirm?" className="h-10 w-full rounded-xl border border-[#1A3C34]/15 px-3" />
+                      <input value={note} onChange={(event) => setNote(event.target.value)} placeholder="What should they confirm?" className="h-10 w-full rounded-xl border border-[#203337]/15 px-3" />
                       <button type="submit" className="mt-2 text-sm font-semibold">Request verification</button>
                     </form>
                   ) : null}

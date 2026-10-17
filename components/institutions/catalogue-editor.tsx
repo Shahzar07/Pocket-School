@@ -51,11 +51,11 @@ export function CatalogueEditor() {
     }
   };
 
-  if (loading) return <p className="text-sm text-[#1A3C34]">Loading the catalogue.</p>;
+  if (loading) return <p className="text-sm text-[#203337]">Loading the catalogue.</p>;
 
   return (
     <div className="space-y-4">
-      <p className="rounded-2xl bg-[#F8E7C4] px-4 py-3 text-sm text-[#1A3C34]">{draft.note}</p>
+      <p className="rounded-2xl bg-[#E9F7FA] px-4 py-3 text-sm text-[#203337]">{draft.note}</p>
       <div className="grid gap-3 sm:grid-cols-4">
         <label className="text-sm">Annual discount
           <Input className="mt-1" type="number" min={0} max={1} step="0.01" value={draft.annualDiscount} onChange={(event) => setDraft({ ...draft, annualDiscount: Number(event.target.value) })} />
@@ -70,9 +70,9 @@ export function CatalogueEditor() {
           <Input className="mt-1" type="number" min={1} value={draft.trialSeatCap} onChange={(event) => setDraft({ ...draft, trialSeatCap: Number(event.target.value) })} />
         </label>
       </div>
-      <div className="rounded-3xl border border-[#1A3C34]/10 bg-white p-4">
-        <h2 className="font-semibold text-[#1A3C34]">Bundle discount</h2>
-        <p className="mt-1 text-sm text-[#1A3C34]/70">Optional. When an academy selects enough programmes, the highest matching step comes off those programmes. Categories stay at their own price. Set a step to 0 to turn it off.</p>
+      <div className="rounded-3xl border border-[#203337]/10 bg-white p-4">
+        <h2 className="font-semibold text-[#203337]">Bundle discount</h2>
+        <p className="mt-1 text-sm text-[#203337]/70">Optional. When an academy selects enough programmes, the highest matching step comes off those programmes. Categories stay at their own price. Set a step to 0 to turn it off.</p>
         <div className="mt-3 space-y-2">
           {draft.bundleRules.map((rule) => (
             <div key={rule.id} className="grid gap-3 sm:grid-cols-2">
@@ -94,7 +94,7 @@ export function CatalogueEditor() {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-[#1A3C34]/70">
+            <tr className="text-left text-[#203337]/70">
               <th className="py-2">Item</th>
               <th>Per seat / month</th>
               <th>Sparks / seat</th>
@@ -134,7 +134,7 @@ export function CatalogueEditor() {
           </label>
         ))}
       </div>
-      <Button className="h-11 rounded-full bg-[#1A3C34]" disabled={saving} onClick={() => void save()}>{saving ? 'Saving…' : 'Save catalogue'}</Button>
+      <Button className="h-11 rounded-full bg-[#203337]" disabled={saving} onClick={() => void save()}>{saving ? 'Saving…' : 'Save catalogue'}</Button>
     </div>
   );
 }
@@ -156,8 +156,8 @@ function TierFields({
     onChange({ ...tier, seatPrices });
   };
   return (
-    <section className="rounded-3xl border border-[#1A3C34]/10 bg-white p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[#1A3C34]/60">{tierRangeLabel(tier)} students</p>
+    <section className="rounded-3xl border border-[#203337]/10 bg-white p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-[#203337]/60">{tierRangeLabel(tier)} students</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-4">
         <label className="text-sm">Name
           <Input className="mt-1" value={tier.name} onChange={(event) => onChange({ ...tier, name: event.target.value, label: event.target.value })} />

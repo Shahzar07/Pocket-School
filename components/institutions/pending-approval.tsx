@@ -41,40 +41,40 @@ export function PendingApproval({
     <InstitutionJourneyFrame eyebrow="For Schools & Organisations" title={copy.title} lede={copy.body}>
       <dl className="space-y-3 rounded-2xl bg-[#F6F1E7] px-4 py-4 text-sm">
         <div className="flex items-start justify-between gap-4">
-          <dt className="text-[#1A3C34]/60">Organisation</dt>
+          <dt className="text-[#203337]/60">Organisation</dt>
           <dd className="text-right font-semibold">{name}</dd>
         </div>
         <div className="flex items-start justify-between gap-4">
-          <dt className="text-[#1A3C34]/60">Status</dt>
-          <dd className="rounded-full bg-[#F8E7C4] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#1A3C34]">
+          <dt className="text-[#203337]/60">Status</dt>
+          <dd className="rounded-full bg-[#E9F7FA] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#203337]">
             {status === 'unknown' ? 'Sign in required' : status}
           </dd>
         </div>
         {email && (
           <div className="flex items-start justify-between gap-4">
-            <dt className="text-[#1A3C34]/60">Approval email</dt>
+            <dt className="text-[#203337]/60">Approval email</dt>
             <dd className="text-right font-semibold">{email}</dd>
           </div>
         )}
         {reasons.length > 0 && (
           <div>
-            <dt className="text-[#1A3C34]/60">Waiting on</dt>
+            <dt className="text-[#203337]/60">Waiting on</dt>
             <dd className="mt-1 font-semibold">{reasons.join(' ')}</dd>
           </div>
         )}
       </dl>
       <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
         {status === 'active' && continueHref && (
-          <Link href={continueHref} className="inline-flex h-11 items-center rounded-full bg-[#1A3C34] px-5 text-white">
+          <Link href={continueHref} className="inline-flex h-11 items-center rounded-full bg-[#203337] px-5 text-white">
             Continue
           </Link>
         )}
         {status !== 'active' && (
-          <Link href="/institutions/login" className="inline-flex h-11 items-center rounded-full bg-[#1A3C34] px-5 text-white">
+          <Link href="/institutions/login" className="inline-flex h-11 items-center rounded-full bg-[#203337] px-5 text-white">
             Institution admin sign-in
           </Link>
         )}
-        <Link href="/login" className="inline-flex h-11 items-center rounded-full border border-[#1A3C34]/15 px-5">
+        <Link href="/login" className="inline-flex h-11 items-center rounded-full border border-[#203337]/15 px-5">
           Main Poket School login
         </Link>
       </div>

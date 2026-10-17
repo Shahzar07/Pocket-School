@@ -33,7 +33,7 @@ export default function InstitutionAutomationPage() {
                 <p className="text-sm font-semibold">{rule.journey}</p>
                 <p className="text-sm text-muted-foreground">{rule.label}</p>
               </div>
-              <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${rules[rule.id] ? 'bg-[#1A3C34] text-white' : 'bg-muted text-muted-foreground'}`}>
+              <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${rules[rule.id] ? 'bg-[#203337] text-white' : 'bg-muted text-muted-foreground'}`}>
                 {rules[rule.id] ? 'On' : 'Off'}
               </span>
             </li>

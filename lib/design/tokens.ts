@@ -8,8 +8,8 @@
  *
  * Cyan is an accent fill. It is not a text colour on white (1.64:1).
  * Text and links on light backgrounds use brand blue `#1E6A83`.
- * Primary buttons are amber `#E2AF4D` with ink `#3D2C08` (about 6.7:1).
- * White on that amber is about 2:1, so it is never the label.
+ * Primary buttons are cyan `#3FE0D0` with ink `#203337` and a `#1E6A83` border.
+ * White on that fill is about 1.6:1, so it is never the label.
  */
 
 export interface RoleWash {
@@ -34,26 +34,26 @@ export const CYAN = {
   border: '#1E6A83',
 } as const;
 
-/** Primary call-to-action. Ink on the fill clears WCAG AA. White does not. */
+/** Primary call-to-action. Ink on the cyan fill clears WCAG AA. White does not. */
 export const AMBER = {
-  fill: '#E2AF4D',
-  ink: '#3D2C08',
-  soft: 'rgba(226, 175, 77, 0.18)',
+  fill: '#3FE0D0',
+  ink: '#203337',
+  soft: 'rgba(63, 224, 208, 0.15)',
 } as const;
 
 /** Mesh, glass, and card edge. These sit on the locked hero stops. */
 export const overlay = {
   light: {
-    glow: 'rgba(226, 175, 77, 0.45)',
+    glow: 'rgba(63, 224, 208, 0.45)',
     blob: 'rgba(111, 187, 206, 0.55)',
-    blobWarm: 'rgba(226, 175, 77, 0.40)',
+    blobWarm: 'rgba(63, 224, 208, 0.40)',
     glass: 'rgba(255, 255, 255, 0.78)',
     cardEdge: '#D5E6EA',
   },
   dark: {
     glow: 'rgba(111, 187, 206, 0.55)',
     blob: 'rgba(39, 134, 164, 0.65)',
-    blobWarm: 'rgba(226, 175, 77, 0.32)',
+    blobWarm: 'rgba(63, 224, 208, 0.32)',
     glass: 'rgba(18, 30, 34, 0.72)',
     cardEdge: '#2A4E5A',
   },

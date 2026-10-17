@@ -46,9 +46,9 @@ export function JoinByCode({
   };
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-[#C8922A]/40 bg-card shadow-[var(--shadow-card)]">
-      <div className="bg-gradient-to-r from-[#1A3C34] via-[#24685A] to-[#C8922A] px-5 py-4 text-white">
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#F8E7C4]">Poket School</p>
+    <section className="overflow-hidden rounded-3xl border border-[#1E6A83]/40 bg-card shadow-[var(--shadow-card)]">
+      <div className="bg-gradient-to-r from-[#203337] via-[#1E6A83] to-[#1E6A83] px-5 py-4 text-white">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#E9F7FA]">Poket School</p>
         <h2 className="mt-1 font-heading text-2xl">{title}</h2>
         <p className="mt-1 max-w-xl text-sm text-white/80">{body}</p>
       </div>
@@ -61,17 +61,17 @@ export function JoinByCode({
             aria-label="Student number"
             autoCapitalize="characters"
             autoComplete="off"
-            className="h-12 flex-1 rounded-2xl border border-[#1A3C34]/20 bg-background px-4 font-mono text-sm tracking-wider outline-none focus:border-[#C8922A]"
+            className="h-12 flex-1 rounded-2xl border border-[#203337]/20 bg-background px-4 font-mono text-sm tracking-wider outline-none focus:border-[#1E6A83]"
           />
-          <button type="submit" disabled={busy} className="h-12 rounded-2xl bg-[#1A3C34] px-4 text-sm font-semibold text-white disabled:opacity-60">
+          <button type="submit" disabled={busy} className="h-12 rounded-2xl bg-[#203337] px-4 text-sm font-semibold text-white disabled:opacity-60">
             {actionLabel}
           </button>
-          <button type="button" onClick={() => setScanning((open) => !open)} className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[#C8922A] px-4 text-sm font-semibold text-[#1A3C34]">
+          <button type="button" onClick={() => setScanning((open) => !open)} className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[#1E6A83] px-4 text-sm font-semibold text-[#203337]">
             <Camera className="h-4 w-4" /> {scanning ? 'Hide camera' : 'Scan QR'}
           </button>
         </form>
         {scanning && <CodeScanner onCode={submit} onClose={() => setScanning(false)} />}
-        {message && <p className="rounded-2xl bg-[#F8E7C4] px-4 py-3 text-sm text-[#1A3C34]">{message}</p>}
+        {message && <p className="rounded-2xl bg-[#E9F7FA] px-4 py-3 text-sm text-[#203337]">{message}</p>}
         {card && (
           <article className="flex items-center gap-4 rounded-2xl border border-[#3C8DFF]/30 bg-gradient-to-br from-[#E8F2FF] to-[#FFF6E4] p-4">
             {card.photoUrl ? (
@@ -83,9 +83,9 @@ export function JoinByCode({
               </div>
             )}
             <div className="min-w-0">
-              <p className="font-semibold text-[#1A3C34]">{card.name}</p>
-              <p className="text-sm text-[#1A3C34]/70">{card.level}</p>
-              <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 font-mono text-xs text-[#1A3C34]">
+              <p className="font-semibold text-[#203337]">{card.name}</p>
+              <p className="text-sm text-[#203337]/70">{card.level}</p>
+              <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 font-mono text-xs text-[#203337]">
                 <ScanLine className="h-3 w-3" /> {card.studentNumber}
               </p>
             </div>

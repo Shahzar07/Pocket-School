@@ -16,7 +16,7 @@ const FEED: AutomationEvent[] = [
 export default function AutomationPreview() {
   const [settings, setSettings] = useState(defaultAutomation());
   return (
-    <main className="min-h-screen bg-[#F6F1E7] px-5 py-10 text-[#1A3C34]">
+    <main className="min-h-screen bg-[#F6F1E7] px-5 py-10 text-[#203337]">
       <div className="mx-auto max-w-5xl">
         <AutomationPanel
           settings={settings}

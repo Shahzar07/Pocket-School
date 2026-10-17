@@ -86,7 +86,7 @@ export function SignupControls() {
         {hold('holdMarketplace', 'Hold marketplace course publishing')}
         {hold('holdFreeEmail', 'Hold free-email domains above the seat limit')}
       </div>
-      <button type="button" className="mt-4 h-11 rounded-full bg-[#1A3C34] px-5 text-sm font-semibold text-white disabled:opacity-60" disabled={busy} onClick={() => void save()}>
+      <button type="button" className="mt-4 h-11 rounded-full bg-[#203337] px-5 text-sm font-semibold text-white disabled:opacity-60" disabled={busy} onClick={() => void save()}>
         {busy ? 'Saving…' : 'Save approval mode'}
       </button>
       <h3 className="mt-6 text-sm font-semibold">Auto-activated institutions</h3>

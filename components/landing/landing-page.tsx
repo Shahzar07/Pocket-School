@@ -563,7 +563,7 @@ export function LandingPage() {
             <a className="text-sm font-semibold text-primary" href={DEMO}>{t('landing.schools.email')}</a>
             <a
               href="#demo"
-              className="inline-flex h-11 items-center justify-center rounded-full border border-[var(--ps-on-amber)] bg-[var(--ps-amber)] px-5 text-sm font-semibold text-[var(--ps-on-amber)] shadow-[0_8px_22px_var(--ps-glow)]"
+              className="inline-flex h-11 items-center justify-center rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-5 text-sm font-semibold text-[var(--ps-cyan-ink)] shadow-[0_8px_22px_var(--ps-glow)]"
             >
               {t('landing.schools.demo')}
             </a>
@@ -648,7 +648,7 @@ export function LandingPage() {
                   <div className="flex items-center justify-between gap-3">
                     <h3 className="text-xl font-semibold">{t(`landing.pricing.${card.name}`)}</h3>
                     {card.popular ? (
-                      <span className="rounded-full border border-[var(--ps-on-amber)] bg-[var(--ps-amber)] px-3 py-1 text-xs font-semibold text-[var(--ps-on-amber)]">
+                      <span className="rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-3 py-1 text-xs font-semibold text-[var(--ps-cyan-ink)]">
                         {t('landing.pricing.popular')}
                       </span>
                     ) : null}
@@ -674,7 +674,7 @@ export function LandingPage() {
                   </ul>
                   <Link
                     href={card.id === 'preview' ? '/courses' : '/pricing'}
-                    className="mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--ps-on-amber)] bg-[var(--ps-amber)] px-4 text-sm font-semibold text-[var(--ps-on-amber)] shadow-[0_8px_22px_var(--ps-glow)]"
+                    className="mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-4 text-sm font-semibold text-[var(--ps-cyan-ink)] shadow-[0_8px_22px_var(--ps-glow)]"
                   >
                     {card.id === 'preview' ? t('landing.pricing.explore') : t('landing.pricing.view')}
                     <ArrowRight size={14} aria-hidden />

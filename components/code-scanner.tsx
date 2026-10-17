@@ -53,7 +53,7 @@ export function CodeScanner({ onCode, onClose }: { onCode: (value: string) => vo
   }, []);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#1A3C34]/15 bg-[#102820] text-white">
+    <div className="overflow-hidden rounded-2xl border border-[#203337]/15 bg-[#102820] text-white">
       <video ref={videoRef} className="aspect-video w-full bg-black object-cover" muted playsInline />
       <div className="flex items-center justify-between gap-3 px-3 py-2">
         <p className="text-xs text-white/70">{error || 'Point the camera at the student QR code.'}</p>

@@ -168,7 +168,7 @@ export default function HelpdeskPage() {
 
       {!isAdmin && (
         <section className="rounded-3xl border border-border bg-card p-5">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8922A]">ET</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E6A83]">ET</p>
           <h2 className="mt-1 font-heading text-2xl">Ask a common question</h2>
           <form className="mt-3 flex flex-col gap-3 sm:flex-row" onSubmit={(event) => {
             event.preventDefault();

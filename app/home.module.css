@@ -58,9 +58,9 @@
 }
 
 .primary {
-  background: var(--ps-amber);
-  color: var(--ps-on-amber);
-  border: 1px solid var(--ps-on-amber);
+  background: var(--ps-cyan);
+  color: var(--ps-cyan-ink);
+  border: 1px solid var(--ps-cyan-border);
   box-shadow: 0 10px 24px var(--ps-glow);
 }
 

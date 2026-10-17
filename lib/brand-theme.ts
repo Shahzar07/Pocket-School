@@ -16,8 +16,8 @@ export const BRAND = {
   blueDeep: '#1E6A83',
   /** Bright stop. Use ink text on it. */
   blueBright: '#6FBBCE',
-  /** Warning and accent. Use ink text on it. */
-  amber: '#E2AF4D',
+  /** Cyan fill. Use ink text on it, with a brand-blue border. */
+  amber: '#3FE0D0',
   /** Danger. */
   coral: '#D0553F',
   /** Success. */

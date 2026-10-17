@@ -37,7 +37,7 @@ export default function DestinationsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  if (!institutionId) return <p className="p-6 text-sm text-[#1A3C34]">This page opens once your account is tied to an academy.</p>;
+  if (!institutionId) return <p className="p-6 text-sm text-[#203337]">This page opens once your account is tied to an academy.</p>;
 
   return (
     <DashPage className="max-w-5xl">
@@ -48,7 +48,7 @@ export default function DestinationsPage() {
       />
       <DestinationBoardView board={board} />
       {requests.length > 0 && (
-        <section className="mt-6 rounded-[28px] border border-[#1A3C34]/10 bg-white p-6 text-[#1A3C34]">
+        <section className="mt-6 rounded-[28px] border border-[#203337]/10 bg-white p-6 text-[#203337]">
           <h2 className="font-heading text-2xl">Verification requests</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {requests.map((item) => (

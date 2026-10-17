@@ -36,8 +36,8 @@ export default function InstitutionOnboardingPreview() {
                 customDomain: 'learn.rochfords.example',
                 branding: {
                   displayName: 'Rochfords',
-                  primaryColor: '#1A3C34',
-                  secondaryColor: '#C8922A',
+                  primaryColor: '#203337',
+                  secondaryColor: '#1E6A83',
                   loginHeadline: 'Welcome back to Rochfords',
                   loginBody: 'Students, teachers, and institution admins sign in here.',
                 },

@@ -123,7 +123,7 @@ export function HomeView({
             New here? The onboarding course walks through these tiles. Start with the three tasks above.
           </p>
           <div className="flex gap-2">
-            <Link href="/onboarding" className="inline-flex min-h-12 items-center rounded-full border border-[var(--ps-on-amber)] bg-[var(--ps-amber)] px-4 text-sm font-semibold text-[var(--ps-on-amber)] shadow-[0_8px_22px_var(--ps-glow)]">
+            <Link href="/onboarding" className="inline-flex min-h-12 items-center rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-4 text-sm font-semibold text-[var(--ps-cyan-ink)] shadow-[0_8px_22px_var(--ps-glow)]">
               Open the course
             </Link>
             <button type="button" onClick={onDismissCoach} className="inline-flex min-h-12 items-center rounded-full border border-border px-4 text-sm font-semibold">

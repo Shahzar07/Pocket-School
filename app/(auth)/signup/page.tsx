@@ -651,7 +651,7 @@ export default function SignupPage() {
           </div>
 
           {joinSlug && (
-            <p className="mb-4 rounded-2xl border border-[#C8922A]/50 bg-[#1A3C34] px-4 py-3 text-sm leading-relaxed text-[#F8E7C4]">
+            <p className="mb-4 rounded-2xl border border-[#1E6A83]/50 bg-[#203337] px-4 py-3 text-sm leading-relaxed text-[#E9F7FA]">
               This account joins your academy. Everyone else signs up as an individual. Progress stays with the account.
             </p>
           )}
@@ -790,8 +790,8 @@ export default function SignupPage() {
                   {t('signup.childHint')}
                 </p>
                 {childEmail.trim() && (
-                  <div className="space-y-3 rounded-2xl border border-[#C8922A]/40 bg-[#1A3C34] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-[#F8E7C4]">Child details</p>
+                  <div className="space-y-3 rounded-2xl border border-[#1E6A83]/40 bg-[#203337] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#E9F7FA]">Child details</p>
                     <GenderSelect tone="inverse" id="child-gender" value={childGender} onChange={setChildGender} disabled={loading} />
                     <LevelNameSelect tone="inverse" id="child-level" value={childLevel} onChange={setChildLevel} disabled={loading} />
                     <div className="space-y-1.5">

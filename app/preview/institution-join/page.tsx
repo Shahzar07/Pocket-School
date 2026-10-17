@@ -20,8 +20,8 @@ export default function InstitutionJoinPreview() {
     <InstitutionJoinScreen
       schoolName="North Academy"
       slug="north"
-      primaryColor="#1A3C34"
-      secondaryColor="#C8922A"
+      primaryColor="#203337"
+      secondaryColor="#1E6A83"
       result={result}
       initial={{ role: 'student', name: 'Ada Lovelace', email: 'ada@school.edu.my', dob: '2012-04-01', studentId: 'S-14', inviteCode: 'IGCSE1' }}
       onCheck={(input: JoinAttempt) => {

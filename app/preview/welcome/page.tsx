@@ -16,7 +16,7 @@ const current = state.lessons.find((lesson) => !lesson.done) ?? state.lessons[0]
 /** Static welcome course so the card, stars, and a ticked task can be reviewed without Firebase. */
 export default function WelcomePreview() {
   return (
-    <main className="min-h-screen bg-[#F6F1E7] px-5 py-8 text-[#1A3C34]">
+    <main className="min-h-screen bg-[#F6F1E7] px-5 py-8 text-[#203337]">
       <div className="mx-auto max-w-3xl space-y-4">
         <WelcomeResumeCard state={state} onSkip={() => undefined} />
         <WelcomeLessonCard lesson={current} selected={2} note="That check is in once you choose it. The Sparks page is already ticked." />

@@ -22,8 +22,8 @@ export function BrandedLoginStep({
 }) {
   const branding = institution.branding ?? {};
   const [logoUrl, setLogoUrl] = useState(branding.logoUrl ?? '');
-  const [primary, setPrimary] = useState(branding.primaryColor || '#1A3C34');
-  const [secondary, setSecondary] = useState(branding.secondaryColor || '#C8922A');
+  const [primary, setPrimary] = useState(branding.primaryColor || '#203337');
+  const [secondary, setSecondary] = useState(branding.secondaryColor || '#1E6A83');
   const [slug, setSlug] = useState(institution.subdomain || (preview ? 'rochfords' : ''));
   const [domain, setDomain] = useState(institution.customDomain || (preview ? 'learn.rochfords.example' : ''));
   const [published, setPublished] = useState(branding.loginPublished === true || (preview && Boolean(institution.subdomain)));
@@ -180,11 +180,11 @@ export function BrandedLoginStep({
         </label>
         <label className="block text-sm font-medium">
           Primary colour
-          <input aria-label="Primary colour" type="color" value={/^#[0-9a-fA-F]{6}$/.test(primary) ? primary : '#1A3C34'} onChange={(event) => setPrimary(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-border bg-background" />
+          <input aria-label="Primary colour" type="color" value={/^#[0-9a-fA-F]{6}$/.test(primary) ? primary : '#203337'} onChange={(event) => setPrimary(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-border bg-background" />
         </label>
         <label className="block text-sm font-medium">
           Secondary colour
-          <input aria-label="Secondary colour" type="color" value={/^#[0-9a-fA-F]{6}$/.test(secondary) ? secondary : '#C8922A'} onChange={(event) => setSecondary(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-border bg-background" />
+          <input aria-label="Secondary colour" type="color" value={/^#[0-9a-fA-F]{6}$/.test(secondary) ? secondary : '#1E6A83'} onChange={(event) => setSecondary(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-border bg-background" />
         </label>
         <label className="block text-sm font-medium sm:col-span-2">
           Address
@@ -227,9 +227,9 @@ export function BrandedLoginStep({
           </button>
         </div>
       )}
-      {error && <p role="alert" className="rounded-xl bg-[#F8E7C4] px-3 py-2 text-sm">{error}</p>}
+      {error && <p role="alert" className="rounded-xl bg-[#E9F7FA] px-3 py-2 text-sm">{error}</p>}
       <div className="flex flex-wrap items-center gap-3">
-        <button type="button" className="h-11 rounded-full bg-[#1A3C34] px-5 text-sm font-semibold text-white disabled:opacity-60" disabled={busy} onClick={() => void save(published)}>
+        <button type="button" className="h-11 rounded-full bg-[#203337] px-5 text-sm font-semibold text-white disabled:opacity-60" disabled={busy} onClick={() => void save(published)}>
           Save login page
         </button>
         <label className="inline-flex items-center gap-2 text-sm font-semibold">

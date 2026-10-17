@@ -9,7 +9,7 @@ export const BRAND = {
   cyan: '#3FE0D0',
   /** Text on a light surface, including the label on a cyan button. */
   ink: '#203337',
-  amber: '#E2AF4D',
+  amber: '#3FE0D0',
   coral: '#D0553F',
   good: '#1F8A70',
   mint: '#E5F6EF',

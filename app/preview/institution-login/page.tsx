@@ -8,8 +8,8 @@ export default function InstitutionLoginPreview() {
     <InstitutionLoginScreen
       schoolName="North Academy"
       logoUrl={null}
-      primaryColor="#1A3C34"
-      secondaryColor="#C8922A"
+      primaryColor="#203337"
+      secondaryColor="#1E6A83"
       headline="Welcome back to North Academy"
       body="Students, teachers, and institution admins sign in here."
       showPoweredBy

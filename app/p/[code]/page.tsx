@@ -15,9 +15,9 @@ export default function PublicAlumniPage({ params }: { params: Promise<{ code: s
   }, [code]);
 
   return (
-    <main className="min-h-screen bg-[#F6F1E7] px-5 py-12 text-[#1A3C34]">
-      <article className="mx-auto max-w-xl rounded-[28px] border border-[#1A3C34]/10 bg-white p-8">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8922A]">Poket School alumni</p>
+    <main className="min-h-screen bg-[#F6F1E7] px-5 py-12 text-[#203337]">
+      <article className="mx-auto max-w-xl rounded-[28px] border border-[#203337]/10 bg-white p-8">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E6A83]">Poket School alumni</p>
         {profile === undefined ? <p className="mt-4 text-sm">Opening this record…</p> : null}
         {profile === null ? <p className="mt-4 text-sm leading-relaxed">This profile is private. Certificate pages stay available from each certificate QR.</p> : null}
         {profile ? (

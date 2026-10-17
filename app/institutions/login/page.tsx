@@ -115,7 +115,7 @@ export default function InstitutionAdminLoginPage() {
       title={step === 'code' ? 'Enter your email code' : 'Institution admin sign-in'}
       lede="This door is for the person who registered the academy. A code is sent to the work email before the academy opens."
     >
-      {error && <p role="alert" className="mb-4 rounded-2xl bg-[#F8E7C4] px-4 py-3 text-sm">{error}</p>}
+      {error && <p role="alert" className="mb-4 rounded-2xl bg-[#E9F7FA] px-4 py-3 text-sm">{error}</p>}
       {step === 'credentials' ? (
         <form
           className="space-y-4"
@@ -149,7 +149,7 @@ export default function InstitutionAdminLoginPage() {
           <button type="submit" className={journeyButton} disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
         </form>
       )}
-      <p className="mt-6 text-sm text-[#1A3C34]/70">
+      <p className="mt-6 text-sm text-[#203337]/70">
         Students and teachers use the <Link href="/login" className="font-semibold underline">main Poket School login</Link>.
         {' '}New academy? <Link href="/institutions/register" className="font-semibold underline">For Schools & Organisations</Link>.
       </p>

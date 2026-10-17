@@ -65,7 +65,7 @@ export function WorldMap({
   const path = useMemo(() => geoPath(projection), [projection]);
 
   if (failed) {
-    return <p className="rounded-2xl bg-[#F6F1E7] px-4 py-8 text-sm text-[#1A3C34]">The map could not load. Country totals are in the table below.</p>;
+    return <p className="rounded-2xl bg-[#F6F1E7] px-4 py-8 text-sm text-[#203337]">The map could not load. Country totals are in the table below.</p>;
   }
 
   return (
@@ -80,7 +80,7 @@ export function WorldMap({
           <path
             key={item.code}
             d={outline}
-            fill={count ? mix('#F8E7C4', '#C8922A', Math.min(1, count / max)) : '#1A3C34'}
+            fill={count ? mix('#E9F7FA', '#1E6A83', Math.min(1, count / max)) : '#203337'}
             stroke={active ? '#3C8DFF' : '#0B1F1A'}
             strokeWidth={active ? 1.4 : 0.4}
             className="cursor-pointer"

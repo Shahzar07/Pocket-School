@@ -97,7 +97,7 @@
     --blue-deep: #1E6A83;
     --blue-bright: #6FBBCE;
     --brand-primary: #2786A4;
-    --amber: #E2AF4D;
+    --amber: #3FE0D0;
     --coral: #D0553F;
     --good: #1F8A70;
     --bg: #F4F6F6;
@@ -147,13 +147,13 @@
     --ps-cyan-ink: #203337;
     --ps-cyan-border: #1E6A83;
     /* Primary buttons. Ink on the fill is about 6.7:1. White on it is about 2:1. */
-    --ps-amber: #E2AF4D;
-    --ps-on-amber: #3D2C08;
-    --ps-amber-fill: #E2AF4D;
-    --ps-amber-soft: rgba(226, 175, 77, 0.18);
-    --ps-glow: rgba(226, 175, 77, 0.45);
+    --ps-amber: #3FE0D0;
+    --ps-on-amber: #203337;
+    --ps-amber-fill: #3FE0D0;
+    --ps-amber-soft: rgba(63, 224, 208, 0.15);
+    --ps-glow: rgba(63, 224, 208, 0.45);
     --ps-blob: rgba(111, 187, 206, 0.55);
-    --ps-blob-warm: rgba(226, 175, 77, 0.40);
+    --ps-blob-warm: rgba(63, 224, 208, 0.40);
     --ps-glass: rgba(255, 255, 255, 0.78);
     --ps-card-edge: #D5E6EA;
     /* Dashboard accents. Inks are AA text on white; on-fill is AA on the ink.
@@ -277,13 +277,13 @@
     --ps-cyan-soft: rgba(63, 224, 208, 0.15);
     --ps-cyan-ink: #203337;
     --ps-cyan-border: #1E6A83;
-    --ps-amber: #E2AF4D;
-    --ps-on-amber: #3D2C08;
-    --ps-amber-fill: #E2AF4D;
-    --ps-amber-soft: rgba(226, 175, 77, 0.22);
+    --ps-amber: #3FE0D0;
+    --ps-on-amber: #203337;
+    --ps-amber-fill: #3FE0D0;
+    --ps-amber-soft: rgba(63, 224, 208, 0.15);
     --ps-glow: rgba(111, 187, 206, 0.55);
     --ps-blob: rgba(39, 134, 164, 0.65);
-    --ps-blob-warm: rgba(226, 175, 77, 0.32);
+    --ps-blob-warm: rgba(63, 224, 208, 0.32);
     --ps-glass: rgba(18, 30, 34, 0.72);
     --ps-card-edge: #2A4E5A;
     --shadow-card: 0 0 0 1px #2A4E5A, 0 18px 42px rgba(111, 187, 206, 0.28);

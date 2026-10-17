@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from 'react';
 
-const CHIP = ['#C8922A', '#E36A4F', '#3C8DFF', '#F8E7C4', '#7DCEA0'];
-const INK = ['#1A3C34', '#1A3C34', '#F8E7C4', '#1A3C34', '#1A3C34'];
+const CHIP = ['#1E6A83', '#E36A4F', '#3C8DFF', '#E9F7FA', '#7DCEA0'];
+const INK = ['#203337', '#203337', '#E9F7FA', '#203337', '#203337'];
 
 export function SchoolMarquee({ names }: { names: readonly string[] }) {
   if (names.length === 0) return null;
   const loop = [...names, ...names];
   return (
-    <section aria-label="Students from these schools learn with Poket School" className="overflow-hidden bg-[#1A3C34] text-[#F8E7C4]">
-      <p className="px-4 pt-5 text-center text-[11px] font-bold uppercase tracking-[0.22em] text-[#C8922A]">
+    <section aria-label="Students from these schools learn with Poket School" className="overflow-hidden bg-[#203337] text-[#E9F7FA]">
+      <p className="px-4 pt-5 text-center text-[11px] font-bold uppercase tracking-[0.22em] text-[#1E6A83]">
         Students from these schools learn with Poket School
       </p>
       <div className="relative mt-3 pb-5">

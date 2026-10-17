@@ -59,9 +59,9 @@ export default function PublicPortfolioPage({ params }: { params: Promise<{ code
   }, [profile]);
 
   return (
-    <main className="min-h-screen bg-[#F6F1E7] px-5 py-12 text-[#1A3C34]">
+    <main className="min-h-screen bg-[#F6F1E7] px-5 py-12 text-[#203337]">
       <article className="mx-auto max-w-3xl">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8922A]">Poket School portfolio</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E6A83]">Poket School portfolio</p>
         {profile === undefined ? <p className="mt-4 text-sm">Opening this portfolio…</p> : null}
         {profile === null ? <p className="mt-4 text-sm leading-relaxed">This portfolio is private. A learner under 18 stays private until a parent approves sharing.</p> : null}
         {profile && doc ? (
@@ -78,7 +78,7 @@ export default function PublicPortfolioPage({ params }: { params: Promise<{ code
               ))}
             </ul>
             <div className="mt-6 inline-flex items-center gap-3 rounded-[28px] bg-white px-4 py-3">
-              <QRCodeSVG value={profile.qrUrl} size={88} fgColor="#1A3C34" bgColor="#ffffff" />
+              <QRCodeSVG value={profile.qrUrl} size={88} fgColor="#203337" bgColor="#ffffff" />
               <p className="text-xs">{profile.qrUrl}</p>
             </div>
           </>

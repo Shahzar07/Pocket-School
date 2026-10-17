@@ -57,8 +57,8 @@ export function InstitutionLoginScreen({
   /** Branded registration for students and parents of this academy. */
   joinHref?: string;
 }) {
-  const accent = /^#[0-9a-fA-F]{6}$/.test(primaryColor ?? '') ? primaryColor ?? '#1A3C34' : '#1A3C34';
-  const gold = /^#[0-9a-fA-F]{6}$/.test(secondaryColor ?? '') ? secondaryColor ?? '#C8922A' : '#C8922A';
+  const accent = /^#[0-9a-fA-F]{6}$/.test(primaryColor ?? '') ? primaryColor ?? '#203337' : '#203337';
+  const gold = /^#[0-9a-fA-F]{6}$/.test(secondaryColor ?? '') ? secondaryColor ?? '#1E6A83' : '#1E6A83';
   const ink = accentInk(accent);
   const logo = displayLogoUrl(logoUrl);
   const [tab, setTab] = useState<InstitutionLoginTab>('student');
@@ -67,12 +67,12 @@ export function InstitutionLoginScreen({
   const [code, setCode] = useState('');
 
   return (
-    <main className={`${embedded ? 'bg-[#F6F1E7]' : 'min-h-screen'} text-[#1A3C34]`} style={{ fontFamily: 'var(--font-institution), inherit' }}>
+    <main className={`${embedded ? 'bg-[#F6F1E7]' : 'min-h-screen'} text-[#203337]`} style={{ fontFamily: 'var(--font-institution), inherit' }}>
       <div className={`mx-auto flex max-w-lg flex-col justify-center px-5 py-12 ${embedded ? '' : 'min-h-screen'}`}>
-        <section className="rounded-[28px] border border-[#1A3C34]/10 bg-white p-6 shadow-[0_24px_60px_-36px_rgba(26,60,52,0.45)] sm:p-8">
+        <section className="rounded-[28px] border border-[#203337]/10 bg-white p-6 shadow-[0_24px_60px_-36px_rgba(26,60,52,0.45)] sm:p-8">
           <div className="flex items-center gap-3">
             {logo ? (
-              <img src={logo} alt="" className="h-14 w-14 rounded-2xl border border-[#1A3C34]/10 bg-[#F6F1E7] object-contain p-1.5" />
+              <img src={logo} alt="" className="h-14 w-14 rounded-2xl border border-[#203337]/10 bg-[#F6F1E7] object-contain p-1.5" />
             ) : (
               <span className="flex h-14 w-14 items-center justify-center rounded-2xl text-lg font-bold" style={{ background: accent, color: ink }}>
                 {(schoolName || 'P').slice(0, 1).toUpperCase()}
@@ -84,7 +84,7 @@ export function InstitutionLoginScreen({
             </div>
           </div>
 
-          {status === 'loading' && <p className="mt-8 text-sm text-[#1A3C34]/70">Opening this academy…</p>}
+          {status === 'loading' && <p className="mt-8 text-sm text-[#203337]/70">Opening this academy…</p>}
 
           {status === 'missing' && (
             <div className="mt-8 space-y-3">
@@ -117,7 +117,7 @@ export function InstitutionLoginScreen({
             >
               <div>
                 <h2 className="font-heading text-xl tracking-tight">{headline}</h2>
-                <p className="mt-1 text-sm text-[#1A3C34]/70">{body}</p>
+                <p className="mt-1 text-sm text-[#203337]/70">{body}</p>
               </div>
               <div className="grid grid-cols-3 gap-1 rounded-2xl bg-[#F6F1E7] p-1" role="tablist" aria-label="Sign in as">
                 {INSTITUTION_LOGIN_TABS.map((item) => {
@@ -130,7 +130,7 @@ export function InstitutionLoginScreen({
                       aria-selected={selected}
                       onClick={() => setTab(item.id)}
                       className="rounded-xl px-2 py-2 text-center text-xs font-semibold leading-tight"
-                      style={selected ? { background: accent, color: ink } : { color: '#1A3C34' }}
+                      style={selected ? { background: accent, color: ink } : { color: '#203337' }}
                     >
                       {item.label}
                     </button>
@@ -138,31 +138,31 @@ export function InstitutionLoginScreen({
                 })}
               </div>
               {tab === 'institution_admin' && (
-                <p className="text-xs text-[#1A3C34]/70">Institution admins confirm with a code sent to their email.</p>
+                <p className="text-xs text-[#203337]/70">Institution admins confirm with a code sent to their email.</p>
               )}
               {signupPolicy === 'invite' && (
-                <p className="text-xs text-[#1A3C34]/70">This academy adds people by invitation.</p>
+                <p className="text-xs text-[#203337]/70">This academy adds people by invitation.</p>
               )}
               {signupPolicy === 'domain' && (
-                <p className="text-xs text-[#1A3C34]/70">New accounts use an email on an allowed academy domain.</p>
+                <p className="text-xs text-[#203337]/70">New accounts use an email on an allowed academy domain.</p>
               )}
               {refused && (
-                <div role="alert" className="rounded-2xl bg-[#F8E7C4] px-4 py-3 text-sm leading-relaxed">
+                <div role="alert" className="rounded-2xl bg-[#E9F7FA] px-4 py-3 text-sm leading-relaxed">
                   <p>{institutionLoginRefusal(schoolName)}</p>
                   <a href={PLATFORM_LOGIN_URL} className="mt-2 inline-flex font-semibold underline">Sign in at Poket School</a>
                 </div>
               )}
-              {error && !refused && <p role="alert" className="rounded-2xl bg-[#F8E7C4] px-4 py-3 text-sm">{error}</p>}
+              {error && !refused && <p role="alert" className="rounded-2xl bg-[#E9F7FA] px-4 py-3 text-sm">{error}</p>}
               <button
                 type="button"
                 onClick={() => onGoogle(tab)}
                 disabled={busy}
-                className="flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-[#1A3C34]/15 text-sm font-semibold disabled:opacity-60"
+                className="flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-[#203337]/15 text-sm font-semibold disabled:opacity-60"
               >
                 <GoogleMark />
                 Continue with Google
               </button>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#1A3C34]/60">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[#203337]/60">
                 Email
                 <input
                   type="email"
@@ -172,10 +172,10 @@ export function InstitutionLoginScreen({
                   onChange={(event) => setEmail(event.target.value)}
                   disabled={busy}
                   placeholder="name@school.edu"
-                  className="mt-1 h-12 w-full rounded-2xl border border-[#1A3C34]/15 bg-[#F6F1E7]/60 px-4 text-base font-normal normal-case tracking-normal text-[#1A3C34]"
+                  className="mt-1 h-12 w-full rounded-2xl border border-[#203337]/15 bg-[#F6F1E7]/60 px-4 text-base font-normal normal-case tracking-normal text-[#203337]"
                 />
               </label>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#1A3C34]/60">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[#203337]/60">
                 Password
                 <input
                   type="password"
@@ -184,7 +184,7 @@ export function InstitutionLoginScreen({
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   disabled={busy}
-                  className="mt-1 h-12 w-full rounded-2xl border border-[#1A3C34]/15 bg-[#F6F1E7]/60 px-4 text-base font-normal normal-case tracking-normal"
+                  className="mt-1 h-12 w-full rounded-2xl border border-[#203337]/15 bg-[#F6F1E7]/60 px-4 text-base font-normal normal-case tracking-normal"
                 />
               </label>
               <button
@@ -196,7 +196,7 @@ export function InstitutionLoginScreen({
                 {busy ? 'Signing in…' : 'Sign in'}
               </button>
               {joinHref && (
-                <a href={joinHref} className="flex h-12 w-full items-center justify-center rounded-2xl border border-[#1A3C34]/15 text-sm font-semibold">
+                <a href={joinHref} className="flex h-12 w-full items-center justify-center rounded-2xl border border-[#203337]/15 text-sm font-semibold">
                   Sign up with {schoolName}
                 </a>
               )}
@@ -213,12 +213,12 @@ export function InstitutionLoginScreen({
             >
               <div>
                 <h2 className="font-heading text-xl tracking-tight">Check your email</h2>
-                <p className="mt-1 text-sm text-[#1A3C34]/70">
-                  We sent a 6-digit code to <span className="font-semibold text-[#1A3C34]">{emailForCode}</span>.
+                <p className="mt-1 text-sm text-[#203337]/70">
+                  We sent a 6-digit code to <span className="font-semibold text-[#203337]">{emailForCode}</span>.
                 </p>
               </div>
-              {error && <p role="alert" className="rounded-2xl bg-[#F8E7C4] px-4 py-3 text-sm">{error}</p>}
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#1A3C34]/60">
+              {error && <p role="alert" className="rounded-2xl bg-[#E9F7FA] px-4 py-3 text-sm">{error}</p>}
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[#203337]/60">
                 Email code
                 <input
                   inputMode="numeric"
@@ -228,7 +228,7 @@ export function InstitutionLoginScreen({
                   onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
                   disabled={busy}
                   placeholder="123456"
-                  className="mt-1 h-14 w-full rounded-2xl border border-[#1A3C34]/15 bg-[#F6F1E7]/60 text-center text-2xl font-bold tracking-[0.4em]"
+                  className="mt-1 h-14 w-full rounded-2xl border border-[#203337]/15 bg-[#F6F1E7]/60 text-center text-2xl font-bold tracking-[0.4em]"
                 />
               </label>
               <button
@@ -242,14 +242,14 @@ export function InstitutionLoginScreen({
               <button type="button" onClick={onResend} disabled={busy} className="w-full text-xs font-semibold underline" style={{ color: gold }}>
                 Send a new code
               </button>
-              <button type="button" onClick={onCancel} disabled={busy} className="w-full text-sm text-[#1A3C34]/60">
+              <button type="button" onClick={onCancel} disabled={busy} className="w-full text-sm text-[#203337]/60">
                 Use a different account
               </button>
             </form>
           )}
 
           {showPoweredBy && status !== 'loading' && (
-            <p className="mt-8 text-center text-xs text-[#1A3C34]/55">Powered by Poket School</p>
+            <p className="mt-8 text-center text-xs text-[#203337]/55">Powered by Poket School</p>
           )}
         </section>
       </div>

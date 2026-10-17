@@ -119,12 +119,12 @@ test('cyan tokens match the shared accent and keep weak pairs off text', () => {
   assert.equal(decl(light, '--ps-cyan-ink'), '#203337');
   assert.equal(decl(light, '--ps-cyan-border'), '#1E6A83');
   assert.match(light, /--ps-cyan-soft:\s*rgba\(63,\s*224,\s*208,\s*0\.15\)/);
-  assert.equal(decl(light, '--ps-amber'), '#E2AF4D');
-  assert.equal(decl(light, '--ps-on-amber'), '#3D2C08');
+  assert.equal(decl(light, '--ps-amber'), '#3FE0D0');
+  assert.equal(decl(light, '--ps-on-amber'), '#203337');
   assert.equal(decl(light, '--ps-card-edge'), '#D5E6EA');
-  assert.match(light, /--ps-glow:\s*rgba\(226,\s*175,\s*77,\s*0\.45\)/);
+  assert.match(light, /--ps-glow:\s*rgba\(63,\s*224,\s*208,\s*0\.45\)/);
   assert.match(light, /--ps-blob:\s*rgba\(111,\s*187,\s*206,\s*0\.55\)/);
-  assert.match(light, /--ps-blob-warm:\s*rgba\(226,\s*175,\s*77,\s*0\.40\)/);
+  assert.match(light, /--ps-blob-warm:\s*rgba\(63,\s*224,\s*208,\s*0\.40\)/);
   assert.match(light, /--ps-glass:\s*rgba\(255,\s*255,\s*255,\s*0\.78\)/);
 
   assert.equal(decl(dark, '--ps-cyan'), '#3FE0D0');
@@ -132,8 +132,8 @@ test('cyan tokens match the shared accent and keep weak pairs off text', () => {
   assert.equal(decl(dark, '--ps-cyan-text'), '#3FE0D0');
   assert.equal(decl(dark, '--ps-cyan-ink'), '#203337');
   assert.equal(decl(dark, '--ps-cyan-border'), '#1E6A83');
-  assert.equal(decl(dark, '--ps-amber'), '#E2AF4D');
-  assert.equal(decl(dark, '--ps-on-amber'), '#3D2C08');
+  assert.equal(decl(dark, '--ps-amber'), '#3FE0D0');
+  assert.equal(decl(dark, '--ps-on-amber'), '#203337');
   assert.equal(decl(dark, '--ps-card-edge'), '#2A4E5A');
   assert.match(dark, /--ps-glow:\s*rgba\(111,\s*187,\s*206,\s*0\.55\)/);
   assert.match(dark, /--ps-glass:\s*rgba\(18,\s*30,\s*34,\s*0\.72\)/);
@@ -147,7 +147,7 @@ test('cyan tokens match the shared accent and keep weak pairs off text', () => {
     ['#3FE0D0', '#121E22', 'cyan accent on a dark card'],
     ['#3FE0D0', '#203337', 'cyan accent on institution ink'],
     ['#14B8A6', '#0B1417', 'cyan strong on the dark canvas'],
-    ['#3D2C08', '#E2AF4D', 'ink on the amber button'],
+    ['#203337', '#3FE0D0', 'ink on the cyan button'],
   ];
   for (const [foreground, background, label] of required) {
     const ratio = contrast(foreground, background);
@@ -161,7 +161,7 @@ test('cyan tokens match the shared accent and keep weak pairs off text', () => {
     ['#3FE0D0', '#F4F6F6', 'cyan fill on the page'],
     ['#1E6A83', '#3FE0D0', 'brand blue on the cyan fill'],
     ['#1E6A83', '#0B1417', 'brand blue on the dark canvas'],
-    ['#FFFFFF', '#E2AF4D', 'white on the amber button'],
+    ['#FFFFFF', '#3FE0D0', 'white on the cyan button'],
   ];
   for (const [foreground, background, label] of forbidden) {
     const ratio = contrast(foreground, background);
