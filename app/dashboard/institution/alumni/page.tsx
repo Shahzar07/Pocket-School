@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { GraduationDesk } from '@/components/alumni/graduation-panels';
 import { InstitutionNetworkDesk, type NetworkDeskData } from '@/components/alumni/network-panels';
+import { InstitutionYearbookDesk } from '@/components/alumni/yearbook-panels';
 import { AlumniBoard } from '@/components/alumni/record-panels';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { authedFetch } from '@/lib/api-client';
@@ -164,6 +165,7 @@ export default function InstitutionAlumniPage() {
             .catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not approve that match.'));
         }}
       />
+      <InstitutionYearbookDesk institutionId={institutionId} />
     </div>
   );
 }

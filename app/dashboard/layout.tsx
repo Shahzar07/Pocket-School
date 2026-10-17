@@ -96,6 +96,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/student/billing', icon: CreditCard, labelKey: 'nav.billing' },
       { href: '/dashboard/student/academy', icon: GraduationCap, labelKey: 'nav.academy', label: 'My academy' },
       { href: '/dashboard/student/network', icon: Users, labelKey: 'nav.academy', label: 'Class network' },
+      { href: '/dashboard/student/yearbook', icon: BookOpen, labelKey: 'nav.academy', label: 'Yearbook' },
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
     ]},

@@ -195,6 +195,7 @@ export function isInstitutionJourneyPath(pathname: string): boolean {
     || path === '/preview/graduation'
     || path === '/preview/portfolio'
     || path === '/preview/alumni-network'
+    || path === '/preview/yearbook'
     || /^\/i\/[a-z0-9_-]+$/i.test(path)
     || /^\/i\/[a-z0-9_-]+\/join$/i.test(path)
     || /^\/i\/[a-z0-9_-]+\/explainer$/i.test(path);

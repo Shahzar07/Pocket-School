@@ -32,6 +32,7 @@ import { adminDb } from '../firebase-admin';
 import { notifyUser } from './device-push';
 import { sendInstitutionMail } from './institution-mail';
 import { recordStatedDestination } from './learner-record-store';
+import { ensureYearbookPage } from './yearbook-store';
 
 function text(value: unknown): string {
   return typeof value === 'string' ? value : '';
@@ -149,6 +150,15 @@ export async function rememberAttendance(input: {
     await memberRef.set({ studentId, joinedOn: leftOn, directoryName: '' });
     await groupRef.set({ memberCount: FieldValue.increment(1) }, { merge: true });
   }
+  await ensureYearbookPage({
+    institutionId,
+    studentId,
+    institutionName: clip(input.institutionName, 120) || 'Academy',
+    level,
+    className,
+    year,
+    leftOn,
+  });
   const alumniRef = adminDb().doc(`institutions/${institutionId}/alumni/${studentId}`);
   const alumni = await alumniRef.get();
   const profile = {
@@ -426,7 +436,40 @@ export async function moderateHeldPost(input: {
   if (!snap.exists || snap.get('status') !== 'held') return { error: 'That post is not waiting.' };
   const visible = input.release;
   const status = input.release ? 'released' : 'blocked';
-  if (snap.get('kind') === 'mentor') {
+  if (snap.get('kind') === 'yearbook') {
+    const bookId = safeId(text(snap.get('bookId')));
+    const signatureId = safeId(text(snap.get('signatureId')));
+    if (bookId && signatureId) {
+      await adminDb().doc(`institutions/${input.institutionId}/yearbooks/${bookId}/signatures/${signatureId}`).set({
+        visible,
+        queued: false,
+        decision: input.release ? 'allow' : 'block',
+      }, { merge: true });
+    }
+  } else if (snap.get('kind') === 'yearbook-memory') {
+    const bookId = safeId(text(snap.get('bookId')));
+    const memoryId = safeId(text(snap.get('memoryId')));
+    if (bookId && memoryId) {
+      await adminDb().doc(`institutions/${input.institutionId}/yearbooks/${bookId}/memories/${memoryId}`).set({
+        visible,
+        queued: false,
+      }, { merge: true });
+    }
+  } else if (snap.get('kind') === 'feed') {
+    const feedId = safeId(text(snap.get('feedId')));
+    if (feedId) {
+      await adminDb().doc(`alumni_feed/${feedId}`).set({ visible, queued: false }, { merge: true });
+    }
+  } else if (snap.get('kind') === 'feed-comment') {
+    const feedId = safeId(text(snap.get('feedId')));
+    const commentId = safeId(text(snap.get('commentId')));
+    if (feedId && commentId) {
+      await adminDb().doc(`alumni_feed/${feedId}/comments/${commentId}`).set({
+        visible,
+        queued: false,
+      }, { merge: true });
+    }
+  } else if (snap.get('kind') === 'mentor') {
     const messageId = text(snap.get('messageId'));
     const mentorshipId = text(snap.get('mentorshipId'));
     if (messageId && mentorshipId) {

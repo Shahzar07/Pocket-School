@@ -977,4 +977,66 @@ The mentor is an adult alumnus who opted in. The student is a current student of
 
 These are single-document reads, subcollections, or one-field queries. No composite index and no collection-group query. Rules still need an owner deploy. These rules are not deployed from this change. Mobile clients do not write seat counts.
 
+## Alumni yearbook and wall
+
+Each graduating class has one yearbook. The book id is the class group id, or the level cohort when there is no class name. Creating a page does not occupy a seat and does not change `seatCounted`, `seatFreed`, or `undoneOn`.
+
+## `institutions/{id}/yearbooks/{bookId}`
+
+| Field | Meaning |
+| --- | --- |
+| `institutionId`, `institutionName` | The academy |
+| `name` | Class or cohort label, such as Oak 2026 |
+| `cohort` | Four-digit graduating cohort, or empty |
+| `className`, `level` | The class the page was opened from |
+| `lockOn` | `YYYY-MM-DD`. Students can edit through this day. Default is 30 days after they leave |
+| `status` | `open` or `released` |
+| `template` | `forest`, `gold`, `coral`, or `blue` |
+| `principalMessage`, `teacherMessage` | Staff notes printed on the cover. Contact details are refused |
+| `releasedAt` | ISO time, set when the academy releases the book |
+
+`yearbooks/{bookId}/pages/{studentId}` is the student's page. The student writes `quote`, `mostLikely`, `clubs`, and `photo` (a boolean). The server fills achievements and destination from the existing record. The client does not write `status`, `parentApproved`, or achievement titles.
+
+`audiences` is one of `classmates`, `institution`, `alumni`, or `public` for each of `photo`, `name`, `className`, `quote`, `mostLikely`, `clubs`, `achievements`, and `destination`. The default is `classmates`. A wider audience includes the narrower ones. A field set to classmates stays off the public page.
+
+`status` is `draft`, `pending`, or `approved`. `parentApproved` is set only by a linked parent whose `childIds` contains the student. A student cannot set it. An under-18 page stays hidden from classmates, other alumni, and the public until the parent has agreed and the academy has approved it. The academy can still read the draft in order to approve it.
+
+`yearbooks/{bookId}/signatures/{id}` is a note or sticker on a classmate page or the class wall (`toId` `wall`). Fields: `fromId`, `fromName` (first name and last initial), `toId`, `body`, `sticker` (`star`, `leaf`, `gold`, `coral`, `blue`, or empty), `decision`, `visible`, `queued`, `at`. A minor's signature is held even when the safety filter would allow it. A blocked note is not stored. There is no direct message for anyone under 18.
+
+`yearbooks/{bookId}/memories/{id}` is the class timeline: `authorId`, `authorName`, `title`, `body`, `visible`, `queued`, `at`. A minor's memory is held.
+
+`yearbooks/{bookId}/gallery/{id}` is a class photo the academy adds: `caption`, `imageUrl` (https only, otherwise empty), `at`.
+
+Push for a released book and for a visible signature uses the existing device token store, preference `digest`, and the link `/dashboard/student/yearbook`. Push is skipped when that person's push consent is off.
+
+The printable PDF is built on the server. It does not fetch remote photos.
+
+## Alumni wall, map, and directory
+
+`alumni_feed/{id}` is one update for an academy. The list is `where('institutionId', '==', id)`. No composite index.
+
+| Field | Meaning |
+| --- | --- |
+| `institutionId`, `authorId`, `authorName` | Who posted, with a public name |
+| `kind` | `update`, `reunion`, `throwback`, or `achievement` |
+| `title`, `body` | The note. An achievement title must match a badge or certificate already on the record |
+| `visible`, `queued` | A minor's update is held. Hidden rows stay out of the feed |
+| `likeCount`, `rsvpCount` | Counts. RSVP is only for a reunion |
+| `at` | ISO time |
+
+Likes are `alumni_feed/{id}/likes/{uid}`. Comments are `comments/{id}` with `authorId`, `authorName`, `body`, `visible`, `queued`, and `at`. Reunion RSVPs are `rsvps/{uid}` with `going` and `at`. A reunion notifies alumni who still accept inbox or push.
+
+`alumni_directory/{institutionId}__{uid}` is the opt-in adult directory. The query is `where('institutionId', '==', id)`, then cohort, class, destination, industry, and country are filtered in memory. Fields: `studentId`, `name` (first name and last initial), `year`, `className`, `destination`, `industry`, `country`. No email. A minor cannot opt in.
+
+`alumni_places/{institutionId}__{uid}` is the map opt-in: `country`, `shareName`, `name` (empty unless they opted to show a name and they are an adult). Countries with fewer than five people are hidden. The map uses country names only, not a personal coordinate.
+
+`users/{uid}/connections/{otherId}` is an adult connection request: `status` `pending` or `accepted`, `institutionId`, `name`, `at`. Both people must be adults in that academy's directory, and neither may have blocked the other. There is no direct message until both have the existing messages consent, and never for a minor.
+
+Mentorship stays on `institutions/{id}/mentorships/{id}`. An adult alumnus can offer to mentor a current student. Messages stay closed until the academy approves. A minor student's thread is moderated.
+
+Held yearbook signatures, memories, feed updates, and comments join the existing `institutions/{id}/alumni_queue` list. `kind` may be `yearbook`, `yearbook-memory`, `feed`, or `feed-comment`, in addition to `post` and `mentor`. The held query is still one field.
+
+These are single-document reads, subcollections, or one-field queries. No composite index and no collection-group query. Rules still need an owner deploy. These rules are not deployed from this change. Mobile clients do not write seat counts, `parentApproved`, or verified achievement text.
+
+
 
