@@ -10,15 +10,53 @@ interface ReadResult {
   note?: string;
 }
 
-/** POST { image: dataURL } → the maths problem(s) in the photo, as Markdown + LaTeX. */
+interface WritingResult {
+  text: string;
+  confidence: 'high' | 'medium' | 'low';
+  note?: string;
+}
+
+/** POST { image: dataURL, purpose?: 'maths' | 'writing' }. Maths returns problems. Writing returns the handwritten words. */
 export async function POST(req: Request) {
   try {
     await requireUser(req);
-    const { image } = await req.json();
+    const body = await req.json();
+    const image = body?.image;
+    const purpose = body?.purpose === 'writing' ? 'writing' : 'maths';
     if (typeof image !== 'string' || !image.startsWith('data:image/')) {
       return Response.json({ error: 'Send a photo of the problem.' }, { status: 400 });
     }
     if (image.length > 6_000_000) return Response.json({ error: 'That photo is too large — crop closer to the problem.' }, { status: 413 });
+
+    if (purpose === 'writing') {
+      const result = await chatJSON<WritingResult>({
+        models: MODELS.VISION,
+        maxTokens: 2000,
+        temperature: 0.1,
+        messages: [
+          {
+            role: 'system',
+            content: `You transcribe photographed writing, printed or handwritten, exactly as written.
+- Keep the student's words, spelling, and paragraph breaks. Never correct, complete, mark, or continue the work.
+- If part of the image is unreadable, transcribe what you can and say what is unclear in "note".
+${JSON_RULES}
+Shape: {"text":"...","confidence":"high"|"medium"|"low","note":"optional"}`,
+          },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Transcribe the writing in this image.' },
+              { type: 'image_url', image_url: { url: image } },
+            ],
+          },
+        ],
+      });
+      const text = String(result.text ?? '').trim();
+      if (!text) {
+        return Response.json({ error: result.note || "I couldn't read any writing in that photo. Try a closer, brighter shot." }, { status: 422 });
+      }
+      return Response.json({ text, confidence: result.confidence ?? 'medium', note: result.note ?? null });
+    }
 
     const result = await chatJSON<ReadResult>({
       models: MODELS.VISION,

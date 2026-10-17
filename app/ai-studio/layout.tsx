@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function AiStudioLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="dark min-h-screen bg-[#0A0A0F] text-slate-100">
+    <div className="min-h-screen bg-background text-foreground">
       {children}
     </div>
   );

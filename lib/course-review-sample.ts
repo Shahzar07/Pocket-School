@@ -7,7 +7,7 @@ import {
   type PublishedSnapshot,
 } from '@/lib/course-review';
 
-const cell = proceduralArt('academic', 'plant cell year 7', 0);
+const cell = proceduralArt('academic', 'plant cell lower secondary', 0);
 
 export function samplePreviewCourse(now = Date.now()): {
   course: PreviewCourse;
@@ -16,10 +16,10 @@ export function samplePreviewCourse(now = Date.now()): {
 } {
   const course: PreviewCourse = {
     id: 'sample-cells',
-    title: 'Year 7 · Cells and systems',
+    title: 'Lower Secondary · Cells and systems',
     description: 'How a plant cell is built, and how to check the picture before the quiz.',
     subject: 'Science',
-    level: 'Year 7',
+    level: 'Lower Secondary',
     language: 'English',
     status: 'in_review',
     modules: [

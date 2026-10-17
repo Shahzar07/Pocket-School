@@ -8,6 +8,7 @@ import { WhiteLabelProvider } from '@/components/white-label-provider';
 import { TenantChrome } from '@/components/tenant-chrome';
 import { Toaster } from "@/components/ui/sonner"
 import { SiteHeader } from '@/components/site-header';
+import { ModuleHeader } from '@/components/module-header';
 import { SiteFooter } from '@/components/site-footer';
 import { CookieConsent } from '@/components/cookie-consent';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -87,6 +88,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <WhiteLabelProvider>
             <SiteHeader />
             <TenantChrome />
+            <ModuleHeader />
             <div id="content">{children}</div>
             <SiteFooter />
             <CookieConsent />

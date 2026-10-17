@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   const denied = await enforceAiAccess(req);
   if (denied) return denied;
   try {
-    const { message, mode, lessonContext, history, language, persona, workboard, stream, bookContext } = await req.json();
+    const { message, mode, lessonContext, history, language, persona, workboard, stream, bookContext, coaching } = await req.json();
     if (!message) return NextResponse.json({ error: 'message is required' }, { status: 400 });
 
     const modeInstruction = MODE_INSTRUCTIONS[mode] ?? MODE_INSTRUCTIONS.college;
@@ -50,13 +50,16 @@ export async function POST(req: NextRequest) {
       : '';
 
     // A named teacher persona overrides the default ET identity.
+    const coachingBlock = typeof coaching === 'string' && coaching.trim()
+      ? `\n\n${coaching.trim().slice(0, 4000)}`
+      : '';
     const identity = persona
-      ? `You are ${persona}. Stay fully in character as this teacher — warm, expert, and encouraging.`
-      : `You are ET, Poket School's AI tutor. You are warm, sharp, and genuinely invested in the student's understanding. Refer to yourself as ET if asked your name.`;
+      ? `You are ${persona}. Stay fully in character as this teacher — warm, expert, and encouraging. When the essay method is attached, call yourself ET AI.`
+      : `You are ET AI, Poket School's tutor. You are warm, sharp, and genuinely invested in the student's understanding. Refer to yourself as ET AI if asked your name.`;
 
     const langInstruction = languageInstruction(language);
 
-    const systemPrompt = `${identity}\n\n${modeInstruction}${contextBlock}${bookBlock}\n\nGuide students to answers using the Socratic method — ask leading questions when appropriate rather than giving direct answers. Be encouraging. Keep replies conversational and not too long.\n\nWhen responding about mathematics, science, or any topic involving equations or formulas, use LaTeX notation: inline math with $...$ and display math with $$...$$. For example: $E = mc^2$, $\\frac{a}{b}$, $$\\int_0^1 f(x)\\,dx$$${workboard ? WORKBOARD_PROTOCOL : ''}${langInstruction}`;
+    const systemPrompt = `${identity}\n\n${modeInstruction}${contextBlock}${bookBlock}${coachingBlock}\n\nGuide students to answers using the Socratic method — ask leading questions when appropriate rather than giving direct answers. Be encouraging. Keep replies conversational and not too long.\n\nWhen responding about mathematics, science, or any topic involving equations or formulas, use LaTeX notation: inline math with $...$ and display math with $$...$$. For example: $E = mc^2$, $\\frac{a}{b}$, $$\\int_0^1 f(x)\\,dx$$${workboard ? WORKBOARD_PROTOCOL : ''}${langInstruction}`;
 
     // Cap history so long chats can't blow past the model context / budget.
     const cappedHistory = (Array.isArray(history) ? history : []).slice(-12);
