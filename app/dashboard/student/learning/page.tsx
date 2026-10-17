@@ -267,7 +267,7 @@ export default function MyLearningPage() {
                             <Badge className={`text-[10px] rounded-full ${
                               status.state === 'passed'
                                 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                                : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                                : 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20'
                             }`}>
                               Quiz best: {status.bestQuizPercentage}%
                             </Badge>

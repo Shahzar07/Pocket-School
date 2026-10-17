@@ -188,10 +188,10 @@ export function AdminPricingPanel() {
 
   return (
     <section className="bg-card border border-border rounded-3xl p-6 sm:p-7 relative overflow-hidden card-glow space-y-8">
-      <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-amber-500 opacity-80" />
+      <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-[var(--ps-cyan)] opacity-80" />
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-md">
-          <Receipt className="w-5 h-5 text-white" />
+        <div className="w-10 h-10 rounded-xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] flex items-center justify-center shadow-md">
+          <Receipt className="w-5 h-5 text-[var(--ps-cyan-ink)]" />
         </div>
         <div>
           <h2 className="font-heading text-2xl text-foreground">Pricing</h2>
@@ -361,7 +361,7 @@ export function AdminPricingPanel() {
         </div>
       </div>
 
-      <Button onClick={save} disabled={saving} className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-amber-500 to-orange-600 text-white gap-2">
+      <Button onClick={save} disabled={saving} className="rounded-full h-11 px-5 font-bold border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)] gap-2">
         {saving && <Loader2 className="w-4 h-4 animate-spin" />}
         Save pricing
       </Button>

@@ -105,8 +105,8 @@ export default function ParentCommunications() {
         className="pt-2 flex flex-col sm:flex-row sm:items-end justify-between gap-6"
       >
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-amber-600 flex items-center gap-2">
-            <span className="w-5 h-px bg-amber-600 inline-block" /> Teacher messaging
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--ps-cyan-text)] flex items-center gap-2">
+            <span className="w-5 h-px bg-[var(--ps-cyan)] inline-block" /> Teacher messaging
           </p>
           <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-3">
             Your <span className="gradient-text italic">communications</span>
@@ -114,7 +114,7 @@ export default function ParentCommunications() {
           <p className="text-muted-foreground mt-2 text-[15px]">Message teachers and view correspondence.</p>
         </div>
         <Button onClick={() => setShowCompose(true)}
-          className="rounded-full h-11 px-5 gap-2 font-bold bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-90 text-white shrink-0"
+          className="rounded-full h-11 px-5 gap-2 font-bold border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] hover:opacity-90 text-[var(--ps-cyan-ink)] shrink-0"
         >
           <Plus className="w-4 h-4" /> New Message
         </Button>
@@ -157,7 +157,7 @@ export default function ParentCommunications() {
             </div>
             <div className="flex gap-3">
               <Button variant="outline" className="flex-1 rounded-full h-11 font-semibold" onClick={() => setShowCompose(false)}>Cancel</Button>
-              <Button className="flex-1 rounded-full h-11 font-bold bg-gradient-to-r from-amber-500 to-orange-600 text-white gap-2" onClick={handleSend} disabled={sending}>
+              <Button className="flex-1 rounded-full h-11 font-bold border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)] gap-2" onClick={handleSend} disabled={sending}>
                 <Send className="w-4 h-4" />{sending ? 'Sending…' : 'Send Message'}
               </Button>
             </div>
@@ -171,7 +171,7 @@ export default function ParentCommunications() {
           <button key={t} onClick={() => setTab(t)}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors capitalize ${tab === t ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
           >
-            {t === 'inbox' ? <><Inbox className="w-3.5 h-3.5" />Inbox {inbox.length > 0 && <span className="bg-amber-500/10 text-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full">{inbox.length}</span>}</> : <><Send className="w-3.5 h-3.5" />Sent</>}
+            {t === 'inbox' ? <><Inbox className="w-3.5 h-3.5" />Inbox {inbox.length > 0 && <span className="bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] text-[10px] font-bold px-2 py-0.5 rounded-full">{inbox.length}</span>}</> : <><Send className="w-3.5 h-3.5" />Sent</>}
           </button>
         ))}
       </div>
@@ -181,8 +181,8 @@ export default function ParentCommunications() {
         <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
           className="relative text-center py-16 bg-card rounded-[2rem] border border-border overflow-hidden"
         >
-          <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-amber-500/8 blur-[80px]" />
-          <MessageSquare className="w-12 h-12 mx-auto mb-4 text-amber-600/40" />
+          <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-[var(--ps-cyan-soft)] blur-[80px]" />
+          <MessageSquare className="w-12 h-12 mx-auto mb-4 text-[var(--ps-cyan-text)]/40" />
           <h3 className="font-heading text-2xl text-foreground mb-1.5">No {tab === 'inbox' ? 'messages' : 'sent messages'} yet</h3>
           <p className="text-sm text-muted-foreground">{tab === 'inbox' ? 'Teachers will appear here when they message you.' : 'Send your first message to a teacher.'}</p>
         </motion.div>
@@ -190,7 +190,7 @@ export default function ParentCommunications() {
         <div className="space-y-3">
           {currentMessages.map((msg, i) => (
             <motion.div key={msg.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + i * 0.05 }}
-              className={`bg-card border rounded-2xl p-5 card-glow ${!msg.read && tab === 'inbox' ? 'border-amber-500/40 bg-amber-500/5 cursor-pointer' : 'border-border'}`}
+              className={`bg-card border rounded-2xl p-5 card-glow ${!msg.read && tab === 'inbox' ? 'border-[var(--ps-cyan-border)]/40 bg-[var(--ps-cyan-soft)] cursor-pointer' : 'border-border'}`}
               onClick={() => {
                 if (msg.read || tab !== 'inbox') return;
                 markMessageRead(msg.id).catch(() => {});
@@ -199,7 +199,7 @@ export default function ParentCommunications() {
             >
               <div className="flex items-start gap-4">
                 <Avatar className="w-10 h-10 shrink-0">
-                  <AvatarFallback className="bg-gradient-to-br from-amber-500 to-orange-600 text-white font-bold text-sm">
+                  <AvatarFallback className="border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)] font-bold text-sm">
                     {(tab === 'inbox' ? teacherName(msg.fromId) : teacherName(msg.toId)).charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
@@ -207,7 +207,7 @@ export default function ParentCommunications() {
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-bold text-foreground text-sm">{msg.subject}</p>
                     <div className="flex items-center gap-2 shrink-0">
-                      {!msg.read && tab === 'inbox' && <Badge className="rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 text-[10px] px-2">New</Badge>}
+                      {!msg.read && tab === 'inbox' && <Badge className="rounded-full bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border border-[var(--ps-cyan-border)]/20 text-[10px] px-2">New</Badge>}
                       <span className="text-xs text-muted-foreground">{formatTime(msg.sentAt)}</span>
                     </div>
                   </div>

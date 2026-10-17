@@ -69,7 +69,7 @@ function AnalyticsPreviewBody() {
 
   return (
     <main className="max-w-6xl mx-auto px-4 py-8 space-y-6" data-analytics-preview={side}>
-      <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+      <div className="rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] px-4 py-3 text-sm text-[var(--ps-cyan-text)]">
         Sample data for review. This is not a live student record. {label}.
       </div>
       <h1 className="font-heading text-3xl">{label}</h1>

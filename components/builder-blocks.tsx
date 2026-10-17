@@ -308,7 +308,7 @@ export function VideoBlock({ lesson, videoConfig, onConfig, script, onScriptChan
             }`}
           >
             {t.label}
-            {t.sparks > 0 && <span className="ml-1.5 text-amber-500">⚡{t.sparks}</span>}
+            {t.sparks > 0 && <span className="ml-1.5 text-[var(--ps-cyan-text)]">⚡{t.sparks}</span>}
             {!t.available && <span className="ml-1.5 text-[9px] uppercase">soon</span>}
           </button>
         ))}
@@ -390,7 +390,7 @@ function VideoEmbed({ url }: { url: string }) {
   if (/\.(mp4|webm|ogg)(\?|$)/i.test(url)) {
     return <video src={url} controls className="w-full aspect-video rounded-xl bg-black" />;
   }
-  return <p className="text-xs text-amber-600 flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Unrecognised video URL — use YouTube, Vimeo or a direct MP4 link.</p>;
+  return <p className="text-xs text-[var(--ps-cyan-text)] flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Unrecognised video URL — use YouTube, Vimeo or a direct MP4 link.</p>;
 }
 
 /* ── Lesson text ────────────────────────────────────────────── */

@@ -22,6 +22,7 @@ import {
 import { AiTeacherModal } from '@/components/ai-teacher-modal';
 import { teacherPortrait } from '@/lib/teacher-portrait';
 import {
+  accentOnLight,
   AI_TEACHERS,
   CEFR_BANNER,
   CEFR_LEVELS,
@@ -68,7 +69,7 @@ export default function AiTeachersPage() {
       {/* ── Hero ───────────────────────────────────────────────── */}
       <section className="relative pt-14 lg:pt-20 pb-12 bg-gradient-to-b from-[#E9F7FA] via-[#F5F1FF] to-[#F8F4EE] overflow-hidden">
         <div className="absolute -top-20 -left-20 w-96 h-96 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[#E2AF4D]/10 blur-3xl" />
+        <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[var(--ps-cyan-soft)] blur-3xl" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 text-center">
           <p className="text-xs font-bold tracking-[0.25em] text-primary mb-5">AI TEACHERS LIBRARY</p>
@@ -91,7 +92,7 @@ export default function AiTeachersPage() {
               30+ AVAILABLE NOW
             </span>
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-md border border-black/[0.04]">
-              <Sparkles className="w-3.5 h-3.5 text-[#E2AF4D]" />
+              <Sparkles className="w-3.5 h-3.5 text-[var(--ps-cyan-text)]" />
               30+ SUBJECTS
             </span>
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-md border border-black/[0.04]">
@@ -177,7 +178,7 @@ export default function AiTeachersPage() {
           <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-white leading-[1.05] mb-5">
             Know a great educator?
             <br />
-            <span className="bg-gradient-to-r from-[var(--ps-primary)] via-[#6FBBCE] to-[#E2AF4D] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[var(--ps-primary)] via-[#6FBBCE] to-[#3FE0D0] bg-clip-text text-transparent">
               Help us train the next AI teacher.
             </span>
           </h2>
@@ -250,8 +251,8 @@ function TeacherCard({
           </div>
         )}
         {!isLive && (
-          <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-amber-400 shadow-sm">
-            <span className="text-[9px] font-bold tracking-widest text-amber-950">COMING SOON</span>
+          <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-[var(--ps-cyan)] shadow-sm">
+            <span className="text-[9px] font-bold tracking-widest text-[var(--ps-cyan-ink)]">COMING SOON</span>
           </div>
         )}
       </div>
@@ -266,7 +267,7 @@ function TeacherCard({
             <span
               key={s}
               className="text-[10px] font-bold px-2 py-0.5 rounded"
-              style={{ backgroundColor: `${teacher.accentColor}15`, color: teacher.accentColor }}
+              style={{ backgroundColor: `${teacher.accentColor}15`, color: accentOnLight(teacher.accentColor) }}
             >
               {s}
             </span>

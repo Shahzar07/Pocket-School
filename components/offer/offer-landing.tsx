@@ -40,7 +40,7 @@ function Cta({
     ink: 'bg-[#1E6A83] text-white hover:bg-[#18586e]',
     line: 'border border-[#1E6A83]/30 text-[#1E6A83] hover:bg-[#E9F7FA] dark:border-[#6FBBCE]/40 dark:text-[#A7D9E5] dark:hover:bg-white/5',
   } as const;
-  const classNames = `inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E2AF4D] ${tones[tone]} ${className}`;
+  const classNames = `inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3FE0D0] ${tones[tone]} ${className}`;
   if (external) {
     return (
       <a href={href} className={classNames}>

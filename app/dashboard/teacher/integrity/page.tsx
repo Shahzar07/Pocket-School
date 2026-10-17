@@ -25,7 +25,7 @@ const fadeUp: Record<string, any> = {
 const STATUS_STYLES: Record<string, string> = {
   pending: 'bg-muted text-muted-foreground',
   clean: 'bg-emerald-500/10 text-emerald-700',
-  suspicious: 'bg-amber-500/10 text-amber-700',
+  suspicious: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
   violation: 'bg-red-500/10 text-red-700',
 };
 
@@ -97,7 +97,7 @@ export default function IntegrityPage() {
   if (loadError) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12">
       <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
-        <Shield className="w-10 h-10 mx-auto text-amber-500" />
+        <Shield className="w-10 h-10 mx-auto text-[var(--ps-cyan-text)]" />
         <p className="font-heading text-2xl text-foreground">Couldn&apos;t load integrity reports</p>
         <p className="text-sm text-muted-foreground">Something went wrong while fetching reports. Please try again.</p>
         <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={load}>Retry</Button>
@@ -129,7 +129,7 @@ export default function IntegrityPage() {
       >
         <StatCard icon={Shield} label="Total reports" value={stats.total} tone="violet" index={0} />
         <StatCard icon={ShieldCheck} label="Clean" value={stats.clean} tone="emerald" index={1} trend={stats.clean > 0 ? { direction: 'up', label: 'Clear work' } : { direction: 'flat', label: 'None yet' }} />
-        <StatCard icon={AlertTriangle} label="Suspicious" value={stats.suspicious} tone="amber" index={2} trend={stats.suspicious > 0 ? { direction: 'down', label: 'Needs a look' } : { direction: 'up', label: 'None waiting' }} />
+        <StatCard icon={AlertTriangle} label="Suspicious" value={stats.suspicious} tone="cyan" index={2} trend={stats.suspicious > 0 ? { direction: 'down', label: 'Needs a look' } : { direction: 'up', label: 'None waiting' }} />
         <StatCard icon={AlertTriangle} label="Violations" value={stats.violation} tone="coral" index={3} trend={stats.violation > 0 ? { direction: 'down', label: 'Open' } : { direction: 'up', label: 'None open' }} />
       </motion.div>
 
@@ -166,21 +166,21 @@ export default function IntegrityPage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-semibold text-foreground">{r.studentName}</p>
                   <Badge className={STATUS_STYLES[r.status]}>{r.status}</Badge>
-                  {r.aiScore >= 70 && <Badge className="bg-amber-500/10 text-amber-700">⚠ High AI Score</Badge>}
+                  {r.aiScore >= 70 && <Badge className="bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]">⚠ High AI Score</Badge>}
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">{r.assignmentTitle ?? 'Unknown assignment'} · {(r.createdAt as any)?.toDate?.().toLocaleDateString()}</p>
               </div>
-              <AlertTriangle className={`w-5 h-5 shrink-0 ${r.status === 'violation' ? 'text-red-500' : r.status === 'suspicious' ? 'text-amber-500' : 'text-muted-foreground'}`} />
+              <AlertTriangle className={`w-5 h-5 shrink-0 ${r.status === 'violation' ? 'text-red-500' : r.status === 'suspicious' ? 'text-[var(--ps-cyan-text)]' : 'text-muted-foreground'}`} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs font-semibold text-muted-foreground mb-1">AI Detection Score</p>
-                <ScoreBar value={r.aiScore} color={r.aiScore >= 70 ? 'bg-red-500' : r.aiScore >= 40 ? 'bg-yellow-400' : 'bg-green-500'} />
+                <ScoreBar value={r.aiScore} color={r.aiScore >= 70 ? 'bg-red-500' : r.aiScore >= 40 ? 'bg-[var(--ps-cyan)]' : 'bg-green-500'} />
               </div>
               <div>
                 <p className="text-xs font-semibold text-muted-foreground mb-1">Plagiarism Score</p>
-                <ScoreBar value={r.plagiarismScore} color={r.plagiarismScore >= 70 ? 'bg-red-500' : r.plagiarismScore >= 40 ? 'bg-yellow-400' : 'bg-green-500'} />
+                <ScoreBar value={r.plagiarismScore} color={r.plagiarismScore >= 70 ? 'bg-red-500' : r.plagiarismScore >= 40 ? 'bg-[var(--ps-cyan)]' : 'bg-green-500'} />
               </div>
             </div>
 

@@ -90,7 +90,7 @@
 .header a:focus-visible,
 .header button:focus-visible,
 .footer a:focus-visible {
-  outline: 3px solid var(--ps-amber-fill);
+  outline: 3px solid var(--ps-cyan-border);
   outline-offset: 5px;
 }
 .scrolled {

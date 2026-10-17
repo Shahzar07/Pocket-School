@@ -564,7 +564,7 @@ function AdminLoginForm() {
         </div>
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
           {timedOut && step === 'credentials' && (
-            <p className="mb-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-2xl px-3 py-2">
+            <p className="mb-4 text-sm text-[var(--ps-cyan-text)] bg-[var(--ps-cyan-soft)] border border-[var(--ps-cyan-border)] rounded-2xl px-3 py-2">
               Your admin session closed after 30 minutes of inactivity.
             </p>
           )}

@@ -79,7 +79,7 @@ export function TierSelector({
           {scope} Tier
         </label>
         {overridden ? (
-          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]">
             Manual
           </span>
         ) : (
@@ -178,7 +178,7 @@ export function TierBadge({ selection, className = '' }: { selection: TierSelect
   const tone: Record<TierId, string> = {
     tier1: 'bg-sky-100 text-sky-700',
     tier2: 'bg-violet-100 text-violet-700',
-    tier3: 'bg-amber-100 text-amber-700',
+    tier3: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
     tier4: 'bg-rose-100 text-rose-700',
   };
   return (

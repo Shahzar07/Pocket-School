@@ -12,7 +12,7 @@ import {
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X, Phone, Siren,
   Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked, Compass, Camera, Newspaper,
-  Wallet, Gift, Landmark, Plug, PieChart, Search, Briefcase,
+  Wallet, Gift, Landmark, Plug, PieChart, Search, Briefcase, IdCard,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -61,7 +61,7 @@ type Role = 'student' | 'teacher' | 'parent' | 'admin' | 'institution_admin';
 const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string; wash: string }> = {
   student: { icon: 'text-primary', bar: 'bg-primary', chip: 'from-primary to-[var(--ps-blue-bright)]', wash: 'var(--ps-role-student)' },
   teacher: { icon: 'text-[var(--ps-emerald)]', bar: 'bg-[var(--ps-emerald)]', chip: 'from-[var(--ps-mint-ink)] to-[var(--ps-emerald)]', wash: 'var(--ps-role-teacher)' },
-  parent:  { icon: 'text-[var(--ps-amber)]', bar: 'bg-[var(--ps-amber-fill)]', chip: 'from-[var(--ps-amber-fill)] to-[var(--ps-amber)]', wash: 'var(--ps-role-parent)' },
+  parent:  { icon: 'text-[var(--ps-cyan-text)]', bar: 'bg-[var(--ps-cyan)]', chip: 'from-[var(--ps-cyan)] to-[var(--ps-cyan-text)]', wash: 'var(--ps-role-parent)' },
   admin:   { icon: 'text-[var(--ps-violet)]', bar: 'bg-[var(--ps-violet)]', chip: 'from-[var(--ps-violet)] to-[var(--ps-sky)]', wash: 'var(--ps-role-admin)' },
   institution_admin: { icon: 'text-[var(--ps-sky)]', bar: 'bg-[var(--ps-sky)]', chip: 'from-[var(--ps-sky)] to-[var(--ps-teal)]', wash: 'var(--ps-role-admin)' },
 };
@@ -120,6 +120,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
     { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -170,6 +171,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
     ]},
     { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -203,6 +205,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
     { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -256,6 +259,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
     { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -292,6 +296,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
     ]},
     { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -741,12 +746,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* New device warning banner */}
         {newDevice && (
-          <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 flex items-center justify-between gap-3 text-sm text-amber-700 dark:text-amber-400 shrink-0">
+          <div className="bg-[var(--ps-cyan-soft)] border-b border-[var(--ps-cyan-border)]/20 px-4 py-2.5 flex items-center justify-between gap-3 text-sm text-[var(--ps-cyan-text)] dark:text-[var(--ps-cyan-text)] shrink-0">
             <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+              <ShieldCheck className="w-4 h-4 text-[var(--ps-cyan-text)] shrink-0" />
               <span><strong>New device detected.</strong> If this wasn't you, change your password immediately in My Profile.</span>
             </div>
-            <button onClick={() => setNewDevice(false)} className="text-amber-600 hover:text-amber-800 shrink-0">
+            <button onClick={() => setNewDevice(false)} className="text-[var(--ps-cyan-text)] hover:text-[var(--ps-cyan-text)] shrink-0">
               <X className="w-4 h-4" />
             </button>
           </div>

@@ -11,7 +11,7 @@
 }
 
 .home :focus-visible {
-  outline: 3px solid var(--ps-amber-fill);
+  outline: 3px solid var(--ps-cyan-border);
   outline-offset: 3px;
 }
 
@@ -51,12 +51,13 @@
 }
 
 .primary {
-  background: white;
-  color: var(--ps-blue-deep);
+  background: var(--ps-cyan);
+  color: var(--ps-cyan-ink);
+  border: 1px solid var(--ps-cyan-border);
 }
 
 .primary:hover {
-  background: var(--ps-wash);
+  background: var(--ps-cyan-strong);
 }
 
 .secondary {

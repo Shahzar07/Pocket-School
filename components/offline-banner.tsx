@@ -21,7 +21,7 @@ export function OfflineBanner() {
 
   if (online) return null;
   return (
-    <div className="bg-amber-500 text-amber-950 text-sm font-semibold px-4 py-2 text-center" role="status">
+    <div className="border-y border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)] text-sm font-semibold px-4 py-2 text-center" role="status">
       You are offline. {lastTitle ? `Last opened: ${lastTitle}. ` : ''}Open lessons need a connection. Your notes stay on this device until you save them.
     </div>
   );

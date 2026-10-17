@@ -120,7 +120,7 @@ export function SelfJoinPicker({
             <label className="block space-y-1.5">
               <span className={label}>School name</span>
               <input
-                className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8922A]`}
+                className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1E6A83]`}
                 value={schoolName}
                 onChange={(event) => onSchoolName?.(event.target.value)}
                 placeholder="Type your school name"
@@ -128,20 +128,18 @@ export function SelfJoinPicker({
                 autoComplete="organization"
                 maxLength={80}
               />
-              <span className={inverse ? 'block text-xs leading-relaxed text-[#F8E7C4]' : 'block text-xs leading-relaxed text-[#1A3C34]'}>
+              <span className={inverse ? 'block text-xs leading-relaxed text-[#3FE0D0]' : 'block text-xs leading-relaxed text-[#1E6A83]'}>
                 This is your own school name. It does not join a Poket School institution.
               </span>
             </label>
           )}
           {chosen && (
             <div className="space-y-2">
-              <p className={inverse ? 'text-sm text-[#F8E7C4]' : 'text-sm text-[#1A3C34]'}>You are joining {chosen.name}.</p>
+              <p className={inverse ? 'text-sm text-[#3FE0D0]' : 'text-sm text-[#1E6A83]'}>You are joining {chosen.name}.</p>
               {chosen.slug && (
                 <a
                   href={`/i/${chosen.slug}/join`}
-                  className={inverse
-                    ? 'inline-flex h-11 items-center rounded-2xl bg-[#C8922A] px-4 text-sm font-semibold text-[#1A3C34]'
-                    : 'inline-flex h-11 items-center rounded-2xl bg-[#1A3C34] px-4 text-sm font-semibold text-white'}
+                  className="inline-flex h-11 items-center rounded-2xl border border-[#1E6A83] bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]"
                 >
                   Join with my school
                 </a>
@@ -149,7 +147,7 @@ export function SelfJoinPicker({
             </div>
           )}
           {country && state && institutions.length === 0 && (
-            <p className={inverse ? 'text-xs text-[#F8E7C4]' : 'text-sm text-[#1A3C34]'}>
+            <p className={inverse ? 'text-xs text-[#3FE0D0]' : 'text-sm text-[#1E6A83]'}>
               No registered institution in that state or region. Continue as an independent learner and ask your school to register.
             </p>
           )}

@@ -9,13 +9,13 @@
 
 /** Palette pairs — each is a readable gradient with white text on top. */
 const GRADIENTS: [string, string][] = [
-  ['#f59e0b', '#b45309'], // amber
+  ['#1E6A83', '#0B1417'], // brand blue, white label stays AA
   ['#0ea5e9', '#1e3a8a'], // sky → indigo
   ['#10b981', '#065f46'], // emerald
   ['#8b5cf6', '#4c1d95'], // violet
   ['#ef4444', '#7f1d1d'], // red
   ['#ec4899', '#831843'], // pink
-  ['#14b8a6', '#134e4a'], // teal
+  ['#0E7A62', '#0B1417'], // green, white label stays AA
   ['#6366f1', '#312e81'], // indigo
 ];
 

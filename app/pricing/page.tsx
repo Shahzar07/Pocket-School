@@ -161,7 +161,7 @@ export default function PricingPage() {
       {/* ── Hero ───────────────────────────────────────────────── */}
       <section className="relative pt-24 lg:pt-32 pb-14 bg-gradient-to-b from-[#E9F7FA] via-[#F5F1FF] to-white overflow-hidden">
         <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-primary/10 blur-3xl" aria-hidden />
-        <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[#E2AF4D]/10 blur-3xl" aria-hidden />
+        <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[var(--ps-cyan-soft)] blur-3xl" aria-hidden />
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <motion.div variants={fadeUp} initial="hidden" animate="visible">
@@ -218,7 +218,7 @@ export default function PricingPage() {
               })}
             </div>
             <p className="text-xs font-semibold text-primary inline-flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#E2AF4D]" />
+              <Sparkles className="w-3.5 h-3.5 text-[var(--ps-cyan-text)]" />
               Pay annually and save {discountLabel(config)}
             </p>
           </motion.div>
@@ -355,7 +355,7 @@ export default function PricingPage() {
                       {s.plan}
                     </p>
                     <p className="font-heading text-3xl text-[#203337] leading-none flex items-center justify-center gap-1.5">
-                      <Zap className="w-4 h-4 text-[#E2AF4D] fill-[#E2AF4D]" />
+                      <Zap className="w-4 h-4 text-[var(--ps-cyan-text)] fill-[var(--ps-cyan-text)]" />
                       {s.amount}
                     </p>
                     <p className="text-[11px] text-slate-500 mt-1.5">{s.note}</p>
@@ -378,8 +378,8 @@ export default function PricingPage() {
                   key={u.title}
                   className="flex gap-4 rounded-2xl bg-white border border-slate-200 p-5 hover:border-primary/40 hover:shadow-[0_20px_50px_-20px_rgba(30,106,131,0.25)] transition-all"
                 >
-                  <div className="w-10 h-10 shrink-0 rounded-xl bg-[#FFF8E6] flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-[#E2AF4D] fill-[#E2AF4D]" />
+                  <div className="w-10 h-10 shrink-0 rounded-xl bg-[var(--ps-cyan-soft)] flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-[var(--ps-cyan-text)] fill-[var(--ps-cyan-text)]" />
                   </div>
                   <div>
                     <h3 className="text-base font-extrabold text-[#203337] mb-1">{u.title}</h3>
@@ -417,7 +417,7 @@ export default function PricingPage() {
               <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-white leading-[1.05] mb-5">
                 Schools, colleges and
                 <br />
-                <span className="bg-gradient-to-r from-[#6FBBCE] via-[#A9D7E4] to-[#E2AF4D] bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-[#6FBBCE] via-[#A9D7E4] to-[#3FE0D0] bg-clip-text text-transparent">
                   training providers.
                 </span>
               </h2>
@@ -558,7 +558,7 @@ function PlanCard({
       {plan.popular && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
           <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold tracking-[0.15em] shadow-lg shadow-primary/30">
-            <Sparkles className="w-3 h-3 text-[#E2AF4D]" />
+            <Sparkles className="w-3 h-3 text-[var(--ps-cyan-text)]" />
             MOST POPULAR
           </span>
         </div>
@@ -648,7 +648,7 @@ function PlanCard({
         </div>
 
         <div className="mt-auto pt-6">
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-md border border-[#E2AF4D]/30 bg-[#FFF8E6] text-[#8A6100]">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-md border border-[var(--ps-cyan-border)]/30 bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]">
             <Zap className="w-3 h-3 fill-current" />
             {sparksLine}
           </span>

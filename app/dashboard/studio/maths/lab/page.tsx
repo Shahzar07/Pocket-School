@@ -20,7 +20,7 @@ import { isoDay } from '@/lib/study/schedule';
 import { recordStudyDay } from '@/lib/study/db';
 import { light } from '@/lib/design/tokens';
 
-const SERIES_COLORS = [light.primary, light.amber, '#8B5CF6', light.coral, light.good];
+const SERIES_COLORS = [light.primary, light.cyanText, '#8B5CF6', light.coral, light.good];
 const FunctionPlot = dynamic(() => import('@/components/study/function-plot').then(mod => mod.FunctionPlot), {
   loading: () => <div className="h-[280px] animate-pulse rounded-2xl bg-muted sm:h-[440px]" role="status" aria-label="Loading the graph" />,
 });
@@ -153,7 +153,7 @@ function FunctionAnalysis() {
 /* ── Daily puzzle ───────────────────────────────────────────── */
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '+', '-', '*', '/', '='];
-const TILE: Record<Mark, string> = { hit: 'bg-emerald-500 text-white border-emerald-500', near: 'bg-amber-400 text-white border-amber-400', miss: 'bg-slate-400 text-white border-slate-400' };
+const TILE: Record<Mark, string> = { hit: 'bg-emerald-500 text-[var(--ps-cyan-ink)] border-emerald-500', near: 'bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)] border-[var(--ps-cyan-border)]', miss: 'bg-slate-400 text-[var(--ps-cyan-ink)] border-slate-400' };
 
 function EquationPuzzle() {
   const { user } = useAuthSTORE();
@@ -226,7 +226,7 @@ function EquationPuzzle() {
       <Panel className="lg:col-span-7">
         <div className="flex items-center justify-between mb-4">
           <p className="font-semibold inline-flex items-center gap-2"><Puzzle className="w-4 h-4 text-primary" /> Today&apos;s equation</p>
-          <span className="text-[12px] font-semibold text-amber-600 inline-flex items-center gap-1"><Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> +20 stars</span>
+          <span className="text-[12px] font-semibold text-[var(--ps-cyan-text)] inline-flex items-center gap-1"><Star className="w-3.5 h-3.5 fill-[var(--ps-cyan-text)] text-[var(--ps-cyan-text)]" /> +20 stars</span>
         </div>
         <div className="space-y-1.5 max-w-md mx-auto">
           {rows.map((row, r) => {

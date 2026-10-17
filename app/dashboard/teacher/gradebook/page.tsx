@@ -150,7 +150,7 @@ Write encouraging, constructive feedback in 2-3 sentences that acknowledges what
   if (loadError) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 pt-8">
       <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
-        <ClipboardList className="w-10 h-10 mx-auto text-amber-500" />
+        <ClipboardList className="w-10 h-10 mx-auto text-[var(--ps-cyan-text)]" />
         <p className="font-heading text-2xl text-foreground">Couldn&apos;t load submissions</p>
         <p className="text-sm text-muted-foreground">Something went wrong while fetching your gradebook. Please try again.</p>
         <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={() => { setLoading(true); load(); }}>Retry</Button>
@@ -296,8 +296,8 @@ Write encouraging, constructive feedback in 2-3 sentences that acknowledges what
                 custom={i}
                 className="relative overflow-hidden bg-card border border-border rounded-2xl p-4 flex items-center gap-4 card-glow"
               >
-                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-amber-500" />
-                <ClipboardList className="w-5 h-5 text-amber-600 shrink-0" />
+                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-[var(--ps-cyan)]" />
+                <ClipboardList className="w-5 h-5 text-[var(--ps-cyan-text)] shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-foreground text-sm">{sub.lessonTitle}</p>
                   <p className="text-xs text-muted-foreground">

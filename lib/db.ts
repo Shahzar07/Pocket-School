@@ -144,6 +144,19 @@ export interface UserProfile {
   studentNumber?: string;
   /** YYYY-MM-DD days a lesson was opened, used for the study streak. */
   studyDates?: string[];
+  /**
+   * Server-issued. `PSM-` is a Poket School member with no school.
+   * `PS-` is the institution student number. Clients cannot write it.
+   */
+  studentNumber?: string;
+  /** Server-issued code for `referrals/{code}`. Not a coupon and not a reward. */
+  referralCode?: string;
+  /** Current public card id. Empty after revoke. Server-only. */
+  cardShareId?: string;
+  /** Adult choice for search indexing. Under-18 cards stay noindex. */
+  cardIndexed?: boolean;
+  /** Verified parent switch required before an under-13 card can be shared. */
+  cardSharing?: boolean;
   /** When false, the privacy-safe leaderboard omits this student. */
   shareBoard?: boolean;
   /**

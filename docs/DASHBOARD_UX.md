@@ -16,11 +16,11 @@ A public stand-in for screenshots and design review is `/preview/dashboard?role=
 | Search | `components/dashboard/command-palette.tsx` | Cmd/Ctrl-K over the role’s own links. `/` still focuses course search. |
 | Tabs and action | `components/shell/mobile-nav.tsx` | Four tabs plus More, and the floating main action, under 1024px. |
 
-Buttons that carry a label on a solid primary fill use `bg-primary` and `text-primary-foreground`. That primary is `#1E6A83` in light mode so the label stays WCAG AA. Do not put `text-white` on `bg-primary`, and do not hardcode `#2786A4`.
+Primary action buttons use the cyan fill `#3FE0D0` (`--ps-cyan`) with ink `#203337` (`--ps-cyan-ink`) and a 1px `#1E6A83` border (`--ps-cyan-border`). The fill alone is about 1.6:1 on white, so the border is part of the control. Do not put white text on that fill, and do not use `#14B8A6` or the cyan fill as text on a light background. Text and links on light backgrounds use `--ps-cyan-text` (`#1E6A83`). Brand blue controls that still set `bg-primary` keep `text-primary-foreground`. Do not put `text-white` on `bg-primary`, and do not hardcode `#2786A4`.
 
 Tiles use radius 18. The greeting and list cards use radius 24. Touch targets are at least 48px (`min-h-12`, tab bar 64px). Motion uses `motion-safe` utilities so reduced-motion settings skip the moves. Skeletons use `.ps-skeleton`, which already stops when motion is reduced.
 
-Charts use the brand chart inks (`--chart-1` and the rest). Alert tones are good, amber, coral, and critical, from `--ps-good`, `--ps-amber`, `--ps-coral`, and `--destructive`.
+Charts use the brand chart inks (`--chart-1` and the rest). Alert tones are good, cyan, coral, and critical, from `--ps-good`, `--ps-cyan-text`, `--ps-coral`, and `--destructive`.
 
 ## Category map
 
@@ -32,8 +32,8 @@ Each category has one icon, a soft wash, and an ink that is readable on that was
 | Progress | `activity` | `--ps-mint` | `--ps-mint-ink` |
 | Messages | `message-square` | `--accent` | `--ps-sky` |
 | Community | `users` | `--ps-wash` | `--ps-violet` |
-| Careers | `briefcase` | `--ps-amber-soft` | `--ps-amber` |
-| Payments | `credit-card` | `--ps-amber-soft` | `--ps-amber` |
+| Careers | `briefcase` | `--ps-cyan-soft` | `--ps-cyan-text` |
+| Payments | `credit-card` | `--ps-cyan-soft` | `--ps-cyan-text` |
 | Safety | `shield` | `--ps-coral-soft` | `--ps-coral` |
 | Settings | `settings` | `--muted` | `--foreground` |
 | Insights | `bar-chart-3` | `--ps-mint` | `--ps-mint-ink` |

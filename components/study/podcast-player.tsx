@@ -141,7 +141,7 @@ export function PodcastPlayer({ podcast, onComplete }: { podcast: PodcastAsset; 
           return (
             <motion.p key={i} animate={{ opacity: active || !playing ? 1 : 0.45 }}
               className={`text-[15px] leading-relaxed rounded-xl px-3 py-1.5 ${active ? 'bg-primary/[0.06]' : ''}`}>
-              <span className={`text-[11px] font-bold uppercase tracking-wider mr-2 ${l.speaker === 'B' ? 'text-amber-600' : 'text-primary'}`}>{l.speaker === 'B' ? 'Guest' : 'Host'}</span>
+              <span className={`text-[11px] font-bold uppercase tracking-wider mr-2 ${l.speaker === 'B' ? 'text-[var(--ps-cyan-text)]' : 'text-primary'}`}>{l.speaker === 'B' ? 'Guest' : 'Host'}</span>
               {l.text}
             </motion.p>
           );

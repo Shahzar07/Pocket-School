@@ -125,8 +125,8 @@ export default function AdminVerificationsPage() {
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
         className="bg-card border border-border rounded-3xl p-5 sm:p-6 relative overflow-hidden card-glow max-w-xs"
       >
-        <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-amber-500 opacity-80" />
-        <ShieldCheck className="w-5 h-5 text-amber-600" />
+        <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-[var(--ps-cyan)] opacity-80" />
+        <ShieldCheck className="w-5 h-5 text-[var(--ps-cyan-text)]" />
         <p className="font-heading text-4xl sm:text-5xl text-foreground mt-3 leading-none">{pendingCount}</p>
         <p className="text-xs text-muted-foreground mt-2 font-semibold uppercase tracking-wider">Pending of {verifications.length}</p>
       </motion.div>
@@ -163,8 +163,8 @@ export default function AdminVerificationsPage() {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
-                      <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shrink-0 shadow-md">
-                        <Users className="w-5 h-5 text-white" />
+                      <div className="w-11 h-11 rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] flex items-center justify-center shrink-0 shadow-md">
+                        <Users className="w-5 h-5 text-[var(--ps-cyan-ink)]" />
                       </div>
                       <div className="space-y-1.5">
                         <p className="font-bold text-foreground">{v.parentName}</p>
@@ -173,7 +173,7 @@ export default function AdminVerificationsPage() {
                           <Badge className="rounded-full text-[10px] bg-primary/10 text-primary border border-primary/20">Child: {v.studentEmail}</Badge>
                           {v.studentId && <Badge className="rounded-full text-[10px] bg-muted text-muted-foreground">Student ID: {v.studentId}</Badge>}
                           <Badge className="rounded-full text-[10px] bg-muted text-muted-foreground">Parent ID: {v.parentId}</Badge>
-                          <Badge className="rounded-full text-[10px] capitalize bg-amber-500/10 text-amber-600 border border-amber-500/20">{v.status}</Badge>
+                          <Badge className="rounded-full text-[10px] capitalize bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border border-[var(--ps-cyan-border)]/20">{v.status}</Badge>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">Submitted {date.toLocaleDateString()}</p>
                       </div>

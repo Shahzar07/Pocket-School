@@ -31,7 +31,7 @@ export const DASH_CATEGORIES = [
 
 export type DashCategory = (typeof DASH_CATEGORIES)[number];
 
-export type AlertTone = 'good' | 'amber' | 'coral' | 'critical';
+export type AlertTone = 'good' | 'cyan' | 'coral' | 'critical';
 
 export interface CategoryStyle {
   label: string;
@@ -48,8 +48,8 @@ export const CATEGORY_STYLE: Record<DashCategory, CategoryStyle> = {
   progress: { label: 'Progress', icon: 'activity', wash: 'var(--ps-mint)', ink: 'var(--ps-mint-ink)' },
   messages: { label: 'Messages', icon: 'message-square', wash: 'var(--accent)', ink: 'var(--ps-sky)' },
   community: { label: 'Community', icon: 'users', wash: 'var(--ps-wash)', ink: 'var(--ps-violet)' },
-  careers: { label: 'Careers', icon: 'briefcase', wash: 'var(--ps-amber-soft)', ink: 'var(--ps-amber)' },
-  payments: { label: 'Payments', icon: 'credit-card', wash: 'var(--ps-amber-soft)', ink: 'var(--ps-amber)' },
+  careers: { label: 'Careers', icon: 'briefcase', wash: 'var(--ps-cyan-soft)', ink: 'var(--ps-cyan-text)' },
+  payments: { label: 'Payments', icon: 'credit-card', wash: 'var(--ps-cyan-soft)', ink: 'var(--ps-cyan-text)' },
   safety: { label: 'Safety', icon: 'shield', wash: 'var(--ps-coral-soft)', ink: 'var(--ps-coral)' },
   settings: { label: 'Settings', icon: 'settings', wash: 'var(--muted)', ink: 'var(--foreground)' },
   insights: { label: 'Insights', icon: 'bar-chart-3', wash: 'var(--ps-mint)', ink: 'var(--ps-mint-ink)' },
@@ -58,7 +58,7 @@ export const CATEGORY_STYLE: Record<DashCategory, CategoryStyle> = {
 
 export const ALERT_TONE: Record<AlertTone, { label: string; wash: string; ink: string }> = {
   good: { label: 'On track', wash: 'var(--ps-mint)', ink: 'var(--ps-good)' },
-  amber: { label: 'Needs a look', wash: 'var(--ps-amber-soft)', ink: 'var(--ps-amber)' },
+  cyan: { label: 'Needs a look', wash: 'var(--ps-cyan-soft)', ink: 'var(--ps-cyan-text)' },
   coral: { label: 'Needs care', wash: 'var(--ps-coral-soft)', ink: 'var(--ps-coral)' },
   critical: { label: 'Urgent', wash: 'var(--destructive)', ink: 'var(--destructive-foreground)' },
 };

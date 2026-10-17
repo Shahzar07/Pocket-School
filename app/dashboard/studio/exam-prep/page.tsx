@@ -130,7 +130,7 @@ function PrepCard({ prep, index }: { prep: ExamPrep; index: number }) {
           </div>
         </div>
         <div className="mt-4 flex items-center gap-4 text-[13px]">
-          <span className="inline-flex items-center gap-1 text-muted-foreground"><Flame className="w-4 h-4 text-orange-500" /> <span className="tabular-nums text-foreground font-semibold">{prep.streak ?? 0}</span></span>
+          <span className="inline-flex items-center gap-1 text-muted-foreground"><Flame className="w-4 h-4 text-[var(--ps-cyan-text)]" /> <span className="tabular-nums text-foreground font-semibold">{prep.streak ?? 0}</span></span>
           <span className="inline-flex items-center gap-1 text-muted-foreground"><GraduationCap className="w-4 h-4" /> est. <span className="text-foreground font-semibold">{grade}</span></span>
           <span className="ml-auto inline-flex items-center gap-1 font-semibold text-primary">{items.length ? `${items.length} due` : 'All done'} <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" /></span>
         </div>

@@ -511,7 +511,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
               onClick={() => { setView('chat'); setSkill('problems'); setSubject('Mathematics'); setSidebarOpen(false); }}
               className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${view === 'chat' && skill === 'problems' ? `${C.raised} ${C.text}` : `${C.dim} ${C.surfaceHover}`}`}
             >
-              <span className="h-2 w-2 rounded-full bg-[#8A5A12] dark:bg-[#E2AF4D]" aria-hidden />
+              <span className="h-2 w-2 rounded-full bg-[#1E6A83] dark:border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)]" aria-hidden />
               <Calculator className="w-4 h-4" /> ET Maths
             </button>
             <button

@@ -37,8 +37,8 @@ export default function StudentIntegrityPage() {
           <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ps-emerald)' }}>Appeals sent</p>
           <p className="mt-1 text-3xl font-semibold tabular-nums">{cases.filter(item => item.appealStatus === 'submitted').length}</p>
         </div>
-        <div className="rounded-2xl border border-border p-4" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-amber) 16%, var(--card)), var(--card))' }}>
-          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ps-amber)' }}>Waiting</p>
+        <div className="rounded-2xl border border-border p-4" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-cyan-text) 16%, var(--card)), var(--card))' }}>
+          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ps-cyan-text)' }}>Waiting</p>
           <p className="mt-1 text-3xl font-semibold tabular-nums">{cases.filter(item => item.decision === 'pending' || item.decision == null).length}</p>
         </div>
       </div>

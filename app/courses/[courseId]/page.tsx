@@ -347,8 +347,8 @@ export default function CourseDetailPage() {
                 )}
 
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm mb-4">
-                  <span className="inline-flex items-center gap-1.5 text-amber-300 font-bold">
-                    {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-3.5 h-3.5 fill-amber-300" />)}
+                  <span className="inline-flex items-center gap-1.5 text-[var(--ps-cyan-text)] font-bold">
+                    {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-3.5 h-3.5 fill-[var(--ps-cyan-text)]" />)}
                     <span className="ml-1 text-white/80 font-medium">New course</span>
                   </span>
                   <span className="inline-flex items-center gap-1.5 text-white/70">

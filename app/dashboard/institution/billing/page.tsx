@@ -186,7 +186,7 @@ export default function InstitutionBillingPage() {
             <p className="text-sm text-muted-foreground">{quote.tierLabel} · {quote.seats} student seats · {interval}</p>
           </>
         )}
-        {cliff && <p className="mt-2 text-sm text-amber-800">The next band, {cliff.toLabel}, is cheaper than {cliff.fromLabel}. Banded pricing is there so a school is not pushed off a cliff.</p>}
+        {cliff && <p className="mt-2 text-sm text-[#1E6A83]">The next band, {cliff.toLabel}, is cheaper than {cliff.fromLabel}. Banded pricing is there so a school is not pushed off a cliff.</p>}
         {tierNote && !('error' in tierNote) && tierNote.action === 'upgrade' && <p className="mt-2 text-sm">{tierNote.message}</p>}
         {tierNote && !('error' in tierNote) && tierNote.action === 'suggest_downgrade' && <p className="mt-2 text-sm">{tierNote.message}</p>}
         {liveNote && !('error' in liveNote) && liveNote.action !== 'stay' && liveNote.message !== (tierNote && !('error' in tierNote) ? tierNote.message : '') && <p className="mt-2 text-sm">{liveNote.message}</p>}

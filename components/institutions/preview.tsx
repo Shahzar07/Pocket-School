@@ -54,7 +54,7 @@ const branding: NonNullable<Institution['branding']> = {
   tagline: 'A campus that learns together.',
   logoUrl: '',
   primaryColor: '#1E6A83',
-  secondaryColor: '#E2AF4D',
+  secondaryColor: '#3FE0D0',
   hidePoweredBy: false,
   emailFromName: 'North Academy',
   certificateIssuer: 'North Academy',

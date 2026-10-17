@@ -45,8 +45,8 @@ export const STUDIO_TOOLS: StudioTool[] = [
     name: 'ET Maths',
     kicker: 'Solve',
     blurb: 'Snap or type a problem. ET Maths walks you through it, with exam packs and a puzzle for today.',
-    well: 'bg-[#FBF3E4] text-[#8A5A12] dark:bg-[#2A2114] dark:text-[#F0D08A]',
-    bar: 'bg-[#8A5A12] dark:bg-[#E2AF4D]',
+    well: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] dark:bg-[var(--ps-cyan-soft)] dark:text-[var(--ps-cyan)]',
+    bar: 'bg-[#1E6A83] dark:border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)]',
     links: [
       { href: `${STUDIO_MATHS}/packs`, label: 'Exam packs' },
       { href: `${STUDIO_MATHS}/lab`, label: "Today's puzzle" },

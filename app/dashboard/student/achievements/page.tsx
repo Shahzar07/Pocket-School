@@ -163,7 +163,7 @@ export default function AchievementsPage() {
         {[
           { label: 'Total XP', value: xp.toLocaleString(), icon: <Zap className="w-6 h-6 text-primary" />, accent: 'bg-primary' },
           { label: 'Badges', value: badges.length, icon: <Star className="w-6 h-6 text-violet-500" />, accent: 'bg-violet-500' },
-          { label: 'Leaderboard', value: myRank > 0 ? `#${myRank}` : '—', icon: <Crown className="w-6 h-6 text-amber-500" />, accent: 'bg-amber-500' },
+          { label: 'Leaderboard', value: myRank > 0 ? `#${myRank}` : '—', icon: <Crown className="w-6 h-6 text-[var(--ps-cyan-text)]" />, accent: 'bg-[var(--ps-cyan)]' },
         ].map((s, i) => (
           <motion.div
             key={i}

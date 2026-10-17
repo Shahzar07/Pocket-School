@@ -99,7 +99,7 @@ export function GoalsWorkspace({
         ) : undefined}
       />
       {nudges.length > 0 && (
-        <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950" data-overdue-nudge>
+        <div className="rounded-xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] px-4 py-3 text-sm text-[var(--ps-cyan-text)]" data-overdue-nudge>
           {nudges.map(line => <p key={line}>{line}</p>)}
         </div>
       )}

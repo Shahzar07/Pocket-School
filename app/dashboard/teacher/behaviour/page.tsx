@@ -21,7 +21,7 @@ const TYPE_STYLES: Record<string, string> = {
   merit: 'bg-emerald-500/10 text-emerald-700',
   commendation: 'bg-blue-500/10 text-blue-700',
   note: 'bg-muted text-muted-foreground',
-  warning: 'bg-amber-500/10 text-amber-700',
+  warning: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
   demerit: 'bg-red-500/10 text-red-700',
 };
 

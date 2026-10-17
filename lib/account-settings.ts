@@ -68,6 +68,11 @@ export const PRIVILEGED_PROFILE_FIELDS = [
   'xp',
   'verification',
   'partnerKind',
+  'studentNumber',
+  'referralCode',
+  'cardShareId',
+  'cardIndexed',
+  'cardSharing',
 ] as const;
 
 export interface NotificationPrefs {

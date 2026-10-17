@@ -3139,3 +3139,37 @@ These stay website canonical. Relay them to the app:
 - FPX on a family plan is a one-time Stripe payment. Card is a Stripe subscription. `tng` is the Malaysian gateway.
 - Translated FAQ drafts outside English may still quote the old $19 and $99 amounts. English copy and `pricing_config` do not. Checkout uses the config.
 
+## Student ID and member card
+
+The digital card is free for every account. It is a marketing surface. Server code for the card does not read a plan, an access tier, or a paid feature.
+
+`PLAN-superapp.md` is not in this repo. The issued number is stored on `users/{uid}.studentNumber`. There is no `memberNumber` field. `PSM-` is the member form of `studentNumber`. A person with `institutionId` keeps the existing school format `PS-` (for example `PS-1042`). A person with no institution gets `PSM-` plus a zero-padded sequence (for example `PSM-0042`). Sequences start at 1000 in `number_sequences/member` and `number_sequences/student`. Each issued value is reserved in `student_numbers/{number}` as `{ uid, at }`.
+
+The server writes the number at signup (`POST /api/card` with `action: "issue"`) and backfills existing users. `GET /api/cron/member-cards` (Bearer `CRON_SECRET`, schedule `30 2 * * *`) issues up to 40 missing numbers per run, paging `users` by document id from `number_sequences/backfill`. If a number is already stored, it is kept. A later school link does not rewrite `PSM-` into `PS-`.
+
+Clients cannot create or update `studentNumber`, `referralCode`, `cardShareId`, `cardIndexed`, or `cardSharing`. Those names are on the privileged profile list and are denied in Firestore rules for client creates and admin-client updates.
+
+A person with no school sees the title **Poket School member card**. A person with `institutionId` sees **Student card**. The owner page `/dashboard/card` shows the number. The public card does not.
+
+## Card share
+
+`card_shares/{shareId}` is `{ uid, createdAt, revoked, revokedAt?, viewCount }`. `shareId` is a random base64url string of 16 to 64 URL-safe characters. The user field `cardShareId` points at the live share. Creating a new share revokes the previous document. Revoke sets `revoked` and deletes `cardShareId`. Regenerate issues a new id. The public page is `/card/[shareId]`. The image is `opengraph-image.tsx` on that route: the branded blue gradient, first name, level name, and badges or streak, plus **Join Poket School**. The page link is `/signup?ref={code}`. A preview that does not need the server account is `/preview/card`.
+
+The public card never includes the student number, a QR code, or a date of birth. `schoolName` is sent only when the person is an adult and has an institution. Under-18 cards omit the school name.
+
+Age rules:
+
+- Under 13: initials only (`avatarUrl` is cleared, no photo). Sharing stays off until a verified parent sets `cardSharing`. The parent link is `parent_links/{parentId}_{studentId}` with `status: approved`. The page is `noindex`.
+- Under 18 (teen and under 13): `noindex`, even if `cardIndexed` is true.
+- Adults: `cardIndexed` defaults to false, so the page stays `noindex` until they opt in. Indexing also requires the share to be visible.
+
+`GET /api/card` returns the owner card and linked under-13 children. `POST /api/card` actions are `issue`, `share`, `regenerate`, `revoke`, `channel`, `index`, and `parent-share`.
+
+Every share is an append-only hash-chain row in `card_audit`, headed by `card_audit_head/current`. Types are `created`, `revoked`, `regenerated`, `channel`, and `view`. The payload is sequence, previous hash, type, uid, share id, time, actor, channel, and view count. It does not store the student number or the date of birth. Create, revoke, regenerate, and channel also write `activity_log` (`card.created`, `card.revoked`, `card.regenerated`, `card.channel`). A view increments `card_shares.viewCount` and writes a `view` chain row only, so view traffic does not flood the activity log. Clients cannot write the chain. Activity retention does not purge it.
+
+## Referrals
+
+`referrals/{code}` is `{ inviterUid, createdAt, redeemedBy: [{ uid, at }] }`. The code is 8 characters from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`. The same code is stored on the user as `referralCode`. The server writes both. This collection is separate from affiliate `coupons` and `referralState`. It does not pay a reward.
+
+Signup reads `?ref=code`, keeps it in `sessionStorage` for the OTP steps, and sends it with `action: "issue"`. A known code appends `{ uid, at }` to `redeemedBy`. Signing up with your own code is rejected. A second redeem is `already`. An unknown code does not fail signup. There is no rewards logic yet.
+

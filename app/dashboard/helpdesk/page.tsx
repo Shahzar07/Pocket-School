@@ -25,7 +25,7 @@ const fadeUp: Record<string, any> = {
 };
 
 const STATUS_STYLES: Record<string, string> = {
-  open: 'bg-amber-500/10 text-amber-600 border border-amber-500/20',
+  open: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border border-[var(--ps-cyan-border)]/20',
   pending: 'bg-primary/10 text-primary border border-primary/20',
   in_progress: 'bg-primary/10 text-primary border border-primary/20',
   kiv: 'bg-violet-500/10 text-violet-700 border border-violet-500/20',
@@ -52,7 +52,7 @@ function ticketDocument(ticket: SupportTicket): Deliverable {
 const PRIORITY_STYLES: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
   normal: 'bg-primary/10 text-primary border border-primary/20',
-  high: 'bg-amber-500/10 text-amber-600 border border-amber-500/20',
+  high: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border border-[var(--ps-cyan-border)]/20',
   urgent: 'bg-destructive/10 text-destructive border border-destructive/20',
 };
 

@@ -81,7 +81,7 @@ const GOAL_STATUS_META: Record<string, { label: string; pill: string }> = {
   in_progress: { label: 'In progress', pill: 'bg-primary/10 text-primary' },
   completed: { label: 'Completed', pill: 'bg-emerald-500/10 text-emerald-600' },
   overdue: { label: 'Overdue', pill: 'bg-destructive/10 text-destructive' },
-  excused: { label: 'Excused', pill: 'bg-amber-500/10 text-amber-600' },
+  excused: { label: 'Excused', pill: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]' },
 };
 
 /** Deadline ('HH:mm') resolved against the goal's own dateKey. */
@@ -366,7 +366,7 @@ export default function ParentDashboard() {
                     </div>
                     {total > 0 && (
                       <div className="text-right shrink-0">
-                        <p className={`text-[26px] font-semibold tracking-[-0.03em] leading-none tabular-nums ${pct === 100 ? 'text-emerald-600' : pct >= 50 ? 'text-amber-600' : 'text-destructive'}`}>{pct}%</p>
+                        <p className={`text-[26px] font-semibold tracking-[-0.03em] leading-none tabular-nums ${pct === 100 ? 'text-emerald-600' : pct >= 50 ? 'text-[var(--ps-cyan-text)]' : 'text-destructive'}`}>{pct}%</p>
                       </div>
                     )}
                   </div>
@@ -391,7 +391,7 @@ export default function ParentDashboard() {
                           return (
                             <div key={goal.id} className="bg-muted/50 border border-border rounded-xl p-3.5 flex flex-wrap items-center gap-x-3 gap-y-2">
                               {st === 'completed' ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                                : st === 'excused' ? <ShieldCheck className="w-4 h-4 text-amber-500 shrink-0" />
+                                : st === 'excused' ? <ShieldCheck className="w-4 h-4 text-[var(--ps-cyan-text)] shrink-0" />
                                 : <Clock className={`w-4 h-4 shrink-0 ${st === 'overdue' ? 'text-destructive' : 'text-muted-foreground'}`} />}
                               <p className="text-sm font-semibold text-foreground flex-1 min-w-[8rem] truncate">{goal.title}</p>
                               <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${meta.pill}`}>
@@ -413,7 +413,7 @@ export default function ParentDashboard() {
                                 </Button>
                               )}
                               {goal.status === 'excused' && goal.excuseReason && (
-                                <p className="w-full text-xs text-amber-600">Excused by {goal.excusedBy || 'you'}: {goal.excuseReason}</p>
+                                <p className="w-full text-xs text-[var(--ps-cyan-text)]">Excused by {goal.excusedBy || 'you'}: {goal.excuseReason}</p>
                               )}
                             </div>
                           );
@@ -432,8 +432,8 @@ export default function ParentDashboard() {
         <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
           className="relative text-center py-20 bg-card rounded-2xl border border-border shadow-[var(--shadow-card)] overflow-hidden"
         >
-          <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-amber-500/8 blur-[80px]" />
-          <UserRound className="w-12 h-12 mx-auto mb-5 text-amber-600/40" />
+          <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-[var(--ps-cyan-soft)] blur-[80px]" />
+          <UserRound className="w-12 h-12 mx-auto mb-5 text-[var(--ps-cyan-text)]/40" />
           <h3 className="font-heading text-2xl text-foreground mb-2">No linked children yet</h3>
           <p className="text-sm text-muted-foreground max-w-sm mx-auto">
             Link your child's account via profile settings or during onboarding to see their progress here.
@@ -486,9 +486,9 @@ export default function ParentDashboard() {
                     <p className="text-[28px] font-semibold tracking-[-0.03em] mt-2 leading-none tabular-nums" style={{ color: 'var(--ps-teal)' }}>{enrollments.length}</p>
                     <p className="text-[11px] text-muted-foreground mt-1.5 font-semibold uppercase tracking-wider">Enrolled</p>
                   </div>
-                  <div className="rounded-2xl border border-border p-4" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-amber) 16%, var(--card)), var(--card))' }}>
-                    <TrendingUp className="w-4 h-4" style={{ color: 'var(--ps-amber)' }} />
-                    <p className="text-[28px] font-semibold tracking-[-0.03em] mt-2 leading-none tabular-nums" style={{ color: 'var(--ps-amber)' }}>{inProgress.length}</p>
+                  <div className="rounded-2xl border border-border p-4" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-cyan-text) 16%, var(--card)), var(--card))' }}>
+                    <TrendingUp className="w-4 h-4" style={{ color: 'var(--ps-cyan-text)' }} />
+                    <p className="text-[28px] font-semibold tracking-[-0.03em] mt-2 leading-none tabular-nums" style={{ color: 'var(--ps-cyan-text)' }}>{inProgress.length}</p>
                     <p className="text-[11px] mt-1.5 font-semibold uppercase tracking-wider inline-flex items-center gap-1" style={{ color: inProgress.length ? 'var(--ps-emerald)' : 'var(--muted-foreground)' }}>
                       {inProgress.length ? '↑ In progress' : 'In progress'}
                     </p>

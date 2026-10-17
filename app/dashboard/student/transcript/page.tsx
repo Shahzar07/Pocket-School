@@ -293,7 +293,7 @@ export default function TranscriptPage() {
           custom={2}
           className="bg-card border border-border rounded-3xl p-5 sm:p-6 relative overflow-hidden card-glow text-center"
         >
-          <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-amber-500 opacity-80" />
+          <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-[var(--ps-cyan)] opacity-80" />
           <p className="text-3xl font-extrabold text-foreground">{records.filter(r => r.status === 'Completed').length}</p>
           <p className="text-muted-foreground text-xs mt-1 font-medium">Completed</p>
         </motion.div>
@@ -363,7 +363,7 @@ export default function TranscriptPage() {
                     <td className="px-4 py-4 text-muted-foreground">{r.course.subject}</td>
                     <td className="px-4 py-4 text-center">
                       {r.avg !== null ? (
-                        <span className={`font-bold text-lg ${r.avg >= 70 ? 'text-emerald-500' : r.avg >= 60 ? 'text-amber-500' : 'text-destructive'}`}>
+                        <span className={`font-bold text-lg ${r.avg >= 70 ? 'text-emerald-500' : r.avg >= 60 ? 'text-[var(--ps-cyan-text)]' : 'text-destructive'}`}>
                           {toLetterGrade(r.avg)} <span className="text-sm text-muted-foreground">({r.avg}%)</span>
                         </span>
                       ) : <span className="text-muted-foreground">—</span>}

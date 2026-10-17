@@ -133,15 +133,15 @@ export default function BlogDeskPage() {
         accent="desk."
         description="Super admins write, schedule, and publish. These six drafts stay off the public site until you publish them."
       />
-      {!allowed ? <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">Only a super admin can save or publish. You can still read the unpublished drafts.</p> : null}
-      {notice ? <p role="status" className="text-sm text-amber-800">{notice}</p> : null}
+      {!allowed ? <p className="rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] px-4 py-3 text-sm text-[var(--ps-cyan-text)]">Only a super admin can save or publish. You can still read the unpublished drafts.</p> : null}
+      {notice ? <p role="status" className="text-sm text-[var(--ps-cyan-text)]">{notice}</p> : null}
 
       <section aria-labelledby="sample-drafts">
         <h2 id="sample-drafts" className="text-sm font-bold">Unpublished drafts</h2>
         <ul className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {SAMPLE_POSTS.map((post) => (
             <li key={post.slug} className="rounded-2xl border border-border bg-card p-4">
-              <p className="text-[11px] font-bold tracking-wider text-amber-700">UNPUBLISHED DRAFT</p>
+              <p className="text-[11px] font-bold tracking-wider text-[var(--ps-cyan-text)]">UNPUBLISHED DRAFT</p>
               <h3 className="mt-1 font-semibold">{post.title}</h3>
               <p className="mt-1 text-xs text-muted-foreground">{post.category}</p>
               <button type="button" className="mt-3 min-h-11 text-sm font-bold text-primary" onClick={() => edit(post)}>

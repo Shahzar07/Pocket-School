@@ -40,7 +40,7 @@ export function ChannelsScreen({
         accent="hub"
         description="Class channels, parent channels, and announcements. Minors have no student-to-student direct messages. Quiet hours hold delivery."
       />
-      {quietNote && <p className="text-sm text-amber-700 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2">{quietNote}</p>}
+      {quietNote && <p className="text-sm text-[var(--ps-cyan-text)] bg-[var(--ps-cyan-soft)] border border-[var(--ps-cyan-border)]/20 rounded-xl px-3 py-2">{quietNote}</p>}
       <div className="grid lg:grid-cols-[280px_1fr] gap-4">
         <Panel>
           <PanelHeader title="Channels" />

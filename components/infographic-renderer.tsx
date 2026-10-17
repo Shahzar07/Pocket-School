@@ -35,12 +35,12 @@ interface InfographicDoc {
 /* ─── Accent palette (works on light + dark surfaces) ──────── */
 
 const ACCENTS = [
-  { grad: 'from-blue-500 to-indigo-600', text: 'text-blue-500', soft: 'bg-blue-500/10', border: 'border-blue-500/25' },
-  { grad: 'from-emerald-500 to-teal-600', text: 'text-emerald-500', soft: 'bg-emerald-500/10', border: 'border-emerald-500/25' },
-  { grad: 'from-violet-500 to-purple-600', text: 'text-violet-500', soft: 'bg-violet-500/10', border: 'border-violet-500/25' },
-  { grad: 'from-amber-500 to-orange-600', text: 'text-amber-500', soft: 'bg-amber-500/10', border: 'border-amber-500/25' },
-  { grad: 'from-rose-500 to-pink-600', text: 'text-rose-500', soft: 'bg-rose-500/10', border: 'border-rose-500/25' },
-  { grad: 'from-cyan-500 to-blue-600', text: 'text-cyan-500', soft: 'bg-cyan-500/10', border: 'border-cyan-500/25' },
+  { grad: 'from-blue-500 to-indigo-600', on: 'text-white', text: 'text-blue-500', soft: 'bg-blue-500/10', border: 'border-blue-500/25', frame: '' },
+  { grad: 'from-emerald-500 to-teal-600', on: 'text-white', text: 'text-emerald-500', soft: 'bg-emerald-500/10', border: 'border-emerald-500/25', frame: '' },
+  { grad: 'from-violet-500 to-purple-600', on: 'text-white', text: 'text-violet-500', soft: 'bg-violet-500/10', border: 'border-violet-500/25', frame: '' },
+  { grad: 'from-[var(--ps-cyan)] to-[var(--ps-cyan)]', on: 'text-[var(--ps-cyan-ink)]', text: 'text-[var(--ps-cyan-text)]', soft: 'bg-[var(--ps-cyan-soft)]', border: 'border-[var(--ps-cyan-border)]/25', frame: 'border border-[var(--ps-cyan-border)]' },
+  { grad: 'from-rose-500 to-pink-600', on: 'text-white', text: 'text-rose-500', soft: 'bg-rose-500/10', border: 'border-rose-500/25', frame: '' },
+  { grad: 'from-[#1E6A83] to-[#1E6A83]', on: 'text-white', text: 'text-[var(--ps-cyan-text)]', soft: 'bg-[var(--ps-wash)]', border: 'border-[var(--ps-cyan-border)]/25', frame: '' },
 ];
 
 const accent = (i: number) => ACCENTS[((i % ACCENTS.length) + ACCENTS.length) % ACCENTS.length];
@@ -246,7 +246,7 @@ const DOC_STYLES = `
   p { margin: 0 0 10px; font-size: 13.5px; }
   ul { margin: 0 0 12px; padding-left: 20px; }
   li { font-size: 13.5px; margin-bottom: 5px; }
-  blockquote { margin: 14px 0; padding: 12px 16px; background: #f3f4f6; border-left: 4px solid #f59e0b; font-style: italic; font-size: 13.5px; }
+  blockquote { margin: 14px 0; padding: 12px 16px; background: #f3f4f6; border-left: 4px solid #1E6A83; font-style: italic; font-size: 13.5px; }
   hr { border: none; border-top: 1px solid #e5e7eb; margin: 22px 0; }
   code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; font-size: 12.5px; }
   .ps-foot { margin-top: 32px; padding-top: 10px; border-top: 1px solid #e5e7eb; font-size: 10.5px; color: #9ca3af; }
@@ -508,8 +508,8 @@ export function InfographicRenderer({ content, dark = false }: InfographicRender
               }`}
             >
               <div className="flex items-center gap-3 mb-3">
-                <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${a.grad} flex items-center justify-center shrink-0 shadow-sm`}>
-                  <span className="text-white text-xs font-bold">{i + 1}</span>
+                <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${a.grad} ${a.frame} flex items-center justify-center shrink-0 shadow-sm`}>
+                  <span className={`${a.on} text-xs font-bold`}>{i + 1}</span>
                 </div>
                 <h3 className={`text-base font-semibold leading-tight ${dark ? 'text-white' : 'text-foreground'}`}>
                   {s.title}
@@ -525,18 +525,18 @@ export function InfographicRenderer({ content, dark = false }: InfographicRender
       {doc.takeaway && (
         <div
           className={`mt-6 rounded-2xl border p-4 sm:p-5 ${
-            dark ? 'border-amber-500/30 bg-amber-500/[0.07]' : 'border-amber-300 bg-amber-50'
+            dark ? 'border-[var(--ps-cyan-border)]/30 bg-[var(--ps-cyan-soft)]' : 'border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)]'
           }`}
         >
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shrink-0">
-              <Lightbulb className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] flex items-center justify-center shrink-0">
+              <Lightbulb className="w-4 h-4 text-[var(--ps-cyan-ink)]" />
             </div>
             <div>
-              <p className={`text-[10px] font-bold uppercase tracking-[0.18em] mb-1 ${dark ? 'text-amber-300' : 'text-amber-700'}`}>
+              <p className={`text-[10px] font-bold uppercase tracking-[0.18em] mb-1 ${dark ? 'text-[var(--ps-cyan)]' : 'text-[var(--ps-cyan-text)]'}`}>
                 Key takeaway
               </p>
-              <p className={`text-sm leading-relaxed ${dark ? 'text-amber-50' : 'text-amber-900'}`}>
+              <p className={`text-sm leading-relaxed ${dark ? 'text-[var(--ps-cyan)]' : 'text-[var(--ps-cyan-text)]'}`}>
                 {renderInline(doc.takeaway)}
               </p>
             </div>

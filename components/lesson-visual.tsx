@@ -167,17 +167,17 @@ export function VisualBlock({
           <Button type="button" size="sm" className="rounded-xl gap-1.5 h-8 text-xs bg-gradient-to-r from-violet-600 to-purple-600 text-white" disabled={busy} onClick={() => setConfirming(true)}>
             {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
             Generate with ET AI
-            <span className="text-amber-200 font-bold">{cost} ⚡</span>
+            <span className="text-[var(--ps-cyan-text)] font-bold">{cost} ⚡</span>
           </Button>
         ) : (
-          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-2 py-1.5">
-            <p className="text-[11px] text-amber-800">Generate this {label.toLowerCase()} for {cost} Sparks? It is drawn only from the lesson text.</p>
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] px-2 py-1.5">
+            <p className="text-[11px] text-[var(--ps-cyan-text)]">Generate this {label.toLowerCase()} for {cost} Sparks? It is drawn only from the lesson text.</p>
             <Button type="button" size="sm" className="rounded-lg h-7 text-[11px]" disabled={busy} onClick={() => { void generate(); }}>Confirm</Button>
             <Button type="button" size="sm" variant="ghost" className="rounded-lg h-7 text-[11px]" onClick={() => setConfirming(false)}>Cancel</Button>
           </div>
         )}
       </div>
-      {status && <p className="text-[11px] text-amber-700">{status}</p>}
+      {status && <p className="text-[11px] text-[var(--ps-cyan-text)]">{status}</p>}
     </div>
   );
 }

@@ -84,14 +84,14 @@ const TYPE_ICON: Record<string, string> = Object.fromEntries(LESSON_TYPES.map(t 
 const STATUS_DOT: Record<string, string> = {
   published: 'bg-emerald-500',
   approved: 'bg-blue-500',
-  in_review: 'bg-amber-500',
+  in_review: 'bg-[var(--ps-cyan)]',
   draft: 'bg-slate-300',
   archived: 'bg-red-300',
 };
 
 const STATUS_CARD: Record<string, { bg: string; label: string }> = {
   draft: { bg: 'bg-slate-100 text-slate-700 border-slate-200', label: 'Draft' },
-  in_review: { bg: 'bg-amber-50 text-amber-700 border-amber-200', label: 'In Review' },
+  in_review: { bg: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]', label: 'In Review' },
   approved: { bg: 'bg-blue-50 text-blue-700 border-blue-200', label: 'Approved' },
   published: { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: 'Published' },
   archived: { bg: 'bg-red-50 text-red-600 border-red-200', label: 'Archived' },
@@ -1097,7 +1097,7 @@ export default function ContentBuilderPage() {
         {/* Save status */}
         <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground max-w-sm" role="status" aria-live="polite" data-save-state={saveState}>
           <span className={`w-2 h-2 rounded-full shrink-0 ${
-            saveState === 'saved' ? 'bg-emerald-500' : saveState === 'error' ? 'bg-red-500' : 'bg-amber-400 animate-pulse'
+            saveState === 'saved' ? 'bg-emerald-500' : saveState === 'error' ? 'bg-red-500' : 'bg-[var(--ps-cyan)] animate-pulse'
           }`} />
           {saveState === 'saved' && 'All changes saved'}
           {saveState === 'saving' && 'Saving…'}
@@ -1450,7 +1450,7 @@ export default function ContentBuilderPage() {
                       >
                         <span className="text-base">{def.icon}</span>
                         <span className="flex-1">{def.label}</span>
-                        {def.sparks && !added && <span className="text-[10px] text-amber-500">⚡{def.sparks}</span>}
+                        {def.sparks && !added && <span className="text-[10px] text-[var(--ps-cyan-text)]">⚡{def.sparks}</span>}
                         {added && <CheckCircle2 className="w-3 h-3" />}
                       </button>
                     );
@@ -1520,8 +1520,8 @@ export default function ContentBuilderPage() {
               className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl bg-card border border-border shadow-2xl"
             >
               <div className="flex items-start gap-3 px-5 py-4 border-b border-border">
-                <span className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
-                  <AlertTriangle className="w-4.5 h-4.5 text-amber-600" />
+                <span className="w-9 h-9 rounded-xl bg-[var(--ps-cyan-soft)] border border-[var(--ps-cyan-border)] flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-4.5 h-4.5 text-[var(--ps-cyan-text)]" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <h2 id="publish-disclaimer-title" className="font-heading text-lg text-foreground leading-tight">
@@ -1734,7 +1734,7 @@ function TreeUnit({
                 className={`group flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer text-xs transition-colors ${
                   sub ? 'ml-4' : ''
                 } ${dropId === l.id ? 'ring-2 ring-teal-400' : ''} ${dragId === l.id ? 'opacity-40' : ''} ${
-                  active ? 'bg-amber-100/80 text-amber-900 font-semibold' : 'hover:bg-muted/60 text-foreground'
+                  active ? 'border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)] font-semibold' : 'hover:bg-muted/60 text-foreground'
                 }`}
                 onClick={() => !editing && onSelect(l.id)}
               >
@@ -2142,7 +2142,7 @@ function PropertiesTab({
         <div className="flex items-baseline justify-between gap-2">
           <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">AI generation (per format)</p>
           {isCurriculumCourse && (
-            <span className="text-[10px] font-semibold text-amber-600 shrink-0">
+            <span className="text-[10px] font-semibold text-[var(--ps-cyan-text)] shrink-0">
               {unlockAllCost} ⚡ to unlock all
             </span>
           )}
@@ -2179,7 +2179,7 @@ function PropertiesTab({
                   : <Sparkles className="w-3 h-3 shrink-0" />}
                 <span className="truncate flex-1">{f.label}{status ? ` · ${status}` : ''}</span>
                 {isCurriculumCourse && (
-                  <span className="text-[10px] font-bold text-amber-600 shrink-0 tabular-nums">
+                  <span className="text-[10px] font-bold text-[var(--ps-cyan-text)] shrink-0 tabular-nums">
                     {getFormatCost(f.id)}
                   </span>
                 )}

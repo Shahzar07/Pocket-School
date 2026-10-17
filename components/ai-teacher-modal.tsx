@@ -34,7 +34,7 @@ import {
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { subscribeTeacherNotification } from '@/lib/db';
 import { toast } from 'sonner';
-import type { AiTeacher, TeacherIconKey } from '@/lib/ai-teachers';
+import { accentOnFill, accentOnLight, type AiTeacher, type TeacherIconKey } from '@/lib/ai-teachers';
 
 const ICONS: Record<TeacherIconKey, typeof Atom> = {
   atom: Atom,
@@ -204,8 +204,8 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
                 </div>
               )}
               {!isLive && (
-                <div className="absolute top-3 left-3 z-10 px-3 py-1.5 rounded-full bg-amber-400/95 backdrop-blur-sm">
-                  <span className="text-[10px] font-bold tracking-widest text-amber-950">COMING SOON</span>
+                <div className="absolute top-3 left-3 z-10 px-3 py-1.5 rounded-full bg-[var(--ps-cyan)] backdrop-blur-sm">
+                  <span className="text-[10px] font-bold tracking-widest text-[var(--ps-cyan-ink)]">COMING SOON</span>
                 </div>
               )}
 
@@ -228,7 +228,7 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
             <div className="flex items-start gap-4 mb-5">
               <div
                 className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: `${teacher.accentColor}15`, color: teacher.accentColor }}
+                style={{ backgroundColor: `${teacher.accentColor}15`, color: accentOnLight(teacher.accentColor) }}
               >
                 <Icon className="w-7 h-7" strokeWidth={1.7} />
               </div>
@@ -243,7 +243,7 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
                 <span
                   key={s}
                   className="text-[11px] font-bold px-2.5 py-1 rounded-md"
-                  style={{ backgroundColor: `${teacher.accentColor}15`, color: teacher.accentColor }}
+                  style={{ backgroundColor: `${teacher.accentColor}15`, color: accentOnLight(teacher.accentColor) }}
                 >
                   {s}
                 </span>
@@ -256,7 +256,8 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
                 className="w-full rounded-full h-12 text-sm font-bold shadow-md transition-all"
                 style={{
                   backgroundColor: teacher.accentColor,
-                  color: 'white',
+                  color: accentOnFill(teacher.accentColor),
+                  borderColor: teacher.accentColor.trim().toUpperCase() === '#3FE0D0' ? '#1E6A83' : undefined,
                 }}
               >
                 {primaryCtaLabel}
@@ -264,9 +265,9 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
               </Button>
             ) : (
               <div className="w-full rounded-full h-12 text-sm font-bold flex items-center justify-center gap-2 border-2 border-dashed"
-                style={{ borderColor: teacher.accentColor, color: teacher.accentColor }}
+                style={{ borderColor: teacher.accentColor, color: accentOnLight(teacher.accentColor) }}
               >
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-[var(--ps-cyan)] animate-pulse" />
                 Coming Soon
               </div>
             )}

@@ -667,9 +667,9 @@ export default function UploadPage() {
                 ))}
               </ul>
             </div>
-            <div className="flex items-start gap-2 rounded-xl bg-amber-500/10 border border-amber-500/20 px-3 py-2">
-              <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
-              <p className="text-[10px] text-amber-700 dark:text-amber-400 leading-relaxed">
+            <div className="flex items-start gap-2 rounded-xl bg-[var(--ps-cyan-soft)] border border-[var(--ps-cyan-border)]/20 px-3 py-2">
+              <AlertCircle className="w-3.5 h-3.5 text-[var(--ps-cyan-text)] shrink-0 mt-0.5" />
+              <p className="text-[10px] text-[var(--ps-cyan-text)] dark:text-[var(--ps-cyan-text)] leading-relaxed">
                 Use your own material or licensed sources — don&apos;t paste copyrighted textbook pages.
               </p>
             </div>

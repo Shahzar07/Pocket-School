@@ -62,7 +62,7 @@ function QuestionList({ items }: { items: string[] }) {
             </span>
             <span className="flex-1 text-sm leading-relaxed">{body.replace(/^\d+[).]\s*/, '')}</span>
             {m && (
-              <span className="shrink-0 self-start text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+              <span className="shrink-0 self-start text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]">
                 {m[1]} marks
               </span>
             )}
@@ -104,7 +104,7 @@ function CaseCard({ entry, index }: { entry: CaseLawEntry; index: number }) {
         ))}
       </dl>
       {entry.examHighlight && (
-        <p className="flex items-start gap-2 px-4 py-2.5 border-t border-rose-200/60 bg-amber-50/70 text-[13px] leading-relaxed text-amber-900">
+        <p className="flex items-start gap-2 px-4 py-2.5 border-t border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[13px] leading-relaxed text-[var(--ps-cyan-ink)]">
           <Target className="w-3.5 h-3.5 mt-0.5 shrink-0" />
           <span><span className="font-bold">Exam highlight: </span>{entry.examHighlight}</span>
         </p>
@@ -136,7 +136,7 @@ function StatuteCard({ entry }: { entry: StatuteEntry }) {
         ))}
       </dl>
       {entry.examHighlight && (
-        <p className="flex items-start gap-2 px-4 py-2.5 border-t border-indigo-200/60 bg-amber-50/70 text-[13px] leading-relaxed text-amber-900">
+        <p className="flex items-start gap-2 px-4 py-2.5 border-t border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[13px] leading-relaxed text-[var(--ps-cyan-ink)]">
           <Target className="w-3.5 h-3.5 mt-0.5 shrink-0" />
           <span><span className="font-bold">Exam highlight: </span>{entry.examHighlight}</span>
         </p>
@@ -205,9 +205,9 @@ export function LessonPackView({ pack, showHeader = true }: { pack: LessonPack; 
       ) : null}
 
       {pack.mnemonic && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50/60 px-4 py-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700">Mnemonic</p>
-          <p className="text-sm font-medium text-amber-900 mt-1">“{pack.mnemonic}”</p>
+        <div className="rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-4 py-3">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--ps-cyan-ink)]">Mnemonic</p>
+          <p className="text-sm font-medium text-[var(--ps-cyan-ink)] mt-1">“{pack.mnemonic}”</p>
         </div>
       )}
 
@@ -286,7 +286,7 @@ export function LessonPackView({ pack, showHeader = true }: { pack: LessonPack; 
                 {pack.rubric.map((r, i) => (
                   <tr key={i} className="border-t border-border">
                     <td className="px-3 py-2 font-medium">{r.criteria}</td>
-                    <td className="px-3 py-2 text-amber-700 font-bold">{r.weighting}</td>
+                    <td className="px-3 py-2 text-[var(--ps-cyan-text)] font-bold">{r.weighting}</td>
                     <td className="px-3 py-2 text-muted-foreground">{r.description}</td>
                   </tr>
                 ))}
