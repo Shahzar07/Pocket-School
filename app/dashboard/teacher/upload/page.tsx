@@ -26,7 +26,8 @@ import { problemsAreWorked } from '@/lib/generation-quality';
 import { hasCmsAddon } from '@/lib/entitlements';
 import type { LessonMediaAsset } from '@/lib/db';
 
-import { YEAR_GROUPS } from '@/lib/year-groups';
+import { LevelSelect } from '@/components/level-select';
+import { useCoursePlaceholders } from '@/hooks/use-example-course';
 
 const FORMATS = [
   { id: 'text', label: 'Lesson Text' },
@@ -60,6 +61,7 @@ const fadeUp: Record<string, any> = {
 
 export default function UploadPage() {
   const { user, profile } = useAuthSTORE();
+  const placeholders = useCoursePlaceholders();
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState('new');
@@ -84,7 +86,7 @@ export default function UploadPage() {
 
   // Guided help + admin request box
   const [guideOpen, setGuideOpen] = useState(true);
-  const [reqCategory, setReqCategory] = useState('New subject or year group');
+  const [reqCategory, setReqCategory] = useState('New subject or level');
   const [reqMessage, setReqMessage] = useState('');
   const [reqSending, setReqSending] = useState(false);
   const [reqSent, setReqSent] = useState(false);
@@ -92,7 +94,7 @@ export default function UploadPage() {
   // Curriculum SOW submission
   const [sowTitle, setSowTitle] = useState('');
   const [sowSubject, setSowSubject] = useState('');
-  const [sowYearGroup, setSowYearGroup] = useState(YEAR_GROUPS[0]?.value ?? 'Year 7');
+  const [sowYearGroup, setSowYearGroup] = useState('');
   const [sowFile, setSowFile] = useState<File | null>(null);
   const [sowUploadPct, setSowUploadPct] = useState(0);
   const [sowSubmitting, setSowSubmitting] = useState(false);
@@ -368,7 +370,7 @@ export default function UploadPage() {
       toast.success('Curriculum SOW submitted for admin review!');
       setSowTitle('');
       setSowSubject('');
-      setSowYearGroup(YEAR_GROUPS[0]?.value ?? 'Year 7');
+      setSowYearGroup('');
       setSowFile(null);
       setSowUploadPct(0);
     } catch (e: any) {
@@ -532,11 +534,11 @@ export default function UploadPage() {
           <div className="grid sm:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-2xl border border-dashed border-border">
             <div className="space-y-1.5">
               <Label>New Course Title *</Label>
-              <Input value={courseTitle} onChange={e => setCourseTitle(e.target.value)} placeholder="e.g. Biology 101" className="rounded-xl h-11" />
+              <Input value={courseTitle} onChange={e => setCourseTitle(e.target.value)} placeholder={placeholders.title} className="rounded-xl h-11" />
             </div>
             <div className="space-y-1.5">
               <Label>Subject Area</Label>
-              <Input value={courseSubject} onChange={e => setCourseSubject(e.target.value)} placeholder="e.g. Biology" className="rounded-xl h-11" />
+              <Input value={courseSubject} onChange={e => setCourseSubject(e.target.value)} placeholder={placeholders.subject} className="rounded-xl h-11" />
             </div>
           </div>
         )}
@@ -547,7 +549,7 @@ export default function UploadPage() {
             <Input
               value={moduleTitle}
               onChange={e => setModuleTitle(e.target.value)}
-              placeholder={`e.g. Subject ${modules.length + 1}`}
+              placeholder={placeholders.title}
               className="rounded-xl h-11"
             />
           </div>
@@ -573,7 +575,7 @@ export default function UploadPage() {
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label>Lesson Title *</Label>
-              <Input value={lessonTitle} onChange={e => setLessonTitle(e.target.value)} placeholder='e.g. "Cellular Respiration: How Cells Release Energy"' className="rounded-xl h-11" />
+              <Input value={lessonTitle} onChange={e => setLessonTitle(e.target.value)} placeholder={placeholders.title} className="rounded-xl h-11" />
             </div>
             <div className="space-y-1.5">
               <Label>Lesson Content *</Label>
@@ -845,24 +847,23 @@ export default function UploadPage() {
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label>Subject Title *</Label>
-            <Input value={sowTitle} onChange={e => setSowTitle(e.target.value)} placeholder="e.g. Science — Year 7" className="rounded-xl h-11" />
+            <Input value={sowTitle} onChange={e => setSowTitle(e.target.value)} placeholder={placeholders.title} className="rounded-xl h-11" />
           </div>
           <div className="space-y-1.5">
             <Label>Subject</Label>
-            <Input value={sowSubject} onChange={e => setSowSubject(e.target.value)} placeholder="e.g. Science" className="rounded-xl h-11" />
+            <Input value={sowSubject} onChange={e => setSowSubject(e.target.value)} placeholder={placeholders.subject} className="rounded-xl h-11" />
           </div>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label>Year / Level</Label>
-            <select
+            <Label>Level</Label>
+            <LevelSelect
               value={sowYearGroup}
-              onChange={e => setSowYearGroup(e.target.value)}
-              className="w-full h-11 rounded-xl border border-input bg-background px-3 text-sm text-foreground"
-            >
-              {YEAR_GROUPS.map(yg => <option key={yg.value} value={yg.value}>{yg.label}</option>)}
-            </select>
+              onChange={setSowYearGroup}
+              ariaLabel="Level"
+              className="w-full h-11 rounded-xl border border-input bg-background px-3 text-sm"
+            />
           </div>
           <div className="space-y-1.5">
             <Label>SOW Document *</Label>
@@ -904,7 +905,7 @@ export default function UploadPage() {
           <div>
             <h2 className="font-bold text-foreground text-sm">Missing something? Ask the admin team</h2>
             <p className="text-xs text-muted-foreground">
-              Need a subject or year group that isn&apos;t listed, curriculum access, a new content format, or anything else to build your lesson? Send a request — it lands in the admin Helpdesk and you&apos;ll get a reply there.
+              Need a subject or level that isn&apos;t listed, curriculum access, a new content format, or anything else to build your lesson? Send a request — it lands in the admin Helpdesk and you&apos;ll get a reply there.
             </p>
           </div>
         </div>
@@ -916,7 +917,7 @@ export default function UploadPage() {
             className="h-11 rounded-xl border border-input bg-background px-3 text-sm text-foreground"
           >
             {[
-              'New subject or year group',
+              'New subject or level',
               'Curriculum / CMS access',
               'New content format or AI feature',
               'Course approval or publishing issue',
@@ -926,7 +927,7 @@ export default function UploadPage() {
           <Textarea
             value={reqMessage}
             onChange={e => { setReqMessage(e.target.value); setReqSent(false); }}
-            placeholder='Describe what you need and why — e.g. "Please add Year 10 Chemistry as a subject so I can build the atomic structure unit."'
+            placeholder={placeholders.description}
             className="min-h-11 rounded-xl text-sm resize-none sm:min-h-0"
           />
         </div>

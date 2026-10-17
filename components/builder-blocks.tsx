@@ -346,7 +346,7 @@ export function VideoBlock({ lesson, videoConfig, onConfig, script, onScriptChan
             <Input
               value={prompt}
               onChange={e => { setPrompt(e.target.value); onConfig({ ...videoConfig, prompt: e.target.value }); }}
-              placeholder='e.g. "Explain atomic structure with animated diagrams aimed at Year 10 students"'
+              placeholder='e.g. "Explain atomic structure with animated diagrams aimed at IGCSE students"'
               className="h-10 rounded-xl text-sm"
             />
             <Button className="rounded-xl gap-1.5 shrink-0 bg-gradient-to-r from-red-500 to-rose-600 text-white" disabled={busy}

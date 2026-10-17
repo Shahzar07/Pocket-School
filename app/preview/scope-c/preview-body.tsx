@@ -14,7 +14,7 @@ export function PreviewBody({ initial }: { initial?: string }) {
   const [screen, setScreen] = useState<ScreenId>(SCREENS.includes(initial as ScreenId) ? initial as ScreenId : 'community');
   const [snap, setSnap] = useState<{ answer: string; steps: string[]; similar: string[] } | null>(null);
   const [blocked, setBlocked] = useState('');
-  const [tutorNote, setTutorNote] = useState('Group bookings open a live class. Payment stays pending until the wallet captures it.');
+  const [tutorNote, setTutorNote] = useState('');
   const [bookings, setBookings] = useState<BookingCard[]>([]);
   const [papers, setPapers] = useState<PaperCard[]>([{
     id: 'paper',
@@ -61,11 +61,11 @@ export function PreviewBody({ initial }: { initial?: string }) {
       )}
       {screen === 'channels' && (
         <ChannelsScreen
-          activeTitle="Year 10 parents"
+          activeTitle="IGCSE parents"
           quietNote="Quiet hours hold messages to minors between 21:00 and 07:00."
           channels={[
-            { id: 'c1', title: 'Year 10 class', kind: 'class', ageTier: 'minor' },
-            { id: 'c2', title: 'Year 10 parents', kind: 'parent', ageTier: 'adult' },
+            { id: 'c1', title: 'IGCSE class', kind: 'class', ageTier: 'minor' },
+            { id: 'c2', title: 'IGCSE parents', kind: 'parent', ageTier: 'adult' },
           ]}
           messages={[
             { id: 'm1', senderName: 'Tess', body: 'The trip is on Friday.', bodyTranslated: 'Lawatan pada hari Jumaat.' },

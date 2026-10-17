@@ -91,7 +91,7 @@ export default function ParentReportsPage() {
 }
 
 function ParentSign({ cardId, parentId, parentName, onDone }: { cardId: string; parentId: string; parentName: string; onDone: () => Promise<void> }) {
-  const [reply, setReply] = useState('Read and signed.');
+  const [reply, setReply] = useState('');
   if (!parentId) return null;
   return (
     <form className="mt-3 space-y-2" onSubmit={async event => {
@@ -100,7 +100,7 @@ function ParentSign({ cardId, parentId, parentName, onDone }: { cardId: string; 
       toast.success('Acknowledged');
       await onDone();
     }}>
-      <textarea className="w-full rounded-xl border border-border p-3 text-sm" rows={2} value={reply} onChange={event => setReply(event.target.value)} aria-label="Parent reply" />
+      <textarea className="w-full rounded-xl border border-border p-3 text-sm" rows={2} value={reply} onChange={event => setReply(event.target.value)} aria-label="Parent reply" placeholder="e.g. Read and signed." />
       <Button type="submit">Acknowledge and e-sign</Button>
     </form>
   );

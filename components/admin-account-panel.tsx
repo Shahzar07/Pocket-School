@@ -48,7 +48,7 @@ export function AdminAccountPanel({
   const staff = resolveStaffRole({ ...row.data, id: row.id });
   const [reason, setReason] = useState(row.data.statusReason ?? '');
   const [nextRole, setNextRole] = useState<string>(staff ?? '');
-  const [amount, setAmount] = useState('25');
+  const [amount, setAmount] = useState('');
   const [tier, setTier] = useState(String(row.data.accessTier ?? ''));
   const [permission, setPermission] = useState('addon:cms');
   const [activity, setActivity] = useState<SparkTransaction[]>([]);
@@ -143,7 +143,7 @@ export function AdminAccountPanel({
 
         {can(actor, 'sparks') && (
           <div className="flex gap-2">
-            <Input aria-label="Sparks amount" value={amount} onChange={event => setAmount(event.target.value)} className="h-10 rounded-xl" />
+            <Input aria-label="Sparks amount" value={amount} onChange={event => setAmount(event.target.value)} placeholder="e.g. 25" className="h-10 rounded-xl" />
             <Button disabled={busy} className="rounded-xl" onClick={() => {
               const value = Number(amount);
               run(

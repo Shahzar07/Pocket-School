@@ -13,8 +13,8 @@ import { toast } from 'sonner';
 export default function SchoolTemplatesPage() {
   const { profile } = useAuthSTORE();
   const institutionId = profile?.institutionId ?? '';
-  const [label, setLabel] = useState('School term');
-  const [heading, setHeading] = useState('Term report');
+  const [label, setLabel] = useState('');
+  const [heading, setHeading] = useState('');
   const [scaleId, setScaleId] = useState('a_to_e');
   const [logoUrl, setLogoUrl] = useState('');
   const [quietStart, setQuietStart] = useState(DEFAULT_NOTIFY_SETTINGS.quietStart);
@@ -37,8 +37,8 @@ export default function SchoolTemplatesPage() {
       />
       <Panel>
         <div className="grid sm:grid-cols-2 gap-3">
-          <Input value={label} onChange={event => setLabel(event.target.value)} aria-label="Template name" />
-          <Input value={heading} onChange={event => setHeading(event.target.value)} aria-label="Heading" />
+          <Input value={label} onChange={event => setLabel(event.target.value)} aria-label="Template name" placeholder="e.g. School term" />
+          <Input value={heading} onChange={event => setHeading(event.target.value)} aria-label="Heading" placeholder="e.g. Term report" />
           <Input value={logoUrl} onChange={event => setLogoUrl(event.target.value)} placeholder="https:// logo" aria-label="Logo URL" />
           <select className="h-10 rounded-xl border border-border bg-card px-3" value={scaleId} onChange={event => setScaleId(event.target.value)} aria-label="Grading scale">
             {SCALES.map(scale => <option key={scale.id} value={scale.id}>{scale.label}</option>)}

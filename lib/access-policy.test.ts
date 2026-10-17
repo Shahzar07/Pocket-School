@@ -140,7 +140,7 @@ test('programme, year, level, country, region, and language narrow the audience'
   assert.equal(productAccess(aimed, match).open, true);
   assert.equal(productAccess(aimed, { ...match, country: 'GB' }).reason, 'Outside this country');
   assert.equal(productAccess(aimed, { ...match, language: 'zh' }).reason, 'Not available in this language');
-  assert.equal(productAccess(aimed, { ...match, yearGroup: 'Year 9' }).reason, 'Outside this year');
+  assert.equal(productAccess(aimed, { ...match, yearGroup: 'Year 9' }).reason, 'Outside this level');
 });
 
 test('release, expiry, access length, drip, and seats', () => {

@@ -146,11 +146,11 @@ describe('imports stay drafts', () => {
 describe('pacing rebuild', () => {
   it('skips holidays and exam weeks, then moves releases when a holiday moves', () => {
     const plan = seedPlan();
-    const built = rebuildPlan(SEED_UNITS, '2026-10-01', '2026-11-06', plan.events, { campusId: 'north', classId: '4A', yearGroup: 'Y4' });
+    const built = rebuildPlan(SEED_UNITS, '2026-10-01', '2026-11-06', plan.events, { campusId: 'north', classId: '4A', yearGroup: 'Primary' });
     const releases = built.filter(event => event.id.startsWith('release-'));
     assert.equal(releases.length, 3);
     assert.ok(releases.every(event => isSchoolDay(event.date, plan.events)));
-    assert.ok(releases.every(event => event.campusId === 'north' && event.classId === '4A' && event.yearGroup === 'Y4'));
+    assert.ok(releases.every(event => event.campusId === 'north' && event.classId === '4A' && event.yearGroup === 'Primary'));
     const assessment = built.find(event => event.id === 'milestone-assessment');
     const report = built.find(event => event.id === 'milestone-report');
     assert.equal(absenceCounts(assessment?.date ?? '', plan.events), true);

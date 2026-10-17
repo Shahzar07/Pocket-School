@@ -1,9 +1,11 @@
 /**
- * Programme names, year bands and subjects.
+ * Programme names, levels and subjects.
  * Source: Harry's Master Alignment Brief (October 2026). That brief wins where
- * older briefs disagree. Year numbers are placement labels on the registration
- * form only — public pages use the programme name.
+ * older briefs disagree. Placement uses named levels only. Stored year numbers
+ * from older accounts are shown as those levels.
  */
+
+import { NAMED_LEVELS, isNamedLevel } from './example-courses';
 
 export interface Programme {
   value: string;
@@ -13,9 +15,8 @@ export interface Programme {
   summary?: string;
   tier: 0 | 1 | 2 | 3 | 4;
   /**
-   * Year / Level labels for this programme.
-   * Empty means the only choice is "Not applicable" (adult and professional courses).
-   * School years stay as placement labels. Public cards show levels, not those years.
+   * Level labels for this programme.
+   * Empty means the only choice is "Not applicable" (independent study).
    */
   years: readonly string[];
   subjects: readonly string[];
@@ -26,14 +27,14 @@ export const PROGRAMMES: readonly Programme[] = [
     value: 'Primary',
     label: 'Primary',
     tier: 1,
-    years: ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6'],
+    years: ['Primary'],
     subjects: ['Science', 'Mathematics', 'English', 'Malay'],
   },
   {
     value: 'Lower Secondary',
-    label: 'Secondary',
+    label: 'Lower Secondary',
     tier: 1,
-    years: ['Year 7', 'Year 8', 'Year 9'],
+    years: ['Lower Secondary'],
     subjects: [
       'Biology', 'Chemistry', 'Physics', 'Mathematics', 'English', 'English Second Language',
       'Malay', 'Business Studies', 'ICT', 'History', 'Geography', 'Global Citizenship',
@@ -43,7 +44,7 @@ export const PROGRAMMES: readonly Programme[] = [
     value: 'IGCSE',
     label: 'IGCSE',
     tier: 2,
-    years: ['Year 10', 'Year 11'],
+    years: ['IGCSE'],
     subjects: [
       'Biology', 'Human Biology', 'Chemistry', 'Physics', 'Mathematics', 'Additional Mathematics',
       'English First Language', 'English Second Language', 'Malay', 'Mandarin', 'French', 'German',
@@ -55,7 +56,7 @@ export const PROGRAMMES: readonly Programme[] = [
     value: 'A-Level',
     label: 'A-Level',
     tier: 2,
-    years: ['Year 12', 'Year 13'],
+    years: ['A-Level'],
     subjects: [
       'Biology', 'Chemistry', 'Physics', 'Mathematics', 'Further Mathematics', 'English Literature',
       'English Language', 'Malay', 'Mandarin', 'French', 'German', 'Business Studies', 'Economics',
@@ -64,11 +65,19 @@ export const PROGRAMMES: readonly Programme[] = [
     ],
   },
   {
+    value: 'Pre-University',
+    label: 'Pre-University',
+    summary: 'The step between school exams and a degree.',
+    tier: 2,
+    years: ['Pre-University'],
+    subjects: ['Physics', 'Mathematics', 'Chemistry', 'Biology', 'Economics', 'English'],
+  },
+  {
     value: 'LLB Law',
     label: 'LLB Law',
     summary: 'LLB Law covers the University of London (UoL) and other universities.',
     tier: 4,
-    years: ['Year 1 (LLB)', 'Year 2 (LLB)', 'Year 3 (LLB)'],
+    years: ['Degree'],
     subjects: [
       'Contract Law', 'Tort Law', 'Criminal Law', 'Public Law', 'Land Law', 'Equity and Trusts',
       'Company Law', 'Jurisprudence', 'Evidence', 'Family Law', 'Commercial Law', 'International Law',
@@ -79,7 +88,7 @@ export const PROGRAMMES: readonly Programme[] = [
     label: 'MBBS Medicine',
     summary: 'A full medical degree. ET Medicine is included on Professional & Degrees.',
     tier: 4,
-    years: ['Year 1 (MBBS)', 'Year 2 (MBBS)', 'Year 3 (MBBS)', 'Year 4 (MBBS)', 'Year 5 (MBBS)'],
+    years: ['Degree'],
     subjects: [
       'Anatomy', 'Physiology', 'Biochemistry', 'Pharmacology', 'Pathology', 'Clinical Reasoning',
       'Internal Medicine', 'Surgery', 'Obstetrics and Gynaecology', 'Paediatrics', 'Psychiatry',
@@ -106,14 +115,14 @@ export const PROGRAMMES: readonly Programme[] = [
     value: 'Micro Degree',
     label: 'Micro Degrees',
     tier: 3,
-    years: [],
+    years: ['Degree'],
     subjects: [],
   },
   {
     value: 'Professional Certification',
     label: 'Professional',
     tier: 3,
-    years: [],
+    years: ['Professional'],
     subjects: [],
   },
   {
@@ -167,8 +176,8 @@ export function yearsForProgramme(value: string | null | undefined): readonly st
 }
 
 /**
- * Year / Level choices for one programme.
- * Adult and professional courses offer "Not applicable".
+ * Level choices for one programme.
+ * Independent study offers "Not applicable".
  */
 export function levelsForProgramme(value: string | null | undefined): readonly string[] {
   const programme = programmeByValue(canonicalProgramme(value));
@@ -183,8 +192,9 @@ export interface Placement {
 }
 
 /**
- * Accept a programme and year only when the year belongs to that programme.
- * "Not applicable" is stored as an empty year group.
+ * Accept a programme and level only when the level belongs to that programme.
+ * "Not applicable" is stored as an empty level. Older year-number labels are
+ * rewritten to the named level.
  */
 export function assertPlacement(programme: string, year: string): Placement {
   const level = canonicalProgramme(programme);
@@ -193,13 +203,14 @@ export function assertPlacement(programme: string, year: string): Placement {
     throw new Error('Choose a programme from the list.');
   }
   const years = levelsForProgramme(level);
-  if (!years.includes(year)) {
-    throw new Error('That year does not belong to the selected programme.');
+  const offered = years.includes(year) ? year : toNamedLevel(year);
+  if (!years.includes(offered)) {
+    throw new Error('That level does not belong to the selected programme.');
   }
   return {
     pathway: level,
     level,
-    yearGroup: year === NOT_APPLICABLE ? '' : year,
+    yearGroup: offered === NOT_APPLICABLE ? '' : offered,
   };
 }
 
@@ -233,8 +244,9 @@ export function cmsYearLevelSuggestions(): readonly string[] {
 }
 
 /**
- * Years a CMS subject may use. A programme name from the taxonomy wins.
- * A custom CMS programme keeps the years stored on that document.
+ * Levels a CMS subject may use. A programme name from the taxonomy wins.
+ * A custom CMS programme keeps the levels stored on that document.
+ * Older year-number labels are rewritten to named levels.
  */
 export function cmsSubjectYearOptions(
   name: string | null | undefined,
@@ -242,7 +254,7 @@ export function cmsSubjectYearOptions(
 ): readonly string[] {
   const known = programmeByValue(canonicalProgramme(name));
   if (known) return levelsForProgramme(known.value);
-  const stored = storedYears.map((year) => year.trim()).filter(Boolean);
+  const stored = [...new Set(storedYears.map((year) => toNamedLevel(year.trim())).filter(Boolean))];
   if (stored.length) return stored;
   return cmsYearLevelSuggestions();
 }
@@ -270,8 +282,8 @@ export function schoolAge(dob: string, now = new Date()): number | null {
 }
 
 /**
- * Suggest a programme and year from a date of birth.
- * Ages follow the international Year 1–13 structure: Year 1 at age 5 on 1 September.
+ * Suggest a programme and level from a date of birth.
+ * Ages follow the same bands as before: primary from age 5 on 1 September.
  * 18 and over is Independent Learning.
  */
 export function suggestPlacementFromDob(
@@ -312,16 +324,16 @@ export type StudioMode = 'k12' | 'college' | 'professional' | 'legal';
 export function studioModeForProgramme(value: string | null | undefined): StudioMode {
   const programme = canonicalProgramme(value);
   if (programme === 'Primary' || programme === 'Lower Secondary') return 'k12';
-  if (programme === 'IGCSE' || programme === 'A-Level') return 'college';
+  if (programme === 'IGCSE' || programme === 'A-Level' || programme === 'Pre-University') return 'college';
   if (programme === 'LLB Law') return 'legal';
   if (programme === 'MBBS Medicine' || programme === 'Engineering' || programme === 'Nursing') return 'professional';
   return 'professional';
 }
 
 /**
- * Public level names for a CMS year list.
- * "Year 9 · Year 10 · Year 11" becomes "Secondary · IGCSE".
- * Degree placement labels that already name a level are kept.
+ * Public level names for a stored level list.
+ * Older labels such as a school year number become Primary, Lower Secondary,
+ * IGCSE, A-Level or Degree. Labels that already name a level are kept.
  */
 export function displayLevels(yearGroups: readonly string[] | null | undefined): string {
   if (!yearGroups?.length) return '';
@@ -335,20 +347,45 @@ export function displayLevels(yearGroups: readonly string[] | null | undefined):
 }
 
 function levelsInLabel(part: string): string[] {
-  if (/LLB/i.test(part)) return ['LLB Law'];
-  if (/MBBS/i.test(part)) return ['MBBS Medicine'];
+  if (/LLB/i.test(part) || /MBBS/i.test(part)) return ['Degree'];
   if (/engineering/i.test(part) && /foundation|degree/i.test(part)) return ['Engineering'];
   if (/nursing/i.test(part) && /foundation|degree/i.test(part)) return ['Nursing'];
+  if (/^secondary$/i.test(part)) return ['Lower Secondary'];
+  const form = /\bform\s+([0-9]{1,2})\b/i.exec(part);
+  if (form) return [levelFromForm(Number(form[1]))];
+  const grade = /\b(?:grade|y)\s*([0-9]{1,2})\b/i.exec(part);
+  if (grade) return [levelFromSchoolNumber(Number(grade[1]))];
   const year = /\bYear\s+(\d+)\b/i.exec(part);
-  if (year) {
-    const n = Number(year[1]);
-    if (n <= 6) return ['Primary'];
-    if (n <= 9) return ['Secondary'];
-    if (n <= 11) return ['IGCSE'];
-    if (n <= 13) return ['A-Level'];
-    return ['Degree'];
-  }
+  if (year) return [levelFromSchoolNumber(Number(year[1]))];
+  if (isNamedLevel(part)) return [part];
   const known = PROGRAMMES.find((programme) => programme.value === part || programme.label === part);
   if (known) return [known.label];
   return [part];
+}
+
+function levelFromForm(n: number): string {
+  if (n <= 3) return 'Lower Secondary';
+  if (n <= 5) return 'IGCSE';
+  return 'A-Level';
+}
+
+function levelFromSchoolNumber(n: number): string {
+  if (n <= 6) return 'Primary';
+  if (n <= 9) return 'Lower Secondary';
+  if (n <= 11) return 'IGCSE';
+  if (n <= 13) return 'A-Level';
+  return 'Degree';
+}
+
+/** Rewrite a stored year number or form label into a named level when we know it. */
+export function toNamedLevel(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (isNamedLevel(trimmed)) return trimmed;
+  const shown = displayLevels([trimmed]);
+  if (!shown) return trimmed;
+  const first = shown.split(' · ')[0] ?? shown;
+  if (isNamedLevel(first) || (NAMED_LEVELS as readonly string[]).includes(first)) return first;
+  if (/\bYear\s+\d/.test(first)) return levelFromSchoolNumber(Number(/\d+/.exec(first)?.[0] ?? 0));
+  return first;
 }

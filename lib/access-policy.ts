@@ -176,7 +176,7 @@ function targetReason(policy: AccessPolicy, viewer: AllocationViewer): string | 
     return 'Outside this programme';
   }
   if ((policy.yearGroups ?? []).length && !policy.yearGroups!.includes(viewer.yearGroup ?? '')) {
-    return 'Outside this year';
+    return 'Outside this level';
   }
   if ((policy.levels ?? []).length && !policy.levels!.includes(viewer.level ?? '')) {
     return 'Outside this level';

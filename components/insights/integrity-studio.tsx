@@ -21,7 +21,7 @@ export function IntegrityStudio({ side }: { side: DeskSide }) {
   const [confirmed, setConfirmed] = useState(false);
   const [appeal, setAppeal] = useState('');
   const [appealSent, setAppealSent] = useState(false);
-  const [reply, setReply] = useState('Read with Mina.');
+  const [reply, setReply] = useState('');
   const [signed, setSigned] = useState(false);
   const checks = deskChecks(side);
   const decisions = confirmed || side === 'parent' ? ['confirmed'] : ['pending'];
@@ -132,7 +132,7 @@ export function IntegrityStudio({ side }: { side: DeskSide }) {
         {side === 'parent' && (
           signed ? <p className="text-sm">Signed by Pat. Reply saved.</p> : (
             <form className="space-y-2" onSubmit={event => { event.preventDefault(); parentSign({ parentId: 'parent1', parentName: 'Pat', reply, at: '2026-10-15T12:00:00.000Z' }); setSigned(true); }}>
-              <textarea className="w-full rounded-xl border border-border p-3 text-sm" rows={2} value={reply} onChange={event => setReply(event.target.value)} aria-label="Parent reply" />
+              <textarea className="w-full rounded-xl border border-border p-3 text-sm" rows={2} value={reply} onChange={event => setReply(event.target.value)} aria-label="Parent reply" placeholder="e.g. Read with Mina." />
               <button type="submit" className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Acknowledge and e-sign</button>
             </form>
           )

@@ -304,7 +304,7 @@ export function YearPlanner({
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">This week</p>
         <h2 className="font-heading text-2xl mt-1">Today, {today}</h2>
         {week.length === 0 ? (
-          <p className="text-sm text-muted-foreground mt-2">Nothing due in the next 7 days for this campus, class, or year group.</p>
+          <p className="text-sm text-muted-foreground mt-2">Nothing due in the next 7 days for this campus, class, or level.</p>
         ) : (
           <ul className="mt-3 space-y-2">
             {week.map(item => (
@@ -400,7 +400,7 @@ export function YearPlanner({
                 <Input value={plan.yearGroup} disabled={!canEdit} onChange={event => setPlan(current => ({ ...current, yearGroup: event.target.value }))} placeholder="All" />
               </label>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">A blank field shows every campus, class, or year group. Events with a different campus stay hidden.</p>
+            <p className="text-xs text-muted-foreground mt-2">A blank field shows every campus, class, or level. Events with a different campus stay hidden.</p>
           </Panel>
 
           {canEdit && (

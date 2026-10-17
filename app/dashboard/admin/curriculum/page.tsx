@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
@@ -19,29 +19,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import {
   Loader2, Plus, Layers, Sparkles, BookOpen, ChevronRight, Wand2, Check, RotateCcw,
-  Pencil, Trash2,
+  Pencil, Trash2, Search,
 } from 'lucide-react';
 import Link from 'next/link';
 import { reorderById, sortByOrder, withSequentialOrder } from '@/lib/reorder';
 import { hasCmsAddon } from '@/lib/entitlements';
 import { stripUnitPrefix } from '@/lib/unit-title';
 import { ReorderControls, reorderKeyDown } from '@/components/reorder-controls';
-import { PROGRAMMES, cmsSubjectYearOptions, displayLevels } from '@/lib/programmes';
+import { displayLevels, toNamedLevel } from '@/lib/programmes';
+import { LevelSelect } from '@/components/level-select';
+import { useCoursePlaceholders } from '@/hooks/use-example-course';
+
+const PAGE_SIZE = 12;
 
 const STATUS_BADGE: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
   pending_approval: 'bg-amber-50 text-amber-700 border border-amber-200',
   published: 'bg-emerald-50 text-emerald-700',
 };
-
-/** Year / Level suggestions from the same taxonomy as sign-up. */
-const YEAR_LEVEL_SUGGESTIONS = PROGRAMMES.map((programme) => programme.label);
-
-function yearChoices(name: string | undefined, stored: readonly string[], current: string): readonly string[] {
-  const years = cmsSubjectYearOptions(name, stored);
-  if (current && !years.includes(current)) return [current, ...years];
-  return years;
-}
 
 /** A teaching week is planned as 5 × 60-minute sessions. */
 const MINUTES_PER_WEEK = 300;
@@ -61,7 +56,8 @@ export default function AdminCurriculumPage() {
   const [showProgrammeForm, setShowProgrammeForm] = useState(false);
   const [progName, setProgName] = useState('');
   const [progSubjects, setProgSubjects] = useState('');
-  const [progYearGroups, setProgYearGroups] = useState('Secondary');
+  const placeholders = useCoursePlaceholders();
+  const [progYearGroups, setProgYearGroups] = useState('');
   const [progTier, setProgTier] = useState<'free' | 'academic'>('academic');
   const [creatingProgramme, setCreatingProgramme] = useState(false);
   /** Programme being edited; null means the form creates a new one. */
@@ -82,7 +78,7 @@ export default function AdminCurriculumPage() {
     setEditingSubject(m.id);
     setSubjTitle(m.title ?? '');
     setSubjSubject(m.subject ?? '');
-    setSubjYear(m.yearGroup ?? '');
+    setSubjYear(toNamedLevel(m.yearGroup ?? ''));
     setSubjProgrammeId(m.programmeId ?? '');
   };
 
@@ -135,19 +131,25 @@ export default function AdminCurriculumPage() {
   const [showModuleForm, setShowModuleForm] = useState(false);
   const [modTitle, setModTitle] = useState('');
   const [modSubject, setModSubject] = useState('');
-  const [modYearGroup, setModYearGroup] = useState('Year 7');
+  const [modYearGroup, setModYearGroup] = useState('');
   const [modProgrammeId, setModProgrammeId] = useState<string>('');
   const [creatingModule, setCreatingModule] = useState(false);
 
   // AI Course Architect (ET AI)
   const [archSubject, setArchSubject] = useState('');
-  const [archYear, setArchYear] = useState('Year 7');
-  const [archWeeks, setArchWeeks] = useState('12');
+  const [archYear, setArchYear] = useState('');
+  const [archWeeks, setArchWeeks] = useState('');
   const [archTitle, setArchTitle] = useState('');
   const [archOutline, setArchOutline] = useState<OutlineModule[] | null>(null);
   const [archDesigning, setArchDesigning] = useState(false);
   const [archCreating, setArchCreating] = useState(false);
   const [archProgress, setArchProgress] = useState<{ done: number; total: number; step: string } | null>(null);
+  const [archStep, setArchStep] = useState<1 | 2 | 3>(1);
+  const [programmeQuery, setProgrammeQuery] = useState('');
+  const [tierFilter, setTierFilter] = useState<'all' | 'free' | 'academic'>('all');
+  const [programmePage, setProgrammePage] = useState(0);
+  const [subjectQuery, setSubjectQuery] = useState('');
+  const [subjectPage, setSubjectPage] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -155,7 +157,6 @@ export default function AdminCurriculumPage() {
       const [progs, mods] = await Promise.all([getProgrammes(), getAllCurriculumModules()]);
       setProgrammes(sortByOrder(progs));
       setModules(sortByOrder(mods));
-      if (progs.length > 0) setModProgrammeId(prev => prev || progs[0].id);
     } catch (e: any) {
       toast.error(e?.message || 'Failed to load curriculum data.');
     } finally {
@@ -188,9 +189,9 @@ export default function AdminCurriculumPage() {
     try {
       const result = await seedY7ScienceUnit1(user.uid);
       if (result.created) {
-        toast.success(`Seeded "Science — Year 7" with ${result.lessonsCreated} lessons.`);
+        toast.success(`Seeded "Science — Lower Secondary" with ${result.lessonsCreated} lessons.`);
       } else {
-        toast.info('Science — Year 7 already exists — nothing to seed.');
+        toast.info('Science — Lower Secondary already exists — nothing to seed.');
       }
       load();
     } catch (e: any) {
@@ -210,7 +211,11 @@ export default function AdminCurriculumPage() {
   const designWithEt = async () => {
     const subject = archSubject.trim();
     if (!subject) { toast.error('Enter a subject for ET AI to design.'); return; }
-    const weeks = Math.min(52, Math.max(1, Number(archWeeks) || 12));
+    const weeks = Number(archWeeks);
+    if (!Number.isFinite(weeks) || weeks < 1 || weeks > 52) {
+      toast.error('Enter a duration in weeks.');
+      return;
+    }
 
     // Designing a second copy of a subject that already exists is almost always
     // a mistake, and it is expensive to undo once units and lessons are built.
@@ -245,6 +250,7 @@ export default function AdminCurriculumPage() {
       if (!modules.length) throw new Error('ET AI returned an empty outline — try again.');
       setArchOutline(modules);
       setArchTitle(prev => prev.trim() || `${subject}${archYear.trim() ? ` — ${archYear.trim()}` : ''}`);
+      setArchStep(2);
       toast.success(`ET AI designed ${modules.length} modules.`);
     } catch (e: any) {
       toast.error(e?.message || 'ET AI request failed.');
@@ -261,6 +267,7 @@ export default function AdminCurriculumPage() {
     const tick = (step: string) => { done += 1; setArchProgress({ done, total, step }); };
 
     setArchCreating(true);
+    setArchStep(3);
     setArchProgress({ done: 0, total, step: 'Creating subject…' });
     try {
       const courseId = await createCurriculumModule({
@@ -317,7 +324,7 @@ export default function AdminCurriculumPage() {
   const resetProgrammeForm = () => {
     setProgName('');
     setProgSubjects('');
-    setProgYearGroups('Secondary');
+    setProgYearGroups('');
     setProgTier('academic');
     setEditingProgramme(null);
     setShowProgrammeForm(false);
@@ -338,7 +345,7 @@ export default function AdminCurriculumPage() {
     setCreatingProgramme(true);
     const payload = {
       name: progName.trim(),
-      yearGroups: progYearGroups.split(',').map(s => s.trim()).filter(Boolean),
+      yearGroups: [...new Set(progYearGroups.split(',').map(s => toNamedLevel(s.trim())).filter(Boolean))],
       subjects: progSubjects.split(',').map(s => s.trim()).filter(Boolean),
       requiredTier: progTier,
     };
@@ -397,7 +404,7 @@ export default function AdminCurriculumPage() {
       toast.success('Subject created.');
       setModTitle('');
       setModSubject('');
-      setModYearGroup(YEAR_LEVEL_SUGGESTIONS[0]);
+      setModYearGroup('');
       setShowModuleForm(false);
       await load();
       window.location.href = `/dashboard/admin/curriculum/${courseId}`;
@@ -407,6 +414,41 @@ export default function AdminCurriculumPage() {
       setCreatingModule(false);
     }
   };
+
+  const programmeFiltering = programmeQuery.trim() !== '' || tierFilter !== 'all';
+  const visibleProgrammes = useMemo(() => {
+    const query = programmeQuery.trim().toLowerCase();
+    return programmes.filter(programme => {
+      const levels = displayLevels(programme.yearGroups).toLowerCase();
+      const subjects = (programme.subjects ?? []).join(' ').toLowerCase();
+      const matchesQuery = !query
+        || programme.name.toLowerCase().includes(query)
+        || levels.includes(query)
+        || subjects.includes(query);
+      const tier = programme.requiredTier ?? 'academic';
+      const matchesTier = tierFilter === 'all' || tier === tierFilter;
+      return matchesQuery && matchesTier;
+    });
+  }, [programmes, programmeQuery, tierFilter]);
+  const programmePages = Math.max(1, Math.ceil(visibleProgrammes.length / PAGE_SIZE));
+  const programmePageSafe = Math.min(programmePage, programmePages - 1);
+  const programmeSlice = visibleProgrammes.slice(programmePageSafe * PAGE_SIZE, programmePageSafe * PAGE_SIZE + PAGE_SIZE);
+
+  const visibleSubjects = useMemo(() => {
+    const query = subjectQuery.trim().toLowerCase();
+    if (!query) return modules;
+    return modules.filter(module => {
+      const programmeName = programmes.find(item => item.id === module.programmeId)?.name ?? '';
+      return [module.title, module.subject, module.yearGroup, programmeName]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .includes(query);
+    });
+  }, [modules, programmes, subjectQuery]);
+  const subjectPages = Math.max(1, Math.ceil(visibleSubjects.length / PAGE_SIZE));
+  const subjectPageSafe = Math.min(subjectPage, subjectPages - 1);
+  const subjectSlice = visibleSubjects.slice(subjectPageSafe * PAGE_SIZE, subjectPageSafe * PAGE_SIZE + PAGE_SIZE);
 
   if (!hasCmsAddon(profile)) {
     return (
@@ -439,7 +481,7 @@ export default function AdminCurriculumPage() {
         <div className="sm:text-right">
           <Button onClick={handleSeed} disabled={seeding} variant="outline" className="gap-2 rounded-xl">
             <BookOpen className="w-4 h-4" />
-            {seeding ? 'Loading…' : 'Load Sample Curriculum (Secondary Science)'}
+            {seeding ? 'Loading…' : 'Load Sample Curriculum (Lower Secondary Science)'}
           </Button>
           <p className="text-xs text-muted-foreground mt-1.5 max-w-xs sm:ml-auto">
             Creates a ready-made demo subject you can edit or delete at any time.
@@ -448,51 +490,80 @@ export default function AdminCurriculumPage() {
       </div>
 
       {/* ── AI Course Architect ── */}
-      <Card className="p-0 rounded-2xl overflow-hidden border-violet-200">
-        <div className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-teal-500 px-6 py-5 text-white">
-          <div className="flex items-start gap-3">
-            <span className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0">
-              <Wand2 className="w-5 h-5" />
+      <Card className="p-0 rounded-2xl overflow-hidden border-border">
+        <div className="px-5 py-4 border-b border-border flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3 min-w-0">
+            <span className="w-9 h-9 rounded-lg bg-violet-50 text-violet-700 flex items-center justify-center shrink-0">
+              <Wand2 className="w-4 h-4" />
             </span>
             <div className="min-w-0">
-              <h2 className="font-bold text-lg leading-tight">AI Course Architect</h2>
-              <p className="text-sm text-white/85">
-                Tell ET AI the subject, level and length — it designs the whole scheme of work,
-                module by module, lesson by lesson. Review it, then build it in one click.
-              </p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">1 · Course builder</p>
+              <h2 className="font-semibold text-foreground leading-tight">AI Course Architect</h2>
             </div>
           </div>
+          <ol className="flex items-center gap-1 text-xs" aria-label="Course architect steps">
+            {([
+              [1, 'Brief'],
+              [2, 'Review'],
+              [3, 'Build'],
+            ] as const).map(([step, label], index) => (
+              <li key={step} className="flex items-center gap-1">
+                {index > 0 ? <span className="w-4 h-px bg-border" aria-hidden /> : null}
+                <button
+                  type="button"
+                  disabled={step === 2 && !archOutline}
+                  onClick={() => {
+                    if (step === 1) setArchStep(1);
+                    if (step === 2 && archOutline) setArchStep(2);
+                    if (step === 3 && archOutline) setArchStep(3);
+                  }}
+                  className={`rounded-full px-2.5 py-1 font-medium ${
+                    archStep === step
+                      ? 'bg-foreground text-background'
+                      : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {step}. {label}
+                </button>
+              </li>
+            ))}
+          </ol>
         </div>
 
-        <div className="p-6 space-y-5">
+        <div className="p-5 space-y-4">
+          {archStep === 1 && (
           <div className="grid sm:grid-cols-[1fr_1fr_140px_auto] gap-3 sm:items-end">
             <div className="space-y-1.5">
               <Label>Subject *</Label>
               <Input value={archSubject} onChange={e => setArchSubject(e.target.value)}
-                placeholder="e.g. Combined Science" className="rounded-xl h-10" />
+                placeholder={placeholders.title} className="rounded-xl h-10" />
             </div>
             <div className="space-y-1.5">
-              <Label>Year / Level</Label>
-              <Input value={archYear} onChange={e => setArchYear(e.target.value)}
-                list="year-level-suggestions" placeholder="e.g. Secondary"
-                className="rounded-xl h-10" />
+              <Label>Level</Label>
+              <LevelSelect
+                value={archYear}
+                onChange={setArchYear}
+                ariaLabel="Level"
+                className="w-full rounded-xl h-10 border border-input bg-background px-3 text-sm"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Duration (weeks)</Label>
               <Input type="number" min={1} max={52} value={archWeeks}
-                onChange={e => setArchWeeks(e.target.value)} className="rounded-xl h-10" />
+                onChange={e => setArchWeeks(e.target.value)} placeholder={placeholders.weeks} className="rounded-xl h-10" />
             </div>
             <Button
               onClick={designWithEt}
               disabled={archDesigning || archCreating}
-              className="rounded-xl h-10 gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white"
+              className="rounded-xl h-10 gap-2"
             >
               {archDesigning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
               {archDesigning ? 'Designing…' : 'Design with ET AI'}
             </Button>
           </div>
+          )}
 
-          {archDesigning && (
+          {(archStep === 1 || archDesigning) && archDesigning && (
             <div className="rounded-xl border border-dashed border-violet-200 bg-violet-50/50 px-4 py-6 text-center">
               <Loader2 className="w-5 h-5 animate-spin mx-auto text-violet-600" />
               <p className="text-sm text-violet-700 font-medium mt-2">
@@ -503,7 +574,7 @@ export default function AdminCurriculumPage() {
           )}
 
           <AnimatePresence>
-            {archOutline && !archDesigning && (
+            {archOutline && !archDesigning && archStep > 1 && (
               <motion.div
                 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                 className="space-y-4"
@@ -546,22 +617,35 @@ export default function AdminCurriculumPage() {
                   ))}
                 </div>
 
-                <div className="grid sm:grid-cols-[1fr_auto_auto] gap-3 sm:items-end pt-1">
-                  <div className="space-y-1.5">
-                    <Label>Subject title (as it will appear in the CMS)</Label>
-                    <Input value={archTitle} onChange={e => setArchTitle(e.target.value)} className="rounded-xl h-10" />
+                {archStep === 3 && (
+                <div className="space-y-1.5">
+                  <Label>Subject title</Label>
+                  <Input value={archTitle} onChange={e => setArchTitle(e.target.value)} placeholder={placeholders.title} className="rounded-xl h-10" />
+                </div>
+                )}
+
+                <div className="sticky bottom-3 z-10 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-background/95 px-3 py-2 shadow-sm backdrop-blur">
+                  <p className="text-xs text-muted-foreground">
+                    {archStep === 2 ? 'Review the outline, then name the subject.' : 'Draft only. Publish later in the content builder.'}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" className="rounded-lg gap-1.5" disabled={archCreating} onClick={() => { setArchStep(1); void designWithEt(); }}>
+                      <RotateCcw className="w-3.5 h-3.5" /> Redesign
+                    </Button>
+                    {archStep === 2 ? (
+                      <Button size="sm" className="rounded-lg" onClick={() => setArchStep(3)}>Continue</Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={createFromOutline}
+                        disabled={archCreating}
+                        className="rounded-lg gap-1.5"
+                      >
+                        {archCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                        {archCreating ? 'Creating…' : 'Create this structure'}
+                      </Button>
+                    )}
                   </div>
-                  <Button variant="outline" className="rounded-xl h-10 gap-2" disabled={archCreating} onClick={designWithEt}>
-                    <RotateCcw className="w-3.5 h-3.5" /> Redesign
-                  </Button>
-                  <Button
-                    onClick={createFromOutline}
-                    disabled={archCreating}
-                    className="rounded-xl h-10 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
-                  >
-                    {archCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                    {archCreating ? 'Creating…' : 'Create this structure'}
-                  </Button>
                 </div>
 
                 {archProgress && (
@@ -588,18 +672,43 @@ export default function AdminCurriculumPage() {
         </div>
       </Card>
 
-      <datalist id="year-level-suggestions">
-        {YEAR_LEVEL_SUGGESTIONS.map(y => <option key={y} value={y} />)}
-      </datalist>
-
       {/* Programmes */}
       <Card className="p-6 rounded-2xl">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-foreground text-lg">Programmes ({programmes.length})</h2>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">2 · Taxonomy</p>
+            <h2 className="font-semibold text-foreground">Programmes ({visibleProgrammes.length}{programmeFiltering ? ` of ${programmes.length}` : ''})</h2>
+          </div>
           <Button size="sm" variant="outline" className="gap-1.5 rounded-xl"
             onClick={() => (showProgrammeForm ? resetProgrammeForm() : setShowProgrammeForm(true))}>
             <Plus className="w-3.5 h-3.5" /> {showProgrammeForm ? 'Cancel' : 'New Programme'}
           </Button>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2 mb-4">
+          <div className="relative flex-1">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={programmeQuery}
+              onChange={event => { setProgrammeQuery(event.target.value); setProgrammePage(0); }}
+              placeholder="Search programmes"
+              aria-label="Search programmes"
+              className="rounded-xl h-9 pl-8"
+            />
+          </div>
+          <div className="flex gap-1">
+            {(['all', 'academic', 'free'] as const).map(tier => (
+              <Button
+                key={tier}
+                type="button"
+                size="sm"
+                variant={tierFilter === tier ? 'default' : 'outline'}
+                className="rounded-lg h-9 capitalize"
+                onClick={() => { setTierFilter(tier); setProgrammePage(0); }}
+              >
+                {tier}
+              </Button>
+            ))}
+          </div>
         </div>
 
         {showProgrammeForm && (
@@ -612,7 +721,7 @@ export default function AdminCurriculumPage() {
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Name *</Label>
-                <Input value={progName} onChange={e => setProgName(e.target.value)} placeholder="e.g. iLowerSecondary" className="rounded-xl h-10" />
+                <Input value={progName} onChange={e => setProgName(e.target.value)} placeholder={placeholders.title} className="rounded-xl h-10" />
               </div>
               <div className="space-y-1.5">
                 <Label>Required tier</Label>
@@ -627,8 +736,8 @@ export default function AdminCurriculumPage() {
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Year / Level groups (comma-separated)</Label>
-                <Input value={progYearGroups} onChange={e => setProgYearGroups(e.target.value)} className="rounded-xl h-10" />
+                <Label>Levels (comma-separated)</Label>
+                <Input value={progYearGroups} onChange={e => setProgYearGroups(e.target.value)} placeholder={placeholders.level} className="rounded-xl h-10" />
               </div>
               <div className="space-y-1.5">
                 <Label>Subjects (comma-separated)</Label>
@@ -660,69 +769,100 @@ export default function AdminCurriculumPage() {
         )}
         {programmes.length === 0 ? (
           <p className="text-sm text-muted-foreground">No programmes yet.</p>
+        ) : visibleProgrammes.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No programmes match that search.</p>
         ) : (
-          <div className="grid sm:grid-cols-2 gap-3">
-            {programmes.map((p, index) => (
+          <>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {programmeSlice.map((p) => {
+              const index = programmes.findIndex(item => item.id === p.id);
+              return (
               <div
                 key={p.id}
-                className="border border-border rounded-xl p-4"
-                tabIndex={0}
-                onKeyDown={event => reorderKeyDown(event, index, programmes.length, to => {
-                  void persistOrder(reorderById(programmes, programmes[index].id, programmes[to].id), row => updateProgramme(row.id, { order: row.order }), setProgrammes, 'Programme order');
-                })}
+                className="border border-border rounded-lg px-3 py-2.5"
+                tabIndex={programmeFiltering ? -1 : 0}
+                onKeyDown={event => {
+                  if (programmeFiltering) return;
+                  reorderKeyDown(event, index, programmes.length, to => {
+                    void persistOrder(reorderById(programmes, programmes[index].id, programmes[to].id), row => updateProgramme(row.id, { order: row.order }), setProgrammes, 'Programme order');
+                  });
+                }}
                 onDragOver={event => event.preventDefault()}
                 onDrop={event => {
+                  if (programmeFiltering) return;
                   const from = Number(event.dataTransfer.getData('text/plain'));
                   if (!Number.isInteger(from) || !programmes[from]) return;
                   void persistOrder(reorderById(programmes, programmes[from].id, p.id), row => updateProgramme(row.id, { order: row.order }), setProgrammes, 'Programme order');
                 }}
               >
-                <ReorderControls
-                  index={index}
-                  count={programmes.length}
-                  label={p.name}
-                  onMove={to => {
-                    void persistOrder(reorderById(programmes, p.id, programmes[to].id), row => updateProgramme(row.id, { order: row.order }), setProgrammes, 'Programme order');
-                  }}
-                />
-                <div className="flex items-center justify-between mb-1">
-                  <p className="font-bold text-foreground">{p.name}</p>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
-                    p.requiredTier === 'academic' ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'
-                  }`}>
-                    {p.requiredTier === 'academic' ? 'Academic' : 'Free'}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground">{displayLevels(p.yearGroups) || p.name}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{p.subjects?.join(', ')}</p>
-                <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border">
-                  <Button size="sm" variant="ghost" className="h-8 rounded-lg text-xs gap-1.5"
-                    onClick={() => startEditProgramme(p)}>
-                    <Pencil className="w-3.5 h-3.5" /> Edit
-                  </Button>
-                  <Button size="sm" variant="ghost"
-                    className="h-8 rounded-lg text-xs gap-1.5 text-muted-foreground hover:text-destructive"
-                    disabled={deletingProgramme === p.id}
-                    onClick={() => handleDeleteProgramme(p)}>
-                    {deletingProgramme === p.id
-                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      : <Trash2 className="w-3.5 h-3.5" />}
-                    Delete
-                  </Button>
+                <div className="flex items-start gap-2">
+                  {!programmeFiltering && (
+                    <ReorderControls
+                      index={index}
+                      count={programmes.length}
+                      label={p.name}
+                      onMove={to => {
+                        void persistOrder(reorderById(programmes, p.id, programmes[to].id), row => updateProgramme(row.id, { order: row.order }), setProgrammes, 'Programme order');
+                      }}
+                    />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-medium text-sm text-foreground truncate">{p.name}</p>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold shrink-0 ${
+                        p.requiredTier === 'academic' ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'
+                      }`}>
+                        {p.requiredTier === 'academic' ? 'Academic' : 'Free'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{displayLevels(p.yearGroups) || 'No level'}</p>
+                    <p className="text-xs text-muted-foreground truncate">{p.subjects?.slice(0, 3).join(', ') || 'No subjects'}{(p.subjects?.length ?? 0) > 3 ? ` +${(p.subjects?.length ?? 0) - 3}` : ''}</p>
+                  </div>
+                  <div className="flex items-center shrink-0">
+                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0 rounded-lg" title="Edit programme"
+                      onClick={() => startEditProgramme(p)}>
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button size="sm" variant="ghost"
+                      className="h-7 w-7 p-0 rounded-lg text-muted-foreground hover:text-destructive"
+                      title="Delete programme"
+                      disabled={deletingProgramme === p.id}
+                      onClick={() => handleDeleteProgramme(p)}>
+                      {deletingProgramme === p.id
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        : <Trash2 className="w-3.5 h-3.5" />}
+                    </Button>
+                  </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
+          <Pager page={programmePageSafe} pages={programmePages} onPage={setProgrammePage} />
+          </>
         )}
       </Card>
 
       {/* Curriculum modules */}
       <Card className="p-6 rounded-2xl">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-foreground text-lg">Subjects ({modules.length})</h2>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">3 · Subjects</p>
+            <h2 className="font-semibold text-foreground">Subjects ({visibleSubjects.length})</h2>
+          </div>
           <Button size="sm" variant="outline" className="gap-1.5 rounded-xl" onClick={() => setShowModuleForm(o => !o)}>
             <Plus className="w-3.5 h-3.5" /> New Subject
           </Button>
+        </div>
+        <div className="relative mb-3">
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={subjectQuery}
+            onChange={event => { setSubjectQuery(event.target.value); setSubjectPage(0); }}
+            placeholder="Search subjects"
+            aria-label="Search subjects"
+            className="rounded-xl h-9 pl-8"
+          />
         </div>
 
         {showModuleForm && (
@@ -730,38 +870,26 @@ export default function AdminCurriculumPage() {
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Title *</Label>
-                <Input value={modTitle} onChange={e => setModTitle(e.target.value)} placeholder="e.g. Maths — Secondary" className="rounded-xl h-10" />
+                <Input value={modTitle} onChange={e => setModTitle(e.target.value)} placeholder={placeholders.title} className="rounded-xl h-10" />
               </div>
               <div className="space-y-1.5">
                 <Label>Subject *</Label>
-                <Input value={modSubject} onChange={e => setModSubject(e.target.value)} placeholder="e.g. Maths" className="rounded-xl h-10" />
+                <Input value={modSubject} onChange={e => setModSubject(e.target.value)} placeholder={placeholders.subject} className="rounded-xl h-10" />
               </div>
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Year / Level</Label>
-                <select
-                  aria-label="Year / Level"
+                <Label>Level</Label>
+                <LevelSelect
                   value={modYearGroup}
-                  onChange={e => setModYearGroup(e.target.value)}
+                  onChange={setModYearGroup}
+                  ariaLabel="Level"
                   className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm"
-                >
-                  {yearChoices(
-                    programmes.find(item => item.id === modProgrammeId)?.name,
-                    programmes.find(item => item.id === modProgrammeId)?.yearGroups ?? [],
-                    modYearGroup,
-                  ).map(yg => <option key={yg} value={yg}>{yg}</option>)}
-                </select>
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>Programme</Label>
-                <Select value={modProgrammeId} onValueChange={(v) => {
-                  const next = v ?? '';
-                  setModProgrammeId(next);
-                  const chosen = programmes.find(item => item.id === next);
-                  const years = cmsSubjectYearOptions(chosen?.name, chosen?.yearGroups ?? []);
-                  if (years.length && !years.includes(modYearGroup)) setModYearGroup(years[0] ?? '');
-                }} disabled={programmes.length === 0}>
+                <Select value={modProgrammeId} onValueChange={(v) => setModProgrammeId(v ?? '')} disabled={programmes.length === 0}>
                   <SelectTrigger className="rounded-xl h-10"><SelectValue placeholder="None" /></SelectTrigger>
                   <SelectContent>
                     {programmes.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
@@ -778,11 +906,14 @@ export default function AdminCurriculumPage() {
         {modules.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <BookOpen className="w-10 h-10 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">No subjects yet — seed Y7 Science or create one.</p>
+            <p className="text-sm">No subjects yet — load the sample curriculum or create one.</p>
           </div>
         ) : (
+          <>
           <div className="divide-y divide-border">
-            {modules.map((m, index) => (
+            {subjectSlice.map((m) => {
+              const index = modules.findIndex(item => item.id === m.id);
+              return (
               editingSubject === m.id ? (
                 <div key={m.id} className="py-3.5 -mx-2 px-2 rounded-lg bg-muted/40 space-y-3">
                   <div className="grid sm:grid-cols-3 gap-3">
@@ -795,29 +926,17 @@ export default function AdminCurriculumPage() {
                       <Input value={subjSubject} onChange={e => setSubjSubject(e.target.value)} className="rounded-xl h-10" />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Year / Level</Label>
-                      <select
-                        aria-label="Year / Level"
+                      <Label className="text-xs">Level</Label>
+                      <LevelSelect
                         value={subjYear}
-                        onChange={e => setSubjYear(e.target.value)}
+                        onChange={setSubjYear}
+                        ariaLabel="Level"
                         className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm"
-                      >
-                        {yearChoices(
-                          programmes.find(item => item.id === subjProgrammeId)?.name,
-                          programmes.find(item => item.id === subjProgrammeId)?.yearGroups ?? [],
-                          subjYear,
-                        ).map(yg => <option key={yg} value={yg}>{yg}</option>)}
-                      </select>
+                      />
                     </div>
                     <div className="space-y-1.5 sm:col-span-3">
                       <Label className="text-xs">Programme</Label>
-                      <Select value={subjProgrammeId} onValueChange={(v) => {
-                        const next = v ?? '';
-                        setSubjProgrammeId(next);
-                        const chosen = programmes.find(item => item.id === next);
-                        const years = cmsSubjectYearOptions(chosen?.name, chosen?.yearGroups ?? []);
-                        if (years.length && !years.includes(subjYear)) setSubjYear(years[0] ?? '');
-                      }}>
+                      <Select value={subjProgrammeId} onValueChange={(v) => setSubjProgrammeId(v ?? '')}>
                         <SelectTrigger className="rounded-xl h-10"><SelectValue placeholder="Choose a programme" /></SelectTrigger>
                         <SelectContent>
                           {programmes.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
@@ -839,28 +958,32 @@ export default function AdminCurriculumPage() {
                   key={m.id}
                   className="flex items-center justify-between gap-4 py-3.5 hover:bg-muted/40 transition-colors -mx-2 px-2 rounded-lg"
                   tabIndex={0}
-                  onKeyDown={event => reorderKeyDown(event, index, modules.length, to => {
-                    void persistOrder(reorderById(modules, modules[index].id, modules[to].id), row => updateCourse(row.id, { order: row.order }), setModules, 'Subject order');
-                  })}
+                  onKeyDown={event => {
+                    if (subjectQuery.trim()) return;
+                    reorderKeyDown(event, index, modules.length, to => {
+                      void persistOrder(reorderById(modules, modules[index].id, modules[to].id), row => updateCourse(row.id, { order: row.order }), setModules, 'Subject order');
+                    });
+                  }}
                   onDragOver={event => event.preventDefault()}
                   onDrop={event => {
+                    if (subjectQuery.trim()) return;
                     const from = Number(event.dataTransfer.getData('text/plain'));
                     if (!Number.isInteger(from) || !modules[from]) return;
                     void persistOrder(reorderById(modules, modules[from].id, m.id), row => updateCourse(row.id, { order: row.order }), setModules, 'Subject order');
                   }}
                 >
-                  <ReorderControls
+                  {!subjectQuery.trim() && <ReorderControls
                     index={index}
                     count={modules.length}
                     label={m.title}
                     onMove={to => {
                       void persistOrder(reorderById(modules, m.id, modules[to].id), row => updateCourse(row.id, { order: row.order }), setModules, 'Subject order');
                     }}
-                  />
+                  />}
                   <Link href={`/dashboard/admin/curriculum/${m.id}`} className="min-w-0 flex-1">
                     <p className="font-semibold text-foreground text-sm truncate">{m.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      {m.subject} · {m.yearGroup ?? '—'}
+                      {m.subject} · {toNamedLevel(m.yearGroup ?? '') || '—'}
                       {m.programmeId ? ` · ${programmes.find(p => p.id === m.programmeId)?.name ?? 'Programme linked'}` : ' · No programme'}
                     </p>
                   </Link>
@@ -887,10 +1010,26 @@ export default function AdminCurriculumPage() {
                   </div>
                 </div>
               )
-            ))}
+              );
+            })}
           </div>
+          <Pager page={subjectPageSafe} pages={subjectPages} onPage={setSubjectPage} />
+          </>
         )}
       </Card>
+    </div>
+  );
+}
+
+function Pager({ page, pages, onPage }: { page: number; pages: number; onPage: (page: number) => void }) {
+  if (pages <= 1) return null;
+  return (
+    <div className="flex items-center justify-between gap-2 pt-3">
+      <p className="text-xs text-muted-foreground">Page {page + 1} of {pages}</p>
+      <div className="flex gap-1">
+        <Button type="button" size="sm" variant="outline" className="h-8 rounded-lg" disabled={page === 0} onClick={() => onPage(page - 1)}>Previous</Button>
+        <Button type="button" size="sm" variant="outline" className="h-8 rounded-lg" disabled={page >= pages - 1} onClick={() => onPage(page + 1)}>Next</Button>
+      </div>
     </div>
   );
 }

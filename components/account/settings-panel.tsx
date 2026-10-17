@@ -30,7 +30,7 @@ import {
 import type { ChildControls, PaymentMethod } from '@/lib/parent-controls';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PROGRAMMES, canonicalProgramme, levelsForProgramme } from '@/lib/programmes';
+import { PROGRAMMES, canonicalProgramme, levelsForProgramme, toNamedLevel } from '@/lib/programmes';
 
 export interface SettingsSession {
   id: string;
@@ -83,7 +83,8 @@ function StudentPlacement({
 }) {
   const programme = canonicalProgramme(draft.level);
   const years = levelsForProgramme(programme);
-  const year = years.includes(draft.yearGroup) ? draft.yearGroup : (years[0] ?? '');
+  const named = toNamedLevel(draft.yearGroup);
+  const year = years.includes(named) ? named : '';
 
   useEffect(() => {
     if (!programme) return;
@@ -100,7 +101,8 @@ function StudentPlacement({
           onChange={event => {
             const next = event.target.value;
             const nextYears = levelsForProgramme(next);
-            onChange({ ...draft, level: next, yearGroup: nextYears[0] ?? '' });
+            const kept = toNamedLevel(draft.yearGroup);
+            onChange({ ...draft, level: next, yearGroup: nextYears.includes(kept) ? kept : '' });
           }}
           className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
         >
@@ -108,14 +110,15 @@ function StudentPlacement({
           {PROGRAMMES.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}
         </select>
       </Field>
-      <Field label="Year / Level">
+      <Field label="Level">
         <select
-          aria-label="Year / Level"
+          aria-label="Level"
           value={year}
           disabled={!programme}
           onChange={event => onChange({ ...draft, level: programme, yearGroup: event.target.value })}
           className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
         >
+          <option value="">Choose a level</option>
           {years.map(item => <option key={item} value={item}>{item}</option>)}
         </select>
       </Field>

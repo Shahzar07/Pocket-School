@@ -92,7 +92,7 @@ const STATUS_CARD: Record<string, { bg: string; label: string }> = {
   archived: { bg: 'bg-red-50 text-red-600 border-red-200', label: 'Archived' },
 };
 
-const STUDENT_GROUPS = ['Year 10 All', 'Year 11 Advanced', 'SPM Target', 'Free Trial'];
+const STUDENT_GROUPS = ['IGCSE All', 'IGCSE Advanced', 'SPM Target', 'Free Trial'];
 
 const DEFAULT_BLOCKS = ['objectives', 'video', 'text', 'vocabulary', 'quiz'];
 

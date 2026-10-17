@@ -17,7 +17,9 @@ import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebas
 import { storage } from '@/lib/firebase';
 import type { Course, CourseType } from '@/lib/db';
 import { createCourse, updateCourse } from '@/lib/db';
-import { COURSE_LEVELS, canonicalCourseLevel } from '@/lib/course-builder';
+import { LevelSelect } from '@/components/level-select';
+import { useCoursePlaceholders } from '@/hooks/use-example-course';
+import { toNamedLevel } from '@/lib/programmes';
 import { formatMoney } from '@/lib/pricing';
 import { CoverArtPicker, storeMedia } from '@/components/media';
 
@@ -87,7 +89,8 @@ export default function CourseEditorModal({
   const thumbInputRef = useRef<HTMLInputElement>(null);
 
   // Tab 2
-  const [level, setLevel] = useState('All');
+  const placeholders = useCoursePlaceholders();
+  const [level, setLevel] = useState('');
   const [price, setPrice] = useState<string>('0');
   const [currency, setCurrency] = useState('USD');
   const [whatYouLearn, setWhatYouLearn] = useState('');
@@ -115,7 +118,7 @@ export default function CourseEditorModal({
       setThumbnailUrl(initial.thumbnailUrl ?? '');
       setThumbnailPreview(initial.thumbnailUrl ?? '');
       setThumbnailFile(null);
-      setLevel(canonicalCourseLevel(initial.level ?? 'All'));
+      setLevel(initial.level ? toNamedLevel(initial.level) || initial.level : '');
       setPrice(String(initial.price ?? 0));
       setCurrency(initial.currency ?? 'USD');
       setWhatYouLearn((initial.whatYouLearn ?? []).join('\n'));
@@ -130,7 +133,7 @@ export default function CourseEditorModal({
     } else {
       setTitle(''); setDescription(''); setType('course'); setCategory('Other');
       setSubject(''); setThumbnailUrl(''); setThumbnailPreview(''); setThumbnailFile(null);
-      setLevel('All'); setPrice('0'); setCurrency('USD'); setWhatYouLearn('');
+      setLevel(''); setPrice('0'); setCurrency('USD'); setWhatYouLearn('');
       setRequirements(''); setTags(''); setWorkbookUrl(''); setWorkbookFile(null);
       setWorkbookFileName(''); setPreviewUrl(''); setDurationHours(''); setIsPublic(true);
     }
@@ -236,11 +239,11 @@ export default function CourseEditorModal({
           <TabsContent value="basic" className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="ce-title">Title *</Label>
-              <Input id="ce-title" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. GCSE Biology — Cell Respiration" />
+              <Input id="ce-title" value={title} onChange={e => setTitle(e.target.value)} placeholder={placeholders.title} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ce-desc">Description *</Label>
-              <Textarea id="ce-desc" value={description} onChange={e => setDescription(e.target.value)} placeholder="What's this product about?" rows={4} />
+              <Textarea id="ce-desc" value={description} onChange={e => setDescription(e.target.value)} placeholder={placeholders.description} rows={4} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -264,7 +267,7 @@ export default function CourseEditorModal({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ce-subject">Subject (optional)</Label>
-              <Input id="ce-subject" value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. Biology" />
+              <Input id="ce-subject" value={subject} onChange={e => setSubject(e.target.value)} placeholder={placeholders.subject} />
             </div>
 
             {/* Thumbnail upload */}
@@ -335,16 +338,16 @@ export default function CourseEditorModal({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Level</Label>
-                <Select value={canonicalCourseLevel(level)} onValueChange={(v) => v && setLevel(v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {(COURSE_LEVELS.includes(canonicalCourseLevel(level)) ? COURSE_LEVELS : [canonicalCourseLevel(level), ...COURSE_LEVELS]).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <LevelSelect
+                  value={level}
+                  onChange={setLevel}
+                  ariaLabel="Level"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="ce-dur">Duration (hours, optional)</Label>
-                <Input id="ce-dur" type="number" min="0" step="0.5" value={durationHours} onChange={e => setDurationHours(e.target.value)} placeholder="e.g. 12" />
+                <Input id="ce-dur" type="number" min="0" step="0.5" value={durationHours} onChange={e => setDurationHours(e.target.value)} placeholder={placeholders.hours} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -367,16 +370,16 @@ export default function CourseEditorModal({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ce-learn">What learners will gain (one point per line)</Label>
-              <Textarea id="ce-learn" value={whatYouLearn} onChange={e => setWhatYouLearn(e.target.value)} rows={5} placeholder={'Understand cell respiration step by step\nApply the ATP cycle to exam questions\nConfidently answer 6-mark questions\n…'} />
+              <Textarea id="ce-learn" value={whatYouLearn} onChange={e => setWhatYouLearn(e.target.value)} rows={5} placeholder={placeholders.description} />
               <p className="text-xs text-muted-foreground">These appear as bullet points on your course listing page.</p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ce-req">Requirements / prerequisites (one per line)</Label>
-              <Textarea id="ce-req" value={requirements} onChange={e => setRequirements(e.target.value)} rows={3} placeholder={'Basic GCSE biology\nA notebook and pen'} />
+              <Textarea id="ce-req" value={requirements} onChange={e => setRequirements(e.target.value)} rows={3} placeholder={placeholders.description} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ce-tags">Tags (comma-separated)</Label>
-              <Input id="ce-tags" value={tags} onChange={e => setTags(e.target.value)} placeholder="GCSE, biology, revision" />
+              <Input id="ce-tags" value={tags} onChange={e => setTags(e.target.value)} placeholder={placeholders.subject} />
             </div>
           </TabsContent>
 

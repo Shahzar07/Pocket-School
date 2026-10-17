@@ -160,7 +160,7 @@ export default function InstitutionAcademyPage() {
       <section className="rounded-3xl border border-border p-5 space-y-3">
         <h2 className="font-semibold">Classes</h2>
         <p className="text-xs text-muted-foreground">{classCount} classes. Choose the programmes this class can open.</p>
-        <Input value={className} onChange={event => setClassName(event.target.value)} placeholder="Year 8 Science" className="rounded-xl h-11" />
+        <Input value={className} onChange={event => setClassName(event.target.value)} placeholder="e.g. Lower Secondary Science" className="rounded-xl h-11" />
         <AllocationPicker
           label="Programmes"
           chips={[]}
@@ -175,7 +175,7 @@ export default function InstitutionAcademyPage() {
         />
         <p className="text-sm text-muted-foreground">{describeTargets(classProgrammes.map(id => `programme:${id}`), Object.fromEntries(classProgrammes.map(id => [`programme:${id}`, PROGRAMMES.find(programme => programme.value === id)?.label ?? id])))}</p>
         {classProgrammes.length > 0 && (
-          <p className="text-sm text-muted-foreground">Year / Level: {allocationYearsFor(classProgrammes).join(', ') || 'Not applicable'}</p>
+          <p className="text-sm text-muted-foreground">Level: {allocationYearsFor(classProgrammes).join(', ') || 'Not applicable'}</p>
         )}
         <Button onClick={() => void addClass()} className="rounded-full" disabled={!live.length}>Add class</Button>
       </section>

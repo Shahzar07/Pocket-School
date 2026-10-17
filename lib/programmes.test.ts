@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { COURSE_LEVELS } from './course-builder';
+import { NAMED_LEVELS } from './example-courses';
 import {
   NOT_APPLICABLE,
   PROGRAMMES,
@@ -13,9 +14,10 @@ import {
   levelsForProgramme,
   signupProgrammeOptions,
   suggestPlacementFromDob,
+  toNamedLevel,
 } from './programmes';
 
-test('sign-up programme and year options equal the CMS taxonomy', () => {
+test('sign-up programme and level options equal the CMS taxonomy', () => {
   const signup = signupProgrammeOptions().map((option) => option.value);
   assert.deepEqual(signup, PROGRAMMES.map((programme) => programme.value));
   assert.deepEqual([...allocationLevelOptions()], signup);
@@ -33,49 +35,57 @@ test('sign-up programme and year options equal the CMS taxonomy', () => {
   );
 });
 
-test('school programmes use the year bands from the master brief', () => {
-  assert.deepEqual(
-    [...levelsForProgramme('Primary')],
-    ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6'],
-  );
-  assert.deepEqual([...levelsForProgramme('Lower Secondary')], ['Year 7', 'Year 8', 'Year 9']);
-  assert.deepEqual([...levelsForProgramme('IGCSE')], ['Year 10', 'Year 11']);
-  assert.deepEqual([...levelsForProgramme('A-Level')], ['Year 12', 'Year 13']);
-  assert.deepEqual([...levelsForProgramme('LLB Law')], ['Year 1 (LLB)', 'Year 2 (LLB)', 'Year 3 (LLB)']);
-  assert.deepEqual([...levelsForProgramme('MBBS Medicine')], [
-    'Year 1 (MBBS)', 'Year 2 (MBBS)', 'Year 3 (MBBS)', 'Year 4 (MBBS)', 'Year 5 (MBBS)',
-  ]);
-  assert.deepEqual([...levelsForProgramme('Micro Degree')], [NOT_APPLICABLE]);
-  assert.deepEqual([...levelsForProgramme('Professional Certification')], [NOT_APPLICABLE]);
+test('programmes use named levels and never school year numbers', () => {
+  assert.deepEqual([...levelsForProgramme('Primary')], ['Primary']);
+  assert.deepEqual([...levelsForProgramme('Lower Secondary')], ['Lower Secondary']);
+  assert.deepEqual([...levelsForProgramme('IGCSE')], ['IGCSE']);
+  assert.deepEqual([...levelsForProgramme('A-Level')], ['A-Level']);
+  assert.deepEqual([...levelsForProgramme('Pre-University')], ['Pre-University']);
+  assert.deepEqual([...levelsForProgramme('LLB Law')], ['Degree']);
+  assert.deepEqual([...levelsForProgramme('MBBS Medicine')], ['Degree']);
+  assert.deepEqual([...levelsForProgramme('Micro Degree')], ['Degree']);
+  assert.deepEqual([...levelsForProgramme('Professional Certification')], ['Professional']);
   assert.deepEqual([...levelsForProgramme('Independent Learning')], [NOT_APPLICABLE]);
   assert.deepEqual([...levelsForProgramme('Engineering')], ['Foundation', 'Degree']);
   assert.deepEqual([...levelsForProgramme('Nursing')], ['Foundation', 'Degree']);
   assert.equal(PROGRAMMES.find((item) => item.value === 'LLB Law')?.summary?.includes('University of London (UoL)'), true);
+  for (const level of NAMED_LEVELS) {
+    assert.equal(PROGRAMMES.some((programme) => programme.years.includes(level) || programme.label === level), true);
+  }
 });
 
 test('CMS cards show levels instead of year numbers', () => {
-  assert.equal(displayLevels(['Year 9', 'Year 10', 'Year 11']), 'Secondary · IGCSE');
-  assert.equal(displayLevels(['IGCSE – Year 9', 'Year 10', 'Year 11']), 'Secondary · IGCSE');
+  assert.equal(displayLevels(['Year 9', 'Year 10', 'Year 11']), 'Lower Secondary · IGCSE');
+  assert.equal(displayLevels(['IGCSE – Year 9', 'Year 10', 'Year 11']), 'Lower Secondary · IGCSE');
   assert.equal(displayLevels(['Year 1', 'Year 6']), 'Primary');
-  assert.equal(displayLevels(['Year 1 (LLB)', 'Year 2 (LLB)', 'Year 3 (LLB)']), 'LLB Law');
-  assert.equal(displayLevels(['Year 1 (MBBS)', 'Year 5 (MBBS)']), 'MBBS Medicine');
+  assert.equal(displayLevels(['Year 1 (LLB)', 'Year 2 (LLB)', 'Year 3 (LLB)']), 'Degree');
+  assert.equal(displayLevels(['Year 1 (MBBS)', 'Year 5 (MBBS)']), 'Degree');
   assert.equal(displayLevels(['Foundation', 'Degree']), 'Foundation · Degree');
+  assert.equal(displayLevels(['Form 4']), 'IGCSE');
+  assert.equal(displayLevels(['Y7']), 'Lower Secondary');
   assert.equal(displayLevels(null), '');
+  assert.equal(toNamedLevel('Year 8'), 'Lower Secondary');
+  assert.equal(toNamedLevel('Degree'), 'Degree');
 });
 
-test('the server rejects a year that belongs to a different programme', () => {
-  assert.throws(() => assertPlacement('Primary', 'Year 10'), /does not belong/);
-  assert.throws(() => assertPlacement('IGCSE', 'Year 7'), /does not belong/);
-  assert.throws(() => assertPlacement('Made up', 'Year 1'), /Choose a programme/);
+test('the server rejects a level that belongs to a different programme', () => {
+  assert.throws(() => assertPlacement('Primary', 'IGCSE'), /does not belong/);
+  assert.throws(() => assertPlacement('IGCSE', 'Primary'), /does not belong/);
+  assert.throws(() => assertPlacement('Made up', 'Primary'), /Choose a programme/);
+  assert.deepEqual(assertPlacement('IGCSE', 'IGCSE'), {
+    pathway: 'IGCSE',
+    level: 'IGCSE',
+    yearGroup: 'IGCSE',
+  });
   assert.deepEqual(assertPlacement('IGCSE', 'Year 11'), {
     pathway: 'IGCSE',
     level: 'IGCSE',
-    yearGroup: 'Year 11',
+    yearGroup: 'IGCSE',
   });
   assert.deepEqual(assertPlacement('secondary', 'Year 8'), {
     pathway: 'Lower Secondary',
     level: 'Lower Secondary',
-    yearGroup: 'Year 8',
+    yearGroup: 'Lower Secondary',
   });
   assert.deepEqual(assertPlacement('Independent Learning', NOT_APPLICABLE), {
     pathway: 'Independent Learning',
@@ -85,29 +95,29 @@ test('the server rejects a year that belongs to a different programme', () => {
   assert.deepEqual(assertPlacement('', ''), { pathway: '', level: '', yearGroup: '' });
 });
 
-test('changing the programme drops years that no longer belong', () => {
+test('changing the programme drops levels that no longer belong', () => {
   const primary = allocationYearsFor(['Primary']);
-  assert.equal(primary.includes('Year 7'), false);
+  assert.equal(primary.includes('IGCSE'), false);
   assert.deepEqual(
     [...allocationYearsFor(['Primary', 'IGCSE'])],
-    ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6', 'Year 10', 'Year 11'],
+    ['Primary', 'IGCSE'],
   );
-  assert.deepEqual([...allocationYearsFor(['lower-secondary'])], ['Year 7', 'Year 8', 'Year 9']);
+  assert.deepEqual([...allocationYearsFor(['lower-secondary'])], ['Lower Secondary']);
 });
 
-test('a date of birth suggests the matching programme and year', () => {
+test('a date of birth suggests the matching programme and level', () => {
   const now = new Date(2026, 9, 15);
-  assert.deepEqual(suggestPlacementFromDob('2012-01-15', now), { programme: 'IGCSE', year: 'Year 10' });
-  assert.deepEqual(suggestPlacementFromDob('2013-03-01', now), { programme: 'Lower Secondary', year: 'Year 9' });
-  assert.deepEqual(suggestPlacementFromDob('2010-06-01', now), { programme: 'A-Level', year: 'Year 12' });
+  assert.deepEqual(suggestPlacementFromDob('2012-01-15', now), { programme: 'IGCSE', year: 'IGCSE' });
+  assert.deepEqual(suggestPlacementFromDob('2013-03-01', now), { programme: 'Lower Secondary', year: 'Lower Secondary' });
+  assert.deepEqual(suggestPlacementFromDob('2010-06-01', now), { programme: 'A-Level', year: 'A-Level' });
   assert.deepEqual(suggestPlacementFromDob('2000-01-01', now), { programme: 'Independent Learning', year: NOT_APPLICABLE });
   assert.equal(suggestPlacementFromDob('not-a-date', now), null);
 });
 
-test('a custom CMS programme keeps its own stored years', () => {
+test('a custom CMS programme keeps its own stored levels, rewritten when they are year numbers', () => {
   assert.deepEqual(
     [...cmsSubjectYearOptions('iLowerSecondary', ['Year 7', 'Year 8', 'Year 9'])],
-    ['Year 7', 'Year 8', 'Year 9'],
+    ['Lower Secondary'],
   );
   assert.deepEqual([...cmsSubjectYearOptions('Lower Secondary', ['Year 1'])], [...levelsForProgramme('Lower Secondary')]);
 });

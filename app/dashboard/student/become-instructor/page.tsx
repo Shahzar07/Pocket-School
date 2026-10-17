@@ -51,7 +51,7 @@ export default function BecomeInstructorPage() {
       <div className="space-y-4 rounded-3xl border border-border bg-card p-6">
         <div className="space-y-2">
           <Label htmlFor="headline">Headline</Label>
-          <Input id="headline" value={headline} onChange={event => setHeadline(event.target.value)} placeholder="Year 8 science" />
+          <Input id="headline" value={headline} onChange={event => setHeadline(event.target.value)} placeholder="e.g. Lower Secondary science" />
         </div>
         <div className="space-y-2">
           <Label htmlFor="subject">Subject</Label>

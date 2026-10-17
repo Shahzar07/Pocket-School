@@ -1,6 +1,6 @@
-// ─── Y7 Science Unit 1 seed — "Living Organisms" ────────────────
+// ─── Lower Secondary Science Unit 1 seed — "Living Organisms" ──
 // Source: Rochford's Education internal content brief
-// "iLowerSecondary Science · Year 7 · Unit 1: Living Organisms —
+// "iLowerSecondary Science · Lower Secondary · Unit 1: Living Organisms —
 //  Curriculum Content Architecture" (aligned to the Pearson
 // iLowerSecondary Science Scheme of Work).
 //
@@ -42,9 +42,9 @@ const L1: SeedCurriculumLesson = {
   title: 'The Seven Characteristics of Life',
   objectiveCodes: ['B7.1.1A'],
   briefPrompt:
-    'Generate a full lesson on the seven characteristics of living things (MRS NERG: Movement, Respiration, Sensitivity, Nutrition, Excretion, Reproduction, Growth) for Year 7 iLowerSecondary Science students. Include clear definitions, at least one example per characteristic from Malaysian or Southeast Asian organisms, a worked comparison between a plant and an animal, and common exam misconceptions. Write at IGCSE foundation level. Do not reproduce any Pearson textbook text.',
+    'Generate a full lesson on the seven characteristics of living things (MRS NERG: Movement, Respiration, Sensitivity, Nutrition, Excretion, Reproduction, Growth) for Lower Secondary iLowerSecondary Science students. Include clear definitions, at least one example per characteristic from Malaysian or Southeast Asian organisms, a worked comparison between a plant and an animal, and common exam misconceptions. Write at IGCSE foundation level. Do not reproduce any Pearson textbook text.',
   teacherNotes:
-    'This is Lesson 1 — students may be unfamiliar with the term "excretion" vs "egestion/defaecation" — clarify early. The virus discussion in Q8 previews Year 9 Biology. Use it as a stretch question only. Malaysian context examples: rambutan (growth/reproduction), Rafflesia (sensitivity — blooms at specific time), Komodo dragon (all seven).',
+    'This is Lesson 1 — students may be unfamiliar with the term "excretion" vs "egestion/defaecation" — clarify early. The virus discussion in Q8 previews Lower Secondary Biology. Use it as a stretch question only. Malaysian context examples: rambutan (growth/reproduction), Rafflesia (sensitivity — blooms at specific time), Komodo dragon (all seven).',
   contentSources: [{
     type: 'text',
     value: 'The seven shared characteristics of living things (MRS NERG): Movement, Respiration, Sensitivity, Nutrition, Excretion, Reproduction, Growth. Each characteristic applies to a wide range of organisms in the local and wider environment, including Malaysian examples such as the merbok bird, rambutan tree and Rafflesia.',
@@ -131,7 +131,7 @@ const L1: SeedCurriculumLesson = {
         'They are made of metal and plastic, not cells',
       ],
       answer: 'They show one characteristic (reproduction) but cannot carry out the others on their own',
-      explanation: 'Stretch question (previews Year 9 Biology): viruses only reproduce by hijacking a host cell and lack independent respiration, nutrition, excretion and growth.',
+      explanation: 'Stretch question (previews Lower Secondary Biology): viruses only reproduce by hijacking a host cell and lack independent respiration, nutrition, excretion and growth.',
       objectiveCode: 'B7.1.1A',
     },
   ],
@@ -142,7 +142,7 @@ const L2: SeedCurriculumLesson = {
   title: 'Animal Cell Structure',
   objectiveCodes: ['B7.1.2A', 'B7.1.2C', 'B7.1.2D'],
   briefPrompt:
-    'Generate a full Year 7 lesson on animal cell structure for iLowerSecondary Science. Cover: cell membrane (controls entry/exit), cytoplasm (jelly-like substance where reactions occur), nucleus (controls cell activities, contains DNA), mitochondria (site of aerobic respiration / energy release). Include a section on the light microscope — eyepiece lens, objective lens, fine/coarse focus, stage, mirror — and what can be seen at school microscope magnifications (×40 to ×400). Include one worked magnification calculation. Write at Pearson Edexcel foundation level. Do not reproduce any Pearson textbook text.',
+    'Generate a full Lower Secondary lesson on animal cell structure for iLowerSecondary Science. Cover: cell membrane (controls entry/exit), cytoplasm (jelly-like substance where reactions occur), nucleus (controls cell activities, contains DNA), mitochondria (site of aerobic respiration / energy release). Include a section on the light microscope — eyepiece lens, objective lens, fine/coarse focus, stage, mirror — and what can be seen at school microscope magnifications (×40 to ×400). Include one worked magnification calculation. Write at Pearson Edexcel foundation level. Do not reproduce any Pearson textbook text.',
   teacherNotes:
     'Magnification formula (M = I/A) appears in Physics and Biology. Introduce it here and reinforce. For the microscope section, if students have lab access, this lesson pairs with a practical cheek cell slide activity (enquiry objective B7.1.2D). Remind students that ribosomes are too small to see with a light microscope — this distinguishes animal cells from what they might see at home.',
   contentSources: [{
@@ -234,7 +234,7 @@ const L3: SeedCurriculumLesson = {
   title: 'Plant Cells vs Animal Cells',
   objectiveCodes: ['B7.1.2B', 'B7.1.2E', 'B7.1.2F'],
   briefPrompt:
-    'Generate a Year 7 iLowerSecondary Science lesson comparing plant and animal cells. Cover all 7 structures listed in B7.1.2E/F: cell wall (cellulose, gives support and shape), cell membrane (controls what enters/exits), cytoplasm (site of chemical reactions), nucleus (controls activities, contains genetic material), permanent vacuole (contains cell sap, maintains turgor), mitochondria (aerobic respiration), chloroplasts (photosynthesis — present in green plant cells only). Include a clear comparison table, exam-style worked examples, and note that not all plant cells have chloroplasts (e.g. root cells). Do not reproduce any Pearson textbook text.',
+    'Generate a Lower Secondary iLowerSecondary Science lesson comparing plant and animal cells. Cover all 7 structures listed in B7.1.2E/F: cell wall (cellulose, gives support and shape), cell membrane (controls what enters/exits), cytoplasm (site of chemical reactions), nucleus (controls activities, contains genetic material), permanent vacuole (contains cell sap, maintains turgor), mitochondria (aerobic respiration), chloroplasts (photosynthesis — present in green plant cells only). Include a clear comparison table, exam-style worked examples, and note that not all plant cells have chloroplasts (e.g. root cells). Do not reproduce any Pearson textbook text.',
   teacherNotes:
     'Common exam error: students say "chloroplasts are found in ALL plant cells" — root cells are the counterexample. The permanent vacuole question (Q5) is intentionally open-ended — accept "animal cells need to be more flexible" or "animal cells do not need to maintain turgor pressure". The Venn diagram mind map format is particularly effective for this lesson — consider assigning it as the primary format for weaker students.',
   contentSources: [{
@@ -332,7 +332,7 @@ const L4: SeedCurriculumLesson = {
   title: 'Cell Organisation — Tissues, Organs & Systems',
   objectiveCodes: ['B7.1.2G', 'B7.1.2H', 'B7.1.2I'],
   briefPrompt:
-    'Generate a Year 7 iLowerSecondary Science lesson on the hierarchical organisation of multicellular organisms. Cover the five levels: cell → tissue → organ → organ system → organism. Use cardiac muscle cells → heart → circulatory system → human as the main worked example. Include a table of 8 human organ systems: circulatory (heart, blood vessels), respiratory (lungs, trachea), digestive (stomach, intestines, liver), nervous (brain, spinal cord, nerves), musculo-skeletal (bones, muscles), urinary/excretory (kidneys), skin/integumentary, reproductive. Add a brief section on applying this to other vertebrates (cats, fish, birds). Do not reproduce any Pearson textbook text.',
+    'Generate a Lower Secondary iLowerSecondary Science lesson on the hierarchical organisation of multicellular organisms. Cover the five levels: cell → tissue → organ → organ system → organism. Use cardiac muscle cells → heart → circulatory system → human as the main worked example. Include a table of 8 human organ systems: circulatory (heart, blood vessels), respiratory (lungs, trachea), digestive (stomach, intestines, liver), nervous (brain, spinal cord, nerves), musculo-skeletal (bones, muscles), urinary/excretory (kidneys), skin/integumentary, reproductive. Add a brief section on applying this to other vertebrates (cats, fish, birds). Do not reproduce any Pearson textbook text.',
   teacherNotes:
     'Students often confuse "organ" with "organ system" — the heart vs the circulatory system is the clearest example. For B7.1.2I (vertebrates), keep it brief — one or two examples linking a named vertebrate organ to a human equivalent. The infographic format (body silhouette) works well as a visual summary for students who struggle with text-heavy notes. Pairs well with a body-systems labelling activity.',
   contentSources: [{
@@ -428,7 +428,7 @@ const L5: SeedCurriculumLesson = {
   title: 'The External Structure of Plants',
   objectiveCodes: ['B7.2.1A', 'B7.2.1B', 'B7.2.1C', 'B7.2.1D'],
   briefPrompt:
-    'Generate a Year 7 iLowerSecondary Science lesson on the external structure of flowering plants. Cover: roots (absorb water and minerals, anchor the plant, storage in some species), stems (transport water upward via xylem, transport sugars via phloem, support), leaves (photosynthesis, gas exchange, transpiration). Include examples from Malaysian/tropical plants (hibiscus, rambutan, banana, rubber tree). Add a section on habitat adaptations: desert plants (cacti — thick stems for water storage, waxy coating to reduce evaporation, spines instead of leaves), arctic/tundra plants (small, ground-hugging, thick leaves to retain heat), tropical rainforest plants (large thin leaves to capture light, drip tips to shed water). Do not reproduce any Pearson textbook text.',
+    'Generate a Lower Secondary iLowerSecondary Science lesson on the external structure of flowering plants. Cover: roots (absorb water and minerals, anchor the plant, storage in some species), stems (transport water upward via xylem, transport sugars via phloem, support), leaves (photosynthesis, gas exchange, transpiration). Include examples from Malaysian/tropical plants (hibiscus, rambutan, banana, rubber tree). Add a section on habitat adaptations: desert plants (cacti — thick stems for water storage, waxy coating to reduce evaporation, spines instead of leaves), arctic/tundra plants (small, ground-hugging, thick leaves to retain heat), tropical rainforest plants (large thin leaves to capture light, drip tips to shed water). Do not reproduce any Pearson textbook text.',
   teacherNotes:
     'Malaysian context is a major strength here — students can observe hibiscus (national flower), banana, papaya, and rubber trees in their environment. The habitat adaptation section links directly to B7.4.2A (organisms adapted to their habitat) later in this unit. Consider assigning the infographic as a take-home task using a plant the student can find locally.',
   contentSources: [{
@@ -529,7 +529,7 @@ const L6: SeedCurriculumLesson = {
   title: 'The Musculo-Skeletal System',
   objectiveCodes: ['B7.3.1A', 'B7.3.1B', 'B7.3.1C', 'B7.3.1D'],
   briefPrompt:
-    'Generate a Year 7 iLowerSecondary Science lesson on the musculo-skeletal system. Cover: (1) Skeleton functions — support (maintains body shape), protection (skull/ribcage/vertebral column), movement (with muscles), production of blood cells (red bone marrow). (2) Antagonistic muscles — bicep contracts/tricep relaxes to bend the arm; tricep contracts/bicep relaxes to straighten. Muscles can only pull, not push. (3) Joints — ball-and-socket (shoulder, hip — full rotation), hinge (elbow, knee — one plane), pivot (neck), fixed/fused (skull). (4) Worked example: movement at the elbow during a bicep curl. Do not reproduce any Pearson textbook text.',
+    'Generate a Lower Secondary iLowerSecondary Science lesson on the musculo-skeletal system. Cover: (1) Skeleton functions — support (maintains body shape), protection (skull/ribcage/vertebral column), movement (with muscles), production of blood cells (red bone marrow). (2) Antagonistic muscles — bicep contracts/tricep relaxes to bend the arm; tricep contracts/bicep relaxes to straighten. Muscles can only pull, not push. (3) Joints — ball-and-socket (shoulder, hip — full rotation), hinge (elbow, knee — one plane), pivot (neck), fixed/fused (skull). (4) Worked example: movement at the elbow during a bicep curl. Do not reproduce any Pearson textbook text.',
   teacherNotes:
     'Students frequently confuse which muscle contracts for which action — the mnemonic "Bend = Bicep, Straight = Tricep" helps. For B7.3.1D (joint comparison), use students’ own bodies — ask them to rotate their shoulder vs bend their elbow and describe the difference. This lesson pairs excellently with a joints practical where students compare movement using a model arm or their own.',
   contentSources: [{
@@ -631,7 +631,7 @@ const L7: SeedCurriculumLesson = {
   title: 'Organisms & Their Environment — Food Chains, Food Webs & Adaptation',
   objectiveCodes: ['B7.4.1A', 'B7.4.1B', 'B7.4.2A', 'B7.4.2B', 'B7.4.2C'],
   briefPrompt:
-    'Generate a Year 7 iLowerSecondary Science lesson on organisms and their environment. Cover: (1) Feeding levels — producer (makes own food via photosynthesis), primary consumer (eats producer), secondary consumer, tertiary consumer, decomposer (breaks down dead material, returns nutrients to soil). (2) Food chains and food webs — energy flows from producer upward — interdependence means change in one population affects others. Use a Malaysian/Southeast Asian context: e.g. grass → grasshopper → lizard → monitor lizard → tiger, or a mangrove food web. (3) Adaptation — give 3 examples with structural and behavioural adaptations (e.g. polar bear: white fur for camouflage, blubber for insulation; cactus: spines, thick stem; fish: streamlined body, gills). (4) Abiotic factors (temperature, light intensity, water availability, pH, salinity) vs biotic factors (predation, competition, disease, food availability). (5) Effect of environmental change — if one species declines, predict knock-on effects. Do not reproduce any Pearson textbook text.',
+    'Generate a Lower Secondary iLowerSecondary Science lesson on organisms and their environment. Cover: (1) Feeding levels — producer (makes own food via photosynthesis), primary consumer (eats producer), secondary consumer, tertiary consumer, decomposer (breaks down dead material, returns nutrients to soil). (2) Food chains and food webs — energy flows from producer upward — interdependence means change in one population affects others. Use a Malaysian/Southeast Asian context: e.g. grass → grasshopper → lizard → monitor lizard → tiger, or a mangrove food web. (3) Adaptation — give 3 examples with structural and behavioural adaptations (e.g. polar bear: white fur for camouflage, blubber for insulation; cactus: spines, thick stem; fish: streamlined body, gills). (4) Abiotic factors (temperature, light intensity, water availability, pH, salinity) vs biotic factors (predation, competition, disease, food availability). (5) Effect of environmental change — if one species declines, predict knock-on effects. Do not reproduce any Pearson textbook text.',
   teacherNotes:
     'Use Malaysian examples throughout — the Malayan tiger (endangered), the hornbill (national symbol of Sarawak), the Malayan tapir, and mangrove ecosystems are all highly relatable. The food web prediction question (Q6) is the most important exam skill in this lesson — students must practise chain-of-reasoning answers: "deer decrease → tiger has less food → tiger population decreases; grass increases because fewer deer eating it". The abiotic/biotic distinction trips up students who confuse "disease" (biotic) with "drought" (abiotic).',
   contentSources: [{
@@ -736,7 +736,7 @@ const L8: SeedCurriculumLesson = {
     'B7.4.2B', 'B7.4.2C',
   ],
   briefPrompt:
-    'Generate a 20-question Unit 1 mastery quiz for Year 7 iLowerSecondary Science covering: characteristics of living things (MRS NERG), animal and plant cell structure, cell organisation hierarchy, external plant structure, musculo-skeletal system, food chains/webs, adaptation, and abiotic/biotic factors. Format: 10 multiple-choice (4 options each), 5 short-answer (1–2 marks each), 3 structured questions (4–6 marks each), 2 extended response (4 marks each). Questions must be at Pearson Edexcel iLowerSecondary standard. Include a full mark scheme. Do not reproduce any Pearson textbook text.',
+    'Generate a 20-question Unit 1 mastery quiz for Lower Secondary iLowerSecondary Science covering: characteristics of living things (MRS NERG), animal and plant cell structure, cell organisation hierarchy, external plant structure, musculo-skeletal system, food chains/webs, adaptation, and abiotic/biotic factors. Format: 10 multiple-choice (4 options each), 5 short-answer (1–2 marks each), 3 structured questions (4–6 marks each), 2 extended response (4 marks each). Questions must be at Pearson Edexcel iLowerSecondary standard. Include a full mark scheme. Do not reproduce any Pearson textbook text.',
   teacherNotes:
     'MASTERY GATE: Students must score 70% or above (14/20) to unlock Unit 2. Students who fail are directed back to the specific lessons where they lost marks — the adaptive review system maps each quiz question to its source lesson. This is the Rochford’s mastery model applied digitally. The parent dashboard auto-generates a report showing the score, time taken, weakest objective, and recommended next steps. Teacher accounts see all student scores in the class dashboard.',
   contentSources: [{
@@ -970,18 +970,18 @@ export const Y7_SCIENCE_UNIT_1 = {
     id: 'ilowersecondary',
     name: 'iLowerSecondary',
     description:
-      'Pearson iLowerSecondary programme for Years 7–9 — Science, Maths, English and Computing. Aligned to the Pearson iLowerSecondary Schemes of Work.',
-    yearGroups: ['Year 7', 'Year 8', 'Year 9'],
+      'Pearson iLowerSecondary programme for Lower Secondary — Science, Maths, English and Computing. Aligned to the Pearson iLowerSecondary Schemes of Work.',
+    yearGroups: ['Lower Secondary'],
     subjects: ['Science', 'Maths', 'English', 'Computing'],
     requiredTier: 'academic' as const,
     status: 'active' as const,
   },
   module: {
-    title: 'Science — Year 7',
+    title: 'Science — Lower Secondary',
     description:
-      'iLowerSecondary Science for Year 7. Six units across the academic year, each ending in a mastery quiz. Unit 1 covers Living Organisms: characteristics of life, cells, organisation, plants, the musculo-skeletal system, and organisms & their environment.',
+      'iLowerSecondary Science for Lower Secondary. Six units across the academic year, each ending in a mastery quiz. Unit 1 covers Living Organisms: characteristics of life, cells, organisation, plants, the musculo-skeletal system, and organisms & their environment.',
     subject: 'Science',
-    yearGroup: 'Year 7',
+    yearGroup: 'Lower Secondary',
   },
   unit: {
     title: 'Unit 1: Living Organisms',
@@ -997,9 +997,9 @@ export const Y7_SCIENCE_UNIT_1 = {
 };
 
 /**
- * Seed the iLowerSecondary programme + "Science — Year 7" curriculum module
+ * Seed the iLowerSecondary programme + "Science — Lower Secondary" curriculum module
  * with Unit 1 and its 8 lessons. Idempotent: skips if a curriculum course
- * titled "Science — Year 7" already exists.
+ * titled "Science — Lower Secondary" already exists.
  */
 export async function seedY7ScienceUnit1(
   adminId: string

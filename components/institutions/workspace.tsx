@@ -658,7 +658,7 @@ function IntegrationsTab({
   onAction: (action: WorkspaceAction) => Promise<void>;
 }) {
   const [url, setUrl] = useState('');
-  const [keyName, setKeyName] = useState('Academy key');
+  const [keyName, setKeyName] = useState('');
   const cards = [
     ['SSO SAML', identity.saml, INTEGRATION_ENV.saml],
     ['SSO OIDC', identity.oidc, INTEGRATION_ENV.oidc],
@@ -685,7 +685,7 @@ function IntegrationsTab({
         <h2 className="font-semibold">API keys and webhooks</h2>
         <p className="text-sm text-muted-foreground">The full key is shown once and only its hash is stored.</p>
         <div className="flex gap-2">
-          <Input aria-label="API key name" value={keyName} onChange={(event) => setKeyName(event.target.value)} className="h-11 rounded-xl" />
+          <Input aria-label="API key name" value={keyName} onChange={(event) => setKeyName(event.target.value)} placeholder="e.g. Academy key" className="h-11 rounded-xl" />
           <Button type="button" className="rounded-full" disabled={busy} onClick={() => void onAction({ type: 'api-key', name: keyName })}>Create key</Button>
         </div>
         <ul className="text-sm">{apiKeys.map((key) => <li key={key.id}>{key.name} · {key.prefix}…</li>)}</ul>

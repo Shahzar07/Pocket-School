@@ -227,28 +227,42 @@ app/dashboard/admin/curriculum/[courseId]/page.tsx	updateLesson(courseId, module
 app/dashboard/admin/curriculum/[courseId]/preview/page.tsx	/ Preview course
 app/dashboard/admin/curriculum/[courseId]/preview/page.tsx	Content Builder
 app/dashboard/admin/curriculum/[courseId]/preview/page.tsx	Course CMS
+app/dashboard/admin/curriculum/page.tsx	1 · Course builder
+app/dashboard/admin/curriculum/page.tsx	2 · Taxonomy
+app/dashboard/admin/curriculum/page.tsx	3 · Subjects
 app/dashboard/admin/curriculum/page.tsx	AI Course Architect
 app/dashboard/admin/curriculum/page.tsx	An admin can allocate it from Access allocation. Platform admins already have the course editor.
 app/dashboard/admin/curriculum/page.tsx	Choose a programme
 app/dashboard/admin/curriculum/page.tsx	Choose the programme this subject belongs to.
+app/dashboard/admin/curriculum/page.tsx	Course architect steps
+app/dashboard/admin/curriculum/page.tsx	Delete programme
 app/dashboard/admin/curriculum/page.tsx	Delete subject
 app/dashboard/admin/curriculum/page.tsx	Duration (weeks)
+app/dashboard/admin/curriculum/page.tsx	Edit programme
 app/dashboard/admin/curriculum/page.tsx	Edit subject
+app/dashboard/admin/curriculum/page.tsx	Enter a duration in weeks.
 app/dashboard/admin/curriculum/page.tsx	Enter a programme name.
 app/dashboard/admin/curriculum/page.tsx	Enter a subject for ET AI to design.
 app/dashboard/admin/curriculum/page.tsx	Enter a subject title.
 app/dashboard/admin/curriculum/page.tsx	Enter a subject.
 app/dashboard/admin/curriculum/page.tsx	Enter a title.
+app/dashboard/admin/curriculum/page.tsx	Levels (comma-separated)
 app/dashboard/admin/curriculum/page.tsx	Name *
+app/dashboard/admin/curriculum/page.tsx	No programmes match that search.
 app/dashboard/admin/curriculum/page.tsx	No programmes yet.
+app/dashboard/admin/curriculum/page.tsx	No subjects yet — load the sample curriculum or create one.
 app/dashboard/admin/curriculum/page.tsx	No subjects yet — seed Y7 Science or create one.
 app/dashboard/admin/curriculum/page.tsx	Programme created.
 app/dashboard/admin/curriculum/page.tsx	Programme updated.
 app/dashboard/admin/curriculum/page.tsx	Proposed structure
 app/dashboard/admin/curriculum/page.tsx	Required tier
+app/dashboard/admin/curriculum/page.tsx	Science — Lower Secondary already exists — nothing to seed.
 app/dashboard/admin/curriculum/page.tsx	Science — Year 7 already exists — nothing to seed.
+app/dashboard/admin/curriculum/page.tsx	Search programmes
+app/dashboard/admin/curriculum/page.tsx	Search subjects
 app/dashboard/admin/curriculum/page.tsx	Subject *
 app/dashboard/admin/curriculum/page.tsx	Subject created.
+app/dashboard/admin/curriculum/page.tsx	Subject title
 app/dashboard/admin/curriculum/page.tsx	Subject title (as it will appear in the CMS)
 app/dashboard/admin/curriculum/page.tsx	Subject updated.
 app/dashboard/admin/curriculum/page.tsx	Subjects (comma-separated)
@@ -355,6 +369,7 @@ app/dashboard/admin/settings/page.tsx	you@example.com
 app/dashboard/admin/users/page.tsx	A reason is required.
 app/dashboard/admin/users/page.tsx	All countries
 app/dashboard/admin/users/page.tsx	All institutions
+app/dashboard/admin/users/page.tsx	All levels
 app/dashboard/admin/users/page.tsx	All staff roles
 app/dashboard/admin/users/page.tsx	All tiers
 app/dashboard/admin/users/page.tsx	All year groups
@@ -363,6 +378,7 @@ app/dashboard/admin/users/page.tsx	Couldn&apos;t load users
 app/dashboard/admin/users/page.tsx	Custom Sparks amount
 app/dashboard/admin/users/page.tsx	Filter by country
 app/dashboard/admin/users/page.tsx	Filter by institution
+app/dashboard/admin/users/page.tsx	Filter by level
 app/dashboard/admin/users/page.tsx	Filter by role
 app/dashboard/admin/users/page.tsx	Filter by staff role
 app/dashboard/admin/users/page.tsx	Filter by status
@@ -452,6 +468,7 @@ app/dashboard/institution/page.tsx	Logo, colours, domain and certificate name ar
 app/dashboard/institution/page.tsx	Name on the academy
 app/dashboard/institution/page.tsx	This licence includes the school’s own courses.
 app/dashboard/institution/page.tsx	Year 8 Science
+app/dashboard/institution/page.tsx	e.g. Lower Secondary Science
 app/dashboard/institution/templates/page.tsx	Grading scale
 app/dashboard/institution/templates/page.tsx	Logo URL
 app/dashboard/institution/templates/page.tsx	Push waits. The inbox still updates.
@@ -464,6 +481,8 @@ app/dashboard/institution/templates/page.tsx	Save quiet hours
 app/dashboard/institution/templates/page.tsx	Save template
 app/dashboard/institution/templates/page.tsx	Template name
 app/dashboard/institution/templates/page.tsx	Template saved for this school.
+app/dashboard/institution/templates/page.tsx	e.g. School term
+app/dashboard/institution/templates/page.tsx	e.g. Term report
 app/dashboard/institution/templates/page.tsx	https:// logo
 app/dashboard/layout.tsx	If this wasn't you, change your password immediately in My Profile.
 app/dashboard/layout.tsx	New device detected.
@@ -533,6 +552,7 @@ app/dashboard/parent/reports/page.tsx	Acknowledge and e-sign
 app/dashboard/parent/reports/page.tsx	No report cards yet.
 app/dashboard/parent/reports/page.tsx	Parent reply
 app/dashboard/parent/reports/page.tsx	Report cards
+app/dashboard/parent/reports/page.tsx	e.g. Read and signed.
 app/dashboard/planner/page.tsx	Opening terms on the calendar…
 app/dashboard/profile/page.tsx	A parent can edit a profile only for an under-13 account.
 app/dashboard/profile/page.tsx	Check the new inbox. The email changes after you open the link.
@@ -623,6 +643,7 @@ app/dashboard/student/become-instructor/page.tsx	Become an instructor
 app/dashboard/student/become-instructor/page.tsx	I understand a marketplace course stays in review until Poket School publishes it. This step does not list a course for sale.
 app/dashboard/student/become-instructor/page.tsx	Teaching is on. Marketplace courses still wait for review.
 app/dashboard/student/become-instructor/page.tsx	Year 8 science
+app/dashboard/student/become-instructor/page.tsx	e.g. Lower Secondary science
 app/dashboard/student/billing/page.tsx	Amount due
 app/dashboard/student/billing/page.tsx	Couldn&apos;t load this page.
 app/dashboard/student/billing/page.tsx	Invoice reference
@@ -763,6 +784,7 @@ app/dashboard/student/transcript/page.tsx	Enroll in courses to see your transcri
 app/dashboard/student/transcript/page.tsx	Excused:
 app/dashboard/student/transcript/page.tsx	Grades and completed courses for this level. Print, or choose Save as PDF in the print dialog.
 app/dashboard/student/transcript/page.tsx	Late:
+app/dashboard/student/transcript/page.tsx	Level:
 app/dashboard/student/transcript/page.tsx	No attendance was recorded for this period.
 app/dashboard/student/transcript/page.tsx	No courses enrolled yet
 app/dashboard/student/transcript/page.tsx	Official record of your academic performance.
@@ -864,6 +886,7 @@ app/dashboard/studio/exam-prep/new/page.tsx	Rename, reorder, remove or re-weight
 app/dashboard/studio/exam-prep/new/page.tsx	Your notes in.
 app/dashboard/studio/exam-prep/new/page.tsx	Your plan is ready.
 app/dashboard/studio/exam-prep/new/page.tsx	e.g. Form 4 Add Maths — Final
+app/dashboard/studio/exam-prep/new/page.tsx	e.g. IGCSE Additional Mathematics — Final
 app/dashboard/studio/exam-prep/new/page.tsx	or click to choose · up to 20 files · scanned pages are read too
 app/dashboard/studio/exam-prep/page.tsx	AI Studio
 app/dashboard/studio/exam-prep/page.tsx	Create my first plan
@@ -902,6 +925,7 @@ app/dashboard/studio/maths/lab/page.tsx	Share result
 app/dashboard/studio/maths/lab/page.tsx	Stationary points
 app/dashboard/studio/maths/lab/page.tsx	Today&apos;s equation
 app/dashboard/studio/maths/lab/page.tsx	e.g. 2x + 1
+app/dashboard/studio/maths/lab/page.tsx	e.g. x^3 - 6x^2 + 9x - 2
 app/dashboard/studio/maths/lab/page.tsx	e^(-x^2)
 app/dashboard/studio/maths/lab/page.tsx	f(x) =
 app/dashboard/studio/maths/lab/page.tsx	sqrt(x)
@@ -1279,6 +1303,7 @@ app/mode-preview/preview.tsx	Children you monitor
 app/mode-preview/preview.tsx	Class 8A
 app/mode-preview/preview.tsx	Classes you teach
 app/mode-preview/preview.tsx	I understand a marketplace course stays in review until Poket School publishes it.
+app/mode-preview/preview.tsx	Lower Secondary · weekly report on
 app/mode-preview/preview.tsx	My profile & settings
 app/mode-preview/preview.tsx	Parent view
 app/mode-preview/preview.tsx	Poket School
@@ -1290,6 +1315,7 @@ app/mode-preview/preview.tsx	Year 8 · weekly report on
 app/mode-preview/preview.tsx	Your courses, progress, certificates, and Sparks. Classes you teach and children you monitor stay in the other views.
 app/mode-preview/preview.tsx	Your learning space
 app/mode-preview/preview.tsx	Your own courses, certificates, and Sparks stay in Learning.
+app/mode-preview/preview.tsx	e.g. Lower Secondary science
 app/not-found.tsx	PAGE NOT FOUND
 app/onboarding/page.tsx	(optional)
 app/onboarding/page.tsx	Ask your child to approve a link, or share an invite code from settings.
@@ -1303,6 +1329,7 @@ app/onboarding/page.tsx	How do you learn best?
 app/onboarding/page.tsx	We'll prioritise the formats that suit your style — you can always change this later.
 app/onboarding/page.tsx	Welcome to Poket School!
 app/onboarding/page.tsx	Welcome to Poket School! 🎉
+app/onboarding/page.tsx	Which level are you on?
 app/onboarding/page.tsx	Which programme are you on?
 app/onboarding/page.tsx	Which year are you in?
 app/onboarding/page.tsx	Your year or level depends on the programme.
@@ -1391,6 +1418,7 @@ components/account/profile-photo.tsx	Crop nudge
 components/account/profile-photo.tsx	Crop zoom
 components/account/profile-photo.tsx	Upload profile photo
 components/account/settings-panel.tsx	Active sessions
+components/account/settings-panel.tsx	Choose a level
 components/account/settings-panel.tsx	Class and branding changes stay on the academy dashboard.
 components/account/settings-panel.tsx	Confirm email to delete account
 components/account/settings-panel.tsx	Currency preference
@@ -1443,6 +1471,7 @@ components/admin-account-panel.tsx	Study days
 components/admin-account-panel.tsx	Tier 0–6
 components/admin-account-panel.tsx	View as
 components/admin-account-panel.tsx	Why this change is being made
+components/admin-account-panel.tsx	e.g. 25
 components/admin-pricing-panel.tsx	Add-ons, monthly USD
 components/admin-pricing-panel.tsx	Audit log
 components/admin-pricing-panel.tsx	Charm (.99)
@@ -1744,6 +1773,7 @@ components/insights/integrity-studio.tsx	Send appeal
 components/insights/integrity-studio.tsx	Signed by Pat. Reply saved.
 components/insights/integrity-studio.tsx	Wellbeing check-ins stay with the parent and the teacher.
 components/insights/integrity-studio.tsx	What should your teacher reconsider?
+components/insights/integrity-studio.tsx	e.g. Read with Mina.
 components/insights/learning-charts.tsx	Activity heatmap
 components/insights/learning-charts.tsx	Bloom by topic
 components/insights/learning-charts.tsx	Bloom’s taxonomy
@@ -1956,6 +1986,7 @@ components/institutions/workspace.tsx	This plan keeps “Powered by Poket School
 components/institutions/workspace.tsx	Training title
 components/institutions/workspace.tsx	Upload the academy’s own content
 components/institutions/workspace.tsx	Webhook URL
+components/institutions/workspace.tsx	e.g. Academy key
 components/institutions/workspace.tsx	https://example.edu/hooks/poket
 components/institutions/workspace.tsx	learn.school.example
 components/institutions/workspace.tsx	name@school.example
@@ -2006,6 +2037,7 @@ components/pip-guide.tsx	Open the guided tour
 components/pip-guide.tsx	Pip, your guide
 components/pip-guide.tsx	Previous step
 components/pip-guide.tsx	Show me around
+components/planner/year-planner.tsx	A blank field shows every campus, class, or level. Events with a different campus stay hidden.
 components/planner/year-planner.tsx	A blank field shows every campus, class, or year group. Events with a different campus stay hidden.
 components/planner/year-planner.tsx	Add a term and at least one line. Weekends, holidays, and exam weeks are skipped.
 components/planner/year-planner.tsx	Add a term and at least one unit. Weekends, holidays, and exam weeks are skipped.
@@ -2013,6 +2045,7 @@ components/planner/year-planner.tsx	Add term
 components/planner/year-planner.tsx	Loading the school year…
 components/planner/year-planner.tsx	National Day 2026-08-31
 components/planner/year-planner.tsx	Next month
+components/planner/year-planner.tsx	Nothing due in the next 7 days for this campus, class, or level.
 components/planner/year-planner.tsx	Nothing due in the next 7 days for this campus, class, or year group.
 components/planner/year-planner.tsx	Previous month
 components/planner/year-planner.tsx	Remove last term
@@ -2099,6 +2132,13 @@ components/scope-c/market-screens.tsx	Write a resource
 components/scope-c/market-screens.tsx	Write the note in markdown
 components/scope-c/market-screens.tsx	Your bookings
 components/scope-c/market-screens.tsx	Your tutor profile
+components/scope-c/market-screens.tsx	e.g. 2x + 4 = 10
+components/scope-c/market-screens.tsx	e.g. 4000
+components/scope-c/market-screens.tsx	e.g. 45
+components/scope-c/market-screens.tsx	e.g. 5
+components/scope-c/market-screens.tsx	e.g. IGCSE
+components/scope-c/market-screens.tsx	e.g. Mathematics
+components/scope-c/market-screens.tsx	e.g. Medicine
 components/scope-c/market-screens.tsx	prompt | answer | marks
 components/shell/design-desk.tsx	AI Studio
 components/shell/design-desk.tsx	Home / Today
@@ -2167,6 +2207,7 @@ components/teacher-course-studio.tsx	Remove section
 components/teacher-course-studio.tsx	Resource link
 components/teacher-course-studio.tsx	Save the course before adding a coupon.
 components/teacher-course-studio.tsx	Section title
+components/teacher-course-studio.tsx	e.g. 10
 components/teacher-course-studio.tsx	https://
 components/teacher-studio-demo.tsx	Loading the course studio…
 components/tenant-chrome.tsx	Powered by Poket School

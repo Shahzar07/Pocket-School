@@ -224,7 +224,7 @@ function outlinePrompt(subject: string, yearLevel: string, weeks: number, existi
 
 Design a complete course structure for:
 - Subject: ${subject}
-- Year / Level: ${yearLevel}
+- Level: ${yearLevel}
 - Total duration: ${weeks} teaching weeks${continuation}
 
 Produce roughly ${moduleHint} modules covering the whole ${weeks} weeks, sequenced from foundational to advanced so each module depends only on earlier ones. Each module holds 3-6 lessons. The sum of every lesson's durationWeeks across all modules must be close to ${weeks}. Each lesson lists 2-4 measurable learning objectives written as "Students will be able to…".

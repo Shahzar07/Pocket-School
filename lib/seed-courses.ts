@@ -53,7 +53,7 @@ export const SEED_COURSES: SeedCourse[] = [
       'Approach exam questions with a repeatable method instead of guesswork',
     ],
     requirements: [
-      'Comfortable with Form 3 mathematics',
+      'Comfortable with Lower Secondary mathematics',
       'A notebook, pencil and a scientific calculator',
     ],
     tags: ['add-maths', 'spm', 'calculus', 'algebra'],

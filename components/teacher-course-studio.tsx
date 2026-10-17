@@ -13,11 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { usePricing } from '@/hooks/use-pricing';
+import { LevelSelect } from '@/components/level-select';
+import { useCoursePlaceholders } from '@/hooks/use-example-course';
 import {
   COURSE_CATEGORIES,
   COURSE_LANGUAGES,
-  COURSE_LEVELS,
-  canonicalCourseLevel,
   STUDIO_STEPS,
   applyAllocationPreset,
   blankPolicy,
@@ -158,14 +158,15 @@ export function TeacherCourseStudio({
   initialTarget?: AllocationTarget;
 }) {
   const { courseLabel, currency, localMoney } = usePricing();
+  const placeholders = useCoursePlaceholders();
   const [step, setStep] = useState<StudioStep>(initialStep);
   const [preview, setPreview] = useState(initialPreview);
   const [savedId, setSavedId] = useState(courseId);
-  const [title, setTitle] = useState(initial?.title ?? (sample ? 'Introduction to forces' : ''));
-  const [subtitle, setSubtitle] = useState(initial?.subtitle ?? (sample ? 'A short course on how pushes and pulls change motion' : ''));
-  const [description, setDescription] = useState(initial?.description ?? (sample ? 'Students explain contact and non-contact forces, then check their understanding.' : ''));
-  const [category, setCategory] = useState(initial?.category ?? 'Science');
-  const [level, setLevel] = useState(canonicalCourseLevel(initial?.level ?? 'Lower Secondary'));
+  const [title, setTitle] = useState(initial?.title ?? '');
+  const [subtitle, setSubtitle] = useState(initial?.subtitle ?? '');
+  const [description, setDescription] = useState(initial?.description ?? '');
+  const [category, setCategory] = useState(initial?.category ?? 'Other');
+  const [level, setLevel] = useState(initial?.level ?? '');
   const [language, setLanguage] = useState(initial?.language ?? 'en');
   const [thumbnailUrl, setThumbnailUrl] = useState(initial?.thumbnailUrl ?? '');
   const [previewUrl, setPreviewUrl] = useState(initial?.previewUrl ?? '');
@@ -182,8 +183,8 @@ export function TeacherCourseStudio({
   ] : [emptySection()]);
   const [sectionId, setSectionId] = useState(sections[0]?.id ?? '');
   const [lectureId, setLectureId] = useState(sections[0]?.lectures[0]?.id ?? '');
-  const [free, setFree] = useState((initial?.price ?? 19) <= 0 && initial?.priceType === 'FREE');
-  const [price, setPrice] = useState(initial?.price && initial.price > 0 ? String(initial.price) : '19');
+  const [free, setFree] = useState(initial?.priceType === 'FREE');
+  const [price, setPrice] = useState(initial?.price && initial.price > 0 ? String(initial.price) : '');
   const [policy, setPolicy] = useState<AccessPolicy>(initial?.accessPolicy ?? (
     initialTarget === 'students'
       ? applyAllocationPreset(blankPolicy(), 'students', ['student-demo'])
@@ -205,7 +206,7 @@ export function TeacherCourseStudio({
     allocatedInstitutionIds: initial?.allocatedInstitutionIds,
   }));
   const [couponCode, setCouponCode] = useState(generateCouponCode());
-  const [discount, setDiscount] = useState('20');
+  const [discount, setDiscount] = useState('');
   const [couponNote, setCouponNote] = useState('');
   const [statusNote, setStatusNote] = useState(initialTarget === 'students'
     ? 'Allocated to student-demo. Status: published. Not listed on the marketplace.'
@@ -446,15 +447,15 @@ export function TeacherCourseStudio({
             <div className="space-y-4">
               <div>
                 <Label htmlFor="course-title">Title</Label>
-                <Input id="course-title" value={title} onChange={event => setTitle(event.target.value)} />
+                <Input id="course-title" value={title} onChange={event => setTitle(event.target.value)} placeholder={placeholders.title} />
               </div>
               <div>
                 <Label htmlFor="course-subtitle">Subtitle</Label>
-                <Input id="course-subtitle" value={subtitle} onChange={event => setSubtitle(event.target.value)} />
+                <Input id="course-subtitle" value={subtitle} onChange={event => setSubtitle(event.target.value)} placeholder={placeholders.subject} />
               </div>
               <div>
                 <Label htmlFor="course-description">Description</Label>
-                <Textarea id="course-description" rows={4} value={description} onChange={event => setDescription(event.target.value)} />
+                <Textarea id="course-description" rows={4} value={description} onChange={event => setDescription(event.target.value)} placeholder={placeholders.description} />
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 <label className="text-sm font-semibold">Category
@@ -463,9 +464,12 @@ export function TeacherCourseStudio({
                   </select>
                 </label>
                 <label className="text-sm font-semibold">Level
-                  <select className="mt-1 h-10 w-full rounded-xl border border-border bg-background px-2" value={level} onChange={event => setLevel(event.target.value)}>
-                    {(COURSE_LEVELS.includes(level) ? COURSE_LEVELS : [level, ...COURSE_LEVELS]).map(item => <option key={item}>{item}</option>)}
-                  </select>
+                  <LevelSelect
+                    value={level}
+                    onChange={setLevel}
+                    ariaLabel="Level"
+                    className="mt-1 h-10 w-full rounded-xl border border-border bg-background px-2 text-sm"
+                  />
                 </label>
                 <label className="text-sm font-semibold">Language
                   <select className="mt-1 h-10 w-full rounded-xl border border-border bg-background px-2" value={language} onChange={event => setLanguage(event.target.value)}>
@@ -585,7 +589,7 @@ export function TeacherCourseStudio({
               </label>
               <div>
                 <Label htmlFor="usd-price">Price in USD</Label>
-                <Input id="usd-price" type="number" min={0} step="0.01" disabled={free} value={free ? '0' : price} onChange={event => setPrice(event.target.value)} />
+                <Input id="usd-price" type="number" min={0} step="0.01" disabled={free} value={free ? '0' : price} onChange={event => setPrice(event.target.value)} placeholder="0" />
                 <p className="mt-2 text-sm text-muted-foreground">
                   Charged in USD.
                   {currency === 'USD'
@@ -597,7 +601,7 @@ export function TeacherCourseStudio({
                 <p className="text-sm font-semibold">Coupon</p>
                 <div className="grid gap-2 sm:grid-cols-[1fr_120px]">
                   <Input aria-label="Coupon code" value={couponCode} onChange={event => setCouponCode(event.target.value.toUpperCase())} />
-                  <Input aria-label="Discount percent" type="number" min={1} max={100} value={discount} onChange={event => setDiscount(event.target.value)} />
+                  <Input aria-label="Discount percent" type="number" min={1} max={100} value={discount} onChange={event => setDiscount(event.target.value)} placeholder="e.g. 10" />
                 </div>
                 <Button type="button" variant="outline" className="rounded-full" onClick={() => { void addCoupon(); }}>Create coupon</Button>
                 {couponNote && <p className="text-sm text-muted-foreground">{couponNote}</p>}

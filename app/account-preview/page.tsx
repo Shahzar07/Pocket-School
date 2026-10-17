@@ -25,9 +25,9 @@ function viewFor(role: string): SettingsView {
     language: 'en',
     currency: 'MYR',
     level: 'secondary',
-    yearGroup: 'Year 8',
+    yearGroup: 'Lower Secondary',
     twoFactorEnabled: role !== 'student',
-    instructor: { headline: 'Physics and science', bio: 'I teach Year 8 labs.', public: true },
+    instructor: { headline: 'Physics and science', bio: 'I teach Lower Secondary labs.', public: true },
   });
   return {
     role,
@@ -56,7 +56,7 @@ function viewFor(role: string): SettingsView {
         name: 'Adam Rahman',
         email: 'adam@poketschool.ai',
         ageTier: 'under13',
-        bio: 'Year 4 science',
+        bio: 'Primary science',
         avatarUrl: '',
         controls: { ...defaultChildControls('child-2'), screenTimeMinutes: 60, sparksDailyLimit: 20, teacherMessages: 'digest' },
       },
@@ -73,8 +73,8 @@ function viewFor(role: string): SettingsView {
         ? [{ id: 'req-2', parentId: 'parent-1', parentName: 'Sara Rahman', studentEmail: 'student@poketschool.ai', status: 'pending' }]
         : [],
     payment: role === 'parent' ? { brand: 'Visa', last4: '4242', expiry: '12/28', holder: 'Sara Rahman' } : { brand: '', last4: '', expiry: '', holder: '' },
-    receipts: role === 'parent' ? [{ id: 'inv-1', description: 'Year 8 science pack', amountLabel: 'RM 89', status: 'paid' }] : [],
-    purchases: role === 'parent' ? [{ id: 'buy-1', title: 'Year 8 science pack', amountLabel: 'RM 89', status: 'pending' }] : [],
+    receipts: role === 'parent' ? [{ id: 'inv-1', description: 'Lower Secondary science pack', amountLabel: 'RM 89', status: 'paid' }] : [],
+    purchases: role === 'parent' ? [{ id: 'buy-1', title: 'Lower Secondary science pack', amountLabel: 'RM 89', status: 'pending' }] : [],
     studentLimits: role === 'student' ? { screenTimeMinutes: 120, sparksDailyLimit: 50, purchaseApproval: true } : null,
   };
 }
