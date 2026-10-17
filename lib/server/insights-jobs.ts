@@ -191,8 +191,9 @@ export async function writeStudentSnapshot(studentId: string, now = new Date()) 
     const data = doc.data();
     return quizPointsFromAttempt({
       completedAt: data.completedAt,
-      score: Number(data.score) || 0,
-      total: Number(data.total) || 0,
+      score: typeof data.score === 'number' ? data.score : undefined,
+      maxScore: typeof data.maxScore === 'number' ? data.maxScore : undefined,
+      total: typeof data.total === 'number' ? data.total : undefined,
       marksAwarded: typeof data.marksAwarded === 'number' ? data.marksAwarded : undefined,
       marksMax: typeof data.marksMax === 'number' ? data.marksMax : undefined,
       unitId: data.unitId as string | undefined,

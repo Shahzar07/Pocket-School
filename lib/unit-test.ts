@@ -372,6 +372,7 @@ export function quizPointsFromAttempt(attempt: {
   total?: number;
   marksAwarded?: number;
   marksMax?: number;
+  maxScore?: number;
   percentage?: number;
   unitId?: string;
   lessonId?: string;
@@ -391,8 +392,8 @@ export function quizPointsFromAttempt(attempt: {
 }, fallbackAt = ''): UnitTestQuizPoint[] {
   const ms = completedAtMs(attempt.completedAt);
   const at = ms > 0 ? new Date(ms).toISOString() : fallbackAt;
-  const score = attempt.marksAwarded ?? attempt.score ?? 0;
-  const max = attempt.marksMax ?? attempt.total ?? 0;
+  const score = attempt.score ?? attempt.marksAwarded ?? 0;
+  const max = attempt.maxScore ?? attempt.marksMax ?? attempt.total ?? 0;
   const summary: UnitTestQuizPoint = {
     at,
     score,

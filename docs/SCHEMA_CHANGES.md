@@ -740,7 +740,10 @@ A unit test is a lesson with `lessonType: "unit_test"` and `isUnitQuiz: true`.
 |---|---|---|
 | `kind` | string | `unit_test` |
 | `version` | string | `A` or `B` |
-| `marksAwarded` / `marksMax` | number | Weighted score. `score` / `total` / `percentage` stay. |
+| `score` | number | Marks awarded. |
+| `maxScore` | number | Marks available. |
+| `percentage` | number | Rounded percent. |
+| `marksAwarded` / `marksMax` | number | Same marks as `score` and `maxScore`. `total` matches `maxScore`. |
 | `responses[].marks` / `marksAwarded` / `bloom` / `lessonId` | | Per question. `sourceLessonId` is still set to the same lesson. |
 | `timeTakenSeconds` | number | Already stored. |
 | `recommendedLessonIds` | string[] | Lessons to show as Review these lessons. |
@@ -784,9 +787,10 @@ Collection `unit_quiz_attempts`. Written by the server. A client score is ignore
 | `kind` | string | `unit_test` |
 | `version` | string | `A` or `B` |
 | `attemptNumber` | number | |
-| `score`, `total` | number | Marks awarded and marks available. |
-| `marksAwarded`, `marksMax` | number | Same marks. |
-| `percentage` | number | Rounded marks awarded / marks available. |
+| `score` | number | Marks awarded. |
+| `maxScore` | number | Marks available. |
+| `percentage` | number | Rounded percent (`score` / `maxScore`). |
+| `total`, `marksAwarded`, `marksMax` | number | Same marks. `total` and `marksMax` match `maxScore`. `marksAwarded` matches `score`. |
 | `passed` | boolean | `percentage` against that unit's pass mark. |
 | `timeTakenSeconds` | number | |
 | `responses[]` | array | `question`, `selected` (option id), `correct`, `marks`, `marksAwarded`, `bloom`, `lessonId` |
@@ -806,7 +810,9 @@ On a pass, the server updates `courses/{courseId}/enrollments/{studentId}`:
 | `unitProgress.{unitId}` | object | `{ passed: true, score, lessonId, passedAt }`. `score` is the percentage. |
 | `unlockedUnitIds` | string[] | The next module id, when there is one. |
 
-A fail does not unlock the next unit. The unit test stays locked until each id in `recommendedLessonIds` has `lessonCompletedAt` greater than that attempt's `completedAt`. The next attempt then uses the other version.
+There is no unlock route. A pass returns the next module id as `unlockedUnitId` on `POST /api/unit-tests/mark`. A fail does not unlock the next unit. The unit test stays locked until each id in `recommendedLessonIds` has `lessonCompletedAt` greater than that attempt's `completedAt`. The next attempt then uses the other version.
+
+`unitProgress.{unitId}.score` is the percentage. Attempt `score` is marks awarded. They are different fields.
 
 Passing a unit does not award a certificate.
 
@@ -844,8 +850,8 @@ Fields on `certificates/{id}`:
 | Field | Type | Notes |
 |---|---|---|
 | `id` | string | Document id. This is the certificate ID. |
-| `verifyUrl` | string | Public verify page. Path only, for example `/verify/11111111-2222-4333-8444-555555555555`. The page is `app/verify/[uuid]`. |
-| `qr` | string | Data the QR encodes. The same value as `verifyUrl`. Not an image. |
+| `verifyUrl` | string | Public verify page. Path only: `/verify/{id}`. Clients prefix the public site origin (`NEXT_PUBLIC_SITE_URL`, fallback `https://poketschool.ai`). The page is `app/verify/[uuid]`. |
+| `qr` | string | Data the QR encodes. The same path as `verifyUrl`. Not an image and not an absolute URL. |
 | `studentNumber` | string | Institution student number, when the server has one on the user profile. Omitted when there is none. |
 | `name` | string | Student name printed on the certificate. Also stored as `studentName`. |
 | `course` | string | Course title. Also stored as `courseTitle`. |
@@ -855,13 +861,17 @@ Fields on `certificates/{id}`:
 
 Also stored for the web app: `studentId`, `courseId`, `passMark`, `kind` (`course`), `status` (`valid` or `revoked`). PDF download is `GET /api/certificates/{id}/pdf`.
 
+API responses that return a certificate also include `absoluteVerifyUrl`, the origin plus `verifyUrl`. That absolute URL is not stored.
+
 Older rows with `kind: "module"` were issued for a finished module. They may have `studentName` and `courseTitle` and no `verifyUrl`, `qr`, `name`, or `course`. New issuance does not create those rows. Read `name` then `studentName`, and `course` then `courseTitle`.
 
 If SMTP is configured (`SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`), the server emails the PDF link. If it is not configured, issuance still succeeds and the email is skipped.
 
 ### `POST /api/unit-tests/mark`
 
-Signed-in student. The server loads the paper and grades it.
+This is the only marker. Signed-in student. The server loads the paper and grades it. Unlock is `unlockedUnitId` on this response. There is no separate unlock route.
+
+`POST /api/platform/unit-quiz` is deprecated for unit tests. If a unit test is posted there, the server delegates to this same marker and returns this same shape. Mastery quizzes that are not unit tests still use `/api/platform/unit-quiz`. Those do not award a certificate and do not return `unlockedUnitId`.
 
 Request:
 
@@ -882,12 +892,11 @@ Response:
 ```json
 {
   "attemptId": "attempt-id",
-  "score": 80,
+  "score": 8,
+  "maxScore": 10,
+  "percentage": 80,
   "passed": true,
   "lessonIds": ["lesson-to-review"],
-  "percentage": 80,
-  "marksAwarded": 8,
-  "marksMax": 10,
   "version": "A",
   "attemptNumber": 1,
   "unlockedUnitId": "next-module-id",
@@ -895,8 +904,41 @@ Response:
 }
 ```
 
-`score` and `percentage` are the same rounded percentage. `lessonIds` are the lessons behind missed questions. `unlockedUnitId` is null when there is no next module or the attempt failed. `certificate` is an object `{ id, fresh, studentName, courseTitle, issuedAt }` when this pass awards one, otherwise null.
+`score` is marks awarded. `maxScore` is marks available. `percentage` is the rounded percent. The stored attempt uses those same three fields. `lessonIds` are the lessons behind missed questions. `unlockedUnitId` is the next module id, or null when there is no next module or the attempt failed.
+
+`certificate` is null unless this pass awards the course certificate. When it does, the object is:
+
+```json
+{
+  "id": "11111111-2222-4333-8444-555555555555",
+  "studentNumber": "PS-1042",
+  "name": "Amina Yusuf",
+  "course": "Biology",
+  "level": "IGCSE",
+  "score": 82,
+  "issuedAt": "2026-10-17T09:00:00.000Z",
+  "verifyUrl": "/verify/11111111-2222-4333-8444-555555555555",
+  "qr": "/verify/11111111-2222-4333-8444-555555555555",
+  "absoluteVerifyUrl": "https://poketschool.ai/verify/11111111-2222-4333-8444-555555555555"
+}
+```
+
+`studentNumber` is omitted when the server has none. `verifyUrl` and `qr` are the path `/verify/{id}`. `absoluteVerifyUrl` is `NEXT_PUBLIC_SITE_URL` (fallback `https://poketschool.ai`) plus that path, and is only on the response. `score` here is the final-assessment percentage, not the unit-test marks. `issuedAt` on the response is an ISO string. The stored certificate `issuedAt` is a timestamp.
 
 A locked retake returns HTTP 400 with `code: "LOCKED"` and the message `Review these lessons before the unit test unlocks.`
 
-`POST /api/platform/unit-quiz` marks a unit test through the same function. Mastery quizzes that are not unit tests still use that route and do not award a certificate.
+### `lesson.first_complete`
+
+The name is `lesson.first_complete`, exported from `lib/events.ts` as `LESSON_FIRST_COMPLETE`.
+
+The server writes one `events` document when a lesson is first completed on the server (`completeLesson`, including the first pass of a unit test):
+
+| Field | Type | Notes |
+|---|---|---|
+| `name` | string | `lesson.first_complete` |
+| `studentId` | string | |
+| `courseId` | string | |
+| `lessonId` | string | |
+| `at` | timestamp | |
+
+Completing the same lesson again does not write another event. Clients must not post `lesson.first_complete`. There is no route that accepts an event name. Firestore's default deny already blocks client writes to `events`. That rule is not changed or deployed by this change.

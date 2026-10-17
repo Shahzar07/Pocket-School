@@ -540,6 +540,8 @@ export interface UnitQuizAttempt {
   attemptNumber: number;
   score: number;
   total: number;
+  /** Marks available. Same value as `marksMax` and `total` on a unit test. */
+  maxScore?: number;
   percentage: number;
   passed: boolean;
   timeTakenSeconds: number;

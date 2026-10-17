@@ -2,11 +2,7 @@ import 'server-only';
 
 import { brandedMailHtml, mailFromHeader } from '../academy-mail';
 import { smtpConfigured } from '../documents/delivery';
-import { certificateVerifyUrl } from '../certificates';
-
-function siteOrigin(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL || 'https://poketschool.ai').replace(/\/$/, '');
-}
+import { certificateVerifyUrl, publicSiteOrigin } from '../certificates';
 
 /** Emails a PDF link. Missing SMTP, or a send failure, does not block issuance. */
 export async function emailCertificatePdfLink(input: {
@@ -23,7 +19,7 @@ export async function emailCertificatePdfLink(input: {
     pass: process.env.SMTP_PASS,
   };
   if (!smtpConfigured(env)) return false;
-  const origin = siteOrigin();
+  const origin = publicSiteOrigin();
   const pdfUrl = `${origin}/api/certificates/${encodeURIComponent(input.certificateId)}/pdf`;
   const verifyUrl = certificateVerifyUrl(input.certificateId, origin);
   try {

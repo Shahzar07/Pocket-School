@@ -12,6 +12,7 @@ import { resolvePassMark } from '../unit-test';
 import { countCompleted, isPublishedLesson, progressPercent } from '../progress';
 import { certificateStatus, certificateStudentName } from '../certificates';
 import { issueCourseCertificate } from '../certificates/issue';
+import { LESSON_FIRST_COMPLETE } from '../events';
 import { recordActivity } from '@/lib/audit/server';
 import {
   ADMIN_SPARKS_GRANT,
@@ -170,6 +171,13 @@ export async function completeLesson(
     const xp = already ? xpBefore : xpBefore + xpReward;
     const reviewedAt = Date.now();
     if (!already) {
+      tx.set(db().collection('events').doc(), {
+        name: LESSON_FIRST_COMPLETE,
+        studentId: uid,
+        courseId,
+        lessonId,
+        at: FieldValue.serverTimestamp(),
+      });
       tx.update(enrollRef, {
         completedLessons: FieldValue.arrayUnion(lessonId),
         progress,
@@ -508,6 +516,7 @@ export async function recordUnitQuiz(uid: string, body: {
     mod.data() as { unitTestPassMark?: number; masteryThreshold?: number } | undefined,
   );
   const hit = await findLesson(body.courseId, body.lessonId);
+  // Deprecated for unit tests. The canonical marker is POST /api/unit-tests/mark.
   if (hit?.data.lessonType === 'unit_test' && hit.data.unitTest) {
     const { markUnitTestAttempt } = await import('./mark-unit-test');
     return markUnitTestAttempt(uid, {

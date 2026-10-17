@@ -5,6 +5,7 @@ import { adminAuth, adminDb } from '../firebase-admin';
 import {
   CERTIFICATE_ISSUER_ID,
   CERTIFICATE_ISSUER_NAME,
+  absoluteVerifyUrl,
   type CertificateAward,
   certificateKey,
   certificateStudentName,
@@ -59,12 +60,24 @@ async function attemptsFor(studentId: string, lessonId: string): Promise<Firebas
   return snap.docs.map((doc) => doc.data());
 }
 
+/** Certificate fields returned by the mark API. `verifyUrl` and `qr` stay paths. */
+export interface CourseCertificateResponse extends CertificateAward {
+  name: string;
+  course: string;
+  level: string;
+  score: number;
+  verifyUrl: string;
+  qr: string;
+  absoluteVerifyUrl: string;
+  studentNumber?: string;
+}
+
 /**
  * Writes one course certificate when the final assessment and every unit are passed.
  * Returns null when the student has not earned it, or already holds it.
  * Completion of lessons never reaches this function.
  */
-export async function issueCourseCertificate(studentId: string, courseId: string): Promise<CertificateAward | null> {
+export async function issueCourseCertificate(studentId: string, courseId: string): Promise<CourseCertificateResponse | null> {
   const courseSnap = await db().doc(`courses/${courseId}`).get();
   if (!courseSnap.exists) return null;
   const course = courseSnap.data() ?? {};
@@ -160,23 +173,34 @@ export async function issueCourseCertificate(studentId: string, courseId: string
       moduleId: 'course',
       createdAt: FieldValue.serverTimestamp(),
     });
-    const award: CertificateAward = {
+    const award: Omit<CourseCertificateResponse, 'absoluteVerifyUrl'> = {
       id,
       fresh: true,
       studentId,
       studentName,
+      name: studentName,
       courseId,
       courseTitle,
+      course: courseTitle,
       moduleId: 'course',
       moduleTitle: courseTitle,
       issuedAt,
       issuedByName,
+      level,
+      score: finalScore,
+      verifyUrl,
+      qr: verifyUrl,
+      ...(studentNumber ? { studentNumber } : {}),
     };
     return award;
   });
   if (!awarded) return null;
+  const response: CourseCertificateResponse = {
+    ...awarded,
+    absoluteVerifyUrl: absoluteVerifyUrl(awarded.verifyUrl),
+  };
   try {
-    await attachOpenBadge(awarded, { id: studentId, role: 'student' });
+    await attachOpenBadge(response, { id: studentId, role: 'student' });
   } catch (error) {
     console.error('Certificate badge skipped', error);
   }
@@ -192,7 +216,7 @@ export async function issueCourseCertificate(studentId: string, courseId: string
     to: email,
     studentName,
     courseTitle,
-    certificateId: awarded.id,
+    certificateId: response.id,
   });
-  return awarded;
+  return response;
 }

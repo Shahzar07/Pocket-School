@@ -136,8 +136,21 @@ export function certificateVerifyPath(id: string): string {
   return `/verify/${encodeURIComponent(id)}`;
 }
 
+/** Public site origin. Clients prefix this onto a stored `/verify/{id}` path. */
+export function publicSiteOrigin(): string {
+  return (process.env.NEXT_PUBLIC_SITE_URL || 'https://poketschool.ai').replace(/\/$/, '');
+}
+
 export function certificateVerifyUrl(id: string, origin = 'https://poketschool.ai'): string {
   return `${origin.replace(/\/$/, '')}${certificateVerifyPath(id)}`;
+}
+
+/** Absolute verify URL for an API response. Stored certificates keep the path only. */
+export function absoluteVerifyUrl(path: string): string {
+  const trimmed = path.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  const suffix = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return `${publicSiteOrigin()}${suffix}`;
 }
 
 /** Issue year from the certificate date, so a download keeps the year it was awarded. */
