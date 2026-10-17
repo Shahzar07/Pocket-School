@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { publicName } from '@/lib/alumni';
+import { BRAND } from '@/lib/brand-theme';
 import { linkedInCertificationUrl, shareLinks, badgeSvg } from '@/lib/credentials/badge-model';
 import { adminDb, isAdminConfigured } from '@/lib/firebase-admin';
 import { renderBadgePng } from '@/lib/server/badge-issue';
@@ -71,7 +72,7 @@ export async function achievementBadgePng(id: string, origin: string): Promise<B
     courseTitle: 'Poket School badge',
     issuerName: 'Poket School',
     standing: 'valid',
-    accent: '#1A3C34',
+    accent: BRAND.ink,
     credentialId: badge.id,
   });
   return renderBadgePng(svg, [{ keyword: 'openbadges', text: badge.verifyUrl }]);

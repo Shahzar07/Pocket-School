@@ -17,6 +17,7 @@ import {
   type CvDesign,
   type SavedCvVersion,
 } from '@/lib/cv-builder';
+import { BRAND } from '@/lib/brand-theme';
 import { LANGUAGES } from '@/lib/languages';
 import { sourceLabel, type RecordItem } from '@/lib/portfolio';
 
@@ -46,14 +47,14 @@ export function CvDocument({ doc }: { doc: ComposedCv }) {
       : 'ui-sans-serif, system-ui, sans-serif';
   return (
     <article
-      className={`overflow-hidden rounded-[28px] border border-[#1A3C34]/10 bg-white text-[#1A3C34] ${theme.compact ? 'text-xs' : 'text-sm'}`}
+      className={`overflow-hidden rounded-[28px] border border-brand-ink/10 bg-white text-brand-ink ${theme.compact ? 'text-xs' : 'text-sm'}`}
       style={{ fontFamily }}
     >
       <header
         className="flex items-center justify-between gap-4 px-6 py-5"
         style={theme.colourful
-          ? { background: theme.accent, color: '#fff' }
-          : { background: '#fff', color: '#1A3C34', borderBottom: `3px solid ${theme.accent}` }}
+          ? { background: theme.accent, color: theme.template === 'bright' || theme.template === 'mist' ? BRAND.ink : BRAND.on }
+          : { background: BRAND.on, color: BRAND.ink, borderBottom: `3px solid ${theme.accent}` }}
       >
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.16em]">Poket School CV · {doc.pageSize}</p>
@@ -64,7 +65,7 @@ export function CvDocument({ doc }: { doc: ComposedCv }) {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={theme.photoUrl} alt="" className="h-14 w-14 rounded-2xl object-cover" />
           ) : (
-            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-white/90 text-lg font-semibold text-[#1A3C34]">{doc.initials}</span>
+            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-white/90 text-lg font-semibold text-brand-ink">{doc.initials}</span>
           )
         ) : null}
       </header>
@@ -99,7 +100,7 @@ function Chip({
   onClick: () => void;
 }) {
   return (
-    <button type="button" onClick={onClick} className={`h-9 rounded-full px-3 text-sm ${active ? 'bg-[#1A3C34] text-white' : 'bg-[#F6F1E7] text-[#1A3C34]'}`}>
+    <button type="button" onClick={onClick} className={`h-9 rounded-full px-3 text-sm ${active ? 'bg-brand-ink text-white' : 'bg-brand-mist text-brand-ink'}`}>
       {children}
     </button>
   );
@@ -248,30 +249,30 @@ export function CvStudio({
   };
 
   return (
-    <section className="grid gap-4 rounded-[28px] border border-[#1A3C34]/10 bg-white p-6 text-[#1A3C34]">
+    <section className="grid gap-4 rounded-[28px] border border-brand-ink/10 bg-white p-6 text-brand-ink">
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8922A]">CV builder</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-mid">CV builder</p>
         <h2 className="mt-1 font-heading text-3xl tracking-tight">Live preview</h2>
         <p className="mt-1 text-sm leading-relaxed">Choose a template, accent, font, columns, and photo. Drag sections, hide a line, or rename a heading. Verified facts stay as recorded. Self-reported wording and the summary can change on this version.</p>
       </div>
 
       <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
         <label className="text-sm">Saved CV
-          <select value={versionId} onChange={(event) => loadVersion(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-[#1A3C34]/15 bg-[#F6F1E7] px-3">
+          <select value={versionId} onChange={(event) => loadVersion(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-brand-ink/15 bg-brand-mist px-3">
             <option value="">New CV</option>
             {versions.map((version) => <option key={version.id} value={version.id}>{version.name}</option>)}
           </select>
         </label>
         <label className="text-sm">Version name
-          <input value={versionName} onChange={(event) => setVersionName(event.target.value)} placeholder="Company X - Analyst" className="mt-1 h-11 w-full rounded-xl border border-[#1A3C34]/15 px-3" />
+          <input value={versionName} onChange={(event) => setVersionName(event.target.value)} placeholder="Company X - Analyst" className="mt-1 h-11 w-full rounded-xl border border-brand-ink/15 px-3" />
         </label>
         <div className="flex items-end gap-2">
-          <button type="button" onClick={save} className="h-11 rounded-full bg-[#1A3C34] px-4 text-sm font-semibold text-white">Save version</button>
-          {versionId ? <button type="button" onClick={remove} className="h-11 rounded-full border border-[#1A3C34] px-4 text-sm">Remove</button> : null}
+          <button type="button" onClick={save} className="h-11 rounded-full bg-brand-ink px-4 text-sm font-semibold text-white">Save version</button>
+          {versionId ? <button type="button" onClick={remove} className="h-11 rounded-full border border-brand-ink px-4 text-sm">Remove</button> : null}
         </div>
       </div>
       <label className="text-sm">Job tracker share link
-        <select value={shareToken} onChange={(event) => setShareToken(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-[#1A3C34]/15 bg-white px-3">
+        <select value={shareToken} onChange={(event) => setShareToken(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-brand-ink/15 bg-white px-3">
           <option value="">No share link</option>
           {links.map((link) => <option key={link.token} value={link.token}>{link.label}</option>)}
         </select>
@@ -294,10 +295,10 @@ export function CvStudio({
 
       <div className="flex flex-wrap items-end gap-3">
         <label className="text-sm">Accent
-          <input type="color" value={design.accent} onChange={(event) => patch({ accent: event.target.value })} className="mt-1 block h-11 w-16 cursor-pointer rounded-xl border border-[#1A3C34]/15 bg-white" />
+          <input type="color" value={design.accent} onChange={(event) => patch({ accent: event.target.value })} className="mt-1 block h-11 w-16 cursor-pointer rounded-xl border border-brand-ink/15 bg-white" />
         </label>
         <label className="text-sm">Font
-          <select value={design.font} onChange={(event) => patch({ font: event.target.value === 'serif' || event.target.value === 'mono' ? event.target.value : 'sans' })} className="mt-1 h-11 rounded-xl border border-[#1A3C34]/15 px-3">
+          <select value={design.font} onChange={(event) => patch({ font: event.target.value === 'serif' || event.target.value === 'mono' ? event.target.value : 'sans' })} className="mt-1 h-11 rounded-xl border border-brand-ink/15 px-3">
             <option value="sans">Sans</option>
             <option value="serif">Serif</option>
             <option value="mono">Mono</option>
@@ -315,11 +316,11 @@ export function CvStudio({
       </div>
 
       <label className="text-sm">Language
-        <select value={design.language} onChange={(event) => patch({ language: event.target.value })} className="mt-1 h-11 w-full rounded-xl border border-[#1A3C34]/15 px-3">
+        <select value={design.language} onChange={(event) => patch({ language: event.target.value })} className="mt-1 h-11 w-full rounded-xl border border-brand-ink/15 px-3">
           {LANGUAGES.map((language) => <option key={language.code} value={language.code}>{language.label}</option>)}
         </select>
       </label>
-      <button type="button" onClick={translate} className="h-10 w-fit rounded-full border border-[#1A3C34] px-4 text-sm">Preview this language</button>
+      <button type="button" onClick={translate} className="h-10 w-fit rounded-full border border-brand-ink px-4 text-sm">Preview this language</button>
       {notice ? <p className="text-sm">{notice}</p> : <p className="text-sm">English stays as written. Another language is a display copy from content translation. Verified facts are not rewritten.</p>}
 
       <div className="grid gap-2">
@@ -337,13 +338,13 @@ export function CvStudio({
                 const from = event.dataTransfer.getData('text/plain');
                 patch({ sectionOrder: moveSection(design.sectionOrder, from, index) });
               }}
-              className="flex flex-wrap items-center gap-2 rounded-2xl bg-[#F6F1E7] px-3 py-2"
+              className="flex flex-wrap items-center gap-2 rounded-2xl bg-brand-mist px-3 py-2"
             >
               <span className="cursor-grab text-xs font-semibold uppercase tracking-wide">Drag</span>
               <input
                 value={design.sectionTitles[id] ?? id}
                 onChange={(event) => patch({ sectionTitles: { ...design.sectionTitles, [id]: event.target.value } })}
-                className="h-9 min-w-40 flex-1 rounded-xl border border-[#1A3C34]/10 bg-white px-3 text-sm"
+                className="h-9 min-w-40 flex-1 rounded-xl border border-brand-ink/10 bg-white px-3 text-sm"
               />
               <button type="button" className="text-xs underline" onClick={() => patch({ sectionOrder: moveSection(design.sectionOrder, id, index - 1) })}>Up</button>
               <button type="button" className="text-xs underline" onClick={() => patch({ sectionOrder: moveSection(design.sectionOrder, id, index + 1) })}>Down</button>
@@ -365,11 +366,11 @@ export function CvStudio({
       </div>
 
       <div className="grid gap-2 md:grid-cols-[1fr_2fr_auto]">
-        <input value={customTitle} onChange={(event) => setCustomTitle(event.target.value)} placeholder="Custom section" className="h-11 rounded-xl border border-[#1A3C34]/15 px-3 text-sm" />
-        <input value={customBody} onChange={(event) => setCustomBody(event.target.value)} placeholder="Wording for this section" className="h-11 rounded-xl border border-[#1A3C34]/15 px-3 text-sm" />
+        <input value={customTitle} onChange={(event) => setCustomTitle(event.target.value)} placeholder="Custom section" className="h-11 rounded-xl border border-brand-ink/15 px-3 text-sm" />
+        <input value={customBody} onChange={(event) => setCustomBody(event.target.value)} placeholder="Wording for this section" className="h-11 rounded-xl border border-brand-ink/15 px-3 text-sm" />
         <button
           type="button"
-          className="h-11 rounded-full bg-[#C8922A] px-4 text-sm font-semibold text-[#1A3C34]"
+          className="h-11 rounded-full bg-brand-mid px-4 text-sm font-semibold text-white"
           onClick={() => {
             if (!customBody.trim()) return;
             const slug = customTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 24) || 'section';
@@ -382,7 +383,7 @@ export function CvStudio({
       </div>
 
       <label className="text-sm">Summary
-        <textarea value={design.summary} onChange={(event) => patch({ summary: event.target.value })} rows={3} className="mt-1 w-full rounded-xl border border-[#1A3C34]/15 px-3 py-2" />
+        <textarea value={design.summary} onChange={(event) => patch({ summary: event.target.value })} rows={3} className="mt-1 w-full rounded-xl border border-brand-ink/15 px-3 py-2" />
       </label>
 
       <div className="grid gap-2">
@@ -395,7 +396,7 @@ export function CvStudio({
           const hidden = design.hiddenItems.includes(item.id) || (item.kind === 'score' && !design.showScores);
           const wording = design.wording[item.id];
           return (
-            <div key={item.id} className="rounded-2xl border border-[#1A3C34]/10 px-3 py-2">
+            <div key={item.id} className="rounded-2xl border border-brand-ink/10 px-3 py-2">
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -408,7 +409,7 @@ export function CvStudio({
                     : { hiddenItems: [...design.hiddenItems, item.id] })}
                 />
                 <span>{item.source === 'verified' ? item.title : (wording?.title || item.title)}</span>
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-[#C8922A]">{sourceLabel(item.source)}</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-mid">{sourceLabel(item.source)}</span>
               </label>
               {item.source === 'verified' ? (
                 <p className="mt-1 text-xs">{[item.detail, item.when].filter(Boolean).join(' · ')} Verified facts stay as recorded.</p>
@@ -417,12 +418,12 @@ export function CvStudio({
                   <input
                     value={wording?.title ?? item.title}
                     onChange={(event) => patch({ wording: { ...design.wording, [item.id]: { title: event.target.value, detail: wording?.detail ?? item.detail } } })}
-                    className="h-10 rounded-xl border border-[#1A3C34]/15 px-3 text-sm"
+                    className="h-10 rounded-xl border border-brand-ink/15 px-3 text-sm"
                   />
                   <input
                     value={wording?.detail ?? item.detail}
                     onChange={(event) => patch({ wording: { ...design.wording, [item.id]: { title: wording?.title ?? item.title, detail: event.target.value } } })}
-                    className="h-10 rounded-xl border border-[#1A3C34]/15 px-3 text-sm"
+                    className="h-10 rounded-xl border border-brand-ink/15 px-3 text-sm"
                   />
                 </div>
               )}
@@ -432,9 +433,9 @@ export function CvStudio({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={() => exportFile('pdf')} className="h-11 rounded-full bg-[#1A3C34] px-5 text-sm font-semibold text-white">PDF</button>
-        <button type="button" onClick={() => exportFile('docx')} className="h-11 rounded-full bg-[#1A3C34] px-5 text-sm font-semibold text-white">DOCX</button>
-        <button type="button" onClick={publishTheme} className="h-11 rounded-full border border-[#C8922A] px-5 text-sm font-semibold text-[#1A3C34]">Public portfolio theme</button>
+        <button type="button" onClick={() => exportFile('pdf')} className="h-11 rounded-full bg-brand-ink px-5 text-sm font-semibold text-white">PDF</button>
+        <button type="button" onClick={() => exportFile('docx')} className="h-11 rounded-full bg-brand-ink px-5 text-sm font-semibold text-white">DOCX</button>
+        <button type="button" onClick={publishTheme} className="h-11 rounded-full border border-brand-mid px-5 text-sm font-semibold text-brand-ink">Public portfolio theme</button>
       </div>
       <p className="text-sm">The public portfolio uses this template, accent, font, layout, and photo.</p>
       <CvDocument doc={preview} />

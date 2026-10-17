@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { linkedInCertificationUrl, shareLinks } from '@/lib/credentials/badge-model';
-import { sourceLabel, type PortfolioConsent, type RecordItem } from '@/lib/portfolio';
+import { CV_TEMPLATES, sourceLabel, type PortfolioConsent, type RecordItem } from '@/lib/portfolio';
 import type { DestinationBoard } from '@/lib/destinations';
 
 export function RecordPanels({
@@ -61,8 +61,8 @@ export function RecordPanels({
         <p className="mt-3 text-xs leading-relaxed text-[#1A3C34]/80">Review this. ET AI does not add achievements you have not recorded.</p>
       </div>
       <div className="mt-4 flex flex-wrap gap-2 text-xs">
-        {(['forest', 'gold', 'coral', 'classic'] as const).map((template) => (
-          <span key={template} className={`rounded-full px-3 py-1 ${consent.template === template ? 'bg-[#1A3C34] text-white' : 'bg-[#F6F1E7]'}`}>
+        {CV_TEMPLATES.map((template) => (
+          <span key={template} className={`rounded-full px-3 py-1 ${consent.template === template ? 'bg-brand-ink text-white' : 'bg-brand-mist text-brand-ink'}`}>
             {template} CV
           </span>
         ))}

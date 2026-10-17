@@ -170,11 +170,11 @@ function TierFields({
         </label>
         <label className="text-sm">Card colour
           <select className="mt-1 h-10 w-full rounded-xl border px-2" value={tier.accent} onChange={(event) => onChange({ ...tier, accent: event.target.value as TierAccent })}>
-            <option value="cream">Cream</option>
-            <option value="forest">Forest</option>
-            <option value="gold">Gold</option>
-            <option value="blue">Blue</option>
-            <option value="coral">Coral</option>
+            <option value="mist">Mist</option>
+            <option value="foam">Foam</option>
+            <option value="deep">Deep</option>
+            <option value="mid">Mid</option>
+            <option value="bright">Bright</option>
           </select>
         </label>
       </div>

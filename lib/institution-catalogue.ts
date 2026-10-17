@@ -4,6 +4,7 @@
  * This module does not publish a price list.
  */
 
+import { BRAND } from './brand-theme';
 import type { VolumePlanId } from './institution-pricing';
 import { taxRateFor } from './payments/tax';
 
@@ -35,15 +36,30 @@ export interface CatalogueItem {
   overage: SeatOverage;
 }
 
+/** TODO_BRAND. Stored catalogues may still say cream, forest, gold, blue, or coral. */
 export const TIER_ACCENTS = {
-  cream: '#F6F1E7',
-  forest: '#1A3C34',
-  gold: '#C8922A',
-  blue: '#3C8DFF',
-  coral: '#E36A4F',
+  mist: BRAND.mist,
+  foam: BRAND.foam,
+  deep: BRAND.ink,
+  mid: BRAND.mid,
+  bright: BRAND.bright,
 } as const;
 
 export type TierAccent = keyof typeof TIER_ACCENTS;
+
+const LEGACY_TIER_ACCENT: Record<string, TierAccent> = {
+  cream: 'mist',
+  forest: 'deep',
+  gold: 'mid',
+  blue: 'bright',
+  coral: 'bright',
+};
+
+export function readTierAccent(value: unknown): TierAccent {
+  if (typeof value === 'string' && value in TIER_ACCENTS) return value as TierAccent;
+  if (typeof value === 'string' && LEGACY_TIER_ACCENT[value]) return LEGACY_TIER_ACCENT[value];
+  return 'deep';
+}
 
 export interface TierSeatPrice {
   itemId: string;
@@ -222,7 +238,7 @@ export function seedInstitutionCatalogue(): InstitutionCatalogue {
       quoteContact: false,
       selfServe: true,
       contactHref: '',
-      accent: 'cream',
+      accent: 'mist',
     }),
     namedTier({
       id: 'starter',
@@ -235,7 +251,7 @@ export function seedInstitutionCatalogue(): InstitutionCatalogue {
       quoteContact: false,
       selfServe: true,
       contactHref: '',
-      accent: 'forest',
+      accent: 'deep',
     }),
     namedTier({
       id: 'growth',
@@ -248,7 +264,7 @@ export function seedInstitutionCatalogue(): InstitutionCatalogue {
       quoteContact: false,
       selfServe: true,
       contactHref: '',
-      accent: 'gold',
+      accent: 'mid',
     }),
     namedTier({
       id: 'pro',
@@ -261,7 +277,7 @@ export function seedInstitutionCatalogue(): InstitutionCatalogue {
       quoteContact: false,
       selfServe: true,
       contactHref: '',
-      accent: 'blue',
+      accent: 'bright',
     }),
     namedTier({
       id: 'enterprise',
@@ -274,7 +290,7 @@ export function seedInstitutionCatalogue(): InstitutionCatalogue {
       quoteContact: true,
       selfServe: true,
       contactHref: ENTERPRISE_CONTACT,
-      accent: 'coral',
+      accent: 'bright',
     }),
   ];
   return {
@@ -807,9 +823,7 @@ export function normalizeCatalogue(value: unknown): InstitutionCatalogue {
       const name = typeof tier.name === 'string' && tier.name.trim()
         ? tier.name.trim()
         : typeof tier.label === 'string' && tier.label.trim() ? tier.label.trim() : id;
-      const accent: TierAccent = tier.accent === 'cream' || tier.accent === 'gold' || tier.accent === 'blue' || tier.accent === 'coral' || tier.accent === 'forest'
-        ? tier.accent
-        : 'forest';
+      const accent = readTierAccent(tier.accent);
       const href = typeof tier.contactHref === 'string' ? tier.contactHref.trim() : '';
       const safeHref = href.startsWith('/') || href.startsWith('mailto:') || href.startsWith('https://') ? href : '';
       return [{

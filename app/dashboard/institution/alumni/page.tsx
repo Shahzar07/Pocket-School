@@ -51,20 +51,20 @@ export default function InstitutionAlumniPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  if (!institutionId) return <p className="p-6 text-sm text-brand-forest">This page opens once your account is tied to an academy.</p>;
+  if (!institutionId) return <p className="p-6 text-sm text-brand-ink">This page opens once your account is tied to an academy.</p>;
 
   return (
     <div className="space-y-5">
-      <a href="/dashboard/institution/destinations" className="inline-flex h-11 items-center rounded-full bg-brand-blue px-5 text-sm font-semibold text-white">
+      <a href="/dashboard/institution/destinations" className="inline-flex h-11 items-center rounded-full bg-brand-mid px-5 text-sm font-semibold text-white">
         Alumni destinations
       </a>
       {claims.length > 0 && (
-        <section className="space-y-3 rounded-3xl bg-white p-4 text-brand-forest sm:p-6">
+        <section className="space-y-3 rounded-3xl bg-white p-4 text-brand-ink sm:p-6">
           <h2 className="text-xl font-semibold">Alumni verification</h2>
           <p className="text-sm">An individual learner asked to join. Confirming them does not use a seat. A learner under 18 waits for a parent first.</p>
           <ul className="space-y-2">
             {claims.map((claim) => (
-              <li key={claim.studentId} className="rounded-2xl bg-brand-cream px-4 py-3 text-sm">
+              <li key={claim.studentId} className="rounded-2xl bg-brand-mist px-4 py-3 text-sm">
                 <span className="font-semibold">{claim.name}</span>
                 <span> · {claim.className} · {claim.graduationYear}</span>
                 <span className="ml-2">{claim.status === 'needs_parent' ? 'Waiting for a parent' : 'Waiting for you'}</span>
@@ -79,7 +79,7 @@ export default function InstitutionAlumniPage() {
                         }).then(() => { toast.success('They are in the alumni network.'); load(); })
                           .catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not confirm that request.'));
                       }}
-                      className="h-10 rounded-full bg-brand-forest px-4 text-sm font-semibold text-white"
+                      className="h-10 rounded-full bg-brand-ink px-4 text-sm font-semibold text-white"
                     >
                       Confirm
                     </button>

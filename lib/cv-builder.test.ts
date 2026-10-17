@@ -128,7 +128,7 @@ test('classic and colourful templates, page size, and photo are export choices',
   const a4 = new TextDecoder().decode(cvDocumentPdf(composeCv({
     name: 'Ada Lovelace',
     items: [verified],
-    design: design({ template: 'forest', pageSize: 'A4', font: 'serif', photo: true, layout: 'two' }),
+    design: design({ template: 'deep', pageSize: 'A4', font: 'serif', photo: true, layout: 'two' }),
   })));
   assert.equal(a4.startsWith('%PDF-1.4'), true);
   assert.equal(a4.includes('MediaBox [0 0 595 842]'), true);

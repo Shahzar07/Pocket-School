@@ -5,10 +5,12 @@
 
 import { isMinorTier, type AgeTier } from './age-tier';
 import { publicName } from './alumni';
+import { BRAND, brandPdfRgb, brandRgbChannels } from './brand-theme';
 import { spanDates, type EducationSpan } from './lifelong';
 import { linkedInPack } from './linkedin';
 
-export const CV_TEMPLATES = ['forest', 'gold', 'coral', 'classic'] as const;
+/** TODO_BRAND. Older portfolios stored forest, gold, or coral. */
+export const CV_TEMPLATES = ['deep', 'mid', 'bright', 'classic'] as const;
 export type CvTemplate = (typeof CV_TEMPLATES)[number];
 
 export const SELF_KINDS = [
@@ -59,13 +61,22 @@ export function defaultConsent(): PortfolioConsent {
     sharePortfolioWithSchools: false,
     shareDestinationWithSchools: false,
     includeScores: false,
-    template: 'forest',
+    template: 'deep',
     sections,
   };
 }
 
+const LEGACY_CV_TEMPLATE: Record<string, CvTemplate> = {
+  forest: 'deep',
+  gold: 'mid',
+  coral: 'bright',
+  blue: 'bright',
+};
+
 export function readTemplate(value: unknown): CvTemplate {
-  return CV_TEMPLATES.includes(value as CvTemplate) ? value as CvTemplate : 'forest';
+  if (typeof value === 'string' && (CV_TEMPLATES as readonly string[]).includes(value)) return value as CvTemplate;
+  if (typeof value === 'string' && LEGACY_CV_TEMPLATE[value]) return LEGACY_CV_TEMPLATE[value];
+  return 'deep';
 }
 
 export function needsParentApproval(ageTier: AgeTier): boolean {
@@ -352,10 +363,10 @@ export function portfolioJson(input: {
 }
 
 const HEADER: Record<CvTemplate, [number, number, number]> = {
-  forest: [0.102, 0.235, 0.204],
-  gold: [0.784, 0.573, 0.165],
-  coral: [0.890, 0.416, 0.310],
-  classic: [0.102, 0.235, 0.204],
+  deep: brandRgbChannels(BRAND.ink),
+  mid: brandRgbChannels(BRAND.mid),
+  bright: brandRgbChannels(BRAND.bright),
+  classic: brandRgbChannels(BRAND.ink),
 };
 
 function pdfEscape(value: string): string {
@@ -364,9 +375,10 @@ function pdfEscape(value: string): string {
 
 /** One-page CV. The header colour follows the template. Classic uses a thin rule. */
 export function cvPdf(input: { template: CvTemplate; name: string; lines: readonly string[] }): Uint8Array {
-  const [r, g, b] = HEADER[input.template];
-  const bar = input.template === 'classic' ? '48 742 516 1.5 re f' : '0 736 612 56 re f';
-  const titleInk = input.template === 'classic' ? '0 0 0 rg' : '1 1 1 rg';
+  const template = readTemplate(input.template);
+  const [r, g, b] = HEADER[template];
+  const bar = template === 'classic' ? '48 742 516 1.5 re f' : '0 736 612 56 re f';
+  const titleInk = template === 'classic' || template === 'bright' ? `${brandPdfRgb(BRAND.ink)} rg` : '1 1 1 rg';
   const body = [input.name.trim() || 'Learner', ...input.lines].slice(0, 36).map((line) => pdfEscape(line).slice(0, 90));
   const commands = [
     `${r} ${g} ${b} rg`,

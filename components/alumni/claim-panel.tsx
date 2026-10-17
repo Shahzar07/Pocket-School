@@ -103,7 +103,7 @@ export function AttendedSchoolPanel() {
   };
 
   return (
-    <section id="attended-school" className="space-y-4 rounded-3xl bg-white p-4 text-brand-forest sm:p-6">
+    <section id="attended-school" className="space-y-4 rounded-3xl bg-white p-4 text-brand-ink sm:p-6">
       <div>
         <h2 className="text-xl font-semibold">Add a school I attended</h2>
         <p className="mt-1 text-sm">An individual account can join that school&apos;s alumni network. A registered academy confirms you. No seat is used.</p>
@@ -114,7 +114,7 @@ export function AttendedSchoolPanel() {
             value={schoolName}
             onChange={(event) => { setSchoolName(event.target.value); setInstitutionId(''); }}
             placeholder="Search a Poket School academy or type a name"
-            className="mt-1 h-12 w-full rounded-2xl bg-brand-cream px-3"
+            className="mt-1 h-12 w-full rounded-2xl bg-brand-mist px-3"
           />
         </label>
         {matches.length > 0 && (
@@ -124,7 +124,7 @@ export function AttendedSchoolPanel() {
                 key={school.id}
                 type="button"
                 onClick={() => { setInstitutionId(school.id); setSchoolName(school.name); setMatches([]); }}
-                className="h-10 rounded-full bg-brand-forest px-4 text-sm font-semibold text-white"
+                className="h-10 rounded-full bg-brand-ink px-4 text-sm font-semibold text-white"
               >
                 {school.name}
               </button>
@@ -133,18 +133,18 @@ export function AttendedSchoolPanel() {
         )}
         {institutionId && <p className="text-sm md:col-span-2">This academy is on Poket School. A roster or email-domain match is confirmed at once. Anything else waits for the academy.</p>}
         <label className="text-sm">Graduation year
-          <input value={year} onChange={(event) => setYear(event.target.value)} inputMode="numeric" placeholder="2024" className="mt-1 h-12 w-full rounded-2xl bg-brand-cream px-3" />
+          <input value={year} onChange={(event) => setYear(event.target.value)} inputMode="numeric" placeholder="2024" className="mt-1 h-12 w-full rounded-2xl bg-brand-mist px-3" />
         </label>
         <label className="text-sm">Class
-          <input value={className} onChange={(event) => setClassName(event.target.value)} className="mt-1 h-12 w-full rounded-2xl bg-brand-cream px-3" />
+          <input value={className} onChange={(event) => setClassName(event.target.value)} className="mt-1 h-12 w-full rounded-2xl bg-brand-mist px-3" />
         </label>
         {!institutionId && (
           <>
             <label className="text-sm">Country
-              <input value={country} onChange={(event) => setCountry(event.target.value)} placeholder="MY" className="mt-1 h-12 w-full rounded-2xl bg-brand-cream px-3" />
+              <input value={country} onChange={(event) => setCountry(event.target.value)} placeholder="MY" className="mt-1 h-12 w-full rounded-2xl bg-brand-mist px-3" />
             </label>
             <label className="text-sm">State / region
-              <input value={stateName} onChange={(event) => setStateName(event.target.value)} className="mt-1 h-12 w-full rounded-2xl bg-brand-cream px-3" />
+              <input value={stateName} onChange={(event) => setStateName(event.target.value)} className="mt-1 h-12 w-full rounded-2xl bg-brand-mist px-3" />
             </label>
           </>
         )}
@@ -161,7 +161,7 @@ export function AttendedSchoolPanel() {
           country,
           state: stateName,
         }, 'Request sent.')}
-        className="h-12 rounded-full bg-brand-forest px-5 text-sm font-semibold text-white"
+        className="h-12 rounded-full bg-brand-ink px-5 text-sm font-semibold text-white"
       >
         {busy ? 'Sending…' : 'Add school'}
       </button>
@@ -169,10 +169,10 @@ export function AttendedSchoolPanel() {
       {home && home.mine.length > 0 && (
         <ul className="space-y-2">
           {home.mine.map((row) => (
-            <li key={row.id} className="rounded-2xl bg-brand-cream px-4 py-3 text-sm">
+            <li key={row.id} className="rounded-2xl bg-brand-mist px-4 py-3 text-sm">
               <span className="font-semibold">{row.schoolName}</span>
               <span> · {row.className} · {row.graduationYear}</span>
-              <span className={`ml-2 inline-flex h-7 items-center rounded-full px-3 text-xs font-semibold ${row.status === 'unverified' ? 'bg-brand-sand' : 'bg-white'}`}>
+              <span className={`ml-2 inline-flex h-7 items-center rounded-full px-3 text-xs font-semibold ${row.status === 'unverified' ? 'bg-brand-foam' : 'bg-white'}`}>
                 {STATUS[row.status] ?? row.status}
               </span>
             </li>
@@ -180,25 +180,25 @@ export function AttendedSchoolPanel() {
         </ul>
       )}
       {home?.children.map((child) => (
-        <div key={`${child.childId}-${child.claimId}`} className="rounded-2xl bg-brand-sand px-4 py-3 text-sm">
+        <div key={`${child.childId}-${child.claimId}`} className="rounded-2xl bg-brand-foam px-4 py-3 text-sm">
           <p>{child.childName} asked to join {child.schoolName}, class {child.className}, {child.graduationYear}.</p>
           <button
             type="button"
             disabled={busy}
             onClick={() => send({ action: 'approve-child', childId: child.childId, claimId: child.claimId }, 'Confirmed.')}
-            className="mt-2 h-10 rounded-full bg-brand-forest px-4 text-sm font-semibold text-white"
+            className="mt-2 h-10 rounded-full bg-brand-ink px-4 text-sm font-semibold text-white"
           >
             Confirm
           </button>
         </div>
       ))}
       {home?.groups.map((group) => (
-        <div key={group.key} className="space-y-2 rounded-2xl border border-brand-gold p-4">
-          <p className="text-sm font-semibold">{group.name} <span className="ml-2 rounded-full bg-brand-sand px-3 py-1 text-xs">Unverified</span></p>
+        <div key={group.key} className="space-y-2 rounded-2xl border border-brand-mid p-4">
+          <p className="text-sm font-semibold">{group.name} <span className="ml-2 rounded-full bg-brand-foam px-3 py-1 text-xs">Unverified</span></p>
           <p className="text-sm">Peer-joined and moderated. Notes from anyone under 18 wait for an adult in the group. If this school registers, the group joins its official alumni network.</p>
           <ul className="space-y-2">
             {group.posts.filter((post) => post.visible || post.queued).map((post) => (
-              <li key={post.id} className="rounded-2xl bg-brand-cream px-3 py-2 text-sm">
+              <li key={post.id} className="rounded-2xl bg-brand-mist px-3 py-2 text-sm">
                 <span className="font-semibold">{post.authorName}.</span> {post.body}
                 {post.queued && <span className="ml-2 text-xs">Held</span>}
                 {post.queued && (
@@ -208,9 +208,9 @@ export function AttendedSchoolPanel() {
             ))}
           </ul>
           <label className="block text-sm">Note
-            <input value={note} onChange={(event) => setNote(event.target.value)} className="mt-1 h-12 w-full rounded-2xl bg-brand-cream px-3" />
+            <input value={note} onChange={(event) => setNote(event.target.value)} className="mt-1 h-12 w-full rounded-2xl bg-brand-mist px-3" />
           </label>
-          <button type="button" disabled={busy} onClick={() => send({ action: 'post', schoolKey: group.key, body: note }, 'Sent.')} className="h-10 rounded-full bg-brand-gold px-4 text-sm font-semibold text-brand-forest">Post</button>
+          <button type="button" disabled={busy} onClick={() => send({ action: 'post', schoolKey: group.key, body: note }, 'Sent.')} className="h-10 rounded-full bg-brand-mid px-4 text-sm font-semibold text-white">Post</button>
         </div>
       ))}
     </section>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { BRAND } from '@/lib/brand-theme';
 import { documentPdf } from '@/lib/institution-pricing';
 import {
   catalogueDocumentLines,
@@ -108,13 +109,14 @@ export function PriceCalculator({
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {catalogue.tiers.map((tier) => {
           const selected = highlighted?.id === tier.id;
-          const ink = tier.accent === 'gold' || tier.accent === 'cream' ? '#1A3C34' : '#F6F1E7';
+          const onLight = tier.accent === 'mist' || tier.accent === 'foam' || tier.accent === 'bright';
+          const ink = onLight ? BRAND.ink : BRAND.on;
           const prices = catalogue.items.map((entry) => tierUnitMonthly(tier, entry));
           const from = prices.length ? Math.min(...prices) : 0;
           return (
             <article
               key={tier.id}
-              className={`rounded-3xl p-4 shadow-sm ${tier.accent === 'cream' ? 'border border-[#1A3C34]/15' : ''} ${selected ? 'ring-4 ring-[#F6F1E7] ring-offset-2 ring-offset-[#C8922A]' : ''}`}
+              className={`rounded-3xl p-4 shadow-sm ${onLight ? 'border border-brand-ink/15' : ''} ${selected ? 'ring-4 ring-brand-mid ring-offset-2 ring-offset-brand-foam' : ''}`}
               style={{ background: TIER_ACCENTS[tier.accent], color: ink }}
             >
               <button type="button" className="w-full text-left" onClick={() => pickTier(tier)}>

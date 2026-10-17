@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { authedFetch } from '@/lib/api-client';
 import { useAccountMode } from '@/hooks/use-account-mode';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { isOnboardingTrack, type WelcomeHue, type WelcomeState } from '@/lib/onboarding-course';
+import { isOnboardingTrack, readWelcomeHue, type WelcomeState } from '@/lib/onboarding-course';
 import { WelcomeFinish, WelcomeLessonCard, WelcomeResumeCard, WelcomeStars } from '@/components/onboarding/welcome-board';
 import { useContentTranslation } from '@/hooks/use-content-translation';
 import { readLanguage } from '@/lib/languages';
@@ -19,7 +19,7 @@ function readState(data: Record<string, unknown>): WelcomeState | null {
     const row = item as Record<string, unknown>;
     const options = Array.isArray(row.options) ? row.options.filter((option): option is string => typeof option === 'string') : [];
     if (typeof row.id !== 'string' || typeof row.title !== 'string' || options.length < 3) return [];
-    const hue: WelcomeHue = row.hue === 'gold' || row.hue === 'coral' || row.hue === 'blue' ? row.hue : 'forest';
+    const hue = readWelcomeHue(row.hue);
     return [{
       id: row.id,
       title: row.title,
@@ -140,10 +140,10 @@ export function WelcomeHelpLink() {
   const { state, send } = useWelcome();
   const [busy, setBusy] = useState(false);
   return (
-    <section className="rounded-3xl border border-[#1A3C34]/15 bg-[#F6F1E7] p-5 text-[#1A3C34]">
-      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8922A]">Welcome course</p>
+    <section className="rounded-3xl border border-brand-ink/15 bg-brand-foam p-5 text-brand-ink">
+      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-mid">Welcome course</p>
       <h2 className="mt-1 font-heading text-2xl">Pick the welcome course back up</h2>
-      <p className="mt-1 text-sm text-[#1A3C34]/80">
+      <p className="mt-1 text-sm text-brand-ink/80">
         {state?.complete
           ? 'You already earned the Welcome star. Open the course any time to read a lesson again.'
           : 'Skip hides the card on your dashboard. It does not delete the lessons.'}
@@ -155,7 +155,7 @@ export function WelcomeHelpLink() {
           setBusy(true);
           void send('reopen').finally(() => setBusy(false));
         }}
-        className="mt-4 inline-flex h-11 items-center rounded-full bg-[#1A3C34] px-5 text-sm font-semibold text-white"
+        className="mt-4 inline-flex h-11 items-center rounded-full bg-brand-ink px-5 text-sm font-semibold text-white"
       >
         {busy ? 'Opening…' : 'Reopen the welcome course'}
       </button>
@@ -193,7 +193,7 @@ function TranslatedLesson({
   return (
     <div dir={translation.dir}>
       {translation.autoTranslated && (
-        <button type="button" onClick={translation.toggle} className="mb-2 text-xs font-semibold text-[#3C8DFF]">
+        <button type="button" onClick={translation.toggle} className="mb-2 text-xs font-semibold text-brand-mid">
           {translation.showOriginal ? 'Show translation' : 'Show English'}
         </button>
       )}
@@ -225,22 +225,22 @@ export function WelcomePlayer() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <header className="rounded-3xl bg-[#1A3C34] p-6 text-white">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#F8E7C4]">Poket School · free welcome</p>
+      <header className="rounded-3xl bg-brand-gradient p-6 text-white">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-mist">Poket School · free welcome</p>
         <h1 className="mt-1 font-heading text-4xl">{state.trackTitle}</h1>
         <p className="mt-2 max-w-xl text-sm text-white/80">{state.blurb} A star lands when the check is right and the task is ticked. No Sparks.</p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <span className="rounded-2xl bg-white px-3 py-2 text-[#1A3C34]">
+          <span className="rounded-2xl bg-white px-3 py-2 text-brand-ink">
             <WelcomeStars count={state.stars} total={state.total} />
           </span>
-          <span className="rounded-full bg-[#E36A4F] px-3 py-1 text-xs font-bold">{state.streak} lesson streak</span>
+          <span className="rounded-full bg-brand-bright text-brand-ink px-3 py-1 text-xs font-bold">{state.streak} lesson streak</span>
         </div>
       </header>
       <ol className="grid gap-2 sm:grid-cols-2">
         {state.lessons.map((lesson, index) => (
           <li key={lesson.id} className="flex items-center justify-between rounded-2xl border border-border bg-card px-3 py-2 text-sm">
-            <span className={lesson.done ? 'font-semibold text-[#1A3C34]' : 'text-muted-foreground'}>{index + 1}. {lesson.title}</span>
-            <span className={lesson.done ? 'text-[#C8922A]' : 'text-[#1A3C34]/25'} aria-hidden>★</span>
+            <span className={lesson.done ? 'font-semibold text-brand-ink' : 'text-muted-foreground'}>{index + 1}. {lesson.title}</span>
+            <span className={lesson.done ? 'text-brand-mid' : 'text-brand-ink/25'} aria-hidden>★</span>
           </li>
         ))}
       </ol>

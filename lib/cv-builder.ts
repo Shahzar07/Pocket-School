@@ -13,7 +13,8 @@ import {
 } from './portfolio';
 
 export const CLASSIC_TEMPLATES = ['classic', 'serif', 'compact'] as const;
-export const COLOURFUL_TEMPLATES = ['forest', 'gold', 'coral', 'blue'] as const;
+/** TODO_BRAND. Older versions stored forest, gold, coral, or blue. */
+export const COLOURFUL_TEMPLATES = ['deep', 'mid', 'bright', 'mist'] as const;
 export const CV_DESIGN_TEMPLATES = [...CLASSIC_TEMPLATES, ...COLOURFUL_TEMPLATES] as const;
 export type CvDesignTemplate = (typeof CV_DESIGN_TEMPLATES)[number];
 export type CvFont = 'sans' | 'serif' | 'mono';
@@ -25,13 +26,21 @@ export const CV_LAYOUTS: readonly CvLayout[] = ['one', 'two'];
 export const CV_PAGE_SIZES: readonly CvPageSize[] = ['A4', 'Letter'];
 
 const TEMPLATE_ACCENT: Record<CvDesignTemplate, string> = {
-  classic: BRAND.forest,
-  serif: BRAND.forest,
-  compact: BRAND.forest,
-  forest: BRAND.forest,
-  gold: BRAND.gold,
-  coral: BRAND.coral,
-  blue: BRAND.blue,
+  classic: BRAND.ink,
+  serif: BRAND.ink,
+  compact: BRAND.ink,
+  deep: BRAND.ink,
+  mid: BRAND.mid,
+  bright: BRAND.bright,
+  mist: BRAND.mist,
+};
+
+/** Stored CV versions may still name Rochford swatches. */
+const LEGACY_DESIGN_TEMPLATE: Record<string, CvDesignTemplate> = {
+  forest: 'deep',
+  gold: 'mid',
+  coral: 'bright',
+  blue: 'bright',
 };
 
 export const CV_BASE_SECTIONS = ['summary', ...SECTION_IDS] as const;
@@ -155,6 +164,12 @@ function isTemplate(value: string): value is CvDesignTemplate {
   return (CV_DESIGN_TEMPLATES as readonly string[]).includes(value);
 }
 
+export function readDesignTemplate(value: unknown): CvDesignTemplate {
+  if (typeof value === 'string' && isTemplate(value)) return value;
+  if (typeof value === 'string' && LEGACY_DESIGN_TEMPLATE[value]) return LEGACY_DESIGN_TEMPLATE[value];
+  return 'classic';
+}
+
 export function templateFamily(template: CvDesignTemplate): 'classic' | 'colourful' {
   return (CLASSIC_TEMPLATES as readonly string[]).includes(template) ? 'classic' : 'colourful';
 }
@@ -202,7 +217,7 @@ function customId(value: string, index: number): string {
 export function readCvDesign(value: unknown): CvDesign {
   const base = defaultCvDesign();
   const raw = value && typeof value === 'object' ? value as Record<string, unknown> : {};
-  const template = typeof raw.template === 'string' && isTemplate(raw.template) ? raw.template : base.template;
+  const template = raw.template === undefined ? base.template : readDesignTemplate(raw.template);
   const customSections: CvCustomSection[] = [];
   const seen = new Set<string>();
   const incoming = Array.isArray(raw.customSections) ? raw.customSections : [];
@@ -444,7 +459,7 @@ function pdfEscape(value: string): string {
 }
 
 function rgb(hex: string): [number, number, number] {
-  const raw = /^#[0-9A-Fa-f]{6}$/.test(hex) ? hex : '#1A3C34';
+  const raw = /^#[0-9A-Fa-f]{6}$/.test(hex) ? hex : BRAND.ink;
   return [
     parseInt(raw.slice(1, 3), 16) / 255,
     parseInt(raw.slice(3, 5), 16) / 255,

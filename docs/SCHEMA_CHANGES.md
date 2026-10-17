@@ -744,7 +744,7 @@ The signed-in learner may read and list their own spans. Client creates, updates
 | `sharePortfolioWithSchools` | Former schools may see sections marked for schools. Default `false` |
 | `shareDestinationWithSchools` | Former schools may count the next step. Default `false` |
 | `includeScores` | Unit and final scores on the CV. Default `false` |
-| `template` | `forest`, `gold`, `coral`, or `classic` |
+| `template` | `deep`, `mid`, `bright`, or `classic`. Older rows may still say `forest`, `gold`, or `coral`. The server reads those as `deep`, `mid`, and `bright`. |
 | `sections` | Map of section id to `private`, `schools`, or `public` |
 | `summary`, `bullets` | Wording the learner saved after reviewing an ET AI draft |
 
@@ -870,8 +870,8 @@ The learner reads and writes these through the portfolio API. The id matches `cv
 | --- | --- |
 | `name` | The learner’s name for this CV, such as Company X - Analyst |
 | `shareToken` | Optional id of a `share_links` document this learner owns |
-| `template` | `classic`, `serif`, `compact`, `forest`, `gold`, `coral`, or `blue` |
-| `accent` | Hex colour such as `#1A3C34` |
+| `template` | `classic`, `serif`, `compact`, `deep`, `mid`, `bright`, or `mist`. Older rows may still say `forest`, `gold`, `coral`, or `blue`. The server reads those as `deep`, `mid`, `bright`, and `bright`. |
+| `accent` | Hex colour. New colourful templates start from the TODO_BRAND blue gradient in `lib/brand-theme.ts`. |
 | `font` | `sans`, `serif`, or `mono` |
 | `layout` | `one` or `two` |
 | `photo` | Whether the CV shows a photo block |
@@ -991,7 +991,7 @@ Each graduating class has one yearbook. The book id is the class group id, or th
 | `className`, `level` | The class the page was opened from |
 | `lockOn` | `YYYY-MM-DD`. Students can edit through this day. Default is 30 days after they leave |
 | `status` | `open` or `released` |
-| `template` | `forest`, `gold`, `coral`, or `blue` |
+| `template` | `deep`, `mid`, `bright`, or `mist`. Older books may still say `forest`, `gold`, `coral`, or `blue`. The server reads those as `deep`, `mid`, `bright`, and `bright`. |
 | `principalMessage`, `teacherMessage` | Staff notes printed on the cover. Contact details are refused |
 | `releasedAt` | ISO time, set when the academy releases the book |
 
@@ -1001,7 +1001,7 @@ Each graduating class has one yearbook. The book id is the class group id, or th
 
 `status` is `draft`, `pending`, or `approved`. `parentApproved` is set only by a linked parent whose `childIds` contains the student. A student cannot set it. An under-18 page stays hidden from classmates, other alumni, and the public until the parent has agreed and the academy has approved it. The academy can still read the draft in order to approve it.
 
-`yearbooks/{bookId}/signatures/{id}` is a note or sticker on a classmate page or the class wall (`toId` `wall`). Fields: `fromId`, `fromName` (first name and last initial), `toId`, `body`, `sticker` (`star`, `leaf`, `gold`, `coral`, `blue`, or empty), `decision`, `visible`, `queued`, `at`. A minor's signature is held even when the safety filter would allow it. A blocked note is not stored. There is no direct message for anyone under 18.
+`yearbooks/{bookId}/signatures/{id}` is a note or sticker on a classmate page or the class wall (`toId` `wall`). Fields: `fromId`, `fromName` (first name and last initial), `toId`, `body`, `sticker` (`star`, `spark`, `deep`, `mid`, `bright`, or empty). Older notes may still say `leaf`, `gold`, or `coral`. The server reads those as `deep`, `mid`, and `bright`. Also `decision`, `visible`, `queued`, `at`. A minor's signature is held even when the safety filter would allow it. A blocked note is not stored. There is no direct message for anyone under 18.
 
 `yearbooks/{bookId}/memories/{id}` is the class timeline: `authorId`, `authorName`, `title`, `body`, `visible`, `queued`, `at`. A minor's memory is held.
 
@@ -1138,7 +1138,19 @@ Each new category has an account toggle on `users/{uid}.notificationPrefs` and t
 
 ### Brand colours
 
-The palette is held while Harry confirms it. Poket School may move to a blue gradient. The current inks live in `lib/brand-theme.ts` and the `--brand-*` variables in `app/globals.css`. Alumni, yearbook, and graduation screens use `bg-brand-forest`, `bg-brand-gold`, `bg-brand-coral`, `bg-brand-blue`, `bg-brand-cream`, and `bg-brand-sand`. A palette change is those two files. The values are not changed in this update.
+Harry confirmed Poket School uses a blue gradient, the same family as the mobile mockup. Forest green `#1A3C34` and gold `#C8922A` are Rochford's school colours, not Poket School's. Exact hex values are still to come. Until then `lib/brand-theme.ts` and the `--brand-*` variables in `app/globals.css` hold a placeholder marked `TODO_BRAND`.
+
+| Token | Class | Role |
+| --- | --- | --- |
+| `ink` | `bg-brand-ink` | Deep stop |
+| `mid` | `bg-brand-mid` | Middle stop |
+| `bright` | `bg-brand-bright` | Bright stop. Use dark ink text on it |
+| `mist` | `bg-brand-mist` | Pale card wash |
+| `foam` | `bg-brand-foam` | Softer surface |
+| `on` | `text-brand-on` | Text on the deep and middle stops |
+| gradient | `bg-brand-gradient` | The brand surface. It reads `--brand-gradient` |
+
+Swap the hex values in those two files together when the mockup numbers arrive. Institution white-label colours stay on each academy (`primaryColor` and `secondaryColor`). They are not this palette. Older stored yearbook templates, CV templates, pricing-card accents, and welcome hues named `forest`, `gold`, `coral`, `cream`, or `blue` still open. New writes use the token names above.
 
 ## Individual alumni claims
 

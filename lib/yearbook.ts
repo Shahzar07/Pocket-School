@@ -8,7 +8,8 @@ import { screenPost, type ScreenedPost } from './alumni-network';
 import { BRAND, brandPdfRgb } from './brand-theme';
 import { moderateText } from './community/moderation';
 
-export const YEARBOOK_TEMPLATES = ['forest', 'gold', 'coral', 'blue'] as const;
+/** TODO_BRAND stops. Older books stored forest, gold, coral, or blue. */
+export const YEARBOOK_TEMPLATES = ['deep', 'mid', 'bright', 'mist'] as const;
 export type YearbookTemplate = (typeof YEARBOOK_TEMPLATES)[number];
 
 export const YEARBOOK_FIELDS = ['photo', 'name', 'className', 'quote', 'mostLikely', 'clubs', 'achievements', 'destination'] as const;
@@ -17,7 +18,8 @@ export type YearbookField = (typeof YEARBOOK_FIELDS)[number];
 export const AUDIENCES = ['classmates', 'institution', 'alumni', 'public'] as const;
 export type YearbookAudience = (typeof AUDIENCES)[number];
 
-export const STICKERS = ['star', 'leaf', 'gold', 'coral', 'blue'] as const;
+/** TODO_BRAND. Older notes stored leaf, gold, or coral. */
+export const STICKERS = ['star', 'spark', 'deep', 'mid', 'bright'] as const;
 export type YearbookSticker = (typeof STICKERS)[number];
 
 export const MIN_PLACE_BUCKET = 5;
@@ -26,10 +28,23 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const RANK: Record<YearbookAudience, number> = { classmates: 1, institution: 2, alumni: 3, public: 4 };
 
 const INK: Record<YearbookTemplate, string> = {
-  forest: brandPdfRgb(BRAND.forest),
-  gold: brandPdfRgb(BRAND.gold),
-  coral: brandPdfRgb(BRAND.coral),
-  blue: brandPdfRgb(BRAND.blue),
+  deep: brandPdfRgb(BRAND.ink),
+  mid: brandPdfRgb(BRAND.mid),
+  bright: brandPdfRgb(BRAND.bright),
+  mist: brandPdfRgb(BRAND.ink),
+};
+
+const LEGACY_TEMPLATE: Record<string, YearbookTemplate> = {
+  forest: 'deep',
+  gold: 'mid',
+  coral: 'bright',
+  blue: 'bright',
+};
+
+const LEGACY_STICKER: Record<string, YearbookSticker> = {
+  leaf: 'deep',
+  gold: 'mid',
+  coral: 'bright',
 };
 
 export interface YearbookAudiences {
@@ -57,7 +72,9 @@ export function defaultAudiences(): YearbookAudiences {
 }
 
 export function readTemplate(value: unknown): YearbookTemplate {
-  return YEARBOOK_TEMPLATES.find((item) => item === value) ?? 'forest';
+  if (typeof value !== 'string') return 'deep';
+  if ((YEARBOOK_TEMPLATES as readonly string[]).includes(value)) return value as YearbookTemplate;
+  return LEGACY_TEMPLATE[value] ?? 'deep';
 }
 
 export function readAudience(value: unknown): YearbookAudience {
@@ -73,7 +90,9 @@ export function readAudiences(data: unknown): YearbookAudiences {
 }
 
 export function readSticker(value: unknown): YearbookSticker | '' {
-  return STICKERS.find((item) => item === value) ?? '';
+  if (typeof value !== 'string') return '';
+  if ((STICKERS as readonly string[]).includes(value)) return value as YearbookSticker;
+  return LEGACY_STICKER[value] ?? '';
 }
 
 /** The field audience is the widest group. A narrower viewer still sees it. */
@@ -221,9 +240,9 @@ export function yearbookPdf(input: { template: YearbookTemplate; academy: string
     const commands = [
       `${ink} rg`,
       '0 790 595 52 re f',
-      '1 1 1 rg',
+      `${template === 'bright' ? brandPdfRgb(BRAND.ink) : '1 1 1'} rg`,
       'BT /F1 16 Tf 36 808 Td (Poket School) Tj ET',
-      '0.102 0.235 0.204 rg',
+      `${brandPdfRgb(BRAND.ink)} rg`,
       'BT /F1 12 Tf 16 TL 36 760 Td',
     ];
     lines.forEach((line, lineIndex) => {

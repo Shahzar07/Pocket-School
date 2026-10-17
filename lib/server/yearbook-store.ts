@@ -71,7 +71,7 @@ export async function ensureYearbookPage(input: {
       level: clip(input.level, 40),
       lockOn: lockDateFrom(input.leftOn),
       status: 'open',
-      template: 'forest',
+      template: 'deep',
       principalMessage: '',
       teacherMessage: '',
     });
@@ -479,7 +479,7 @@ export async function institutionYearbook(institutionId: string, bookId: string)
   return {
     books,
     book: {
-      ...(home.book ?? { id: selected, name: '', lockOn: '', status: 'open', template: 'forest' as YearbookTemplate, principalMessage: '', teacherMessage: '', portraits: [], wall: [], memories: [], gallery: [], own: null }),
+      ...(home.book ?? { id: selected, name: '', lockOn: '', status: 'open', template: 'deep' as YearbookTemplate, principalMessage: '', teacherMessage: '', portraits: [], wall: [], memories: [], gallery: [], own: null }),
       pages: pages.docs.map((doc) => ({
         id: doc.id,
         status: text(doc.get('status')) || 'draft',

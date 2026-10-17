@@ -64,7 +64,7 @@ const cvItems = [
 const cvShare = shareTokenFrom(new Uint8Array(24).fill(7));
 const cvDesign = readCvDesign({
   ...defaultCvDesign(),
-  template: 'forest',
+  template: 'deep',
   font: 'serif',
   layout: 'two',
   photo: true,

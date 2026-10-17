@@ -12,6 +12,7 @@ import {
   placeBoard,
   portraitLines,
   screenOwnPage,
+  readTemplate,
   screenSignature,
   suggestionAllowed,
   yearbookPdf,
@@ -116,7 +117,7 @@ test('a feed suggestion has to match a recorded achievement', () => {
 
 test('the yearbook download is a printable A4 PDF in the academy colour', () => {
   const pdf = Buffer.from(yearbookPdf({
-    template: 'forest',
+    template: 'deep',
     academy: 'North Academy',
     sheets: [
       { heading: 'Oak 2026', lines: ['North Academy'] },
@@ -124,10 +125,12 @@ test('the yearbook download is a printable A4 PDF in the academy colour', () => 
     ],
   }));
   const text = pdf.toString('latin1');
+  assert.equal(readTemplate('forest'), 'deep');
+  assert.equal(readTemplate('gold'), 'mid');
   assert.equal(text.startsWith('%PDF-1.4'), true);
   assert.match(text, /\/Count 2/);
   assert.match(text, /0 0 595 842/);
-  assert.match(text, /0\.102 0\.235 0\.204/);
+  assert.match(text, /0\.043 0\.227 0\.431/);
   assert.match(text, /Oak 2026/);
   assert.match(text, /Ada L\./);
 });

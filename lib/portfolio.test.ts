@@ -136,7 +136,7 @@ test('the CV download is a one-page PDF', () => {
     evidenceLink: '',
     section: 'education',
   }]);
-  const bytes = cvPdf({ template: 'forest', name: 'Ada L.', lines });
+  const bytes = cvPdf({ template: 'deep', name: 'Ada L.', lines });
   const header = new TextDecoder().decode(bytes.slice(0, 8));
   assert.equal(header, '%PDF-1.4');
   assert.equal(lines[0]?.includes('Verified by Poket School'), true);
