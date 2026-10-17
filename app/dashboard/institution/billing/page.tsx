@@ -14,6 +14,7 @@ import { periodStartFor, quoteForInstitution, type SubscriptionState } from '@/l
 import { loadCurrentBill } from '@/lib/institution-membership-store';
 import { seedInstitutionPricing, tierCliff, VOLUME_PLANS, type VolumeInterval, type VolumePlanId } from '@/lib/institution-pricing';
 import { scaleSeats } from '@/lib/institution-commerce';
+import { planTierReview, seedInstitutionCatalogue } from '@/lib/institution-catalogue';
 
 export default function InstitutionBillingPage() {
   const { profile } = useAuthSTORE();
@@ -75,6 +76,31 @@ export default function InstitutionBillingPage() {
   const quote = quoteForInstitution({ seats, planId, interval });
   const cliff = tierCliff(seedInstitutionPricing(), planId, interval);
   const periodStart = bill ? periodStartFor(bill.periodEnd, bill.interval) : '';
+  const today = new Date().toISOString().slice(0, 10);
+  const tierNote = bill && periodStart ? planTierReview({
+    catalogue: seedInstitutionCatalogue(),
+    currentSeats: bill.seats,
+    currentTotal: bill.total,
+    students: seats,
+    itemIds: programmeIds,
+    interval,
+    country: profile?.country || 'MY',
+    periodStart,
+    periodEnd: bill.periodEnd,
+    on: today,
+  }) : null;
+  const liveNote = bill && periodStart && activeStudents !== seats ? planTierReview({
+    catalogue: seedInstitutionCatalogue(),
+    currentSeats: bill.seats,
+    currentTotal: bill.total,
+    students: activeStudents,
+    itemIds: programmeIds,
+    interval,
+    country: profile?.country || 'MY',
+    periodStart,
+    periodEnd: bill.periodEnd,
+    on: today,
+  }) : null;
   const scaled = bill && periodStart ? scaleSeats({
     seats: bill.seats,
     activeStudents: seats,
@@ -92,6 +118,10 @@ export default function InstitutionBillingPage() {
       });
       if (typeof data.url === 'string' && data.url) {
         window.location.href = data.url;
+        return;
+      }
+      if (data.suggested === true) {
+        toast.message(typeof data.message === 'string' ? data.message : 'The lower tier applies at renewal.');
         return;
       }
       if (data.sandbox === true && data.applied !== true) {
@@ -155,7 +185,10 @@ export default function InstitutionBillingPage() {
           </>
         )}
         {cliff && <p className="mt-2 text-sm text-amber-800">The next band, {cliff.toLabel}, is cheaper than {cliff.fromLabel}. Banded pricing is there so a school is not pushed off a cliff.</p>}
-        {bill && scaled && !('error' in scaled) && scaled.charge > 0 && <p className="mt-2 text-sm">Pro-rated charge for {seats - bill.seats} added seats, for the days left in this period: {bill.currency} {scaled.charge.toFixed(2)}.</p>}
+        {tierNote && !('error' in tierNote) && tierNote.action === 'upgrade' && <p className="mt-2 text-sm">{tierNote.message}</p>}
+        {tierNote && !('error' in tierNote) && tierNote.action === 'suggest_downgrade' && <p className="mt-2 text-sm">{tierNote.message}</p>}
+        {liveNote && !('error' in liveNote) && liveNote.action !== 'stay' && liveNote.message !== (tierNote && !('error' in tierNote) ? tierNote.message : '') && <p className="mt-2 text-sm">{liveNote.message}</p>}
+        {bill && scaled && !('error' in scaled) && scaled.charge > 0 && !(tierNote && !('error' in tierNote) && tierNote.action === 'upgrade') && <p className="mt-2 text-sm">Pro-rated charge for {seats - bill.seats} added seats, for the days left in this period: {bill.currency} {scaled.charge.toFixed(2)}.</p>}
         {bill && scaled && !('error' in scaled) && scaled.credit > 0 && <p className="mt-2 text-sm">Pro-rated credit for unused seats, for the days left in this period: {bill.currency} {scaled.credit.toFixed(2)}.</p>}
       </Panel>
       {(academyAdmin || superAdmin) && (

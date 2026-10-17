@@ -20,7 +20,7 @@ export type OrderAccess = 'subscription' | 'a_la_carte';
 
 export const INVOICE_MIN_SEATS = 50;
 export const SEAT_MIN = 1;
-/** High enough that Enterprise (500+ students) can still check out. */
+/** High enough that Enterprise (300+ students) can still check out. */
 export const SEAT_MAX = 2000;
 
 export const SANDBOX_BANNER =

@@ -116,7 +116,7 @@ export function PlanCheckout({
       </label>
       <label className="block text-sm font-medium">
         Unique students: {seats}
-        <span className="mt-1 block font-normal text-[#1A3C34]/70">This count picks Starter, Growth, Pro, or Enterprise. Each selected programme is billed for these students.</span>
+        <span className="mt-1 block font-normal text-[#1A3C34]/70">This count picks Micro, Starter, Growth, Pro, or Enterprise. Each selected programme is billed for these students, and a larger tier has a lower per-seat price.</span>
         <input
           className="mt-2 w-full accent-[#C8922A]"
           type="range"

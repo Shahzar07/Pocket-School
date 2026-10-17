@@ -22,6 +22,17 @@ function activityMillis(value: unknown): number {
   return 0;
 }
 
+/** Students linked to this academy. The tier follows this unique count. */
+export async function countInstitutionStudents(institutionId: string): Promise<number> {
+  if (!isAdminConfigured() || !institutionId) return 0;
+  const snap = await adminDb().collection('users').where('institutionId', '==', institutionId).limit(500).get();
+  let count = 0;
+  for (const row of snap.docs) {
+    if (row.get('role') === 'student') count += 1;
+  }
+  return count;
+}
+
 /** Students of this academy who have signed in on or after the period start. */
 export async function countActiveStudents(institutionId: string, periodStartIso: string): Promise<number> {
   if (!isAdminConfigured() || !institutionId) return 0;

@@ -105,16 +105,16 @@ export function PriceCalculator({
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {catalogue.tiers.map((tier) => {
           const selected = highlighted?.id === tier.id;
-          const ink = tier.accent === 'gold' ? '#1A3C34' : '#F6F1E7';
+          const ink = tier.accent === 'gold' || tier.accent === 'cream' ? '#1A3C34' : '#F6F1E7';
           const prices = catalogue.items.map((entry) => tierUnitMonthly(tier, entry));
           const from = prices.length ? Math.min(...prices) : 0;
           return (
             <article
               key={tier.id}
-              className={`rounded-3xl p-4 shadow-sm ${selected ? 'ring-4 ring-[#F6F1E7] ring-offset-2 ring-offset-[#C8922A]' : ''}`}
+              className={`rounded-3xl p-4 shadow-sm ${tier.accent === 'cream' ? 'border border-[#1A3C34]/15' : ''} ${selected ? 'ring-4 ring-[#F6F1E7] ring-offset-2 ring-offset-[#C8922A]' : ''}`}
               style={{ background: TIER_ACCENTS[tier.accent], color: ink }}
             >
               <button type="button" className="w-full text-left" onClick={() => pickTier(tier)}>
@@ -143,7 +143,7 @@ export function PriceCalculator({
         )}
         <fieldset>
           <legend className="text-sm font-semibold">Programmes</legend>
-          <p className="mt-1 text-sm text-[#1A3C34]/70">Select more than one. The price adds each programme’s seats times its per-seat price. The tier follows unique students.</p>
+          <p className="mt-1 text-sm text-[#1A3C34]/70">Select more than one. The price adds each programme. Micro, Starter, Growth, Pro, and Enterprise follow unique students, and the per-seat price steps down as the tier grows.</p>
           <div className="mt-2 space-y-2">
             {programmes.map((item) => (
               <label key={item.id} className="flex items-center justify-between gap-3 text-sm">

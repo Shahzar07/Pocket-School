@@ -806,7 +806,7 @@ export interface EmailDraft {
   text: string;
 }
 
-export function institutionEmail(kind: 'payment_link' | 'dunning' | 'suspended' | 'restored' | 'invoice' | 'invite' | 'join_approved' | 'join_rejected' | 'join_received' | 'academy_approved' | 'welcome_receipt' | 'under_review', vars: {
+export function institutionEmail(kind: 'payment_link' | 'dunning' | 'suspended' | 'restored' | 'invoice' | 'invite' | 'join_approved' | 'join_rejected' | 'join_received' | 'academy_approved' | 'welcome_receipt' | 'under_review' | 'tier_upgrade' | 'tier_renewal', vars: {
   institutionName: string;
   plan?: string;
   seats?: number;
@@ -817,6 +817,7 @@ export function institutionEmail(kind: 'payment_link' | 'dunning' | 'suspended' 
   reasons?: string;
   link?: string;
   graceEnds?: string;
+  renewalOn?: string;
   code?: string;
   personName?: string;
 }): EmailDraft {
@@ -877,6 +878,26 @@ export function institutionEmail(kind: 'payment_link' | 'dunning' | 'suspended' 
         vars.total ? `Receipt total: ${vars.total}.` : '',
         `Sign in: ${link}`,
       ].filter(Boolean).join('\n'),
+    };
+  }
+  if (kind === 'tier_upgrade') {
+    return {
+      subject: `${name} moved to ${vars.plan || 'the next tier'}`,
+      text: [
+        `${name} now has ${vars.seats ?? ''} unique students, so the tier is ${vars.plan || 'the next tier'}.`,
+        vars.total ? `Prorated charge for the days left: ${vars.total}.` : 'The new tier applies for the days left in this period.',
+        'The per-seat price on this tier is lower. Billing shows the new total.',
+      ].join('\n'),
+    };
+  }
+  if (kind === 'tier_renewal') {
+    return {
+      subject: `${vars.plan || 'A lower tier'} is ready for ${name} at renewal`,
+      text: [
+        `${name} has ${vars.seats ?? ''} unique students.`,
+        `At renewal on ${vars.renewalOn || 'the next renewal'}, ${vars.plan || 'the lower tier'} matches that count.`,
+        vars.total ? `That tier is ${vars.total} less for the period.` : '',
+      ].filter(Boolean).join(' '),
     };
   }
   if (kind === 'under_review') {

@@ -36,6 +36,7 @@ export interface CatalogueItem {
 }
 
 export const TIER_ACCENTS = {
+  cream: '#F6F1E7',
   forest: '#1A3C34',
   gold: '#C8922A',
   blue: '#3C8DFF',
@@ -211,13 +212,26 @@ export function seedInstitutionCatalogue(): InstitutionCatalogue {
   }));
   const tiers: CatalogueTier[] = [
     namedTier({
-      id: 'starter',
-      name: 'Starter',
-      minSeats: 0,
-      maxSeats: 50,
+      id: 'micro',
+      name: 'Micro',
+      minSeats: 1,
+      maxSeats: 20,
       discount: 0,
       seatPrices: prices(0),
       features: ['Programmes for the levels you choose', 'Sparks allowance per seat', 'Self-serve checkout'],
+      quoteContact: false,
+      selfServe: true,
+      contactHref: '',
+      accent: 'cream',
+    }),
+    namedTier({
+      id: 'starter',
+      name: 'Starter',
+      minSeats: 21,
+      maxSeats: 50,
+      discount: 0.05,
+      seatPrices: prices(0.05),
+      features: ['A lower per-seat price', 'Assign programmes by level', 'Self-serve checkout'],
       quoteContact: false,
       selfServe: true,
       contactHref: '',
@@ -227,10 +241,10 @@ export function seedInstitutionCatalogue(): InstitutionCatalogue {
       id: 'growth',
       name: 'Growth',
       minSeats: 51,
-      maxSeats: 200,
+      maxSeats: 100,
       discount: 0.1,
       seatPrices: prices(0.1),
-      features: ['Lower per-seat price', 'Assign programmes by level', 'Quote PDF for larger orders'],
+      features: ['A lower per-seat price', 'Assign programmes by level', 'Quote PDF for larger orders'],
       quoteContact: false,
       selfServe: true,
       contactHref: '',
@@ -239,11 +253,11 @@ export function seedInstitutionCatalogue(): InstitutionCatalogue {
     namedTier({
       id: 'pro',
       name: 'Pro',
-      minSeats: 201,
-      maxSeats: 500,
-      discount: 0.15,
-      seatPrices: prices(0.15),
-      features: ['Wider seat allowance', 'Active-student billing where configured', 'Invoice PDF'],
+      minSeats: 101,
+      maxSeats: 300,
+      discount: 0.18,
+      seatPrices: prices(0.18),
+      features: ['A lower per-seat price', 'Active-student billing where configured', 'Invoice PDF'],
       quoteContact: false,
       selfServe: true,
       contactHref: '',
@@ -252,11 +266,11 @@ export function seedInstitutionCatalogue(): InstitutionCatalogue {
     namedTier({
       id: 'enterprise',
       name: 'Enterprise',
-      minSeats: 501,
+      minSeats: 301,
       maxSeats: null,
-      discount: 0.2,
-      seatPrices: prices(0.2),
-      features: ['Custom pricing', 'Quote or a conversation with Poket School', 'Self-serve checkout stays open'],
+      discount: 0.25,
+      seatPrices: prices(0.25),
+      features: ['The lowest per-seat price', 'Custom pricing and a quote', 'Self-serve checkout stays open'],
       quoteContact: true,
       selfServe: true,
       contactHref: ENTERPRISE_CONTACT,
@@ -286,7 +300,7 @@ export function seedInstitutionCatalogue(): InstitutionCatalogue {
 }
 
 export function tierRangeLabel(tier: Pick<CatalogueTier, 'minSeats' | 'maxSeats'>): string {
-  if (tier.maxSeats == null) return tier.minSeats === 501 ? '500+' : `${tier.minSeats}+`;
+  if (tier.maxSeats == null) return `${Math.max(0, tier.minSeats - 1)}+`;
   return `${tier.minSeats}–${tier.maxSeats}`;
 }
 
@@ -341,6 +355,147 @@ export function tierForSeats(catalogue: InstitutionCatalogue, seats: number): Ca
   const count = Math.max(0, Math.floor(seats));
   const ordered = [...catalogue.tiers].sort((a, b) => a.minSeats - b.minSeats);
   return ordered.find((tier) => count >= tier.minSeats && (tier.maxSeats == null || count <= tier.maxSeats)) ?? null;
+}
+
+export interface TierReview {
+  action: 'stay' | 'upgrade' | 'suggest_downgrade';
+  students: number;
+  fromId: string;
+  fromName: string;
+  toId: string;
+  toName: string;
+  nextSeats: number;
+  nextTotal: number;
+  charge: number;
+  savings: number;
+  currency: string;
+  sparks: number;
+  lines: CatalogueLine[];
+  itemIds: string[];
+  periodEnd: string;
+  message: string;
+  noticeKey: string;
+}
+
+function isoDays(from: string, to: string): number | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) return null;
+  const ms = Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`);
+  return Math.round(ms / 86_400_000);
+}
+
+function stayReview(students: number, from: CatalogueTier | null, periodEnd: string): TierReview {
+  return {
+    action: 'stay',
+    students,
+    fromId: from?.id ?? '',
+    fromName: from?.name ?? '',
+    toId: from?.id ?? '',
+    toName: from?.name ?? '',
+    nextSeats: students,
+    nextTotal: 0,
+    charge: 0,
+    savings: 0,
+    currency: '',
+    sparks: 0,
+    lines: [],
+    itemIds: [],
+    periodEnd,
+    message: '',
+    noticeKey: '',
+  };
+}
+
+/**
+ * A larger student count moves the academy up a tier now.
+ * A smaller count waits, and the cheaper tier is suggested at renewal.
+ */
+export function planTierReview(input: {
+  catalogue?: InstitutionCatalogue;
+  currentTierId?: string;
+  currentSeats: number;
+  currentTotal: number;
+  students: number;
+  itemIds: readonly string[];
+  interval: 'monthly' | 'annual';
+  country: string;
+  tender?: 'card' | 'fpx' | 'invoice' | 'trial';
+  periodStart: string;
+  periodEnd: string;
+  on: string;
+}): TierReview | { error: string } {
+  const catalogue = input.catalogue ?? seedInstitutionCatalogue();
+  const students = Math.floor(input.students);
+  const currentSeats = Math.floor(input.currentSeats);
+  const current = (input.currentTierId ? catalogue.tiers.find((tier) => tier.id === input.currentTierId) : undefined)
+    ?? tierForSeats(catalogue, currentSeats);
+  if (!Number.isInteger(students) || students < 1 || !current) return stayReview(Math.max(0, students), current, input.periodEnd);
+  const destination = tierForSeats(catalogue, students);
+  if (!destination || destination.id === current.id) return stayReview(students, current, input.periodEnd);
+  const upgrade = destination.minSeats > current.minSeats;
+  const nextSeats = upgrade ? Math.max(currentSeats, students) : students;
+  const priced = priceCatalogue({
+    catalogue,
+    itemIds: input.itemIds,
+    purchasedSeats: nextSeats,
+    activeSeats: students,
+    interval: input.interval,
+    country: input.country,
+    tender: input.tender ?? 'card',
+  });
+  if ('error' in priced) return priced;
+  if (!upgrade) {
+    const savings = round2(input.currentTotal - priced.total);
+    if (!(savings > 0)) return stayReview(students, current, input.periodEnd);
+    const when = /^\d{4}-\d{2}-\d{2}$/.test(input.periodEnd) ? input.periodEnd : 'renewal';
+    return {
+      action: 'suggest_downgrade',
+      students,
+      fromId: current.id,
+      fromName: current.name,
+      toId: destination.id,
+      toName: destination.name,
+      nextSeats,
+      nextTotal: priced.total,
+      charge: 0,
+      savings,
+      currency: priced.currency,
+      sparks: priced.sparks,
+      lines: priced.lines,
+      itemIds: priced.itemIds,
+      periodEnd: input.periodEnd,
+      message: `At renewal on ${when}, ${destination.name} matches ${students} unique students and is ${priced.currency} ${savings.toFixed(2)} less for the period.`,
+      noticeKey: `suggest:${destination.id}:${input.periodEnd}`,
+    };
+  }
+  const daysInPeriod = isoDays(input.periodStart, input.periodEnd);
+  const daysRemaining = isoDays(input.on, input.periodEnd);
+  if (daysInPeriod == null || daysRemaining == null || daysInPeriod <= 0 || daysRemaining < 0 || daysRemaining > daysInPeriod) {
+    return { error: 'The billing period needs a start and an end date.' };
+  }
+  const net = round2((priced.total - input.currentTotal) * (daysRemaining / daysInPeriod));
+  const charge = net > 0 ? net : 0;
+  const money = charge > 0
+    ? ` The prorated charge for the days left is ${priced.currency} ${charge.toFixed(2)}.`
+    : ' The new tier applies for the days left in this period.';
+  return {
+    action: 'upgrade',
+    students,
+    fromId: current.id,
+    fromName: current.name,
+    toId: destination.id,
+    toName: destination.name,
+    nextSeats,
+    nextTotal: priced.total,
+    charge,
+    savings: 0,
+    currency: priced.currency,
+    sparks: priced.sparks,
+    lines: priced.lines,
+    itemIds: priced.itemIds,
+    periodEnd: input.periodEnd,
+    message: `${destination.name} matches ${students} unique students.${money}`,
+    noticeKey: `upgrade:${destination.id}:${nextSeats}`,
+  };
 }
 
 export function currencyForCountry(catalogue: InstitutionCatalogue, country: string): { code: string; rate: number } {
@@ -652,7 +807,7 @@ export function normalizeCatalogue(value: unknown): InstitutionCatalogue {
       const name = typeof tier.name === 'string' && tier.name.trim()
         ? tier.name.trim()
         : typeof tier.label === 'string' && tier.label.trim() ? tier.label.trim() : id;
-      const accent: TierAccent = tier.accent === 'gold' || tier.accent === 'blue' || tier.accent === 'coral' || tier.accent === 'forest'
+      const accent: TierAccent = tier.accent === 'cream' || tier.accent === 'gold' || tier.accent === 'blue' || tier.accent === 'coral' || tier.accent === 'forest'
         ? tier.accent
         : 'forest';
       const href = typeof tier.contactHref === 'string' ? tier.contactHref.trim() : '';

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isNextResponse, requireUser } from '@/lib/api-guard';
 import { adminDb, isAdminConfigured } from '@/lib/firebase-admin';
-import { blankSubscription, periodStartFor, readSubscription } from '@/lib/institution-membership';
+import { blankSubscription, institutionEmail, periodStartFor, readSubscription } from '@/lib/institution-membership';
 import { planName, type VolumeInterval, type VolumePlanId } from '@/lib/institution-pricing';
 import {
   callerOwnsInstitution,
@@ -16,7 +16,8 @@ import {
   quoteSelfServeChange,
   sandboxBannerFor,
 } from '@/lib/institution-self-serve';
-import { sameSelection } from '@/lib/institution-catalogue';
+import { planTierReview, sameSelection, tierForSeats } from '@/lib/institution-catalogue';
+import { sendInstitutionMail } from '@/lib/server/institution-mail';
 import { countActiveStudents, loadInstitutionCatalogue } from '@/lib/server/institution-catalogue';
 import { loadAutomation, logAutomation } from '@/lib/server/automation-store';
 
@@ -95,7 +96,8 @@ export async function POST(req: NextRequest) {
       activeSeats = Number.isInteger(body.activeSeats) ? body.activeSeats as number : seats;
     }
   }
-  const hybrid = programmeIds.length
+  const catalogue = programmeIds.length ? await loadInstitutionCatalogue() : null;
+  const hybrid = catalogue
     ? priceInstitutionOrder({
       planId,
       interval,
@@ -105,10 +107,68 @@ export async function POST(req: NextRequest) {
       country,
       tender: 'card',
       activeSeats,
-      catalogue: await loadInstitutionCatalogue(),
+      catalogue,
     })
     : null;
   if (hybrid && 'error' in hybrid) return NextResponse.json({ error: hybrid.error }, { status: 400 });
+  const currentTier = catalogue ? tierForSeats(catalogue, current.seats) : null;
+  const nextTier = catalogue ? tierForSeats(catalogue, seats) : null;
+  const tierUpgraded = Boolean(currentTier && nextTier && nextTier.minSeats > currentTier.minSeats);
+  if (catalogue && currentTier && nextTier && nextTier.minSeats < currentTier.minSeats) {
+    const review = planTierReview({
+      catalogue,
+      currentTierId: currentTier.id,
+      currentSeats: current.seats,
+      currentTotal: current.total,
+      students: seats,
+      itemIds: programmeIds,
+      interval,
+      country,
+      tender: 'card',
+      periodStart: periodStart || todayIso(),
+      periodEnd: current.periodEnd,
+      on: todayIso(),
+    });
+    if (!('error' in review) && review.action === 'suggest_downgrade') {
+      const name = typeof academy.get('name') === 'string' ? academy.get('name') as string : 'Your institution';
+      const mail = institutionEmail('tier_renewal', {
+        institutionName: name,
+        plan: review.toName,
+        seats: review.students,
+        total: `${review.currency} ${review.savings.toFixed(2)}`,
+        renewalOn: current.periodEnd,
+      });
+      await ref.set({
+        renewalSuggestion: {
+          tierId: review.toId,
+          tierName: review.toName,
+          students: review.students,
+          nextTotal: review.nextTotal,
+          savings: review.savings,
+          currency: review.currency,
+          periodEnd: current.periodEnd,
+          message: review.message,
+        },
+        tierNoticeKey: review.noticeKey,
+      }, { merge: true });
+      await adminDb().collection('institutions').doc(institutionId).collection('notifications').add({
+        kind: 'tier_renewal',
+        title: mail.subject,
+        body: mail.text,
+        audience: 'admins',
+        at: todayIso(),
+      });
+      if (current.payerEmail) await sendInstitutionMail(current.payerEmail, mail);
+      return NextResponse.json({
+        suggested: true,
+        message: review.message,
+        tier: review.toName,
+        renewalOn: current.periodEnd,
+        savings: review.savings,
+        currency: review.currency,
+      });
+    }
+  }
   const nextTotal = hybrid ? hybrid.total : recurringTotal(planId, interval, seats);
   const quote = quoteSelfServeChange({
     currentSeats: current.seats,
@@ -117,7 +177,7 @@ export async function POST(req: NextRequest) {
     currentPeriodEnd: current.periodEnd,
     nextSeats: seats,
     nextTotal,
-    planChanged,
+    planChanged: planChanged || tierUpgraded,
     on: todayIso(),
   });
   if ('error' in quote) return NextResponse.json({ error: quote.error }, { status: 400 });
@@ -154,6 +214,7 @@ export async function POST(req: NextRequest) {
       phase: 'active',
       cancelOn: '',
       ...(hybrid ? { programmeIds: hybrid.programmeIds, lines: hybrid.lines } : {}),
+      ...(nextTier ? { tierId: nextTier.id, renewalSuggestion: null } : {}),
     });
     await adminDb().doc(`institutions/${institutionId}`).set({
       billingPhase: 'active',
