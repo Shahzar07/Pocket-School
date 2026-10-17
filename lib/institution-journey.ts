@@ -187,5 +187,10 @@ export function isInstitutionJourneyPath(pathname: string): boolean {
     || path === '/preview/institution-checkout'
     || path === '/preview/automation'
     || path === '/preview/welcome'
-    || path === '/preview/institution-pricing';
+    || path === '/preview/institution-pricing'
+    || path === '/preview/institution-join'
+    || path === '/preview/institution-verification'
+    || /^\/i\/[a-z0-9_-]+$/i.test(path)
+    || /^\/i\/[a-z0-9_-]+\/join$/i.test(path)
+    || /^\/i\/[a-z0-9_-]+\/explainer$/i.test(path);
 }

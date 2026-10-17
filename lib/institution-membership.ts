@@ -197,6 +197,8 @@ export interface JoinDirectoryRow {
   listedForSelfJoin: boolean;
   /** Absent on academies created before automated billing. */
   billingPhase?: BillingPhase | '';
+  /** Branded join page at /i/{slug}/join when the academy has published a subdomain. */
+  slug?: string;
 }
 
 export function institutionsForSelfJoin(

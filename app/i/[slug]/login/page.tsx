@@ -348,6 +348,7 @@ export default function InstitutionLoginPage() {
       onVerify={(code) => { void onVerify(code); }}
       onResend={() => { void onResend(); }}
       onCancel={() => { void onCancel(); }}
+      joinHref={slug && slug !== HOST_LOGIN_SLUG ? `/i/${slug}/join` : undefined}
     />
   );
 }

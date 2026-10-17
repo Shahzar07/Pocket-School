@@ -91,7 +91,7 @@ export default function CoursesPage() {
           gate = null;
         }
       }
-      const levelName = typeof profile?.level === 'string' ? profile.level : '';
+      const levelName = profile?.academyLevel || (typeof profile?.level === 'string' ? profile.level : '');
       setAvailable(all.filter(c => {
         if (enrolledIds.has(c.id) || !productAccess(c, viewer).listed || !memberCanSee(c, profile, user.uid)) return false;
         if (!gate) return true;

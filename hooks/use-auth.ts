@@ -26,6 +26,8 @@ interface UserProfile {
   studentNumber?: string;
   photoStoragePath?: string;
   level?: string;
+  /** Level name assigned by the academy, such as IGCSE or Primary. */
+  academyLevel?: string;
   learningStyle?: string;
   interests?: string[];
   xp?: number;

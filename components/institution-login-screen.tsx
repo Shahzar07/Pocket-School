@@ -31,6 +31,7 @@ export function InstitutionLoginScreen({
   onVerify,
   onResend,
   onCancel,
+  joinHref,
 }: {
   schoolName: string;
   logoUrl?: string | null;
@@ -53,6 +54,8 @@ export function InstitutionLoginScreen({
   onVerify: (code: string) => void;
   onResend: () => void;
   onCancel: () => void;
+  /** Branded registration for students and parents of this academy. */
+  joinHref?: string;
 }) {
   const accent = /^#[0-9a-fA-F]{6}$/.test(primaryColor ?? '') ? primaryColor ?? '#1A3C34' : '#1A3C34';
   const gold = /^#[0-9a-fA-F]{6}$/.test(secondaryColor ?? '') ? secondaryColor ?? '#C8922A' : '#C8922A';
@@ -192,6 +195,11 @@ export function InstitutionLoginScreen({
               >
                 {busy ? 'Signing in…' : 'Sign in'}
               </button>
+              {joinHref && (
+                <a href={joinHref} className="flex h-12 w-full items-center justify-center rounded-2xl border border-[#1A3C34]/15 text-sm font-semibold">
+                  Sign up with {schoolName}
+                </a>
+              )}
             </form>
           )}
 

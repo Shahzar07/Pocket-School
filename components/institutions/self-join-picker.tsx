@@ -58,6 +58,7 @@ export function SelfJoinPicker({
   const states = statesForCountry(country);
   const showDirectory = student || place || path === 'institution';
   const showSchoolName = (student || place) && !institutionId;
+  const chosen = institutions.find((item) => item.id === institutionId);
   return (
     <div className="space-y-3">
       {student && (
@@ -81,7 +82,7 @@ export function SelfJoinPicker({
                   : 'border-border bg-card text-muted-foreground'
             }`}
           >
-            {item === 'independent' ? 'Independent' : 'From an institution'}
+            {item === 'independent' ? 'Independent' : 'Join with my school'}
           </button>
         ))}
       </div>}
@@ -131,6 +132,21 @@ export function SelfJoinPicker({
                 This is your own school name. It does not join a Poket School institution.
               </span>
             </label>
+          )}
+          {chosen && (
+            <div className="space-y-2">
+              <p className={inverse ? 'text-sm text-[#F8E7C4]' : 'text-sm text-[#1A3C34]'}>You are joining {chosen.name}.</p>
+              {chosen.slug && (
+                <a
+                  href={`/i/${chosen.slug}/join`}
+                  className={inverse
+                    ? 'inline-flex h-11 items-center rounded-2xl bg-[#C8922A] px-4 text-sm font-semibold text-[#1A3C34]'
+                    : 'inline-flex h-11 items-center rounded-2xl bg-[#1A3C34] px-4 text-sm font-semibold text-white'}
+                >
+                  Join with my school
+                </a>
+              )}
+            </div>
           )}
           {country && state && institutions.length === 0 && (
             <p className={inverse ? 'text-xs text-[#F8E7C4]' : 'text-sm text-[#1A3C34]'}>

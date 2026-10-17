@@ -31,6 +31,7 @@ function rowFrom(id: string, data: Record<string, unknown>): JoinDirectoryRow {
     status: typeof data.status === 'string' ? data.status : '',
     listedForSelfJoin: data.listedForSelfJoin === true,
     billingPhase: phase === 'pending_payment' || phase === 'active' || phase === 'grace' || phase === 'suspended' || phase === '' ? phase : undefined,
+    slug: typeof data.subdomain === 'string' && data.subdomain.trim() ? data.subdomain.trim().toLowerCase() : undefined,
   };
 }
 

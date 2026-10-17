@@ -77,6 +77,10 @@ export default function SignupPage() {
   const [joinInstitution, setJoinInstitution] = useState('');
   const [listed, setListed] = useState<JoinDirectoryRow[]>([]);
   const [inviteCode, setInviteCode] = useState('');
+  const [joinSlug, setJoinSlug] = useState('');
+  const [studentNumber, setStudentNumber] = useState('');
+  const [childStudentNumber, setChildStudentNumber] = useState('');
+  const [linkedConsent, setLinkedConsent] = useState(false);
   useEffect(() => {
     const states = statesForCountry(country);
     setJoinState((current) => (states as readonly string[]).includes(current) ? current : '');
@@ -90,8 +94,27 @@ export default function SignupPage() {
     listSelfJoinInstitutions(country, joinState).then(setListed).catch(() => setListed([]));
   }, [role, joinPath, country, joinState]);
   useEffect(() => {
-    const requested = new URLSearchParams(window.location.search).get('role');
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get('role');
     if (requested === 'student' || requested === 'teacher' || requested === 'parent') setRole(requested);
+    const slug = (params.get('join') ?? '').trim().toLowerCase();
+    if (/^[a-z0-9-]{2,40}$/.test(slug)) {
+      setJoinSlug(slug);
+      setJoinPath('institution');
+    }
+    const prefillEmail = params.get('email') ?? '';
+    if (prefillEmail.includes('@')) setEmail(prefillEmail);
+    const prefillName = params.get('name') ?? '';
+    if (prefillName) setName(prefillName.slice(0, 120));
+    const prefillDob = params.get('dob') ?? '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(prefillDob)) setDob(prefillDob);
+    const prefillCode = params.get('code') ?? '';
+    if (prefillCode) setInviteCode(prefillCode.toUpperCase().slice(0, 16));
+    const prefillStudent = params.get('studentId') ?? '';
+    if (prefillStudent) setStudentNumber(prefillStudent.slice(0, 40));
+    const prefillChild = params.get('child') ?? '';
+    if (prefillChild) setChildStudentNumber(prefillChild.slice(0, 40));
+    if (params.get('consent') === '1') setLinkedConsent(true);
   }, []);
   const [dob, setDob] = useState('');
   const [agreed, setAgreed] = useState(false);
@@ -143,6 +166,26 @@ export default function SignupPage() {
     const person = (account?.name || name).trim();
     const childEmails = childEmail.trim() ? [childEmail.trim().toLowerCase()] : [];
     try {
+      if (joinSlug) {
+        const result = await authedFetch('/api/institutions/join', {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'attach',
+            slug: joinSlug,
+            role: joinRole,
+            name: person,
+            email: address,
+            dob,
+            studentId: studentNumber,
+            inviteCode,
+            parentConsent: guardianVerified || linkedConsent,
+            childStudentNumber,
+            takeCredit: true,
+          }),
+        });
+        toast.message(typeof result.message === 'string' ? result.message : 'The academy has this account.');
+        return;
+      }
       if (inviteCode.trim()) {
         const result = await redeemInviteCode({
           userId: uid, email: address, code: inviteCode, role: joinRole, name: person, childEmails,
@@ -580,6 +623,11 @@ export default function SignupPage() {
             </div>
           </div>
 
+          {joinSlug && (
+            <p className="mb-4 rounded-2xl border border-[#C8922A]/50 bg-[#1A3C34] px-4 py-3 text-sm leading-relaxed text-[#F8E7C4]">
+              This account joins your academy. Everyone else signs up as an individual. Progress stays with the account.
+            </p>
+          )}
           <div className="mb-6">
             <SelfJoinPicker
               path={joinPath}

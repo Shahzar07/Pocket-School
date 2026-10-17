@@ -55,6 +55,10 @@ export interface UserProfile {
   avatarUrl?: string;
   /** PS-XXXX-XXXX. Issued on signup and backfilled when a student profile loads. */
   studentNumber?: string;
+  /** Level name assigned by the academy, such as IGCSE or Primary. */
+  academyLevel?: string;
+  /** Children linked from a parent account, including children at other academies. */
+  parentLinks?: { studentNumber: string; institutionId: string; name: string }[];
   /** Storage path for the profile photo, under media/{uid}/. */
   photoStoragePath?: string;
   level?: string;
