@@ -31,7 +31,7 @@ export default function WhiteLabelPreview() {
           <span className="ms-auto text-xs text-muted-foreground">Powered by Poket School</span>
         </div>
       </div>
-      <section className="bg-[#06060F] px-6 py-10 text-white">
+      <section className="bg-[var(--ps-dark-bg)] px-6 py-10 text-white">
         <AcademyLockup name="North Academy" logoUrl={LOGO} accent={ACCENT} powered />
         <h1 className="mt-8 text-3xl font-bold">Welcome back to North Academy</h1>
         <p className="mt-2 text-sm text-white/60">Sign in with your academy account.</p>

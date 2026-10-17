@@ -1,23 +1,29 @@
 /**
  * Poket School design tokens.
  *
- * Colour, type, space, radius, shadow, and motion live in `app/globals.css`
- * as CSS variables. This module is the named contract those variables follow,
- * plus the copy helpers every screen should use instead of raw errors.
+ * The palette lives in `./tokens` (the same numbers as the mobile theme).
+ * CSS variables in `app/globals.css` follow that file. Controls that put
+ * white text on a fill use `blueDeep` in light mode, because brand primary
+ * `#2786A4` is 4.17:1 on white.
  */
+
+import { dark, light, radius } from './tokens';
 
 export const TOKENS = {
   color: {
-    ink: '#203337',
-    /** Light text primary. #2786A4 is only 4.2:1 on white. */
-    teal: '#1E6A83',
-    /** Dark text primary. Light enough for 4.5:1 on #0B1417 and #121E22. */
-    tealOnDark: '#6FBBCE',
-    tealDeep: '#1E6A83',
-    page: '#F4F6F6',
-    card: '#FFFFFF',
-    line: '#E7EDED',
-    muted: '#3E5257',
+    ink: light.ink,
+    /** Brand primary. Large colour and gradients. 4.17:1 on white. */
+    brand: light.primary,
+    /** Light control fill. White text clears 4.5:1. */
+    teal: light.blueDeep,
+    /** Dark text primary. Light enough for 4.5:1 on the dark canvas and cards. */
+    tealOnDark: dark.primary,
+    tealDeep: light.blueDeep,
+    page: light.bg,
+    card: light.card,
+    line: light.line,
+    muted: light.muted,
+    /** Text-safe coral. Brand coral `#D0553F` is 4.16:1 on white. */
     danger: '#B23B2E',
   },
   type: {
@@ -38,10 +44,11 @@ export const TOKENS = {
     7: '48px',
   },
   radius: {
-    sm: '8px',
-    md: '12px',
-    lg: '16px',
-    xl: '24px',
+    sm: `${radius.sm}px`,
+    md: `${radius.md}px`,
+    lg: `${radius.lg}px`,
+    xl: `${radius.xl}px`,
+    pill: `${radius.pill}px`,
   },
   motion: {
     fast: '120ms',

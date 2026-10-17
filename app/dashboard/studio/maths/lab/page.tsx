@@ -18,8 +18,9 @@ import { compileFn, derivativeOf, exprToTex, findRoots } from '@/lib/study/math-
 import { dailyEquation, isValidEquation, markGuess, LENGTH, GUESSES, type Mark } from '@/lib/study/equation-puzzle';
 import { isoDay } from '@/lib/study/schedule';
 import { recordStudyDay } from '@/lib/study/db';
+import { light } from '@/lib/design/tokens';
 
-const SERIES_COLORS = ['#2786A4', '#E8A33D', '#8B5CF6', '#E5484D', '#30A46C'];
+const SERIES_COLORS = [light.primary, light.amber, '#8B5CF6', light.coral, light.good];
 const FunctionPlot = dynamic(() => import('@/components/study/function-plot').then(mod => mod.FunctionPlot), {
   loading: () => <div className="h-[280px] animate-pulse rounded-2xl bg-muted sm:h-[440px]" role="status" aria-label="Loading the graph" />,
 });

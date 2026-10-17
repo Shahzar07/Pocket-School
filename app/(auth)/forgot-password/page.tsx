@@ -66,7 +66,7 @@ export default function ForgotPasswordPage() {
                 id="email"
                 type="email"
                 placeholder="name@example.com"
-                className="h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-[#2786A4] focus:ring-[#2786A4]/20 transition-all"
+                className="h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-primary focus:ring-primary/20 transition-all"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 disabled={loading}
@@ -75,7 +75,7 @@ export default function ForgotPasswordPage() {
             </div>
             <Button
               type="submit"
-              className="w-full h-12 rounded-2xl bg-[#2786A4] hover:bg-[#1E6A83] text-white font-semibold text-base shadow-lg shadow-blue-900/30 transition-all mt-2"
+              className="w-full h-12 rounded-2xl bg-primary text-primary-foreground hover:brightness-110 font-semibold text-base shadow-lg shadow-blue-900/30 transition-all mt-2"
               disabled={loading}
             >
               {loading ? t('authForm.sending') : t('authForm.sendReset')}
@@ -84,7 +84,7 @@ export default function ForgotPasswordPage() {
         </>
       ) : (
         <div className="text-center">
-          <div className="mx-auto w-14 h-14 rounded-2xl bg-[#2786A4]/15 border border-[#2786A4]/30 flex items-center justify-center mb-6">
+          <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/15 border border-primary/30 flex items-center justify-center mb-6">
             <MailCheck className="w-7 h-7 text-[#6FBBCE]" />
           </div>
           <h2 className="text-3xl font-bold text-white mb-2">{t('authForm.inboxTitle')}</h2>

@@ -8,6 +8,7 @@ import { LanguageSwitcher } from '@/components/language-switcher';
 import { AcademyLockup } from '@/components/academy-lockup';
 import { useWhiteLabel } from '@/components/white-label-provider';
 import { accentInk } from '@/lib/white-label';
+import { dark, light } from '@/lib/design/tokens';
 
 const FEATURES = [
   { icon: <Brain className="w-4 h-4" />, title: 'auth.f1title', desc: 'auth.f1desc' },
@@ -22,7 +23,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   const accent = branding.isWhiteLabel && /^#[0-9a-fA-F]{6}$/.test(branding.primaryColor ?? '') ? branding.primaryColor : '';
   const ink = accent ? accentInk(accent) : '#ffffff';
   return (
-    <div className="min-h-screen flex bg-[#06060F]" style={{ fontFamily: 'var(--font-institution), inherit' }}>
+    <div className="min-h-screen flex" style={{ fontFamily: 'var(--font-institution), inherit', background: dark.bg }}>
       {/* ── Left: video hero panel ── */}
       <div className="hidden lg:block w-[52%] shrink-0 p-5">
         <div className="relative w-full h-full rounded-3xl overflow-hidden bg-black min-h-[calc(100vh-2.5rem)]">
@@ -55,10 +56,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               >
-                <h1
-                  className="text-[2.6rem] leading-[1.1] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] mb-3"
-                  style={{ fontFamily: "'Instrument Serif', serif" }}
-                >
+                <h1 className="font-heading text-[2.6rem] leading-[1.1] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] mb-3">
                   {t('auth.line1')}<br />
                   <em>{t('auth.line2')}</em>
                 </h1>
@@ -76,7 +74,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                     transition={{ duration: 0.45, delay: 0.35 + i * 0.09, ease: [0.16, 1, 0.3, 1] }}
                     className="flex items-center gap-3 bg-black/25 backdrop-blur-md rounded-2xl px-4 py-3 border border-white/10"
                   >
-                    <div className="backdrop-blur-sm p-2 rounded-lg shrink-0" style={{ background: accent || '#2786A4', color: ink }}>
+                    <div className="backdrop-blur-sm p-2 rounded-lg shrink-0" style={{ background: accent || light.primary, color: ink }}>
                       {f.icon}
                     </div>
                     <div>
@@ -92,7 +90,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </div>
 
       {/* ── Right: form area ── */}
-      <div className="relative flex-1 flex items-center justify-center px-8 py-12 bg-[#06060F]">
+      <div className="relative flex-1 flex items-center justify-center px-8 py-12" style={{ background: dark.bg }}>
         <div className="absolute top-4 end-4 z-20">
           <LanguageSwitcher tone="onDark" />
         </div>
@@ -102,7 +100,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <AcademyLockup
               name={branding.isWhiteLabel ? branding.displayName : 'Poket School'}
               logoUrl={branding.isWhiteLabel ? branding.logoUrl : null}
-              accent={accent || '#2786A4'}
+              accent={accent || light.primary}
               powered={branding.isWhiteLabel && !branding.hidePoweredBy}
             />
           </div>

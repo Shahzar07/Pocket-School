@@ -683,7 +683,7 @@ Optional additions:
 
 Parents may set `status` only to `excused`, plus `excuseReason`, `excusedBy`, `notifiedMissed`, co-sign fields, `parentNote`, and `reactions` (`{ parentId, emoji, at }[]`). Students cannot write reactions.
 
-Further optional fields: `priority` (`low|medium|high`), `reminderTime` (`HH:mm`), `quizTarget`, `studioTask`, `pomodoroWork`, `pomodoroBreak`, `reflectionPrompt`, `reward`, `lessonTitles`, `shareWithTeachers`, and `teacherIds`. A goal is readable by the student, a linked parent, an admin, or a teacher whose id is in `teacherIds` while `shareWithTeachers` is not false. `deviceTokens.provider` may be `expo`, `webpush`, or `fcm`. The document shape is unchanged. FCM sends only when `FCM_SERVER_KEY` is set.
+Further optional fields: `priority` (`low|medium|high`), `reminderTime` (`HH:mm`), `quizTarget`, `studioTask`, `pomodoroWork`, `pomodoroBreak`, `reflectionPrompt`, `reward`, `lessonTitles`, `shareWithTeachers`, and `teacherIds`. A goal is readable by the student, a linked parent, an admin, or a teacher whose id is in `teacherIds` while `shareWithTeachers` is not false. `deviceTokens.provider` may be `expo`, `webpush`, or `fcm`. The document shape is unchanged. FCM HTTP v1 sends when `FCM_SERVICE_ACCOUNT` is set (JSON with `client_email`, `private_key`, and `project_id`). If that is unset, a legacy `FCM_SERVER_KEY` still sends. If neither is set, that token is skipped and Expo or Web Push on other devices still go out. A 404 from FCM prunes the token.
 
 `users/{parentId}/child_controls/{childId}` may include optional `goalPush` (bool) and `digestCadence` (`off|daily|weekly`). Older saves that omit them still pass the rules.
 
@@ -2752,3 +2752,92 @@ Get involved links to `/community-partners` from `/stand-up-to-bullying`, `/ambe
 | GET | `/community-partners` |
 | POST | `/api/community-partners` |
 | POST | `/api/community-partners/review` |
+
+## Institutions
+
+`institutions/{id}` is the academy. The mobile app reads it. It does not invent a second school record.
+
+| Field | Meaning |
+| --- | --- |
+| `name`, `domain`, `adminId` | Display name, email domain, and the institution admin |
+| `studentCount`, `teacherCount` | Counts shown on the academy |
+| `status` | `active`, `pending`, or `suspended` |
+| `type` | `school`, `university`, `corporate`, or `government` |
+| `country`, `state` | ISO country and the subdivision used by self-join |
+| `listedForSelfJoin` | Super admin lists the academy for Independent vs institution signup |
+| `plan` | `starter`, `team`, `enterprise`, or `oem` |
+| `parentInstitutionId`, `isolateData` | A sub-academy. Its data stays in its own subcollections |
+| `subdomain`, `previousSubdomains`, `customDomain`, `customDomainStatus`, `customDomainMessage` | Host label and an optional school-owned hostname |
+| `branding` | White-label name, logo, colours, certificate issuer, invite copy, and mobile icon. Absent values fall back to Poket School |
+| `signupPolicy`, `allowedEmailDomains` | `open`, `invite`, or `domain` |
+| `catalogueVisibility`, `publicCatalogueIds` | `private`, `curated`, or `public` |
+| `defaultLocale`, `require2fa`, `passwordMinLength`, `passwordRequireSymbol`, `sessionTimeoutMinutes` | Academy sign-in policy |
+| `features` | Optional flag map |
+| `leaderboardVisible` | `academy`, `group`, or `off`. `leaderboard` is a small display list |
+| `publishedPages` | `{ slug, title, body }[]` for the academy site |
+
+`users.yearGroup` and `courses.yearGroup` stay the stored field names. The app shows them as a level (Primary, Lower Secondary, IGCSE, A-Level). They are not a year number.
+
+`institutions/{id}/email_templates/{kind}` holds the institution’s letters. `kind` is `otp`, `notification`, `invoice`, or `welcome`. Fields are `subject` and `body`, with `{{name}}` style placeholders. The institution admin saves them through `POST /api/institution/email-templates`. Clients do not write this subcollection. WhatsApp uses its own Cloud API templates (`poket_otp`, `poket_notice`) and falls back to this email when WhatsApp is unset or fails.
+
+`institutions/{id}/billing/current` is the subscription state. `institutions/{id}/sparks_pool/current` is below.
+
+`activity_log` may include optional `institutionId`. The institution screen reads `GET /api/audit?scope=institution`. The query is a single equality on `institutionId` (no composite index). Clients cannot write `activity_log`.
+
+`courses.placement` is optional: `marketplace` (`hidden|pending|approved|rejected`), `featured`, `core`, `levels` (`primary_secondary`, `igcse_alevel`, `professional`), and `institutionIds`. `featured` on the course is the featured-spot flag. `allocatedInstitutionIds` lists the same institutions. A core programme needs a level. An institution course is not listed on the public marketplace until that institution has approved it for the library. The super admin sets this on `/dashboard/admin/placement`.
+
+Rules for these paths are unchanged. Email templates, the activity log, and help articles are written with the Admin SDK.
+
+## Sparks pools
+
+`institutions/{id}/sparks_pool/current` stores `topUps` and `allocated`, both numbers. The pool is shared by that school. A missing document reads as zeros.
+
+Sparks are learning credits. They cannot buy a marketplace course. Goal bonuses stay in `lib/sparks.ts`. This note does not change how Sparks are earned.
+
+## AI teachers
+
+The catalogue is code in `lib/ai-teachers.ts`, not a Firestore collection. Routes are `/ai-teachers` and `/ai-teachers/{teacherId}/session`. Studio uses `/dashboard/studio/teachers` and `/dashboard/studio/teachers/{teacherId}`.
+
+| Field | Meaning |
+| --- | --- |
+| `id`, `name`, `title`, `subjects`, `category` | Who the teacher is |
+| `status` | `live` or `coming-soon` |
+| `iframeUrl`, `avatarUrl`, `accentColor`, `iconKey` | Session frame and portrait |
+| `voice`, `voiceStyle` | Gemini TTS voice and delivery |
+| `tagline`, `bio`, `education`, `teachingStyle`, `languages`, `specialties`, `sampleQuestions`, `trainedOn` | Profile copy |
+| `yearsExperience` | Years spent teaching. Show it as experience. The level names stay Primary, Lower Secondary, IGCSE, and A-Level |
+
+## Translation
+
+`content_translations/{id}` is written by the server. The id is the first 40 hex characters of the sha256 of the cache key. Fields:
+
+| Field | Meaning |
+| --- | --- |
+| `contentId` | Source content id |
+| `language` | Target language code |
+| `fields` | Map of string field name to translated string |
+| `updatedAt` | Milliseconds |
+
+Clients do not read or write this collection. The app asks the server, which returns the translated strings. Quiz scoring uses option ids (`lib/quiz.ts`), not the translated label, so a language change cannot change a mark.
+
+## Studio tools
+
+ET AI Studio desk tools are requested at `POST /api/ai/studio-desk`. There is no new client-writable studio collection. Sparks are spent on the user’s `sparksBalance` and recorded in `users/{uid}/spark_transactions`.
+
+| Tool | Sparks |
+| --- | --- |
+| `teacher-toolkit` | 15 |
+| `parent-explainer` | 8 |
+| `research-helper` | 10 |
+
+Toolkit kinds are `pack`, `lesson-plan`, `worksheet`, `rubric`, `differentiated`, and `exit-ticket`. Research Helper summarises sources. It does not write the assignment, the essay, or the answers.
+
+Desk routes live under `/dashboard/studio` (including ET Maths, exam prep, and essays). Those existing collections are unchanged.
+
+## Help articles and MyInvois
+
+`help_articles/{id}` is Admin SDK only. Fields are `title`, `body`, `published`, `updatedAt`, and `updatedBy`. The public site reads published articles through `GET /api/help`. ET AI answers from those articles at `POST /api/help/ask` and does not call a model. A weak match tells the person to open the existing `support_tickets` helpdesk ticket. Clients do not write `help_articles`.
+
+`myinvois_queue/{invoiceId}` is Admin SDK only. A paid invoice is queued from the payment engine. Status is `not_configured`, `queued`, `submitted`, `retry`, or `failed`. `not_configured` is the clear no-op when `MYINVOIS_CLIENT_ID`, `MYINVOIS_CLIENT_SECRET`, or `TIN` (or `MYINVOIS_TIN`) is unset: nothing is sent to LHDN. `MYINVOIS_ENV=production` uses the live host. Anything else uses the sandbox. The daily insights cron retries `retry` rows, up to five attempts. Clients cannot write this collection.
+
+WhatsApp Cloud API uses `WHATSAPP_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID`. OTP and notifications try the template first and fall back to email. Push adds the FCM v1 path above beside Expo and Web Push. None of these collections need a new client rule. Rules still need an owner deploy only for changes that already said so. This note does not deploy rules or indexes.

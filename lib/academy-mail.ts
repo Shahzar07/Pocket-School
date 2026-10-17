@@ -3,6 +3,7 @@
  */
 
 import { escapeHtml, safeLogoUrl } from './certificates';
+import { dark, light, radius } from './design/tokens';
 
 export interface MailBrand {
   name: string;
@@ -55,12 +56,12 @@ export function mailBrandFromInstitution(data: Record<string, unknown> | null | 
 
 export function brandedMailHtml(input: { brand?: MailBrand | null; heading: string; paragraphs: readonly string[] }): string {
   const name = escapeHtml(input.brand?.name || 'Poket School');
-  const accent = input.brand?.primaryColor || '#2786A4';
+  const accent = input.brand?.primaryColor || light.primary;
   const logo = input.brand?.logoUrl
     ? `<img alt="" src="${escapeHtml(input.brand.logoUrl)}" width="48" height="48" style="display:block;margin:0 0 12px;object-fit:contain" />`
     : '';
   const body = input.paragraphs.map((line) => `<p style="color:rgba(255,255,255,0.72);font-size:14px;line-height:1.5;margin:0 0 12px">${escapeHtml(line)}</p>`).join('');
-  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#06060F;border-radius:16px;color:#fff">
+  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:${dark.bg};border-radius:${radius.md}px;color:#fff">
     ${logo}
     <h1 style="font-size:20px;margin:0 0 8px;color:${accent}">${name}</h1>
     <p style="color:#fff;font-size:16px;margin:0 0 16px">${escapeHtml(input.heading)}</p>

@@ -27,6 +27,13 @@ export async function listActivity(max = 500): Promise<(ActivityEvent & { id: st
   return snap.docs.map((item) => ({ id: item.id, ...(item.data() as ActivityEvent) }));
 }
 
+export async function listInstitutionActivity(institutionId: string): Promise<(ActivityEvent & { id: string })[]> {
+  const snap = await adminDb().collection('activity_log').where('institutionId', '==', institutionId).limit(200).get();
+  return snap.docs
+    .map((item) => ({ id: item.id, ...(item.data() as ActivityEvent) }))
+    .sort((a, b) => b.at - a.at);
+}
+
 export async function listOwnAuth(actorId: string): Promise<(ActivityEvent & { id: string })[]> {
   const snap = await adminDb()
     .collection('users')

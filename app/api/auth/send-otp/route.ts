@@ -10,12 +10,16 @@ import {
   CODE_TTL_MS,
   RESEND_COOLDOWN_MS,
   generateCode,
+  getOtpSecret,
   isEmailServiceConfigured,
   sendOtpEmail,
   signOtp,
 } from '@/lib/email-otp';
 import { mailBrandFromInstitution } from '@/lib/academy-mail';
 import { adminDb, isAdminConfigured } from '@/lib/firebase-admin';
+import { defaultEmailTemplate, renderEmailTemplate, type InstitutionEmailTemplate } from '@/lib/institution-email';
+import { deliverWithEmailFallback, whatsAppConfig } from '@/lib/messaging/whatsapp';
+import { sendPlainEmail } from '@/lib/messaging/plain-email';
 import { bearerToken, lookupIdToken } from '@/lib/identity-token';
 
 export const dynamic = 'force-dynamic';
@@ -44,7 +48,7 @@ async function fallbackFor(req: Request, email: string): Promise<MfaFallback[]> 
 }
 
 export async function POST(req: Request) {
-  let body: { email?: string; language?: string; institutionId?: string };
+  let body: { email?: string; language?: string; institutionId?: string; phone?: string };
   try {
     body = await req.json();
   } catch {
@@ -56,9 +60,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'A valid email address is required.' }, { status: 400 });
   }
 
-  // No SMTP on this deployment. Signup still sees configured:false and can continue.
+  const phone = typeof body.phone === 'string' ? body.phone : '';
+  const whatsAppReady = !!whatsAppConfig() && phone.replace(/[^\d]/g, '').length >= 8;
+  // No SMTP and no WhatsApp. Signup still sees configured:false and can continue.
   // Admin sign-in must not: a second factor is added only for an allowlisted super admin.
-  if (!isEmailServiceConfigured()) {
+  if (!getOtpSecret() || (!isEmailServiceConfigured() && !whatsAppReady)) {
     const fallback = await fallbackFor(req, email);
     return NextResponse.json({
       configured: false,
@@ -87,7 +93,25 @@ export async function POST(req: Request) {
       const snap = await adminDb().doc(`institutions/${institutionId}`).get();
       brand = mailBrandFromInstitution(snap.data() as Record<string, unknown> | undefined);
     }
-    await sendOtpEmail(email, code, body.language || headerLanguage, brand);
+    let template: InstitutionEmailTemplate | null = null;
+    if (institutionId && isAdminConfigured()) {
+      const saved = await adminDb().doc(`institutions/${institutionId}/email_templates/otp`).get();
+      const data = saved.data();
+      if (data && typeof data.subject === 'string' && typeof data.body === 'string') {
+        template = { kind: 'otp', subject: data.subject, body: data.body };
+      }
+    }
+    const letter = renderEmailTemplate(template ?? defaultEmailTemplate('otp'), { code, name: email, school: brand?.name || 'Poket School' });
+    const sent = await deliverWithEmailFallback({
+      phone,
+      template: 'poket_otp',
+      params: [code],
+      sendEmail: async () => {
+        if (template) await sendPlainEmail(email, letter.subject, letter.text);
+        else await sendOtpEmail(email, code, body.language || headerLanguage, brand);
+      },
+    });
+    if (sent.channel === 'skipped') throw new Error(sent.detail);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to send verification email.';
     return NextResponse.json({ error: message }, { status: 502 });

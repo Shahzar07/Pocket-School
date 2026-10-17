@@ -36,7 +36,7 @@ export default function LoginPage() {
   const buttonStyle = accent ? { background: accent, color: accentInk(accent) } : undefined;
   const buttonClass = accent
     ? 'w-full h-12 rounded-2xl font-semibold text-base transition-all mt-2'
-    : 'w-full h-12 rounded-2xl bg-[#2786A4] hover:bg-[#1E6A83] text-white font-semibold text-base shadow-lg shadow-blue-900/30 transition-all mt-2';
+    : 'w-full h-12 rounded-2xl bg-primary text-primary-foreground hover:brightness-110 font-semibold text-base shadow-lg shadow-blue-900/30 transition-all mt-2';
   const linkClass = linkColor ? 'font-semibold' : 'text-[#6FBBCE] font-semibold hover:text-[#93C5FD] transition-colors';
   const router = useRouter();
   const [linkedInEnabled, setLinkedInEnabled] = useState(false);

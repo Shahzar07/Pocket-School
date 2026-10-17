@@ -5,6 +5,7 @@
 import JSZip from 'jszip';
 import { mindmapSvg, parseBuzan } from '../mindmap';
 import { copyrightNotice, WORDMARK } from './notice';
+import { light } from '../design/tokens';
 import { assetLines, slidePages, type ExportAsset, type ExportFormat } from './payload';
 
 export interface BuiltFile {
@@ -236,7 +237,7 @@ function cardSvg(title: string, lines: string[], notice: string): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600">
   <rect width="100%" height="100%" fill="#f7f4ee"/>
-  <circle cx="48" cy="56" r="16" fill="#2786A4"/>
+  <circle cx="48" cy="56" r="16" fill="${light.primary}"/>
   <text x="76" y="62" font-size="22" font-family="sans-serif" font-weight="700" fill="#243037">${xml(WORDMARK)}</text>
   <text x="48" y="110" font-size="28" font-family="sans-serif" font-weight="700" fill="#243037">${xml(title.slice(0, 60))}</text>
   ${body}
@@ -248,7 +249,7 @@ function footerSvg(width: number, notice: string): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="56">
   <rect width="100%" height="100%" fill="#f7f4ee"/>
-  <circle cx="28" cy="28" r="12" fill="#2786A4"/>
+  <circle cx="28" cy="28" r="12" fill="${light.primary}"/>
   <text x="48" y="33" font-size="14" font-family="sans-serif" fill="#374151">${xml(`${WORDMARK}  ${notice}`)}</text>
 </svg>`;
 }

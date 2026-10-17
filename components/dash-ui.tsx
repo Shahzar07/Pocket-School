@@ -127,7 +127,7 @@ export function StatCard({
       <span
         aria-hidden
         className="absolute inset-x-0 top-0 h-1"
-        style={{ background: `linear-gradient(90deg, var(--ps-${accent}), color-mix(in srgb, var(--ps-${accent}) 55%, var(--ps-amber)))` }}
+        style={{ background: `linear-gradient(90deg, var(--ps-${accent}), color-mix(in srgb, var(--ps-${accent}) 55%, var(--ps-amber-fill)))` }}
       />
       <div className={`flex items-center gap-2.5 ${compact ? 'mb-3' : 'mb-4'}`}>
         <span

@@ -68,6 +68,8 @@ export interface ActivityEvent {
   before: unknown;
   after: unknown;
   diff: DiffRow[];
+  /** Set when the action belongs to one institution. Platform rows omit it. */
+  institutionId?: string;
 }
 
 export interface ActivityDraft {
@@ -83,6 +85,7 @@ export interface ActivityDraft {
   before?: unknown;
   after?: unknown;
   at?: number;
+  institutionId?: string;
 }
 
 const PUBLIC_ACTIONS = new Set<string>(['auth.login_failed', 'auth.two_factor_failed']);
@@ -234,6 +237,7 @@ export function activityDocument(input: ActivityDraft): ActivityEvent {
     before,
     after,
     diff: diffRecords(before, after),
+    ...(input.institutionId?.trim() ? { institutionId: input.institutionId.trim().slice(0, 128) } : {}),
   };
 }
 
