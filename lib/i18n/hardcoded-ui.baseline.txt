@@ -2263,3 +2263,22 @@ components/gamification/class-boards.tsx	Add a class before choosing leaderboard
 components/gamification/class-boards.tsx	Class board updated.
 components/gamification/house-board.tsx	House competitions are off for this class.
 components/gamification/house-board.tsx	No house scores yet this week.
+app/community-guidelines/page.tsx	A warning, then a 24 hour posting pause, then a 7 day pause, then a suspension while an admin reviews the account.
+app/community-guidelines/page.tsx	Community guidelines
+app/community-guidelines/page.tsx	ET AI reads every post, comment, reply, message, profile, and image before it is published. A person still reviews the queue.
+app/community-guidelines/page.tsx	Harassment, bullying, and pile-ons.
+app/community-guidelines/page.tsx	Hate or discrimination, including race, religion, gender, and disability.
+app/community-guidelines/page.tsx	If ET AI misses something, report it. Schools and the super admin see the moderation queue.
+app/community-guidelines/page.tsx	If something is held or removed
+app/community-guidelines/page.tsx	POKET SCHOOL
+app/community-guidelines/page.tsx	Repeat harm
+app/community-guidelines/page.tsx	Scams, spam, and personal data such as a phone number or email.
+app/community-guidelines/page.tsx	Self-harm signals. You will see a supportive note, and a school contact is told when the member is under 18.
+app/community-guidelines/page.tsx	Sexual content, threats, and violent content.
+app/community-guidelines/page.tsx	Under-18 profiles stay inside the school. They are not public and they are not searchable. Direct messages to adults outside the school are not available.
+app/community-guidelines/page.tsx	Unsolicited investment pitches. Poket School does not vet investments.
+app/community-guidelines/page.tsx	What is removed
+app/community-guidelines/page.tsx	You get a short note that says why, without shaming you. You can appeal. An admin restores it or keeps it down. Removed items stay in an admin audit log for 90 days.
+app/community-guidelines/page.tsx	Young members
+app/community-guidelines/page.tsx	Your report still matters
+components/network/automation-panel.tsx	Network automation

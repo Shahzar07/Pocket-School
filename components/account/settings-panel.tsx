@@ -490,6 +490,9 @@ export function SettingsPanel({
             ['announcements', 'Announcements'],
             ['product', 'Product updates'],
             ['achievements', 'Achievements'],
+            ['network', 'Network'],
+            ['safety', 'Safety'],
+            ['networkDigest', 'Network email digest'],
           ]}
           value={notes}
           onChange={key => setNotes({ ...notes, [key]: !notes[key] })}

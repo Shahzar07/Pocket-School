@@ -768,3 +768,281 @@ Level names from XP are Seedling, Explorer, Pathfinder, Scholar, Mentor, Luminar
 Account `notificationPrefs.achievements` is the web toggle for badge, level-up, and quest pushes. A missing value stays on. `false` skips the push. Device `prefs.achievements` does the same for that device. Assignment grades stay on `grades`.
 
 Parent Explainer reads `badges` for the linked child and names them in the weekly note. No rules or index deploy is part of this change.
+
+## Professional network
+
+Poket School's verified network. The mobile app calls the HTTP routes. It does not publish by writing Firestore from the device. ET AI screens every post, comment, message, and profile first. Rules and indexes below are in the repo and are not deployed.
+
+`platform_settings/network` holds the super-admin switches. Missing document uses these defaults: `networkOn` true, `recruiterTierOn` false, `foundersOn` false, `foundersProOn` false, `studentGroupsOn` true, `groupApprovalMode` `school`, `groupDuesOn` false, `orgVerificationMode` `domain_and_admin`, placeholder prices `recruiterFreeCents` `recruiterProCents` `foundersProCents` at 0, `inmailCreditsFree` 0, `inmailCreditsPro` 20. Paid charges are sandbox records in `recruiter_charges` and `group_dues`. Nothing captures a live card.
+
+Under-18 profiles are `visibility: school`, `searchable: false`, and never appear in recruiter or public founder search. A missing `users.ageTier` still fails closed as `under13`.
+
+### network_profiles/{uid}
+
+`handle`, `headline`, `about`, `selfReported` (owner text), `visibility` (`public`, `network`, `private`, `school`), `searchable`, `ageTier`, `role`, `institutionId`, `openToWork` (`no`, `everyone`, `recruiters`), `availability` (`open`, `internship`, `part_time`, `closed`), `location`, `shareContact`, `recruiterOptIn`, `verified` (badges and skills passport entries, shown or hidden, never edited by the member), `showVerified`, `consent` (`pdpa`, `gdpr`, `child`, `atMs`), `moderation`.
+
+Public URL is `/u/{handle}`.
+
+TODO(institutions): `verified.skills` reads `skills_passport/{uid}.entries` when that collection exists. Until then the list is empty. Badges are read from `gamification/{uid}.badges`.
+
+### network_posts/{id}
+
+`authorId`, `authorName`, `ageTier`, `institutionId`, `classId`, `orgId`, `kind` (`text`, `image`, `link`, `project`, `achievement`), `body`, `imageUrl`, `linkUrl`, `hashtags`, `mentions`, `skillIds`, `achievement` (badge or certificate card), `space` (`network`, `school`, `class`), `moderation` (`allow`, `hold`, `block`), `createdAtMs`.
+
+Under-18 posts must use `school` or `class`. Feed query: `moderation == allow`, then ranked in the API from connections, followed organisations, school or class, and skills.
+
+### network_comments/{id}
+
+`postId`, `authorId`, `authorName`, `ageTier`, `body`, `moderation`, `createdAtMs`.
+
+### network_reactions/{postId}_{uid}
+
+`postId`, `userId`, `emoji` (`clap`, `thanks`, `idea`, `support`), `createdAtMs`.
+
+### network_reposts/{postId}_{uid}
+
+`postId`, `userId`, `createdAtMs`.
+
+### network_connections/{uidA}_{uidB}
+
+Sorted ids. `userIds`, `fromId`, `toId`, `status` (`pending`, `accepted`, `declined`), `createdAtMs`. Adults connect across the platform. Under-18 members connect with classmates and teachers in the same institution only.
+
+Index, not deployed: `userIds` CONTAINS, `status` ASC.
+
+### network_follows/{followerId}_{target}
+
+`followerId`, `targetId`, `orgId`, `createdAtMs`. Under-18 members follow organisations, not people outside class.
+
+### network_blocks/{uid}_{targetId}
+
+`userId`, `targetId`, `createdAtMs`.
+
+### network_messages/{id}
+
+Adults who are connected, or an accepted recruiter InMail to an opted-in adult. `fromId`, `toId`, `body`, `kind` (`dm` or `inmail`), `moderation`, `createdAtMs`. No direct message from or to an under-18 member.
+
+### network_reports/{id}
+
+`reporterId`, `targetType`, `targetId`, `reason`, `status`, `createdAtMs`. Also copied onto `moderation_queue`.
+
+### network_orgs/{id}
+
+`name`, `kind` (`institution`, `employer`, `university`, `training`), `about`, `domain`, `domainChecked`, `verified`, `verification` (`pending`, `domain`, `approved`), `ownerId`, `createdAtMs`.
+
+`network_org_members/{orgId}_{uid}`: `orgId`, `userId`, `role` (`admin` or `editor`).
+
+### recruiter_seats/{uid}
+
+Verified through an employer org. `tier` (`free` or `pro`), `verified`, `inmailUsed`.
+
+### recruiter_searches/{id}
+
+`userId`, `query`, `alert`, `createdAtMs`.
+
+### talent_lists/{id}
+
+`userId`, `name`, `memberIds`, `updatedAtMs`.
+
+### job_openings/{id} and job_applications/{id}
+
+TODO(institutions): the job board UI should read these. `job_openings` has `orgId`, `startupId`, `title`, `level`, `location`, `kind`, `status`, `postedBy`. Applications store `userId`, `openingId`, `cvVersionId`, `source`, `status`. TODO(institutions): `cv_versions/{uid}` is the CV the member applies with.
+
+### Routes
+
+| Method | Path |
+| --- | --- |
+| POST | `/api/network/profile` |
+| GET | `/api/network/profile?handle=` |
+| GET | `/api/network/feed` |
+| POST | `/api/network/post` |
+| POST | `/api/network/comment` |
+| POST | `/api/network/react` |
+| POST | `/api/network/repost` |
+| POST | `/api/network/connect` |
+| POST | `/api/network/connect-reply` |
+| POST | `/api/network/follow` |
+| POST | `/api/network/message` |
+| POST | `/api/network/report` |
+| POST | `/api/network/block` |
+| POST | `/api/network/org` |
+| POST | `/api/network/org-approve` |
+| GET | `/api/network/search` |
+| POST | `/api/network/search-save` |
+| POST | `/api/network/talent` |
+| POST | `/api/network/inmail` |
+| POST | `/api/network/upgrade` |
+| POST | `/api/network/apply` |
+| POST | `/api/network/opening` |
+| GET | `/api/network/export` |
+| POST | `/api/network/delete` |
+| GET | `/api/network/insights` |
+| POST | `/api/network/settings` |
+
+Insights omit any school group with fewer than 5 profiles. Recruiters receive `email` and `phone` only when `shareContact` is true.
+
+Push category `network` covers connections, comments, mentions, messages, recruiter messages, and group activity. Account `notificationPrefs.network` defaults on. `notificationPrefs.networkDigest` defaults off (email digest opt-in). Device `prefs.network` works the same way.
+
+Share-out links are built by the client: LinkedIn share-offsite, WhatsApp, and copy link. They point at the public post or profile URL.
+
+## ET AI moderation
+
+Shared by the professional network, class spaces, channel messages, lesson questions, the alumni wall, and the yearbook signing wall. `POST /api/community/post` and `POST /api/community/comment` call it for class spaces. `POST /api/messaging/send` calls it for class channels. `POST /api/community/alumni-post` writes `alumni_wall_posts`. `POST /api/community/yearbook` writes `yearbook_notes`. TODO(institutions): those two walls should keep calling these routes instead of writing the collections from the device.
+
+Provider: OpenRouter when `OPENROUTER_API_KEY` is set, otherwise Gemini when `GEMINI_API_KEY` is set, otherwise the keyword and pattern list. A model can only make a decision stricter. Images the model did not see are held.
+
+Decisions stay `allow`, `hold`, `block`. Categories: `hate`, `harassment`, `sexual`, `sexual_minor`, `violence`, `self_harm`, `scam`, `spam`, `personal_data`, `grooming`, `investment_solicitation`, `image_unseen`, `borderline`. Severity: `low`, `medium`, `high`, `critical`.
+
+The author message is short, neutral, and links to `/community-guidelines`. Self-harm adds a supportive note. Under-18s are told their school safeguarding contact was notified. Adults are pointed at a local helpline.
+
+`platform_settings/moderation` thresholds: `adultMildInsult` (`hold` or `block`), `personalData`, `imageWithoutVision`. Under-18 spaces ignore a looser insult or personal-data setting and stay at block.
+
+### moderation_strikes/{userId}
+
+`count`, `action` (`warning`, `mute_24h`, `mute_7d`, `suspend`), `mutedUntilMs`, `suspended`, `updatedAtMs`.
+
+### moderation_actions/{id}
+
+`userId`, `action`, `category`, `severity`, `surface`, `atMs`. Admins read the strike log here.
+
+### moderation_audit/{id}
+
+Removed text. `authorId`, `surface`, `text`, `category`, `severity`, `institutionId`, `createdAtMs`, `purgeAtMs` (90 days). `POST /api/moderation/purge` deletes expired rows.
+
+### moderation_appeals/{id}
+
+`queueId`, `userId`, `note`, `status` (`open`, `restored`, `upheld`), `resolvedBy`, `resolvedAtMs`.
+
+`POST /api/moderation/appeal` and `POST /api/moderation/appeal-resolve`.
+
+`moderation_queue` gains `category`, `severity`, `institutionId`, `authorMessage`. Institution admins see their school's open rows.
+
+### moderation_events/{id}
+
+`authorId`, `targetIds`, `category`, `severity`, `surface`, `atMs`. Used for repeat targeting, pile-ons, and mood change. Index, not deployed: `authorId` ASC, `atMs` DESC.
+
+## Safeguarding alerts
+
+Push category `safety`. Critical alerts set `force: true` and are delivered even when `notificationPrefs.safety` or device `prefs.safety` is false. Other safety alerts respect the toggle. A missing toggle stays on.
+
+Severity timing: `low` weekly digest only, `medium` same day, `high` and `critical` immediate. Critical also sets `escalateAtMs` 15 minutes out. `POST /api/moderation/escalate` marks an unacknowledged critical alert `escalated`.
+
+Under-18 routing, per `safeguarding_settings/{institutionId}`: safeguarding lead (`leadIds`) always, class teacher when `tellTeacher` is not false, linked parents from `users.childIds`. `parentLevel` is `all`, `medium`, or `high`. High and critical cannot be switched off for minors. Parents are not told about adults. Parent copy names only their own child. Schools see the redacted excerpt; full text stays in the case file. Push text never includes graphic words.
+
+High and critical also queue `safety_mail` (`status: queued`) for email. Flagged content is stored with `trainingUse: false` and is not used to train models.
+
+### safeguarding_cases/{id}
+
+`institutionId`, `authorId`, `authorName`, `targetIds`, `category`, `severity`, `surface`, `space`, `status` (`open`, `monitoring`, `resolved`), `outcome`, `assignees`, `patterns` (`repeat_target`, `pile_on`, `mood_change`), `timeline` (`atMs`, `kind`, `note`, `actorId`), `createdAtMs`, `trainingUse`.
+
+### safeguarding_alerts/{id}
+
+`caseId`, `userId`, `audience` (`safeguarding_lead`, `teacher`, `author_parent`, `victim_parent`, `admin`, `moderator`), `severity`, `category`, `timing` (`digest`, `same_day`, `immediate`), `title`, `body`, `excerpt`, `fullTextVisible`, `actionTaken`, `guide` (ET AI conversation guide), `status` (`open`, `acknowledged`, `escalated`), `ackAtMs`, `escalateAtMs`, `institutionId`, `channels` (`inbox`, `push`, `email`), `createdAtMs`.
+
+Buttons the app should render: acknowledge (`POST /api/moderation/acknowledge`), view (`GET /api/moderation/case?id=`), contact the school (open the case), mark resolved (`POST /api/moderation/case-status`).
+
+`GET /api/moderation/case-pdf?id=` returns `pdfBase64`. `POST /api/moderation/false-positive` records `safety_feedback` and can hold adult mild-insult thresholds at `hold`. `POST /api/moderation/case-note` appends a timeline note.
+
+### safeguarding_settings/{institutionId}
+
+`leadIds`, `tellTeacher`, `parentLevel`, `quietStart`, `quietEnd`, `thresholds`. Critical alerts ignore quiet hours.
+
+## Founders hub
+
+Poket School Founders. Off until `platform_settings/network.foundersOn` is true. Public matching is adults with `optIn: true` only.
+
+### founder_profiles/{uid}
+
+`optIn`, `hasIdea`, `idea`, `roles` (`technical`, `business`, `design`, `domain`), `commitment` (`full_time`, `part_time`, `exploring`), `location`, `remote`, `timezone`, `industries`, `skills` (`name`, `verified`), `lookingFor`, `looking`, `stage` (`idea`, `building`, `launched`, `growing`), `links`, `ageTier`, `institutionId`, `verifiedIdentity`, `moderation`, `disclaimer`.
+
+Index, not deployed: `optIn` ASC, `ageTier` ASC.
+
+### founder_swipes/{fromId}_{toId}
+
+`fromId`, `toId`, `choice` (`skip` or `interested`), `createdAtMs`.
+
+### founder_matches/{pair}
+
+Written when both choices are `interested`. `userIds`, `createdAtMs`. Messages in `founder_messages` require this row.
+
+### startups/{id}
+
+`name`, `problem`, `solution`, `stage`, `ownerId`, `hiring`, `moderation`, `disclaimer`. `startup_members/{startupId}_{uid}` role `founder`. Hiring also writes `job_openings`.
+
+### startup_applications/{id}
+
+`startupId`, `userId`, `note`, `status`, `moderation`.
+
+### founder_programmes/{id}
+
+Run by a school or organisation. `orgId`, `name`, `kind`, `form` (question strings), `ownerId`, `institutionId`, `status`.
+
+### programme_applications/{id}
+
+`programmeId`, `userId`, `answers`, `status`, `moderation`. Review pipeline is the `status` field.
+
+### school_founder_teams/{pair}
+
+Under-18 classmates in the same institution. `userIds`, `institutionId`, `advisorRequired`. Not part of public matching.
+
+TODO(institutions): programme mentors should read the alumni mentoring collection when it exists. Until then mentor ids are not invented.
+
+Weekly suggestions: `POST /api/founders/digest` sends push category `network` and queues an email. The email is opt-in through `notificationPrefs.networkDigest` on the account; the digest route queues the mail row for the app to honour that flag.
+
+| Method | Path |
+| --- | --- |
+| POST | `/api/founders/profile` |
+| GET | `/api/founders/suggestions` |
+| POST | `/api/founders/swipe` |
+| POST | `/api/founders/message` |
+| POST | `/api/founders/startup` |
+| POST | `/api/founders/startup-apply` |
+| POST | `/api/founders/programme` |
+| POST | `/api/founders/programme-apply` |
+| POST | `/api/founders/school-team` |
+| POST | `/api/founders/digest` |
+
+Founders Pro is `foundersProOn` plus `foundersProCents`, sandbox only, default off.
+
+## Groups and associations
+
+`groups/{id}`: `name`, `kind` (`interest`, `club`, `study`, `association`, `alumni`, `professional`), `visibility` (`public`, `private`, `secret`), `description`, `rules`, `institutionId`, `schoolOnly`, `advisorId`, `ownerId`, `status` (`pending`, `active`, `archived`), `interests`, `skills`, `classIds`, `inviteCode`, `moderation`, `createdAtMs`.
+
+A student can create a group only inside their institution, with `advisorId` set. `groupApprovalMode: school` leaves `status: pending` until `POST /api/groups/moderate` with `action: approve`. `auto` activates it. Members who are under 18 must share a `classIds` entry or be staff. Secret groups are invite only.
+
+`group_members/{groupId}_{uid}`: `role` (`founder`, `president`, `officer`, `moderator`, `member`, `advisor`), `posts`.
+
+`group_posts/{id}`: `kind` (`post`, `poll`, `file`, `announcement`, `chat`), `body`, `poll`, `fileName`, `moderation`. Chat for minors requires an active school group with an advisor. The message is stored, which is the log.
+
+`group_events/{id}`: `title`, `whenLabel`, `groupId`. `group_rsvps/{eventId}_{uid}`: `going`.
+
+`group_requests/{id}`: private groups. `groupId`, `userId`, `status`.
+
+`group_badges/{uid}_{badge}`: `founder`, `officer`, `active_member`.
+
+`group_leadership/{uid}_{groupId}`: `title`, `verified`. Verified only after the advisor or the school confirms. TODO(institutions): copy the verified line onto `cv_items/{uid}` when the CV PR lands.
+
+`group_dues/{id}`: sandbox, refused while `groupDuesOn` is false.
+
+| Method | Path |
+| --- | --- |
+| POST | `/api/groups/create` |
+| POST | `/api/groups/join` |
+| POST | `/api/groups/post` |
+| POST | `/api/groups/event` |
+| POST | `/api/groups/rsvp` |
+| POST | `/api/groups/appoint` |
+| POST | `/api/groups/confirm` |
+| POST | `/api/groups/moderate` |
+| POST | `/api/groups/invite` |
+| POST | `/api/groups/dues` |
+| GET | `/api/groups/discover` |
+
+Discovery ranks by shared school, skills, and interests. Institution admins approve, archive, and transfer ownership from `/dashboard/institution/groups`.
+
+Push for group activity reuses `network`. Critical safety on a group post uses `safety`.
+
+## Push categories added
+
+`network` and `safety`, on both `lib/push.ts` and `lib/platform/push.ts`. The reject string is `category must be goals, flags, attendance, digests, grades, assignments, general, achievements, network, or safety.`
+
+Account toggles: `notificationPrefs.network`, `notificationPrefs.safety`, `notificationPrefs.networkDigest`.

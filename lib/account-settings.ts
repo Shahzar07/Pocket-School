@@ -71,6 +71,12 @@ export interface NotificationPrefs {
   product: boolean;
   /** Badges, level-ups, and quests. Missing stays on. */
   achievements: boolean;
+  /** Connections, comments, mentions, messages, and group activity. */
+  network: boolean;
+  /** Safeguarding alerts. Critical alerts are delivered even when this is off. */
+  safety: boolean;
+  /** Weekly network email. Off until the person opts in. */
+  networkDigest: boolean;
 }
 
 export interface PrivacySettings {
@@ -107,6 +113,9 @@ export const DEFAULT_NOTIFICATIONS: NotificationPrefs = {
   announcements: true,
   product: true,
   achievements: true,
+  network: true,
+  safety: true,
+  networkDigest: false,
 };
 
 export const DEFAULT_PRIVACY: PrivacySettings = {

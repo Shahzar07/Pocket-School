@@ -97,6 +97,7 @@ const NAV: Record<Role, NavGroup[]> = {
     ]},
     { sectionKey: 'nav.section.community', items: [
       { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
+      { href: '/dashboard/network', icon: Users, labelKey: 'nav.community', label: 'Network' },
       { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
       { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.examCentre', flag: 'examCentre' },
       { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
@@ -145,6 +146,7 @@ const NAV: Record<Role, NavGroup[]> = {
     // Billing and Helpdesk are institution-admin responsibilities, not teachers'.
     { sectionKey: 'nav.section.community', items: [
       { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
+      { href: '/dashboard/network', icon: Users, labelKey: 'nav.community', label: 'Network' },
       { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
       { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.examCentre', flag: 'examCentre' },
       { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
@@ -212,6 +214,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
       { href: '/dashboard/admin/moderation', icon: Shield, labelKey: 'nav.moderation', flag: 'community' },
       { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
+      { href: '/dashboard/network', icon: Users, labelKey: 'nav.community', label: 'Network' },
       { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
       { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
     ]},

@@ -101,6 +101,8 @@ test('provider errors that mean the token is dead are pruned', () => {
   assert.equal(wantsCategory(token({ prefs: { achievements: false } }), 'achievements'), false);
   assert.equal(wantsCategory(token(), 'achievements'), true);
   assert.equal(wantsCategory(token(), 'attendance'), true);
+  assert.equal(wantsCategory(token({ prefs: { safety: false } }), 'safety'), false);
+  assert.equal(wantsCategory(token(), 'network'), true);
   assert.equal(tokensForRecipient([token({ userId: 'a' }), token({ userId: 'b' })], 'a').length, 1);
 });
 

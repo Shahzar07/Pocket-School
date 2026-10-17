@@ -17,6 +17,8 @@ export const PUSH_CATEGORIES = [
   'assignments',
   'general',
   'achievements',
+  'network',
+  'safety',
 ] as const;
 
 export type PushCategory = (typeof PUSH_CATEGORIES)[number];
@@ -42,6 +44,8 @@ export interface PushMessage {
   title: string;
   body: string;
   link?: string;
+  /** Critical safeguarding is delivered even when the device muted `safety`. */
+  force?: boolean;
 }
 
 export interface PushStore {
@@ -88,7 +92,7 @@ async function deliver(message: PushMessage, deps: PushDeps): Promise<PushReport
   let skipped = 0;
 
   for (const token of tokens) {
-    if (!wantsCategory(token, message.category)) {
+    if (!message.force && !wantsCategory(token, message.category)) {
       skipped += 1;
       continue;
     }

@@ -11,6 +11,7 @@ import { getAllUsers, getPlatformSettings, savePlatformSettings } from '@/lib/db
 import { AdminPricingPanel } from '@/components/admin-pricing-panel';
 import { VolumePricingEditor } from '@/components/institutions/volume-pricing-editor';
 import { FlagToggles } from '@/components/scope-c/flag-toggles';
+import { NetworkAutomationPanel } from '@/components/network/automation-panel';
 import { SMTP_PRESETS, smtpPreset } from '@/lib/smtp-presets';
 import { useAuthSTORE } from '@/hooks/use-auth';
 
@@ -152,6 +153,7 @@ export default function AdminSystemSettings() {
 
       <div className="space-y-5">
         {show('flags features') && <FlagToggles />}
+        {show('network founders recruiter') && <NetworkAutomationPanel />}
         {/* General */}
         {show('general name support email') && <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
           className="bg-card border border-border rounded-3xl p-6 sm:p-7 relative overflow-hidden card-glow"
