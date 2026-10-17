@@ -998,3 +998,110 @@ describe('admin catalogue and settings writes', () => {
     await assertSucceeds(getDoc(doc(dbFor('admin1'), 'platform_settings/payments')));
   });
 });
+
+describe('institution membership', () => {
+  it('accepts a join request only for a listed active academy and lets that admin approve it', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'users/learner1'), { role: 'student', name: 'Amina', institutionId: '' });
+      await setDoc(doc(db, 'users/instadmin1'), { role: 'institution_admin', name: 'North Admin', institutionId: 'school-a' });
+      await setDoc(doc(db, 'users/admin1'), { role: 'admin', name: 'Admin' });
+      await setDoc(doc(db, 'institutions/school-a'), { name: 'North', status: 'active', listedForSelfJoin: true, plan: 'team', state: 'Selangor' });
+      await setDoc(doc(db, 'institutions/school-b'), { name: 'South', status: 'active', listedForSelfJoin: false, plan: 'team' });
+    });
+    const learner = env.authenticatedContext('learner1').firestore();
+    const request = {
+      userId: 'learner1', role: 'student', email: 'amina@school.edu', name: 'Amina',
+      status: 'pending', childEmails: [], createdAt: '2026-10-16T00:00:00.000Z',
+    };
+    await assertSucceeds(setDoc(doc(learner, 'institutions/school-a/join_requests/learner1'), request));
+    await assertFails(setDoc(doc(learner, 'institutions/school-b/join_requests/learner1'), request));
+    await assertFails(updateDoc(doc(learner, 'institutions/school-a/join_requests/learner1'), { status: 'approved' }));
+
+    const academy = env.authenticatedContext('instadmin1').firestore();
+    await assertFails(updateDoc(doc(academy, 'institutions/school-a'), { listedForSelfJoin: false }));
+    await assertSucceeds(updateDoc(doc(academy, 'institutions/school-a/join_requests/learner1'), {
+      status: 'approved', level: 'igcse_alevel', classIds: ['class-1'], courseIds: ['biology'],
+      decidedBy: 'instadmin1', decidedAt: '2026-10-16T01:00:00.000Z',
+    }));
+    await assertSucceeds(updateDoc(doc(academy, 'users/learner1'), { institutionId: 'school-a', level: 'igcse_alevel' }));
+    await assertFails(updateDoc(doc(academy, 'users/learner1'), { role: 'admin' }));
+
+    const stranger = env.authenticatedContext('adult1').firestore();
+    await assertFails(getDoc(doc(stranger, 'institutions/school-a/join_requests/learner1')));
+  });
+
+  it('keeps Sparks, billing, and partner revenue with the platform admin', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'users/admin1'), { role: 'admin', name: 'Admin' });
+      await setDoc(doc(db, 'users/instadmin1'), { role: 'institution_admin', institutionId: 'school-a', name: 'North Admin' });
+      await setDoc(doc(db, 'users/learner1'), { role: 'student', institutionId: 'school-a', name: 'Amina' });
+      await setDoc(doc(db, 'institutions/school-a'), { name: 'North', status: 'active', plan: 'team' });
+    });
+    const admin = env.authenticatedContext('admin1').firestore();
+    const academy = env.authenticatedContext('instadmin1').firestore();
+    const learner = env.authenticatedContext('learner1').firestore();
+    await assertSucceeds(setDoc(doc(admin, 'sparks_config/current'), { primary_secondary: 300, igcse_alevel: 800, professional: 1000 }));
+    await assertFails(setDoc(doc(academy, 'sparks_config/current'), { professional: 99999 }));
+    await assertSucceeds(setDoc(doc(admin, 'institutions/school-a/sparks_pool/current'), { allowance: 1600, perSeat: 800 }));
+    await assertFails(setDoc(doc(academy, 'institutions/school-a/sparks_pool/current'), { allowance: 999999 }));
+    await assertSucceeds(setDoc(doc(academy, 'institutions/school-a/sparks_allocations/learner1'), {
+      subjectId: 'learner1', amount: 400, classId: 'class-1', note: 'October', at: '2026-10-16',
+    }));
+    await assertFails(setDoc(doc(academy, 'institutions/school-a/sparks_allocations/huge'), {
+      subjectId: 'learner1', amount: 100000, classId: '', note: '', at: '2026-10-16',
+    }));
+    await assertSucceeds(getDoc(doc(learner, 'institutions/school-a/sparks_allocations/learner1')));
+    await assertSucceeds(setDoc(doc(admin, 'institutions/school-a/billing/current'), { phase: 'active', total: 580.99 }));
+    await assertFails(setDoc(doc(academy, 'institutions/school-a/billing/current'), { phase: 'active' }));
+    await assertSucceeds(getDoc(doc(academy, 'institutions/school-a/billing/current')));
+    await assertSucceeds(setDoc(doc(admin, 'partner_orgs/acme'), { name: 'Acme', recognisedBy: 'Recognised by Acme' }));
+    await assertFails(setDoc(doc(academy, 'partner_orgs/acme'), { name: 'Stolen' }));
+    await assertSucceeds(setDoc(doc(admin, 'partner_revenue/row1'), {
+      partnerId: 'acme', amount: 1000, currency: 'USD', channel: 'enterprise_invoice',
+    }));
+    await assertFails(updateDoc(doc(admin, 'partner_revenue/row1'), { amount: 1 }));
+    await assertSucceeds(setDoc(doc(admin, 'subscriber_billing/learner1'), { phase: 'active', subject: 'individual' }));
+    await assertFails(setDoc(doc(learner, 'subscriber_billing/learner1'), { phase: 'suspended' }));
+    await assertSucceeds(getDoc(doc(learner, 'subscriber_billing/learner1')));
+  });
+
+  it('stops an institution student raising their own seat invoice and hides another teacher report card', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'users/learner1'), { role: 'student', institutionId: 'school-a', name: 'Amina' });
+      await setDoc(doc(db, 'users/adult1'), { role: 'student', institutionId: '', name: 'Ava' });
+      await setDoc(doc(db, 'users/teacher1'), { role: 'teacher', institutionId: 'school-a', cohortIds: ['class-1'] });
+      await setDoc(doc(db, 'users/teacher2'), { role: 'teacher', institutionId: 'school-a', cohortIds: ['class-2'] });
+      await setDoc(doc(db, 'users/parent1'), { role: 'parent', childIds: ['learner1'] });
+      await setDoc(doc(db, 'users/instadmin1'), { role: 'institution_admin', institutionId: 'school-a' });
+      await setDoc(doc(db, 'report_cards/card-north'), {
+        studentId: 'learner1', teacherId: 'teacher1', institutionId: 'school-a', classId: 'class-1', grade: 'A',
+      });
+    });
+    const member = env.authenticatedContext('learner1').firestore();
+    const independent = env.authenticatedContext('adult1').firestore();
+    await assertFails(setDoc(doc(member, 'invoices/own'), { studentId: 'learner1', status: 'draft', total: 19 }));
+    await assertSucceeds(setDoc(doc(independent, 'invoices/own'), { studentId: 'adult1', status: 'draft', total: 19 }));
+
+    const teacher = env.authenticatedContext('teacher1').firestore();
+    const otherTeacher = env.authenticatedContext('teacher2').firestore();
+    const parent = env.authenticatedContext('parent1').firestore();
+    const school = env.authenticatedContext('instadmin1').firestore();
+    await assertSucceeds(getDoc(doc(teacher, 'report_cards/card-north')));
+    await assertFails(getDoc(doc(otherTeacher, 'report_cards/card-north')));
+    await assertSucceeds(getDoc(doc(parent, 'report_cards/card-north')));
+    await assertSucceeds(getDoc(doc(school, 'report_cards/card-north')));
+
+    const owner = env.authenticatedContext('teacher1').firestore();
+    await assertFails(setDoc(doc(owner, 'courses/private-course'), {
+      ownerId: 'teacher1', institutionId: 'school-a', status: 'draft', isPublic: true, title: 'Biology',
+    }));
+    await assertSucceeds(setDoc(doc(owner, 'courses/private-course'), {
+      ownerId: 'teacher1', institutionId: 'school-a', status: 'draft', isPublic: false,
+      publishScope: 'institution', marketplaceApproved: false, title: 'Biology',
+    }));
+    await assertFails(updateDoc(doc(owner, 'courses/private-course'), { marketplaceApproved: true }));
+  });
+});
