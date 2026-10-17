@@ -1,0 +1,197 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import { documentPdf } from '@/lib/institution-pricing';
+import {
+  catalogueDocumentLines,
+  normalizeCatalogue,
+  priceCatalogue,
+  seedInstitutionCatalogue,
+  type InstitutionCatalogue,
+} from '@/lib/institution-catalogue';
+
+function downloadPdf(name: string, lines: string[]) {
+  const bytes = documentPdf(lines);
+  const blob = new Blob([new Uint8Array(bytes)], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = name;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+export function PriceCalculator({
+  catalogue: given,
+  country: initialCountry = 'MY',
+  institutionName = 'North Academy',
+  initialSeats = 80,
+  initialActive = 90,
+  initialIds = ['igcse', 'maths'],
+  issuedOn = '2026-10-17',
+  onApply,
+}: {
+  catalogue?: InstitutionCatalogue;
+  country?: string;
+  institutionName?: string;
+  initialSeats?: number;
+  initialActive?: number;
+  initialIds?: string[];
+  issuedOn?: string;
+  onApply?: (selection: { itemIds: string[]; seats: number; active: number; interval: 'monthly' | 'annual' }) => void;
+}) {
+  const [catalogue, setCatalogue] = useState<InstitutionCatalogue>(given ?? seedInstitutionCatalogue());
+  const [ids, setIds] = useState<string[]>(initialIds);
+  const [seats, setSeats] = useState(initialSeats);
+  const [active, setActive] = useState(initialActive);
+  const [interval, setInterval] = useState<'monthly' | 'annual'>('annual');
+  const [country, setCountry] = useState(initialCountry);
+
+  useEffect(() => {
+    if (given) return;
+    let cancelled = false;
+    fetch('/api/institutions/catalogue')
+      .then((res) => res.json())
+      .then((data: { catalogue?: unknown }) => {
+        if (!cancelled && data.catalogue) setCatalogue(normalizeCatalogue(data.catalogue));
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [given]);
+
+  const programmes = catalogue.items.filter((item) => item.kind === 'programme');
+  const categories = catalogue.items.filter((item) => item.kind === 'category');
+  const quote = useMemo(() => priceCatalogue({
+    catalogue,
+    itemIds: ids,
+    purchasedSeats: seats,
+    activeSeats: active,
+    interval,
+    country,
+    tender: 'card',
+  }), [catalogue, ids, seats, active, interval, country]);
+  const invoice = useMemo(() => priceCatalogue({
+    catalogue,
+    itemIds: ids,
+    purchasedSeats: seats,
+    activeSeats: active,
+    interval,
+    country,
+    tender: 'invoice',
+  }), [catalogue, ids, seats, active, interval, country]);
+
+  const toggle = (id: string) => {
+    setIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  };
+
+  const pdf = (kind: 'quote' | 'invoice') => {
+    const source = kind === 'invoice' ? invoice : quote;
+    if ('error' in source) return;
+    downloadPdf(
+      kind === 'invoice' ? 'poket-school-invoice.pdf' : 'poket-school-quote.pdf',
+      catalogueDocumentLines({ kind, institutionName, issuedOn, quote: source }),
+    );
+  };
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+      <section className="rounded-3xl bg-white p-5 shadow-sm">
+        {catalogue.placeholder && (
+          <p className="mb-4 rounded-2xl bg-[#F8E7C4] px-4 py-3 text-sm text-[#1A3C34]">{catalogue.note}</p>
+        )}
+        <fieldset>
+          <legend className="text-sm font-semibold">Programmes</legend>
+          <div className="mt-2 space-y-2">
+            {programmes.map((item) => (
+              <label key={item.id} className="flex items-center justify-between gap-3 text-sm">
+                <span className="flex items-center gap-2">
+                  <input type="checkbox" checked={ids.includes(item.id)} onChange={() => toggle(item.id)} />
+                  {item.title}
+                  <span className="text-[#1A3C34]/60">{item.level}</span>
+                </span>
+                <span className="tabular-nums text-[#1A3C34]/70">USD {item.perSeatMonthly.toFixed(2)} / seat{item.placeholder ? ' · placeholder' : ''}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <fieldset className="mt-4">
+          <legend className="text-sm font-semibold">Categories</legend>
+          <div className="mt-2 space-y-2">
+            {categories.map((item) => (
+              <label key={item.id} className="flex items-center justify-between gap-3 text-sm">
+                <span className="flex items-center gap-2">
+                  <input type="checkbox" checked={ids.includes(item.id)} onChange={() => toggle(item.id)} />
+                  {item.title}
+                </span>
+                <span className="tabular-nums text-[#1A3C34]/70">USD {item.perSeatMonthly.toFixed(2)} / seat{item.placeholder ? ' · placeholder' : ''}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <label className="text-sm font-medium">Purchased seats: {seats}
+            <input className="mt-2 w-full accent-[#C8922A]" type="range" min={1} max={600} value={seats} onChange={(event) => setSeats(Number(event.target.value))} />
+          </label>
+          <label className="text-sm font-medium">Active students
+            <input className="mt-2 h-11 w-full rounded-xl border border-[#1A3C34]/15 px-3" type="number" min={0} value={active} onChange={(event) => setActive(Number(event.target.value))} />
+          </label>
+          <label className="text-sm font-medium">Billing
+            <select className="mt-2 h-11 w-full rounded-xl border border-[#1A3C34]/15 px-3" value={interval} onChange={(event) => setInterval(event.target.value as 'monthly' | 'annual')}>
+              <option value="annual">Annual</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </label>
+          <label className="text-sm font-medium">Country
+            <select className="mt-2 h-11 w-full rounded-xl border border-[#1A3C34]/15 px-3" value={country} onChange={(event) => setCountry(event.target.value)}>
+              <option value="MY">Malaysia</option>
+              <option value="GB">United Kingdom</option>
+              <option value="US">United States</option>
+            </select>
+          </label>
+        </div>
+      </section>
+      <section className="rounded-3xl bg-[#1A3C34] p-5 text-white" aria-live="polite">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#F8E7C4]">Live price</p>
+        {'error' in quote ? (
+          <p className="mt-3 text-sm">{quote.error}</p>
+        ) : (
+          <>
+            <p className="mt-2 font-heading text-4xl tabular-nums">{quote.currency} {quote.total.toFixed(2)}</p>
+            <p className="mt-1 text-sm text-white/75">Tier {quote.tierLabel} · {quote.purchasedSeats} purchased seats · {quote.activeSeats} active</p>
+            <ul className="mt-4 space-y-2 text-sm">
+              {quote.lines.map((line) => (
+                <li key={line.id} className="flex justify-between gap-3 border-t border-white/10 pt-2">
+                  <span>{line.title}<span className="block text-xs text-white/60">{line.seats} seats · {line.billingBasis === 'active_minimum' ? 'active, with a minimum' : 'purchased seats'}</span></span>
+                  <span className="tabular-nums">{quote.currency} {line.amount.toFixed(2)}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 text-sm text-white/80">Subtotal {quote.currency} {quote.subtotal.toFixed(2)} · tax {quote.currency} {quote.tax.toFixed(2)} · {quote.sparks.toLocaleString('en')} Sparks</p>
+            {quote.notices.map((notice) => (
+              <p key={notice} className="mt-3 rounded-2xl bg-[#E36A4F] px-3 py-2 text-sm">{notice}</p>
+            ))}
+            {seats >= catalogue.quoteMinSeats && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button type="button" className="inline-flex h-11 items-center rounded-full bg-[#C8922A] px-5 text-sm font-semibold text-[#1A3C34]" onClick={() => pdf('quote')}>
+                  Download quote PDF
+                </button>
+                <button type="button" className="inline-flex h-11 items-center rounded-full border border-white/30 px-5 text-sm font-semibold" onClick={() => pdf('invoice')}>
+                  Download invoice PDF
+                </button>
+              </div>
+            )}
+            {onApply && (
+              <button
+                type="button"
+                className="mt-3 inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-[#1A3C34]"
+                onClick={() => onApply({ itemIds: ids, seats, active, interval })}
+              >
+                Update this academy
+              </button>
+            )}
+          </>
+        )}
+      </section>
+    </div>
+  );
+}

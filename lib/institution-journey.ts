@@ -186,5 +186,6 @@ export function isInstitutionJourneyPath(pathname: string): boolean {
     || path === '/preview/institution-onboarding'
     || path === '/preview/institution-checkout'
     || path === '/preview/automation'
-    || path === '/preview/welcome';
+    || path === '/preview/welcome'
+    || path === '/preview/institution-pricing';
 }

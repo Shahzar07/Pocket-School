@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { toast } from 'sonner';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { authedFetch } from '@/lib/api-client';
@@ -116,7 +117,8 @@ export default function InstitutionBillingPage() {
 
   return (
     <DashPage className="max-w-3xl">
-      <DashHeader eyebrow="Institution" title="Billing" description={`Phase: ${bill?.phase ?? 'pending_payment'}. Change the plan or seat count here. A charge is pro-rated for the days left. A credit applies immediately. Cancel keeps the academy open until the period ends. A failed payment still has a 7-day grace, then the academy suspends until it is paid.`} />
+      <DashHeader eyebrow="Institution" title="Billing" description={`Phase: ${bill?.phase ?? 'pending_payment'}. Programme prices and the live calculator are on the pricing page. A charge is pro-rated for the days left. A credit applies immediately. Cancel keeps the academy open until the period ends. A failed payment still has a 7-day grace, then the academy suspends until it is paid.`} />
+      <p className="text-sm"><Link className="font-semibold text-[#3C8DFF]" href="/dashboard/institution/pricing">Open the price calculator</Link></p>
       {banner && <p role="status" className="rounded-2xl bg-[#F8E7C4] px-4 py-3 text-sm text-[#1A3C34]">{banner}</p>}
       {cancelOn && <p className="text-sm">Cancellation is set for {cancelOn}.</p>}
       <Panel>

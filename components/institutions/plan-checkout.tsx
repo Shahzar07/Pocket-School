@@ -142,7 +142,7 @@ export function PlanCheckout({
               <input type="checkbox" checked={programmeIds.includes(programme.id)} onChange={() => toggleProgramme(programme.id)} />
               {programme.title}
             </span>
-            {access === 'a_la_carte' && <span className="tabular-nums text-[#1A3C34]/70">USD {programme.alaCarteUsd.toFixed(2)}</span>}
+            <span className="tabular-nums text-[#1A3C34]/70">USD {programme.perSeatMonthly.toFixed(2)} / seat{programme.placeholder ? ' · placeholder' : ''}</span>
           </label>
         ))}
       </fieldset>
@@ -170,11 +170,20 @@ export function PlanCheckout({
           <p className="text-sm">{priced.error}</p>
         ) : (
           <>
+            {priced.placeholder && <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#C8922A]">Placeholder prices</p>}
             <p className="text-2xl font-semibold tabular-nums">{priced.currency} {priced.total.toFixed(2)}</p>
             <p className="mt-1 text-sm text-[#1A3C34]/75">
-              {priced.currency} {priced.subtotal.toFixed(2)} plus {priced.currency} {priced.tax.toFixed(2)} tax
+              Tier {priced.tierLabel}. {priced.currency} {priced.subtotal.toFixed(2)} plus {priced.currency} {priced.tax.toFixed(2)} tax
               {country.trim().toUpperCase() === 'MY' && tender !== 'invoice' ? ' (SST)' : ''}. {priced.sparks.toLocaleString('en')} Sparks.
             </p>
+            <ul className="mt-2 space-y-1 text-sm">
+              {priced.lines.map((line) => (
+                <li key={line.id} className="flex justify-between gap-3">
+                  <span>{line.title} · {line.seats} seats</span>
+                  <span className="tabular-nums">{priced.currency} {line.amount.toFixed(2)}</span>
+                </li>
+              ))}
+            </ul>
             <p className="mt-1 text-sm text-[#1A3C34]/75">{email}</p>
           </>
         )}

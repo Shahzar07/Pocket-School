@@ -16,6 +16,7 @@ import {
   priceInstitutionOrder,
   sandboxBannerFor,
 } from '@/lib/institution-self-serve';
+import { loadInstitutionCatalogue } from '@/lib/server/institution-catalogue';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
   const academy = await adminDb().doc(`institutions/${institutionId}`).get();
   if (!academy.exists) return NextResponse.json({ error: 'That academy was not found.' }, { status: 404 });
   const country = typeof academy.data()?.country === 'string' ? academy.data()?.country ?? '' : '';
-  const priced = priceInstitutionOrder({ ...parsed.value, country });
+  const priced = priceInstitutionOrder({ ...parsed.value, country, catalogue: await loadInstitutionCatalogue() });
   if ('error' in priced) return NextResponse.json({ error: priced.error }, { status: 400 });
   await saveInstitutionOrder(institutionId, parsed.value, priced);
   const keys = await institutionPaymentKeys();

@@ -1,0 +1,139 @@
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import {
+  CATALOGUE_PLACEHOLDER,
+  billableSeats,
+  catalogueDocumentLines,
+  normalizeCatalogue,
+  priceCatalogue,
+  programmeRevenue,
+  proratedSeatAdd,
+  seedInstitutionCatalogue,
+  seatOverage,
+  institutionLibraryIncludes,
+  sameSelection,
+  studentSeesPaidCourse,
+  validateCatalogue,
+} from './institution-catalogue';
+
+describe('institution catalogue pricing', () => {
+  it('marks every seed amount as a placeholder', () => {
+    const seed = seedInstitutionCatalogue();
+    assert.equal(seed.placeholder, true);
+    assert.match(seed.note, new RegExp(CATALOGUE_PLACEHOLDER));
+    assert.ok(seed.items.every((entry) => entry.placeholder));
+    assert.ok(seed.tiers.every((tier) => tier.placeholder));
+    assert.ok(seed.currencies.every((currency) => currency.placeholder));
+    assert.deepEqual(seed.tiers.map((tier) => tier.label), ['1–50', '51–200', '201–500', '500+']);
+  });
+
+  it('sums per-seat prices, then applies the tier, the annual discount, currency, and tax', () => {
+    const quote = priceCatalogue({
+      itemIds: ['igcse', 'maths'],
+      purchasedSeats: 80,
+      activeSeats: 80,
+      interval: 'annual',
+      country: 'MY',
+      tender: 'card',
+    });
+    assert.ok(!('error' in quote));
+    if ('error' in quote) return;
+    assert.equal(quote.tierLabel, '51–200');
+    assert.equal(quote.tierDiscount, 0.1);
+    assert.equal(quote.lines[0]?.unit, 86.4);
+    assert.equal(quote.lines[1]?.unit, 34.56);
+    assert.equal(quote.subtotalUsd, 9676.8);
+    assert.equal(quote.currency, 'MYR');
+    assert.equal(quote.subtotal, 45480.96);
+    assert.equal(quote.tax, 3638.48);
+    assert.equal(quote.sparks, 80 * 8 + 80 * 2);
+    assert.equal(quote.placeholder, true);
+  });
+
+  it('bills active students with a minimum, and keeps a soft seat cap', () => {
+    const catalogue = seedInstitutionCatalogue();
+    const sen = catalogue.items.find((entry) => entry.id === 'rise-sen')!;
+    assert.equal(billableSeats(sen, 10, 2), 5);
+    assert.equal(billableSeats(sen, 10, 12), 12);
+    assert.deepEqual(seatOverage(sen, 10, 12), { status: 'auto_add', extra: 2 });
+    const core = catalogue.items.find((entry) => entry.id === 'igcse')!;
+    assert.deepEqual(seatOverage(core, 10, 12), { status: 'prompt', extra: 2 });
+    const quote = priceCatalogue({
+      itemIds: ['igcse'],
+      purchasedSeats: 10,
+      activeSeats: 12,
+      interval: 'monthly',
+      country: 'GB',
+      tender: 'card',
+    });
+    assert.ok(!('error' in quote));
+    if ('error' in quote) return;
+    assert.equal(quote.lines[0]?.seats, 10);
+    assert.match(quote.notices[0] ?? '', /Add seats/);
+    assert.equal(proratedSeatAdd({ perSeat: 10, extra: 2, daysRemaining: 10, daysInPeriod: 30 }), 6.67);
+  });
+
+  it('shows a student only the paid programme assigned to their level', () => {
+    assert.equal(sameSelection(['maths', 'igcse'], ['igcse', 'maths']), true);
+    assert.equal(sameSelection(['igcse'], ['igcse', 'maths']), false);
+    assert.equal(institutionLibraryIncludes(seedInstitutionCatalogue(), ['igcse'], { level: 'IGCSE' }), true);
+    assert.equal(institutionLibraryIncludes(seedInstitutionCatalogue(), ['primary'], { level: 'Law' }), false);
+    assert.equal(institutionLibraryIncludes(seedInstitutionCatalogue(), ['igcse'], { subject: 'Art' }), true);
+    const grants = [{ itemId: 'igcse', studentIds: [], levels: ['IGCSE'] }];
+    assert.equal(studentSeesPaidCourse({
+      paidIds: ['igcse'],
+      grants,
+      studentId: 'ada',
+      studentLevel: 'IGCSE',
+      course: { programmeId: 'igcse', level: 'IGCSE' },
+    }), true);
+    assert.equal(studentSeesPaidCourse({
+      paidIds: ['igcse'],
+      grants,
+      studentId: 'ada',
+      studentLevel: 'Law',
+      course: { programmeId: 'law-school', level: 'Law' },
+    }), false);
+    assert.equal(studentSeesPaidCourse({
+      paidIds: ['maths'],
+      grants: [{ itemId: 'maths', studentIds: ['ada'], levels: [] }],
+      studentId: 'bee',
+      studentLevel: 'IGCSE',
+      course: { categoryId: 'maths', level: 'IGCSE' },
+    }), false);
+    assert.equal(studentSeesPaidCourse({
+      paidIds: ['igcse'],
+      grants,
+      studentId: 'ada',
+      studentLevel: 'IGCSE',
+      course: { subject: 'Art' },
+    }), true);
+  });
+
+  it('groups revenue by academy and programme, and prints a quote', () => {
+    const cells = programmeRevenue([
+      { institutionId: 'north', name: 'North Academy', currency: 'MYR', lines: [{ id: 'igcse', title: 'IGCSE core', amount: 100 }, { id: 'igcse', title: 'IGCSE core', amount: 20 }] },
+      { institutionId: 'south', name: 'South Academy', currency: 'GBP', lines: [{ id: 'primary', title: 'Primary', amount: 40 }] },
+    ]);
+    assert.equal(cells.find((cell) => cell.institutionId === 'north')?.amount, 120);
+    assert.equal(cells.find((cell) => cell.itemId === 'primary')?.currency, 'GBP');
+    const quote = priceCatalogue({ itemIds: ['primary'], purchasedSeats: 50, interval: 'monthly', country: 'US', tender: 'invoice' });
+    assert.ok(!('error' in quote));
+    if ('error' in quote) return;
+    const pdf = catalogueDocumentLines({ kind: 'quote', institutionName: 'North Academy', issuedOn: '2026-10-17', quote });
+    assert.match(pdf[0] ?? '', /quote/);
+    assert.match(pdf.join('\n'), /PLACEHOLDER/);
+    assert.equal(quote.tax, 0);
+  });
+
+  it('keeps a saved catalogue and falls back when the document is not a catalogue', () => {
+    const seed = seedInstitutionCatalogue();
+    const saved = normalizeCatalogue({ ...seed, annualDiscount: 0.25, placeholder: false, items: seed.items.map((entry) => ({ ...entry, placeholder: false })) });
+    assert.equal(saved.annualDiscount, 0.25);
+    assert.equal(saved.placeholder, false);
+    assert.equal(normalizeCatalogue({ currency: 'USD' }).placeholder, true);
+    const broken = { ...seed, tiers: [{ ...seed.tiers[0], minSeats: 10, maxSeats: 1 }] };
+    assert.equal(validateCatalogue(broken as typeof seed), 'A tier maximum is at least its minimum.');
+    assert.equal(normalizeCatalogue(broken).tiers[0]?.id, '1-50');
+  });
+});

@@ -7,6 +7,8 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { getEnrolledCourses, getAllPublishedCourses, enrollStudent, Course, Enrollment } from '@/lib/db';
 import { productAccess, viewerFromProfile } from '@/lib/allocation';
 import { asVolumePlanId, canSeeCourse, type AccessViewer } from '@/lib/institution-membership';
+import { studentSeesPaidCourse, type ProgrammeGrant } from '@/lib/institution-catalogue';
+import { authedFetch } from '@/lib/api-client';
 import { forLearnerView } from '@/lib/account-modes';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -78,7 +80,29 @@ export default function CoursesPage() {
       setEnrolled(mine);
       const enrolledIds = new Set(mine.map(e => e.course.id));
       const viewer = viewerFromProfile(profile, { userId: user.uid });
-      setAvailable(all.filter(c => !enrolledIds.has(c.id) && productAccess(c, viewer).listed && memberCanSee(c, profile, user.uid)).sort((a, b) => a.title.localeCompare(b.title)));
+      let gate: { paidIds: string[]; grants: ProgrammeGrant[] } | null = null;
+      if (profile?.institutionId && profile.role === 'student') {
+        try {
+          const data = await authedFetch(`/api/institutions/programme-access?institutionId=${profile.institutionId}`);
+          const paidIds = Array.isArray(data.programmeIds) ? data.programmeIds.filter((id): id is string => typeof id === 'string') : [];
+          const grants = Array.isArray(data.grants) ? data.grants as ProgrammeGrant[] : [];
+          if (paidIds.length) gate = { paidIds, grants };
+        } catch {
+          gate = null;
+        }
+      }
+      const levelName = typeof profile?.level === 'string' ? profile.level : '';
+      setAvailable(all.filter(c => {
+        if (enrolledIds.has(c.id) || !productAccess(c, viewer).listed || !memberCanSee(c, profile, user.uid)) return false;
+        if (!gate) return true;
+        return studentSeesPaidCourse({
+          paidIds: gate.paidIds,
+          grants: gate.grants,
+          studentId: user.uid,
+          studentLevel: levelName,
+          course: { category: c.category, level: c.level, subject: c.subject, tags: c.tags },
+        });
+      }).sort((a, b) => a.title.localeCompare(b.title)));
     } catch (e: any) {
       setError(e?.message ?? 'Something went wrong.');
     } finally {

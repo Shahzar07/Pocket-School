@@ -14,6 +14,7 @@ import {
   blankSubscription,
 } from '../institution-membership';
 import type { VolumeInterval, VolumePlanId } from '../institution-pricing';
+import { loadInstitutionCatalogue } from './institution-catalogue';
 import { normaliseSubdomain } from '../tenant-host';
 import { secretValue } from '../payments/server/settings';
 import {
@@ -179,6 +180,7 @@ async function provision(input: {
     ...billed.state,
     access: input.priced.access,
     programmeIds: input.priced.programmeIds,
+    lines: input.priced.lines,
     tender: input.priced.tender,
     trial: input.trial,
     providerRef: input.providerRef ?? '',
@@ -318,6 +320,7 @@ export async function settleInstitutionOrder(
     programmeIds,
     country: academy.country,
     tender: tender === 'trial' ? 'card' : tender,
+    catalogue: await loadInstitutionCatalogue(),
   });
   if ('error' in priced) {
     await adminDb().doc(orderRef).set({ status: 'open' }, { merge: true });
@@ -413,6 +416,7 @@ export async function startInstitutionTrial(institutionId: string, requestedSeat
     programmeIds,
     country: academy.country,
     tender: 'card',
+    catalogue: await loadInstitutionCatalogue(),
   });
   if ('error' in priced) throw new Error(priced.error);
   const activationOpen = await institutionActivationOpen();
@@ -456,6 +460,7 @@ export async function releaseHeldInstitution(institutionId: string): Promise<voi
     access: order.access === 'a_la_carte' ? 'a_la_carte' : 'subscription',
     programmeIds: Array.isArray(order.programmeIds) ? order.programmeIds.filter((item): item is string => typeof item === 'string') : [],
     country: academy.country,
+    catalogue: await loadInstitutionCatalogue(),
     tender: order.tender === 'invoice' || order.tender === 'fpx' ? order.tender : 'card',
   });
   if ('error' in priced) return;

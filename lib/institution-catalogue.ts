@@ -1,0 +1,538 @@
+/**
+ * Hybrid institution catalogue.
+ * Every money figure in the seed is a placeholder. A super admin replaces it.
+ * This module does not publish a price list.
+ */
+
+import type { VolumePlanId } from './institution-pricing';
+import { taxRateFor } from './payments/tax';
+
+export const CATALOGUE_PLACEHOLDER = 'PLACEHOLDER';
+
+export const CATALOGUE_NOTE =
+  'PLACEHOLDER prices, discounts, and currency rates. They are not a published price list. A super admin replaces them on the institution pricing page.';
+
+export type CatalogueKind = 'programme' | 'category';
+export type BillingBasis = 'purchased' | 'active_minimum';
+export type SeatOverage = 'prompt' | 'auto_add';
+export type CatalogueAccess = 'subscription' | 'a_la_carte' | 'both';
+export type CataloguePlan = VolumePlanId | 'any';
+
+export interface CatalogueItem {
+  id: string;
+  title: string;
+  kind: CatalogueKind;
+  /** Level name a student must match. Categories can leave this empty. */
+  level: string;
+  planId: CataloguePlan;
+  access: CatalogueAccess;
+  /** Per student per month in USD before the tier and the annual discount. */
+  perSeatMonthly: number;
+  placeholder: boolean;
+  sparksPerSeat: number;
+  billingBasis: BillingBasis;
+  minimumSeats: number;
+  overage: SeatOverage;
+}
+
+export interface CatalogueTier {
+  id: string;
+  label: string;
+  minSeats: number;
+  maxSeats: number | null;
+  /** Fraction off the per-seat price, for example 0.1 for 10%. */
+  discount: number;
+  placeholder: boolean;
+}
+
+export interface CatalogueCurrency {
+  code: string;
+  /** Local units for 1 USD. */
+  rate: number;
+  enabled: boolean;
+  placeholder: boolean;
+  countries: string[];
+}
+
+export interface InstitutionCatalogue {
+  placeholder: boolean;
+  note: string;
+  baseCurrency: 'USD';
+  /** Fraction off twelve months of the monthly seat price. */
+  annualDiscount: number;
+  quoteMinSeats: number;
+  trialDays: number;
+  trialSeatCap: number;
+  tiers: CatalogueTier[];
+  currencies: CatalogueCurrency[];
+  items: CatalogueItem[];
+}
+
+export interface CatalogueLine {
+  id: string;
+  title: string;
+  kind: CatalogueKind;
+  seats: number;
+  unit: number;
+  amount: number;
+  sparks: number;
+  billingBasis: BillingBasis;
+  overage: 'within' | SeatOverage;
+  extraSeats: number;
+}
+
+export interface CatalogueQuote {
+  currency: string;
+  baseCurrency: 'USD';
+  interval: 'monthly' | 'annual';
+  tierId: string;
+  tierLabel: string;
+  tierDiscount: number;
+  annualDiscount: number;
+  purchasedSeats: number;
+  activeSeats: number;
+  subtotalUsd: number;
+  subtotal: number;
+  taxRate: number;
+  tax: number;
+  total: number;
+  sparks: number;
+  placeholder: boolean;
+  lines: CatalogueLine[];
+  notices: string[];
+  itemIds: string[];
+  itemTitles: string[];
+}
+
+export interface ProgrammeGrant {
+  itemId: string;
+  studentIds: string[];
+  levels: string[];
+}
+
+export interface CatalogueCourse {
+  programmeId?: string;
+  categoryId?: string;
+  category?: string;
+  level?: string;
+  subject?: string;
+  tags?: readonly string[];
+}
+
+export interface RevenueInput {
+  institutionId: string;
+  name: string;
+  currency: string;
+  lines: readonly { id: string; title: string; amount: number }[];
+}
+
+export interface RevenueCell {
+  institutionId: string;
+  name: string;
+  itemId: string;
+  title: string;
+  currency: string;
+  amount: number;
+}
+
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function item(partial: Omit<CatalogueItem, 'placeholder'> & { placeholder?: boolean }): CatalogueItem {
+  return { placeholder: true, ...partial };
+}
+
+/** Seed only. Amounts are placeholders for the super admin to replace. */
+export function seedInstitutionCatalogue(): InstitutionCatalogue {
+  const tiers: CatalogueTier[] = [
+    { id: '1-50', label: '1–50', minSeats: 1, maxSeats: 50, discount: 0, placeholder: true },
+    { id: '51-200', label: '51–200', minSeats: 51, maxSeats: 200, discount: 0.1, placeholder: true },
+    { id: '201-500', label: '201–500', minSeats: 201, maxSeats: 500, discount: 0.15, placeholder: true },
+    { id: '500-plus', label: '500+', minSeats: 501, maxSeats: null, discount: 0.2, placeholder: true },
+  ];
+  return {
+    placeholder: true,
+    note: CATALOGUE_NOTE,
+    baseCurrency: 'USD',
+    annualDiscount: 0.2,
+    quoteMinSeats: 50,
+    trialDays: 14,
+    trialSeatCap: 25,
+    tiers,
+    currencies: [
+      { code: 'USD', rate: 1, enabled: true, placeholder: true, countries: [] },
+      { code: 'MYR', rate: 4.7, enabled: true, placeholder: true, countries: ['MY'] },
+      { code: 'GBP', rate: 0.79, enabled: true, placeholder: true, countries: ['GB', 'UK'] },
+    ],
+    items: [
+      item({ id: 'igcse', title: 'IGCSE core', kind: 'programme', level: 'IGCSE', planId: 'igcse_alevel', access: 'both', perSeatMonthly: 10, sparksPerSeat: 8, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
+      item({ id: 'primary', title: 'Primary', kind: 'programme', level: 'Primary', planId: 'primary_secondary', access: 'both', perSeatMonthly: 8, sparksPerSeat: 6, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
+      item({ id: 'lower-secondary', title: 'Lower Secondary', kind: 'programme', level: 'Lower Secondary', planId: 'primary_secondary', access: 'subscription', perSeatMonthly: 8, sparksPerSeat: 6, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
+      item({ id: 'law-school', title: 'Law School', kind: 'programme', level: 'Law', planId: 'professional', access: 'both', perSeatMonthly: 12, sparksPerSeat: 10, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
+      item({ id: 'rise-sen', title: 'RISE SEN', kind: 'programme', level: 'RISE', planId: 'primary_secondary', access: 'both', perSeatMonthly: 9, sparksPerSeat: 8, billingBasis: 'active_minimum', minimumSeats: 5, overage: 'auto_add' }),
+      item({ id: 'maths', title: 'Mathematics', kind: 'category', level: '', planId: 'any', access: 'both', perSeatMonthly: 4, sparksPerSeat: 2, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
+      item({ id: 'english', title: 'English', kind: 'category', level: '', planId: 'any', access: 'both', perSeatMonthly: 3, sparksPerSeat: 2, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
+      item({ id: 'science', title: 'Science', kind: 'category', level: '', planId: 'any', access: 'both', perSeatMonthly: 3, sparksPerSeat: 2, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
+      item({ id: 'sen-support', title: 'SEN support', kind: 'category', level: 'RISE', planId: 'any', access: 'both', perSeatMonthly: 5, sparksPerSeat: 3, billingBasis: 'active_minimum', minimumSeats: 5, overage: 'prompt' }),
+    ],
+  };
+}
+
+export function billableSeats(entry: Pick<CatalogueItem, 'billingBasis' | 'minimumSeats'>, purchased: number, active: number): number {
+  const bought = Math.max(0, Math.floor(purchased));
+  const live = Math.max(0, Math.floor(active));
+  if (entry.billingBasis === 'active_minimum') return Math.max(entry.minimumSeats, live);
+  return bought;
+}
+
+export function seatOverage(
+  entry: Pick<CatalogueItem, 'overage'>,
+  purchased: number,
+  active: number,
+): { status: 'within' | SeatOverage; extra: number } {
+  const extra = Math.max(0, Math.floor(active) - Math.floor(purchased));
+  if (extra === 0) return { status: 'within', extra: 0 };
+  return { status: entry.overage, extra };
+}
+
+export function proratedSeatAdd(input: {
+  perSeat: number;
+  extra: number;
+  daysRemaining: number;
+  daysInPeriod: number;
+}): number | { error: string } {
+  if (!Number.isFinite(input.perSeat) || input.perSeat < 0) return { error: 'The per-student price is missing.' };
+  if (!Number.isInteger(input.extra) || input.extra < 0) return { error: 'Extra seats are a whole number.' };
+  if (!Number.isInteger(input.daysRemaining) || !Number.isInteger(input.daysInPeriod) || input.daysInPeriod <= 0) {
+    return { error: 'The billing period needs a start and an end date.' };
+  }
+  if (input.daysRemaining < 0 || input.daysRemaining > input.daysInPeriod) return { error: 'Seat changes apply inside the current period.' };
+  return round2(input.perSeat * input.extra * (input.daysRemaining / input.daysInPeriod));
+}
+
+export function tierForSeats(catalogue: InstitutionCatalogue, seats: number): CatalogueTier | null {
+  const count = Math.max(0, Math.floor(seats));
+  const ordered = [...catalogue.tiers].sort((a, b) => a.minSeats - b.minSeats);
+  return ordered.find((tier) => count >= tier.minSeats && (tier.maxSeats == null || count <= tier.maxSeats)) ?? null;
+}
+
+export function currencyForCountry(catalogue: InstitutionCatalogue, country: string): { code: string; rate: number } {
+  const code = country.trim().toUpperCase();
+  const match = catalogue.currencies.find((row) => row.enabled && row.countries.includes(code) && row.rate > 0);
+  if (!match) return { code: 'USD', rate: 1 };
+  return { code: match.code, rate: match.rate };
+}
+
+function listed(entry: CatalogueItem, planId: VolumePlanId, access: 'subscription' | 'a_la_carte'): boolean {
+  if (entry.planId !== 'any' && entry.planId !== planId) return false;
+  if (entry.access === 'both') return true;
+  return entry.access === access;
+}
+
+export function catalogueItemsFor(catalogue: InstitutionCatalogue, planId: VolumePlanId, access: 'subscription' | 'a_la_carte'): CatalogueItem[] {
+  return catalogue.items.filter((entry) => listed(entry, planId, access));
+}
+
+export function priceCatalogue(input: {
+  catalogue?: InstitutionCatalogue;
+  itemIds: readonly string[];
+  purchasedSeats: number;
+  activeSeats?: number;
+  interval: 'monthly' | 'annual';
+  country: string;
+  tender: 'card' | 'fpx' | 'invoice' | 'trial';
+}): CatalogueQuote | { error: string } {
+  const catalogue = input.catalogue ?? seedInstitutionCatalogue();
+  const purchased = Math.floor(input.purchasedSeats);
+  const active = Math.floor(input.activeSeats ?? purchased);
+  if (!Number.isInteger(purchased) || purchased < 1) return { error: 'Choose at least one seat.' };
+  if (!Number.isInteger(active) || active < 0) return { error: 'Active students are a whole number.' };
+  const wanted = input.itemIds.filter((id) => id.trim());
+  if (wanted.length === 0) return { error: 'Choose at least one programme or category.' };
+  const byId = new Map(catalogue.items.map((entry) => [entry.id, entry]));
+  const selected: CatalogueItem[] = [];
+  for (const id of wanted) {
+    const entry = byId.get(id);
+    if (!entry) return { error: 'One of those programmes is not on the catalogue.' };
+    selected.push(entry);
+  }
+  const tier = tierForSeats(catalogue, purchased);
+  if (!tier) return { error: 'That seat count is outside the configured tiers.' };
+  const annual = input.interval === 'annual';
+  const discount = Math.min(1, Math.max(0, tier.discount));
+  const annualDiscount = Math.min(1, Math.max(0, catalogue.annualDiscount));
+  const notices: string[] = [];
+  const lines: CatalogueLine[] = selected.map((entry) => {
+    const seats = billableSeats(entry, purchased, active);
+    const monthly = entry.perSeatMonthly * (1 - discount);
+    const unit = round2(annual ? monthly * 12 * (1 - annualDiscount) : monthly);
+    const over = seatOverage(entry, purchased, active);
+    if (over.status === 'prompt') {
+      notices.push(`${entry.title}: ${over.extra} active students are above the purchased seats. Add seats and the extra is prorated for the days left.`);
+    }
+    if (over.status === 'auto_add') {
+      notices.push(`${entry.title}: ${over.extra} seats will be added automatically and prorated for the days left.`);
+    }
+    return {
+      id: entry.id,
+      title: entry.title,
+      kind: entry.kind,
+      seats,
+      unit,
+      amount: round2(unit * seats),
+      sparks: entry.sparksPerSeat * seats,
+      billingBasis: entry.billingBasis,
+      overage: over.status,
+      extraSeats: over.extra,
+    };
+  });
+  const subtotalUsd = round2(lines.reduce((sum, line) => sum + line.amount, 0));
+  const fx = currencyForCountry(catalogue, input.country);
+  const subtotal = round2(subtotalUsd * fx.rate);
+  const taxKind = input.tender === 'invoice' || input.tender === 'trial' ? 'invoice' : 'course';
+  const taxRate = taxRateFor(taxKind, input.country, fx.code);
+  const tax = round2(subtotal * taxRate);
+  return {
+    currency: fx.code,
+    baseCurrency: 'USD',
+    interval: input.interval,
+    tierId: tier.id,
+    tierLabel: tier.label,
+    tierDiscount: discount,
+    annualDiscount: annual ? annualDiscount : 0,
+    purchasedSeats: purchased,
+    activeSeats: active,
+    subtotalUsd,
+    subtotal,
+    taxRate,
+    tax,
+    total: round2(subtotal + tax),
+    sparks: lines.reduce((sum, line) => sum + line.sparks, 0),
+    placeholder: catalogue.placeholder || selected.some((entry) => entry.placeholder),
+    lines,
+    notices,
+    itemIds: selected.map((entry) => entry.id),
+    itemTitles: selected.map((entry) => entry.title),
+  };
+}
+
+export function catalogueDocumentLines(input: {
+  kind: 'quote' | 'invoice';
+  institutionName: string;
+  issuedOn: string;
+  quote: CatalogueQuote;
+  poNumber?: string;
+}): string[] {
+  const money = (amount: number) => `${input.quote.currency} ${amount.toFixed(2)}`;
+  const period = input.quote.interval === 'annual' ? 'per year' : 'per month';
+  const lines = [
+    input.kind === 'invoice' ? 'Poket School invoice' : 'Poket School quote',
+    input.quote.placeholder ? 'PLACEHOLDER prices. A super admin can replace them.' : '',
+    input.institutionName,
+    `Issued ${input.issuedOn}`,
+    input.poNumber ? `Reference ${input.poNumber}` : '',
+    `Seats purchased ${input.quote.purchasedSeats}`,
+    `Active students ${input.quote.activeSeats}`,
+    `Tier ${input.quote.tierLabel}`,
+  ];
+  for (const line of input.quote.lines) {
+    lines.push(`${line.title} · ${line.seats} seats · ${money(line.unit)} ${period} · ${money(line.amount)}`);
+  }
+  lines.push(
+    `Subtotal ${money(input.quote.subtotal)}`,
+    `Tax ${money(input.quote.tax)}`,
+    `Total ${money(input.quote.total)}`,
+    `Sparks ${input.quote.sparks}`,
+  );
+  return lines.filter((line) => line.length > 0);
+}
+
+function sameName(left: string, right: string): boolean {
+  return left.trim().toLowerCase() === right.trim().toLowerCase();
+}
+
+export function matchingItemIds(catalogue: InstitutionCatalogue, course: CatalogueCourse): string[] {
+  const ids = new Set<string>();
+  for (const entry of catalogue.items) {
+    if (course.programmeId && course.programmeId === entry.id) ids.add(entry.id);
+    if (course.categoryId && course.categoryId === entry.id) ids.add(entry.id);
+    if (course.category && (sameName(course.category, entry.id) || sameName(course.category, entry.title))) ids.add(entry.id);
+    if (course.subject && entry.kind === 'category' && sameName(course.subject, entry.title)) ids.add(entry.id);
+    if (course.tags?.some((tag) => sameName(tag, entry.id) || sameName(tag, entry.title))) ids.add(entry.id);
+    if (course.level && entry.level && sameName(course.level, entry.level) && entry.kind === 'programme') ids.add(entry.id);
+  }
+  return [...ids];
+}
+
+export function institutionOffersCourse(catalogue: InstitutionCatalogue, paidIds: readonly string[], course: CatalogueCourse): boolean {
+  const paid = new Set(paidIds);
+  return matchingItemIds(catalogue, course).some((id) => paid.has(id));
+}
+
+/** A course stays in the library when it matches no catalogue item, or when a paid item covers it. */
+export function institutionLibraryIncludes(catalogue: InstitutionCatalogue, paidIds: readonly string[], course: CatalogueCourse): boolean {
+  const matches = matchingItemIds(catalogue, course);
+  if (matches.length === 0) return true;
+  return matches.some((id) => paidIds.includes(id));
+}
+
+export function sameSelection(left: readonly string[], right: readonly string[]): boolean {
+  const a = [...new Set(left)].sort();
+  const b = [...new Set(right)].sort();
+  return a.length === b.length && a.every((id, index) => id === b[index]);
+}
+
+export function grantCovers(grant: ProgrammeGrant | undefined, studentId: string, studentLevel: string): boolean {
+  if (!grant) return false;
+  if (grant.studentIds.includes(studentId)) return true;
+  return Boolean(studentLevel) && grant.levels.some((level) => sameName(level, studentLevel));
+}
+
+/** A student sees a course when the academy paid for it and the student or their level is assigned. */
+export function studentSeesPaidCourse(input: {
+  catalogue?: InstitutionCatalogue;
+  paidIds: readonly string[];
+  grants: readonly ProgrammeGrant[];
+  studentId: string;
+  studentLevel: string;
+  course: CatalogueCourse;
+}): boolean {
+  const catalogue = input.catalogue ?? seedInstitutionCatalogue();
+  const matches = matchingItemIds(catalogue, input.course);
+  if (matches.length === 0) return true;
+  if (input.course.level && input.studentLevel && !sameName(input.course.level, input.studentLevel)) return false;
+  const paid = matches.filter((id) => input.paidIds.includes(id));
+  if (paid.length === 0) return false;
+  return paid.some((id) => grantCovers(input.grants.find((grant) => grant.itemId === id), input.studentId, input.studentLevel));
+}
+
+export function programmeRevenue(rows: readonly RevenueInput[]): RevenueCell[] {
+  const cells: RevenueCell[] = [];
+  for (const row of rows) {
+    for (const line of row.lines) {
+      const found = cells.find((cell) => cell.institutionId === row.institutionId && cell.itemId === line.id && cell.currency === row.currency);
+      if (found) found.amount = round2(found.amount + line.amount);
+      else cells.push({
+        institutionId: row.institutionId,
+        name: row.name,
+        itemId: line.id,
+        title: line.title,
+        currency: row.currency,
+        amount: round2(line.amount),
+      });
+    }
+  }
+  return cells.sort((a, b) => a.name.localeCompare(b.name) || a.title.localeCompare(b.title));
+}
+
+function finite(value: unknown, fallback: number): number {
+  const number = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+export function validateCatalogue(catalogue: InstitutionCatalogue): string | null {
+  if (catalogue.annualDiscount < 0 || catalogue.annualDiscount > 1) return 'The annual discount is between 0 and 100%.';
+  if (!Number.isInteger(catalogue.trialDays) || catalogue.trialDays < 1 || catalogue.trialDays > 90) return 'Trial length is between 1 and 90 days.';
+  if (!Number.isInteger(catalogue.trialSeatCap) || catalogue.trialSeatCap < 1) return 'The trial needs a seat cap.';
+  if (!Number.isInteger(catalogue.quoteMinSeats) || catalogue.quoteMinSeats < 1) return 'The quote minimum is a whole number of seats.';
+  if (catalogue.items.length === 0) return 'Add at least one programme or category.';
+  if (catalogue.tiers.length === 0) return 'Add at least one seat tier.';
+  const ordered = [...catalogue.tiers].sort((a, b) => a.minSeats - b.minSeats);
+  let previous = 0;
+  const tierIds = new Set<string>();
+  for (const tier of ordered) {
+    if (!tier.id.trim() || tierIds.has(tier.id)) return 'Each tier needs its own id.';
+    tierIds.add(tier.id);
+    if (!Number.isInteger(tier.minSeats) || tier.minSeats < previous) return 'Seat tiers cannot overlap.';
+    if (tier.maxSeats != null && (!Number.isInteger(tier.maxSeats) || tier.maxSeats < tier.minSeats)) return 'A tier maximum is at least its minimum.';
+    if (tier.discount < 0 || tier.discount > 1) return 'A tier discount is between 0 and 100%.';
+    previous = (tier.maxSeats ?? tier.minSeats) + 1;
+  }
+  const ids = new Set<string>();
+  for (const entry of catalogue.items) {
+    if (!entry.id.trim() || ids.has(entry.id)) return 'Each programme needs its own id.';
+    ids.add(entry.id);
+    if (entry.perSeatMonthly < 0) return 'A per-seat price is zero or greater.';
+    if (entry.sparksPerSeat < 0 || !Number.isInteger(entry.sparksPerSeat)) return 'Sparks per seat are a whole number.';
+    if (!Number.isInteger(entry.minimumSeats) || entry.minimumSeats < 0) return 'A minimum seat count is a whole number.';
+  }
+  for (const currency of catalogue.currencies) {
+    if (!/^[A-Z]{3}$/.test(currency.code)) return 'Currency is a three-letter code.';
+    if (currency.enabled && currency.rate <= 0) return 'An enabled currency needs a rate above zero.';
+  }
+  return null;
+}
+
+export function normalizeCatalogue(value: unknown): InstitutionCatalogue {
+  const seed = seedInstitutionCatalogue();
+  if (!value || typeof value !== 'object') return seed;
+  const raw = value as Partial<InstitutionCatalogue>;
+  if (!Array.isArray(raw.items) || !Array.isArray(raw.tiers)) return seed;
+  const catalogue: InstitutionCatalogue = {
+    placeholder: raw.placeholder !== false,
+    note: typeof raw.note === 'string' && raw.note.trim() ? raw.note.trim() : seed.note,
+    baseCurrency: 'USD',
+    annualDiscount: Math.min(1, Math.max(0, finite(raw.annualDiscount, seed.annualDiscount))),
+    quoteMinSeats: Math.floor(finite(raw.quoteMinSeats, seed.quoteMinSeats)),
+    trialDays: Math.floor(finite(raw.trialDays, seed.trialDays)),
+    trialSeatCap: Math.floor(finite(raw.trialSeatCap, seed.trialSeatCap)),
+    tiers: raw.tiers.flatMap((row) => {
+      if (!row || typeof row !== 'object') return [];
+      const tier = row as Partial<CatalogueTier>;
+      const id = typeof tier.id === 'string' ? tier.id.trim() : '';
+      if (!id) return [];
+      const max = tier.maxSeats == null ? null : Math.floor(finite(tier.maxSeats, 0));
+      return [{
+        id,
+        label: typeof tier.label === 'string' && tier.label.trim() ? tier.label.trim() : id,
+        minSeats: Math.floor(finite(tier.minSeats, 1)),
+        maxSeats: max,
+        discount: Math.min(1, Math.max(0, finite(tier.discount, 0))),
+        placeholder: tier.placeholder !== false,
+      }];
+    }),
+    currencies: Array.isArray(raw.currencies) && raw.currencies.length
+      ? raw.currencies.flatMap((row) => {
+        if (!row || typeof row !== 'object') return [];
+        const currency = row as Partial<CatalogueCurrency>;
+        const code = typeof currency.code === 'string' ? currency.code.trim().toUpperCase() : '';
+        if (!/^[A-Z]{3}$/.test(code)) return [];
+        return [{
+          code,
+          rate: finite(currency.rate, 1),
+          enabled: currency.enabled !== false,
+          placeholder: currency.placeholder !== false,
+          countries: Array.isArray(currency.countries) ? currency.countries.filter((item): item is string => typeof item === 'string') : [],
+        }];
+      })
+      : seed.currencies,
+    items: raw.items.flatMap((row) => {
+      if (!row || typeof row !== 'object') return [];
+      const entry = row as Partial<CatalogueItem>;
+      const id = typeof entry.id === 'string' ? entry.id.trim() : '';
+      if (!id) return [];
+      const basis: BillingBasis = entry.billingBasis === 'active_minimum' ? 'active_minimum' : 'purchased';
+      const overage: SeatOverage = entry.overage === 'auto_add' ? 'auto_add' : 'prompt';
+      const access: CatalogueAccess = entry.access === 'subscription' || entry.access === 'a_la_carte' ? entry.access : 'both';
+      const planId: CataloguePlan = entry.planId === 'any' || entry.planId === 'primary_secondary' || entry.planId === 'igcse_alevel' || entry.planId === 'professional'
+        ? entry.planId
+        : 'any';
+      return [{
+        id,
+        title: typeof entry.title === 'string' && entry.title.trim() ? entry.title.trim() : id,
+        kind: entry.kind === 'category' ? 'category' : 'programme',
+        level: typeof entry.level === 'string' ? entry.level.trim() : '',
+        planId,
+        access,
+        perSeatMonthly: Math.max(0, finite(entry.perSeatMonthly, 0)),
+        placeholder: entry.placeholder !== false,
+        sparksPerSeat: Math.max(0, Math.floor(finite(entry.sparksPerSeat, 0))),
+        billingBasis: basis,
+        minimumSeats: Math.max(0, Math.floor(finite(entry.minimumSeats, 1))),
+        overage,
+      }];
+    }),
+  };
+  return validateCatalogue(catalogue) ? seed : catalogue;
+}

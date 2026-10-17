@@ -3,15 +3,16 @@
  * Pricing, tax, and day-based proration stay in the modules that already own them.
  */
 
-import { checkoutChoices, scaleSeats, type CourseAccessMode } from './institution-commerce';
 import {
-  addIsoDays,
-  DEFAULT_SPARKS_BY_PLAN,
-  periodStartFor,
-  quoteForInstitution,
-} from './institution-membership';
+  catalogueItemsFor,
+  priceCatalogue,
+  seedInstitutionCatalogue,
+  type CatalogueLine,
+  type InstitutionCatalogue,
+} from './institution-catalogue';
+import { scaleSeats, type CourseAccessMode } from './institution-commerce';
+import { addIsoDays, periodStartFor } from './institution-membership';
 import { planName, type VolumeInterval, type VolumePlanId } from './institution-pricing';
-import { taxRateFor } from './payments/tax';
 
 export type ApprovalMode = 'auto' | 'manual' | 'auto_review';
 export type InstitutionTender = 'card' | 'fpx' | 'invoice' | 'trial';
@@ -48,22 +49,31 @@ export interface ProgrammeOffer {
   id: string;
   title: string;
   level: VolumePlanId;
-  /** Lifetime price for an a la carte programme. Subscription uses the seat quote. */
+  /** Per-seat monthly placeholder, until a super admin saves a catalogue price. */
   alaCarteUsd: number;
   access: CourseAccessMode;
+  kind: 'programme' | 'category';
+  placeholder: boolean;
+  perSeatMonthly: number;
+  sparksPerSeat: number;
+  billingBasis: 'purchased' | 'active_minimum';
 }
 
-/** Level names only. Prices are the a la carte lifetime amount for that programme. */
-export const PROGRAMME_CATALOGUE: readonly ProgrammeOffer[] = [
-  { id: 'primary', title: 'Primary', level: 'primary_secondary', alaCarteUsd: 49, access: 'both' },
-  { id: 'lower-secondary', title: 'Lower Secondary', level: 'primary_secondary', alaCarteUsd: 59, access: 'subscription' },
-  { id: 'igcse', title: 'IGCSE', level: 'igcse_alevel', alaCarteUsd: 129, access: 'both' },
-  { id: 'a-level', title: 'A-Level', level: 'igcse_alevel', alaCarteUsd: 149, access: 'both' },
-  { id: 'llb-law', title: 'LLB Law', level: 'professional', alaCarteUsd: 199, access: 'both' },
-  { id: 'mbbs-medicine', title: 'MBBS Medicine', level: 'professional', alaCarteUsd: 249, access: 'a_la_carte' },
-  { id: 'engineering', title: 'Engineering', level: 'professional', alaCarteUsd: 199, access: 'both' },
-  { id: 'nursing', title: 'Nursing', level: 'professional', alaCarteUsd: 179, access: 'both' },
-];
+/** Names only. Money lives on the editable catalogue, not in this list. */
+export function programmeOffers(catalogue: InstitutionCatalogue = seedInstitutionCatalogue()): ProgrammeOffer[] {
+  return catalogue.items.map((entry) => ({
+    id: entry.id,
+    title: entry.title,
+    level: entry.planId === 'any' ? 'primary_secondary' : entry.planId,
+    alaCarteUsd: entry.perSeatMonthly,
+    access: entry.access === 'both' ? 'both' : entry.access,
+    kind: entry.kind,
+    placeholder: entry.placeholder,
+    perSeatMonthly: entry.perSeatMonthly,
+    sparksPerSeat: entry.sparksPerSeat,
+    billingBasis: entry.billingBasis,
+  }));
+}
 
 export interface ApprovalSettings {
   mode: ApprovalMode;
@@ -133,8 +143,9 @@ export function isFreeEmailDomain(email: string): boolean {
   return FREE_EMAIL_DOMAINS.has(domain);
 }
 
-export function programmesForLevel(planId: VolumePlanId, access: OrderAccess): ProgrammeOffer[] {
-  return PROGRAMME_CATALOGUE.filter((item) => item.level === planId && checkoutChoices(item.access).includes(access));
+export function programmesForLevel(planId: VolumePlanId, access: OrderAccess, catalogue: InstitutionCatalogue = seedInstitutionCatalogue()): ProgrammeOffer[] {
+  const offers = new Map(programmeOffers(catalogue).map((item) => [item.id, item]));
+  return catalogueItemsFor(catalogue, planId, access).map((entry) => offers.get(entry.id)!);
 }
 
 export interface PricedOrder {
@@ -152,6 +163,11 @@ export interface PricedOrder {
   total: number;
   sparks: number;
   tender: InstitutionTender;
+  lines: CatalogueLine[];
+  tierLabel: string;
+  placeholder: boolean;
+  notices: string[];
+  activeSeats: number;
 }
 
 function round2(value: number): number {
@@ -166,6 +182,8 @@ export function priceInstitutionOrder(input: {
   programmeIds: readonly string[];
   country: string;
   tender: InstitutionTender;
+  catalogue?: InstitutionCatalogue;
+  activeSeats?: number;
 }): PricedOrder | { error: string } {
   const seats = Math.floor(input.seats);
   if (!Number.isInteger(seats) || seats < SEAT_MIN || seats > SEAT_MAX) {
@@ -174,39 +192,50 @@ export function priceInstitutionOrder(input: {
   if (input.tender === 'invoice' && seats < INVOICE_MIN_SEATS) {
     return { error: `Invoice and purchase orders are available from ${INVOICE_MIN_SEATS} seats.` };
   }
-  const available = programmesForLevel(input.planId, input.access);
-  const wanted = new Set(input.programmeIds);
+  const catalogue = input.catalogue ?? seedInstitutionCatalogue();
+  const offers = programmeOffers(catalogue);
   const selected = input.programmeIds.length
-    ? available.filter((item) => wanted.has(item.id))
-    : input.access === 'subscription' ? available : [];
+    ? offers.filter((item) => input.programmeIds.includes(item.id))
+    : input.access === 'subscription' ? programmesForLevel(input.planId, input.access, catalogue) : [];
   if (input.programmeIds.length && selected.length !== input.programmeIds.length) {
-    return { error: 'One of those programmes is not on this level, or it is not sold that way.' };
+    return { error: 'One of those programmes is not on the catalogue.' };
   }
-  if (input.access === 'a_la_carte' && selected.length === 0) {
-    return { error: 'Choose at least one a la carte programme.' };
+  if (selected.some((item) => item.access !== 'both' && item.access !== input.access)) {
+    return { error: 'One of those programmes is not sold that way.' };
   }
-  const quote = quoteForInstitution({ seats, planId: input.planId, interval: input.interval });
-  const subtotal = input.access === 'a_la_carte'
-    ? round2(selected.reduce((sum, item) => sum + item.alaCarteUsd, 0))
-    : quote.total;
-  const taxKind = input.tender === 'invoice' ? 'invoice' : 'course';
-  const taxRate = taxRateFor(taxKind, input.country, quote.currency);
-  const tax = round2(subtotal * taxRate);
+  if (selected.length === 0) {
+    return { error: 'Choose at least one programme or category.' };
+  }
+  const quote = priceCatalogue({
+    catalogue,
+    itemIds: selected.map((item) => item.id),
+    purchasedSeats: seats,
+    activeSeats: input.activeSeats ?? seats,
+    interval: input.interval,
+    country: input.country,
+    tender: input.tender,
+  });
+  if ('error' in quote) return quote;
   return {
     planId: input.planId,
     planLabel: planName(input.planId),
     interval: input.interval,
     access: input.access,
     seats,
-    programmeIds: selected.map((item) => item.id),
-    programmeTitles: selected.map((item) => item.title),
+    programmeIds: quote.itemIds,
+    programmeTitles: quote.itemTitles,
     currency: quote.currency,
-    subtotal,
-    taxRate,
-    tax,
-    total: round2(subtotal + tax),
-    sparks: DEFAULT_SPARKS_BY_PLAN[input.planId] * seats,
+    subtotal: quote.subtotal,
+    taxRate: quote.taxRate,
+    tax: quote.tax,
+    total: quote.total,
+    sparks: quote.sparks,
     tender: input.tender,
+    lines: quote.lines,
+    tierLabel: quote.tierLabel,
+    placeholder: quote.placeholder,
+    notices: quote.notices,
+    activeSeats: quote.activeSeats,
   };
 }
 

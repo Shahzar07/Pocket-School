@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isNextResponse, requireUser } from '@/lib/api-guard';
 import { adminDb, isAdminConfigured } from '@/lib/firebase-admin';
-import { blankSubscription, readSubscription } from '@/lib/institution-membership';
+import { blankSubscription, periodStartFor, readSubscription } from '@/lib/institution-membership';
 import { planName, type VolumeInterval, type VolumePlanId } from '@/lib/institution-pricing';
 import {
   callerOwnsInstitution,
@@ -12,9 +12,12 @@ import { DEFAULT_SPARKS_BY_PLAN } from '@/lib/institution-membership';
 import {
   cancellationDate,
   checkoutChannel,
+  priceInstitutionOrder,
   quoteSelfServeChange,
   sandboxBannerFor,
 } from '@/lib/institution-self-serve';
+import { sameSelection } from '@/lib/institution-catalogue';
+import { countActiveStudents, loadInstitutionCatalogue } from '@/lib/server/institution-catalogue';
 import { loadAutomation, logAutomation } from '@/lib/server/automation-store';
 
 export const dynamic = 'force-dynamic';
@@ -34,6 +37,8 @@ export async function POST(req: NextRequest) {
     planId?: string;
     interval?: string;
     seats?: number;
+    activeSeats?: number;
+    programmeIds?: string[];
     cancel?: boolean;
     confirmSandbox?: boolean;
   };
@@ -62,7 +67,14 @@ export async function POST(req: NextRequest) {
   const interval: VolumeInterval = body.interval === 'monthly' ? 'monthly' : body.interval === 'annual' ? 'annual' : current.interval;
   const seats = Math.floor(Number(body.seats));
   if (!Number.isInteger(seats) || seats < 1) return NextResponse.json({ error: 'Choose a seat count.' }, { status: 400 });
-  const planChanged = planId !== current.planId || interval !== current.interval;
+  const programmeIds = Array.isArray(body.programmeIds)
+    ? body.programmeIds.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+    : [];
+  const storedProgrammes = Array.isArray(snap.get('programmeIds'))
+    ? snap.get('programmeIds').filter((id: unknown): id is string => typeof id === 'string')
+    : [];
+  const programmesChanged = programmeIds.length > 0 && !sameSelection(programmeIds, storedProgrammes);
+  const planChanged = planId !== current.planId || interval !== current.interval || programmesChanged;
   const seatsChanged = seats !== current.seats;
   if (planChanged && !automation.rules.plan_proration) {
     await logAutomation({ rule: 'plan_proration', outcome: 'held', summary: 'Plan changes are set to manual.', actorId: user.uid, refId: institutionId });
@@ -72,7 +84,32 @@ export async function POST(req: NextRequest) {
     await logAutomation({ rule: 'institution_seats', outcome: 'held', summary: 'Seat changes are set to manual.', actorId: user.uid, refId: institutionId });
     return NextResponse.json({ error: 'Seat changes are with a super admin at the moment.' }, { status: 409 });
   }
-  const nextTotal = recurringTotal(planId, interval, seats);
+  const academy = await adminDb().doc(`institutions/${institutionId}`).get();
+  const country = typeof academy.get('country') === 'string' ? academy.get('country') as string : '';
+  const periodStart = periodStartFor(current.periodEnd, current.interval);
+  let activeSeats = Number.isInteger(body.activeSeats) ? body.activeSeats as number : seats;
+  if (programmeIds.length) {
+    try {
+      activeSeats = await countActiveStudents(institutionId, periodStart || todayIso());
+    } catch {
+      activeSeats = Number.isInteger(body.activeSeats) ? body.activeSeats as number : seats;
+    }
+  }
+  const hybrid = programmeIds.length
+    ? priceInstitutionOrder({
+      planId,
+      interval,
+      seats,
+      access: 'subscription',
+      programmeIds,
+      country,
+      tender: 'card',
+      activeSeats,
+      catalogue: await loadInstitutionCatalogue(),
+    })
+    : null;
+  if (hybrid && 'error' in hybrid) return NextResponse.json({ error: hybrid.error }, { status: 400 });
+  const nextTotal = hybrid ? hybrid.total : recurringTotal(planId, interval, seats);
   const quote = quoteSelfServeChange({
     currentSeats: current.seats,
     currentTotal: current.total,
@@ -80,17 +117,28 @@ export async function POST(req: NextRequest) {
     currentPeriodEnd: current.periodEnd,
     nextSeats: seats,
     nextTotal,
-    planChanged: planId !== current.planId || interval !== current.interval,
+    planChanged,
     on: todayIso(),
   });
   if ('error' in quote) return NextResponse.json({ error: quote.error }, { status: 400 });
-  const sparks = DEFAULT_SPARKS_BY_PLAN[planId] * seats;
-  const change = { planId, interval, seats, total: nextTotal, sparks, currency: current.currency, status: 'open' as const };
+  const sparks = hybrid ? hybrid.sparks : DEFAULT_SPARKS_BY_PLAN[planId] * seats;
+  const currency = hybrid ? hybrid.currency : current.currency;
+  const change = {
+    planId,
+    interval,
+    seats,
+    total: nextTotal,
+    sparks,
+    currency,
+    status: 'open' as const,
+    programmeIds: hybrid ? hybrid.programmeIds : programmeIds,
+    lines: hybrid ? hybrid.lines : [],
+  };
   const keys = await institutionPaymentKeys();
   const channel = checkoutChannel({
     stripe: keys.stripe,
     gateway: keys.gateway,
-    currency: current.currency || 'USD',
+    currency: currency || 'USD',
     tender: 'card',
     total: quote.charge,
   });
@@ -102,10 +150,24 @@ export async function POST(req: NextRequest) {
       interval,
       seats,
       total: nextTotal,
+      currency,
       phase: 'active',
       cancelOn: '',
+      ...(hybrid ? { programmeIds: hybrid.programmeIds, lines: hybrid.lines } : {}),
     });
-    await adminDb().doc(`institutions/${institutionId}`).set({ billingPhase: 'active', status: 'active', planId }, { merge: true });
+    await adminDb().doc(`institutions/${institutionId}`).set({
+      billingPhase: 'active',
+      status: 'active',
+      planId,
+      ...(hybrid ? { programmeIds: hybrid.programmeIds } : {}),
+    }, { merge: true });
+    if (hybrid) {
+      await adminDb().doc(`institutions/${institutionId}/settings/access`).set({
+        planId,
+        access: 'subscription',
+        programmeIds: hybrid.programmeIds,
+      }, { merge: true });
+    }
     await adminDb().doc(`institutions/${institutionId}/settings/profile`).set({ seatCount: seats }, { merge: true });
     await adminDb().doc(`institutions/${institutionId}/sparks_guard/current`).set({ cap: sparks, allowance: sparks, lowAtPercent: 20 }, { merge: true });
     await adminDb().doc(`institutions/${institutionId}/billing/change`).set({ status: 'settled' }, { merge: true });
@@ -115,6 +177,8 @@ export async function POST(req: NextRequest) {
       credit: quote.credit,
       sandbox: channel === 'sandbox' && quote.charge > 0,
       banner: channel === 'sandbox' && quote.charge > 0 ? sandboxBannerFor('sandbox') : '',
+      activeSeats,
+      currency,
     });
   }
   if (channel === 'sandbox') {
@@ -125,7 +189,8 @@ export async function POST(req: NextRequest) {
       charge: quote.charge,
       credit: quote.credit,
       total: nextTotal,
-      currency: current.currency,
+      currency,
+      activeSeats,
     });
   }
   await adminDb().doc(`institutions/${institutionId}/billing/change`).set(change);
@@ -137,7 +202,7 @@ export async function POST(req: NextRequest) {
     line_items: [{
       quantity: 1,
       price_data: {
-        currency: (current.currency || 'USD').toLowerCase(),
+        currency: (currency || 'USD').toLowerCase(),
         unit_amount: Math.round(quote.charge * 100),
         product_data: { name: `Poket School — ${planName(planId)} · ${seats} seats, pro-rated` },
       },
@@ -152,5 +217,5 @@ export async function POST(req: NextRequest) {
     success_url: `${req.nextUrl.origin}/dashboard/institution/billing?paid=1`,
     cancel_url: `${req.nextUrl.origin}/dashboard/institution/billing`,
   });
-  return NextResponse.json({ url: session.url, charge: quote.charge, credit: quote.credit, currency: current.currency });
+  return NextResponse.json({ url: session.url, charge: quote.charge, credit: quote.credit, currency, activeSeats });
 }

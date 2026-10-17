@@ -64,18 +64,21 @@ test('the live price adds Malaysian tax on card and skips it on an invoice', () 
   });
   assert.ok(!('error' in card));
   if (!('error' in card)) {
-    assert.equal(card.subtotal, 365.99);
-    assert.equal(card.tax, 29.28);
-    assert.equal(card.total, 395.27);
-    assert.equal(card.sparks, 8000);
-    assert.deepEqual(card.programmeTitles, ['IGCSE']);
+    assert.equal(card.placeholder, true);
+    assert.equal(card.currency, 'MYR');
+    assert.equal(card.subtotal, 4512);
+    assert.equal(card.tax, 360.96);
+    assert.equal(card.total, 4872.96);
+    assert.equal(card.sparks, 80);
+    assert.equal(card.tierLabel, '1–50');
+    assert.deepEqual(card.programmeTitles, ['IGCSE core']);
   }
   const invoice = priceInstitutionOrder({
     planId: 'igcse_alevel',
     interval: 'annual',
     seats: 50,
     access: 'subscription',
-    programmeIds: [],
+    programmeIds: ['igcse'],
     country: 'MY',
     tender: 'invoice',
   });
@@ -86,16 +89,22 @@ test('the live price adds Malaysian tax on card and skips it on an invoice', () 
     interval: 'annual',
     seats: 10,
     access: 'subscription',
-    programmeIds: [],
+    programmeIds: ['igcse'],
     country: 'GB',
     tender: 'card',
   });
   assert.ok(!('error' in abroad));
-  if (!('error' in abroad)) assert.equal(abroad.tax, 0);
+  if (!('error' in abroad)) {
+    assert.equal(abroad.tax, 0);
+    assert.equal(abroad.currency, 'GBP');
+  }
 });
 
-test('a la carte sums the programmes on that level', () => {
-  assert.deepEqual(programmesForLevel('primary_secondary', 'a_la_carte').map((item) => item.id), ['primary']);
+test('a la carte sums the selected programmes and categories by the seat count', () => {
+  const alaCarte = programmesForLevel('primary_secondary', 'a_la_carte').map((item) => item.id);
+  assert.ok(alaCarte.includes('primary'));
+  assert.ok(alaCarte.includes('maths'));
+  assert.equal(alaCarte.includes('lower-secondary'), false);
   assert.ok(programmesForLevel('primary_secondary', 'subscription').some((item) => item.id === 'lower-secondary'));
   const priced = priceInstitutionOrder({
     planId: 'primary_secondary',
@@ -108,10 +117,11 @@ test('a la carte sums the programmes on that level', () => {
   });
   assert.ok(!('error' in priced));
   if (!('error' in priced)) {
-    assert.equal(priced.subtotal, 49);
-    assert.equal(priced.tax, 3.92);
+    assert.equal(priced.subtotal, 7219.2);
+    assert.equal(priced.tax, 577.54);
     assert.equal(priced.seats, 20);
-    assert.equal(priced.sparks, 6000);
+    assert.equal(priced.sparks, 120);
+    assert.equal(priced.lines[0]?.seats, 20);
   }
   const mixed = priceInstitutionOrder({
     planId: 'primary_secondary',
