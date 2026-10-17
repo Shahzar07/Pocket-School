@@ -27,6 +27,10 @@ import { CountrySelect, PhoneField } from '@/components/country-select';
 import { readGeoCountry } from '@/lib/countries';
 import { useWhiteLabel } from '@/components/white-label-provider';
 import { passwordAccepts, signupDecision } from '@/lib/academy-settings';
+import { SelfJoinPicker } from '@/components/institutions/self-join-picker';
+import { listSelfJoinInstitutions, redeemInviteCode, submitSelfJoin } from '@/lib/institution-membership-store';
+import type { JoinDirectoryRow, JoinRole } from '@/lib/institution-membership';
+import { statesForCountry } from '@/lib/institution-states';
 
 const ROLES = [
   { id: 'student', titleKey: 'signup.student', icon: <GraduationCap className="w-5 h-5" /> },
@@ -67,6 +71,22 @@ export default function SignupPage() {
   }, []);
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('student');
+  const [joinPath, setJoinPath] = useState<'independent' | 'institution'>('independent');
+  const [joinState, setJoinState] = useState('');
+  const [joinInstitution, setJoinInstitution] = useState('');
+  const [listed, setListed] = useState<JoinDirectoryRow[]>([]);
+  const [inviteCode, setInviteCode] = useState('');
+  useEffect(() => {
+    const states = statesForCountry(country);
+    setJoinState((current) => (states as readonly string[]).includes(current) ? current : states[0] ?? '');
+  }, [country]);
+  useEffect(() => {
+    if (joinPath !== 'institution' || !country || !joinState) {
+      setListed([]);
+      return;
+    }
+    listSelfJoinInstitutions(country, joinState).then(setListed).catch(() => setListed([]));
+  }, [joinPath, country, joinState]);
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get('role');
     if (requested === 'student' || requested === 'teacher' || requested === 'parent') setRole(requested);
@@ -107,6 +127,33 @@ export default function SignupPage() {
     setPathway(suggestedPlacement.programme);
     setYearGroup(suggestedPlacement.year);
   }, [role, placementEdited, suggestedPlacement]);
+
+  const finishJoin = async (uid: string, account?: { email?: string | null; name?: string | null }) => {
+    if (joinPath !== 'institution') return;
+    const joinRole: JoinRole = role === 'teacher' || role === 'parent' ? role : 'student';
+    const address = (account?.email || email).trim();
+    const person = (account?.name || name).trim();
+    const childEmails = childEmail.trim() ? [childEmail.trim().toLowerCase()] : [];
+    try {
+      if (inviteCode.trim()) {
+        const result = await redeemInviteCode({
+          userId: uid, email: address, code: inviteCode, role: joinRole, name: person, childEmails,
+        });
+        toast.message(result === 'joined' ? 'Joined with the invite code.' : 'Request sent to the institution.');
+        return;
+      }
+      if (!joinInstitution) {
+        toast.message('No listed institution was selected, so this account stays independent.');
+        return;
+      }
+      await submitSelfJoin({
+        userId: uid, institutionId: joinInstitution, role: joinRole, name: person, email: address, childEmails,
+      });
+      toast.message('Request sent. The institution admin assigns the level, classes, and courses.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not send the join request.');
+    }
+  };
 
   const routeAfterSignup = (r: string) => {
     if (r === 'teacher') router.push('/dashboard/teacher');
@@ -170,6 +217,7 @@ export default function SignupPage() {
             toast.error(error instanceof Error ? error.message : t('signup.placementFailed'));
           });
         }
+        await finishJoin(result.user.uid, { email: result.user.email, name: result.user.displayName });
       }
       const existing = snap.exists() ? snap.data() : { role };
       routeAfterSignup(existing.role || role);
@@ -292,6 +340,7 @@ export default function SignupPage() {
       });
     }
     toast.success(t('signup.welcome'));
+    await finishJoin(result.user.uid, { email: result.user.email, name });
     routeAfterSignup(role);
   };
 
@@ -455,6 +504,25 @@ export default function SignupPage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="mb-6">
+            <SelfJoinPicker
+              path={joinPath}
+              country={country}
+              state={joinState}
+              institutionId={joinInstitution}
+              institutions={listed}
+              inviteCode={inviteCode}
+              childEmails={childEmail}
+              showChildren={false}
+              onPath={setJoinPath}
+              onCountry={setCountry}
+              onState={setJoinState}
+              onInstitution={setJoinInstitution}
+              onInviteCode={setInviteCode}
+              onChildEmails={setChildEmail}
+            />
           </div>
 
           <button

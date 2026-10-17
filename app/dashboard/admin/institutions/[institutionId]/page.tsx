@@ -243,6 +243,8 @@ export default function InstitutionConsolePage() {
           poNumber: profile.poNumber,
           parentInstitutionId: profile.parentInstitutionId,
           isolateData: profile.isolateData,
+          state: profile.state,
+          listedForSelfJoin: profile.listedForSelfJoin,
         };
         await saveInstitutionPublic(institutionId, { name: action.name.trim() });
         await saveInstitutionProfile(institutionId, next);

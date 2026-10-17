@@ -45,7 +45,7 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
 };
 
 export default function StudentBillingPage() {
-  const { user } = useAuthSTORE();
+  const { user, profile } = useAuthSTORE();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -110,6 +110,11 @@ export default function StudentBillingPage() {
           <span className="gradient-text italic">Billing</span>
         </h1>
         <p className="text-sm text-muted-foreground mt-2 max-w-2xl">{PAYER_NOTE}</p>
+        {profile?.institutionId && (
+          <p className="text-sm mt-3 max-w-2xl rounded-2xl border border-border bg-card px-4 py-3">
+            Your institution pays this seat. Poket School does not charge you for it. Marketplace courses are a separate purchase with a card or the wallet. Sparks cannot buy them.
+          </p>
+        )}
         {user && invoices.length > 0 && (
           <div className="mt-4">
             <DocumentDelivery

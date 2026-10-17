@@ -35,7 +35,19 @@ export async function POST(req: NextRequest) {
       data: { object: event.data.object as unknown as Record<string, unknown> },
     });
 
-    if (parsed.type === 'unified_paid') {
+    if (parsed.type === 'institution_paid') {
+      const { markInstitutionPaid } = await import('@/lib/server/institution-billing');
+      await markInstitutionPaid(parsed.institutionId, parsed.interval);
+    } else if (parsed.type === 'individual_paid') {
+      const { markIndividualPaid } = await import('@/lib/server/institution-billing');
+      await markIndividualPaid(parsed.uid, parsed.planId, parsed.interval);
+    } else if (parsed.type === 'institution_payment_failed') {
+      const { markInstitutionFailed } = await import('@/lib/server/institution-billing');
+      await markInstitutionFailed(parsed.institutionId);
+    } else if (parsed.type === 'individual_payment_failed') {
+      const { markIndividualFailed } = await import('@/lib/server/institution-billing');
+      await markIndividualFailed(parsed.uid);
+    } else if (parsed.type === 'unified_paid') {
       await fulfillCheckout(parsed.checkoutId, {
         eventId: parsed.eventId,
         provider: 'stripe',

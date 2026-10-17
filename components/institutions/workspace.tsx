@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { AllocationPicker } from '@/components/allocation-picker';
 import { CountrySelect, PhoneField } from '@/components/country-select';
+import { statesForCountry } from '@/lib/institution-states';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { buildXlsx } from '@/lib/insights/xlsx';
@@ -270,7 +271,24 @@ function ProfileTab({
           </select>
         </label>
       </div>
-      <CountrySelect label="Country" value={draft.country} onChange={(country) => setDraft({ ...draft, country })} />
+      <CountrySelect label="Country" value={draft.country} onChange={(country) => {
+        const states = statesForCountry(country);
+        setDraft({ ...draft, country, state: states.includes(draft.state) ? draft.state : states[0] ?? '' });
+      }} />
+      <label className="text-sm">State
+        <select aria-label="State" value={draft.state} onChange={(event) => setDraft({ ...draft, state: event.target.value })} disabled={!superAdmin} className="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3">
+          {statesForCountry(draft.country).map((state) => <option key={state} value={state}>{state}</option>)}
+        </select>
+      </label>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={draft.listedForSelfJoin}
+          disabled={!superAdmin}
+          onChange={(event) => setDraft({ ...draft, listedForSelfJoin: event.target.checked })}
+        />
+        Listed for self-join. Students, parents, and teachers can request to join from signup.
+      </label>
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="text-sm">Address<Input value={draft.address.line1} onChange={(event) => setDraft({ ...draft, address: { ...draft.address, line1: event.target.value } })} className="mt-1 h-11 rounded-xl" /></label>
         <label className="text-sm">City<Input value={draft.address.city} onChange={(event) => setDraft({ ...draft, address: { ...draft.address, city: event.target.value } })} className="mt-1 h-11 rounded-xl" /></label>
