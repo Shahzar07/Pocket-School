@@ -209,7 +209,7 @@ const CSS = `
   width: 36px;
   height: 36px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #1E6A83 0%, #2786A4 50%, #6FBBCE 100%);
+  background: var(--ps-hero);
   flex-shrink: 0;
 }
 .pk-nav { display: flex; flex-direction: column; gap: 4px; overflow: auto; }
@@ -270,7 +270,7 @@ const CSS = `
 }
 .pk-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .pk-header {
-  background: linear-gradient(135deg, #1E6A83 0%, #2786A4 50%, #6FBBCE 100%);
+  background: var(--ps-hero);
   color: #fff;
   padding: 22px 20px 28px;
   border-radius: 0 0 28px 28px;
@@ -354,7 +354,7 @@ const CSS = `
   box-shadow: var(--shadow);
   padding: 16px;
 }
-.pk-cover { height: 96px; border-radius: 18px; background: linear-gradient(135deg, #1E6A83 0%, #2786A4 50%, #6FBBCE 100%); }
+.pk-cover { height: 96px; border-radius: 18px; background: var(--ps-hero); }
 .pk-pills { display: flex; gap: 8px; flex-wrap: wrap; }
 .pk-pill {
   display: inline-flex;
@@ -388,7 +388,7 @@ const CSS = `
   color: var(--ink);
   font-weight: 700;
 }
-.pk-choice.is-primary { background: #2786A4; color: #fff; border-color: #2786A4; }
+.pk-choice.is-primary { background: #3FE0D0; color: #203337; border-color: #1E6A83; }
 .pk-tabs {
   position: fixed;
   left: 0;
@@ -416,7 +416,7 @@ const CSS = `
   font-size: 11px;
   font-weight: 700;
 }
-.pk-tab.is-on { color: #2786A4; background: var(--mint); }
+.pk-tab.is-on { color: #1E6A83; background: var(--mint); }
 .pk-days { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); padding: 0 8px; }
 .pk-ring-wrap { display: flex; align-items: center; gap: 16px; }
 @media (min-width: 800px) {

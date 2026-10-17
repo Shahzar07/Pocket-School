@@ -19,7 +19,7 @@ const CSS = `
   font-family: var(--font-sans), "Plus Jakarta Sans", sans-serif;
 }
 .hk-header {
-  background: linear-gradient(135deg, #1E6A83 0%, #2786A4 50%, #6FBBCE 100%);
+  background: var(--ps-hero);
   color: #fff;
   padding: 28px 20px 36px;
   border-radius: 0 0 28px 28px;
@@ -55,8 +55,9 @@ const CSS = `
   padding: 0 16px;
   font: inherit;
   font-weight: 700;
-  background: #2786A4;
-  color: #fff;
+  background: #3FE0D0;
+  color: #203337;
+  border: 1px solid #1E6A83;
   display: inline-flex;
   align-items: center;
   gap: 8px;

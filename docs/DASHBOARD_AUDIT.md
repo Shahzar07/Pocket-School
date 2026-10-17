@@ -1167,6 +1167,402 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** The region comes from the school, never a home address.
 - **Owner keys:** None.
 
+### Welcome course
+
+- **Route:** `/dashboard/welcome`
+- **Audience:** everyone
+- **Purpose:** The first-run welcome session. It plays once, then the learner continues into the dashboard.
+- **Overlaps:** Student home.
+- **Decision:** Keep as the onboarding player. It is not a second home.
+- **Owner keys:** None.
+
+### Alumni home
+
+- **Route:** `/dashboard/alumni`
+- **Audience:** everyone
+- **Purpose:** An alumni landing page for certificates already issued and the profile a school is allowed to see.
+- **Overlaps:** Student certificates and the institution alumni desk.
+- **Decision:** Keep. Certificates stay on the student certificates page.
+- **Owner keys:** None.
+
+### Recruiter desk
+
+- **Route:** `/dashboard/recruiter`
+- **Audience:** everyone
+- **Purpose:** A recruiter searches shared talent lists. A list appears only after a school shares it.
+- **Overlaps:** Institution career desk.
+- **Decision:** Keep. Recruiters never see a list the school has not shared.
+- **Owner keys:** None.
+
+### Safety alert
+
+- **Route:** `/dashboard/safety/[id]`
+- **Audience:** everyone
+- **Purpose:** One safeguarding notice: who needs help, and the family contact decision.
+- **Overlaps:** Safety Desk and the student safety report.
+- **Decision:** Keep. The notice is one record, not a second queue.
+- **Owner keys:** None.
+
+### Staff roll call
+
+- **Route:** `/dashboard/staff/roll-call`
+- **Audience:** teacher, admin, institution
+- **Purpose:** Staff mark who is accounted for during an all-staff alert.
+- **Overlaps:** Emergency alerts.
+- **Decision:** Keep for the all-staff check-in. It does not publish an alert.
+- **Owner keys:** None.
+
+### My academy
+
+- **Route:** `/dashboard/student/academy`
+- **Audience:** student
+- **Purpose:** The student’s academy home: classes, people, and the school they belong to.
+- **Overlaps:** Class network and yearbook.
+- **Decision:** Keep as the academy front door.
+- **Owner keys:** None.
+
+### Class network
+
+- **Route:** `/dashboard/student/network`
+- **Audience:** student
+- **Purpose:** The class network for the student’s school, including alumni posts they are allowed to see.
+- **Overlaps:** Community and the professional network.
+- **Decision:** Keep. Visibility still follows the network and safety gates.
+- **Owner keys:** None.
+
+### Yearbook
+
+- **Route:** `/dashboard/student/yearbook`
+- **Audience:** student
+- **Purpose:** A student’s yearbook page: quote, clubs, photo, and who is allowed to see it. Under-18 pages need a parent.
+- **Overlaps:** Class network.
+- **Decision:** Keep. Sharing stays with the student and, for minors, the parent.
+- **Owner keys:** None.
+
+### Career
+
+- **Route:** `/dashboard/student/career`
+- **Audience:** student
+- **Purpose:** The student’s skills passport and the teacher references written for them.
+- **Overlaps:** Portfolio and teacher references.
+- **Decision:** Keep. The student reads references; teachers write them.
+- **Owner keys:** None.
+
+### CV and portfolio
+
+- **Route:** `/dashboard/student/portfolio`
+- **Audience:** student
+- **Purpose:** The student’s CV and portfolio, including what a school or recruiter may see.
+- **Overlaps:** Career and certificates.
+- **Decision:** Keep. The public portfolio is a separate share link.
+- **Owner keys:** None.
+
+### My progress
+
+- **Route:** `/dashboard/student/progress`
+- **Audience:** student
+- **Purpose:** The student’s own progress alerts: what is slipping and what to do next.
+- **Overlaps:** Analytics and parent progress.
+- **Decision:** Keep. Parents and teachers have their own read views.
+- **Owner keys:** None.
+
+### Report a concern
+
+- **Route:** `/dashboard/student/safety`
+- **Audience:** student
+- **Purpose:** A student reports a safety or bullying concern, including an anonymous report to the Safety Desk.
+- **Overlaps:** Safety Desk and the school hotline.
+- **Decision:** Keep. Anonymous reports do not put the student’s name on the push.
+- **Owner keys:** None.
+
+### Child progress
+
+- **Route:** `/dashboard/parent/progress`
+- **Audience:** parent
+- **Purpose:** A parent’s view of a linked child’s progress alerts.
+- **Overlaps:** Parent home and student progress.
+- **Decision:** Keep as a read view. Parents do not edit the student’s plan.
+- **Owner keys:** None.
+
+### Class risk
+
+- **Route:** `/dashboard/teacher/progress`
+- **Audience:** teacher
+- **Purpose:** Teachers see which learners in their classes are at risk and what the alert says.
+- **Overlaps:** Institution at-risk learners.
+- **Decision:** Keep scoped to the teacher’s classes.
+- **Owner keys:** None.
+
+### Teacher references
+
+- **Route:** `/dashboard/teacher/references`
+- **Audience:** teacher
+- **Purpose:** A teacher writes a reference that can appear on a student’s career page.
+- **Overlaps:** Student career.
+- **Decision:** Keep. The student does not edit the reference.
+- **Owner keys:** None.
+
+### ET Essays
+
+- **Route:** `/dashboard/studio/essays`
+- **Audience:** everyone
+- **Purpose:** ET AI Essay Writer inside the studio. The learner drafts; a teacher can review.
+- **Overlaps:** Teacher essay review.
+- **Decision:** Keep under the studio hub.
+- **Owner keys:** OPENROUTER_API_KEY
+
+### Essay review
+
+- **Route:** `/dashboard/studio/essays/review`
+- **Audience:** teacher
+- **Purpose:** A teacher reviews an essay draft from ET Essays.
+- **Overlaps:** ET Essays.
+- **Decision:** Keep. Review is separate from the learner’s draft.
+- **Owner keys:** OPENROUTER_API_KEY
+
+### AI Teachers
+
+- **Route:** `/dashboard/studio/teachers`
+- **Audience:** everyone
+- **Purpose:** The studio list of ET subject teachers a learner can open.
+- **Overlaps:** The public AI Teachers pages.
+- **Decision:** Keep. Studio conversations stay inside the dashboard.
+- **Owner keys:** OPENROUTER_API_KEY
+
+### AI Teacher conversation
+
+- **Route:** `/dashboard/studio/teachers/[teacherId]`
+- **Audience:** everyone
+- **Purpose:** One ET subject teacher conversation inside the studio.
+- **Overlaps:** AI Teachers list.
+- **Decision:** Keep. Unknown teacher ids return to the list.
+- **Owner keys:** OPENROUTER_API_KEY
+
+### Automation rules
+
+- **Route:** `/dashboard/admin/automation`
+- **Audience:** admin
+- **Purpose:** Super admins edit the automation rules. Institution admins only read them.
+- **Overlaps:** Institution automation.
+- **Decision:** Keep. Only a super admin can save a rule.
+- **Owner keys:** None.
+
+### Blog
+
+- **Route:** `/dashboard/admin/blog`
+- **Audience:** admin
+- **Purpose:** Super admins draft and publish the public Poket School blog.
+- **Overlaps:** The public blog.
+- **Decision:** Keep. Publishing stays with super admins.
+- **Owner keys:** None.
+
+### Help articles
+
+- **Route:** `/dashboard/admin/help`
+- **Audience:** admin
+- **Purpose:** Published help articles are what the help centre and ET AI answer from.
+- **Overlaps:** Help centre.
+- **Decision:** Keep as the only editor for help articles.
+- **Owner keys:** OPENROUTER_API_KEY
+
+### Platform insights
+
+- **Route:** `/dashboard/admin/insights`
+- **Audience:** admin
+- **Purpose:** Census, programme revenue, and platform progress alerts for staff.
+- **Overlaps:** Institution insights.
+- **Decision:** Keep. Platform scope is separate from one school.
+- **Owner keys:** None.
+
+### School leads
+
+- **Route:** `/dashboard/admin/schools`
+- **Audience:** admin
+- **Purpose:** School leads waiting to become institutions, plus the homepage school-strip threshold.
+- **Overlaps:** Institution onboarding.
+- **Decision:** Keep for super admins. Approving a school starts institution onboarding.
+- **Owner keys:** None.
+
+### Placement
+
+- **Route:** `/dashboard/admin/placement`
+- **Audience:** admin
+- **Purpose:** Staff place courses and learners on Primary, Lower Secondary, IGCSE, A-Level, or a professional programme.
+- **Overlaps:** Institution join settings.
+- **Decision:** Keep. Levels use the named programmes, not year numbers.
+- **Owner keys:** None.
+
+### Institution pricing
+
+- **Route:** `/dashboard/admin/institution-pricing`
+- **Audience:** admin
+- **Purpose:** Platform prices for institution plans. Schools read the result on their own pricing page.
+- **Overlaps:** Institution pricing.
+- **Decision:** Keep. A school does not set the platform price.
+- **Owner keys:** None.
+
+### Local emergency numbers
+
+- **Route:** `/dashboard/admin/emergency-numbers`
+- **Audience:** admin
+- **Purpose:** The local emergency numbers shown with an alert, by country.
+- **Overlaps:** Emergency alerts.
+- **Decision:** Keep. Numbers are reference data, not an alert.
+- **Owner keys:** None.
+
+### Safety Desk
+
+- **Route:** `/dashboard/admin/safety-desk`
+- **Audience:** admin
+- **Purpose:** The Safety Desk queue for reports addressed to the desk, including anonymous ones.
+- **Overlaps:** Student safety reports and the hotline.
+- **Decision:** Keep. Desk leads see the queue. Anonymous names stay off the push.
+- **Owner keys:** None.
+
+### Activity log
+
+- **Route:** `/dashboard/institution/activity`
+- **Audience:** institution
+- **Purpose:** What changed in this institution: joins, approvals, and settings.
+- **Overlaps:** Admin audit log.
+- **Decision:** Keep scoped to one institution.
+- **Owner keys:** None.
+
+### Alumni verification
+
+- **Route:** `/dashboard/institution/alumni`
+- **Audience:** institution
+- **Purpose:** The school verifies alumni and decides what they can see.
+- **Overlaps:** Alumni destinations and the alumni home.
+- **Decision:** Keep. Verification is the school’s decision.
+- **Owner keys:** None.
+
+### Approvals
+
+- **Route:** `/dashboard/institution/approvals`
+- **Audience:** institution
+- **Purpose:** Pending students, parents, and teachers. A student is assigned a level when approved.
+- **Overlaps:** Join settings.
+- **Decision:** Keep. Approval is the gate into the school.
+- **Owner keys:** None.
+
+### School automation
+
+- **Route:** `/dashboard/institution/automation`
+- **Audience:** institution
+- **Purpose:** A read-only view of the automation rules a super admin can change.
+- **Overlaps:** Admin automation.
+- **Decision:** Keep read-only. Institution admins do not edit the rules here.
+- **Owner keys:** None.
+
+### Institution billing
+
+- **Route:** `/dashboard/institution/billing`
+- **Audience:** institution
+- **Purpose:** The school’s subscription, renewal, and the lower tier that applies at renewal.
+- **Overlaps:** Usage and admin finance.
+- **Decision:** Keep. Test mode can apply a change without a card.
+- **Owner keys:** Stripe and the other payment keys in Integrations.
+
+### Career desk
+
+- **Route:** `/dashboard/institution/career`
+- **Audience:** institution
+- **Purpose:** Skill map, opportunities, and alumni giving for this school.
+- **Overlaps:** Student career and the recruiter desk.
+- **Decision:** Keep. Sharing a list with a recruiter is a separate step.
+- **Owner keys:** None.
+
+### Alumni destinations
+
+- **Route:** `/dashboard/institution/destinations`
+- **Audience:** institution
+- **Purpose:** Where alumni went, and the verification requests still open.
+- **Overlaps:** Alumni verification.
+- **Decision:** Keep with the alumni desk.
+- **Owner keys:** None.
+
+### School insights
+
+- **Route:** `/dashboard/institution/insights`
+- **Audience:** institution
+- **Purpose:** Alumni count, seats freed, and certificates for this institution.
+- **Overlaps:** Platform insights.
+- **Decision:** Keep scoped to one school.
+- **Owner keys:** None.
+
+### Join settings
+
+- **Route:** `/dashboard/institution/join`
+- **Audience:** institution
+- **Purpose:** Who can join this school, and the claim links sent to families.
+- **Overlaps:** Approvals and public join pages.
+- **Decision:** Keep. Join rules save for this institution only.
+- **Owner keys:** None.
+
+### Institution onboarding
+
+- **Route:** `/dashboard/institution/onboarding`
+- **Audience:** institution
+- **Purpose:** The school’s setup, including the branded login page.
+- **Overlaps:** School leads.
+- **Decision:** Keep. A new school lands here after approval.
+- **Owner keys:** None.
+
+### School pricing
+
+- **Route:** `/dashboard/institution/pricing`
+- **Audience:** institution
+- **Purpose:** How this school’s programme price is shared, and who receives a programme.
+- **Overlaps:** Admin institution pricing.
+- **Decision:** Keep as the school’s view. Platform prices are set by admins.
+- **Owner keys:** None.
+
+### At-risk learners
+
+- **Route:** `/dashboard/institution/progress`
+- **Audience:** institution
+- **Purpose:** Learners in this school whose progress alerts are open.
+- **Overlaps:** Teacher class risk and parent progress.
+- **Decision:** Keep. The school sees its own learners.
+- **Owner keys:** None.
+
+### Course library
+
+- **Route:** `/dashboard/institution/publishing`
+- **Audience:** institution
+- **Purpose:** Teacher courses that pass the content check enter this library. This page is the override.
+- **Overlaps:** CMS and resources.
+- **Decision:** Keep. A passing course publishes itself; this page overrides that.
+- **Owner keys:** None.
+
+### Sparks pool
+
+- **Route:** `/dashboard/institution/sparks`
+- **Audience:** institution
+- **Purpose:** The finite monthly Sparks allowance per student seat. Sparks cannot buy marketplace courses.
+- **Overlaps:** Wallet and usage.
+- **Decision:** Keep. There is no unlimited plan.
+- **Owner keys:** None.
+
+### Usage and cost
+
+- **Route:** `/dashboard/institution/usage`
+- **Audience:** institution
+- **Purpose:** Seats, Sparks, and cost for this institution.
+- **Overlaps:** Institution billing.
+- **Decision:** Keep as the usage view. Invoices stay on billing.
+- **Owner keys:** None.
+
+### Verify a student
+
+- **Route:** `/dashboard/institution/verify`
+- **Audience:** institution
+- **Purpose:** Scan or enter a student number to see name, level, and photo, then approve membership. Parent links for learners under 13 live here too.
+- **Overlaps:** Approvals and the public student-ID check.
+- **Decision:** Keep. The public verify page does not show the student number.
+- **Owner keys:** CARD_TOKEN_SECRET for live student-ID tokens. Without it, verification says it is coming soon.
+
 ### Dashboard session
 
 - **Route:** `/dashboard/session`

@@ -2470,7 +2470,7 @@ Retention: closed alerts stay archived and are not indexed. Retracted alerts are
 
 ## Push categories added
 
-`hotline` and `emergency`, on both `lib/push.ts` and `lib/platform/push.ts`. The reject string is `category must be goals, flags, attendance, digests, grades, assignments, general, alumni, institution, achievements, network, safety, hotline, or emergency.`
+`hotline` and `emergency`, on both `lib/push.ts` and `lib/platform/push.ts`. The reject string is `category must be goals, flags, attendance, digests, grades, assignments, general, progress, alumni, institution, achievements, network, safety, hotline, or emergency.`
 
 Account toggle: `notificationPrefs.hotline`. Emergency alerts are not a preference. `pushBypassesQuietHours` is true for category `emergency`, so an all-staff alert and every other emergency push are delivered during quiet hours and when the device has muted the category.
 

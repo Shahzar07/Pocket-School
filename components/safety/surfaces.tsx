@@ -23,7 +23,7 @@ const STAGE_LABEL: Record<TrackerStage, string> = {
 
 const CSS = `
 .sf { min-height: 100vh; background: #F3F7F8; color: #17343C; font-family: var(--font-sans), "Plus Jakarta Sans", sans-serif; }
-.sf-header { background: linear-gradient(135deg, #1E6A83 0%, #2786A4 50%, #6FBBCE 100%); color: #fff; padding: 28px 20px 36px; border-radius: 0 0 28px 28px; }
+.sf-header { background: var(--ps-hero); color: #fff; padding: 28px 20px 36px; border-radius: 0 0 28px 28px; }
 .sf-kicker { margin: 0; letter-spacing: 0.16em; font-size: 12px; font-weight: 700; text-transform: uppercase; }
 .sf-title { margin: 8px 0 0; font-size: 34px; line-height: 1.1; font-weight: 800; }
 .sf-sub { margin: 8px 0 0; max-width: 560px; font-size: 16px; }
@@ -37,7 +37,7 @@ const CSS = `
 .sf-shield { background: #17343C; color: #fff; }
 .sf-danger { background: #D0553F; color: #fff; width: 100%; }
 .sf-chip { background: #fff; color: #17343C; border: 1px solid #D5E3E7; }
-.sf-btn { background: #2786A4; color: #fff; }
+.sf-btn { background: #3FE0D0; color: #203337; border: 1px solid #1E6A83; }
 .sf-btn.ghost { background: #fff; color: #17343C; border: 1px solid #D5E3E7; }
 .sf-call { margin: 0; font-size: 40px; font-weight: 800; letter-spacing: -0.03em; }
 .sf-note { margin: 6px 0 0; color: #4E6A72; font-size: 14px; }
