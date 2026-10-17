@@ -117,6 +117,7 @@ export function SiteHeader() {
             <Link href="/ai-teachers">{t("header.aiTeachers")}</Link>
             <Link href="/reads">{t("nav.books")}</Link>
             <Link href="/pricing">{t("header.pricing")}</Link>
+            <Link href="/blog" aria-current={pathname.startsWith("/blog") ? "page" : undefined}>{t("header.blog")}</Link>
             {!user && <Link href="/login">{t("header.signIn")}</Link>}
           </nav>
           <div className={styles.headerTools}>
@@ -153,6 +154,7 @@ export function SiteHeader() {
             <Link href="/ai-teachers">{t("header.aiTeachers")}</Link>
             <Link href="/reads">{t("nav.books")}</Link>
             <Link href="/pricing">{t("header.pricing")}</Link>
+            <Link href="/blog">{t("header.blog")}</Link>
             <Link href={user ? dashPath : "/login"}>
               {user ? t("header.dashboard") : t("header.signIn")}
             </Link>

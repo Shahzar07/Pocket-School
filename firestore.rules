@@ -2334,6 +2334,23 @@ service cloud.firestore {
     }
 
     // Public lookup by id for the QR. Listing every card is refused.
+    // Marketing journal. Super admins write. The public site reads published
+    // rows with the Admin SDK, so clients cannot list the desk.
+    match /blogPosts/{slug} {
+      allow get: if callerIsSuper() || resource.data.status == 'published';
+      allow list: if callerIsSuper();
+      allow create, update: if callerIsSuper()
+        && incoming().slug == slug
+        && incoming().title is string
+        && incoming().title.size() > 0
+        && incoming().title.size() < 200
+        && incoming().body is string
+        && incoming().body.size() < 30000
+        && incoming().status in ['draft', 'scheduled', 'published']
+        && incoming().sample == false;
+      allow delete: if callerIsSuper();
+    }
+
     match /published_reports/{token} {
       allow get: if true;
       allow list: if false;
