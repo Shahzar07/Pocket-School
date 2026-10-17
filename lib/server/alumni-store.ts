@@ -33,6 +33,7 @@ import { loadAutomation, logAutomation } from './automation-store';
 import { countInstitutionStudents, loadInstitutionCatalogue } from './institution-catalogue';
 import { sendInstitutionMail } from './institution-mail';
 import { reviewInstitutionTier } from './institution-tier';
+import { closeEducationSpan, unpublishLearnerRecord } from './learner-record-store';
 
 function text(value: unknown): string {
   return typeof value === 'string' ? value : '';
@@ -171,6 +172,11 @@ async function settleGraduate(input: {
   }
   if (!input.studentId) return false;
   await completeInstitutionCourses(input.studentId, institutionId);
+  await closeEducationSpan(input.studentId, institutionId, input.today, {
+    institutionName: person.institutionName,
+    level: person.level,
+    studentNumber: person.studentNumber,
+  });
   await adminDb().doc(`badges/${input.studentId}_graduate`).set({
     userId: input.studentId,
     type: 'graduate',
@@ -497,8 +503,49 @@ export async function sendAlumniLetters(institutionId: string, note: string, act
   return sent;
 }
 
+/** Frees the seat at the academy the learner is leaving for another one. Records stay. */
+export async function transferFromAcademy(fromId: string, uid: string, email: string, today: string): Promise<void> {
+  if (!fromId || !uid) return;
+  const userRef = adminDb().doc(`users/${uid}`);
+  const user = await userRef.get();
+  if (text(user.get('institutionId')) !== fromId) return;
+  const academy = await adminDb().doc(`institutions/${fromId}`).get();
+  const academyName = text(academy.get('name')) || 'the academy';
+  if (email) {
+    const rosterRef = adminDb().doc(`institutions/${fromId}/joinRoster/${rosterKey(email)}`);
+    const roster = await rosterRef.get();
+    const className = text(roster.get('className'));
+    const savedClass = text(roster.get('classNameBefore'));
+    await rosterRef.set({
+      status: 'leaver',
+      className: '',
+      graceEndsOn: FieldValue.delete(),
+      ...(savedClass || !className ? {} : { classNameBefore: className }),
+    }, { merge: true });
+  }
+  await userRef.set({
+    institutionId: FieldValue.delete(),
+    institutionAccess: 'ended',
+  }, { merge: true });
+  await dropUsedLicence(fromId);
+  await reviewInstitutionTier(fromId, today);
+  await closeEducationSpan(uid, fromId, today, {
+    institutionName: academyName,
+    level: text(user.get('academyLevel')),
+    studentNumber: text(user.get('studentNumber')),
+  });
+  await logAutomation({
+    rule: 'learner_record',
+    outcome: 'auto',
+    summary: `The learner moved on from ${academyName}. The student number and earlier history stay on the account.`,
+    actorId: uid,
+    refId: fromId,
+  });
+}
+
 /** Keeps the verify page. The status line says the holder asked for deletion. */
 export async function honourHolderDeletion(uid: string): Promise<number> {
+  await unpublishLearnerRecord(uid);
   const decision = holderDeletion();
   const snap = await adminDb().collection('certificates').where('studentId', '==', uid).limit(100).get();
   let updated = 0;

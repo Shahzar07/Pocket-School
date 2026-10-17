@@ -36,7 +36,7 @@ export default function StudentAcademyPage() {
       <DashHeader
         eyebrow="Student"
         title="My academy"
-        description="An individual account can join an academy later. Progress stays. Leaving moves academy courses to Completed, frees the seat, and keeps this account as an individual with the alumni offer."
+        description="An individual account can join an academy later. The student number stays with this account. Leaving moves academy courses to Completed, frees the seat, and keeps this account as an individual with the alumni offer."
       />
       {profile?.alumniOf && !joined && (
         <GraduationCelebration
@@ -79,10 +79,13 @@ export default function StudentAcademyPage() {
           }}
         />
       )}
+      <a href="/dashboard/student/portfolio" className="inline-flex h-11 items-center rounded-full bg-[#C8922A] px-5 text-sm font-semibold text-[#1A3C34]">
+        CV and portfolio
+      </a>
       {joined ? (
         <Panel>
           <p className="text-sm leading-relaxed">You are with your academy{profile?.academyLevel ? ` on ${profile.academyLevel}` : ''}.</p>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">To transfer, leave this academy and open the next academy’s join page. Courses, badges, and certificates stay on this account.</p>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Joining another academy keeps this student number and the earlier history. The seat here is freed. Courses, badges, and certificates stay on this account.</p>
           <button type="button" disabled={busy} onClick={() => void leave()} className="mt-4 h-11 rounded-full bg-[#1A3C34] px-5 text-sm font-semibold text-white disabled:opacity-60">
             {busy ? 'Leaving…' : 'Leave the academy'}
           </button>

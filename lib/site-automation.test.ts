@@ -21,6 +21,7 @@ test('marketplace listing stays off and the institution library stays on', () =>
   assert.equal(settings.rules.help_et, true);
   assert.equal(settings.rules.institution_join, true);
   assert.equal(settings.rules.alumni_rollover, true);
+  assert.equal(settings.rules.learner_record, true);
   const stored = readAutomation({ rules: { marketplace_listing: true, trialDays: 3, student_refund: 'yes' } });
   assert.equal(stored.rules.marketplace_listing, true);
   assert.equal(stored.rules.student_refund, true);

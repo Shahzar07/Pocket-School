@@ -715,3 +715,93 @@ Further optional fields: `priority` (`low|medium|high`), `reminderTime` (`HH:mm`
 Rules still need an owner deploy.
 
 Sparks amounts for goals live only in `lib/sparks.ts` (`GOAL_ON_TIME_BONUS`, `GOAL_STREAK_BONUS`). The ledger type is `earn`.
+
+## Lifelong learner record
+
+One Poket School account follows the learner. The student number on `users/{uid}` does not change when they join another academy. Mobile clients do not write `studentNumber`, `institutionId`, or `role`.
+
+Joining an academy adds a span and closes the previous open span. Graduation closes the span. Spans are not deleted. A transfer frees the previous academy’s used seat and does not send a graduation letter.
+
+## `users/{uid}/education/{institutionId}`
+
+| Field | Meaning |
+| --- | --- |
+| `institutionId` | Academy id. This is also the document id. |
+| `institutionName` | Academy name at the time of the span |
+| `level` | Level name |
+| `from` | `YYYY-MM-DD` |
+| `to` | `YYYY-MM-DD`, or empty while this academy is current |
+| `studentNumber` | The same number on every span for this account |
+
+The signed-in learner may read and list their own spans. Client creates, updates, and deletes are denied, so the number cannot be edited from the app. The server writes these documents with the Admin SDK.
+
+## `users/{uid}/portfolio/profile`
+
+| Field | Meaning |
+| --- | --- |
+| `publicPortfolio` | Ask for a public page. Default `false` |
+| `parentApproved` | A linked parent sets this. The learner cannot |
+| `sharePortfolioWithSchools` | Former schools may see sections marked for schools. Default `false` |
+| `shareDestinationWithSchools` | Former schools may count the next step. Default `false` |
+| `includeScores` | Unit and final scores on the CV. Default `false` |
+| `template` | `forest`, `gold`, `coral`, or `classic` |
+| `sections` | Map of section id to `private`, `schools`, or `public` |
+| `summary`, `bullets` | Wording the learner saved after reviewing an ET AI draft |
+
+Section ids: `education`, `courses`, `scores`, `certificates`, `badges`, `projects`, `endorsements`, `activities`, `awards`, `experience`, `skills`, `links`.
+
+The learner may update the sharing toggles, template, section map, summary, and bullets. The learner cannot set `parentApproved`. A parent whose `childIds` contain this learner may set `parentApproved` only.
+
+A public page stays off until `publicPortfolio` is true. If `ageTier` is `under13` or `teen`, it also stays off until `parentApproved` is true. A missing age tier is treated as under 13, so the public page stays off.
+
+## `users/{uid}/portfolio_items/{id}`
+
+Self-reported achievements. The learner may create, update, and delete. `source` is `self_reported`. Fields: `kind` (`activity`, `award`, `competition`, `volunteering`, `sport`, `leadership`, `work`, `skill`, `language`, `link`), `title`, `detail`, `when`, `evidenceLink`, `evidencePath`, `section`, `userId`.
+
+`evidenceLink` is empty or an `https://` URL. `evidencePath` is empty or `media/{uid}/portfolio/{itemId}`. Storage rules already let that user write images under `media/{uid}/`. Keep files at or under 5 MB. Do not store a data URL in Firestore.
+
+## Verified inputs the CV reads
+
+These collections are reserved. The CV builder reads them when a document is present. It does not invent a project or an endorsement.
+
+| Collection | Who writes | Notes |
+| --- | --- | --- |
+| `users/{uid}/studio_projects/{id}` | The signed-in learner, from Studio or Research Helper | `title`, `detail` |
+| `users/{uid}/endorsements/{id}` | A teacher at the same academy | `title`, `detail`, `teacherId` |
+
+Certificates stay in `certificates` where `studentId` matches. Badges stay in `badges` where `userId` matches. Scores are read from `grades` and `unit_quiz_attempts` only when `includeScores` is true, and only when a numeric score is already stored.
+
+Verified lines are labelled `Verified by Poket School`. Self-reported lines are labelled `Self-reported`.
+
+## `users/{uid}/destination/current`
+
+The learner’s own next step: `kind` (`university`, `college`, `institution`, `work`, `other`), `name`, `course`, `country`, `source` (`stated` or `detected`), `shareWithSchools`, `shareName`, `testimonial`, `shareTestimonial`, and optional `destinationInstitutionId`. The learner may write this private copy. Sharing with a school is a separate consent flag.
+
+## `learner_destinations/{fromInstitutionId}_{uid}`
+
+One document per former school for this learner. The destination academy itself is not given a row about its own join.
+
+| Field | Meaning |
+| --- | --- |
+| `fromInstitutionId` | The school that may see this row |
+| `studentId` | Learner uid, used to remove the row |
+| `learnerName` | First name and last initial, and only when `shareName` is true. Otherwise empty |
+| `name`, `course`, `country`, `kind` | The next step |
+| `source` | `stated` or `detected` |
+| `shareWithSchools`, `shareName`, `shareTestimonial` | Consent flags |
+| `testimonial` | Optional quote, empty unless the learner opts in |
+
+A school reads with `where('fromInstitutionId', '==', institutionId)`. That is a single-field query. The index is automatic. It is not added to `firestore.indexes.json`. The same is true for `where('studentId', '==', uid)` when a deletion removes the rows.
+
+Counts group by institution, country, and course. A bucket under 5 is omitted. An opted-in name or testimonial is not a count, so it can still be shown.
+
+## `portfolio_public/{studentNumber}`
+
+Public `get` by the student number. `list` is denied. The same pattern as `alumni_public`.
+
+The document stores `name` (first name and last initial), `studentNumber`, `summary`, `qrUrl` (`https://poketschool.ai/portfolio/{studentNumber}`), and the items whose section is `public`. It does not store email, date of birth, or private sections. Certificate links on an item point at `https://poketschool.ai/verify/{id}`.
+
+The server deletes this document when sharing is off, when a learner under 18 has no parent approval, or when account deletion is honoured. The private record remains until the existing 14-day deletion wait finishes. `honourHolderDeletion` turns off public sharing and destination sharing immediately. Certificate pages stay up with `revoked at holder's request`.
+
+Rules still need an owner deploy. These rules are not deployed from this change.
+

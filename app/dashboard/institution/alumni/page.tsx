@@ -41,6 +41,9 @@ export default function InstitutionAlumniPage() {
 
   return (
     <div className="space-y-5">
+      <a href="/dashboard/institution/destinations" className="inline-flex h-11 items-center rounded-full bg-[#3C8DFF] px-5 text-sm font-semibold text-white">
+        Alumni destinations
+      </a>
       <GraduationDesk
         suggestions={suggestions}
         preview={preview}

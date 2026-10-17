@@ -19,6 +19,7 @@ import { ChildExamPrep } from '@/components/study/child-exam-prep';
 import { DashPage, DashHeader } from '@/components/dash-ui';
 import { JoinByCode, type JoinStudentCard } from '@/components/join-by-code';
 import { FinalSummaryCard } from '@/components/alumni/record-panels';
+import { asAgeTier, isMinorTier } from '@/lib/age-tier';
 import { authedFetch } from '@/lib/api-client';
 import dynamic from 'next/dynamic';
 import { SeeMore } from '@/components/shell/see-more';
@@ -292,6 +293,20 @@ export default function ParentDashboard() {
           level={child.profile.academyLevel || (typeof child.profile.level === 'string' ? child.profile.level : '')}
           certificates={child.certificates.length}
         />
+      ))}
+      {children.filter((child) => isMinorTier(asAgeTier(child.profile.ageTier))).map((child) => (
+        <button
+          key={child.id}
+          type="button"
+          className="rounded-full bg-[#1A3C34] px-4 py-2 text-sm font-semibold text-white"
+          onClick={() => {
+            void authedFetch('/api/portfolio', { method: 'POST', body: JSON.stringify({ action: 'parent-approve', studentId: child.id }) })
+              .then(() => toast.success('The public portfolio can be turned on.'))
+              .catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not approve the portfolio.'));
+          }}
+        >
+          Approve public portfolio for {child.profile.name || 'your child'}
+        </button>
       ))}
 
       {/* ── Today's Goals ── */}

@@ -26,7 +26,8 @@ import {
   type RosterEntry,
   type SeatPool,
 } from '../institution-join';
-import { beginAlumni, releaseAlumniSeat } from './alumni-store';
+import { beginAlumni, releaseAlumniSeat, transferFromAcademy } from './alumni-store';
+import { closeEducationSpan, noteDetectedDestination, openEducationSpan } from './learner-record-store';
 import { loadAutomation, logAutomation } from './automation-store';
 import { sendInstitutionMail } from './institution-mail';
 import { syncWelcome } from './onboarding-store';
@@ -279,9 +280,38 @@ export async function attachJoin(input: {
         if (childId) patch.childIds = FieldValue.arrayUnion(childId);
       }
     }
+    const today = todayIso();
+    const liveAcademy = text(user.institutionId);
+    if (input.attempt.role === 'student' && liveAcademy && liveAcademy !== academy.id) {
+      await transferFromAcademy(liveAcademy, input.uid, row.email, today);
+    }
     const previousAcademy = text(user.alumniOf);
-    if (previousAcademy && previousAcademy !== academy.id) await releaseAlumniSeat(previousAcademy, input.uid, todayIso());
+    if (previousAcademy && previousAcademy !== academy.id) {
+      await releaseAlumniSeat(previousAcademy, input.uid, today);
+      if (input.attempt.role === 'student' && previousAcademy !== liveAcademy) {
+        await closeEducationSpan(input.uid, previousAcademy, today, {
+          institutionName: text(user.alumniName) || 'Academy',
+          level: text(user.academyLevel),
+          studentNumber: text(user.studentNumber),
+        });
+      }
+    }
     await userRef.set(patch, { merge: true });
+    if (input.attempt.role === 'student') {
+      await openEducationSpan(input.uid, {
+        institutionId: academy.id,
+        institutionName: academy.name,
+        level: decision.level || row.level,
+        studentNumber: text(user.studentNumber),
+      }, today);
+      const automation = await loadAutomation();
+      await noteDetectedDestination(input.uid, {
+        institutionId: academy.id,
+        institutionName: academy.name,
+        level: decision.level || row.level,
+        ruleOn: automation.rules.learner_record,
+      });
+    }
     if (decision.seat === 'auto_add') {
       const bill = adminDb().doc(`institutions/${academy.id}/billing/current`);
       const snap = await bill.get();
@@ -329,7 +359,10 @@ export async function attachJoin(input: {
   }
   const creditLine = credit != null ? ` A credit of ${credit.toFixed(2)} is offered for the unused days on the personal plan.` : '';
   const progress = decision.status === 'approved' ? ' Progress stays with this account.' : '';
-  return { ...preview, credit, message: `${decision.message}${progress}${creditLine}` };
+  const numberLine = decision.status === 'approved' && input.attempt.role === 'student'
+    ? ' Your student number stays with this account.'
+    : '';
+  return { ...preview, credit, message: `${decision.message}${progress}${creditLine}${numberLine}` };
 }
 
 export async function leaveInstitution(uid: string): Promise<{ progressKept: true; account: 'individual'; institutionAccess: 'grace' | 'ended'; graceEndsOn: string } | { error: string }> {
