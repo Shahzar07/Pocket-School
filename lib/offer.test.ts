@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { OFFER_BUNDLE_EXTRAS, offerIncludedFeatures, offerPlans, offerPublicStrings } from './offer';
+import { OFFER_BUNDLE_EXTRAS, OFFER_ROUTES, offerIncludedFeatures, offerPlans, offerPublicStrings } from './offer';
+import { readsPlanItem } from './payments/reads';
 
 const FORBIDDEN = [
   /\bPROPOSED\b/i,
@@ -39,6 +40,16 @@ test('bundle extras follow OFFER_BUNDLE_EXTRAS and default on', () => {
   assert.equal(readsOff, false);
 
   const reads = offerPlans(true).find((plan) => plan.id === 'reads');
-  assert.equal(reads?.price, 'Coming soon');
-  assert.equal(reads?.price.includes('$'), false);
+  const month = readsPlanItem('reads', 'month');
+  const year = readsPlanItem('reads', 'year');
+  const familyMonth = readsPlanItem('reads-family', 'month');
+  const familyYear = readsPlanItem('reads-family', 'year');
+  assert.ok(month && year && familyMonth && familyYear);
+  assert.equal(reads?.price, `$${month.unitAmount}/mo`);
+  assert.equal(reads?.priceNote, `$${year.unitAmount}/yr`);
+  assert.equal(reads?.href, '/reads/offer');
+  assert.equal(reads?.href, OFFER_ROUTES.reads);
+  assert.equal(reads?.features.includes(`Reads Family $${familyMonth.unitAmount}/mo or $${familyYear.unitAmount}/yr`), true);
+  assert.equal(reads?.price.includes('Coming soon'), false);
+  assert.equal(offerPublicStrings().some((line) => line === 'Coming soon'), false);
 });
