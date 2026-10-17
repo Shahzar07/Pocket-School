@@ -155,7 +155,8 @@ service cloud.firestore {
               'twoFactorEnabled', 'sessionsRevokedAt', 'deletionRequest',
               'email', 'updatedAt', 'onboardedAt', 'studyDates',
               'lastActiveAt', 'region', 'parentContacts',
-              'emergencyOptIn', 'currentCountry', 'homeCountry'];
+              'emergencyOptIn', 'currentCountry', 'homeCountry',
+              'dashboardTileOrder', 'dashboardCoachSeen'];
     }
 
     function verificationUntouched() {

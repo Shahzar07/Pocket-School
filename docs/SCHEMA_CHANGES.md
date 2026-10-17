@@ -2985,3 +2985,16 @@ Workflow `POST /api/progress-alerts` also accepts `act`, `seen`, `parent_act`, `
 `progress_alert_wins/{institutionId}_{week}` stores `{ institutionId, week, lines, sent }`. The Monday cron sends one supportive summary and sets `sent`.
 
 `GET /api/progress-alerts` adds `stats` (open, overdue, average response, recovered, parent engagement, intervention success) and `levelStats`. Engagement and success rates are omitted when the group has fewer than five learners. The institution and Insights screens can filter the named list by class and level.
+
+## Dashboard home
+
+The role homes (student, parent, teacher, institution admin, super admin, alumni, recruiter) share `components/dashboard` and the category map in `lib/dashboard/home.ts`. The layout, icons, colours, and navigation rules are written up in `docs/DASHBOARD_UX.md`. The mobile app should follow that file rather than inventing a second home.
+
+Tile order is a preference. The web app keeps it in `localStorage` (`poket-dash-tiles:{role}`, a JSON array of tile ids). When the app stores it, use the signed-in user document:
+
+| Field | Type | Notes |
+|---|---|---|
+| `dashboardTileOrder` | map | Keys are the role names in `DASH_ROLES`. Each value is a string array of tile ids from `roleHome(role).tiles`. Unknown ids are ignored. New tiles are appended. |
+| `dashboardCoachSeen` | map | Role name to `true` once the person dismisses the onboarding note. The note links to the onboarding course. |
+
+`firestore.rules` adds both names to `selfServiceFields()`, so a person can update only their own copy. That rules change is in the repo and is not deployed by this work. The web home still keeps the order in the browser until a client writes the field. These fields do not grant access to another role’s data. Alumni and recruiter shells do not add a collection. Talent lists stay with the school that shares them.
