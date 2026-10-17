@@ -16,6 +16,10 @@ export type ParsedStripeEvent =
   | { type: 'dispute'; eventId: string; disputeId: string; amount: number; currency: string; reason: string; chargeId: string }
   | { type: 'refund'; eventId: string; checkoutId?: string; amount: number; currency: string; chargeId: string }
   | { type: 'subscription_ended'; eventId: string; subscriptionId: string; uid?: string }
+  | { type: 'institution_paid'; eventId: string; institutionId: string; interval: 'monthly' | 'annual' }
+  | { type: 'individual_paid'; eventId: string; uid: string; interval: 'monthly' | 'annual'; planId: string }
+  | { type: 'institution_payment_failed'; eventId: string; institutionId: string }
+  | { type: 'individual_payment_failed'; eventId: string; uid: string }
   | { type: 'ignored'; eventId: string };
 
 function str(value: unknown): string {
@@ -41,6 +45,23 @@ export function parseStripeEvent(event: StripeEventLike): ParsedStripeEvent {
     const currency = str(object.currency).toUpperCase() || 'USD';
     const paymentIntentId = str(object.payment_intent) || undefined;
     const providerRef = str(object.id) || event.id;
+    if (metadata.kind === 'institution_billing' && metadata.institutionId) {
+      return {
+        type: 'institution_paid',
+        eventId: event.id,
+        institutionId: metadata.institutionId,
+        interval: metadata.interval === 'monthly' ? 'monthly' : 'annual',
+      };
+    }
+    if (metadata.kind === 'individual_billing' && metadata.uid) {
+      return {
+        type: 'individual_paid',
+        eventId: event.id,
+        uid: metadata.uid,
+        interval: metadata.interval === 'monthly' ? 'monthly' : 'annual',
+        planId: metadata.planId || metadata.tierId || '',
+      };
+    }
     if (metadata.checkoutId) {
       return { type: 'unified_paid', eventId: event.id, checkoutId: metadata.checkoutId, providerRef, paymentIntentId, amount, currency };
     }
@@ -90,6 +111,15 @@ export function parseStripeEvent(event: StripeEventLike): ParsedStripeEvent {
       currency: str(object.currency).toUpperCase() || 'USD',
       chargeId: str(object.id),
     };
+  }
+
+  if (event.type === 'invoice.payment_failed') {
+    if (metadata.kind === 'institution_billing' && metadata.institutionId) {
+      return { type: 'institution_payment_failed', eventId: event.id, institutionId: metadata.institutionId };
+    }
+    if (metadata.kind === 'individual_billing' && metadata.uid) {
+      return { type: 'individual_payment_failed', eventId: event.id, uid: metadata.uid };
+    }
   }
 
   if (event.type === 'customer.subscription.deleted') {

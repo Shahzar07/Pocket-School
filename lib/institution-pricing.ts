@@ -271,6 +271,33 @@ export interface SeatNotices {
   renewal: RenewalReminder;
 }
 
+/**
+ * A higher band must not cost less than the band below it.
+ * The fee is the published band total, so one extra student does not fall off a cliff.
+ */
+export function tierCliff(
+  schedule: InstitutionVolumeSchedule,
+  planId: VolumePlanId,
+  interval: VolumeInterval,
+): { fromLabel: string; toLabel: string } | null {
+  const ordered = [...schedule.tiers].sort((a, b) => a.minStudents - b.minStudents);
+  let previousTotal = -1;
+  let previousLabel = '';
+  for (const tier of ordered) {
+    const quote = quoteInstitution({
+      schedule,
+      seats: tier.minStudents,
+      override: { planId, interval, discountPercent: 0, addons: [], waivePlatformFee: false, customPerStudent: null },
+    });
+    if (previousLabel && quote.total + 0.001 < previousTotal) {
+      return { fromLabel: previousLabel, toLabel: tier.label };
+    }
+    previousTotal = quote.total;
+    previousLabel = tier.label;
+  }
+  return null;
+}
+
 /** Purchased seats pick the tier. Usage above that tier asks for the next one. */
 export function seatNotices(input: {
   schedule: InstitutionVolumeSchedule;

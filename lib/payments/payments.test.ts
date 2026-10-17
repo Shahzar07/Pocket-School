@@ -267,6 +267,14 @@ describe('webhooks are idempotent and verified', () => {
       id: 'evt_reads', type: 'checkout.session.completed',
       data: { object: { metadata: { kind: 'plan', uid: 'u', id: 'reads-family' } } },
     })).toMatchObject({ type: 'legacy_reads', planId: 'reads-family' });
+    expect(parseStripeEvent({
+      id: 'evt_inst', type: 'checkout.session.completed',
+      data: { object: { metadata: { kind: 'institution_billing', institutionId: 'north', interval: 'annual' } } },
+    })).toMatchObject({ type: 'institution_paid', institutionId: 'north', interval: 'annual' });
+    expect(parseStripeEvent({
+      id: 'evt_fail', type: 'invoice.payment_failed',
+      data: { object: { metadata: { kind: 'individual_billing', uid: 'u1' } } },
+    })).toMatchObject({ type: 'individual_payment_failed', uid: 'u1' });
   });
 
   it('accepts a Billplz callback only when the signature matches', () => {

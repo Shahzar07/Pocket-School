@@ -44,6 +44,8 @@ export interface BadgeSource {
   origin: string;
   expiresAt: string | null;
   template: CertificateTemplate;
+  /** Partner endorsement. The issuer stays Poket School. */
+  endorsement?: { name: string; logoUrl?: string; comment: string } | null;
 }
 
 export function issuerOrigin(origin?: string): string {
@@ -114,6 +116,17 @@ export function buildOpenBadge(source: BadgeSource & { identityHash?: string }):
         description: `${moduleTitle} in ${source.courseTitle}. ${CERTIFICATE_DISCLAIMER}`,
         criteria: { narrative: source.template.narrative },
         achievementType: 'Achievement',
+        ...(source.endorsement?.name ? {
+          endorsement: [{
+            type: ['EndorsementSubject'],
+            comment: source.endorsement.comment || `Recognised by ${source.endorsement.name}`,
+            issuer: {
+              type: ['Profile'],
+              name: source.endorsement.name,
+              ...(source.endorsement.logoUrl ? { image: source.endorsement.logoUrl } : {}),
+            },
+          }],
+        } : {}),
         image: {
           id: `${origin}/api/credentials/${source.id}/image`,
           type: 'Image',
