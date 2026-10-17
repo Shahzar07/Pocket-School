@@ -63,8 +63,6 @@ export const BLOCK_DEFS: BlockDef[] = [
   { id: 'summary', icon: '⚡', label: 'Summary' },
   { id: 'problems', icon: '🧮', label: 'Problems', sparks: 5 },
   { id: 'glossary', icon: '📚', label: 'Glossary', sparks: 5 },
-  { id: 'image', icon: '🖼️', label: 'Image', sparks: 10 },
-  { id: 'illustration', icon: '🎨', label: 'Illustration', sparks: 15 },
 ];
 
 export type AiRunOptions = {

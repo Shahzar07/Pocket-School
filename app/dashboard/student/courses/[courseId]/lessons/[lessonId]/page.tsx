@@ -5,9 +5,9 @@ import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'motion/react';
 import { MathMarkdown } from '@/components/math-markdown';
 import { LessonBody } from '@/components/lesson-body';
-import { readLessonBody } from '@/lib/lesson-body';
+import { bodyHasImage, readLessonBody } from '@/lib/lesson-body';
 import { LessonQa } from '@/components/scope-c/lesson-qa';
-import { LessonFigure } from '@/components/lesson-visual';
+import { MediaFigure } from '@/components/media/figure';
 import { normalizeMarkdown } from '@/components/lesson-format-views';
 import { Timestamp } from 'firebase/firestore';
 import { useAuthSTORE } from '@/hooks/use-auth';
@@ -608,6 +608,18 @@ function FormatLockCard({
   );
 }
 
+/** Older lessons stored one picture beside the text. A picture already in the body is not drawn again. */
+function legacyFigure(
+  visual: { url?: string; alt?: string; caption?: string; placement?: 'before' | 'after' } | undefined,
+  where: 'before' | 'after',
+  body: string,
+) {
+  if (!visual?.url || bodyHasImage(body, visual.url)) return null;
+  const placement = visual.placement ?? 'after';
+  if (where === 'before' ? placement !== 'before' : placement === 'before') return null;
+  return <MediaFigure src={visual.url} alt={visual.alt} caption={visual.caption} className="my-6" />;
+}
+
 // ─── Main Page ────────────────────────────────────────────────
 export default function LessonPage() {
   const { t, i18n } = useTranslation();
@@ -1110,16 +1122,16 @@ export default function LessonPage() {
             {gate('text',
               <motion.div initial="hidden" animate="visible" variants={fadeUp} className="prose prose-sm dark:prose-invert max-w-none bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow">
                 {downloadFor('notes', copy.text, 'text')}
-                {aiOutputs.image?.placement === 'before' && <LessonFigure visual={aiOutputs.image} />}
-                {aiOutputs.illustration?.placement === 'before' && <LessonFigure visual={aiOutputs.illustration} />}
+                {legacyFigure(aiOutputs.image, 'before', copy.text)}
+                {legacyFigure(aiOutputs.illustration, 'before', copy.text)}
                 <LessonBody
                   markdown={copy.text}
                   imageDownload={downloadsOn && !isFormatLocked('text') ? image => (
                     <DownloadMenu asset="image" title={image.alt} content={{ url: image.src }} viewer={downloadViewer} courseId={courseId} />
                   ) : undefined}
                 />
-                {aiOutputs.image?.placement !== 'before' && <LessonFigure visual={aiOutputs.image} />}
-                {aiOutputs.illustration?.placement !== 'before' && <LessonFigure visual={aiOutputs.illustration} />}
+                {legacyFigure(aiOutputs.image, 'after', copy.text)}
+                {legacyFigure(aiOutputs.illustration, 'after', copy.text)}
                 {(lesson.mediaLibrary ?? []).length > 0 && downloadsOn && !isFormatLocked('text') && (
                   <div className="not-prose mt-6 space-y-3">
                     {(lesson.mediaLibrary ?? []).map(image => (

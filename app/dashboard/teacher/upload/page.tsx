@@ -622,6 +622,7 @@ export default function UploadPage() {
                   <LessonIllustrationBlock
                     scopeId={user?.uid ?? 'teacher-draft'}
                     images={pictures}
+                    lessonText={content}
                     onChange={setPictures}
                     onInsert={image => setContent(prev => appendImageMarkdown(prev, image))}
                     showLibrary={false}

@@ -17,14 +17,13 @@ import {
   getCourse, getModulesWithLessons, updateCourse, clearCourseFields, createModule, updateUnit,
   createLesson, updateLesson, deleteLesson, duplicateLesson, deleteUnit, getInstitutions,
   moveLessonToUnit,
-  Course, Module, Lesson, AiOutputs, Institution, LessonVisual,
+  Course, Module, Lesson, AiOutputs, Institution,
 } from '@/lib/db';
 import {
   BLOCK_DEFS, BLOOMS, BlockShell, ObjectivesBlock, VideoBlock, LessonTextBlock,
   VocabularyBlock, ActivityBlock, QuizBlock, AssignmentBlock, AssessmentBlock,
   AudioBlock, MarkdownEditBlock, ProblemsBlock, type AiRunOptions, type BlockDef,
 } from '@/components/builder-blocks';
-import { VisualBlock } from '@/components/lesson-visual';
 import { FormatPreview } from '@/components/lesson-format-views';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,7 +37,7 @@ import type {
   TierId, Tier2SubjectType, LawStage, Tier3Assessment,
 } from '@/lib/curriculum-tiers';
 import { getFormatCost } from '@/lib/sparks';
-import { appendImageMarkdown, lessonBodyPatch, manuscriptToMarkdown, readLessonBody } from '@/lib/lesson-body';
+import { includeLegacyVisuals, lessonBodyPatch, manuscriptToMarkdown, placeImageInLesson, readLessonBody } from '@/lib/lesson-body';
 import { problemsAreWorked } from '@/lib/generation-quality';
 import { hasCmsAddon } from '@/lib/entitlements';
 import { stripUnitPrefix } from '@/lib/unit-title';
@@ -1731,6 +1730,7 @@ function BuilderBlock({
 }) {
   const def: BlockDef = BLOCK_DEFS.find(d => d.id === blockId) ?? { id: blockId, icon: '📄', label: blockId };
   const outputs = draft.aiOutputs ?? {};
+  const library = includeLegacyVisuals(draft.mediaLibrary ?? [], [outputs.image, outputs.illustration]);
   const shell = (children: React.ReactNode, opts?: { regen?: string }) => (
     <BlockShell
       def={def} bloom={draft.bloomsLevel} selected={selected} onSelect={onSelect} onDelete={onDelete}
@@ -1782,18 +1782,19 @@ function BuilderBlock({
       return shell(
         <LessonImageBlock
           scopeId={courseId}
-          images={draft.mediaLibrary ?? []}
+          images={library}
           onChange={images => patch({ mediaLibrary: images })}
-          onInsert={image => patch(lessonBodyPatch(draft, appendImageMarkdown(readLessonBody(draft), image)))}
+          onInsert={image => patch(placeImageInLesson(draft, image))}
         />
       );
     case 'illustration':
       return shell(
         <LessonIllustrationBlock
           scopeId={courseId}
-          images={draft.mediaLibrary ?? []}
+          images={library}
+          lessonText={readLessonBody(draft)}
           onChange={images => patch({ mediaLibrary: images })}
-          onInsert={image => patch(lessonBodyPatch(draft, appendImageMarkdown(readLessonBody(draft), image)))}
+          onInsert={image => patch(placeImageInLesson(draft, image))}
         />
       );
     case 'vocabulary':
@@ -1812,18 +1813,6 @@ function BuilderBlock({
           onChange={v => patch({ aiOutputs: { ...outputs, glossary: v } })}
         />,
         { regen: 'glossary' }
-      );
-    case 'image':
-    case 'illustration':
-      return shell(
-        <VisualBlock
-          kind={blockId}
-          value={outputs[blockId] as LessonVisual | undefined}
-          onChange={v => patch({ aiOutputs: { ...outputs, [blockId]: v } })}
-          lessonText={outputs.text ?? draft.contentSources?.find(s => s.type === 'text')?.value ?? draft.title}
-          courseId={draft.courseId}
-          lessonId={draft.id}
-        />
       );
     case 'problems':
       return shell(

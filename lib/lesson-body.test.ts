@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { appendImageMarkdown, lessonBodyPatch, manuscriptToMarkdown, readLessonBody } from './lesson-body';
+import {
+  appendImageMarkdown, bodyHasImage, illustrationBrief, includeLegacyVisuals,
+  lessonBodyPatch, manuscriptToMarkdown, placeImageInLesson, readLessonBody,
+  type LessonLibraryImage,
+} from './lesson-body';
 
 test('readLessonBody prefers the edited text and falls back to the manuscript', () => {
   assert.equal(readLessonBody({
@@ -32,6 +36,35 @@ test('manuscriptToMarkdown turns imported headings into one lesson', () => {
     { title: 'Cells', body: 'Cells are small.' },
   ]);
   assert.equal(markdown, 'Start here.\n\n## Cells\n\nCells are small.');
+});
+
+test('legacy pictures join the shared library once and leave the side field when placed', () => {
+  const kept: LessonLibraryImage = { id: 'kept', src: 'https://cdn.example/kept.jpg', alt: 'Kept', width: 10, height: 10 };
+  const library = includeLegacyVisuals(
+    [kept],
+    [
+      { url: 'https://cdn.example/old.jpg', alt: 'Old chart', caption: 'Figure 1' },
+      { url: 'https://cdn.example/kept.jpg', alt: 'Duplicate' },
+      { url: '' },
+    ],
+  );
+  assert.equal(library.length, 2);
+  assert.equal(library[1]?.alt, 'Old chart');
+  assert.equal(library[1]?.caption, 'Figure 1');
+
+  const placed = placeImageInLesson({
+    aiOutputs: {
+      text: 'The lesson.',
+      image: { url: 'https://cdn.example/old.jpg', alt: 'Old chart', placement: 'before' },
+      summary: 'Stay',
+    },
+  }, { alt: 'Old chart', src: 'https://cdn.example/old.jpg', caption: 'Figure 1' });
+  assert.equal(placed.aiOutputs.image, undefined);
+  assert.equal(placed.aiOutputs.summary, 'Stay');
+  assert.match(placed.aiOutputs.text ?? '', /old\.jpg/);
+  assert.equal(bodyHasImage(placed.aiOutputs.text ?? '', 'https://cdn.example/old.jpg'), true);
+  assert.equal(illustrationBrief('Too short'), '');
+  assert.equal(illustrationBrief('A'.repeat(40)).length, 40);
 });
 
 test('appendImageMarkdown places a captioned full-page picture', () => {
