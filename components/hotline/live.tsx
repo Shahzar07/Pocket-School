@@ -493,7 +493,7 @@ export function EmergencyLive({ sample = false }: { sample?: boolean }) {
       <DashHeader
         eyebrow="Poket School"
         title="Emergency desk"
-        description="A principal drafts the alert. A second verified staff member confirms it before anyone else sees it."
+        description="A principal drafts the alert. A second verified staff member confirms it before anyone else sees it. People without a school submit to the Safety Desk."
       />
       <form
         className="grid gap-3 rounded-[24px] border border-border bg-card p-4"

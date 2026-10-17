@@ -251,6 +251,8 @@ const admin: RoleHome = {
     { id: 'hotline', label: 'Hotline analytics', href: '/dashboard/admin/hotline', category: 'safety' },
     { id: 'emergency', label: 'Emergency desk', href: '/dashboard/admin/emergency', category: 'safety' },
     { id: 'roll-call', label: 'Staff roll-call', href: '/dashboard/staff/roll-call', category: 'safety' },
+    { id: 'safety-desk', label: 'Safety Desk', href: '/dashboard/admin/safety-desk', category: 'safety' },
+    { id: 'emergency-numbers', label: 'Emergency numbers', href: '/dashboard/admin/emergency-numbers', category: 'safety' },
     { id: 'activity', label: 'Activity', href: '/dashboard/admin/activity', category: 'insights' },
     { id: 'profile', label: 'Settings', href: '/dashboard/profile', category: 'settings' },
   ],

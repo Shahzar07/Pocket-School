@@ -19,6 +19,7 @@ import {
 import { CountrySelect, PhoneField } from '@/components/country-select';
 import { DemographicConsent, GenderSelect, LevelNameSelect } from '@/components/account/demographic-fields';
 import { statesForCountry } from '@/lib/institution-states';
+import { VerificationBadge } from '@/components/verification/badge';
 import { readGeoCountry, resolveCountryCode } from '@/lib/countries';
 import { ProfilePhoto } from '@/components/account/profile-photo';
 import {
@@ -72,6 +73,7 @@ export interface SettingsView {
   receipts: ReceiptRow[];
   purchases: PurchaseRow[];
   studentLimits: StudentLimits | null;
+  verificationTier: number;
 }
 
 const EMPTY_PAYOUT: PayoutDetails = { method: 'none', email: '', accountName: '', bankName: '', accountLast4: '' };
@@ -260,6 +262,7 @@ export function SettingsPanel({
       <header className="pt-2">
         <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">Account</p>
         <h1 className="mt-3 font-heading text-4xl tracking-tight sm:text-5xl">My profile & settings</h1>
+        <VerificationBadge tier={view.verificationTier} />
         <p className="mt-2 text-[15px] text-muted-foreground">
           {view.role === 'teacher' && 'Your account, your public instructor profile, and payout details.'}
           {view.role === 'parent' && 'Your account, your linked children, and the limits you set for them.'}

@@ -182,6 +182,7 @@ export function PublicAlert({ view }: { view: PublicEmergency | null }) {
         <section className="hk-note">
           <strong>If you have information, contact {view.agency} {view.referenceNumber}</strong>
           <p>Call {view.emergencyNumber}. This page does not show school staff numbers.</p>
+          <a href="/help/near-me">Get help near me</a>
         </section>
         {view.status === 'retracted' ? <p className="hk-warn">Retracted. This page is no longer shared.</p> : null}
         {view.photoUrl.startsWith('attachment:') ? (

@@ -29,6 +29,7 @@ import { formatMoney } from '@/lib/money';
 import { defaultChildControls, strictestControls, type ChildControls, type PaymentMethod } from '@/lib/parent-controls';
 import { removeStoredMedia } from '@/components/media';
 import { ProfileBadgeShelf } from '@/components/gamification/profile-shelf';
+import { readVerification } from '@/lib/verification/policy';
 import {
   normalisePayout,
   profilePatch,
@@ -294,6 +295,7 @@ export default function ProfilePage() {
         receipts,
         purchases,
         studentLimits,
+        verificationTier: readVerification(profile.verification).tier,
       });
     };
     void load();

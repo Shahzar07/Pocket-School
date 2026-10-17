@@ -23,6 +23,7 @@ import { canSeeResource, normaliseAudiences } from '../community/store-access';
 import { sendPush } from '../push';
 import { adminPushStore } from '../push-store';
 import { sendToDevice } from '../push-transport';
+import { networkAllowed, readVerification } from '../verification/policy';
 
 function db(): Firestore {
   return adminDb();
@@ -47,6 +48,7 @@ function pack(id: string, data: FirebaseFirestore.DocumentData | undefined): Fir
 export interface Member extends CommunityPerson {
   name: string;
   childIds: string[];
+  verificationTier: number;
 }
 
 export async function requireFlag(flag: FeatureFlag): Promise<void> {
@@ -69,7 +71,14 @@ export async function loadMember(uid: string): Promise<Member> {
     subjects: strList(data.subjects),
     name: str(data.name) || 'Member',
     childIds: strList(data.childIds),
+    verificationTier: readVerification(data.verification).tier,
   };
+}
+
+function assertDmTier(person: Member) {
+  if (!networkAllowed(person.verificationTier)) {
+    throw new ActionError('FORBIDDEN', 'Verify your email and phone before using the network.');
+  }
 }
 
 function asSpace(id: string, data: FirebaseFirestore.DocumentData): CommunitySpace {
@@ -519,6 +528,7 @@ export async function createChannel(uid: string, input: {
     ? input.kind : 'class';
   const memberIds = [...new Set(strList(input.memberIds))].slice(0, 200);
   if (kind === 'dm') {
+    assertDmTier(person);
     if (memberIds.length !== 1) throw new ActionError('VALIDATION', 'A direct message needs one other person.');
     const other = await loadMember(memberIds[0]);
     const decision = canDirectMessage(person, other);
@@ -608,6 +618,7 @@ export async function sendChannelMessage(uid: string, input: { channelId: string
   const channel = asChannel(channelSnap.data() ?? {});
   if (!canReadChannel(person, channel).ok) throw new ActionError('FORBIDDEN', 'You cannot write in this channel.');
   if (channel.kind === 'dm' && channel.memberIds.length === 2) {
+    assertDmTier(person);
     const otherId = channel.memberIds.find((id) => id !== uid) ?? '';
     const other = await loadMember(otherId);
     if (!canDirectMessage(person, other).ok) throw new ActionError('FORBIDDEN', 'You cannot message that person.');

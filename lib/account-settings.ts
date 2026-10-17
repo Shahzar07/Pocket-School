@@ -39,6 +39,7 @@ export const SELF_SERVICE_FIELDS = [
   'region',
   'parentContacts',
   'emergencyOptIn',
+  'currentCountry',
   'homeCountry',
 ] as const;
 
@@ -63,6 +64,8 @@ export const PRIVILEGED_PROFILE_FIELDS = [
   'sparksMonthlyAllowance',
   'sparksGrantedAt',
   'xp',
+  'verification',
+  'partnerKind',
 ] as const;
 
 export interface NotificationPrefs {

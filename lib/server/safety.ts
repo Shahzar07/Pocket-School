@@ -17,7 +17,10 @@ import { sendToDevice } from '../push-transport';
 import { ActionError } from './actions';
 import { appendChain } from './ledger';
 import { notifyTicketStaff } from './staff-notify';
+import { notifySafetyDesk } from './safety-desk';
 import { lockScreenNotice } from '../staff-notice/copy';
+import { addressedToDesk, deskAddress } from '../safety-desk/policy';
+import { parentAlertAllowed, readVerification, staffCaseAllowed } from '../verification/policy';
 import {
   DEFAULT_HELPLINES,
   cleanHelplines,
@@ -55,6 +58,7 @@ interface Actor {
   dateOfBirth: string;
   classId: string;
   formTeacherUid: string;
+  tier: number;
 }
 
 async function loadActor(uid: string): Promise<Actor> {
@@ -73,6 +77,7 @@ async function loadActor(uid: string): Promise<Actor> {
     dateOfBirth: str(data.dateOfBirth),
     classId: str(data.classId),
     formTeacherUid: str(data.formTeacherUid),
+    tier: readVerification(data.verification).tier,
   };
 }
 
@@ -232,15 +237,26 @@ function noticeRow(id: string, data: FirebaseFirestore.DocumentData) {
   };
 }
 
-async function requireStudent(uid: string): Promise<Actor> {
+async function requireReporter(uid: string): Promise<Actor> {
   const actor = await loadActor(uid);
+  if (!actor.institutionId) return actor;
   if (actor.role !== 'student') throw new ActionError('FORBIDDEN', 'A student sends this report.');
-  if (!actor.institutionId) throw new ActionError('BAD_REQUEST', 'Join a school before sending a safety report.');
   return actor;
 }
 
+function assertCaseTier(actor: Actor, view: SafetyView, formTeacherUid: string) {
+  if (view === 'full' || (view === 'notice' && actor.id === formTeacherUid)) {
+    if (!staffCaseAllowed(actor.role, actor.tier)) {
+      throw new ActionError('FORBIDDEN', 'Verified school staff open a safeguarding case.');
+    }
+  }
+  if (view === 'notice' && actor.id !== formTeacherUid && !parentAlertAllowed(actor.tier)) {
+    throw new ActionError('FORBIDDEN', 'A verified guardian can open this alert.');
+  }
+}
+
 export async function fileSafetyReport(uid: string, input: Record<string, unknown>) {
-  const actor = await requireStudent(uid);
+  const actor = await requireReporter(uid);
   const safetyType = str(input.type) || str(input.safetyType);
   if (!isSafetyType(safetyType)) throw new ActionError('BAD_REQUEST', 'Choose a report type.');
   const description = str(input.description).slice(0, 4000);
@@ -265,6 +281,7 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
   const authorities = initialAuthorities('unsure', '');
   if ('error' in authorities) throw new ActionError('BAD_REQUEST', authorities.error);
   const calendar = await calendarFor(actor.institutionId);
+  const desk = addressedToDesk(actor.institutionId);
   const caseRef = db().collection('safeguarding_cases').doc();
   const ref = db().collection('hotline_tickets').doc();
   await caseRef.set({
@@ -284,7 +301,7 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
     parentUid: '',
     reporterUid: actor.id,
     reporterName: actor.name,
-    addressedTo: 'safeguarding_lead',
+    addressedTo: deskAddress(actor.institutionId, 'safeguarding_lead'),
     assigneeUid: '',
     category: 'safeguarding',
     safetyType,
@@ -316,6 +333,7 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
     staffAckAt: 0,
     parentAckAt: 0,
     dangerEscalatedAt: 0,
+    deskEscalatedAt: 0,
     createdAt: now,
     updatedAt: now,
   };
@@ -333,7 +351,8 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
   }
 
   try {
-    await notifyTicketStaff(ref.id);
+    if (desk) await notifySafetyDesk(ref.id);
+    else await notifyTicketStaff(ref.id);
   } catch (error) {
     console.error('staff notice failed', error);
   }
@@ -341,7 +360,7 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
 }
 
 export async function raiseDanger(uid: string, input: Record<string, unknown>) {
-  const actor = await requireStudent(uid);
+  const actor = await requireReporter(uid);
   const safetyType = str(input.type) || str(input.safetyType);
   const type = isSafetyType(safetyType) ? safetyType : 'unsafe_other';
   const who = str(input.who).slice(0, 200);
@@ -378,7 +397,7 @@ export async function raiseDanger(uid: string, input: Record<string, unknown>) {
     parentUid: '',
     reporterUid: actor.id,
     reporterName: actor.name,
-    addressedTo: 'safeguarding_lead',
+    addressedTo: deskAddress(actor.institutionId, 'safeguarding_lead'),
     assigneeUid: '',
     category: 'safeguarding',
     safetyType: type,
@@ -410,6 +429,7 @@ export async function raiseDanger(uid: string, input: Record<string, unknown>) {
     staffAckAt: 0,
     parentAckAt: 0,
     dangerEscalatedAt: 0,
+    deskEscalatedAt: 0,
     createdAt: now,
     updatedAt: now,
   };
@@ -426,8 +446,10 @@ export async function raiseDanger(uid: string, input: Record<string, unknown>) {
       flagged: repeat,
     },
   }, deviceOf(input));
+  const desk = addressedToDesk(actor.institutionId);
   try {
-    await notifyTicketStaff(ref.id);
+    if (desk) await notifySafetyDesk(ref.id);
+    else await notifyTicketStaff(ref.id);
   } catch (error) {
     console.error('staff notice failed', error);
   }
@@ -458,6 +480,7 @@ export async function safetyNotice(uid: string, id: string) {
   const data = snap.data() ?? {};
   const view = viewOf(actor, data);
   if (view === 'hidden') throw new ActionError('FORBIDDEN', 'You cannot open this report.');
+  assertCaseTier(actor, view, str(data.formTeacherUid));
   if (view === 'tracker') return trackerRow(id, data);
   const notice = noticeRow(id, data);
   return {
@@ -475,6 +498,7 @@ export async function acknowledgeDanger(uid: string, id: string, device: ChainDe
   const data = snap.data() ?? {};
   if (str(data.source) !== 'danger_now') throw new ActionError('BAD_REQUEST', 'This acknowledgement is for a danger alert.');
   const view = viewOf(actor, data);
+  assertCaseTier(actor, view, str(data.formTeacherUid));
   const staff = view === 'full' || (view === 'notice' && actor.id === str(data.formTeacherUid));
   const parent = view === 'notice' && data.parentsExcluded !== true && stringList(data.notifiedParentUids).includes(actor.id);
   if (!staff && !parent) throw new ActionError('FORBIDDEN', 'You cannot acknowledge this alert.');
@@ -496,6 +520,7 @@ export async function recordFamilyDecision(uid: string, id: string, input: Recor
   if (!snap.exists) throw new ActionError('NOT_FOUND', 'Report not found.');
   const data = snap.data() ?? {};
   if (viewOf(actor, data) !== 'full') throw new ActionError('FORBIDDEN', 'The safeguarding lead records this decision.');
+  if (!staffCaseAllowed(actor.role, actor.tier)) throw new ActionError('FORBIDDEN', 'Verified school staff open a safeguarding case.');
   if (data.parentsExcluded !== true) throw new ActionError('BAD_REQUEST', 'Parents were already included in this alert.');
   const contact = familyContactChoice(str(input.contact));
   if (!contact) throw new ActionError('BAD_REQUEST', 'Choose whether to contact the family.');
@@ -516,6 +541,7 @@ export async function markDangerFalse(uid: string, id: string, device: ChainDevi
   const data = snap.data() ?? {};
   if (str(data.source) !== 'danger_now') throw new ActionError('BAD_REQUEST', 'Only a danger alert can be marked false.');
   if (viewOf(actor, data) !== 'full') throw new ActionError('FORBIDDEN', 'The safeguarding lead marks a false trigger.');
+  if (!staffCaseAllowed(actor.role, actor.tier)) throw new ActionError('FORBIDDEN', 'Verified school staff open a safeguarding case.');
   const studentId = str(data.reporterUid);
   const flagRef = db().doc(`safety_flags/${studentId}`);
   const flag = await flagRef.get();

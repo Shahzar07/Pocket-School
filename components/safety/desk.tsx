@@ -200,6 +200,7 @@ export function SafetyDesk({
         <p className="text-xs font-bold tracking-widest text-[#D0553F]">EMERGENCY</p>
         <p className="text-4xl font-extrabold">Call {number}</p>
         <p className="text-sm text-muted-foreground">This is the emergency number for your country. Call it now if you can.</p>
+        <a className="min-h-12 inline-flex items-center font-bold text-primary" href="/help/near-me">Get help near me</a>
         <label className="grid gap-1 text-sm font-semibold">If this is about abuse or a person
           <select className="min-h-12 rounded-xl border border-border px-3 font-normal" value={dangerType} onChange={event => setDangerType(event.target.value)} aria-label="Danger type">
             <option value="">I need help now</option>

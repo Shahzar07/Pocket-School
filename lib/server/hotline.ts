@@ -55,6 +55,7 @@ import {
   type WorkCalendar,
 } from '../hotline/policy';
 import { isSafetySource, safetyView, trackerFor, type SafetyView } from '../safety/policy';
+import { parentAlertAllowed, readVerification, staffCaseAllowed } from '../verification/policy';
 
 function db(): Firestore {
   return adminDb();
@@ -71,6 +72,7 @@ interface Actor {
   institutionId: string;
   childIds: string[];
   staffPost: string;
+  tier: number;
 }
 
 async function loadActor(uid: string): Promise<Actor> {
@@ -85,6 +87,7 @@ async function loadActor(uid: string): Promise<Actor> {
     institutionId: str(data.institutionId),
     childIds,
     staffPost: str(data.staffPost),
+    tier: readVerification(data.verification).tier,
   };
 }
 
@@ -292,16 +295,39 @@ function noticeProjection(id: string, data: FirebaseFirestore.DocumentData) {
   };
 }
 
+function staffMay(actor: Actor, category: string): boolean {
+  if (!staffCanSee(actor.role, actor.staffPost, category)) return false;
+  if (isSensitiveCategory(category) && !staffCaseAllowed(actor.role, actor.tier)) return false;
+  return true;
+}
+
+function tierBlockMessage(actor: Actor, data: FirebaseFirestore.DocumentData): string | null {
+  const view = safetyTicketView(actor, data);
+  const staffMessage = 'Verified school staff open a safeguarding case.';
+  if (view === 'full' && !staffCaseAllowed(actor.role, actor.tier)) return staffMessage;
+  if (view === 'notice') {
+    const teacher = actor.id === str(data.formTeacherUid);
+    if (teacher && !staffCaseAllowed(actor.role, actor.tier)) return staffMessage;
+    if (!teacher && !parentAlertAllowed(actor.tier)) return 'A verified guardian can open this alert.';
+  }
+  if (view === null && isSensitiveCategory(str(data.category)) && !staffCaseAllowed(actor.role, actor.tier)) {
+    return staffMessage;
+  }
+  return null;
+}
+
 function canRead(actor: Actor, data: FirebaseFirestore.DocumentData): boolean {
   const view = safetyTicketView(actor, data);
-  if (view) return view !== 'hidden';
+  if (view) return view !== 'hidden' && !tierBlockMessage(actor, data);
+  if (tierBlockMessage(actor, data)) return false;
   if (data.parentUid === actor.id) return true;
   if (data.institutionId !== actor.institutionId && actor.role !== 'admin') return false;
-  return staffCanSee(actor.role, actor.staffPost, str(data.category));
+  return staffMay(actor, str(data.category));
 }
 
 function listedRow(actor: Actor, id: string, data: FirebaseFirestore.DocumentData) {
   const view = safetyTicketView(actor, data);
+  if (tierBlockMessage(actor, data)) return null;
   if (view === 'hidden') return null;
   if (view === 'tracker') return trackerProjection(id, data);
   if (view === 'notice') return noticeProjection(id, data);
@@ -326,6 +352,8 @@ export async function listTickets(uid: string, status: string) {
 export async function getTicket(uid: string, id: string) {
   const actor = await loadActor(uid);
   const ticket = await loadTicket(id);
+  const blocked = tierBlockMessage(actor, ticket.data);
+  if (blocked) throw new ActionError('FORBIDDEN', blocked);
   if (!canRead(actor, ticket.data)) throw new ActionError('FORBIDDEN', 'You cannot open this ticket.');
   const view = safetyTicketView(actor, ticket.data);
   if (view === 'tracker') return trackerProjection(id, ticket.data);
@@ -387,7 +415,7 @@ export async function commentTicket(uid: string, id: string, input: Record<strin
 export async function assignTicket(uid: string, id: string, assigneeUid: string, device: ChainDevice = SERVER_DEVICE) {
   const actor = await loadActor(uid);
   const ticket = await loadTicket(id);
-  if (!staffCanSee(actor.role, actor.staffPost, str(ticket.data.category))) {
+  if (!staffMay(actor, str(ticket.data.category))) {
     throw new ActionError('FORBIDDEN', 'You cannot assign this ticket.');
   }
   const now = Date.now();
@@ -404,7 +432,7 @@ export async function assignTicket(uid: string, id: string, assigneeUid: string,
 export async function setTicketStatus(uid: string, id: string, input: Record<string, unknown>) {
   const actor = await loadActor(uid);
   const ticket = await loadTicket(id);
-  if (!staffCanSee(actor.role, actor.staffPost, str(ticket.data.category))) {
+  if (!staffMay(actor, str(ticket.data.category))) {
     throw new ActionError('FORBIDDEN', 'You cannot change this ticket.');
   }
   const status = str(input.status);
@@ -479,7 +507,7 @@ export async function hotlineAnalytics(uid: string) {
   const snap = await db().collection('hotline_tickets').where('institutionId', '==', actor.institutionId).limit(400).get();
   const rows: TicketStat[] = snap.docs
     .map(doc => doc.data())
-    .filter(data => staffCanSee(actor.role, actor.staffPost, str(data.category)))
+    .filter(data => staffMay(actor, str(data.category)))
     .map(data => ({
       category: str(data.category),
       status: str(data.status),
@@ -598,7 +626,7 @@ export async function viewTicketFile(uid: string, id: string, attachmentId: stri
 export async function setTicketAuthorities(uid: string, id: string, input: Record<string, unknown>) {
   const actor = await loadActor(uid);
   const ticket = await loadTicket(id);
-  if (!staffCanSee(actor.role, actor.staffPost, str(ticket.data.category))) {
+  if (!staffMay(actor, str(ticket.data.category))) {
     throw new ActionError('FORBIDDEN', 'You cannot update this ticket.');
   }
   const current = (ticket.data.authorities ?? { required: 'unsure', reason: '', status: 'to_be_informed', informed: null }) as AuthorityDecision;

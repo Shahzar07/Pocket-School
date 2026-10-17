@@ -2381,7 +2381,7 @@ Retention: closed alerts stay archived and are not indexed. Retracted alerts are
 
 ## Push categories added
 
-`hotline` and `emergency`, on both `lib/push.ts` and `lib/platform/push.ts`. The reject string is `category must be goals, flags, attendance, digests, grades, assignments, general, achievements, network, safety, hotline, or emergency.`
+`hotline` and `emergency`, on both `lib/push.ts` and `lib/platform/push.ts`. The reject string is `category must be goals, flags, attendance, digests, grades, assignments, general, alumni, institution, achievements, network, safety, hotline, or emergency.`
 
 Account toggle: `notificationPrefs.hotline`. Emergency alerts are not a preference. `pushBypassesQuietHours` is true for category `emergency`, so an all-staff alert and every other emergency push are delivered during quiet hours and when the device has muted the category.
 
@@ -2468,3 +2468,95 @@ The community push for an Amber alert links to `/amber/{id}`. The body is the ap
 | POST | `/api/amber/opt-in` |
 
 Samples: `/amber/sample` and `/amber/sample-resolved`. The sample referral code is `POKETAMBER` (`referrals/POKETAMBER`).
+
+## Verification tiers
+
+`users/{uid}.verification` is `{ tier, method, verifiedAt, verifiedBy }`. The server is the only writer. A missing object is tier 0, method `basic`. A later write cannot lower a tier. `partnerKind` (`police` or `ngo`) is stored beside it for tier 4. Firestore rules reject `verification` and `partnerKind` on create, and `verificationUntouched()` rejects them on every update, including an admin using the client SDK. Rules are not deployed from this branch.
+
+| Tier | Who | How it is raised |
+| --- | --- | --- |
+| 0 | Basic account | Default. |
+| 1 | Email and phone verified | OTP. Email uses the existing HMAC token against `users.email`. Phone uses the same token with the subject `phone:{number}`. Both `emailVerified` and `phoneVerified` must already be true before the tier becomes 1, method `otp`. |
+| 2 | Verified guardian | The guardian creates an 8-character code. The child confirms it. The guardian is raised to tier 2, method `guardian_link`, `verifiedBy` the child. `parent_links/{parentId}_{childId}` is set approved. The code is the QR payload. It expires after 24 hours. |
+| 3 | Verified school staff | A school admin of the same school, or a super admin, records `admin_invite` or `email_domain` when `institutions.emailDomain` matches the staff email. A principal is not verified on this path. A principal is raised only by a super admin, method `school_documents`, with a note of at least 3 characters about the school registration documents. |
+| 4 | Verified partner | Super admin only. Method `partner_review`. Kind is `police` or `ngo`. |
+
+An optional ID-check adapter (`lib/verification/id-check.ts`) stays off until both `ID_CHECK_API_KEY` and `ID_CHECK_URL` are set. No vendor is called otherwise. Phone OTP is delivered to `SMS_WEBHOOK_URL` when that is set. Without it, development logs that a code was created and production returns `Phone verification is not configured.` The code is not written to the production log. Reviews are appended to `verification_reviews`. Clients cannot read or write that collection or `guardian_link_codes`.
+
+`requireTier(have, need)` is the shared check. The server throws when a gate fails.
+
+| Feature | Need |
+| --- | --- |
+| Professional network and direct messages | Tier 1. Class channels stay open. The message is `Verify your email and phone before using the network.` |
+| Parent view of an alert | Tier 2. |
+| Staff safeguarding case | Tier 3, or `role === 'admin'` so the platform desk still works at tier 0. |
+| Publish an Amber alert (`missing_child`) | Tier 3 and `staffPost === 'principal'`, or tier 4. |
+| Publish any emergency alert with no school | Blocked unless the person is a super admin or a tier 4 partner. The message tells them to use the Safety Desk. |
+
+A principal who is `verifiedStaff` but still tier 0 can still draft a non-Amber alert when `canCreate` allows it. They cannot publish Amber, and they cannot open a safeguarding case, until tier 3. The profile shows the tier label: Basic, Contact verified, Verified guardian, Verified staff, Verified partner.
+
+`users.currentCountry` and `users.homeCountry` are self-service fields. `POST /api/verification/country` stores them as `MY`, `US`, or `GB` (and the same helper for any other two-letter code).
+
+| Method | Path |
+| --- | --- |
+| GET | `/api/verification/read` |
+| POST | `/api/verification/email` |
+| POST | `/api/verification/phone-send` |
+| POST | `/api/verification/phone` |
+| POST | `/api/verification/guardian-code` |
+| POST | `/api/verification/confirm-guardian` |
+| POST | `/api/verification/id-check` |
+| POST | `/api/verification/staff` |
+| POST | `/api/verification/principal` |
+| POST | `/api/verification/partner` |
+| POST | `/api/verification/country` |
+
+## Safety Desk
+
+A person with an empty `institutionId` can file a safety report or a danger alert. The ticket is still a `hotline_tickets` document, so the hash chain, legal hold, and append-only events already apply. `addressedTo` is `poket_safety_desk` instead of `safeguarding_lead`. A student at a school keeps the school path. The old error `Join a school before sending a safety report` is gone for people without a school.
+
+The desk sends an urgent push and a confidential email to super admins (`role === 'admin'`), the on-call primary, and linked guardians at tier 2 or higher. The same parent-exclusion rule applies: those parents are not recipients. The email card still lists guardian name, phone, and email, and it says parents were not notified. Backup is included only when the case is escalated. Delivery is the same append-only `delivery` chain entry. A failed channel falls back and, if anything failed, the first super admin gets `Staff notice failed` / `Open case.`
+
+`GET /api/cron/hotline` also calls `escalateUnackedDesk`. Escalation is strict: `now - createdAt > 5 minutes`, status `pending`, and both `staffAckAt` and `deskEscalatedAt` empty. It writes chain action `desk_escalated` once and notifies again with the backup. It is not a new cron.
+
+The rota is `safety_desk/rota`: `{ timezone, slots: [{ weekday, startMinutes, endMinutes, primaryUid, backupUid }], updatedBy, updatedAt }`. Weekday is 0 Sunday through 6 Saturday, matching the hotline calendar. Clients cannot read or write `safety_desk`. The super-admin queue is `/dashboard/admin/safety-desk`. It shows SLA, assignment, and the rota. Assignment sets `status: in_progress` and chain action `assigned`. The queue projection has no report body.
+
+An individual (empty `institutionId`, not a super admin, tier below 4) cannot create or confirm an emergency alert, including Amber. `publishBlock` runs after `canCreate` on create and again on confirm. `POST /api/safety-desk/submit` writes a `desk_alert` ticket to the desk and does not create `emergency_alerts`.
+
+Index, not deployed: `hotline_tickets` `addressedTo` ASC, `createdAt` DESC.
+
+| Method | Path |
+| --- | --- |
+| GET | `/api/safety-desk/queue` |
+| GET | `/api/safety-desk/rota` |
+| POST | `/api/safety-desk/rota` |
+| POST | `/api/safety-desk/assign` |
+| POST | `/api/safety-desk/submit` |
+
+## Emergency numbers
+
+The catalog is `platform_settings/emergency_numbers/catalog/{countryCode}`. A document cannot sit at `platform_settings/emergency_numbers/{countryCode}` because that path has three segments. Each entry has police, ambulance, fire, general, child helpline name and number, mental-health helpline name and number, the official child-alert name and link, `sourceUrl`, `lastVerified`, and `needsReview`. Public read is allowed. Client write is false, including for an admin. The editor is `POST /api/emergency-numbers`, super admin only. `GET /api/emergency-numbers` is public and merges the database over the bundled seed. If the database is down, the seed is returned.
+
+Seeded on 17 October 2026 from pages fetched for this change. `needsReview` is false only when the number is on one of these pages:
+
+| Country | Numbers | Source |
+| --- | --- | --- |
+| MY | 999 for police, ambulance, fire, and general. Talian Kasih 15999. NUR Alert `https://rmp2u.rmp.gov.my/nur-alert`. Mental health left blank. | `https://www.malaysia.gov.my/en/topics/mers-999-emergency-line`, `https://999.gov.my/`, `https://www.malaysia.gov.my/en/topics/talian-kasih-15999` |
+| US | 911 for every service. Childhelp `1-800-422-4453`. 988 Suicide and Crisis Lifeline. AMBER Alert `https://amberalert.ojp.gov/`. | `https://www.usa.gov/report-crime`, `https://www.fcc.gov/988-suicide-and-crisis-lifeline` |
+| GB | 999 for every service. Childline `0800 1111`. Samaritans `116 123`. Child Rescue Alert `https://missingpersons.police.uk/en-gb/child-rescue-alert`. | `https://www.gov.uk/report-child-abuse`, `https://www.samaritans.org/how-we-can-help/contact-samaritan/talk-us-phone/` |
+
+Malaysia's mental-health line is not in this seed. Befrienders remains on the separate safety support card. A row with no `https` source or no `YYYY-MM-DD` date is stored as `needsReview`. The super-admin editor is `/dashboard/admin/emergency-numbers`.
+
+Amber and emergency push targeting is institution members, plus region match, plus `homeCountry` match. `currentCountry` is not a target. The region query still requires country, state, and city when those are set. Home country matches `MY` / `Malaysia`, `US` / `United States` / `USA`, or `GB` / `United Kingdom` / `UK`. Push text uses the recipient's `language`: English, Malay, Chinese (including `zh-Hant`), and Tamil, otherwise English. The title is the type. The body is the short "open the alert" line. The description and phone numbers are not in the push.
+
+| Method | Path |
+| --- | --- |
+| GET | `/api/emergency-numbers` |
+| GET | `/api/emergency-numbers?country=MY` |
+| POST | `/api/emergency-numbers` |
+
+## Help near me
+
+`/help/near-me` is public. It is linked from the safety shield, the danger screen, and the public alert page. It renders tap-to-call numbers from the bundled seed first, so the numbers are on the page when the network is down. The country picker defaults from the geo cookie when that country is in the seed. A row marked `needsReview` says the numbers still need a review.
+
+`Nearest police station` and `Nearest hospital` open `https://www.google.com/maps/search/?api=1&query=police%20station` or `hospital`. The device location is added to that query only after the person grants it. A denial opens the search without coordinates. There is no Places API. People without a school can submit a title and description on this page. That calls `POST /api/safety-desk/submit` and does not publish an alert.

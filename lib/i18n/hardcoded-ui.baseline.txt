@@ -2425,3 +2425,30 @@ components/amber/public-alert.tsx	Photo shared with consent
 components/amber/public-alert.tsx	This alert is not available.
 components/hotline/live.tsx	A child name, photo, and this description stay off the public page until you approve them.
 components/hotline/live.tsx	Public description
+components/emergency/numbers-editor.tsx	Emergency numbers
+components/emergency/numbers-editor.tsx	Needs review
+components/help/near-me.tsx	Desk title
+components/help/near-me.tsx	Emergency numbers
+components/help/near-me.tsx	Get help near me
+components/help/near-me.tsx	No checked numbers for this country yet.
+components/help/near-me.tsx	People without a school cannot publish an alert. This goes to the desk only.
+components/help/near-me.tsx	Poket School
+components/help/near-me.tsx	Send to the Safety Desk
+components/help/near-me.tsx	Tell the Safety Desk
+components/help/near-me.tsx	These numbers are stored on this page so they still open when you are offline. Maps opens only after you allow location.
+components/help/near-me.tsx	These numbers still need a review.
+components/help/near-me.tsx	What happened
+components/hotline/surfaces.tsx	Get help near me
+components/safety/desk-queue.tsx	A case is past its SLA
+components/safety/desk-queue.tsx	Backup on call
+components/safety/desk-queue.tsx	End time
+components/safety/desk-queue.tsx	On-call rota
+components/safety/desk-queue.tsx	Primary is called first. Backup is added if nobody acknowledges within five minutes.
+components/safety/desk-queue.tsx	Primary on call
+components/safety/desk-queue.tsx	Safety Desk
+components/safety/desk-queue.tsx	Save rota
+components/safety/desk-queue.tsx	Staff user id
+components/safety/desk-queue.tsx	Start time
+components/safety/desk-queue.tsx	The desk is clear
+components/safety/desk-queue.tsx	User id
+components/safety/desk.tsx	Get help near me

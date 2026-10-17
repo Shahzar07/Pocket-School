@@ -63,7 +63,7 @@ test('the export verification hash is the file prefix, not the hash line', () =>
 
 test('server writers never update or delete append-only logs', () => {
   const root = new URL('../..', import.meta.url);
-  const files = ['lib/server/ledger.ts', 'lib/server/hotline.ts', 'lib/server/emergency.ts', 'lib/server/staff-notify.ts', 'lib/server/all-staff.ts'];
+  const files = ['lib/server/ledger.ts', 'lib/server/hotline.ts', 'lib/server/emergency.ts', 'lib/server/staff-notify.ts', 'lib/server/all-staff.ts', 'lib/server/safety-desk.ts'];
   const forbidden = [
     /\/events['"`]\)[\s\S]{0,120}\.(update|delete|set)\(/,
     /\/audit['"`]\)[\s\S]{0,120}\.(update|delete|set)\(/,

@@ -19,6 +19,7 @@ import {
   type Availability, type CandidateCard, type NetworkPerson, type OpenToWork, type ProfileVisibility,
 } from '../network/policy';
 import type { ModerationSurface } from '../moderation/screen';
+import { networkAllowed, readVerification } from '../verification/policy';
 
 function db(): Firestore {
   return adminDb();
@@ -46,6 +47,13 @@ async function requireNetwork() {
 interface Actor extends NetworkPerson {
   name: string;
   email: string;
+  verificationTier: number;
+}
+
+function gate(actor: Actor) {
+  if (!networkAllowed(actor.verificationTier)) {
+    throw new ActionError('FORBIDDEN', 'Verify your email and phone before using the network.');
+  }
 }
 
 async function loadActor(uid: string): Promise<Actor> {
@@ -69,6 +77,7 @@ async function loadActor(uid: string): Promise<Actor> {
     blockedIds: blocks.docs.map(doc => str(doc.data().targetId)),
     name: str(data.name) || 'Member',
     email: str(data.email),
+    verificationTier: readVerification(data.verification).tier,
   };
 }
 
@@ -112,6 +121,7 @@ async function screen(actor: Actor, surface: ModerationSurface, text: string, su
 export async function saveProfile(uid: string, input: Record<string, unknown>) {
   await requireNetwork();
   const actor = await loadActor(uid);
+  gate(actor);
   const handle = str(input.handle).toLowerCase() || actor.handle;
   if (!validHandle(handle)) throw new ActionError('VALIDATION', 'Choose a handle with letters, numbers, and hyphens.');
   const taken = await db().collection('network_profiles').where('handle', '==', handle).limit(2).get();
@@ -151,6 +161,7 @@ export async function saveProfile(uid: string, input: Record<string, unknown>) {
 export async function readProfile(viewerId: string, handle: string) {
   await requireNetwork();
   const viewer = await loadActor(viewerId);
+  gate(viewer);
   const snap = await db().collection('network_profiles').where('handle', '==', handle.toLowerCase()).limit(1).get();
   const doc = snap.docs[0];
   if (!doc) throw new ActionError('NOT_FOUND', 'Profile not found.');
@@ -176,6 +187,7 @@ export async function readProfile(viewerId: string, handle: string) {
 export async function createNetworkPost(uid: string, input: Record<string, unknown>) {
   await requireNetwork();
   const actor = await loadActor(uid);
+  gate(actor);
   if (isMinorTier(actor.ageTier)) {
     const space = str(input.space);
     if (space !== 'school' && space !== 'class') {
@@ -211,6 +223,7 @@ export async function createNetworkPost(uid: string, input: Record<string, unkno
 export async function commentOnPost(uid: string, postId: string, body: string) {
   await requireNetwork();
   const actor = await loadActor(uid);
+  gate(actor);
   const post = await db().doc(`network_posts/${postId}`).get();
   if (!post.exists || post.data()?.moderation !== 'allow') throw new ActionError('NOT_FOUND', 'Post not found.');
   const ref = db().collection('network_comments').doc();
@@ -225,6 +238,7 @@ export async function commentOnPost(uid: string, postId: string, body: string) {
 
 export async function reactToPost(uid: string, postId: string, emoji: string) {
   await requireNetwork();
+  gate(await loadActor(uid));
   const safe = ['clap', 'thanks', 'idea', 'support'].includes(emoji) ? emoji : 'clap';
   await db().doc(`network_reactions/${postId}_${uid}`).set({ postId, userId: uid, emoji: safe, createdAtMs: Date.now() });
   return { ok: true };
@@ -232,6 +246,7 @@ export async function reactToPost(uid: string, postId: string, emoji: string) {
 
 export async function repost(uid: string, postId: string) {
   await requireNetwork();
+  gate(await loadActor(uid));
   await db().doc(`network_reposts/${postId}_${uid}`).set({ postId, userId: uid, createdAtMs: Date.now() });
   return { ok: true };
 }
@@ -239,6 +254,7 @@ export async function repost(uid: string, postId: string) {
 export async function feedFor(uid: string) {
   await requireNetwork();
   const actor = await loadActor(uid);
+  gate(actor);
   const posts = await db().collection('network_posts').where('moderation', '==', 'allow').limit(40).get();
   const connections = await db().collection('network_connections').where('userIds', 'array-contains', uid).where('status', '==', 'accepted').limit(50).get();
   const follows = await db().collection('network_follows').where('followerId', '==', uid).limit(50).get();
@@ -271,6 +287,7 @@ export async function feedFor(uid: string) {
 export async function requestConnection(uid: string, targetId: string) {
   await requireNetwork();
   const actor = await loadActor(uid);
+  gate(actor);
   const target = await loadActor(targetId);
   const decision = canConnect(actor, target);
   if (!decision.ok) throw new ActionError('FORBIDDEN', decision.reason);
@@ -293,6 +310,7 @@ export async function requestConnection(uid: string, targetId: string) {
 
 export async function respondConnection(uid: string, connectionId: string, accept: boolean) {
   await requireNetwork();
+  gate(await loadActor(uid));
   const doc = await db().doc(`network_connections/${connectionId}`).get();
   if (!doc.exists || !strList(doc.data()?.userIds).includes(uid)) throw new ActionError('NOT_FOUND', 'Request not found.');
   await doc.ref.set({ status: accept ? 'accepted' : 'declined' }, { merge: true });
@@ -302,6 +320,7 @@ export async function respondConnection(uid: string, connectionId: string, accep
 export async function followTarget(uid: string, targetId: string, orgId: string) {
   await requireNetwork();
   const actor = await loadActor(uid);
+  gate(actor);
   if (targetId) {
     const target = await loadActor(targetId);
     if (isMinorTier(actor.ageTier) && targetId) {
@@ -320,6 +339,7 @@ export async function followTarget(uid: string, targetId: string, orgId: string)
 export async function sendDirectMessage(uid: string, targetId: string, body: string) {
   await requireNetwork();
   const actor = await loadActor(uid);
+  gate(actor);
   const target = await loadActor(targetId);
   const id = [uid, targetId].sort().join('_');
   const connection = await db().doc(`network_connections/${id}`).get();
@@ -338,6 +358,7 @@ export async function sendDirectMessage(uid: string, targetId: string, body: str
 
 export async function reportOrBlock(uid: string, input: Record<string, unknown>, block: boolean) {
   await requireNetwork();
+  gate(await loadActor(uid));
   const targetId = str(input.targetId);
   if (block && targetId) {
     await db().doc(`network_blocks/${uid}_${targetId}`).set({ userId: uid, targetId, createdAtMs: Date.now() });
@@ -377,6 +398,7 @@ async function ping(userId: string, title: string, body: string, link: string) {
 export async function saveOrg(uid: string, input: Record<string, unknown>) {
   const settings = await requireNetwork();
   const actor = await loadActor(uid);
+  gate(actor);
   if (actor.role !== 'admin' && actor.role !== 'institution_admin' && actor.role !== 'teacher' && actor.ageTier !== 'adult') {
     throw new ActionError('FORBIDDEN', 'Adults and school staff create organisation pages.');
   }
@@ -411,6 +433,7 @@ export async function approveOrg(actorId: string, orgId: string) {
 
 export async function searchCandidates(uid: string, query: Record<string, unknown>) {
   const settings = await requireNetwork();
+  gate(await loadActor(uid));
   if (!settings.recruiterTierOn) throw new ActionError('FORBIDDEN', 'Recruiter search is off until a super admin enables it.');
   const seat = await db().doc(`recruiter_seats/${uid}`).get();
   if (seat.data()?.verified !== true) throw new ActionError('FORBIDDEN', 'Recruiter access is verified through an employer organisation.');
@@ -465,6 +488,7 @@ export async function saveSearch(uid: string, input: Record<string, unknown>) {
 
 export async function talentList(uid: string, input: Record<string, unknown>) {
   const settings = await requireNetwork();
+  gate(await loadActor(uid));
   if (!settings.recruiterTierOn) throw new ActionError('FORBIDDEN', 'Recruiter tools are off.');
   const ref = str(input.id) ? db().doc(`talent_lists/${str(input.id)}`) : db().collection('talent_lists').doc();
   await ref.set({
@@ -486,6 +510,7 @@ export async function inmail(uid: string, targetId: string, body: string) {
     throw new ActionError('FORBIDDEN', 'That person is not open to recruiter messages.');
   }
   const actor = await loadActor(uid);
+  gate(actor);
   const ref = db().collection('network_messages').doc();
   const mod = await screen(actor, 'network_dm', body, `network_messages/${ref.id}`);
   if (mod.decision === 'block') throw new ActionError('FORBIDDEN', mod.authorMessage);
@@ -513,6 +538,7 @@ export async function sandboxUpgrade(uid: string, tier: string) {
 
 export async function applyToOpening(uid: string, input: Record<string, unknown>) {
   await requireNetwork();
+  gate(await loadActor(uid));
   // TODO(institutions): cv_versions/{uid} is the CV the job board will own.
   const cvVersionId = str(input.cvVersionId);
   const ref = await db().collection('job_applications').add({
@@ -528,6 +554,7 @@ export async function applyToOpening(uid: string, input: Record<string, unknown>
 
 export async function postOpening(uid: string, input: Record<string, unknown>) {
   await requireNetwork();
+  gate(await loadActor(uid));
   // TODO(institutions): the job board UI should list job_openings.
   const ref = await db().collection('job_openings').add({
     orgId: str(input.orgId),
@@ -545,6 +572,7 @@ export async function postOpening(uid: string, input: Record<string, unknown>) {
 
 export async function exportNetwork(uid: string) {
   await requireNetwork();
+  gate(await loadActor(uid));
   const [profile, posts, messages] = await Promise.all([
     db().doc(`network_profiles/${uid}`).get(),
     db().collection('network_posts').where('authorId', '==', uid).limit(100).get(),
