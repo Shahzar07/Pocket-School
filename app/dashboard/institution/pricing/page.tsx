@@ -70,7 +70,7 @@ export default function InstitutionPricingPage() {
       <DashHeader
         eyebrow="Institution"
         title="Pricing"
-        description="Pick programmes and categories. Only those appear in the academy library and in a student’s courses, and only at the level you assign."
+        description="Starter, Growth, Pro, and Enterprise follow the seat count. Pick programmes, then assign who receives each one."
       />
       <PriceCalculator institutionName="Academy" onApply={(selection) => void apply(selection)} />
       <section className="rounded-3xl border border-[#1A3C34]/10 bg-white p-4">

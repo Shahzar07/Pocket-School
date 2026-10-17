@@ -9,6 +9,8 @@ import {
   programmeRevenue,
   proratedSeatAdd,
   seedInstitutionCatalogue,
+  tierRangeLabel,
+  tierUnitMonthly,
   seatOverage,
   institutionLibraryIncludes,
   sameSelection,
@@ -24,7 +26,11 @@ describe('institution catalogue pricing', () => {
     assert.ok(seed.items.every((entry) => entry.placeholder));
     assert.ok(seed.tiers.every((tier) => tier.placeholder));
     assert.ok(seed.currencies.every((currency) => currency.placeholder));
-    assert.deepEqual(seed.tiers.map((tier) => tier.label), ['1–50', '51–200', '201–500', '500+']);
+    assert.deepEqual(seed.tiers.map((tier) => tier.name), ['Starter', 'Growth', 'Pro', 'Enterprise']);
+    assert.deepEqual(seed.tiers.map((tier) => tierRangeLabel(tier)), ['0–50', '51–200', '201–500', '500+']);
+    assert.equal(seed.tiers[3]?.quoteContact, true);
+    assert.equal(seed.tiers[3]?.selfServe, true);
+    assert.ok(seed.tiers.every((tier) => tier.features.length > 0 && tier.seatPrices.length === seed.items.length));
   });
 
   it('sums per-seat prices, then applies the tier, the annual discount, currency, and tax', () => {
@@ -38,7 +44,7 @@ describe('institution catalogue pricing', () => {
     });
     assert.ok(!('error' in quote));
     if ('error' in quote) return;
-    assert.equal(quote.tierLabel, '51–200');
+    assert.equal(quote.tierLabel, 'Growth');
     assert.equal(quote.tierDiscount, 0.1);
     assert.equal(quote.lines[0]?.unit, 86.4);
     assert.equal(quote.lines[1]?.unit, 34.56);
@@ -134,6 +140,20 @@ describe('institution catalogue pricing', () => {
     assert.equal(normalizeCatalogue({ currency: 'USD' }).placeholder, true);
     const broken = { ...seed, tiers: [{ ...seed.tiers[0], minSeats: 10, maxSeats: 1 }] };
     assert.equal(validateCatalogue(broken as typeof seed), 'A tier maximum is at least its minimum.');
-    assert.equal(normalizeCatalogue(broken).tiers[0]?.id, '1-50');
+    assert.equal(normalizeCatalogue(broken).tiers[0]?.id, 'starter');
+    const grown = seedInstitutionCatalogue();
+    const growth = grown.tiers.find((tier) => tier.id === 'growth')!;
+    growth.seatPrices = growth.seatPrices.map((row) => row.itemId === 'igcse' ? { ...row, perSeatMonthly: 7 } : row);
+    const custom = priceCatalogue({ catalogue: grown, itemIds: ['igcse'], purchasedSeats: 80, interval: 'monthly', country: 'US', tender: 'card' });
+    assert.ok(!('error' in custom));
+    if (!('error' in custom)) assert.equal(custom.lines[0]?.unit, 7);
+    const enterprise = priceCatalogue({ itemIds: ['igcse'], purchasedSeats: 501, interval: 'monthly', country: 'US', tender: 'card' });
+    assert.ok(!('error' in enterprise));
+    if (!('error' in enterprise)) {
+      assert.equal(enterprise.tierLabel, 'Enterprise');
+      assert.equal(enterprise.quoteContact, true);
+      assert.equal(enterprise.selfServe, true);
+      assert.equal(enterprise.lines[0]?.unit, tierUnitMonthly(seed.tiers[3]!, seed.items[0]!));
+    }
   });
 });

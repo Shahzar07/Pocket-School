@@ -173,7 +173,7 @@ export function PlanCheckout({
             {priced.placeholder && <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#C8922A]">Placeholder prices</p>}
             <p className="text-2xl font-semibold tabular-nums">{priced.currency} {priced.total.toFixed(2)}</p>
             <p className="mt-1 text-sm text-[#1A3C34]/75">
-              Tier {priced.tierLabel}. {priced.currency} {priced.subtotal.toFixed(2)} plus {priced.currency} {priced.tax.toFixed(2)} tax
+              {priced.tierLabel}. {priced.currency} {priced.subtotal.toFixed(2)} plus {priced.currency} {priced.tax.toFixed(2)} tax
               {country.trim().toUpperCase() === 'MY' && tender !== 'invoice' ? ' (SST)' : ''}. {priced.sparks.toLocaleString('en')} Sparks.
             </p>
             <ul className="mt-2 space-y-1 text-sm">
@@ -184,13 +184,16 @@ export function PlanCheckout({
                 </li>
               ))}
             </ul>
+            {priced.quoteContact && (
+              <p className="mt-2 text-sm text-[#1A3C34]">Custom pricing. Request a quote from Poket School{priced.selfServe ? ', or continue with self-serve checkout' : ''}.</p>
+            )}
             <p className="mt-1 text-sm text-[#1A3C34]/75">{email}</p>
           </>
         )}
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <button type="button" className={journeyButton} disabled={busy || ('error' in priced)} onClick={() => onCheckout?.(draft())}>
+        <button type="button" className={journeyButton} disabled={busy || ('error' in priced) || (!('error' in priced) && priced.selfServe === false)} onClick={() => onCheckout?.(draft())}>
           {busy ? 'Working…' : banner ? 'Complete test payment' : tender === 'invoice' ? 'Place invoice order' : 'Pay and open the academy'}
         </button>
         <button

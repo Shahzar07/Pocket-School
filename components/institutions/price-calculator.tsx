@@ -7,6 +7,11 @@ import {
   normalizeCatalogue,
   priceCatalogue,
   seedInstitutionCatalogue,
+  tierForSeats,
+  tierRangeLabel,
+  tierUnitMonthly,
+  TIER_ACCENTS,
+  type CatalogueTier,
   type InstitutionCatalogue,
 } from '@/lib/institution-catalogue';
 
@@ -59,6 +64,7 @@ export function PriceCalculator({
     return () => { cancelled = true; };
   }, [given]);
 
+  const highlighted = tierForSeats(catalogue, seats);
   const programmes = catalogue.items.filter((item) => item.kind === 'programme');
   const categories = catalogue.items.filter((item) => item.kind === 'category');
   const quote = useMemo(() => priceCatalogue({
@@ -93,7 +99,43 @@ export function PriceCalculator({
     );
   };
 
+  const pickTier = (tier: CatalogueTier) => {
+    setSeats(Math.max(1, tier.minSeats));
+  };
+
   return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {catalogue.tiers.map((tier) => {
+          const selected = highlighted?.id === tier.id;
+          const ink = tier.accent === 'gold' ? '#1A3C34' : '#F6F1E7';
+          const prices = catalogue.items.map((entry) => tierUnitMonthly(tier, entry));
+          const from = prices.length ? Math.min(...prices) : 0;
+          return (
+            <article
+              key={tier.id}
+              className={`rounded-3xl p-4 shadow-sm ${selected ? 'ring-4 ring-[#F6F1E7] ring-offset-2 ring-offset-[#C8922A]' : ''}`}
+              style={{ background: TIER_ACCENTS[tier.accent], color: ink }}
+            >
+              <button type="button" className="w-full text-left" onClick={() => pickTier(tier)}>
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] opacity-80">{tierRangeLabel(tier)} students</p>
+                <h2 className="mt-1 font-heading text-2xl">{tier.name}</h2>
+                <p className="mt-2 text-sm font-semibold">
+                  {tier.quoteContact ? 'Custom pricing' : `From USD ${from.toFixed(2)} / seat`}
+                  {tier.placeholder ? ' · placeholder' : ''}
+                </p>
+                <ul className="mt-3 space-y-1 text-sm">
+                  {tier.features.map((feature) => <li key={feature}>{feature}</li>)}
+                </ul>
+                <p className="mt-3 text-xs font-semibold uppercase tracking-wide">{selected ? 'This seat count' : 'Use this tier'}{tier.selfServe ? ' · self-serve checkout' : ''}</p>
+              </button>
+              {tier.quoteContact && tier.contactHref && (
+                <a className="mt-2 inline-flex text-sm font-semibold underline" href={tier.contactHref}>Request a quote</a>
+              )}
+            </article>
+          );
+        })}
+      </div>
     <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
       <section className="rounded-3xl bg-white p-5 shadow-sm">
         {catalogue.placeholder && (
@@ -109,7 +151,7 @@ export function PriceCalculator({
                   {item.title}
                   <span className="text-[#1A3C34]/60">{item.level}</span>
                 </span>
-                <span className="tabular-nums text-[#1A3C34]/70">USD {item.perSeatMonthly.toFixed(2)} / seat{item.placeholder ? ' · placeholder' : ''}</span>
+                <span className="tabular-nums text-[#1A3C34]/70">USD {(highlighted ? tierUnitMonthly(highlighted, item) : item.perSeatMonthly).toFixed(2)} / seat{item.placeholder ? ' · placeholder' : ''}</span>
               </label>
             ))}
           </div>
@@ -123,14 +165,14 @@ export function PriceCalculator({
                   <input type="checkbox" checked={ids.includes(item.id)} onChange={() => toggle(item.id)} />
                   {item.title}
                 </span>
-                <span className="tabular-nums text-[#1A3C34]/70">USD {item.perSeatMonthly.toFixed(2)} / seat{item.placeholder ? ' · placeholder' : ''}</span>
+                <span className="tabular-nums text-[#1A3C34]/70">USD {(highlighted ? tierUnitMonthly(highlighted, item) : item.perSeatMonthly).toFixed(2)} / seat{item.placeholder ? ' · placeholder' : ''}</span>
               </label>
             ))}
           </div>
         </fieldset>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <label className="text-sm font-medium">Purchased seats: {seats}
-            <input className="mt-2 w-full accent-[#C8922A]" type="range" min={1} max={600} value={seats} onChange={(event) => setSeats(Number(event.target.value))} />
+            <input className="mt-2 w-full accent-[#C8922A]" type="range" min={1} max={800} value={seats} onChange={(event) => setSeats(Number(event.target.value))} />
           </label>
           <label className="text-sm font-medium">Active students
             <input className="mt-2 h-11 w-full rounded-xl border border-[#1A3C34]/15 px-3" type="number" min={0} value={active} onChange={(event) => setActive(Number(event.target.value))} />
@@ -157,7 +199,12 @@ export function PriceCalculator({
         ) : (
           <>
             <p className="mt-2 font-heading text-4xl tabular-nums">{quote.currency} {quote.total.toFixed(2)}</p>
-            <p className="mt-1 text-sm text-white/75">Tier {quote.tierLabel} · {quote.purchasedSeats} purchased seats · {quote.activeSeats} active</p>
+            <p className="mt-1 text-sm text-white/75">{quote.tierLabel} · {quote.purchasedSeats} purchased seats · {quote.activeSeats} active</p>
+            {quote.quoteContact && (
+              <p className="mt-3 rounded-2xl bg-[#F8E7C4] px-3 py-2 text-sm text-[#1A3C34]">
+                Custom pricing. Request a quote{quote.selfServe ? ', or continue with self-serve checkout' : ''}.
+              </p>
+            )}
             <ul className="mt-4 space-y-2 text-sm">
               {quote.lines.map((line) => (
                 <li key={line.id} className="flex justify-between gap-3 border-t border-white/10 pt-2">
@@ -180,7 +227,7 @@ export function PriceCalculator({
                 </button>
               </div>
             )}
-            {onApply && (
+            {onApply && highlighted?.selfServe !== false && (
               <button
                 type="button"
                 className="mt-3 inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-[#1A3C34]"
@@ -192,6 +239,7 @@ export function PriceCalculator({
           </>
         )}
       </section>
+    </div>
     </div>
   );
 }

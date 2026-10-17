@@ -70,7 +70,7 @@ test('the live price adds Malaysian tax on card and skips it on an invoice', () 
     assert.equal(card.tax, 360.96);
     assert.equal(card.total, 4872.96);
     assert.equal(card.sparks, 80);
-    assert.equal(card.tierLabel, '1–50');
+    assert.equal(card.tierLabel, 'Starter');
     assert.deepEqual(card.programmeTitles, ['IGCSE core']);
   }
   const invoice = priceInstitutionOrder({

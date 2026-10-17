@@ -8,7 +8,10 @@ import { authedFetch } from '@/lib/api-client';
 import {
   normalizeCatalogue,
   seedInstitutionCatalogue,
+  tierRangeLabel,
+  type CatalogueTier,
   type InstitutionCatalogue,
+  type TierAccent,
 } from '@/lib/institution-catalogue';
 
 export function CatalogueEditor() {
@@ -61,27 +64,10 @@ export function CatalogueEditor() {
           <Input className="mt-1" type="number" min={1} value={draft.trialSeatCap} onChange={(event) => setDraft({ ...draft, trialSeatCap: Number(event.target.value) })} />
         </label>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-[#1A3C34]/70">
-              <th className="py-2">Tier</th>
-              <th>From</th>
-              <th>To</th>
-              <th>Discount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {draft.tiers.map((tier) => (
-              <tr key={tier.id}>
-                <td className="py-1 pr-2">{tier.label}</td>
-                <td className="pr-2"><Input type="number" value={tier.minSeats} onChange={(event) => setDraft({ ...draft, tiers: draft.tiers.map((row) => row.id === tier.id ? { ...row, minSeats: Number(event.target.value) } : row) })} /></td>
-                <td className="pr-2"><Input type="number" value={tier.maxSeats ?? ''} placeholder="open" onChange={(event) => setDraft({ ...draft, tiers: draft.tiers.map((row) => row.id === tier.id ? { ...row, maxSeats: event.target.value === '' ? null : Number(event.target.value) } : row) })} /></td>
-                <td><Input type="number" min={0} max={1} step="0.01" value={tier.discount} onChange={(event) => setDraft({ ...draft, tiers: draft.tiers.map((row) => row.id === tier.id ? { ...row, discount: Number(event.target.value) } : row) })} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="space-y-4">
+        {draft.tiers.map((tier) => (
+          <TierFields key={tier.id} tier={tier} items={draft.items} onChange={(next) => setDraft({ ...draft, tiers: draft.tiers.map((row) => row.id === tier.id ? next : row) })} />
+        ))}
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -128,5 +114,66 @@ export function CatalogueEditor() {
       </div>
       <Button className="h-11 rounded-full bg-[#1A3C34]" disabled={saving} onClick={() => void save()}>{saving ? 'Saving…' : 'Save catalogue'}</Button>
     </div>
+  );
+}
+
+function TierFields({
+  tier,
+  items,
+  onChange,
+}: {
+  tier: CatalogueTier;
+  items: InstitutionCatalogue['items'];
+  onChange: (tier: CatalogueTier) => void;
+}) {
+  const priceFor = (itemId: string) => tier.seatPrices.find((row) => row.itemId === itemId)?.perSeatMonthly ?? 0;
+  const setPrice = (itemId: string, perSeatMonthly: number) => {
+    const seatPrices = tier.seatPrices.some((row) => row.itemId === itemId)
+      ? tier.seatPrices.map((row) => row.itemId === itemId ? { ...row, perSeatMonthly } : row)
+      : [...tier.seatPrices, { itemId, perSeatMonthly }];
+    onChange({ ...tier, seatPrices });
+  };
+  return (
+    <section className="rounded-3xl border border-[#1A3C34]/10 bg-white p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-[#1A3C34]/60">{tierRangeLabel(tier)} students</p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-4">
+        <label className="text-sm">Name
+          <Input className="mt-1" value={tier.name} onChange={(event) => onChange({ ...tier, name: event.target.value, label: event.target.value })} />
+        </label>
+        <label className="text-sm">From students
+          <Input className="mt-1" type="number" min={0} value={tier.minSeats} onChange={(event) => onChange({ ...tier, minSeats: Number(event.target.value) })} />
+        </label>
+        <label className="text-sm">To students
+          <Input className="mt-1" type="number" value={tier.maxSeats ?? ''} placeholder="open" onChange={(event) => onChange({ ...tier, maxSeats: event.target.value === '' ? null : Number(event.target.value) })} />
+        </label>
+        <label className="text-sm">Card colour
+          <select className="mt-1 h-10 w-full rounded-xl border px-2" value={tier.accent} onChange={(event) => onChange({ ...tier, accent: event.target.value as TierAccent })}>
+            <option value="forest">Forest</option>
+            <option value="gold">Gold</option>
+            <option value="blue">Blue</option>
+            <option value="coral">Coral</option>
+          </select>
+        </label>
+      </div>
+      <label className="mt-3 block text-sm">Features, one per line
+        <textarea className="mt-1 min-h-24 w-full rounded-xl border px-3 py-2" value={tier.features.join('\n')} onChange={(event) => onChange({ ...tier, features: event.target.value.split('\n').slice(0, 12) })} />
+      </label>
+      <div className="mt-3 flex flex-wrap gap-4 text-sm">
+        <label className="flex items-center gap-2"><input type="checkbox" checked={tier.quoteContact} onChange={(event) => onChange({ ...tier, quoteContact: event.target.checked })} /> Quote and contact</label>
+        <label className="flex items-center gap-2"><input type="checkbox" checked={tier.selfServe} onChange={(event) => onChange({ ...tier, selfServe: event.target.checked })} /> Self-serve checkout</label>
+      </div>
+      {tier.quoteContact && (
+        <label className="mt-3 block text-sm">Contact link
+          <Input className="mt-1" value={tier.contactHref} onChange={(event) => onChange({ ...tier, contactHref: event.target.value })} />
+        </label>
+      )}
+      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+        {items.map((entry) => (
+          <label key={entry.id} className="text-sm">{entry.title} USD / seat
+            <Input className="mt-1" type="number" min={0} step="0.01" value={priceFor(entry.id)} onChange={(event) => setPrice(entry.id, Number(event.target.value))} />
+          </label>
+        ))}
+      </div>
+    </section>
   );
 }

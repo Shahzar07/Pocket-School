@@ -20,7 +20,8 @@ export type OrderAccess = 'subscription' | 'a_la_carte';
 
 export const INVOICE_MIN_SEATS = 50;
 export const SEAT_MIN = 1;
-export const SEAT_MAX = 500;
+/** High enough that Enterprise (500+ students) can still check out. */
+export const SEAT_MAX = 2000;
 
 export const SANDBOX_BANNER =
   'Payment keys are not configured. This checkout is in test mode and will not charge a card. A completed test payment still opens the academy.';
@@ -165,6 +166,8 @@ export interface PricedOrder {
   tender: InstitutionTender;
   lines: CatalogueLine[];
   tierLabel: string;
+  quoteContact: boolean;
+  selfServe: boolean;
   placeholder: boolean;
   notices: string[];
   activeSeats: number;
@@ -233,6 +236,8 @@ export function priceInstitutionOrder(input: {
     tender: input.tender,
     lines: quote.lines,
     tierLabel: quote.tierLabel,
+    quoteContact: quote.quoteContact,
+    selfServe: quote.selfServe,
     placeholder: quote.placeholder,
     notices: quote.notices,
     activeSeats: quote.activeSeats,

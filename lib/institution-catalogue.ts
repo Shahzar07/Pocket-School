@@ -35,13 +35,37 @@ export interface CatalogueItem {
   overage: SeatOverage;
 }
 
+export const TIER_ACCENTS = {
+  forest: '#1A3C34',
+  gold: '#C8922A',
+  blue: '#3C8DFF',
+  coral: '#E36A4F',
+} as const;
+
+export type TierAccent = keyof typeof TIER_ACCENTS;
+
+export interface TierSeatPrice {
+  itemId: string;
+  /** USD per student per month for this item on this tier. */
+  perSeatMonthly: number;
+}
+
 export interface CatalogueTier {
   id: string;
+  name: string;
+  /** Same as the name, so older readers still show the tier. */
   label: string;
   minSeats: number;
   maxSeats: number | null;
-  /** Fraction off the per-seat price, for example 0.1 for 10%. */
+  /** Used when a programme has no per-tier seat price. */
   discount: number;
+  seatPrices: TierSeatPrice[];
+  features: string[];
+  /** Shows a quote and contact path. Checkout can stay open beside it. */
+  quoteContact: boolean;
+  selfServe: boolean;
+  contactHref: string;
+  accent: TierAccent;
   placeholder: boolean;
 }
 
@@ -88,6 +112,9 @@ export interface CatalogueQuote {
   tierId: string;
   tierLabel: string;
   tierDiscount: number;
+  quoteContact: boolean;
+  selfServe: boolean;
+  features: string[];
   annualDiscount: number;
   purchasedSeats: number;
   activeSeats: number;
@@ -143,13 +170,83 @@ function item(partial: Omit<CatalogueItem, 'placeholder'> & { placeholder?: bool
   return { placeholder: true, ...partial };
 }
 
+const ENTERPRISE_CONTACT = 'mailto:institutions@poketschool.ai?subject=Enterprise%20pricing';
+
+function namedTier(partial: Omit<CatalogueTier, 'label' | 'placeholder' | 'seatPrices'> & { seatPrices?: TierSeatPrice[] }): CatalogueTier {
+  const { seatPrices, ...rest } = partial;
+  return { ...rest, label: rest.name, placeholder: true, seatPrices: seatPrices ?? [] };
+}
+
 /** Seed only. Amounts are placeholders for the super admin to replace. */
 export function seedInstitutionCatalogue(): InstitutionCatalogue {
+  const items = [
+    item({ id: 'igcse', title: 'IGCSE core', kind: 'programme', level: 'IGCSE', planId: 'igcse_alevel', access: 'both', perSeatMonthly: 10, sparksPerSeat: 8, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
+    item({ id: 'primary', title: 'Primary', kind: 'programme', level: 'Primary', planId: 'primary_secondary', access: 'both', perSeatMonthly: 8, sparksPerSeat: 6, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
+    item({ id: 'lower-secondary', title: 'Lower Secondary', kind: 'programme', level: 'Lower Secondary', planId: 'primary_secondary', access: 'subscription', perSeatMonthly: 8, sparksPerSeat: 6, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
+    item({ id: 'law-school', title: 'Law School', kind: 'programme', level: 'Law', planId: 'professional', access: 'both', perSeatMonthly: 12, sparksPerSeat: 10, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
+    item({ id: 'rise-sen', title: 'RISE SEN', kind: 'programme', level: 'RISE', planId: 'primary_secondary', access: 'both', perSeatMonthly: 9, sparksPerSeat: 8, billingBasis: 'active_minimum', minimumSeats: 5, overage: 'auto_add' }),
+    item({ id: 'maths', title: 'Mathematics', kind: 'category', level: '', planId: 'any', access: 'both', perSeatMonthly: 4, sparksPerSeat: 2, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
+    item({ id: 'english', title: 'English', kind: 'category', level: '', planId: 'any', access: 'both', perSeatMonthly: 3, sparksPerSeat: 2, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
+    item({ id: 'science', title: 'Science', kind: 'category', level: '', planId: 'any', access: 'both', perSeatMonthly: 3, sparksPerSeat: 2, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
+    item({ id: 'sen-support', title: 'SEN support', kind: 'category', level: 'RISE', planId: 'any', access: 'both', perSeatMonthly: 5, sparksPerSeat: 3, billingBasis: 'active_minimum', minimumSeats: 5, overage: 'prompt' }),
+  ];
+  const prices = (discount: number): TierSeatPrice[] => items.map((entry) => ({
+    itemId: entry.id,
+    perSeatMonthly: round2(entry.perSeatMonthly * (1 - discount)),
+  }));
   const tiers: CatalogueTier[] = [
-    { id: '1-50', label: '1–50', minSeats: 1, maxSeats: 50, discount: 0, placeholder: true },
-    { id: '51-200', label: '51–200', minSeats: 51, maxSeats: 200, discount: 0.1, placeholder: true },
-    { id: '201-500', label: '201–500', minSeats: 201, maxSeats: 500, discount: 0.15, placeholder: true },
-    { id: '500-plus', label: '500+', minSeats: 501, maxSeats: null, discount: 0.2, placeholder: true },
+    namedTier({
+      id: 'starter',
+      name: 'Starter',
+      minSeats: 0,
+      maxSeats: 50,
+      discount: 0,
+      seatPrices: prices(0),
+      features: ['Programmes for the levels you choose', 'Sparks allowance per seat', 'Self-serve checkout'],
+      quoteContact: false,
+      selfServe: true,
+      contactHref: '',
+      accent: 'forest',
+    }),
+    namedTier({
+      id: 'growth',
+      name: 'Growth',
+      minSeats: 51,
+      maxSeats: 200,
+      discount: 0.1,
+      seatPrices: prices(0.1),
+      features: ['Lower per-seat price', 'Assign programmes by level', 'Quote PDF for larger orders'],
+      quoteContact: false,
+      selfServe: true,
+      contactHref: '',
+      accent: 'gold',
+    }),
+    namedTier({
+      id: 'pro',
+      name: 'Pro',
+      minSeats: 201,
+      maxSeats: 500,
+      discount: 0.15,
+      seatPrices: prices(0.15),
+      features: ['Wider seat allowance', 'Active-student billing where configured', 'Invoice PDF'],
+      quoteContact: false,
+      selfServe: true,
+      contactHref: '',
+      accent: 'blue',
+    }),
+    namedTier({
+      id: 'enterprise',
+      name: 'Enterprise',
+      minSeats: 501,
+      maxSeats: null,
+      discount: 0.2,
+      seatPrices: prices(0.2),
+      features: ['Custom pricing', 'Quote or a conversation with Poket School', 'Self-serve checkout stays open'],
+      quoteContact: true,
+      selfServe: true,
+      contactHref: ENTERPRISE_CONTACT,
+      accent: 'coral',
+    }),
   ];
   return {
     placeholder: true,
@@ -165,18 +262,20 @@ export function seedInstitutionCatalogue(): InstitutionCatalogue {
       { code: 'MYR', rate: 4.7, enabled: true, placeholder: true, countries: ['MY'] },
       { code: 'GBP', rate: 0.79, enabled: true, placeholder: true, countries: ['GB', 'UK'] },
     ],
-    items: [
-      item({ id: 'igcse', title: 'IGCSE core', kind: 'programme', level: 'IGCSE', planId: 'igcse_alevel', access: 'both', perSeatMonthly: 10, sparksPerSeat: 8, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
-      item({ id: 'primary', title: 'Primary', kind: 'programme', level: 'Primary', planId: 'primary_secondary', access: 'both', perSeatMonthly: 8, sparksPerSeat: 6, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
-      item({ id: 'lower-secondary', title: 'Lower Secondary', kind: 'programme', level: 'Lower Secondary', planId: 'primary_secondary', access: 'subscription', perSeatMonthly: 8, sparksPerSeat: 6, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
-      item({ id: 'law-school', title: 'Law School', kind: 'programme', level: 'Law', planId: 'professional', access: 'both', perSeatMonthly: 12, sparksPerSeat: 10, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
-      item({ id: 'rise-sen', title: 'RISE SEN', kind: 'programme', level: 'RISE', planId: 'primary_secondary', access: 'both', perSeatMonthly: 9, sparksPerSeat: 8, billingBasis: 'active_minimum', minimumSeats: 5, overage: 'auto_add' }),
-      item({ id: 'maths', title: 'Mathematics', kind: 'category', level: '', planId: 'any', access: 'both', perSeatMonthly: 4, sparksPerSeat: 2, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
-      item({ id: 'english', title: 'English', kind: 'category', level: '', planId: 'any', access: 'both', perSeatMonthly: 3, sparksPerSeat: 2, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
-      item({ id: 'science', title: 'Science', kind: 'category', level: '', planId: 'any', access: 'both', perSeatMonthly: 3, sparksPerSeat: 2, billingBasis: 'purchased', minimumSeats: 1, overage: 'prompt' }),
-      item({ id: 'sen-support', title: 'SEN support', kind: 'category', level: 'RISE', planId: 'any', access: 'both', perSeatMonthly: 5, sparksPerSeat: 3, billingBasis: 'active_minimum', minimumSeats: 5, overage: 'prompt' }),
-    ],
+    items,
   };
+}
+
+export function tierRangeLabel(tier: Pick<CatalogueTier, 'minSeats' | 'maxSeats'>): string {
+  if (tier.maxSeats == null) return tier.minSeats === 501 ? '500+' : `${tier.minSeats}+`;
+  return `${tier.minSeats}–${tier.maxSeats}`;
+}
+
+/** Per-seat monthly USD for one programme on a tier. A listed tier price wins. */
+export function tierUnitMonthly(tier: CatalogueTier, entry: Pick<CatalogueItem, 'id' | 'perSeatMonthly'>): number {
+  const listed = tier.seatPrices.find((row) => row.itemId === entry.id);
+  if (listed && Number.isFinite(listed.perSeatMonthly)) return Math.max(0, listed.perSeatMonthly);
+  return entry.perSeatMonthly * (1 - Math.min(1, Math.max(0, tier.discount)));
 }
 
 export function billableSeats(entry: Pick<CatalogueItem, 'billingBasis' | 'minimumSeats'>, purchased: number, active: number): number {
@@ -265,7 +364,7 @@ export function priceCatalogue(input: {
   const notices: string[] = [];
   const lines: CatalogueLine[] = selected.map((entry) => {
     const seats = billableSeats(entry, purchased, active);
-    const monthly = entry.perSeatMonthly * (1 - discount);
+    const monthly = tierUnitMonthly(tier, entry);
     const unit = round2(annual ? monthly * 12 * (1 - annualDiscount) : monthly);
     const over = seatOverage(entry, purchased, active);
     if (over.status === 'prompt') {
@@ -298,8 +397,11 @@ export function priceCatalogue(input: {
     baseCurrency: 'USD',
     interval: input.interval,
     tierId: tier.id,
-    tierLabel: tier.label,
+    tierLabel: tier.name,
     tierDiscount: discount,
+    quoteContact: tier.quoteContact,
+    selfServe: tier.selfServe,
+    features: tier.features,
     annualDiscount: annual ? annualDiscount : 0,
     purchasedSeats: purchased,
     activeSeats: active,
@@ -335,6 +437,7 @@ export function catalogueDocumentLines(input: {
     `Seats purchased ${input.quote.purchasedSeats}`,
     `Active students ${input.quote.activeSeats}`,
     `Tier ${input.quote.tierLabel}`,
+    input.quote.quoteContact ? 'Custom pricing. Request a quote, or continue with self-serve checkout.' : '',
   ];
   for (const line of input.quote.lines) {
     lines.push(`${line.title} · ${line.seats} seats · ${money(line.unit)} ${period} · ${money(line.amount)}`);
@@ -446,7 +549,10 @@ export function validateCatalogue(catalogue: InstitutionCatalogue): string | nul
     tierIds.add(tier.id);
     if (!Number.isInteger(tier.minSeats) || tier.minSeats < previous) return 'Seat tiers cannot overlap.';
     if (tier.maxSeats != null && (!Number.isInteger(tier.maxSeats) || tier.maxSeats < tier.minSeats)) return 'A tier maximum is at least its minimum.';
+    if (!tier.name.trim()) return 'Each tier needs a name.';
     if (tier.discount < 0 || tier.discount > 1) return 'A tier discount is between 0 and 100%.';
+    if (tier.seatPrices.some((row) => row.perSeatMonthly < 0)) return 'A per-tier seat price is zero or greater.';
+    if (tier.quoteContact && !tier.contactHref.trim()) return 'A quote tier needs a contact link.';
     previous = (tier.maxSeats ?? tier.minSeats) + 1;
   }
   const ids = new Set<string>();
@@ -482,13 +588,38 @@ export function normalizeCatalogue(value: unknown): InstitutionCatalogue {
       const tier = row as Partial<CatalogueTier>;
       const id = typeof tier.id === 'string' ? tier.id.trim() : '';
       if (!id) return [];
-      const max = tier.maxSeats == null ? null : Math.floor(finite(tier.maxSeats, 0));
+      const max = tier.maxSeats == null || tier.maxSeats === undefined ? null : Math.floor(finite(tier.maxSeats, 0));
+      const name = typeof tier.name === 'string' && tier.name.trim()
+        ? tier.name.trim()
+        : typeof tier.label === 'string' && tier.label.trim() ? tier.label.trim() : id;
+      const accent: TierAccent = tier.accent === 'gold' || tier.accent === 'blue' || tier.accent === 'coral' || tier.accent === 'forest'
+        ? tier.accent
+        : 'forest';
+      const href = typeof tier.contactHref === 'string' ? tier.contactHref.trim() : '';
+      const safeHref = href.startsWith('/') || href.startsWith('mailto:') || href.startsWith('https://') ? href : '';
       return [{
         id,
-        label: typeof tier.label === 'string' && tier.label.trim() ? tier.label.trim() : id,
-        minSeats: Math.floor(finite(tier.minSeats, 1)),
+        name,
+        label: name,
+        minSeats: Math.max(0, Math.floor(finite(tier.minSeats, 0))),
         maxSeats: max,
         discount: Math.min(1, Math.max(0, finite(tier.discount, 0))),
+        seatPrices: Array.isArray(tier.seatPrices)
+          ? tier.seatPrices.flatMap((row) => {
+            if (!row || typeof row !== 'object') return [];
+            const price = row as Partial<TierSeatPrice>;
+            const itemId = typeof price.itemId === 'string' ? price.itemId.trim() : '';
+            if (!itemId) return [];
+            return [{ itemId, perSeatMonthly: Math.max(0, finite(price.perSeatMonthly, 0)) }];
+          })
+          : [],
+        features: Array.isArray(tier.features)
+          ? tier.features.filter((feature): feature is string => typeof feature === 'string' && feature.trim().length > 0).map((feature) => feature.trim()).slice(0, 12)
+          : [],
+        quoteContact: tier.quoteContact === true,
+        selfServe: tier.selfServe !== false,
+        contactHref: safeHref,
+        accent,
         placeholder: tier.placeholder !== false,
       }];
     }),
