@@ -1,6 +1,6 @@
 import { LEGAL_COMPANY_NO, LEGAL_ENTITY } from './legal';
 import { LANGUAGES } from './languages';
-import { READS_BOOKS, READS_PLANS } from './payments/reads';
+import { READS_BOOKS, readsPlanItem } from './payments/reads';
 
 /** Public sales letter. Separate from the Poket School plan ladder at /offer. */
 export const READS_OFFER_PATH = '/reads/offer';
@@ -12,17 +12,19 @@ export const READS_OFFER_LANGUAGE_COUNT = LANGUAGES.length;
 export const READS_OFFER_ENTITY = LEGAL_ENTITY;
 export const READS_OFFER_COMPANY_NO = LEGAL_COMPANY_NO;
 
-const PLAN_USD = Object.fromEntries(READS_PLANS.map(plan => [plan.id, plan.usd])) as Record<string, number>;
-
-export function readsMonthlyUsd(sku: 'reads' | 'reads-family'): number {
-  const usd = PLAN_USD[sku];
-  if (!usd) throw new Error(`Unknown Reads plan ${sku}`);
-  return usd;
+function readsUsd(sku: 'reads' | 'reads-family', interval: 'month' | 'year'): number {
+  const item = readsPlanItem(sku, interval);
+  if (!item) throw new Error(`Unknown Reads plan ${sku}`);
+  return item.unitAmount;
 }
 
-/** Annual Reads is ten times the monthly price. Two months are not billed. */
+export function readsMonthlyUsd(sku: 'reads' | 'reads-family'): number {
+  return readsUsd(sku, 'month');
+}
+
+/** Annual Reads is the shared shelf price: ten times the month, so two months are not billed. */
 export function readsYearlyUsd(sku: 'reads' | 'reads-family'): number {
-  return readsMonthlyUsd(sku) * 10;
+  return readsUsd(sku, 'year');
 }
 
 export function readsCheckoutHref(sku: 'reads' | 'reads-family', interval: 'month' | 'year'): string {

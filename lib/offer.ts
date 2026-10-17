@@ -3,8 +3,10 @@
  *
  * Poket Reads on the All-In plan, and the 1-week ET AI Live taster, render as
  * ordinary included items only while OFFER_BUNDLE_EXTRAS is true.
- * Standalone Poket Reads has no public price.
+ * Standalone Poket Reads uses the shared shelf price and links to /reads/offer.
  */
+
+import { readsPlanItem } from './payments/reads';
 
 export const OFFER_BUNDLE_EXTRAS = true;
 
@@ -16,7 +18,8 @@ export const OFFER_ROUTES = {
   primary: '/dashboard/checkout?kind=subscription&sku=primary_secondary',
   professional: '/dashboard/checkout?kind=subscription&sku=professional',
   family: '/signup?role=parent',
-  reads: '/reads',
+  /** Standalone Poket Reads sales letter. */
+  reads: '/reads/offer',
   institutions: 'mailto:institutions@poketschool.ai?subject=Poket%20School%20for%20institutions',
 } as const;
 
@@ -117,7 +120,23 @@ const BUNDLE_EXTRAS = [
   '1-week ET AI Live taster',
 ] as const;
 
+function readsShelfPrice(): { price: string; priceNote: string; family: string } {
+  const month = readsPlanItem('reads', 'month');
+  const year = readsPlanItem('reads', 'year');
+  const familyMonth = readsPlanItem('reads-family', 'month');
+  const familyYear = readsPlanItem('reads-family', 'year');
+  if (!month || !year || !familyMonth || !familyYear) {
+    throw new Error('Reads price is missing from the shared shelf.');
+  }
+  return {
+    price: `$${month.unitAmount}/mo`,
+    priceNote: `$${year.unitAmount}/yr`,
+    family: `Reads Family $${familyMonth.unitAmount}/mo or $${familyYear.unitAmount}/yr`,
+  };
+}
+
 export function offerPlans(extras: boolean = OFFER_BUNDLE_EXTRAS): OfferPlan[] {
+  const reads = readsShelfPrice();
   return [
     {
       id: 'preview',
@@ -193,10 +212,11 @@ export function offerPlans(extras: boolean = OFFER_BUNDLE_EXTRAS): OfferPlan[] {
     {
       id: 'reads',
       name: 'Poket Reads',
-      price: 'Coming soon',
-      priceNote: 'Standalone access',
+      price: reads.price,
+      priceNote: reads.priceNote,
       tagline: 'A library that reads with you.',
       features: [
+        reads.family,
         'Books and audiobooks',
         'Children’s illustrated stories',
         'ET AI book studio',
