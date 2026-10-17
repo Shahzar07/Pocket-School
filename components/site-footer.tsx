@@ -14,6 +14,7 @@
 
 import Link from "next/link";
 import { useWhiteLabel } from "@/components/white-label-provider";
+import { isBrandedLoginPath } from "@/lib/institution-login";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
 import {
@@ -51,6 +52,7 @@ const HIDDEN_PREFIXES = [
 function hidesSiteFooter(pathname: string): boolean {
   return (
     HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix)) ||
+    isBrandedLoginPath(pathname) ||
     pathname === "/offer" ||
     pathname.startsWith("/offer/")
   );

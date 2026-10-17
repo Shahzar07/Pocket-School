@@ -12,6 +12,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { CurrencySwitcher } from "@/components/currency-switcher";
 import styles from "./home-chrome.module.css";
 import { PromoBanner } from "@/components/promo-banner";
+import { isBrandedLoginPath } from "@/lib/institution-login";
 
 const NAV_LINKS = [
   { label: "Marketplace", href: "/courses" },
@@ -40,6 +41,7 @@ const HIDDEN_PREFIXES = [
 function hidesSiteChrome(pathname: string): boolean {
   return (
     HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix)) ||
+    isBrandedLoginPath(pathname) ||
     pathname === "/offer" ||
     pathname.startsWith("/offer/")
   );

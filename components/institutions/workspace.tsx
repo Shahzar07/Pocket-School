@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { buildXlsx } from '@/lib/insights/xlsx';
 import { certificateBrandLine, licencePhase, type OemLicence } from '@/lib/oem';
 import { brandedInvite } from '@/lib/oem';
+import { institutionLoginLinks } from '@/lib/institution-login';
+import { InstitutionLoginShare } from '@/components/institution-login-share';
 import { institutionOrigin } from '@/lib/white-label';
 import {
   ACADEMY_ROLES, BRAND_FONTS, GROUP_KINDS, INSTITUTION_PLANS, INSTITUTION_TYPES, INTEGRATION_ENV,
@@ -191,7 +193,7 @@ export function InstitutionWorkspace({
         <ProfileTab name={name} profile={profile} busy={busy} superAdmin={superAdmin} onAction={onAction} />
       )}
       {tab === 'people' && (
-        <PeopleTab invites={invites} members={members} groups={groups} programmes={programmes} branding={branding} subdomain={subdomain} busy={busy} onAction={onAction} />
+        <PeopleTab invites={invites} members={members} groups={groups} programmes={programmes} branding={branding} subdomain={subdomain} customDomain={customDomain} busy={busy} onAction={onAction} />
       )}
       {tab === 'white-label' && (
         <BrandTab name={name} plan={profile.plan} subdomain={subdomain} customDomain={customDomain} domain={domain} branding={branding} busy={busy} superAdmin={superAdmin} onAction={onAction} />
@@ -375,7 +377,7 @@ function SinglePerson({
 }
 
 function PeopleTab({
-  invites, members, groups, programmes, branding, subdomain, busy, onAction,
+  invites, members, groups, programmes, branding, subdomain, customDomain, busy, onAction,
 }: {
   invites: AcademyInvite[];
   members: AcademyMember[];
@@ -383,6 +385,7 @@ function PeopleTab({
   programmes: Pick<Programme, 'id' | 'name'>[];
   branding: NonNullable<Institution['branding']>;
   subdomain: string;
+  customDomain: string;
   busy?: boolean;
   onAction: (action: WorkspaceAction) => Promise<void>;
 }) {
@@ -395,7 +398,11 @@ function PeopleTab({
   const preview = brandedInvite({
     displayName: branding.displayName || 'Academy',
     emailFromName: branding.emailFromName,
-  }, 'JOINCODE', origin, { subject: branding.inviteSubject, text: branding.inviteBody });
+  }, 'JOINCODE', origin, {
+    subject: branding.inviteSubject,
+    text: branding.inviteBody,
+    loginUrl: institutionLoginLinks({ slug: subdomain, customDomain }).share,
+  });
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <section className="rounded-3xl border border-border p-5 space-y-3">
@@ -522,6 +529,11 @@ function BrandTab({
           <Input value={draft.customDomain} disabled={!domainAllowed && !superAdmin} onChange={(event) => setDraft({ ...draft, customDomain: event.target.value })} className="mt-1 h-11 rounded-xl" placeholder="learn.school.example" />
         </label>
         {!domainAllowed && <p className="text-xs text-muted-foreground">Custom domains open on the enterprise and OEM plans. This academy keeps its Poket School subdomain.</p>}
+        <InstitutionLoginShare
+          slug={draft.subdomain}
+          customDomain={domainAllowed || superAdmin ? draft.customDomain : customDomain}
+          schoolName={draft.displayName || name}
+        />
         <div className="grid sm:grid-cols-2 gap-3">
           <label className="text-sm">Display name<Input value={draft.displayName} onChange={(event) => setDraft({ ...draft, displayName: event.target.value })} className="mt-1 h-11 rounded-xl" /></label>
           <label className="text-sm">Logo URL<Input value={draft.logoUrl} onChange={(event) => setDraft({ ...draft, logoUrl: event.target.value })} className="mt-1 h-11 rounded-xl" /></label>

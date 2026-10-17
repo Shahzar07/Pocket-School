@@ -91,6 +91,7 @@ import {
 import { loadPriceOverride, loadVolumeSchedule, savePriceOverride } from '@/lib/institution-pricing-store';
 import { publishedBooks } from '@/lib/reads/seed';
 import { canManageInstitution, isSuperAdmin } from '@/lib/roles';
+import { institutionLoginLinks } from '@/lib/institution-login';
 import { institutionOrigin } from '@/lib/white-label';
 
 function asStatus(value: string | undefined): InstitutionStatus {
@@ -304,7 +305,11 @@ export default function InstitutionConsolePage() {
         const message = brandedInvite({
           displayName: institution.branding?.displayName || institution.name,
           emailFromName: institution.branding?.emailFromName,
-        }, code, origin, { subject: institution.branding?.inviteSubject, text: institution.branding?.inviteBody });
+        }, code, origin, {
+          subject: institution.branding?.inviteSubject,
+          text: institution.branding?.inviteBody,
+          loginUrl: institutionLoginLinks({ slug: institution.subdomain, customDomain: institution.customDomain }).share,
+        });
         const sent = await authedFetch('/api/institutions/invites/send', {
           method: 'POST',
           body: JSON.stringify({ institutionId, emails: parsed.rows.map((row) => row.email), code }),

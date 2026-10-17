@@ -5,6 +5,8 @@
  * public site and a signed-in person to the dashboard.
  */
 
+import { isBrandedLoginPath } from './institution-login';
+
 const MODULE_PREFIXES = [
   '/reads',
   '/ai-studio',
@@ -35,6 +37,7 @@ function matchesPrefix(pathname: string, prefix: string): boolean {
 /** True when this path is a standalone module that has no site navigation. */
 export function showsModuleHeader(pathname: string): boolean {
   if (!pathname || pathname === '/') return false;
+  if (isBrandedLoginPath(pathname)) return false;
   if (BLOCKED_PREFIXES.some(prefix => matchesPrefix(pathname, prefix))) return false;
   return MODULE_PREFIXES.some(prefix => matchesPrefix(pathname, prefix));
 }
