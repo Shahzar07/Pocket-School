@@ -19,10 +19,12 @@ export const PUSH_CATEGORIES = [
   'alumni',
   'institution',
   'achievements',
+  'network',
+  'safety',
 ] as const;
 
 /** Account toggles. A missing key stays on. `alumni` covers reunions, the wall, yearbook release, and alumni messages. Badge pushes use `achievements`. `grades` stays a category for unit tests and is not an account toggle. */
-export const USER_PUSH_TOGGLES = ['alumni', 'institution', 'achievements'] as const;
+export const USER_PUSH_TOGGLES = ['alumni', 'institution', 'achievements', 'network', 'safety'] as const;
 
 export type PushCategory = (typeof PUSH_CATEGORIES)[number];
 
@@ -47,6 +49,8 @@ export interface PushMessage {
   title: string;
   body: string;
   link?: string;
+  /** Critical safeguarding is delivered even when the device muted `safety`. */
+  force?: boolean;
 }
 
 export interface PushStore {
@@ -102,7 +106,7 @@ async function deliver(message: PushMessage, deps: PushDeps): Promise<PushReport
   let skipped = 0;
 
   for (const token of tokens) {
-    if (!wantsCategory(token, message.category)) {
+    if (!message.force && !wantsCategory(token, message.category)) {
       skipped += 1;
       continue;
     }

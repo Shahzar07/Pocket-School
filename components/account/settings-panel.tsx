@@ -515,6 +515,9 @@ export function SettingsPanel({
             ['alumni', 'Alumni'],
             ['institution', 'Institution'],
             ['achievements', 'Achievements'],
+            ['network', 'Network'],
+            ['safety', 'Safety'],
+            ['networkDigest', 'Network email digest'],
           ]}
           value={notes}
           onChange={key => setNotes({ ...notes, [key]: !notes[key] })}

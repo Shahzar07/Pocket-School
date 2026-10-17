@@ -26,6 +26,21 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
     if (action === 'react') return react(user.uid, str(body.postId), str(body.emoji));
     if (action === 'follow') return follow(user.uid, str(body.targetId));
     if (action === 'report') return reportContent(user.uid, { targetType: str(body.targetType), targetId: str(body.targetId), reason: str(body.reason) });
+    if (action === 'alumni-post' || action === 'yearbook') {
+      const { publishScreened } = await import('@/lib/server/et-moderation');
+      const { loadMember } = await import('@/lib/server/scope-c');
+      const person = await loadMember(user.uid);
+      return publishScreened({
+        collection: action === 'alumni-post' ? 'alumni_wall_posts' : 'yearbook_notes',
+        surface: action === 'alumni-post' ? 'alumni_wall' : 'yearbook',
+        authorId: user.uid,
+        authorName: person.name,
+        ageTier: person.ageTier,
+        text: str(body.body),
+        subjectPath: '',
+        institutionId: str(body.institutionId),
+      });
+    }
     if (action === 'best-answer') return markBestAnswer(user.uid, str(body.postId), str(body.commentId));
     if (action === 'parent-controls') return writeParentControls(user.uid, str(body.studentId), body);
     const { ActionError } = await import('@/lib/server/actions');

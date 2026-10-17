@@ -1014,6 +1014,60 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Keep as the academy issuance desk. It does not change the platform template.
 - **Owner keys:** None.
 
+### Professional network
+
+- **Route:** `/dashboard/network`
+- **Audience:** everyone
+- **Purpose:** Profiles, the feed, organisations, and messages. Under-18 members stay inside their school.
+- **Overlaps:** Community spaces and groups.
+- **Decision:** Keep as the verified professional network. Community remains the class wall.
+- **Owner keys:** OPENROUTER_API_KEY or GEMINI_API_KEY for ET AI moderation. Patterns run when no key is set.
+
+### Poket School Founders
+
+- **Route:** `/dashboard/network/founders`
+- **Audience:** everyone
+- **Purpose:** Adult opt-in co-founder matching, startup pages, and school entrepreneurship teams.
+- **Overlaps:** The job board and alumni mentoring, when those land.
+- **Decision:** Off until a super admin enables it. Under-18s are not in public matching.
+- **Owner keys:** None. Founders Pro sandbox billing stays off.
+
+### Groups and associations
+
+- **Route:** `/dashboard/network/groups`
+- **Audience:** everyone
+- **Purpose:** Interest groups, clubs, study groups, associations, alumni chapters, and professional groups.
+- **Overlaps:** Institution group approval.
+- **Decision:** Student groups need a teacher advisor and school approval by default.
+- **Owner keys:** None. Dues are sandbox and off.
+
+### Recruiter search
+
+- **Route:** `/dashboard/network/recruit`
+- **Audience:** everyone
+- **Purpose:** Search opted-in adult candidates by verified skills, level, certificates, and availability.
+- **Overlaps:** The job board and CV versions.
+- **Decision:** Recruiter tiers stay off until a super admin enables sandbox billing.
+- **Owner keys:** None until billing is enabled. Charges are sandbox only.
+
+### Safeguarding
+
+- **Route:** `/dashboard/admin/safeguarding`
+- **Audience:** admin
+- **Purpose:** Case files, alerts, and the moderation audit for schools and the super admin.
+- **Overlaps:** Moderation queue.
+- **Decision:** Parents see a redacted note. Schools see the case. Critical alerts cannot be muted.
+- **Owner keys:** OPENROUTER_API_KEY or GEMINI_API_KEY. SMTP_PASS for high-severity email when it is set.
+
+### School groups
+
+- **Route:** `/dashboard/institution/groups`
+- **Audience:** institution, admin
+- **Purpose:** Approve, archive, or transfer a student group when officers leave.
+- **Overlaps:** Groups and associations.
+- **Decision:** Institution admins act on their own school. A super admin can see every school.
+- **Owner keys:** None.
+
 ### Dashboard session
 
 - **Route:** `/dashboard/session`

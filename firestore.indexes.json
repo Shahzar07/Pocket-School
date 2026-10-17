@@ -655,6 +655,14 @@
       ]
     },
     {
+      "collectionGroup": "network_connections",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userIds", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "rosters",
       "queryScope": "COLLECTION",
       "fields": [
@@ -730,6 +738,38 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "kind", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "founder_profiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "optIn", "order": "ASCENDING" },
+        { "fieldPath": "ageTier", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "moderation_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "authorId", "order": "ASCENDING" },
+        { "fieldPath": "atMs", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "network_posts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "moderation", "order": "ASCENDING" },
+        { "fieldPath": "createdAtMs", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "groups",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "institutionId", "order": "ASCENDING" }
       ]
     }
   ],

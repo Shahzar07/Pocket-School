@@ -2715,6 +2715,88 @@ service cloud.firestore {
       allow delete: if callerIsSuper();
     }
 
+    // Professional network, founders, groups, and safeguarding.
+    // Clients may read. Writes stay on the API so ET AI can screen them.
+    // In the repo only. Do not deploy these rules from this change.
+    match /network_profiles/{userId} {
+      allow read: if isSignedIn() && (
+        isUser(userId)
+        || isAdmin()
+        || (resource.data.ageTier == 'adult' && resource.data.visibility == 'public')
+        || (resource.data.ageTier == 'adult' && resource.data.visibility == 'network' && callerAgeTier() == 'adult')
+        || (resource.data.ageTier != 'adult' && resource.data.institutionId == myInstitution())
+      );
+      allow create, update, delete: if false;
+    }
+    match /network_posts/{postId} {
+      allow read: if isSignedIn() && (
+        resource.data.authorId == request.auth.uid
+        || isAdmin()
+        || (resource.data.moderation == 'allow' && resource.data.ageTier == 'adult' && callerAgeTier() == 'adult')
+        || (resource.data.moderation == 'allow' && resource.data.institutionId != '' && resource.data.institutionId == myInstitution())
+      );
+      allow create, update, delete: if false;
+    }
+    match /network_comments/{commentId} {
+      allow read: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin() || resource.data.moderation == 'allow');
+      allow create, update, delete: if false;
+    }
+    match /network_messages/{messageId} {
+      allow read: if isSignedIn() && (resource.data.fromId == request.auth.uid || resource.data.toId == request.auth.uid || isAdmin());
+      allow create, update, delete: if false;
+    }
+    match /network_orgs/{orgId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if false;
+    }
+    match /founder_profiles/{userId} {
+      allow read: if isSignedIn() && resource.data.ageTier == 'adult' && resource.data.optIn == true && callerAgeTier() == 'adult';
+      allow create, update, delete: if false;
+    }
+    match /startups/{startupId} {
+      allow read: if isSignedIn() && callerAgeTier() == 'adult';
+      allow create, update, delete: if false;
+    }
+    match /groups/{groupId} {
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || (resource.data.visibility != 'secret' && (resource.data.schoolOnly != true || resource.data.institutionId == myInstitution()))
+      );
+      allow create, update, delete: if false;
+    }
+    match /group_posts/{postId} {
+      allow read: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin() || resource.data.moderation == 'allow');
+      allow create, update, delete: if false;
+    }
+    match /safeguarding_cases/{caseId} {
+      allow read: if isAdmin() || (isInstitutionAdmin() && resource.data.institutionId == myInstitution());
+      allow create, update, delete: if false;
+    }
+    match /safeguarding_alerts/{alertId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create, update, delete: if false;
+    }
+    match /moderation_audit/{itemId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+    match /moderation_strikes/{userId} {
+      allow read: if isUser(userId) || isAdmin();
+      allow create, update, delete: if false;
+    }
+    match /moderation_appeals/{appealId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create, update, delete: if false;
+    }
+    match /alumni_wall_posts/{postId} {
+      allow read: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin() || (resource.data.moderation == 'allow' && callerAgeTier() == 'adult'));
+      allow create, update, delete: if false;
+    }
+    match /yearbook_notes/{noteId} {
+      allow read: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin() || (resource.data.moderation == 'allow' && resource.data.institutionId == myInstitution()));
+      allow create, update, delete: if false;
+    }
+
     match /published_reports/{token} {
       allow get: if true;
       allow list: if false;
