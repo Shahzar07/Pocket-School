@@ -239,12 +239,20 @@ export function paymentGateway(country: string): PaymentGatewayId {
 }
 
 /**
- * A student, parent, or teacher inside an institution is not billed for the seat.
- * Marketplace courses are still paid by the person. Top-ups of an institution pool
- * are paid by the institution.
+ * Institution students, teachers, and parents are not billed for the seat.
+ * A parent account is free on either path. Marketplace courses are paid by the
+ * buyer, or by the institution when it bulk-buys them onto its invoice.
+ * Sparks are not a marketplace tender. Top-ups of an institution pool are paid
+ * by the institution. Person-level prices live in lib/institution-commerce.ts.
  */
-export function chargeFor(input: { membership: EnrolPath; product: ChargeProduct }): 'waived' | 'individual' | 'institution' {
-  if (input.product === 'marketplace') return 'individual';
+export function chargeFor(input: {
+  membership: EnrolPath;
+  product: ChargeProduct;
+  role?: JoinRole;
+  marketplacePayer?: 'individual' | 'institution';
+}): 'waived' | 'individual' | 'institution' {
+  if (input.product === 'marketplace') return input.marketplacePayer === 'institution' ? 'institution' : 'individual';
+  if (input.role === 'parent') return 'waived';
   if (input.membership === 'institution') return input.product === 'topup' ? 'institution' : 'waived';
   return 'individual';
 }
@@ -530,6 +538,8 @@ export interface AccessCourse {
   visibility?: 'core' | 'institution' | 'marketplace' | 'legacy' | '';
   level?: VolumePlanId | '';
   marketplaceApproved?: boolean;
+  /** Absent on courses created before the library gate. Those stay visible. */
+  libraryApproved?: boolean;
   classIds?: readonly string[];
   ownerId?: string;
 }
@@ -567,12 +577,15 @@ export function canSeeCourse(viewer: AccessViewer, course: AccessCourse): boolea
     return !!course.level && viewer.entitledLevels.includes(course.level) && (viewer.role !== 'student' || viewer.level === course.level || viewer.level === '');
   }
   if (!course.institutionId || viewer.institutionId !== course.institutionId) return false;
+  const inLibrary = course.libraryApproved !== false;
   if (viewer.role === 'institution_admin') return true;
   if (viewer.role === 'teacher') {
     if (course.ownerId && course.ownerId === viewer.userId) return true;
+    if (!inLibrary) return false;
     if (!course.classIds || course.classIds.length === 0) return false;
     return overlaps(viewer.classIds, course.classIds);
   }
+  if (!inLibrary) return false;
   if (viewer.role === 'student') {
     if (course.classIds && course.classIds.length > 0) return overlaps(viewer.classIds, course.classIds);
     return true;
