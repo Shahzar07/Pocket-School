@@ -9,14 +9,19 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { hasAccountRole } from '@/lib/account-modes';
 import { getSparkTransactions, SparkTransaction } from '@/lib/db';
 import { useEffect, useState } from 'react';
+import { automationEnabled } from '@/lib/automation-status';
 
 export default function SparksPage() {
   const { user, profile } = useAuthSTORE();
   const [rows, setRows] = useState<SparkTransaction[]>([]);
+  const [packsOpen, setPacksOpen] = useState(true);
   useEffect(() => {
     if (!user) return;
     getSparkTransactions(user.uid, 40).then(setRows).catch(() => setRows([]));
   }, [user]);
+  useEffect(() => {
+    automationEnabled('sparks_topup').then(setPacksOpen).catch(() => setPacksOpen(true));
+  }, []);
   const allowance = monthlySparksForProfile(profile);
 
   return (
@@ -57,13 +62,17 @@ export default function SparksPage() {
           ))}
         </ul>
       </div>
-      <div className="flex flex-wrap gap-2">
-        {SPARK_PACKS.map((pack) => (
-          <Link key={pack.id} href={`/dashboard/checkout?kind=sparks&sku=${pack.id}`} className="inline-flex h-11 items-center rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground">
-            {pack.title} · {formatMoney(pack.usd)}
-          </Link>
-        ))}
-      </div>
+      {packsOpen ? (
+        <div className="flex flex-wrap gap-2">
+          {SPARK_PACKS.map((pack) => (
+            <Link key={pack.id} href={`/dashboard/checkout?kind=sparks&sku=${pack.id}`} className="inline-flex h-11 items-center rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground">
+              {pack.title} · {formatMoney(pack.usd)}
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm">Sparks packs are added by a super admin at the moment.</p>
+      )}
       <div>
         <h2 className="font-semibold mb-2">History</h2>
         {rows.length === 0 && <p className="text-sm text-muted-foreground">Nothing here yet. Finish a lesson to earn your first Sparks.</p>}

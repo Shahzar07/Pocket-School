@@ -15,6 +15,7 @@ import {
   quoteSelfServeChange,
   sandboxBannerFor,
 } from '@/lib/institution-self-serve';
+import { loadAutomation, logAutomation } from '@/lib/server/automation-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,10 +44,16 @@ export async function POST(req: NextRequest) {
   const ref = adminDb().doc(`institutions/${institutionId}/billing/current`);
   const snap = await ref.get();
   const current = readSubscription(snap.data() as Record<string, unknown> | undefined, blankSubscription('institution', todayIso()));
+  const automation = await loadAutomation();
   if (body.cancel) {
+    if (!automation.rules.institution_cancel) {
+      await logAutomation({ rule: 'institution_cancel', outcome: 'held', summary: 'Academy cancellation is set to manual.', actorId: user.uid, refId: institutionId });
+      return NextResponse.json({ error: 'Cancellation is with a super admin at the moment.' }, { status: 409 });
+    }
     const dated = cancellationDate(current.periodEnd);
     if ('error' in dated) return NextResponse.json({ error: dated.error }, { status: 400 });
     await ref.set({ cancelOn: dated.cancelOn }, { merge: true });
+    await logAutomation({ rule: 'institution_cancel', outcome: 'auto', summary: `Academy cancels on ${dated.cancelOn}.`, actorId: user.uid, refId: institutionId });
     return NextResponse.json({ cancelOn: dated.cancelOn });
   }
   const planId: VolumePlanId = body.planId === 'primary_secondary' || body.planId === 'professional' || body.planId === 'igcse_alevel'
@@ -55,6 +62,16 @@ export async function POST(req: NextRequest) {
   const interval: VolumeInterval = body.interval === 'monthly' ? 'monthly' : body.interval === 'annual' ? 'annual' : current.interval;
   const seats = Math.floor(Number(body.seats));
   if (!Number.isInteger(seats) || seats < 1) return NextResponse.json({ error: 'Choose a seat count.' }, { status: 400 });
+  const planChanged = planId !== current.planId || interval !== current.interval;
+  const seatsChanged = seats !== current.seats;
+  if (planChanged && !automation.rules.plan_proration) {
+    await logAutomation({ rule: 'plan_proration', outcome: 'held', summary: 'Plan changes are set to manual.', actorId: user.uid, refId: institutionId });
+    return NextResponse.json({ error: 'Plan changes are with a super admin at the moment.' }, { status: 409 });
+  }
+  if (seatsChanged && !planChanged && !automation.rules.institution_seats) {
+    await logAutomation({ rule: 'institution_seats', outcome: 'held', summary: 'Seat changes are set to manual.', actorId: user.uid, refId: institutionId });
+    return NextResponse.json({ error: 'Seat changes are with a super admin at the moment.' }, { status: 409 });
+  }
   const nextTotal = recurringTotal(planId, interval, seats);
   const quote = quoteSelfServeChange({
     currentSeats: current.seats,

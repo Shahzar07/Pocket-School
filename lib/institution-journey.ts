@@ -184,5 +184,6 @@ export function isInstitutionJourneyPath(pathname: string): boolean {
     || path.startsWith('/institutions/')
     || path === '/preview/institution-pending'
     || path === '/preview/institution-onboarding'
-    || path === '/preview/institution-checkout';
+    || path === '/preview/institution-checkout'
+    || path === '/preview/automation';
 }

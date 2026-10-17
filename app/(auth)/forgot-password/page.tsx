@@ -11,6 +11,7 @@ import { motion } from 'motion/react';
 import Link from 'next/link';
 import { MailCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { automationEnabled } from '@/lib/automation-status';
 
 export default function ForgotPasswordPage() {
   const { t } = useTranslation();
@@ -26,6 +27,10 @@ export default function ForgotPasswordPage() {
     }
     setLoading(true);
     try {
+      if (!(await automationEnabled('password_reset'))) {
+        toast.error('A super admin sends password resets at the moment.');
+        return;
+      }
       await sendPasswordResetEmail(auth, email.trim());
       setSent(true);
     } catch (err: any) {

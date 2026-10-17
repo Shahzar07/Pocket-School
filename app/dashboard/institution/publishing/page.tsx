@@ -31,7 +31,7 @@ export default function PublishingPage() {
 
   return (
     <DashPage className="max-w-3xl">
-      <DashHeader eyebrow="Institution" title="Course library" description="Teachers can create a course. It appears here after you approve it. Listing on the Poket School marketplace needs a super admin." />
+      <DashHeader eyebrow="Institution" title="Course library" description="A teacher course that passes the content check goes into this library on its own. This page is the override when that rule is off, or when you want to return a course. The public marketplace still needs a super admin unless that rule is turned on." />
       {rows.length === 0 && <Panel><p className="text-sm text-muted-foreground">No institution courses yet.</p></Panel>}
       <ul className="space-y-3">
         {rows.map((row) => (

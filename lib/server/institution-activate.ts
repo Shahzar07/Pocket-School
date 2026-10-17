@@ -83,6 +83,15 @@ interface AcademyRecord {
   setupComplete: boolean;
 }
 
+async function institutionActivationOpen(): Promise<boolean> {
+  try {
+    const { loadAutomation } = await import('./automation-store');
+    return (await loadAutomation()).rules.institution_activation;
+  } catch {
+    return true;
+  }
+}
+
 async function loadAcademy(institutionId: string): Promise<AcademyRecord | null> {
   const snap = await adminDb().doc(`institutions/${institutionId}`).get();
   if (!snap.exists) return null;
@@ -323,18 +332,21 @@ export async function settleInstitutionOrder(
     wantsCobrand: order.wantsCobrand === true,
     wantsMarketplace: order.wantsMarketplace === true,
   });
+  const activationOpen = await institutionActivationOpen();
+  const activate = decision.activate && activationOpen;
+  const reasons = activate ? decision.reasons : (activationOpen ? decision.reasons : ['Institution activation is set to manual.']);
   const mailed = await provision({
     institutionId,
     academy,
     priced: { ...priced, tender },
     periodEnd: '',
-    activate: decision.activate,
-    reasons: decision.reasons,
+    activate,
+    reasons,
     tenderLabel: tender,
     trial: false,
     providerRef: extra.providerRef,
     paymentIntentId: extra.paymentIntentId,
-    emailKind: decision.activate ? 'welcome_receipt' : 'under_review',
+    emailKind: activate ? 'welcome_receipt' : 'under_review',
   });
   await adminDb().doc(orderRef).set({ status: 'settled', providerRef: extra.providerRef ?? '' }, { merge: true });
   return {
@@ -403,16 +415,17 @@ export async function startInstitutionTrial(institutionId: string, requestedSeat
     tender: 'card',
   });
   if ('error' in priced) throw new Error(priced.error);
+  const activationOpen = await institutionActivationOpen();
   const mailed = await provision({
     institutionId,
     academy,
     priced: { ...priced, tender: 'trial', total: 0, tax: 0, subtotal: 0 },
     periodEnd: terms.periodEnd,
-    activate: true,
-    reasons: [],
+    activate: activationOpen,
+    reasons: activationOpen ? [] : ['Institution activation is set to manual.'],
     tenderLabel: `Free trial, ${terms.days} days`,
     trial: true,
-    emailKind: 'welcome_receipt',
+    emailKind: activationOpen ? 'welcome_receipt' : 'under_review',
   });
   await adminDb().doc(`institutions/${institutionId}/billing/order`).set({
     status: 'settled',

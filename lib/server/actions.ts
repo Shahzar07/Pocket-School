@@ -160,6 +160,10 @@ export async function completeLesson(
   const enrollRef = db().doc(`courses/${courseId}/enrollments/${uid}`);
   const keyRef = db().doc(`certificate_keys/${certificateKey(uid, courseId, hit.moduleId)}`);
 
+  const { loadAutomation } = await import('./automation-store');
+  const { defaultAutomation } = await import('../site-automation');
+  const issueCertificates = (await loadAutomation().catch(() => defaultAutomation())).rules.certificate_issue;
+
   const result = await db().runTransaction(async (tx) => {
     const [userSnap, enrollSnap, keySnap] = await Promise.all([tx.get(userRef), tx.get(enrollRef), tx.get(keyRef)]);
     if (!userSnap.exists) throw new ActionError('USER_NOT_FOUND');
@@ -211,7 +215,7 @@ export async function completeLesson(
       moduleTitle,
       publishedIds: modulePublishedIds,
       completedIds: next,
-      fresh: !already && moduleIsComplete(modulePublishedIds, next),
+      fresh: issueCertificates && !already && moduleIsComplete(modulePublishedIds, next),
       issuerName: issuer.issuerName,
       showPoweredBy: issuer.showPoweredBy,
       accent: issuer.accent,

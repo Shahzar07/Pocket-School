@@ -14,6 +14,7 @@ import { CertificateDocument } from '@/components/certificate-document';
 import { CERTIFICATE_DISCLAIMER, certificateStatus, certificateStudentNumber, formatCertificateDate, type CertificateFace } from '@/lib/certificates';
 import { CredentialPanel } from '@/components/credentials/credential-panel';
 import { copyrightLine } from '@/lib/insights/copyright';
+import { automationEnabled } from '@/lib/automation-status';
 
 function toFace(cert: Certificate): CertificateFace {
   const issued = cert.issuedAt instanceof Timestamp ? cert.issuedAt.toDate() : cert.issuedAt;
@@ -56,6 +57,11 @@ export default function VerifyCertificate({ params }: { params: Promise<{ uuid: 
   const [certData, setCertData] = useState<Certificate | null>(null);
   const [loading, setLoading] = useState(false);
   const [revoking, setRevoking] = useState(false);
+  const [checksOpen, setChecksOpen] = useState(true);
+
+  useEffect(() => {
+    automationEnabled('certificate_verify').then(setChecksOpen).catch(() => setChecksOpen(true));
+  }, []);
 
   useEffect(() => {
     if (resolvedParams.uuid && resolvedParams.uuid !== 'new') {
@@ -68,6 +74,10 @@ export default function VerifyCertificate({ params }: { params: Promise<{ uuid: 
   const handleVerify = async (id?: string) => {
     const target = (id ?? uuid).trim();
     if (!target) return;
+    if (!(await automationEnabled('certificate_verify'))) {
+      setChecksOpen(false);
+      return;
+    }
     setLoading(true);
     try {
       const cert = await getCertificateByUUID(target);
@@ -92,8 +102,11 @@ export default function VerifyCertificate({ params }: { params: Promise<{ uuid: 
           <h1 className="font-heading text-4xl text-[#1c2b30] mt-3">Verify a certificate</h1>
           <p className="text-sm text-[#526066] mt-2">Anyone can confirm a certificate. This page shows the student number, name, course and issue date.</p>
         </div>
+        {!checksOpen && (
+          <p className="rounded-2xl border border-[#1A3C34]/10 bg-white px-4 py-4 text-sm text-center">Certificate checks are with a super admin at the moment.</p>
+        )}
 
-        <div className="flex gap-2 mb-8 max-w-xl mx-auto">
+        {checksOpen && <div className="flex gap-2 mb-8 max-w-xl mx-auto">
           <Input
             value={uuid}
             onChange={(e) => setUuid(e.target.value)}
@@ -104,7 +117,7 @@ export default function VerifyCertificate({ params }: { params: Promise<{ uuid: 
           <Button onClick={() => handleVerify()} disabled={loading || !uuid.trim()} className="h-12 rounded-xl bg-[#1E6A83] hover:bg-[#2786A4] px-5">
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
           </Button>
-        </div>
+        </div>}
 
         {verified === true && certData && (
           <VerificationRecord

@@ -372,6 +372,11 @@ export default function ProfilePage() {
       onPhoto={onPhoto}
       onChangeEmail={async (email, password) => {
         try {
+          const { automationEnabled } = await import('@/lib/automation-status');
+          if (!(await automationEnabled('email_change'))) {
+            toast.error('A super admin changes email addresses at the moment.');
+            return;
+          }
           await reauthenticate(password);
           await verifyBeforeUpdateEmail(user, email);
           toast.success('Check the new inbox. The email changes after you open the link.');
@@ -476,6 +481,11 @@ export default function ProfilePage() {
         toast.success('Privacy settings saved.');
       }}
       onExport={async () => {
+        const { automationEnabled } = await import('@/lib/automation-status');
+        if (!(await automationEnabled('data_export'))) {
+          toast.error('A super admin prepares data exports at the moment.');
+          return;
+        }
         const body = {
           exportedAt: new Date().toISOString(),
           account: {
@@ -508,6 +518,11 @@ export default function ProfilePage() {
       }}
       onRequestDeletion={async () => {
         try {
+          const { automationEnabled } = await import('@/lib/automation-status');
+          if (!(await automationEnabled('account_deletion'))) {
+            toast.error('A super admin handles account deletion at the moment.');
+            return;
+          }
           const request: DeletionRequest = scheduleDeletion(Date.now());
           await updateUser(user.uid, { deletionRequest: request });
           await refresh();
