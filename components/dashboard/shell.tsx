@@ -36,7 +36,13 @@ export function DashboardShell({ role, hour = 9 }: { role: DashRole; hour?: numb
       <div className="flex min-h-screen">
         <aside className={`hidden shrink-0 border-e border-sidebar-border bg-sidebar lg:flex lg:flex-col ${collapsed ? 'w-[76px]' : 'w-[248px]'}`}>
           <div className="flex items-center gap-3 px-3 py-4">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-primary text-sm font-bold text-primary-foreground">
+            <span
+              className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] text-sm font-bold"
+              style={{
+                background: role === 'parent' ? 'var(--ps-amber-soft)' : role === 'teacher' ? 'var(--ps-coral-soft)' : 'var(--ps-wash)',
+                color: role === 'parent' ? 'var(--ps-on-amber)' : role === 'teacher' ? 'var(--ps-coral)' : 'var(--ps-blue-deep)',
+              }}
+            >
               {preview.name.slice(0, 1)}
             </span>
             {collapsed ? null : (

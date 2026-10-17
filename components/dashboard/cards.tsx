@@ -70,10 +70,10 @@ export function StatCard({
   ring?: number;
 }) {
   return (
-    <article className="flex min-h-12 items-center justify-between gap-3 rounded-[18px] border border-border bg-card p-4 shadow-[var(--shadow-card)]">
+    <article className="ps-surface ps-rise flex min-h-12 items-center justify-between gap-3 p-4">
       <div className="min-w-0">
         <p className="text-xs font-semibold text-muted-foreground">{label}</p>
-        <p className="mt-1 font-heading text-2xl text-foreground">{value}</p>
+        <p className="mt-1 font-heading text-4xl tabular-nums text-foreground">{value}</p>
         {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
       </div>
       {typeof ring === 'number' ? <ProgressRing value={ring} label={`${label} ${ring}%`} /> : null}
@@ -99,7 +99,7 @@ export function AlertCard({ tone, title, detail }: { tone: AlertTone; title: str
 
 export function ListCard({ title, rows }: { title: string; rows: { id: string; title: string; detail: string }[] }) {
   return (
-    <section className="rounded-[24px] border border-border bg-card p-4">
+    <section className="ps-surface p-4">
       <h2 className="font-heading text-xl text-foreground">{title}</h2>
       {rows.length === 0 ? <EmptyState title="Nothing waiting" detail="When something needs you, it will show up here." /> : (
         <ul className="mt-3 divide-y divide-border">
@@ -156,7 +156,7 @@ export function TileLink({
 }) {
   const style = CATEGORY_STYLE[category];
   return (
-    <div className="relative flex flex-col gap-2 rounded-[18px] p-4" style={{ background: style.wash }}>
+    <div className="ps-rise relative flex flex-col gap-2 rounded-[24px] border border-[var(--ps-card-edge)] p-4" style={{ background: style.wash }}>
       <Link
         href={href}
         className="flex min-h-12 flex-col justify-between gap-3 text-foreground transition-transform motion-safe:hover:-translate-y-0.5 motion-reduce:transition-none"
@@ -197,7 +197,7 @@ export function BadgeArt({ label, earned }: { label: string; earned: boolean }) 
 
 export function InsightMap() {
   return (
-    <section className="rounded-[24px] border border-border bg-card p-4">
+    <section className="ps-surface p-4">
       <h2 className="font-heading text-xl text-foreground">Where learners are active</h2>
       <p className="mt-1 text-sm text-muted-foreground">Sample regions. A school’s own map uses only the region it has saved.</p>
       <svg viewBox="0 0 320 140" className="mt-3 h-36 w-full" role="img" aria-label="Sample map of active regions">

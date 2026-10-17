@@ -129,10 +129,28 @@ test('the streak stops on the first missing day', () => {
 });
 
 test('card routes do not consult entitlements', () => {
-  const server = readFileSync(path.join(root, 'lib/cards/server.ts'), 'utf8');
-  const route = readFileSync(path.join(root, 'app/api/card/route.ts'), 'utf8');
-  const page = readFileSync(path.join(root, 'app/card/[shareId]/page.tsx'), 'utf8');
-  for (const sourceText of [server, route, page]) {
-    assert.equal(/entitlement|accessTier|subscriptionTier|paywall/i.test(sourceText), false);
+  const files = [
+    'lib/cards/model.ts',
+    'lib/cards/server.ts',
+    'app/api/card/route.ts',
+    'app/api/cron/member-cards/route.ts',
+    'app/dashboard/card/page.tsx',
+    'components/cards/member-card-face.tsx',
+    'components/cards/card-desk.tsx',
+    'app/card/[shareId]/page.tsx',
+    'app/card/[shareId]/opengraph-image.tsx',
+    'app/card/[shareId]/story/route.tsx',
+  ];
+  for (const file of files) {
+    const sourceText = readFileSync(path.join(root, file), 'utf8');
+    assert.equal(/entitlement|accessTier|subscriptionTier|paywall/i.test(sourceText), false, file);
   }
+  const story = readFileSync(path.join(root, 'app/card/[shareId]/story/route.tsx'), 'utf8');
+  const openGraph = readFileSync(path.join(root, 'app/card/[shareId]/opengraph-image.tsx'), 'utf8');
+  assert.match(story, /loadPublicCard/);
+  assert.match(openGraph, /loadPublicCard/);
+  assert.match(story, /width: 1080/);
+  assert.match(story, /height: 1920/);
+  assert.doesNotMatch(story, /recordCardView/);
+  assert.doesNotMatch(openGraph, /recordCardView/);
 });

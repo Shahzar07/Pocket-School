@@ -119,7 +119,9 @@ export function SiteHeader() {
       <header className={`${styles.header} ${scrolled || !isLanding ? styles.scrolled : ""}`}>
         <div className={styles.headerInner}>
           <Link href="/" className={styles.brand}>
-            <Globe size={25} />{" "}
+            <span className={styles.mark} aria-hidden>
+              <Globe size={16} />
+            </span>
             <span>
               Poket School <small>/ AI</small>
             </span>

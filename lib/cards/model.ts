@@ -1,6 +1,6 @@
 /**
- * Digital member card. Free for every account. This module never reads a plan,
- * an entitlement, or a paywall. PLAN-superapp.md is not in this repo, so the
+ * Digital member card. Free for every account. This module never reads a plan
+ * or a paid feature. PLAN-superapp.md is not in this repo, so the
  * issued number lives on `users.studentNumber`. `PSM-` is the member form of
  * that field. There is no separate memberNumber.
  */
