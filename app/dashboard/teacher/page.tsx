@@ -13,6 +13,7 @@ import Link from 'next/link';
 import {
   DashPage, DashHeader, Panel, PanelHeader, StatCard, ListRow, Initials, EmptyState,
 } from '@/components/dash-ui';
+import { DashboardHome } from '@/components/dashboard';
 import { SeeMore } from '@/components/shell/see-more';
 
 const fadeUp: Record<string, any> = {
@@ -83,6 +84,7 @@ export default function TeacherDashboard() {
 
   if (loading) return (
     <DashPage>
+      <DashboardHome role="teacher" name={firstName} loading />
       <div className="h-16 bg-muted animate-pulse rounded-2xl" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[0, 1, 2, 3].map(i => <div key={i} className="h-36 bg-muted animate-pulse rounded-2xl" />)}
@@ -93,6 +95,15 @@ export default function TeacherDashboard() {
 
   return (
     <DashPage>
+      <DashboardHome
+        role="teacher"
+        name={firstName}
+        stats={[
+          { id: 'courses', label: 'Courses', value: String(courses.length), hint: 'You teach' },
+          { id: 'marking', label: 'To mark', value: String(ungraded.length), hint: 'Waiting on you' },
+          { id: 'returned', label: 'Marked', value: String(Math.max(submissions.length - ungraded.length, 0)), hint: 'Returned' },
+        ]}
+      />
       <DashHeader
         eyebrow={`${greeting()} · ${today}`}
         title="Your classroom,"

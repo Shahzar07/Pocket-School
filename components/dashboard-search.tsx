@@ -33,8 +33,7 @@ export function DashboardSearch() {
   // The "/" hint in the field has to actually do something.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const command = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k';
-      if (!command && (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey)) return;
+      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
       const el = document.activeElement;
       const typing = el instanceof HTMLInputElement
         || el instanceof HTMLTextAreaElement

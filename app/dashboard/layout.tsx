@@ -28,7 +28,9 @@ import { AccountMenu } from '@/components/account/account-menu';
 import { ModeSwitch } from '@/components/account/mode-switch';
 import { Breadcrumbs } from '@/components/shell/breadcrumbs';
 import { ModuleHeader } from '@/components/module-header';
-import { MobileNav } from '@/components/shell/mobile-nav';
+import { DashFab, MobileNav } from '@/components/shell/mobile-nav';
+import { CommandPalette } from '@/components/dashboard/command-palette';
+import type { DashRole } from '@/lib/dashboard/home';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useAccountMode } from '@/hooks/use-account-mode';
 import { homeForMode, learnerSpaceRoles, modeRedirect, MODE_NAMES, type AccountMode } from '@/lib/account-modes';
@@ -78,7 +80,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
       { href: '/dashboard/student/achievements', icon: CheckCircle, labelKey: 'nav.achievements' },
     ]},
-    { sectionKey: 'nav.section.academics', items: [
+    { sectionKey: 'nav.section.academics', sectionLabel: 'Progress', items: [
       { href: '/dashboard/student/assignments', icon: ClipboardList, labelKey: 'nav.assignments' },
       { href: '/dashboard/student/exams', icon: PenSquare, labelKey: 'nav.exams' },
       { href: '/dashboard/student/transcript', icon: GraduationCap, labelKey: 'nav.transcript' },
@@ -91,25 +93,25 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/student/integrity', icon: Shield, labelKey: 'nav.integrity' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
     ]},
-    { sectionKey: 'nav.section.finance', items: [
+    { sectionKey: 'nav.section.finance', sectionLabel: 'Payments', items: [
       { href: '/dashboard/student/billing', icon: CreditCard, labelKey: 'nav.billing' },
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
     ]},
-    { sectionKey: 'nav.section.community', items: [
+    { sectionKey: 'nav.section.community', sectionLabel: 'Community', items: [
       { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
       { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
       { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.examCentre', flag: 'examCentre' },
       { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
       { href: '/dashboard/studio/maths', icon: Camera, labelKey: 'nav.snapSolve', label: 'ET Maths', flag: 'snapAndSolve' },
     ]},
-    { sectionKey: 'nav.section.school', items: [
+    { sectionKey: 'nav.section.school', sectionLabel: 'Messages', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
       { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
       { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
-    { sectionKey: 'nav.section.account', items: [
+    { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -130,7 +132,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher/progress', icon: AlertTriangle, labelKey: 'nav.insights', label: 'Class risk' },
       { href: '/dashboard/teacher/goals', icon: Target, labelKey: 'nav.goals' },
     ]},
-    { sectionKey: 'nav.section.academics', items: [
+    { sectionKey: 'nav.section.academics', sectionLabel: 'Learning', items: [
       { href: '/dashboard/teacher/gradebook', icon: ClipboardList, labelKey: 'nav.gradebook' },
       { href: '/dashboard/teacher/assignments', icon: FileText, labelKey: 'nav.assignments' },
       { href: '/dashboard/teacher/exams', icon: PenSquare, labelKey: 'nav.examBuilder' },
@@ -145,18 +147,18 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher/behaviour', icon: Star, labelKey: 'nav.merits' },
     ]},
     // Billing and Helpdesk are institution-admin responsibilities, not teachers'.
-    { sectionKey: 'nav.section.community', items: [
+    { sectionKey: 'nav.section.community', sectionLabel: 'Community', items: [
       { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
       { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
       { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.examCentre', flag: 'examCentre' },
       { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
     ]},
-    { sectionKey: 'nav.section.school', items: [
+    { sectionKey: 'nav.section.school', sectionLabel: 'Messages', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
       { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
       { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
     ]},
-    { sectionKey: 'nav.section.account', items: [
+    { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -180,15 +182,15 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/parent/reports', icon: FileBarChart, labelKey: 'nav.reportCards' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
     ]},
-    { sectionKey: 'nav.section.family', items: [
+    { sectionKey: 'nav.section.family', sectionLabel: 'Safety', items: [
       { href: '/dashboard/parent/controls', icon: Shield, labelKey: 'nav.controls', flag: 'community' },
     ]},
-    { sectionKey: 'nav.section.school', items: [
+    { sectionKey: 'nav.section.school', sectionLabel: 'Messages', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
       { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
-    { sectionKey: 'nav.section.account', items: [
+    { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -220,21 +222,21 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
       { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
     ]},
-    { sectionKey: 'nav.section.money', items: [
+    { sectionKey: 'nav.section.money', sectionLabel: 'Payments', items: [
       { href: '/dashboard/admin/payments', icon: Landmark, labelKey: 'nav.payments', superOnly: true },
       { href: '/dashboard/admin/integrations', icon: Plug, labelKey: 'nav.integrations', superOnly: true },
       { href: '/dashboard/admin/finance', icon: PieChart, labelKey: 'nav.finance', superOnly: true },
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
     ]},
-    { sectionKey: 'nav.section.platform', items: [
+    { sectionKey: 'nav.section.platform', sectionLabel: 'Settings', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
       { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
       { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
       { href: '/dashboard/teacher/billing', icon: CreditCard, labelKey: 'nav.billing' },
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
-    { sectionKey: 'nav.section.account', items: [
+    { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -259,11 +261,11 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/institution/progress', icon: AlertTriangle, labelKey: 'nav.insights', label: 'At-risk learners' },
       { href: '/dashboard/institution/certificates', icon: Award, labelKey: 'nav.certificates', label: 'Certificates' },
     ]},
-    { sectionKey: 'nav.section.school', items: [
+    { sectionKey: 'nav.section.school', sectionLabel: 'Messages', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
       { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
     ]},
-    { sectionKey: 'nav.section.account', items: [
+    { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -275,30 +277,33 @@ function isNavActive(href: string, pathname: string): boolean {
   return pathname === href || pathname.startsWith(href + '/');
 }
 
-const NavItem = ({ entry, role, pathname, onClick, router }: {
-  entry: NavEntry; role: Role; pathname: string; onClick: () => void; router: ReturnType<typeof useRouter>;
+const NavItem = ({ entry, pathname, onClick, router, compact }: {
+  entry: NavEntry; pathname: string; onClick: () => void; router: ReturnType<typeof useRouter>; compact: boolean;
 }) => {
   const { t } = useTranslation();
   const active = isNavActive(entry.href, pathname);
   const Icon = entry.icon;
+  const label = entry.label ?? t(entry.labelKey);
 
   return (
     <button
       type="button"
       onClick={() => { onClick(); router.push(entry.href); }}
       aria-current={active ? 'page' : undefined}
-      className={`relative w-full px-3 h-9 rounded-xl flex items-center gap-3 cursor-pointer transition-colors text-start text-[13px] ${
+      title={label}
+      className={`relative w-full min-h-12 px-3 rounded-[18px] flex items-center gap-3 cursor-pointer transition-colors text-start text-[13px] ${
+        compact ? 'justify-center' : ''
+      } ${
         active
           ? 'bg-muted text-foreground font-semibold shadow-[var(--shadow-card)]'
           : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground font-medium'
       }`}
     >
-      {/* Active marker sits in the gutter, as in the reference design. */}
-      {active && (
+      {active && !compact && (
         <span data-nav-marker className="absolute -start-3 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full bg-primary" />
       )}
-      <Icon className={`w-[17px] h-[17px] shrink-0 ${active ? 'text-primary' : ''}`} />
-      <span className="truncate">{entry.label ?? t(entry.labelKey)}</span>
+      <Icon className={`h-6 w-6 shrink-0 ${active ? 'text-primary' : ''}`} />
+      {compact ? <span className="sr-only">{label}</span> : <span className="truncate">{label}</span>}
     </button>
   );
 };
@@ -553,6 +558,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
   }).filter(group => group.items.length > 0);
   const accent = ROLE_ACCENT[role];
+  const dashRole: DashRole = role === 'institution_admin' ? 'institution' : role;
+  const compactNav = !sidebarOpen;
 
   return (
     <div className="flex h-screen overflow-hidden" data-dashboard-role={role} style={{ background: accent.wash }}>
@@ -561,7 +568,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         Skip to content
       </a>
       {/* ── Sidebar — light, profile-led, grouped ── */}
-      <aside data-tour="sidebar" className={`relative bg-sidebar border-e border-sidebar-border flex flex-col transition-all duration-300 shrink-0 ${sidebarOpen ? 'w-[264px]' : 'w-0 opacity-0 overflow-hidden'}`}>
+      <aside data-tour="sidebar" className={`relative bg-sidebar border-e border-sidebar-border flex flex-col motion-safe:transition-all motion-safe:duration-300 motion-reduce:transition-none shrink-0 max-lg:fixed max-lg:inset-y-0 max-lg:z-50 ${sidebarOpen ? 'w-[264px]' : 'lg:w-[76px] w-0 max-lg:overflow-hidden'}`}>
 
         {/* Who you are, at the top — the reference design leads with identity
             rather than a logo lockup. */}
@@ -583,15 +590,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {profile.name?.charAt(0)?.toUpperCase() ?? 'U'}
                 </AvatarFallback>
               </Avatar>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[13.5px] font-semibold text-foreground truncate leading-tight">
-                  {profile.displayName || profile.name || 'User'}
+              {compactNav ? null : (
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13.5px] font-semibold text-foreground truncate leading-tight">
+                    {profile.displayName || profile.name || 'User'}
+                  </span>
+                  <span className="block text-[11px] text-muted-foreground truncate mt-0.5">
+                    {roleLabel}
+                  </span>
                 </span>
-                <span className="block text-[11px] text-muted-foreground truncate mt-0.5">
-                  {roleLabel}
-                </span>
-              </span>
-              <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              )}
+              {compactNav ? null : <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
             </span>
           </AccountMenu>
         </div>
@@ -600,13 +609,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <nav className="relative flex-1 overflow-y-auto px-3 pb-2 space-y-0.5 [scrollbar-width:thin]">
           {nav.map((group, gi) => (
             <div key={gi} className="space-y-0.5">
-              {(group.sectionLabel || group.sectionKey) && (
+              {(group.sectionLabel || group.sectionKey) && !compactNav && (
                 <p className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-[0.14em] px-3 pt-5 pb-1.5">
                   {group.sectionLabel ?? t(group.sectionKey!)}
                 </p>
               )}
               {group.items.map(entry => (
-                <NavItem key={entry.href} entry={entry} role={role} pathname={pathname} onClick={handleNavClick} router={router} />
+                <NavItem key={entry.href} entry={entry} pathname={pathname} onClick={handleNavClick} router={router} compact={compactNav} />
               ))}
             </div>
           ))}
@@ -618,7 +627,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             href="/dashboard/helpdesk"
             className="flex items-center gap-3 px-3 h-9 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
-            <HelpCircle className="w-[17px] h-[17px] shrink-0" /> {t('nav.helpCenter')}
+            <HelpCircle className="h-6 w-6 shrink-0" /> {compactNav ? <span className="sr-only">{t('nav.helpCenter')}</span> : t('nav.helpCenter')}
           </Link>
           <button
             onClick={() => {
@@ -632,7 +641,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             }}
             className="w-full flex items-center gap-3 px-3 h-9 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
           >
-            <LogOut className="w-[17px] h-[17px] shrink-0" /> {t('nav.signOut')}
+            <LogOut className="h-6 w-6 shrink-0" /> {compactNav ? <span className="sr-only">{t('nav.signOut')}</span> : t('nav.signOut')}
           </button>
         </div>
       </aside>
@@ -729,6 +738,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       <MobileNav role={role} onMore={() => setSidebarOpen(true)} />
+      <DashFab role={role} />
+      <CommandPalette role={dashRole} />
       {viewAs ? null : <AITutor />}
     </div>
   );

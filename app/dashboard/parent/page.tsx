@@ -18,6 +18,7 @@ import { certificateStatus, formatCertificateDate, type CertificateFace } from '
 import Link from 'next/link';
 import { ChildExamPrep } from '@/components/study/child-exam-prep';
 import { DashPage, DashHeader } from '@/components/dash-ui';
+import { DashboardHome } from '@/components/dashboard';
 import dynamic from 'next/dynamic';
 import { SeeMore } from '@/components/shell/see-more';
 import { friendlyError } from '@/lib/design/system';
@@ -224,8 +225,11 @@ export default function ParentDashboard() {
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
+  const parentName = profile?.name?.split(' ')[0] ?? 'Parent';
+
   if (loading) return (
     <div className="max-w-5xl mx-auto px-0 sm:px-2 py-2 space-y-5">
+      <DashboardHome role="parent" name={parentName} loading />
       <div className="h-24 bg-muted animate-pulse rounded-2xl" />
       {[1, 2].map(i => <div key={i} className="h-64 bg-muted animate-pulse rounded-2xl" />)}
     </div>
@@ -233,6 +237,11 @@ export default function ParentDashboard() {
 
   return (
     <DashPage>
+      <DashboardHome
+        role="parent"
+        name={parentName}
+        stats={[{ id: 'children', label: 'Children', value: String(children.length), hint: 'Linked to you' }]}
+      />
       <DashHeader
         eyebrow={`Family overview · ${today}`}
         title="Your family's"

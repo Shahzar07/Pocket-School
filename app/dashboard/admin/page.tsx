@@ -15,6 +15,7 @@ import Link from 'next/link';
 import {
   DashPage, DashHeader, Panel, PanelHeader, StatCard, ListRow, Initials, EmptyState,
 } from '@/components/dash-ui';
+import { DashboardHome } from '@/components/dashboard';
 import { SeeMore } from '@/components/shell/see-more';
 import { friendlyError } from '@/lib/design/system';
 
@@ -89,8 +90,11 @@ export default function AdminDashboard() {
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
+  const adminName = profile?.name?.split(' ')[0] ?? 'Admin';
+
   if (loading) return (
     <DashPage>
+      <DashboardHome role="admin" name={adminName} loading />
       <div className="h-16 bg-muted animate-pulse rounded-2xl" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[0, 1, 2, 3].map(i => <div key={i} className="h-36 bg-muted animate-pulse rounded-2xl" />)}
@@ -101,6 +105,16 @@ export default function AdminDashboard() {
 
   return (
     <DashPage>
+      <DashboardHome
+        role="admin"
+        name={adminName}
+        showMap
+        stats={[
+          { id: 'students', label: 'Students', value: stats.students.toLocaleString(), hint: 'Platform' },
+          { id: 'schools', label: 'Institutions', value: String(institutions.length), hint: 'Schools' },
+          { id: 'courses', label: 'Courses', value: stats.courses.toLocaleString(), hint: 'On the platform' },
+        ]}
+      />
       <DashHeader
         eyebrow={`Platform · ${today}`}
         title="Control"

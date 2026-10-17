@@ -16,6 +16,7 @@ import { institutionOrigin } from '@/lib/white-label';
 import { Mail, Ticket, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashPage, DashHeader, Panel, StatCard } from '@/components/dash-ui';
+import { DashboardHome } from '@/components/dashboard';
 import { authedFetch } from '@/lib/api-client';
 import { friendlyError } from '@/lib/design/system';
 import { Input } from '@/components/ui/input';
@@ -125,6 +126,15 @@ export default function InstitutionAcademyPage() {
 
   return (
     <DashPage className="max-w-3xl">
+      <DashboardHome
+        role="institution"
+        name={institution?.branding?.displayName || institution?.name || profile?.name || 'Your academy'}
+        stats={[
+          { id: 'seats', label: 'Seats left', value: String(seats), hint: 'Licences' },
+          { id: 'joins', label: 'Invites', value: String(invites), hint: 'Waiting' },
+          { id: 'classes', label: 'Classes', value: String(classCount), hint: 'On the timetable' },
+        ]}
+      />
       <DashHeader
         eyebrow="Today"
         title={institution?.branding?.displayName || institution?.name || 'Your academy'}

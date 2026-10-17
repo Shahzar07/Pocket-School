@@ -25,6 +25,7 @@ import {
   DashPage, DashHeader, Panel, PanelHeader, StatCard, ProgressBar,
   ListRow, Initials, EmptyState,
 } from '@/components/dash-ui';
+import { DashboardHome } from '@/components/dashboard';
 
 interface CourseWithEnrollment { course: Course; enrollment: Enrollment }
 
@@ -144,6 +145,7 @@ export default function StudentDashboard() {
 
   if (loading) return (
     <DashPage>
+      <DashboardHome role="student" name={firstName} loading />
       <div className="h-16 bg-muted animate-pulse rounded-2xl" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[0, 1, 2, 3].map(i => <div key={i} className="h-36 bg-muted animate-pulse rounded-2xl" />)}
@@ -157,6 +159,15 @@ export default function StudentDashboard() {
 
   return (
     <DashPage>
+      <DashboardHome
+        role="student"
+        name={firstName}
+        stats={[
+          { id: 'streak', label: 'Streak', value: `${studyStreak} days`, hint: 'Study days in a row', series: [Math.max(studyStreak - 2, 0), Math.max(studyStreak - 1, 0), studyStreak] },
+          { id: 'level', label: 'Level', value: `Level ${level}`, hint: `${Math.round(xpProgress)}% of this level`, ring: xpProgress },
+          { id: 'courses', label: 'In progress', value: String(inProgress.length), hint: `${completed.length} finished` },
+        ]}
+      />
       <DashHeader
         eyebrow={`${greeting()} · ${today}`}
         title="Welcome back,"

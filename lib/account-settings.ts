@@ -38,6 +38,8 @@ export const SELF_SERVICE_FIELDS = [
   'lastActiveAt',
   'region',
   'parentContacts',
+  'dashboardTileOrder',
+  'dashboardCoachSeen',
 ] as const;
 
 /** A signed-in person must not be able to set these on their own document. */

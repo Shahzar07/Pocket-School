@@ -153,7 +153,8 @@ service cloud.firestore {
               'notificationPrefs', 'privacy', 'instructor',
               'twoFactorEnabled', 'sessionsRevokedAt', 'deletionRequest',
               'email', 'updatedAt', 'onboardedAt', 'studyDates',
-              'lastActiveAt', 'region', 'parentContacts'];
+              'lastActiveAt', 'region', 'parentContacts',
+              'dashboardTileOrder', 'dashboardCoachSeen'];
     }
 
     function deletionRequestOk() {
