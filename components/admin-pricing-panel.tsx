@@ -64,20 +64,44 @@ export function AdminPricingPanel() {
   }, []);
 
   const updatePlan = (id: string, field: 'monthlyUsd' | 'annualUsd' | 'sparks', value: string) => {
-    const number = Number(value);
-    if (!Number.isFinite(number)) return;
     setDraft(current => ({
       ...current,
-      plans: current.plans.map(plan => plan.id === id ? { ...plan, [field]: number } : plan),
+      plans: current.plans.map(plan => {
+        if (plan.id !== id) return plan;
+        if (field !== 'sparks' && value.trim() === '') return { ...plan, [field]: null };
+        const number = Number(value);
+        if (!Number.isFinite(number) || number < 0) return plan;
+        return { ...plan, [field]: number };
+      }),
     }));
   };
 
   const applyDiscount = (id: string) => {
     setDraft(current => ({
       ...current,
-      plans: current.plans.map(plan => plan.id === id
-        ? { ...plan, annualUsd: annualFromMonthly(plan.monthlyUsd, current.annualDiscount) }
-        : plan),
+      plans: current.plans.map(plan => {
+        if (plan.id !== id || plan.monthlyUsd == null) return plan;
+        return { ...plan, annualUsd: annualFromMonthly(plan.monthlyUsd, current.annualDiscount) };
+      }),
+    }));
+  };
+
+  const updateFamilyRate = (field: 'secondChildOff' | 'furtherChildOff', value: string) => {
+    setDraft(current => {
+      if (value.trim() === '') return { ...current, familyBundleDiscount: null };
+      const percent = Number(value);
+      if (!Number.isFinite(percent) || percent < 0 || percent > 100) return current;
+      const previous = current.familyBundleDiscount ?? { secondChildOff: 0, furtherChildOff: 0 };
+      return { ...current, familyBundleDiscount: { ...previous, [field]: percent / 100 } };
+    });
+  };
+
+  const updateReads = (id: string, value: string) => {
+    const number = Number(value);
+    if (!Number.isFinite(number) || number <= 0) return;
+    setDraft(current => ({
+      ...current,
+      reads: current.reads.map(plan => plan.id === id ? { ...plan, monthlyUsd: number } : plan),
     }));
   };
 
@@ -199,7 +223,7 @@ export function AdminPricingPanel() {
           className="rounded-xl h-11 bg-muted/50"
         />
         <p className="text-xs text-muted-foreground">
-          Apply discount writes each plan&apos;s annual price from its monthly USD price. A direct annual edit is what checkout charges.
+          Apply discount writes each plan&apos;s annual price from its monthly USD price. A direct annual edit is what checkout charges. Leave Primary and Professional blank until a price is decided. A blank price refuses checkout.
         </p>
       </div>
 
@@ -221,12 +245,12 @@ export function AdminPricingPanel() {
                 <tr key={plan.id} className="border-t border-border">
                   <td className="py-2 pe-3 font-medium">{labelFor(plan.id)}</td>
                   <td className="py-2 pe-3">
-                    <Input type="number" min={0} step={0.01} value={plan.monthlyUsd}
+                    <Input type="number" min={0} step={0.01} value={plan.monthlyUsd ?? ''} placeholder="Not set"
                       onChange={event => updatePlan(plan.id, 'monthlyUsd', event.target.value)}
                       className="rounded-xl h-10 w-28 bg-muted/50" aria-label={`${plan.id} monthly USD`} />
                   </td>
                   <td className="py-2 pe-3">
-                    <Input type="number" min={0} step={0.01} value={plan.annualUsd}
+                    <Input type="number" min={0} step={0.01} value={plan.annualUsd ?? ''} placeholder="Not set"
                       onChange={event => updatePlan(plan.id, 'annualUsd', event.target.value)}
                       className="rounded-xl h-10 w-28 bg-muted/50" aria-label={`${plan.id} annual USD`} />
                   </td>
@@ -246,6 +270,47 @@ export function AdminPricingPanel() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="text-sm font-bold text-foreground">Family bundle discount</h3>
+        <p className="text-xs text-muted-foreground">
+          Blank means no discount. An example an admin may enter is 10% off the second child and 15% off the third and later. Those figures are not charged until they are saved here.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <label className="text-sm">
+            <span className="mb-1 block text-xs text-muted-foreground">Second child (%)</span>
+            <Input type="number" min={0} max={100} step={0.1}
+              value={draft.familyBundleDiscount ? draft.familyBundleDiscount.secondChildOff * 100 : ''}
+              placeholder="Not set"
+              aria-label="Second child discount percent"
+              onChange={event => updateFamilyRate('secondChildOff', event.target.value)}
+              className="rounded-xl h-10 w-28 bg-muted/50" />
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block text-xs text-muted-foreground">Third and later (%)</span>
+            <Input type="number" min={0} max={100} step={0.1}
+              value={draft.familyBundleDiscount ? draft.familyBundleDiscount.furtherChildOff * 100 : ''}
+              placeholder="Not set"
+              aria-label="Further child discount percent"
+              onChange={event => updateFamilyRate('furtherChildOff', event.target.value)}
+              className="rounded-xl h-10 w-28 bg-muted/50" />
+          </label>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="text-sm font-bold text-foreground">Poket Reads, monthly USD</h3>
+        <p className="text-xs text-muted-foreground">Annual Reads is ten times the monthly price. Reads is $9 and Reads Family is $15 until a super admin changes them.</p>
+        {draft.reads.map(plan => (
+          <label key={plan.id} className="flex items-center gap-3 text-sm">
+            <span className="w-40">{plan.id === 'reads-family' ? 'Poket Reads Family' : 'Poket Reads'}</span>
+            <Input type="number" min={0.01} step={0.01} value={plan.monthlyUsd}
+              aria-label={`${plan.id} monthly USD`}
+              onChange={event => updateReads(plan.id, event.target.value)}
+              className="rounded-xl h-10 w-28 bg-muted/50" />
+          </label>
+        ))}
       </div>
 
       <div className="space-y-3">

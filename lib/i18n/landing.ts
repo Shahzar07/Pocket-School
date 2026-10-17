@@ -463,7 +463,7 @@ export const landingEn = {
     pricingEyebrow: 'Pricing questions',
     pricingTitle: 'The things people actually ask',
     q1: 'What does each plan cost?',
-    a1: 'Free Preview is $0. Primary & Lower Secondary is $19 a month, or $171 a year. IGCSE & A-Level is $79 a month, or $708 a year. Professional & Degrees is $99 a month, or $888 a year. One flat price worldwide. Cancel any time.',
+    a1: 'Free Preview is $0. Primary & Lower Secondary and Professional & Degrees have no monthly price until a super admin sets one. IGCSE & A-Level is $79 a month, or $708 a year. Poket Reads is $9 and Poket Reads Family is $15. Cancel any time.',
     q2: 'What is included in Professional & Degrees?',
     a2: 'It includes MBBS Medicine, LLB Law for the University of London (UoL) and other universities, Engineering, and Nursing, plus Micro Degrees, professional certifications, and independent learning. The IGCSE & A-Level plan is included.',
     q3: 'What is a Spark?',

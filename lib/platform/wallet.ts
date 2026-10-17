@@ -4,6 +4,7 @@ import {
   quoteAddon,
   quoteCourse,
   quotePlan,
+  readsPriceUsd,
   seedPricing,
   type PricingConfig,
 } from '@/lib/pricing';
@@ -80,8 +81,9 @@ export function quoteCheckout(
 
   if (request.kind === 'reads' || (request.kind === 'plan' && READS_PLANS.some(plan => plan.id === request.id))) {
     const plan = READS_PLANS.find(item => item.id === request.id);
-    if (!plan) return null;
-    const amount = interval === 'annual' ? plan.usd * 10 : plan.usd;
+    const usd = readsPriceUsd(config, request.id);
+    if (!plan || usd == null) return null;
+    const amount = interval === 'annual' ? usd * 10 : usd;
     return finish(amount, amount, 'USD', plan.name, 'subscription', interval === 'annual', requested, false);
   }
 

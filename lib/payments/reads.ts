@@ -19,10 +19,11 @@ export const READS_BOOKS = [
   { id: 'plain-contract', title: 'Plain Words for Contract', usd: 10, myr: 49 },
 ] as const;
 
-export function readsPlanItem(sku: string, interval: 'month' | 'year'): PricedItem | null {
+export function readsPlanItem(sku: string, interval: 'month' | 'year', monthlyUsd?: number | null): PricedItem | null {
   const plan = READS_PLANS.find((item) => item.id === sku);
   if (!plan) return null;
-  const amount = interval === 'year' ? plan.usd * 10 : plan.usd;
+  const usd = monthlyUsd != null && monthlyUsd > 0 ? monthlyUsd : plan.usd;
+  const amount = interval === 'year' ? usd * 10 : usd;
   return {
     kind: 'reads',
     sku: plan.id,
@@ -31,7 +32,7 @@ export function readsPlanItem(sku: string, interval: 'month' | 'year'): PricedIt
     currency: 'USD',
     accessTier: 1,
     interval,
-    recurringMonthly: interval === 'year' ? Math.round((amount / 12) * 100) / 100 : plan.usd,
+    recurringMonthly: interval === 'year' ? Math.round((amount / 12) * 100) / 100 : usd,
     permission: plan.permission,
   };
 }

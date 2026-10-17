@@ -15,6 +15,7 @@ import { loadCurrentBill } from '@/lib/institution-membership-store';
 import { seedInstitutionPricing, tierCliff, VOLUME_PLANS, type VolumeInterval, type VolumePlanId } from '@/lib/institution-pricing';
 import { scaleSeats } from '@/lib/institution-commerce';
 import { planTierReview, seedInstitutionCatalogue } from '@/lib/institution-catalogue';
+import { ManageSubscription } from '@/components/billing/manage-subscription';
 
 export default function InstitutionBillingPage() {
   const { profile } = useAuthSTORE();
@@ -168,9 +169,10 @@ export default function InstitutionBillingPage() {
   return (
     <DashPage className="max-w-3xl">
       <DashHeader eyebrow="Institution" title="Billing" description={`Phase: ${bill?.phase ?? 'pending_payment'}. Programme prices and the live calculator are on the pricing page. A charge is pro-rated for the days left. A credit applies immediately. Cancel keeps the academy open until the period ends. A failed payment still has a 7-day grace, then the academy suspends until it is paid.`} />
-      <p className="text-sm"><Link className="font-semibold text-[#3C8DFF]" href="/dashboard/institution/pricing">Open the price calculator</Link></p>
-      {banner && <p role="status" className="rounded-2xl bg-[#F8E7C4] px-4 py-3 text-sm text-[#1A3C34]">{banner}</p>}
+      <p className="text-sm"><Link className="font-semibold text-[#1E6A83]" href="/dashboard/institution/pricing">Open the price calculator</Link></p>
+      {banner && <p role="status" className="rounded-2xl border border-[#1E6A83] bg-[rgba(63,224,208,0.15)] px-4 py-3 text-sm text-[#203337]">{banner}</p>}
       {cancelOn && <p className="text-sm">Cancellation is set for {cancelOn}.</p>}
+      <ManageSubscription returnPath="/dashboard/institution/billing" institutionId={institutionId || undefined} />
       <Panel>
         {hybrid && !('error' in hybrid) ? (
           <>

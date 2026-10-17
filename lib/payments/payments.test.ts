@@ -144,13 +144,13 @@ describe('quotes, family seats, SST and affiliates', () => {
   });
 
   it('adds 8% SST for a Malaysian buyer and pays the affiliate on the pre-tax amount', () => {
-    const item = subscriptionItem('professional', 'month');
+    const item = subscriptionItem('igcse_alevel', 'month');
     const quote = buildQuote({ item: item!, country: 'MY', coupon });
-    expect(quote.discount).toBe(9.9);
+    expect(quote.discount).toBe(7.9);
     expect(quote.taxRate).toBe(0.08);
-    expect(quote.tax).toBe(7.13);
-    expect(quote.total).toBe(96.23);
-    expect(quote.commission).toBe(8.91);
+    expect(quote.tax).toBe(5.69);
+    expect(quote.total).toBe(76.79);
+    expect(quote.commission).toBe(7.11);
     expect(quote.taxLabel).toBe('SST');
   });
 
@@ -161,7 +161,7 @@ describe('quotes, family seats, SST and affiliates', () => {
   });
 
   it('rejects more than six seats', () => {
-    const item = subscriptionItem('primary_secondary', 'year');
+    const item = subscriptionItem('igcse_alevel', 'year');
     expect(() => buildQuote({ item: item!, seats: 8, country: 'US' })).toThrow(QuoteError);
   });
 

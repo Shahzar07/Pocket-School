@@ -20,6 +20,10 @@ export type ParsedStripeEvent =
   | { type: 'individual_paid'; eventId: string; uid: string; interval: 'monthly' | 'annual'; planId: string }
   | { type: 'institution_payment_failed'; eventId: string; institutionId: string }
   | { type: 'individual_payment_failed'; eventId: string; uid: string }
+  | { type: 'family_paid'; eventId: string; checkoutId: string; providerRef: string; paymentIntentId?: string; amount: number; currency: string; subscriptionId?: string; currentPeriodEnd?: number; customerId?: string }
+  | { type: 'subscription_sync'; eventId: string; subscriptionId: string; uid?: string; checkoutId?: string; status: string; currentPeriodEnd: number | null; cancelAtPeriodEnd: boolean; customerId?: string; beneficiaryUids: string[]; tierId?: string }
+  | { type: 'subscription_renewed'; eventId: string; subscriptionId: string; uid?: string; checkoutId?: string; currentPeriodEnd: number | null; customerId?: string }
+  | { type: 'subscription_payment_failed'; eventId: string; subscriptionId?: string; uid?: string; checkoutId?: string }
   | { type: 'ignored'; eventId: string };
 
 function str(value: unknown): string {
@@ -62,6 +66,21 @@ export function parseStripeEvent(event: StripeEventLike): ParsedStripeEvent {
         uid: metadata.uid,
         interval: metadata.interval === 'monthly' ? 'monthly' : 'annual',
         planId: metadata.planId || metadata.tierId || '',
+      };
+    }
+    if (metadata.kind === 'family_plan' && metadata.checkoutId) {
+      const periodEnd = Number(object.current_period_end ?? metadata.currentPeriodEnd ?? 0);
+      return {
+        type: 'family_paid',
+        eventId: event.id,
+        checkoutId: metadata.checkoutId,
+        providerRef,
+        paymentIntentId,
+        amount,
+        currency,
+        subscriptionId: str(object.subscription) || undefined,
+        currentPeriodEnd: periodEnd > 0 ? periodEnd * 1000 : undefined,
+        customerId: str(object.customer) || undefined,
       };
     }
     if (metadata.checkoutId) {
@@ -122,6 +141,49 @@ export function parseStripeEvent(event: StripeEventLike): ParsedStripeEvent {
     if (metadata.kind === 'individual_billing' && metadata.uid) {
       return { type: 'individual_payment_failed', eventId: event.id, uid: metadata.uid };
     }
+    if (metadata.uid || metadata.checkoutId || str(object.subscription)) {
+      return {
+        type: 'subscription_payment_failed',
+        eventId: event.id,
+        subscriptionId: str(object.subscription) || undefined,
+        uid: metadata.uid || metadata.payerUid || undefined,
+        checkoutId: metadata.checkoutId || undefined,
+      };
+    }
+  }
+
+  if (event.type === 'invoice.paid' && (str(object.subscription) || metadata.checkoutId)) {
+    const line = Array.isArray((object.lines as { data?: unknown[] } | undefined)?.data)
+      ? ((object.lines as { data: Record<string, unknown>[] }).data[0] ?? {})
+      : {};
+    const period = (line.period ?? {}) as { end?: unknown };
+    const endSeconds = Number(period.end ?? object.period_end ?? 0);
+    return {
+      type: 'subscription_renewed',
+      eventId: event.id,
+      subscriptionId: str(object.subscription) || str(object.id),
+      uid: metadata.uid || undefined,
+      checkoutId: metadata.checkoutId || undefined,
+      currentPeriodEnd: endSeconds > 0 ? endSeconds * 1000 : null,
+      customerId: str(object.customer) || undefined,
+    };
+  }
+
+  if (event.type === 'customer.subscription.created' || event.type === 'customer.subscription.updated') {
+    const endSeconds = Number(object.current_period_end ?? 0);
+    return {
+      type: 'subscription_sync',
+      eventId: event.id,
+      subscriptionId: str(object.id) || event.id,
+      uid: metadata.uid || metadata.payerUid || undefined,
+      checkoutId: metadata.checkoutId || undefined,
+      status: str(object.status) || 'active',
+      currentPeriodEnd: endSeconds > 0 ? endSeconds * 1000 : null,
+      cancelAtPeriodEnd: object.cancel_at_period_end === true,
+      customerId: str(object.customer) || undefined,
+      beneficiaryUids: (metadata.beneficiary_uids || metadata.beneficiaries || '').split(',').map((id) => id.trim()).filter(Boolean),
+      tierId: metadata.tierId || undefined,
+    };
   }
 
   if (event.type === 'customer.subscription.deleted') {

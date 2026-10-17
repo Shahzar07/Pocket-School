@@ -10,6 +10,7 @@ import {
   optionalLocalAmount,
   quoteCourse,
   quotePlan,
+  normalizePricing,
   resolveDisplayCurrency,
   roundMoney,
   seedPricing,
@@ -32,10 +33,14 @@ test('USD quotes use the stored monthly and annual amounts', () => {
   assert.equal(monthly?.currency, 'USD');
   assert.equal(monthly?.amount, 79);
   assert.equal(annual?.amount, 708);
-  assert.equal(quotePlan(config, 'professional', 'monthly', 'USD')?.amount, 99);
-  assert.equal(quotePlan(config, 'professional', 'annual', 'USD')?.amount, 888);
-  assert.equal(annualFromMonthly(19, 0.25), 171);
-  assert.equal(quotePlan(config, 'primary_secondary', 'annual', 'usd')?.amount, 171);
+  assert.equal(quotePlan(config, 'professional', 'monthly', 'USD'), null);
+  assert.equal(quotePlan(config, 'professional', 'annual', 'USD'), null);
+  assert.equal(quotePlan(config, 'primary_secondary', 'monthly', 'USD'), null);
+  assert.equal(quotePlan(config, 'primary_secondary', 'annual', 'usd'), null);
+  assert.equal(annualFromMonthly(79, 0.25), 711);
+  assert.equal(config.familyBundleDiscount, null);
+  assert.equal(config.reads.find(plan => plan.id === 'reads')?.monthlyUsd, 9);
+  assert.equal(config.reads.find(plan => plan.id === 'reads-family')?.monthlyUsd, 15);
 });
 
 test('a stored annual price is charged even when the discount would differ', () => {
@@ -47,27 +52,41 @@ test('a stored annual price is charged even when the discount would differ', () 
 });
 
 test('MYR rate mode applies charm rounding', () => {
-  const quote = quotePlan(seedPricing(), 'primary_secondary', 'monthly', 'MYR');
+  const quote = quotePlan(seedPricing(), 'igcse_alevel', 'monthly', 'MYR');
   assert.equal(quote?.currency, 'MYR');
-  assert.equal(quote?.amount, roundMoney(19 * 4.7, 'charm', 'MYR'));
-  assert.equal(quote?.amount, 89.99);
+  assert.equal(quote?.amount, roundMoney(79 * 4.7, 'charm', 'MYR'));
+  assert.equal(quote?.amount, 371.99);
 });
 
 test('a fixed local price beats the converted rate, and a missing key falls back', () => {
   const config = withMyr({
     mode: 'fixed',
-    fixedMonthly: { primary_secondary: 80 },
+    fixedMonthly: { igcse_alevel: 80 },
     fixedAnnual: {},
   });
-  assert.equal(quotePlan(config, 'primary_secondary', 'monthly', 'MYR')?.amount, 80);
-  assert.equal(quotePlan(config, 'primary_secondary', 'annual', 'MYR')?.amount, 803.99);
+  assert.equal(quotePlan(config, 'igcse_alevel', 'monthly', 'MYR')?.amount, 80);
+  assert.equal(quotePlan(config, 'igcse_alevel', 'annual', 'MYR')?.amount, roundMoney(708 * 4.7, 'charm', 'MYR'));
 });
 
 test('a disabled currency falls back to USD', () => {
   const config = withMyr({ enabled: false });
-  const quote = quotePlan(config, 'primary_secondary', 'monthly', 'MYR');
+  const quote = quotePlan(config, 'igcse_alevel', 'monthly', 'MYR');
   assert.equal(quote?.currency, 'USD');
-  assert.equal(quote?.amount, 19);
+  assert.equal(quote?.amount, 79);
+});
+
+test('a null price stays null and a stored number is kept', () => {
+  const kept = normalizePricing({
+    plans: [{ id: 'primary_secondary', monthlyUsd: 19, annualUsd: 171, sparks: 300 }],
+  });
+  assert.equal(kept.plans.find(plan => plan.id === 'primary_secondary')?.monthlyUsd, 19);
+  const cleared = normalizePricing({
+    plans: [{ id: 'primary_secondary', monthlyUsd: null, annualUsd: null, sparks: 300 }],
+    familyBundleDiscount: null,
+  });
+  assert.equal(cleared.plans.find(plan => plan.id === 'primary_secondary')?.monthlyUsd, null);
+  assert.equal(cleared.familyBundleDiscount, null);
+  assert.equal(quotePlan(cleared, 'primary_secondary', 'monthly', 'USD'), null);
 });
 
 test('display currency stays on USD unless the reader chose another', () => {
@@ -146,15 +165,16 @@ test('the audit diff names the fields that changed', () => {
   myr.fixedMonthly = { primary_secondary: 90 };
   const lines = diffPricing(before, after);
   assert.ok(lines.some(line => line.includes('Annual discount') && line.includes('20%')));
-  assert.ok(lines.some(line => line.includes('primary_secondary monthly USD 19 → 29')));
+  assert.ok(lines.some(line => line.includes('primary_secondary monthly USD unset → 29')));
   assert.ok(lines.some(line => line.includes('MYR rate 4.7 → 4.8')));
   assert.ok(lines.some(line => line.includes('primary_secondary monthly fixed')));
 });
 
-test('plan copy uses levels and keeps the $19 and $99 prices', () => {
+test('plan copy uses levels and leaves Primary and Professional unset', () => {
   const config = seedPricing();
-  assert.equal(config.plans.find(plan => plan.id === 'primary_secondary')?.monthlyUsd, 19);
-  assert.equal(config.plans.find(plan => plan.id === 'professional')?.monthlyUsd, 99);
+  assert.equal(config.plans.find(plan => plan.id === 'primary_secondary')?.monthlyUsd, null);
+  assert.equal(config.plans.find(plan => plan.id === 'professional')?.monthlyUsd, null);
+  assert.equal(config.plans.find(plan => plan.id === 'igcse_alevel')?.monthlyUsd, 79);
   const page = readFileSync(new URL('../app/pricing/page.tsx', import.meta.url), 'utf8');
   const plans = TIERS.flatMap(tier => [tier.name, tier.blurb, ...tier.programmes]).join('\n');
   const copy = `${plans}\n${page}`;

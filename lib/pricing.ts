@@ -21,9 +21,20 @@ export type CurrencySource = 'user' | 'auto';
 
 export interface PlanPrice {
   id: string;
-  monthlyUsd: number;
-  annualUsd: number;
+  /** Null until a super admin sets a price. Checkout refuses a null price. */
+  monthlyUsd: number | null;
+  annualUsd: number | null;
   sparks: number;
+}
+
+export interface ReadsPlanPrice {
+  id: string;
+  monthlyUsd: number;
+}
+
+export interface FamilyBundleDiscount {
+  secondChildOff: number;
+  furtherChildOff: number;
 }
 
 export interface AddonPrice {
@@ -49,6 +60,9 @@ export interface PricingConfig {
   plans: PlanPrice[];
   addons: AddonPrice[];
   currencies: CurrencyPrice[];
+  /** Null until a super admin saves a family bundle discount. */
+  familyBundleDiscount: FamilyBundleDiscount | null;
+  reads: ReadsPlanPrice[];
 }
 
 export interface MoneyQuote {
@@ -96,13 +110,13 @@ export function annualFromMonthly(monthlyUsd: number, discount: number): number 
 
 export function seedPricing(): PricingConfig {
   const annualDiscount = 0.25;
-  const drafts: Array<{ id: string; monthlyUsd: number; sparks: number; annualUsd?: number }> = [
-    { id: 'preview', monthlyUsd: 0, sparks: 0 },
-    { id: 'primary_secondary', monthlyUsd: 19, sparks: 300 },
-    // $59 × 12 and $74 × 12 match the public annual prices. A strict 25% of the
-    // year would be $711 and $891 ($59.25 and $74.25 a month).
+  const drafts: Array<{ id: string; monthlyUsd: number | null; sparks: number; annualUsd: number | null }> = [
+    { id: 'preview', monthlyUsd: 0, sparks: 0, annualUsd: 0 },
+    { id: 'primary_secondary', monthlyUsd: null, sparks: 300, annualUsd: null },
+    // $59 × 12 matches the public IGCSE annual price. A strict 25% of the
+    // year would be $711 ($59.25 a month).
     { id: 'igcse_alevel', monthlyUsd: 79, sparks: 800, annualUsd: 708 },
-    { id: 'professional', monthlyUsd: 99, sparks: 1000, annualUsd: 888 },
+    { id: 'professional', monthlyUsd: null, sparks: 1000, annualUsd: null },
   ];
   return {
     version: 1,
@@ -111,11 +125,16 @@ export function seedPricing(): PricingConfig {
       id: plan.id,
       monthlyUsd: plan.monthlyUsd,
       sparks: plan.sparks,
-      annualUsd: plan.annualUsd ?? annualFromMonthly(plan.monthlyUsd, annualDiscount),
+      annualUsd: plan.annualUsd,
     })),
     addons: [
       { id: 'lyra_live', monthlyUsd: 49 },
       { id: 'cms', monthlyUsd: 29 },
+    ],
+    familyBundleDiscount: null,
+    reads: [
+      { id: 'reads', monthlyUsd: 9 },
+      { id: 'reads-family', monthlyUsd: 15 },
     ],
     currencies: [
       emptyCurrency('USD', { enabled: true, mode: 'base', rate: 1, rounding: 'none' }),
@@ -223,7 +242,17 @@ export function quotePlan(
   const plan = planById(config, planId);
   if (!plan) return null;
   const usd = interval === 'annual' ? plan.annualUsd : plan.monthlyUsd;
+  if (usd == null) return null;
   return priceInCurrency(config, usd, planId, interval, requestedCurrency);
+}
+
+/** Reads monthly USD from config, or the published $9 / $15 shelf when that row is absent. */
+export function readsPriceUsd(config: PricingConfig, id: string): number | null {
+  const row = config.reads.find(item => item.id === id);
+  if (row) return Number.isFinite(row.monthlyUsd) && row.monthlyUsd > 0 ? row.monthlyUsd : null;
+  if (id === 'reads') return 9;
+  if (id === 'reads-family') return 15;
+  return null;
 }
 
 export function quoteAddon(
@@ -284,11 +313,20 @@ export function validatePricing(config: PricingConfig): string | null {
   if (config.plans.length === 0) return 'Add at least one plan.';
   for (const plan of config.plans) {
     if (!plan.id.trim()) return 'Every plan needs an id.';
-    if (plan.monthlyUsd < 0 || plan.annualUsd < 0 || plan.sparks < 0) {
-      return `${plan.id}: prices and Sparks must be zero or more.`;
+    if (!priceOk(plan.monthlyUsd) || !priceOk(plan.annualUsd) || !Number.isFinite(plan.sparks) || plan.sparks < 0) {
+      return `${plan.id}: prices must be blank or zero or more, and Sparks must be a number.`;
     }
-    if (![plan.monthlyUsd, plan.annualUsd, plan.sparks].every(Number.isFinite)) {
-      return `${plan.id}: enter a valid number.`;
+  }
+  if (config.familyBundleDiscount) {
+    const { secondChildOff, furtherChildOff } = config.familyBundleDiscount;
+    if (![secondChildOff, furtherChildOff].every(rate => Number.isFinite(rate) && rate >= 0 && rate <= 1)) {
+      return 'Family bundle discount must be between 0 and 100%, or blank.';
+    }
+  }
+  for (const plan of config.reads) {
+    if (!plan.id.trim()) return 'Every Reads plan needs an id.';
+    if (!Number.isFinite(plan.monthlyUsd) || plan.monthlyUsd <= 0) {
+      return `${plan.id}: Reads price must be greater than zero.`;
     }
   }
   for (const addon of config.addons) {
@@ -327,7 +365,15 @@ export function normalizePricing(raw: unknown): PricingConfig {
   const plans = mergePlans(record.plans, seed.plans);
   const addons = mergeAddons(record.addons, seed.addons);
   const currencies = mergeCurrencies(record.currencies, seed.currencies);
-  return { version: 1, annualDiscount, plans, addons, currencies };
+  return {
+    version: 1,
+    annualDiscount,
+    plans,
+    addons,
+    currencies,
+    familyBundleDiscount: asFamilyDiscount(record.familyBundleDiscount, seed.familyBundleDiscount),
+    reads: mergeReads(record.reads, seed.reads),
+  };
 }
 
 export function diffPricing(before: PricingConfig, after: PricingConfig): string[] {
@@ -344,10 +390,10 @@ export function diffPricing(before: PricingConfig, after: PricingConfig): string
       continue;
     }
     if (prev.monthlyUsd !== next.monthlyUsd) {
-      lines.push(`${id} monthly USD ${prev.monthlyUsd} → ${next.monthlyUsd}`);
+      lines.push(`${id} monthly USD ${usdLabel(prev.monthlyUsd)} → ${usdLabel(next.monthlyUsd)}`);
     }
     if (prev.annualUsd !== next.annualUsd) {
-      lines.push(`${id} annual USD ${prev.annualUsd} → ${next.annualUsd}`);
+      lines.push(`${id} annual USD ${usdLabel(prev.annualUsd)} → ${usdLabel(next.annualUsd)}`);
     }
     if (prev.sparks !== next.sparks) {
       lines.push(`${id} monthly Sparks ${prev.sparks} → ${next.sparks}`);
@@ -368,6 +414,17 @@ export function diffPricing(before: PricingConfig, after: PricingConfig): string
   }
   for (const id of beforeAddons.keys()) {
     if (!afterAddons.has(id)) lines.push(`${id} add-on removed`);
+  }
+
+  const beforeDiscount = discountText(before.familyBundleDiscount);
+  const afterDiscount = discountText(after.familyBundleDiscount);
+  if (beforeDiscount !== afterDiscount) lines.push(`Family bundle discount ${beforeDiscount} → ${afterDiscount}`);
+  const beforeReads = new Map(before.reads.map(plan => [plan.id, plan]));
+  const afterReads = new Map(after.reads.map(plan => [plan.id, plan]));
+  for (const [id, next] of afterReads) {
+    const prev = beforeReads.get(id);
+    if (!prev) lines.push(`${id} Reads plan added`);
+    else if (prev.monthlyUsd !== next.monthlyUsd) lines.push(`${id} monthly USD ${prev.monthlyUsd} → ${next.monthlyUsd}`);
   }
 
   const beforeCurrencies = new Map(before.currencies.map(currency => [currency.code, currency]));
@@ -464,9 +521,13 @@ function emptyCurrency(
 
 function mergePlans(raw: unknown, seed: PlanPrice[]): PlanPrice[] {
   const incoming = Array.isArray(raw) ? raw : [];
+  const seedById = new Map(seed.map(plan => [plan.id, plan]));
   const byId = new Map<string, PlanPrice>();
   for (const item of incoming) {
-    const plan = asPlan(item);
+    const id = item && typeof item === 'object' && typeof (item as { id?: unknown }).id === 'string'
+      ? (item as { id: string }).id.trim()
+      : '';
+    const plan = asPlan(item, seedById.get(id));
     if (plan) byId.set(plan.id, plan);
   }
   const merged = seed.map(plan => byId.get(plan.id) ?? plan);
@@ -512,16 +573,71 @@ function lockUsd(currency: CurrencyPrice): CurrencyPrice {
   return { ...currency, enabled: true, mode: 'base', rate: 1, rounding: 'none' };
 }
 
-function asPlan(raw: unknown): PlanPrice | null {
+function asPlan(raw: unknown, seed: PlanPrice | undefined): PlanPrice | null {
   if (!raw || typeof raw !== 'object') return null;
   const item = raw as Record<string, unknown>;
   const id = typeof item.id === 'string' ? item.id.trim() : '';
   if (!id) return null;
-  const monthlyUsd = nonNegative(item.monthlyUsd);
-  const annualUsd = nonNegative(item.annualUsd);
-  const sparks = nonNegative(item.sparks);
-  if (monthlyUsd == null || annualUsd == null || sparks == null) return null;
+  const monthlyUsd = priceField(item.monthlyUsd, seed?.monthlyUsd ?? null);
+  const annualUsd = priceField(item.annualUsd, seed?.annualUsd ?? null);
+  const sparks = nonNegative(item.sparks) ?? seed?.sparks ?? null;
+  if (monthlyUsd === undefined || annualUsd === undefined || sparks == null) return null;
   return { id, monthlyUsd, annualUsd, sparks };
+}
+
+function mergeReads(raw: unknown, seed: ReadsPlanPrice[]): ReadsPlanPrice[] {
+  const incoming = Array.isArray(raw) ? raw : [];
+  const byId = new Map<string, ReadsPlanPrice>();
+  for (const item of incoming) {
+    const plan = asReads(item);
+    if (plan) byId.set(plan.id, plan);
+  }
+  const merged = seed.map(plan => byId.get(plan.id) ?? plan);
+  for (const [id, plan] of byId) {
+    if (!seed.some(item => item.id === id)) merged.push(plan);
+  }
+  return merged;
+}
+
+function asReads(raw: unknown): ReadsPlanPrice | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const item = raw as Record<string, unknown>;
+  const id = typeof item.id === 'string' ? item.id.trim() : '';
+  const monthlyUsd = nonNegative(item.monthlyUsd);
+  if (!id || monthlyUsd == null || monthlyUsd <= 0) return null;
+  return { id, monthlyUsd };
+}
+
+function asFamilyDiscount(raw: unknown, seed: FamilyBundleDiscount | null): FamilyBundleDiscount | null {
+  if (raw === undefined) return seed;
+  if (raw === null) return null;
+  if (!raw || typeof raw !== 'object') return seed;
+  const item = raw as Record<string, unknown>;
+  const secondChildOff = nonNegative(item.secondChildOff);
+  const furtherChildOff = nonNegative(item.furtherChildOff);
+  if (secondChildOff == null || furtherChildOff == null || secondChildOff > 1 || furtherChildOff > 1) return seed;
+  return { secondChildOff, furtherChildOff };
+}
+
+function priceOk(value: number | null): boolean {
+  return value === null || (Number.isFinite(value) && value >= 0);
+}
+
+function usdLabel(value: number | null): string {
+  return value == null ? 'unset' : String(value);
+}
+
+function discountText(value: FamilyBundleDiscount | null): string {
+  if (!value) return 'unset';
+  return `${value.secondChildOff}/${value.furtherChildOff}`;
+}
+
+/** Null stays null. A missing field uses the seed. An invalid number is rejected. */
+function priceField(value: unknown, seed: number | null): number | null | undefined {
+  if (value === null) return null;
+  if (value === undefined || value === '') return seed;
+  const number = nonNegative(value);
+  return number == null ? undefined : number;
 }
 
 function asAddon(raw: unknown): AddonPrice | null {

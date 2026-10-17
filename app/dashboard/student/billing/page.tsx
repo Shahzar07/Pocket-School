@@ -24,6 +24,8 @@ import { PAYER_NOTE } from '@/lib/billing-model';
 import { authedFetch } from '@/lib/api-client';
 import { automationEnabled } from '@/lib/automation-status';
 import { toast } from 'sonner';
+import { AskParent } from '@/components/billing/family-board';
+import { ManageSubscription } from '@/components/billing/manage-subscription';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -136,16 +138,22 @@ export default function StudentBillingPage() {
         {typeof profile?.alumniDiscount === 'number' && profile.alumniDiscount > 0 && !profile.institutionId && (() => {
           const offer = individualOffer(profile.academyLevel ?? '', profile.alumniDiscount ?? 0);
           return (
-            <div id="alumni-upgrade" className={`mt-3 max-w-2xl rounded-2xl border bg-card px-4 py-3 ${alumniLink ? 'border-[#C8922A] ring-2 ring-[#C8922A]' : 'border-border'}`}>
-              <p className="text-sm">
+            <div id="alumni-upgrade" className={`mt-3 max-w-2xl rounded-2xl border bg-card px-4 py-3 ${alumniLink ? 'border-[#1E6A83] ring-2 ring-[#1E6A83]' : 'border-border'}`}>
+              <p className="text-sm text-[#203337]">
                 Alumni discount of {offer.percent}% on the individual plan. The list price is {formatMoney(offer.listMonthly, 'USD')} a month. Checkout applies the discount when you continue, so the plan is {formatMoney(offer.monthly, 'USD')} a month before tax. Certificates and the transcript stay on this account.
               </p>
-              <Link href={offer.href} className="mt-3 inline-flex h-11 items-center rounded-full bg-[#1A3C34] px-5 text-sm font-semibold text-white">
+              <Link href={offer.href} className="mt-3 inline-flex h-11 items-center rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-5 text-sm font-semibold text-[#203337]">
                 Continue with the alumni discount
               </Link>
             </div>
           );
         })()}
+        <div className="mt-4 flex flex-wrap gap-3">
+          <ManageSubscription returnPath="/dashboard/student/billing" />
+        </div>
+        <div className="mt-4">
+          <AskParent adult={profile?.ageTier === 'adult'} />
+        </div>
         {profile?.institutionId && (
           <p className="text-sm mt-3 max-w-2xl rounded-2xl border border-border bg-card px-4 py-3">
             Your institution pays this seat. Poket School does not charge you for it. Marketplace courses are a separate purchase with a card or the wallet. Sparks cannot buy them.

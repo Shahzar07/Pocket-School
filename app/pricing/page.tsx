@@ -232,18 +232,18 @@ export default function PricingPage() {
             {PLANS.map((plan, i) => {
               const monthlyQuote = quotePlan(config, plan.id, 'monthly', currency);
               const annualQuote = quotePlan(config, plan.id, 'annual', currency);
-              const monthlyUsd = quotePlan(config, plan.id, 'monthly', 'USD')?.amount ?? 0;
-              const annualUsd = quotePlan(config, plan.id, 'annual', 'USD')?.amount ?? 0;
+              const monthlyUsd = quotePlan(config, plan.id, 'monthly', 'USD')?.amount ?? null;
+              const annualUsd = quotePlan(config, plan.id, 'annual', 'USD')?.amount ?? null;
               return (
               <PlanCard
                 key={plan.id}
                 plan={plan}
                 billing={billing}
                 index={i}
-                currency={monthlyQuote?.currency ?? currency}
-                monthly={monthlyQuote?.amount ?? 0}
-                annual={annualQuote?.amount ?? 0}
-                conversion={localMoney(billing === 'monthly' ? monthlyUsd : annualUsd)}
+                currency={monthlyQuote?.currency ?? annualQuote?.currency ?? currency}
+                monthly={monthlyQuote?.amount ?? null}
+                annual={annualQuote?.amount ?? null}
+                conversion={localMoney((billing === 'monthly' ? monthlyUsd : annualUsd) ?? 0)}
                 sparks={planById(config, plan.id)?.sparks ?? 0}
                 rollover={TIERS.find(tier => tier.id === plan.id)?.sparksRollover ?? 0}
                 checkingOut={checkingOut === `plan:${plan.id}`}
@@ -521,8 +521,8 @@ function PlanCard({
   billing: Billing;
   index: number;
   currency: string;
-  monthly: number;
-  annual: number;
+  monthly: number | null;
+  annual: number | null;
   conversion: string | null;
   sparks: number;
   rollover: number;
@@ -531,10 +531,11 @@ function PlanCard({
 }) {
   const isFree = monthly === 0 && annual === 0;
   const price = billing === 'monthly' ? monthly : annual;
-  const shown = formatMoney(price, currency);
-  const suffix = isFree ? 'forever' : billing === 'monthly' ? '/month' : '/year';
-  const annualLabel = formatMoney(annual, currency);
-  const saving = monthly * 12 - annual;
+  const priceUnset = price == null;
+  const shown = priceUnset ? 'Not set' : formatMoney(price, currency);
+  const suffix = isFree ? 'forever' : priceUnset ? '' : billing === 'monthly' ? '/month' : '/year';
+  const annualLabel = annual == null ? 'Not set' : formatMoney(annual, currency);
+  const saving = monthly != null && annual != null ? monthly * 12 - annual : 0;
   const sparksLine = sparks > 0
     ? `${sparks.toLocaleString('en')} Sparks a month${rollover > 0 ? ` · ${rollover.toLocaleString('en')} roll over` : ''}`
     : `${SIGNUP_GRANT.toLocaleString('en')} welcome Sparks`;
@@ -586,17 +587,18 @@ function PlanCard({
         )}
 
         <div className="mt-2 h-5">
-          {!isFree && billing === 'annual' && saving > 0 && (
+          {!isFree && !priceUnset && billing === 'annual' && saving > 0 && (
             <p className="text-xs font-bold text-emerald-600">
               Save {formatMoney(saving, currency)}
             </p>
           )}
-          {!isFree && billing === 'monthly' && (
+          {!isFree && !priceUnset && billing === 'monthly' && annual != null && (
             <p className="text-xs text-slate-500">
               or {annualLabel}/year
             </p>
           )}
           {isFree && <p className="text-xs text-slate-500">No card required</p>}
+          {priceUnset && <p className="text-xs text-slate-500">A super admin has not set this price</p>}
         </div>
 
         {isFree ? (
@@ -611,14 +613,14 @@ function PlanCard({
           <button
             type="button"
             onClick={onCheckout}
-            disabled={checkingOut}
+            disabled={checkingOut || priceUnset}
             className={`mt-6 w-full inline-flex items-center justify-center gap-2 h-12 rounded-full text-sm font-bold transition-all disabled:opacity-60 ${
               plan.popular
                 ? 'bg-primary hover:bg-[#1E6A83] text-primary-foreground shadow-lg shadow-primary/30'
                 : 'bg-[#203337] hover:bg-[#132a5e] text-white'
             }`}
           >
-            {checkingOut ? 'Starting checkout…' : plan.cta}
+            {priceUnset ? 'Price not set' : checkingOut ? 'Starting checkout…' : plan.cta}
             <ArrowRight className="w-4 h-4" />
           </button>
         )}

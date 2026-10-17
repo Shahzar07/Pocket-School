@@ -16,6 +16,7 @@ import { formatMoney } from '@/lib/pricing';
 import { DocumentDelivery } from '@/components/document-delivery';
 import { billingDocument } from '@/lib/documents/packet';
 import { PAYER_NOTE } from '@/lib/billing-model';
+import { ManageSubscription } from '@/components/billing/manage-subscription';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -182,6 +183,9 @@ export default function TeacherBillingPage() {
           <p className="text-sm text-muted-foreground mt-2">
             {PAYER_NOTE} Issued copies also appear in admin finance.
           </p>
+          <div className="mt-4">
+            <ManageSubscription returnPath="/dashboard/teacher/billing" />
+          </div>
           {invoices.length > 0 && (
             <div className="mt-4">
               <DocumentDelivery
