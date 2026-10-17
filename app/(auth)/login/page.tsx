@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   signInWithPopup,
   GoogleAuthProvider,
   signInWithEmailAndPassword,
+  signInWithCustomToken,
   signOut,
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
@@ -38,6 +39,8 @@ export default function LoginPage() {
     : 'w-full h-12 rounded-2xl bg-[#2786A4] hover:bg-[#1E6A83] text-white font-semibold text-base shadow-lg shadow-blue-900/30 transition-all mt-2';
   const linkClass = linkColor ? 'font-semibold' : 'text-[#6FBBCE] font-semibold hover:text-[#93C5FD] transition-colors';
   const router = useRouter();
+  const [linkedInEnabled, setLinkedInEnabled] = useState(false);
+  const [linkedInNote, setLinkedInNote] = useState('');
   const [step, setStep] = useState<'credentials' | 'twofa'>('credentials');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -79,6 +82,34 @@ export default function LoginPage() {
     }
     router.push(landingPath({ role, roles }, readActiveMode()));
   };
+
+  useEffect(() => {
+    let cancel = false;
+    fetch('/api/auth/linkedin')
+      .then((response) => response.json())
+      .then((data: { enabled?: boolean }) => {
+        if (!cancel) setLinkedInEnabled(data.enabled === true);
+      })
+      .catch(() => {
+        if (!cancel) setLinkedInEnabled(false);
+      });
+    const flag = new URLSearchParams(window.location.search).get('linkedin');
+    if (flag === 'link-first') setLinkedInNote('Sign in with Poket School first, then link LinkedIn from your portfolio.');
+    if (flag === 'unavailable') setLinkedInNote('LinkedIn sign-in needs the app keys and the server account tools.');
+    if (flag === 'ready') {
+      fetch('/api/auth/linkedin/session')
+        .then((response) => response.json())
+        .then(async (data: { token?: string }) => {
+          if (cancel || typeof data.token !== 'string' || !data.token) return;
+          const result = await signInWithCustomToken(auth, data.token);
+          await routeUser(result.user.uid);
+        })
+        .catch(() => {
+          if (!cancel) setLinkedInNote('LinkedIn sign-in did not finish. Try again.');
+        });
+    }
+    return () => { cancel = true; };
+  }, []);
 
   const sendToAdminLogin = async (uid: string, address: string) => {
     const snap = await getDoc(doc(db, 'users', uid));
@@ -307,6 +338,15 @@ export default function LoginPage() {
             </svg>
             {t('authForm.google')}
           </button>
+          {linkedInNote ? <p className="mb-4 text-sm text-white/70">{linkedInNote}</p> : null}
+          {linkedInEnabled ? (
+            <a
+              href="/api/auth/linkedin?start=login"
+              className="w-full h-12 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white font-medium transition-all flex items-center justify-center gap-3 mb-6"
+            >
+              Sign in with LinkedIn
+            </a>
+          ) : null}
 
           <div className="flex items-center my-6">
             <div className="flex-1 border-t border-white/8" />

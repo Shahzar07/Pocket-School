@@ -49,4 +49,15 @@ test('destination counts under five stay hidden and an opted-in name still shows
   assert.deepEqual(board.named, [{ name: 'Ada L.', destination: 'Studio School', course: 'Design' }]);
   assert.equal(board.testimonials[0]?.name, 'Ada L.');
   assert.match(board.testimonials[0]?.quote ?? '', /science course/);
+  assert.equal(board.outcomes.some((bucket) => bucket.label === 'Studying' && bucket.count >= 5), true);
+  assert.equal(board.outcomes.some((bucket) => bucket.label === 'Hired'), false);
+});
+
+test('hired and studying counts under five stay hidden', () => {
+  const hired = Array.from({ length: 3 }, () => row({ name: 'Clinic', kind: 'work', course: 'Analyst' }));
+  const studying = Array.from({ length: 5 }, () => row({ name: 'University of Malaya', kind: 'university' }));
+  const board = destinationBoard([...hired, ...studying]);
+  assert.equal(board.outcomes.some((bucket) => bucket.label === 'Hired'), false);
+  assert.equal(board.outcomes.some((bucket) => bucket.label === 'Studying' && bucket.count === 5), true);
+  assert.ok(board.hiddenBuckets >= 1);
 });

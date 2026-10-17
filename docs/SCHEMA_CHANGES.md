@@ -805,3 +805,57 @@ The server deletes this document when sharing is off, when a learner under 18 ha
 
 Rules still need an owner deploy. These rules are not deployed from this change.
 
+## LinkedIn and job applications
+
+Poket School uses LinkedIn’s own buttons and OpenID Connect. It does not scrape LinkedIn and it does not submit applications on LinkedIn.
+
+Add to Profile uses `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME`. Share uses `https://www.linkedin.com/sharing/share-offsite/`. Neither needs a LinkedIn API product. `LINKEDIN_ORGANIZATION_ID` is optional. When it is unset, the button sends `organizationName` as Poket School.
+
+Sign in with LinkedIn is hidden until `LINKEDIN_CLIENT_ID` and `LINKEDIN_CLIENT_SECRET` are set. The requested scope is `openid profile email` only. The redirect is `/api/auth/linkedin/callback`. A person who is already signed in can link `linkedInSub` on `users/{uid}`. A signed-out LinkedIn sign-in works only when that `sub` is already linked. The server looks it up with `where('linkedInSub', '==', sub)`. That is a single-field query. The index is automatic.
+
+A member post stays off. It needs LinkedIn approval for `w_member_social` and `LINKEDIN_MEMBER_SHARE=on`, and this server does not request or store that token. `POST /api/auth/linkedin/share` returns that explanation and does not call LinkedIn.
+
+## `share_links/{token}`
+
+The token is the document id. The learner creates one link per job application.
+
+| Field | Meaning |
+| --- | --- |
+| `studentId` | Learner uid. Listed with `where('studentId', '==', uid)` |
+| `label` | The learner’s name for the link, such as Company X - Analyst |
+| `expiresOn` | `YYYY-MM-DD` |
+| `createdAt` | ISO time |
+| `revoked` | Closed by the learner |
+
+`share_links/{token}/views/{id}` stores `at`, `itemTitle`, and `visitorLabel`. `visitorLabel` is only the text the visitor types. The view does not store an IP address or any other detail about the visitor.
+
+The public page is `/record/{token}`. An expired or revoked token does not return the record.
+
+## `verification_requests/{id}`
+
+An employer can ask the learner or the school to confirm a self-reported item. The employer cannot write the record.
+
+| Field | Meaning |
+| --- | --- |
+| `studentId` | Learner uid |
+| `itemId`, `itemTitle` | The self-reported item |
+| `note`, `visitorLabel` | What the visitor typed |
+| `status` | `open` or `confirmed` |
+| `confirmedBy` | `learner` or `school` |
+| `schoolIds` | Academies already on the learner’s education history |
+
+A school reads with `where('schoolIds', 'array-contains', institutionId)`. That is a single-field query. Confirming sets `confirmation` on `users/{uid}/portfolio_items/{id}` to `learner` or `school`. The line stays self-reported. It does not become a Poket School certificate.
+
+## `users/{uid}/applications/{id}`
+
+The learner’s own job tracker: `company`, `role`, `link` (https or empty), `status` (`draft`, `applied`, `interview`, `offer`, `hired`, `studying`, `closed`), `date`, `shareToken`, `reminderOn`. A reminder shows in the portfolio when the date is today or earlier and the status is `applied` or `interview`. Poket School does not email a blast and does not apply for the learner.
+
+ET AI tailors bullets from verified achievements whose title or detail already contains a word from the pasted job description. A skill that appears only in the job text is left out.
+
+When the status is `hired` or `studying` and the learner already shares a destination with former schools, that outcome is copied onto the existing destination rows. Alumni Destinations then counts Hired and Studying. A count under 5 stays hidden.
+
+`linkedInSub` on `users/{uid}` is written by the server during link. Mobile clients do not write it.
+
+Rules still need an owner deploy. These rules are not deployed from this change.
+
+

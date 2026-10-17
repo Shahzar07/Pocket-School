@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { RecordPanels } from '@/components/portfolio/record-panels';
+import { JobTracker, LinkedInCopy } from '@/components/portfolio/linkedin-panels';
 import { DashHeader, DashPage, Panel } from '@/components/dash-ui';
 import { authedFetch } from '@/lib/api-client';
 import { DESTINATION_KINDS } from '@/lib/destinations';
@@ -92,6 +93,7 @@ export default function StudentPortfolioPage() {
         description="Verified lines come from your Poket School record. Self-reported lines stay labelled. The same student number follows this account across academies."
       />
       {record ? (
+        <>
         <RecordPanels
           name={record.name}
           studentNumber={record.studentNumber}
@@ -102,6 +104,9 @@ export default function StudentPortfolioPage() {
           reason={record.publication.reason}
           consent={consent}
         />
+        <LinkedInCopy name={record.name} studentNumber={record.studentNumber} items={record.items} />
+        <JobTracker items={record.items} />
+        </>
       ) : <p className="text-sm text-[#1A3C34]">Opening your record…</p>}
 
       <Panel>

@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { linkedInCertificationUrl, shareLinks } from '@/lib/credentials/badge-model';
 import { sourceLabel, type PortfolioConsent, type RecordItem } from '@/lib/portfolio';
 import type { DestinationBoard } from '@/lib/destinations';
 
@@ -26,6 +28,15 @@ export function RecordPanels({
   const verified = items.filter((item) => item.source === 'verified');
   const reported = items.filter((item) => item.source === 'self_reported');
   const qr = studentNumber ? `https://poketschool.ai/portfolio/${studentNumber}` : '';
+  const [organizationId, setOrganizationId] = useState('');
+  useEffect(() => {
+    fetch('/api/auth/linkedin')
+      .then((response) => response.json())
+      .then((data: { organizationId?: string }) => {
+        if (typeof data.organizationId === 'string') setOrganizationId(data.organizationId);
+      })
+      .catch(() => undefined);
+  }, []);
   return (
     <section className="rounded-[28px] border border-[#1A3C34]/10 bg-white p-6 text-[#1A3C34]">
       <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8922A]">Lifelong record</p>
@@ -33,8 +44,8 @@ export function RecordPanels({
       <p className="mt-1 font-mono text-sm">{studentNumber || 'Student number follows this account'}</p>
       <p className="mt-3 text-sm leading-relaxed">{reason}</p>
       <div className="mt-5 grid gap-4 md:grid-cols-2">
-        <ItemColumn title="Verified by Poket School" items={verified} />
-        <ItemColumn title="Self-reported" items={reported} />
+        <ItemColumn title="Verified by Poket School" items={verified} organizationId={organizationId} />
+        <ItemColumn title="Self-reported" items={reported} organizationId={organizationId} />
       </div>
       {nudges.length > 0 && (
         <ul className="mt-4 space-y-1 text-sm">
@@ -61,27 +72,43 @@ export function RecordPanels({
       {qr ? (
         <div className="mt-4 inline-flex items-center gap-3 rounded-2xl border border-[#1A3C34]/10 p-3">
           <QRCodeSVG value={qr} size={88} fgColor="#1A3C34" bgColor="#ffffff" />
-          <p className="max-w-[16rem] text-xs leading-relaxed">{qr}</p>
+          <p className="max-w-[16rem] text-xs leading-relaxed">LinkedIn Featured and the Contact info website field use {qr}</p>
         </div>
       ) : null}
     </section>
   );
 }
 
-function ItemColumn({ title, items }: { title: string; items: readonly RecordItem[] }) {
+function ItemColumn({ title, items, organizationId }: { title: string; items: readonly RecordItem[]; organizationId: string }) {
   return (
     <div>
       <h3 className="text-sm font-semibold">{title}</h3>
       <ul className="mt-2 space-y-2 text-sm">
         {items.length === 0 ? <li className="text-[#1A3C34]/70">Nothing in this column yet.</li> : null}
-        {items.map((item) => (
-          <li key={item.id} className="rounded-xl border border-[#1A3C34]/10 px-3 py-2">
-            <p className="font-medium">{item.title}</p>
-            <p className="text-[#1A3C34]/80">{[item.detail, item.when].filter(Boolean).join(' · ')}</p>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#C8922A]">{sourceLabel(item.source)}</p>
-            {item.verifyUrl ? <p className="truncate text-xs">{item.verifyUrl}</p> : null}
-          </li>
-        ))}
+        {items.map((item) => {
+          const dated = item.when.match(/\d{4}-\d{2}-\d{2}/);
+          const showLinkedIn = (item.kind === 'certificate' || item.kind === 'badge') && item.verifyUrl;
+          return (
+            <li key={item.id} className="rounded-xl border border-[#1A3C34]/10 px-3 py-2">
+              <p className="font-medium">{item.title}</p>
+              <p className="text-[#1A3C34]/80">{[item.detail, item.when].filter(Boolean).join(' · ')}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#C8922A]">{sourceLabel(item.source)}</p>
+              {item.verifyUrl ? <p className="truncate text-xs">{item.verifyUrl}</p> : null}
+              {showLinkedIn ? (
+                <p className="mt-1 flex flex-wrap gap-3 text-xs font-semibold">
+                  <a href={linkedInCertificationUrl({
+                    name: item.title,
+                    organizationId,
+                    issuedAt: dated ? `${dated[0]}T00:00:00.000Z` : '2020-01-01T00:00:00.000Z',
+                    certUrl: item.verifyUrl,
+                    certId: item.id,
+                  })} target="_blank" rel="noreferrer">Add to LinkedIn</a>
+                  <a href={shareLinks(item.verifyUrl, item.title).linkedin} target="_blank" rel="noreferrer">Share to LinkedIn</a>
+                </p>
+              ) : null}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
@@ -97,6 +124,10 @@ export function DestinationBoardView({ board }: { board: DestinationBoard & { no
         <BucketList title="Institution" rows={board.institutions} />
         <BucketList title="Country" rows={board.countries} />
         <BucketList title="Course" rows={board.courses} />
+      </div>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <BucketList title="Hired" rows={board.outcomes.filter((row) => row.label === 'Hired')} />
+        <BucketList title="Studying" rows={board.outcomes.filter((row) => row.label === 'Studying')} />
       </div>
       {board.named.length > 0 && (
         <ul className="mt-4 space-y-1 text-sm">

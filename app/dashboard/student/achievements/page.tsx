@@ -13,6 +13,7 @@ import { Zap, Star, Crown } from 'lucide-react';
 import { LeaderboardPodium } from '@/components/leaderboard/podium';
 import { streakFromDates } from '@/lib/learning';
 import { Progress } from '@/components/ui/progress';
+import { linkedInCertificationUrl, shareLinks } from '@/lib/credentials/badge-model';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -36,6 +37,7 @@ export default function AchievementsPage() {
   const [badges, setBadges] = useState<Badge[]>([]);
   const [leaderboard, setLeaderboard] = useState<{ id: string; data: UserProfile; school: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [organizationId, setOrganizationId] = useState('');
 
   useEffect(() => {
     if (!user) return;
@@ -60,6 +62,15 @@ export default function AchievementsPage() {
       setLoading(false);
     });
   }, [user]);
+
+  useEffect(() => {
+    fetch('/api/auth/linkedin')
+      .then((response) => response.json())
+      .then((data: { organizationId?: string }) => {
+        if (typeof data.organizationId === 'string') setOrganizationId(data.organizationId);
+      })
+      .catch(() => undefined);
+  }, []);
 
   const xp = profile?.xp ?? 0;
   const earnedTypes = new Set(badges.map(b => b.type));
@@ -186,6 +197,9 @@ export default function AchievementsPage() {
           <div className="space-y-3">
             {ALL_BADGES.map((b, i) => {
               const earned = earnedTypes.has(b.type);
+              const earnedBadge = badges.find((item) => item.type === b.type);
+              const verifyUrl = earnedBadge ? `${typeof window === 'undefined' ? 'https://poketschool.ai' : window.location.origin}/verify/badge/${encodeURIComponent(earnedBadge.id)}` : '';
+              const issuedAt = earnedBadge?.awardedAt?.toDate?.().toISOString() ?? '2020-01-01T00:00:00.000Z';
               return (
                 <motion.div
                   key={b.type}
@@ -199,6 +213,12 @@ export default function AchievementsPage() {
                   <div className="flex-1 min-w-0">
                     <p className="font-heading text-sm text-foreground">{b.name}</p>
                     <p className="text-xs text-muted-foreground">{b.description}</p>
+                    {earned && earnedBadge ? (
+                      <p className="mt-2 flex flex-wrap gap-3 text-xs font-semibold">
+                        <a href={linkedInCertificationUrl({ name: b.name, organizationId, issuedAt, certUrl: verifyUrl, certId: earnedBadge.id })} target="_blank" rel="noreferrer">Add to LinkedIn</a>
+                        <a href={shareLinks(verifyUrl, b.name).linkedin} target="_blank" rel="noreferrer">Share to LinkedIn</a>
+                      </p>
+                    ) : null}
                   </div>
                   {earned ? (
                     <BadgeUI className="rounded-full bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px] font-semibold">Earned</BadgeUI>
@@ -206,6 +226,19 @@ export default function AchievementsPage() {
                     <BadgeUI className="rounded-full bg-muted text-muted-foreground border-border text-[10px] font-semibold">Locked</BadgeUI>
                   )}
                 </motion.div>
+              );
+            })}
+            {badges.filter((badge) => !ALL_BADGES.some((item) => item.type === badge.type)).map((badge) => {
+              const verifyUrl = `${typeof window === 'undefined' ? 'https://poketschool.ai' : window.location.origin}/verify/badge/${encodeURIComponent(badge.id)}`;
+              const issuedAt = badge.awardedAt?.toDate?.().toISOString() ?? '2020-01-01T00:00:00.000Z';
+              return (
+                <div key={badge.id} className="bg-card border border-border rounded-2xl p-4 card-glow">
+                  <p className="font-heading text-sm text-foreground">{badge.name}</p>
+                  <p className="mt-2 flex flex-wrap gap-3 text-xs font-semibold">
+                    <a href={linkedInCertificationUrl({ name: badge.name, organizationId, issuedAt, certUrl: verifyUrl, certId: badge.id })} target="_blank" rel="noreferrer">Add to LinkedIn</a>
+                    <a href={shareLinks(verifyUrl, badge.name).linkedin} target="_blank" rel="noreferrer">Share to LinkedIn</a>
+                  </p>
+                </div>
               );
             })}
           </div>

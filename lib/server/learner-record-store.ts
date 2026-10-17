@@ -165,6 +165,7 @@ function itemFrom(id: string, data: Record<string, unknown> | undefined): Record
     verifyUrl: '',
     evidenceLink: text(data.evidenceLink),
     section: text(data.section) || sectionForKind(kind),
+    confirmation: data.confirmation === 'learner' || data.confirmation === 'school' ? data.confirmation : '',
   };
 }
 
@@ -236,7 +237,7 @@ export async function buildPortfolio(uid: string): Promise<BuiltPortfolio> {
     certificates: certificateItems,
     badges: badges.docs.flatMap((doc) => {
       const title = text(doc.get('name')).trim();
-      return title ? [{ title }] : [];
+      return title ? [{ id: doc.id, title, when: whenOf(doc.get('awardedAt')) }] : [];
     }),
     projects: projects.docs.flatMap((doc) => {
       const title = text(doc.get('title')).trim();
@@ -484,6 +485,7 @@ function destinationFrom(data: Record<string, unknown> | undefined): StoredDesti
     shareName: data.shareName === true && shareWithSchools,
     testimonial: text(data.testimonial).slice(0, 280),
     shareTestimonial: data.shareTestimonial === true && shareWithSchools && text(data.testimonial).trim().length > 0,
+    outcome: data.outcome === 'hired' || data.outcome === 'studying' ? data.outcome : undefined,
     destinationInstitutionId: safeId(text(data.destinationInstitutionId)),
   };
 }
@@ -620,7 +622,7 @@ export async function noteDetectedDestination(uid: string, input: {
 export async function destinationDashboard(institutionId: string): Promise<DestinationBoard & { note: string }> {
   const id = safeId(institutionId);
   if (!id) {
-    return { institutions: [], countries: [], courses: [], named: [], testimonials: [], hiddenBuckets: 0, note: 'Groups under five stay hidden.' };
+    return { institutions: [], countries: [], courses: [], named: [], testimonials: [], outcomes: [], hiddenBuckets: 0, note: 'Groups under five stay hidden.' };
   }
   const snap = await adminDb().collection('learner_destinations').where('fromInstitutionId', '==', id).limit(500).get();
   const rows: DestinationRow[] = snap.docs.flatMap((doc) => {
@@ -637,6 +639,7 @@ export async function destinationDashboard(institutionId: string): Promise<Desti
       shareName: data.shareName === true,
       testimonial: text(data.testimonial),
       shareTestimonial: data.shareTestimonial === true,
+      outcome: data.outcome === 'hired' || data.outcome === 'studying' ? data.outcome : undefined,
       fromInstitutionId: id,
       learnerName: text(data.learnerName),
     }];

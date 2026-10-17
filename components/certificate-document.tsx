@@ -23,7 +23,7 @@ import {
   displayLogoUrl,
   formatCertificateDate,
 } from '@/lib/certificates';
-import { linkedInCertificationUrl } from '@/lib/credentials/badge-model';
+import { linkedInCertificationUrl, shareLinks } from '@/lib/credentials/badge-model';
 
 function origin(): string | undefined {
   if (typeof window === 'undefined') return undefined;
@@ -102,9 +102,18 @@ export function CertificateDocument({
   const accent = certificateAccent(certificate.accent) ?? '#1E6A83';
   const logo = displayLogoUrl(certificate.logoUrl);
   const [verify, setVerify] = useState(() => certificateVerifyUrl(certificate.id));
+  const [organizationId, setOrganizationId] = useState('');
   useEffect(() => {
     setVerify(`${window.location.origin}${path}`);
   }, [path]);
+  useEffect(() => {
+    fetch('/api/auth/linkedin')
+      .then((response) => response.json())
+      .then((data: { organizationId?: string }) => {
+        if (typeof data.organizationId === 'string') setOrganizationId(data.organizationId);
+      })
+      .catch(() => undefined);
+  }, []);
   return (
     <div className={compact ? '' : 'bg-card border border-border rounded-3xl overflow-hidden card-glow'}>
       <div className="bg-white text-[#1c2b30] border-[10px] m-3 sm:m-4 rounded-sm" style={{ borderColor: accent }}>
@@ -178,6 +187,7 @@ export function CertificateDocument({
             className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'rounded-full font-bold')}
             href={linkedInCertificationUrl({
               name: moduleTitle || certificate.courseTitle,
+              organizationId,
               issuedAt: issuedIso(certificate.issuedAt),
               certUrl: verify,
               certId: certificate.id,
@@ -186,6 +196,14 @@ export function CertificateDocument({
             rel="noreferrer"
           >
             Add to LinkedIn
+          </a>
+          <a
+            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'rounded-full font-bold')}
+            href={shareLinks(verify, moduleTitle || certificate.courseTitle).linkedin}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Share to LinkedIn
           </a>
           <a className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'rounded-full font-bold')} href={`/api/credentials/${encodeURIComponent(certificate.id)}/image`}>
             Download badge

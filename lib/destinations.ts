@@ -8,6 +8,8 @@ export const MIN_DESTINATION_BUCKET = 5;
 export const DESTINATION_KINDS = ['university', 'college', 'institution', 'work', 'other'] as const;
 export type DestinationKind = (typeof DESTINATION_KINDS)[number];
 
+export type DestinationOutcome = 'hired' | 'studying' | 'other';
+
 export interface DestinationChoice {
   kind: DestinationKind;
   name: string;
@@ -18,6 +20,8 @@ export interface DestinationChoice {
   shareName: boolean;
   testimonial: string;
   shareTestimonial: boolean;
+  /** Set when the learner states hired or studying. Otherwise the kind decides. */
+  outcome?: DestinationOutcome;
 }
 
 export interface DestinationRow extends DestinationChoice {
@@ -36,6 +40,7 @@ export interface DestinationBoard {
   courses: DestinationBucket[];
   named: { name: string; destination: string; course: string }[];
   testimonials: { quote: string; name: string }[];
+  outcomes: DestinationBucket[];
   hiddenBuckets: number;
 }
 
@@ -52,6 +57,7 @@ export function stateDestination(input: {
   shareName: boolean;
   testimonial?: string;
   shareTestimonial: boolean;
+  outcome?: string;
 }): DestinationChoice | { error: string } {
   const name = input.name.replace(/\s+/g, ' ').trim().slice(0, 120);
   if (!name) return { error: 'Add the university, college, or workplace.' };
@@ -66,7 +72,15 @@ export function stateDestination(input: {
     shareName: input.shareName && input.shareWithSchools,
     testimonial,
     shareTestimonial: input.shareTestimonial && input.shareWithSchools && testimonial.length > 0,
+    outcome: outcomeOf({ kind: readDestinationKind(input.kind), outcome: input.outcome }),
   };
+}
+
+export function outcomeOf(row: { kind: DestinationKind; outcome?: string }): DestinationOutcome {
+  if (row.outcome === 'hired' || row.outcome === 'studying') return row.outcome;
+  if (row.kind === 'work') return 'hired';
+  if (row.kind === 'university' || row.kind === 'college' || row.kind === 'institution') return 'studying';
+  return 'other';
 }
 
 /** Joining another Poket School academy can fill the next step only with consent. */
@@ -89,6 +103,7 @@ export function detectDestination(input: {
     shareName: false,
     testimonial: '',
     shareTestimonial: false,
+    outcome: 'studying',
   };
 }
 
@@ -114,6 +129,12 @@ export function destinationBoard(rows: readonly DestinationRow[]): DestinationBo
   const institutions = buckets(rows, (row) => row.name);
   const countries = buckets(rows, (row) => row.country);
   const courses = buckets(rows, (row) => row.course);
+  const outcomes = buckets(rows, (row) => {
+    const outcome = outcomeOf(row);
+    if (outcome === 'hired') return 'Hired';
+    if (outcome === 'studying') return 'Studying';
+    return '';
+  });
   const named = rows
     .filter((row) => row.shareWithSchools && row.shareName && row.learnerName.trim())
     .slice(0, 12)
@@ -128,6 +149,7 @@ export function destinationBoard(rows: readonly DestinationRow[]): DestinationBo
     courses: courses.shown,
     named,
     testimonials,
-    hiddenBuckets: institutions.hidden + countries.hidden + courses.hidden,
+    outcomes: outcomes.shown,
+    hiddenBuckets: institutions.hidden + countries.hidden + courses.hidden + outcomes.hidden,
   };
 }

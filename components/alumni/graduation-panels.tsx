@@ -2,6 +2,7 @@
 
 import { QRCodeSVG } from 'qrcode.react';
 import { canUndoGraduation, type GraduationBillPreview, type GraduationCard, type ReadyGraduate } from '@/lib/graduation';
+import { shareLinks } from '@/lib/credentials/badge-model';
 
 const CONFETTI = ['#C8922A', '#E36A4F', '#3C8DFF', '#F8E7C4', '#F6F1E7'];
 
@@ -58,6 +59,7 @@ export function GraduationCelebration({ card }: { card: GraduationCard }) {
             <p className="mt-3 font-mono text-sm">{card.studentNumber}</p>
             {card.graduatedOn ? <p className="mt-1 text-xs text-[#1A3C34]/70">Graduated {card.graduatedOn}</p> : null}
             <p className="mt-3 text-xs leading-relaxed text-[#1A3C34]/70">Share this card. The code opens the public profile once that profile is on.</p>
+            <a className="mt-2 inline-flex text-sm font-semibold text-[#3C8DFF]" href={shareLinks(card.qrUrl, `${card.publicName} graduated on Poket School`).linkedin} target="_blank" rel="noreferrer">Share to LinkedIn</a>
           </article>
           <div className="flex items-center justify-center rounded-3xl bg-white p-4">
             <QRCodeSVG value={card.qrUrl} size={128} fgColor="#1A3C34" bgColor="#ffffff" />

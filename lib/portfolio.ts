@@ -6,6 +6,7 @@
 import { isMinorTier, type AgeTier } from './age-tier';
 import { publicName } from './alumni';
 import { spanDates, type EducationSpan } from './lifelong';
+import { linkedInPack } from './linkedin';
 
 export const CV_TEMPLATES = ['forest', 'gold', 'coral', 'classic'] as const;
 export type CvTemplate = (typeof CV_TEMPLATES)[number];
@@ -31,6 +32,7 @@ export interface RecordItem {
   verifyUrl: string;
   evidenceLink: string;
   section: string;
+  confirmation?: '' | 'learner' | 'school';
 }
 
 export interface PortfolioConsent {
@@ -105,7 +107,7 @@ export function verifiedItems(input: {
   courses: readonly { title: string; when?: string }[];
   scores: readonly { title: string; score: string }[];
   certificates: readonly { id: string; title: string; when?: string }[];
-  badges: readonly { title: string }[];
+  badges: readonly { id?: string; title: string; when?: string }[];
   projects: readonly { title: string; detail?: string }[];
   endorsements: readonly { title: string; detail?: string }[];
   includeScores: boolean;
@@ -173,8 +175,8 @@ export function verifiedItems(input: {
       kind: 'badge',
       title: badge.title,
       detail: 'Badge',
-      when: '',
-      verifyUrl: '',
+      when: badge.when ?? '',
+      verifyUrl: badge.id ? `https://poketschool.ai/verify/badge/${encodeURIComponent(badge.id)}` : '',
       evidenceLink: '',
       section: 'badges',
     });
@@ -313,13 +315,17 @@ export function publicPortfolioView(input: {
 }
 
 export function linkedInText(input: { name: string; studentNumber: string; items: readonly RecordItem[] }): string {
-  const lines = [input.name.trim() || 'Learner', input.studentNumber.trim().toUpperCase(), ''];
-  for (const item of input.items.slice(0, 24)) {
-    const when = item.when ? ` (${item.when})` : '';
-    const detail = item.detail ? ` — ${item.detail}` : '';
-    lines.push(`- ${item.title}${detail}${when} [${sourceLabel(item.source)}]`);
-  }
-  return lines.join('\n').trim();
+  return linkedInPack({
+    name: input.name,
+    studentNumber: input.studentNumber,
+    items: input.items.slice(0, 24).map((item) => ({
+      source: item.source,
+      kind: item.kind,
+      title: item.title,
+      detail: item.detail,
+      when: item.when,
+    })),
+  }).text;
 }
 
 export function portfolioJson(input: {
