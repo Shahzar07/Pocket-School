@@ -3563,3 +3563,52 @@ components/visual-blocks.tsx	Title (optional)
 components/visual-blocks.tsx	Transcript of the chant or rhyme
 components/visual-blocks.tsx	Upload failed.
 lib/email-otp.ts	Poket School
+
+app/dashboard/admin/activity/page.tsx	Could not export the audit chain.
+components/admin/desk.tsx	Add my approval
+components/admin/desk.tsx	Admin desk
+components/admin/desk.tsx	Approve merchant
+components/admin/desk.tsx	Approve offer
+components/admin/desk.tsx	Approve school
+components/admin/desk.tsx	At a glance
+components/admin/desk.tsx	Broadcast category
+components/admin/desk.tsx	Broadcast message
+components/admin/desk.tsx	Country code
+components/admin/desk.tsx	End minute
+components/admin/desk.tsx	Family billing stays on the finance desk.
+components/admin/desk.tsx	Helpline countries
+components/admin/desk.tsx	Helpline name
+components/admin/desk.tsx	Helpline number
+components/admin/desk.tsx	Kill switches
+components/admin/desk.tsx	No refund requests are in this view.
+components/admin/desk.tsx	Nothing is waiting in this queue.
+components/admin/desk.tsx	Nothing matched.
+components/admin/desk.tsx	On-call rota
+components/admin/desk.tsx	Only a super admin can change a kill switch.
+components/admin/desk.tsx	Open moderation
+components/admin/desk.tsx	Open the Safety Desk
+components/admin/desk.tsx	Open the account and set the tier with a reason.
+components/admin/desk.tsx	Platform KPIs
+components/admin/desk.tsx	Primary account id
+components/admin/desk.tsx	Primary uid
+components/admin/desk.tsx	Push broadcast
+components/admin/desk.tsx	Queue broadcast
+components/admin/desk.tsx	Read only until a person sends it.
+components/admin/desk.tsx	Safeguarding names stay hidden unless you are the safeguarding lead.
+components/admin/desk.tsx	Safety terms
+components/admin/desk.tsx	Save helpline
+components/admin/desk.tsx	Save terms note
+components/admin/desk.tsx	Search results
+components/admin/desk.tsx	Search users, institutions, and tickets
+components/admin/desk.tsx	Search users, institutions, tickets
+components/admin/desk.tsx	Set tier 2
+components/admin/desk.tsx	Source URL
+components/admin/desk.tsx	Start minute
+components/admin/desk.tsx	Terms reason
+components/admin/desk.tsx	This admin tool is coming soon.
+components/admin/desk.tsx	Top tasks
+components/admin/desk.tsx	Type SEND
+components/admin/desk.tsx	Type SEND to confirm
+components/admin/desk.tsx	Why this change
+components/admin/desk.tsx	Why this note
+components/admin/desk.tsx	https://

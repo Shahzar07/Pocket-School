@@ -215,6 +215,10 @@ const NAV: Record<Role, NavGroup[]> = {
   admin: [
     { items: [
       { href: '/dashboard/admin', icon: BarChart, labelKey: 'nav.analytics' },
+      { href: '/dashboard/admin/queues', icon: ClipboardList, labelKey: 'nav.dashboard', label: 'Queues' },
+      { href: '/dashboard/admin/platform', icon: Settings, labelKey: 'nav.systemSettings', label: 'Platform tools' },
+      { href: '/dashboard/admin/pulse', icon: Activity, labelKey: 'nav.insights', label: 'Pulse' },
+      { href: '/dashboard/admin/safety-desk', icon: Shield, labelKey: 'nav.moderation', label: 'Safety Desk' },
       { href: '/dashboard/admin/blog', icon: Newspaper, labelKey: 'nav.blog', label: 'Blog', superOnly: true },
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/dashboard/admin/courses', icon: Presentation, labelKey: 'nav.allCourses' },

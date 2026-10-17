@@ -3217,3 +3217,23 @@ Sharing is off until the owner asks. `POST /api/notes` with `action: "share"` ch
 
 Indexes for the reminder query and the trash query are in `firestore.indexes.json`. They are not deployed from this change.
 
+## Admin desk
+
+The web admin home is `/dashboard/admin`. Queues are `/dashboard/admin/queues`. Platform tools are `/dashboard/admin/platform`. KPIs are `/dashboard/admin/pulse`. The API is `GET` and `POST /api/admin/desk`.
+
+`super_admin` can open every queue and every platform tool. `admin` is limited to rows whose `institutionId` or `region` matches the account. With neither set, only a matching `country` is visible, and a row with no place is hidden. An admin cannot change a super admin's role, tier, or suspension. Hotline and safeguarding rows hide names, emails, and phone numbers unless `staffPost` is `safeguarding_lead`. A super admin still sees them. The hotline list for a super admin is not filtered by one institution.
+
+Amber approval stores `deskApprovers` on `emergency_alerts/{id}`. Two different admins must each give a reason. `deskApproval` stays `pending` until the second approval, then becomes `approved`. That record does not by itself publish the alert.
+
+`admin_desk/log` is the append-only parent (`chainSeq`, `chainHead`, `legalHold`). Each admin action is one document in `admin_desk/log/audit`. Clients cannot read or write it. `GET /api/admin/desk?export=csv` and `export=pdf` are super-admin only. The file ends with `verificationHash`, the SHA-256 of the text before that line. Filters are `action` and `actor`.
+
+`push_broadcasts/{id}` is `{ category, audience, body, createdBy, createdAt, status }`. `status` starts as `queued`. A super admin must type `SEND`. Clients cannot read or write the collection.
+
+`helpline_config/{country}` is `{ country, name, number, sourceUrl, updatedBy, updatedAt }`. `country` is a two-letter code. `sourceUrl`, when set, starts with `https://`. Signed-in clients may read it. Only the server writes it. An admin may write their own country. A super admin may write any country.
+
+Feature flags stay on `platform_settings/feature_flags`. Only a super admin can change one from this desk. Safety terms notes merge `statusNote` onto `legal/safetyTerms/versions/{version}` and do not reset `chainSeq` when the document already exists. The on-call rota remains `safety_desk/rota`.
+
+Merchant approval still uses `decidePartner`, which can set `users.role` to `partner_merchant`. Community partner approval still grants nothing. A missing Firebase Admin key returns "This admin tool is coming soon." and writes nothing.
+
+Rules for `admin_desk`, `push_broadcasts`, and `helpline_config` are in `firestore.rules`. They are not deployed.
+
