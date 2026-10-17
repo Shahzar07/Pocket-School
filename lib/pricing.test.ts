@@ -15,6 +15,7 @@ import {
   resolveDisplayCurrency,
   roundMoney,
   seedPricing,
+  snapToStorePricePoint,
   stripeUnitAmount,
   type PricingConfig,
 } from './pricing';
@@ -169,6 +170,24 @@ test('the audit diff names the fields that changed', () => {
   assert.ok(lines.some(line => line.includes('primary_secondary monthly USD unset → 29')));
   assert.ok(lines.some(line => line.includes('MYR rate 4.7 → 4.8')));
   assert.ok(lines.some(line => line.includes('primary_secondary monthly fixed')));
+});
+
+test('a book price snaps to the nearest Apple and Google .99 point', () => {
+  assert.equal(snapToStorePricePoint(seedPricing().defaultBookUsd), 1.99);
+  for (const point of [0.99, 1.99, 2.99, 9.99, 10.99]) {
+    assert.equal(snapToStorePricePoint(point), point);
+  }
+  assert.equal(snapToStorePricePoint(2), 1.99);
+  assert.equal(snapToStorePricePoint(2.48), 1.99);
+  assert.equal(snapToStorePricePoint(2.49), 2.99);
+  assert.equal(snapToStorePricePoint(5), 4.99);
+  assert.equal(snapToStorePricePoint(0.01), 0.99);
+  assert.equal(snapToStorePricePoint(0.49), 0.99);
+  assert.equal(snapToStorePricePoint(10.4), 9.99);
+  assert.equal(snapToStorePricePoint(10.49), 10.99);
+  assert.equal(snapToStorePricePoint(0), 0);
+  assert.equal(snapToStorePricePoint(-3), 0);
+  assert.equal(snapToStorePricePoint(Number.NaN), 0);
 });
 
 test('Reads plans and the default book price come from the seed', () => {
