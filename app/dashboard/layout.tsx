@@ -42,6 +42,7 @@ import { isSuperAdmin, ROLE_LABELS } from '@/lib/roles';
 import { PipGuide } from '@/components/pip-guide';
 import { OfflineBanner } from '@/components/offline-banner';
 import { RoleChecklist } from '@/components/role-checklist';
+import { WelcomeResume } from '@/components/onboarding/welcome-session';
 import { PagePurpose } from '@/components/page-purpose';
 import dynamic from 'next/dynamic';
 import type { TourRole } from '@/lib/tour-steps';
@@ -724,6 +725,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {ACCESS_DENIED_MESSAGE}
               </div>
             )}
+            <WelcomeResume />
             <RoleChecklist role={role} />
             <PagePurpose pathname={pathname} />
             {children}

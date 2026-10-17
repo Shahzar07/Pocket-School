@@ -45,6 +45,11 @@ export default function InstitutionOnboardingPage() {
   };
 
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('step') !== 'login') return;
+    document.getElementById('branded-login')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [institution]);
+
+  useEffect(() => {
     if (loading) return;
     const institutionId = profile?.institutionId;
     if (!user || profile?.role !== 'institution_admin' || !institutionId) return;
@@ -79,7 +84,7 @@ export default function InstitutionOnboardingPage() {
         <OnboardingList steps={steps} />
       </Panel>
       <Panel>
-        <h2 className="font-heading text-2xl">Branded login page</h2>
+        <h2 id="branded-login" className="font-heading text-2xl">Branded login page</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Upload a logo, pick colours, and claim an address such as poketschool.ai/i/rochfords. A custom domain is optional. Publish when the preview looks right.
         </p>

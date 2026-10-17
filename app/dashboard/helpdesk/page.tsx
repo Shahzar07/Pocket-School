@@ -17,6 +17,7 @@ import type { Deliverable } from '@/lib/documents/delivery';
 import { Timestamp } from 'firebase/firestore';
 import { canonicalStatus, slaDue, statusLabel, ticketNumber, TICKET_STATUSES } from '@/lib/tickets';
 import { authedFetch } from '@/lib/api-client';
+import { WelcomeHelpLink } from '@/components/onboarding/welcome-session';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -162,6 +163,8 @@ export default function HelpdeskPage() {
           </Button>
         )}
       </motion.header>
+
+      <WelcomeHelpLink />
 
       {!isAdmin && (
         <section className="rounded-3xl border border-border bg-card p-5">

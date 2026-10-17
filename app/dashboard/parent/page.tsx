@@ -171,6 +171,11 @@ export default function ParentDashboard() {
 
   useEffect(() => { loadGoals(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('link') !== '1') return;
+    document.getElementById('link-child')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
   // Keep the feed and its countdowns fresh without a full page reload.
   useEffect(() => {
     const tick = setInterval(() => setGoalsNow(Date.now()), 30_000);
@@ -265,6 +270,7 @@ export default function ParentDashboard() {
         }
       />
 
+      <div id="link-child">
       <JoinByCode
         title="Link your child"
         body="Scan the QR on their student pass or type the student number. They confirm the link. A learner under 13 is confirmed by their institution admin. After that, progress stays on this page and Parent Explainer can summarise the week."
@@ -275,6 +281,7 @@ export default function ParentDashboard() {
         busy={linkBusy}
         extra={<Link href="/ai-studio?mode=parent-explainer" className="inline-flex text-sm font-semibold text-[#1A3C34] underline">Open Parent Explainer</Link>}
       />
+      </div>
 
       {/* ── Today's Goals ── */}
       <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={0.5} className="space-y-4">

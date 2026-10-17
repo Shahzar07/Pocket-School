@@ -10,6 +10,7 @@ import { accessTierFor, freePreviewCount, tierDefinition, type AccessTier } from
 import { answersMatch } from '../quiz';
 import { countCompleted, isPublishedLesson, progressPercent } from '../progress';
 import { certificateKey, certificateStatus, certificateStudentName, certificateStudentNumber, moduleIsComplete } from '../certificates';
+import { ONBOARDING_COURSE_ID, WELCOME_SPARKS, isOnboardingTrack, shouldStampStudentNumber, welcomeBadge } from '../onboarding-course';
 import { issueInTransaction, issuerFromInstitution } from './module-certificates';
 import { attachOpenBadge } from './badge-issue';
 import { recordActivity } from '@/lib/audit/server';
@@ -155,14 +156,16 @@ export async function completeLesson(
   const courseTitle = ((course.title as string) || '').trim() || 'Course';
   // A passed unit quiz pays UNIT_PASS_REWARD on its own. Completing that quiz
   // lesson must not also pay the ordinary lesson reward.
-  const sparksReward = grantLessonSparks && course.kind === 'curriculum' ? LESSON_COMPLETE_REWARD : 0;
+  const welcome = courseId === ONBOARDING_COURSE_ID;
+  const sparksReward = welcome ? WELCOME_SPARKS : (grantLessonSparks && course.kind === 'curriculum' ? LESSON_COMPLETE_REWARD : 0);
+  const xpGrant = welcome ? 0 : xpReward;
   const userRef = db().doc(`users/${uid}`);
   const enrollRef = db().doc(`courses/${courseId}/enrollments/${uid}`);
   const keyRef = db().doc(`certificate_keys/${certificateKey(uid, courseId, hit.moduleId)}`);
 
   const { loadAutomation } = await import('./automation-store');
   const { defaultAutomation } = await import('../site-automation');
-  const issueCertificates = (await loadAutomation().catch(() => defaultAutomation())).rules.certificate_issue;
+  const issueCertificates = welcome || (await loadAutomation().catch(() => defaultAutomation())).rules.certificate_issue;
 
   const result = await db().runTransaction(async (tx) => {
     const [userSnap, enrollSnap, keySnap] = await Promise.all([tx.get(userRef), tx.get(enrollRef), tx.get(keyRef)]);
@@ -176,8 +179,10 @@ export async function completeLesson(
     const balanceBefore = (userSnap.data()?.sparksBalance as number) ?? 0;
     const xpBefore = (userSnap.data()?.xp as number) ?? 0;
     const balance = already ? balanceBefore : balanceBefore + sparksReward;
-    const xp = already ? xpBefore : xpBefore + xpReward;
+    const xp = already ? xpBefore : xpBefore + xpGrant;
     const institutionId = typeof userSnap.data()?.institutionId === 'string' ? userSnap.data()?.institutionId as string : '';
+    const role = (userSnap.data()?.role as string) ?? 'student';
+    const stampNumber = shouldStampStudentNumber({ courseId, moduleId: hit.moduleId, role, institutionId });
     const instSnap = institutionId ? await tx.get(db().doc(`institutions/${institutionId}`)) : null;
     const issuer = issuerFromInstitution(instSnap?.data() as Record<string, unknown> | undefined);
     if (!already) {
@@ -205,17 +210,18 @@ export async function completeLesson(
       tx.update(enrollRef, { progress });
     }
     const studentName = certificateStudentName(userSnap.data()?.name);
+    const moduleDone = moduleIsComplete(modulePublishedIds, next);
     const certificate = issueInTransaction(tx, db(), keySnap.exists, {
       studentId: uid,
       studentName,
-      studentNumber: certificateStudentNumber(userSnap.data()?.studentNumber),
+      studentNumber: stampNumber ? certificateStudentNumber(userSnap.data()?.studentNumber) : '',
       courseId,
       courseTitle,
       moduleId: hit.moduleId,
       moduleTitle,
       publishedIds: modulePublishedIds,
       completedIds: next,
-      fresh: issueCertificates && !already && moduleIsComplete(modulePublishedIds, next),
+      fresh: issueCertificates && !already && moduleDone,
       issuerName: issuer.issuerName,
       showPoweredBy: issuer.showPoweredBy,
       accent: issuer.accent,
@@ -229,12 +235,15 @@ export async function completeLesson(
       xp,
       progress,
       name: studentName,
-      role: (userSnap.data()?.role as string) ?? 'student',
+      role,
+      institutionId,
+      stampNumber,
+      moduleDone,
       certificate,
     };
   });
 
-  if (result.certificate && !certificateStudentNumber(result.certificate.studentNumber)) {
+  if (result.certificate && result.stampNumber && !certificateStudentNumber(result.certificate.studentNumber)) {
     try {
       const { ensureStudentNumber } = await import('./student-pass');
       const studentNumber = certificateStudentNumber(await ensureStudentNumber(uid));
@@ -249,7 +258,23 @@ export async function completeLesson(
   if (result.certificate) {
     await attachOpenBadge(result.certificate, { id: uid, role: result.role ?? 'student' });
   }
-  if (!result.already) {
+  if (welcome && result.moduleDone && isOnboardingTrack(hit.moduleId)) {
+    const badge = welcomeBadge(hit.moduleId);
+    const badgeRef = db().doc(`badges/${uid}_${badge.type}`);
+    const badgeSnap = await badgeRef.get();
+    if (!badgeSnap.exists) {
+      await badgeRef.set({
+        userId: uid,
+        type: badge.type,
+        name: badge.name,
+        description: badge.description,
+        icon: badge.icon,
+        sparks: WELCOME_SPARKS,
+        awardedAt: FieldValue.serverTimestamp(),
+      });
+    }
+  }
+  if (!result.already && !welcome) {
     await writePublicXp(uid, result.name ?? '', result.xp, result.role ?? 'student');
     await awardBadges(uid, result.xp);
   }
