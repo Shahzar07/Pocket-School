@@ -11,7 +11,7 @@ import type { Book } from '../reads/types';
 import { bookAllocation, decideBook } from './allocation';
 import { coverBookSparks, institutionReadsBill, licenceOffer, quoteBookLicence, seatsFromInstitution } from './licence';
 import { applyTranslatedFields, editionFor } from './localization';
-import { storedBookPriceRM } from './pricing';
+import { bookChargeUsd, storedBookPriceRM } from './pricing';
 
 function requireBook(id: string): Book {
   const found = bookById(id);
@@ -219,7 +219,15 @@ test('a book Sparks cost can be covered by the institution pool', () => {
 });
 
 test('a stored MYR book price uses the admin rate', () => {
-  const quoted = quoteCourse(seedPricing(), 5, 'USD', 'MYR');
-  assert.equal(storedBookPriceRM(5), quoted.amount);
+  const config = seedPricing();
+  const quoted = quoteCourse(config, config.defaultBookUsd, 'USD', 'MYR');
+  assert.equal(storedBookPriceRM(config.defaultBookUsd), quoted.amount);
+  assert.equal(harbour.priceUsd, config.defaultBookUsd);
+  assert.equal(harbour.priceRM, quoted.amount);
+  const override = quoteCourse(config, 5, 'USD', 'MYR');
+  assert.equal(storedBookPriceRM(5), override.amount);
   assert.equal(storedBookPriceRM(0), 0);
+  assert.equal(bookChargeUsd({ storedUsd: 5, catalogueUsd: config.defaultBookUsd, defaultUsd: config.defaultBookUsd }), 5);
+  assert.equal(bookChargeUsd({ storedUsd: null, catalogueUsd: config.defaultBookUsd, defaultUsd: config.defaultBookUsd }), config.defaultBookUsd);
+  assert.equal(bookChargeUsd({ storedUsd: 0, catalogueUsd: config.defaultBookUsd, defaultUsd: config.defaultBookUsd }), null);
 });

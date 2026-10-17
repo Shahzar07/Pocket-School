@@ -1,6 +1,11 @@
 import { proceduralArt } from '@/components/media/fallback-art';
+import { seedPricing } from '@/lib/pricing';
+import { storedBookPriceRM } from '@/lib/platform/pricing';
 import { fullPageImage } from '@/lib/reads/picture-book';
 import type { Book } from './types';
+
+const DEFAULT_BOOK_USD = seedPricing().defaultBookUsd;
+const DEFAULT_BOOK_RM = storedBookPriceRM(DEFAULT_BOOK_USD);
 
 const HARBOUR_1 = `The jetty smelled of rain and warm rope. Aisha stopped where the boards turned dark and watched the lighthouse take its turn: a slow white sweep, then nothing, then the sweep again. Behind her, the night market was packing up. Someone dropped a crate of mangoes and laughed. The sound did not reach the water.
 
@@ -203,8 +208,8 @@ export const BOOKS: Book[] = [
     version: 1,
     accessMode: 'both',
     minTier: 1,
-    priceUsd: 5,
-    priceRM: 24,
+    priceUsd: DEFAULT_BOOK_USD,
+    priceRM: DEFAULT_BOOK_RM,
     licensable: true,
     sparksCost: 80,
     seats: { total: 120, used: 0 },

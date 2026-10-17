@@ -321,7 +321,9 @@ Books are products on the same allocator as courses. A purchase writes the exist
 
 Shelf quotes go through `lib/pricing.ts`. `quotePrice` and `viewerCurrency` no longer keep a private FX table. The rate source is `pricing_config/current`, with `seedPricing()` when that document is missing. The reader currency is the `poket-currency` key, and it is used only when `poket-currency-source` is `user`. USD, MYR, and GBP are the enabled seed currencies. A daily FX feed is not stored.
 
-`seedPricing()` now includes `reads` (9 USD a month, 90 USD a year) and `reads-family` (15 USD a month, 150 USD a year). `normalizePricing` merges those rows into an existing pricing document. Reads annual is ten times the monthly price. School plans still use `annualDiscount` (25%). Reads subscriptions stay on card, in USD.
+`seedPricing()` includes `reads` (4.99 USD a month, 49.99 USD a year) and `reads-family` (7.99 USD a month, 79.99 USD a year). `normalizePricing` merges those rows into an existing pricing document. A stored Reads row keeps the amount already saved, so an admin document that still has the previous prices has to be saved again before checkout uses the new ones. School plans still use `annualDiscount` (25%). Reads subscriptions stay on card, in USD.
+
+A buy-to-own book defaults to `defaultBookUsd` (1.99 USD). `storedBookPriceRM` turns that into the shelf ringgit figure. Harbour Light’s seed and the checkout fallback use that default. Book Studio starts a new book at the same price. A book’s own `priceUsd` still overrides it, and a purchase still writes `library/{uid}/books/{bookId}` so the copy stays after the plan ends.
 
 ### Language
 
@@ -622,7 +624,7 @@ Collections written by the unified checkout. Clients cannot read or write the mo
 
 User fields written by the server: `permissions` (`alloc:marketplace:{id}`, `plan:reads`, `plan:reads-family`) and `stripeAccountId` (Connect). Both are privileged and rejected on client writes.
 
-Reads plans are `reads` at $9 a month and `reads-family` at $15. Annual is ten times the monthly price and is billed in USD on a card. Ringgit books use the admin FX quote (`quoteCheckout`) when present, otherwise the shelf RM price. Touch 'n Go is gateway method `tng`, not a Stripe metadata flag. Book and Reads purchases share `POST /api/stripe/create-checkout` and `POST /api/payments/checkout`. FPX and GrabPay stay on the one-time MYR Stripe session.
+Reads plans are `reads` at $4.99 a month ($49.99 a year) and `reads-family` at $7.99 a month ($79.99 a year), billed in USD on a card. A buy-to-own book defaults to $1.99 (`defaultBookUsd`); Harbour Light uses that default, and an admin can set `priceUsd` on the book. Ringgit books use the admin FX quote (`quoteCheckout`) when present, otherwise the shelf RM price from `storedBookPriceRM`. Touch 'n Go is gateway method `tng`, not a Stripe metadata flag. Book and Reads purchases share `POST /api/stripe/create-checkout` and `POST /api/payments/checkout`. FPX and GrabPay stay on the one-time MYR Stripe session. Checkout sends `price_data.unit_amount` from that quote. It does not look up a Stripe Price id.
 
 ## Account modes
 
