@@ -25,6 +25,7 @@ import { adminPushStore } from '../push-store';
 import { sendToDevice } from '../push-transport';
 import { ActionError } from './actions';
 import { appendChain } from './ledger';
+import { classifySchool, queueOffPlatformDrafts, schoolConsentOffer } from './school-notice';
 import { notifyTicketStaff } from './staff-notify';
 import { lockScreenNotice } from '../staff-notice/copy';
 import {
@@ -189,6 +190,20 @@ async function formTeacherUid(actor: Actor): Promise<string> {
   return match?.id ?? '';
 }
 
+function namedSchool(school: unknown, id: unknown, name: unknown): { id: string; name: string } {
+  if (school && typeof school === 'object') {
+    const row = school as { id?: unknown; name?: unknown };
+    return {
+      id: typeof row.id === 'string' ? row.id.trim().slice(0, 128) : '',
+      name: typeof row.name === 'string' ? row.name : '',
+    };
+  }
+  return {
+    id: typeof id === 'string' ? id.trim().slice(0, 128) : '',
+    name: typeof name === 'string' ? name : '',
+  };
+}
+
 function startOfUtcDay(now: number): number {
   const date = new Date(now);
   return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
@@ -242,6 +257,7 @@ function trackerRow(id: string, data: FirebaseFirestore.DocumentData) {
     tracker: trackerFor(str(data.status)),
     createdAt: Number(data.createdAt) || 0,
     flagged: data.flagged === true,
+    schoolInformed: Number(data.schoolInformedAt) > 0,
   };
 }
 
@@ -322,6 +338,11 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
   const concernRole = str(input.concernRole).slice(0, 40);
   const dontTellParents = input.dontTellParents === true;
   const anonymous = input.anonymous === true;
+  const victimInput = namedSchool(input.victimSchool, input.victimSchoolId, input.victimSchoolName);
+  const bullyInput = namedSchool(input.bullySchool, input.bullySchoolId, input.bullySchoolName);
+  const victimSchool = await classifySchool(victimInput.id, victimInput.name);
+  const bullySchool = await classifySchool(bullyInput.id, bullyInput.name);
+  const schoolNoticeConsent = input.schoolNoticeConsent === true && actor.ageTier !== 'under13';
   const exclusion = { type: safetyType, who, concernRole, dontTellParents };
   const toDesk = anonymous || !actor.institutionId;
   const audience = toDesk
@@ -393,11 +414,31 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
     parentAckAt: 0,
     dangerEscalatedAt: 0,
     deskEscalatedAt: 0,
+    victimSchoolId: victimSchool.id,
+    victimSchoolName: victimSchool.name,
+    victimSchoolOnPoket: victimSchool.onPoket,
+    bullySchoolId: bullySchool.id,
+    bullySchoolName: bullySchool.name,
+    bullySchoolOnPoket: bullySchool.onPoket,
+    schoolNoticeConsent,
+    schoolNoticeGuardianId: '',
+    schoolInformedAt: 0,
     createdAt: now,
     updatedAt: now,
   };
   await ref.set(ticket);
   await noteRepeatedTarget(ticket.targetUid, ref.id);
+  try {
+    await queueOffPlatformDrafts({
+      reportId: ref.id,
+      victim: victimSchool,
+      bully: bullySchool,
+      incidentType: safetyType,
+      when,
+    });
+  } catch (error) {
+    console.error('school notice draft', error);
+  }
   const device = deviceOf(input);
   await logEvent(ref.id, actor, 'created', {
     before: {},
@@ -567,6 +608,13 @@ export async function safetyNotice(uid: string, id: string) {
     canAck: view === 'notice' || view === 'full',
     canDecideFamily: view === 'full' && data.parentsExcluded === true,
     canMarkFalse: view === 'full' && str(data.source) === 'danger_now',
+    canInformSchool: view === 'full' && (actor.role === 'admin' || actor.staffPost === 'safety_desk'),
+    canGrantSchoolConsent: (await schoolConsentOffer(uid, id)).canGrant,
+    victimSchoolName: str(data.victimSchoolName),
+    bullySchoolName: str(data.bullySchoolName),
+    victimSchoolOnPoket: data.victimSchoolOnPoket === true,
+    bullySchoolOnPoket: data.bullySchoolOnPoket === true,
+    schoolInformed: Number(data.schoolInformedAt) > 0,
   };
 }
 

@@ -2793,6 +2793,18 @@ service cloud.firestore {
     match /network_mutes/{pairId} {
       allow read, write: if false;
     }
+    // Off-platform school notices. Append-only on the server. Not deployed.
+    match /schoolNotices/{noticeId} {
+      allow read, write: if false;
+      match /events/{eventId} {
+        allow read: if false;
+        allow create: if false;
+        allow update, delete: if false;
+      }
+    }
+    match /schools/{schoolId} {
+      allow read, write: if false;
+    }
 
     match /published_reports/{token} {
       allow get: if true;

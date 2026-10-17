@@ -3,6 +3,9 @@ export interface OutboundMail {
   subject: string;
   text: string;
   html: string;
+  /** Overrides the env from-address. School notices use the safety@ sender. */
+  from?: string;
+  attachments?: { filename: string; content: string }[];
 }
 
 export interface MailSendResult {

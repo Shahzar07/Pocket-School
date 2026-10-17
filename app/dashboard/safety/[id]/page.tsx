@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { WidenAllStaff } from '@/components/alerts/all-staff';
+import { InformSchool } from '@/components/bullying/inform-school';
 import { DashHeader, DashPage } from '@/components/dash-ui';
 import { authedFetch, postJSON } from '@/lib/authed-fetch';
 
@@ -16,6 +17,12 @@ interface Notice {
   canAck?: boolean;
   canDecideFamily?: boolean;
   canMarkFalse?: boolean;
+  canInformSchool?: boolean;
+  canGrantSchoolConsent?: boolean;
+  victimSchoolName?: string;
+  bullySchoolName?: string;
+  victimSchoolOnPoket?: boolean;
+  bullySchoolOnPoket?: boolean;
   flagged?: boolean;
   flagReason?: string;
 }
@@ -55,6 +62,11 @@ export default function SafetyNoticePage() {
     setMessage('Marked as a false trigger. A repeat is flagged and still goes through.');
   };
 
+  const grantConsent = async () => {
+    await postJSON('/api/bullying/school-consent', { reportId: id });
+    setMessage('Saved. The student\'s name stays off the notice.');
+  };
+
   const whenText = notice?.createdAt ? new Date(notice.createdAt).toISOString() : '';
 
   return (
@@ -73,6 +85,9 @@ export default function SafetyNoticePage() {
           {notice.flagged ? <p className="text-sm">Flagged for staff: {notice.flagReason || 'review'}.</p> : null}
           {notice.canAck ? <button type="button" className="min-h-12 rounded-xl bg-primary text-primary-foreground font-bold" onClick={() => void ack()}>I have seen this</button> : null}
           {notice.canMarkFalse ? <button type="button" className="min-h-12 rounded-xl border font-bold" onClick={() => void markFalse()}>Mark as a false trigger</button> : null}
+          {notice.canGrantSchoolConsent ? (
+            <button type="button" className="min-h-12 rounded-xl border font-bold" onClick={() => void grantConsent()}>I agree this school may be told. The student&apos;s name stays off the notice.</button>
+          ) : null}
           {notice.canDecideFamily ? (
             <form className="grid gap-2" onSubmit={event => { event.preventDefault(); void family(); }}>
               <h2 className="font-bold">Family contact decision</h2>
@@ -93,6 +108,15 @@ export default function SafetyNoticePage() {
             </form>
           ) : null}
         </section>
+      ) : null}
+      {notice?.canInformSchool ? (
+        <InformSchool
+          reportId={id}
+          victimSchoolName={notice.victimSchoolName ?? ''}
+          bullySchoolName={notice.bullySchoolName ?? ''}
+          victimOnPoket={notice.victimSchoolOnPoket === true}
+          bullyOnPoket={notice.bullySchoolOnPoket === true}
+        />
       ) : null}
       <WidenAllStaff source="case" sourceId={id} />
     </DashPage>

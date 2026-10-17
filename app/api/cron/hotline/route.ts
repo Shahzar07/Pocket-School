@@ -3,6 +3,7 @@ import { isAdminConfigured } from '@/lib/firebase-admin';
 import { escalateCriticalDesk, sendDueCheckIns } from '@/lib/server/bullying';
 import { escalateDueTickets, remindAuthorityTickets } from '@/lib/server/hotline';
 import { escalateUnackedDanger } from '@/lib/server/safety';
+import { escalateSchoolNotices, remindSchoolNotices } from '@/lib/server/school-notice';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,5 +24,7 @@ export async function GET(req: NextRequest) {
   const danger = await escalateUnackedDanger(now);
   const desk = await escalateCriticalDesk(now);
   const checkIns = await sendDueCheckIns(now);
-  return NextResponse.json({ ok: true, ...result, ...reminders, ...danger, ...desk, ...checkIns });
+  const schoolReminders = await remindSchoolNotices(now);
+  const schoolEscalations = await escalateSchoolNotices(now);
+  return NextResponse.json({ ok: true, ...result, ...reminders, ...danger, ...desk, ...checkIns, ...schoolReminders, ...schoolEscalations });
 }

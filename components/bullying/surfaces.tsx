@@ -1,3 +1,4 @@
+import { InformSchool } from '@/components/bullying/inform-school';
 import { BRAND } from '@/lib/brand';
 import { DESK_SLA_MS, NOT_A_COUNSELLOR, evidenceHash, helpNearMe, helplinesForCountry } from '@/lib/bullying/policy';
 
@@ -109,6 +110,13 @@ export function DeskSurface() {
           </dl>
           <button type="button" className="mt-4 inline-flex min-h-12 items-center rounded-xl px-4 font-semibold" style={cyanButton}>Send referral</button>
         </article>
+        <InformSchool
+          sample
+          reportId="sample"
+          victimSchoolName="Sample Off Platform School"
+          bullySchoolName="Sample Academy"
+          bullyOnPoket
+        />
         <article className="rounded-3xl border bg-white p-5">
           <h2 className="text-2xl font-semibold" style={{ color: BRAND.blueDeep }}>False reports</h2>
           <p className="mt-2" style={{ color: BRAND.ink }}>Repeated false reports are flagged for a person to review. The reporter is not muted or restricted for that flag.</p>

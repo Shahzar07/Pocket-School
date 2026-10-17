@@ -2460,3 +2460,35 @@ components/bullying/surfaces.tsx	School referral
 components/bullying/surfaces.tsx	Send referral
 components/bullying/surfaces.tsx	Send this only after the person who reported it agrees, and only if the other school is on Poket School.
 components/bullying/surfaces.tsx	You get this check-in 24 hours after a report, and again after 7 days.
+components/bullying/ack-form.tsx	Action taken
+components/bullying/ack-form.tsx	Confirm receipt
+components/bullying/ack-form.tsx	What the school did
+components/bullying/inform-school.tsx	A Desk member reviews every notice. Nothing is sent until you send it. The reporter is not named.
+components/bullying/inform-school.tsx	A short account with no names
+components/bullying/inform-school.tsx	Copied from the official page
+components/bullying/inform-school.tsx	Evidence record
+components/bullying/inform-school.tsx	Inform a school
+components/bullying/inform-school.tsx	Official email
+components/bullying/inform-school.tsx	Official page
+components/bullying/inform-school.tsx	Serious risk, tell the school without consent
+components/bullying/inform-school.tsx	That school is on Poket School. Use the safeguarding referral.
+components/bullying/inform-school.tsx	Which school
+components/bullying/inform-school.tsx	Why this child is at serious risk
+components/bullying/inform-school.tsx	https://
+components/bullying/school-field.tsx	Not on Poket School
+components/bullying/school-field.tsx	On Poket School
+components/bullying/school-field.tsx	School name
+components/bullying/school-field.tsx	Which school do you go to?
+components/bullying/school-field.tsx	Which school is the bully at?
+components/bullying/school-notice-view.tsx	Confidential notice
+components/bullying/school-notice-view.tsx	Dates.
+components/bullying/school-notice-view.tsx	Incident type.
+components/bullying/school-notice-view.tsx	Join Poket School for free safeguarding tools
+components/bullying/school-notice-view.tsx	SAFETY DESK
+components/bullying/school-notice-view.tsx	Safety Desk.
+components/bullying/school-notice-view.tsx	Summary.
+components/bullying/school-notice-view.tsx	The reporter is not named in this notice.
+components/bullying/school-notice-view.tsx	This link has expired.
+components/bullying/school-notice-view.tsx	This link is not available.
+components/safety/desk.tsx	I am 13 or older and I agree the Safety Desk may tell these schools. My name stays off the notice.
+components/safety/surfaces.tsx	Your school has been informed

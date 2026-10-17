@@ -1596,3 +1596,59 @@ The public page is `/stand-up-to-bullying`. It is indexed, canonical, and lists 
 Samples: `/preview/bullying` and `/preview/bullying?view=desk`. Platform report links: WhatsApp `https://www.whatsapp.com/safety`, Instagram `https://help.instagram.com/`, TikTok `https://www.tiktok.com/safety`.
 
 Indexes, not deployed: `evidence_locker` on `ownerId`; `evidence_locker` on `guardianIds` (array); `hotline_tickets` on `targetUid`; `hotline_tickets` on `deskSeverity`; `network_mutes` on `userId`.
+
+## Schools that are not on Poket School
+
+When the student's school, or the other student's school, is not an `institutions/{id}` document, the Safety Desk can still tell that school. Naming a school on a report does not send anything. `fileSafetyReport` writes a draft and the email goes out only when a Desk lead posts `send: true`.
+
+The report form asks, optionally, "Which school do you go to?" and "Which school is the bully at?". Each field is a directory picker plus free text. The ticket stores `victimSchoolId`, `victimSchoolName`, `victimSchoolOnPoket`, `bullySchoolId`, `bullySchoolName`, `bullySchoolOnPoket`, `schoolNoticeConsent`, `schoolNoticeGuardianId`, and `schoolInformedAt`. `schoolNoticeConsent` is saved only when the reporter is not `under13` and they ticked the box. A Desk request cannot set that flag.
+
+`schools/{id}` is the directory of off-platform schools. A free-text name is stored at the first 20 hex characters of SHA-256 of the cleaned lowercase name, with `name`, `nameLower`, `onPoket: false`, `contactEmail: ''`, `contactSource: ''`, and `contactVerified: false`. An id that already exists as `institutions/{id}` is on Poket School. The email notice is refused with "That school is on Poket School. Use the safeguarding referral." `GET /api/bullying/schools?q=` returns `{ id, name, onPoket }` only. It does not return an email address. The search reads up to 50 directory rows and 40 institutions and filters in memory, so it does not need a new composite index.
+
+`schoolNotices/{id}` is append-only through `appendChain` on `schoolNotices/{id}/events`. Clients cannot read or write `schoolNotices`, its `events`, or `schools`. Rules are not deployed. The document is:
+
+| Field | Meaning |
+| --- | --- |
+| `reportId` | `hotline_tickets` id |
+| `schoolId` | `schools/{id}` or blank |
+| `schoolName` | Display name |
+| `side` | `victim` or `bully` |
+| `contact` | Verified email, or the word `phone` or `letter`. Never a guessed address |
+| `contactSource` | `https://` page the Desk opened |
+| `consentBy` | Student uid, guardian uid, or the Desk uid for a serious-risk override |
+| `sentBy` | Desk uid. Blank until something is actually sent or logged as reached |
+| `sentAt` | Milliseconds. `0` until then |
+| `ackAt` | Milliseconds the school confirmed, else `0` |
+| `actionTaken` | What the school wrote |
+| `status` | `draft`, `find_contact`, `sent`, `reminded`, `escalated`, `acknowledged` |
+| `channel` | `email`, `phone`, or `letter` |
+| `incidentType` | Safety type |
+| `dates` | When it happened |
+| `summary` | Short account. Rejected if it contains the reporter's name |
+| `token` | 48 hex characters. Server only. Clients cannot read this collection |
+| `tokenHash` | SHA-256 of `token`. The public page looks up this |
+| `tokenExpiresAt` | 30 days after send |
+| `remindedAt` | Set when the 3-working-day reminder runs |
+| `escalatedAt` | Set when the 7-working-day escalation runs |
+| `chainSeq`, `chainHead`, `legalHold` | Same audit chain as other safety records |
+
+A draft starts at `find_contact`. The Desk push says "Find contact. A school notice is waiting for review. Nothing was sent." An email is accepted only when it is a valid address, the source is a public `https://` URL (no localhost, no IP address, no userinfo, and the fetch does not follow redirects), and that exact address appears on the page. Otherwise the status stays `find_contact` and the task is `Find contact`. Phone and letter logging store the channel word plus the source URL. They do not store a number or a postal address. `reached` has to be true before that log counts as sent.
+
+Consent is the student's own tick from age 13, or `POST /api/bullying/school-consent` from an approved guardian at verification tier 2 or higher who is not excluded by the parent-exclusion rule. Under 13, the student's tick is ignored. A serious-risk override needs `seriousRisk: true` and `overrideReason` of at least 8 characters. That writes `school_notice_override` on the ticket chain and on the notice chain, with the reason. The notice body is built by `schoolNoticeMessage`. It has the incident type, the dates, the summary, the Desk address `safety@poketschool.ai`, the acknowledgement link, and the free join link `/signup?help=bullying&ref=POKETSTAND`. It says the reporter is not named. Mail goes through `lib/mail` from `Poket School <safety@poketschool.ai>`, even when `MAIL_FROM` is something else. An evidence PDF is attached only when the Desk passes an evidence locker id whose note does not contain the reporter's name.
+
+The acknowledgement page is `/school-notice/{token}`. It is `noindex`, omitted from the sitemap, and disallowed in `robots.ts`. The sample `/school-notice/sample` renders a static notice and does not call Firebase. A bad or unknown token says "This link is not available." An expired token says "This link has expired." The page shows the incident type, the dates, the summary, the Desk contact, a receipt form, and the join link. It does not show the reporter, the report id, or the token hash. `POST /api/school-notice/ack` is public. The token is the credential.
+
+`GET /api/cron/hotline` calls `remindSchoolNotices` and `escalateSchoolNotices`. Three working days after `sentAt` (Monday to Friday, `Asia/Kuala_Lumpur`, skipping holidays on `DEFAULT_WORK`), a `sent` notice becomes `reminded`. The reminder email reuses the stored token, and only when the channel is email, the contact contains `@`, and the token is 48 hex characters. Otherwise the Desk is pushed: "Remind the school. No acknowledgement yet, and no email is on file." Seven working days with no `ackAt` sets `escalated` and pushes the rota primary, the backup, and `staffPost: safety_desk`. The school is not emailed a third time. The push does not include the reporter's name.
+
+When a notice is sent, or a phone or letter is logged as reached, the ticket `schoolInformedAt` is set. The student's tracker then shows "Your school has been informed". It does not name the school.
+
+| Method | Path |
+| --- | --- |
+| GET | `/api/bullying/schools` |
+| GET | `/api/bullying/school-notice` |
+| POST | `/api/bullying/school-notice` |
+| POST | `/api/bullying/school-consent` |
+| GET | `/school-notice/{token}` |
+| POST | `/api/school-notice/ack` |
+
+Queries, single field, not a new composite index: `schoolNotices.reportId`, `schoolNotices.tokenHash`, `schoolNotices.status`. Rules and indexes are not deployed. Samples: `/school-notice/sample` and the desk card on `/preview/bullying?view=desk`. The report form sample is `/preview/safety`.

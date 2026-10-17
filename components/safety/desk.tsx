@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { Phone, Shield } from 'lucide-react';
 import { authedFetch, postJSON } from '@/lib/authed-fetch';
 import { emergencyNumber } from '@/lib/emergency/policy';
+import { SchoolField, type SchoolChoice } from '@/components/bullying/school-field';
 import { SAFETY_TYPE_OPTIONS, SupportCard, TrackerCard } from '@/components/safety/surfaces';
 import { DEFAULT_HELPLINES, WHERE_PLACES, type Helpline, type TrackerStage } from '@/lib/safety/policy';
 
@@ -13,7 +14,10 @@ interface TrackerItem {
   tracker: TrackerStage;
   createdAt: number;
   flagged: boolean;
+  schoolInformed?: boolean;
 }
+
+const EMPTY_SCHOOL: SchoolChoice = { id: '', name: '', onPoket: false };
 
 async function fileAsBase64(file: File): Promise<string> {
   const bytes = new Uint8Array(await file.arrayBuffer());
@@ -44,7 +48,14 @@ export function SafetyDesk({
   const [where, setWhere] = useState('');
   const [when, setWhen] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [reports, setReports] = useState<TrackerItem[]>([]);
+  const [reports, setReports] = useState<TrackerItem[]>(sample ? [{
+    id: 'sample-informed',
+    safetyType: 'bullying',
+    tracker: 'being_looked_at',
+    createdAt: Date.now(),
+    flagged: false,
+    schoolInformed: true,
+  }] : []);
   const [lines, setLines] = useState<Helpline[]>(sample ? DEFAULT_HELPLINES : []);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -55,6 +66,9 @@ export function SafetyDesk({
   const [dangerType, setDangerType] = useState('');
   const [concernRole, setConcernRole] = useState('');
   const [concernWho, setConcernWho] = useState('');
+  const [victimSchool, setVictimSchool] = useState<SchoolChoice>(sample ? { id: '', name: 'Sample', onPoket: false } : EMPTY_SCHOOL);
+  const [bullySchool, setBullySchool] = useState<SchoolChoice>(EMPTY_SCHOOL);
+  const [schoolConsent, setSchoolConsent] = useState(false);
 
   useEffect(() => {
     if (sample) return;
@@ -89,6 +103,9 @@ export function SafetyDesk({
         who,
         where,
         when,
+        victimSchool,
+        bullySchool,
+        schoolNoticeConsent: schoolConsent,
       });
       if (file) {
         await postJSON('/api/hotline/attach', {
@@ -104,6 +121,9 @@ export function SafetyDesk({
       setWho('');
       setWhere('');
       setWhen('');
+      setVictimSchool(EMPTY_SCHOOL);
+      setBullySchool(EMPTY_SCHOOL);
+      setSchoolConsent(false);
       setFile(null);
       setNote(created.flagged ? 'Sent. The school has this, and it was flagged for a follow-up.' : 'Sent. The safeguarding lead has this.');
     } catch (error) {
@@ -179,6 +199,12 @@ export function SafetyDesk({
             <input className="min-h-12 rounded-xl border border-border px-3 font-normal" value={when} onChange={event => setWhen(event.target.value)} aria-label="When" />
           </label>
         </div>
+        <SchoolField which="victim" value={victimSchool} onChange={setVictimSchool} sample={sample} />
+        <SchoolField which="bully" value={bullySchool} onChange={setBullySchool} sample={sample} />
+        <label className="flex min-h-12 items-center gap-2 text-sm font-semibold">
+          <input type="checkbox" checked={schoolConsent} onChange={event => setSchoolConsent(event.target.checked)} />
+          <span>I am 13 or older and I agree the Safety Desk may tell these schools. My name stays off the notice.</span>
+        </label>
         <label className="grid gap-1 text-sm font-semibold">
           Evidence
           <input type="file" aria-label="Evidence" onChange={event => setFile(event.target.files?.[0] ?? null)} />
@@ -192,7 +218,7 @@ export function SafetyDesk({
           <h2 className="text-lg font-bold">Your report</h2>
           <p className="text-sm text-muted-foreground">Nothing sent yet. Staff notes are never shown here.</p>
         </section>
-      ) : reports.map(report => <TrackerCard key={report.id} stage={report.tracker} />);
+      ) : reports.map(report => <TrackerCard key={report.id} stage={report.tracker} schoolInformed={report.schoolInformed === true} />);
 
   const dangerForm = (
       <form id="danger-now" onSubmit={event => void onDanger(event)} className="rounded-2xl border border-border bg-card p-4 grid gap-3">

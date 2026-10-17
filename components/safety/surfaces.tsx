@@ -78,11 +78,12 @@ export function SupportCard({ lines = DEFAULT_HELPLINES }: { lines?: Helpline[] 
   );
 }
 
-export function TrackerCard({ stage = 'received' }: { stage?: TrackerStage }) {
+export function TrackerCard({ stage = 'received', schoolInformed = false }: { stage?: TrackerStage; schoolInformed?: boolean }) {
   return (
     <section className="sf-card" aria-label="Report tracker">
       <h2 style={{ margin: '0 0 8px', fontSize: 18 }}>Your report</h2>
       <p className="sf-note">You can see where it stands. Staff notes stay with the safeguarding lead.</p>
+      {schoolInformed ? <p className="sf-note" style={{ color: '#1E6A83', fontWeight: 700 }}>Your school has been informed</p> : null}
       <div className="sf-row" style={{ marginTop: 12 }}>
         {TRACKER_STAGES.map(item => (
           <span key={item} className={item === stage ? 'sf-stage on' : 'sf-stage'}>{STAGE_LABEL[item]}</span>

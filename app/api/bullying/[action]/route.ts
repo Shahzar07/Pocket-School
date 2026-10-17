@@ -15,6 +15,7 @@ import {
   storeEvidence,
   supportChat,
 } from '@/lib/server/bullying';
+import { grantSchoolNoticeConsent, listSchoolNotices, reviewSchoolNotice, searchSchools } from '@/lib/server/school-notice';
 import { runGet, runPost } from '@/lib/server/http';
 
 export const dynamic = 'force-dynamic';
@@ -38,6 +39,8 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
     if (action === 'desk-restrict') return deskRestrictComments(user.uid, str(body.targetId), body.on !== false);
     if (action === 'referral') return sendSchoolReferral(user.uid, input);
     if (action === 'support') return supportChat(user.uid, input);
+    if (action === 'school-notice') return reviewSchoolNotice(user.uid, input);
+    if (action === 'school-consent') return grantSchoolNoticeConsent(user.uid, str(body.reportId));
     throw new ActionError('NOT_FOUND', 'Unknown action.');
   });
 }
@@ -73,6 +76,12 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ action: str
       const id = caseId(req.nextUrl.searchParams.get('id'));
       if (!id) throw new ActionError('BAD_REQUEST', 'Choose a referral.');
       return readSchoolReferral(user.uid, id);
+    }
+    if (action === 'schools') return searchSchools(user.uid, req.nextUrl.searchParams.get('q') ?? '');
+    if (action === 'school-notice') {
+      const id = caseId(req.nextUrl.searchParams.get('reportId'));
+      if (!id) throw new ActionError('BAD_REQUEST', 'Choose a report.');
+      return listSchoolNotices(user.uid, id);
     }
     throw new ActionError('NOT_FOUND', 'Unknown action.');
   });
