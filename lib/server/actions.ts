@@ -9,7 +9,7 @@ import { asAgeTier, isAgeTier } from '../age-tier';
 import { accessTierFor, freePreviewCount, tierDefinition, type AccessTier } from '../entitlements';
 import { answersMatch } from '../quiz';
 import { countCompleted, isPublishedLesson, progressPercent } from '../progress';
-import { certificateKey, certificateStatus, certificateStudentName, moduleIsComplete } from '../certificates';
+import { certificateKey, certificateStatus, certificateStudentName, certificateStudentNumber, moduleIsComplete } from '../certificates';
 import { issueInTransaction, issuerFromInstitution } from './module-certificates';
 import { attachOpenBadge } from './badge-issue';
 import { recordActivity } from '@/lib/audit/server';
@@ -204,6 +204,7 @@ export async function completeLesson(
     const certificate = issueInTransaction(tx, db(), keySnap.exists, {
       studentId: uid,
       studentName,
+      studentNumber: certificateStudentNumber(userSnap.data()?.studentNumber),
       courseId,
       courseTitle,
       moduleId: hit.moduleId,
@@ -229,6 +230,18 @@ export async function completeLesson(
     };
   });
 
+  if (result.certificate && !certificateStudentNumber(result.certificate.studentNumber)) {
+    try {
+      const { ensureStudentNumber } = await import('./student-pass');
+      const studentNumber = certificateStudentNumber(await ensureStudentNumber(uid));
+      if (studentNumber) {
+        await db().doc(`certificates/${result.certificate.id}`).set({ studentNumber }, { merge: true });
+        result.certificate.studentNumber = studentNumber;
+      }
+    } catch {
+      // The public verification page stamps the number the next time the certificate is opened.
+    }
+  }
   if (result.certificate) {
     await attachOpenBadge(result.certificate, { id: uid, role: result.role ?? 'student' });
   }
@@ -877,6 +890,15 @@ export async function syncModuleCertificates(callerId: string, studentId: string
   const user = await db().doc(`users/${target}`).get();
   if (!user.exists) throw new ActionError('USER_NOT_FOUND');
   const studentName = certificateStudentName(user.data()?.name);
+  let studentNumber = certificateStudentNumber(user.data()?.studentNumber);
+  if (!studentNumber) {
+    try {
+      const { ensureStudentNumber } = await import('./student-pass');
+      studentNumber = certificateStudentNumber(await ensureStudentNumber(target));
+    } catch {
+      studentNumber = '';
+    }
+  }
   const institutionId = typeof user.data()?.institutionId === 'string' ? user.data()?.institutionId as string : '';
   const instSnap = institutionId ? await db().doc(`institutions/${institutionId}`).get() : null;
   const issuer = issuerFromInstitution(instSnap?.data() as Record<string, unknown> | undefined);
@@ -921,6 +943,7 @@ export async function syncModuleCertificates(callerId: string, studentId: string
         return issueInTransaction(tx, db(), keySnap.exists, {
           studentId: target,
           studentName,
+          studentNumber,
           courseId: thisCourseId,
           courseTitle: ((course.title as string) || '').trim() || 'Course',
           moduleId,

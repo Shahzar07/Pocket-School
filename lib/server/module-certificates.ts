@@ -6,6 +6,7 @@ import {
   type CertificateAward,
   certificateKey,
   certificateStudentName,
+  certificateStudentNumber,
   moduleIsComplete,
   safeLogoUrl,
 } from '../certificates';
@@ -26,6 +27,7 @@ interface IssueInput {
   accent?: string;
   logoUrl?: string;
   certificateFooter?: string;
+  studentNumber?: string;
 }
 
 /**
@@ -41,6 +43,7 @@ export function issueInTransaction(
   if (keyExists || !moduleIsComplete(input.publishedIds, input.completedIds)) return null;
   const id = crypto.randomUUID();
   const studentName = certificateStudentName(input.studentName);
+  const studentNumber = certificateStudentNumber(input.studentNumber);
   const issuedAt = new Date().toISOString();
   const issuedByName = input.issuerName?.trim() || CERTIFICATE_ISSUER_NAME;
   tx.set(firestore.doc(`certificates/${id}`), {
@@ -59,6 +62,7 @@ export function issueInTransaction(
     ...(input.accent ? { accent: input.accent } : {}),
     ...(input.logoUrl ? { logoUrl: input.logoUrl } : {}),
     ...(input.certificateFooter ? { certificateFooter: input.certificateFooter } : {}),
+    ...(studentNumber ? { studentNumber } : {}),
     status: 'valid',
     disclaimer: CERTIFICATE_DISCLAIMER,
   });
@@ -80,6 +84,7 @@ export function issueInTransaction(
     moduleTitle: input.moduleTitle,
     issuedAt,
     issuedByName,
+    ...(studentNumber ? { studentNumber } : {}),
   };
 }
 

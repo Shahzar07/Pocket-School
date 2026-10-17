@@ -3410,6 +3410,7 @@ export interface Certificate {
   showPoweredBy?: boolean;
   logoUrl?: string;
   certificateFooter?: string;
+  studentNumber?: string;
 }
 
 export async function getCertificatesForStudent(studentId: string): Promise<Certificate[]> {

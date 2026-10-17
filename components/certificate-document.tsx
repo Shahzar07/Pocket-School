@@ -17,6 +17,7 @@ import {
   certificateDocumentHtml,
   certificateHeader,
   certificateStatus,
+  certificateStudentNumber,
   certificateVerifyPath,
   certificateVerifyUrl,
   displayLogoUrl,
@@ -94,6 +95,7 @@ export function CertificateDocument({
   compact?: boolean;
 }) {
   const moduleTitle = certificate.moduleTitle?.trim();
+  const studentNumber = certificateStudentNumber(certificate.studentNumber);
   const path = certificateVerifyPath(certificate.id);
   const status = certificateStatus(certificate.status);
   const header = certificateHeader(certificate);
@@ -117,6 +119,12 @@ export function CertificateDocument({
           </p>
           <p className="text-sm text-[#526066] mt-4">This is to certify that</p>
           <p className="font-heading text-3xl italic mt-2" style={{ color: accent }}>{certificate.studentName}</p>
+          {studentNumber ? (
+            <p className="mt-3 text-sm text-[#1c2b30]">
+              <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-[#526066]">Student number</span>
+              <span className="font-mono text-lg tracking-wide">{studentNumber}</span>
+            </p>
+          ) : null}
           <p className="text-sm text-[#526066] mt-4">has completed the module</p>
           <p className="font-heading text-2xl mt-1">{moduleTitle || certificate.courseTitle}</p>
           {moduleTitle ? <p className="text-sm text-[#526066] mt-1">{certificate.courseTitle}</p> : null}
@@ -137,7 +145,13 @@ export function CertificateDocument({
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#526066] mt-1">Scan to verify</p>
             </div>
             <div className="text-left min-w-0 max-w-sm">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#526066]">Certificate ID</p>
+              {studentNumber ? (
+                <>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#526066]">Student number</p>
+                  <p className="font-mono text-sm text-[#1c2b30]">{studentNumber}</p>
+                </>
+              ) : null}
+              <p className={`text-[10px] font-bold uppercase tracking-[0.16em] text-[#526066] ${studentNumber ? 'mt-3' : ''}`}>Certificate ID</p>
               <p className="font-mono text-sm break-all text-[#1c2b30]">{certificate.id}</p>
               <p className="text-[11px] text-[#526066] mt-2">Scanning the QR code opens</p>
               <p className="font-mono text-[11px] break-all text-[#1E6A83] mt-1">{verify}</p>

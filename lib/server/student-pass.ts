@@ -3,6 +3,7 @@ import { adminDb } from '../firebase-admin';
 import { hasAccountRole } from '../account-modes';
 import { VOLUME_PLANS, type VolumePlanId } from '../institution-pricing';
 import { parentLinkId, pendingLink } from '../parent-controls';
+import { certificateStudentName, certificateStudentNumber, certificateStatus } from '../certificates';
 import { ActionError } from './actions';
 import {
   isStudentNumber,
@@ -272,4 +273,50 @@ export async function approveMembershipByCode(actorId: string, code: string, lev
     }, { merge: true });
   }
   return lookupStudent(normaliseStudentNumber(text(found.data.studentNumber)) || normaliseStudentNumber(code), institutionId);
+}
+
+export interface PublicCertificate {
+  studentNumber: string;
+  studentName: string;
+  courseTitle: string;
+  moduleTitle: string;
+  issuedAt: string;
+  status: 'valid' | 'revoked';
+}
+
+function issuedIso(value: unknown): string {
+  if (typeof value === 'string' && !Number.isNaN(Date.parse(value))) return new Date(value).toISOString();
+  if (value && typeof value === 'object' && 'toDate' in value && typeof (value as { toDate: () => Date }).toDate === 'function') {
+    const date = (value as { toDate: () => Date }).toDate();
+    if (!Number.isNaN(date.getTime())) return date.toISOString();
+  }
+  return '';
+}
+
+/** Public fields for /verify. Older certificates pick up the student number here. */
+export async function publicCertificate(id: string): Promise<PublicCertificate | null> {
+  const certificateId = id.trim();
+  if (!certificateId || certificateId.length > 80) return null;
+  const ref = db().doc(`certificates/${certificateId}`);
+  const snap = await ref.get();
+  if (!snap.exists) return null;
+  const data = snap.data() ?? {};
+  let studentNumber = certificateStudentNumber(data.studentNumber);
+  const studentId = text(data.studentId);
+  if (!studentNumber && studentId) {
+    try {
+      studentNumber = certificateStudentNumber(await ensureStudentNumber(studentId));
+      if (studentNumber) await ref.set({ studentNumber }, { merge: true });
+    } catch {
+      studentNumber = '';
+    }
+  }
+  return {
+    studentNumber,
+    studentName: certificateStudentName(data.studentName),
+    courseTitle: text(data.courseTitle) || 'Course',
+    moduleTitle: text(data.moduleTitle),
+    issuedAt: issuedIso(data.issuedAt),
+    status: certificateStatus(data.status),
+  };
 }

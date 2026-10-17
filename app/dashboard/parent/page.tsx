@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Zap, BookOpen, MessageSquare, Trophy, UserRound, FileBarChart, TrendingUp, Target, Clock, ShieldCheck, CheckCircle2, Loader2, Award } from 'lucide-react';
-import { certificateStatus, formatCertificateDate, type CertificateFace } from '@/lib/certificates';
+import { certificateStatus, certificateStudentNumber, formatCertificateDate, type CertificateFace } from '@/lib/certificates';
 import Link from 'next/link';
 import { ChildExamPrep } from '@/components/study/child-exam-prep';
 import { DashPage, DashHeader } from '@/components/dash-ui';
@@ -39,7 +39,7 @@ interface ChildData {
   certificates: CertificateFace[];
 }
 
-function certificateFace(cert: Certificate): CertificateFace {
+function certificateFace(cert: Certificate, fallbackNumber?: string): CertificateFace {
   return {
     id: cert.id ?? '',
     studentName: cert.studentName,
@@ -54,6 +54,7 @@ function certificateFace(cert: Certificate): CertificateFace {
     showPoweredBy: cert.showPoweredBy,
     logoUrl: cert.logoUrl,
     certificateFooter: cert.certificateFooter,
+    studentNumber: certificateStudentNumber(cert.studentNumber) || certificateStudentNumber(fallbackNumber),
   };
 }
 
@@ -207,7 +208,7 @@ export default function ParentDashboard() {
             buildUnitReports(id, enrollments).catch(() => [] as UnitReportData[]),
             getCertificatesForStudent(id).catch(() => [] as Certificate[]),
           ]);
-          return { id, profile: data, enrollments, unitReports, certificates: certificateRows.map(certificateFace) };
+          return { id, profile: data, enrollments, unitReports, certificates: certificateRows.map((cert) => certificateFace(cert, data.studentNumber)) };
         })
       );
       setChildren(data);
@@ -489,6 +490,7 @@ export default function ParentDashboard() {
                             <p className="text-xs text-muted-foreground truncate">
                               {cert.moduleTitle ? `${cert.courseTitle} · ` : ''}{formatCertificateDate(cert.issuedAt)}
                             </p>
+                            {cert.studentNumber ? <p className="font-mono text-[11px] text-foreground mt-1">{cert.studentNumber}</p> : null}
                             <p className="font-mono text-[11px] text-muted-foreground break-all mt-1">{cert.id}</p>
                             <p className={`text-[11px] font-bold uppercase tracking-wider mt-1 ${certificateStatus(cert.status) === 'revoked' ? 'text-[#9B1C1C]' : 'text-[#0F6E56]'}`}>
                               {certificateStatus(cert.status) === 'revoked' ? 'Revoked' : 'Valid'}
