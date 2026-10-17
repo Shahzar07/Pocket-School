@@ -25,6 +25,7 @@ import { adminPushStore } from '../push-store';
 import { sendToDevice } from '../push-transport';
 import { ActionError } from './actions';
 import { appendChain } from './ledger';
+import { referredForTracker } from '../bullying/authority-referral';
 import { classifySchool, queueOffPlatformDrafts, schoolConsentOffer } from './school-notice';
 import { notifyTicketStaff } from './staff-notify';
 import { lockScreenNotice } from '../staff-notice/copy';
@@ -78,7 +79,7 @@ async function loadActor(uid: string): Promise<Actor> {
     institutionId: str(data.institutionId),
     staffPost: str(data.staffPost),
     email: str(data.email),
-    country: str(data.country),
+    country: str(data.country) || str(data.homeCountry),
     ageTier: str(data.ageTier),
     dateOfBirth: str(data.dateOfBirth),
     classId: str(data.classId),
@@ -258,6 +259,7 @@ function trackerRow(id: string, data: FirebaseFirestore.DocumentData) {
     createdAt: Number(data.createdAt) || 0,
     flagged: data.flagged === true,
     schoolInformed: Number(data.schoolInformedAt) > 0,
+    authorityReferred: referredForTracker(data.authorityTrackerVisible === true, Number(data.authorityReferredAt) || 0),
   };
 }
 
@@ -385,6 +387,7 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
     safetyType,
     priority: severity === 'critical' ? 'high' : severity,
     deskSeverity: severity,
+    reporterCountry: actor.country,
     status: 'pending',
     body: description,
     who,
@@ -423,6 +426,8 @@ export async function fileSafetyReport(uid: string, input: Record<string, unknow
     schoolNoticeConsent,
     schoolNoticeGuardianId: '',
     schoolInformedAt: 0,
+    authorityReferredAt: 0,
+    authorityTrackerVisible: false,
     createdAt: now,
     updatedAt: now,
   };
@@ -532,11 +537,14 @@ export async function raiseDanger(uid: string, input: Record<string, unknown>) {
     location,
     slaDueAt: toDesk ? deskDueAt(now, 'critical') : slaDueAt(now, 'high', calendar),
     deskSeverity: 'critical',
+    reporterCountry: actor.country,
     checkIns: checkInTimes(now).map(dueAt => ({ dueAt, sentAt: 0 })),
     escalationLevel: 0,
     safeguardingCaseId: caseRef.id,
     authorities: authorities.decision,
     authoritiesRemindedAt: 0,
+    authorityReferredAt: 0,
+    authorityTrackerVisible: false,
     chainSeq: 0,
     chainHead: GENESIS,
     legalHold: emptyLegalHold(),
@@ -609,12 +617,18 @@ export async function safetyNotice(uid: string, id: string) {
     canDecideFamily: view === 'full' && data.parentsExcluded === true,
     canMarkFalse: view === 'full' && str(data.source) === 'danger_now',
     canInformSchool: view === 'full' && (actor.role === 'admin' || actor.staffPost === 'safety_desk'),
+    canReferAuthority: view === 'full' && (actor.role === 'admin' || actor.staffPost === 'safety_desk'),
     canGrantSchoolConsent: (await schoolConsentOffer(uid, id)).canGrant,
     victimSchoolName: str(data.victimSchoolName),
     bullySchoolName: str(data.bullySchoolName),
     victimSchoolOnPoket: data.victimSchoolOnPoket === true,
     bullySchoolOnPoket: data.bullySchoolOnPoket === true,
+    deskSeverity: str(data.deskSeverity),
+    reporterCountry: str(data.reporterCountry),
+    authorityRequired: str((data.authorities as { required?: string } | undefined)?.required),
+    authorityStatus: str((data.authorities as { status?: string } | undefined)?.status),
     schoolInformed: Number(data.schoolInformedAt) > 0,
+    authorityReferred: referredForTracker(data.authorityTrackerVisible === true, Number(data.authorityReferredAt) || 0),
   };
 }
 

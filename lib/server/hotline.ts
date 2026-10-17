@@ -17,6 +17,7 @@ import {
   TICKET_AUTHORITY_REMINDER_MS,
   type AuthorityDecision,
 } from '../authorities/policy';
+import { authorityCloseMessage } from '../bullying/authority-referral';
 import { canViewAttachment, hotlineStoragePath, isAttachmentLabel } from '../attachments/policy';
 import { prepareAttachment } from '../attachments/prepare';
 import { bytesFromBase64, imagePass, saveObject, signedRead } from './files';
@@ -409,8 +410,20 @@ export async function setTicketStatus(uid: string, id: string, input: Record<str
   }
   const status = str(input.status);
   if (!isHotlineStatus(status)) throw new ActionError('BAD_REQUEST', 'Choose a status.');
-  const authorityStatus = str((ticket.data.authorities as { status?: string } | undefined)?.status);
-  if ((status === 'solved' || status === 'closed') && !canCloseTicket(authorityStatus)) {
+  const authority = (ticket.data.authorities ?? {}) as { status?: string; required?: string };
+  const authorityStatus = str(authority.status);
+  const closing = status === 'solved' || status === 'closed';
+  const safetyBlock = authorityCloseMessage({
+    source: str(ticket.data.source),
+    safetyType: str(ticket.data.safetyType),
+    deskSeverity: str(ticket.data.deskSeverity),
+    text: `${str(ticket.data.body)} ${str(ticket.data.who)}`,
+    required: str(authority.required),
+    status: authorityStatus,
+    closing,
+  });
+  if (safetyBlock) throw new ActionError('BAD_REQUEST', safetyBlock);
+  if (closing && !canCloseTicket(authorityStatus)) {
     throw new ActionError('BAD_REQUEST', 'Tell the authorities, or record that they are not required, before this ticket is solved or closed.');
   }
   const now = Date.now();

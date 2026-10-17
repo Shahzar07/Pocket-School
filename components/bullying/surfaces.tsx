@@ -1,3 +1,4 @@
+import { AuthorityDesk } from '@/components/bullying/authority-desk';
 import { InformSchool } from '@/components/bullying/inform-school';
 import { BRAND } from '@/lib/brand';
 import { DESK_SLA_MS, NOT_A_COUNSELLOR, evidenceHash, helpNearMe, helplinesForCountry } from '@/lib/bullying/policy';
@@ -117,6 +118,7 @@ export function DeskSurface() {
           bullySchoolName="Sample Academy"
           bullyOnPoket
         />
+        <AuthorityDesk sample reportId="sample" country="Malaysia" />
         <article className="rounded-3xl border bg-white p-5">
           <h2 className="text-2xl font-semibold" style={{ color: BRAND.blueDeep }}>False reports</h2>
           <p className="mt-2" style={{ color: BRAND.ink }}>Repeated false reports are flagged for a person to review. The reporter is not muted or restricted for that flag.</p>

@@ -2805,6 +2805,15 @@ service cloud.firestore {
     match /schools/{schoolId} {
       allow read, write: if false;
     }
+    // Authority referrals. Append-only on the server. Not deployed.
+    match /authorityReferrals/{referralId} {
+      allow read, write: if false;
+      match /events/{eventId} {
+        allow read: if false;
+        allow create: if false;
+        allow update, delete: if false;
+      }
+    }
 
     match /published_reports/{token} {
       allow get: if true;

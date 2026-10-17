@@ -15,6 +15,7 @@ interface TrackerItem {
   createdAt: number;
   flagged: boolean;
   schoolInformed?: boolean;
+  authorityReferred?: boolean;
 }
 
 const EMPTY_SCHOOL: SchoolChoice = { id: '', name: '', onPoket: false };
@@ -55,6 +56,7 @@ export function SafetyDesk({
     createdAt: Date.now(),
     flagged: false,
     schoolInformed: true,
+    authorityReferred: true,
   }] : []);
   const [lines, setLines] = useState<Helpline[]>(sample ? DEFAULT_HELPLINES : []);
   const [note, setNote] = useState('');
@@ -218,13 +220,21 @@ export function SafetyDesk({
           <h2 className="text-lg font-bold">Your report</h2>
           <p className="text-sm text-muted-foreground">Nothing sent yet. Staff notes are never shown here.</p>
         </section>
-      ) : reports.map(report => <TrackerCard key={report.id} stage={report.tracker} schoolInformed={report.schoolInformed === true} />);
+      ) : reports.map(report => (
+        <TrackerCard
+          key={report.id}
+          stage={report.tracker}
+          schoolInformed={report.schoolInformed === true}
+          authorityReferred={report.authorityReferred === true}
+        />
+      ));
 
   const dangerForm = (
       <form id="danger-now" onSubmit={event => void onDanger(event)} className="rounded-2xl border border-border bg-card p-4 grid gap-3">
 
         <p className="text-xs font-bold tracking-widest text-[#D0553F]">EMERGENCY</p>
         <p className="text-4xl font-extrabold">Call {number}</p>
+        <p className="text-sm font-semibold">The Safety Desk does not replace emergency services.</p>
         <p className="text-sm text-muted-foreground">This is the emergency number for your country. Call it now if you can.</p>
         <label className="grid gap-1 text-sm font-semibold">If this is about abuse or a person
           <select className="min-h-12 rounded-xl border border-border px-3 font-normal" value={dangerType} onChange={event => setDangerType(event.target.value)} aria-label="Danger type">

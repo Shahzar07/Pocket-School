@@ -52,11 +52,11 @@ export function SchoolField({
   return (
     <div className="grid gap-1">
       <label className="grid gap-1 text-sm font-semibold">
-        {which === 'victim' ? <span>Which school do you go to?</span> : <span>Which school is the bully at?</span>}
+        {which === 'victim' ? <span>Your school</span> : <span>Bully's school</span>}
         <input
           className="min-h-12 rounded-xl border border-border px-3 font-normal"
           value={value.name}
-          aria-label={which === 'victim' ? 'Which school do you go to?' : 'Which school is the bully at?'}
+          aria-label={which === 'victim' ? 'Your school' : "Bully's school"}
           placeholder="School name"
           onChange={event => onChange({ id: '', name: event.target.value, onPoket: false })}
         />

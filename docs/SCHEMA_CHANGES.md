@@ -1601,7 +1601,7 @@ Indexes, not deployed: `evidence_locker` on `ownerId`; `evidence_locker` on `gua
 
 When the student's school, or the other student's school, is not an `institutions/{id}` document, the Safety Desk can still tell that school. Naming a school on a report does not send anything. `fileSafetyReport` writes a draft and the email goes out only when a Desk lead posts `send: true`.
 
-The report form asks, optionally, "Which school do you go to?" and "Which school is the bully at?". Each field is a directory picker plus free text. The ticket stores `victimSchoolId`, `victimSchoolName`, `victimSchoolOnPoket`, `bullySchoolId`, `bullySchoolName`, `bullySchoolOnPoket`, `schoolNoticeConsent`, `schoolNoticeGuardianId`, and `schoolInformedAt`. `schoolNoticeConsent` is saved only when the reporter is not `under13` and they ticked the box. A Desk request cannot set that flag.
+The report form asks, optionally, "Your school" and "Bully's school". Each field is a directory picker plus free text. The ticket stores `victimSchoolId`, `victimSchoolName`, `victimSchoolOnPoket`, `bullySchoolId`, `bullySchoolName`, `bullySchoolOnPoket`, `schoolNoticeConsent`, `schoolNoticeGuardianId`, and `schoolInformedAt`. `schoolNoticeConsent` is saved only when the reporter is not `under13` and they ticked the box. A Desk request cannot set that flag.
 
 `schools/{id}` is the directory of off-platform schools. A free-text name is stored at the first 20 hex characters of SHA-256 of the cleaned lowercase name, with `name`, `nameLower`, `onPoket: false`, `contactEmail: ''`, `contactSource: ''`, and `contactVerified: false`. An id that already exists as `institutions/{id}` is on Poket School. The email notice is refused with "That school is on Poket School. Use the safeguarding referral." `GET /api/bullying/schools?q=` returns `{ id, name, onPoket }` only. It does not return an email address. The search reads up to 50 directory rows and 40 institutions and filters in memory, so it does not need a new composite index.
 
@@ -1652,3 +1652,56 @@ When a notice is sent, or a phone or letter is logged as reached, the ticket `sc
 | POST | `/api/school-notice/ack` |
 
 Queries, single field, not a new composite index: `schoolNotices.reportId`, `schoolNotices.tokenHash`, `schoolNotices.status`. Rules and indexes are not deployed. Samples: `/school-notice/sample` and the desk card on `/preview/bullying?view=desk`. The report form sample is `/preview/safety`.
+
+## Authority referrals
+
+High and critical safety cases reuse `hotline_tickets.authorities`. A case is high or critical when `deskSeverity` or `safetyType` is `high`, `critical`, `bullying`, `cyberbullying`, `harassment`, `abuse`, or `self_harm_concern`, or when the text matches threats of violence, assault, sexual content or exploitation, extortion, self-harm risk, or a hate crime. Before `solved` or `closed`, the Desk records refer (`required: yes`, `status: to_be_informed`) or not needed (`required: no`, `status: not_required`, reason at least 3 characters). Refer cannot close until the referral is sent and the status is `informed`, `acknowledged`, or `closed_by_authority`. A parent hotline ticket keeps the older close check. Low `unsafe_other` with none of those words is not this extra gate. New safety and danger tickets store `reporterCountry` from the account `country` or `homeCountry`, `authorityReferredAt: 0`, and `authorityTrackerVisible: false`.
+
+Nothing is emailed unless `POST /api/bullying/authority-send` has `send: true`. A verified partner is a `users` document with `partnerKind` of `police` or `child_protection`, `verification.tier` at least 4, and the same country (Malaysia and `MY` match). If both the partner and the report have a state, those must match. The Desk list returns `{ id, name, kind, country }` and never an email. Mail uses the account email only when it already matches an email shape. If that partner has no email, the Desk pushes the case link instead. The message is from `Poket School <safety@poketschool.ai>` and is rejected if it contains the reporter's name. An evidence PDF is attached only when the evidence note does not name the reporter.
+
+Where no partner matches, the Desk submits a referral pack through an official channel in `OFFICIAL_AUTHORITY_CHANNELS`. Checked Malaysia pages, and no others:
+
+| Channel | How | Source |
+| --- | --- | --- |
+| Royal Malaysia Police | In person at a station. e-Reporting is not used for a crime | `https://rmp2u.rmp.gov.my/faq` |
+| Talian Kasih 15999 | Child and family line | `https://www.malaysia.gov.my/en/topics/talian-kasih-15999` |
+| National Scam Response Centre 997 | Extortion or a scam that took money, and a station report is still required | `https://nfcc.jpm.gov.my/index.php/en/about-nsrc` |
+
+TODO: another country, only after its official page is opened. TODO: MCMC Cyber999, only after the official reporting URL is opened. A country with no checked channel returns "No verified official channel is on file for this country. The task is to find the official page. Do not guess an email." The pack stores the agency, the source URL, the incident type, the dates, the summary, and the reference. It does not invent an email.
+
+Sexual cases in Malaysia include a mandatory-reporting note citing Child Act 2001 sections 27 to 29A and Sexual Offences Against Children Act 2017 section 19, with source `https://petari.bheuu.gov.my/wp-content/uploads/2025/10/UNICEF-Child-Sexual-Abuse-Report-Final-FA_Digital-Version-Interactive-pdf-compressed.pdf`. Other countries and other kinds leave the note empty.
+
+The student sees the country emergency number first. The page says "The Safety Desk does not replace emergency services." Guardians are told unless the case is abuse by a parent or guardian, or parents are already excluded. The student is told unless the Desk sets `withholdStudent` with a reason of at least 8 characters. That writes `authority_referral_withhold` on the ticket chain and the referral chain. The tracker shows "Referred to authorities" only when `authorityTrackerVisible` is true and `authorityReferredAt` is set, which is only when the student is told.
+
+`authorityReferrals/{id}` is append-only through `appendChain` on `authorityReferrals/{id}/events`. Clients cannot read or write the collection or its events. Rules are not deployed.
+
+| Field | Meaning |
+| --- | --- |
+| `reportId` | `hotline_tickets` id |
+| `country` | Reporter country, or Malaysia when the account has none |
+| `agency` | Partner name or official agency |
+| `partnerId` | `users` id, or blank for an official pack |
+| `channel` | `partner`, `police`, `helpline`, or `scam` |
+| `sentBy` | Desk uid |
+| `sentAt` | Milliseconds |
+| `reference` | Official reference, or `PS-` plus the first 8 token characters |
+| `status` | `draft`, `sent`, `acknowledged`, `closed` |
+| `outcome` | What the authority did. The Desk records it. Status becomes `acknowledged` |
+| `contact` | Source URL, or the words `Poket School partner` |
+| `summary`, `incidentType`, `dates` | Minimal facts. The summary cannot contain the reporter's name |
+| `token` | 48 hex characters. Server only |
+| `tokenHash` | SHA-256. The public page looks up this |
+| `tokenExpiresAt` | 30 days |
+| `chainSeq`, `chainHead`, `legalHold` | Same audit chain as other safety records |
+
+The partner page is `/authority-case/{token}`. It is `noindex` and disallowed in `robots.ts`. `/authority-case/sample` does not call Firebase. A bad token says "This link is not available." An expired token says "This link has expired." The page shows the emergency number, the agency, the country, the incident type, the dates, the summary, the reference, the status, and `safety@poketschool.ai`. It does not show the reporter or the report id.
+
+| Method | Path |
+| --- | --- |
+| GET | `/api/bullying/authority` |
+| POST | `/api/bullying/authority-decision` |
+| POST | `/api/bullying/authority-send` |
+| POST | `/api/bullying/authority-outcome` |
+| GET | `/authority-case/{token}` |
+
+Queries, single field, not a new composite index: `users.partnerKind`, `authorityReferrals.tokenHash`. Rules and indexes are not deployed. The desk sample is `/preview/bullying?view=desk`.

@@ -2492,3 +2492,37 @@ components/bullying/school-notice-view.tsx	This link has expired.
 components/bullying/school-notice-view.tsx	This link is not available.
 components/safety/desk.tsx	I am 13 or older and I agree the Safety Desk may tell these schools. My name stays off the notice.
 components/safety/surfaces.tsx	Your school has been informed
+components/bullying/authority-case-view.tsx	Confidential case
+components/bullying/authority-case-view.tsx	Country.
+components/bullying/authority-case-view.tsx	Dates.
+components/bullying/authority-case-view.tsx	Incident type.
+components/bullying/authority-case-view.tsx	Reference.
+components/bullying/authority-case-view.tsx	SAFETY DESK
+components/bullying/authority-case-view.tsx	Safety Desk.
+components/bullying/authority-case-view.tsx	Status.
+components/bullying/authority-case-view.tsx	Summary.
+components/bullying/authority-case-view.tsx	The reporter is not named in this message.
+components/bullying/authority-case-view.tsx	The reporter is not named.
+components/bullying/authority-case-view.tsx	This link has expired.
+components/bullying/authority-case-view.tsx	This link is not available.
+components/bullying/authority-desk.tsx	A Desk member sends this. Nothing is sent automatically. The reporter is not named.
+components/bullying/authority-desk.tsx	A short account with no names
+components/bullying/authority-desk.tsx	Case summary
+components/bullying/authority-desk.tsx	Do not tell the student
+components/bullying/authority-desk.tsx	Evidence record
+components/bullying/authority-desk.tsx	Mandatory reporting.
+components/bullying/authority-desk.tsx	No verified official channel is on file for this country.
+components/bullying/authority-desk.tsx	No verified partner is on file for this country.
+components/bullying/authority-desk.tsx	Official channel
+components/bullying/authority-desk.tsx	Official reference
+components/bullying/authority-desk.tsx	Refer to the authorities
+components/bullying/authority-desk.tsx	Sample case. Nothing is sent from this preview.
+components/bullying/authority-desk.tsx	Verified partners
+components/bullying/authority-desk.tsx	What the authority did
+components/bullying/authority-desk.tsx	Why it is not needed
+components/bullying/authority-desk.tsx	Write why telling the student would put them at risk.
+components/bullying/school-field.tsx	Bully's school
+components/bullying/school-field.tsx	Your school
+components/safety/desk.tsx	The Safety Desk does not replace emergency services.
+components/safety/surfaces.tsx	Referred to authorities
+components/safety/surfaces.tsx	The Safety Desk does not replace emergency services.

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { WidenAllStaff } from '@/components/alerts/all-staff';
+import { AuthorityDesk } from '@/components/bullying/authority-desk';
 import { InformSchool } from '@/components/bullying/inform-school';
 import { DashHeader, DashPage } from '@/components/dash-ui';
 import { authedFetch, postJSON } from '@/lib/authed-fetch';
@@ -18,6 +19,8 @@ interface Notice {
   canDecideFamily?: boolean;
   canMarkFalse?: boolean;
   canInformSchool?: boolean;
+  canReferAuthority?: boolean;
+  reporterCountry?: string;
   canGrantSchoolConsent?: boolean;
   victimSchoolName?: string;
   bullySchoolName?: string;
@@ -117,6 +120,9 @@ export default function SafetyNoticePage() {
           victimOnPoket={notice.victimSchoolOnPoket === true}
           bullyOnPoket={notice.bullySchoolOnPoket === true}
         />
+      ) : null}
+      {notice?.canReferAuthority ? (
+        <AuthorityDesk reportId={id} country={notice.reporterCountry || 'Malaysia'} />
       ) : null}
       <WidenAllStaff source="case" sourceId={id} />
     </DashPage>

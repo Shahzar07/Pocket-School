@@ -15,6 +15,7 @@ import {
   storeEvidence,
   supportChat,
 } from '@/lib/server/bullying';
+import { authorityOptions, recordAuthorityDecision, recordAuthorityOutcome, sendAuthorityReferral } from '@/lib/server/authority-referral';
 import { grantSchoolNoticeConsent, listSchoolNotices, reviewSchoolNotice, searchSchools } from '@/lib/server/school-notice';
 import { runGet, runPost } from '@/lib/server/http';
 
@@ -41,6 +42,9 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
     if (action === 'support') return supportChat(user.uid, input);
     if (action === 'school-notice') return reviewSchoolNotice(user.uid, input);
     if (action === 'school-consent') return grantSchoolNoticeConsent(user.uid, str(body.reportId));
+    if (action === 'authority-decision') return recordAuthorityDecision(user.uid, input);
+    if (action === 'authority-send') return sendAuthorityReferral(user.uid, input);
+    if (action === 'authority-outcome') return recordAuthorityOutcome(user.uid, input);
     throw new ActionError('NOT_FOUND', 'Unknown action.');
   });
 }
@@ -82,6 +86,11 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ action: str
       const id = caseId(req.nextUrl.searchParams.get('reportId'));
       if (!id) throw new ActionError('BAD_REQUEST', 'Choose a report.');
       return listSchoolNotices(user.uid, id);
+    }
+    if (action === 'authority') {
+      const id = caseId(req.nextUrl.searchParams.get('reportId'));
+      if (!id) throw new ActionError('BAD_REQUEST', 'Choose a report.');
+      return authorityOptions(user.uid, id);
     }
     throw new ActionError('NOT_FOUND', 'Unknown action.');
   });

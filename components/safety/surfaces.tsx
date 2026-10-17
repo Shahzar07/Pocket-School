@@ -78,12 +78,21 @@ export function SupportCard({ lines = DEFAULT_HELPLINES }: { lines?: Helpline[] 
   );
 }
 
-export function TrackerCard({ stage = 'received', schoolInformed = false }: { stage?: TrackerStage; schoolInformed?: boolean }) {
+export function TrackerCard({
+  stage = 'received',
+  schoolInformed = false,
+  authorityReferred = false,
+}: {
+  stage?: TrackerStage;
+  schoolInformed?: boolean;
+  authorityReferred?: boolean;
+}) {
   return (
     <section className="sf-card" aria-label="Report tracker">
       <h2 style={{ margin: '0 0 8px', fontSize: 18 }}>Your report</h2>
       <p className="sf-note">You can see where it stands. Staff notes stay with the safeguarding lead.</p>
       {schoolInformed ? <p className="sf-note" style={{ color: '#1E6A83', fontWeight: 700 }}>Your school has been informed</p> : null}
+      {authorityReferred ? <p className="sf-note" style={{ color: '#1E6A83', fontWeight: 700 }}>Referred to authorities</p> : null}
       <div className="sf-row" style={{ marginTop: 12 }}>
         {TRACKER_STAGES.map(item => (
           <span key={item} className={item === stage ? 'sf-stage on' : 'sf-stage'}>{STAGE_LABEL[item]}</span>
@@ -105,6 +114,7 @@ export function DangerCard({
     <section className="sf-card" aria-label="I'm in danger now">
       <p className="sf-kicker" style={{ color: '#D0553F' }}>Emergency</p>
       <p className="sf-call">Call {number}</p>
+      <p className="sf-note">The Safety Desk does not replace emergency services.</p>
       <p className="sf-note">This is the emergency number for your country. Call it now if you can. Poket School is not a replacement for emergency services.</p>
       <button type="button" className="sf-danger" style={{ marginTop: 12 }}>
         <Phone size={24} aria-hidden="true" />
