@@ -198,6 +198,9 @@ export interface ProfileDraft {
   level: string;
   learningStyle: string;
   yearGroup: string;
+  region?: string;
+  gender?: '' | 'male' | 'female';
+  demographicConsent?: boolean;
   notificationPrefs: NotificationPrefs;
   privacy: PrivacySettings;
   twoFactorEnabled: boolean;
@@ -222,6 +225,7 @@ export function profilePatch(draft: ProfileDraft, role: string): Record<string, 
     shareBoard: draft.privacy.shareBoard,
     twoFactorEnabled: draft.twoFactorEnabled,
   };
+  if (draft.region?.trim()) patch.region = draft.region.trim();
   if (draft.avatarUrl) patch.avatarUrl = draft.avatarUrl;
   if (draft.photoStoragePath) patch.photoStoragePath = draft.photoStoragePath;
   if (role === 'student') {

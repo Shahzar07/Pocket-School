@@ -27,6 +27,7 @@ import { CountrySelect, PhoneField } from '@/components/country-select';
 import { readGeoCountry } from '@/lib/countries';
 import { useWhiteLabel } from '@/components/white-label-provider';
 import { passwordAccepts, signupDecision } from '@/lib/academy-settings';
+import { DemographicConsent, GenderSelect, LevelNameSelect } from '@/components/account/demographic-fields';
 import { SelfJoinPicker } from '@/components/institutions/self-join-picker';
 import { listSelfJoinInstitutions, redeemInviteCode, submitSelfJoin } from '@/lib/institution-membership-store';
 import type { JoinDirectoryRow, JoinRole } from '@/lib/institution-membership';
@@ -106,6 +107,11 @@ export default function SignupPage() {
   const [institution, setInstitution] = useState('');
   const [schoolName, setSchoolName] = useState('');
   const [childEmail, setChildEmail] = useState('');
+  const [gender, setGender] = useState<'' | 'male' | 'female'>('');
+  const [demographicConsent, setDemographicConsent] = useState(false);
+  const [childGender, setChildGender] = useState<'' | 'male' | 'female'>('');
+  const [childLevel, setChildLevel] = useState('');
+  const [childDob, setChildDob] = useState('');
 
   // Parental consent (under-18 students)
   const [guardianName, setGuardianName] = useState('');
@@ -174,16 +180,44 @@ export default function SignupPage() {
     }
     if (role === 'teacher') {
       const subjects = subject.split(',').map(s => s.trim()).filter(Boolean);
+      const school = schoolName.trim() || institution.trim();
       return {
         subjects,
         subject: subjects[0] ?? '',
         teachingLevel,
         level: teachingLevel,
-        ...(institution.trim() ? { institutionName: institution.trim(), institution: institution.trim() } : {}),
+        ...(school ? { institutionName: school, institution: school } : {}),
       };
     }
     if (role === 'parent') return childEmail.trim() ? { pendingChildEmail: childEmail.trim().toLowerCase() } : {};
     return {};
+  };
+
+  const syncDemographics = async () => {
+    const pendingChild = role === 'parent' && childEmail.trim()
+      ? {
+        email: childEmail.trim().toLowerCase(),
+        gender: childGender,
+        level: childLevel,
+        dateOfBirth: childDob,
+        country,
+        region: joinState,
+      }
+      : undefined;
+    await authedFetch('/api/insights/sync', {
+      method: 'POST',
+      body: JSON.stringify({
+        gender,
+        demographicConsent: true,
+        country,
+        region: joinState,
+        level: role === 'teacher' ? teachingLevel : yearGroup,
+        yearGroup: role === 'student' ? yearGroup : '',
+        institutionName: schoolName.trim() || institution.trim(),
+        dateOfBirth: dob,
+        ...(pendingChild ? { pendingChild } : {}),
+      }),
+    }).catch(() => undefined);
   };
 
   const reportSchool = async () => {
@@ -195,6 +229,8 @@ export default function SignupPage() {
   };
 
   const handleGoogleSignIn = async () => {
+    if (!gender) { toast.error('Choose male or female.'); return; }
+    if (!demographicConsent) { toast.error('Confirm the demographic statistics notice.'); return; }
     if (!agreed) { toast.error(t('signup.acceptFirst')); return; }
     try {
       setLoading(true);
@@ -213,6 +249,8 @@ export default function SignupPage() {
           emailVerificationRequired: !result.user.emailVerified,
           consentAcceptedAt: serverTimestamp(),
           ...(dob ? { dateOfBirth: dob } : {}),
+          ...(gender ? { gender } : {}),
+          ...(demographicConsent ? { demographicConsentAt: Date.now() } : {}),
           ...(country ? { country } : {}),
           ...(joinState ? { region: joinState } : {}),
           ...(phone.trim() ? { phone: phone.trim() } : {}),
@@ -231,6 +269,7 @@ export default function SignupPage() {
           });
         }
         await finishJoin(result.user.uid, { email: result.user.email, name: result.user.displayName });
+        await syncDemographics();
       }
       const existing = snap.exists() ? snap.data() : { role };
       routeAfterSignup(existing.role || role);
@@ -283,8 +322,24 @@ export default function SignupPage() {
       toast.error(t('signup.phoneFormat'));
       return false;
     }
+    if (!gender) {
+      toast.error('Choose male or female.');
+      return false;
+    }
+    if (!demographicConsent) {
+      toast.error('Confirm the demographic statistics notice.');
+      return false;
+    }
     if (role === 'teacher' && !subject.trim()) {
       toast.error(t('signup.needSubjects'));
+      return false;
+    }
+    if (role === 'teacher' && !teachingLevel) {
+      toast.error('Choose the level you teach.');
+      return false;
+    }
+    if (role === 'parent' && childEmail.trim() && (!childGender || !childLevel || !childDob || !demographicConsent)) {
+      toast.error('Add the child gender, level, date of birth, and the demographic notice.');
       return false;
     }
     if (role === 'student') {
@@ -321,6 +376,8 @@ export default function SignupPage() {
       emailVerified: false,
       emailVerificationRequired: true,
       dateOfBirth: dob,
+      ...(gender ? { gender } : {}),
+      ...(demographicConsent ? { demographicConsentAt: Date.now() } : {}),
       consentAcceptedAt: serverTimestamp(),
       ...(isMinor ? {
         isMinor: true,
@@ -357,6 +414,7 @@ export default function SignupPage() {
     }
     toast.success(t('signup.welcome'));
     await finishJoin(result.user.uid, { email: result.user.email, name });
+    await syncDemographics();
     routeAfterSignup(role);
   };
 
@@ -533,6 +591,7 @@ export default function SignupPage() {
               childEmails={childEmail}
               showChildren={false}
               student={role === 'student'}
+              place={role !== 'student'}
               onPath={setJoinPath}
               onCountry={setCountry}
               onState={setJoinState}
@@ -596,6 +655,9 @@ export default function SignupPage() {
               )}
             </div>
 
+            <GenderSelect tone="inverse" value={gender} onChange={setGender} disabled={loading} />
+            <DemographicConsent tone="inverse" checked={demographicConsent} onChange={setDemographicConsent} disabled={loading} />
+
             {/* ── Role-specific fields ── */}
             {role === 'student' && (
               <div className="grid grid-cols-1 gap-3">
@@ -638,23 +700,7 @@ export default function SignupPage() {
                     value={subject} onChange={e => setSubject(e.target.value)} disabled={loading} />
                   <p className="text-xs text-white/25">{t('signup.subjectsHint')}</p>
                 </div>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="teachingLevel" className={LABEL_CLASS}>{t('signup.levelTeach')}</Label>
-                    <select id="teachingLevel" className={SELECT_CLASS} value={teachingLevel}
-                      onChange={e => setTeachingLevel(e.target.value)} disabled={loading}>
-                      <option value="" className="bg-[#0B0F1A]">{t('signup.levelTeach')}</option>
-                      {PROGRAMMES.map(p => <option key={p.value} value={p.value} className="bg-[#0B0F1A]">{p.label}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="institution" className={LABEL_CLASS}>
-                      {t('signup.institution')} <span className="text-white/30 normal-case font-normal">{t('signup.optional')}</span>
-                    </Label>
-                    <Input id="institution" type="text" placeholder={t('signup.institutionPlaceholder')} className={INPUT_CLASS}
-                      value={institution} onChange={e => setInstitution(e.target.value)} disabled={loading} />
-                  </div>
-                </div>
+                <LevelNameSelect tone="inverse" id="teachingLevel" label={t('signup.levelTeach')} value={teachingLevel} onChange={setTeachingLevel} disabled={loading} />
               </>
             )}
 
@@ -668,6 +714,17 @@ export default function SignupPage() {
                 <p className="text-xs text-white/25">
                   {t('signup.childHint')}
                 </p>
+                {childEmail.trim() && (
+                  <div className="space-y-3 rounded-2xl border border-[#C8922A]/40 bg-[#1A3C34] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#F8E7C4]">Child details</p>
+                    <GenderSelect tone="inverse" id="child-gender" value={childGender} onChange={setChildGender} disabled={loading} />
+                    <LevelNameSelect tone="inverse" id="child-level" value={childLevel} onChange={setChildLevel} disabled={loading} />
+                    <div className="space-y-1.5">
+                      <Label htmlFor="childDob" className={LABEL_CLASS}>Child date of birth</Label>
+                      <Input id="childDob" type="date" className={INPUT_CLASS} value={childDob} max={new Date().toISOString().slice(0, 10)} onChange={e => setChildDob(e.target.value)} disabled={loading} />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

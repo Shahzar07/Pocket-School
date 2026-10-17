@@ -52,6 +52,8 @@ interface UserProfile {
   permissions?: string[];
   phone?: string;
   country?: string;
+  gender?: 'male' | 'female';
+  demographicConsentAt?: number;
   timezone?: string;
   currency?: string;
   notificationPrefs?: NotificationPrefs;

@@ -201,6 +201,11 @@ export default function ProfilePage() {
               ageTier: row.data.ageTier,
               bio: row.data.bio,
               avatarUrl: row.data.avatarUrl,
+              gender: row.data.gender,
+              level: row.data.yearGroup || row.data.level || '',
+              country: row.data.country ?? '',
+              region: row.data.region ?? '',
+              dateOfBirth: row.data.dateOfBirth ?? '',
               controls: controls ?? defaultChildControls(row.id),
             };
           })),
@@ -262,6 +267,9 @@ export default function ProfilePage() {
           level: profile.level ?? '',
           learningStyle: profile.learningStyle ?? '',
           yearGroup: profile.yearGroup ?? '',
+          region: profile.region ?? '',
+          gender: profile.gender ?? '',
+          demographicConsent: Boolean(profile.demographicConsentAt),
           notificationPrefs: profile.notificationPrefs,
           privacy: {
             shareBoard: profile.privacy?.shareBoard ?? profile.shareBoard !== false,
@@ -300,6 +308,10 @@ export default function ProfilePage() {
 
   const saveProfile = async (draft: ProfileDraft) => {
     try {
+      if (draft.gender && !draft.demographicConsent) {
+        toast.error('Confirm the demographic statistics notice.');
+        return;
+      }
       const patch = profilePatch(draft, sectionRole);
       if (sectionRole === 'student') {
         await authedFetch('/api/account/placement', {
@@ -308,6 +320,17 @@ export default function ProfilePage() {
         });
       }
       await updateUser(user.uid, patch as Partial<UserProfile>);
+      await authedFetch('/api/insights/sync', {
+        method: 'POST',
+        body: JSON.stringify({
+          gender: draft.gender || '',
+          demographicConsent: draft.demographicConsent === true,
+          country: draft.country,
+          region: draft.region || '',
+          level: draft.level,
+          yearGroup: draft.yearGroup,
+        }),
+      });
       applyAppLanguage(draft.language, { explicit: true });
       writeCurrencyChoice(draft.currency, true);
       await updateProfile(user, { displayName: draft.displayName.trim() || draft.name.trim(), photoURL: draft.avatarUrl || null });
@@ -609,8 +632,9 @@ export default function ProfilePage() {
       }}
       onSaveDob={async date => {
         try {
-          const data = await authedFetch('/api/community/dob', { method: 'POST', body: JSON.stringify({ dateOfBirth: date }) });
-          toast.success(`Age tier set to ${String(data.ageTier ?? 'saved')}.`);
+          await authedFetch('/api/insights/sync', { method: 'POST', body: JSON.stringify({ dateOfBirth: date }) });
+          await authedFetch('/api/community/dob', { method: 'POST', body: JSON.stringify({ dateOfBirth: date }) }).catch(() => undefined);
+          toast.success('Date of birth saved.');
           await refresh();
         } catch (error) {
           toast.error(authMessage(error, 'Could not save the date of birth.'));

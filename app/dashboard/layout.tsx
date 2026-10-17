@@ -23,6 +23,7 @@ import { LanguageSwitcher } from '@/components/language-switcher';
 import { CurrencySwitcher } from '@/components/currency-switcher';
 import { SparksChip } from '@/components/sparks-chip';
 import { upsertUserSession, accountStatusOf, clearUserFields, updateUser } from '@/lib/db';
+import { authedFetch } from '@/lib/api-client';
 import { deletionClosed, formatDeletionDate, sessionRevoked } from '@/lib/account-settings';
 import { AccountMenu } from '@/components/account/account-menu';
 import { ModeSwitch } from '@/components/account/mode-switch';
@@ -202,6 +203,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/admin/users', icon: UserCog, labelKey: 'nav.usersSparks' },
       { href: '/dashboard/admin/institutions', icon: Users, labelKey: 'nav.institutions' },
       { href: '/dashboard/admin/schools', icon: GraduationCap, labelKey: 'nav.institutions', label: 'School leads', superOnly: true },
+      { href: '/dashboard/admin/insights', icon: PieChart, labelKey: 'nav.analytics', label: 'Insights', superOnly: true },
       { href: '/dashboard/admin/access', icon: Shield, labelKey: 'nav.accessConfig' },
       { href: '/dashboard/admin/allocations', icon: KeyRound, labelKey: 'nav.allocations' },
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
@@ -236,6 +238,7 @@ const NAV: Record<Role, NavGroup[]> = {
   institution_admin: [
     { items: [
       { href: '/dashboard/institution', icon: GraduationCap, labelKey: 'nav.myClasses' },
+      { href: '/dashboard/institution/insights', icon: PieChart, labelKey: 'nav.analytics', label: 'Insights' },
       { href: '/dashboard/institution/approvals', icon: ShieldCheck, labelKey: 'nav.approvals', label: 'Approvals' },
       { href: '/dashboard/institution/verify', icon: Camera, labelKey: 'nav.verifyStudent', label: 'Verify student' },
       { href: '/dashboard/institution/publishing', icon: Library, labelKey: 'nav.library', label: 'Course library' },
@@ -389,6 +392,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
     }).catch(() => {});
   }, [user, router, pathname]);
+
+  useEffect(() => {
+    if (!user || adminMfaPending(user.uid)) return;
+    void authedFetch('/api/insights/pulse', { method: 'POST', body: '{}' }).catch(() => undefined);
+  }, [user]);
 
   useEffect(() => {
     if (!profile || !user || adminMfaPending(user.uid)) return;

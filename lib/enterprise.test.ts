@@ -80,6 +80,14 @@ test('member CSV accepts academy roles and SSO degrades without keys', () => {
   assert.equal(platformRoleForAcademy('manager'), 'teacher');
   assert.equal(platformRoleForAcademy('learner'), 'student');
   assert.equal(parsed.errors.length, 1);
+  const rich = parseMemberCsv('email,name,role,gender,level,country,state,dateOfBirth\nmina@school.edu,Mina,learner,F,Year 10,MY,Selangor,2012-04-02\nlee@school.edu,Lee,teacher,other,IGCSE,MY,Penang,1990-01-01\n');
+  assert.equal(rich.rows.length, 1);
+  assert.equal(rich.rows[0]?.gender, 'female');
+  assert.equal(rich.rows[0]?.level, 'IGCSE');
+  assert.equal(rich.rows[0]?.country, 'MY');
+  assert.equal(rich.rows[0]?.state, 'Selangor');
+  assert.equal(rich.rows[0]?.dateOfBirth, '2012-04-02');
+  assert.equal(rich.errors.length, 1);
   const dark = identityMode({});
   assert.equal(dark.mode, 'invite-only');
   assert.equal(dark.saml, false);

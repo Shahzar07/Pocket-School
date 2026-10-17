@@ -17,6 +17,8 @@ import {
   type ProfileDraft,
 } from '@/lib/account-settings';
 import { CountrySelect, PhoneField } from '@/components/country-select';
+import { DemographicConsent, GenderSelect, LevelNameSelect } from '@/components/account/demographic-fields';
+import { statesForCountry } from '@/lib/institution-states';
 import { readGeoCountry, resolveCountryCode } from '@/lib/countries';
 import { ProfilePhoto } from '@/components/account/profile-photo';
 import {
@@ -141,6 +143,9 @@ export function blankDraft(partial: Partial<ProfileDraft> = {}): ProfileDraft {
     level: '',
     learningStyle: '',
     yearGroup: '',
+    region: '',
+    gender: '',
+    demographicConsent: false,
     notificationPrefs: { ...DEFAULT_NOTIFICATIONS, ...partial.notificationPrefs },
     privacy: { ...DEFAULT_PRIVACY, ...partial.privacy },
     twoFactorEnabled: false,
@@ -313,6 +318,24 @@ export function SettingsPanel({
             onChange={phone => setDraft({ ...draft, phone })}
           />
         </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="State / region">
+            <select
+              aria-label="State or region"
+              value={draft.region ?? ''}
+              onChange={event => setDraft({ ...draft, region: event.target.value })}
+              className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+            >
+              <option value="">Choose a state / region</option>
+              {statesForCountry(draft.country).map(item => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </Field>
+          <GenderSelect value={draft.gender ?? ''} onChange={gender => setDraft({ ...draft, gender })} />
+        </div>
+        {view.role === 'teacher' && (
+          <LevelNameSelect value={draft.level} onChange={level => setDraft({ ...draft, level })} />
+        )}
+        <DemographicConsent checked={draft.demographicConsent === true} onChange={checked => setDraft({ ...draft, demographicConsent: checked })} />
         <Field label="Timezone">
           <Input value={zoneQuery} onChange={event => setZoneQuery(event.target.value)} placeholder="Search timezones" aria-label="Search timezones" className="mb-2 h-10 rounded-xl" />
           <select

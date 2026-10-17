@@ -527,6 +527,97 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "insight_cells",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "scope", "order": "ASCENDING" },
+        { "fieldPath": "country", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "insight_cells",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "scope", "order": "ASCENDING" },
+        { "fieldPath": "country", "order": "ASCENDING" },
+        { "fieldPath": "state", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "insight_cells",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "scope", "order": "ASCENDING" },
+        { "fieldPath": "country", "order": "ASCENDING" },
+        { "fieldPath": "state", "order": "ASCENDING" },
+        { "fieldPath": "gender", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "insight_cells",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "scope", "order": "ASCENDING" },
+        { "fieldPath": "country", "order": "ASCENDING" },
+        { "fieldPath": "state", "order": "ASCENDING" },
+        { "fieldPath": "gender", "order": "ASCENDING" },
+        { "fieldPath": "level", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "insight_cells",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "scope", "order": "ASCENDING" },
+        { "fieldPath": "country", "order": "ASCENDING" },
+        { "fieldPath": "state", "order": "ASCENDING" },
+        { "fieldPath": "level", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "insight_cells",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "scope", "order": "ASCENDING" },
+        { "fieldPath": "country", "order": "ASCENDING" },
+        { "fieldPath": "gender", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "insight_cells",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "scope", "order": "ASCENDING" },
+        { "fieldPath": "country", "order": "ASCENDING" },
+        { "fieldPath": "level", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "insight_cells",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "scope", "order": "ASCENDING" },
+        { "fieldPath": "gender", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "insight_cells",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "scope", "order": "ASCENDING" },
+        { "fieldPath": "level", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "insight_cells",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "scope", "order": "ASCENDING" },
+        { "fieldPath": "level", "order": "ASCENDING" },
+        { "fieldPath": "gender", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

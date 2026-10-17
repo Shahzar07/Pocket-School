@@ -14,7 +14,7 @@ import {
 } from './db';
 import { omitUndefined } from './course-builder';
 import {
-  blankProfile, platformRoleForAcademy, type AcademyRole, type AuditEvent, type DirectoryRow,
+  blankProfile, platformRoleForAcademy, type AuditEvent, type DirectoryRow, type MemberRow,
   type InstitutionProfile, type InstitutionStatus, type LeadDraft, type LeadStatus,
 } from './enterprise';
 import { saveSchedule } from './insights/client';
@@ -403,12 +403,17 @@ export async function saveSkills(institutionId: string, rows: Omit<SkillItem, 'i
   await Promise.all(rows.map((row) => addDoc(collection(db, 'institutions', institutionId, 'skills'), row)));
 }
 
-export async function savePeopleInvites(institutionId: string, rows: { email: string; name: string; academyRole: AcademyRole }[]): Promise<void> {
+export async function savePeopleInvites(institutionId: string, rows: MemberRow[]): Promise<void> {
   await saveAcademyInvites(institutionId, rows.map((row) => ({
     email: row.email,
     name: row.name,
     role: platformRoleForAcademy(row.academyRole) === 'student' ? 'student' : 'teacher',
     academyRole: row.academyRole,
+    ...(row.gender ? { gender: row.gender } : {}),
+    ...(row.level ? { level: row.level } : {}),
+    ...(row.country ? { country: row.country } : {}),
+    ...(row.state ? { state: row.state } : {}),
+    ...(row.dateOfBirth ? { dateOfBirth: row.dateOfBirth } : {}),
   })));
 }
 

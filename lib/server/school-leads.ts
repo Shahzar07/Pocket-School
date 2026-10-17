@@ -103,6 +103,12 @@ export async function recordSelfReportedSchool(
     }, { merge: true });
     return { key: targetKey, name: display, country, state };
   });
+  try {
+    const { reconcileUser } = await import('./insight-counters');
+    await reconcileUser(uid);
+  } catch (error) {
+    console.error('insight school counter skipped', error);
+  }
   return saved;
 }
 

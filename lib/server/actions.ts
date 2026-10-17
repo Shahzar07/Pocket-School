@@ -288,6 +288,12 @@ async function addSparks(uid: string, amount: number, type: string, note: string
     });
     return balanceAfter;
   });
+  try {
+    const { recordLearning } = await import('./insight-counters');
+    await recordLearning(uid, { sparks: amount });
+  } catch (error) {
+    console.error('insight sparks counter skipped', error);
+  }
   return balance;
 }
 
@@ -494,6 +500,14 @@ export async function enrollFromPayment(opts: {
     permissions: FieldValue.arrayUnion(`alloc:marketplace:${courseId}`),
     updatedAt: FieldValue.serverTimestamp(),
   }, { merge: true });
+  if (!existing.exists) {
+    try {
+      const { recordLearning } = await import('./insight-counters');
+      await recordLearning(studentId, { enrolments: 1 });
+    } catch (error) {
+      console.error('insight enrolment counter skipped', error);
+    }
+  }
 }
 
 interface QuizRow {
@@ -769,6 +783,15 @@ export async function respondParentLink(studentUid: string, studentEmail: string
     read: false,
     createdAt: FieldValue.serverTimestamp(),
   });
+  try {
+    const { reconcileUser } = await import('./insight-counters');
+    const pending = parent.data()?.pendingChild as { email?: string } | undefined;
+    if (pending && String(pending.email ?? '').toLowerCase() === email) {
+      await reconcileUser(studentUid, pending as Record<string, unknown>);
+    }
+  } catch (error) {
+    console.error('pending child demographics skipped', error);
+  }
   return { status: 'approved' };
 }
 

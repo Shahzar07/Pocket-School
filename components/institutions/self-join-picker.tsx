@@ -16,6 +16,7 @@ export function SelfJoinPicker({
   showChildren,
   schoolName = '',
   student = false,
+  place = false,
   tone = 'inverse',
   onPath,
   onCountry,
@@ -37,6 +38,8 @@ export function SelfJoinPicker({
   schoolName?: string;
   /** Student signup always shows country, state, and the registered-institution list. */
   student?: boolean;
+  /** Teachers and parents always see country, state, and a school or institution. */
+  place?: boolean;
   tone?: 'inverse' | 'default';
   onPath: (path: 'independent' | 'institution') => void;
   onCountry: (country: string) => void;
@@ -53,7 +56,8 @@ export function SelfJoinPicker({
     ? 'w-full h-12 rounded-2xl bg-white/5 border border-white/10 text-white px-4 text-sm outline-none'
     : 'w-full h-11 rounded-xl border border-border bg-background px-3 text-sm';
   const states = statesForCountry(country);
-  const showDirectory = student || path === 'institution';
+  const showDirectory = student || place || path === 'institution';
+  const showSchoolName = (student || place) && !institutionId;
   return (
     <div className="space-y-3">
       {student && (
@@ -97,21 +101,21 @@ export function SelfJoinPicker({
             </select>
           </label>
           <label className="block space-y-1.5">
-            <span className={label}>Institution</span>
+            <span className={label}>{student || place ? 'School / institution' : 'Institution'}</span>
             <select
               className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8922A]`}
               value={institutionId}
               onChange={(event) => {
                 onInstitution(event.target.value);
-                if (student) onPath(event.target.value ? 'institution' : 'independent');
+                if (student || place) onPath(event.target.value ? 'institution' : 'independent');
               }}
               aria-label="Institution"
             >
-              <option value="" className="bg-[#0B0F1A]">{student ? "My school isn't listed" : 'Choose a listed institution'}</option>
+              <option value="" className="bg-[#0B0F1A]">{student || place ? "My school isn't listed" : 'Choose a listed institution'}</option>
               {institutions.map((item) => <option key={item.id} value={item.id} className="bg-[#0B0F1A]">{item.name}</option>)}
             </select>
           </label>
-          {student && !institutionId && (
+          {showSchoolName && (
             <label className="block space-y-1.5">
               <span className={label}>School name</span>
               <input

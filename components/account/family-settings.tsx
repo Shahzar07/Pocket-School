@@ -1,6 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
+import { authedFetch } from '@/lib/api-client';
+import { CountrySelect } from '@/components/country-select';
+import { DemographicConsent, GenderSelect, LevelNameSelect } from '@/components/account/demographic-fields';
+import { statesForCountry } from '@/lib/institution-states';
 import Link from 'next/link';
 import { NEUTRAL_LINK, defaultChildControls, normaliseChildControls, type ChildControls, type DigestCadence, type PaymentMethod, type TeacherMessagePref } from '@/lib/parent-controls';
 import { ProfilePhoto } from '@/components/account/profile-photo';
@@ -15,6 +20,11 @@ export interface FamilyChild {
   bio?: string;
   avatarUrl?: string;
   controls?: ChildControls;
+  gender?: '' | 'male' | 'female';
+  level?: string;
+  country?: string;
+  region?: string;
+  dateOfBirth?: string;
 }
 
 export interface LinkRequestRow {
@@ -207,6 +217,39 @@ function ChildCard({
     photoStoragePath: '',
   });
   const [controls, setControls] = useState<ChildControls>(normaliseChildControls(child.controls ?? defaultChildControls(child.id)));
+  const [census, setCensus] = useState({
+    gender: child.gender ?? '',
+    level: child.level ?? '',
+    country: child.country ?? '',
+    region: child.region ?? '',
+    dateOfBirth: child.dateOfBirth ?? '',
+    consent: false,
+  });
+
+  const saveCensus = async () => {
+    if (!census.consent) {
+      toast.error('Confirm the demographic statistics notice.');
+      return;
+    }
+    try {
+      await authedFetch('/api/insights/child', {
+        method: 'POST',
+        body: JSON.stringify({
+          childId: child.id,
+          gender: census.gender,
+          level: census.level,
+          yearGroup: census.level,
+          country: census.country,
+          region: census.region,
+          dateOfBirth: census.dateOfBirth,
+          demographicConsent: true,
+        }),
+      });
+      toast.success('Child demographics saved.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not save those demographics.');
+    }
+  };
 
   return (
     <li className="space-y-4 rounded-2xl border border-border p-4" data-child-id={child.id}>
@@ -217,6 +260,25 @@ function ChildCard({
           {child.ageTier ? ` · ${child.ageTier === 'under13' ? 'Under 13' : child.ageTier}` : ''}
         </span>
         <Button type="button" variant="outline" className="h-8 rounded-full" onClick={onUnlink}>Unlink</Button>
+      </div>
+      <div className="space-y-3" data-child-demographics>
+        <p className="text-sm font-semibold">Gender, level, and place</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <GenderSelect id={`child-gender-${child.id}`} value={census.gender} onChange={gender => setCensus({ ...census, gender })} />
+          <LevelNameSelect id={`child-level-${child.id}`} value={census.level} onChange={level => setCensus({ ...census, level })} />
+          <CountrySelect label="Country" value={census.country} onChange={country => setCensus({ ...census, country, region: '' })} />
+          <label className="block space-y-1.5 text-sm font-medium">State / region
+            <select aria-label="Child state" value={census.region} onChange={event => setCensus({ ...census, region: event.target.value })} className="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm">
+              <option value="">Choose a state / region</option>
+              {statesForCountry(census.country).map(item => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </label>
+          <label className="block space-y-1.5 text-sm font-medium sm:col-span-2">Date of birth
+            <Input aria-label="Child date of birth" type="date" value={census.dateOfBirth} onChange={event => setCensus({ ...census, dateOfBirth: event.target.value })} className="mt-1 h-11 max-w-xs rounded-xl" />
+          </label>
+        </div>
+        <DemographicConsent checked={census.consent} onChange={consent => setCensus({ ...census, consent })} />
+        <Button type="button" className="rounded-full" onClick={() => void saveCensus()}>Save child demographics</Button>
       </div>
       {under13 && (
         <div className="space-y-3" data-under13-editor>

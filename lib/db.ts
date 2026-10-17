@@ -99,6 +99,12 @@ export interface UserProfile {
   ageTier?: 'under13' | 'teen' | 'adult';
   /** YYYY-MM-DD. Server-set. Clients cannot write it. */
   dateOfBirth?: string;
+  /** Male or female. Written through the insights sync so rules can stay unchanged. */
+  gender?: 'male' | 'female';
+  /** State or region the person chose. Coarse place only. */
+  region?: string;
+  /** When the person agreed to grouped demographic statistics. */
+  demographicConsentAt?: number;
   lastActiveAt?: Timestamp;
   sparksBalance?: number;
   sparksMonthlyAllowance?: number;
@@ -1535,6 +1541,11 @@ export interface AcademyInvite {
   name: string;
   role: 'student' | 'teacher';
   academyRole?: string;
+  gender?: 'male' | 'female';
+  level?: string;
+  country?: string;
+  state?: string;
+  dateOfBirth?: string;
 }
 
 export async function saveAcademyInvites(institutionId: string, rows: AcademyInvite[]): Promise<void> {

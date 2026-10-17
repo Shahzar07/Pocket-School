@@ -24,6 +24,7 @@ import type {
   ApiKeyItem, CatalogueItem, ComplianceItem, InvoiceItem, LearningPathItem, SkillItem, WebhookItem,
 } from '@/lib/institution-store';
 import type { AcademyClass, AcademyInvite, AcademyMember, Programme } from '@/lib/db';
+import { DemographicConsent, GenderSelect, LevelNameSelect } from '@/components/account/demographic-fields';
 import { InstitutionSettings } from '@/components/institutions/settings-panel';
 import { VolumeQuote } from '@/components/institutions/volume-quote';
 import type { AcademySettings } from '@/lib/academy-settings';
@@ -312,6 +313,10 @@ function ProfileTab({
   );
 }
 
+function csvCell(value: string): string {
+  return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+}
+
 function SinglePerson({
   busy,
   onInvite,
@@ -322,19 +327,46 @@ function SinglePerson({
   const [email, setEmail] = useState('');
   const [person, setPerson] = useState('');
   const [role, setRole] = useState<AcademyRole>('learner');
+  const [gender, setGender] = useState('');
+  const [level, setLevel] = useState('');
+  const [country, setCountry] = useState('');
+  const [state, setState] = useState('');
+  const [dob, setDob] = useState('');
+  const [consent, setConsent] = useState(false);
   return (
-    <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
-      <Input aria-label="Person email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@school.example" className="h-11 rounded-xl" />
-      <Input aria-label="Person name" value={person} onChange={(event) => setPerson(event.target.value)} placeholder="Name" className="h-11 rounded-xl" />
-      <select aria-label="Person role" value={role} onChange={(event) => setRole(event.target.value as AcademyRole)} className="h-11 rounded-xl border border-border bg-background px-3 capitalize">
-        {ACADEMY_ROLES.map((item) => <option key={item} value={item}>{item.replace('_', ' ')}</option>)}
-      </select>
+    <div className="space-y-3">
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Input aria-label="Person email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@school.example" className="h-11 rounded-xl" />
+        <Input aria-label="Person name" value={person} onChange={(event) => setPerson(event.target.value)} placeholder="Name" className="h-11 rounded-xl" />
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <select aria-label="Person role" value={role} onChange={(event) => setRole(event.target.value as AcademyRole)} className="h-11 rounded-xl border border-border bg-background px-3 capitalize">
+          {ACADEMY_ROLES.map((item) => <option key={item} value={item}>{item.replace('_', ' ')}</option>)}
+        </select>
+        <GenderSelect id="invite-gender" value={gender} onChange={setGender} />
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <LevelNameSelect id="invite-level" value={level} onChange={setLevel} />
+        <CountrySelect label="Country" value={country} onChange={(next) => { setCountry(next); setState(''); }} />
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <label className="block space-y-1.5 text-sm font-medium">State / region
+          <select aria-label="Invite state" value={state} onChange={(event) => setState(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm">
+            <option value="">Choose a state / region</option>
+            {statesForCountry(country).map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+        </label>
+        <label className="block space-y-1.5 text-sm font-medium">Date of birth
+          <Input aria-label="Invite date of birth" type="date" value={dob} onChange={(event) => setDob(event.target.value)} className="mt-1 h-11 rounded-xl" />
+        </label>
+      </div>
+      <DemographicConsent checked={consent} onChange={setConsent} />
       <Button
         type="button"
         variant="outline"
         className="rounded-full"
-        disabled={busy}
-        onClick={() => onInvite(`${email},${person},${role}`)}
+        disabled={busy || (Boolean(gender) && !consent)}
+        onClick={() => onInvite([email, person, role, gender, level, country, state, dob].map(csvCell).join(','))}
       >
         Add person
       </Button>
@@ -354,7 +386,8 @@ function PeopleTab({
   busy?: boolean;
   onAction: (action: WorkspaceAction) => Promise<void>;
 }) {
-  const [csv, setCsv] = useState('email,name,role\n');
+  const [csv, setCsv] = useState('email,name,role,gender,level,country,state,dateOfBirth\n');
+  const [censusConsent, setCensusConsent] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [kind, setKind] = useState<GroupKind>('class');
   const [programmeIds, setProgrammeIds] = useState<string[]>([]);
@@ -367,10 +400,11 @@ function PeopleTab({
     <div className="grid gap-4 lg:grid-cols-2">
       <section className="rounded-3xl border border-border p-5 space-y-3">
         <h2 className="font-semibold">Add people</h2>
-        <p className="text-sm text-muted-foreground">Add one person, or paste a CSV. Roles: institution admin, manager, teacher, learner, parent. Email and join-link invites copy a message. SSO and SCIM stay on the integrations tab and stay off until the platform keys exist. HRIS and SIS lists use this same CSV.</p>
+        <p className="text-sm text-muted-foreground">Add one person, or paste a CSV. Roles: institution admin, manager, teacher, learner, parent. Optional columns are gender (male or female), level (a level name such as IGCSE, never a year number), country, state, and dateOfBirth. Gender needs the demographic notice below. Email and join-link invites copy a message. SSO and SCIM stay on the integrations tab and stay off until the platform keys exist. HRIS and SIS lists use this same CSV.</p>
         <SinglePerson onInvite={(line) => void onAction({ type: 'invite', csv: line })} busy={busy} />
         <textarea aria-label="Invite CSV" className="min-h-28 w-full rounded-xl border border-border p-3 text-sm" value={csv} onChange={(event) => setCsv(event.target.value)} />
-        <Button type="button" className="rounded-full" disabled={busy} onClick={() => void onAction({ type: 'invite', csv })}>Save invites and copy the email</Button>
+        <DemographicConsent checked={censusConsent} onChange={setCensusConsent} />
+        <Button type="button" className="rounded-full" disabled={busy || (/\b(male|female|m|f)\b/i.test(csv) && !censusConsent)} onClick={() => void onAction({ type: 'invite', csv })}>Save invites and copy the email</Button>
         <p className="text-xs text-muted-foreground">{invites.length} invites waiting · {members.length} members</p>
         <ul className="text-sm space-y-1">
           {members.slice(0, 8).map((member) => (
