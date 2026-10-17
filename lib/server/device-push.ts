@@ -9,7 +9,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '../firebase-admin';
 import { goalPushAllowed } from '../parent-controls';
-import { sendPush, type PushCategory } from '../push';
+import { sendPush, userWantsPush, type PushCategory } from '../push';
 import { adminPushStore } from '../push-store';
 import { sendToDevice } from '../push-transport';
 
@@ -21,13 +21,22 @@ export type PushPref =
   | 'attendance'
   | 'integrity'
   | 'behaviour'
-  | 'reports';
+  | 'reports'
+  | 'reunions'
+  | 'wall'
+  | 'yearbook'
+  | 'alumni_messages'
+  | 'institution'
+  | 'achievements';
 
 function categoryFor(pref: PushPref): PushCategory {
   if (pref === 'attendance') return 'attendance';
   if (pref === 'integrity') return 'flags';
   if (pref === 'digest' || pref === 'reports') return 'digests';
   if (pref === 'goals' || pref === 'streaks' || pref === 'focus') return 'goals';
+  if (pref === 'reunions' || pref === 'wall' || pref === 'yearbook' || pref === 'alumni_messages' || pref === 'institution' || pref === 'achievements') {
+    return pref;
+  }
   return 'general';
 }
 
@@ -60,9 +69,13 @@ export async function notifyUser(payload: NotifyPayload): Promise<{ inApp: boole
 
   if (payload.skipPush) return { inApp: true, pushed: 0, skipped: 0 };
 
+  const category = categoryFor(payload.pref);
+  const prefs = (await db.doc(`users/${payload.userId}`).get()).get('notificationPrefs');
+  if (!userWantsPush(prefs, category)) return { inApp: true, pushed: 0, skipped: 0 };
+
   const report = await sendPush({
     recipientUid: payload.userId,
-    category: categoryFor(payload.pref),
+    category,
     title: payload.title,
     body: payload.message,
     link: payload.link,

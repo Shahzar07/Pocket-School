@@ -6,10 +6,10 @@ import { authedFetch } from '@/lib/api-client';
 import { AUDIENCES, COUNTRY_DOTS, STICKERS, YEARBOOK_TEMPLATES, type YearbookTemplate } from '@/lib/yearbook';
 
 const COVER: Record<YearbookTemplate, string> = {
-  forest: 'bg-[#1A3C34] text-white',
-  gold: 'bg-[#C8922A] text-[#1A3C34]',
-  coral: 'bg-[#E36A4F] text-white',
-  blue: 'bg-[#3C8DFF] text-white',
+  forest: 'bg-brand-forest text-white',
+  gold: 'bg-brand-gold text-brand-forest',
+  coral: 'bg-brand-coral text-white',
+  blue: 'bg-brand-blue text-white',
 };
 
 export interface FlipSheet {
@@ -31,7 +31,7 @@ export function YearbookFlipbook({
   const page = pages[Math.min(index, pages.length - 1)] ?? pages[0];
   return (
     <div className="mx-auto w-full max-w-sm">
-      <article className={`flex min-h-80 flex-col justify-between rounded-3xl p-5 shadow-sm ${index === 0 ? COVER[template] : 'bg-white text-[#1A3C34]'}`}>
+      <article className={`flex min-h-80 flex-col justify-between rounded-3xl p-5 shadow-sm ${index === 0 ? COVER[template] : 'bg-white text-brand-forest'}`}>
         <div>
           <p className="text-xs uppercase tracking-wide opacity-80">{academy || 'Poket School'}</p>
           <h2 className="mt-3 text-2xl font-semibold">{page?.heading}</h2>
@@ -42,8 +42,8 @@ export function YearbookFlipbook({
         <p className="text-xs opacity-70">{index + 1} of {pages.length}</p>
       </article>
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <button type="button" onClick={() => setIndex((value) => Math.max(0, value - 1))} className="h-12 rounded-full bg-white text-sm font-semibold text-[#1A3C34]">Previous</button>
-        <button type="button" onClick={() => setIndex((value) => Math.min(pages.length - 1, value + 1))} className="h-12 rounded-full bg-[#1A3C34] text-sm font-semibold text-white">Next</button>
+        <button type="button" onClick={() => setIndex((value) => Math.max(0, value - 1))} className="h-12 rounded-full bg-white text-sm font-semibold text-brand-forest">Previous</button>
+        <button type="button" onClick={() => setIndex((value) => Math.min(pages.length - 1, value + 1))} className="h-12 rounded-full bg-brand-forest text-sm font-semibold text-white">Next</button>
       </div>
     </div>
   );
@@ -53,12 +53,12 @@ export function YearbookShowcase() {
   return (
     <div className="mx-auto max-w-sm space-y-4">
       <header>
-        <h1 className="text-2xl font-semibold text-[#1A3C34]">Alumni yearbook</h1>
-        <p className="mt-1 text-sm text-[#1A3C34]">Oak 2026 at North Academy. A parent agrees before an under-18 page can be submitted.</p>
+        <h1 className="text-2xl font-semibold text-brand-forest">Alumni yearbook</h1>
+        <p className="mt-1 text-sm text-brand-forest">Oak 2026 at North Academy. A parent agrees before an under-18 page can be submitted.</p>
       </header>
       <div className="flex flex-wrap gap-2">
         {YEARBOOK_TEMPLATES.map((item) => (
-          <span key={item} className={`inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold capitalize ${item === 'forest' ? COVER.forest : 'bg-white text-[#1A3C34]'}`}>{item}</span>
+          <span key={item} className={`inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold capitalize ${item === 'forest' ? COVER.forest : 'bg-white text-brand-forest'}`}>{item}</span>
         ))}
       </div>
       <YearbookFlipbook
@@ -69,7 +69,7 @@ export function YearbookShowcase() {
           { heading: 'Ada L.', lines: ['Quote: Keep asking.', 'Most likely to: Open a school', 'Clubs: Debate', 'Achievement: Graduate', 'Destination: Oxford'] },
         ]}
       />
-      <article className="space-y-2 rounded-3xl bg-white p-4 text-sm text-[#1A3C34]">
+      <article className="space-y-2 rounded-3xl bg-white p-4 text-sm text-brand-forest">
         <h2 className="text-lg font-semibold">Ada L.</h2>
         <p>Quote: Keep asking.</p>
         <p>Most likely to: Open a school</p>
@@ -77,7 +77,7 @@ export function YearbookShowcase() {
         <p>Achievement: Graduate</p>
         <p>Destination: Oxford</p>
       </article>
-      <article className="space-y-2 rounded-3xl bg-white p-4 text-sm text-[#1A3C34]">
+      <article className="space-y-2 rounded-3xl bg-white p-4 text-sm text-brand-forest">
         <p className="font-semibold">Teacher message</p>
         <p>Keep the library open.</p>
         <p className="font-semibold">Principal message</p>
@@ -85,21 +85,21 @@ export function YearbookShowcase() {
         <p>Class photo on the green.</p>
         <p>Memory: The last assembly.</p>
       </article>
-      <article className="space-y-2 rounded-3xl bg-[#F8E7C4] p-4 text-sm text-[#1A3C34]">
+      <article className="space-y-2 rounded-3xl bg-brand-sand p-4 text-sm text-brand-forest">
         <p className="font-semibold">Signing wall</p>
         <p>Sam T. left a note. Held for an academy moderator.</p>
         <p>Class wall · gold sticker.</p>
         <p>Direct messages stay off for anyone under 18.</p>
       </article>
-      <article className="space-y-2 rounded-3xl bg-white p-4 text-sm text-[#1A3C34]">
+      <article className="space-y-2 rounded-3xl bg-white p-4 text-sm text-brand-forest">
         <p className="font-semibold">Alumni wall</p>
         <p>Reunion on the green · RSVP 6</p>
         <p>Where they are now: Malaysia 6. One country stays hidden until five people share it.</p>
-        <div className="relative h-28 rounded-2xl bg-[#1A3C34]">
-          <span className="absolute rounded-full bg-[#C8922A]" style={{ left: `${COUNTRY_DOTS.Malaysia.x}%`, top: `${COUNTRY_DOTS.Malaysia.y}%`, width: 12, height: 12 }} />
+        <div className="relative h-28 rounded-2xl bg-brand-forest">
+          <span className="absolute rounded-full bg-brand-gold" style={{ left: `${COUNTRY_DOTS.Malaysia.x}%`, top: `${COUNTRY_DOTS.Malaysia.y}%`, width: 12, height: 12 }} />
         </div>
       </article>
-      <article className="space-y-2 rounded-3xl bg-white p-4 text-sm text-[#1A3C34]">
+      <article className="space-y-2 rounded-3xl bg-white p-4 text-sm text-brand-forest">
         <p className="font-semibold">Find alumni</p>
         <p>Search by cohort, class, destination, industry, and country. Adults who opted in can connect.</p>
         <p>Ada L. asked to connect with Grace H.</p>
@@ -180,53 +180,53 @@ export function InstitutionYearbookDesk({ institutionId }: { institutionId: stri
   return (
     <section className="space-y-4 rounded-3xl bg-white p-4 sm:p-6">
       <div>
-        <h2 className="text-xl font-semibold text-[#1A3C34]">Yearbook</h2>
-        <p className="mt-1 text-sm text-[#1A3C34]">Approve pages, set the lock date, then release the book. A page never occupies a seat.</p>
+        <h2 className="text-xl font-semibold text-brand-forest">Yearbook</h2>
+        <p className="mt-1 text-sm text-brand-forest">Approve pages, set the lock date, then release the book. A page never occupies a seat.</p>
       </div>
-      <label className="block text-sm text-[#1A3C34]">
+      <label className="block text-sm text-brand-forest">
         Class book
-        <select value={bookId} onChange={(event) => setBookId(event.target.value)} className="mt-1 h-12 w-full rounded-2xl bg-[#F6F1E7] px-3">
+        <select value={bookId} onChange={(event) => setBookId(event.target.value)} className="mt-1 h-12 w-full rounded-2xl bg-brand-cream px-3">
           {desk.books.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </select>
       </label>
       <div className="flex flex-wrap gap-2">
         {YEARBOOK_TEMPLATES.map((item) => (
-          <button key={item} type="button" onClick={() => setTemplate(item)} className={`h-10 rounded-full px-4 text-sm font-semibold capitalize ${template === item ? COVER[item] : 'bg-[#F6F1E7] text-[#1A3C34]'}`}>{item}</button>
+          <button key={item} type="button" onClick={() => setTemplate(item)} className={`h-10 rounded-full px-4 text-sm font-semibold capitalize ${template === item ? COVER[item] : 'bg-brand-cream text-brand-forest'}`}>{item}</button>
         ))}
       </div>
-      <label className="block text-sm text-[#1A3C34]">
+      <label className="block text-sm text-brand-forest">
         Lock date
-        <input value={lockOn} onChange={(event) => setLockOn(event.target.value)} placeholder="YYYY-MM-DD" className="mt-1 h-12 w-full rounded-2xl bg-[#F6F1E7] px-3" />
+        <input value={lockOn} onChange={(event) => setLockOn(event.target.value)} placeholder="YYYY-MM-DD" className="mt-1 h-12 w-full rounded-2xl bg-brand-cream px-3" />
       </label>
-      <textarea value={teacherMessage} onChange={(event) => setTeacherMessage(event.target.value)} placeholder="Teacher message" className="min-h-20 w-full rounded-2xl bg-[#F6F1E7] p-3 text-sm" />
-      <textarea value={principalMessage} onChange={(event) => setPrincipalMessage(event.target.value)} placeholder="Principal message" className="min-h-20 w-full rounded-2xl bg-[#F6F1E7] p-3 text-sm" />
+      <textarea value={teacherMessage} onChange={(event) => setTeacherMessage(event.target.value)} placeholder="Teacher message" className="min-h-20 w-full rounded-2xl bg-brand-cream p-3 text-sm" />
+      <textarea value={principalMessage} onChange={(event) => setPrincipalMessage(event.target.value)} placeholder="Principal message" className="min-h-20 w-full rounded-2xl bg-brand-cream p-3 text-sm" />
       <div className="grid grid-cols-2 gap-2">
-        <button type="button" onClick={() => send('staff', { template, lockOn, principalMessage, teacherMessage })} className="h-12 rounded-full bg-[#1A3C34] text-sm font-semibold text-white">Save book</button>
-        <button type="button" onClick={() => send('release', {})} className="h-12 rounded-full bg-[#C8922A] text-sm font-semibold text-[#1A3C34]">Release</button>
+        <button type="button" onClick={() => send('staff', { template, lockOn, principalMessage, teacherMessage })} className="h-12 rounded-full bg-brand-forest text-sm font-semibold text-white">Save book</button>
+        <button type="button" onClick={() => send('release', {})} className="h-12 rounded-full bg-brand-gold text-sm font-semibold text-brand-forest">Release</button>
       </div>
-      <button type="button" onClick={() => send('pdf', { viewer: 'classmates' })} className="h-12 w-full rounded-full bg-[#3C8DFF] text-sm font-semibold text-white">Download PDF</button>
-      <label className="block text-sm text-[#1A3C34]">
+      <button type="button" onClick={() => send('pdf', { viewer: 'classmates' })} className="h-12 w-full rounded-full bg-brand-blue text-sm font-semibold text-white">Download PDF</button>
+      <label className="block text-sm text-brand-forest">
         Class photo caption
-        <input value={caption} onChange={(event) => setCaption(event.target.value)} className="mt-1 h-12 w-full rounded-2xl bg-[#F6F1E7] px-3" />
+        <input value={caption} onChange={(event) => setCaption(event.target.value)} className="mt-1 h-12 w-full rounded-2xl bg-brand-cream px-3" />
       </label>
-      <button type="button" onClick={() => send('gallery', { caption, imageUrl: '' })} className="h-12 rounded-full bg-white px-5 text-sm font-semibold text-[#1A3C34] ring-1 ring-[#1A3C34]">Add to gallery</button>
+      <button type="button" onClick={() => send('gallery', { caption, imageUrl: '' })} className="h-12 rounded-full bg-white px-5 text-sm font-semibold text-brand-forest ring-1 ring-brand-forest">Add to gallery</button>
       <div className="space-y-2">
         {(book?.pages ?? []).map((page) => (
-          <div key={page.id} className="rounded-2xl bg-[#F6F1E7] px-4 py-3 text-sm text-[#1A3C34]">
+          <div key={page.id} className="rounded-2xl bg-brand-cream px-4 py-3 text-sm text-brand-forest">
             <p className="font-semibold">{page.status}{page.parentApproved ? ' · parent agreed' : ''}</p>
             <p>{page.quote}</p>
             {page.status !== 'approved' && (
-              <button type="button" onClick={() => send('approve', { studentId: page.id })} className="mt-2 h-10 rounded-full bg-[#1A3C34] px-4 text-sm font-semibold text-white">Approve</button>
+              <button type="button" onClick={() => send('approve', { studentId: page.id })} className="mt-2 h-10 rounded-full bg-brand-forest px-4 text-sm font-semibold text-white">Approve</button>
             )}
           </div>
         ))}
         {(book?.held ?? []).map((row) => (
-          <div key={row.id} className="rounded-2xl border border-[#E36A4F] px-4 py-3 text-sm text-[#1A3C34]">
+          <div key={row.id} className="rounded-2xl border border-brand-coral px-4 py-3 text-sm text-brand-forest">
             <p className="font-semibold">{row.authorName}</p>
             <p>{row.body}</p>
             <div className="mt-2 flex gap-2">
-              <button type="button" onClick={() => send('moderate', { queueId: row.id, release: true })} className="h-10 rounded-full bg-[#1A3C34] px-4 text-sm font-semibold text-white">Release</button>
-              <button type="button" onClick={() => send('moderate', { queueId: row.id, release: false })} className="h-10 rounded-full bg-white px-4 text-sm font-semibold text-[#1A3C34]">Block</button>
+              <button type="button" onClick={() => send('moderate', { queueId: row.id, release: true })} className="h-10 rounded-full bg-brand-forest px-4 text-sm font-semibold text-white">Release</button>
+              <button type="button" onClick={() => send('moderate', { queueId: row.id, release: false })} className="h-10 rounded-full bg-white px-4 text-sm font-semibold text-brand-forest">Block</button>
             </div>
           </div>
         ))}
@@ -238,7 +238,7 @@ export function InstitutionYearbookDesk({ institutionId }: { institutionId: stri
           sheets={(book.portraits ?? []).map((page) => ({ heading: page.initials, lines: page.lines }))}
         />
       )}
-      <p className="text-xs text-[#1A3C34]/70">Audiences: {AUDIENCES.join(', ')}. Stickers: {STICKERS.join(', ')}.</p>
+      <p className="text-xs text-brand-forest/70">Audiences: {AUDIENCES.join(', ')}. Stickers: {STICKERS.join(', ')}.</p>
     </section>
   );
 }

@@ -23,7 +23,7 @@ Fields the app writes:
 | `provider` | string | `expo` or `webpush`. |
 | `deviceId` | string | Same id as the document id. |
 | `keys` | map | Web Push subscription keys: `p256dh`, `auth`. Omit for Expo. |
-| `prefs` | map | Optional booleans. A missing key stays on. `false` opts that device out. Keys: `goals`, `flags`, `attendance`, `digests`, `grades`, `assignments`, `general`. |
+| `prefs` | map | Optional booleans. A missing key stays on. `false` opts that device out. Keys: `goals`, `flags`, `attendance`, `digests`, `grades`, `assignments`, `general`, `reunions`, `wall`, `yearbook`, `alumni_messages`, `institution`, `achievements`. |
 | `app` | string | Which client registered the device. |
 | `updatedAt` | timestamp | Last registration write. |
 
@@ -1007,9 +1007,7 @@ Each graduating class has one yearbook. The book id is the class group id, or th
 
 `yearbooks/{bookId}/gallery/{id}` is a class photo the academy adds: `caption`, `imageUrl` (https only, otherwise empty), `at`.
 
-Push for a released book and for a visible signature uses the existing device token store, preference `digest`, and the link `/dashboard/student/yearbook`. Push is skipped when that person's push consent is off.
-
-The printable PDF is built on the server. It does not fetch remote photos.
+Push uses the device token store. A released book uses category `yearbook`. A visible signature uses `wall`. A reunion uses `reunions`. A connection request uses `alumni_messages`. The link is `/dashboard/student/yearbook`. Push is skipped when that person's alumni push consent is off, when `users.notificationPrefs.push` is `false`, or when that category's account toggle is `false`. The printable PDF is built on the server. It does not fetch remote photos.
 
 ## Alumni wall, map, and directory
 
@@ -1037,6 +1035,111 @@ Mentorship stays on `institutions/{id}/mentorships/{id}`. An adult alumnus can o
 Held yearbook signatures, memories, feed updates, and comments join the existing `institutions/{id}/alumni_queue` list. `kind` may be `yearbook`, `yearbook-memory`, `feed`, or `feed-comment`, in addition to `post` and `mentor`. The held query is still one field.
 
 These are single-document reads, subcollections, or one-field queries. No composite index and no collection-group query. Rules still need an owner deploy. These rules are not deployed from this change. Mobile clients do not write seat counts, `parentApproved`, or verified achievement text.
+
+## Poketschool app contract
+
+This is the request and response shape the mobile app uses. Collection fields named earlier in this file stay as written. A missing push preference stays on.
+
+### Signup fields
+
+`users/{uid}` on first signup. The client writes these. The server issues `studentNumber` and never lets the client choose it.
+
+| Field | Type | Notes |
+|---|---|---|
+| `email` | string | From the auth account. |
+| `name` | string | Display name. |
+| `avatarUrl` | string | Optional photo URL. |
+| `role` | string | `student`, `parent`, or `teacher`. |
+| `dateOfBirth` | string | `YYYY-MM-DD` when the person entered one. |
+| `gender` | string | `male` or `female`. |
+| `demographicConsentAt` | number | Milliseconds. Required before gender is stored. |
+| `country` | string | Country code or name entered at signup. |
+| `region` | string | State or region. |
+| `phone` | string | Optional. |
+| `consentAcceptedAt` | timestamp | Terms accepted. |
+| `pathway`, `level`, `yearGroup` | string | Student placement. |
+| `subjects`, `subject`, `teachingLevel`, `institutionName` | string or array | Teacher profile. |
+| `pendingChildEmail` | string | Parent signup, until the child is linked. |
+| `xp` | number | Starts at 0. |
+
+`POST /api/account/student-number` with a Firebase ID token and `{}` returns `{ studentNumber }`. The same call returns the existing code. `POST /api/account/self-reported-school` with `{ name, country, state }` records a school the student typed. It does not attach an institution membership.
+
+### Student number and QR
+
+Format: `PS-XXXX-XXXX`. Alphabet: `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (no `I`, `O`, `0`, or `1`). The QR payload is the join path `/join/PS-XXXX-XXXX`. A scan or a typed code is normalised before lookup. The public portfolio URL is `https://poketschool.ai/portfolio/PS-XXXX-XXXX` and the credential URL is `https://poketschool.ai/p/PS-XXXX-XXXX`.
+
+### Parent link
+
+`POST /api/join` with a Firebase ID token.
+
+| `action` | Body | Response |
+|---|---|---|
+| `lookup` | `{ action: "lookup", code }` | `{ card: { studentNumber, name, level, photoUrl, membership } }` |
+| `membership` | `{ action: "membership", code, level }` | Same card, plus `{ message }`. Institution admin only. Sets membership. Does not set `parentApproved`. |
+| `parent` | `{ action: "parent", code }` | `{ message, confirmBy }` where `confirmBy` is `student` or `institution_admin`. |
+| `confirm` | `{ action: "confirm", requestId }` | `{ ok: true, message }`. Institution admin confirms an under-13 link. |
+
+`code` may be `PS-XXXX-XXXX` or a scanned `/join/PS-XXXX-XXXX` URL. A teen or adult student confirms on `parent_links/{parentId}_{studentId}`. A learner under 13, or with no age tier yet, creates `institution_parent_requests/{parentId}_{studentId}` with `status: pending` and the institution admin confirms it. `GET /api/join` returns `{ requests: [{ id, parentName, studentName, studentNumber, status }] }` for that admin.
+
+`POST /api/institutions/join` with `{ action: "link", studentNumber, institutionId, name }` is the parent link from the academy join page. It returns `{ links }` or `{ error }`.
+
+### Invite code, roster, and email domain
+
+`GET /api/institutions/join?slug={slug}` returns `{ name, slug, policy, codes, overage }`. `policy` includes `emailDomains`, `acceptInviteCode`, and `rosterMatch`. `codes` is `[{ code, level, className }]`.
+
+`POST /api/institutions/join` `{ action: "decide", slug, role, email, name, dob, studentId, inviteCode, parentConsent, programmeId, level }` returns `{ decision, programmes, institutionName }`. `decision.status` is `approved`, `pending`, `needs_consent`, `waiting_for_seat`, or `rejected`. `decision.method` is `roster`, `code`, `domain`, `manual`, or empty. A roster row matches the school student id, the email, or the name plus date of birth. An invite code matches a class code or a generic invite of at least four characters. An email domain matches `policy.emailDomains`. A student under 13 returns `needs_consent` until `parentConsent` is true.
+
+`{ action: "attach", slug, ...same attempt, childStudentNumber, takeCredit }` signs the caller in and returns the preview plus `credit` and `message`. An approved student keeps the same `studentNumber`. `{ action: "claim", slug, token }` claims a roster invite. `{ action: "leave" }` returns `{ progressKept: true, account: "individual", institutionAccess, graceEndsOn }`.
+
+### Welcome star
+
+Finishing the welcome track writes `badges/{uid}_welcome_{track}`. `track` is `student`, `parent`, `teacher`, `institution`, or `independent`. Fields: `userId`, `type` (`welcome_{track}`), `name` (`Welcome star`), `description`, `icon`, `sparks` (`0`), `awardedAt`. It does not issue a certificate and it does not spend Sparks. Badge push uses category `achievements` from PR #127.
+
+### Graduation to an individual account
+
+When an academy graduates a student, `users/{uid}` keeps `role: student` and the same `studentNumber`. The server deletes `institutionId` when that academy was the current one, sets `alumniOf`, `alumniName`, `alumniLeftOn`, `alumniGraceEnds`, `alumniDiscount`, and `institutionAccess` (`grace` for a Professional or Law leaver inside 90 days, otherwise `ended`). The seat flag `seatCounted` is written only by the server. Progress, the portfolio, and the student number stay on the account. `POST /api/institutions/join` `{ action: "leave" }` is the student's own move to an individual account and returns the same access fields.
+
+### CV, portfolio, share links, and the job tracker
+
+The record lives at `users/{uid}/portfolio/profile`, `users/{uid}/portfolio_items/{id}`, `users/{uid}/cv_versions/{id}`, and `portfolio_public/{studentNumber}`. Verified rows come from courses, scores, certificates, and badges. The client does not write a verified line.
+
+`share_links/{token}` fields are `studentId`, `label`, `expiresOn`, `createdAt`, and `revoked`. The public page is `/record/{token}`. Each open adds `share_links/{token}/views/{id}` with `at`, `itemTitle`, and `visitorLabel`. The view count is the size of that subcollection. The app reads it. It does not write a count field, an IP address, or a visitor id.
+
+`users/{uid}/applications/{id}` is the job tracker: `company`, `role`, `link` (https or empty), `status` (`draft`, `applied`, `interview`, `offer`, `hired`, `studying`, `closed`), `date`, `shareToken`, and `reminderOn`. Poket School does not apply for the learner.
+
+### Alumni messages, yearbook, wall, reunions, and mentoring
+
+Direct messages are `users/{uid}/alumni_threads/{otherId}/messages/{id}` with `authorId`, `body`, and `at`. Both adults must have `messages: true` on `users/{uid}/alumni_consent/{institutionId}`. A minor cannot open that consent. The push category is `alumni_messages`.
+
+Yearbook documents are `institutions/{id}/yearbooks/{bookId}` and `pages/{studentId}`. Release push uses `yearbook`. A signature push uses `wall`. Reunion posts and reunion campaigns use `reunions`. Other academy campaigns use `institution`.
+
+Mentoring stays on `institutions/{id}/mentorships/{id}`. A minor student's thread is moderated. Mentor consent is `mentor: true` on the same alumni consent document, and a minor cannot set it.
+
+### DM consent and minor moderation
+
+`users/{uid}/alumni_consent/{institutionId}` fields: `email`, `inbox`, `push`, `directory`, `messages`, `mentor`, `unsubscribed`. Missing means off. `messages` is the DM consent. Both people must opt in. Under-18 accounts cannot set `messages` or `mentor`.
+
+A minor's wall signature, memory, feed post, and comment is held on `institutions/{id}/alumni_queue` until a staff member releases it. `kind` is `yearbook`, `yearbook-memory`, `feed`, or `feed-comment`. The minor's own yearbook page can be saved when their own text passes the word filter. They still need `parentApproved` before the page is submitted, and the client never writes that flag.
+
+### Push preference toggles
+
+Each new category has an account toggle on `users/{uid}.notificationPrefs` and the same key on `deviceTokens/{deviceId}.prefs`.
+
+| Key | What it covers |
+|---|---|
+| `reunions` | Reunion posts and reunion campaigns |
+| `wall` | Yearbook signatures |
+| `yearbook` | A released yearbook |
+| `alumni_messages` | Alumni notes and connection requests |
+| `institution` | Other academy campaigns |
+| `achievements` | Badge pushes. The category name comes from PR #127 |
+
+`notificationPrefs.push: false` stops every push from the shared sender. A missing key stays on. `false` opts out. The in-app `notifications` row is still written.
+
+### Brand colours
+
+The palette is held while Harry confirms it. Poket School may move to a blue gradient. The current inks live in `lib/brand-theme.ts` and the `--brand-*` variables in `app/globals.css`. Alumni, yearbook, and graduation screens use `bg-brand-forest`, `bg-brand-gold`, `bg-brand-coral`, `bg-brand-blue`, `bg-brand-cream`, and `bg-brand-sand`. A palette change is those two files. The values are not changed in this update.
+
 
 
 

@@ -49,11 +49,11 @@ export default function InstitutionAlumniPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  if (!institutionId) return <p className="p-6 text-sm text-[#1A3C34]">This page opens once your account is tied to an academy.</p>;
+  if (!institutionId) return <p className="p-6 text-sm text-brand-forest">This page opens once your account is tied to an academy.</p>;
 
   return (
     <div className="space-y-5">
-      <a href="/dashboard/institution/destinations" className="inline-flex h-11 items-center rounded-full bg-[#3C8DFF] px-5 text-sm font-semibold text-white">
+      <a href="/dashboard/institution/destinations" className="inline-flex h-11 items-center rounded-full bg-brand-blue px-5 text-sm font-semibold text-white">
         Alumni destinations
       </a>
       <GraduationDesk

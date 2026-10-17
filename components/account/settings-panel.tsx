@@ -512,6 +512,12 @@ export function SettingsPanel({
             ['messages', 'Messages'],
             ['announcements', 'Announcements'],
             ['product', 'Product updates'],
+            ['reunions', 'Reunions'],
+            ['wall', 'Yearbook wall'],
+            ['yearbook', 'Yearbook release'],
+            ['alumni_messages', 'Alumni messages'],
+            ['institution', 'Institution'],
+            ['achievements', 'Achievements'],
           ]}
           value={notes}
           onChange={key => setNotes({ ...notes, [key]: !notes[key] })}

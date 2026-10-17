@@ -279,7 +279,7 @@ async function deliverCampaign(campaignId: string, academyName: string): Promise
           message: body.slice(0, 180),
           type: 'announcement',
           link: '/dashboard/student/network',
-          pref: 'digest',
+          pref: text(claimed.kind) === 'reunion' ? 'reunions' : 'institution',
           skipPush: !pushOn,
         });
       }
@@ -809,7 +809,7 @@ export async function sendAlumniDirect(input: {
     message: clip(input.body, 140),
     type: 'message',
     link: '/dashboard/student/network',
-    pref: 'digest',
+    pref: 'alumni_messages',
     skipPush: !channelOpen(themConsent, 'push'),
   });
   return { ok: true };

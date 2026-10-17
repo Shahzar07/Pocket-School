@@ -49,8 +49,8 @@ function StatRow({ stats }: { stats: NetworkDeskData['stats'] }) {
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
       {STATS.map((item) => (
         <div key={item.key} className="rounded-2xl bg-white px-3 py-3">
-          <p className="text-xs uppercase tracking-wide text-[#1A3C34]/70">{item.label}</p>
-          <p className="text-2xl font-semibold text-[#1A3C34]">{stats[item.key]}</p>
+          <p className="text-xs uppercase tracking-wide text-brand-forest/70">{item.label}</p>
+          <p className="text-2xl font-semibold text-brand-forest">{stats[item.key]}</p>
         </div>
       ))}
     </div>
@@ -85,10 +85,10 @@ export function InstitutionNetworkDesk({
   const filter = { year, level, programme, className, country, destination };
 
   return (
-    <section className="space-y-4 rounded-3xl bg-[#F8E7C4] p-4 sm:p-6">
+    <section className="space-y-4 rounded-3xl bg-brand-sand p-4 sm:p-6">
       <div>
-        <h2 className="text-xl font-semibold text-[#1A3C34]">Alumni communications</h2>
-        <p className="mt-1 text-sm text-[#1A3C34]">{desk.seatNote || SEAT_NOTE}</p>
+        <h2 className="text-xl font-semibold text-brand-forest">Alumni communications</h2>
+        <p className="mt-1 text-sm text-brand-forest">{desk.seatNote || SEAT_NOTE}</p>
       </div>
       <StatRow stats={desk.stats} />
       <div className="flex flex-wrap gap-2">
@@ -97,30 +97,30 @@ export function InstitutionNetworkDesk({
             key={item}
             type="button"
             onClick={() => setKind(item)}
-            className={`h-10 rounded-full px-4 text-sm font-semibold ${kind === item ? 'bg-[#1A3C34] text-white' : 'bg-white text-[#1A3C34]'}`}
+            className={`h-10 rounded-full px-4 text-sm font-semibold ${kind === item ? 'bg-brand-forest text-white' : 'bg-white text-brand-forest'}`}
           >
             {MESSAGE_TEMPLATES[item].label}
           </button>
         ))}
       </div>
       <div className="grid gap-2 sm:grid-cols-3">
-        <input value={year} onChange={(event) => setYear(event.target.value)} placeholder="Cohort" className="h-11 rounded-xl bg-white px-3 text-sm text-[#1A3C34]" />
-        <input value={level} onChange={(event) => setLevel(event.target.value)} placeholder="Level" className="h-11 rounded-xl bg-white px-3 text-sm text-[#1A3C34]" />
-        <input value={programme} onChange={(event) => setProgramme(event.target.value)} placeholder="Programme" className="h-11 rounded-xl bg-white px-3 text-sm text-[#1A3C34]" />
-        <input value={className} onChange={(event) => setClassName(event.target.value)} placeholder="Class" className="h-11 rounded-xl bg-white px-3 text-sm text-[#1A3C34]" />
-        <input value={country} onChange={(event) => setCountry(event.target.value)} placeholder="Country" className="h-11 rounded-xl bg-white px-3 text-sm text-[#1A3C34]" />
-        <input value={destination} onChange={(event) => setDestination(event.target.value)} placeholder="Destination" className="h-11 rounded-xl bg-white px-3 text-sm text-[#1A3C34]" />
+        <input value={year} onChange={(event) => setYear(event.target.value)} placeholder="Cohort" className="h-11 rounded-xl bg-white px-3 text-sm text-brand-forest" />
+        <input value={level} onChange={(event) => setLevel(event.target.value)} placeholder="Level" className="h-11 rounded-xl bg-white px-3 text-sm text-brand-forest" />
+        <input value={programme} onChange={(event) => setProgramme(event.target.value)} placeholder="Programme" className="h-11 rounded-xl bg-white px-3 text-sm text-brand-forest" />
+        <input value={className} onChange={(event) => setClassName(event.target.value)} placeholder="Class" className="h-11 rounded-xl bg-white px-3 text-sm text-brand-forest" />
+        <input value={country} onChange={(event) => setCountry(event.target.value)} placeholder="Country" className="h-11 rounded-xl bg-white px-3 text-sm text-brand-forest" />
+        <input value={destination} onChange={(event) => setDestination(event.target.value)} placeholder="Destination" className="h-11 rounded-xl bg-white px-3 text-sm text-brand-forest" />
       </div>
-      <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add a short note. Email, inbox, and push follow each person's consent." className="min-h-24 w-full rounded-2xl bg-white p-3 text-sm text-[#1A3C34]" />
+      <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add a short note. Email, inbox, and push follow each person's consent." className="min-h-24 w-full rounded-2xl bg-white p-3 text-sm text-brand-forest" />
       <div className="flex flex-wrap items-center gap-2">
-        <input type="date" value={sendOn} onChange={(event) => setSendOn(event.target.value)} className="h-11 rounded-xl bg-white px-3 text-sm text-[#1A3C34]" />
-        <button type="button" onClick={() => onCampaign({ kind, note, sendOn, filter })} className="h-11 rounded-full bg-[#C8922A] px-5 text-sm font-semibold text-[#1A3C34]">
+        <input type="date" value={sendOn} onChange={(event) => setSendOn(event.target.value)} className="h-11 rounded-xl bg-white px-3 text-sm text-brand-forest" />
+        <button type="button" onClick={() => onCampaign({ kind, note, sendOn, filter })} className="h-11 rounded-full bg-brand-gold px-5 text-sm font-semibold text-brand-forest">
           {sendOn ? 'Schedule' : 'Send now'}
         </button>
       </div>
       <ul className="space-y-2">
         {desk.campaigns.map((campaign) => (
-          <li key={campaign.id} className="rounded-2xl bg-white px-4 py-3 text-sm text-[#1A3C34]">
+          <li key={campaign.id} className="rounded-2xl bg-white px-4 py-3 text-sm text-brand-forest">
             <p className="font-semibold">{campaign.subject}</p>
             <p>
               {campaign.status} · reach {campaign.reached} · opens {campaign.opened} · clicks {campaign.clicked} · replies {campaign.replies}
@@ -130,30 +130,30 @@ export function InstitutionNetworkDesk({
         ))}
       </ul>
       <div className="grid gap-2 sm:grid-cols-3">
-        <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Reunion title" className="h-11 rounded-xl bg-white px-3 text-sm text-[#1A3C34]" />
-        <input value={when} onChange={(event) => setWhen(event.target.value)} placeholder="When" className="h-11 rounded-xl bg-white px-3 text-sm text-[#1A3C34]" />
-        <input value={place} onChange={(event) => setPlace(event.target.value)} placeholder="Place" className="h-11 rounded-xl bg-white px-3 text-sm text-[#1A3C34]" />
+        <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Reunion title" className="h-11 rounded-xl bg-white px-3 text-sm text-brand-forest" />
+        <input value={when} onChange={(event) => setWhen(event.target.value)} placeholder="When" className="h-11 rounded-xl bg-white px-3 text-sm text-brand-forest" />
+        <input value={place} onChange={(event) => setPlace(event.target.value)} placeholder="Place" className="h-11 rounded-xl bg-white px-3 text-sm text-brand-forest" />
       </div>
-      <button type="button" onClick={() => onEvent({ title, when, place })} className="h-11 rounded-full bg-[#3C8DFF] px-5 text-sm font-semibold text-white">
+      <button type="button" onClick={() => onEvent({ title, when, place })} className="h-11 rounded-full bg-brand-blue px-5 text-sm font-semibold text-white">
         Publish event
       </button>
       {desk.groups.length > 0 && (
         <ul className="flex flex-wrap gap-2">
           {desk.groups.map((group) => (
-            <li key={group.id} className="rounded-full bg-white px-3 py-2 text-sm text-[#1A3C34]">{group.name} · {group.members}</li>
+            <li key={group.id} className="rounded-full bg-white px-3 py-2 text-sm text-brand-forest">{group.name} · {group.members}</li>
           ))}
         </ul>
       )}
       {desk.held.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-[#1A3C34]">Waiting for a moderator</h3>
+          <h3 className="text-sm font-semibold text-brand-forest">Waiting for a moderator</h3>
           {desk.held.map((post) => (
-            <div key={post.id} className="rounded-2xl bg-white px-4 py-3 text-sm text-[#1A3C34]">
+            <div key={post.id} className="rounded-2xl bg-white px-4 py-3 text-sm text-brand-forest">
               <p className="font-semibold">{post.authorName}</p>
               <p>{post.body}</p>
               <div className="mt-2 flex gap-2">
-                <button type="button" onClick={() => onModerate(post.id, true)} className="h-10 rounded-full bg-[#1A3C34] px-4 text-sm font-semibold text-white">Release</button>
-                <button type="button" onClick={() => onModerate(post.id, false)} className="h-10 rounded-full bg-[#E36A4F] px-4 text-sm font-semibold text-white">Block</button>
+                <button type="button" onClick={() => onModerate(post.id, true)} className="h-10 rounded-full bg-brand-forest px-4 text-sm font-semibold text-white">Release</button>
+                <button type="button" onClick={() => onModerate(post.id, false)} className="h-10 rounded-full bg-brand-coral px-4 text-sm font-semibold text-white">Block</button>
               </div>
             </div>
           ))}
@@ -161,9 +161,9 @@ export function InstitutionNetworkDesk({
       )}
       {desk.updates && desk.updates.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-[#1A3C34]">Destinations shared with this academy</h3>
+          <h3 className="text-sm font-semibold text-brand-forest">Destinations shared with this academy</h3>
           {desk.updates.map((row) => (
-            <p key={`${row.name}-${row.destination}`} className="rounded-2xl bg-white px-4 py-3 text-sm text-[#1A3C34]">
+            <p key={`${row.name}-${row.destination}`} className="rounded-2xl bg-white px-4 py-3 text-sm text-brand-forest">
               {row.name}{row.job ? ` · ${row.job}` : ''}{row.destination ? ` · ${row.destination}` : ''}
             </p>
           ))}
@@ -171,13 +171,13 @@ export function InstitutionNetworkDesk({
       )}
       {desk.mentors.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-[#1A3C34]">Mentorship</h3>
+          <h3 className="text-sm font-semibold text-brand-forest">Mentorship</h3>
           {desk.mentors.map((row) => (
-            <div key={row.id} className="rounded-2xl bg-white px-4 py-3 text-sm text-[#1A3C34]">
+            <div key={row.id} className="rounded-2xl bg-white px-4 py-3 text-sm text-brand-forest">
               <p>{row.mentorName} with {row.studentName}</p>
               <p>{row.status}{row.moderated ? ' · the academy can read this thread' : ''}</p>
               {row.status === 'pending' && (
-                <button type="button" onClick={() => onApprove(row.id)} className="mt-2 h-10 rounded-full bg-[#1A3C34] px-4 text-sm font-semibold text-white">Approve</button>
+                <button type="button" onClick={() => onApprove(row.id)} className="mt-2 h-10 rounded-full bg-brand-forest px-4 text-sm font-semibold text-white">Approve</button>
               )}
             </div>
           ))}
@@ -190,42 +190,42 @@ export function InstitutionNetworkDesk({
 export function AlumniNetworkShowcase() {
   return (
     <div className="space-y-4">
-      <section className="space-y-4 rounded-3xl bg-[#F8E7C4] p-4 sm:p-6">
+      <section className="space-y-4 rounded-3xl bg-brand-sand p-4 sm:p-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#1A3C34]">Alumni communications</h1>
-          <p className="mt-1 text-sm text-[#1A3C34]">{SEAT_NOTE}</p>
+          <h1 className="text-2xl font-semibold text-brand-forest">Alumni communications</h1>
+          <p className="mt-1 text-sm text-brand-forest">{SEAT_NOTE}</p>
         </div>
         <StatRow stats={{ reached: 40, opened: 18, clicked: 7, replies: 3, events: 1, rsvps: 12, mentorships: 2, pendingMentors: 1 }} />
         <div className="flex flex-wrap gap-2">
           {MESSAGE_KINDS.map((item) => (
-            <span key={item} className={`inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold ${item === 'reunion' ? 'bg-[#1A3C34] text-white' : 'bg-white text-[#1A3C34]'}`}>
+            <span key={item} className={`inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold ${item === 'reunion' ? 'bg-brand-forest text-white' : 'bg-white text-brand-forest'}`}>
               {MESSAGE_TEMPLATES[item].label}
             </span>
           ))}
         </div>
-        <p className="text-sm text-[#1A3C34]">Filtered to cohort 2026 · Professional · class Oak</p>
-        <article className="rounded-2xl bg-white px-4 py-3 text-sm text-[#1A3C34]">
+        <p className="text-sm text-brand-forest">Filtered to cohort 2026 · Professional · class Oak</p>
+        <article className="rounded-2xl bg-white px-4 py-3 text-sm text-brand-forest">
           <p className="font-semibold">A reunion at North Academy</p>
           <p>sent · reach 40 · opens 18 · clicks 7 · replies 3 · cohort 2026</p>
         </article>
       </section>
       <section className="grid gap-4 lg:grid-cols-2">
         <article className="space-y-3 rounded-3xl bg-white p-4 sm:p-6">
-          <h2 className="text-xl font-semibold text-[#1A3C34]">Oak 2026</h2>
-          <p className="text-sm text-[#1A3C34]">Classmates who opted in. Names stay as a first name and last initial.</p>
-          <p className="rounded-2xl bg-[#F6F1E7] px-4 py-3 text-sm text-[#1A3C34]">Ada L. · Professional · Oxford</p>
-          <div className="rounded-2xl border border-[#C8922A] px-4 py-3 text-sm text-[#1A3C34]">
+          <h2 className="text-xl font-semibold text-brand-forest">Oak 2026</h2>
+          <p className="text-sm text-brand-forest">Classmates who opted in. Names stay as a first name and last initial.</p>
+          <p className="rounded-2xl bg-brand-cream px-4 py-3 text-sm text-brand-forest">Ada L. · Professional · Oxford</p>
+          <div className="rounded-2xl border border-brand-gold px-4 py-3 text-sm text-brand-forest">
             <p className="font-semibold">Sam T.</p>
             <p>Can I bring a friend to the reunion?</p>
-            <p className="mt-1 text-[#E36A4F]">Held for an academy moderator. Direct messages stay off for anyone under 18.</p>
+            <p className="mt-1 text-brand-coral">Held for an academy moderator. Direct messages stay off for anyone under 18.</p>
           </div>
-          <p className="rounded-2xl bg-[#1A3C34] px-4 py-3 text-sm text-white">Reunion on the green · Ada L. is going</p>
+          <p className="rounded-2xl bg-brand-forest px-4 py-3 text-sm text-white">Reunion on the green · Ada L. is going</p>
         </article>
-        <article className="space-y-3 rounded-3xl bg-[#1A3C34] p-4 text-white sm:p-6">
+        <article className="space-y-3 rounded-3xl bg-brand-forest p-4 text-white sm:p-6">
           <h2 className="text-xl font-semibold">Mentorship</h2>
-          <p className="text-sm text-[#F8E7C4]">Opt-in, academy-approved, and moderated when the student is under 18.</p>
+          <p className="text-sm text-brand-sand">Opt-in, academy-approved, and moderated when the student is under 18.</p>
           <p className="rounded-2xl bg-white/10 px-4 py-3 text-sm">Ada L. with Sam T. · pending approval · the academy can read this thread</p>
-          <p className="text-sm text-[#F8E7C4]">This link costs the academy no seat.</p>
+          <p className="text-sm text-brand-sand">This link costs the academy no seat.</p>
         </article>
       </section>
     </div>

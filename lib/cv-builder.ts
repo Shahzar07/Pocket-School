@@ -4,6 +4,7 @@
  */
 
 import { isSupportedLanguage } from './languages';
+import { BRAND } from './brand-theme';
 import {
   SECTION_IDS,
   sourceLabel,
@@ -24,13 +25,13 @@ export const CV_LAYOUTS: readonly CvLayout[] = ['one', 'two'];
 export const CV_PAGE_SIZES: readonly CvPageSize[] = ['A4', 'Letter'];
 
 const TEMPLATE_ACCENT: Record<CvDesignTemplate, string> = {
-  classic: '#1A3C34',
-  serif: '#1A3C34',
-  compact: '#1A3C34',
-  forest: '#1A3C34',
-  gold: '#C8922A',
-  coral: '#E36A4F',
-  blue: '#3C8DFF',
+  classic: BRAND.forest,
+  serif: BRAND.forest,
+  compact: BRAND.forest,
+  forest: BRAND.forest,
+  gold: BRAND.gold,
+  coral: BRAND.coral,
+  blue: BRAND.blue,
 };
 
 export const CV_BASE_SECTIONS = ['summary', ...SECTION_IDS] as const;

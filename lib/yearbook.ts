@@ -5,6 +5,7 @@
 
 import { asAgeTier, isMinorTier, type AgeTier } from './age-tier';
 import { screenPost, type ScreenedPost } from './alumni-network';
+import { BRAND, brandPdfRgb } from './brand-theme';
 import { moderateText } from './community/moderation';
 
 export const YEARBOOK_TEMPLATES = ['forest', 'gold', 'coral', 'blue'] as const;
@@ -25,10 +26,10 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const RANK: Record<YearbookAudience, number> = { classmates: 1, institution: 2, alumni: 3, public: 4 };
 
 const INK: Record<YearbookTemplate, string> = {
-  forest: '0.102 0.235 0.204',
-  gold: '0.784 0.573 0.165',
-  coral: '0.890 0.416 0.310',
-  blue: '0.235 0.553 1',
+  forest: brandPdfRgb(BRAND.forest),
+  gold: brandPdfRgb(BRAND.gold),
+  coral: brandPdfRgb(BRAND.coral),
+  blue: brandPdfRgb(BRAND.blue),
 };
 
 export interface YearbookAudiences {

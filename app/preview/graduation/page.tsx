@@ -20,7 +20,7 @@ const preview = previewGraduationBill({
 
 export default function GraduationPreview() {
   return (
-    <main className="min-h-screen bg-[#F6F1E7] px-4 py-8">
+    <main className="min-h-screen bg-brand-cream px-4 py-8">
       <div className="mx-auto grid max-w-5xl gap-6">
         <GraduationCelebration
           card={graduationCard({
