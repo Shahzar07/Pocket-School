@@ -36,7 +36,7 @@ test('a chain verifies, and a changed field breaks it', () => {
 });
 
 test('hotline tickets cannot be shared, and only an active public alert can', () => {
-  assert.equal(shareRefusal('hotline', 'pending', false), 'Hotline tickets cannot be shared.');
+  assert.equal(shareRefusal('hotline', 'pending', false), 'SafeLine tickets cannot be shared.');
   assert.equal(shareRefusal('alert', 'resolved', true), 'Only an active public alert can be shared.');
   assert.equal(shareRefusal('alert', 'active', false), 'This alert is not public.');
   assert.equal(shareRefusal('alert', 'updated', true), null);
