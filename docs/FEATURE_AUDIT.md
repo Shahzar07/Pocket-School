@@ -12,7 +12,7 @@ Pull request 144 publishes `users/{uid}/goals` with `source` of `self` (older do
 
 ## Shared record
 
-Assignments, the gradebook, attendance, goals, report cards, Report Studio, and the parent view read one sample for Rochford’s International School: institution, class IGCSE Mathematics, enrolments, assessments, marks, attendance, and goals. It is labelled sample. It stays in the browser until `scripts/seed-rochford-class.ts` can write with the Firebase Admin key.
+Classes, grade scales, the gradebook, assignments, report cards, and teacher-assigned goals are read and written in Firestore for the signed-in teacher. A class grade shows 9–1, A*–G, and a percentage together. Attendance and Report Studio stay on their live course pages. Earnings lists each invoice. Institution admins bulk-create classes from a CSV, and a teacher user id in that file owns the class. Teachers add, edit, and delete the goals they assigned. The Rochford fixture is written only by `scripts/seed-rochford-class.ts` or `POST /api/admin/rochford-class`, and only when that class document is missing. An empty demo preview can show the fixture. Saving a class does not write the sample.
 
 ## Register
 
@@ -88,12 +88,12 @@ Assignments, the gradebook, attendance, goals, report cards, Report Studio, and 
 
 - `/dashboard/teacher` (Built): Home reads the shared class record and files a class note. It is no longer only a course overview.
 - `/dashboard/studio` (Built): A class brief sits on the shared record. The Studio editor underneath is unchanged.
-- `/dashboard/teacher/classes` (Built): Create, edit, and archive. Search, filters, and sort. Roster, attendance, assignments, goals, gradebook, and announcements. Join by CSV, invite link, QR, or code, with approval. Institution admins bulk-create and assign a teacher.
+- `/dashboard/teacher/classes` (Built): Create, edit, and archive. Search, filters, and sort. Roster, attendance, assignments, goals, gradebook, and announcements. Join by CSV, invite link, QR, or code, with approval. Institution admins bulk-create from a CSV file. A teacher user id in the teacher column owns the class. A display name stays on the class and the signed-in admin owns the record.
 - `/dashboard/teacher/courses` (Built): The class course is created here. The existing lesson builder stays on the page.
 - `/dashboard/teacher/courses/build` (Built): The class course is created here. The existing lesson builder stays on the page.
 - `/dashboard/teacher/courses/[courseId]` (Built): The class course is created here. The existing lesson builder stays on the page.
 - `/dashboard/teacher/courses/[courseId]/preview` (Built): The class course is created here. The existing lesson builder stays on the page.
-- `/dashboard/teacher/earnings` (Built): Per-sale table with course, date, gross, split, fees, and net. Pending, available, and paid totals. Payout schedule and history, refunds, CSV, and a monthly chart. Labelled sample.
+- `/dashboard/teacher/earnings` (Built): The live earnings page lists each invoice: student, description, amount, currency, status, discount, and date, plus totals by status. The Rochford ledger is not the source.
 - `/courses` (Built): A signed-in teacher can file a marketplace listing for a class. The public catalogue is unchanged for everyone else.
 - `/reads` (Built): A signed-in teacher attaches a book to the class. The Reads library is unchanged.
 - `/dashboard/wallet` (Built): A sample wallet transfer sits on the same ledger as earnings.
@@ -103,14 +103,14 @@ Assignments, the gradebook, attendance, goals, report cards, Report Studio, and 
 - `/dashboard/teacher/analytics` (Built): Analytics reads the shared marks, attendance, and goals, and can store a snapshot.
 - `/dashboard/teacher/insights` (Built): An insight is a saved note on the class record.
 - `/dashboard/teacher/progress` (Built): Risk flags are created here and line up with teacher goals.
-- `/dashboard/teacher/goals` (Built): Source filter covers self, ET AI, teacher, parent, and institution. Each row shows status, due time, active focus time, and reschedules. Edit and delete stay on goals that teacher or the school assigned.
+- `/dashboard/teacher/goals` (Built): Teachers add, edit, and delete goals they assigned. Institution admins add, edit, and delete institution goals. The source filter covers self, ET AI, teacher, parent, and institution. Each row shows status, due time, active focus time, and reschedules. The daily goals list on the same page stays live.
 - `/dashboard/teacher/references` (Built): References are drafted per student on the class record.
-- `/dashboard/teacher/gradebook` (Built): Root cause of the blank page: submissions query required a missing composite index.
+- `/dashboard/teacher/gradebook` (Built): Every mark and the term grade show 9–1, A*–G, and a percentage together. The assessment scale stays beside them.
 - `/dashboard/teacher/assignments` (Built): ET AI suggests a mark. Nothing is returned until the teacher approves it.
 - `/dashboard/teacher/exams` (Built): Saving an exam creates a gradebook assessment on the same class.
 - `/dashboard/teacher/report-cards` (Built): ET AI comment is a draft until the teacher edits it.
-- `/dashboard/teacher/report-studio` (Built): Intro explains how it differs from the gradebook and from report cards.
-- `/dashboard/teacher/attendance` (Built): Absent and late queue a parent notice. Live fill is sample active time.
+- `/dashboard/teacher/report-studio` (Built): The working Report Studio stays. Each row shows 9–1, A*–G, and a percentage beside the template grade.
+- `/dashboard/teacher/attendance` (Built): The working attendance page stays. It is not replaced by a sample register.
 - `/dashboard/teacher/live` (Built): A live room can write a present mark with a live source. The video key is still required to open a real room.
 - `/dashboard/teacher/integrity` (Built): Integrity notes are created here and printed on the report card until they are closed.
 - `/dashboard/teacher/integrity/cases` (Built): The case queue is the integrity list filtered to this class.

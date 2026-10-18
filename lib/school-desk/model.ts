@@ -312,11 +312,18 @@ export function gradeOnScale(percent: number, scale: ScaleId, custom: GradeBand[
   return bandGrade(rounded, SCALE_BANDS[scale]);
 }
 
+/** 9–1, A*–G, and a percentage, shown together wherever a class grade appears. */
+export function gradeSetLabel(percent: number): string {
+  if (!Number.isFinite(percent)) return '—';
+  return `${gradeOnScale(percent, 'igcse_9_1')} on 9–1 · ${gradeOnScale(percent, 'astar_g')} on A*–G · ${gradeOnScale(percent, 'percent')}`;
+}
+
 export function displayMark(points: number | null, max: number, scale: ScaleId, custom: GradeBand[]): string {
   if (points == null || !Number.isFinite(points)) return '—';
-  if (scale === 'points') return `${points}/${max}`;
   const percent = max > 0 ? (points / max) * 100 : 0;
-  return gradeOnScale(percent, scale, custom);
+  const scales = gradeSetLabel(percent);
+  if (scale === 'points') return `${points}/${max} · ${scales}`;
+  return `${gradeOnScale(percent, scale, custom)} · ${scales}`;
 }
 
 export function suggestMark(body: string, maxPoints: number): AiSuggestion {
@@ -660,6 +667,14 @@ export function setTeachingMode(state: DeskState, mode: 'school' | 'independent'
   return stamp({ ...state, institution }, state.actorName, mode === 'school' ? 'school classes' : 'independent classes', institution.name);
 }
 
+/** A teacher user id has no spaces. A display name stays on the class and the signed-in admin owns the record. */
+function classOwner(teacher: string, state: DeskState): { ownerTeacherId: string; ownerTeacherName: string } {
+  const name = teacher.trim();
+  if (!name) return { ownerTeacherId: state.actorId, ownerTeacherName: state.actorName };
+  if (!/\s/.test(name)) return { ownerTeacherId: name, ownerTeacherName: name };
+  return { ownerTeacherId: state.actorId, ownerTeacherName: name };
+}
+
 export function bulkCreateClasses(state: DeskState, csv: string): { state: DeskState; created: number; error: string } {
   const lines = csv.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   if (lines.length < 2) return { state, created: 0, error: 'Add a header and one class.' };
@@ -668,6 +683,7 @@ export function bulkCreateClasses(state: DeskState, csv: string): { state: DeskS
   for (const line of lines.slice(1)) {
     const [name, subject, level, programme, term, campus, room, timetable, teacher, capacity] = line.split(',').map((part) => part.trim());
     if (!name || !LEVELS.includes(level as LevelName)) continue;
+    const owner = classOwner(teacher || '', next);
     const result = createClass(next, {
       name,
       subject: subject || name,
@@ -679,8 +695,8 @@ export function bulkCreateClasses(state: DeskState, csv: string): { state: DeskS
       timetable: timetable || 'To be set',
       coTeachers: [],
       capacity: Number(capacity) || 20,
-      ownerTeacherId: 'teacher-assigned',
-      ownerTeacherName: teacher || next.actorName,
+      ownerTeacherId: owner.ownerTeacherId,
+      ownerTeacherName: owner.ownerTeacherName,
       createdByRole: 'institution_admin',
     }, 'institution_admin');
     if (!result.error) {
@@ -1008,7 +1024,7 @@ export function reportLines(state: DeskState, report: ReportCard): string[] {
   return [
     `${state.institution.name} · ${state.institution.branding}`,
     `${report.studentName} · ${klass?.name ?? 'Class'} · ${report.level} · ${report.term}`,
-    `Subject grade ${result.grade} (${result.percent}%) on ${SCALE_LABEL[state.institution.defaultScale]}`,
+    `Subject grades ${gradeSetLabel(result.percent)}. School scale ${result.grade} on ${SCALE_LABEL[state.institution.defaultScale]}.`,
     `Effort ${report.effort} of 5 · Attendance ${rate}% · Merits ${merits} · Goals ${done}/${goals.length}`,
     `Integrity: ${state.flows.filter((item) => (item.flow === 'integrity' || item.flow === 'case') && item.studentId === report.studentId && item.status !== 'Closed').map((item) => item.title).join(', ') || 'None'}`,
     `Teacher: ${report.subjectComment}`,

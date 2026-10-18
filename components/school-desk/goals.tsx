@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { deskCopy as t } from '@/lib/school-desk/copy';
 import {
   bulkGoals, canEditGoal, deleteGoal, goalSourceGroup, goalsForRoster, roster, upsertGoal,
@@ -44,6 +44,11 @@ export function GoalRoster({
   const overdue = classGoals.filter((item) => item.status === 'overdue').length;
   const school = acting === 'institution_admin';
 
+  useEffect(() => {
+    if (pupils.some((item) => item.studentId === studentId)) return;
+    if (pupils[0]) setStudentId(pupils[0].studentId);
+  }, [pupils, studentId]);
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-[#1E6A83]">{t.goalRule}</p>
@@ -84,7 +89,7 @@ export function GoalRoster({
           <input className={deskStyles.field} value={title} onChange={(event) => setTitle(event.target.value)} aria-label={t.titleLabel} />
           <input className={deskStyles.field} type="date" value={due} onChange={(event) => setDue(event.target.value)} aria-label={t.due} />
           <input className={deskStyles.field} type="time" value={dueTime} onChange={(event) => setDueTime(event.target.value)} aria-label={t.due} />
-          <button type="submit" className={deskStyles.btn}>{editing ? t.save : t.addGoal}</button>
+          <button type="submit" data-action={editing ? 'save-goal' : 'add-goal'} className={deskStyles.btn}>{editing ? t.saveGoal : t.addGoal}</button>
           <button type="button" className={deskStyles.ghost} onClick={() => setState(bulkGoals(state, classId, title, due, school ? state.institution.id : state.actorId, school ? state.institution.name : state.actorName, school ? 'institution' : 'teacher'))}>{t.bulkGoal}</button>
         </form>
       ) : null}
@@ -122,7 +127,7 @@ export function GoalRoster({
               {move ? <p className="text-[#1E6A83]">{t.lastMove} {move.fromDate} {move.fromTime ?? ''} {move.toDate} {move.toTime ?? ''}</p> : null}
               {editable ? (
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <button type="button" className={deskStyles.ghost} onClick={() => { setEditing(goal.id); setTitle(goal.title); setDue(goal.due); setDueTime(goal.dueTime); setStudentId(goal.studentId); }}>{t.save}</button>
+                  <button type="button" data-action="edit-goal" className={deskStyles.ghost} onClick={() => { setEditing(goal.id); setTitle(goal.title); setDue(goal.due); setDueTime(goal.dueTime); setStudentId(goal.studentId); }}>{t.editGoal}</button>
                   <select className={deskStyles.field} value={goal.status} aria-label={goal.title} onChange={(event) => setState(upsertGoal(state, { ...goal, status: event.target.value as GoalStatus }, state.actorName, { actorId: state.actorId, role: acting }))}>
                     {(['not_started', 'in_progress', 'completed', 'overdue'] as const).map((item) => <option key={item} value={item}>{t.goalStatus[item]}</option>)}
                   </select>
@@ -154,7 +159,7 @@ export function GoalsDesk({ base = 'dashboard' }: { base?: 'dashboard' | 'previe
     <DeskFrame title={t.goalsTitle} lede={t.goalsLede} state={state} onReset={() => resetToDemo(setState)} syncs="Student goals, report cards, ET AI planner when a published mark is weak">
       <DeskLinks base={base} />
       <ClassSelect state={state} classId={activeId} onChange={setClassId} />
-      <GoalRoster state={state} setState={setState} classId={activeId} role="teacher" showRoleToggle />
+      <GoalRoster state={state} setState={setState} classId={activeId} role="teacher" showRoleToggle={base === 'preview'} />
     </DeskFrame>
   );
 }

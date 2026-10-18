@@ -5,7 +5,7 @@ import { auditMarkdown, AUDIT } from './catalog';
 import { flowForPath } from './flows';
 import {
   addEnrolment, addFlow, applyLatePenalty, approveEnrolment, bulkCreateClasses, canDeleteGoal, createClass, createDemoDesk,
-  deleteGoal, earningNet, goalSourceGroup, goalsForRoster, gradeOnScale, refundEarning, returnSubmission, setMark, setTeachingMode, submitWork, termResult, upsertGoal,
+  deleteGoal, earningNet, emptyDesk, goalRecord, goalSourceGroup, goalsForRoster, gradeOnScale, gradeSetLabel, refundEarning, returnSubmission, setMark, setTeachingMode, submitWork, termResult, upsertGoal,
 } from './model';
 
 test('scales cover IGCSE, A star to G, percent, points, and pass or fail', () => {
@@ -20,6 +20,8 @@ test('scales cover IGCSE, A star to G, percent, points, and pass or fail', () =>
   assert.equal(gradeOnScale(39, 'pass_fail'), 'Fail');
   assert.equal(gradeOnScale(40, 'pass_fail'), 'Pass');
   assert.equal(gradeOnScale(86, 'custom', custom), 'Distinction');
+  assert.equal(gradeSetLabel(91), '9 on 9–1 · A* on A*–G · 91%');
+  assert.equal(gradeSetLabel(35), '3 on 9–1 · F on A*–G · 35%');
 });
 
 test('term grade skips excused and missing marks', () => {
@@ -167,7 +169,13 @@ test('institution bulk create assigns the teacher and an independent teacher can
   const made = bulkCreateClasses(createDemoDesk(), csv);
   assert.equal(made.error, '');
   assert.equal(made.created, 1);
-  assert.equal(made.state.classes.some((item) => item.name === 'IGCSE Physics' && item.ownerTeacherName === 'Siti Aminah'), true);
+  const physics = made.state.classes.find((item) => item.name === 'IGCSE Physics');
+  assert.equal(physics?.ownerTeacherName, 'Siti Aminah');
+  assert.equal(physics?.ownerTeacherId, made.state.actorId);
+  const assigned = bulkCreateClasses(createDemoDesk(), 'name,subject,level,programme,term,campus,room,timetable,teacher,capacity\nIGCSE Chemistry,Chemistry,IGCSE,Cambridge,Term 1,Falim,F-1,Mon 09:00,teacher-siti,18');
+  const chemistry = assigned.state.classes.find((item) => item.name === 'IGCSE Chemistry');
+  assert.equal(chemistry?.ownerTeacherId, 'teacher-siti');
+  assert.equal(chemistry?.ownerTeacherName, 'teacher-siti');
   const blocked = createDemoDesk();
   blocked.institution = { ...blocked.institution, teachersCanCreateClasses: false };
   const alone = setTeachingMode(blocked, 'independent');

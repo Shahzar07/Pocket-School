@@ -5,7 +5,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { deskCopy as t } from '@/lib/school-desk/copy';
 import { buildPdf } from '@/lib/insights/pdf';
 import {
-  SCALE_LABEL, acknowledgeReport, attendanceRate, buildReport, draftReportComment, reportLines, roster, saveReport, termResult,
+  SCALE_LABEL, acknowledgeReport, attendanceRate, buildReport, draftReportComment, gradeSetLabel, reportLines, roster, saveReport, termResult,
   type ReportCard,
 } from '@/lib/school-desk/model';
 import { ClassSelect, DeskFrame, DeskLinks, deskStyles, resetToDemo, useDesk } from './ui';
@@ -85,6 +85,7 @@ export function ReportCardDesk({ base = 'dashboard' }: { base?: 'dashboard' | 'p
           <h2 className="font-heading text-3xl">{current.studentName}</h2>
           <p className="text-sm text-[#1E6A83]">{klass.name} · {current.level} · {current.term} · {state.institution.branding}</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-4">
+            <p className="rounded-2xl bg-[#f4f7f8] p-3 text-sm sm:col-span-4" data-grade-set={result.percent}>{gradeSetLabel(result.percent)}</p>
             <p className="rounded-2xl bg-[#f4f7f8] p-3 text-sm">{SCALE_LABEL[state.institution.defaultScale]}<span className="mt-1 block font-heading text-3xl text-[#203337]">{result.grade}</span></p>
             <p className="rounded-2xl bg-[#f4f7f8] p-3 text-sm">{t.percent}<span className="mt-1 block font-heading text-3xl text-[#203337]">{result.percent}%</span></p>
             <p className="rounded-2xl bg-[#f4f7f8] p-3 text-sm">{t.effort}<span className="mt-1 block font-heading text-3xl text-[#203337]">{current.effort}/5</span></p>
@@ -216,7 +217,7 @@ export function StudioDesk({ base = 'dashboard' }: { base?: 'dashboard' | 'previ
             {rows.map((row) => (
               <tr key={row.name} className="border-t border-[#1E6A83]/10">
                 <td className="px-3 py-2">{row.name}</td>
-                <td>{row.result.grade} · {row.result.percent}%</td>
+                <td>{row.result.grade} · {gradeSetLabel(row.result.percent)}</td>
                 <td>{row.rate}%</td>
                 <td>{row.done}/{row.total}</td>
               </tr>

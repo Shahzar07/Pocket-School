@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { deskCopy as t } from '@/lib/school-desk/copy';
 import {
-  LEVELS, addEnrolment, approveEnrolment, attendanceRate, bulkCreateClasses, createClass, importRoster, postAnnouncement, roster, setTeachingMode, termResult, updateClass,
+  LEVELS, addEnrolment, approveEnrolment, attendanceRate, bulkCreateClasses, createClass, gradeSetLabel, importRoster, postAnnouncement, roster, setTeachingMode, termResult, updateClass,
   type DeskRole, type JoinMethod, type LevelName,
 } from '@/lib/school-desk/model';
 import { GoalRoster } from './goals';
@@ -122,6 +122,19 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
         }}>
           <h2 className="font-heading text-2xl">{t.bulkClasses}</h2>
           <p className="text-sm text-[#1E6A83]">{t.bulkHelp}</p>
+          <label className="block text-sm text-[#1E6A83]">{t.bulkFile}
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              className="mt-1 block w-full text-sm"
+              aria-label={t.bulkFile}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                void file.text().then(setBulk);
+              }}
+            />
+          </label>
           <textarea className="h-24 w-full rounded-2xl border border-[#1E6A83]/30 p-3 text-sm" value={bulk} onChange={(event) => setBulk(event.target.value)} aria-label={t.bulkClasses} />
           <button type="submit" className={deskStyles.btn} data-action="bulk-classes">{t.bulkClasses}</button>
         </form>
@@ -259,7 +272,7 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
                 <ul className="mt-3 text-sm">
                   {people.filter((item) => item.status === 'active').map((item) => {
                     const result = termResult(state, klass.id, item.studentId);
-                    return <li key={item.id}>{item.studentName}: {result.grade} · {result.percent}%</li>;
+                    return <li key={item.id}>{item.studentName}: {result.grade} · {gradeSetLabel(result.percent)}</li>;
                   })}
                   <a className={`${deskStyles.ghost} mt-3 inline-flex`} href={deskHref(base, '/dashboard/teacher/gradebook')}>{t.gradebookTitle}</a>
                 </ul>

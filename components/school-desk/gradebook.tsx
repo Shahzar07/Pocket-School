@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { deskCopy as t } from '@/lib/school-desk/copy';
 import {
-  SCALE_LABEL, displayMark, importMarks, marksCsv, publishAllDrafts, roster, setMark, termResult,
+  SCALE_LABEL, displayMark, gradeSetLabel, importMarks, marksCsv, publishAllDrafts, roster, setMark, termResult,
   type MarkFlag, type ScaleId,
 } from '@/lib/school-desk/model';
 import { ClassSelect, DeskFrame, DeskLinks, deskStyles, resetToDemo, useDesk } from './ui';
@@ -92,7 +92,7 @@ export function GradebookDesk({ base = 'dashboard' }: { base?: 'dashboard' | 'pr
                       </td>
                     );
                   })}
-                  <td className="px-3 py-3 font-semibold">{result.grade} · {result.percent}%</td>
+                  <td className="px-3 py-3 font-semibold" data-grade-set={result.percent}>{result.grade} · {gradeSetLabel(result.percent)}</td>
                 </tr>
               );
             })}

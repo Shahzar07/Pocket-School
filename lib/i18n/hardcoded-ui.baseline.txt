@@ -1482,9 +1482,15 @@ app/dashboard/teacher/courses/page.tsx	Publish flow:
 app/dashboard/teacher/courses/page.tsx	Submitted for admin review. You\
 app/dashboard/teacher/courses/page.tsx	Withdrawn — course is back in draft.
 app/dashboard/teacher/courses/page.tsx	You haven&apos;t created any products yet.
+app/dashboard/teacher/earnings/page.tsx	Amount
 app/dashboard/teacher/earnings/page.tsx	Course sales
+app/dashboard/teacher/earnings/page.tsx	Date
+app/dashboard/teacher/earnings/page.tsx	Description
+app/dashboard/teacher/earnings/page.tsx	Discount
 app/dashboard/teacher/earnings/page.tsx	IGCSE Maths, one hour
+app/dashboard/teacher/earnings/page.tsx	Invoice detail
 app/dashboard/teacher/earnings/page.tsx	List session
+app/dashboard/teacher/earnings/page.tsx	No invoices yet.
 app/dashboard/teacher/earnings/page.tsx	Offer a tutoring session
 app/dashboard/teacher/earnings/page.tsx	Paid invoices
 app/dashboard/teacher/earnings/page.tsx	Paid sales
@@ -1492,6 +1498,8 @@ app/dashboard/teacher/earnings/page.tsx	Sales recorded here. Payouts go to a Str
 app/dashboard/teacher/earnings/page.tsx	Session currency
 app/dashboard/teacher/earnings/page.tsx	Session price
 app/dashboard/teacher/earnings/page.tsx	Session title
+app/dashboard/teacher/earnings/page.tsx	Status
+app/dashboard/teacher/earnings/page.tsx	Student
 app/dashboard/teacher/earnings/page.tsx	You have not published a course yet. Create one from Courses, then share the join code with your class.
 app/dashboard/teacher/exams/page.tsx	Add Question
 app/dashboard/teacher/exams/page.tsx	All questions need text

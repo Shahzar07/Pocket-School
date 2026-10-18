@@ -32,6 +32,7 @@ import { StudentPassCard } from '@/components/student-pass-card';
 import { useEnsureStudentNumber } from '@/components/use-student-number';
 import { learnerLevelLabel } from '@/lib/student-number';
 import { DashboardHome } from '@/components/dashboard';
+import { ParentClassRecord } from '@/components/school-desk/parent-record';
 
 interface CourseWithEnrollment { course: Course; enrollment: Enrollment }
 
@@ -174,6 +175,7 @@ export default function StudentDashboard() {
           { id: 'courses', label: 'In progress', value: String(inProgress.length), hint: `${completed.length} finished` },
         ]}
       />
+      {user ? <ParentClassRecord childIds={[user.uid]} /> : null}
       <DashHeader
         eyebrow={`${greeting()} · ${today}`}
         title="Welcome back,"
