@@ -318,6 +318,18 @@ An enrolled student can create a question. The course owner can read and reply. 
 
 Books are products on the same allocator as courses. A purchase writes the existing `alloc:marketplace:{bookId}` permission. A Reads plan writes `plan:reads` or `plan:reads-family` and sets the subscription through the existing Stripe apply path.
 
+### Display prices
+
+Shelf quotes go through `lib/pricing.ts`. `quotePrice` and `viewerCurrency` no longer keep a private FX table. The rate source is `pricing_config/current`, with `seedPricing()` when that document is missing. The reader currency is the `poket-currency` key, and it is used only when `poket-currency-source` is `user`. USD, MYR, and GBP are the enabled seed currencies. A daily FX feed is not stored.
+
+`seedPricing()` includes `reads` (4.99 USD a month, 49.99 USD a year) and `reads-family` (7.99 USD a month, 79.99 USD a year). `normalizePricing` merges those rows into an existing pricing document. A stored Reads row keeps the amount already saved, so an admin document that still has the previous prices has to be saved again before checkout uses the new ones. School plans still use `annualDiscount` (25%). Reads subscriptions stay on card, in USD.
+
+A buy-to-own book defaults to `defaultBookUsd` (1.99 USD). `storedBookPriceRM` turns that into the shelf ringgit figure. Harbour Light’s seed and the checkout fallback use that default. Book Studio starts a new book at the same price. A book’s own `priceUsd` still overrides it. In Book Studio that override snaps to the nearest Apple and Google price point through `snapToStorePricePoint` ($0.99, $1.99, $2.99, and so on). Zero stays zero, so a book can remain included with the plan. A purchase still writes `library/{uid}/books/{bookId}` so the copy stays after the plan ends.
+
+### Language
+
+The reader language is `lib/languages.ts` (`pocket-school-lang`), applied by `I18nProvider`. The list has 53 languages. `editionFor` keeps a saved `languageVersions` row, including a draft or review edition. When that row is missing, the reader and the book page call `useContentTranslation`, which posts to `/api/content/translate` and caches by source hash. `ContentLanguageBar` labels the machine text and offers show original. Machine text is not stored as an approved edition. `POST /api/reads/translate` is the admin preview and calls `translateContent` from `lib/i18n/content-cache.ts`. There is no second translator.
+
 ### library/{uid}/books/{bookId}
 
 Written by the Stripe webhook when `checkout.session.completed` has `metadata.kind = book`.
@@ -332,7 +344,9 @@ The parent path `library/{uid}` is the signed-in student. Clients do not write t
 
 ### Book targets
 
-A book document (seeded in the app today, stored with the catalogue when that collection lands) may include `targets`, an array of `students`, `teachers`, `parents`, `institutions`, `all`, `marketplace`. That is the multi-select the allocator already uses for audiences. An empty list falls back to students and parents, plus institutions when the book is on the subscription shelf, plus marketplace when it is sold.
+A book document may include `targets`: role tokens (`students`, `teachers`, `parents`, `institutions`, `all`, `marketplace`) or a specific `user:`, `class:`, `parent:`, or `institution:` id. `lib/platform/allocation.ts` reads that list with `migrateAllocation`, the same expansion the server checks use. An explicit list is kept. An empty list becomes students and parents, plus institutions when `allocateLibrary` is set, plus marketplace when `allocateMarketplace` is set. Firestore `targetsHit` is the rule for a stored list.
+
+Institution seats are not stored on the book. `decideBook` and `licenceOffer` read `seatCount`, `seatsUsed`, `licenceStartsOn`, and `licenceEndsOn`, and pass them through `licencePhase` in `lib/oem.ts`. A billing phase, when the caller supplies one, uses `learningOpen` in `lib/institution-membership.ts`: `active` and `grace` can read, and `pending_payment` and `suspended` cannot. A full seat cap still denies a new reader during grace. A quote for licensing books adds the `poket_reads` row from `VOLUME_ADDONS` via `quoteInstitution`. `quoteForInstitution` still leaves add-ons empty. The institution billing page and `openInstitutionBill` use `institutionReadsBill`, which keeps that seat quote and adds the Poket Reads line. The stored bill total is the sum. Seed add-on prices are 0 until an admin sets a rate on the volume schedule. The super-admin volume quote on the academy console remains the place that toggles every add-on. `book.seats` is ignored. A book's Sparks cost is reserved on the institution Sparks page pool with `coverBookSparks` (`allocateSparks`, row `book:{id}`). The shelf price in MYR is `storedBookPriceRM`, from the admin rate in `lib/pricing.ts`, not `Math.round(priceUsd * 4.7)`. Checkout goes through `lib/payments/wallet-checkout.ts`.
 
 ### daily_goals (reading)
 
@@ -356,7 +370,7 @@ Book Studio writes the shared `media_assets` documents from `components/media` w
 
 ### Push
 
-A reading notice uses the shared push body: `recipientUid`, `category` (`goals` for a reading goal), `title`, `body`, optional `link`. `POST /api/push` verifies the signed-in caller and sends through `deviceTokens` (Expo and Web Push). Clients cannot read those documents. A missing sender configuration returns an error with `{ sent: 0, pruned: [] }`.
+A continue-reading notice is a push with `category: goals`. `postReadingNotice` posts that body to `POST /api/push`, which verifies the signed-in caller and sends with `sendGoalParentAlert` through `deviceTokens` (Expo and Web Push). The recipient is the signed-in uid. A sample shelf profile with no Firebase uid is shown on the page and is not pushed. Clients cannot read `deviceTokens`. A missing sender configuration returns an error with `{ sent: 0, pruned: [] }`.
 
 ## Community, tutors, exams, and the creator store
 
@@ -611,7 +625,7 @@ Collections written by the unified checkout. Clients cannot read or write the mo
 
 User fields written by the server: `permissions` (`alloc:marketplace:{id}`, `plan:reads`, `plan:reads-family`) and `stripeAccountId` (Connect). Both are privileged and rejected on client writes.
 
-Reads plans are `reads` at $9 a month and `reads-family` at $15. Annual is ten times the monthly price and is billed in USD on a card. Ringgit books use the admin FX quote (`quoteCheckout`) when present, otherwise the shelf RM price. Touch 'n Go is gateway method `tng`, not a Stripe metadata flag. Book and Reads purchases share `POST /api/stripe/create-checkout` and `POST /api/payments/checkout`. FPX and GrabPay stay on the one-time MYR Stripe session.
+Reads plans are `reads` at $4.99 a month ($49.99 a year) and `reads-family` at $7.99 a month ($79.99 a year), billed in USD on a card. A buy-to-own book defaults to $1.99 (`defaultBookUsd`); Harbour Light uses that default, and an admin can set `priceUsd` on the book. Ringgit books use the admin FX quote (`quoteCheckout`) when present, otherwise the shelf RM price from `storedBookPriceRM`. Touch 'n Go is gateway method `tng`, not a Stripe metadata flag. Book and Reads purchases share `POST /api/stripe/create-checkout` and `POST /api/payments/checkout`. FPX and GrabPay stay on the one-time MYR Stripe session. Checkout sends `price_data.unit_amount` from that quote. It does not look up a Stripe Price id.
 
 ## Account modes
 
@@ -3003,7 +3017,7 @@ Tile order is a preference. The web app keeps it in `localStorage` (`poket-dash-
 
 Reconciled with the app payments schema (test mode). The website owns Stripe (`POST /api/stripe/create-checkout`, `POST /api/payments/checkout`, and the Stripe webhook). Touch ’n Go is gateway method `tng`, not a Stripe flag. The iOS and Android apps use RevenueCat and do not write entitlements. Prices live in `pricing_config/current` (fallback `seedPricing()`). That path is website canonical. The app’s `platform_settings/pricing` name is not used.
 
-Primary (`primary_secondary`) and Professional (`professional`) `monthlyUsd` and `annualUsd` stay null until a super admin sets them. IGCSE & A-Level stays monthly USD 79 and annual USD 708. Poket Reads stays $9 and Poket Reads Family $15, on the same document as `reads[]`, and a super admin can change them. A null plan price makes `quotePlan` return null and checkout refuses it. The public pricing page shows “Not set” and does not treat that as free. Preview stays $0. A `pricing_config/current` document that already stored 19 or 99 keeps those numbers until a super admin clears the field.
+Primary (`primary_secondary`) and Professional (`professional`) `monthlyUsd` and `annualUsd` stay null until a super admin sets them. IGCSE & A-Level stays monthly USD 79 and annual USD 708. Poket Reads stays $4.99 a month and $49.99 a year, and Poket Reads Family stays $7.99 a month and $79.99 a year. Those annual amounts are the published prices, not ten times the monthly price. They live on the plan rows and on `reads[]` (monthly). Wallet checkout and the payments engine both quote `readsPlanItem` from that table. A saved copy of the old shelf ($9 / $90 and $15 / $150) is rewritten to these prices when the document is loaded. Any other saved Reads price stays. A super admin can change them. A null plan price makes `quotePlan` return null and checkout refuses it. The public pricing page shows “Not set” and does not treat that as free. Preview stays $0. A `pricing_config/current` document that already stored 19 or 99 keeps those numbers until a super admin clears the field.
 
 `familyBundleDiscount` on that document is null until a super admin saves `{ secondChildOff, furtherChildOff }` as fractions from 0 to 1. Null charges list price. Ten percent and fifteen percent are an example, not the seed.
 

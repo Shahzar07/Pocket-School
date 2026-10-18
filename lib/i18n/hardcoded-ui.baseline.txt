@@ -1966,7 +1966,7 @@ components/admin-account-panel.tsx	View as
 components/admin-account-panel.tsx	Why this change is being made
 components/admin-account-panel.tsx	e.g. 25
 components/admin-pricing-panel.tsx	Add-ons, monthly USD
-components/admin-pricing-panel.tsx	Annual Reads is ten times the monthly price. Reads is $9 and Reads Family is $15 until a super admin changes them.
+components/admin-pricing-panel.tsx	Checkout uses the annual amount on the plan row. The published prices are Poket Reads $4.99 a month or $49.99 a year, and Poket Reads Family $7.99 a month or $79.99 a year, until a super admin changes them.
 components/admin-pricing-panel.tsx	Audit log
 components/admin-pricing-panel.tsx	Charm (.99)
 components/admin-pricing-panel.tsx	Enter a three-letter currency code.

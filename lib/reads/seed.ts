@@ -1,6 +1,11 @@
 import { proceduralArt } from '@/components/media/fallback-art';
+import { seedPricing } from '@/lib/pricing';
+import { storedBookPriceRM } from '@/lib/platform/pricing';
 import { fullPageImage } from '@/lib/reads/picture-book';
 import type { Book } from './types';
+
+const DEFAULT_BOOK_USD = seedPricing().defaultBookUsd;
+const DEFAULT_BOOK_RM = storedBookPriceRM(DEFAULT_BOOK_USD);
 
 const HARBOUR_1 = `The jetty smelled of rain and warm rope. Aisha stopped where the boards turned dark and watched the lighthouse take its turn: a slow white sweep, then nothing, then the sweep again. Behind her, the night market was packing up. Someone dropped a crate of mangoes and laughed. The sound did not reach the water.
 
@@ -192,7 +197,7 @@ export const BOOKS: Book[] = [
     title: 'The Harbour Light',
     author: 'ET AI',
     blurb: 'A girl, a lighthouse that should be empty, and a line in her father’s handwriting telling her to come before the monsoon.',
-    cover: { from: '#14343F', to: '#0C2229', accent: '#E7C27D' },
+    cover: { from: '#1E6A83', to: '#14343F', accent: '#E9F7FA' },
     category: 'general',
     form: 'fiction',
     genre: 'Adventure',
@@ -203,8 +208,8 @@ export const BOOKS: Book[] = [
     version: 1,
     accessMode: 'both',
     minTier: 1,
-    priceUsd: 5,
-    priceRM: 24,
+    priceUsd: DEFAULT_BOOK_USD,
+    priceRM: DEFAULT_BOOK_RM,
     licensable: true,
     sparksCost: 80,
     seats: { total: 120, used: 0 },
@@ -275,7 +280,7 @@ export const BOOKS: Book[] = [
     title: 'The Blue Notebook',
     author: 'ET AI',
     blurb: 'Imran is allowed one true sentence every Tuesday. Then the notebook starts writing back.',
-    cover: { from: '#1F4E6B', to: '#16364B', accent: '#F2D48A' },
+    cover: { from: '#1E6A83', to: '#16364B', accent: '#E9F7FA' },
     category: 'general',
     form: 'fiction',
     genre: 'Story',
@@ -307,7 +312,7 @@ export const BOOKS: Book[] = [
     title: 'Cells to Systems',
     author: 'ET AI',
     blurb: 'IGCSE Biology from a single cell to a whole organism, written so the mark scheme and the idea are the same thing.',
-    cover: { from: '#0F4F45', to: '#0C2E2A', accent: '#B7E3C8' },
+    cover: { from: '#1E6A83', to: '#14343F', accent: '#E9F7FA' },
     category: 'academic',
     form: 'non-fiction',
     genre: 'Biology',
@@ -352,7 +357,7 @@ export const BOOKS: Book[] = [
     title: 'A Short History of Malacca',
     author: 'ET AI',
     blurb: 'Why a muddy river mouth became one of the world’s ports, and what changed when the promise changed.',
-    cover: { from: '#6A3A2A', to: '#3A2118', accent: '#F0D7A4' },
+    cover: { from: '#1E6A83', to: '#2786A4', accent: '#E9F7FA' },
     category: 'general',
     form: 'non-fiction',
     genre: 'History',
@@ -384,7 +389,7 @@ export const BOOKS: Book[] = [
     title: 'Plain Words for Contract',
     author: 'ET AI',
     blurb: 'Agreement, consideration, intention — the three gates of a contract, in language you can reuse in an essay.',
-    cover: { from: '#2A3148', to: '#171B2B', accent: '#E6D3A3' },
+    cover: { from: '#1E6A83', to: '#171B2B', accent: '#E9F7FA' },
     category: 'academic',
     form: 'non-fiction',
     genre: 'Law',
@@ -421,7 +426,7 @@ export const BOOKS: Book[] = [
     title: 'The yellow window',
     author: 'ET AI',
     blurb: 'A picture book for Ages 5–7. The same child, in the same yellow raincoat, on every page.',
-    cover: { from: '#F4C95D', to: '#1E6A83', accent: '#F7F1E1', image: proceduralArt('illustrated-kids', 'yellow window cover', 0) },
+    cover: { from: '#1E6A83', to: '#2786A4', accent: '#E9F7FA', image: proceduralArt('illustrated-kids', 'yellow window cover', 0) },
     category: 'childrens_stories',
     form: 'fiction',
     genre: "Children's Stories",
@@ -470,7 +475,7 @@ export const BOOKS: Book[] = [
     title: 'The Monsoon Market',
     author: 'ET AI',
     blurb: 'A market that opens only when the wind turns. Still a draft.',
-    cover: { from: '#3D3A55', to: '#232033', accent: '#E7C27D' },
+    cover: { from: '#1E6A83', to: '#232033', accent: '#E9F7FA' },
     category: 'general',
     form: 'fiction',
     genre: 'Fantasy',

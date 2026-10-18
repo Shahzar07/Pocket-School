@@ -90,7 +90,7 @@ export function MarketHome() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-2xl text-[13px] leading-relaxed text-muted-foreground">{t('reads.market.sample')}</p>
         <div className="flex items-center gap-3">
-          <Link href="/reads" className="text-[13px] font-semibold text-primary">{t('reads.market.reads')}</Link>
+          <Link href="/reads" className="text-[13px] font-semibold text-[var(--ps-cyan-text)]">{t('reads.market.reads')}</Link>
           <ProfileSwitch profile={profile} onChoose={choose} label={t('reads.profile.switch')} />
         </div>
       </div>

@@ -1,10 +1,11 @@
 import { ADDONS, TIERS } from '@/lib/entitlements';
+import { readsPlanItem } from '@/lib/payments/reads';
 import { BOOKS } from '@/lib/reads/seed';
 import {
+  isReadsPlan,
   quoteAddon,
   quoteCourse,
   quotePlan,
-  readsPriceUsd,
   seedPricing,
   type PricingConfig,
 } from '@/lib/pricing';
@@ -52,11 +53,6 @@ export interface CheckoutQuote {
   recurring: 'month' | 'year' | null;
 }
 
-const READS_PLANS = [
-  { id: 'reads', name: 'Poket Reads', usd: 9 },
-  { id: 'reads-family', name: 'Poket Reads Family', usd: 15 },
-] as const;
-
 export function isCheckoutKind(value: string): value is CheckoutKind {
   return (CHECKOUT_KINDS as readonly string[]).includes(value);
 }
@@ -79,12 +75,10 @@ export function quoteCheckout(
     return finish(money.amount, money.usd, money.currency, book.title, 'payment', false, requested, myr);
   }
 
-  if (request.kind === 'reads' || (request.kind === 'plan' && READS_PLANS.some(plan => plan.id === request.id))) {
-    const plan = READS_PLANS.find(item => item.id === request.id);
-    const usd = readsPriceUsd(config, request.id);
-    if (!plan || usd == null) return null;
-    const amount = interval === 'annual' ? usd * 10 : usd;
-    return finish(amount, amount, 'USD', plan.name, 'subscription', interval === 'annual', requested, false);
+  if (request.kind === 'reads' || (request.kind === 'plan' && isReadsPlan(request.id))) {
+    const item = readsPlanItem(request.id, interval === 'annual' ? 'year' : 'month', config);
+    if (!item) return null;
+    return finish(item.unitAmount, item.unitAmount, 'USD', item.title, 'subscription', interval === 'annual', requested, false);
   }
 
   if (request.kind === 'plan') {

@@ -45,15 +45,15 @@ IGCSE & A-Level stays at 800. That plan already covers about eight full lessons.
 ### What the code does today
 
 - A single book is content type `BOOK` with minimum tier **0**. Opening a book is not gated by a paid school plan.
-- The shelf still sells a subscription: **Poket Reads at $9 a month** (`plan:reads`) and **Poket Reads Family at $15 a month** (`plan:reads-family`). A year is ten times the monthly price.
-- Individual books stay for sale (for example The Harbour Light at $5 / MYR 24). A Firestore book document can override those shelf prices.
+- The shelf still sells a subscription: **Poket Reads at $4.99 a month** (`plan:reads`, $49.99 a year) and **Poket Reads Family at $7.99 a month** (`plan:reads-family`, $79.99 a year).
+- Individual books stay for sale. The default is $1.99 (The Harbour Light uses that default). A Firestore book document can override the shelf price.
 
 So books are already reachable without a school plan, but the Reads library subscription is a separate product. A Primary subscriber does not automatically receive `plan:reads`.
 
 ### Recommendation
 
 1. **Paid school plans include Reads.** Tier 1 and above should grant `plan:reads`. Tier 5 (institution) and the family-shaped plans should grant `plan:reads-family` where the seat is a household. Do not grant Reads on the free preview tier.
-2. **Keep the a-la-carte plans.** Someone who does not want Primary, IGCSE, or Professional can still buy Poket Reads at $9 or Reads Family at $15. That is the right product for a reader who is not taking a course.
+2. **Keep the a-la-carte plans.** Someone who does not want Primary, IGCSE, or Professional can still buy Poket Reads at $4.99 or Reads Family at $7.99. That is the right product for a reader who is not taking a course.
 3. **Keep selling single books.** A person with no subscription can buy one title. A Reads subscriber should not be charged again for a title that is inside the library; a title marked as a separate purchase stays paid.
 4. Make the change in the entitlement check that grants `plan:reads` from tier ≥ 1, and on the pricing page copy. Leave `READS_PLANS` prices where they are until that copy ships with it.
 

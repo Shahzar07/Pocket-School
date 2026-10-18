@@ -18,6 +18,8 @@ import { BOOKS } from '@/lib/reads/seed';
 import { publishIssues, screenCoverAge, type CoverBrief, type CoverFont, type CoverPlacement } from '@/lib/reads/cover';
 import { bookEpub, bookPdf, chapterPlain } from '@/lib/reads/book-export';
 import { blankCraftBook } from '@/lib/reads/creator';
+import { storedBookPriceRM } from '@/lib/platform/pricing';
+import { snapToStorePricePoint } from '@/lib/pricing';
 import { CreatorPanel } from '@/components/reads/creator-panel';
 import {
   AGE_BANDS, ageBand, blankChildrensStory, fallbackStory, isPictureBook, storyChapters, storyPublishIssues, storyShape, withPageIllustration, wordsOf,
@@ -52,6 +54,7 @@ export function StudioView() {
   const [chapterId, setChapterId] = useState('mm-1');
   const [dragFrom, setDragFrom] = useState<number | null>(null);
   const [replaceImport, setReplaceImport] = useState(false);
+  const [priceDraft, setPriceDraft] = useState<string | null>(null);
   const [revisions, setRevisions] = useState<ContentRevision<Book>[]>([]);
   const book = books.find(item => item.id === id) ?? books[0];
   const chapter = book.chapters.find(item => item.id === chapterId) ?? book.chapters[0];
@@ -63,6 +66,10 @@ export function StudioView() {
     const saved = readAutosave<Book[]>(AUTOSAVE_KEY);
     if (saved && saved.length > 0) setBooks(saved);
   }, []);
+
+  useEffect(() => {
+    setPriceDraft(null);
+  }, [book.id]);
 
   useEffect(() => {
     if (!savedAt) return;
@@ -415,10 +422,26 @@ export function StudioView() {
               </label>
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="text-sm font-semibold">{t('reads.studio.price')}
-                  <input type="number" value={book.priceUsd} onChange={e => {
-                    const priceUsd = Number(e.target.value);
-                    update({ priceUsd, priceRM: Math.round(priceUsd * 4.7) });
-                  }} className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal" />
+                  <input
+                    type="number"
+                    min={0}
+                    step="any"
+                    inputMode="decimal"
+                    value={priceDraft ?? book.priceUsd}
+                    onFocus={() => setPriceDraft(String(book.priceUsd))}
+                    onChange={event => setPriceDraft(event.target.value)}
+                    onBlur={() => {
+                      const typed = priceDraft?.trim() ?? '';
+                      setPriceDraft(null);
+                      if (typed === '') return;
+                      const raw = Number(typed);
+                      if (!Number.isFinite(raw) || raw === book.priceUsd) return;
+                      const priceUsd = snapToStorePricePoint(raw);
+                      update({ priceUsd, priceRM: storedBookPriceRM(priceUsd) });
+                    }}
+                    className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal"
+                  />
+                  <span className="mt-1 block font-normal text-muted-foreground">{t('reads.studio.priceHint')}</span>
                 </label>
                 <label className="text-sm font-semibold">{t('reads.studio.tier')}
                   <input type="number" min={0} max={6} value={book.minTier} onChange={e => update({ minTier: Number(e.target.value) as Book['minTier'] })} className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal" />
@@ -439,9 +462,9 @@ export function StudioView() {
                 <button type="button" onClick={() => downloadBook(book, 'pdf')} className="h-10 rounded-full border border-border px-4 text-sm font-semibold">Download PDF</button>
                 <button type="button" onClick={() => downloadBook(book, 'epub')} className="h-10 rounded-full border border-border px-4 text-sm font-semibold">Download EPUB</button>
                 {isPictureBook(book) ? (
-                  <button type="button" onClick={() => void writeStory()} className="h-10 rounded-full bg-secondary px-4 text-sm font-bold text-secondary-foreground">Write story</button>
+                  <button type="button" onClick={() => void writeStory()} className="h-10 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-4 text-sm font-bold text-[var(--ps-cyan-ink)]">Write story</button>
                 ) : (
-                  <button type="button" onClick={() => void generate()} className="h-10 rounded-full bg-secondary px-4 text-sm font-bold text-secondary-foreground">{t('reads.studio.generate')}</button>
+                  <button type="button" onClick={() => void generate()} className="h-10 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-4 text-sm font-bold text-[var(--ps-cyan-ink)]">{t('reads.studio.generate')}</button>
                 )}
                 {book.status === 'draft' && <button type="button" onClick={() => setStatus('review')} className="h-10 rounded-full bg-foreground px-4 text-sm font-bold text-background">{t('reads.studio.toReview')}</button>}
                 {book.status === 'review' && <button type="button" onClick={() => setStatus('published')} className="h-10 rounded-full bg-foreground px-4 text-sm font-bold text-background">{t('reads.studio.publish')}</button>}
@@ -461,7 +484,7 @@ export function StudioView() {
                       {version.status !== 'approved' && (
                         <button
                           type="button"
-                          className="h-9 rounded-full bg-secondary px-3 text-[12px] font-bold"
+                          className="h-9 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-3 text-[12px] font-bold text-[var(--ps-cyan-ink)]"
                           onClick={() => update({
                             languageVersions: (book.languageVersions ?? []).map(v => v.language === version.language ? { ...v, status: 'approved' } : v),
                           })}
@@ -571,7 +594,7 @@ export function StudioView() {
                 <div className="rounded-2xl border border-border p-3">
                   <p className="text-sm font-semibold">One illustration per page</p>
                   <p className="mt-1 text-sm text-muted-foreground">ET AI keeps the same child, clothes, and colours. The style stays with this book. Without an image key, each page is drawn here and costs nothing.</p>
-                  <button type="button" className="mt-3 h-10 rounded-full bg-secondary px-4 text-sm font-bold text-secondary-foreground" onClick={() => void illustratePages()}>
+                  <button type="button" className="mt-3 h-10 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-4 text-sm font-bold text-[var(--ps-cyan-ink)]" onClick={() => void illustratePages()}>
                     Illustrate every page
                   </button>
                 </div>
@@ -702,7 +725,7 @@ export function StudioView() {
                   {t('reads.studio.ageCheck')}
                 </button>
                 {book.coverBrief?.ageNote && (
-                  <p className={`text-sm ${book.coverBrief.ageOk ? 'text-emerald-800' : 'text-red-700'}`}>{book.coverBrief.ageNote}</p>
+                  <p className={`text-sm ${book.coverBrief.ageOk ? 'text-[var(--ps-cyan-text)]' : 'text-red-700'}`}>{book.coverBrief.ageNote}</p>
                 )}
               </div>
               <p className="text-xs text-muted-foreground">The author line is always ET AI. The picture itself has no lettering; the title is drawn on top.</p>
@@ -758,13 +781,13 @@ function ReadAloud({ text }: { text: string }) {
     <div className="rounded-2xl border border-border p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-semibold">Read this chapter aloud</p>
-        <button type="button" onClick={play} className="h-9 rounded-full bg-secondary px-3 text-sm font-bold text-secondary-foreground">{on ? 'Stop' : 'Play'}</button>
+        <button type="button" onClick={play} className="h-9 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-3 text-sm font-bold text-[var(--ps-cyan-ink)]">{on ? 'Stop' : 'Play'}</button>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">This browser’s voice. No speech key, and nothing is charged.</p>
       {words.length > 0 && (
         <p className="mt-3 text-sm leading-relaxed">
           {words.map((token, index) => (
-            <span key={`${index}-${token}`} className={on && index === at ? 'rounded bg-[#E7C27D] px-0.5' : ''}>{token} </span>
+            <span key={`${index}-${token}`} className={on && index === at ? 'rounded bg-[var(--ps-cyan-soft)] px-0.5 text-[var(--ps-cyan-text)]' : ''}>{token} </span>
           ))}
         </p>
       )}
