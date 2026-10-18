@@ -24,6 +24,10 @@ export default function PartnerPortalPage() {
   if (error) return <p className="text-sm text-[#203337]">{error}</p>;
 
   return (
+    <div className="space-y-4">
+      <p className="text-sm text-[#203337]">
+        Update your name, logo, offers, and contact on the <a className="font-semibold text-[#1E6A83]" href="/dashboard/admin/partners">merchant record</a>. Approval stays with Poket School.
+      </p>
     <PartnerDesk
       name={name}
       status={status}
@@ -32,6 +36,7 @@ export default function PartnerPortalPage() {
         await authedFetch('/api/partners', { method: 'POST', body: JSON.stringify({ action: 'offer', ...input }) });
         await load();
       }}
-    />
+      />
+    </div>
   );
 }

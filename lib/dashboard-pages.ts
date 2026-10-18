@@ -650,7 +650,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/admin/institutions',
     title: 'Institutions',
-    purpose: 'Schools and organisations on the platform.',
+    purpose: 'Schools and organisations on the platform. A super admin adds one through the server. Without the Firebase Admin key the form says the tool is coming soon.',
     audience: ['admin'],
     overlaps: 'Access institution-admin assignment.',
     decision: 'Keep. Assigning an institution admin is reachable from Access and from an institution.',
@@ -677,7 +677,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/admin/allocations',
     title: 'Allocations',
-    purpose: 'Grant a tier, a course, or a coupon to a person.',
+    purpose: 'Seat allocations for a course or plan, plus a tier, course, or coupon for one person.',
     audience: ['admin'],
     overlaps: 'Access and Users.',
     decision: 'Keep and make the three grants easier to find. This is the only place coupons are created.',
@@ -956,7 +956,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/admin/partners',
     title: 'Partner perks',
-    purpose: 'Approve merchant applications and offers. Blocked categories are refused for under-18s.',
+    purpose: 'Add and update merchants, then approve, suspend, or archive them. A partner edits only their own record.',
     audience: ['admin'],
     overlaps: 'Partner portal.',
     decision: 'Keep. Offers stay in review until an admin approves them.',
@@ -1028,7 +1028,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/admin/certificates',
     title: 'Certificates',
-    purpose: 'Design the Open Badge and issue it to a school list. Each badge is a signed credential with a public verify page.',
+    purpose: 'Design certificate templates with a live preview and PDF export. A super admin sets the default. An institution admin saves their override.',
     audience: ['admin'],
     overlaps: 'Module certificates and the school issuance desk.',
     decision: 'Keep as the platform badge template and bulk issue desk.',
@@ -1342,8 +1342,8 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   },
   {
     path: '/dashboard/admin/help',
-    title: 'Help articles',
-    purpose: 'Published help articles are what the help centre and ET AI answer from.',
+    title: 'Admin help',
+    purpose: 'Where each admin tool lives, what each role can do, which keys still say coming soon, and the help articles ET AI answers from.',
     audience: ['admin'],
     overlaps: 'Help centre.',
     decision: 'Keep as the only editor for help articles.',

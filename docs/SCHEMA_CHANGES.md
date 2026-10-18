@@ -3251,3 +3251,19 @@ Merchant approval still uses `decidePartner`, which can set `users.role` to `par
 
 Rules for `admin_desk`, `push_broadcasts`, and `helpline_config` are in `firestore.rules`. They are not deployed.
 
+## Admin tools batch
+
+Adding an institution from `/dashboard/admin/institutions` is `POST /api/admin/institutions`. The browser no longer writes `institutions` itself. Firestore only allows `role == 'admin'` to create that document, so a super admin whose token is not that role was denied and the dialog still closed. The route uses the Admin SDK. Without `FIREBASE_SERVICE_ACCOUNT` or `GOOGLE_APPLICATION_CREDENTIALS` it returns "Adding an institution needs the Firebase Admin key. This admin tool is coming soon." and writes nothing. The dialog stays open.
+
+`institutions/{id}` may also store `slug`, `group`, `campuses`, `website`, `levels`, `city`, and `test`. `test: true` marks a fixture. Rochford's International School is slug `rochfords-international-school`: Rochford's Education Group, Ipoh, Perak, Malaysia, Falim and Ipoh Garden, `https://www.edquest.edu.my`, primary to secondary IGCSE. `scripts/seed-rochford.ts` creates it once the key exists. The institutions screen can create the same fixture.
+
+`seat_allocations/{id}` is `{ kind, courseId, plan, targetType, targetId, targetLabel, seats, startsOn, endsOn, institutionId, status, createdBy, createdAt }`. `kind` is `course` or `plan`. `targetType` is `institution`, `class`, or `user`. `status` is `active`. Clients cannot write it. `GET` and `POST /api/admin/allocations` list and create rows. A super admin sees every row. An admin, institution admin, or teacher with an institution sees that institution. Only a super admin, or an admin with an institution, can create one.
+
+`certificate_designs/{id}` is the visual template: `name`, `title`, `palette` (`blue` or `cyan`), `border` (`none`, `line`, `double`, `corner`), visibility flags, up to three `signatories` (`name`, `title`, `imageUrl`), `logoUrl`, `coBrandName`, `coBrandLogoUrl`, `institutionId`, and `isDefault`. An empty `institutionId` is a platform template. One platform template is the default. An institution override uses id `institution-{institutionId}` and cannot be the platform default. Clients cannot write the collection. The Open Badge document `certificate_templates/default` is unchanged.
+
+`partners/{id}` may also store `offersNote` and `ageMin`. `status` adds `suspended` and `archived` beside `pending`, `approved`, and `rejected`. Approve still sets `partner_merchant` through `decidePartner`. Suspend and archive set `verified` false and do not remove the role.
+
+Poket SafeLine banner counts are not stored. `GET /api/safety/banner` reads open high-priority `hotline_tickets` (`pending`, `in_progress`, `kiv`) and open `emergency_alerts` (`active`, `updated`). A super admin sees all of them. An admin, institution admin, or teacher sees their institution, or their region or country when they have no institution. A parent sees tickets they opened. Partner merchants see no banner. The client polls every 30 seconds. Without the Firebase Admin key the banner stays hidden.
+
+Rules for `certificate_designs` and `seat_allocations` are in `firestore.rules`. They are not deployed.
+

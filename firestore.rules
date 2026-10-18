@@ -2762,6 +2762,18 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Visual certificate designs. The server writes them with the Admin SDK.
+    match /certificate_designs/{designId} {
+      allow read: if isAdmin() || isInstitutionAdmin();
+      allow create, update, delete: if false;
+    }
+
+    // Seat allocations. Clients cannot write them.
+    match /seat_allocations/{allocationId} {
+      allow read: if isAdmin() || isInstitutionAdmin();
+      allow create, update, delete: if false;
+    }
+
     // Machine translations of lessons, quizzes, books, essay feedback, and
     // teacher replies. The server writes them with the Admin SDK. Clients
     // may read one document and cannot list or edit the cache.

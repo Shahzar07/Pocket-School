@@ -27,6 +27,7 @@ import { DashboardHome } from '@/components/dashboard';
 import dynamic from 'next/dynamic';
 import { SeeMore } from '@/components/shell/see-more';
 import { friendlyError } from '@/lib/design/system';
+import { SafeLineBanner } from '@/components/safety/safeline-banner';
 import { lessonVisibleToStudent } from '@/lib/course-review';
 
 const LearningCharts = dynamic(
@@ -266,6 +267,7 @@ export default function ParentDashboard() {
 
   return (
     <DashPage>
+      <SafeLineBanner />
       <DashboardHome
         role="parent"
         name={parentName}

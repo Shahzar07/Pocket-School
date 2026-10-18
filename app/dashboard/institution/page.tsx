@@ -24,6 +24,7 @@ import { friendlyError } from '@/lib/design/system';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ClassBoardControls } from '@/components/gamification/class-boards';
+import { SafeLineBanner } from '@/components/safety/safeline-banner';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -136,6 +137,7 @@ export default function InstitutionAcademyPage() {
 
   return (
     <DashPage className="max-w-3xl">
+      <SafeLineBanner />
       <DashboardHome
         role="institution"
         name={institution?.branding?.displayName || institution?.name || profile?.name || 'Your academy'}

@@ -6,6 +6,7 @@ import { authedFetch } from '@/lib/api-client';
 import { BROADCAST_CATEGORIES, DESK_QUEUES } from '@/lib/admin/desk';
 import { DEFAULT_FLAGS, FEATURE_FLAG_LABELS, FEATURE_FLAGS, type FeatureFlag } from '@/lib/feature-flags';
 import { Sparkline, StatCard, TileLink } from '@/components/dashboard';
+import { SafeLineBanner } from '@/components/safety/safeline-banner';
 import { useAuthSTORE } from '@/hooks/use-auth';
 
 type Row = { id: string; title: string; detail: string };
@@ -95,6 +96,8 @@ export function AdminDesk({ view }: { view: 'home' | 'queues' | 'platform' | 'pu
         </p>
         {desk?.identityHidden ? <p className="mt-2 text-sm">Safeguarding names stay hidden unless you are the safeguarding lead.</p> : null}
       </header>
+
+      {view === 'home' ? <SafeLineBanner /> : null}
 
       {desk?.comingSoon || note === 'This admin tool is coming soon.' ? (
         <p className="rounded-[18px] bg-card px-4 py-3 text-sm">This admin tool is coming soon.</p>

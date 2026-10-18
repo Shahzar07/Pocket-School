@@ -3612,3 +3612,69 @@ components/admin/desk.tsx	Type SEND to confirm
 components/admin/desk.tsx	Why this change
 components/admin/desk.tsx	Why this note
 components/admin/desk.tsx	https://
+
+app/dashboard/admin/certificates/page.tsx	Loading templates.
+app/dashboard/admin/certificates/page.tsx	Partners do not design certificates.
+app/dashboard/admin/certificates/page.tsx	Teachers issue class work from their classroom. Certificate templates stay with the institution admin.
+app/dashboard/admin/help/page.tsx	Admin help
+app/dashboard/admin/help/page.tsx	Published articles are what the help centre and ET AI answer from. OPENROUTER_API_KEY is required for live replies.
+app/dashboard/admin/partners/page.tsx	A partner login can edit only their own record. They cannot approve themselves.
+app/dashboard/admin/partners/page.tsx	Add partner
+app/dashboard/admin/partners/page.tsx	Add the merchant with a name, logo, category, offers, age limit, and contact.
+app/dashboard/admin/partners/page.tsx	Age restriction
+app/dashboard/admin/partners/page.tsx	Approve them when the offer is safe. Under-18 offers cannot use alcohol, vape, tobacco, gambling, or adult categories.
+app/dashboard/admin/partners/page.tsx	How this desk works
+app/dashboard/admin/partners/page.tsx	No merchants yet. Add one to start the review.
+app/dashboard/admin/partners/page.tsx	No offers yet.
+app/dashboard/admin/partners/page.tsx	Partner category
+app/dashboard/admin/partners/page.tsx	Partner contact
+app/dashboard/admin/partners/page.tsx	Partner logo
+app/dashboard/admin/partners/page.tsx	Partner name
+app/dashboard/admin/partners/page.tsx	Partner offers
+app/dashboard/admin/partners/page.tsx	Partner status
+app/dashboard/admin/partners/page.tsx	Save partner
+app/dashboard/admin/partners/page.tsx	Suspend a live merchant to stop new redemptions, or archive them when the partnership ends.
+app/dashboard/admin/partners/page.tsx	https://
+app/dashboard/partner/page.tsx	Update your name, logo, offers, and contact on the
+app/dashboard/partner/page.tsx	merchant record
+app/preview/admin-tools/page.tsx	Admin desk
+app/preview/admin-tools/page.tsx	Open queues
+app/preview/admin-tools/page.tsx	Review accounts
+app/preview/admin-tools/page.tsx	Safety Desk
+app/preview/admin-tools/page.tsx	Super admin. The whole platform.
+components/admin/admin-help.tsx	Keys that still say coming soon
+components/admin/admin-help.tsx	Sign in with an admin role to see the full desk.
+components/admin/admin-help.tsx	Where each tool lives
+components/admin/admin-help.tsx	Your login
+components/admin/seat-desk.tsx	Allocation kind
+components/admin/seat-desk.tsx	Allocation target
+components/admin/seat-desk.tsx	An allocation gives a course or a plan to an institution, a class, or a user, for a number of seats and a date range.
+components/admin/seat-desk.tsx	Course id
+components/admin/seat-desk.tsx	End date
+components/admin/seat-desk.tsx	Institution id
+components/admin/seat-desk.tsx	No allocations yet
+components/admin/seat-desk.tsx	Recipient id
+components/admin/seat-desk.tsx	Recipient name
+components/admin/seat-desk.tsx	Save allocation
+components/admin/seat-desk.tsx	Seat allocations
+components/admin/seat-desk.tsx	Start date
+components/admin/seat-desk.tsx	When a school, class, or person is given seats, the row appears here. Course grants for one email stay in the people search below.
+components/certificates/designer.tsx	Add signatory
+components/certificates/designer.tsx	Border style
+components/certificates/designer.tsx	Brand palette
+components/certificates/designer.tsx	Certificate preview
+components/certificates/designer.tsx	Certificate title
+components/certificates/designer.tsx	Co-brand logo
+components/certificates/designer.tsx	Co-brand name
+components/certificates/designer.tsx	Download PDF
+components/certificates/designer.tsx	Institution logo
+components/certificates/designer.tsx	New template
+components/certificates/designer.tsx	Poket School
+components/certificates/designer.tsx	Template name
+components/certificates/designer.tsx	The PDF carries the wording, signatory names, and the verify link. Logos and signature images stay on this preview.
+components/certificates/designer.tsx	This override belongs to your institution. The platform default stays with a super admin.
+components/certificates/designer.tsx	https://
+components/institutions/directory.tsx	Falim, Ipoh Garden
+components/institutions/directory.tsx	Primary to secondary IGCSE
+components/institutions/directory.tsx	https://www.edquest.edu.my
+components/safety/safeline-banner.tsx	Poket SafeLine

@@ -12,6 +12,7 @@ import {
   type InstitutionPlan, type InstitutionStatus, type InstitutionType, type LeadStatus,
 } from '@/lib/enterprise';
 import type { DemoLead } from '@/lib/institution-store';
+import { ROCHFORD_SCHOOL } from '@/lib/institutions/rochford';
 
 const LEAD_COLUMNS: LeadStatus[] = ['new', 'contacted', 'qualified', 'demo', 'won', 'lost'];
 
@@ -43,7 +44,12 @@ export function InstitutionDirectory({
   locale?: string;
   busy?: boolean;
   onOpen: (id: string) => void;
-  onCreate: (input: { name: string; profile: ReturnType<typeof blankProfile> }) => Promise<void>;
+  onCreate: (input: {
+    name: string;
+    profile: ReturnType<typeof blankProfile>;
+    details?: { group: string; campuses: string; website: string; levels: string; city: string; test: boolean };
+    fixture?: 'rochford';
+  }) => Promise<boolean | void>;
   onBulk: (ids: string[], action: 'approve' | 'suspend' | 'restore' | 'delete') => Promise<void>;
   onLead: (id: string, status: LeadStatus) => Promise<void>;
   onExport?: () => void;
@@ -53,6 +59,12 @@ export function InstitutionDirectory({
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
   const [profile, setProfile] = useState(blankProfile());
+  const [group, setGroup] = useState('');
+  const [campuses, setCampuses] = useState('');
+  const [website, setWebsite] = useState('');
+  const [levels, setLevels] = useState('');
+  const [city, setCity] = useState('');
+  const [formError, setFormError] = useState('');
   const visible = useMemo(() => filterDirectory(rows, filter), [rows, filter]);
   const allChecked = visible.length > 0 && visible.every((row) => selected.includes(row.id));
 
@@ -73,10 +85,28 @@ export function InstitutionDirectory({
           </p>
         </div>
         {superAdmin && (
-          <Button className="rounded-full" onClick={() => setCreating(true)}>
-            <Plus className="w-4 h-4" /> Add institution
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button className="rounded-full" onClick={() => { setFormError(''); setCreating(true); }}>
+              <Plus className="w-4 h-4" /> Add institution
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-full"
+              disabled={busy}
+              onClick={() => {
+                void onCreate({ name: ROCHFORD_SCHOOL.name, profile: blankProfile({ type: 'school', country: 'MY', state: 'Perak', plan: 'team' }), fixture: 'rochford' }).then((created) => {
+                  if (created === false) setFormError('The test school was not created.');
+                }).catch((error: unknown) => {
+                  setFormError(error instanceof Error ? error.message : 'The test school was not created.');
+                });
+              }}
+            >
+              Add Rochford test school
+            </Button>
+          </div>
         )}
+        {formError && !creating ? <p className="text-sm text-[#203337]">{formError}</p> : null}
       </header>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -247,10 +277,26 @@ export function InstitutionDirectory({
             className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-3xl border border-border bg-card p-6 space-y-4"
             onSubmit={(event) => {
               event.preventDefault();
-              void onCreate({ name, profile }).then(() => {
+              setFormError('');
+              void onCreate({
+                name,
+                profile,
+                details: { group, campuses, website, levels, city, test: false },
+              }).then((created) => {
+                if (created === false) {
+                  setFormError('The institution was not created.');
+                  return;
+                }
                 setCreating(false);
                 setName('');
                 setProfile(blankProfile());
+                setGroup('');
+                setCampuses('');
+                setWebsite('');
+                setLevels('');
+                setCity('');
+              }).catch((error: unknown) => {
+                setFormError(error instanceof Error ? error.message : 'The institution was not created.');
               });
             }}
           >
@@ -259,6 +305,48 @@ export function InstitutionDirectory({
               Name
               <Input required value={name} onChange={(event) => setName(event.target.value)} className="mt-1 h-11 rounded-xl" />
             </label>
+            <label className="block text-sm">
+              Group
+              <Input value={group} onChange={(event) => setGroup(event.target.value)} aria-label="Group" className="mt-1 h-11 rounded-xl" />
+            </label>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <label className="block text-sm">
+                City
+                <Input value={city} onChange={(event) => setCity(event.target.value)} aria-label="City" className="mt-1 h-11 rounded-xl" />
+              </label>
+              <label className="block text-sm">
+                State
+                <Input value={profile.state} onChange={(event) => setProfile({ ...profile, state: event.target.value })} aria-label="State" className="mt-1 h-11 rounded-xl" />
+              </label>
+            </div>
+            <label className="block text-sm">
+              Campuses
+              <Input value={campuses} onChange={(event) => setCampuses(event.target.value)} aria-label="Campuses" placeholder="Falim, Ipoh Garden" className="mt-1 h-11 rounded-xl" />
+            </label>
+            <label className="block text-sm">
+              Website
+              <Input value={website} onChange={(event) => setWebsite(event.target.value)} aria-label="Website" placeholder="https://www.edquest.edu.my" className="mt-1 h-11 rounded-xl" />
+            </label>
+            <label className="block text-sm">
+              Levels
+              <Input value={levels} onChange={(event) => setLevels(event.target.value)} aria-label="Levels" placeholder="Primary to secondary IGCSE" className="mt-1 h-11 rounded-xl" />
+            </label>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-full"
+              onClick={() => {
+                setName(ROCHFORD_SCHOOL.name);
+                setGroup(ROCHFORD_SCHOOL.group);
+                setCity(ROCHFORD_SCHOOL.city);
+                setCampuses(ROCHFORD_SCHOOL.campuses.join(', '));
+                setWebsite(ROCHFORD_SCHOOL.website);
+                setLevels(ROCHFORD_SCHOOL.levels);
+                setProfile(blankProfile({ type: 'school', country: 'MY', state: ROCHFORD_SCHOOL.state, plan: 'team' }));
+              }}
+            >
+              Fill Rochford test school
+            </Button>
             <div className="grid sm:grid-cols-2 gap-3">
               <FilterSelect label="Type" value={profile.type} options={[...INSTITUTION_TYPES]} onChange={(type) => setProfile({ ...profile, type: type as InstitutionType })} />
               <FilterSelect label="Plan" value={profile.plan} options={[...INSTITUTION_PLANS]} onChange={(plan) => setProfile({ ...profile, plan: plan as InstitutionPlan })} />
@@ -268,6 +356,7 @@ export function InstitutionDirectory({
               Seats
               <Input type="number" min={1} value={profile.seatCount || ''} onChange={(event) => setProfile({ ...profile, seatCount: Number(event.target.value) })} className="mt-1 h-11 rounded-xl" />
             </label>
+            {formError ? <p className="text-sm text-[#203337]">{formError}</p> : null}
             <div className="flex gap-2">
               <Button type="button" variant="outline" className="flex-1 rounded-full" onClick={() => setCreating(false)}>Cancel</Button>
               <Button type="submit" className="flex-1 rounded-full" disabled={busy}>Create</Button>

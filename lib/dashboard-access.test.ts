@@ -46,6 +46,13 @@ describe('dashboard role guard', () => {
     assert.equal(decideDashboardAccess('/dashboard/admin/courses', school).allowed, false);
     assert.equal(decideDashboardAccess('/dashboard/admin/institutions/school-a', school).allowed, true);
     assert.equal(decideDashboardAccess('/dashboard/institution/certificates', school).allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/admin/allocations', school).allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/admin/allocations', teacher).allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/admin/certificates', school).allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/admin/partners', { role: 'partner_merchant' }).allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/admin/partners', teacher).allowed, false);
+    assert.equal(decideDashboardAccess('/dashboard/admin/help', school).allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/admin/help', parent, 'parent').allowed, false);
   });
 
   it('opens curriculum only for an admin or a teacher with the CMS add-on', () => {

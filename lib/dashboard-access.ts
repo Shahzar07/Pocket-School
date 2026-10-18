@@ -107,6 +107,20 @@ export function decideDashboardAccess(
   if (matches(path, '/dashboard/admin/institutions')) {
     return isSuperAdmin(actor) || isInstitutionAdmin(actor) ? { allowed: true } : deny(actor, mode);
   }
+  if (matches(path, '/dashboard/admin/allocations')) {
+    const teaching = hasAccountRole(actor, 'teacher');
+    return isSuperAdmin(actor) || isInstitutionAdmin(actor) || teaching ? { allowed: true } : deny(actor, mode);
+  }
+  if (matches(path, '/dashboard/admin/certificates')) {
+    return isSuperAdmin(actor) || isInstitutionAdmin(actor) ? { allowed: true } : deny(actor, mode);
+  }
+  if (matches(path, '/dashboard/admin/partners')) {
+    return isSuperAdmin(actor) || isPartnerMerchant(actor) ? { allowed: true } : deny(actor, mode);
+  }
+  if (matches(path, '/dashboard/admin/help')) {
+    const teaching = hasAccountRole(actor, 'teacher');
+    return isSuperAdmin(actor) || isInstitutionAdmin(actor) || teaching || isPartnerMerchant(actor) ? { allowed: true } : deny(actor, mode);
+  }
   if (matches(path, '/dashboard/admin/curriculum')) {
     const staffCms = (hasAccountRole(actor, 'teacher') || isInstitutionAdmin(actor)) && canOpenCms(actor);
     return isSuperAdmin(actor) || staffCms ? { allowed: true } : deny(actor, mode);
