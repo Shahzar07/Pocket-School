@@ -14,11 +14,8 @@ import { usePricing } from '@/hooks/use-pricing';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { isAdmin } from '@/lib/roles';
 import { useHomeMotion } from '@/hooks/use-home-motion';
-import dynamic from 'next/dynamic';
-import { MemberCardFace } from '@/components/cards/member-card-face';
-import { MEMBER_CARD_TITLE, type PublicCard } from '@/lib/cards/model';
+import { DemoLeadForm } from '@/components/demo-lead-form';
 import { SchoolStrip } from '@/components/landing/school-strip';
-import { LanguageHome } from '@/components/landing/language-home';
 import s from '@/app/home.module.css';
 
 const DEMO = 'mailto:institutions@poketschool.ai';
@@ -60,45 +57,16 @@ const NEW_FEATURES = ['essay', 'live', 'reads', 'badges', 'transcripts', 'parent
 
 const SHOTS = [
   { id: 'analytics', src: '/landing/analytics.webp' },
+  { id: 'behaviour', src: '/landing/behaviour.webp' },
+  { id: 'integrity', src: '/landing/integrity.webp' },
   { id: 'tutors', src: '/landing/tutors.webp' },
   { id: 'exams', src: '/landing/exams.webp' },
+  { id: 'snap', src: '/landing/snap.webp' },
+  { id: 'store', src: '/landing/store.webp' },
+  { id: 'modes', src: '/landing/modes.webp' },
   { id: 'reads', src: '/landing/reads.webp' },
+  { id: 'payments', src: '/landing/payments.webp' },
 ] as const;
-
-/** The eight homepage illustrations. The attached files were not on disk, so each slot uses an existing site image. */
-const ILLUSTRATIONS = [
-  { id: 'hero-students-ai', src: '/landing/goals.webp', title: 'Students with ET AI', alt: 'Students planning a week with ET AI' },
-  { id: 'et-ai-tutor', src: '/landing/tutors.webp', title: 'An ET AI tutor', alt: 'An ET AI tutor in a lesson' },
-  { id: 'parents-family', src: '/landing/modes.webp', title: 'Families', alt: 'A family following a learner at home' },
-  { id: 'teachers-classroom', src: '/landing/analytics.webp', title: 'Teachers', alt: 'A teacher reading class progress' },
-  { id: 'safety-community', src: '/landing/behaviour.webp', title: 'Safety and community', alt: 'A school community and safety desk' },
-  { id: 'student-card', src: '/landing/payments.webp', title: 'Student card', alt: 'A digital student card' },
-  { id: 'network-career', src: '/landing/store.webp', title: 'Network and career', alt: 'Career events and the school network' },
-  { id: 'notes-study', src: '/landing/reads.webp', title: 'Notes and study', alt: 'Study notes and reading' },
-] as const;
-
-const SAMPLE_CARD: PublicCard = {
-  title: MEMBER_CARD_TITLE,
-  firstName: 'Amina',
-  levelName: 'IGCSE',
-  schoolName: null,
-  showPhoto: false,
-  avatarUrl: '',
-  badges: ['Algebra'],
-  streakDays: 4,
-  referralCode: 'AMINA2K7',
-  joinPath: '/signup?ref=AMINA2K7',
-  indexable: false,
-  visible: true,
-};
-
-const ShotGallery = dynamic(() => import('./shot-gallery').then((mod) => mod.ShotGallery), {
-  loading: () => <div className="h-40" aria-hidden />,
-});
-
-const DemoLeadForm = dynamic(() => import('@/components/demo-lead-form').then((mod) => mod.DemoLeadForm), {
-  loading: () => <div className="h-24" aria-hidden />,
-});
 
 const FAQ = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9'] as const;
 const AUDIENCES = ['students', 'parents', 'teachers', 'schools'] as const;
@@ -134,26 +102,6 @@ function Shot({
   caption?: string;
   onDark?: boolean;
 }) {
-  if (priority) {
-    return (
-      <figure className="overflow-hidden rounded-2xl border border-white/30 bg-card shadow-[var(--shadow-card)]">
-        <img
-          src={src}
-          alt={alt}
-          width={960}
-          height={600}
-          fetchPriority="high"
-          decoding="sync"
-          className="aspect-[16/10] w-full bg-muted object-cover object-top"
-        />
-        {caption ? (
-          <figcaption className={`px-3 py-2 text-xs leading-relaxed ${onDark ? 'bg-[#123844] text-white' : 'text-muted-foreground'}`}>
-            {caption}
-          </figcaption>
-        ) : null}
-      </figure>
-    );
-  }
   return (
     <figure className="overflow-hidden rounded-2xl border border-white/30 bg-card shadow-[var(--shadow-card)]">
       <div className="relative aspect-[16/10] bg-muted">
@@ -161,9 +109,9 @@ function Shot({
           src={src}
           alt={alt}
           fill
-          sizes="(min-width: 1024px) 46vw, 100vw"
+          sizes={priority ? '(min-width: 1024px) 48vw, 100vw' : '(min-width: 1024px) 46vw, 100vw'}
           className="object-cover object-top"
-          quality={50}
+          priority={priority}
         />
       </div>
       {caption ? (
@@ -252,46 +200,6 @@ export function LandingPage() {
       </section>
 
       <SchoolStrip />
-
-      <LanguageHome />
-
-      <section className="mx-auto max-w-6xl px-4 py-12" aria-label="Sample member card">
-        <MemberCardFace card={SAMPLE_CARD} sample />
-      </section>
-
-      <section className="mx-auto grid max-w-6xl items-center gap-8 px-4 py-12 lg:grid-cols-2" aria-labelledby="free-id-heading">
-        <Image src="/landing/payments.webp" alt="A free digital student card" width={640} height={420} sizes="(min-width: 1024px) 480px, 100vw" quality={50} className="h-auto w-full rounded-3xl" />
-        <div>
-          <p className="text-xs font-bold tracking-[0.18em] text-[#1E6A83]">FREE FOR EVERYONE</p>
-          <h2 id="free-id-heading" className="mt-2 font-heading text-4xl text-[#203337]">A free digital student ID</h2>
-          <p className="mt-3 text-base leading-7 text-[#203337]">Every learner can carry a Poket School card. The sample on this page shows the chip, the name, and the watermark. A real card is issued from the account, with nothing to pay.</p>
-          <Link className="mt-4 inline-flex h-11 items-center rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]" href="/dashboard/card">Open a sample card</Link>
-        </div>
-      </section>
-
-      <section className="bg-[#203337] text-white" aria-labelledby="safeline-heading">
-        <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 py-12 lg:grid-cols-2">
-          <div>
-            <p className="text-xs font-bold tracking-[0.18em] text-[#3FE0D0]">POKET SAFELINE</p>
-            <h2 id="safeline-heading" className="mt-2 font-heading text-4xl">A school safety line</h2>
-            <p className="mt-3 text-base leading-7 text-white/90">Students, parents, and staff can report a concern to the school safety desk. Poket SafeLine stays inside the school. Not an emergency service. In danger? Call 999.</p>
-            <Link className="mt-4 inline-flex h-11 items-center rounded-full border border-[#3FE0D0] px-4 text-sm font-semibold text-[#3FE0D0]" href="/preview/hotline">Read how SafeLine works</Link>
-          </div>
-          <Image src="/landing/behaviour.webp" alt="Poket SafeLine for a school community" width={640} height={420} sizes="(min-width: 1024px) 480px, 100vw" quality={50} className="h-auto w-full rounded-3xl" />
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-4 py-12" aria-labelledby="illustrations-heading">
-        <h2 id="illustrations-heading" className="font-heading text-4xl text-[#203337]">Eight pictures of the school</h2>
-        <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {ILLUSTRATIONS.map((item) => (
-            <li key={item.id} className="overflow-hidden rounded-3xl border border-[#E7EDED] bg-white">
-              <Image src={item.src} alt={item.alt} width={480} height={320} sizes="(min-width: 1024px) 240px, 50vw" quality={50} className="h-40 w-full object-cover" />
-              <p className="px-3 py-3 text-sm font-semibold text-[#203337]">{item.title}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
 
       <section className="border-b border-border bg-card" aria-label={t('landing.exam.label')}>
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between">
@@ -408,12 +316,6 @@ export function LandingPage() {
                 <span>{t(`landing.audiences.${audience}.${point}`)}</span>
               </li>
             ))}
-            {(audience === 'students' || audience === 'parents' || audience === 'schools') && (
-              <li className="flex gap-2 text-sm leading-relaxed md:col-span-3">
-                <CheckCircle2 className="mt-0.5 shrink-0 text-primary" size={18} aria-hidden />
-                <span>{t(`landing.audiences.${audience}.languageNote`)}</span>
-              </li>
-            )}
           </ul>
         </div>
       </section>
@@ -606,7 +508,13 @@ export function LandingPage() {
           <p className="text-sm font-semibold text-primary">{t('landing.shots.eyebrow')}</p>
           <h2 className="mt-2 text-[clamp(32px,4vw,48px)] font-medium leading-tight">{t('landing.shots.title')}</h2>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">{t('landing.shots.caption')}</p>
-          <ShotGallery shots={SHOTS.map((shot) => ({ ...shot, alt: t(`landing.shots.${shot.id}Alt`) }))} />
+          <ul className="mt-8 grid gap-4 md:grid-cols-2">
+            {SHOTS.map((shot) => (
+              <li key={shot.id}>
+                <Shot src={shot.src} alt={t(`landing.shots.${shot.id}Alt`)} />
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
