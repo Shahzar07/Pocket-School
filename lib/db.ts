@@ -2076,10 +2076,15 @@ export async function getSubmissionsForTeacher(teacherId: string): Promise<Submi
   const courses = await getTeacherCourses(teacherId);
   const results: Submission[] = [];
   for (const course of courses) {
-    const q = query(collection(db, 'submissions'), where('courseId', '==', course.id), orderBy('submittedAt', 'desc'), limit(20));
+    // where(courseId) + orderBy(submittedAt) needs a composite index that is
+    // not in firestore.indexes.json. Firestore rejected it, and the gradebook
+    // (and the teacher home) showed a load error. Sort in memory instead.
+    const q = query(collection(db, 'submissions'), where('courseId', '==', course.id), limit(50));
     const snap = await getDocs(q);
     snap.docs.forEach(d => results.push({ id: d.id, ...d.data() } as Submission));
   }
+  const millis = (row: Submission) => row.submittedAt?.toMillis?.() ?? 0;
+  results.sort((a, b) => millis(b) - millis(a));
   return results;
 }
 

@@ -3267,3 +3267,27 @@ Poket SafeLine banner counts are not stored. `GET /api/safety/banner` reads open
 
 Rules for `certificate_designs` and `seat_allocations` are in `firestore.rules`. They are not deployed.
 
+## Teacher class desk
+
+`daily_goals.source` stays `student`, `parent`, or `ai` so it matches `cursor/ai-teachers-content-language-02e8`. Assigned work uses a separate subcollection.
+
+`users/{studentUid}/goals/{goalId}` is `{ studentId, classId, title, source, assignedBy, assignedByName, due, status, topic }`. `source` is `teacher`, `institution`, `student`, `parent`, or `ai`. `status` is `not_started`, `in_progress`, `completed`, or `overdue`. A teacher may create and delete only when `source` is `teacher` and `assignedBy` is that teacher. A student may delete only their own `source: student` goal. An institution admin may delete `source: institution`. Students cannot delete teacher or institution goals.
+
+`school_classes/{classId}` is the shared class: `institutionId`, `name`, `subject`, `level`, `programme`, `term`, `campus`, `room`, `timetable`, `coTeachers`, `capacity`, `status` (`active` or `archived`), `joinCode`, `ownerTeacherId`, `ownerTeacherName`, `createdByRole`, `announcements`. `level` is a level name, not a year number. An empty `institutionId` is an independent teacher’s class.
+
+`school_enrolments/{id}` is `{ classId, studentId, studentName, status, joinMethod, under18, institutionMember, holdReason }`. `status` is `active` or `pending`. `joinMethod` is `roster`, `csv`, `invite`, `qr`, or `code`. An under-18 who is not an institution member stays `pending`.
+
+`school_assessments/{id}` is `{ classId, title, kind, scaleId, maxPoints, weight, category, dueAt, instructions, attachments, rubric, latePolicy, lessonLabel, status, studentIds }`. `kind` is `assignment`, `test`, `quiz`, `exam`, `coursework`, or `lesson_quiz`. `scaleId` is `igcse_9_1`, `astar_g`, `percent`, `points`, `pass_fail`, or `custom`. `latePolicy` is `{ allow, penaltyPercentPerDay, cutoffDays }`.
+
+`school_marks/{id}` is `{ assessmentId, classId, studentId, points, flag, comment, state, enteredBy, updatedAt }`. `flag` is `none`, `missing`, `late`, or `excused`. `state` is `draft` or `published`. Publishing queues a student and parent notice in the desk. A published mark under 45% adds a `source: teacher` goal for that topic.
+
+`school_attendance/{id}` is `{ classId, studentId, date, session, status, reason, source, activeMinutes, parentNote }`. `status` is `present`, `late`, `absent`, or `excused`. `source` is `manual`, `login`, or `live`. Absent and late queue a parent notice.
+
+The institution default scale lives on the school record as `defaultScale` plus optional `customBands` (`{ min, grade }`). `teachersCanCreateClasses` is a boolean. A teacher creates a class only when that flag is true, or when the class has no institution.
+
+Rochford’s International School sample class is IGCSE Mathematics at Falim, join code `FALIM-MATH`, teacher Aisha Rahman. `scripts/seed-rochford-class.ts` writes these documents when the Firebase Admin key exists. Without the key it prints the institutions message and writes nothing. The browser keeps the same sample, labelled sample, until then.
+
+Rules for `users/{uid}/goals` and `school_classes`, `school_enrolments`, `school_assessments`, `school_marks`, and `school_attendance` are in `firestore.rules`. They are not deployed.
+
+The gradebook query on `submissions` no longer uses `orderBy(submittedAt)` with `where(courseId)`. That pair was missing from `firestore.indexes.json` and the page failed closed.
+

@@ -1695,6 +1695,63 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('childIds', []).hasAny([uid]);
     }
 
+    // Assigned goals. daily_goals stays the student's own list.
+    // source=teacher goals are deleted only by the teacher who assigned them.
+    // A student cannot delete a teacher or institution goal.
+    match /users/{userId}/goals/{goalId} {
+      allow read: if isSignedIn() && (
+        isUser(userId) || isParentOf(userId) || isTeacherOrAdmin() || isAdmin()
+      );
+      allow create: if isSignedIn() && incoming().studentId == userId && (
+        (isUser(userId) && incoming().source == 'student' && incoming().assignedBy == request.auth.uid)
+        || (isTeacherOrAdmin() && incoming().source == 'teacher' && incoming().assignedBy == request.auth.uid)
+        || ((isInstitutionAdmin() || isAdmin()) && incoming().source == 'institution')
+        || isAdmin()
+      );
+      allow update: if isAdmin()
+        || (isUser(userId) && resource.data.source == 'student')
+        || (isTeacherOrAdmin() && resource.data.source == 'teacher' && resource.data.assignedBy == request.auth.uid)
+        || (isInstitutionAdmin() && (resource.data.source == 'institution' || resource.data.source == 'teacher'));
+      allow delete: if isAdmin()
+        || (resource.data.source == 'student' && isUser(userId))
+        || (resource.data.source == 'teacher' && resource.data.assignedBy == request.auth.uid)
+        || (resource.data.source == 'institution' && (isInstitutionAdmin() || isAdmin()));
+    }
+
+    match /school_classes/{classId} {
+      allow read: if isSignedIn();
+      allow create, update: if isAdmin()
+        || (isInstitutionAdmin() && incoming().institutionId == myInstitution())
+        || (isTeacherOrAdmin()
+            && incoming().ownerTeacherId == request.auth.uid
+            && (incoming().get('institutionId', '') == '' || incoming().institutionId == myInstitution()));
+      allow delete: if isAdmin()
+        || (isInstitutionAdmin() && resource.data.institutionId == myInstitution())
+        || (isTeacherOrAdmin() && resource.data.ownerTeacherId == request.auth.uid);
+    }
+
+    match /school_enrolments/{enrolmentId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isTeacherOrAdmin() || isAdmin();
+    }
+
+    match /school_assessments/{assessmentId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isTeacherOrAdmin() || isAdmin();
+    }
+
+    match /school_marks/{markId} {
+      allow read: if isSignedIn();
+      allow create, update: if isTeacherOrAdmin() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /school_attendance/{rowId} {
+      allow read: if isSignedIn();
+      allow create, update: if isTeacherOrAdmin() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
     match /users/{userId}/exam_preps/{prepId} {
       allow read: if isUser(userId) || isParentOf(userId) || isAdmin();
       allow create: if isUser(userId) && incoming().ownerId == userId;

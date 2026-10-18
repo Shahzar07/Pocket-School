@@ -371,7 +371,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/teacher/classes',
     title: 'My classes',
-    purpose: 'The classes this teacher runs and the students in them.',
+    purpose: 'Create and run a class: roster, join code, attendance, assignments, goals, and the gradebook.',
     audience: ['teacher'],
     overlaps: 'Institution home.',
     decision: 'Keep.',
@@ -416,7 +416,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/teacher/earnings',
     title: 'Earnings',
-    purpose: 'What this teacher has earned from courses and tutoring.',
+    purpose: 'Course sales, live sessions, school payments, and revenue share. Sample figures until the payout keys exist.',
     audience: ['teacher'],
     overlaps: 'Wallet and admin finance.',
     decision: 'Keep as the teacher’s own earnings. Payouts still settle in the wallet.',
@@ -443,16 +443,16 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/teacher/goals',
     title: 'Class daily goals',
-    purpose: 'The same daily goals students set, seen by their teacher.',
+    purpose: 'Goals a teacher or the school assigns. Students cannot delete those goals.',
     audience: ['teacher'],
     overlaps: 'Student daily goals.',
-    decision: 'Keep as the teacher view. Do not add a second goal model.',
+    decision: 'Assigned goals live on the student record. Daily goals students set stay on the daily goals list.',
     ownerKeys: 'None.',
   },
   {
     path: '/dashboard/teacher/gradebook',
     title: 'Gradebook',
-    purpose: 'Marks for the teacher’s classes.',
+    purpose: 'Enter marks for a class on the assessment scale, then publish them to the student and parent.',
     audience: ['teacher'],
     overlaps: 'Transcript and report cards.',
     decision: 'Keep. The gradebook is where marks are entered.',
@@ -461,7 +461,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/teacher/assignments',
     title: 'Assignments',
-    purpose: 'Set work for a class, one student, or the whole institution, then mark it.',
+    purpose: 'Set work for a class or a student, mark the inbox, and return it to the gradebook.',
     audience: ['teacher'],
     overlaps: 'Student assignments.',
     decision: 'Keep. This is the sending side.',
@@ -479,7 +479,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/teacher/report-cards',
     title: 'Report cards',
-    purpose: 'Term reports for families.',
+    purpose: 'Term report cards pulled from the gradebook, attendance, merits, and goals.',
     audience: ['teacher'],
     overlaps: 'Report studio and parent reports.',
     decision: 'Keep. Studio designs them; this page issues them.',
@@ -488,7 +488,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/teacher/report-studio',
     title: 'Report studio',
-    purpose: 'Lay out a report before it is issued.',
+    purpose: 'Build and run reports: pick a template, a scope, and dates, then export or schedule them.',
     audience: ['teacher'],
     overlaps: 'Institution templates.',
     decision: 'Keep.',
@@ -497,7 +497,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/teacher/attendance',
     title: 'Take attendance',
-    purpose: 'Mark who is present and record login time for the institution.',
+    purpose: 'Mark a class register and send absent or late notices to parents.',
     audience: ['teacher'],
     overlaps: 'Student attendance.',
     decision: 'Keep as the register.',

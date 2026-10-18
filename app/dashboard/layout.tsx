@@ -43,6 +43,7 @@ import { AdminViewAsBanner, clearViewAs, useAdminIdle, useViewAs } from '@/compo
 import { isSuperAdmin, ROLE_LABELS } from '@/lib/roles';
 import { PipGuide } from '@/components/pip-guide';
 import { AllStaffBanner } from '@/components/alerts/all-staff';
+import { DeskScope } from '@/components/school-desk/scope';
 import { OfflineBanner } from '@/components/offline-banner';
 import { RoleChecklist } from '@/components/role-checklist';
 import { WelcomeResume } from '@/components/onboarding/welcome-session';
@@ -793,6 +794,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <RoleChecklist role={role} />
             <PagePurpose pathname={pathname} />
             {role === 'teacher' || role === 'institution_admin' || role === 'admin' ? <AllStaffBanner /> : null}
+            {role === 'teacher' || role === 'institution_admin' ? <DeskScope pathname={pathname} /> : null}
             {children}
           </div>
         </main>
