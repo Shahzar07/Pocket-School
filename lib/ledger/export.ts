@@ -34,7 +34,7 @@ export function verificationHash(payload: string): string {
   return createHash('sha256').update(payload).digest('hex');
 }
 
-export function exportCsv(id: string, kind: 'ticket' | 'alert', entries: ChainEntry[], chainHead: string): ExportFile {
+export function exportCsv(id: string, kind: 'ticket' | 'alert' | 'admin', entries: ChainEntry[], chainHead: string): ExportFile {
   const header = 'seq,actorUid,actorRole,action,serverTimestamp,prevHash,hash,stream,diff,device\n';
   const payload = `${header}${entries.map(row).join('\n')}${entries.length ? '\n' : ''}chainHead,${chainHead}\n`;
   const hash = verificationHash(payload);
@@ -48,7 +48,7 @@ export function exportCsv(id: string, kind: 'ticket' | 'alert', entries: ChainEn
   };
 }
 
-export function exportPdf(id: string, kind: 'ticket' | 'alert', entries: ChainEntry[], chainHead: string): ExportFile {
+export function exportPdf(id: string, kind: 'ticket' | 'alert' | 'admin', entries: ChainEntry[], chainHead: string): ExportFile {
   const lines = [
     `Poket School ${kind} log ${id}`,
     `Entries ${entries.length}`,

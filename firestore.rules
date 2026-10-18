@@ -2968,6 +2968,19 @@ service cloud.firestore {
     match /safety_desk/{docId} {
       allow read, write: if false;
     }
+    match /admin_desk/{docId} {
+      allow read, write: if false;
+      match /audit/{entryId} {
+        allow read, write: if false;
+      }
+    }
+    match /push_broadcasts/{broadcastId} {
+      allow read, write: if false;
+    }
+    match /helpline_config/{country} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
     match /verification_reviews/{reviewId} {
       allow read, write: if false;
     }

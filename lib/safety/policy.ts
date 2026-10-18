@@ -178,7 +178,7 @@ export function dangerFanOut(input: {
 
 export type SafetyView = 'full' | 'tracker' | 'notice' | 'hidden';
 
-export function safetyView(viewer: { id: string; role: string; staffPost: string; institutionId?: string }, ticket: {
+export function safetyView(viewer: { id: string; role: string; staffPost: string; staffRole?: string; institutionId?: string }, ticket: {
   source: string;
   reporterUid: string;
   formTeacherUid: string;
