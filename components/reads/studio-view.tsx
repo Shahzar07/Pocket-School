@@ -462,9 +462,9 @@ export function StudioView() {
                 <button type="button" onClick={() => downloadBook(book, 'pdf')} className="h-10 rounded-full border border-border px-4 text-sm font-semibold">Download PDF</button>
                 <button type="button" onClick={() => downloadBook(book, 'epub')} className="h-10 rounded-full border border-border px-4 text-sm font-semibold">Download EPUB</button>
                 {isPictureBook(book) ? (
-                  <button type="button" onClick={() => void writeStory()} className="h-10 rounded-full bg-secondary px-4 text-sm font-bold text-secondary-foreground">Write story</button>
+                  <button type="button" onClick={() => void writeStory()} className="h-10 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-4 text-sm font-bold text-[var(--ps-cyan-ink)]">Write story</button>
                 ) : (
-                  <button type="button" onClick={() => void generate()} className="h-10 rounded-full bg-secondary px-4 text-sm font-bold text-secondary-foreground">{t('reads.studio.generate')}</button>
+                  <button type="button" onClick={() => void generate()} className="h-10 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-4 text-sm font-bold text-[var(--ps-cyan-ink)]">{t('reads.studio.generate')}</button>
                 )}
                 {book.status === 'draft' && <button type="button" onClick={() => setStatus('review')} className="h-10 rounded-full bg-foreground px-4 text-sm font-bold text-background">{t('reads.studio.toReview')}</button>}
                 {book.status === 'review' && <button type="button" onClick={() => setStatus('published')} className="h-10 rounded-full bg-foreground px-4 text-sm font-bold text-background">{t('reads.studio.publish')}</button>}
@@ -484,7 +484,7 @@ export function StudioView() {
                       {version.status !== 'approved' && (
                         <button
                           type="button"
-                          className="h-9 rounded-full bg-secondary px-3 text-[12px] font-bold"
+                          className="h-9 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-3 text-[12px] font-bold text-[var(--ps-cyan-ink)]"
                           onClick={() => update({
                             languageVersions: (book.languageVersions ?? []).map(v => v.language === version.language ? { ...v, status: 'approved' } : v),
                           })}
@@ -594,7 +594,7 @@ export function StudioView() {
                 <div className="rounded-2xl border border-border p-3">
                   <p className="text-sm font-semibold">One illustration per page</p>
                   <p className="mt-1 text-sm text-muted-foreground">ET AI keeps the same child, clothes, and colours. The style stays with this book. Without an image key, each page is drawn here and costs nothing.</p>
-                  <button type="button" className="mt-3 h-10 rounded-full bg-secondary px-4 text-sm font-bold text-secondary-foreground" onClick={() => void illustratePages()}>
+                  <button type="button" className="mt-3 h-10 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-4 text-sm font-bold text-[var(--ps-cyan-ink)]" onClick={() => void illustratePages()}>
                     Illustrate every page
                   </button>
                 </div>
@@ -725,7 +725,7 @@ export function StudioView() {
                   {t('reads.studio.ageCheck')}
                 </button>
                 {book.coverBrief?.ageNote && (
-                  <p className={`text-sm ${book.coverBrief.ageOk ? 'text-primary' : 'text-red-700'}`}>{book.coverBrief.ageNote}</p>
+                  <p className={`text-sm ${book.coverBrief.ageOk ? 'text-[var(--ps-cyan-text)]' : 'text-red-700'}`}>{book.coverBrief.ageNote}</p>
                 )}
               </div>
               <p className="text-xs text-muted-foreground">The author line is always ET AI. The picture itself has no lettering; the title is drawn on top.</p>
@@ -781,13 +781,13 @@ function ReadAloud({ text }: { text: string }) {
     <div className="rounded-2xl border border-border p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-semibold">Read this chapter aloud</p>
-        <button type="button" onClick={play} className="h-9 rounded-full bg-secondary px-3 text-sm font-bold text-secondary-foreground">{on ? 'Stop' : 'Play'}</button>
+        <button type="button" onClick={play} className="h-9 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-3 text-sm font-bold text-[var(--ps-cyan-ink)]">{on ? 'Stop' : 'Play'}</button>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">This browser’s voice. No speech key, and nothing is charged.</p>
       {words.length > 0 && (
         <p className="mt-3 text-sm leading-relaxed">
           {words.map((token, index) => (
-            <span key={`${index}-${token}`} className={on && index === at ? 'rounded bg-secondary px-0.5 text-foreground' : ''}>{token} </span>
+            <span key={`${index}-${token}`} className={on && index === at ? 'rounded bg-[var(--ps-cyan-soft)] px-0.5 text-[var(--ps-cyan-text)]' : ''}>{token} </span>
           ))}
         </p>
       )}

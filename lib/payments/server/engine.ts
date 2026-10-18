@@ -206,6 +206,8 @@ async function resolveItem(input: CheckoutInput, settings: PaymentsSettings, pay
     return item;
   }
   if (kind === 'reads') {
+    // Published annual amounts live on the plan row. Do not pass readsPriceUsd:
+    // the old engine multiplied that monthly shelf by ten ($90 / $150).
     const config = await loadPricingConfig();
     const item = readsPlanItem(sku, interval, config);
     if (!item) throw new ActionError('INVALID', 'Choose Poket Reads or Poket Reads Family.');

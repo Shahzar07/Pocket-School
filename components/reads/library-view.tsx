@@ -45,7 +45,7 @@ export function LibraryView() {
   return (
     <div className="space-y-8">
       <header>
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">{profile.name}</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--ps-cyan-text)]">{profile.name}</p>
         <h1 className="mt-2 font-heading text-[40px] tracking-[-0.04em] sm:text-[52px]">{t('reads.library.title')}</h1>
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">{t('reads.library.lead')}</p>
         {profile.kind !== 'parent' && owned[0] && (

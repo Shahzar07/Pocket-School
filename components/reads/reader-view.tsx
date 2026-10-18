@@ -425,7 +425,7 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
         </div>
       </header>
       <div className="h-1 bg-black/5" aria-hidden>
-        <div className="h-full bg-primary" style={{ width: `${Math.min(100, percent)}%` }} />
+        <div className="h-full bg-[var(--ps-cyan)]" style={{ width: `${Math.min(100, percent)}%` }} />
       </div>
 
       <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-28 lg:grid-cols-[1fr_280px] lg:px-6">
@@ -480,7 +480,7 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
                 }}
               >
                 {wordsOf(spread.text).map((token, index) => (
-                  <span key={`${index}-${token}`} className={listening && index === word ? 'rounded bg-secondary px-0.5 text-foreground' : ''}>{token} </span>
+                  <span key={`${index}-${token}`} className={listening && index === word ? 'rounded bg-[var(--ps-cyan-soft)] px-0.5 text-[var(--ps-cyan-text)]' : ''}>{token} </span>
                 ))}
               </p>
             </div>
@@ -505,7 +505,7 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
                 }}
               >
                 {listening ? sentences.map((s, i) => (
-                  <span key={i} style={i === sentence ? { background: 'var(--secondary)', color: 'var(--foreground)' } : undefined}>{s} </span>
+                  <span key={i} style={i === sentence ? { background: 'var(--ps-cyan-soft)', color: 'var(--ps-cyan-text)' } : undefined}>{s} </span>
                 )) : (
                   <ChapterProse markdown={page} quotes={notes.map(n => n.quote)} />
                 )}
@@ -571,7 +571,7 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
             {highlighted ? '' : ''} · {t('reads.reader.saved')}
           </p>
           <div className="mt-3 h-1 overflow-hidden rounded-full" style={{ background: theme.paper }} aria-label={t('reads.reader.progress')}>
-            <div className="h-full bg-primary" style={{ width: `${percent}%` }} />
+            <div className="h-full bg-[var(--ps-cyan)]" style={{ width: `${percent}%` }} />
           </div>
           {finishNote && <p className="mt-3 text-sm font-semibold" role="status">{finishNote}</p>}
           {percent >= 100 && book && (

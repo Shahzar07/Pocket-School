@@ -105,7 +105,7 @@ export function BookDetail({ bookId }: { bookId: string }) {
       <div className="grid items-start gap-8 lg:grid-cols-[280px_1fr]">
         <BookCover title={title} cover={book.cover} className="aspect-[2/3] w-full max-w-[280px] rounded-xl shadow-[var(--shadow-card-hover)]" />
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">{book.genre} · {t('reads.detail.by')}</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--ps-cyan-text)]">{book.genre} · {t('reads.detail.by')}</p>
           <h1 className="mt-2 font-heading text-[42px] leading-[0.98] tracking-[-0.04em] sm:text-[56px]">{title}</h1>
           <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-muted-foreground">{blurb}</p>
           <dl className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-muted-foreground">
@@ -114,11 +114,11 @@ export function BookDetail({ bookId }: { bookId: string }) {
             <div>{book.category === 'academic' ? t('reads.filter.academic') : book.category === 'childrens_stories' ? t('reads.filter.childrens') : t('reads.filter.general')}</div>
           </dl>
           <div className="mt-6 flex flex-wrap gap-2">
-            <Link href={`/reads/read/${book.id}?lang=${lang}`} className="inline-flex h-11 items-center rounded-full bg-foreground px-5 text-sm font-bold text-background">
+            <Link href={`/reads/read/${book.id}?lang=${lang}`} className="inline-flex h-11 items-center rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-5 text-sm font-bold text-[var(--ps-cyan-ink)]">
               {access.allowed && access.source !== 'preview' ? t('reads.detail.read') : t('reads.detail.sample')}
             </Link>
             {book.priceUsd > 0 && !(access.allowed && access.source === 'owned') && (
-              <button type="button" disabled={buying} onClick={() => void checkout({ bookId: book.id })} className="inline-flex h-11 items-center rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground">
+              <button type="button" disabled={buying} onClick={() => void checkout({ bookId: book.id })} className="inline-flex h-11 items-center rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-5 text-sm font-bold text-[var(--ps-cyan-ink)]">
                 {t('reads.detail.buyNow')}
               </button>
             )}
@@ -180,7 +180,7 @@ export function BookDetail({ bookId }: { bookId: string }) {
         </div>
       </div>
 
-      <section className="rounded-[28px] border border-border bg-secondary p-6 text-foreground sm:p-10">
+      <section className="rounded-[28px] border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] p-6 text-foreground sm:p-10">
         <h2 className="font-heading text-[28px]">{t('reads.detail.preview')}</h2>
         <p className="mt-1 text-sm opacity-70">{edition.chapters[0]?.title}</p>
         <div className="mt-6 max-w-[66ch] space-y-4 font-heading text-[19px] leading-[1.75]">
@@ -197,7 +197,7 @@ export function BookDetail({ bookId }: { bookId: string }) {
           )}
           {book.series.nextTitle && (
             <div className="mt-4 rounded-2xl border border-dashed border-border p-4">
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">{t('reads.detail.coming')}</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ps-cyan-text)]">{t('reads.detail.coming')}</p>
               <p className="mt-1 font-semibold">{book.series.nextTitle}</p>
               <p className="mt-1 text-sm text-muted-foreground">{book.series.nextBlurb}</p>
             </div>

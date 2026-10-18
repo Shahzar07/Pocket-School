@@ -32,14 +32,14 @@ export function CourseCatalogueDetail({ seedKey }: { seedKey: string }) {
 
   return (
     <article className="mx-auto max-w-[1240px] space-y-8 px-4 py-8 sm:px-6">
-      <Link href="/courses" className="text-[13px] font-semibold text-primary">{t('reads.nav.courses')}</Link>
+      <Link href="/courses" className="text-[13px] font-semibold text-[var(--ps-cyan-text)]">{t('reads.nav.courses')}</Link>
       <div className="grid items-start gap-8 lg:grid-cols-[360px_1fr]">
         <div className="overflow-hidden rounded-xl shadow-[var(--shadow-card-hover)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={course.image} alt="" className="aspect-[16/10] w-full object-cover" />
         </div>
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--ps-cyan-text)]">
             {course.subject} · {course.level}
           </p>
           <h1 className="mt-2 font-heading text-[42px] leading-[0.98] tracking-[-0.04em] sm:text-[56px]">{course.title}</h1>
@@ -50,7 +50,7 @@ export function CourseCatalogueDetail({ seedKey }: { seedKey: string }) {
             <span className="text-[12px] text-muted-foreground">{course.durationHours}h · {course.ownerName}</span>
           </div>
           <div className="mt-6 flex flex-wrap gap-2">
-            <a href="#preview" className="inline-flex h-11 items-center rounded-full bg-[#203337] px-5 text-sm font-bold text-white">
+            <a href="#preview" className="inline-flex h-11 items-center rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-5 text-sm font-bold text-[var(--ps-cyan-ink)]">
               {t('reads.market.preview')}
             </a>
             <button
@@ -65,7 +65,7 @@ export function CourseCatalogueDetail({ seedKey }: { seedKey: string }) {
         </div>
       </div>
 
-      <section id="preview" className="rounded-[28px] border border-border bg-secondary p-6 text-foreground sm:p-10">
+      <section id="preview" className="rounded-[28px] border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] p-6 text-foreground sm:p-10">
         <h2 className="font-heading text-[28px]">{t('reads.market.preview')}</h2>
         <p className="mt-4 max-w-[66ch] font-heading text-[19px] leading-[1.75]">{preview}</p>
       </section>

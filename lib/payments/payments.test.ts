@@ -224,8 +224,14 @@ describe('fulfillment grants and refunds', () => {
     expect(grants.some((grant) => grant.action === 'grant_library' && grant.bookId === 'harbour-light')).toBe(true);
     expect(grants.some((grant) => grant.action === 'enroll_course')).toBe(false);
 
+    const month = readsPlanItem('reads', 'month');
+    expect(month).toMatchObject({ unitAmount: 4.99, currency: 'USD', permission: 'plan:reads' });
+    const year = readsPlanItem('reads', 'year');
+    expect(year).toMatchObject({ unitAmount: 49.99, currency: 'USD', permission: 'plan:reads' });
     const family = readsPlanItem('reads-family', 'year');
     expect(family).toMatchObject({ unitAmount: 79.99, currency: 'USD', permission: 'plan:reads-family', recurringMonthly: 6.67 });
+    const familyMonth = readsPlanItem('reads-family', 'month');
+    expect(familyMonth).toMatchObject({ unitAmount: 7.99, currency: 'USD' });
     const plan = planGrants({
       ...paid, kind: 'reads', sku: 'reads-family', permission: 'plan:reads-family', accessTier: 1, childIds: [], seats: 1,
     });

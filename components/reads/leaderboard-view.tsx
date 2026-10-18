@@ -51,7 +51,7 @@ export function LeaderboardView() {
       </div>
       <div className="flex flex-wrap gap-2">
         {SCOPES.map(s => (
-          <button key={s} type="button" aria-pressed={scope === s} onClick={() => setScope(s)} className={`h-9 rounded-full px-3 text-[13px] font-semibold ${scope === s ? 'bg-primary text-primary-foreground' : 'border border-border'}`}>
+          <button key={s} type="button" aria-pressed={scope === s} onClick={() => setScope(s)} className={`h-9 rounded-full px-3 text-[13px] font-semibold ${scope === s ? 'border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)]' : 'border border-border'}`}>
             {t(scopeLabel[s])}
           </button>
         ))}
@@ -69,9 +69,9 @@ export function LeaderboardView() {
           rankDelta: movement.get(row.entry.id) ?? 0,
         }))}
       />
-      <aside className="rounded-3xl border border-primary bg-primary p-6 text-primary-foreground">
+      <aside className="rounded-3xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] p-6 text-[var(--ps-cyan-ink)]">
         <h2 className="font-heading text-[26px]">{t('reads.board.safety')}</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-primary-foreground/90">{t('reads.board.safetyBody')}</p>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed">{t('reads.board.safetyBody')}</p>
         {(profile.kind === 'parent' || profile.kind === 'reader') && (
           <label className="mt-4 flex items-center gap-2 text-sm font-semibold">
             <input

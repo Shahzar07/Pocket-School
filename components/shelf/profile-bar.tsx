@@ -48,7 +48,7 @@ export function ProfileSwitch({
           onClick={() => onChoose(p.id)}
           aria-pressed={p.id === profile.id}
           title={p.name}
-          className={`grid h-9 w-9 place-items-center rounded-full text-[11px] font-bold text-primary-foreground ${p.id === profile.id ? 'ring-2 ring-offset-2 ring-primary' : 'opacity-70'}`}
+          className={`grid h-9 w-9 place-items-center rounded-full text-[11px] font-bold ${p.id === 'imran' ? 'text-[var(--ps-cyan-ink)]' : 'text-primary-foreground'} ${p.id === profile.id ? 'ring-2 ring-offset-2 ring-[var(--ps-cyan-border)]' : 'opacity-70'}`}
           style={{ background: p.tint }}
         >
           {p.name.slice(0, 1)}

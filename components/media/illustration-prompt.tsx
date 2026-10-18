@@ -62,7 +62,7 @@ export function IllustrationPrompt({
           {COVER_STYLES.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
         </select>
       </label>
-      <button type="button" disabled={!prompt.trim() || busy} onClick={() => { if (confirmSparks) void confirmThenRun(); else setOpen(true); }} className="mt-3 h-9 rounded-full bg-secondary px-3 text-sm font-bold disabled:opacity-40">
+      <button type="button" disabled={!prompt.trim() || busy} onClick={() => { if (confirmSparks) void confirmThenRun(); else setOpen(true); }} className="mt-3 h-9 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-3 text-sm font-bold text-[var(--ps-cyan-ink)] disabled:opacity-40">
         Generate · {sparksCost} Sparks
       </button>
       {error && <p className="mt-2 text-sm text-red-700">{error}</p>}

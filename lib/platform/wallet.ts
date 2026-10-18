@@ -1,12 +1,11 @@
 import { ADDONS, TIERS } from '@/lib/entitlements';
+import { readsPlanItem } from '@/lib/payments/reads';
 import { BOOKS } from '@/lib/reads/seed';
 import {
   isReadsPlan,
-  planById,
   quoteAddon,
   quoteCourse,
   quotePlan,
-  READS_PLAN_LABELS,
   seedPricing,
   type PricingConfig,
 } from '@/lib/pricing';
@@ -77,11 +76,9 @@ export function quoteCheckout(
   }
 
   if (request.kind === 'reads' || (request.kind === 'plan' && isReadsPlan(request.id))) {
-    const plan = planById(config, request.id);
-    if (!plan || !isReadsPlan(plan.id)) return null;
-    const amount = interval === 'annual' ? plan.annualUsd : plan.monthlyUsd;
-    if (!(amount != null && amount > 0)) return null;
-    return finish(amount, amount, 'USD', READS_PLAN_LABELS[plan.id], 'subscription', interval === 'annual', requested, false);
+    const item = readsPlanItem(request.id, interval === 'annual' ? 'year' : 'month', config);
+    if (!item) return null;
+    return finish(item.unitAmount, item.unitAmount, 'USD', item.title, 'subscription', interval === 'annual', requested, false);
   }
 
   if (request.kind === 'plan') {

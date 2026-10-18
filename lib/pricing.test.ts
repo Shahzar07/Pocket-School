@@ -11,7 +11,7 @@ import {
   optionalLocalAmount,
   quoteCourse,
   quotePlan,
-  normalizePricing,
+  readsPriceUsd,
   resolveDisplayCurrency,
   roundMoney,
   seedPricing,
@@ -41,8 +41,8 @@ test('USD quotes use the stored monthly and annual amounts', () => {
   assert.equal(quotePlan(config, 'primary_secondary', 'annual', 'usd'), null);
   assert.equal(annualFromMonthly(79, 0.25), 711);
   assert.equal(config.familyBundleDiscount, null);
-  assert.equal(config.reads.find(plan => plan.id === 'reads')?.monthlyUsd, 9);
-  assert.equal(config.reads.find(plan => plan.id === 'reads-family')?.monthlyUsd, 15);
+  assert.equal(config.reads.find(plan => plan.id === 'reads')?.monthlyUsd, 4.99);
+  assert.equal(config.reads.find(plan => plan.id === 'reads-family')?.monthlyUsd, 7.99);
 });
 
 test('a stored annual price is charged even when the discount would differ', () => {
@@ -188,6 +188,36 @@ test('a book price snaps to the nearest Apple and Google .99 point', () => {
   assert.equal(snapToStorePricePoint(0), 0);
   assert.equal(snapToStorePricePoint(-3), 0);
   assert.equal(snapToStorePricePoint(Number.NaN), 0);
+});
+
+test('a stored $9 and $15 Reads shelf becomes the published prices', () => {
+  const stored = normalizePricing({
+    reads: [
+      { id: 'reads', monthlyUsd: 9 },
+      { id: 'reads-family', monthlyUsd: 15 },
+    ],
+    plans: [
+      { id: 'reads', monthlyUsd: 9, annualUsd: 90, sparks: 0 },
+      { id: 'reads-family', monthlyUsd: 15, annualUsd: 150, sparks: 0 },
+    ],
+  });
+  assert.equal(stored.reads.find(plan => plan.id === 'reads')?.monthlyUsd, 4.99);
+  assert.equal(stored.reads.find(plan => plan.id === 'reads-family')?.monthlyUsd, 7.99);
+  assert.equal(stored.plans.find(plan => plan.id === 'reads')?.annualUsd, 49.99);
+  assert.equal(stored.plans.find(plan => plan.id === 'reads-family')?.annualUsd, 79.99);
+  const monthOnly = normalizePricing({
+    plans: [{ id: 'reads', monthlyUsd: 9, annualUsd: null, sparks: 0 }],
+  });
+  assert.equal(monthOnly.plans.find(plan => plan.id === 'reads')?.monthlyUsd, 4.99);
+  assert.equal(monthOnly.plans.find(plan => plan.id === 'reads')?.annualUsd, 49.99);
+  assert.equal(readsPriceUsd(stored, 'reads'), 4.99);
+  assert.equal(readsPriceUsd({ ...seedPricing(), reads: [{ id: 'reads', monthlyUsd: 9 }, { id: 'reads-family', monthlyUsd: 15 }] }, 'reads-family'), 7.99);
+  const custom = normalizePricing({
+    reads: [{ id: 'reads', monthlyUsd: 6 }, { id: 'reads-family', monthlyUsd: 8 }],
+    plans: [{ id: 'reads', monthlyUsd: 6, annualUsd: 55, sparks: 0 }],
+  });
+  assert.equal(custom.plans.find(plan => plan.id === 'reads')?.annualUsd, 55);
+  assert.equal(custom.reads.find(plan => plan.id === 'reads-family')?.monthlyUsd, 8);
 });
 
 test('Reads plans and the default book price come from the seed', () => {

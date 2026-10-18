@@ -279,10 +279,11 @@ export function quotePlan(
   return priceInCurrency(config, usd, planId, interval, requestedCurrency);
 }
 
-/** Reads monthly USD from config, or the published $4.99 / $7.99 shelf when that row is absent. */
+/** Reads monthly USD from config, or the published $4.99 / $7.99 shelf when that row is absent. A stored $9 / $15 seed is the retired shelf, not an admin price. */
 export function readsPriceUsd(config: PricingConfig, id: string): number | null {
   const row = config.reads.find(item => item.id === id);
-  if (row) return Number.isFinite(row.monthlyUsd) && row.monthlyUsd > 0 ? row.monthlyUsd : null;
+  const monthly = row && Number.isFinite(row.monthlyUsd) && row.monthlyUsd > 0 ? row.monthlyUsd : null;
+  if (monthly != null && monthly !== retiredReads(id)?.monthlyUsd) return monthly;
   if (id === 'reads') return 4.99;
   if (id === 'reads-family') return 7.99;
   return null;
@@ -623,29 +624,48 @@ function asPlan(raw: unknown, seed: PlanPrice | undefined): PlanPrice | null {
   const annualUsd = priceField(item.annualUsd, seed?.annualUsd ?? null);
   const sparks = nonNegative(item.sparks) ?? seed?.sparks ?? null;
   if (monthlyUsd === undefined || annualUsd === undefined || sparks == null) return null;
-  return { id, monthlyUsd, annualUsd, sparks };
+  if (!seed) return { id, monthlyUsd, annualUsd, sparks };
+  const retired = retiredReads(id);
+  const staleMonth = retired != null && monthlyUsd === retired.monthlyUsd;
+  const staleYear = retired != null && annualUsd === retired.annualUsd;
+  return {
+    id,
+    monthlyUsd: staleMonth ? seed.monthlyUsd : monthlyUsd,
+    annualUsd: staleYear || (staleMonth && annualUsd == null) ? seed.annualUsd : annualUsd,
+    sparks,
+  };
 }
 
 function mergeReads(raw: unknown, seed: ReadsPlanPrice[]): ReadsPlanPrice[] {
   const incoming = Array.isArray(raw) ? raw : [];
+  const seedById = new Map(seed.map(plan => [plan.id, plan]));
   const byId = new Map<string, ReadsPlanPrice>();
   for (const item of incoming) {
-    const plan = asReads(item);
+    const plan = asReads(item, seedById);
     if (plan) byId.set(plan.id, plan);
   }
   const merged = seed.map(plan => byId.get(plan.id) ?? plan);
   for (const [id, plan] of byId) {
-    if (!seed.some(item => item.id === id)) merged.push(plan);
+    if (!seedById.has(id)) merged.push(plan);
   }
   return merged;
 }
 
-function asReads(raw: unknown): ReadsPlanPrice | null {
+/** Shelf amounts before the published $4.99 / $49.99 and $7.99 / $79.99 prices. A saved copy of that seed is rewritten on load. */
+function retiredReads(id: string): { monthlyUsd: number; annualUsd: number } | null {
+  if (id === 'reads') return { monthlyUsd: 9, annualUsd: 90 };
+  if (id === 'reads-family') return { monthlyUsd: 15, annualUsd: 150 };
+  return null;
+}
+
+function asReads(raw: unknown, seedById: Map<string, ReadsPlanPrice>): ReadsPlanPrice | null {
   if (!raw || typeof raw !== 'object') return null;
   const item = raw as Record<string, unknown>;
   const id = typeof item.id === 'string' ? item.id.trim() : '';
   const monthlyUsd = nonNegative(item.monthlyUsd);
   if (!id || monthlyUsd == null || monthlyUsd <= 0) return null;
+  const seed = seedById.get(id);
+  if (seed && monthlyUsd === retiredReads(id)?.monthlyUsd) return { id, monthlyUsd: seed.monthlyUsd };
   return { id, monthlyUsd };
 }
 

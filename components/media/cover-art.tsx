@@ -46,7 +46,7 @@ export function CoverArtPicker({
             disabled={Boolean(lockedStyleId) && lockedStyleId !== style.id}
             aria-pressed={activeStyle === style.id}
             onClick={() => setStyleId(style.id)}
-            className={`h-9 rounded-full px-3 text-xs font-semibold ${activeStyle === style.id ? 'bg-[#203337] text-white' : 'border border-border'} disabled:opacity-40`}
+            className={`h-9 rounded-full px-3 text-xs font-semibold ${activeStyle === style.id ? 'border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)]' : 'border border-border'} disabled:opacity-40`}
           >
             {style.label}
           </button>
@@ -56,7 +56,7 @@ export function CoverArtPicker({
         Refine the picture
         <input value={refine} onChange={event => setRefine(event.target.value)} placeholder="Warmer light, no people, a harbour at dusk" className="mt-1 h-10 w-full rounded-xl border border-border px-3 font-normal" />
       </label>
-      <button type="button" onClick={() => void run()} disabled={busy || !brief.trim()} className="h-10 rounded-full bg-secondary px-4 text-sm font-bold disabled:opacity-40">
+      <button type="button" onClick={() => void run()} disabled={busy || !brief.trim()} className="h-10 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-4 text-sm font-bold text-[var(--ps-cyan-ink)] disabled:opacity-40">
         {busy ? 'Generating…' : options.length ? 'Regenerate options' : 'Generate options'}
       </button>
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">

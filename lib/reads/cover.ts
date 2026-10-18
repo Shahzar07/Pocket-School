@@ -2,20 +2,13 @@ export type CoverFont = 'serif' | 'sans' | 'rounded';
 export type CoverPlacement = 'top' | 'center' | 'bottom';
 
 /**
- * Default cover paint. The dark stop is #1E6A83 so white title text clears
+ * Default cover paint for the picture, not the page chrome. The image model
+ * and the fallback SVG need real colours, so these stay hex. Page chrome uses
+ * `--ps-cyan`, `--ps-cyan-text` (#1E6A83), `--ps-cyan-ink` (#203337) and
+ * `--ps-cyan-border`. The dark stop is #1E6A83 so white title text clears
  * WCAG AA. #2786A4 is only the far end of the gradient. The kicker uses
- * #E9F7FA, which clears 4.5:1 on #1E6A83. Electric cyan #3FE0D0 does not
- * (3.7:1), and #14B8A6 on white is 2.5:1, so neither is text on a light ground.
- * Text on a light ground stays #1E6A83 or #203337.
- *
- * TODO: palette PR #128 is still open and has not added these names, so they
- * are not declared here. When they land, use the shared variables:
- * `--ps-cyan` #3FE0D0, `--ps-cyan-strong` #14B8A6 (fills and icons on dark
- * only), `--ps-cyan-soft`, `--ps-cyan-ink` #203337, `--ps-cyan-border` #1E6A83.
- * `--ps-cyan-text` is #1E6A83, not #0F766E. Never use #14B8A6 as text on a
- * light ground. Reads buttons then become a `--ps-cyan` fill, `--ps-cyan-ink`
- * text, and a 1px `--ps-cyan-border`. `--ps-amber` is deprecated; Reads chrome
- * already avoids it.
+ * #E9F7FA, which clears 4.5:1 on #1E6A83. Electric cyan #3FE0D0 on that
+ * blue is 3.7:1, and #14B8A6 on white is 2.5:1, so neither is text on a light ground.
  */
 export const BRAND_COVER = {
   from: '#1E6A83',

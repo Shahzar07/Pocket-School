@@ -7,12 +7,12 @@ import type { ShelfBadge, ShelfItem } from '@/lib/shelf/types';
 import { BookCover } from './book-cover';
 
 const TONE: Record<ShelfBadge['tone'], string> = {
-  free: 'bg-primary text-primary-foreground',
-  included: 'bg-secondary text-primary',
-  buy: 'bg-white text-[#203337]',
-  owned: 'bg-foreground text-background',
-  locked: 'bg-white text-[#203337]',
-  preview: 'bg-white text-[#203337]',
+  free: 'border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)]',
+  included: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
+  buy: 'bg-white text-[var(--ps-cyan-ink)]',
+  owned: 'bg-[var(--ps-cyan-ink)] text-[var(--ps-cyan)]',
+  locked: 'bg-white text-[var(--ps-cyan-ink)]',
+  preview: 'bg-white text-[var(--ps-cyan-ink)]',
 };
 
 export function ShelfBadgePill({ badge }: { badge: ShelfBadge }) {
@@ -27,7 +27,7 @@ export function Poster({ item, rank }: { item: ShelfItem; rank?: number }) {
   return (
     <Link href={item.href} className="group relative block w-[168px] shrink-0 snap-start sm:w-[186px] [content-visibility:auto] [contain-intrinsic-size:186px_320px]">
       {typeof rank === 'number' && (
-        <span className="pointer-events-none absolute -left-3 bottom-8 z-10 font-heading text-[84px] leading-none text-[#203337]/90 drop-shadow-[0_2px_0_#fff]" aria-hidden>
+        <span className="pointer-events-none absolute -left-3 bottom-8 z-10 font-heading text-[84px] leading-none text-[var(--ps-cyan-ink)]/90 drop-shadow-[0_2px_0_#fff]" aria-hidden>
           {rank}
         </span>
       )}
@@ -44,12 +44,12 @@ export function Poster({ item, rank }: { item: ShelfItem; rank?: number }) {
         )}
         {typeof item.progress === 'number' && item.progress > 0 && (
           <span className="absolute inset-x-0 bottom-0 h-1 bg-black/20">
-            <span className="block h-full bg-primary" style={{ width: `${Math.min(100, item.progress)}%` }} />
+            <span className="block h-full bg-[var(--ps-cyan)]" style={{ width: `${Math.min(100, item.progress)}%` }} />
           </span>
         )}
       </div>
       <div className="mt-2 px-0.5">
-        <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-foreground group-hover:text-primary">{item.title}</p>
+        <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-foreground group-hover:text-[var(--ps-cyan-text)]">{item.title}</p>
         <div className="mt-1 flex items-center gap-1.5">
           <ShelfBadgePill badge={item.badge} />
         </div>
@@ -71,7 +71,7 @@ export function ShelfRow({
     <section className="space-y-3">
       <div className="flex items-end justify-between gap-3 px-1">
         <h2 className="font-heading text-[22px] tracking-[-0.03em] text-foreground sm:text-[26px]">{title}</h2>
-        {action && <Link href={action.href} className="text-[12px] font-semibold text-primary">{action.label}</Link>}
+        {action && <Link href={action.href} className="text-[12px] font-semibold text-[var(--ps-cyan-text)]">{action.label}</Link>}
       </div>
       <div className="flex gap-4 overflow-x-auto scroll-px-1 px-1 pb-2 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.map((item, i) => <Poster key={item.id} item={item} rank={ranked ? i + 1 : undefined} />)}
@@ -95,23 +95,23 @@ export function Hero({
   visual: ReactNode;
 }) {
   return (
-    <section className="relative overflow-hidden rounded-[28px] border border-border bg-primary text-primary-foreground shadow-[var(--shadow-card-hover)]">
+    <section className="relative overflow-hidden rounded-[28px] border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)] shadow-[var(--shadow-card-hover)]">
       <div className="grid lg:grid-cols-[1.3fr_0.9fr]">
         <div className="relative z-10 flex flex-col justify-end p-6 sm:p-10 lg:min-h-[440px]">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-secondary">{eyebrow}</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em]">{eyebrow}</p>
           <h1 className="mt-3 max-w-xl font-heading text-[40px] leading-[0.98] tracking-[-0.04em] sm:text-[58px]">{title}</h1>
-          <p className="mt-4 max-w-lg text-sm leading-relaxed text-primary-foreground/90 sm:text-[15px]">{description}</p>
+          <p className="mt-4 max-w-lg text-sm leading-relaxed sm:text-[15px]">{description}</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            {badges.map(b => <span key={b.label} className="rounded-full bg-primary-foreground/10 px-2.5 py-1 text-[11px] font-semibold text-primary-foreground">{b.label}</span>)}
+            {badges.map(b => <span key={b.label} className="rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] px-2.5 py-1 text-[11px] font-semibold">{b.label}</span>)}
           </div>
           <div className="mt-6 flex flex-wrap gap-2">
-            <Link href={primary.href} className="inline-flex h-11 items-center rounded-full border border-primary bg-white px-5 text-sm font-bold text-[#203337]">
+            <Link href={primary.href} className="inline-flex h-11 items-center rounded-full border border-[var(--ps-cyan-border)] bg-white px-5 text-sm font-bold text-[var(--ps-cyan-ink)]">
               {primary.label}
             </Link>
             <button
               type="button"
               onClick={onToggleList}
-              className="inline-flex h-11 items-center gap-2 rounded-full border border-primary-foreground/30 px-4 text-sm font-semibold text-primary-foreground hover:bg-primary-foreground/10"
+              className="inline-flex h-11 items-center gap-2 rounded-full border border-[var(--ps-cyan-border)] px-4 text-sm font-semibold hover:bg-[var(--ps-cyan-soft)]"
             >
               {listed ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
               {listed ? listedLabel : listLabel}
@@ -156,7 +156,7 @@ export function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`h-8 shrink-0 rounded-full px-3 text-[12px] font-semibold ${active ? 'bg-[#203337] text-white' : 'bg-card text-muted-foreground border border-border'}`}
+      className={`h-8 shrink-0 rounded-full px-3 text-[12px] font-semibold ${active ? 'border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)]' : 'bg-card text-muted-foreground border border-border'}`}
     >
       {children}
     </button>

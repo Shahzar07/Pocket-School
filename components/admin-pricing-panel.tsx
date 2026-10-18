@@ -301,7 +301,7 @@ export function AdminPricingPanel() {
 
       <div className="space-y-3">
         <h3 className="text-sm font-bold text-foreground">Poket Reads, monthly USD</h3>
-        <p className="text-xs text-muted-foreground">Annual Reads is ten times the monthly price. Reads is $9 and Reads Family is $15 until a super admin changes them.</p>
+        <p className="text-xs text-muted-foreground">Checkout uses the annual amount on the plan row. The published prices are Poket Reads $4.99 a month or $49.99 a year, and Poket Reads Family $7.99 a month or $79.99 a year, until a super admin changes them.</p>
         {draft.reads.map(plan => (
           <label key={plan.id} className="flex items-center gap-3 text-sm">
             <span className="w-40">{plan.id === 'reads-family' ? 'Poket Reads Family' : 'Poket Reads'}</span>
