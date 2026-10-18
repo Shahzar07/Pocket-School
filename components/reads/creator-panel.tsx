@@ -188,7 +188,7 @@ export function CreatorPanel({
         <textarea value={craft.idea} onChange={event => writeCraft({ idea: event.target.value })} rows={2} placeholder="A market that opens only when the rain starts" className="mt-1 w-full rounded-xl border border-border px-3 py-2 font-normal" />
       </label>
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={propose} className="h-10 rounded-full bg-secondary px-4 text-sm font-bold text-secondary-foreground">Propose titles · {SPARK_COSTS.idea} Sparks</button>
+        <button type="button" onClick={propose} className="h-10 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-4 text-sm font-bold text-[var(--ps-cyan-ink)]">Propose titles · {SPARK_COSTS.idea} Sparks</button>
         <button type="button" onClick={outline} className="h-10 rounded-full bg-foreground px-4 text-sm font-bold text-background">Build chapters · {SPARK_COSTS.outline} Sparks</button>
       </div>
       {craft.titles.length > 0 && (
@@ -255,7 +255,7 @@ export function CreatorPanel({
               <Field label="Voice" value={person.voice} onChange={value => writeCraft({ characters: patchPerson(craft, person.id, { voice: value }) })} />
               <Field label="Relationships" value={person.relationships} onChange={value => writeCraft({ characters: patchPerson(craft, person.id, { relationships: value }) })} />
               <div>
-                <button type="button" onClick={() => void paint(person.id)} className="h-10 rounded-full bg-secondary px-3 text-sm font-bold text-secondary-foreground">Portrait · {SPARK_COSTS.portrait} Sparks</button>
+                <button type="button" onClick={() => void paint(person.id)} className="h-10 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-3 text-sm font-bold text-[var(--ps-cyan-ink)]">Portrait · {SPARK_COSTS.portrait} Sparks</button>
                 {person.portrait && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={person.portrait} alt={person.name || 'Character portrait'} className="mt-2 h-28 w-20 rounded-lg object-cover" />
@@ -356,7 +356,7 @@ export function CreatorPanel({
               <button type="button" onClick={() => revise('shorten')} className="h-9 rounded-full border border-border px-3 text-sm font-semibold">Shorten · {SPARK_COSTS.suggestion} Sparks</button>
             </div>
             {suggestion && (
-              <div className="rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] p-3 text-sm">
+              <div className="rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] p-3 text-sm text-[var(--ps-cyan-ink)]">
                 <p className="font-semibold">ET AI suggestion</p>
                 <p className="mt-1 whitespace-pre-wrap">{suggestion}</p>
                 <button type="button" onClick={accept} className="mt-2 h-9 rounded-full bg-foreground px-3 text-sm font-bold text-background">Accept into the chapter</button>
@@ -372,7 +372,7 @@ export function CreatorPanel({
       <section className="space-y-2">
         <h3 className="font-heading text-[22px]">Continuity</h3>
         <ul className="space-y-1 text-sm">
-          {notes.map(note => <li key={note.message} className={note.tone === 'warn' ? 'text-[var(--ps-cyan-text)]' : 'text-emerald-800'}>{note.message}</li>)}
+          {notes.map(note => <li key={note.message} className={note.tone === 'warn' ? 'text-[var(--ps-cyan-text)]' : 'text-[var(--ps-cyan-ink)]'}>{note.message}</li>)}
         </ul>
       </section>
 
@@ -382,7 +382,7 @@ export function CreatorPanel({
         {book.chapters.map(item => (
           <div key={item.id} className="flex items-center justify-between gap-2 rounded-xl border border-border px-3 py-2">
             <span className="text-sm">{item.title}</span>
-            <button type="button" onClick={() => speak(item.markdown)} className="h-9 rounded-full bg-secondary px-3 text-sm font-bold text-secondary-foreground">Play · {SPARK_COSTS.audiobook} Sparks shown, 0 if local</button>
+            <button type="button" onClick={() => speak(item.markdown)} className="h-9 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-3 text-sm font-bold text-[var(--ps-cyan-ink)]">Play · {SPARK_COSTS.audiobook} Sparks shown, 0 if local</button>
           </div>
         ))}
       </section>

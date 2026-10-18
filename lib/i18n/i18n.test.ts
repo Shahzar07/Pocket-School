@@ -209,8 +209,10 @@ test('faq catalogs match current plans and stay translated', () => {
   const en = catalogFor('en').landing.faq;
   assert.match(en.a1, /\$79/);
   assert.match(en.a1, /\$708/);
-  assert.match(en.a1, /\$9/);
-  assert.match(en.a1, /\$15/);
+  assert.match(en.a1, /\$4\.99/);
+  assert.match(en.a1, /\$49\.99/);
+  assert.match(en.a1, /\$7\.99/);
+  assert.match(en.a1, /\$79\.99/);
   assert.doesNotMatch(en.a1, /\$19/);
   assert.doesNotMatch(en.a1, /\$99/);
   assert.match(en.a2, /University of London/);

@@ -98,9 +98,9 @@ export function shareLocation(origin: string, id: string, channel: ShareChannel,
   return page;
 }
 
-/** Hotline tickets are never shared. An alert share has to be active and public. */
+/** SafeLine tickets are never shared. An alert share has to be active and public. */
 export function shareRefusal(kind: 'hotline' | 'alert', status: string, shareEnabled: boolean): string | null {
-  if (kind === 'hotline') return 'Hotline tickets cannot be shared.';
+  if (kind === 'hotline') return 'SafeLine tickets cannot be shared.';
   if (status !== 'active' && status !== 'updated') return 'Only an active public alert can be shared.';
   if (!shareEnabled) return 'This alert is not public.';
   return null;

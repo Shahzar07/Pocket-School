@@ -1,39 +1,56 @@
+import { planById, READS_PLAN_LABELS, seedPricing, type PricingConfig } from '@/lib/pricing';
+import { storedBookPriceRM } from '@/lib/platform/pricing';
 import type { PricedItem } from './quote';
 
 /**
- * Poket Reads prices from the published shelf (PR #55).
- * Annual Reads is ten times the monthly price. The checkout prefers the admin
- * FX quote for a ringgit book. This list is the fallback shelf price.
- * A Firestore `books/{id}` document overrides this list when Book Studio has saved one.
+ * Poket Reads prices from `seedPricing()`.
+ * Plan amounts are the published monthly and annual prices. A buy-to-own book
+ * uses `defaultBookUsd` unless that book sets its own price. The checkout
+ * prefers the admin FX quote for a ringgit book. This list is the fallback
+ * shelf price. A Firestore `books/{id}` document overrides it.
  */
 
-export const READS_PLANS = [
-  { id: 'reads', name: 'Poket Reads', usd: 9, permission: 'plan:reads' },
-  { id: 'reads-family', name: 'Poket Reads Family', usd: 15, permission: 'plan:reads-family' },
-] as const;
+const READS_PERMISSIONS = {
+  reads: 'plan:reads',
+  'reads-family': 'plan:reads-family',
+} as const;
+
+/** Names and grant strings. Monthly USD comes from `seedPricing()`. */
+export const READS_PLANS = (Object.keys(READS_PLAN_LABELS) as Array<keyof typeof READS_PLAN_LABELS>).map(id => ({
+  id,
+  name: READS_PLAN_LABELS[id],
+  usd: planById(seedPricing(), id)?.monthlyUsd ?? 0,
+  permission: READS_PERMISSIONS[id],
+}));
+
+const shelfUsd = seedPricing().defaultBookUsd;
 
 export const READS_BOOKS = [
-  { id: 'harbour-light', title: 'The Harbour Light', usd: 5, myr: 24 },
+  { id: 'harbour-light', title: 'The Harbour Light', usd: shelfUsd, myr: storedBookPriceRM(shelfUsd) },
   { id: 'cells-to-systems', title: 'Cells to Systems', usd: 8, myr: 36 },
   { id: 'malacca', title: 'A Short History of Malacca', usd: 4, myr: 18 },
   { id: 'plain-contract', title: 'Plain Words for Contract', usd: 10, myr: 49 },
 ] as const;
 
-export function readsPlanItem(sku: string, interval: 'month' | 'year', monthlyUsd?: number | null): PricedItem | null {
-  const plan = READS_PLANS.find((item) => item.id === sku);
-  if (!plan) return null;
-  const usd = monthlyUsd != null && monthlyUsd > 0 ? monthlyUsd : plan.usd;
-  const amount = interval === 'year' ? usd * 10 : usd;
+export function readsPlanItem(
+  sku: string,
+  interval: 'month' | 'year',
+  config: PricingConfig = seedPricing(),
+): PricedItem | null {
+  const listed = READS_PLANS.find((item) => item.id === sku);
+  const plan = planById(config, sku);
+  if (!listed || !plan || plan.monthlyUsd == null || plan.annualUsd == null) return null;
+  const amount = interval === 'year' ? plan.annualUsd : plan.monthlyUsd;
   return {
     kind: 'reads',
-    sku: plan.id,
-    title: plan.name,
+    sku: listed.id,
+    title: listed.name,
     unitAmount: amount,
     currency: 'USD',
     accessTier: 1,
     interval,
-    recurringMonthly: interval === 'year' ? Math.round((amount / 12) * 100) / 100 : usd,
-    permission: plan.permission,
+    recurringMonthly: interval === 'year' ? Math.round((amount / 12) * 100) / 100 : plan.monthlyUsd,
+    permission: listed.permission,
   };
 }
 

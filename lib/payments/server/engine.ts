@@ -20,8 +20,9 @@ import { eventDocId, claimDecision } from '../idempotency';
 import { toMinor } from '../minor';
 import { canonicalMethod, methodsFor, stripeTypesForCharge, type MethodId } from '../methods';
 import { buildQuote, type CheckoutKind, type PricedItem, type Quote } from '../quote';
-import { quoteCourse, readsPriceUsd } from '../../pricing';
+import { quoteCourse } from '../../pricing';
 import { loadPricingConfig } from '../../pricing-store';
+import { bookChargeUsd } from '../../platform/pricing';
 import { quoteCheckout } from '../../platform/wallet';
 import { readsBookItem, readsPlanItem } from '../reads';
 import { buildMyInvois } from '../tax';
@@ -134,21 +135,35 @@ async function readsShelfItem(sku: string, currency: string): Promise<PricedItem
   }
   const code = currency.toUpperCase() === 'MYR' ? 'MYR' : 'USD';
   const config = await loadPricingConfig();
-  const quoted = quoteCheckout({ kind: 'book', id: sku, currency: code }, config);
-  if (quoted) {
-    const item = shelfPriced(sku, data ? str(data.title) || quoted.name : quoted.name, quoted.amount, quoted.currency);
+  const catalogue = quoteCheckout({ kind: 'book', id: sku, currency: 'USD' }, config);
+  if (data?.accessMode === 'subscription') {
+    const explicit = typeof data.priceUsd === 'number' ? data.priceUsd : null;
+    if (explicit == null || explicit <= 0) {
+      throw new ActionError('INVALID', 'That book is included with Reads. Open it from the shelf.');
+    }
+  }
+  const storedUsd = data && typeof data.priceUsd === 'number'
+    ? data.priceUsd
+    : data && typeof data.price === 'number'
+      ? data.price
+      : null;
+  const usd = data || catalogue
+    ? bookChargeUsd({
+      storedUsd,
+      catalogueUsd: catalogue?.usd ?? null,
+      defaultUsd: config.defaultBookUsd,
+    })
+    : null;
+  if (usd != null && usd > 0) {
+    const money = quoteCourse(config, usd, 'USD', code);
+    const title = data ? str(data.title) || catalogue?.name || 'Book' : catalogue?.name || 'Book';
+    const item = shelfPriced(sku, title, money.amount, money.currency);
     if (item) return item;
   }
   if (data) {
     const shelfMyr = Number(data.priceRM ?? data.priceMyr ?? 0);
-    const shelfUsd = Number(data.priceUsd ?? data.price ?? 0);
-    if (code === 'MYR' && shelfMyr > 0) {
+    if (code === 'MYR' && shelfMyr > 0 && storedUsd == null) {
       const item = shelfPriced(sku, str(data.title) || 'Book', shelfMyr, 'MYR');
-      if (item) return item;
-    }
-    if (shelfUsd > 0) {
-      const money = quoteCourse(config, shelfUsd, 'USD', code);
-      const item = shelfPriced(sku, str(data.title) || 'Book', money.amount, money.currency);
       if (item) return item;
     }
     throw new ActionError('INVALID', 'That book is included with Reads. Open it from the shelf.');
@@ -191,7 +206,10 @@ async function resolveItem(input: CheckoutInput, settings: PaymentsSettings, pay
     return item;
   }
   if (kind === 'reads') {
-    const item = readsPlanItem(sku, interval, readsPriceUsd(await loadPricingConfig(), sku));
+    // Published annual amounts live on the plan row. Do not pass readsPriceUsd:
+    // the old engine multiplied that monthly shelf by ten ($90 / $150).
+    const config = await loadPricingConfig();
+    const item = readsPlanItem(sku, interval, config);
     if (!item) throw new ActionError('INVALID', 'Choose Poket Reads or Poket Reads Family.');
     return item;
   }

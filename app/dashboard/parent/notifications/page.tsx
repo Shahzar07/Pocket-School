@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { getNotifications, Notification } from '@/lib/db';
 import { useShelfProfile } from '@/components/shelf/profile-bar';
-import { readingNotices } from '@/lib/platform/notifications';
+import { postReadingNotice, readingNotices } from '@/lib/platform/notifications';
 import { progressMap } from '@/lib/shelf/storage';
 
 export default function ParentNotificationsPage() {
@@ -17,10 +17,23 @@ export default function ParentNotificationsPage() {
     if (!user) return;
     getNotifications(user.uid).then(setRows).catch(() => setRows([]));
   }, [user]);
+  const uid = user?.uid;
   useEffect(() => {
     if (!ready) return;
-    setReading(readingNotices(progressMap(profile.id)));
-  }, [ready, profile.id]);
+    const notices = readingNotices(progressMap(profile.id));
+    setReading(notices);
+    if (!uid || notices.length === 0) return;
+    for (const notice of notices) {
+      const key = `reads-push:${uid}:${notice.id}`;
+      try {
+        if (sessionStorage.getItem(key)) continue;
+        sessionStorage.setItem(key, '1');
+      } catch {
+        /* private mode still attempts one send */
+      }
+      void postReadingNotice(uid, notice);
+    }
+  }, [ready, profile.id, uid]);
   const empty = rows.length === 0 && reading.length === 0;
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-12">

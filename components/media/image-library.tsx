@@ -138,7 +138,7 @@ export function ImageLibrary({
               <button
                 type="button"
                 disabled={!image.alt.trim()}
-                className="h-8 rounded-full bg-[#203337] px-3 text-xs font-bold text-white disabled:opacity-40"
+                className="h-8 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-3 text-xs font-bold text-[var(--ps-cyan-ink)] disabled:opacity-40"
                 onClick={() => onInsert?.(image)}
               >
                 Place in text
@@ -164,7 +164,7 @@ export function ImageLibrary({
             <button type="button" className="h-9 rounded-full border border-border px-3 text-sm" onClick={() => setCropId(null)}>Cancel</button>
             <button
               type="button"
-              className="h-9 rounded-full bg-[#203337] px-3 text-sm font-bold text-white"
+              className="h-9 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-3 text-sm font-bold text-[var(--ps-cyan-ink)]"
               onClick={() => {
                 void cropImage(cropping.src, zoom, offset, 0).then(async result => {
                   const stored = await storeMedia(scopeId, result.blob, `${cropping.id}-crop.jpg`);

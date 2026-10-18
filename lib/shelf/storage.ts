@@ -12,8 +12,8 @@ export interface ShelfProfile {
 }
 
 export const SHELF_PROFILES: ShelfProfile[] = [
-  { id: 'aisha', name: 'Aisha', kind: 'reader', maxAge: null, tint: 'var(--primary)' },
-  { id: 'imran', name: 'Imran', kind: 'child', maxAge: 8, tint: '#3FE0D0' },
+  { id: 'aisha', name: 'Aisha', kind: 'reader', maxAge: null, tint: 'var(--ps-teal)' },
+  { id: 'imran', name: 'Imran', kind: 'child', maxAge: 8, tint: 'var(--ps-cyan)' },
   { id: 'family', name: 'Family', kind: 'parent', maxAge: null, tint: '#3E555C' },
 ];
 

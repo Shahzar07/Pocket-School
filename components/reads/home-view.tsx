@@ -96,7 +96,7 @@ export function ReadsHome() {
   return (
     <div className="space-y-8">
       {profile.kind !== 'parent' && (
-        <p className="rounded-2xl border border-border bg-secondary/60 px-4 py-3 text-[13px] leading-relaxed text-secondary-foreground">
+        <p className="rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] px-4 py-3 text-[13px] leading-relaxed text-[var(--ps-cyan-text)]">
           {t('reads.previewBanner')}
         </p>
       )}
@@ -114,7 +114,7 @@ export function ReadsHome() {
               <span className="font-semibold text-foreground">{t('reads.home.goalProgress', { done: Math.min(today, goal), goal })}</span>
             </div>
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-              <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, (today / goal) * 100)}%` }} />
+              <div className="h-full rounded-full bg-[var(--ps-cyan)]" style={{ width: `${Math.min(100, (today / goal) * 100)}%` }} />
             </div>
           </div>
         </div>
@@ -192,22 +192,22 @@ function FamilyReport() {
   });
   return (
     <section className="rounded-[28px] border border-border bg-card p-6 shadow-[var(--shadow-card)]">
-      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">{t('reads.library.family')}</p>
+      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--ps-cyan-text)]">{t('reads.library.family')}</p>
       <h2 className="mt-2 font-heading text-[32px] tracking-[-0.04em]">{t('reads.library.familyLead')}</h2>
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <Report name="Aisha" minutes={aisha.readingMinutes} finished={aisha.booksFinished} tint="var(--primary)" />
+        <Report name="Aisha" minutes={aisha.readingMinutes} finished={aisha.booksFinished} tint="var(--ps-cyan)" ink />
         <Report name="Imran" minutes={imran.readingMinutes} finished={imran.booksFinished} tint="var(--chart-3)" />
       </div>
     </section>
   );
 }
 
-function Report({ name, minutes, finished, tint }: { name: string; minutes: number; finished: number; tint: string }) {
+function Report({ name, minutes, finished, tint, ink = false }: { name: string; minutes: number; finished: number; tint: string; ink?: boolean }) {
   const t = useReadsT();
   return (
     <div className="rounded-2xl border border-border p-4">
       <div className="flex items-center gap-3">
-        <span className="grid h-10 w-10 place-items-center rounded-full text-sm font-bold text-primary-foreground" style={{ background: tint }}>{name.slice(0, 1)}</span>
+        <span className={`grid h-10 w-10 place-items-center rounded-full text-sm font-bold ${ink ? 'text-[var(--ps-cyan-ink)]' : 'text-primary-foreground'}`} style={{ background: tint }}>{name.slice(0, 1)}</span>
         <div>
           <p className="font-semibold">{name}</p>
           <p className="text-sm text-muted-foreground">{t('reads.board.minutes', { count: minutes })} · {t('reads.library.finished', { count: finished })}</p>

@@ -1,5 +1,5 @@
 /**
- * Parent-to-school hotline. Client writes are denied. The scheduled
+ * Poket SafeLine, the parent-to-school line. Client writes are denied. The scheduled
  * escalate path is POST /api/cron/hotline.
  */
 
@@ -167,7 +167,7 @@ export async function createTicket(uid: string, input: Record<string, unknown>) 
   const category = rawCategory;
   const body = str(input.body).slice(0, 4000);
   const priority = str(input.priority) as HotlinePriority;
-  if (!parentOwns(actor, studentId)) throw new ActionError('FORBIDDEN', 'A parent opens a hotline ticket for their own child.');
+  if (!parentOwns(actor, studentId)) throw new ActionError('FORBIDDEN', 'A parent opens a SafeLine ticket for their own child.');
   if (!isHotlineCategory(category)) throw new ActionError('BAD_REQUEST', 'Choose a category.');
   if (priority !== 'low' && priority !== 'medium' && priority !== 'high') {
     throw new ActionError('BAD_REQUEST', 'Choose a priority.');
@@ -249,7 +249,7 @@ export async function createTicket(uid: string, input: Record<string, unknown>) 
     }
   } else {
     for (const recipient of recipients.uids) {
-      await notify(recipient, 'School hotline', 'A hotline ticket is waiting.', '/dashboard/teacher/hotline');
+      await notify(recipient, 'Poket SafeLine', 'A SafeLine ticket is waiting.', '/dashboard/teacher/hotline');
     }
   }
   return { id: ref.id, addressedTo, slaDueAt: ticket.slaDueAt, safeguardingCaseId };
@@ -437,7 +437,7 @@ export async function commentTicket(uid: string, id: string, input: Record<strin
   });
   await db().doc(`hotline_tickets/${id}`).set({ updatedAt: now }, { merge: true });
   if (!internal && actor.role !== 'parent') {
-    await notify(str(ticket.data.parentUid), 'The school replied', 'Open the hotline for the latest note.', `/dashboard/parent/hotline`);
+    await notify(str(ticket.data.parentUid), 'The school replied', 'Open SafeLine for the latest note.', `/dashboard/parent/hotline`);
   }
   return { id: ref.id };
 }
@@ -455,7 +455,7 @@ export async function assignTicket(uid: string, id: string, assigneeUid: string,
     before: { assigneeUid: previous },
     after: { assigneeUid },
   }, device);
-  await notify(assigneeUid, 'A hotline ticket is yours', str(ticket.data.category), `/dashboard/teacher/hotline`);
+  await notify(assigneeUid, 'Poket SafeLine', `A SafeLine ticket is yours. ${str(ticket.data.category)}`, `/dashboard/teacher/hotline`);
   return { ok: true };
 }
 
@@ -502,7 +502,7 @@ export async function setTicketStatus(uid: string, id: string, input: Record<str
     before: { status: str(ticket.data.status) },
     after: { status, kivReason: patch.kivReason ?? '', kivFollowUpAt: patch.kivFollowUpAt ?? 0 },
   }, deviceOf(input));
-  await notify(str(ticket.data.parentUid), 'Hotline update', `Status: ${status.replace('_', ' ')}`, '/dashboard/parent/hotline');
+  await notify(str(ticket.data.parentUid), 'Poket SafeLine', `Status: ${status.replace('_', ' ')}`, '/dashboard/parent/hotline');
   return { ok: true };
 }
 
@@ -544,7 +544,7 @@ export async function rateTicket(uid: string, id: string, input: Record<string, 
 export async function hotlineAnalytics(uid: string) {
   const actor = await loadActor(uid);
   if (actor.role !== 'admin' && actor.role !== 'institution_admin' && actor.staffPost !== 'principal') {
-    throw new ActionError('FORBIDDEN', 'School leads can see hotline analytics.');
+    throw new ActionError('FORBIDDEN', 'School leads can see SafeLine analytics.');
   }
   const snap = await db().collection('hotline_tickets').where('institutionId', '==', actor.institutionId).limit(400).get();
   const rows: TicketStat[] = snap.docs
@@ -586,7 +586,7 @@ export async function escalateDueTickets(now = Date.now()) {
       sensitive: isSensitiveCategory(str(data.category)),
     });
     for (const recipient of chain.uids) {
-      await notify(recipient, 'Hotline ticket is overdue', `Escalated to ${next.replaceAll('_', ' ')}.`, '/dashboard/teacher/hotline');
+      await notify(recipient, 'Poket SafeLine', `A SafeLine ticket is overdue. Escalated to ${next.replaceAll('_', ' ')}.`, '/dashboard/teacher/hotline');
     }
     escalated += 1;
   }
@@ -710,7 +710,7 @@ export async function remindAuthorityTickets(now = Date.now()) {
       after: { authoritiesRemindedAt: now },
     });
     const target = str(data.assigneeUid);
-    if (target) await notify(target, 'Authorities still to be informed', 'This hotline ticket has waited four hours.', '/dashboard/teacher/hotline');
+    if (target) await notify(target, 'Authorities still to be informed', 'This SafeLine ticket has waited four hours.', '/dashboard/teacher/hotline');
     reminded += 1;
   }
   return { reminded };

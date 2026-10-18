@@ -57,6 +57,8 @@ export interface PricingConfig {
   version: 1;
   /** Fraction off the monthly run-rate, e.g. 0.25 for 25%. */
   annualDiscount: number;
+  /** Default USD price for a buy-to-own book. A book can still set its own `priceUsd`. */
+  defaultBookUsd: number;
   plans: PlanPrice[];
   addons: AddonPrice[];
   currencies: CurrencyPrice[];
@@ -108,6 +110,16 @@ export function annualFromMonthly(monthlyUsd: number, discount: number): number 
   return round2(monthly * 12 * (1 - rate));
 }
 
+/** Display names for the Reads rows in `seedPricing()`. Amounts live on the plan. */
+export const READS_PLAN_LABELS = {
+  reads: 'Poket Reads',
+  'reads-family': 'Poket Reads Family',
+} as const;
+
+export function isReadsPlan(id: string): id is keyof typeof READS_PLAN_LABELS {
+  return Object.prototype.hasOwnProperty.call(READS_PLAN_LABELS, id);
+}
+
 export function seedPricing(): PricingConfig {
   const annualDiscount = 0.25;
   const drafts: Array<{ id: string; monthlyUsd: number | null; sparks: number; annualUsd: number | null }> = [
@@ -118,23 +130,32 @@ export function seedPricing(): PricingConfig {
     { id: 'igcse_alevel', monthlyUsd: 79, sparks: 800, annualUsd: 708 },
     { id: 'professional', monthlyUsd: null, sparks: 1000, annualUsd: null },
   ];
+  // Reads annual amounts are the published prices. School plans use annualDiscount.
+  const reads = [
+    { id: 'reads', monthlyUsd: 4.99, annualUsd: 49.99, sparks: 0 },
+    { id: 'reads-family', monthlyUsd: 7.99, annualUsd: 79.99, sparks: 0 },
+  ];
   return {
     version: 1,
     annualDiscount,
-    plans: drafts.map(plan => ({
-      id: plan.id,
-      monthlyUsd: plan.monthlyUsd,
-      sparks: plan.sparks,
-      annualUsd: plan.annualUsd,
-    })),
+    defaultBookUsd: 1.99,
+    plans: [
+      ...drafts.map(plan => ({
+        id: plan.id,
+        monthlyUsd: plan.monthlyUsd,
+        sparks: plan.sparks,
+        annualUsd: plan.annualUsd,
+      })),
+      ...reads,
+    ],
     addons: [
       { id: 'lyra_live', monthlyUsd: 49 },
       { id: 'cms', monthlyUsd: 29 },
     ],
     familyBundleDiscount: null,
     reads: [
-      { id: 'reads', monthlyUsd: 9 },
-      { id: 'reads-family', monthlyUsd: 15 },
+      { id: 'reads', monthlyUsd: 4.99 },
+      { id: 'reads-family', monthlyUsd: 7.99 },
     ],
     currencies: [
       emptyCurrency('USD', { enabled: true, mode: 'base', rate: 1, rounding: 'none' }),
@@ -154,6 +175,18 @@ export function roundMoney(amount: number, rounding: Rounding, currency: string)
     return sign * (Math.floor(Math.abs(amount)) + 0.99);
   }
   return round2(amount);
+}
+
+/**
+ * Nearest Apple and Google USD book price. The points are $0.99, $1.99,
+ * $2.99, and so on. A non-positive or non-finite amount stays 0, so a book
+ * can remain included with the plan. A tie snaps up to the next point.
+ */
+export function snapToStorePricePoint(usd: number): number {
+  if (!Number.isFinite(usd) || usd <= 0) return 0;
+  const cents = Math.round(usd * 100);
+  const index = Math.max(0, Math.round((cents - 99) / 100));
+  return round2((index * 100 + 99) / 100);
 }
 
 export function formatMoney(amount: number, currency: string): string {
@@ -246,12 +279,13 @@ export function quotePlan(
   return priceInCurrency(config, usd, planId, interval, requestedCurrency);
 }
 
-/** Reads monthly USD from config, or the published $9 / $15 shelf when that row is absent. */
+/** Reads monthly USD from config, or the published $4.99 / $7.99 shelf when that row is absent. A stored $9 / $15 seed is the retired shelf, not an admin price. */
 export function readsPriceUsd(config: PricingConfig, id: string): number | null {
   const row = config.reads.find(item => item.id === id);
-  if (row) return Number.isFinite(row.monthlyUsd) && row.monthlyUsd > 0 ? row.monthlyUsd : null;
-  if (id === 'reads') return 9;
-  if (id === 'reads-family') return 15;
+  const monthly = row && Number.isFinite(row.monthlyUsd) && row.monthlyUsd > 0 ? row.monthlyUsd : null;
+  if (monthly != null && monthly !== retiredReads(id)?.monthlyUsd) return monthly;
+  if (id === 'reads') return 4.99;
+  if (id === 'reads-family') return 7.99;
   return null;
 }
 
@@ -310,6 +344,9 @@ export function validatePricing(config: PricingConfig): string | null {
   if (!Number.isFinite(config.annualDiscount) || config.annualDiscount < 0 || config.annualDiscount > 1) {
     return 'Annual discount must be between 0 and 100.';
   }
+  if (!Number.isFinite(config.defaultBookUsd) || config.defaultBookUsd < 0) {
+    return 'The default book price must be zero or more.';
+  }
   if (config.plans.length === 0) return 'Add at least one plan.';
   for (const plan of config.plans) {
     if (!plan.id.trim()) return 'Every plan needs an id.';
@@ -362,12 +399,14 @@ export function normalizePricing(raw: unknown): PricingConfig {
   if (!raw || typeof raw !== 'object') return seed;
   const record = raw as Record<string, unknown>;
   const annualDiscount = clamp(finite(record.annualDiscount, seed.annualDiscount), 0, 1);
+  const defaultBookUsd = finite(record.defaultBookUsd, seed.defaultBookUsd);
   const plans = mergePlans(record.plans, seed.plans);
   const addons = mergeAddons(record.addons, seed.addons);
   const currencies = mergeCurrencies(record.currencies, seed.currencies);
   return {
     version: 1,
     annualDiscount,
+    defaultBookUsd: defaultBookUsd > 0 ? defaultBookUsd : seed.defaultBookUsd,
     plans,
     addons,
     currencies,
@@ -380,6 +419,9 @@ export function diffPricing(before: PricingConfig, after: PricingConfig): string
   const lines: string[] = [];
   if (before.annualDiscount !== after.annualDiscount) {
     lines.push(`Annual discount ${discountLabel(before)} → ${discountLabel(after)}`);
+  }
+  if (before.defaultBookUsd !== after.defaultBookUsd) {
+    lines.push(`Default book USD ${before.defaultBookUsd} → ${after.defaultBookUsd}`);
   }
   const beforePlans = new Map(before.plans.map(plan => [plan.id, plan]));
   const afterPlans = new Map(after.plans.map(plan => [plan.id, plan]));
@@ -582,29 +624,48 @@ function asPlan(raw: unknown, seed: PlanPrice | undefined): PlanPrice | null {
   const annualUsd = priceField(item.annualUsd, seed?.annualUsd ?? null);
   const sparks = nonNegative(item.sparks) ?? seed?.sparks ?? null;
   if (monthlyUsd === undefined || annualUsd === undefined || sparks == null) return null;
-  return { id, monthlyUsd, annualUsd, sparks };
+  if (!seed) return { id, monthlyUsd, annualUsd, sparks };
+  const retired = retiredReads(id);
+  const staleMonth = retired != null && monthlyUsd === retired.monthlyUsd;
+  const staleYear = retired != null && annualUsd === retired.annualUsd;
+  return {
+    id,
+    monthlyUsd: staleMonth ? seed.monthlyUsd : monthlyUsd,
+    annualUsd: staleYear || (staleMonth && annualUsd == null) ? seed.annualUsd : annualUsd,
+    sparks,
+  };
 }
 
 function mergeReads(raw: unknown, seed: ReadsPlanPrice[]): ReadsPlanPrice[] {
   const incoming = Array.isArray(raw) ? raw : [];
+  const seedById = new Map(seed.map(plan => [plan.id, plan]));
   const byId = new Map<string, ReadsPlanPrice>();
   for (const item of incoming) {
-    const plan = asReads(item);
+    const plan = asReads(item, seedById);
     if (plan) byId.set(plan.id, plan);
   }
   const merged = seed.map(plan => byId.get(plan.id) ?? plan);
   for (const [id, plan] of byId) {
-    if (!seed.some(item => item.id === id)) merged.push(plan);
+    if (!seedById.has(id)) merged.push(plan);
   }
   return merged;
 }
 
-function asReads(raw: unknown): ReadsPlanPrice | null {
+/** Shelf amounts before the published $4.99 / $49.99 and $7.99 / $79.99 prices. A saved copy of that seed is rewritten on load. */
+function retiredReads(id: string): { monthlyUsd: number; annualUsd: number } | null {
+  if (id === 'reads') return { monthlyUsd: 9, annualUsd: 90 };
+  if (id === 'reads-family') return { monthlyUsd: 15, annualUsd: 150 };
+  return null;
+}
+
+function asReads(raw: unknown, seedById: Map<string, ReadsPlanPrice>): ReadsPlanPrice | null {
   if (!raw || typeof raw !== 'object') return null;
   const item = raw as Record<string, unknown>;
   const id = typeof item.id === 'string' ? item.id.trim() : '';
   const monthlyUsd = nonNegative(item.monthlyUsd);
   if (!id || monthlyUsd == null || monthlyUsd <= 0) return null;
+  const seed = seedById.get(id);
+  if (seed && monthlyUsd === retiredReads(id)?.monthlyUsd) return { id, monthlyUsd: seed.monthlyUsd };
   return { id, monthlyUsd };
 }
 

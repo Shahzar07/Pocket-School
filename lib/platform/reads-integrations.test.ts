@@ -2,11 +2,13 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { applyAward } from './gamification';
 import { readingGoal } from './reading';
-import { parsePushRequest } from './push';
+import { deliverReadingGoal, parsePushRequest } from './push';
 import { discussionSpace, suggestWinPost } from './community';
 import { parseBookCommand } from './studio-commands';
 import { defaultBookTargets } from './allocation';
 import { parentReadingReport } from './reports';
+import { quotePrice } from './pricing';
+import type { PushMessage } from '../push';
 
 const BOOKS = [
   { id: 'harbour-light', title: 'Harbour Light' },
@@ -69,6 +71,51 @@ test('book targets default to the allocator audiences', () => {
   assert.deepEqual(defaultBookTargets({ allocateLibrary: true, allocateMarketplace: true }), [
     'students', 'parents', 'institutions', 'marketplace',
   ]);
+  assert.deepEqual(
+    defaultBookTargets({ targets: ['marketplace', 'teachers'], allocateLibrary: true }),
+    ['teachers', 'marketplace'],
+  );
+});
+
+test('a shelf price uses the admin MYR rate', () => {
+  const quote = quotePrice(5, 'USD', 'MYR');
+  assert.equal(quote.usd, 5);
+  assert.equal(quote.localAmount, 23.99);
+  assert.equal(quote.localCurrency, 'MYR');
+  assert.equal(quote.asOf, 'admin');
+  assert.equal(quotePrice(0, 'USD', 'MYR').combined, 'Free');
+});
+
+test('a reading notice is delivered as a goals push', async () => {
+  const sent: PushMessage[] = [];
+  const report = await deliverReadingGoal({
+    recipientUid: 'parent-1',
+    category: 'general',
+    title: 'Continue',
+    body: '40% of the way through',
+    link: '/reads/read/harbour-light',
+  }, {
+    store: {
+      async listForUser() {
+        return [{
+          userId: 'parent-1',
+          token: 't',
+          platform: 'web',
+          provider: 'webpush',
+          deviceId: 'd1',
+        }];
+      },
+      async deleteToken() {},
+    },
+    send: async (_token, message) => {
+      sent.push(message);
+      return { ok: true, prune: false };
+    },
+  });
+  assert.equal(report.category, 'goals');
+  assert.equal(report.sent, 1);
+  assert.equal(sent[0]?.category, 'goals');
+  assert.equal(sent[0]?.link, '/reads/read/harbour-light');
 });
 
 test('parent reading report rounds minutes', () => {
