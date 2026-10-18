@@ -40,7 +40,7 @@ function Cta({
     ghost: 'border border-white/70 text-white hover:bg-white/10',
     ink: 'bg-[#1E6A83] text-white hover:bg-[#18586e]',
     line: 'border border-[#1E6A83]/30 text-[#1E6A83] hover:bg-[#E9F7FA] dark:border-[#6FBBCE]/40 dark:text-[#A7D9E5] dark:hover:bg-white/5',
-    cyan: 'border border-[#1E6A83] bg-[#3FE0D0] text-[#203337] hover:bg-[#14B8A6]',
+    cyan: 'border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)] hover:brightness-[0.97]',
   } as const;
   const classNames = `inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ps-cyan)] ${tones[tone]} ${className}`;
   if (external) {
@@ -76,11 +76,11 @@ function PlanCard({ plan }: { plan: OfferPlan }) {
       <h3 className="font-heading text-lg leading-tight text-foreground">{plan.name}</h3>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{plan.tagline}</p>
       <p className="mt-5 font-heading text-4xl tracking-tight text-foreground">{plan.price}</p>
-      <p className="mt-1 text-sm font-medium text-[#1E6A83] dark:text-[#8ecbda]">{plan.priceNote}</p>
+      <p className={`mt-1 text-sm font-medium ${plan.ctaTone === 'cyan' ? 'text-[var(--ps-cyan-text)]' : 'text-[#1E6A83] dark:text-[#8ecbda]'}`}>{plan.priceNote}</p>
       <ul className="mt-5 flex-1 space-y-2.5 text-sm leading-relaxed text-foreground">
         {plan.features.map((feature) => (
           <li key={feature} className="flex gap-2">
-            <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#1E6A83] dark:text-[#8ecbda]" aria-hidden />
+            <Check className={`mt-0.5 h-4 w-4 shrink-0 ${plan.ctaTone === 'cyan' ? 'text-[var(--ps-cyan-text)]' : 'text-[#1E6A83] dark:text-[#8ecbda]'}`} aria-hidden />
             <span>{feature}</span>
           </li>
         ))}

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
-import { BANNED_OFFER_COLOURS, OFFER_JACKETS, POKET_CYAN, POKET_CYAN_DEEP } from './reads-offer-media';
+import { CYAN, light } from './design/tokens';
+import { BANNED_OFFER_COLOURS, OFFER_JACKETS } from './reads-offer-media';
 import { readsOfferExcerpts } from './reads-offer-excerpts';
 import { LANGUAGES } from './languages';
 import { BOOKS } from './reads/seed';
@@ -128,17 +129,19 @@ test('sales-letter jackets use Poket blue and electric cyan', () => {
   for (const colour of BANNED_OFFER_COLOURS) {
     assert.equal(used.includes(colour), false);
   }
-  assert.match(used, /#1E6A83/);
-  assert.match(used, /#2786A4/);
-  assert.match(used, /#6FBBCE/);
-  assert.match(used, new RegExp(POKET_CYAN));
-  assert.equal(used.includes(POKET_CYAN_DEEP), false);
+  assert.match(used, new RegExp(light.blueDeep, 'i'));
+  assert.match(used, new RegExp(light.primary, 'i'));
+  assert.match(used, new RegExp(light.blueBright, 'i'));
+  assert.match(used, new RegExp(CYAN.fill, 'i'));
+  assert.equal(used.includes(CYAN.strong.toUpperCase()), false);
   const letter = readFileSync(new URL('../components/reads-offer/cta.tsx', import.meta.url), 'utf8');
   const card = readFileSync(new URL('../components/offer/offer-landing.tsx', import.meta.url), 'utf8');
-  assert.match(letter, new RegExp(POKET_CYAN));
-  assert.match(letter, /text-\[#203337\]/);
-  assert.match(card, new RegExp(POKET_CYAN));
-  assert.equal(/#E2AF4D|#1F8A70|#1A3C34|#C8922A/i.test(letter + card), false);
+  assert.match(letter, /var\(--ps-cyan\)/);
+  assert.match(letter, /var\(--ps-cyan-ink\)/);
+  assert.match(letter, /var\(--ps-cyan-border\)/);
+  assert.match(card, /var\(--ps-cyan\)/);
+  assert.match(card, /var\(--ps-cyan-ink\)/);
+  assert.equal(/#3FE0D0|#14B8A6|#E2AF4D|#1F8A70|#1A3C34|#C8922A/i.test(letter + card), false);
   const sitemap = readFileSync(new URL('../app/sitemap.ts', import.meta.url), 'utf8');
   const robots = readFileSync(new URL('../app/robots.ts', import.meta.url), 'utf8');
   const page = readFileSync(new URL('../app/reads/offer/page.tsx', import.meta.url), 'utf8');

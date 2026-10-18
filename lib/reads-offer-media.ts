@@ -1,21 +1,16 @@
-/**
- * Jackets drawn for the sales letter only. Blue gradient #1E6A83 → #2786A4 →
- * #6FBBCE, accent electric cyan #3FE0D0. No amber, gold, mustard, olive or green.
- * Shared --ps-* tokens do not include #3FE0D0 (--ps-teal is the blue, --ps-amber
- * is a dark mustard), so these surfaces use the cyan hex directly.
- */
-export const POKET_CYAN = '#3FE0D0';
-/** Darker cyan. About 2.5:1 on white, so it is a hover fill, not text on a light page. */
-export const POKET_CYAN_DEEP = '#14B8A6';
-export const POKET_INK = '#203337';
+import { CYAN, dark, light } from './design/tokens';
 
+/**
+ * Jackets for the sales letter. Stops and the accent come from the shared
+ * palette: blueDeep → primary → blueBright, with CYAN.fill (--ps-cyan).
+ */
 export const OFFER_JACKETS = {
-  'yellow-window': { from: '#6FBBCE', to: '#1E6A83', accent: POKET_CYAN },
-  'blue-notebook': { from: '#2786A4', to: '#1E6A83', accent: POKET_CYAN },
-  'harbour-light': { from: '#1E6A83', to: '#143E4E', accent: POKET_CYAN },
-  malacca: { from: '#2786A4', to: '#1E6A83', accent: POKET_CYAN },
-  'cells-to-systems': { from: '#1E6A83', to: '#2786A4', accent: POKET_CYAN },
-  'plain-contract': { from: '#143E4E', to: '#1E6A83', accent: POKET_CYAN },
+  'yellow-window': { from: light.blueBright, to: light.blueDeep, accent: CYAN.fill },
+  'blue-notebook': { from: light.primary, to: light.blueDeep, accent: CYAN.fill },
+  'harbour-light': { from: light.blueDeep, to: dark.bg, accent: CYAN.fill },
+  malacca: { from: light.primary, to: light.blueDeep, accent: CYAN.fill },
+  'cells-to-systems': { from: light.blueDeep, to: light.primary, accent: CYAN.fill },
+  'plain-contract': { from: dark.bg, to: light.blueDeep, accent: CYAN.fill },
 } as const;
 
 export const BANNED_OFFER_COLOURS = ['#1A3C34', '#C8922A', '#E2AF4D', '#1F8A70', '#9A5B00'] as const;

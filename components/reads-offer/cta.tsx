@@ -24,13 +24,8 @@ export function trackOfferCta(id: string, href: string) {
 }
 
 const VARIANTS = {
-  /**
-   * Electric cyan fill. White on #3FE0D0 is 1.6:1, so the label is dark ink
-   * (8.0:1). The blue border keeps the control at 3:1 against a white card.
-   * Hover #14B8A6 still holds dark ink at 5.3:1. That darker cyan is 2.5:1
-   * on white, so it is not used as text.
-   */
-  primary: 'border border-[#1E6A83] bg-[#3FE0D0] text-[#203337] hover:bg-[#14B8A6]',
+  /** --ps-cyan fill, --ps-cyan-ink label, 1px --ps-cyan-border. */
+  primary: 'border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)] hover:brightness-[0.97]',
   secondary: 'bg-primary text-primary-foreground',
   quiet: 'border border-border bg-card text-foreground',
 } as const;
@@ -52,7 +47,7 @@ export function OfferCta({
       prefetch={false}
       data-analytics-id={id}
       onClick={() => trackOfferCta(id, href)}
-      className={`inline-flex min-h-12 items-center justify-center rounded-full px-5 text-center text-sm font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1E6A83] ${VARIANTS[variant]}`}
+      className={`inline-flex min-h-12 items-center justify-center rounded-full px-5 text-center text-sm font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ps-cyan-border)] ${VARIANTS[variant]}`}
     >
       {children}
     </Link>
