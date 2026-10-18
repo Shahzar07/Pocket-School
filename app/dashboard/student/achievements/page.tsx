@@ -240,7 +240,7 @@ export default function AchievementsPage() {
                     ) : null}
                   </div>
                   {earned ? (
-                    <BadgeUI className="rounded-full bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px] font-semibold">Earned</BadgeUI>
+                    <BadgeUI className="rounded-full bg-success/10 text-success border-success/20 text-[10px] font-semibold">Earned</BadgeUI>
                   ) : (
                     <BadgeUI className="rounded-full bg-muted text-muted-foreground border-border text-[10px] font-semibold">Locked</BadgeUI>
                   )}

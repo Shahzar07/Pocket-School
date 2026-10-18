@@ -282,7 +282,7 @@ export default function TranscriptPage() {
           custom={1}
           className="bg-card border border-border rounded-3xl p-5 sm:p-6 relative overflow-hidden card-glow text-center"
         >
-          <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-emerald-500 opacity-80" />
+          <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-success opacity-80" />
           <p className="text-3xl font-extrabold text-foreground">{records.length}</p>
           <p className="text-muted-foreground text-xs mt-1 font-medium">Courses</p>
         </motion.div>
@@ -363,7 +363,7 @@ export default function TranscriptPage() {
                     <td className="px-4 py-4 text-muted-foreground">{r.course.subject}</td>
                     <td className="px-4 py-4 text-center">
                       {r.avg !== null ? (
-                        <span className={`font-bold text-lg ${r.avg >= 70 ? 'text-emerald-500' : r.avg >= 60 ? 'text-[var(--ps-cyan-text)]' : 'text-destructive'}`}>
+                        <span className={`font-bold text-lg ${r.avg >= 70 ? 'text-success' : r.avg >= 60 ? 'text-[var(--ps-cyan-text)]' : 'text-destructive'}`}>
                           {toLetterGrade(r.avg)} <span className="text-sm text-muted-foreground">({r.avg}%)</span>
                         </span>
                       ) : <span className="text-muted-foreground">—</span>}
@@ -380,7 +380,7 @@ export default function TranscriptPage() {
                     <td className="px-4 py-4 text-center">
                       <Badge className={`rounded-full text-[10px] ${
                         r.status === 'Completed'
-                          ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                          ? 'bg-success/10 text-success border-success/20'
                           : r.status === 'In Progress'
                             ? 'bg-primary/10 text-primary border-primary/20'
                             : 'bg-muted text-muted-foreground border-border'

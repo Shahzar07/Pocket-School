@@ -300,7 +300,7 @@ export default function OnboardingPage() {
           {step === 3 && (
             <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <div className="text-center mb-10">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-500 to-success flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <Brain className="w-8 h-8 text-white" />
                 </div>
                 <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">How do you learn best?</h1>
@@ -332,7 +332,7 @@ export default function OnboardingPage() {
                 <Button variant="ghost" className="h-11 rounded-full px-6" onClick={() => setStep(yearChoices.length === 1 && yearChoices[0] === NOT_APPLICABLE ? 1 : 2)}>Back</Button>
                 <Button
                   size="lg"
-                  className="rounded-full px-8 h-12 bg-gradient-to-r from-teal-500 to-emerald-600 text-white"
+                  className="rounded-full px-8 h-12 bg-gradient-to-r from-teal-500 to-success text-white"
                   disabled={!learningStyle || loading}
                   onClick={completeStudentOnboarding}
                 >

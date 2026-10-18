@@ -33,6 +33,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 ## Pages
 
+### Dashboard
+
+- **Route:** `/dashboard`
+- **Audience:** everyone
+- **Purpose:** Opens the home for the signed-in role.
+- **Overlaps:** Student, teacher, parent, and admin homes.
+- **Decision:** Redirect. There is no second dashboard.
+- **Owner keys:** None.
+
 ### Student home
 
 - **Route:** `/dashboard/student`
@@ -325,18 +334,18 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/student/tasks`
 - **Audience:** student, parent, teacher
-- **Purpose:** The one daily-goals list: what to finish today, visible to the student, their parents, and their teachers.
+- **Purpose:** The old tasks address. It opens the daily-goals page and keeps the query.
 - **Overlaps:** /dashboard/student/goals.
-- **Decision:** This is the merged goals page. /dashboard/student/goals redirects here.
+- **Decision:** Redirect to /dashboard/student/goals. The query, including add=1, is kept.
 - **Owner keys:** None.
 
-### Goals (retired)
+### Daily goals
 
 - **Route:** `/dashboard/student/goals`
 - **Audience:** student
-- **Purpose:** The old second goals page. It now opens daily goals.
-- **Overlaps:** Daily goals.
-- **Decision:** Redirect to /dashboard/student/tasks. Removed from the student nav.
+- **Purpose:** The one daily-goals list: what to finish today, visible to the student, their parents, and their teachers.
+- **Overlaps:** Tasks.
+- **Decision:** This is the merged goals page. /dashboard/student/tasks redirects here.
 - **Owner keys:** None.
 
 ### Learning insights
@@ -687,7 +696,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Audience:** admin
 - **Purpose:** What each role can do, with a live count of people in that role, plus assigning an institution admin.
 - **Overlaps:** Users and Sparks, and allocations.
-- **Decision:** Not a second email editor. Subscription changes stay on Users and allocations. Institution-admin assignment stays here.
+- **Decision:** Roles stay here. Tier, course, and coupon grants stay on Allocations, linked from this page.
 - **Owner keys:** None.
 
 ### Allocations
@@ -696,7 +705,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Audience:** admin
 - **Purpose:** Grant a tier, a course, or a coupon to a person.
 - **Overlaps:** Access and Users.
-- **Decision:** Keep and make the three grants easier to find. This is the only place coupons are created.
+- **Decision:** Keep. This is the grants half of Access. Coupons are created only here.
 - **Owner keys:** None.
 
 ### System settings
@@ -776,8 +785,8 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Route:** `/dashboard/admin/audit`
 - **Audience:** admin
 - **Purpose:** Who changed staff-level settings and when.
-- **Overlaps:** None.
-- **Decision:** Keep.
+- **Overlaps:** Activity log.
+- **Decision:** Redirect to /dashboard/admin/activity. Staff changes and the server log are one list.
 - **Owner keys:** None.
 
 ### Payments
@@ -1037,8 +1046,8 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Route:** `/dashboard/admin/activity`
 - **Audience:** admin
 - **Purpose:** Server-written sign-in, role, content, and admin actions. Super admins read it. People cannot edit a row.
-- **Overlaps:** Institution audit on an academy.
-- **Decision:** Keep. This is the platform log. Academy settings keep their own audit.
+- **Overlaps:** The older audit page and institution audit on an academy.
+- **Decision:** Keep. /dashboard/admin/audit opens this log. Academy settings keep their own audit.
 - **Owner keys:** None. The server stamps actor, time, and IP.
 
 ### Badges

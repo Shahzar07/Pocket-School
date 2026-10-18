@@ -3616,3 +3616,31 @@ components/wall/wall-screen.tsx	Write a reply
 components/wall/wall-screen.tsx	amina, wei
 components/wall/wall-screen.tsx	This timeline only shows people in your school.
 components/wall/wall-screen.tsx	No profile for this name
+app/ai-teachers/page.tsx	BEYOND A-LEVEL
+app/ai-teachers/page.tsx	Degrees and professional routes.
+app/dashboard/admin/access/page.tsx	Tier, course, and coupon grants
+app/dashboard/admin/allocations/page.tsx	Roles and institution admins
+app/dashboard/admin/audit/page.tsx	Opening the activity log.
+app/dashboard/admin/curriculum/[courseId]/page.tsx	A save writes a row here. Publish and allocate save from their own tabs.
+app/dashboard/admin/curriculum/[courseId]/page.tsx	Save lesson
+app/dashboard/admin/curriculum/[courseId]/page.tsx	Save properties
+app/dashboard/admin/safeguarding/page.tsx	Safeguarding desk
+app/dashboard/network/recruit/page.tsx	Recruiter search
+app/dashboard/page.tsx	Opening your dashboard.
+app/dashboard/recruiter/page.tsx	Recruiter desk
+app/dashboard/student/goals/page.tsx	Assigned goals
+app/dashboard/student/goals/page.tsx	Assigned goals stay on the plan. Move one to tomorrow if the day will not fit.
+app/dashboard/student/goals/page.tsx	Could not reschedule that goal.
+app/dashboard/student/goals/page.tsx	Goal added.
+app/dashboard/student/goals/page.tsx	Sign in to set a goal.
+app/dashboard/student/tasks/page.tsx	Opening your goals.
+app/dashboard/studio/maths/page.tsx	SPM · IGCSE · A Level exam packs
+app/pricing/page.tsx	Sample member card
+components/cards/member-card-face.tsx	Sample card
+components/coming-soon.tsx	Coming soon
+components/landing/landing-page.tsx	Sample member card
+components/reads/studio-view.tsx	Sign in as a teacher or admin to save books to the school.
+components/studio/studio-nav.tsx	AI Studio
+app/dashboard/student/goals/page.tsx	Opening your goals.
+app/dashboard/helpdesk/page.tsx	ET AI
+app/dashboard/helpdesk/page.tsx	ET AI could not take that question.

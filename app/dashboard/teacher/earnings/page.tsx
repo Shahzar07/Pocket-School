@@ -31,7 +31,7 @@ export default function EarningsPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-12">
-      <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">Earnings</p>
+      <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">Earnings</p>
       <h1 className="font-heading text-4xl">Course sales</h1>
       <p className="text-muted-foreground text-sm">Sales recorded here. Payouts go to a Stripe Connect account. With no secret key, Connect stays in sandbox and nothing is sent to a bank.</p>
       <div className="flex flex-wrap gap-2">

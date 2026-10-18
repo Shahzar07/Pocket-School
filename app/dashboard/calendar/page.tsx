@@ -28,7 +28,7 @@ const fadeUp: Record<string, any> = {
 const TYPE_COLORS: Record<string, string> = {
   assignment: 'bg-primary',
   exam: 'bg-violet-500',
-  event: 'bg-emerald-500',
+  event: 'bg-success',
   holiday: 'bg-[var(--ps-cyan)]',
   class: 'bg-teal-500',
   payment: 'bg-rose-500',
@@ -37,7 +37,7 @@ const TYPE_COLORS: Record<string, string> = {
 const TYPE_BADGE: Record<string, string> = {
   assignment: 'bg-primary/10 text-primary border border-primary/20',
   exam: 'bg-violet-500/10 text-violet-600 border border-violet-500/20',
-  event: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20',
+  event: 'bg-success/10 text-success border border-success/20',
   holiday: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border border-[var(--ps-cyan-border)]/20',
   class: 'bg-teal-500/10 text-teal-600 border border-teal-500/20',
   payment: 'bg-rose-500/10 text-rose-600 border border-rose-500/20',

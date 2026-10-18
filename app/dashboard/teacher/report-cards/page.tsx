@@ -35,7 +35,7 @@ function letterGrade(pct: number) {
 }
 
 const GRADE_COLORS: Record<string, string> = {
-  A: 'bg-emerald-500/10 text-emerald-600',
+  A: 'bg-success/10 text-success',
   B: 'bg-sky-500/10 text-sky-600',
   C: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
   D: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
@@ -215,7 +215,7 @@ export default function ReportCardsPage() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">REPORT CARDS</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">REPORT CARDS</p>
           <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight">
             Student <span className="gradient-text italic">Reports</span>
           </h1>
@@ -288,7 +288,7 @@ export default function ReportCardsPage() {
           <Button
             onClick={generateReports}
             disabled={generating || !selectedCourse}
-            className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all gap-2"
+            className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-success to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all gap-2"
           >
             {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             Generate Reports
@@ -324,7 +324,7 @@ export default function ReportCardsPage() {
           className="relative text-center py-20"
         >
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl" />
+            <div className="w-64 h-64 bg-success/10 rounded-full blur-3xl" />
           </div>
           <FileBarChart className="w-14 h-14 mx-auto mb-4 text-muted-foreground/40" />
           <p className="font-heading text-2xl text-foreground">No reports yet</p>
@@ -351,7 +351,7 @@ export default function ReportCardsPage() {
             {/* Header */}
             <div className="flex items-start justify-between border-b border-border pb-4 mb-4">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">Poket School · Report Card</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">Poket School · Report Card</p>
                 <h2 className="text-xl font-bold text-foreground mt-1">{r.studentName}</h2>
                 <p className="text-sm text-muted-foreground">{selectedCourseName}</p>
               </div>
@@ -375,13 +375,13 @@ export default function ReportCardsPage() {
             </div>
 
             {/* AI Comment */}
-            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4">
+            <div className="bg-success/10 border border-success/20 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="w-4 h-4 text-emerald-600" />
-                <p className="text-xs font-bold text-emerald-600">Teacher&apos;s Comment</p>
+                <Sparkles className="w-4 h-4 text-success" />
+                <p className="text-xs font-bold text-success">Teacher&apos;s Comment</p>
               </div>
               {r.loadingComment ? (
-                <div className="flex items-center gap-2 text-sm text-emerald-600"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating comment...</div>
+                <div className="flex items-center gap-2 text-sm text-success"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating comment...</div>
               ) : (
                 <p className="text-sm text-foreground italic">{r.comment || 'No comment generated.'}</p>
               )}

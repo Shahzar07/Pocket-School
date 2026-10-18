@@ -7,10 +7,13 @@ import type { PublicCard } from '@/lib/cards/model';
 export function MemberCardFace({
   card,
   schoolOnCard = false,
+  sample = false,
 }: {
   card: PublicCard;
   /** Owner view may name the school. The public face passes the card's own schoolName, which is already hidden for under-18s. */
   schoolOnCard?: boolean;
+  /** Sample faces add the cyan chip and a light watermark. */
+  sample?: boolean;
 }) {
   const school = schoolOnCard ? card.schoolName : null;
   const marks = card.badges.length > 0
@@ -22,9 +25,15 @@ export function MemberCardFace({
 
   return (
     <article
-      className="overflow-hidden rounded-[28px] text-white shadow-xl"
+      className="relative overflow-hidden rounded-[28px] text-white shadow-xl"
       style={{ background: 'var(--ps-card-face)' }}
     >
+      {sample ? (
+        <>
+          <p className="absolute left-4 top-4 z-20 rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-3 py-1 text-xs font-semibold text-[#203337]">Sample card</p>
+          <p aria-hidden className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-5xl font-black uppercase tracking-[0.28em] text-[#203337]" style={{ opacity: 0.18 }}>SAMPLE</p>
+        </>
+      ) : null}
       <div className="grid gap-6 p-6 sm:grid-cols-[1.1fr_0.9fr] sm:p-8">
         <div className="rounded-3xl bg-[#0B1417] p-6">
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#3FE0D0]">{card.title}</p>

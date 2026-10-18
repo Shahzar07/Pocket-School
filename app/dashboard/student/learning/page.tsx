@@ -250,10 +250,10 @@ export default function MyLearningPage() {
                       )}
                     >
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                        status.state === 'passed' ? 'bg-emerald-500/10' :
+                        status.state === 'passed' ? 'bg-success/10' :
                         status.state === 'in_progress' ? 'bg-primary/10' : 'bg-muted'
                       }`}>
-                        {status.state === 'passed' && <Trophy className="w-4.5 h-4.5 text-emerald-500" />}
+                        {status.state === 'passed' && <Trophy className="w-4.5 h-4.5 text-success" />}
                         {status.state === 'in_progress' && <PlayCircle className="w-5 h-5 text-primary" />}
                         {locked && <Lock className="w-4 h-4 text-muted-foreground" />}
                       </div>
@@ -266,7 +266,7 @@ export default function MyLearningPage() {
                           {status.bestQuizPercentage !== undefined && (
                             <Badge className={`text-[10px] rounded-full ${
                               status.state === 'passed'
-                                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                                ? 'bg-success/10 text-success border-success/20'
                                 : 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20'
                             }`}>
                               Quiz best: {status.bestQuizPercentage}%
@@ -303,10 +303,10 @@ export default function MyLearningPage() {
                               }`}
                             >
                               <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                                lessonStatus === 'completed' ? 'bg-emerald-500/10' :
+                                lessonStatus === 'completed' ? 'bg-success/10' :
                                 lessonStatus === 'available' ? 'bg-primary/10' : 'bg-muted'
                               }`}>
-                                {lessonStatus === 'completed' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                                {lessonStatus === 'completed' && <CheckCircle2 className="w-4 h-4 text-success" />}
                                 {lessonStatus === 'available' && (lesson.isUnitQuiz || lesson.lessonType === 'unit_test'
                                   ? <Trophy className="w-4 h-4 text-primary" />
                                   : <PlayCircle className="w-4 h-4 text-primary" />)}

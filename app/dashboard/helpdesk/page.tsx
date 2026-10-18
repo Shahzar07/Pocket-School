@@ -29,8 +29,8 @@ const STATUS_STYLES: Record<string, string> = {
   pending: 'bg-primary/10 text-primary border border-primary/20',
   in_progress: 'bg-primary/10 text-primary border border-primary/20',
   kiv: 'bg-violet-500/10 text-violet-700 border border-violet-500/20',
-  solved: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20',
-  resolved: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20',
+  solved: 'bg-success/10 text-success border border-success/20',
+  resolved: 'bg-success/10 text-success border border-success/20',
   closed: 'bg-muted text-muted-foreground',
 };
 
@@ -152,7 +152,7 @@ export default function HelpdeskPage() {
             {isAdmin ? 'Support' : 'Help &'} <span className="gradient-text italic">{isAdmin ? 'tickets' : 'support'}</span>
           </h1>
           <p className="text-muted-foreground mt-2 text-[15px]">
-            {isAdmin ? 'Manage student and parent support requests.' : 'Ask ET first. A ticket opens only when that answer is not enough.'}
+            {isAdmin ? 'Manage student and parent support requests.' : 'Ask ET AI first. A ticket opens only when that answer is not enough.'}
           </p>
         </div>
         {!isAdmin && (
@@ -168,7 +168,7 @@ export default function HelpdeskPage() {
 
       {!isAdmin && (
         <section className="rounded-3xl border border-border bg-card p-5">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E6A83]">ET</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E6A83]">ET AI</p>
           <h2 className="mt-1 font-heading text-2xl">Ask a common question</h2>
           <form className="mt-3 flex flex-col gap-3 sm:flex-row" onSubmit={(event) => {
             event.preventDefault();
@@ -199,14 +199,14 @@ export default function HelpdeskPage() {
                 setQuestion('');
                 await load();
               } catch {
-                toast.error('ET could not take that question.');
+                toast.error('ET AI could not take that question.');
               } finally {
                 setAsking(false);
               }
             })();
           }}>
             <Input value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Password, refund, certificate, parent link…" className="h-11 rounded-xl" />
-            <Button type="submit" disabled={asking} className="h-11 rounded-full">{asking ? 'Asking…' : 'Ask ET'}</Button>
+            <Button type="submit" disabled={asking} className="h-11 rounded-full">{asking ? 'Asking…' : 'Ask ET AI'}</Button>
           </form>
           {answer && <p className="mt-3 text-sm leading-relaxed">{answer}</p>}
         </section>
@@ -304,7 +304,7 @@ export default function HelpdeskPage() {
                         </Button>
                       )}
                       {(isAdmin || ticket.userId === user?.uid) && (
-                        <Button size="sm" variant="ghost" onClick={() => handleResolve(ticket.id!)} className="rounded-xl text-xs gap-1 text-emerald-600 hover:text-emerald-700">
+                        <Button size="sm" variant="ghost" onClick={() => handleResolve(ticket.id!)} className="rounded-xl text-xs gap-1 text-success hover:text-success">
                           <CheckCircle2 className="w-3.5 h-3.5" /> Solved
                         </Button>
                       )}

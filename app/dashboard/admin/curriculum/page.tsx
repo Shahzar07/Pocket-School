@@ -35,7 +35,7 @@ const PAGE_SIZE = 12;
 const STATUS_BADGE: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
   pending_approval: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border border-[var(--ps-cyan-border)]',
-  published: 'bg-emerald-50 text-emerald-700',
+  published: 'bg-success/15 text-success',
 };
 
 /** A teaching week is planned as 5 × 60-minute sessions. */

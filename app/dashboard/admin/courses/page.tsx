@@ -25,7 +25,7 @@ const fadeUp: Record<string, any> = {
 
 const COURSE_GRADIENTS = [
   'from-primary to-primary',
-  'from-emerald-500 to-teal-600',
+  'from-success to-teal-600',
   'from-[var(--ps-cyan)] to-[var(--ps-cyan-border)]',
   'from-rose-500 to-pink-600',
 ];
@@ -179,7 +179,7 @@ export default function AdminCourseMgmt() {
         {[
           { label: 'All Courses', value: courses.length, icon: BookOpen, accent: 'text-primary', bar: 'bg-primary' },
           { label: 'Pending', value: pendingCourses.length, icon: Clock, accent: 'text-[var(--ps-cyan-text)]', bar: 'bg-[var(--ps-cyan)]' },
-          { label: 'Published', value: courses.filter(c => c.status === 'published').length, icon: CheckCircle2, accent: 'text-emerald-600', bar: 'bg-emerald-500' },
+          { label: 'Published', value: courses.filter(c => c.status === 'published').length, icon: CheckCircle2, accent: 'text-success', bar: 'bg-success' },
           { label: 'Drafts', value: courses.filter(c => c.status === 'draft').length, icon: Edit, accent: 'text-violet-600', bar: 'bg-violet-500' },
         ].map((s, i) => (
           <motion.div key={s.label} variants={fadeUp} initial="hidden" animate="visible" custom={1 + i}
@@ -227,8 +227,8 @@ export default function AdminCourseMgmt() {
 
       {!loading && activeTab === 'pending' && pendingCourses.length === 0 && (
         <div className="relative text-center py-16 bg-card rounded-[2rem] border border-border overflow-hidden">
-          <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-emerald-500/8 blur-[80px]" />
-          <CheckCircle2 className="w-12 h-12 mx-auto mb-4 text-emerald-600/40" />
+          <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-success/8 blur-[80px]" />
+          <CheckCircle2 className="w-12 h-12 mx-auto mb-4 text-success/40" />
           <h3 className="font-heading text-2xl text-foreground mb-1.5">All caught up</h3>
           <p className="text-sm text-muted-foreground">No courses pending approval.</p>
         </div>
@@ -267,7 +267,7 @@ export default function AdminCourseMgmt() {
                     {c.type ?? 'course'}
                   </span>
                   <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${
-                    c.status === 'published' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' :
+                    c.status === 'published' ? 'bg-success/10 text-success border border-success/20' :
                     c.status === 'pending_approval' ? 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border border-[var(--ps-cyan-border)]/20' :
                     'bg-muted text-muted-foreground'
                   }`}>
@@ -287,7 +287,7 @@ export default function AdminCourseMgmt() {
               <div className="px-5 pb-5 pt-0 space-y-2.5">
                 {c.status === 'pending_approval' && (
                   <div className="grid grid-cols-2 gap-2">
-                    <Button size="sm" className="rounded-full font-bold bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5" onClick={() => onApprove(c)}>
+                    <Button size="sm" className="rounded-full font-bold bg-success hover:bg-success text-white gap-1.5" onClick={() => onApprove(c)}>
                       <CheckCircle2 className="w-3.5 h-3.5" /> Approve
                     </Button>
                     <Button size="sm" variant="outline" className="rounded-full font-bold text-destructive border-destructive/30 hover:bg-destructive/10 gap-1.5" onClick={() => onReject(c)}>

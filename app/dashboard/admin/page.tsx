@@ -245,7 +245,7 @@ export default function AdminDashboard() {
               { href: '/dashboard/admin/users', icon: Users, title: 'Users & Sparks', sub: 'Accounts, roles and grants' },
               ...(can(resolveStaffRole(profile), 'audit') ? [
                 { href: '/dashboard/admin/activity', icon: Shield, title: 'Activity log', sub: 'Sign-ins, edits, and view-as' },
-                { href: '/dashboard/admin/audit', icon: Shield, title: 'Audit', sub: 'Admin actions' },
+                { href: '/dashboard/admin/activity', icon: Shield, title: 'Activity log', sub: 'Sign-ins, edits, and admin actions' },
               ] : []),
               { href: '/dashboard/admin/certificates', icon: Shield, title: 'Certificates', sub: 'Open Badges and class issuance' },
             ].map(x => (

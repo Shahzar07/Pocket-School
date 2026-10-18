@@ -128,7 +128,7 @@ export function seedPricing(): PricingConfig {
       annualUsd: plan.annualUsd,
     })),
     addons: [
-      { id: 'lyra_live', monthlyUsd: 49 },
+      { id: 'et_ai_live', monthlyUsd: 49 },
       { id: 'cms', monthlyUsd: 29 },
     ],
     familyBundleDiscount: null,

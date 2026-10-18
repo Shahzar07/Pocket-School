@@ -1821,6 +1821,16 @@ service cloud.firestore {
         && (!incoming().keys().hasAny(['checklist']) || incoming().checklist is list);
     }
 
+    match /users/{userId}/activity/{dateKey} {
+      allow read: if isUser(userId) || isAdmin();
+      allow create, update: if isUser(userId)
+        && incoming().dateKey == dateKey
+        && incoming().activeMs is number
+        && incoming().idleMs is number
+        && incoming().hiddenMs is number;
+      allow delete: if false;
+    }
+
     match /users/{userId}/notes/{noteId} {
       allow read: if isUser(userId);
       allow create: if isUser(userId)

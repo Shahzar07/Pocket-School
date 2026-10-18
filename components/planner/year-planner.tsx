@@ -40,7 +40,7 @@ const DOT: Record<string, string> = {
   holiday: 'bg-[var(--ps-cyan)]',
   exam: 'bg-violet-500',
   assessment: 'bg-rose-500',
-  report: 'bg-emerald-500',
+  report: 'bg-success',
   period: 'bg-sky-500',
   term: 'bg-primary',
   event: 'bg-teal-500',

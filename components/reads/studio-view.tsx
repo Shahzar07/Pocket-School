@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useAuthSTORE } from '@/hooks/use-auth';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
@@ -45,6 +48,7 @@ function cloneBooks(): Book[] {
 
 export function StudioView() {
   const t = useReadsT();
+  const { user, profile } = useAuthSTORE();
   const placeholders = useCoursePlaceholders();
   const [books, setBooks] = useState<Book[]>(cloneBooks);
   const [id, setId] = useState('monsoon-market');
@@ -57,12 +61,61 @@ export function StudioView() {
   const chapter = book.chapters.find(item => item.id === chapterId) ?? book.chapters[0];
   const bookRef = useRef(book);
   bookRef.current = book;
+  const booksRef = useRef(books);
+  booksRef.current = books;
   const savedAt = useAutosave(AUTOSAVE_KEY, books);
 
   useEffect(() => {
-    const saved = readAutosave<Book[]>(AUTOSAVE_KEY);
-    if (saved && saved.length > 0) setBooks(saved);
-  }, []);
+    let live = true;
+    const load = async () => {
+      const local = readAutosave<Book[]>(AUTOSAVE_KEY) ?? [];
+      const ids = [...new Set([...cloneBooks().map((item) => item.id), ...local.map((item) => item.id)])];
+      const remote: Book[] = [];
+      for (const bookId of ids) {
+        try {
+          const snap = await getDoc(doc(db, 'books', bookId));
+          if (snap.exists()) remote.push({ ...(snap.data() as Book), id: bookId });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : '';
+          if (live && message && !/permission|insufficient/i.test(message)) toast.error(message);
+        }
+      }
+      if (!live) return;
+      const byId = new Map<string, Book>();
+      for (const item of cloneBooks()) byId.set(item.id, item);
+      for (const item of local) if (item?.id) byId.set(item.id, item);
+      for (const item of remote) byId.set(item.id, item);
+      if (local.length > 0 || remote.length > 0) setBooks([...byId.values()]);
+    };
+    void load();
+    return () => { live = false; };
+  }, [user]);
+
+  useEffect(() => {
+    if (!savedAt || !user) return;
+    const role = profile?.role;
+    const canWrite = role === 'admin' || role === 'teacher' || role === 'institution_admin';
+    if (!canWrite) {
+      toast.error('Sign in as a teacher or admin to save books to the school.');
+      return;
+    }
+    let live = true;
+    const write = async () => {
+      try {
+        await Promise.all(booksRef.current.map(async (item) => {
+          const payload = JSON.parse(JSON.stringify(item)) as Record<string, unknown>;
+          payload.id = item.id;
+          payload.ownerId = user.uid;
+          payload.updatedAt = savedAt;
+          await setDoc(doc(db, 'books', item.id), payload, { merge: true });
+        }));
+      } catch (error) {
+        if (live) toast.error(error instanceof Error ? error.message : 'Books were not saved.');
+      }
+    };
+    void write();
+    return () => { live = false; };
+  }, [savedAt, user, profile?.role]);
 
   useEffect(() => {
     if (!savedAt) return;
@@ -702,7 +755,7 @@ export function StudioView() {
                   {t('reads.studio.ageCheck')}
                 </button>
                 {book.coverBrief?.ageNote && (
-                  <p className={`text-sm ${book.coverBrief.ageOk ? 'text-emerald-800' : 'text-red-700'}`}>{book.coverBrief.ageNote}</p>
+                  <p className={`text-sm ${book.coverBrief.ageOk ? 'text-success' : 'text-red-700'}`}>{book.coverBrief.ageNote}</p>
                 )}
               </div>
               <p className="text-xs text-muted-foreground">The author line is always ET AI. The picture itself has no lettering; the title is drawn on top.</p>

@@ -1,3 +1,5 @@
+import { portraitFor } from './teacher-portrait';
+
 export type TeacherStatus = 'live' | 'coming-soon';
 
 export type TeacherCategory =
@@ -60,9 +62,6 @@ export interface AiTeacher {
   trainedOn?: string[];
 }
 
-const dicebear = (seed: string) =>
-  `https://api.dicebear.com/9.x/lorelei/svg?seed=${encodeURIComponent(seed)}&backgroundColor=eef3ff,f5f1ff,fff7e6&radius=20`;
-
 const VOICES: TeacherVoice[] = [
   'Kore', 'Charon', 'Aoede', 'Puck', 'Leda', 'Zephyr', 'Fenrir', 'Orus', 'Iapetus',
 ];
@@ -101,7 +100,7 @@ function et(input: {
   return {
     ...input,
     status: 'live',
-    avatarUrl: dicebear(input.id),
+    avatarUrl: portraitFor(input.category, input.id),
     accentColor,
     voice,
     voiceStyle: 'Warm, clear, and patient. Short steps, then a check that the idea has landed.',
@@ -341,7 +340,7 @@ export const ET_AI_TUTOR: AiTeacher = {
   subjects: ['Any subject'],
   category: 'Study Support',
   status: 'live',
-  avatarUrl: dicebear('et-ai'),
+  avatarUrl: portraitFor('Study Support', 'et-ai'),
   accentColor: '#3FE0D0',
   iconKey: 'brain',
   voice: 'Kore',

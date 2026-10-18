@@ -36,7 +36,7 @@ interface InfographicDoc {
 
 const ACCENTS = [
   { grad: 'from-blue-500 to-indigo-600', on: 'text-white', text: 'text-blue-500', soft: 'bg-blue-500/10', border: 'border-blue-500/25', frame: '' },
-  { grad: 'from-emerald-500 to-teal-600', on: 'text-white', text: 'text-emerald-500', soft: 'bg-emerald-500/10', border: 'border-emerald-500/25', frame: '' },
+  { grad: 'from-success to-teal-600', on: 'text-white', text: 'text-success', soft: 'bg-success/10', border: 'border-success/25', frame: '' },
   { grad: 'from-violet-500 to-purple-600', on: 'text-white', text: 'text-violet-500', soft: 'bg-violet-500/10', border: 'border-violet-500/25', frame: '' },
   { grad: 'from-[var(--ps-cyan)] to-[var(--ps-cyan)]', on: 'text-[var(--ps-cyan-ink)]', text: 'text-[var(--ps-cyan-text)]', soft: 'bg-[var(--ps-cyan-soft)]', border: 'border-[var(--ps-cyan-border)]/25', frame: 'border border-[var(--ps-cyan-border)]' },
   { grad: 'from-rose-500 to-pink-600', on: 'text-white', text: 'text-rose-500', soft: 'bg-rose-500/10', border: 'border-rose-500/25', frame: '' },

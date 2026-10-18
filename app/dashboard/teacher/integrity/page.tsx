@@ -24,7 +24,7 @@ const fadeUp: Record<string, any> = {
 
 const STATUS_STYLES: Record<string, string> = {
   pending: 'bg-muted text-muted-foreground',
-  clean: 'bg-emerald-500/10 text-emerald-700',
+  clean: 'bg-success/10 text-success',
   suspicious: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
   violation: 'bg-red-500/10 text-red-700',
 };
@@ -109,7 +109,7 @@ export default function IntegrityPage() {
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
       {/* Header */}
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}>
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">Academic Integrity</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">Academic Integrity</p>
         <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1">
           Academic <span className="gradient-text italic">Integrity</span>
         </h1>
@@ -136,7 +136,7 @@ export default function IntegrityPage() {
       {reports.length === 0 && (
         <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2} className="text-center py-20 relative">
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl" />
+            <div className="w-64 h-64 bg-success/10 rounded-full blur-3xl" />
           </div>
           <Shield className="w-14 h-14 mx-auto mb-4 text-muted-foreground relative" />
           <p className="font-heading text-2xl text-foreground relative">No integrity reports yet</p>
@@ -146,7 +146,7 @@ export default function IntegrityPage() {
 
       {reports.length > 0 && (
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">Reports</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">Reports</p>
           <h2 className="font-heading text-3xl text-foreground tracking-tight mt-1">Review Submissions</h2>
         </div>
       )}
@@ -176,11 +176,11 @@ export default function IntegrityPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs font-semibold text-muted-foreground mb-1">AI Detection Score</p>
-                <ScoreBar value={r.aiScore} color={r.aiScore >= 70 ? 'bg-red-500' : r.aiScore >= 40 ? 'bg-[var(--ps-cyan)]' : 'bg-green-500'} />
+                <ScoreBar value={r.aiScore} color={r.aiScore >= 70 ? 'bg-red-500' : r.aiScore >= 40 ? 'bg-[var(--ps-cyan)]' : 'bg-success'} />
               </div>
               <div>
                 <p className="text-xs font-semibold text-muted-foreground mb-1">Plagiarism Score</p>
-                <ScoreBar value={r.plagiarismScore} color={r.plagiarismScore >= 70 ? 'bg-red-500' : r.plagiarismScore >= 40 ? 'bg-[var(--ps-cyan)]' : 'bg-green-500'} />
+                <ScoreBar value={r.plagiarismScore} color={r.plagiarismScore >= 70 ? 'bg-red-500' : r.plagiarismScore >= 40 ? 'bg-[var(--ps-cyan)]' : 'bg-success'} />
               </div>
             </div>
 
@@ -217,7 +217,7 @@ export default function IntegrityPage() {
               <Button
                 onClick={() => handleUpdate(r.id)}
                 disabled={saving === r.id}
-                className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:opacity-90 shrink-0 gap-1"
+                className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-success to-teal-600 text-white hover:opacity-90 shrink-0 gap-1"
               >
                 {saving === r.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />} Update
               </Button>

@@ -79,7 +79,7 @@ const fadeUp: Record<string, any> = {
 const GOAL_STATUS_META: Record<string, { label: string; pill: string }> = {
   not_started: { label: 'Not started', pill: 'bg-muted text-muted-foreground' },
   in_progress: { label: 'In progress', pill: 'bg-primary/10 text-primary' },
-  completed: { label: 'Completed', pill: 'bg-emerald-500/10 text-emerald-600' },
+  completed: { label: 'Completed', pill: 'bg-success/10 text-success' },
   overdue: { label: 'Overdue', pill: 'bg-destructive/10 text-destructive' },
   excused: { label: 'Excused', pill: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]' },
 };
@@ -366,7 +366,7 @@ export default function ParentDashboard() {
                     </div>
                     {total > 0 && (
                       <div className="text-right shrink-0">
-                        <p className={`text-[26px] font-semibold tracking-[-0.03em] leading-none tabular-nums ${pct === 100 ? 'text-emerald-600' : pct >= 50 ? 'text-[var(--ps-cyan-text)]' : 'text-destructive'}`}>{pct}%</p>
+                        <p className={`text-[26px] font-semibold tracking-[-0.03em] leading-none tabular-nums ${pct === 100 ? 'text-success' : pct >= 50 ? 'text-[var(--ps-cyan-text)]' : 'text-destructive'}`}>{pct}%</p>
                       </div>
                     )}
                   </div>
@@ -377,7 +377,7 @@ export default function ParentDashboard() {
                     <>
                       <div className="h-2 bg-muted rounded-full overflow-hidden">
                         <motion.div
-                          className={`h-full rounded-full ${pct === 100 ? 'bg-emerald-500' : 'bg-primary'}`}
+                          className={`h-full rounded-full ${pct === 100 ? 'bg-success' : 'bg-primary'}`}
                           initial={{ width: 0 }}
                           animate={{ width: `${pct}%` }}
                           transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -390,7 +390,7 @@ export default function ParentDashboard() {
                           const canExcuse = st === 'overdue';
                           return (
                             <div key={goal.id} className="bg-muted/50 border border-border rounded-xl p-3.5 flex flex-wrap items-center gap-x-3 gap-y-2">
-                              {st === 'completed' ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                              {st === 'completed' ? <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
                                 : st === 'excused' ? <ShieldCheck className="w-4 h-4 text-[var(--ps-cyan-text)] shrink-0" />
                                 : <Clock className={`w-4 h-4 shrink-0 ${st === 'overdue' ? 'text-destructive' : 'text-muted-foreground'}`} />}
                               <p className="text-sm font-semibold text-foreground flex-1 min-w-[8rem] truncate">{goal.title}</p>

@@ -372,7 +372,7 @@ export function CreatorPanel({
       <section className="space-y-2">
         <h3 className="font-heading text-[22px]">Continuity</h3>
         <ul className="space-y-1 text-sm">
-          {notes.map(note => <li key={note.message} className={note.tone === 'warn' ? 'text-[var(--ps-cyan-text)]' : 'text-emerald-800'}>{note.message}</li>)}
+          {notes.map(note => <li key={note.message} className={note.tone === 'warn' ? 'text-[var(--ps-cyan-text)]' : 'text-success'}>{note.message}</li>)}
         </ul>
       </section>
 

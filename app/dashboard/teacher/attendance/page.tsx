@@ -31,14 +31,14 @@ const fadeUp: Record<string, any> = {
 };
 
 const STATUS_STYLES_SELECTED: Record<AttStatus, string> = {
-  present: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+  present: 'bg-success/10 text-success border-success/20',
   absent: 'bg-red-500/10 text-red-600 border-red-500/20',
   late: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20',
   excused: 'bg-sky-500/10 text-sky-600 border-sky-500/20',
 };
 
 const STATUS_BADGE_STYLES: Record<AttStatus, string> = {
-  present: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+  present: 'bg-success/10 text-success border-success/20',
   absent: 'bg-red-500/10 text-red-600 border-red-500/20',
   late: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20',
   excused: 'bg-sky-500/10 text-sky-600 border-sky-500/20',
@@ -150,7 +150,7 @@ export default function TeacherAttendancePage() {
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
       {/* Page Header */}
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}>
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">ATTENDANCE</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">ATTENDANCE</p>
         <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight">
           Track <span className="gradient-text italic">Attendance</span>
         </h1>
@@ -174,7 +174,7 @@ export default function TeacherAttendancePage() {
         className="bg-card border border-border rounded-3xl p-5 sm:p-6 space-y-5 card-glow"
       >
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">New Record</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">New Record</p>
           <h2 className="font-heading text-2xl text-foreground">Mark Attendance</h2>
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
@@ -209,7 +209,7 @@ export default function TeacherAttendancePage() {
                     className="bg-card border border-border rounded-2xl p-4 flex flex-wrap items-center gap-4 card-glow"
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-success to-teal-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
                         {s.name.charAt(0).toUpperCase()}
                       </div>
                       <span className="text-sm font-medium text-foreground truncate">{s.name}</span>
@@ -236,7 +236,7 @@ export default function TeacherAttendancePage() {
                   </motion.div>
                 ))}
                 <Button onClick={handleSave} disabled={saving}
-                  className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all gap-2 mt-2"
+                  className="w-full rounded-full h-11 font-bold bg-gradient-to-r from-success to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all gap-2 mt-2"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardCheck className="w-4 h-4" />}
                   Save Attendance
@@ -251,7 +251,7 @@ export default function TeacherAttendancePage() {
       {records.length > 0 && (
         <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2} className="space-y-4">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">History</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">History</p>
             <h2 className="font-heading text-3xl text-foreground">Past Records ({records.length})</h2>
             {(() => {
               const marks = flattenSessionRecords(records.map(record => ({
@@ -281,14 +281,14 @@ export default function TeacherAttendancePage() {
               >
                 <button className="w-full flex items-center justify-between p-4 text-left gap-3" onClick={() => setExpanded(isExp ? null : r.id!)}>
                   <div className="flex items-center gap-3">
-                    <ClipboardCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <ClipboardCheck className="w-4 h-4 text-success shrink-0" />
                     <div>
                       <p className="font-semibold text-foreground text-sm">{r.lessonTitle}</p>
                       <p className="text-xs text-muted-foreground">{r.courseTitle} · {date.toLocaleDateString()}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <Badge className={`rounded-full text-[10px] border ${rate >= 80 ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : rate >= 60 ? 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20' : 'bg-red-500/10 text-red-600 border-red-500/20'}`}>
+                    <Badge className={`rounded-full text-[10px] border ${rate >= 80 ? 'bg-success/10 text-success border-success/20' : rate >= 60 ? 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20' : 'bg-red-500/10 text-red-600 border-red-500/20'}`}>
                       {rate}% present
                     </Badge>
                     {isExp ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
@@ -318,7 +318,7 @@ export default function TeacherAttendancePage() {
           className="relative text-center py-20"
         >
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl" />
+            <div className="w-64 h-64 bg-success/10 rounded-full blur-3xl" />
           </div>
           <div className="relative">
             <ClipboardCheck className="w-14 h-14 mx-auto mb-4 text-muted-foreground/30" />

@@ -600,7 +600,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                                   <button
                                     onClick={() => saveGen(i)}
                                     disabled={saving === i || t.saved}
-                                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${t.saved ? 'text-emerald-400' : `${C.faint} hover:text-white ${C.surfaceHover}`}`}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${t.saved ? 'text-success' : `${C.faint} hover:text-white ${C.surfaceHover}`}`}
                                   >
                                     <Save className="w-3.5 h-3.5" />
                                     {saving === i ? 'Saving…' : t.saved ? 'Saved' : 'Save to library'}
@@ -834,7 +834,7 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
           <div key={i} className="rounded-xl bg-[#1F1E1C] border border-[#2E2B28] p-4">
             <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#3FE0D0' }}>Question</p>
             <p className="text-sm text-white mb-3">{card.question}</p>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-400 mb-2">Answer</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-success mb-2">Answer</p>
             <p className="text-sm text-[#D8D4CC]">{card.answer}</p>
           </div>
         ))}
@@ -849,7 +849,7 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
             <p className="text-sm font-semibold text-white mb-3">{i + 1}. {q.question}</p>
             <ul className="space-y-1.5 mb-3">
               {q.options?.map((opt: string, j: number) => (
-                <li key={j} className={`text-sm rounded-lg px-3 py-2 ${q.answer === String.fromCharCode(65 + j) || q.answer === opt ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30' : 'bg-white/[0.02] text-[#D8D4CC] border border-transparent'}`}>
+                <li key={j} className={`text-sm rounded-lg px-3 py-2 ${q.answer === String.fromCharCode(65 + j) || q.answer === opt ? 'bg-success/10 text-success border border-success/30' : 'bg-white/[0.02] text-[#D8D4CC] border border-transparent'}`}>
                   {String.fromCharCode(65 + j)}. {opt}
                 </li>
               ))}

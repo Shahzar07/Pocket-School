@@ -7,7 +7,7 @@ import type { ShelfBadge, ShelfItem } from '@/lib/shelf/types';
 import { BookCover } from './book-cover';
 
 const TONE: Record<ShelfBadge['tone'], string> = {
-  free: 'bg-emerald-700 text-white',
+  free: 'bg-success text-white',
   included: 'bg-[#E9F7FA] text-[#1E6A83]',
   buy: 'bg-white/95 text-[#203337]',
   owned: 'bg-[#203337] text-white',

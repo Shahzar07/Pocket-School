@@ -277,9 +277,9 @@ export default function AdminSystemSettings() {
         {show('data retention export import backup') && <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3}
           className="bg-card border border-border rounded-3xl p-6 sm:p-7 relative overflow-hidden card-glow"
         >
-          <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-emerald-500 opacity-80" />
+          <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-success opacity-80" />
           <div className="flex items-center gap-3 mb-5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-success to-teal-600 flex items-center justify-center shadow-md">
               <Database className="w-5 h-5 text-white" />
             </div>
             <h2 className="font-heading text-2xl text-foreground">Data Management</h2>
@@ -360,7 +360,7 @@ export default function AdminSystemSettings() {
                 </div>
                 <DialogFooter className="gap-2">
                   <Button variant="outline" onClick={() => setRetentionOpen(false)} className="rounded-full">Cancel</Button>
-                  <Button onClick={handleSaveRetention} disabled={savingRetention} className="rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold gap-2">
+                  <Button onClick={handleSaveRetention} disabled={savingRetention} className="rounded-full bg-gradient-to-r from-success to-teal-600 text-white font-bold gap-2">
                     {savingRetention && <Loader2 className="w-4 h-4 animate-spin" />}
                     Apply
                   </Button>
