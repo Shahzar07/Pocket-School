@@ -3204,7 +3204,7 @@ export async function deleteTask(id: string) {
 
 // ─── Daily Goals (accountability system) ──────────────────────────────────────
 
-export type GoalCategory = 'study' | 'revision' | 'practice' | 'reading' | 'other';
+export type GoalCategory = 'study' | 'homework' | 'revision' | 'reading' | 'practice' | 'personal' | 'other';
 export type GoalStatus = 'not_started' | 'in_progress' | 'completed' | 'overdue' | 'excused';
 
 export interface DailyGoal {
@@ -3253,7 +3253,23 @@ export interface DailyGoal {
   /** Set only by the server when the Sparks bonus is granted. */
   sparksAwarded?: boolean;
   progress?: number;
-  source?: 'student' | 'parent' | 'ai';
+  source?: 'student' | 'self' | 'parent' | 'ai' | 'et_ai' | 'teacher';
+  /** What the goal opens. Note text is never copied onto the goal. */
+  link?: { type: 'course' | 'lesson' | 'assignment' | 'exam' | 'note'; id: string };
+  lessonId?: string;
+  /** False hides the goal from parents. Assigned goals stay visible. */
+  parentVisibility?: boolean;
+  /** A private goal is omitted from parent and teacher views. */
+  private?: boolean;
+  rescheduleCount?: number;
+  rescheduleLimit?: number;
+  rescheduleLog?: { at: string; fromDate: string; toDate: string; fromTime: string; toTime: string }[];
+  catchUp?: boolean;
+  missCount?: number;
+  assignedByName?: string;
+  priorityStar?: boolean;
+  order?: number;
+  dueDateKey?: string;
   suggestedBy?: string;
   suggestedByName?: string;
   cosignedBy?: string;

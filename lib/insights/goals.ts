@@ -7,11 +7,11 @@
 import { GOAL_ON_TIME_BONUS, GOAL_STREAK_BONUS } from '../sparks';
 import { addDays, isoDateKey, parseDateKey, weekdayOf } from './dates';
 
-export type GoalCategory = 'study' | 'revision' | 'practice' | 'reading' | 'other';
+export type GoalCategory = 'study' | 'homework' | 'revision' | 'reading' | 'practice' | 'personal' | 'other';
 export type GoalStatus = 'not_started' | 'in_progress' | 'completed' | 'overdue' | 'excused';
 export type GoalRecurrence = 'none' | 'daily' | 'weekdays' | 'weekly';
 export type GoalTargetKind = 'free_text' | 'unit' | 'lessons' | 'revision' | 'quiz_score' | 'studio';
-export type GoalSource = 'student' | 'parent' | 'ai';
+export type GoalSource = 'student' | 'self' | 'parent' | 'ai' | 'et_ai' | 'teacher';
 export type GoalPriority = 'low' | 'medium' | 'high';
 
 export interface GoalReaction {

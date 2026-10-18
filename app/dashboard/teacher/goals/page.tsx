@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { subscribeTeacherGoals, type DailyGoal } from '@/lib/db';
 import { DashPage, DashHeader, Panel, PanelHeader, EmptyState } from '@/components/dash-ui';
+import { ClassAdherence } from '@/components/goals/class-adherence';
+import { classAdherence } from '@/lib/study/planner';
 import { DocumentDelivery } from '@/components/document-delivery';
 import { textDocument } from '@/lib/documents/packet';
 import { Target } from 'lucide-react';
@@ -16,6 +18,21 @@ export default function TeacherGoalsPage() {
     if (!user) return;
     return subscribeTeacherGoals(user.uid, setGoals);
   }, [user]);
+
+  const adherence = useMemo(() => {
+    const byStudent = new Map<string, DailyGoal[]>();
+    for (const goal of goals) {
+      if (goal.private || goal.parentVisibility === false) continue;
+      const list = byStudent.get(goal.studentId) ?? [];
+      list.push(goal);
+      byStudent.set(goal.studentId, list);
+    }
+    return classAdherence([...byStudent.entries()].map(([studentId, studentGoals]) => ({
+      studentId,
+      name: studentGoals[0]?.studentName || 'Student',
+      goals: studentGoals,
+    })));
+  }, [goals]);
 
   return (
     <DashPage>
@@ -34,6 +51,7 @@ export default function TeacherGoalsPage() {
           studentIds={[...new Set(goals.map(goal => goal.studentId))]}
         />
       )}
+      <ClassAdherence classRate={adherence.classRate} rows={adherence.rows} />
       <Panel>
         <PanelHeader title="Shared with you" />
         {goals.length === 0 ? (

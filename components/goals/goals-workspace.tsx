@@ -15,7 +15,7 @@ export interface WorkspaceGoal extends GoalLike {
   reflection?: string;
   progress?: number;
   cosignedBy?: string;
-  source?: 'student' | 'parent' | 'ai';
+  source?: GoalLike['source'];
   focusMinutes?: number;
   priority?: GoalLike['priority'];
   reactions?: GoalLike['reactions'];

@@ -3217,3 +3217,42 @@ Sharing is off until the owner asks. `POST /api/notes` with `action: "share"` ch
 
 Indexes for the reminder query and the trash query are in `firestore.indexes.json`. They are not deployed from this change.
 
+## Study planner goals
+
+The mobile contract stays `daily_goals`. The same goal is also stored at `users/{uid}/goals/{goalId}` so a plan, a link, and a visibility flag travel with the learner. `goalId` matches the `daily_goals` document id (`mirrorId` on the subcollection copy).
+
+`source` is `self` (older documents may say `student`), `et_ai` (older documents may say `ai`), `teacher`, or `parent`. Assigned sources cannot be deleted by the student. The title, privacy, and parent visibility of an assigned goal stay fixed. `rescheduleCount` may rise by a logged move and cannot pass `rescheduleLimit`.
+
+| Field | Meaning |
+| --- | --- |
+| `link` | `{ type, id }` where `type` is `course`, `lesson`, `assignment`, `exam`, or `note`. The note id is a pointer. Note text is never copied. |
+| `parentVisibility` | Default true. `false` hides the goal from parents. |
+| `private` | Default false. Private goals are omitted from parent cards and from teacher and institution counts. |
+| `dueDateKey` | The real deadline the planner worked backwards from. |
+| `catchUp` | True when the block was placed after the deadline. |
+| `missCount` | Overdue repeats. At the age cap this raises a `missed_goals` concern for the existing progress alerts. |
+| `rescheduleLog` | Optional short list. The full log is append-only at `users/{uid}/goal_reschedules/{id}` with `{ goalId, at, fromDate, toDate, fromTime, toTime, by }`. |
+| `category` | Also `homework` and `personal`, beside `study`, `revision`, `practice`, `reading`, and `other`. |
+
+`users/{uid}/study_plan/{planId}` is the week the planner built: `{ source, weekStart, goals, limits }`. The student, a linked parent, or an admin can read it. A teacher writes only `source: teacher`.
+
+`users/{uid}/goal_adherence/{weekId}` is counts only: `{ assigned, onTime, plannedMinutes, actualMinutes, teacherIds, institutionId }`. It must not contain `titles` or `noteText`. A listed teacher, or the institution admin for `institutionId`, can read it.
+
+`planner_defaults/global` is `{ maxDailyMinutes, maxGoalsPerDay, rescheduleLimit, missFlagAfter }`. Signed-in users can read it. Only an admin can write it. Age caps in `limitsForAge` are a ceiling: under-13 is 45 minutes and 3 goals, teen is 90 minutes and 5 goals, adult is 150 minutes and 5 goals. Admin values can only tighten those caps.
+
+Without an ET AI key, `buildStudyPlan` in `lib/study/planner.ts` places blocks into evening and weekend windows, working backwards from deadlines. Completing the linked lesson or assignment ticks the goal. Overdue assigned goals roll into the next open slot. One miss reminds the student and notifies a parent (category `goals`, quiet hours on `notify_settings`). Repeated misses use the existing `missed_goals` concern, which already reaches teachers. Push and email still go through `/api/push`. If FCM or email keys are missing, the in-app notification remains.
+
+These rules are in `firestore.rules` and are not deployed.
+
+## School wall
+
+One wall for community, class, school, groups, alumni, and a profile timeline at `/u/{handle}`. The web component is `components/wall/wall-screen.tsx`. The mobile app should render the same fields and the same audience rules.
+
+`wall_posts/{postId}` is `{ authorId, authorHandle, body, audience, feed, schoolId, feeling, tags, locationOn, location, images, link, poll, event, sharedId, pinned, reactions, shares, moderation, createdAt }`. `audience` is `public`, `school`, `class`, `group`, or `only-me`. Under-18 accounts cannot choose `public`, cannot turn location on, and the `schoolId` must match `users.institutionId`. `feed` is `school`, `class`, `group`, `alumni`, or `event`. `reactions` is a map of `like`, `love`, `celebrate`, `insightful`, and `support` counts. `locationOn` defaults to false. Images are resized in the browser and re-encoded so EXIF location is dropped, then stored at `media/{uid}/posts/{file}`.
+
+`wall_posts/{postId}/comments/{commentId}` is `{ authorId, body, image, parentId, createdAt }`. Replies set `parentId`. `wall_posts/{postId}/reactions/{uid}` is `{ kind }` so one person has one reaction. `wall_notifications/{id}` is `{ userId, fromId, kind, postId, read, createdAt }` with `kind` `reaction`, `comment`, or `mention`.
+
+Feed queries are `schoolId + createdAt`, `authorHandle + createdAt`, and `feed + createdAt` in `firestore.indexes.json`. They are not deployed. A minor only reads posts whose school matches theirs. A held post is visible to the author until the Safety Desk releases it. Reports use the existing `reports` collection and the Safety Desk queue.
+
+The app should follow `docs/DASHBOARD_UX.md` for the three-column wall: profile shortcuts, composer and feed, then events, groups, moments, online classmates, and SafeLine.
+

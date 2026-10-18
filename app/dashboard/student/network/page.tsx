@@ -6,6 +6,7 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { authedFetch } from '@/lib/api-client';
 import { SEAT_NOTE, type AlumniConsent } from '@/lib/alumni-network';
 import { AttendedSchoolPanel } from '@/components/alumni/claim-panel';
+import { WallScreen } from '@/components/wall/wall-screen';
 
 interface AttendedRow {
   institutionId: string;
@@ -121,6 +122,7 @@ export default function ClassNetworkPage() {
         {attended.length === 0 && <p className="mt-3 text-sm text-ink">Add a school you attended, or your class groups appear here after you leave an academy. The history stays on this account.</p>}
       </section>
       <AttendedSchoolPanel />
+      <WallScreen surface="class" />
 
       {network && (
         <section className="space-y-3 rounded-3xl bg-white p-4 sm:p-6">

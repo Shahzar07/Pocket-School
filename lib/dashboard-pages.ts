@@ -443,7 +443,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/teacher/goals',
     title: 'Class daily goals',
-    purpose: 'The same daily goals students set, seen by their teacher.',
+    purpose: 'Assigned-goal adherence for the class, plus goals a student chose to share. Private goals are left out.',
     audience: ['teacher'],
     overlaps: 'Student daily goals.',
     decision: 'Keep as the teacher view. Do not add a second goal model.',
@@ -720,6 +720,15 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     ownerKeys: 'OPENROUTER_API_KEY for lesson generation.',
   },
   {
+    path: '/dashboard/admin/planner',
+    title: 'Study planner',
+    purpose: 'Age caps and reschedule limits for ET AI assigned goals.',
+    audience: ['admin'],
+    overlaps: 'Student daily goals.',
+    decision: 'Keep. The planner writes the same daily goals. It does not add a second list.',
+    ownerKeys: 'None. Without an ET AI key the planner is rule-based.',
+  },
+  {
     path: '/dashboard/admin/curriculum/[courseId]',
     title: 'Curriculum course',
     purpose: 'Edit one official course in the CMS.',
@@ -812,7 +821,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/community',
     title: 'Community',
-    purpose: 'Spaces and posts, plus class channels as a tab. ET AI can summarise a thread and suggest an answer.',
+    purpose: 'Facebook-style school wall: composer, photo grids, reactions, and comments. Class channels stay on a tab. The same wall is used for class, groups, alumni, and profile timelines.',
     audience: ['everyone'],
     overlaps: '/dashboard/channels.',
     decision: 'Channels fold in as a tab. /dashboard/channels redirects here.',
@@ -1509,6 +1518,15 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     audience: ['institution'],
     overlaps: 'Teacher class risk and parent progress.',
     decision: 'Keep. The school sees its own learners.',
+    ownerKeys: 'None.',
+  },
+  {
+    path: '/dashboard/institution/goals',
+    title: 'Goal adherence',
+    purpose: 'Assigned-goal completion for the school, with no private goal titles.',
+    audience: ['institution'],
+    overlaps: 'Teacher class goals and student daily goals.',
+    decision: 'Keep as the school count. Private goals stay off this page.',
     ownerKeys: 'None.',
   },
   {
