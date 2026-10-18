@@ -2305,6 +2305,8 @@ components/calendar/calendar-tools.tsx	Term start
 components/calendar/calendar-tools.tsx	Units, one per line
 components/cards/card-desk.tsx	A verified parent turns sharing on for this card. The public page uses an avatar, not a photo.
 components/cards/card-desk.tsx	Loading your card…
+components/cards/card-desk.tsx	Not issued yet
+components/cards/card-desk.tsx	The share link is unavailable right now. This card still shows the signed-in account.
 components/cards/card-desk.tsx	This card is not indexed by search engines.
 components/cards/card-desk.tsx	Under-13 sharing
 components/cards/card-desk.tsx	Your number is
@@ -3714,3 +3716,7 @@ components/goals/add-goal-dialog.tsx	Teachers and linked parents can see this go
 components/goals/class-adherence.tsx	Every goal counts, including ones a student set. Titles are on the student list.
 components/goals/class-adherence.tsx	No goals in this class yet.
 components/goals/parent-plan-card.tsx	Plan against what was finished. Self-set goals are included.
+components/alumni/rochford-desk.tsx	You are in the Rochford alumni network. This stays after a reload on this device.
+components/wall/wall-screen.tsx	Loading saved posts…
+components/alumni/rochford-desk.tsx	You are in the Rochford alumni network. This stays after a reload on this device.
+components/wall/wall-screen.tsx	Loading saved posts…

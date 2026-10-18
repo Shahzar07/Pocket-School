@@ -81,6 +81,7 @@ export default function PreviewNotesPage() {
   const [notes, setNotes] = useState(seed);
   return (
     <main className="min-h-screen bg-[#F4F6F6] px-4 py-8">
+      <p className="mx-auto mb-4 max-w-5xl text-xs font-bold uppercase tracking-[0.16em] text-[#1E6A83]">Rochford demo · Amina Rahman, notes</p>
       <NotesBoard
         notes={notes}
         now={1_700_000_100_000}
@@ -94,7 +95,7 @@ export default function PreviewNotesPage() {
             order: current.length,
             board: input.board || 'My board',
             linkedTo: { type: 'none', id: '' },
-            checklist: input.checklist ? [{ id: '1', text: input.text, done: false }] : [],
+            checklist: input.checklist ? [{ id: '1', text: 'Add a step', done: false }] : [],
             createdAt: 1_700_000_100_000,
             updatedAt: 1_700_000_100_000,
           }, ...current]);

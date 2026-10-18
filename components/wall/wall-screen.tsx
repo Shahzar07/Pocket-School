@@ -2,6 +2,18 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useAuthSTORE } from '@/hooks/use-auth';
+import {
+  addWallComment,
+  publishWallPost,
+  reportWallPost,
+  setWallReaction,
+  uploadWallPhoto,
+  watchHandle,
+  watchWall,
+  type WallActor,
+} from '@/lib/wall/live';
+import { wallHandle } from '@/lib/wall/live-shape';
 import {
   BadgeCheck, Bell, Bookmark, CalendarDays, Globe2, ImagePlus, Lock, MapPin,
   MessageCircle, MoreHorizontal, School, Send, Share2, Smile, Users, X,
@@ -80,8 +92,24 @@ export function WallScreen({
   surface?: FeedFilter;
   profileHandle?: string;
 }) {
+  const { user, profile: account } = useAuthSTORE();
+  const actor = useMemo<WallActor | null>(() => {
+    if (!user) return null;
+    const name = account?.displayName || account?.name || 'Learner';
+    return {
+      uid: user.uid,
+      name,
+      schoolId: account?.institutionId || '',
+      ageTier: account?.ageTier || 'teen',
+      adult: (account?.ageTier || 'teen') === 'adult',
+    };
+  }, [user, account]);
+  const viewer: WallViewer = actor
+    ? { handle: wallHandle(actor.name, actor.uid), ageTier: actor.ageTier === 'under13' || actor.ageTier === 'adult' ? actor.ageTier : 'teen', schoolId: actor.schoolId }
+    : VIEWER;
   const seed = useMemo(() => rochfordWall(NOW), []);
   const [posts, setPosts] = useState<WallPost[]>(() => seed.posts.filter((post) => post.id !== 'pond'));
+  const [liveReady, setLiveReady] = useState(false);
   const [incoming, setIncoming] = useState<WallPost[]>(() => seed.posts.filter((post) => post.id === 'pond'));
   const [filter, setFilter] = useState<FeedFilter>(surface === 'all' ? 'all' : surface);
   const [sort, setSort] = useState<'top' | 'recent'>('recent');
@@ -94,16 +122,31 @@ export function WallScreen({
   const sentinel = useRef<HTMLDivElement>(null);
 
   const profile = profileHandle ? personByHandle(seed.people, profileHandle) : undefined;
-  const missingProfile = Boolean(profileHandle) && !profile;
+  const missingProfile = Boolean(profileHandle) && !profile && !actor;
   const visible = useMemo(() => {
     if (missingProfile) return [];
-    const base = profile
-      ? postsByAuthor(posts, profile.handle, VIEWER)
-      : filterFeed(posts, filter, VIEWER);
+    const base = profileHandle
+      ? postsByAuthor(posts, profileHandle, viewer)
+      : filterFeed(posts, filter, viewer);
     const saved = savedOnly ? base.filter((post) => post.saved) : base;
     return sortFeed(saved, sort);
-  }, [posts, filter, sort, profile, savedOnly, missingProfile]);
+  }, [posts, filter, sort, profileHandle, viewer, savedOnly, missingProfile]);
   const page = visible.slice(0, count);
+
+  useEffect(() => {
+    if (!actor) return undefined;
+    setLiveReady(false);
+    const onPosts = (rows: WallPost[]) => {
+      setPosts(rows);
+      setIncoming([]);
+      setLiveReady(true);
+    };
+    const onError = (message: string) => setNotice(message);
+    const stop = profileHandle
+      ? watchHandle(actor, profileHandle, onPosts, onError)
+      : watchWall(actor, onPosts, onError);
+    return stop;
+  }, [actor, profileHandle]);
 
   useEffect(() => {
     const node = sentinel.current;
@@ -122,7 +165,7 @@ export function WallScreen({
   return (
     <div className="mx-auto grid max-w-[1180px] gap-4 px-3 py-4 lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)_300px]">
       <aside className="hidden space-y-3 lg:block">
-        <ProfileMini people={seed.people} onSaved={() => { setSavedOnly(true); setFilter('all'); }} />
+        <ProfileMini people={seed.people} viewer={viewer} onSaved={() => { setSavedOnly(true); setFilter('all'); }} />
         <nav className="rounded-2xl border border-[#E7EDED] bg-white p-2 shadow-[0_8px_24px_rgba(32,51,55,0.04)]">
           {([
             ['all', 'All posts'],
@@ -148,7 +191,29 @@ export function WallScreen({
         ) : null}
         {profile ? <ProfileHero person={profile} /> : null}
         {!profile && !missingProfile ? (
-          <Composer onPublish={(post) => { setPosts((current) => [post, ...current]); setNotice(post.moderation === 'hold' ? 'ET AI is holding this for the Safety Desk.' : 'Posted to your school wall.'); }} />
+          <Composer
+            viewer={viewer}
+            actor={actor}
+            onPublish={async (post, files) => {
+              if (!actor) {
+                setPosts((current) => [post, ...current]);
+                setNotice('Sign in to keep this post. This preview stays on this screen only.');
+                return;
+              }
+              const images: string[] = [];
+              for (const file of files) images.push(await uploadWallPhoto(actor.uid, file));
+              const saved = await publishWallPost(actor, {
+                body: post.body,
+                audience: post.audience,
+                feed: post.feed,
+                images: images.length ? images : post.images.filter((src) => src.startsWith('http')),
+                feeling: post.feeling,
+                tags: post.tags,
+                locationOn: post.locationOn,
+              });
+              setNotice(saved.moderation === 'hold' ? 'ET AI is holding this for the Safety Desk.' : 'Posted to your school wall.');
+            }}
+          />
         ) : null}
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex gap-1 rounded-full bg-white p-1">
@@ -166,7 +231,8 @@ export function WallScreen({
           </button>
         ) : null}
         {notice ? <p className="rounded-2xl bg-white px-4 py-3 text-sm text-[#203337]">{notice}</p> : null}
-        {page.length === 0 ? (
+        {actor && !liveReady ? <p className="rounded-2xl bg-white px-4 py-3 text-sm text-[#203337]">Loading saved posts…</p> : null}
+        {page.length === 0 && (!actor || liveReady) ? (
           <div className="rounded-2xl border border-dashed border-[#1E6A83] bg-white px-6 py-12 text-center">
             <p className="font-heading text-2xl text-[#203337]">Nothing on this wall yet</p>
             <p className="mx-auto mt-2 max-w-sm text-sm text-[#1E6A83]">Posts from your school, class, and groups show up here. Public posts stay with adults.</p>
@@ -181,30 +247,56 @@ export function WallScreen({
             open={thread === post.id}
             menu={menu === post.id}
             onMenu={() => setMenu(menu === post.id ? '' : post.id)}
-            onReact={(reaction) => patch(post.id, (item) => toggleReaction(item, reaction))}
+            onReact={(reaction) => {
+              const current = posts.find((item) => item.id === post.id);
+              const previous = current?.mine || '';
+              const next = previous === reaction ? '' : reaction;
+              patch(post.id, (item) => toggleReaction(item, reaction));
+              if (actor && !post.id.startsWith('local-') && !post.id.startsWith('share-')) {
+                void setWallReaction(post.id, actor.uid, previous, next).catch((error: Error) => setNotice(error.message));
+              }
+            }}
             onToggleComments={() => setThread(thread === post.id ? '' : post.id)}
             onSave={() => patch(post.id, (item) => ({ ...item, saved: !item.saved }))}
             onHide={() => { patch(post.id, (item) => ({ ...item, hidden: true })); setNotice('Post hidden.'); }}
-            onReport={() => setNotice('Report sent to the Safety Desk.')}
+            onReport={() => {
+              if (!actor) {
+                setNotice('Sign in to send a report.');
+                return;
+              }
+              void reportWallPost(actor, post.id, 'Reported from the school wall')
+                .then(() => setNotice('Report sent to the Safety Desk.'))
+                .catch((error: Error) => setNotice(error.message));
+            }}
             onDelete={() => setPosts((current) => current.filter((item) => item.id !== post.id))}
+            viewerHandle={viewer.handle}
             onShare={() => {
               const copy: WallPost = {
-                ...post, id: `share-${post.id}-${posts.length}`, sharedId: post.id, body: 'Sharing this with the class.', images: [], poll: undefined, event: undefined, comments: [], createdAt: NOW, mine: '', reactions: emptyReactions(), shares: 0, pinned: false, authorHandle: VIEWER.handle,
+                ...post, id: `share-${post.id}-${posts.length}`, sharedId: post.id, body: 'Sharing this with the class.', images: [], poll: undefined, event: undefined, comments: [], createdAt: Date.now(), mine: '', reactions: emptyReactions(), shares: 0, pinned: false, authorHandle: viewer.handle, schoolId: viewer.schoolId,
               };
               setPosts((current) => [copy, ...current]);
               patch(post.id, (item) => ({ ...item, shares: item.shares + 1 }));
+              if (actor) {
+                void publishWallPost(actor, { body: copy.body, audience: 'school', feed: 'school', images: [], tags: [], locationOn: false }).catch((error: Error) => setNotice(error.message));
+              }
             }}
-            onComment={(body, image) => patch(post.id, (item) => ({
-              ...item,
-              comments: [...item.comments, { id: `local-${item.comments.length}`, authorHandle: VIEWER.handle, body, createdAt: NOW, image, replies: [] }],
-            }))}
-            onReply={(commentId, body) => patch(post.id, (item) => ({
-              ...item,
-              comments: item.comments.map((comment) => comment.id === commentId ? {
-                ...comment,
-                replies: [...comment.replies, { id: `reply-${comment.replies.length}`, authorHandle: VIEWER.handle, body, createdAt: NOW, replies: [] }],
-              } : comment),
-            }))}
+            onComment={(body, image) => {
+              patch(post.id, (item) => ({
+                ...item,
+                comments: [...item.comments, { id: `local-${item.comments.length}`, authorHandle: viewer.handle, body, createdAt: Date.now(), image, replies: [] }],
+              }));
+              if (actor && !post.id.startsWith('local-')) void addWallComment(actor, post.id, body).catch((error: Error) => setNotice(error.message));
+            }}
+            onReply={(commentId, body) => {
+              patch(post.id, (item) => ({
+                ...item,
+                comments: item.comments.map((comment) => comment.id === commentId ? {
+                  ...comment,
+                  replies: [...comment.replies, { id: `reply-${comment.replies.length}`, authorHandle: viewer.handle, body, createdAt: Date.now(), replies: [] }],
+                } : comment),
+              }));
+              if (actor && !post.id.startsWith('local-')) void addWallComment(actor, post.id, body, commentId).catch((error: Error) => setNotice(error.message));
+            }}
             onVote={(optionId) => patch(post.id, (item) => item.poll ? {
               ...item,
               poll: {
@@ -272,8 +364,8 @@ export function WallScreen({
   );
 }
 
-function ProfileMini({ people, onSaved }: { people: ReturnType<typeof rochfordWall>['people']; onSaved: () => void }) {
-  const me = personByHandle(people, VIEWER.handle);
+function ProfileMini({ people, viewer, onSaved }: { people: ReturnType<typeof rochfordWall>['people']; viewer: WallViewer; onSaved: () => void }) {
+  const me = personByHandle(people, viewer.handle) ?? personByHandle(people, VIEWER.handle);
   if (!me) return null;
   return (
     <div className="overflow-hidden rounded-2xl border border-[#E7EDED] bg-white shadow-[0_8px_24px_rgba(32,51,55,0.04)]">
@@ -323,7 +415,7 @@ function ProfileHero({ person }: { person: ReturnType<typeof rochfordWall>['peop
   );
 }
 
-function Composer({ onPublish }: { onPublish: (post: WallPost) => void }) {
+function Composer({ viewer, actor, onPublish }: { viewer: WallViewer; actor: WallActor | null; onPublish: (post: WallPost, files: File[]) => Promise<void> }) {
   const [open, setOpen] = useState(false);
   const [body, setBody] = useState('');
   const [audience, setAudience] = useState<Audience>('school');
@@ -331,28 +423,29 @@ function Composer({ onPublish }: { onPublish: (post: WallPost) => void }) {
   const [tags, setTags] = useState('');
   const [locationOn, setLocationOn] = useState(false);
   const [images, setImages] = useState<string[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
   const [poll, setPoll] = useState(false);
   const [optionA, setOptionA] = useState('');
   const [optionB, setOptionB] = useState('');
   const [eventOn, setEventOn] = useState(false);
   const [eventTitle, setEventTitle] = useState('');
   const [error, setError] = useState('');
-  const choices = audienceChoices(VIEWER.ageTier);
+  const choices = audienceChoices(viewer.ageTier);
 
   const publish = (event: FormEvent) => {
     event.preventDefault();
     const text = body.trim();
     if (!text && images.length === 0) return;
-    const decision = screenWallDraft({ body: text || 'photo', ageTier: VIEWER.ageTier, audience, authorSchoolId: VIEWER.schoolId, hasImage: images.length > 0 });
+    const decision = screenWallDraft({ body: text || 'photo', ageTier: viewer.ageTier, audience, authorSchoolId: viewer.schoolId || actor?.schoolId || '', hasImage: images.length > 0 });
     if (decision.decision === 'block') {
       setError(decision.reason);
       return;
     }
     setError('');
     const tokens = parseTokens(text);
-    onPublish({
+    void onPublish({
       id: `local-${Date.now()}`,
-      authorHandle: VIEWER.handle,
+      authorHandle: viewer.handle,
       body: text,
       audience,
       feed: audience === 'class' ? 'class' : audience === 'group' ? 'group' : 'school',
@@ -364,7 +457,7 @@ function Composer({ onPublish }: { onPublish: (post: WallPost) => void }) {
       images,
       poll: poll && optionA && optionB ? { question: text || 'Poll', options: [{ id: 'a', label: optionA, votes: 0 }, { id: 'b', label: optionB, votes: 0 }] } : undefined,
       event: eventOn && eventTitle ? { title: eventTitle, when: 'This week', place: 'School' } : undefined,
-      schoolId: VIEWER.schoolId,
+      schoolId: viewer.schoolId,
       reactions: emptyReactions(),
       mine: '',
       comments: [],
@@ -372,9 +465,10 @@ function Composer({ onPublish }: { onPublish: (post: WallPost) => void }) {
       saved: false,
       hidden: false,
       moderation: decision.decision,
-    });
+    }, files).catch((error: Error) => setError(error.message));
     setBody('');
     setImages([]);
+    setFiles([]);
     setOpen(false);
   };
 
@@ -391,8 +485,18 @@ function Composer({ onPublish }: { onPublish: (post: WallPost) => void }) {
             <label className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full border border-[#E7EDED] px-3 text-xs font-semibold text-[#1E6A83]">
               <ImagePlus className="h-3.5 w-3.5" aria-hidden /> Photo or video
               <input type="file" accept="image/*,video/mp4,video/webm" multiple className="sr-only" onChange={(event) => {
-                const files = [...(event.target.files ?? [])].slice(0, 4);
-                setImages(files.map((file) => URL.createObjectURL(file)));
+                const picked = [...(event.target.files ?? [])].slice(0, 4);
+                const rejected = picked.map((file) => {
+                  if (!file.type.startsWith('image/')) return 'Photos need to be an image file.';
+                  if (file.size >= 5 * 1024 * 1024) return 'Photos need to be under 5 MB.';
+                  return '';
+                }).find(Boolean);
+                if (rejected) {
+                  setError(rejected);
+                  return;
+                }
+                setFiles(picked);
+                setImages(picked.map((file) => URL.createObjectURL(file)));
               }} />
             </label>
             <label className="inline-flex h-9 items-center gap-1 rounded-full border border-[#E7EDED] px-3 text-xs font-semibold text-[#1E6A83]">
@@ -459,6 +563,7 @@ function PostCard(props: {
   onHide: () => void;
   onReport: () => void;
   onDelete: () => void;
+  viewerHandle: string;
   onShare: () => void;
   onComment: (body: string, image?: string) => void;
   onReply: (commentId: string, body: string) => void;
@@ -505,7 +610,7 @@ function PostCard(props: {
               <button type="button" className="block w-full rounded-lg px-3 py-2 text-left" onClick={props.onHide}>Hide</button>
               <button type="button" className="block w-full rounded-lg px-3 py-2 text-left" onClick={props.onReport}>Report</button>
               <button type="button" className="block w-full rounded-lg px-3 py-2 text-left" onClick={() => undefined}>Turn off notifications</button>
-              {post.authorHandle === VIEWER.handle ? <button type="button" className="block w-full rounded-lg px-3 py-2 text-left" onClick={props.onDelete}>Delete</button> : null}
+              {post.authorHandle === props.viewerHandle ? <button type="button" className="block w-full rounded-lg px-3 py-2 text-left" onClick={props.onDelete}>Delete</button> : null}
             </div>
           ) : null}
         </div>

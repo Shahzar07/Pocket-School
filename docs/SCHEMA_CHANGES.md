@@ -3151,6 +3151,22 @@ Clients cannot create or update `studentNumber`, `referralCode`, `cardShareId`, 
 
 A person with no school sees the title **Poket School member card**. A person with `institutionId` sees **Student card**. The owner page `/dashboard/card` shows the number. The public card does not.
 
+### Card face
+
+The web card and the app card use the same layout, at credit-card ratio 85.6 × 54 mm. Copy the structure of a campus ID, not its colours.
+
+- Header band: logo on the left, institution name in bold caps with a tagline under it, and a rounded badge on the right reading **Student ID Card** plus the institution name.
+- Body, left: photo with a thick frame, then a barcode and the ID number.
+- Body, right: **Name** large; **Student ID** and **Level**; **Programme** and **Academic year**; **Valid until** and a seal, with a small QR for `/verify` beside the seal. Level is a level name such as IGCSE, A-Level, or Degree Year.
+- Emergency row: a phone icon, **Poket SafeLine**, and `branding.emergencyPhone` when the school has set one.
+- Footer band: the motto (`branding.motto`, otherwise `branding.certificateFooter`).
+
+Poket School colours: header is a blue gradient, the badge and footer are `#3FE0D0` with `#203337` ink, labels are `#1E6A83`, values are `#203337`. No orange, yellow, or gold.
+
+An institution card uses that school's `branding.displayName`, `logoUrl`, tagline, motto, and seal. An independent learner gets the Poket School mark, **PoketSchool.Ai**, and the tagline “AI teachers, study tools, and the school desk”. Rochford's International School is the one demo that uses forest `#1A3C34` and gold `#C8922A`.
+
+The sample face is **Alex Student**, **PSM-SAMPLE**, level IGCSE, with a SAMPLE watermark at 18% opacity and a cyan **Sample card** chip. The owner card prints `users.studentNumber`. The public share still does not. The QR is the existing HMAC `ps1.` token from `GET /api/student-id`. The back carries short terms, the same QR, “If found, return to…”, and Poket SafeLine. PNG and PDF downloads are generated in the browser. Apple Wallet and Google Wallet buttons are placeholders and do not issue a pass. `GET /api/card` also returns `holderName` and `brand` for the owner face. Clients still cannot write `studentNumber`.
+
 ## Card share
 
 `card_shares/{shareId}` is `{ uid, createdAt, revoked, revokedAt?, viewCount }`. `shareId` is a random base64url string of 16 to 64 URL-safe characters. The user field `cardShareId` points at the live share. Creating a new share revokes the previous document. Revoke sets `revoked` and deletes `cardShareId`. Regenerate issues a new id. The public page is `/card/[shareId]`. Two images sit on that route and both use the same public card: `opengraph-image.tsx` (1200×630) and `/card/[shareId]/story` (1080×1920). Each shows the branded blue gradient, first name, level name, and badges or streak, plus **Join Poket School**. Neither image reads a plan. The page link is `/signup?ref={code}`. A preview that does not need the server account is `/preview/card`.
@@ -3221,13 +3237,15 @@ Indexes for the reminder query and the trash query are in `firestore.indexes.jso
 
 The mobile contract stays `daily_goals`. The same goal is also stored at `users/{uid}/goals/{goalId}` so a plan, a link, and a visibility flag travel with the learner. `goalId` matches the `daily_goals` document id (`mirrorId` on the subcollection copy).
 
-`source` is `self` (older documents may say `student`), `et_ai` (older documents may say `ai`), `teacher`, or `parent`. Assigned sources cannot be deleted by the student. The title, privacy, and parent visibility of an assigned goal stay fixed. `rescheduleCount` may rise by a logged move and cannot pass `rescheduleLimit`.
+`source` is `self` (older documents may say `student`), `et_ai` (older documents may say `ai`), `teacher`, `parent`, or `institution`. The teacher desk filters on those values. Assigned sources cannot be deleted by the student. A teacher, parent, or institution admin can delete only a goal whose `assignedBy` is their uid and whose `source` is theirs. The title of an assigned goal stays fixed. `private` and `parentVisibility` are still stored, and they do not hide the goal. `rescheduleCount` may rise by a logged move and cannot pass `rescheduleLimit`.
 
 | Field | Meaning |
 | --- | --- |
 | `link` | `{ type, id }` where `type` is `course`, `lesson`, `assignment`, `exam`, or `note`. The note id is a pointer. Note text is never copied. |
-| `parentVisibility` | Default true. `false` hides the goal from parents. |
-| `private` | Default false. Private goals are omitted from parent cards and from teacher and institution counts. |
+| `parentVisibility` | Note only. A linked parent can read the goal either way. |
+| `private` | Note only. It does not hide the goal from parents, class teachers, or institution staff. |
+| `assignedBy` | Uid of the adult who added a teacher, parent, or institution goal. They are the only adult who can delete it. |
+| `focusMinutes` | Shown to parents and teachers only while `status` is `in_progress`. |
 | `dueDateKey` | The real deadline the planner worked backwards from. |
 | `catchUp` | True when the block was placed after the deadline. |
 | `missCount` | Overdue repeats. At the age cap this raises a `missed_goals` concern for the existing progress alerts. |

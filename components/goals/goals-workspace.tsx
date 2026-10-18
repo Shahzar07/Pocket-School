@@ -17,6 +17,8 @@ export interface WorkspaceGoal extends GoalLike {
   cosignedBy?: string;
   source?: GoalLike['source'];
   focusMinutes?: number;
+  deadline?: string;
+  rescheduleCount?: number;
   priority?: GoalLike['priority'];
   reactions?: GoalLike['reactions'];
   reminderTime?: string;
@@ -144,6 +146,10 @@ export function GoalsWorkspace({
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-1">
                   {goal.targetKind === 'unit' ? goal.unitTitle || 'Unit' : goal.targetKind === 'lessons' ? `${goal.lessonIds?.length ?? 0} lessons` : goal.targetKind === 'quiz_score' ? `Quiz ${goal.quizTarget ?? 80}%` : goal.targetKind === 'studio' ? goal.studioTask || 'AI Studio' : goal.freeTextTarget || 'Free text'}
+                  {goal.deadline ? ` · due ${goal.deadline}` : ''}
+                  {goal.status === 'in_progress' && goal.focusMinutes != null ? ` · focus ${goal.focusMinutes} min` : ''}
+                  {(goal.rescheduleCount ?? 0) > 0 ? ` · rescheduled ${goal.rescheduleCount}` : ''}
+                  {goal.status === 'completed' ? ' · completed' : ''}
                   {goal.priority ? ` · ${goal.priority}` : ''}
                   {goal.progress != null ? ` · ${goal.progress}%` : ''}
                   {goal.cosignedBy ? ' · Co-signed' : ''}

@@ -148,7 +148,13 @@ export function mergeLimits(age: PlannerLimits, admin?: Partial<PlannerLimits> |
 }
 
 export function isAssignedSource(source: string | null | undefined): boolean {
-  return source === 'et_ai' || source === 'ai' || source === 'teacher' || source === 'parent';
+  return source === 'et_ai' || source === 'ai' || source === 'teacher' || source === 'parent' || source === 'institution';
+}
+
+/** Focus time is shown only while the goal is in progress. */
+export function activeFocusMinutes(goal: { status?: string; focusMinutes?: number }): number | null {
+  if (goal.status !== 'in_progress') return null;
+  return goal.focusMinutes ?? 0;
 }
 
 export function canDeleteGoal(source: string | null | undefined): boolean {
@@ -430,7 +436,7 @@ export function escalationFor(missCount: number, limits: PlannerLimits): Escalat
     : null;
   return {
     studentReminder: missed >= 1,
-    parentNotify: missed >= 1,
+    parentNotify: missed >= 2,
     teacherFlag: missed >= limits.missFlagAfter,
     concern,
   };
@@ -476,7 +482,7 @@ export function weekColumns(
 ): WeekColumn[] {
   return Array.from({ length: 7 }, (_, index) => {
     const dateKey = addDays(weekStart, index);
-    const day = goals.filter((goal) => goal.dateKey === dateKey && !goal.private);
+    const day = goals.filter((goal) => goal.dateKey === dateKey);
     const label = parseDateKey(dateKey).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' });
     return {
       dateKey,
@@ -502,7 +508,7 @@ export function planVsDone(goals: { estimateMinutes: number; actualMinutes?: num
   missed: number;
   rate: number;
 } {
-  const visible = goals.filter((goal) => goal.private !== true && goal.parentVisibility !== false);
+  const visible = goals;
   const planned = visible.reduce((sum, goal) => sum + goal.estimateMinutes, 0);
   const actual = visible.reduce((sum, goal) => sum + (goal.actualMinutes || 0), 0);
   const onTime = visible.filter((goal) => goal.status === 'completed').length;
@@ -520,13 +526,13 @@ export interface AdherenceRow {
   rate: number;
 }
 
-/** Counts only. Private goals are left out, and titles are not returned. */
+/** Counts every goal for the class. Titles stay on the per-student list. */
 export function classAdherence(rows: { studentId: string; name: string; goals: StoredGoal[] }[]): {
   classRate: number;
   rows: AdherenceRow[];
 } {
   const shaped = rows.map((row) => {
-    const assigned = row.goals.filter((goal) => isAssignedSource(goal.source) && goal.private !== true && goal.parentVisibility !== false);
+    const assigned = row.goals;
     const onTime = assigned.filter((goal) => goal.status === 'completed').length;
     return {
       studentId: row.studentId,
@@ -557,6 +563,7 @@ export function sourceLabel(source: string | undefined): string {
   if (source === 'et_ai' || source === 'ai') return 'Assigned by ET AI';
   if (source === 'teacher') return 'Assigned by a teacher';
   if (source === 'parent') return 'Assigned by a parent';
+  if (source === 'institution') return 'Assigned by the school';
   return 'Your goal';
 }
 

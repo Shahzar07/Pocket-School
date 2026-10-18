@@ -469,7 +469,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/teacher/goals`
 - **Audience:** teacher
-- **Purpose:** Assigned-goal adherence for the class, plus goals a student chose to share. Private goals are left out.
+- **Purpose:** Every goal for students in the teacher’s class, with status, due time, active focus, reschedules, and completion.
 - **Overlaps:** Student daily goals.
 - **Decision:** Keep as the teacher view. Do not add a second goal model.
 - **Owner keys:** None.
@@ -734,6 +734,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Overlaps:** Teacher courses and the CMS.
 - **Decision:** Keep as the platform catalogue.
 - **Owner keys:** None.
+
+### Exam packs
+
+- **Route:** `/dashboard/admin/exam-packs`
+- **Audience:** admin
+- **Purpose:** Admins add, edit, and delete ET Maths syllabus packs. Students open the same packs from the studio.
+- **Overlaps:** The student maths pack list.
+- **Decision:** Keep. This is the only add, edit, and delete desk. The studio list is read-only.
+- **Owner keys:** None. Packs are stored on this device.
 
 ### Curriculum CMS
 
@@ -1549,9 +1558,9 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/institution/goals`
 - **Audience:** institution
-- **Purpose:** Assigned-goal completion for the school, with no private goal titles.
+- **Purpose:** Goal completion for the school. Class teachers and institution staff can read every goal.
 - **Overlaps:** Teacher class goals and student daily goals.
-- **Decision:** Keep as the school count. Private goals stay off this page.
+- **Decision:** Keep as the school count. A private flag does not hide a goal.
 - **Owner keys:** None.
 
 ### Course library

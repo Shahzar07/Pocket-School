@@ -12,6 +12,7 @@ import { chainHash } from '../billing/model';
 import { parentLinkId } from '../parent-controls';
 import { recordActivity } from '../audit/server';
 import { ActionError } from '../server/actions';
+import { brandFromSchool, poketBrand, type IdCardBrand } from './id-face';
 import {
   hasInstitution,
   issuedNumber,
@@ -179,13 +180,18 @@ async function badgeLabels(uid: string): Promise<string[]> {
   }).slice(0, 3);
 }
 
-async function schoolName(data: DocumentData): Promise<string> {
+async function schoolRecord(data: DocumentData): Promise<{ name: string; brand: IdCardBrand }> {
   const named = text(data.institutionName) || text(data.institution);
-  if (named) return named;
   const id = text(data.institutionId);
-  if (!id) return '';
+  if (!id && !named) return { name: '', brand: poketBrand() };
+  if (!id) return { name: named, brand: brandFromSchool(named, null) };
   const school = await db().doc(`institutions/${id}`).get();
-  return text(school.data()?.name);
+  const schoolData = school.data() ?? {};
+  const branding = schoolData.branding && typeof schoolData.branding === 'object'
+    ? schoolData.branding as Record<string, unknown>
+    : null;
+  const name = text(branding?.displayName) || text(schoolData.name) || named;
+  return { name, brand: brandFromSchool(name, branding) };
 }
 
 function sourceFrom(data: DocumentData, badges: string[], referralCode: string, revoked: boolean): CardSource {
@@ -217,6 +223,8 @@ export interface OwnerCard {
   canShare: boolean;
   indexed: boolean;
   schoolName: string;
+  holderName: string;
+  brand: IdCardBrand;
 }
 
 async function ownerFromUser(uid: string, now: number): Promise<OwnerCard> {
@@ -230,9 +238,9 @@ async function ownerFromUser(uid: string, now: number): Promise<OwnerCard> {
     revoked = !share.exists || share.data()?.revoked === true || text(share.data()?.uid) !== uid;
   }
   const badges = await badgeLabels(uid);
-  const namedSchool = await schoolName(data);
+  const school = await schoolRecord(data);
   const built = sourceFrom(data, badges, identity.referralCode, revoked);
-  built.institutionName = namedSchool;
+  built.institutionName = school.name;
   const face = publicCard(built, dayKey(now));
   const under13 = built.ageTier === 'under13';
   return {
@@ -245,7 +253,9 @@ async function ownerFromUser(uid: string, now: number): Promise<OwnerCard> {
     parentRequired: under13,
     canShare: !under13 || built.cardSharing,
     indexed: built.cardIndexed,
-    schoolName: namedSchool,
+    schoolName: school.name,
+    holderName: text(data.name) || text(data.displayName) || face.firstName,
+    brand: school.name ? school.brand : poketBrand(),
   };
 }
 
@@ -359,7 +369,7 @@ export async function loadPublicCard(shareId: string, now = Date.now()): Promise
   const data = user.data() ?? {};
   const badges = await badgeLabels(uid);
   const built = sourceFrom(data, badges, text(data.referralCode), false);
-  built.institutionName = await schoolName(data);
+  built.institutionName = (await schoolRecord(data)).name;
   const face = publicCard(built, dayKey(now));
   return face.visible ? face : null;
 }

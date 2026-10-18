@@ -255,6 +255,7 @@ export default function ContentBuilderPage() {
 
   const [selUnit, setSelUnit] = useState<string | null>(null);
   const [selLesson, setSelLesson] = useState<string | null>(null);
+  const [treeOpen, setTreeOpen] = useState(false);
   const [draft, setDraft] = useState<Lesson | null>(null);
   const [saveState, setSaveState] = useState<'saved' | 'dirty' | 'saving' | 'error'>('saved');
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -434,6 +435,7 @@ export default function ContentBuilderPage() {
     }
     setSelUnit(unitId);
     setSelLesson(lessonId);
+    setTreeOpen(false);
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       url.searchParams.set('lesson', lessonId);
@@ -1136,9 +1138,15 @@ export default function ContentBuilderPage() {
 
       {/* ── Three panels ── */}
       <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[270px_minmax(0,1fr)_320px]">
+        <div className="flex items-center justify-between border-b border-border px-3 py-2 lg:hidden">
+          <button type="button" className="h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83]" onClick={() => setTreeOpen(true)}>
+            Course structure
+          </button>
+        </div>
 
-        {/* ── Left: course tree ── */}
-        <aside className="hidden lg:flex flex-col border-r border-border bg-muted/20 overflow-y-auto">
+        {/* ── Left: course tree. A drawer below the large breakpoint. ── */}
+        {treeOpen ? <button type="button" className="fixed inset-0 z-30 bg-black/40 lg:hidden" aria-label="Close course structure" onClick={() => setTreeOpen(false)} /> : null}
+        <aside className={`${treeOpen ? 'fixed inset-y-0 left-0 z-40 flex w-72 shadow-xl' : 'hidden'} lg:static lg:z-auto lg:flex lg:w-auto lg:shadow-none flex-col border-r border-border bg-muted/20 overflow-y-auto`}>
           <div className="p-3 flex items-center justify-between sticky top-0 bg-muted/40 backdrop-blur-sm border-b border-border/50 z-10">
             <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Course Structure</p>
             <button onClick={addUnit} className="p-1 rounded-md hover:bg-muted text-muted-foreground" title="Add module">

@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { authedFetch } from '@/lib/api-client';
+import { useAuthSTORE } from '@/hooks/use-auth';
 import type { PublicCard } from '@/lib/cards/model';
-import { MemberCardFace } from './member-card-face';
+import { academicYear, brandFromSchool, cardValidUntil, displayLevel, poketBrand, type IdCardBrand, type IdCardView } from '@/lib/cards/id-face';
+import { IdCardPanel } from './id-card-panel';
 import { CardQr } from '@/components/student-id/card-qr';
 
 interface OwnerPayload {
@@ -17,6 +19,8 @@ interface OwnerPayload {
   canShare: boolean;
   indexed: boolean;
   schoolName: string;
+  holderName?: string;
+  brand?: IdCardBrand;
 }
 
 interface ChildRow {
@@ -34,7 +38,35 @@ const CHANNELS = [
   ['email', 'Email'],
 ] as const;
 
+function accountFace(profile: {
+  displayName?: string;
+  name?: string;
+  institutionId?: string;
+  studentNumber?: string;
+  academyLevel?: string;
+  level?: string;
+  pathway?: string;
+  avatarUrl?: string;
+} | null): IdCardView | null {
+  const fullName = profile?.displayName || profile?.name || '';
+  if (!profile || !fullName) return null;
+  const school = /rochford/i.test(profile.institutionId || '') ? "Rochford's International School" : '';
+  return {
+    brand: school ? brandFromSchool(school, null) : poketBrand(),
+    fullName,
+    studentId: profile.studentNumber || 'Not issued yet',
+    levelName: displayLevel(profile.academyLevel || profile.level || 'Learner'),
+    programme: profile.pathway || profile.level || 'General',
+    academicYear: academicYear(),
+    validUntil: cardValidUntil(),
+    photoUrl: profile.avatarUrl || '',
+    verifyPath: '/verify',
+    sample: false,
+  };
+}
+
 export function CardDesk() {
+  const { profile } = useAuthSTORE();
   const [card, setCard] = useState<OwnerPayload | null>(null);
   const [children, setChildren] = useState<ChildRow[]>([]);
   const [error, setError] = useState('');
@@ -77,7 +109,16 @@ export function CardDesk() {
     await load();
   };
 
-  if (error) return <p className="text-sm text-[#203337]">{error}</p>;
+  if (error) {
+    const local = accountFace(profile);
+    if (!local) return <p className="text-sm text-[#203337]">{error}</p>;
+    return (
+      <div className="space-y-4">
+        <IdCardPanel view={local} />
+        <p className="text-sm text-[#1E6A83]">The share link is unavailable right now. This card still shows the signed-in account.</p>
+      </div>
+    );
+  }
   if (!card) return <p className="text-sm text-[#5F7074]">Loading your card…</p>;
 
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
@@ -85,10 +126,22 @@ export function CardDesk() {
   const face: PublicCard = card.schoolName
     ? { ...card.publicCard, schoolName: card.schoolName }
     : card.publicCard;
+  const view: IdCardView = {
+    brand: card.brand ?? (card.schoolName ? { ...poketBrand(), institutionName: card.schoolName } : poketBrand()),
+    fullName: card.holderName || face.firstName,
+    studentId: card.studentNumber,
+    levelName: face.levelName || 'Learner',
+    programme: face.badges[0] || 'General',
+    academicYear: academicYear(),
+    validUntil: cardValidUntil(),
+    photoUrl: face.showPhoto ? face.avatarUrl : '',
+    verifyPath: proof?.verifyPath || '/verify',
+    sample: false,
+  };
 
   return (
     <div className="space-y-6">
-      <MemberCardFace card={face} schoolOnCard />
+      <IdCardPanel view={view} />
       {proof?.code ? <CardQr path={proof.verifyPath} code={proof.code} codeValidUntil={proof.codeValidUntil} /> : null}
       <p className="text-sm text-[#203337]">
         Your number is <span className="font-semibold">{card.studentNumber}</span>. It stays on this page. A shared card never shows it.

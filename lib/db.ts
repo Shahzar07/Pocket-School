@@ -12,6 +12,8 @@ import type { Role } from './roles';
 import type { OemLicence } from './oem';
 import type { AccessPolicy } from './access-policy';
 import { coerceDailyGoal } from './goals';
+import { escalationFor, limitsForAge } from './study/planner';
+import type { InstitutionType } from './enterprise';
 import { stripUnitPrefix } from './unit-title';
 import { omitUndefined } from './course-builder';
 import type { DeletionRequest, InstructorProfile, NotificationPrefs, PayoutDetails, PrivacySettings } from './account-settings';
@@ -498,7 +500,7 @@ export interface Institution {
   teacherCount: number;
   status: 'active' | 'pending' | 'suspended';
   createdAt?: Timestamp;
-  type?: 'school' | 'university' | 'corporate' | 'government';
+  type?: InstitutionType;
   /** ISO 3166-1 alpha-2. */
   country?: string;
   /** Subdivision used by the self-join dropdown. */
@@ -3234,6 +3236,8 @@ export interface DailyGoal {
   /** Which parent alerts already fired, so we never double-notify. */
   notifiedNotStarted?: boolean;
   notifiedMissed?: boolean;
+  /** Set once the miss count reaches the teacher step. */
+  teacherFlagged?: boolean;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
   /**
@@ -3255,13 +3259,15 @@ export interface DailyGoal {
   /** Set only by the server when the Sparks bonus is granted. */
   sparksAwarded?: boolean;
   progress?: number;
-  source?: 'student' | 'self' | 'parent' | 'ai' | 'et_ai' | 'teacher';
+  source?: 'student' | 'self' | 'parent' | 'ai' | 'et_ai' | 'teacher' | 'institution';
+  /** Who added the goal. They are the only adult who can delete it. */
+  assignedBy?: string;
   /** What the goal opens. Note text is never copied onto the goal. */
   link?: { type: 'course' | 'lesson' | 'assignment' | 'exam' | 'note'; id: string };
   lessonId?: string;
-  /** False hides the goal from parents. Assigned goals stay visible. */
+  /** Note only. It does not hide the goal from a linked parent. */
   parentVisibility?: boolean;
-  /** A private goal is omitted from parent and teacher views. */
+  /** Note only. Teachers and linked parents can still read the goal. */
   private?: boolean;
   rescheduleCount?: number;
   rescheduleLimit?: number;
@@ -3344,19 +3350,34 @@ export function subscribeDailyGoals(
   );
 }
 
-/** Goals a class teacher may see: the student listed them and left sharing on. */
+/** Goals that name this teacher. Class goals are loaded per student as well. */
 export function subscribeTeacherGoals(teacherId: string, cb: (goals: DailyGoal[]) => void): () => void {
   return onSnapshot(
     query(collection(db, 'daily_goals'), where('teacherIds', 'array-contains', teacherId)),
     snap => {
       const all = snap.docs.flatMap(d => {
         const goal = mapDailyGoal(d.id, d.data() as Record<string, unknown>);
-        return goal && goal.shareWithTeachers !== false ? [goal] : [];
+        return goal ? [goal] : [];
       });
       cb(all.sort((a, b) => (b.dateKey || '').localeCompare(a.dateKey || '')));
     },
     () => cb([]),
   );
+}
+
+/** Students in a class space where this person is staff. */
+export async function classMemberIds(teacherId: string): Promise<string[]> {
+  const snap = await getDocs(query(collection(db, 'spaces'), where('staffIds', 'array-contains', teacherId)));
+  const ids = new Set<string>();
+  snap.docs.forEach((row) => {
+    const data = row.data() as { kind?: string; memberIds?: unknown };
+    if (data.kind && data.kind !== 'class') return;
+    const members = Array.isArray(data.memberIds) ? data.memberIds : [];
+    members.forEach((id) => {
+      if (typeof id === 'string' && id && id !== teacherId) ids.add(id);
+    });
+  });
+  return [...ids];
 }
 
 export async function updateDailyGoal(id: string, data: Partial<DailyGoal> & Record<string, unknown>) {
@@ -3413,39 +3434,83 @@ export async function getChildrenDailyGoals(
   })));
 }
 
-/** Fire the "not started" / "missed" alerts once each, to every linked parent. */
-export async function checkGoalAlerts(studentId: string, studentName: string, goals: DailyGoal[]) {
+/** Student first, then a linked parent, then the named teachers. */
+export async function checkGoalAlerts(
+  studentId: string,
+  studentName: string,
+  goals: DailyGoal[],
+  ageTier?: 'under13' | 'teen' | 'adult',
+) {
   const now = new Date();
+  const limits = limitsForAge(ageTier ?? 'teen');
   const parents = await getDocs(
     query(collection(db, 'users'), where('childIds', 'array-contains', studentId))
   ).catch(() => null);
-  if (!parents || parents.empty) return;
 
   for (const goal of goals) {
     const [h, m] = (goal.deadline || '23:59').split(':').map(Number);
     const due = new Date(now); due.setHours(h || 23, m || 59, 0, 0);
     const overdue = now > due;
+    const openMiss = overdue && goal.status !== 'completed' && goal.status !== 'excused' && !goal.notifiedMissed;
 
-    let title = '', message = '', flag: 'notifiedNotStarted' | 'notifiedMissed' | null = null;
-    if (overdue && goal.status !== 'completed' && goal.status !== 'excused' && !goal.notifiedMissed) {
-      title = `${studentName} missed a goal`;
-      message = `"${goal.title}" wasn't completed. It was due at ${goal.deadline}.`;
-      flag = 'notifiedMissed';
-    } else if (
-      !overdue && goal.status === 'not_started' && !goal.notifiedNotStarted &&
-      due.getTime() - now.getTime() < 60 * 60 * 1000
-    ) {
-      title = `${studentName} hasn't started a goal`;
-      message = `"${goal.title}" is due at ${goal.deadline} and hasn't been started yet.`;
-      flag = 'notifiedNotStarted';
+    if (openMiss) {
+      const already = goals.filter((item) => item.status === 'overdue' || item.notifiedMissed).length;
+      const misses = already + 1;
+      const step = escalationFor(misses, limits);
+      const message = `"${goal.title}" wasn't completed. It was due at ${goal.deadline}.`;
+      await createNotification({
+        userId: studentId,
+        title: 'A goal is still open',
+        message,
+        type: 'general',
+        link: '/dashboard/student/goals',
+        read: false,
+        pushCategory: 'goals',
+      }).catch(() => {});
+      if (step.parentNotify && parents && !parents.empty) {
+        await Promise.all(parents.docs.map((parent) => createNotification({
+          userId: parent.id,
+          title: `${studentName} missed a goal`,
+          message,
+          type: 'general',
+          link: '/dashboard/parent/goals',
+          read: false,
+          pushCategory: 'goals',
+        }).catch(() => {})));
+      }
+      const patch: Partial<DailyGoal> = { notifiedMissed: true };
+      if (step.teacherFlag && goal.teacherIds?.length && !goal.teacherFlagged) {
+        await Promise.all(goal.teacherIds.map((teacherId) => createNotification({
+          userId: teacherId,
+          title: `${studentName} is past the miss limit`,
+          message: `${misses} goals were missed. Class adherence has the count.`,
+          type: 'general',
+          link: '/dashboard/teacher/goals',
+          read: false,
+          pushCategory: 'goals',
+        }).catch(() => {})));
+        patch.teacherFlagged = true;
+      }
+      await updateDailyGoal(goal.id, patch);
+      continue;
     }
-    if (!flag) continue;
 
-    await Promise.all(parents.docs.map(p => createNotification({
-      userId: p.id, title, message, type: 'general',
-      link: '/dashboard/parent', read: false, pushCategory: 'goals',
+    if (
+      !parents || parents.empty || overdue || goal.status !== 'not_started' || goal.notifiedNotStarted
+      || due.getTime() - now.getTime() >= 60 * 60 * 1000
+    ) continue;
+
+    const message = `"${goal.title}" is due at ${goal.deadline} and hasn't been started yet.`;
+    await Promise.all(parents.docs.map((parent) => createNotification({
+      userId: parent.id,
+      title: `${studentName} hasn't started a goal`,
+      message,
+      type: 'general',
+      link: '/dashboard/parent/goals',
+      read: false,
+      pushCategory: 'goals',
     }).catch(() => {})));
-    await updateDailyGoal(goal.id, { [flag]: true } as Partial<DailyGoal>);
+    await updateDailyGoal(goal.id, { notifiedNotStarted: true });
   }
 }
 

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { DashboardHome } from '@/components/dashboard';
 import { WallScreen } from '@/components/wall/wall-screen';
+import { RochfordAlumniDesk } from '@/components/alumni/rochford-desk';
 
 export default function AlumniHomePage() {
   const { profile } = useAuthSTORE();
@@ -27,6 +28,7 @@ export default function AlumniHomePage() {
       <div id="alumni-wall">
         <WallScreen surface="alumni" />
       </div>
+      <RochfordAlumniDesk />
       <p className="text-sm text-muted-foreground">
         This desk reuses the shared home. Certificates and your profile stay where they already live.
         {' '}
