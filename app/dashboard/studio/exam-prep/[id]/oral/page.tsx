@@ -269,7 +269,7 @@ export default function OralExamPage({ params }: { params: Promise<{ id: string 
         <div className="grid lg:grid-cols-12 gap-5">
           <Panel className="lg:col-span-4 text-center">
             <GraduationCap className="w-7 h-7 text-primary mx-auto" />
-            <motion.p initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="font-heading text-[96px] leading-none mt-2 bg-gradient-to-b from-primary to-emerald-600 bg-clip-text text-transparent">{gradeFor(prep.gradeScale, grade.percent)}</motion.p>
+            <motion.p initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="font-heading text-[96px] leading-none mt-2 bg-gradient-to-b from-primary to-success bg-clip-text text-transparent">{gradeFor(prep.gradeScale, grade.percent)}</motion.p>
             <p className="font-semibold text-[18px] tabular-nums">{grade.percent}%</p>
             <p className="text-[14px] text-muted-foreground mt-3">{grade.summary}</p>
             <Link href={`/dashboard/studio/exam-prep/${prep.id}`} className="mt-5 inline-flex h-10 px-4 rounded-full border border-border text-sm font-semibold items-center">Back to my plan</Link>
@@ -290,8 +290,8 @@ export default function OralExamPage({ params }: { params: Promise<{ id: string 
             <Panel>
               <div className="grid sm:grid-cols-2 gap-5">
                 <div>
-                  <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-emerald-700 mb-2">Strengths</p>
-                  <ul className="space-y-1.5">{grade.strengths.map((s, i) => <li key={i} className="flex gap-2 text-[14px]"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />{s}</li>)}</ul>
+                  <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-success mb-2">Strengths</p>
+                  <ul className="space-y-1.5">{grade.strengths.map((s, i) => <li key={i} className="flex gap-2 text-[14px]"><CheckCircle2 className="w-4 h-4 text-success shrink-0 mt-0.5" />{s}</li>)}</ul>
                 </div>
                 <div>
                   <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-rose-600 mb-2">Work on</p>

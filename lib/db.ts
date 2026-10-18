@@ -261,7 +261,9 @@ export interface Course {
   allocatedInstitutionIds?: string[];
   allocatedGroups?: string[];
   allowComments?: boolean;
+  /** Stored course switch. Older documents use this field name. */
   enableLyra?: boolean;
+  enableEtLive?: boolean;
   notifyOnPublish?: boolean;
   timedAssessmentMode?: boolean;
   accessOverride?: { pricePerInstitution?: number; expiryDate?: string; sparksOverride?: number };

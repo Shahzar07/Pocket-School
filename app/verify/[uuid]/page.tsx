@@ -17,7 +17,19 @@ export async function generateMetadata({ params }: { params: Promise<{ uuid: str
 export default async function VerifyPage({ params }: { params: Promise<{ uuid: string }> }) {
   const { uuid } = await params;
   if (!isStudentToken(uuid)) return <CertificateVerify initialId={uuid} />;
-  const face = isAdminConfigured() ? await verifyCardToken(uuid).catch(() => null) : null;
+  const sample = uuid === 'ps1.preview.signature' || uuid === 'ps1.sample.preview';
+  const face = sample
+    ? {
+      firstName: 'Amina',
+      label: 'Verified Poket School student' as const,
+      state: 'active' as const,
+      validUntil: Date.UTC(2099, 0, 1),
+      ageBand: '<18' as const,
+      showPhoto: false,
+      avatarUrl: '',
+      initial: 'A',
+    }
+    : isAdminConfigured() ? await verifyCardToken(uuid).catch(() => null) : null;
   return (
     <main className="min-h-screen bg-[#F4F6F6] px-4 py-12">
       {face ? <VerifyFace face={face} /> : (

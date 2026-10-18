@@ -15,6 +15,9 @@ export const studioRedirects = [
   { source: '/dashboard/student/maths/:path*', destination: `${STUDIO_MATHS}/:path*`, permanent: false },
   { source: '/dashboard/student/exam-prep', destination: STUDIO_EXAM_PREP, permanent: false },
   { source: '/dashboard/student/exam-prep/:path*', destination: `${STUDIO_EXAM_PREP}/:path*`, permanent: false },
+  { source: '/creator-store', destination: '/dashboard/store', permanent: false },
+  { source: '/et-maths', destination: STUDIO_MATHS, permanent: false },
+  { source: '/et-maths/:path*', destination: `${STUDIO_MATHS}/:path*`, permanent: false },
 ] as const;
 
 /** Same mapping as studioRedirects, including nested paths and query strings. */
@@ -26,6 +29,8 @@ export function relocateStudioPath(url: string): string {
   const rules: [string, string][] = [
     ['/dashboard/student/maths', STUDIO_MATHS],
     ['/dashboard/student/exam-prep', STUDIO_EXAM_PREP],
+    ['/creator-store', '/dashboard/store'],
+    ['/et-maths', STUDIO_MATHS],
   ];
   for (const [from, to] of rules) {
     if (path === from || path.startsWith(`${from}/`)) {

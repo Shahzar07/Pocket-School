@@ -38,7 +38,7 @@ export function UnitReportCard({ report }: { report: UnitReportData }) {
   return (
     <div className="bg-card border border-border rounded-2xl overflow-hidden">
       <div className={`px-5 py-3.5 flex items-center justify-between gap-3 border-b ${
-        passed ? 'bg-emerald-50 border-emerald-100' : 'bg-[var(--ps-cyan-soft)] border-[var(--ps-cyan-border)]'
+        passed ? 'bg-success/15 border-success/40' : 'bg-[var(--ps-cyan-soft)] border-[var(--ps-cyan-border)]'
       }`}>
         <div className="min-w-0">
           <p className="font-bold text-foreground text-sm truncate">{report.unitTitle}</p>
@@ -46,7 +46,7 @@ export function UnitReportCard({ report }: { report: UnitReportData }) {
         </div>
         <Badge className={`rounded-full gap-1 shrink-0 ${
           passed
-            ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+            ? 'bg-success/15 text-success border-success/40'
             : 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]'
         }`}>
           {passed ? <Trophy className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
@@ -59,7 +59,7 @@ export function UnitReportCard({ report }: { report: UnitReportData }) {
         <div>
           <div className="flex items-baseline justify-between mb-1.5">
             <span className="text-xs text-muted-foreground">Best quiz score</span>
-            <span className={`text-2xl font-extrabold ${passed ? 'text-emerald-600' : 'text-[var(--ps-cyan-text)]'}`}>
+            <span className={`text-2xl font-extrabold ${passed ? 'text-success' : 'text-[var(--ps-cyan-text)]'}`}>
               {best.percentage}%
             </span>
           </div>

@@ -18,7 +18,7 @@ import { Plus, ClipboardList, Eye, CheckCircle2, Trash2, AlertTriangle, Loader2 
 import { motion } from 'motion/react';
 import { Timestamp } from 'firebase/firestore';
 
-const STATUS_COLORS = { draft: 'bg-muted text-muted-foreground', published: 'bg-emerald-500/10 text-emerald-700 border-emerald-200' };
+const STATUS_COLORS = { draft: 'bg-muted text-muted-foreground', published: 'bg-success/10 text-success border-success/40' };
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -214,7 +214,7 @@ export default function TeacherAssignmentsPage() {
         className="flex items-center justify-between"
       >
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">Assignments</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">Assignments</p>
           <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1">
             Manage <span className="gradient-text italic">Assignments</span>
           </h1>
@@ -223,7 +223,7 @@ export default function TeacherAssignmentsPage() {
         {view === 'list' && (
           <Button
             onClick={() => setView('create')}
-            className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-90 text-white gap-2"
+            className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-success to-teal-600 hover:opacity-90 text-white gap-2"
           >
             <Plus className="w-4 h-4" /> New Assignment
           </Button>
@@ -264,7 +264,7 @@ export default function TeacherAssignmentsPage() {
           className="bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow space-y-5"
         >
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">Create</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">Create</p>
             <h2 className="font-heading text-3xl text-foreground tracking-tight mt-1">New Assignment</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -332,7 +332,7 @@ export default function TeacherAssignmentsPage() {
           <Button
             onClick={handleCreate}
             disabled={saving}
-            className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-90 text-white"
+            className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-success to-teal-600 hover:opacity-90 text-white"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null} Create Assignment
           </Button>
@@ -351,7 +351,7 @@ export default function TeacherAssignmentsPage() {
               className="relative text-center py-20"
             >
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-64 h-64 bg-emerald-400/20 rounded-full blur-3xl" />
+                <div className="w-64 h-64 bg-success/20 rounded-full blur-3xl" />
               </div>
               <div className="relative">
                 <ClipboardList className="w-14 h-14 mx-auto mb-4 text-muted-foreground/40" />
@@ -400,9 +400,9 @@ export default function TeacherAssignmentsPage() {
             custom={1}
             className="bg-card border border-border rounded-3xl p-5 sm:p-6 card-glow relative overflow-hidden"
           >
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-600 to-teal-600" />
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success to-teal-600" />
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">Submissions</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">Submissions</p>
               <h2 className="font-heading text-3xl text-foreground tracking-tight mt-1">{selectedAssignment.title}</h2>
               <p className="text-xs text-muted-foreground mt-1">{submissions.length} submission{submissions.length !== 1 ? 's' : ''} · Max score: {selectedAssignment.maxScore}</p>
             </div>
@@ -417,7 +417,7 @@ export default function TeacherAssignmentsPage() {
               className="relative text-center py-16"
             >
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-48 h-48 bg-emerald-400/20 rounded-full blur-3xl" />
+                <div className="w-48 h-48 bg-success/20 rounded-full blur-3xl" />
               </div>
               <div className="relative">
                 <ClipboardList className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
@@ -442,11 +442,11 @@ export default function TeacherAssignmentsPage() {
                   <p className="text-xs text-muted-foreground">Submitted {(sub.submittedAt as any)?.toDate?.().toLocaleString() ?? 'Unknown'}{sub.isLate ? ' · ⚠️ Late' : ''}</p>
                 </div>
                 {sub.score !== undefined && (
-                  <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-200">{sub.score}/{selectedAssignment.maxScore}</Badge>
+                  <Badge className="bg-success/10 text-success border-success/40">{sub.score}/{selectedAssignment.maxScore}</Badge>
                 )}
               </div>
               {sub.content && <div className="bg-muted rounded-2xl p-3 text-sm text-foreground">{sub.content}</div>}
-              {sub.linkUrl && <a href={sub.linkUrl} target="_blank" rel="noopener noreferrer" className="text-emerald-600 text-sm underline break-all">{sub.linkUrl}</a>}
+              {sub.linkUrl && <a href={sub.linkUrl} target="_blank" rel="noopener noreferrer" className="text-success text-sm underline break-all">{sub.linkUrl}</a>}
               <div className="flex gap-3">
                 <div className="flex-1 space-y-2">
                   <Input type="number" placeholder="Score" value={scores[sub.id] ?? sub.score ?? ''} onChange={e => setScores(s => ({ ...s, [sub.id]: e.target.value }))} min={0} max={selectedAssignment.maxScore} className="w-28 rounded-xl" />
@@ -457,7 +457,7 @@ export default function TeacherAssignmentsPage() {
                     size="sm"
                     onClick={() => handleGrade(sub)}
                     disabled={gradingId === sub.id}
-                    className="rounded-full font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-90 text-white gap-1"
+                    className="rounded-full font-bold bg-gradient-to-r from-success to-teal-600 hover:opacity-90 text-white gap-1"
                   >
                     {gradingId === sub.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />} Grade
                   </Button>

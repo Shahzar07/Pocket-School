@@ -12,7 +12,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { groupNotices } from '@/lib/dashboard/home';
 
 const TYPE_COLORS: Record<string, string> = {
-  grade: 'bg-green-100 text-green-700',
+  grade: 'bg-success/15 text-success',
   assignment: 'bg-blue-100 text-blue-700',
   announcement: 'bg-purple-100 text-purple-700',
   exam: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',

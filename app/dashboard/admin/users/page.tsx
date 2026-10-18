@@ -49,12 +49,12 @@ const ROLE_BADGE: Record<string, string> = {
   admin: 'bg-violet-500/10 text-violet-600 border-violet-500/20',
   institution_admin: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20',
   teacher: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-  student: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+  student: 'bg-success/10 text-success border-success/20',
   parent: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20',
 };
 
 const STATUS_BADGE: Record<AccountStatus, string> = {
-  active: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+  active: 'bg-success/10 text-success border-success/20',
   suspended: 'bg-red-500/10 text-red-600 border-red-500/20',
   pending: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20',
   inactive: 'bg-muted text-muted-foreground border-border',
@@ -369,7 +369,7 @@ export default function AdminUsersPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Total users', value: stats.total, accent: 'bg-primary' },
-          { label: 'Students', value: stats.students, accent: 'bg-emerald-500' },
+          { label: 'Students', value: stats.students, accent: 'bg-success' },
           { label: 'Suspended', value: stats.suspended, accent: 'bg-red-500' },
           { label: 'Sparks in circulation', value: stats.sparks.toLocaleString(), accent: 'bg-[var(--ps-cyan)]' },
         ].map(s => (
@@ -639,7 +639,7 @@ export default function AdminUsersPage() {
                           {can(actor, 'moderate') && (
                             <DropdownMenuItem className="rounded-xl px-3 py-2 gap-2.5" onClick={() => setProfileFor(r)}>
                               {status === 'suspended'
-                                ? <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                                ? <ShieldCheck className="w-4 h-4 text-success" />
                                 : <ShieldOff className="w-4 h-4 text-[var(--ps-cyan-text)]" />}
                               Suspend, ban, or restore
                             </DropdownMenuItem>

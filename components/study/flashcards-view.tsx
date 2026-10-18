@@ -89,7 +89,7 @@ export function FlashcardsView({ cards, onComplete }: { cards: Flashcard[]; onCo
       </div>
       <div className={`flex justify-center gap-3 mt-5 transition-opacity ${flipped ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <button onClick={() => answer(false)} className="h-11 px-5 rounded-full border border-rose-200 bg-rose-50 text-rose-700 font-semibold text-sm inline-flex items-center gap-1.5"><X className="w-4 h-4" /> Still learning</button>
-        <button onClick={() => answer(true)} className="h-11 px-5 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold text-sm inline-flex items-center gap-1.5"><Check className="w-4 h-4" /> Knew it</button>
+        <button onClick={() => answer(true)} className="h-11 px-5 rounded-full border border-success/40 bg-success/15 text-success font-semibold text-sm inline-flex items-center gap-1.5"><Check className="w-4 h-4" /> Knew it</button>
       </div>
     </div>
   );

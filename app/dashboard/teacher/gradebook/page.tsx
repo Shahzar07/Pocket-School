@@ -162,7 +162,7 @@ Write encouraging, constructive feedback in 2-3 sentences that acknowledges what
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
       {/* Page header */}
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}>
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600 mb-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success mb-2">
           GRADEBOOK
         </p>
         <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight">
@@ -227,7 +227,7 @@ Write encouraging, constructive feedback in 2-3 sentences that acknowledges what
                   key={i}
                   className={`p-4 rounded-2xl border ${
                     a.correct
-                      ? 'bg-emerald-500/10 border-emerald-500/20'
+                      ? 'bg-success/10 border-success/20'
                       : 'bg-red-500/10 border-red-500/20'
                   }`}
                 >
@@ -269,7 +269,7 @@ Write encouraging, constructive feedback in 2-3 sentences that acknowledges what
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="w-full rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all"
+              className="w-full rounded-full h-11 px-5 font-bold bg-gradient-to-r from-success to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all"
             >
               {saving ? 'Saving…' : 'Save Grade & Feedback'}
             </Button>
@@ -281,7 +281,7 @@ Write encouraging, constructive feedback in 2-3 sentences that acknowledges what
       {ungraded.length > 0 && (
         <section className="space-y-4">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600 mb-1">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success mb-1">
               NEEDS GRADING · {ungraded.length}
             </p>
             <h2 className="font-heading text-3xl text-foreground">Pending Reviews</h2>
@@ -306,7 +306,7 @@ Write encouraging, constructive feedback in 2-3 sentences that acknowledges what
                 </div>
                 <Button
                   size="sm"
-                  className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all shrink-0"
+                  className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-success to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all shrink-0"
                   onClick={() => openSubmission(sub)}
                 >
                   Grade
@@ -321,7 +321,7 @@ Write encouraging, constructive feedback in 2-3 sentences that acknowledges what
       {graded.length > 0 && (
         <section className="space-y-4">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600 mb-1">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success mb-1">
               GRADED · {graded.length}
             </p>
             <h2 className="font-heading text-3xl text-foreground">Completed</h2>
@@ -336,13 +336,13 @@ Write encouraging, constructive feedback in 2-3 sentences that acknowledges what
                 custom={i}
                 className="relative overflow-hidden bg-card border border-border rounded-2xl p-4 flex items-center gap-4 card-glow"
               >
-                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-emerald-500" />
-                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-success" />
+                <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-foreground text-sm">{sub.lessonTitle}</p>
                   <p className="text-xs text-muted-foreground">{sub.studentName || 'Student'}</p>
                 </div>
-                <Badge className="rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-xs shrink-0">
+                <Badge className="rounded-full bg-success/10 text-success border border-success/20 text-xs shrink-0">
                   {sub.score}/{sub.maxScore}
                 </Badge>
                 <Button
@@ -369,7 +369,7 @@ Write encouraging, constructive feedback in 2-3 sentences that acknowledges what
           className="text-center py-16"
         >
           <div className="relative inline-flex items-center justify-center mb-4">
-            <div className="absolute inset-0 bg-emerald-400/10 blur-3xl rounded-full" />
+            <div className="absolute inset-0 bg-success/10 blur-3xl rounded-full" />
             <ClipboardList className="w-12 h-12 text-muted-foreground relative" />
           </div>
           <h3 className="font-heading text-2xl text-foreground">No submissions yet</h3>

@@ -80,10 +80,10 @@ export function TeacherConversation({
 }) {
   const router = useRouter();
   const { user, profile, loading } = useAuthSTORE();
-  const lyraUnlocked = hasAddOn(permissionsFor(profile), 'lyra_live');
-  const lyra = addOn('lyra_live');
+  const liveUnlocked = hasAddOn(permissionsFor(profile), 'et_ai_live');
+  const liveAddon = addOn('et_ai_live');
   const { config, currency } = usePricing();
-  const lyraQuote = quoteAddon(config, 'lyra_live', currency);
+  const liveQuote = quoteAddon(config, 'et_ai_live', currency);
   const requireAuth = variant !== 'dock';
   const backHref = variant === 'studio' ? '/dashboard/studio/teachers' : '/ai-teachers';
 
@@ -100,7 +100,7 @@ export function TeacherConversation({
   const [liveVoice, setLiveVoice] = useState(false);
   const [LiveSession, setLiveSession] = useState<ComponentType<LiveVoiceSessionProps> | null>(null);
   const [videoOn, setVideoOn] = useState(false);
-  const [lyraPrompt, setLyraPrompt] = useState(false);
+  const [livePrompt, setLivePrompt] = useState(false);
   const [recording, setRecording] = useState(false);
   const [noteStatus, setNoteStatus] = useState('');
   const [lang, setLang] = useState('en');
@@ -462,8 +462,8 @@ export function TeacherConversation({
   };
 
   const openLive = (withCamera: boolean) => {
-    if (!lyraUnlocked) {
-      setLyraPrompt(true);
+    if (!liveUnlocked) {
+      setLivePrompt(true);
       return;
     }
     abortRef.current?.abort();
@@ -508,16 +508,16 @@ export function TeacherConversation({
   return (
     <div className={`${frame} bg-[#07070E] text-white overflow-hidden flex flex-col`} dir={textDirection(lang)}>
       <AnimatePresence>
-        {lyraPrompt && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-black/70 grid place-items-center p-4" onClick={() => setLyraPrompt(false)}>
+        {livePrompt && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-black/70 grid place-items-center p-4" onClick={() => setLivePrompt(false)}>
             <div onClick={event => event.stopPropagation()} className="bg-[#15161c] border border-white/10 rounded-3xl p-7 max-w-sm w-full text-center">
               <Phone className="w-6 h-6 mx-auto mb-3" />
-              <h3 className="font-bold text-lg">{lyra?.name ?? 'ET AI Live'}</h3>
-              <p className="text-white/60 text-sm mt-2">{lyra?.blurb ?? 'Live voice and video with your teacher are part of ET AI Live.'}</p>
-              <p className="text-2xl font-extrabold mt-4">{lyraQuote ? formatMoney(lyraQuote.amount, lyraQuote.currency) : ''}<span className="text-sm font-medium text-white/50">/month</span></p>
+              <h3 className="font-bold text-lg">{liveAddon?.name ?? 'ET AI Live'}</h3>
+              <p className="text-white/60 text-sm mt-2">{liveAddon?.blurb ?? 'Live voice and video with your teacher are part of ET AI Live.'}</p>
+              <p className="text-2xl font-extrabold mt-4">{liveQuote ? formatMoney(liveQuote.amount, liveQuote.currency) : ''}<span className="text-sm font-medium text-white/50">/month</span></p>
               <p className="text-white/40 text-[11px] mt-1">Text, voice notes, and photos stay available. Live voice and video need ET AI Live.</p>
               <Link href="/pricing#addons" className="mt-5 block w-full h-11 rounded-full font-bold text-black grid place-items-center" style={{ background: accent }}>See ET AI Live</Link>
-              <button type="button" onClick={() => setLyraPrompt(false)} className="mt-3 text-white/50 text-xs font-semibold">Keep chatting</button>
+              <button type="button" onClick={() => setLivePrompt(false)} className="mt-3 text-white/50 text-xs font-semibold">Keep chatting</button>
             </div>
           </motion.div>
         )}
@@ -550,10 +550,10 @@ export function TeacherConversation({
             )}
           </div>
           <button type="button" onClick={() => openLive(false)} className="min-h-11 min-w-11 text-xs font-bold px-2 rounded-full text-black inline-flex items-center justify-center gap-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" style={{ background: accent }} aria-label="Live voice">
-            <Phone className="w-4 h-4" />{!lyraUnlocked && <Lock className="w-3 h-3" aria-hidden />}
+            <Phone className="w-4 h-4" />{!liveUnlocked && <Lock className="w-3 h-3" aria-hidden />}
           </button>
           <button type="button" onClick={() => openLive(true)} className="min-h-11 min-w-11 text-xs font-bold px-2 rounded-full border border-white/15 inline-flex items-center justify-center gap-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" aria-label="Video session">
-            <Video className="w-4 h-4" />{!lyraUnlocked && <Lock className="w-3 h-3" aria-hidden />}
+            <Video className="w-4 h-4" />{!liveUnlocked && <Lock className="w-3 h-3" aria-hidden />}
           </button>
           <button type="button" onClick={newSession} className="min-w-11 min-h-11 grid place-items-center text-white/70 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" aria-label="New session"><RotateCcw className="w-4 h-4" /></button>
           <button type="button" onClick={() => { setAutoPlay(value => { const next = !value; localStorage.setItem('poket-teacher-autoplay', next ? '1' : '0'); if (!next) speakerRef.current?.stop(); return next; }); }} className="min-w-11 min-h-11 grid place-items-center text-white/70 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" aria-pressed={autoPlay} aria-label={autoPlay ? 'Auto-play voice replies on' : 'Auto-play voice replies off'}>
@@ -596,7 +596,7 @@ export function TeacherConversation({
                 {id === 'board' && unseenBoard > 0 ? <span className="text-[9px] text-black px-1 rounded-full" style={{ background: accent }}>{unseenBoard}</span> : null}
               </button>
             ))}
-            {score.total > 0 && <span className="ml-auto self-center pr-3 text-emerald-300">{score.right}/{score.total}</span>}
+            {score.total > 0 && <span className="ml-auto self-center pr-3 text-success">{score.right}/{score.total}</span>}
           </div>
           <div className="flex-1 overflow-y-auto min-h-0 px-3 py-3 space-y-3">
             {tab === 'chat' && messages.map((message, index) => (

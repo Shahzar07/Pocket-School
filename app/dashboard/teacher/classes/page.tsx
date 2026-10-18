@@ -121,7 +121,7 @@ export default function TeacherClassesPage() {
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
       >
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">
             Class Management
           </p>
           <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight">
@@ -157,7 +157,7 @@ export default function TeacherClassesPage() {
           className="text-center py-20"
         >
           <div className="relative inline-block mb-4">
-            <div className="absolute inset-0 bg-emerald-400/10 blur-3xl rounded-full" />
+            <div className="absolute inset-0 bg-success/10 blur-3xl rounded-full" />
             <BookOpen className="relative w-12 h-12 text-muted-foreground" />
           </div>
           <p className="font-heading text-2xl text-foreground">No subjects yet.</p>
@@ -176,7 +176,7 @@ export default function TeacherClassesPage() {
           className="text-center py-20"
         >
           <div className="relative inline-block mb-4">
-            <div className="absolute inset-0 bg-emerald-400/10 blur-3xl rounded-full" />
+            <div className="absolute inset-0 bg-success/10 blur-3xl rounded-full" />
             <Users className="relative w-12 h-12 text-muted-foreground" />
           </div>
           <p className="font-heading text-2xl text-foreground">No students enrolled yet.</p>
@@ -225,7 +225,7 @@ export default function TeacherClassesPage() {
                           {attempt ? (
                             <Badge className={`rounded-full font-bold ${
                               attempt.percentage >= threshold
-                                ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                                ? 'bg-success/10 text-success border border-success/20'
                                 : 'bg-red-500/10 text-red-600 border border-red-500/20'
                             }`}>
                               {attempt.percentage}%
@@ -251,7 +251,7 @@ export default function TeacherClassesPage() {
           </div>
           <div className="px-5 py-3 border-t border-border bg-muted/20 flex items-center gap-4 text-[11px] text-muted-foreground">
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Passed mastery quiz
+              <span className="w-2.5 h-2.5 rounded-full bg-success" /> Passed mastery quiz
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-red-500" /> Below pass mark

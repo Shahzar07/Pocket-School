@@ -17,7 +17,7 @@ import { accentFillVar, accentVar, type AccentId } from '@/lib/design/chart-colo
 type AttStatus = 'present' | 'absent' | 'late' | 'excused';
 
 const STATUS_STYLES: Record<AttStatus, string> = {
-  present: 'bg-emerald-500/10 text-emerald-600',
+  present: 'bg-success/10 text-success',
   absent: 'bg-destructive/10 text-destructive',
   late: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
   excused: 'bg-primary/10 text-primary',

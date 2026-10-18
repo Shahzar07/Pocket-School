@@ -142,7 +142,7 @@ export type ContentType =
   | 'COURSE_PRE_UNIVERSITY' | 'COURSE_LLB' | 'COURSE_MBBS' | 'COURSE_ENGINEERING' | 'COURSE_NURSING'
   | 'COURSE_MICRO_DEGREE'
   | 'COURSE_PROFESSIONAL_CERT' | 'COURSE_INDEPENDENT'
-  | 'AI_TUTOR_SESSION' | 'AI_TUTOR_LAW' | 'LYRA_LIVE'
+  | 'AI_TUTOR_SESSION' | 'AI_TUTOR_LAW' | 'ET_AI_LIVE'
   | 'BLOOM_TRACKING' | 'GOALS_LINKED' | 'PARENT_DASHBOARD' | 'CERTIFICATE'
   | 'MARKETPLACE_PURCHASE' | 'MARKETPLACE_LIST'
   | 'GRADEBOOK' | 'ATTENDANCE' | 'EXAM_BUILDER' | 'REPORT_CARD' | 'LIVE_CLASS'
@@ -167,7 +167,9 @@ export const PLAN_MAP: Record<string, string> = {
   ET_AI_STUDIO: 'et_ai:studio',
   AI_TUTOR_SESSION: 'plan:ai_tutor',
   AI_TUTOR_LAW: 'plan:llb',
-  LYRA_LIVE: 'addon:lyra_live',
+  ET_AI_LIVE: 'addon:et_ai_live',
+  /** Grants written before the rename. Readers still accept this. */
+  ET_AI_LIVE_LEGACY: 'addon:lyra_live',
   BLOOM_TRACKING: 'plan:bloom_tracking',
   GOALS_LINKED: 'plan:goals_linked',
   PARENT_DASHBOARD: 'plan:parent_dashboard',
@@ -191,7 +193,7 @@ export const CONTENT_MIN_TIER: Record<string, AccessTier> = {
   COURSE_PRIMARY: 1, COURSE_SECONDARY: 1,
   COURSE_IGCSE: 2, COURSE_ALEVEL: 2, COURSE_PRE_UNIVERSITY: 2, COURSE_INDEPENDENT: 2,
   ET_AI_STUDIO: 1, AI_TUTOR_SESSION: 2, BLOOM_TRACKING: 2, GOALS_LINKED: 2,
-  PARENT_DASHBOARD: 2, CERTIFICATE: 2, LYRA_LIVE: 2,
+  PARENT_DASHBOARD: 2, CERTIFICATE: 2, ET_AI_LIVE: 2,
   COURSE_MICRO_DEGREE: 3, COURSE_PROFESSIONAL_CERT: 3,
   COURSE_LLB: 3, COURSE_MBBS: 3, COURSE_ENGINEERING: 3, COURSE_NURSING: 3, AI_TUTOR_LAW: 3,
   GRADEBOOK: 5, ATTENDANCE: 5, EXAM_BUILDER: 5, REPORT_CARD: 5, LIVE_CLASS: 5,
@@ -254,8 +256,8 @@ export interface AddOn {
  */
 export const ADDONS: AddOn[] = [
   {
-    id: 'lyra_live',
-    permission: 'addon:lyra_live',
+    id: 'et_ai_live',
+    permission: 'addon:et_ai_live',
     name: 'ET AI Live',
     blurb: 'Real-time face-to-face sessions with an AI teacher who sees and hears you.',
     requiresTier: 2,
@@ -276,8 +278,11 @@ export function addOn(id: string): AddOn | undefined {
 /** Does this permission set include a given add-on? Super admins always do. */
 export function hasAddOn(permissions: string[], id: string): boolean {
   if (permissions.includes('role:super_admin')) return true;
-  const a = addOn(id);
-  return !!a && permissions.includes(a.permission);
+  const resolved = id === 'lyra_live' ? 'et_ai_live' : id;
+  const a = addOn(resolved);
+  if (!a) return false;
+  if (permissions.includes(a.permission)) return true;
+  return a.id === 'et_ai_live' && permissions.includes('addon:lyra_live');
 }
 
 /**

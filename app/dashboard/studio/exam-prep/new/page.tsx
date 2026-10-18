@@ -211,7 +211,7 @@ export default function NewExamPrepPage() {
                         </p>
                       </div>
                       {f.status === 'reading' ? <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                        : f.status === 'ready' ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : null}
+                        : f.status === 'ready' ? <CheckCircle2 className="w-4 h-4 text-success" /> : null}
                       <button onClick={() => setFiles(prev => prev.filter(x => x.key !== f.key))} className="text-muted-foreground hover:text-rose-600" aria-label="Remove"><X className="w-4 h-4" /></button>
                     </li>
                   ))}
@@ -295,7 +295,7 @@ export default function NewExamPrepPage() {
                 <ul className="space-y-2.5 text-left">
                   {ANALYSE_STAGES.map((s, i) => (
                     <li key={s} className="flex items-center gap-2.5 text-sm">
-                      {i < stage ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : i === stage ? <Loader2 className="w-4 h-4 animate-spin text-primary" /> : <span className="w-4 h-4 rounded-full border border-border" />}
+                      {i < stage ? <CheckCircle2 className="w-4 h-4 text-success" /> : i === stage ? <Loader2 className="w-4 h-4 animate-spin text-primary" /> : <span className="w-4 h-4 rounded-full border border-border" />}
                       <span className={i <= stage ? 'text-foreground' : 'text-muted-foreground'}>{s}</span>
                     </li>
                   ))}

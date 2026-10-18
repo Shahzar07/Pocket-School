@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { focusSeconds, resolvePomodoro } from '@/lib/insights/goals';
+import { isCountedActive, subscribeCounted } from '@/lib/activity/presence-store';
 
 export function FocusTimer({
   estimateMinutes, workMinutes, breakMinutes, onLog, title, pauseWhenHidden = true,
@@ -35,13 +36,26 @@ export function FocusTimer({
   useEffect(() => {
     if (!running) return;
     const id = window.setInterval(() => setNow(Date.now()), 1000);
-    const onHide = () => {
-      if (pauseWhenHidden && document.hidden) pause();
+    const stop = () => {
+      setOpenStart((current) => {
+        if (current) setSegments((prev) => [...prev, { start: current, end: Date.now() }]);
+        return null;
+      });
+      setRunning(false);
     };
+    const onHide = () => {
+      if (pauseWhenHidden && (document.hidden || !isCountedActive())) stop();
+    };
+    const unsub = subscribeCounted(() => {
+      if (pauseWhenHidden && !isCountedActive()) stop();
+    });
     document.addEventListener('visibilitychange', onHide);
+    window.addEventListener('blur', onHide);
     return () => {
       window.clearInterval(id);
+      unsub();
       document.removeEventListener('visibilitychange', onHide);
+      window.removeEventListener('blur', onHide);
     };
   }, [running, pauseWhenHidden]);
 

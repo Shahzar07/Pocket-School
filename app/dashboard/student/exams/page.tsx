@@ -398,7 +398,7 @@ export default function StudentExamsPage() {
                     <Trophy className={`w-5 h-5 shrink-0 ${passed ? 'text-[var(--ps-cyan-text)]' : 'text-muted-foreground'}`} />
                     <div>
                       <p className="font-semibold text-foreground">{item.exam.title}</p>
-                      <Badge className={`rounded-full text-[10px] mt-1 ${passed ? 'bg-emerald-500/10 text-emerald-600' : 'bg-destructive/10 text-destructive'}`}>
+                      <Badge className={`rounded-full text-[10px] mt-1 ${passed ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
                         {passed ? 'Passed' : 'Failed'}
                       </Badge>
                     </div>

@@ -66,7 +66,9 @@ export function subscribeNotes(
   return onSnapshot(q, (snap) => {
     onNotes(snap.docs.map((item) => toNote(item.id, item.data())));
   }, (error) => {
-    onError?.(error instanceof Error ? error.message : 'Notes could not sync.');
+    const message = error instanceof Error ? error.message : 'Notes could not sync.';
+    console.error('Notes could not sync.', message);
+    onError?.(message);
   });
 }
 

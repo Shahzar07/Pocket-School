@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuthSTORE } from '@/hooks/use-auth';
+import { ActiveTimeTracker } from '@/components/activity/active-time-tracker';
 import { useRouter, usePathname } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -92,7 +93,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/student/transcript', icon: GraduationCap, labelKey: 'nav.transcript' },
       { href: '/dashboard/student/attendance', icon: ClipboardCheck, labelKey: 'nav.attendance' },
       { href: '/dashboard/student/certificates', icon: Award, labelKey: 'nav.certificates' },
-      { href: '/dashboard/student/tasks', icon: ListTodo, labelKey: 'nav.dailyGoals' },
+      { href: '/dashboard/student/goals', icon: ListTodo, labelKey: 'nav.dailyGoals' },
       { href: '/dashboard/student/analytics', icon: Activity, labelKey: 'nav.insights' },
       { href: '/dashboard/student/progress', icon: Activity, labelKey: 'nav.insights', label: 'My progress' },
       { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
@@ -113,8 +114,14 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/network', icon: Users, labelKey: 'nav.community', label: 'Network' },
       { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
       { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.examCentre', flag: 'examCentre' },
-      { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
+    ]},
+    { sectionKey: 'nav.aiStudio', sectionLabel: 'AI Studio', items: [
+      { href: '/dashboard/studio/et', icon: Sparkles, labelKey: 'nav.aiStudio', label: 'ET AI' },
+      { href: '/dashboard/studio/teachers', icon: Users, labelKey: 'nav.aiTeachers', label: 'AI Teachers' },
       { href: '/dashboard/studio/maths', icon: Camera, labelKey: 'nav.snapSolve', label: 'ET Maths', flag: 'snapAndSolve' },
+      { href: '/dashboard/studio/exam-prep', icon: PenSquare, labelKey: 'nav.exams', label: 'ET Exams' },
+      { href: '/dashboard/studio/essays', icon: PenSquare, labelKey: 'nav.aiStudio', label: 'ET Essays' },
+      { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', label: 'Creator Store', flag: 'creatorStore' },
     ]},
     { sectionKey: 'nav.section.school', sectionLabel: 'Messages', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
@@ -166,7 +173,15 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/network', icon: Users, labelKey: 'nav.community', label: 'Network' },
       { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
       { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.examCentre', flag: 'examCentre' },
-      { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
+    ]},
+    { sectionKey: 'nav.aiStudio', sectionLabel: 'AI Studio', items: [
+      { href: '/dashboard/studio/et', icon: Sparkles, labelKey: 'nav.aiStudio', label: 'ET AI' },
+      { href: '/dashboard/studio/teachers', icon: Users, labelKey: 'nav.aiTeachers', label: 'AI Teachers' },
+      { href: '/dashboard/studio/maths', icon: Camera, labelKey: 'nav.snapSolve', label: 'ET Maths' },
+      { href: '/dashboard/studio/exam-prep', icon: PenSquare, labelKey: 'nav.exams', label: 'ET Exams' },
+      { href: '/dashboard/studio/essays', icon: PenSquare, labelKey: 'nav.aiStudio', label: 'ET Essays' },
+      { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', label: 'Creator Store', flag: 'creatorStore' },
+      { href: '/dashboard/admin/books', icon: BookMarked, labelKey: 'nav.books', label: 'Book Studio' },
     ]},
     { sectionKey: 'nav.section.school', sectionLabel: 'Messages', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
@@ -791,6 +806,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <RoleChecklist role={role} />
             <PagePurpose pathname={pathname} />
             {role === 'teacher' || role === 'institution_admin' || role === 'admin' ? <AllStaffBanner /> : null}
+            <ActiveTimeTracker />
             {children}
           </div>
         </main>

@@ -17,7 +17,7 @@ const SCENE_THEMES = [
   'from-teal-950 via-cyan-900 to-slate-950',
   'from-rose-950 via-red-900 to-slate-950',
   'from-[#0B1417] via-[#17282D] to-slate-950',
-  'from-emerald-950 via-green-900 to-slate-950',
+  'from-success via-success to-slate-950',
 ];
 
 /** BCP-47 hints for picking a matching browser voice per app language.
@@ -559,7 +559,7 @@ export function VideoPlayer({
               </span>
             )}
             {voiceState === 'on' && (
-              <span className="hidden sm:flex items-center gap-1 text-[11px] font-semibold text-emerald-300" title="Human AI narration">
+              <span className="hidden sm:flex items-center gap-1 text-[11px] font-semibold text-success" title="Human AI narration">
                 <Sparkles className="w-3.5 h-3.5" /> AI Voice
               </span>
             )}

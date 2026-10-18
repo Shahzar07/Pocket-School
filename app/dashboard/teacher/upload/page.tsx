@@ -433,7 +433,7 @@ export default function UploadPage() {
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
       {/* Page header */}
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}>
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">
           LESSON STUDIO
         </p>
         <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1">
@@ -446,11 +446,11 @@ export default function UploadPage() {
 
       {/* ── How it works guide ── */}
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
-        className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-200/60 rounded-3xl overflow-hidden"
+        className="bg-gradient-to-br from-success to-teal-50 dark:from-success/30 dark:to-teal-950/30 border border-success/60 rounded-3xl overflow-hidden"
       >
         <button onClick={() => setGuideOpen(o => !o)} className="w-full flex items-center justify-between p-5 text-left">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center shadow-md shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-success flex items-center justify-center shadow-md shrink-0">
               <Lightbulb className="w-4.5 h-4.5 text-white" />
             </div>
             <div>
@@ -472,7 +472,7 @@ export default function UploadPage() {
                 ].map(s => (
                   <div key={s.n} className="bg-card/70 rounded-2xl border border-border/60 p-4">
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-black flex items-center justify-center">{s.n}</span>
+                      <span className="w-5 h-5 rounded-full bg-success text-white text-[10px] font-black flex items-center justify-center">{s.n}</span>
                       <p className="text-sm font-bold text-foreground">{s.title}</p>
                     </div>
                     <p className="text-xs text-muted-foreground leading-relaxed">{s.desc}</p>
@@ -490,7 +490,7 @@ export default function UploadPage() {
         className="bg-card border border-border rounded-3xl p-5 sm:p-6 space-y-5 card-glow"
       >
         <div className="flex items-center gap-3">
-          <span className={`w-7 h-7 rounded-full text-xs font-black flex items-center justify-center shrink-0 ${step1Done ? 'bg-emerald-600 text-white' : 'bg-muted text-muted-foreground border border-border'}`}>
+          <span className={`w-7 h-7 rounded-full text-xs font-black flex items-center justify-center shrink-0 ${step1Done ? 'bg-success text-white' : 'bg-muted text-muted-foreground border border-border'}`}>
             {step1Done ? <CheckCircle2 className="w-4 h-4" /> : '1'}
           </span>
           <div>
@@ -562,7 +562,7 @@ export default function UploadPage() {
         className="bg-card border border-border rounded-3xl p-5 sm:p-6 card-glow"
       >
         <div className="flex items-center gap-3 mb-5">
-          <span className={`w-7 h-7 rounded-full text-xs font-black flex items-center justify-center shrink-0 ${step2Done ? 'bg-emerald-600 text-white' : 'bg-muted text-muted-foreground border border-border'}`}>
+          <span className={`w-7 h-7 rounded-full text-xs font-black flex items-center justify-center shrink-0 ${step2Done ? 'bg-success text-white' : 'bg-muted text-muted-foreground border border-border'}`}>
             {step2Done ? <CheckCircle2 className="w-4 h-4" /> : '2'}
           </span>
           <div>
@@ -641,7 +641,7 @@ export default function UploadPage() {
                 {requiredChecks.map(c => (
                   <li key={c.label} className="flex items-start gap-2">
                     {c.ok
-                      ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      ? <CheckCircle2 className="w-4 h-4 text-success shrink-0 mt-0.5" />
                       : <Circle className="w-4 h-4 text-muted-foreground/40 shrink-0 mt-0.5" />}
                     <div>
                       <p className={`text-xs font-semibold ${c.ok ? 'text-foreground' : 'text-muted-foreground'}`}>{c.label}</p>
@@ -657,7 +657,7 @@ export default function UploadPage() {
                 {recommendedChecks.map(c => (
                   <li key={c.label} className="flex items-start gap-2">
                     {c.ok
-                      ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      ? <CheckCircle2 className="w-4 h-4 text-success shrink-0 mt-0.5" />
                       : <Circle className="w-4 h-4 text-muted-foreground/40 shrink-0 mt-0.5" />}
                     <div>
                       <p className={`text-xs font-semibold ${c.ok ? 'text-foreground' : 'text-muted-foreground'}`}>{c.label}</p>
@@ -678,7 +678,7 @@ export default function UploadPage() {
 
         {/* ── Step 3: Generate ── */}
         <div className="mt-5 pt-5 border-t border-border flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <span className={`w-7 h-7 rounded-full text-xs font-black flex items-center justify-center shrink-0 ${step3Done ? 'bg-emerald-600 text-white' : 'bg-muted text-muted-foreground border border-border'}`}>
+          <span className={`w-7 h-7 rounded-full text-xs font-black flex items-center justify-center shrink-0 ${step3Done ? 'bg-success text-white' : 'bg-muted text-muted-foreground border border-border'}`}>
             {step3Done ? <CheckCircle2 className="w-4 h-4" /> : '3'}
           </span>
           <div className="flex-1">
@@ -688,7 +688,7 @@ export default function UploadPage() {
           <Button
             onClick={handleGenerate}
             disabled={generating || !requiredMet}
-            className="rounded-full h-11 px-6 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all gap-2 w-full sm:w-auto"
+            className="rounded-full h-11 px-6 font-bold bg-gradient-to-r from-success to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all gap-2 w-full sm:w-auto"
           >
             <Sparkles className="w-4 h-4" />
             {generating ? `Generating... (${totalDone}/${totalFormats})` : `Generate All ${totalFormats} Formats`}
@@ -711,7 +711,7 @@ export default function UploadPage() {
               const status = progress[f.id];
               return (
                 <div key={f.id} className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium ${
-                  status === 'done' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-600' :
+                  status === 'done' ? 'bg-success/10 border border-success/20 text-success' :
                   status === 'error' ? 'bg-red-500/10 border border-red-500/20 text-red-600' :
                   status === 'pending' ? 'bg-sky-500/10 border border-sky-500/20 text-sky-600 animate-pulse' :
                   'bg-muted border border-border text-muted-foreground'
@@ -746,10 +746,10 @@ export default function UploadPage() {
           initial="hidden"
           animate="visible"
           custom={3}
-          className="bg-card border border-emerald-500/20 rounded-3xl p-5 sm:p-6 card-glow flex items-center justify-between gap-4"
+          className="bg-card border border-success/20 rounded-3xl p-5 sm:p-6 card-glow flex items-center justify-between gap-4"
         >
           <div className="flex items-center gap-3">
-            <span className="w-7 h-7 rounded-full text-xs font-black flex items-center justify-center shrink-0 bg-emerald-600 text-white">4</span>
+            <span className="w-7 h-7 rounded-full text-xs font-black flex items-center justify-center shrink-0 bg-success text-white">4</span>
             <div>
               <h3 className="font-bold text-foreground">{totalDone}/{totalFormats} formats ready</h3>
               <p className="text-sm text-muted-foreground mt-0.5">Final step — publish to make this lesson available to every enrolled student.</p>
@@ -767,7 +767,7 @@ export default function UploadPage() {
             <Button
               onClick={handlePublish}
               disabled={publishing || savingDraft}
-              className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all shrink-0 gap-2"
+              className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-success to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all shrink-0 gap-2"
             >
               <BookOpen className="w-4 h-4" />
               {publishing ? 'Publishing...' : 'Publish Lesson'}
@@ -790,8 +790,8 @@ export default function UploadPage() {
             className="w-full flex items-center justify-between p-5 text-left hover:bg-muted/30 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
+                <CheckCircle2 className="w-4 h-4 text-success" />
               </div>
               <div>
                 <p className="font-bold text-foreground text-sm">Published this session ({sessionLessons.length})</p>
@@ -832,11 +832,11 @@ export default function UploadPage() {
         className="bg-card border border-border rounded-3xl p-5 sm:p-6 space-y-5 card-glow"
       >
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">
             CURRICULUM
           </p>
           <h2 className="font-bold text-foreground flex items-center gap-2 mt-1">
-            <FileUp className="w-4 h-4 text-emerald-600" /> Submit Curriculum SOW for Review
+            <FileUp className="w-4 h-4 text-success" /> Submit Curriculum SOW for Review
           </h2>
           <p className="text-muted-foreground text-sm mt-1">
             Upload a Scheme of Work document for a subject. It will be sent to the
@@ -878,7 +878,7 @@ export default function UploadPage() {
 
         {sowSubmitting && sowUploadPct > 0 && (
           <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-            <div className="h-full bg-emerald-600 transition-all" style={{ width: `${sowUploadPct}%` }} />
+            <div className="h-full bg-success transition-all" style={{ width: `${sowUploadPct}%` }} />
           </div>
         )}
 

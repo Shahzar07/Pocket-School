@@ -49,6 +49,8 @@
     --color-wash: var(--wash);
     --color-line: var(--line);
     --color-good: var(--good);
+    --color-success: var(--good);
+    --color-success-foreground: #ffffff;
     --color-teacher: var(--teacher);
     --color-parent: var(--parent);
     --color-admin: var(--admin);

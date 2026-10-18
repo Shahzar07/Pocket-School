@@ -1,8 +1,11 @@
 'use client';
 
-import { DailyGoalsModal } from '@/components/daily-goals-modal';
+import { useState } from 'react';
+import { AddGoalDialog } from '@/components/goals/add-goal-dialog';
+import { GoalsWorkspace, type WorkspaceGoal } from '@/components/goals/goals-workspace';
 import { ParentPlanCard } from '@/components/goals/parent-plan-card';
 import { WeeklyPlan } from '@/components/goals/weekly-plan';
+import { isoDateKey } from '@/lib/insights/dates';
 import { weekColumns } from '@/lib/study/planner';
 
 const columns = weekColumns([
@@ -13,7 +16,19 @@ const columns = weekColumns([
   { title: 'Practice paper', dateKey: '2026-10-23', estimateMinutes: 45, status: 'not_started', source: 'et_ai' },
 ], '2026-10-18');
 
+const COURSES = [{
+  id: 'igcse-maths',
+  title: 'IGCSE Maths',
+  units: [{ id: 'algebra', title: 'Algebra', lessons: [{ id: 'linear', title: 'Linear equations' }] }],
+}];
+
 export function GoalsPreview({ view }: { view: string }) {
+  const [open, setOpen] = useState(view === 'modal');
+  const today = isoDateKey();
+  const goals: WorkspaceGoal[] = [
+    { id: 'g1', title: 'Continue IGCSE Maths', dateKey: today, estimateMinutes: 45, deadline: '19:30', status: 'not_started', source: 'et_ai', category: 'study' },
+    { id: 'g2', title: 'Revise algebra', dateKey: today, estimateMinutes: 30, status: 'in_progress', source: 'student', category: 'revision', checklist: [{ id: 'c1', label: 'Factorise', done: true }, { id: 'c2', label: 'Solve', done: false }] },
+  ];
   if (view === 'parent') {
     return (
       <main className="mx-auto max-w-3xl p-6">
@@ -21,46 +36,26 @@ export function GoalsPreview({ view }: { view: string }) {
       </main>
     );
   }
-  if (view === 'modal') {
-    return (
-      <main className="min-h-screen bg-[#E9F7FA]">
-        <DailyGoalsModal
-          open
-          studentId=""
-          studentName="Alex Student"
-          streak={4}
-          minutesLeft={150}
-          suggestions={[{
-            key: 'sug-1',
-            title: 'Carry over: unfinished algebra',
-            category: 'revision',
-            estimateMinutes: 30,
-            deadline: '',
-            priorityStar: true,
-            source: 'self',
-            locked: false,
-            persisted: false,
-            reason: 'Yesterday',
-          }]}
-          assigned={[{
-            key: 'asg-1',
-            title: 'Continue IGCSE Maths',
-            category: 'study',
-            estimateMinutes: 45,
-            deadline: '19:30',
-            priorityStar: true,
-            source: 'et_ai',
-            locked: true,
-            persisted: true,
-          }]}
-          onDone={() => undefined}
-        />
-      </main>
-    );
-  }
   return (
     <main className="mx-auto max-w-6xl p-6">
-      <WeeklyPlan columns={columns} />
+      <GoalsWorkspace
+        goals={goals}
+        viewer="student"
+        onAdd={() => setOpen(true)}
+        onToggle={() => undefined}
+        onReflect={() => undefined}
+        onComplete={() => undefined}
+        onLogFocus={() => undefined}
+      />
+      <div className="mt-8">
+        <WeeklyPlan columns={columns} />
+      </div>
+      <AddGoalDialog
+        open={open || view === 'modal'}
+        courses={COURSES}
+        onClose={() => setOpen(false)}
+        onCreate={async () => setOpen(false)}
+      />
     </main>
   );
 }

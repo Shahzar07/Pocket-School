@@ -169,7 +169,7 @@ function TopicInner({ params }: { params: Promise<{ id: string; topicId: string 
             return (
               <button key={t.id} onClick={() => setTab(t.id)}
                 className={`shrink-0 h-10 px-4 rounded-full text-[13px] font-semibold inline-flex items-center gap-1.5 border transition-colors ${tab === t.id ? 'bg-foreground text-background border-foreground' : 'border-border bg-card hover:border-primary/40'}`}>
-                <t.icon className="w-4 h-4" /> {t.label} {done && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
+                <t.icon className="w-4 h-4" /> {t.label} {done && <CheckCircle2 className="w-3.5 h-3.5 text-success" />}
               </button>
             );
           })}

@@ -46,14 +46,14 @@ export default function NotesPage() {
     <NotesBoard
       notes={notes}
       groups={groups}
-      notice={syncError ? 'Notes could not sync. Your last copy is still on screen.' : ''}
+      notice={syncError}
       onCreate={async (input) => {
         try {
           await createNote(user.uid, {
             text: input.text,
             colour: input.colour,
             board: input.board,
-            checklist: input.checklist ? [{ id: '1', text: input.text, done: false }] : [],
+            checklist: input.checklist ? [{ id: 'step-1', text: 'Add a step', done: false }] : [],
           });
         } catch (reason) {
           setSyncError(reason instanceof Error ? reason.message : 'The note was not saved.');

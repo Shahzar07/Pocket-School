@@ -119,7 +119,7 @@ function DragRow({
         const fromId = event.dataTransfer.getData('text/plain');
         if (fromId && fromId !== id) onDropId(fromId);
       }}
-      className={`flex items-center gap-2 rounded-xl border px-2 py-2 ${selected ? 'border-emerald-600 bg-emerald-500/10' : 'border-border bg-card'}`}
+      className={`flex items-center gap-2 rounded-xl border px-2 py-2 ${selected ? 'border-success/40 bg-success/10' : 'border-border bg-card'}`}
     >
       <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
       <button type="button" className="min-w-0 flex-1 truncate text-left text-sm font-semibold" onClick={onSelect}>
@@ -387,7 +387,7 @@ export function TeacherCourseStudio({
     <div className="mx-auto max-w-6xl space-y-6 pb-16">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">Course studio</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">Course studio</p>
           <h1 className="font-heading text-4xl text-foreground">{title || 'New course'}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {decision.status === 'pending_approval' ? 'Marketplace review' : decision.status === 'published' ? 'Ready for your students' : 'Draft'}
@@ -401,7 +401,7 @@ export function TeacherCourseStudio({
           <Button type="button" variant="outline" className="rounded-full" disabled={busy} onClick={() => { void save('draft'); }}>
             Save draft
           </Button>
-          <Button type="button" className="rounded-full bg-emerald-600 text-white hover:bg-emerald-700" disabled={busy} onClick={() => { void save('publish'); }}>
+          <Button type="button" className="rounded-full bg-success text-white hover:bg-success" disabled={busy} onClick={() => { void save('publish'); }}>
             {policy.include.includes('marketplace') && role !== 'admin' ? 'Submit for review' : 'Publish'}
           </Button>
         </div>
@@ -416,7 +416,7 @@ export function TeacherCourseStudio({
               key={item.id}
               type="button"
               onClick={() => { setStep(item.id); setPreview(false); }}
-              className={`w-full rounded-2xl border px-3 py-3 text-left ${step === item.id && !preview ? 'border-emerald-600 bg-emerald-500/10' : 'border-border bg-card'}`}
+              className={`w-full rounded-2xl border px-3 py-3 text-left ${step === item.id && !preview ? 'border-success/40 bg-success/10' : 'border-border bg-card'}`}
             >
               <span className="block text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Step {index + 1}</span>
               <span className="font-semibold text-foreground">{item.label}</span>

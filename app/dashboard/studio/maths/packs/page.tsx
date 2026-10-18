@@ -38,7 +38,7 @@ export default function PacksPage() {
                 <div className="p-5">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: p.accent }}>{p.board}</span>
-                    <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full inline-flex items-center gap-1"><Gift className="w-3 h-3" /> 1st topic free</span>
+                    <span className="text-[11px] font-semibold text-success bg-success/15 px-2 py-0.5 rounded-full inline-flex items-center gap-1"><Gift className="w-3 h-3" /> 1st topic free</span>
                   </div>
                   <p className="font-heading text-[20px] leading-tight mt-2">{p.name}</p>
                   <p className="text-[13px] text-muted-foreground mt-1.5 line-clamp-2">{p.blurb}</p>

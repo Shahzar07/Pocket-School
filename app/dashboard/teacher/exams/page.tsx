@@ -137,7 +137,7 @@ export default function TeacherExamsPage() {
         className="flex items-center justify-between pt-2"
       >
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">
             Exam Builder
           </p>
           <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1">
@@ -157,7 +157,7 @@ export default function TeacherExamsPage() {
           {view === 'list' && (
             <Button
               onClick={() => setView('create')}
-              className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:opacity-90 rounded-full h-11 px-5 font-bold gap-2"
+              className="bg-gradient-to-r from-success to-teal-600 text-white hover:opacity-90 rounded-full h-11 px-5 font-bold gap-2"
             >
               <Plus className="w-4 h-4" /> New Exam
             </Button>
@@ -192,7 +192,7 @@ export default function TeacherExamsPage() {
                 className="relative flex flex-col items-center justify-center py-20"
               >
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-64 h-64 bg-emerald-400/20 rounded-full blur-3xl" />
+                  <div className="w-64 h-64 bg-success/20 rounded-full blur-3xl" />
                 </div>
                 <PenSquare className="w-12 h-12 mb-4 text-muted-foreground/40 relative z-10" />
                 <p className="font-heading text-2xl text-foreground relative z-10">No exams yet</p>
@@ -211,7 +211,7 @@ export default function TeacherExamsPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="font-semibold text-foreground">{e.title}</p>
-                    <Badge className={e.status === 'published' ? 'bg-emerald-500/10 text-emerald-700' : 'bg-muted text-muted-foreground'}>{e.status}</Badge>
+                    <Badge className={e.status === 'published' ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}>{e.status}</Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{e.questions.length} questions · Pass: {e.passingScore}% {e.timeLimit ? `· ${e.timeLimit} min` : ''}</p>
                 </div>
@@ -236,7 +236,7 @@ export default function TeacherExamsPage() {
           className="bg-card border border-border rounded-3xl p-6 sm:p-8 card-glow space-y-6"
         >
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">New Assessment</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">New Assessment</p>
             <h2 className="font-heading text-3xl text-foreground tracking-tight mt-1">Create Exam</h2>
           </div>
 
@@ -277,7 +277,7 @@ export default function TeacherExamsPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">Questions</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">Questions</p>
                 <h3 className="font-heading text-xl text-foreground">{questions.length} Question{questions.length !== 1 ? 's' : ''}</h3>
               </div>
               <Button variant="outline" size="sm" onClick={addQuestion} className="gap-1 rounded-full"><Plus className="w-3.5 h-3.5" /> Add Question</Button>
@@ -342,7 +342,7 @@ export default function TeacherExamsPage() {
           <Button
             onClick={handleCreate}
             disabled={saving}
-            className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:opacity-90 rounded-full h-11 px-5 font-bold"
+            className="bg-gradient-to-r from-success to-teal-600 text-white hover:opacity-90 rounded-full h-11 px-5 font-bold"
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />} Save Exam
           </Button>
@@ -359,7 +359,7 @@ export default function TeacherExamsPage() {
             custom={0}
             className="bg-card border border-border rounded-3xl p-5 card-glow"
           >
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">Results</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">Results</p>
             <h2 className="font-heading text-3xl text-foreground tracking-tight mt-1">{selectedExam.title}</h2>
             <p className="text-xs text-muted-foreground mt-1">{submissions.length} submission{submissions.length !== 1 ? 's' : ''}</p>
           </motion.div>
@@ -373,7 +373,7 @@ export default function TeacherExamsPage() {
               className="relative flex flex-col items-center justify-center py-16"
             >
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-64 h-64 bg-emerald-400/20 rounded-full blur-3xl" />
+                <div className="w-64 h-64 bg-success/20 rounded-full blur-3xl" />
               </div>
               <Eye className="w-12 h-12 mb-4 text-muted-foreground/40 relative z-10" />
               <p className="font-heading text-2xl text-foreground relative z-10">No submissions yet</p>
@@ -399,7 +399,7 @@ export default function TeacherExamsPage() {
                   <p className="font-bold text-lg text-foreground">{s.score}/{s.maxScore}</p>
                   <p className="text-xs text-muted-foreground">{Math.round((s.score / s.maxScore) * 100)}%</p>
                 </div>
-                <Badge className={s.passed ? 'bg-emerald-500/10 text-emerald-700' : 'bg-red-500/10 text-red-700'}>{s.passed ? 'PASSED' : 'FAILED'}</Badge>
+                <Badge className={s.passed ? 'bg-success/10 text-success' : 'bg-red-500/10 text-red-700'}>{s.passed ? 'PASSED' : 'FAILED'}</Badge>
               </div>
             </motion.div>
           ))}

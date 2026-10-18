@@ -88,8 +88,8 @@ export default function TeacherAnalytics() {
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
       {/* Header */}
       <motion.header variants={fadeUp} initial="hidden" animate="visible" custom={0}>
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600 flex items-center gap-2">
-          <span className="w-5 h-px bg-emerald-600 inline-block" /> Student Analytics
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success flex items-center gap-2">
+          <span className="w-5 h-px bg-success inline-block" /> Student Analytics
         </p>
         <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-3">
           Your <span className="gradient-text italic">Analytics</span> Dashboard
@@ -130,8 +130,8 @@ export default function TeacherAnalytics() {
       {/* Per-course breakdown */}
       {courseStats.length > 0 && (
         <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={5}>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600 flex items-center gap-2">
-            <span className="w-5 h-px bg-emerald-600 inline-block" /> Breakdown
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success flex items-center gap-2">
+            <span className="w-5 h-px bg-success inline-block" /> Breakdown
           </p>
           <h2 className="font-heading text-3xl text-foreground tracking-tight mt-2 mb-6">Course Performance</h2>
           <div className="space-y-4">
@@ -139,10 +139,10 @@ export default function TeacherAnalytics() {
               <motion.div key={cs.course.id} variants={fadeUp} initial="hidden" animate="visible" custom={6 + i}
                 className="bg-card border border-border rounded-3xl p-5 sm:p-6 relative overflow-hidden card-glow"
               >
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success to-teal-500" />
                 <div className="flex items-start justify-between gap-4 mb-5">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0">
+                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-success to-teal-600 flex items-center justify-center shrink-0">
                       <BookOpen className="w-5 h-5 text-white" />
                     </div>
                     <div>
@@ -150,7 +150,7 @@ export default function TeacherAnalytics() {
                       <p className="text-xs text-muted-foreground mt-0.5">{cs.course.subject}</p>
                     </div>
                   </div>
-                  <Badge className={`rounded-full text-[10px] shrink-0 font-bold ${cs.course.status === 'published' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20'}`}>
+                  <Badge className={`rounded-full text-[10px] shrink-0 font-bold ${cs.course.status === 'published' ? 'bg-success/10 text-success border-success/20' : 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20'}`}>
                     {cs.course.status}
                   </Badge>
                 </div>
@@ -177,8 +177,8 @@ export default function TeacherAnalytics() {
       {/* Recent quiz submissions */}
       {recentSubmissions.length > 0 && (
         <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={7 + courseStats.length}>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600 flex items-center gap-2">
-            <span className="w-5 h-px bg-emerald-600 inline-block" /> Activity
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success flex items-center gap-2">
+            <span className="w-5 h-px bg-success inline-block" /> Activity
           </p>
           <h2 className="font-heading text-3xl text-foreground tracking-tight mt-2 mb-6">Recent Submissions</h2>
           <div className="space-y-3">
@@ -195,7 +195,7 @@ export default function TeacherAnalytics() {
                 </div>
                 <div className="text-right shrink-0">
                   {sub.score !== undefined ? (
-                    <span className={`text-sm font-bold ${(sub.score / sub.maxScore) >= 0.7 ? 'text-emerald-600' : 'text-[var(--ps-cyan-text)]'}`}>
+                    <span className={`text-sm font-bold ${(sub.score / sub.maxScore) >= 0.7 ? 'text-success' : 'text-[var(--ps-cyan-text)]'}`}>
                       {sub.score}/{sub.maxScore}
                     </span>
                   ) : (
@@ -212,7 +212,7 @@ export default function TeacherAnalytics() {
       {courseStats.length === 0 && (
         <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2} className="text-center py-20">
           <div className="relative inline-flex mb-6">
-            <div className="absolute inset-0 blur-2xl bg-emerald-400/20 rounded-full scale-150" />
+            <div className="absolute inset-0 blur-2xl bg-success/20 rounded-full scale-150" />
             <BarChart3 className="w-14 h-14 text-muted-foreground/40 relative" />
           </div>
           <h3 className="font-heading text-2xl text-foreground">No analytics yet</h3>

@@ -397,7 +397,7 @@ export default function CourseDetailPage() {
                     <div className="grid sm:grid-cols-2 gap-x-8 gap-y-3">
                       {course.whatYouLearn.map((item, i) => (
                         <div key={i} className="flex items-start gap-2.5">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                          <CheckCircle2 className="w-4 h-4 text-success shrink-0 mt-0.5" />
                           <span className="text-sm text-foreground/85 leading-relaxed">{item}</span>
                         </div>
                       ))}
@@ -412,7 +412,7 @@ export default function CourseDetailPage() {
                     {curriculum.length} chapter{curriculum.length === 1 ? '' : 's'}
                     {totalLessons > 0 && <> · {totalLessons} lesson{totalLessons === 1 ? '' : 's'}</>}
                     {previewCount > 0 && previewCount !== Number.MAX_SAFE_INTEGER && (
-                      <> · <span className="text-emerald-600 font-semibold">
+                      <> · <span className="text-success font-semibold">
                         first {previewCount} lesson{previewCount === 1 ? '' : 's'} free
                       </span></>
                     )}
@@ -474,11 +474,11 @@ export default function CourseDetailPage() {
                                   return (
                                     <div key={l.id} className="flex items-center gap-3 px-5 py-3 border-t border-border/60">
                                       {free
-                                        ? <PlayCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                                        ? <PlayCircle className="w-4 h-4 text-success shrink-0" />
                                         : <Lock className="w-4 h-4 text-muted-foreground/60 shrink-0" />}
                                       <span className="text-sm flex-1 min-w-0 truncate text-foreground/85">{l.title}</span>
                                       {free && (
-                                        <span className="text-[11px] font-bold text-emerald-600 shrink-0">Preview</span>
+                                        <span className="text-[11px] font-bold text-success shrink-0">Preview</span>
                                       )}
                                       {l.durationMinutes ? (
                                         <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
@@ -608,7 +608,7 @@ export default function CourseDetailPage() {
 
                     {/* Coupon / scholarship code */}
                     {couponGranted ? (
-                      <p className="mt-4 flex items-center justify-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg py-2.5">
+                      <p className="mt-4 flex items-center justify-center gap-2 text-xs font-semibold text-success bg-success/15 border border-success/40 rounded-lg py-2.5">
                         <CheckCircle2 className="w-4 h-4" /> A scholarship code is applied to this course
                       </p>
                     ) : couponOpen ? (

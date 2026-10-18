@@ -18,6 +18,15 @@ export interface DashboardPage {
 
 export const DASHBOARD_PAGES: DashboardPage[] = [
   {
+    path: '/dashboard',
+    title: 'Dashboard',
+    purpose: 'Opens the home for the signed-in role.',
+    audience: ['everyone'],
+    overlaps: 'Student, teacher, parent, and admin homes.',
+    decision: 'Redirect. There is no second dashboard.',
+    ownerKeys: 'None.',
+  },
+  {
     path: '/dashboard/student',
     title: 'Student home',
     purpose: 'The student landing page: today’s goals, courses to continue, and shortcuts into ET AI, achievements, and learning.',
@@ -308,19 +317,19 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/student/tasks',
     title: 'Daily goals',
-    purpose: 'The one daily-goals list: what to finish today, visible to the student, their parents, and their teachers.',
+    purpose: 'The old tasks address. It opens the daily-goals page and keeps the query.',
     audience: ['student', 'parent', 'teacher'],
     overlaps: '/dashboard/student/goals.',
-    decision: 'This is the merged goals page. /dashboard/student/goals redirects here.',
+    decision: 'Redirect to /dashboard/student/goals. The query, including add=1, is kept.',
     ownerKeys: 'None.',
   },
   {
     path: '/dashboard/student/goals',
-    title: 'Goals (retired)',
-    purpose: 'The old second goals page. It now opens daily goals.',
+    title: 'Daily goals',
+    purpose: 'The one daily-goals list: what to finish today, visible to the student, their parents, and their teachers.',
     audience: ['student'],
-    overlaps: 'Daily goals.',
-    decision: 'Redirect to /dashboard/student/tasks. Removed from the student nav.',
+    overlaps: 'Tasks.',
+    decision: 'This is the merged goals page. /dashboard/student/tasks redirects here.',
     ownerKeys: 'None.',
   },
   {
@@ -671,7 +680,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     purpose: 'What each role can do, with a live count of people in that role, plus assigning an institution admin.',
     audience: ['admin'],
     overlaps: 'Users and Sparks, and allocations.',
-    decision: 'Not a second email editor. Subscription changes stay on Users and allocations. Institution-admin assignment stays here.',
+    decision: 'Roles stay here. Tier, course, and coupon grants stay on Allocations, linked from this page.',
     ownerKeys: 'None.',
   },
   {
@@ -680,7 +689,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     purpose: 'Grant a tier, a course, or a coupon to a person.',
     audience: ['admin'],
     overlaps: 'Access and Users.',
-    decision: 'Keep and make the three grants easier to find. This is the only place coupons are created.',
+    decision: 'Keep. This is the grants half of Access. Coupons are created only here.',
     ownerKeys: 'None.',
   },
   {
@@ -760,8 +769,8 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     title: 'Audit log',
     purpose: 'Who changed staff-level settings and when.',
     audience: ['admin'],
-    overlaps: 'None.',
-    decision: 'Keep.',
+    overlaps: 'Activity log.',
+    decision: 'Redirect to /dashboard/admin/activity. Staff changes and the server log are one list.',
     ownerKeys: 'None.',
   },
   {
@@ -1021,8 +1030,8 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     title: 'Activity log',
     purpose: 'Server-written sign-in, role, content, and admin actions. Super admins read it. People cannot edit a row.',
     audience: ['admin'],
-    overlaps: 'Institution audit on an academy.',
-    decision: 'Keep. This is the platform log. Academy settings keep their own audit.',
+    overlaps: 'The older audit page and institution audit on an academy.',
+    decision: 'Keep. /dashboard/admin/audit opens this log. Academy settings keep their own audit.',
     ownerKeys: 'None. The server stamps actor, time, and IP.',
   },
   {

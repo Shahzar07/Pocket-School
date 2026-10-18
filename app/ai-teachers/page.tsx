@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Atom,
@@ -72,6 +73,9 @@ export default function AiTeachersPage() {
         <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[var(--ps-cyan-soft)] blur-3xl" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 text-center">
+          <p className="mb-4">
+            <Link href="/" className="text-sm font-semibold text-[#1E6A83]">Home</Link>
+          </p>
           <p className="text-xs font-bold tracking-[0.25em] text-primary mb-5">AI TEACHERS LIBRARY</p>
           <h1 className="font-heading text-4xl sm:text-5xl lg:text-7xl tracking-tight text-[#203337] leading-[0.95] mb-6 max-w-4xl mx-auto">
             Your 24/7 Faculty.
@@ -167,6 +171,16 @@ export default function AiTeachersPage() {
               <p className="text-sm text-slate-500">No teachers in this category yet.</p>
             </div>
           )}
+        </div>
+      </section>
+
+      <section className="bg-white py-16 lg:py-20" id="beyond">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
+          <p className="text-xs font-bold tracking-[0.2em] text-[#1E6A83] mb-3">BEYOND A-LEVEL</p>
+          <h2 className="font-heading text-3xl sm:text-4xl tracking-tight text-[#203337]">Degrees and professional routes.</h2>
+          <p className="mt-4 text-sm leading-relaxed text-slate-600">
+            Law, medicine, engineering, and nursing teachers stay on the same bench. The work is preparation. It is not an award from a university or an exam board.
+          </p>
         </div>
       </section>
 
