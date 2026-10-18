@@ -8,7 +8,9 @@ import {
   computeGoalStreak, checkGoalAlerts, goalDateKey, getEnrolledCourses,
   DailyGoal, GoalCategory, Course, Enrollment,
 } from '@/lib/db';
-import { DailyGoalsModal } from '@/components/daily-goals-modal';
+import { assignedDraftsFromGoals, DailyGoalsModal } from '@/components/daily-goals-modal';
+import { WeeklyPlan } from '@/components/goals/weekly-plan';
+import { FocusTimer } from '@/components/goals/focus-timer';
 import { DocumentDelivery } from '@/components/document-delivery';
 import { textDocument } from '@/lib/documents/packet';
 import { Button } from '@/components/ui/button';
@@ -18,6 +20,11 @@ import {
   Plus, Trash2, Loader2, Target, Play, Check, Flame, Clock, Lock,
   Sparkles, CalendarDays, LineChart, CheckCircle2, AlertTriangle, ShieldCheck,
 } from 'lucide-react';
+import {
+  buildStudyPlan, canDeleteGoal, defaultAvailability, isAssignedSource, limitsForAge,
+  minutesLeftToday, requestReschedule, sourceLabel, weekColumns, weekStartKey,
+} from '@/lib/study/planner';
+import { saveReschedule } from '@/lib/study/save-plan';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -26,13 +33,15 @@ const fadeUp: Record<string, any> = {
 
 const CATEGORY_META: Record<GoalCategory, { label: string; pill: string; dot: string }> = {
   study:    { label: 'Study',    pill: 'bg-primary/10 text-primary',   dot: 'bg-primary' },
+  homework: { label: 'Homework', pill: 'bg-primary/10 text-primary',   dot: 'bg-primary' },
   revision: { label: 'Revision', pill: 'bg-primary/10 text-primary',   dot: 'bg-primary' },
-  practice: { label: 'Practice', pill: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',   dot: 'bg-[var(--ps-cyan)]' },
+  practice: { label: 'Practice test', pill: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',   dot: 'bg-[var(--ps-cyan)]' },
   reading:  { label: 'Reading',  pill: 'bg-emerald-500/10 text-emerald-600', dot: 'bg-emerald-500' },
+  personal: { label: 'Personal', pill: 'bg-muted text-muted-foreground',   dot: 'bg-muted-foreground' },
   other:    { label: 'Other',    pill: 'bg-muted text-muted-foreground',   dot: 'bg-muted-foreground' },
 };
 
-const CATEGORY_ORDER: GoalCategory[] = ['study', 'revision', 'practice', 'reading', 'other'];
+const CATEGORY_ORDER: GoalCategory[] = ['study', 'homework', 'revision', 'practice', 'reading', 'personal', 'other'];
 const ESTIMATE_OPTIONS = [15, 30, 45, 60, 90];
 
 type DisplayStatus = 'not_started' | 'in_progress' | 'completed' | 'overdue' | 'excused';
@@ -133,7 +142,10 @@ export default function StudentDailyGoalsPage() {
   const [courses, setCourses] = useState<{ course: Course; enrollment: Enrollment }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<'today' | 'history' | 'insights'>('today');
+  const [tab, setTab] = useState<'today' | 'week' | 'history' | 'insights'>('today');
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [checkedIn, setCheckedIn] = useState(false);
+  const [focusId, setFocusId] = useState<string | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [busyId, setBusyId] = useState<string | null>(null);
   const [poppedId, setPoppedId] = useState<string | null>(null);
@@ -347,6 +359,8 @@ export default function StudentDailyGoalsPage() {
     setBusyId(goal.id);
     try {
       await startDailyGoal(goal.id);
+      setFocusId(goal.id);
+      setTab('week');
       toast.success('Goal started — your courses are unlocked.');
     } catch {
       toast.error('Could not start that goal.');
@@ -371,6 +385,11 @@ export default function StudentDailyGoalsPage() {
   };
 
   const handleDelete = async (id: string) => {
+    const goal = goals.find(item => item.id === id);
+    if (goal && !canDeleteGoal(goal.source)) {
+      toast.error('Assigned goals stay on the plan. You can reschedule them.');
+      return;
+    }
     try {
       await deleteDailyGoal(id);
       toast.success('Goal removed.');
@@ -378,6 +397,73 @@ export default function StudentDailyGoalsPage() {
       toast.error('Could not remove that goal.');
     }
   };
+
+  const handleReschedule = async (goal: DailyGoal) => {
+    const nextDay = new Date();
+    nextDay.setDate(nextDay.getDate() + 1);
+    const dateKey = goalDateKey(nextDay);
+    const result = requestReschedule({
+      id: goal.id,
+      title: goal.title,
+      dateKey: goal.dateKey,
+      deadline: goal.deadline,
+      estimateMinutes: goal.estimateMinutes,
+      status: goal.status,
+      source: goal.source,
+      rescheduleCount: goal.rescheduleCount,
+      rescheduleLimit: goal.rescheduleLimit,
+      dueDateKey: goal.dueDateKey,
+    }, { dateKey, deadline: goal.deadline || '19:30' }, new Date().toISOString());
+    if (!result.ok) {
+      toast.error(result.reason);
+      return;
+    }
+    if (!user) return;
+    await saveReschedule(user.uid, goal.id, result.entry, {
+      dateKey: result.goal.dateKey,
+      deadline: result.goal.deadline,
+      rescheduleCount: result.goal.rescheduleCount ?? 1,
+    }).catch(() => toast.error('Could not reschedule that goal.'));
+  };
+
+  const planSuggestions = useMemo(() => {
+    const limits = limitsForAge('teen');
+    const items = courses.slice(0, 4).map(({ course }) => ({
+      id: course.id,
+      title: `Continue ${course.title}`,
+      kind: 'course' as const,
+      courseId: course.id,
+      courseLabel: course.title,
+      dueDateKey: todayKey,
+      minutes: 30,
+      weight: 4,
+    }));
+    return buildStudyPlan({ today: todayKey, limits, items }).goals.slice(0, 3).map(goal => ({
+      key: goal.key,
+      title: goal.title,
+      category: goal.category,
+      estimateMinutes: goal.estimateMinutes,
+      deadline: '',
+      priorityStar: goal.priorityStar,
+      source: 'et_ai' as const,
+      locked: true,
+      persisted: false,
+      link: goal.link,
+      courseId: goal.courseId,
+      courseLabel: goal.courseLabel,
+      reason: 'From your enrolled courses',
+    }));
+  }, [courses, todayKey]);
+
+  const week = useMemo(() => weekColumns(goals, weekStartKey(todayKey)), [goals, todayKey]);
+
+  useEffect(() => {
+    if (!user || loading) return;
+    setCheckedIn(window.localStorage.getItem(`poket-goals-checkin:${user.uid}:${todayKey}`) === 'done');
+    const reviewed = window.localStorage.getItem(`poket-goals-review:${user.uid}:${todayKey}`) === 'done';
+    if (new Date().getHours() >= 16 && todaysGoals.length > 0 && !reviewed) setReviewOpen(true);
+  }, [user, loading, todayKey, todaysGoals.length]);
+  const focusGoal = todaysGoals.find(goal => goal.id === focusId) ?? null;
 
   // ── Render ───────────────────────────────────────────────────────────────
   if (loading) return (
@@ -489,13 +575,19 @@ export default function StudentDailyGoalsPage() {
               <ShieldCheck className="w-4 h-4" /> Excused
             </span>
           )}
-          <button
-            onClick={() => handleDelete(goal.id)}
-            aria-label="Delete goal"
-            className="text-muted-foreground hover:text-destructive transition-colors p-2"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {isAssignedSource(goal.source) ? (
+            <button type="button" onClick={() => { void handleReschedule(goal); }} className="rounded-full border border-[#1E6A83] px-3 py-1 text-xs font-semibold text-[#1E6A83]">
+              {sourceLabel(goal.source)} · Move
+            </button>
+          ) : (
+            <button
+              onClick={() => handleDelete(goal.id)}
+              aria-label="Delete goal"
+              className="text-muted-foreground hover:text-destructive transition-colors p-2"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </motion.div>
     );
@@ -506,12 +598,39 @@ export default function StudentDailyGoalsPage() {
 
       {/* Blocking goal-setting gate for a fresh day */}
       {user && (
-        <DailyGoalsModal
-          open={!loading && todaysGoals.length === 0 && !modalDone}
-          studentId={user.uid}
-          studentName={profile?.name ?? user.displayName ?? 'Student'}
-          onDone={() => setModalDone(true)}
-        />
+        <>
+          <DailyGoalsModal
+            open={!loading && !modalDone && !checkedIn && !reviewOpen && todaysGoals.every(goal => isAssignedSource(goal.source))}
+            studentId={user.uid}
+            studentName={profile?.name ?? user.displayName ?? 'Student'}
+            assigned={[
+              ...assignedDraftsFromGoals(todaysGoals),
+              ...(todaysGoals.some(goal => isAssignedSource(goal.source)) ? [] : planSuggestions),
+            ]}
+            suggestions={todaysGoals.some(goal => isAssignedSource(goal.source)) ? planSuggestions.map(goal => ({ ...goal, locked: false, source: 'self' as const, persisted: false })) : []}
+            streak={stats.streak}
+            minutesLeft={minutesLeftToday(new Date(nowMs), defaultAvailability())}
+            onDone={() => {
+              localStorage.setItem(`poket-goals-checkin:${user.uid}:${todayKey}`, 'done');
+              setModalDone(true);
+            }}
+          />
+          <DailyGoalsModal
+            mode="review"
+            open={reviewOpen}
+            studentId={user.uid}
+            studentName={profile?.name ?? user.displayName ?? 'Student'}
+            reviewGoals={todaysGoals.map(goal => ({ id: goal.id, title: goal.title, done: goal.status === 'completed' }))}
+            onToggleReview={(id) => {
+              const goal = todaysGoals.find(item => item.id === id);
+              if (goal && goal.status !== 'completed') void handleComplete(goal);
+            }}
+            onDone={() => {
+              localStorage.setItem(`poket-goals-review:${user.uid}:${todayKey}`, 'done');
+              setReviewOpen(false);
+            }}
+          />
+        </>
       )}
 
       {/* ── Page header ── */}
@@ -706,6 +825,7 @@ export default function StudentDailyGoalsPage() {
         <div className="inline-flex gap-1 p-1 rounded-full bg-muted/50 border border-border">
           {([
             { id: 'today', label: 'Today', icon: Target },
+            { id: 'week', label: 'Week', icon: CalendarDays },
             { id: 'history', label: 'History', icon: CalendarDays },
             { id: 'insights', label: 'Insights', icon: LineChart },
           ] as const).map(t => (
@@ -722,6 +842,12 @@ export default function StudentDailyGoalsPage() {
         </div>
 
         <AnimatePresence mode="wait">
+          {tab === 'week' && (
+            <motion.div key="week" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+              <WeeklyPlan columns={week} />
+              {focusGoal ? <FocusTimer title={focusGoal.title} estimateMinutes={focusGoal.estimateMinutes} pauseWhenHidden /> : null}
+            </motion.div>
+          )}
           {tab === 'today' && (
             <motion.div key="today" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-3">
               {todaysGoals.length === 0 ? (

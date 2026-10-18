@@ -460,7 +460,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/teacher/goals`
 - **Audience:** teacher
-- **Purpose:** The same daily goals students set, seen by their teacher.
+- **Purpose:** Assigned-goal adherence for the class, plus goals a student chose to share. Private goals are left out.
 - **Overlaps:** Student daily goals.
 - **Decision:** Keep as the teacher view. Do not add a second goal model.
 - **Owner keys:** None.
@@ -735,6 +735,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Keep. Resources is the file library the CMS can point at.
 - **Owner keys:** OPENROUTER_API_KEY for lesson generation.
 
+### Study planner
+
+- **Route:** `/dashboard/admin/planner`
+- **Audience:** admin
+- **Purpose:** Age caps and reschedule limits for ET AI assigned goals.
+- **Overlaps:** Student daily goals.
+- **Decision:** Keep. The planner writes the same daily goals. It does not add a second list.
+- **Owner keys:** None. Without an ET AI key the planner is rule-based.
+
 ### Curriculum course
 
 - **Route:** `/dashboard/admin/curriculum/[courseId]`
@@ -829,7 +838,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/community`
 - **Audience:** everyone
-- **Purpose:** Spaces and posts, plus class channels as a tab. ET AI can summarise a thread and suggest an answer.
+- **Purpose:** Facebook-style school wall: composer, photo grids, reactions, and comments. Class channels stay on a tab. The same wall is used for class, groups, alumni, and profile timelines.
 - **Overlaps:** /dashboard/channels.
 - **Decision:** Channels fold in as a tab. /dashboard/channels redirects here.
 - **Owner keys:** OPENROUTER_API_KEY for summaries.
@@ -1525,6 +1534,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Purpose:** Learners in this school whose progress alerts are open.
 - **Overlaps:** Teacher class risk and parent progress.
 - **Decision:** Keep. The school sees its own learners.
+- **Owner keys:** None.
+
+### Goal adherence
+
+- **Route:** `/dashboard/institution/goals`
+- **Audience:** institution
+- **Purpose:** Assigned-goal completion for the school, with no private goal titles.
+- **Overlaps:** Teacher class goals and student daily goals.
+- **Decision:** Keep as the school count. Private goals stay off this page.
 - **Owner keys:** None.
 
 ### Course library

@@ -3563,3 +3563,56 @@ components/visual-blocks.tsx	Title (optional)
 components/visual-blocks.tsx	Transcript of the chant or rhyme
 components/visual-blocks.tsx	Upload failed.
 lib/email-otp.ts	Poket School
+app/dashboard/admin/planner/page.tsx	Could not save planner limits.
+app/dashboard/admin/planner/page.tsx	Planner limits saved.
+app/dashboard/admin/planner/page.tsx	Study planner
+app/dashboard/institution/goals/page.tsx	Class goal adherence
+app/dashboard/student/tasks/page.tsx	Assigned goals stay on the plan. You can reschedule them.
+app/dashboard/student/tasks/page.tsx	Could not reschedule that goal.
+components/daily-goals-modal.tsx	Check in
+components/daily-goals-modal.tsx	Could not keep the assigned goals.
+components/daily-goals-modal.tsx	Custom minutes
+components/daily-goals-modal.tsx	Tick what you finished. Assigned goals stay on the list until they are done.
+components/goals/class-adherence.tsx	Assigned goals only. Private goals are not included, and titles are not shown.
+components/goals/class-adherence.tsx	Class goal adherence
+components/goals/class-adherence.tsx	Goal adherence
+components/goals/class-adherence.tsx	No assigned goals in this class yet.
+components/goals/focus-timer.tsx	Focus timer
+components/goals/parent-plan-card.tsx	Plan against what was finished. Private goals stay off this card.
+components/goals/weekly-plan.tsx	ET AI planner
+components/goals/weekly-plan.tsx	Weekly study plan
+app/dashboard/alumni/page.tsx	Request to join
+app/dashboard/community/page.tsx	Class channels
+app/dashboard/community/page.tsx	Loading the wall…
+app/u/[handle]/page.tsx	Poket School
+app/u/[handle]/page.tsx	School wall
+components/wall/wall-screen.tsx	Birthdays and achievements
+components/wall/wall-screen.tsx	Classmates outside your school are hidden.
+components/wall/wall-screen.tsx	Close photo
+components/wall/wall-screen.tsx	Event title
+components/wall/wall-screen.tsx	Location stays off unless you tick it. Photos are resized on this device and location data is removed.
+components/wall/wall-screen.tsx	My class
+components/wall/wall-screen.tsx	Not an emergency service. In danger? Call 999.
+components/wall/wall-screen.tsx	Nothing on this wall yet
+components/wall/wall-screen.tsx	Online in your school
+components/wall/wall-screen.tsx	Option one
+components/wall/wall-screen.tsx	Option two
+components/wall/wall-screen.tsx	Poket SafeLine
+components/wall/wall-screen.tsx	Poll option one
+components/wall/wall-screen.tsx	Poll option two
+components/wall/wall-screen.tsx	Post menu
+components/wall/wall-screen.tsx	Posts from your school, class, and groups show up here. Public posts stay with adults.
+components/wall/wall-screen.tsx	Priya Shah mentioned you in class.
+components/wall/wall-screen.tsx	Report a post, or open SafeLine if something feels wrong.
+components/wall/wall-screen.tsx	Safety terms
+components/wall/wall-screen.tsx	Send comment
+components/wall/wall-screen.tsx	Share something with your school
+components/wall/wall-screen.tsx	Suggested groups
+components/wall/wall-screen.tsx	Tag classmates
+components/wall/wall-screen.tsx	Under-18 posts stay inside this school.
+components/wall/wall-screen.tsx	Wei Lin liked your pond notes.
+components/wall/wall-screen.tsx	Write a comment
+components/wall/wall-screen.tsx	Write a reply
+components/wall/wall-screen.tsx	amina, wei
+components/wall/wall-screen.tsx	This timeline only shows people in your school.
+components/wall/wall-screen.tsx	No profile for this name
