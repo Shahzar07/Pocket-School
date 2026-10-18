@@ -718,7 +718,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                                   <button
                                     onClick={() => saveGen(i)}
                                     disabled={saving === i || t.saved}
-                                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${t.saved ? 'text-emerald-400' : `${C.faint} hover:text-foreground ${C.surfaceHover}`}`}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${t.saved ? 'text-success' : `${C.faint} hover:text-foreground ${C.surfaceHover}`}`}
                                   >
                                     <Save className="w-3.5 h-3.5" />
                                     {saving === i ? 'Saving…' : t.saved ? 'Saved' : 'Save to library'}
@@ -974,7 +974,7 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
             <p className="text-sm font-semibold text-foreground mb-3">{i + 1}. {q.question}</p>
             <ul className="space-y-1.5 mb-3">
               {q.options?.map((opt: string, j: number) => (
-                <li key={j} className={`text-sm rounded-lg px-3 py-2 text-foreground ${q.answer === String.fromCharCode(65 + j) || q.answer === opt ? 'bg-emerald-500/10 border border-emerald-700/40 dark:border-emerald-300/40' : 'bg-background border border-transparent'}`}>
+                <li key={j} className={`text-sm rounded-lg px-3 py-2 text-foreground ${q.answer === String.fromCharCode(65 + j) || q.answer === opt ? 'bg-success/10 border border-success/40 dark:border-success/40' : 'bg-background border border-transparent'}`}>
                   {String.fromCharCode(65 + j)}. {opt}
                 </li>
               ))}

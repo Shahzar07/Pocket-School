@@ -143,7 +143,7 @@ export default function ActivityLogPage() {
           Sign-ins, role switches, content edits, publishes, deletes, admin actions, and view-as. The server writes every row. Clients cannot change or delete them.
         </p>
         <p className="text-sm mt-2">
-          <Link href="/dashboard/admin/audit" className="underline">Older admin-action log</Link>
+          The older audit address opens this log.
           {' · '}
           <Link href="/dashboard/admin/certificates" className="underline">Certificate template</Link>
         </p>

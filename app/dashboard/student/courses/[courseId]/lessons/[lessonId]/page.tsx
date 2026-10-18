@@ -109,7 +109,7 @@ function FlashcardViewer({ cards }: { cards: { question: string; answer: string 
           <div style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', position: 'absolute', inset: 0 }}
             className="bg-gradient-to-br from-primary/5 to-violet-500/5 border border-primary/20 rounded-3xl p-8 flex flex-col items-center justify-center text-center shadow-card"
           >
-            <Badge className="mb-4 text-xs rounded-full bg-emerald-500/10 text-emerald-600 border-emerald-500/20">Answer</Badge>
+            <Badge className="mb-4 text-xs rounded-full bg-success/10 text-success border-success/20">Answer</Badge>
             <p className="text-base text-foreground leading-relaxed">{card.answer}</p>
           </div>
         </motion.div>
@@ -124,7 +124,7 @@ function FlashcardViewer({ cards }: { cards: { question: string; answer: string 
             <Button onClick={markAgain} variant="outline" className="rounded-full gap-2 border-destructive/30 text-destructive hover:bg-destructive/10">
               <X className="w-4 h-4" /> Again
             </Button>
-            <Button onClick={markKnown} className="rounded-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+            <Button onClick={markKnown} className="rounded-full gap-2 bg-success hover:bg-success text-white">
               <Check className="w-4 h-4" /> Got it
             </Button>
           </>
@@ -185,9 +185,9 @@ function QuizViewer({
     <div className="max-w-2xl mx-auto py-6 space-y-6" dir={translation.dir}>
       <ContentLanguageBar status={translation.status} showOriginal={translation.showOriginal} notice={translation.notice} onToggle={translation.toggle} />
       {graded && (
-        <div className={`rounded-3xl p-5 text-center border ${percentage >= 70 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-[var(--ps-cyan-soft)] border-[var(--ps-cyan-border)]/20'}`}>
+        <div className={`rounded-3xl p-5 text-center border ${percentage >= 70 ? 'bg-success/10 border-success/20' : 'bg-[var(--ps-cyan-soft)] border-[var(--ps-cyan-border)]/20'}`}>
           <p className="text-3xl font-extrabold">{percentage}%</p>
-          <p className={`text-sm font-semibold mt-1 ${percentage >= 70 ? 'text-emerald-600' : 'text-[var(--ps-cyan-text)]'}`}>
+          <p className={`text-sm font-semibold mt-1 ${percentage >= 70 ? 'text-success' : 'text-[var(--ps-cyan-text)]'}`}>
             {Object.values(graded).filter(r => r.correct).length}/{questions.length} correct
             {percentage >= 70 ? ' — Great work! 🎉' : ' — Keep studying! 📚'}
           </p>
@@ -217,7 +217,7 @@ function QuizViewer({
                   onClick={() => !graded && setAnswers(a => ({ ...a, [i]: id }))}
                   className={`w-full text-start min-h-12 px-4 py-3 rounded-xl border text-sm font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                     graded
-                      ? isCorrect ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700'
+                      ? isCorrect ? 'border-success/40 bg-success/10 text-success'
                         : isWrong ? 'border-destructive/40 bg-destructive/10 text-destructive'
                         : selected ? 'border-border bg-muted text-muted-foreground'
                         : 'border-border bg-background text-muted-foreground'
@@ -227,14 +227,14 @@ function QuizViewer({
                   }`}
                 >
                   {label}
-                  {graded && isCorrect && <span className="float-right text-emerald-600">✓</span>}
+                  {graded && isCorrect && <span className="float-right text-success">✓</span>}
                   {graded && isWrong && <span className="float-right text-destructive">✗</span>}
                 </button>
               );
             })}
           </div>
           {graded?.[i] && (
-            <p className={`mt-3 text-xs px-3 py-2 rounded-lg ${graded[i].correct ? 'bg-emerald-500/10 text-emerald-600' : 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]'}`}>
+            <p className={`mt-3 text-xs px-3 py-2 rounded-lg ${graded[i].correct ? 'bg-success/10 text-success' : 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]'}`}>
               {graded[i].feedback}
             </p>
           )}
@@ -502,17 +502,17 @@ function UnitQuizMode({
       <motion.div initial="hidden" animate="visible" variants={fadeUp} className="max-w-2xl mx-auto py-8 space-y-5">
         <div className={`relative overflow-hidden rounded-3xl p-8 text-center border ${
           result.passed
-            ? 'bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-emerald-500/20'
+            ? 'bg-gradient-to-br from-success/10 to-success/5 border-success/20'
             : 'bg-gradient-to-br from-[var(--ps-cyan)]/10 to-destructive/5 border-[var(--ps-cyan-border)]/20'
         }`}>
           {result.passed
-            ? <Trophy className="w-10 h-10 mx-auto mb-3 text-emerald-600" />
+            ? <Trophy className="w-10 h-10 mx-auto mb-3 text-success" />
             : <AlertTriangle className="w-10 h-10 mx-auto mb-3 text-[var(--ps-cyan-text)]" />}
           <p className="text-5xl font-extrabold text-foreground">{result.percentage}%</p>
-          <p className={`text-sm font-semibold mt-2 ${result.passed ? 'text-emerald-600' : 'text-[var(--ps-cyan-text)]'}`}>
+          <p className={`text-sm font-semibold mt-2 ${result.passed ? 'text-success' : 'text-[var(--ps-cyan-text)]'}`}>
             {result.marksAwarded ?? result.score}/{result.marksMax ?? result.total} marks · {formatTime(result.timeTakenSeconds)} · attempt #{result.attemptNumber}{result.version ? ` · Version ${result.version}` : ''}
           </p>
-          <p className={`text-base font-bold mt-3 ${result.passed ? 'text-emerald-600' : 'text-[var(--ps-cyan-text)]'}`}>
+          <p className={`text-base font-bold mt-3 ${result.passed ? 'text-success' : 'text-[var(--ps-cyan-text)]'}`}>
             {result.passed
               ? `Passed! +${UNIT_PASS_REWARD}⚡ — the next module is now unlocked.`
               : `Not yet — you need ${threshold}% to pass. Review these lessons, then the unit test unlocks on Version ${result.version === 'A' ? 'B' : 'A'}.`}
@@ -1067,7 +1067,7 @@ export default function LessonPage() {
             {languageNotice}
           </div>
           {completed && (
-            <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 rounded-full gap-1.5 shrink-0">
+            <Badge className="bg-success/10 text-success border-success/20 rounded-full gap-1.5 shrink-0">
               <CheckCircle2 className="w-3.5 h-3.5" /> {t('lesson.passed')}
             </Badge>
           )}
@@ -1159,7 +1159,7 @@ export default function LessonPage() {
             {bookmarked ? 'Saved' : 'Bookmark'}
           </Button>
           {completed ? (
-            <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 rounded-full gap-1.5">
+            <Badge className="bg-success/10 text-success border-success/20 rounded-full gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5" /> Completed
             </Badge>
           ) : (

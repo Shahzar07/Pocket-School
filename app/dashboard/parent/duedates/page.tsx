@@ -88,8 +88,8 @@ export default function ParentDueDates() {
         <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
           className="relative text-center py-16 bg-card rounded-[2rem] border border-border overflow-hidden"
         >
-          <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-emerald-500/8 blur-[80px]" />
-          <CalendarCheck className="w-12 h-12 mx-auto mb-4 text-emerald-600/40" />
+          <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-success/8 blur-[80px]" />
+          <CalendarCheck className="w-12 h-12 mx-auto mb-4 text-success/40" />
           <h3 className="font-heading text-2xl text-foreground mb-1.5">All caught up!</h3>
           <p className="text-sm text-muted-foreground">No upcoming assignments at the moment.</p>
         </motion.div>
@@ -104,7 +104,7 @@ export default function ParentDueDates() {
                     <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-md ${
                       u === 'high' ? 'bg-gradient-to-br from-red-500 to-rose-600' :
                       u === 'medium' ? 'border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)]' :
-                      'bg-gradient-to-br from-emerald-500 to-teal-600'
+                      'bg-gradient-to-br from-success to-teal-600'
                     }`}>
                       {u === 'high' ? <AlertCircle className="w-5 h-5 text-white" /> : <Calendar className={`w-5 h-5 ${u === 'medium' ? 'text-[var(--ps-cyan-ink)]' : 'text-white'}`} />}
                     </div>

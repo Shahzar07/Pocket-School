@@ -33,10 +33,10 @@ export const EXAM_PACKS: ExamPack[] = [
   {
     id: 'spm-math',
     name: 'SPM Mathematics',
-    board: 'KPM · KSSM',
+    board: 'National syllabus',
     level: 'SPM',
     scale: 'spm',
-    blurb: 'The full KSSM Mathematics syllabus, with Paper 1 and Paper 2 style questions.',
+    blurb: 'The full Mathematics syllabus, with Paper 1 and Paper 2 style questions.',
     accent: 'var(--primary)',
     units: [
       { id: 'f4', title: 'Core', topics: t('f4', [
@@ -54,10 +54,10 @@ export const EXAM_PACKS: ExamPack[] = [
   {
     id: 'spm-addmath',
     name: 'SPM Additional Mathematics',
-    board: 'KPM · KSSM',
+    board: 'National syllabus',
     level: 'SPM',
     scale: 'spm',
-    blurb: 'Every Add Maths chapter from functions to kinematics, with exam-style working and mark schemes.',
+    blurb: 'Every Additional Mathematics chapter from functions to kinematics, with exam-style working and mark schemes.',
     accent: '#8B5CF6',
     units: [
       { id: 'f4', title: 'Core', topics: t('f4', [
@@ -73,10 +73,10 @@ export const EXAM_PACKS: ExamPack[] = [
   {
     id: 'igcse-0580',
     name: 'IGCSE Mathematics (0580)',
-    board: 'Cambridge',
+    board: 'International',
     level: 'Extended',
     scale: 'igcse',
-    blurb: 'Cambridge IGCSE Mathematics Extended — all nine syllabus areas at Paper 2 and Paper 4 standard.',
+    blurb: 'IGCSE Mathematics Extended — all nine syllabus areas at Paper 2 and Paper 4 standard.',
     accent: '#E5484D',
     units: [
       { id: 'num', title: 'Number', topics: t('num', ['Types of number, factors and primes', 'Fractions, decimals, percentages', ['Indices and standard form', 4], 'Ratio, proportion and rates', 'Bounds and estimation', ['Surds', 3], 'Percentage change and interest']) },
@@ -93,10 +93,10 @@ export const EXAM_PACKS: ExamPack[] = [
   {
     id: 'igcse-0606',
     name: 'IGCSE Additional Mathematics (0606)',
-    board: 'Cambridge',
+    board: 'International',
     level: 'IGCSE',
     scale: 'igcse',
-    blurb: 'Cambridge IGCSE Additional Mathematics — the bridge to A Level, from polynomials to calculus.',
+    blurb: 'IGCSE Additional Mathematics — the bridge to A Level, from polynomials to calculus.',
     accent: '#30A46C',
     units: [
       { id: 'a', title: 'Algebra', topics: t('a', [['Functions', 4], ['Quadratic functions', 4], 'Factors of polynomials', 'Equations, inequalities and graphs', 'Simultaneous equations', ['Logarithmic and exponential functions', 4]]) },
@@ -108,10 +108,10 @@ export const EXAM_PACKS: ExamPack[] = [
   {
     id: 'alevel-9709',
     name: 'A Level Mathematics (9709)',
-    board: 'Cambridge',
+    board: 'International',
     level: 'AS & A Level',
     scale: 'alevel',
-    blurb: 'Pure 1, Pure 3, Mechanics and Probability & Statistics 1 — the most common 9709 route.',
+    blurb: 'Pure 1, Pure 3, Mechanics and Probability & Statistics 1 — the most common A Level route.',
     accent: '#E8A33D',
     units: [
       { id: 'p1', title: 'Pure Mathematics 1', topics: t('p1', [['Quadratics', 4], ['Functions', 4], 'Coordinate geometry', 'Circular measure', ['Trigonometry', 4], 'Series', ['Differentiation', 5], ['Integration', 5]]) },
@@ -122,8 +122,8 @@ export const EXAM_PACKS: ExamPack[] = [
   },
   {
     id: 'ib-aa',
-    name: 'IB Mathematics: Analysis & Approaches',
-    board: 'IB Diploma',
+    name: 'Mathematics: Analysis and Approaches',
+    board: 'Diploma',
     level: 'SL & HL',
     scale: 'ib',
     blurb: 'All five AA topics, Paper 1 (no calculator) and Paper 2 style, scored on the 1–7 scale.',

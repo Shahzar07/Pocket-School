@@ -71,7 +71,7 @@ export function OnboardingList({ steps }: { steps: { id: string; label: string; 
       <ol className="space-y-2">
         {steps.map((step) => (
           <li key={step.id} className="flex min-h-11 items-center gap-3 rounded-xl border border-border px-3 py-2 text-sm">
-            <span aria-hidden className={`h-2.5 w-2.5 shrink-0 rounded-full ${step.done ? 'bg-emerald-500' : 'bg-muted'}`} />
+            <span aria-hidden className={`h-2.5 w-2.5 shrink-0 rounded-full ${step.done ? 'bg-success' : 'bg-muted'}`} />
             {step.href ? <Link href={step.href} className="font-medium underline-offset-2 hover:underline">{step.label}</Link> : <span>{step.label}</span>}
             <span className="sr-only">{step.done ? ', done' : ', not done'}</span>
           </li>

@@ -82,7 +82,7 @@ const LESSON_TYPES = [
 const TYPE_ICON: Record<string, string> = Object.fromEntries(LESSON_TYPES.map(t => [t.id, t.icon]));
 
 const STATUS_DOT: Record<string, string> = {
-  published: 'bg-emerald-500',
+  published: 'bg-success',
   approved: 'bg-blue-500',
   in_review: 'bg-[var(--ps-cyan)]',
   draft: 'bg-slate-300',
@@ -93,7 +93,7 @@ const STATUS_CARD: Record<string, { bg: string; label: string }> = {
   draft: { bg: 'bg-slate-100 text-slate-700 border-slate-200', label: 'Draft' },
   in_review: { bg: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]', label: 'In Review' },
   approved: { bg: 'bg-blue-50 text-blue-700 border-blue-200', label: 'Approved' },
-  published: { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: 'Published' },
+  published: { bg: 'bg-success/15 text-success border-success/40', label: 'Published' },
   archived: { bg: 'bg-red-50 text-red-600 border-red-200', label: 'Archived' },
 };
 
@@ -1097,7 +1097,7 @@ export default function ContentBuilderPage() {
         {/* Save status */}
         <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground max-w-sm" role="status" aria-live="polite" data-save-state={saveState}>
           <span className={`w-2 h-2 rounded-full shrink-0 ${
-            saveState === 'saved' ? 'bg-emerald-500' : saveState === 'error' ? 'bg-red-500' : 'bg-[var(--ps-cyan)] animate-pulse'
+            saveState === 'saved' ? 'bg-success' : saveState === 'error' ? 'bg-red-500' : 'bg-[var(--ps-cyan)] animate-pulse'
           }`} />
           {saveState === 'saved' && 'All changes saved'}
           {saveState === 'saving' && 'Saving…'}
@@ -1128,7 +1128,7 @@ export default function ContentBuilderPage() {
         <Button size="sm" variant="outline" className="rounded-xl h-8 text-xs" onClick={saveNow} disabled={!draft || saveState === 'saved' || saveState === 'saving'}>
           Save
         </Button>
-        <Button size="sm" className="rounded-xl h-8 text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+        <Button size="sm" className="rounded-xl h-8 text-xs gap-1.5 bg-success hover:bg-success text-white"
           disabled={!draft || status === 'published'} onClick={openPublishModal}>
           <Send className="w-3 h-3" /> Publish
         </Button>
@@ -1462,7 +1462,7 @@ export default function ContentBuilderPage() {
         </main>
 
         {/* ── Right: tabs ── */}
-        <aside className="hidden lg:flex flex-col border-l border-border bg-muted/10 overflow-y-auto">
+        <aside className="flex flex-col border-t border-border bg-muted/10 overflow-y-auto lg:border-t-0 lg:border-l">
           <div className="sticky top-0 z-10 grid grid-cols-4 text-[11px] font-semibold border-b border-border bg-card">
             {(['properties', 'publish', 'allocate', 'history'] as const).map(t => (
               <button key={t} onClick={() => setRightTab(t)}
@@ -1481,6 +1481,7 @@ export default function ContentBuilderPage() {
                 onWriteBrief={writeBrief}
                 onImproveText={improveText}
                 onDraftAssessment={draftAssessment}
+                onSave={saveNow}
               />
             )}
             {rightTab === 'publish' && draft && (
@@ -1494,7 +1495,7 @@ export default function ContentBuilderPage() {
             {rightTab === 'allocate' && (
               <AllocateTab course={course} institutions={institutions} patchCourse={patchCourse} />
             )}
-            {rightTab === 'history' && draft && <HistoryTab draft={draft} />}
+            {rightTab === 'history' && draft && <HistoryTab draft={draft} onSave={saveNow} />}
             {!draft && rightTab !== 'allocate' && (
               <p className="text-xs text-muted-foreground">Select a lesson first.</p>
             )}
@@ -1555,7 +1556,7 @@ export default function ContentBuilderPage() {
                   Cancel
                 </Button>
                 <Button
-                  className="rounded-xl gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="rounded-xl gap-2 bg-success hover:bg-success text-white"
                   disabled={!publishAccepted || publishing}
                   onClick={confirmPublish}
                 >
@@ -2053,7 +2054,7 @@ function BuilderBlock({
 
 function PropertiesTab({
   draft, patch, ai, aiBusy, etBusy, isCurriculumCourse,
-  onSuggestObjectives, onWriteBrief, onImproveText, onDraftAssessment,
+  onSuggestObjectives, onWriteBrief, onImproveText, onDraftAssessment, onSave,
 }: {
   draft: Lesson; patch: (p: Partial<Lesson>) => void;
   ai: (f: string) => Promise<void>; aiBusy: string | null;
@@ -2064,6 +2065,7 @@ function PropertiesTab({
   onWriteBrief: () => void;
   onImproveText: (instruction: string) => void;
   onDraftAssessment: () => void;
+  onSave: () => void;
 }) {
   const acc = draft.accessibility ?? {};
   const setAcc = (k: keyof NonNullable<Lesson['accessibility']>, v: boolean) =>
@@ -2168,7 +2170,7 @@ function PropertiesTab({
               : status === 'Queued' || status === 'Generating'
                 ? 'border-violet-200 bg-violet-50 text-violet-700'
                 : done
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                  ? 'border-success/40 bg-success/15 text-success'
                   : 'border-border text-muted-foreground hover:border-violet-300 hover:text-violet-700';
             return (
               <button key={f.id} onClick={() => ai(f.id)} disabled={aiBusy !== null} title={job?.error}
@@ -2204,6 +2206,7 @@ function PropertiesTab({
           </label>
         ))}
       </section>
+      <Button size="sm" className="w-full rounded-xl text-xs" onClick={onSave}>Save properties</Button>
     </>
   );
 }
@@ -2228,7 +2231,7 @@ function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseI
       </div>
 
       <div className="space-y-2">
-        <Button className="w-full rounded-xl gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+        <Button className="w-full rounded-xl gap-2 bg-success hover:bg-success text-white"
           disabled={status === 'published'} onClick={onPublishRequest}>
           <Send className="w-4 h-4" /> Publish Now
         </Button>
@@ -2351,13 +2354,16 @@ function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseI
       <section className="space-y-1.5">
         {([
           ['allowComments', 'Student comments'],
-          ['enableLyra', 'ET AI Tutor'],
+          ['enableEtLive', 'ET AI Tutor'],
           ['notifyOnPublish', 'Notify students on publish'],
           ['timedAssessmentMode', 'Timed assessment mode'],
         ] as const).map(([key, label]) => (
           <label key={key} className="flex items-center justify-between text-xs py-0.5 cursor-pointer">
             {label}
-            <Switch checked={(course[key] as boolean) ?? false} onCheckedChange={v => patchCourse({ [key]: v })} />
+            <Switch
+              checked={key === 'enableEtLive' ? Boolean(course.enableEtLive ?? course.enableLyra) : Boolean(course[key])}
+              onCheckedChange={v => patchCourse(key === 'enableEtLive' ? { enableEtLive: v, enableLyra: v } : { [key]: v })}
+            />
           </label>
         ))}
       </section>
@@ -2442,11 +2448,13 @@ function AllocateTab({ course, institutions, patchCourse }: {
   );
 }
 
-function HistoryTab({ draft }: { draft: Lesson }) {
+function HistoryTab({ draft, onSave }: { draft: Lesson; onSave: () => void }) {
   const entries = draft.history ?? [];
   return (
     <>
       <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Content audit log</p>
+      <Button size="sm" className="w-full rounded-xl text-xs" onClick={onSave}>Save lesson</Button>
+      <p className="text-[10px] text-muted-foreground">A save writes a row here. Publish and allocate save from their own tabs.</p>
       {entries.length === 0 && (
         <p className="text-xs text-muted-foreground">No history yet — edits, saves, ET AI assists and publish actions will appear here with the name of whoever made them.</p>
       )}

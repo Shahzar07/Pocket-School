@@ -11,6 +11,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -65,6 +66,9 @@ export default function AccessAllocationPage() {
         </h1>
         <p className="text-muted-foreground mt-2 text-[15px]">
           Give a course or a plan to a school, a class, or a person. Seat rows are listed here. A single email grant is in the people search.
+        </p>
+        <p className="mt-3 text-sm">
+          <Link href="/dashboard/admin/access" className="font-semibold text-[#1E6A83] underline">Roles and institution admins</Link>
         </p>
       </motion.header>
 
@@ -541,7 +545,7 @@ function CouponPanel({ courses, adminName }: { courses: Course[]; adminName: str
                             ? 'bg-muted text-muted-foreground border-border'
                             : c.active === false
                               ? 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20'
-                              : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                              : 'bg-success/10 text-success border-success/20'
                         }`}>
                           {expired ? 'Expired' : spent ? 'Fully used' : c.active === false ? 'Paused' : 'Active'}
                         </Badge>

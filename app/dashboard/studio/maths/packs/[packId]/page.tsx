@@ -113,7 +113,7 @@ export default function PackPage({ params }: { params: Promise<{ packId: string 
             <div className="text-center">
               <p className="text-[13px] font-semibold text-muted-foreground">Estimated {GRADE_SCALES[pack.scale].label} grade</p>
               <motion.p key={estimate ?? 'x'} initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                className="font-heading text-[88px] leading-none mt-1 bg-gradient-to-b from-emerald-500 to-emerald-700 bg-clip-text text-transparent">{estimate === null ? '—' : gradeFor(pack.scale, estimate)}</motion.p>
+                className="font-heading text-[88px] leading-none mt-1 bg-gradient-to-b from-success to-success bg-clip-text text-transparent">{estimate === null ? '—' : gradeFor(pack.scale, estimate)}</motion.p>
             </div>
             <div>
               <MasteryBar value={estimate ?? 0} target={target} initial={profile?.name ?? 'Me'} />
@@ -139,9 +139,9 @@ export default function PackPage({ params }: { params: Promise<{ packId: string 
                       <li key={tp.id}>
                         <button onClick={() => setTopicId(tp.id)}
                           className={`w-full text-left rounded-xl px-2.5 py-2 flex items-center gap-2.5 transition-colors ${topicId === tp.id ? 'bg-primary/10' : 'hover:bg-muted/60'}`}>
-                          <span className={`w-8 text-[11px] font-bold tabular-nums text-right ${m === undefined ? 'text-muted-foreground/50' : m >= target ? 'text-emerald-600' : 'text-primary'}`}>{m === undefined ? '—' : `${m}%`}</span>
+                          <span className={`w-8 text-[11px] font-bold tabular-nums text-right ${m === undefined ? 'text-muted-foreground/50' : m >= target ? 'text-success' : 'text-primary'}`}>{m === undefined ? '—' : `${m}%`}</span>
                           <span className="flex-1 text-[13px] text-foreground leading-snug">{tp.title}</span>
-                          {free ? <Gift className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : null}
+                          {free ? <Gift className="w-3.5 h-3.5 text-success shrink-0" /> : null}
                         </button>
                       </li>
                     );
@@ -173,7 +173,7 @@ export default function PackPage({ params }: { params: Promise<{ packId: string 
                 {state === 'idle' && (
                   <motion.div key="i" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-10">
                     {isFreeTopic(pack, topic.id)
-                      ? <p className="text-[13px] font-semibold text-emerald-700 inline-flex items-center gap-1.5 mb-3"><Gift className="w-4 h-4" /> This topic is free</p>
+                      ? <p className="text-[13px] font-semibold text-success inline-flex items-center gap-1.5 mb-3"><Gift className="w-4 h-4" /> This topic is free</p>
                       : <p className="text-[13px] text-muted-foreground inline-flex items-center gap-1.5 mb-3"><Lock className="w-4 h-4" /> {STUDY_COSTS.packSet} Sparks per set of 5</p>}
                     <div><button onClick={generate} className="h-11 px-5 rounded-full bg-primary text-primary-foreground font-semibold text-sm inline-flex items-center gap-2">
                       <Sparkles className="w-4 h-4" /> Get 5 exam-style questions {!isFreeTopic(pack, topic.id) && <span className="text-[12px] opacity-80 inline-flex items-center gap-0.5"><Zap className="w-3 h-3" />{STUDY_COSTS.packSet}</span>}

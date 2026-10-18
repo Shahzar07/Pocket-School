@@ -163,7 +163,7 @@ export function CourseCurriculum({
                       <span className="flex items-start gap-3 px-4 py-3">
                         <span className="shrink-0 mt-0.5">
                           {isDone
-                            ? <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                            ? <CheckCircle2 className="w-4 h-4 text-success" />
                             : unlocked
                               ? <PlayCircle className="w-4 h-4 text-teal-600" />
                               : <Lock className="w-4 h-4 text-muted-foreground/60" />}

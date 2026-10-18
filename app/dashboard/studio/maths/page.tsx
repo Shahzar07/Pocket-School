@@ -53,7 +53,7 @@ const EXAMPLES = [
 const SOLVING_STAGES = ['Reading the question', 'Choosing a method', 'Working it out', 'Double-checking the answer'];
 
 const VERDICT_STYLE: Record<Exclude<Verdict, 'none'>, { label: string; cls: string; icon: typeof CheckCircle2 }> = {
-  correct: { label: 'Correct', cls: 'text-emerald-700 bg-emerald-50 border-emerald-200', icon: CheckCircle2 },
+  correct: { label: 'Correct', cls: 'text-success bg-success/15 border-success/40', icon: CheckCircle2 },
   partly: { label: 'Nearly', cls: 'text-[var(--ps-cyan-text)] bg-[var(--ps-cyan-soft)] border-[var(--ps-cyan-border)]', icon: CircleDot },
   wrong: { label: 'Not quite', cls: 'text-rose-700 bg-rose-50 border-rose-200', icon: XCircle },
 };
@@ -445,7 +445,7 @@ export default function MathsTutorPage() {
                     <ul className="space-y-2 text-left">
                       {SOLVING_STAGES.map((st, i) => (
                         <li key={st} className="flex items-center gap-2.5 text-sm">
-                          {i < stage ? <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          {i < stage ? <CheckCircle2 className="w-4 h-4 text-success" />
                             : i === stage ? <Loader2 className="w-4 h-4 text-primary animate-spin" />
                             : <span className="w-4 h-4 rounded-full border border-border" />}
                           <span className={i <= stage ? 'text-foreground' : 'text-muted-foreground'}>{st}</span>
@@ -495,7 +495,7 @@ export default function MathsTutorPage() {
                         {sol.steps.slice(0, session.stepsDone).map((st, i) => (
                           <motion.li key={i} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
                             className="flex gap-3 items-start rounded-xl bg-muted/40 border border-border px-3 py-2">
-                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-1" />
+                            <CheckCircle2 className="w-4 h-4 text-success shrink-0 mt-1" />
                             <div className="min-w-0">
                               <p className="text-[12px] font-semibold text-muted-foreground">{st.title}</p>
                               <div className="text-[15px] overflow-x-auto [&_p]:my-0"><MathMarkdown>{st.result}</MathMarkdown></div>
@@ -538,9 +538,9 @@ export default function MathsTutorPage() {
                         <button onClick={() => setRevealed(sol.steps.length)} className="h-10 px-4 rounded-full border border-border text-sm font-semibold">Show all</button>
                       </div>
                     ) : (
-                      <div className="mt-4 rounded-2xl bg-emerald-50 border border-emerald-200 p-4">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700 mb-1">Final answer</p>
-                        <div className="text-[18px] text-emerald-950 overflow-x-auto [&_p]:my-0"><MathMarkdown>{sol.finalAnswer}</MathMarkdown></div>
+                      <div className="mt-4 rounded-2xl bg-success/15 border border-success/40 p-4">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-success mb-1">Final answer</p>
+                        <div className="text-[18px] text-success overflow-x-auto [&_p]:my-0"><MathMarkdown>{sol.finalAnswer}</MathMarkdown></div>
                       </div>
                     )}
                   </Panel>
@@ -571,11 +571,11 @@ export default function MathsTutorPage() {
 
                   {celebrate && (
                     <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
-                      className="mt-4 rounded-2xl bg-gradient-to-r from-emerald-50 to-primary/10 border border-emerald-200 p-4 flex flex-wrap items-center gap-3">
+                      className="mt-4 rounded-2xl bg-gradient-to-r from-success to-primary/10 border border-success/40 p-4 flex flex-wrap items-center gap-3">
                       <span className="text-2xl">🎉</span>
                       <div className="flex-1 min-w-[180px]">
-                        <p className="font-semibold text-emerald-900">Solved it — nicely done.</p>
-                        <p className="text-[13px] text-emerald-800/80 inline-flex items-center gap-1"><Star className="w-3.5 h-3.5 fill-[var(--ps-cyan-text)] text-[var(--ps-cyan-text)]" /> +5 stars · keep your streak going</p>
+                        <p className="font-semibold text-success">Solved it — nicely done.</p>
+                        <p className="text-[13px] text-success/80 inline-flex items-center gap-1"><Star className="w-3.5 h-3.5 fill-[var(--ps-cyan-text)] text-[var(--ps-cyan-text)]" /> +5 stars · keep your streak going</p>
                       </div>
                       <button onClick={() => practice('similar')} disabled={busy} className="h-9 px-3.5 rounded-full border border-border bg-card text-[13px] font-semibold">Try a similar one</button>
                       <button onClick={() => practice('harder')} disabled={busy} className="h-9 px-3.5 rounded-full bg-primary text-primary-foreground text-[13px] font-semibold inline-flex items-center gap-1"><TrendingUp className="w-3.5 h-3.5" /> Harder</button>
@@ -655,8 +655,8 @@ export default function MathsTutorPage() {
                 <motion.div className="h-full bg-primary rounded-full" animate={{ width: `${pct}%` }} transition={{ type: 'spring', stiffness: 140, damping: 22 }} />
               </div>
               {session.solved || showAnswer ? (
-                <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700 mb-1">Final answer</p>
+                <div className="rounded-xl bg-success/15 border border-success/40 p-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-success mb-1">Final answer</p>
                   <div className="text-[16px] overflow-x-auto [&_p]:my-0"><MathMarkdown>{sol.finalAnswer}</MathMarkdown></div>
                 </div>
               ) : (
@@ -696,7 +696,7 @@ export default function MathsTutorPage() {
                 ))}
               </ul>
               <Link href="/dashboard/studio/maths/packs" className="mt-4 flex items-center justify-between rounded-xl bg-primary/10 text-primary px-3 py-2.5 text-[13px] font-semibold hover:bg-primary/15">
-                <span className="inline-flex items-center gap-2"><Target className="w-4 h-4" /> SPM · IGCSE · A Level · IB exam packs</span>
+                <span className="inline-flex items-center gap-2"><Target className="w-4 h-4" /> SPM · IGCSE · A Level exam packs</span>
                 <ChevronRight className="w-4 h-4" />
               </Link>
               <Link href="/dashboard/studio/maths/lab" className="mt-2 flex items-center justify-between rounded-xl bg-muted/50 px-3 py-2.5 text-[13px] font-semibold hover:bg-muted">
@@ -718,7 +718,7 @@ export default function MathsTutorPage() {
                       <p className="text-[13px] font-medium text-foreground truncate">{h.solution?.topic ?? 'Problem'}</p>
                       <p className="text-[12px] text-muted-foreground truncate">{h.problem.replace(/\$+/g, '').slice(0, 70)}</p>
                     </button>
-                    {h.solved ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <CircleDot className="w-4 h-4 text-muted-foreground shrink-0" />}
+                    {h.solved ? <CheckCircle2 className="w-4 h-4 text-success shrink-0" /> : <CircleDot className="w-4 h-4 text-muted-foreground shrink-0" />}
                     <button aria-label="Delete" onClick={async () => { if (uid) { await deleteMathSession(uid, h.id).catch(() => {}); loadHistory(); } }}
                       className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-rose-600 transition-opacity">
                       <Trash2 className="w-3.5 h-3.5" />

@@ -113,7 +113,7 @@ export function AllocationPicker({
               key={token}
               type="button"
               onClick={() => toggle(token)}
-              className="inline-flex h-8 items-center rounded-full bg-emerald-500/15 px-3 text-xs font-semibold"
+              className="inline-flex h-8 items-center rounded-full bg-success/15 px-3 text-xs font-semibold"
             >
               {targetLabel(token, labels)}
               <span className="ml-2" aria-hidden>×</span>

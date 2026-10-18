@@ -44,10 +44,10 @@ export function CourseStudentPreview({
         {thumbnailUrl ? (
           <img src={thumbnailUrl} alt="" className="h-52 w-full object-cover" />
         ) : (
-          <div className="h-36 bg-gradient-to-br from-emerald-500/20 to-teal-500/10" />
+          <div className="h-36 bg-gradient-to-br from-success/20 to-teal-500/10" />
         )}
         <div className="space-y-3 p-6">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-600">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-success">
             {[category, level, language].filter(Boolean).join(' · ') || 'Course'}
           </p>
           <h2 className="font-heading text-3xl text-foreground">{title || 'Untitled course'}</h2>

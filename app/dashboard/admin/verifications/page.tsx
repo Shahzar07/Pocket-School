@@ -148,8 +148,8 @@ export default function AdminVerificationsPage() {
       <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={2}>
         {visible.length === 0 ? (
           <div className="relative text-center py-16 bg-card rounded-[2rem] border border-border overflow-hidden">
-            <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-emerald-500/8 blur-[80px]" />
-            <ShieldCheck className="w-12 h-12 mx-auto mb-4 text-emerald-600/40" />
+            <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-success/8 blur-[80px]" />
+            <ShieldCheck className="w-12 h-12 mx-auto mb-4 text-success/40" />
             <h3 className="font-heading text-2xl text-foreground mb-1.5">All clear</h3>
             <p className="text-sm text-muted-foreground">No pending verifications — you're all caught up!</p>
           </div>
@@ -180,7 +180,7 @@ export default function AdminVerificationsPage() {
                     </div>
                     {v.status === 'pending' && <div className="flex gap-2 shrink-0">
                       <Button size="sm" onClick={() => handle(v, 'approved')} disabled={processing === v.id}
-                        className="rounded-full px-4 gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                        className="rounded-full px-4 gap-1.5 text-xs bg-success hover:bg-success text-white font-bold"
                       >
                         {processing === v.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                         Approve

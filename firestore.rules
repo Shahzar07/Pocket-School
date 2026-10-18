@@ -410,8 +410,47 @@ service cloud.firestore {
 
     function studentGoalUpdate() {
       return resource.data.studentId == request.auth.uid
+        && incoming().studentId == resource.data.studentId
+        && incoming().get('source', 'self') == resource.data.get('source', 'self')
         && !request.resource.data.diff(resource.data).affectedKeys()
-          .hasAny(['sparksAwarded', 'cosignedBy', 'cosignedAt', 'excusedBy', 'excuseReason', 'reactions']);
+          .hasAny(['sparksAwarded', 'cosignedBy', 'cosignedAt', 'excusedBy', 'excuseReason', 'reactions'])
+        && (
+          resource.data.get('source', 'self') in ['self', 'student']
+          || (
+            incoming().title == resource.data.title
+            && incoming().get('parentVisibility', true) == resource.data.get('parentVisibility', true)
+            && incoming().get('private', false) == resource.data.get('private', false)
+            && incoming().get('rescheduleCount', 0) >= resource.data.get('rescheduleCount', 0)
+            && incoming().get('rescheduleCount', 0) <= incoming().get('rescheduleLimit', resource.data.get('rescheduleLimit', 2))
+          )
+        );
+    }
+    function goalCreateAllowed() {
+      return incoming().studentId is string
+        && incoming().dateKey is string
+        && incoming().title is string
+        && incoming().estimateMinutes is number
+        && incoming().deadline is string
+        && incoming().status == 'not_started'
+        && !incoming().keys().hasAny(['sparksAwarded', 'cosignedBy', 'cosignedAt', 'excusedBy', 'excuseReason'])
+        && (
+          (incoming().studentId == request.auth.uid && incoming().get('source', 'self') in ['self', 'student', 'et_ai', 'ai'])
+          || (linkedTo(incoming().studentId) && incoming().source == 'parent')
+          || (isTeacherOrAdmin() && incoming().source == 'teacher')
+        );
+    }
+    function goalReadable() {
+      return resource.data.studentId == request.auth.uid
+        || isAdmin()
+        || (
+          linkedTo(resource.data.studentId)
+          && resource.data.get('private', false) != true
+          && resource.data.get('parentVisibility', true) != false
+        )
+        || (
+          teacherMayReadGoal()
+          && resource.data.get('private', false) != true
+        );
     }
     function parentGoalUpdate() {
       return linkedTo(resource.data.studentId)
@@ -507,6 +546,43 @@ service cloud.firestore {
       match /auth_activity/{eventId} {
         allow read: if isUser(userId) || callerIsSuper();
         allow create, update, delete: if false;
+      }
+
+      // Study plan for one learner. Parents see the plan. Teachers do not.
+      match /study_plan/{planId} {
+        allow read: if isUser(userId) || linkedTo(userId) || isAdmin();
+        allow create, update: if isUser(userId) || isAdmin()
+          || (linkedTo(userId) && incoming().source == 'parent')
+          || (isTeacherOrAdmin() && incoming().source == 'teacher');
+        allow delete: if isAdmin();
+      }
+
+      // Canonical copy of a daily goal, including the link and the visibility flag.
+      match /goals/{goalId} {
+        allow read: if isUser(userId) || isAdmin()
+          || (linkedTo(userId) && resource.data.get('private', false) != true && resource.data.get('parentVisibility', true) != false)
+          || (isTeacherOrAdmin() && resource.data.get('private', false) != true && resource.data.get('shareWithTeachers', false) == true && resource.data.get('teacherIds', []).hasAny([request.auth.uid]));
+        allow create: if (isUser(userId) && incoming().get('source', 'self') in ['self', 'student', 'et_ai'])
+          || (linkedTo(userId) && incoming().source == 'parent')
+          || (isTeacherOrAdmin() && incoming().source == 'teacher')
+          || isAdmin();
+        allow update: if isUser(userId) || isAdmin() || (linkedTo(userId) && incoming().get('source', '') == resource.data.get('source', ''));
+        allow delete: if isAdmin() || (isUser(userId) && resource.data.get('source', 'self') in ['self', 'student']);
+      }
+
+      match /goal_reschedules/{logId} {
+        allow read: if isUser(userId) || linkedTo(userId) || isAdmin();
+        allow create: if isUser(userId) && incoming().goalId is string && incoming().fromDate is string && incoming().toDate is string;
+        allow update, delete: if false;
+      }
+
+      // Counts only. No goal titles and no note text.
+      match /goal_adherence/{weekId} {
+        allow read: if isUser(userId) || linkedTo(userId) || isAdmin()
+          || (isTeacherOrAdmin() && resource.data.get('teacherIds', []).hasAny([request.auth.uid]))
+          || (isInstitutionAdmin() && resource.data.get('institutionId', '') == myInstitution());
+        allow create, update: if isUser(userId) && !incoming().keys().hasAny(['titles', 'noteText']);
+        allow delete: if isAdmin();
       }
     }
 
@@ -1798,7 +1874,21 @@ service cloud.firestore {
         && incoming().linkedTo.type in ['lesson', 'course', 'assignment', 'exam', 'none']
         && incoming().linkedTo.id is string
         && incoming().createdAt is number
-        && incoming().updatedAt is number;
+        && incoming().updatedAt is number
+        && (!incoming().keys().hasAny(['remindAt']) || incoming().remindAt == null || (incoming().remindAt is number && incoming().remindAt >= 0))
+        && (!incoming().keys().hasAny(['remindedAt']) || incoming().remindedAt is number)
+        && (!incoming().keys().hasAny(['deletedAt']) || incoming().deletedAt == null || incoming().deletedAt is number)
+        && (!incoming().keys().hasAny(['checklist']) || incoming().checklist is list);
+    }
+
+    match /users/{userId}/activity/{dateKey} {
+      allow read: if isUser(userId) || isAdmin();
+      allow create, update: if isUser(userId)
+        && incoming().dateKey == dateKey
+        && incoming().activeMs is number
+        && incoming().idleMs is number
+        && incoming().hiddenMs is number;
+      allow delete: if false;
     }
 
     match /users/{userId}/notes/{noteId} {
@@ -2020,19 +2110,18 @@ service cloud.firestore {
 
     // ── Daily Goals (student accountability) ──────────────────
     match /daily_goals/{goalId} {
-      allow read: if isSignedIn() && (
-        resource.data.studentId == request.auth.uid
-        || isAdmin()
-        || linkedTo(resource.data.studentId)
-        || teacherMayReadGoal()
-      );
-      allow create: if isSignedIn()
-        && incoming().studentId == request.auth.uid
-        && !incoming().keys().hasAny(['sparksAwarded', 'cosignedBy', 'cosignedAt', 'excusedBy', 'excuseReason']);
+      allow read: if isSignedIn() && goalReadable();
+      allow create: if isSignedIn() && goalCreateAllowed();
       allow update: if isAdmin() || studentGoalUpdate() || parentGoalUpdate();
-      allow delete: if isSignedIn() && (
-        resource.data.studentId == request.auth.uid || isAdmin()
+      allow delete: if isAdmin() || (
+        resource.data.studentId == request.auth.uid
+        && resource.data.get('source', 'self') in ['self', 'student']
       );
+    }
+
+    match /planner_defaults/{docId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
 
     // ── Grades ────────────────────────────────────────────────
@@ -3268,6 +3357,73 @@ service cloud.firestore {
       allow list: if false;
       allow create, update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
+    }
+
+    function wallAdult() {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('ageTier', 'under13') == 'adult';
+    }
+
+    function wallSchool() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('institutionId', '');
+    }
+
+    function wallPostShape() {
+      return incoming().authorId == request.auth.uid
+        && incoming().body is string
+        && incoming().body.size() <= 4000
+        && incoming().audience in ['public', 'school', 'class', 'group', 'only-me']
+        && incoming().schoolId is string
+        && incoming().feed in ['school', 'class', 'group', 'alumni', 'event']
+        && incoming().locationOn is bool
+        && (!incoming().locationOn || wallAdult())
+        && (incoming().audience != 'public' || wallAdult())
+        && (wallAdult() || (incoming().schoolId == wallSchool() && wallSchool() != ''));
+    }
+
+    // School wall. Comments and reactions live under the post so a feed read
+    // stays one query. Counters sit on the post. Rules are not deployed.
+    match /wall_posts/{postId} {
+      allow read: if isSignedIn() && (
+        resource.data.authorId == request.auth.uid
+        || resource.data.audience == 'public' && wallAdult()
+        || (resource.data.audience in ['school', 'class', 'group'] && (wallAdult() || resource.data.schoolId == wallSchool()))
+      );
+      allow create: if wallPostShape() && incoming().moderation in ['allow', 'hold'];
+      allow update: if isSignedIn() && (
+        (resource.data.authorId == request.auth.uid && wallPostShape())
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'shares', 'updatedAt'])
+      );
+      allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
+
+      match /comments/{commentId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn()
+          && incoming().authorId == request.auth.uid
+          && incoming().body is string
+          && incoming().body.size() > 0
+          && incoming().body.size() <= 2000;
+        allow update, delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
+      }
+
+      match /reactions/{userId} {
+        allow read: if isSignedIn();
+        allow create, update: if isUser(userId)
+          && incoming().kind in ['like', 'love', 'celebrate', 'insightful', 'support'];
+        allow delete: if isUser(userId);
+      }
+    }
+
+    match /wall_notifications/{noticeId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && incoming().fromId == request.auth.uid
+        && incoming().userId is string
+        && incoming().kind in ['reaction', 'comment', 'mention'];
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if false;
     }
   }
 }

@@ -2,12 +2,14 @@
 
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { DashboardHome, EmptyState } from '@/components/dashboard';
+import { ComingSoon } from '@/components/coming-soon';
 
 export default function RecruiterHomePage() {
   const { profile } = useAuthSTORE();
   const name = profile?.displayName || profile?.name || 'Recruiter';
   return (
     <div className="space-y-6">
+      <ComingSoon title="Recruiter desk" detail="Talent lists are not open yet. A school has to share a list before anyone appears here." />
       <DashboardHome
         role="recruiter"
         name={name.split(' ')[0] || 'Recruiter'}

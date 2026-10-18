@@ -28,7 +28,7 @@ const fadeUp: Record<string, any> = {
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   draft: { label: 'Draft', className: 'bg-muted text-muted-foreground' },
   pending_approval: { label: 'Pending Review', className: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border border-[var(--ps-cyan-border)]/20' },
-  published: { label: 'Published', className: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' },
+  published: { label: 'Published', className: 'bg-success/10 text-success border border-success/20' },
 };
 
 export default function TeacherCourseMgmt() {
@@ -111,7 +111,7 @@ export default function TeacherCourseMgmt() {
         className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
       >
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600 mb-2">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success mb-2">
             Course Management
           </p>
           <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight">
@@ -123,7 +123,7 @@ export default function TeacherCourseMgmt() {
         </div>
         <Button
           onClick={() => router.push('/dashboard/teacher/courses/build')}
-          className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all"
+          className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-success to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all"
         >
           <Plus className="w-5 h-5 mr-2" /> New course
         </Button>
@@ -159,14 +159,14 @@ export default function TeacherCourseMgmt() {
           className="flex flex-col items-center justify-center py-20 text-center"
         >
           <div className="relative mb-6">
-            <div className="absolute inset-0 bg-emerald-400/10 blur-3xl rounded-full" />
-            <BookOpen className="relative w-14 h-14 text-emerald-600" />
+            <div className="absolute inset-0 bg-success/10 blur-3xl rounded-full" />
+            <BookOpen className="relative w-14 h-14 text-success" />
           </div>
           <h2 className="font-heading text-2xl text-foreground mb-2">No products yet</h2>
           <p className="text-muted-foreground mb-6">You haven&apos;t created any products yet.</p>
           <Button
             onClick={() => router.push('/dashboard/teacher/courses/build')}
-            className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all"
+            className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-success to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all"
           >
             <Plus className="w-4 h-4 mr-2" /> Create your first course
           </Button>
@@ -194,14 +194,14 @@ export default function TeacherCourseMgmt() {
                     </div>
                   )}
                   {!c.thumbnailUrl && (
-                    <div className="w-full h-36 rounded-2xl overflow-hidden mb-4 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 flex items-center justify-center">
-                      <BookOpen className="w-10 h-10 text-emerald-600/40" />
+                    <div className="w-full h-36 rounded-2xl overflow-hidden mb-4 bg-gradient-to-br from-success/10 to-teal-500/10 flex items-center justify-center">
+                      <BookOpen className="w-10 h-10 text-success/40" />
                     </div>
                   )}
 
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600 px-2 py-1 rounded bg-muted">
+                      <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-success px-2 py-1 rounded bg-muted">
                         {c.type ?? 'course'}
                       </span>
                       <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${badge.className}`}>
@@ -211,7 +211,7 @@ export default function TeacherCourseMgmt() {
                     <h3 className="font-bold text-lg text-foreground mb-1 line-clamp-2">{c.title}</h3>
                     <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{c.description}</p>
                     <div className="flex items-center gap-2 flex-wrap mb-3">
-                      <span className="text-xs px-2 py-1 rounded-full font-medium bg-emerald-500/10 text-emerald-600">
+                      <span className="text-xs px-2 py-1 rounded-full font-medium bg-success/10 text-success">
                         {fmtPrice(c)}
                       </span>
                       {c.level && (
@@ -220,7 +220,7 @@ export default function TeacherCourseMgmt() {
                         </span>
                       )}
                       {c.isPublic && c.status === 'published' && (
-                        <span className="text-xs px-2 py-1 rounded-full font-medium bg-emerald-500/10 text-emerald-600">
+                        <span className="text-xs px-2 py-1 rounded-full font-medium bg-success/10 text-success">
                           Marketplace
                         </span>
                       )}
@@ -235,7 +235,7 @@ export default function TeacherCourseMgmt() {
                     {c.status === 'draft' && awaitsMarketplaceReview(c) && (
                       <Button
                         size="sm"
-                        className="w-full rounded-full font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all"
+                        className="w-full rounded-full font-bold bg-gradient-to-r from-success to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all"
                         onClick={() => submitForReview(c)}
                       >
                         <Send className="w-3.5 h-3.5 mr-1.5" /> Publish
@@ -244,7 +244,7 @@ export default function TeacherCourseMgmt() {
                     {c.status === 'draft' && !awaitsMarketplaceReview(c) && (
                       <Button
                         size="sm"
-                        className="w-full rounded-full font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white"
+                        className="w-full rounded-full font-bold bg-gradient-to-r from-success to-teal-600 text-white"
                         onClick={() => router.push(`/dashboard/teacher/courses/${c.id}`)}
                       >
                         Continue in studio

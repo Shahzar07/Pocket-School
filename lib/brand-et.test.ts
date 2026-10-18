@@ -7,7 +7,7 @@ import test from 'node:test';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /** Teacher names stay "ET" plus the subject. The AI brand on its own is "ET AI". */
-const TEACHER = String.raw`Maths|Further|Additional|Science|Biology|Chemistry|Physics|Human|Medicine|Computer|ICT|English|Malay|Mandarin|French|German|Russian|Languages|Law|Global|Psychology|Sociology|Media|Business|Economics|Accounting|History|Geography|Art|Music|Exam|Study`;
+const TEACHER = String.raw`Maths|Further|Additional|Science|Biology|Chemistry|Physics|Human|Medicine|Computer|ICT|English|Malay|Mandarin|French|German|Russian|Languages|Law|Global|Psychology|Sociology|Media|Business|Economics|Accounting|History|Geography|Art|Music|Exam|Essay|Study`;
 const STANDALONE = new RegExp(String.raw`\bET\b(?!\s+AI\b)(?!\s+(?:${TEACHER})s?\b)`, 'g');
 
 function filesUnder(dir: string): string[] {
@@ -29,7 +29,8 @@ test('dashboard copy uses ET AI for the brand and keeps ET subject names', () =>
   assert.deepEqual(offenders, []);
 
   const studio = readFileSync(path.join(ROOT, 'app/dashboard/studio/page.tsx'), 'utf8');
-  assert.match(studio, /name: 'ET AI'/);
-  assert.match(studio, /name: 'ET Maths'/);
-  assert.match(studio, /ET AI's tools/);
+  const tools = readFileSync(path.join(ROOT, 'components/studio/hub-tools.tsx'), 'utf8');
+  assert.match(studio, /What should ET AI make today/);
+  assert.match(tools, /name: 'ET AI'/);
+  assert.match(tools, /name: 'ET Maths'/);
 });

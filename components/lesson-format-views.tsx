@@ -191,7 +191,7 @@ export function FormatPreview({ format, outputs }: { format: string; outputs: Ai
               {q.options?.map((opt: string, j: number) => {
                 const correct = isCorrectOption(opt, q.answer, q.options, j);
                 return (
-                  <li key={j} className={correct ? 'text-emerald-700 font-semibold' : 'text-muted-foreground'}>
+                  <li key={j} className={correct ? 'text-success font-semibold' : 'text-muted-foreground'}>
                     {correct ? '✓ ' : '· '}{opt}
                   </li>
                 );

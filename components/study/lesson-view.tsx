@@ -46,7 +46,7 @@ export function LessonView({ lesson, onComplete, done }: { lesson: LessonAsset; 
               <li key={i}>
                 <div className="text-[15px] text-foreground [&_p]:my-0"><MathMarkdown>{`${i + 1}. ${c.question}`}</MathMarkdown></div>
                 {open[i]
-                  ? <div className="mt-1 text-[14px] text-emerald-800 [&_p]:my-0"><MathMarkdown>{c.answer}</MathMarkdown></div>
+                  ? <div className="mt-1 text-[14px] text-success [&_p]:my-0"><MathMarkdown>{c.answer}</MathMarkdown></div>
                   : <button onClick={() => setOpen(o => ({ ...o, [i]: true }))} className="mt-1 text-[12px] font-semibold text-primary inline-flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> Show answer</button>}
               </li>
             ))}

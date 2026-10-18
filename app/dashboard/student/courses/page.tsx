@@ -129,7 +129,7 @@ export default function CoursesPage() {
   };
 
   const statusColor = (p: number) =>
-    p === 100 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
+    p === 100 ? 'bg-success/10 text-success border-success/20' :
     p > 0 ? 'bg-primary/10 text-primary border-primary/20' :
     'bg-muted text-muted-foreground border-border';
   const statusLabel = (p: number) => p === 100 ? 'Completed' : p > 0 ? 'In progress' : 'Not started';
@@ -267,7 +267,7 @@ export default function CoursesPage() {
                   </Button>
                 )}
                 {enrollment.progress === 100 && (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                  <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
                 )}
               </motion.div>
             ))}

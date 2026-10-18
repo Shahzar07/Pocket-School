@@ -84,6 +84,35 @@ export function noteLink(type: unknown, id: unknown): NoteLink {
   return { type: kind, id: typeof id === 'string' ? id.slice(0, 120) : '' };
 }
 
+/** The document the web app and the mobile app both write. Null means "not set". */
+export function noteDocument(input: {
+  text: string;
+  colour?: NoteColour;
+  pinned?: boolean;
+  order?: number;
+  board?: string;
+  linkedTo?: NoteLink;
+  checklist?: NoteCheck[];
+  remindAt?: number | null;
+  now?: number;
+}): Record<string, unknown> {
+  const now = input.now ?? Date.now();
+  return {
+    text: clampNoteText(input.text),
+    colour: noteColour(input.colour),
+    pinned: input.pinned === true,
+    order: typeof input.order === 'number' ? input.order : now,
+    board: boardName(input.board ?? DEFAULT_BOARD),
+    linkedTo: noteLink(input.linkedTo?.type, input.linkedTo?.id),
+    checklist: cleanChecklist(input.checklist),
+    remindAt: typeof input.remindAt === 'number' ? input.remindAt : null,
+    remindedAt: 0,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+  };
+}
+
 export function cleanChecklist(value: unknown): NoteCheck[] {
   if (!Array.isArray(value)) return [];
   return value.slice(0, CHECKLIST_MAX).flatMap((item, index) => {

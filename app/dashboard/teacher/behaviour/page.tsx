@@ -18,7 +18,7 @@ import { textDocument } from '@/lib/documents/packet';
 import { motion } from 'motion/react';
 
 const TYPE_STYLES: Record<string, string> = {
-  merit: 'bg-emerald-500/10 text-emerald-700',
+  merit: 'bg-success/10 text-success',
   commendation: 'bg-blue-500/10 text-blue-700',
   note: 'bg-muted text-muted-foreground',
   warning: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
@@ -98,7 +98,7 @@ export default function BehaviourPage() {
       {/* Header */}
       <motion.div variants={fadeUp} custom={0} className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">
             Behaviour & Merit
           </p>
           <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-1">
@@ -120,7 +120,7 @@ export default function BehaviourPage() {
         </div>
         <Button
           onClick={() => setShowForm(s => !s)}
-          className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:opacity-90 gap-2"
+          className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-success to-teal-600 text-white hover:opacity-90 gap-2"
         >
           <Plus className="w-4 h-4" /> Add Record
         </Button>
@@ -161,7 +161,7 @@ export default function BehaviourPage() {
             <Button
               onClick={handleCreate}
               disabled={saving}
-              className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:opacity-90"
+              className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-success to-teal-600 text-white hover:opacity-90"
             >
               {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />} Save Record
             </Button>
@@ -176,7 +176,7 @@ export default function BehaviourPage() {
       {Object.keys(byStudent).length === 0 && !showForm && (
         <motion.div variants={fadeUp} custom={1} className="relative flex flex-col items-center justify-center py-24 text-center">
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl" />
+            <div className="w-64 h-64 rounded-full bg-success/10 blur-3xl" />
           </div>
           <Star className="w-12 h-12 mx-auto mb-4 text-muted-foreground/40" />
           <p className="font-heading text-2xl text-foreground">No behaviour records yet</p>
@@ -188,7 +188,7 @@ export default function BehaviourPage() {
       {Object.keys(byStudent).length > 0 && (
         <motion.div variants={fadeUp} custom={2} className="space-y-5">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">Overview</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">Overview</p>
             <h2 className="font-heading text-3xl text-foreground tracking-tight mt-1">Student Records</h2>
           </div>
 
@@ -202,7 +202,7 @@ export default function BehaviourPage() {
               >
                 <div className="bg-muted/50 px-5 py-3 border-b border-border flex items-center justify-between">
                   <p className="font-heading text-lg text-foreground">{d.name}</p>
-                  <Badge className={d.total >= 0 ? 'bg-emerald-500/10 text-emerald-700' : 'bg-red-500/10 text-red-700'}>
+                  <Badge className={d.total >= 0 ? 'bg-success/10 text-success' : 'bg-red-500/10 text-red-700'}>
                     {d.total >= 0 ? '+' : ''}{d.total} pts
                   </Badge>
                 </div>
@@ -216,7 +216,7 @@ export default function BehaviourPage() {
                           <p className="text-xs text-muted-foreground mt-0.5">{(r.createdAt as any)?.toDate?.().toLocaleDateString()}</p>
                         </div>
                       </div>
-                      <span className={`text-sm font-bold shrink-0 ${r.points >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                      <span className={`text-sm font-bold shrink-0 ${r.points >= 0 ? 'text-success' : 'text-red-600'}`}>
                         {r.points >= 0 ? '+' : ''}{r.points}
                       </span>
                     </div>

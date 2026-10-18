@@ -1,7 +1,409 @@
 'use client';
 
-import { ReportCardDesk } from '@/components/school-desk/reports';
+import { useEffect, useMemo, useState } from 'react';
+import { useAuthSTORE } from '@/hooks/use-auth';
+import { getTeacherCourses, Course, getGradesForCourse, Grade } from '@/lib/db';
+import { authedFetch } from '@/lib/api-client';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { Loader2, FileBarChart, Printer, Sparkles, Award, Search } from 'lucide-react';
+import { DocumentDelivery } from '@/components/document-delivery';
+import { textDocument } from '@/lib/documents/packet';
+import {
+  TERMS, TermId, termRange, inRange, formatPeriod, selectableYears,
+} from '@/lib/reporting-periods';
+import { motion } from 'motion/react';
+
+interface StudentReport {
+  studentId: string;
+  studentName: string;
+  grades: Grade[];
+  avgByType: Record<string, { avg: number; count: number }>;
+  overall: number;
+  comment: string;
+  loadingComment: boolean;
+}
+
+function letterGrade(pct: number) {
+  if (pct >= 90) return 'A';
+  if (pct >= 80) return 'B';
+  if (pct >= 70) return 'C';
+  if (pct >= 60) return 'D';
+  return 'F';
+}
+
+const GRADE_COLORS: Record<string, string> = {
+  A: 'bg-success/10 text-success',
+  B: 'bg-sky-500/10 text-sky-600',
+  C: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
+  D: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
+  F: 'bg-red-500/10 text-red-600',
+};
+
+const fadeUp: Record<string, any> = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: [0.21, 0.6, 0.35, 1] as [number, number, number, number], delay: i * 0.08 },
+  }),
+};
 
 export default function ReportCardsPage() {
-  return <ReportCardDesk />;
+  const { user } = useAuthSTORE();
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState('');
+  const [reports, setReports] = useState<StudentReport[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [issuingCert, setIssuingCert] = useState<string | null>(null);
+
+  const [loadError, setLoadError] = useState(false);
+
+  const [term, setTerm] = useState<TermId>('all');
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+  const [studentQuery, setStudentQuery] = useState('');
+
+  const range = useMemo(
+    () => termRange(term, year, customFrom, customTo),
+    [term, year, customFrom, customTo],
+  );
+  const periodLabel = useMemo(() => formatPeriod(range), [range]);
+
+  /** Name filter applied after generation so it never costs another fetch. */
+  const visibleReports = useMemo(() => {
+    const q = studentQuery.trim().toLowerCase();
+    if (!q) return reports;
+    return reports.filter(r => r.studentName.toLowerCase().includes(q));
+  }, [reports, studentQuery]);
+
+  const loadCourses = () => {
+    if (!user) return;
+    setLoading(true);
+    setLoadError(false);
+    getTeacherCourses(user.uid)
+      .then(cs => { setCourses(cs); if (cs.length) setSelectedCourse(cs[0].id); })
+      .catch(() => setLoadError(true))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadCourses(); }, [user]);
+
+  async function generateReports() {
+    if (!selectedCourse) return;
+    setGenerating(true);
+    try {
+      const allGrades = await getGradesForCourse(selectedCourse);
+      const course = courses.find(c => c.id === selectedCourse);
+      // Scope to the reporting period so a term report doesn't quietly include
+      // the whole year.
+      const grades = allGrades.filter(g => inRange(g.gradedAt, range));
+
+      const byStudent: Record<string, { name: string; grades: Grade[] }> = {};
+      for (const g of grades) {
+        if (!byStudent[g.studentId]) byStudent[g.studentId] = { name: g.studentName, grades: [] };
+        byStudent[g.studentId].grades.push(g);
+      }
+
+      const reps: StudentReport[] = Object.entries(byStudent).map(([id, d]) => {
+        const byType: Record<string, number[]> = {};
+        for (const g of d.grades) {
+          if (!byType[g.type]) byType[g.type] = [];
+          byType[g.type].push((g.score / g.maxScore) * 100);
+        }
+        const avgByType: Record<string, { avg: number; count: number }> = {};
+        for (const [t, scores] of Object.entries(byType)) {
+          avgByType[t] = { avg: scores.reduce((a, b) => a + b, 0) / scores.length, count: scores.length };
+        }
+        const allScores = d.grades.map(g => (g.score / g.maxScore) * 100);
+        const overall = allScores.length ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0;
+        return { studentId: id, studentName: d.name, grades: d.grades, avgByType, overall, comment: '', loadingComment: false };
+      });
+
+      setReports(reps);
+      if (reps.length === 0) {
+        toast.info(
+          range
+            ? `No grades recorded for this course in ${periodLabel}.`
+            : 'No grades recorded for this course yet.',
+        );
+      }
+
+      // Generate AI comments
+      for (let i = 0; i < reps.length; i++) {
+        setReports(prev => prev.map((r, j) => j === i ? { ...r, loadingComment: true } : r));
+        try {
+          const res = await fetch('/api/ai/report-comment', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              studentName: reps[i].studentName,
+              courseTitle: course?.title,
+              avgScore: reps[i].overall,
+              submissionCount: reps[i].grades.length,
+              period: periodLabel,
+            }),
+          });
+          const { comment } = await res.json();
+          setReports(prev => prev.map((r, j) => j === i ? { ...r, comment, loadingComment: false } : r));
+        } catch {
+          setReports(prev => prev.map((r, j) => j === i ? { ...r, loadingComment: false } : r));
+        }
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to generate reports.');
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  const handleIssueCert = async (r: StudentReport) => {
+    if (!user || !selectedCourse) return;
+    setIssuingCert(r.studentId);
+    try {
+      const result = await authedFetch('/api/platform/sync-certificates', {
+        method: 'POST',
+        body: JSON.stringify({ studentId: r.studentId, courseId: selectedCourse }),
+      });
+      const issued = Array.isArray(result.issued) ? result.issued as { moduleTitle?: string; id?: string }[] : [];
+      if (issued.length === 0) {
+        toast.message('No certificate yet. It is issued when the course final assessment is passed and every unit is passed.');
+      } else {
+        const names = issued.map((row) => row.moduleTitle).filter(Boolean).join(', ');
+        toast.success(names ? `Awarded: ${names}` : `Awarded ${issued.length} certificate${issued.length === 1 ? '' : 's'}.`);
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Could not award a certificate.';
+      toast.error(message);
+    } finally { setIssuingCert(null); }
+  };
+
+  if (loading) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10">
+      <div className="flex items-center justify-center h-64">
+        <div className="space-y-4 w-full max-w-2xl">
+          <div className="bg-muted animate-pulse rounded-3xl h-40" />
+          <div className="bg-muted animate-pulse rounded-3xl h-40" />
+        </div>
+      </div>
+    </div>
+  );
+
+  if (loadError) return (
+    <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12">
+      <div className="bg-card border border-border rounded-3xl p-10 text-center space-y-4 card-glow">
+        <FileBarChart className="w-10 h-10 mx-auto text-[var(--ps-cyan-text)]" />
+        <p className="font-heading text-2xl text-foreground">Couldn&apos;t load your courses</p>
+        <p className="text-sm text-muted-foreground">Something went wrong while fetching your data. Please try again.</p>
+        <Button variant="outline" className="rounded-full h-11 px-5 font-semibold" onClick={loadCourses}>Retry</Button>
+      </div>
+    </div>
+  );
+
+  const selectedCourseName = courses.find(c => c.id === selectedCourse)?.title ?? '';
+
+  return (
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={fadeUp}
+      className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-10"
+    >
+      {/* Page header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">REPORT CARDS</p>
+          <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight">
+            Student <span className="gradient-text italic">Reports</span>
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">AI-generated report cards with grade summaries</p>
+        </div>
+        <div className="flex flex-col items-end gap-2 print:hidden">
+          <Button
+            onClick={() => window.print()}
+            variant="outline"
+            className="rounded-full gap-2"
+          >
+            <Printer className="w-4 h-4" /> Print All
+          </Button>
+          {reports.length > 0 && (
+            <DocumentDelivery
+              documents={reports.map(report => textDocument({
+                id: `report-${report.studentId}`,
+                title: `Report card · ${report.studentName}`,
+                studentId: report.studentId,
+                lines: [
+                  report.studentName,
+                  `Overall: ${report.overall}`,
+                  report.comment,
+                  ...Object.entries(report.avgByType).map(([kind, row]) => `${kind}: ${row.avg}`),
+                ],
+              }))}
+              studentIds={reports.map(report => report.studentId)}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="space-y-3 print:hidden">
+        <div className="flex flex-wrap items-center gap-3">
+          <Select value={selectedCourse} onValueChange={v => setSelectedCourse(v ?? '')}>
+            <SelectTrigger className="w-56 rounded-full"><SelectValue placeholder="Select course" /></SelectTrigger>
+            <SelectContent>{courses.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}</SelectContent>
+          </Select>
+
+          <select
+            aria-label="Reporting period"
+            value={term}
+            onChange={e => setTerm(e.target.value as TermId)}
+            className="h-11 rounded-full border border-border bg-card px-4 text-sm font-medium text-foreground"
+          >
+            {TERMS.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+          </select>
+
+          {term !== 'all' && term !== 'custom' && (
+            <select
+              aria-label="Year"
+              value={year}
+              onChange={e => setYear(Number(e.target.value))}
+              className="h-11 rounded-full border border-border bg-card px-4 text-sm font-medium text-foreground"
+            >
+              {selectableYears().map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          )}
+
+          {term === 'custom' && (
+            <>
+              <input aria-label="From date" type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)}
+                className="h-11 rounded-full border border-border bg-card px-4 text-sm font-medium text-foreground" />
+              <input aria-label="To date" type="date" value={customTo} onChange={e => setCustomTo(e.target.value)}
+                className="h-11 rounded-full border border-border bg-card px-4 text-sm font-medium text-foreground" />
+            </>
+          )}
+
+          <Button
+            onClick={generateReports}
+            disabled={generating || !selectedCourse}
+            className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-success to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-600/25 transition-all gap-2"
+          >
+            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            Generate Reports
+          </Button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            <input
+              type="search"
+              value={studentQuery}
+              onChange={e => setStudentQuery(e.target.value)}
+              placeholder="Filter by student name"
+              aria-label="Filter by student name"
+              className="h-11 w-64 rounded-full border border-border bg-card pl-11 pr-4 text-sm text-foreground"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Period <span className="font-semibold text-foreground">{periodLabel}</span>
+            {reports.length > 0 && (
+              <> · showing <span className="font-semibold text-foreground">{visibleReports.length}</span> of {reports.length} student{reports.length === 1 ? '' : 's'}</>
+            )}
+          </p>
+        </div>
+      </div>
+
+      {/* Empty state */}
+      {reports.length === 0 && !generating && (
+        <motion.div
+          variants={fadeUp}
+          custom={1}
+          className="relative text-center py-20"
+        >
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-64 h-64 bg-success/10 rounded-full blur-3xl" />
+          </div>
+          <FileBarChart className="w-14 h-14 mx-auto mb-4 text-muted-foreground/40" />
+          <p className="font-heading text-2xl text-foreground">No reports yet</p>
+          <p className="text-sm text-muted-foreground mt-1">Select a course and generate reports. AI will write personalised comments for each student.</p>
+          <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">Grades appear here after you grade student submissions in the <span className="font-semibold text-foreground">Gradebook</span> — once a quiz is graded, its result is recorded and included in report cards.</p>
+        </motion.div>
+      )}
+
+      {/* Report cards */}
+      {reports.length > 0 && visibleReports.length === 0 && (
+        <p className="text-sm text-muted-foreground text-center py-10 print:hidden">
+          No student matches “{studentQuery}”.
+        </p>
+      )}
+
+      <div className="space-y-6 report-cards-container">
+        {visibleReports.map((r, idx) => (
+          <motion.div
+            key={r.studentId}
+            variants={fadeUp}
+            custom={idx}
+            className="bg-card border border-border rounded-3xl p-6 card-glow print:break-inside-avoid print:border print:shadow-none"
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-border pb-4 mb-4">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success">Poket School · Report Card</p>
+                <h2 className="text-xl font-bold text-foreground mt-1">{r.studentName}</h2>
+                <p className="text-sm text-muted-foreground">{selectedCourseName}</p>
+              </div>
+              <div className="text-right">
+                <Badge className={`text-lg font-bold px-3 py-1 ${GRADE_COLORS[letterGrade(r.overall)] ?? ''}`}>
+                  {letterGrade(r.overall)}
+                </Badge>
+                <p className="text-sm text-muted-foreground mt-1">{r.overall.toFixed(1)}% overall</p>
+              </div>
+            </div>
+
+            {/* Grade breakdown */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+              {Object.entries(r.avgByType).map(([type, d]) => (
+                <div key={type} className="bg-muted rounded-2xl p-3 text-center">
+                  <p className="text-xs text-muted-foreground capitalize">{type}</p>
+                  <p className="text-xl font-bold text-foreground">{d.avg.toFixed(0)}%</p>
+                  <p className="text-xs text-muted-foreground">{d.count} assessment{d.count !== 1 ? 's' : ''}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* AI Comment */}
+            <div className="bg-success/10 border border-success/20 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-4 h-4 text-success" />
+                <p className="text-xs font-bold text-success">Teacher&apos;s Comment</p>
+              </div>
+              {r.loadingComment ? (
+                <div className="flex items-center gap-2 text-sm text-success"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating comment...</div>
+              ) : (
+                <p className="text-sm text-foreground italic">{r.comment || 'No comment generated.'}</p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-xs text-muted-foreground">Generated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+              <Button
+                size="sm"
+                onClick={() => handleIssueCert(r)}
+                disabled={issuingCert === r.studentId}
+                className="print:hidden rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)] gap-1.5 text-xs font-bold"
+              >
+                {issuingCert === r.studentId ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Award className="w-3.5 h-3.5" />}
+                Check course certificate
+              </Button>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      <style>{`@media print { .print\\:hidden { display: none !important; } }`}</style>
+    </motion.div>
+  );
 }

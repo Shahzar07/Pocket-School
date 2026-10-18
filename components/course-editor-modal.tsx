@@ -474,7 +474,7 @@ export default function CourseEditorModal({
                     <ul className="space-y-1.5">
                       {learnBullets.map((b, i) => (
                         <li key={i} className="flex items-start gap-2 text-sm text-foreground">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                          <CheckCircle2 className="w-4 h-4 text-success shrink-0 mt-0.5" />
                           {b}
                         </li>
                       ))}

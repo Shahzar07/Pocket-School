@@ -11,6 +11,8 @@ import { SIGNUP_GRANT } from '@/lib/sparks';
 import { discountLabel, formatMoney, planById, quoteAddon, quotePlan, type BillingInterval } from '@/lib/pricing';
 import { usePricing } from '@/hooks/use-pricing';
 import { CurrencySwitcher } from '@/components/currency-switcher';
+import { MemberCardFace } from '@/components/cards/member-card-face';
+import { MEMBER_CARD_TITLE, type PublicCard } from '@/lib/cards/model';
 import {
   ArrowRight,
   Check,
@@ -39,6 +41,21 @@ const fadeUp: Variants = {
     y: 0,
     transition: { duration: 0.6, ease: EASE_OUT_EXPO, delay: i * 0.08 },
   }),
+};
+
+const SAMPLE_CARD: PublicCard = {
+  title: MEMBER_CARD_TITLE,
+  firstName: 'Amina',
+  levelName: 'IGCSE',
+  schoolName: null,
+  showPhoto: false,
+  avatarUrl: '',
+  badges: ['Algebra'],
+  streakDays: 4,
+  referralCode: 'AMINA2K7',
+  joinPath: '/signup?ref=AMINA2K7',
+  indexable: false,
+  visible: true,
 };
 
 /* ─── Data ──────────────────────────────────────────────────── */
@@ -223,6 +240,10 @@ export default function PricingPage() {
             </p>
           </motion.div>
         </div>
+      </section>
+
+      <section className="mx-auto max-w-3xl px-4 pb-8" aria-label="Sample member card">
+        <MemberCardFace card={SAMPLE_CARD} sample />
       </section>
 
       {/* ── Plans ──────────────────────────────────────────────── */}
@@ -557,8 +578,8 @@ function PlanCard({
     >
       {plan.popular && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold tracking-[0.15em] shadow-lg shadow-primary/30">
-            <Sparkles className="w-3 h-3 text-[var(--ps-cyan-text)]" />
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#1E6A83] bg-[#3FE0D0] text-[#203337] text-[10px] font-bold tracking-[0.15em]">
+            <Sparkles className="w-3 h-3 text-[#203337]" />
             MOST POPULAR
           </span>
         </div>
@@ -588,7 +609,7 @@ function PlanCard({
 
         <div className="mt-2 h-5">
           {!isFree && !priceUnset && billing === 'annual' && saving > 0 && (
-            <p className="text-xs font-bold text-emerald-600">
+            <p className="text-xs font-bold text-success">
               Save {formatMoney(saving, currency)}
             </p>
           )}

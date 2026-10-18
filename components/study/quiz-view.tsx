@@ -61,11 +61,11 @@ export function QuizView({ questions, onComplete }: { questions: QuizQuestion[];
                 <button key={k} type="button" disabled={picked !== null} aria-pressed={picked === k}
                   onClick={() => { setPicked(k); if (k === answerIdx) setRight(r => r + 1); }}
                   className={`w-full text-start min-h-12 rounded-2xl border px-4 py-3 text-[15px] flex items-center gap-3 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-                    state === 'right' ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                    state === 'right' ? 'border-success/40 bg-success/15 text-success'
                     : state === 'wrong' ? 'border-rose-300 bg-rose-50 text-rose-900'
                     : state === 'dim' ? 'border-border opacity-60'
                     : 'border-border hover:border-primary/50 hover:bg-primary/5'}`}>
-                  <span className={`w-7 h-7 rounded-full grid place-items-center text-[13px] font-bold shrink-0 ${state === 'right' ? 'bg-emerald-600 text-white' : state === 'wrong' ? 'bg-rose-600 text-white' : 'bg-muted text-foreground'}`}>
+                  <span className={`w-7 h-7 rounded-full grid place-items-center text-[13px] font-bold shrink-0 ${state === 'right' ? 'bg-success text-white' : state === 'wrong' ? 'bg-rose-600 text-white' : 'bg-muted text-foreground'}`}>
                     {state === 'right' ? <CheckCircle2 className="w-4 h-4" /> : state === 'wrong' ? <XCircle className="w-4 h-4" /> : String.fromCharCode(65 + k)}
                   </span>
                   <span className="[&_p]:my-0"><MathMarkdown>{o}</MathMarkdown></span>
@@ -75,7 +75,7 @@ export function QuizView({ questions, onComplete }: { questions: QuizQuestion[];
           </div>
           {picked !== null && (
             <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-4 rounded-2xl bg-muted/50 border border-border p-4">
-              <p className={`text-[13px] font-bold mb-1 ${picked === answerIdx ? 'text-emerald-700' : 'text-rose-700'}`}>{picked === answerIdx ? 'Correct!' : 'Not quite'}</p>
+              <p className={`text-[13px] font-bold mb-1 ${picked === answerIdx ? 'text-success' : 'text-rose-700'}`}>{picked === answerIdx ? 'Correct!' : 'Not quite'}</p>
               <div className="text-[14px] text-foreground leading-relaxed [&_p]:my-1"><MathMarkdown>{q.explanation}</MathMarkdown></div>
               <button onClick={next} className="mt-3 h-10 px-4 rounded-full bg-primary text-primary-foreground text-sm font-semibold inline-flex items-center gap-1.5">
                 {i + 1 >= questions.length ? 'See score' : 'Next'} <ArrowRight className="w-4 h-4" />
@@ -134,7 +134,7 @@ export function TrueFalseView({ items, onComplete }: { items: TrueFalseItem[]; o
           <button key={String(v)} type="button" onClick={() => choose(v)} disabled={picked !== null} aria-pressed={picked === v}
             className={`h-12 w-full sm:w-36 rounded-2xl border text-[15px] font-bold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
               picked === null ? 'border-border hover:border-primary/50 hover:bg-primary/5'
-              : v === source.answer ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+              : v === source.answer ? 'border-success/40 bg-success/15 text-success'
               : picked === v ? 'border-rose-300 bg-rose-50 text-rose-800' : 'border-border opacity-50'}`}>
             {v ? trueLabel : falseLabel}
           </button>

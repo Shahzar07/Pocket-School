@@ -215,7 +215,7 @@ export default function CourseDetailPage() {
                     <Badge variant="outline" className="text-[10px] rounded-full">{mod.module.term}</Badge>
                   )}
                   {unitStatus?.state === 'passed' && (
-                    <Badge className="text-[10px] rounded-full bg-emerald-500/10 text-emerald-600 border-emerald-500/20 gap-1">
+                    <Badge className="text-[10px] rounded-full bg-success/10 text-success border-success/20 gap-1">
                       <Trophy className="w-3 h-3" /> Passed{unitStatus.bestQuizPercentage !== undefined ? ` · ${unitStatus.bestQuizPercentage}%` : ''}
                     </Badge>
                   )}
@@ -259,11 +259,11 @@ export default function CourseDetailPage() {
                       }`}
                     >
                       <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
-                        status === 'completed' ? 'bg-emerald-500/10' :
+                        status === 'completed' ? 'bg-success/10' :
                         status === 'available' ? 'bg-primary/10' :
                         'bg-muted'
                       }`}>
-                        {status === 'completed' && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
+                        {status === 'completed' && <CheckCircle2 className="w-5 h-5 text-success" />}
                         {status === 'available' && <PlayCircle className="w-5 h-5 text-primary" />}
                         {status === 'locked' && <Lock className="w-4 h-4 text-muted-foreground" />}
                       </div>

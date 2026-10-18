@@ -20,7 +20,7 @@ export default function PreviewCardPage() {
   return (
     <main className="min-h-screen bg-[#F4F6F6] px-4 py-12">
       <div className="mx-auto flex max-w-3xl flex-col gap-8">
-        <MemberCardFace card={sample} />
+        <MemberCardFace card={sample} sample />
         <a href={sample.joinPath} className="inline-flex w-fit items-center rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-5 py-3 text-sm font-semibold text-[#203337]">
           Join Poket School
         </a>

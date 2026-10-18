@@ -145,7 +145,7 @@ export default function TeacherLiveClassesPage() {
                 <Input value={form.joinUrl} onChange={e => setForm(f => ({ ...f, joinUrl: e.target.value }))} placeholder="https://meet.google.com/…" className="rounded-xl" />
               </div>
             </div>
-            <Button onClick={handleSchedule} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl gap-2">
+            <Button onClick={handleSchedule} disabled={saving} className="bg-success hover:bg-success text-white rounded-xl gap-2">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
               Schedule Class
             </Button>
@@ -169,7 +169,7 @@ export default function TeacherLiveClassesPage() {
                 className="bg-card border border-border rounded-2xl p-4 flex items-center justify-between gap-4 flex-wrap"
               >
                 <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-xl shrink-0 ${cls.status === 'live' ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-emerald-500'}`}>
+                  <div className={`p-2.5 rounded-xl shrink-0 ${cls.status === 'live' ? 'bg-red-50 text-red-500' : 'bg-success/15 text-success'}`}>
                     {cls.status === 'live' ? <Radio className="w-5 h-5 animate-pulse" /> : <Video className="w-5 h-5" />}
                   </div>
                   <div>
