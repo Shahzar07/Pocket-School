@@ -4,6 +4,7 @@ import {
   buildStudyPlan,
   canDeleteGoal,
   catchUpFor,
+  activeFocusMinutes,
   classAdherence,
   defaultAvailability,
   escalationFor,
@@ -127,9 +128,13 @@ test('overdue assigned work rolls into a catch-up slot and escalates', () => {
   assert.equal(ladder.teacherFlag, true);
   assert.equal(ladder.concern?.kind, 'missed_goals');
   assert.equal(escalationFor(1, limitsForAge('teen')).teacherFlag, false);
+  assert.equal(escalationFor(1, limitsForAge('teen')).studentReminder, true);
+  assert.equal(escalationFor(1, limitsForAge('teen')).parentNotify, false);
+  assert.equal(escalationFor(2, limitsForAge('teen')).parentNotify, true);
+  assert.equal(escalationFor(2, limitsForAge('teen')).teacherFlag, false);
 });
 
-test('finishing a linked lesson ticks the goal, and private goals stay out of class counts', () => {
+test('finishing a linked lesson ticks the goal, and a self-set goal stays in the class count', () => {
   assert.equal(shouldAutoTick({ link: { type: 'lesson', id: 'alg' }, status: 'not_started' }, { kind: 'lesson', id: 'alg' }), true);
   assert.equal(shouldAutoTick({ link: { type: 'lesson', id: 'alg' }, status: 'completed' }, { kind: 'lesson', id: 'alg' }), false);
   assert.equal(shouldAutoTick({ link: { type: 'assignment', id: 'hw' }, status: 'not_started' }, { kind: 'assignment', id: 'hw' }), true);
@@ -141,9 +146,12 @@ test('finishing a linked lesson ticks the goal, and private goals stay out of cl
       { id: 'b', title: 'Assigned paper', dateKey: today, deadline: '19:00', estimateMinutes: 30, status: 'completed', source: 'teacher', private: false },
     ],
   }]);
-  assert.equal(adherence.rows[0]?.assigned, 1);
+  assert.equal(adherence.rows[0]?.assigned, 2);
   assert.equal(adherence.rows[0]?.onTime, 1);
+  assert.equal(adherence.classRate, 50);
   assert.equal(JSON.stringify(adherence).includes('Secret note'), false);
+  assert.equal(activeFocusMinutes({ status: 'in_progress', focusMinutes: 12 }), 12);
+  assert.equal(activeFocusMinutes({ status: 'completed', focusMinutes: 12 }), null);
 });
 
 test('the weekly plan and parent view compare planned time with time done', () => {
@@ -152,16 +160,16 @@ test('the weekly plan and parent view compare planned time with time done', () =
     { title: 'Private', dateKey: '2026-10-19', estimateMinutes: 40, status: 'not_started', source: 'self', private: true },
   ], '2026-10-18');
   const monday = columns.find((column) => column.dateKey === '2026-10-19');
-  assert.equal(monday?.plannedMinutes, 30);
+  assert.equal(monday?.plannedMinutes, 70);
   assert.equal(monday?.doneMinutes, 28);
-  assert.equal(monday?.goals.length, 1);
+  assert.equal(monday?.goals.length, 2);
   const face = planVsDone([
     { estimateMinutes: 30, actualMinutes: 28, status: 'completed' },
     { estimateMinutes: 40, actualMinutes: 0, status: 'overdue', private: true },
   ]);
-  assert.equal(face.planned, 30);
+  assert.equal(face.planned, 70);
   assert.equal(face.actual, 28);
-  assert.equal(face.missed, 0);
+  assert.equal(face.missed, 1);
 });
 
 test('a class allocation reaches that class and skips everyone else', () => {

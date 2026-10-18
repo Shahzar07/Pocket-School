@@ -64,7 +64,6 @@ export function AddGoalDialog({
   const [pomodoroMode, setPomodoroMode] = useState<'classic' | 'custom'>('classic');
   const [workMinutes, setWorkMinutes] = useState(POMODORO_WORK);
   const [breakMinutes, setBreakMinutes] = useState(POMODORO_BREAK);
-  const [shareWithTeachers, setShareWithTeachers] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const course = useMemo(() => courses.find(item => item.id === courseId), [courses, courseId]);
@@ -111,8 +110,8 @@ export function AddGoalDialog({
         reward: reward.trim() || undefined,
         pomodoroWork: pomodoroMode === 'custom' ? workMinutes : POMODORO_WORK,
         pomodoroBreak: pomodoroMode === 'custom' ? breakMinutes : POMODORO_BREAK,
-        shareWithTeachers: shareWithTeachers && !!course?.teacherId,
-        teacherIds: shareWithTeachers && course?.teacherId ? [course.teacherId] : [],
+        shareWithTeachers: true,
+        teacherIds: course?.teacherId ? [course.teacherId] : [],
       });
       setTitle('');
       onClose();
@@ -251,10 +250,7 @@ export function AddGoalDialog({
           Sparks bonus when this is finished on time
         </label>
         <Input value={reward} onChange={e => setReward(e.target.value)} placeholder="Optional reward, for example a film night" aria-label="Reward" />
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={shareWithTeachers} onChange={e => setShareWithTeachers(e.target.checked)} />
-          Let my class teacher see this goal
-        </label>
+        <p className="text-sm text-[#1E6A83]">Teachers and linked parents can see this goal.</p>
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
           <Button type="button" onClick={submit} disabled={saving || !title.trim()}>{saving ? 'Saving…' : 'Save goal'}</Button>

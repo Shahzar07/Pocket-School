@@ -1629,6 +1629,41 @@
       ]
     },
     {
+      "collectionGroup": "wall_posts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "authorId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "wall_posts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "schoolId", "order": "ASCENDING" },
+        { "fieldPath": "audience", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "wall_posts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "audience", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "wall_posts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "authorHandle", "order": "ASCENDING" },
+        { "fieldPath": "schoolId", "order": "ASCENDING" },
+        { "fieldPath": "audience", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "notes",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
@@ -1652,6 +1687,30 @@
         { "fieldPath": "private", "order": "ASCENDING" },
         { "fieldPath": "shareWithTeachers", "order": "ASCENDING" },
         { "fieldPath": "teacherIds", "arrayConfig": "CONTAINS" }
+      ]
+    },
+    {
+      "collectionGroup": "career_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "date", "order": "ASCENDING" },
+        { "fieldPath": "start", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "career_registrations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "eventId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "alumni_members",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "optedIn", "order": "ASCENDING" },
+        { "fieldPath": "displayName", "order": "ASCENDING" }
       ]
     }
   ],

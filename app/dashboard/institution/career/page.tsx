@@ -4,13 +4,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { CareerHome, fieldClass, primaryButton, quietButton } from '@/components/career/app-surface';
+import { EventsDesk } from '@/components/career/events-desk';
+import { ROCHFORD_EVENTS } from '@/lib/career/events';
 import { authedFetch } from '@/lib/api-client';
 
 export default function InstitutionCareerPage() {
   const { profile } = useAuthSTORE();
   const institutionId = profile?.institutionId ?? '';
   const [giving, setGiving] = useState(false);
-  const [section, setSection] = useState('home');
+  const [section, setSection] = useState('events');
   const [skill, setSkill] = useState('Algebraic reasoning');
   const [lessonId, setLessonId] = useState('');
   const [title, setTitle] = useState('');
@@ -55,6 +57,7 @@ export default function InstitutionCareerPage() {
         { id: 'giving', label: giving ? 'Giving is on' : 'Turn on giving', category: 'payments', onSelect: () => setSection('giving') },
       ]}
       tiles={[
+        { id: 'events', label: 'Events', hint: 'Create and edit', category: 'community' },
         { id: 'skills', label: 'Skills', hint: 'Lesson or badge', category: 'learning' },
         { id: 'opportunities', label: 'Opportunities', hint: 'Entered list', category: 'careers' },
         { id: 'giving', label: 'Giving', hint: giving ? 'On' : 'Off', category: 'payments', badge: giving ? 1 : 0 },
@@ -66,6 +69,17 @@ export default function InstitutionCareerPage() {
         { label: 'Academy', value: institutionId ? 'Ready' : 'Choose one', hint: 'This desk follows your academy' },
       ]}
     >
+      {section === 'events' || section === 'home' ? (
+        <EventsDesk
+          initial={ROCHFORD_EVENTS}
+          person="Leah Tan, careers lead"
+          canEdit
+          skills={[{ name: 'Algebraic reasoning', evidence: 'Mapped to a lesson', visible: true }]}
+          matches={[{ title: 'Hospital shadowing week', organisation: 'City clinic', kind: 'experience' }]}
+          jobs={[{ title: 'Saturday lab assistant', employer: 'Science department', level: 'IGCSE', deadline: '30 Nov 2026' }]}
+          mentors={[{ name: 'Omar Haddad', field: 'Medicine', optedIn: true }]}
+        />
+      ) : null}
       {section === 'skills' ? (
         <div className="space-y-3">
           <h2 className="font-heading text-xl">Skill map</h2>

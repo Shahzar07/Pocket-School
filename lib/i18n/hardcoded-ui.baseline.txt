@@ -2478,6 +2478,8 @@ components/calendar/calendar-tools.tsx	Term start
 components/calendar/calendar-tools.tsx	Units, one per line
 components/cards/card-desk.tsx	A verified parent turns sharing on for this card. The public page uses an avatar, not a photo.
 components/cards/card-desk.tsx	Loading your card…
+components/cards/card-desk.tsx	Not issued yet
+components/cards/card-desk.tsx	The share link is unavailable right now. This card still shows the signed-in account.
 components/cards/card-desk.tsx	This card is not indexed by search engines.
 components/cards/card-desk.tsx	Under-13 sharing
 components/cards/card-desk.tsx	Your number is
@@ -3833,3 +3835,159 @@ components/wall/wall-screen.tsx	Write a comment
 components/wall/wall-screen.tsx	Write a reply
 components/wall/wall-screen.tsx	amina, wei
 lib/email-otp.ts	Poket School
+app/dashboard/admin/planner/page.tsx	Could not save planner limits.
+app/dashboard/admin/planner/page.tsx	Planner limits saved.
+app/dashboard/admin/planner/page.tsx	Study planner
+app/dashboard/institution/goals/page.tsx	Class goal adherence
+app/dashboard/student/tasks/page.tsx	Assigned goals stay on the plan. You can reschedule them.
+app/dashboard/student/tasks/page.tsx	Could not reschedule that goal.
+components/daily-goals-modal.tsx	Check in
+components/daily-goals-modal.tsx	Could not keep the assigned goals.
+components/daily-goals-modal.tsx	Custom minutes
+components/daily-goals-modal.tsx	Tick what you finished. Assigned goals stay on the list until they are done.
+components/goals/class-adherence.tsx	Assigned goals only. Private goals are not included, and titles are not shown.
+components/goals/class-adherence.tsx	Class goal adherence
+components/goals/class-adherence.tsx	Goal adherence
+components/goals/class-adherence.tsx	No assigned goals in this class yet.
+components/goals/focus-timer.tsx	Focus timer
+components/goals/parent-plan-card.tsx	Plan against what was finished. Private goals stay off this card.
+components/goals/weekly-plan.tsx	ET AI planner
+components/goals/weekly-plan.tsx	Weekly study plan
+app/dashboard/alumni/page.tsx	Request to join
+app/dashboard/community/page.tsx	Class channels
+app/dashboard/community/page.tsx	Loading the wall…
+app/u/[handle]/page.tsx	Poket School
+app/u/[handle]/page.tsx	School wall
+components/wall/wall-screen.tsx	Birthdays and achievements
+components/wall/wall-screen.tsx	Classmates outside your school are hidden.
+components/wall/wall-screen.tsx	Close photo
+components/wall/wall-screen.tsx	Event title
+components/wall/wall-screen.tsx	Location stays off unless you tick it. Photos are resized on this device and location data is removed.
+components/wall/wall-screen.tsx	My class
+components/wall/wall-screen.tsx	Not an emergency service. In danger? Call 999.
+components/wall/wall-screen.tsx	Nothing on this wall yet
+components/wall/wall-screen.tsx	Online in your school
+components/wall/wall-screen.tsx	Option one
+components/wall/wall-screen.tsx	Option two
+components/wall/wall-screen.tsx	Poket SafeLine
+components/wall/wall-screen.tsx	Poll option one
+components/wall/wall-screen.tsx	Poll option two
+components/wall/wall-screen.tsx	Post menu
+components/wall/wall-screen.tsx	Posts from your school, class, and groups show up here. Public posts stay with adults.
+components/wall/wall-screen.tsx	Priya Shah mentioned you in class.
+components/wall/wall-screen.tsx	Report a post, or open SafeLine if something feels wrong.
+components/wall/wall-screen.tsx	Safety terms
+components/wall/wall-screen.tsx	Send comment
+components/wall/wall-screen.tsx	Share something with your school
+components/wall/wall-screen.tsx	Suggested groups
+components/wall/wall-screen.tsx	Tag classmates
+components/wall/wall-screen.tsx	Under-18 posts stay inside this school.
+components/wall/wall-screen.tsx	Wei Lin liked your pond notes.
+components/wall/wall-screen.tsx	Write a comment
+components/wall/wall-screen.tsx	Write a reply
+components/wall/wall-screen.tsx	amina, wei
+components/wall/wall-screen.tsx	This timeline only shows people in your school.
+components/wall/wall-screen.tsx	No profile for this name
+app/ai-teachers/page.tsx	BEYOND A-LEVEL
+app/ai-teachers/page.tsx	Degrees and professional routes.
+app/dashboard/admin/access/page.tsx	Tier, course, and coupon grants
+app/dashboard/admin/allocations/page.tsx	Roles and institution admins
+app/dashboard/admin/audit/page.tsx	Opening the activity log.
+app/dashboard/admin/curriculum/[courseId]/page.tsx	A save writes a row here. Publish and allocate save from their own tabs.
+app/dashboard/admin/curriculum/[courseId]/page.tsx	Save lesson
+app/dashboard/admin/curriculum/[courseId]/page.tsx	Save properties
+app/dashboard/admin/safeguarding/page.tsx	Safeguarding desk
+app/dashboard/network/recruit/page.tsx	Recruiter search
+app/dashboard/page.tsx	Opening your dashboard.
+app/dashboard/recruiter/page.tsx	Recruiter desk
+app/dashboard/student/goals/page.tsx	Assigned goals
+app/dashboard/student/goals/page.tsx	Assigned goals stay on the plan. Move one to tomorrow if the day will not fit.
+app/dashboard/student/goals/page.tsx	Could not reschedule that goal.
+app/dashboard/student/goals/page.tsx	Goal added.
+app/dashboard/student/goals/page.tsx	Sign in to set a goal.
+app/dashboard/student/tasks/page.tsx	Opening your goals.
+app/dashboard/studio/maths/page.tsx	SPM · IGCSE · A Level exam packs
+app/pricing/page.tsx	Sample member card
+components/cards/member-card-face.tsx	Sample card
+components/coming-soon.tsx	Coming soon
+components/landing/landing-page.tsx	Sample member card
+components/reads/studio-view.tsx	Sign in as a teacher or admin to save books to the school.
+components/studio/studio-nav.tsx	AI Studio
+app/dashboard/student/goals/page.tsx	Opening your goals.
+app/dashboard/helpdesk/page.tsx	ET AI
+app/dashboard/helpdesk/page.tsx	ET AI could not take that question.
+app/dashboard/admin/curriculum/[courseId]/page.tsx	Close course structure
+app/dashboard/admin/exam-packs/page.tsx	Exam packs
+app/dashboard/admin/exam-packs/page.tsx	Open the student pack list
+app/dashboard/admin/exam-packs/page.tsx	Save pack
+app/dashboard/studio/maths/packs/page.tsx	Admin exam pack desk
+app/preview/blog/page.tsx	Rochford demo · Blog editor
+app/preview/cms-tree/page.tsx	Close course structure
+app/preview/cms-tree/page.tsx	Course structure
+app/preview/cms-tree/page.tsx	On a phone the lesson tree opens as a drawer. Choosing a lesson closes it.
+app/preview/cms-tree/page.tsx	Rochford demo · CMS lesson tree
+app/preview/exam-packs/page.tsx	Rochford demo · Admin exam packs · /dashboard/admin/exam-packs
+app/preview/teacher-goals/page.tsx	Rochford demo · Leah Tan, teacher
+components/alumni/rochford-desk.tsx	Alumni career talks
+components/alumni/rochford-desk.tsx	Alumni giving
+components/alumni/rochford-desk.tsx	Countries with fewer than five opted-in alumni stay hidden.
+components/alumni/rochford-desk.tsx	Independent learners
+components/alumni/rochford-desk.tsx	No country has five people yet.
+components/alumni/rochford-desk.tsx	Oak class network
+components/alumni/rochford-desk.tsx	Omar H. · A day in medicine · 19 Nov 2026 · online.
+components/alumni/rochford-desk.tsx	Open the class wall
+components/alumni/rochford-desk.tsx	Open the printable yearbook
+components/alumni/rochford-desk.tsx	Opt-in only. Names stay as a first name and last initial.
+components/alumni/rochford-desk.tsx	Reunion planner
+components/alumni/rochford-desk.tsx	Rochford demo · Alumni desk · Rochford&apos;s International School
+components/alumni/rochford-desk.tsx	The class wall, events, and opt-in mentoring.
+components/alumni/rochford-desk.tsx	Verify through a school
+components/alumni/rochford-desk.tsx	Verify through a school, or join a self-reported group.
+components/alumni/rochford-desk.tsx	Where are they now
+components/blog/live-preview.tsx	Live preview
+components/career/events-desk.tsx	Add an event
+components/career/events-desk.tsx	Amina Rahman · IGCSE · Rochford&apos;s International School. Skills below are verified by Poket School. The PDF stays with the student until they share it.
+components/career/events-desk.tsx	ET AI matcher
+components/career/events-desk.tsx	Google Calendar
+components/career/events-desk.tsx	In person
+components/career/events-desk.tsx	Map link
+components/career/events-desk.tsx	Matches come from opportunities the school entered. ET AI does not invent one.
+components/career/events-desk.tsx	My registrations
+components/career/events-desk.tsx	Online link
+components/career/events-desk.tsx	Save event
+components/career/events-desk.tsx	Verified CV
+components/career/events-desk.tsx	You have not registered yet.
+components/goals/escalation-ladder.tsx	Overdue escalation
+components/landing/landing-page.tsx	A free digital student ID
+components/landing/landing-page.tsx	A free digital student card
+components/landing/landing-page.tsx	A school safety line
+components/landing/landing-page.tsx	Eight pictures of the school
+components/landing/landing-page.tsx	Every learner can carry a Poket School card. The sample on this page shows the chip, the name, and the watermark. A real card is issued from the account, with nothing to pay.
+components/landing/landing-page.tsx	FREE FOR EVERYONE
+components/landing/landing-page.tsx	Open a sample card
+components/landing/landing-page.tsx	POKET SAFELINE
+components/landing/landing-page.tsx	Poket SafeLine for a school community
+components/landing/landing-page.tsx	Read how SafeLine works
+components/landing/landing-page.tsx	Students, parents, and staff can report a concern to the school safety desk. Poket SafeLine stays inside the school. Not an emergency service. In danger? Call 999.
+app/preview/notes/page.tsx	Rochford demo · Amina Rahman, notes
+components/goals/goals-preview.tsx	Rochford demo · parent plan for Amina Rahman
+app/dashboard/card/page.tsx	Free for every account. Your number stays on this card. A shared link does not print it.
+app/dashboard/card/page.tsx	Student ID
+app/preview/card/page.tsx	Poket School sample
+app/preview/card/page.tsx	Rochford demo · Rochford&apos;s International School
+components/cards/id-card.tsx	Emergency contact
+components/cards/id-card.tsx	Sample card
+components/cards/id-card.tsx	This card is free. It is not a government ID. The QR is signed by Poket School and changes on a timer. Partners scan it to check a student.
+components/cards/id-card.tsx	Valid until
+app/dashboard/student/goals/page.tsx	Teachers and linked parents can see your goals, including ones you set yourself.
+app/dashboard/teacher/goals/page.tsx	By student
+app/dashboard/teacher/goals/page.tsx	No goals yet
+components/goals/add-goal-dialog.tsx	Teachers and linked parents can see this goal.
+components/goals/class-adherence.tsx	Every goal counts, including ones a student set. Titles are on the student list.
+components/goals/class-adherence.tsx	No goals in this class yet.
+components/goals/parent-plan-card.tsx	Plan against what was finished. Self-set goals are included.
+components/alumni/rochford-desk.tsx	You are in the Rochford alumni network. This stays after a reload on this device.
+components/wall/wall-screen.tsx	Loading saved posts…
+components/alumni/rochford-desk.tsx	Join a self-reported group
+components/alumni/rochford-desk.tsx	You are in the Rochford alumni network. This stays after a reload.
+components/wall/wall-screen.tsx	Loading saved posts…

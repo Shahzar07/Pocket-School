@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { AddGoalDialog } from '@/components/goals/add-goal-dialog';
 import { GoalsWorkspace, type WorkspaceGoal } from '@/components/goals/goals-workspace';
 import { ParentPlanCard } from '@/components/goals/parent-plan-card';
+import { EscalationLadder } from '@/components/goals/escalation-ladder';
 import { WeeklyPlan } from '@/components/goals/weekly-plan';
 import { isoDateKey } from '@/lib/insights/dates';
 import { weekColumns } from '@/lib/study/planner';
@@ -32,7 +33,9 @@ export function GoalsPreview({ view }: { view: string }) {
   if (view === 'parent') {
     return (
       <main className="mx-auto max-w-3xl p-6">
-        <ParentPlanCard childName="Alex Student" planned={75} actual={40} onTime={1} open={2} missed={0} rate={33} streak={4} />
+        <p className="mb-4 text-xs font-bold uppercase tracking-[0.16em] text-[#1E6A83]">Rochford demo · parent plan for Amina Rahman</p>
+        <ParentPlanCard childName="Amina Rahman" planned={75} actual={40} onTime={1} open={2} missed={1} rate={33} streak={4} />
+        <div className="mt-4"><EscalationLadder missed={1} /></div>
       </main>
     );
   }

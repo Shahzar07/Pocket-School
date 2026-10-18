@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { GoalsWorkspace, type WorkspaceGoal } from '@/components/goals/goals-workspace';
 import { ParentPlanCard } from '@/components/goals/parent-plan-card';
+import { EscalationLadder } from '@/components/goals/escalation-ladder';
 import { planVsDone } from '@/lib/study/planner';
 import { computeGoalStreak } from '@/lib/insights/goals';
 import { DocumentDelivery } from '@/components/document-delivery';
@@ -65,6 +66,7 @@ export default function ParentGoalsPage() {
           streak={computeGoalStreak(child.goals)}
         />
       )}
+      <EscalationLadder missed={planVsDone((child?.goals ?? []).filter(goal => goal.dateKey === goalDateKey())).missed} />
       <GoalsWorkspace
         viewer="parent"
         childName={child?.childName}

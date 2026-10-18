@@ -146,8 +146,8 @@ export function DailyGoalsModal({
       courseLabel: row.courseLabel,
       priorityStar: row.priorityStar,
       priority: row.priorityStar ? 'high' : 'medium',
-      parentVisibility: row.source === 'self' ? row.category !== 'personal' : true,
-      private: row.source === 'self' && row.category === 'personal',
+      parentVisibility: true,
+      private: false,
       order: index,
       assignedByName: row.source === 'et_ai' ? 'ET AI' : row.source === 'teacher' ? 'Teacher' : row.source === 'parent' ? 'Parent' : undefined,
     })));

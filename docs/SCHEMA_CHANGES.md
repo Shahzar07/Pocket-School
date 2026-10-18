@@ -3165,6 +3165,23 @@ Clients cannot create or update `studentNumber`, `referralCode`, `cardShareId`, 
 
 A person with no school sees the title **Poket School member card**. A person with `institutionId` sees **Student card**. The owner page `/dashboard/card` shows the number. The public card does not.
 
+### Card face
+
+The web card matches the approved app card: landscape, about 820×526, radius about 28px, a 1px `#1E6A83` border, and a `#F3FEFE` body.
+
+- Header, about 80px, gradient `#1E6A83` to `#2786A4`. A rounded logo tile holds an open book, or `branding.logoUrl`. Beside it, the institution name in white caps and the tagline. A `#3FE0D0` pill reads **STUDENT ID CARD** in `#203337`.
+- Left: a square photo in a thick `#1E6A83` frame. With no photo, a large initial and a small holographic chip. A white rounded box under the frame holds the barcode.
+- Middle: **NAME**, **STUDENT ID**, **LEVEL**, **DEPARTMENT/PROGRAMME**, **ACADEMIC YEAR** (`2026/27`), **VALID UNTIL**. Labels are small bold caps in `#1E6A83`. Values are bold `#203337`. Level is a Poket level name such as Primary 5 or IGCSE, never `Year N`. Independent learners show **While you learn**.
+- Right: a double-ring seal (`#3FE0D0` outside, `#1E6A83` inside) with `branding.monogram`, and a QR on a white rounded tile.
+- Above the footer: **Poket SafeLine · Not an emergency service**.
+- Footer: full-width `#3FE0D0`, motto centred in bold `#203337`. The Poket motto is **Learn ● Grow ● Achieve**.
+
+The back repeats the header and footer. It states what partners can see, **If found, please return to** the institution, that Poket SafeLine is not an emergency service, and **Verify at poketschool.ai/verify**, with a large QR.
+
+White-label reads `institutions/{id}.branding`: `displayName`, `tagline`, `motto` (else `certificateFooter`), `monogram`, and `logoUrl`. Poket defaults are the name Poket School, tagline “Free for every student”, motto “Learn ● Grow ● Achieve”, and monogram PS. School cards use the same blue and cyan. No gold.
+
+The sample face is **Alex Student**, **PSM-SAMPLE**, level IGCSE, with a SAMPLE watermark at 18% opacity and a cyan **Sample card** chip. The owner card prints `users.studentNumber`. The public share still does not. The QR is the existing HMAC `ps1.` token from `GET /api/student-id`. The back carries short terms, the same QR, “If found, return to…”, and Poket SafeLine. PNG and PDF downloads are generated in the browser. Apple Wallet and Google Wallet buttons are placeholders and do not issue a pass. `GET /api/card` also returns `holderName` and `brand` for the owner face. Clients still cannot write `studentNumber`.
+
 ## Card share
 
 `card_shares/{shareId}` is `{ uid, createdAt, revoked, revokedAt?, viewCount }`. `shareId` is a random base64url string of 16 to 64 URL-safe characters. The user field `cardShareId` points at the live share. Creating a new share revokes the previous document. Revoke sets `revoked` and deletes `cardShareId`. Regenerate issues a new id. The public page is `/card/[shareId]`. Two images sit on that route and both use the same public card: `opengraph-image.tsx` (1200×630) and `/card/[shareId]/story` (1080×1920). Each shows the branded blue gradient, first name, level name, and badges or streak, plus **Join Poket School**. Neither image reads a plan. The page link is `/signup?ref={code}`. A preview that does not need the server account is `/preview/card`.
@@ -3302,13 +3319,15 @@ Exam, live, integrity, behaviour, tutoring, sittings, and the other teacher and 
 
 The mobile contract stays `daily_goals`. The same goal is also stored at `users/{uid}/goals/{goalId}` so a plan, a link, and a visibility flag travel with the learner. `goalId` matches the `daily_goals` document id (`mirrorId` on the subcollection copy).
 
-`source` is `self` (older documents may say `student`), `et_ai` (older documents may say `ai`), `teacher`, or `parent`. Assigned sources cannot be deleted by the student. The title, privacy, and parent visibility of an assigned goal stay fixed. `rescheduleCount` may rise by a logged move and cannot pass `rescheduleLimit`.
+`source` is `self` (older documents may say `student`), `et_ai` (older documents may say `ai`), `teacher`, `parent`, or `institution`. The teacher desk filters on those values. Assigned sources cannot be deleted by the student. A teacher, parent, or institution admin can delete only a goal whose `assignedBy` is their uid and whose `source` is theirs. The title of an assigned goal stays fixed. `private` and `parentVisibility` are still stored, and they do not hide the goal. `rescheduleCount` may rise by a logged move and cannot pass `rescheduleLimit`.
 
 | Field | Meaning |
 | --- | --- |
 | `link` | `{ type, id }` where `type` is `course`, `lesson`, `assignment`, `exam`, or `note`. The note id is a pointer. Note text is never copied. |
-| `parentVisibility` | Default true. `false` hides the goal from parents. |
-| `private` | Default false. Private goals are omitted from parent cards and from teacher and institution counts. |
+| `parentVisibility` | Note only. A linked parent can read the goal either way. |
+| `private` | Note only. It does not hide the goal from parents, class teachers, or institution staff. |
+| `assignedBy` | Uid of the adult who added a teacher, parent, or institution goal. They are the only adult who can delete it. |
+| `focusMinutes` | Shown to parents and teachers only while `status` is `in_progress`. |
 | `dueDateKey` | The real deadline the planner worked backwards from. |
 | `catchUp` | True when the block was placed after the deadline. |
 | `missCount` | Overdue repeats. At the age cap this raises a `missed_goals` concern for the existing progress alerts. |
@@ -3321,7 +3340,7 @@ The mobile contract stays `daily_goals`. The same goal is also stored at `users/
 
 `planner_defaults/global` is `{ maxDailyMinutes, maxGoalsPerDay, rescheduleLimit, missFlagAfter }`. Signed-in users can read it. Only an admin can write it. Age caps in `limitsForAge` are a ceiling: under-13 is 45 minutes and 3 goals, teen is 90 minutes and 5 goals, adult is 150 minutes and 5 goals. Admin values can only tighten those caps.
 
-Without an ET AI key, `buildStudyPlan` in `lib/study/planner.ts` places blocks into evening and weekend windows, working backwards from deadlines. Completing the linked lesson or assignment ticks the goal. Overdue assigned goals roll into the next open slot. One miss reminds the student and notifies a parent (category `goals`, quiet hours on `notify_settings`). Repeated misses use the existing `missed_goals` concern, which already reaches teachers. Push and email still go through `/api/push`. If FCM or email keys are missing, the in-app notification remains.
+Without an ET AI key, `buildStudyPlan` in `lib/study/planner.ts` places blocks into evening and weekend windows, working backwards from deadlines. Completing the linked lesson or assignment ticks the goal. Overdue assigned goals roll into the next open slot. One miss reminds the student. A second miss notifies a parent (category `goals`, quiet hours on `notify_settings`). Repeated misses use the existing `missed_goals` concern, which already reaches teachers. Push and email still go through `/api/push`. If FCM or email keys are missing, the in-app notification remains.
 
 These rules are in `firestore.rules` and are not deployed.
 

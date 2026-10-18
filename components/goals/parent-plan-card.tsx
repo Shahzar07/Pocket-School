@@ -22,7 +22,7 @@ export function ParentPlanCard({
     <section aria-label={`${childName} goals`} className="rounded-[28px] border border-[#E7EDED] bg-white p-5">
       <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#1E6A83]">Today</p>
       <h2 className="font-heading text-2xl text-[#203337]">{childName}</h2>
-      <p className="mt-1 text-sm text-[#1E6A83]">Plan against what was finished. Private goals stay off this card.</p>
+      <p className="mt-1 text-sm text-[#1E6A83]">Plan against what was finished. Self-set goals are included.</p>
       <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#E7EDED]" aria-hidden>
         <div className="h-full rounded-full bg-[#3FE0D0]" style={{ width: `${width}%` }} />
       </div>

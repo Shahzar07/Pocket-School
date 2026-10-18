@@ -70,6 +70,9 @@ export default function AccessAllocationPage() {
         <p className="mt-3 text-sm">
           <Link href="/dashboard/admin/access" className="font-semibold text-[#1E6A83] underline">Roles and institution admins</Link>
         </p>
+        <p className="mt-3 text-sm">
+          <Link href="/dashboard/admin/access" className="font-semibold text-[#1E6A83] underline">Roles and institution admins</Link>
+        </p>
       </motion.header>
 
       <SeatDesk />

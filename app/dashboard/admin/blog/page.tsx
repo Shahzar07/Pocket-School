@@ -7,6 +7,7 @@ import { DashHeader, DashPage } from '@/components/dash-ui';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { resolveStaffRole } from '@/lib/admin-console';
 import { db } from '@/lib/firebase';
+import { BlogLivePreview } from '@/components/blog/live-preview';
 import { BLOG_CATEGORIES, SAMPLE_POSTS, isCoverPath, slugify, type BlogFaq, type BlogPost, type BlogStatus } from '@/lib/blog/posts';
 
 const EMPTY: BlogPost = {
@@ -49,6 +50,7 @@ export default function BlogDeskPage() {
   const [tags, setTags] = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
+  const [showPreview, setShowPreview] = useState(true);
 
   const load = async () => {
     try {
@@ -152,7 +154,12 @@ export default function BlogDeskPage() {
         </ul>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
+      <div className="flex justify-end">
+        <button type="button" className="h-10 rounded-full border px-4 text-sm font-semibold" onClick={() => setShowPreview((value) => !value)}>
+          {showPreview ? 'Hide live preview' : 'Show live preview'}
+        </button>
+      </div>
+      <section className={`grid gap-6 ${showPreview ? 'xl:grid-cols-[1fr_1fr_1fr]' : 'lg:grid-cols-[1fr_1.2fr]'}`}>
         <div>
           <h2 className="text-sm font-bold">Saved essays</h2>
           <ul className="mt-3 space-y-2">
@@ -242,6 +249,9 @@ export default function BlogDeskPage() {
           </div>
           <p className="text-xs text-muted-foreground">The call to action always links to the offer and to sign-up. A scheduled essay stays hidden until its time.</p>
         </form>
+        {showPreview ? (
+          <BlogLivePreview post={{ ...draft, tags: tags.split(',').map((tag) => tag.trim()).filter(Boolean) }} />
+        ) : null}
       </section>
     </DashPage>
   );

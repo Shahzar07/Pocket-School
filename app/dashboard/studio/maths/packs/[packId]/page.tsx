@@ -9,7 +9,8 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { DashPage, Panel, PanelHeader, Segmented } from '@/components/dash-ui';
 import { MasteryBar } from '@/components/study/mastery-bar';
 import { ExercisesView } from '@/components/study/exercises-view';
-import { getPack, packTopics, isFreeTopic, type PackQuestion } from '@/lib/study/exam-packs';
+import { getPack, packTopics, isFreeTopic, type ExamPack, type PackQuestion } from '@/lib/study/exam-packs';
+import { PACK_STORE_KEY, listPacks, readPackStore } from '@/lib/study/pack-admin';
 import { getPackProgress, savePackProgress, getPackSet, savePackSet, assertSparks, chargeSparks, blendMastery, recordStudyDay, InsufficientSparks, type PackProgress } from '@/lib/study/db';
 import { gradeFor, weightedMastery, GRADE_SCALES } from '@/lib/study/grades';
 import { postJSON } from '@/lib/authed-fetch';
@@ -19,7 +20,11 @@ import type { Difficulty } from '@/lib/study/types';
 
 export default function PackPage({ params }: { params: Promise<{ packId: string }> }) {
   const { packId } = use(params);
-  const pack = getPack(packId);
+  const [pack, setPack] = useState<ExamPack | null>(() => getPack(packId));
+  useEffect(() => {
+    const stored = listPacks(readPackStore(window.localStorage.getItem(PACK_STORE_KEY))).find((item) => item.id === packId) ?? null;
+    setPack(stored);
+  }, [packId]);
   const { user, profile } = useAuthSTORE();
   const uid = user?.uid;
   const [progress, setProgress] = useState<PackProgress>({ mastery: {}, setsDone: 0 });

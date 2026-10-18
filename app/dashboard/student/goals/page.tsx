@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import {
+  checkGoalAlerts,
   completeDailyGoal,
   createDailyGoal,
   getEnrolledCourses,
@@ -20,6 +21,7 @@ import { weekColumns, weekStartKey, requestReschedule } from '@/lib/study/planne
 import { saveReschedule } from '@/lib/study/save-plan';
 import type { GoalDraft } from '@/lib/insights/goals';
 import { Button } from '@/components/ui/button';
+import { EscalationLadder } from '@/components/goals/escalation-ladder';
 
 export default function StudentGoalsPage() {
   return (
@@ -46,6 +48,11 @@ function StudentGoalsDesk() {
     if (!user) return;
     return subscribeDailyGoals(user.uid, setGoals);
   }, [user]);
+
+  useEffect(() => {
+    if (!user || goals.length === 0) return;
+    void checkGoalAlerts(user.uid, profile?.name ?? 'Student', goals, profile?.ageTier);
+  }, [user, profile?.name, goals]);
 
   useEffect(() => {
     if (!user) return;
@@ -95,8 +102,9 @@ function StudentGoalsDesk() {
       priority: draft.priority,
       quizTarget: draft.quizTarget,
       studioTask: draft.studioTask,
-      shareWithTeachers: draft.shareWithTeachers,
+      shareWithTeachers: true,
       teacherIds: draft.teacherIds,
+      assignedBy: user.uid,
       pomodoroWork: draft.pomodoroWork,
       pomodoroBreak: draft.pomodoroBreak,
       reflectionPrompt: draft.reflectionPrompt,
@@ -138,6 +146,7 @@ function StudentGoalsDesk() {
 
   return (
     <div className="space-y-4">
+      <p className="text-sm text-[#1E6A83]">Teachers and linked parents can see your goals, including ones you set yourself.</p>
       <GoalsWorkspace
         viewer="student"
         goals={workspaceGoals}
@@ -161,6 +170,7 @@ function StudentGoalsDesk() {
         }}
       />
       <WeeklyPlan columns={week} />
+      <EscalationLadder missed={goals.filter((goal) => goal.status === 'overdue').length} />
       <section className="rounded-[28px] border border-[#E7EDED] bg-white p-4">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E6A83]">Assigned goals</p>
         <p className="mt-1 text-sm text-[#203337]">Assigned goals stay on the plan. Move one to tomorrow if the day will not fit.</p>

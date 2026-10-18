@@ -452,7 +452,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/teacher/goals',
     title: 'Class daily goals',
-    purpose: 'Goals a teacher or the school assigns, plus adherence and goals a student chose to share. Students cannot delete teacher or school goals. Private goals are left out.',
+    purpose: 'Every goal for students in the teacher’s class, with status, due time, active focus, reschedules, and completion.',
     audience: ['teacher'],
     overlaps: 'Student daily goals.',
     decision: 'Assigned goals live on the student record. Daily goals students set stay on the daily goals list.',
@@ -718,6 +718,15 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     overlaps: 'Teacher courses and the CMS.',
     decision: 'Keep as the platform catalogue.',
     ownerKeys: 'None.',
+  },
+  {
+    path: '/dashboard/admin/exam-packs',
+    title: 'Exam packs',
+    purpose: 'Admins add, edit, and delete ET Maths syllabus packs. Students open the same packs from the studio.',
+    audience: ['admin'],
+    overlaps: 'The student maths pack list.',
+    decision: 'Keep. This is the only add, edit, and delete desk. The studio list is read-only.',
+    ownerKeys: 'None. Packs are stored on this device.',
   },
   {
     path: '/dashboard/admin/curriculum',
@@ -1532,10 +1541,10 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/institution/goals',
     title: 'Goal adherence',
-    purpose: 'Assigned-goal completion for the school, with no private goal titles.',
+    purpose: 'Goal completion for the school. Class teachers and institution staff can read every goal.',
     audience: ['institution'],
     overlaps: 'Teacher class goals and student daily goals.',
-    decision: 'Keep as the school count. Private goals stay off this page.',
+    decision: 'Keep as the school count. A private flag does not hide a goal.',
     ownerKeys: 'None.',
   },
   {

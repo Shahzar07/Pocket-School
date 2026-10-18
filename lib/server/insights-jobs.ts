@@ -16,11 +16,18 @@ import { digestDue, type DigestCadence } from '../parent-controls';
 import { addDays, isoDateKey } from '../insights/dates';
 import { behaviourAlertMessages, buildBehaviourBoard } from '../insights/behaviour-board';
 import type { Mood } from '../insights/behaviour';
-import { notifyParents, notifyUser } from './device-push';
+import { notifyParents, notifyUser, parentIdsFor } from './device-push';
+import { sendMail } from '../mail';
+import { escalationFor, limitsForAge } from '../study/planner';
 import { quizPointsFromAttempt } from '../unit-test';
 
 function yesterdayKey(now = new Date()): string {
   return addDays(isoDateKey(now), -1);
+}
+
+function plannerAge(value: unknown): 'under13' | 'teen' | 'adult' | 'unknown' {
+  if (value === 'under13' || value === 'teen' || value === 'adult') return value;
+  return 'unknown';
 }
 
 export async function runMissedGoalAlerts(now = new Date()): Promise<{ checked: number; notified: number }> {
@@ -33,17 +40,58 @@ export async function runMissedGoalAlerts(now = new Date()): Promise<{ checked: 
     if (status === 'completed' || status === 'excused' || data.notifiedMissed === true) continue;
     const studentId = data.studentId as string;
     const name = (data.studentName as string) || 'Your child';
-    await notifyParents(studentId, name, {
-      title: `${name} missed a goal`,
-      message: `"${data.title ?? 'A goal'}" was still open at the end of ${key}.`,
+    const title = (data.title as string) || 'A goal';
+    const message = `"${title}" was still open at the end of ${key}.`;
+    await notifyUser({
+      userId: studentId,
+      title: 'A goal is still open',
+      message,
       type: 'general',
-      link: '/dashboard/parent/goals',
+      link: '/dashboard/student/goals',
       pref: 'goals',
     });
-    await doc.ref.update({ notifiedMissed: true, status: status === 'in_progress' || status === 'not_started' ? 'overdue' : status });
+    const prior = await adminDb().collection('daily_goals').where('studentId', '==', studentId).limit(40).get();
+    const misses = prior.docs.filter((row) => {
+      const rowStatus = row.data().status as string;
+      return rowStatus === 'overdue' || row.data().notifiedMissed === true || row.id === doc.id;
+    }).length;
+    const student = await adminDb().doc(`users/${studentId}`).get();
+    const step = escalationFor(misses, limitsForAge(plannerAge(student.data()?.ageTier)));
+    if (step.parentNotify) {
+      await notifyParents(studentId, name, {
+        title: `${name} missed a goal`,
+        message,
+        type: 'general',
+        link: '/dashboard/parent/goals',
+        pref: 'goals',
+      });
+      const parents = await parentIdsFor(studentId);
+      for (const parentId of parents) {
+        const parent = await adminDb().doc(`users/${parentId}`).get();
+        const email = parent.data()?.email;
+        if (typeof email !== 'string' || !email.includes('@')) continue;
+        await sendMail({ to: email, subject: `${name} missed a goal`, text: message });
+      }
+    }
+    const teacherIds = Array.isArray(data.teacherIds) ? data.teacherIds.filter((id): id is string => typeof id === 'string') : [];
+    const flagTeachers = step.teacherFlag && data.teacherFlagged !== true && teacherIds.length > 0;
+    if (flagTeachers) {
+      await Promise.all(teacherIds.map((teacherId) => notifyUser({
+        userId: teacherId,
+        title: `${name} is past the miss limit`,
+        message: `${misses} goals were missed. Class adherence has the count.`,
+        type: 'general',
+        link: '/dashboard/teacher/goals',
+        pref: 'goals',
+      })));
+    }
+    await doc.ref.update({
+      notifiedMissed: true,
+      status: status === 'in_progress' || status === 'not_started' ? 'overdue' : status,
+      ...(flagTeachers ? { teacherFlagged: true } : {}),
+    });
     notified += 1;
 
-    const prior = await adminDb().collection('daily_goals').where('studentId', '==', studentId).limit(40).get();
     const dayBefore = addDays(key, -1);
     const priorDay = prior.docs.filter(row => row.data().dateKey === dayBefore);
     const held = priorDay.length > 0 && priorDay.every(row => {

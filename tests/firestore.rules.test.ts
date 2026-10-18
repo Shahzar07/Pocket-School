@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { after, before, beforeEach, describe, it } from 'node:test';
@@ -520,14 +521,42 @@ describe('goals, snapshots, integrity, and published reports', () => {
     const stranger = env.authenticatedContext('student2').firestore();
     await assertFails(getDoc(doc(stranger, 'daily_goals/goal1')));
     const teacher = env.authenticatedContext('teacher1').firestore();
+    const otherTeacher = env.authenticatedContext('teacherA').firestore();
     await assertFails(getDoc(doc(teacher, 'daily_goals/goal1')));
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const admin = ctx.firestore();
+      await updateDoc(doc(admin, 'users/student1'), { classId: 'class-maths', institutionId: 'school-a' });
+      await setDoc(doc(admin, 'spaces/class-maths'), {
+        kind: 'class', staffIds: ['teacher1'], memberIds: ['student1'], title: 'Maths',
+      });
+      await setDoc(doc(admin, 'daily_goals/secret'), {
+        ...goal, title: 'Personal', source: 'self', private: true, parentVisibility: false,
+      });
+      await setDoc(doc(admin, 'users/student1/goals/own'), {
+        studentId: 'student1', title: 'My reading', source: 'self', private: true, parentVisibility: false,
+        status: 'in_progress', deadline: '18:00', dateKey: '2026-10-18', focusMinutes: 12,
+      });
+      await setDoc(doc(admin, 'users/student1/goals/from-teacher'), {
+        studentId: 'student1', title: 'Paper', source: 'teacher', assignedBy: 'teacher1', status: 'not_started',
+      });
+    });
+    await assertSucceeds(getDoc(doc(parent, 'daily_goals/secret')));
+    await assertSucceeds(getDoc(doc(teacher, 'daily_goals/secret')));
+    await assertFails(getDoc(doc(otherTeacher, 'daily_goals/secret')));
+    await assertSucceeds(getDoc(doc(parent, 'users/student1/goals/own')));
+    await assertSucceeds(getDoc(doc(teacher, 'users/student1/goals/own')));
+    await assertFails(getDoc(doc(otherTeacher, 'users/student1/goals/own')));
+    const school = env.authenticatedContext('instadmin1').firestore();
+    await assertSucceeds(getDoc(doc(school, 'users/student1/goals/own')));
     const own = env.authenticatedContext('student1').firestore();
-    await assertSucceeds(updateDoc(doc(own, 'daily_goals/goal1'), {
-      shareWithTeachers: true, teacherIds: ['teacher1'],
+    await assertSucceeds(deleteDoc(doc(own, 'users/student1/goals/own')));
+    await assertFails(deleteDoc(doc(own, 'users/student1/goals/from-teacher')));
+    await assertFails(deleteDoc(doc(parent, 'users/student1/goals/from-teacher')));
+    await assertSucceeds(deleteDoc(doc(teacher, 'users/student1/goals/from-teacher')));
+    await assertSucceeds(setDoc(doc(parent, 'users/student1/goals/from-parent'), {
+      studentId: 'student1', title: 'Read tonight', source: 'parent', assignedBy: 'parent1', status: 'not_started',
     }));
-    await assertSucceeds(getDoc(doc(teacher, 'daily_goals/goal1')));
-    await assertSucceeds(updateDoc(doc(own, 'daily_goals/goal1'), { shareWithTeachers: false }));
-    await assertFails(getDoc(doc(teacher, 'daily_goals/goal1')));
+    await assertSucceeds(deleteDoc(doc(parent, 'users/student1/goals/from-parent')));
   });
 
   it('keeps device tokens and snapshots off other clients', async () => {
@@ -1174,5 +1203,44 @@ describe('institution membership', () => {
     await assertSucceeds(updateDoc(doc(admin, 'data_requests/export-1'), { status: 'done' }));
     await assertSucceeds(setDoc(doc(school, 'institutions/school-a/sparks_guard/current'), { cap: 800, lowAtPercent: 20 }));
     await assertFails(setDoc(doc(person, 'institutions/school-a/sparks_guard/current'), { cap: 1 }));
+  });
+
+  it('saves a school wall post, a comment, a reaction, and a report', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users/wall-student'), {
+        role: 'student', ageTier: 'teen', institutionId: 'rochford', name: 'Amina',
+      });
+      await setDoc(doc(ctx.firestore(), 'users/wall-other'), {
+        role: 'student', ageTier: 'teen', institutionId: 'rochford', name: 'Wei',
+      });
+    });
+    const author = env.authenticatedContext('wall-student').firestore();
+    const peer = env.authenticatedContext('wall-other').firestore();
+    const post = {
+      authorId: 'wall-student',
+      authorHandle: 'amina',
+      body: 'Pond notes',
+      audience: 'school',
+      schoolId: 'rochford',
+      feed: 'school',
+      locationOn: false,
+      moderation: 'allow',
+      reactions: { like: 0, love: 0, celebrate: 0, insightful: 0, support: 0 },
+      shares: 0,
+      createdAt: 1,
+    };
+    await assertSucceeds(setDoc(doc(author, 'wall_posts/pond'), post));
+    await assertSucceeds(getDoc(doc(peer, 'wall_posts/pond')));
+    await assertSucceeds(setDoc(doc(peer, 'wall_posts/pond/comments/c1'), {
+      authorId: 'wall-other', body: 'Nice notes',
+    }));
+    await assertSucceeds(setDoc(doc(peer, 'wall_posts/pond/reactions/wall-other'), { kind: 'like' }));
+    await assertSucceeds(updateDoc(doc(peer, 'wall_posts/pond'), { reactions: { like: 1 }, updatedAt: 2 }));
+    await assertSucceeds(setDoc(doc(peer, 'wall_reports/r1'), {
+      reporterId: 'wall-other', postId: 'pond', reason: 'Check this',
+    }));
+    await assertFails(setDoc(doc(peer, 'wall_posts/nope'), { ...post, authorId: 'wall-other', audience: 'public' }));
+    const again = await getDoc(doc(author, 'wall_posts/pond'));
+    assert.equal(again.data()?.body, 'Pond notes');
   });
 });
