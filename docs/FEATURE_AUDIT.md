@@ -4,7 +4,7 @@ Checked against `docs/SCHEMA_CHANGES.md`, `docs/DASHBOARD_AUDIT.md`, `docs/INSTI
 
 School admin in this product is the institution admin. Platform school leads stay on `/dashboard/admin/schools`.
 
-The other agent `bc-fe6ce9aa` (`cursor/ai-teachers-content-language-02e8`) still stores daily goals on `daily_goals` with `source` of `student`, `parent`, or `ai`. It does not yet publish `users/{uid}/goals`. This branch adds that subcollection with `source` of `teacher` or `institution` and leaves `daily_goals` unchanged so the two branches can merge.
+Pull request 144 publishes `users/{uid}/goals` with `source` of `self` (older docs say `student`), `et_ai` (older docs say `ai`), `teacher`, or `parent`, plus `focusMinutes`, `dueDateKey`, `rescheduleCount`, and `rescheduleLog`. This desk also keeps `institution`. Teachers and institution admins see every goal on a class roster. They edit or delete only goals they or their institution assigned. Parent and teacher read rules stay on pull request 144 and are not deployed from here.
 
 ## Gradebook root cause
 
@@ -35,7 +35,7 @@ Assignments, the gradebook, attendance, goals, report cards, Report Studio, and 
 | `/dashboard/teacher/analytics` | Teacher | Built | Quiz submissions for owned courses, plus the class selector | Lesson quizzes | Insights, gradebook |
 | `/dashboard/teacher/insights` | Teacher | Built | Class narrative | Insight job | Analytics |
 | `/dashboard/teacher/progress` | Teacher | Built | At-risk signals | Nightly job | Goals |
-| `/dashboard/teacher/goals` | Teacher | Built | users/{uid}/goals with source teacher or institution | Assign, edit, bulk assign. Delete only when source is teacher and assignedBy is that teacher. | Student goals, report cards, ET AI planner |
+| `/dashboard/teacher/goals` | Teacher | Built | Every users/{uid}/goals row for students on the class roster | Teacher assigns source teacher. Institution admin assigns source institution. Self, ET AI, and parent goals are shown and not edited here. | Student goals, report cards, ET AI planner |
 | `/dashboard/teacher/references` | Teacher | Built | Reference letters | Reference form | Student record |
 | `/dashboard/teacher/gradebook` | Teacher | Built | school_marks on school_assessments for one class and term | Inline entry, CSV import, or a returned assignment | Student dashboard, parent notice, report cards, analytics, goals, certificates |
 | `/dashboard/teacher/assignments` | Teacher | Built | Class or named students, rubric, due time, scale, late policy | Create form. Students submit from the student view. | Gradebook, student, parent, goals |
@@ -103,7 +103,7 @@ Assignments, the gradebook, attendance, goals, report cards, Report Studio, and 
 - `/dashboard/teacher/analytics` (Built): Analytics reads the shared marks, attendance, and goals, and can store a snapshot.
 - `/dashboard/teacher/insights` (Built): An insight is a saved note on the class record.
 - `/dashboard/teacher/progress` (Built): Risk flags are created here and line up with teacher goals.
-- `/dashboard/teacher/goals` (Built): Add, edit, and delete for one student or the whole class. Completed and overdue views are on this page. Students cannot delete assigned goals.
+- `/dashboard/teacher/goals` (Built): Source filter covers self, ET AI, teacher, parent, and institution. Each row shows status, due time, active focus time, and reschedules. Edit and delete stay on goals that teacher or the school assigned.
 - `/dashboard/teacher/references` (Built): References are drafted per student on the class record.
 - `/dashboard/teacher/gradebook` (Built): Root cause of the blank page: submissions query required a missing composite index.
 - `/dashboard/teacher/assignments` (Built): ET AI suggests a mark. Nothing is returned until the teacher approves it.

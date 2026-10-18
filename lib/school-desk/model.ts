@@ -13,7 +13,9 @@ export type MarkFlag = 'none' | 'missing' | 'late' | 'excused';
 export type MarkState = 'draft' | 'published';
 export type JoinMethod = 'roster' | 'csv' | 'invite' | 'qr' | 'code';
 export type AttStatus = 'present' | 'late' | 'absent' | 'excused';
-export type GoalSource = 'teacher' | 'institution' | 'student' | 'parent' | 'ai';
+/** `self` matches older `student`. `et_ai` matches older `ai`. `institution` is this desk. */
+export type GoalSource = 'self' | 'student' | 'et_ai' | 'ai' | 'teacher' | 'parent' | 'institution';
+export type GoalSourceGroup = 'self' | 'et_ai' | 'teacher' | 'parent' | 'institution';
 export type GoalStatus = 'not_started' | 'in_progress' | 'completed' | 'overdue';
 export type DeskRole = 'teacher' | 'institution_admin' | 'student' | 'parent';
 
@@ -162,6 +164,15 @@ export interface AttendanceRow {
   parentNote: string;
 }
 
+export interface GoalMove {
+  at: string;
+  fromDate: string;
+  toDate: string;
+  fromTime?: string;
+  toTime?: string;
+  by: string;
+}
+
 export interface AssignedGoal {
   id: string;
   studentId: string;
@@ -172,8 +183,19 @@ export interface AssignedGoal {
   assignedBy: string;
   assignedByName: string;
   due: string;
+  dueTime: string;
+  dueDateKey: string;
   status: GoalStatus;
   topic: string;
+  focusMinutes: number;
+  rescheduleCount: number;
+  rescheduleLimit: number;
+  rescheduleLog: GoalMove[];
+  private: boolean;
+  parentVisibility: boolean;
+  shareWithTeachers: boolean;
+  teacherIds: string[];
+  mirrorId?: string;
 }
 
 export interface Merit {
@@ -272,7 +294,7 @@ export interface DeskState {
   flows: FlowRecord[];
 }
 
-const STORAGE_KEY = 'poket-school-desk-rochford-v2';
+const STORAGE_KEY = 'poket-school-desk-rochford-v3';
 
 export function bandGrade(percent: number, bands: GradeBand[]): string {
   const sorted = [...bands].sort((a, b) => b.min - a.min);
@@ -315,11 +337,59 @@ export function applyLatePenalty(points: number, max: number, policy: LatePolicy
   return Math.max(0, Math.min(max, Math.round(next)));
 }
 
+export function goalSourceGroup(source: GoalSource): GoalSourceGroup {
+  if (source === 'student' || source === 'self') return 'self';
+  if (source === 'ai' || source === 'et_ai') return 'et_ai';
+  return source;
+}
+
+function ownsSelfGoal(goal: AssignedGoal, actorId: string): boolean {
+  return goalSourceGroup(goal.source) === 'self' && goal.assignedBy === actorId;
+}
+
 export function canDeleteGoal(goal: AssignedGoal, actorId: string, role: DeskRole): boolean {
-  if (role === 'student' || role === 'parent') return goal.source === 'student' && goal.assignedBy === actorId;
+  if (role === 'student' || role === 'parent') return ownsSelfGoal(goal, actorId);
   if (goal.source === 'teacher') return goal.assignedBy === actorId || role === 'institution_admin';
   if (goal.source === 'institution') return role === 'institution_admin';
   return false;
+}
+
+export function canEditGoal(goal: AssignedGoal, actorId: string, role: DeskRole): boolean {
+  return canDeleteGoal(goal, actorId, role);
+}
+
+type GoalWrite = Omit<AssignedGoal, 'dueTime' | 'dueDateKey' | 'focusMinutes' | 'rescheduleCount' | 'rescheduleLimit' | 'rescheduleLog' | 'private' | 'parentVisibility' | 'shareWithTeachers' | 'teacherIds' | 'mirrorId' | 'status'> & Partial<Pick<AssignedGoal, 'dueTime' | 'dueDateKey' | 'focusMinutes' | 'rescheduleCount' | 'rescheduleLimit' | 'rescheduleLog' | 'private' | 'parentVisibility' | 'shareWithTeachers' | 'teacherIds' | 'mirrorId' | 'status'>>;
+
+export function goalRecord(input: GoalWrite): AssignedGoal {
+  return {
+    id: input.id,
+    studentId: input.studentId,
+    studentName: input.studentName,
+    classId: input.classId,
+    title: input.title,
+    source: input.source,
+    assignedBy: input.assignedBy,
+    assignedByName: input.assignedByName,
+    due: input.due,
+    dueTime: input.dueTime || '16:00',
+    dueDateKey: input.dueDateKey || input.due,
+    status: input.status ?? 'not_started',
+    topic: input.topic,
+    focusMinutes: input.focusMinutes ?? 0,
+    rescheduleCount: input.rescheduleCount ?? 0,
+    rescheduleLimit: input.rescheduleLimit ?? 3,
+    rescheduleLog: input.rescheduleLog ?? [],
+    private: input.private ?? false,
+    parentVisibility: input.parentVisibility ?? true,
+    shareWithTeachers: input.shareWithTeachers ?? true,
+    teacherIds: input.teacherIds?.length ? input.teacherIds : ['teacher-aisha'],
+    mirrorId: input.mirrorId ?? input.id,
+  };
+}
+
+export function goalsForRoster(state: DeskState, classId: string): AssignedGoal[] {
+  const ids = new Set(roster(state, classId).map((row) => row.studentId));
+  return state.goals.filter((goal) => ids.has(goal.studentId) && goal.private !== true);
 }
 
 export function canCreateClass(state: DeskState, role: DeskRole): boolean {
@@ -411,7 +481,7 @@ export function setMark(
         const student = next.enrolments.find((item) => item.studentId === input.studentId);
         next = {
           ...made.state,
-          goals: [...made.state.goals, {
+          goals: [...made.state.goals, goalRecord({
             id: made.id,
             studentId: input.studentId,
             studentName: student?.studentName ?? 'Student',
@@ -421,9 +491,10 @@ export function setMark(
             assignedBy: input.actor,
             assignedByName: made.state.actorName,
             due: '2026-10-25',
+            dueTime: '16:00',
             status: 'not_started',
             topic,
-          }],
+          })],
         };
       }
     }
@@ -814,17 +885,23 @@ export function autoAttendance(state: DeskState, classId: string, date: string, 
 
 export function upsertGoal(
   state: DeskState,
-  input: Omit<AssignedGoal, 'id' | 'status'> & { id?: string; status?: GoalStatus },
+  input: Omit<GoalWrite, 'id'> & { id?: string },
   actor: string,
+  access?: { actorId: string; role: DeskRole },
 ): DeskState {
   if (input.id) {
+    const existing = state.goals.find((item) => item.id === input.id);
+    const actorId = access?.actorId ?? state.actorId;
+    const role = access?.role ?? 'teacher';
+    if (!existing || !canEditGoal(existing, actorId, role)) return state;
+    const nextGoal = goalRecord({ ...existing, ...input, id: existing.id });
     return stamp({
       ...state,
-      goals: state.goals.map((item) => (item.id === input.id ? { ...item, ...input, id: item.id } : item)),
-    }, actor, 'edit goal', input.title);
+      goals: state.goals.map((item) => (item.id === existing.id ? nextGoal : item)),
+    }, actor, 'edit goal', nextGoal.title);
   }
   const made = id(state, 'goal');
-  const goal: AssignedGoal = { ...input, id: made.id, status: input.status ?? 'not_started' };
+  const goal = goalRecord({ ...input, id: made.id });
   return stamp({ ...made.state, goals: [...made.state.goals, goal] }, actor, 'assign goal', goal.title);
 }
 
@@ -832,12 +909,12 @@ export function deleteGoal(state: DeskState, goalId: string, actorId: string, ro
   const goal = state.goals.find((item) => item.id === goalId);
   if (!goal) return { state, error: 'Goal not found.' };
   if (!canDeleteGoal(goal, actorId, role)) {
-    return { state, error: 'Students cannot delete a goal a teacher or the school assigned.' };
+    return { state, error: 'This goal can only be changed by the person or school that assigned it.' };
   }
   return { state: stamp({ ...state, goals: state.goals.filter((item) => item.id !== goalId) }, actorId, 'delete goal', goal.title), error: '' };
 }
 
-export function bulkGoals(state: DeskState, classId: string, title: string, due: string, actorId: string, actorName: string): DeskState {
+export function bulkGoals(state: DeskState, classId: string, title: string, due: string, actorId: string, actorName: string, source: GoalSource = 'teacher'): DeskState {
   let next = state;
   for (const student of roster(state, classId).filter((item) => item.status === 'active')) {
     next = upsertGoal(next, {
@@ -845,7 +922,7 @@ export function bulkGoals(state: DeskState, classId: string, title: string, due:
       studentName: student.studentName,
       classId,
       title,
-      source: 'teacher',
+      source,
       assignedBy: actorId,
       assignedByName: actorName,
       due,
@@ -1069,10 +1146,13 @@ export function createDemoDesk(): DeskState {
     { id: `att-${studentId}-16`, classId: klass.id, studentId, date: '2026-10-16', session: '08:30', status: index === 1 ? 'late' as const : 'present' as const, reason: index === 1 ? 'Bus' : '', source: 'login' as const, activeMinutes: 48, parentNote: '' },
   ]));
   const goals: AssignedGoal[] = [
-    { id: 'goal-1', studentId: 'stu-amina', studentName: 'Amina Yusuf', classId: klass.id, title: 'Finish the algebra review', source: 'teacher', assignedBy: 'teacher-aisha', assignedByName: 'Aisha Rahman', due: '2026-10-12', status: 'overdue', topic: 'Algebra' },
-    { id: 'goal-2', studentId: 'stu-leo', studentName: 'Leo Tan', classId: klass.id, title: 'Ten fraction questions', source: 'teacher', assignedBy: 'teacher-aisha', assignedByName: 'Aisha Rahman', due: '2026-10-18', status: 'completed', topic: 'Fractions' },
-    { id: 'goal-3', studentId: 'stu-priya', studentName: 'Priya Nair', classId: klass.id, title: 'Revise fractions', source: 'teacher', assignedBy: 'teacher-aisha', assignedByName: 'Aisha Rahman', due: '2026-10-22', status: 'in_progress', topic: 'Fractions' },
-    { id: 'goal-4', studentId: 'stu-amina', studentName: 'Amina Yusuf', classId: klass.id, title: 'My own reading goal', source: 'student', assignedBy: 'stu-amina', assignedByName: 'Amina Yusuf', due: '2026-10-19', status: 'not_started', topic: 'Reading' },
+    goalRecord({ id: 'goal-1', studentId: 'stu-amina', studentName: 'Amina Yusuf', classId: klass.id, title: 'Finish the algebra review', source: 'teacher', assignedBy: 'teacher-aisha', assignedByName: 'Aisha Rahman', due: '2026-10-12', dueTime: '16:00', status: 'overdue', topic: 'Algebra', focusMinutes: 35, rescheduleCount: 1, rescheduleLog: [{ at: '2026-10-11T08:00:00.000Z', fromDate: '2026-10-11', toDate: '2026-10-12', fromTime: '16:00', toTime: '16:00', by: 'stu-amina' }] }),
+    goalRecord({ id: 'goal-2', studentId: 'stu-leo', studentName: 'Leo Tan', classId: klass.id, title: 'Ten fraction questions', source: 'teacher', assignedBy: 'teacher-aisha', assignedByName: 'Aisha Rahman', due: '2026-10-18', dueTime: '15:30', status: 'completed', topic: 'Fractions', focusMinutes: 40, rescheduleCount: 0 }),
+    goalRecord({ id: 'goal-3', studentId: 'stu-priya', studentName: 'Priya Nair', classId: klass.id, title: 'Revise fractions', source: 'teacher', assignedBy: 'teacher-aisha', assignedByName: 'Aisha Rahman', due: '2026-10-22', dueTime: '18:00', status: 'in_progress', topic: 'Fractions', focusMinutes: 15, rescheduleCount: 0 }),
+    goalRecord({ id: 'goal-4', studentId: 'stu-amina', studentName: 'Amina Yusuf', classId: klass.id, title: 'My own reading goal', source: 'self', assignedBy: 'stu-amina', assignedByName: 'Amina Yusuf', due: '2026-10-19', dueTime: '20:00', status: 'not_started', topic: 'Reading', focusMinutes: 20, rescheduleCount: 1, rescheduleLog: [{ at: '2026-10-17T19:00:00.000Z', fromDate: '2026-10-18', toDate: '2026-10-19', fromTime: '20:00', toTime: '20:00', by: 'stu-amina' }] }),
+    goalRecord({ id: 'goal-5', studentId: 'stu-amina', studentName: 'Amina Yusuf', classId: klass.id, title: 'Evening reading with family', source: 'parent', assignedBy: 'parent-yusuf', assignedByName: 'Farah Yusuf', due: '2026-10-20', dueTime: '19:30', status: 'in_progress', topic: 'Reading', focusMinutes: 25, rescheduleCount: 0 }),
+    goalRecord({ id: 'goal-6', studentId: 'stu-priya', studentName: 'Priya Nair', classId: '', title: 'ET AI fractions drill', source: 'et_ai', assignedBy: 'et-ai', assignedByName: 'ET AI', due: '2026-10-21', dueTime: '17:15', status: 'in_progress', topic: 'Fractions', focusMinutes: 12, rescheduleCount: 2, rescheduleLog: [{ at: '2026-10-18T07:00:00.000Z', fromDate: '2026-10-19', toDate: '2026-10-20', fromTime: '17:15', toTime: '17:15', by: 'stu-priya' }, { at: '2026-10-20T07:00:00.000Z', fromDate: '2026-10-20', toDate: '2026-10-21', fromTime: '17:15', toTime: '17:15', by: 'stu-priya' }] }),
+    goalRecord({ id: 'goal-7', studentId: 'stu-leo', studentName: 'Leo Tan', classId: klass.id, title: 'School weekly practice target', source: 'institution', assignedBy: 'inst-rochford', assignedByName: "Rochford's International School", due: '2026-10-24', dueTime: '16:00', status: 'not_started', topic: 'Practice', focusMinutes: 45, rescheduleCount: 0 }),
   ];
   return {
     seq: 200,
@@ -1141,6 +1221,7 @@ export function readDesk(): DeskState {
     const parsed = JSON.parse(raw) as DeskState;
     if (!parsed?.institution?.id || !Array.isArray(parsed.classes) || !Array.isArray(parsed.flows)) return createDemoDesk();
     if (!Array.isArray(parsed.earnings) || !Array.isArray(parsed.payouts) || parsed.earnings.some((row) => typeof row.split !== 'number' || !row.date)) return createDemoDesk();
+    if (!Array.isArray(parsed.goals) || parsed.goals.some((goal) => typeof goal.focusMinutes !== 'number' || !goal.dueTime || !goal.source)) return createDemoDesk();
     return parsed;
   } catch {
     return createDemoDesk();

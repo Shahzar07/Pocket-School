@@ -1696,6 +1696,9 @@ service cloud.firestore {
     }
 
     // Assigned goals. daily_goals stays the student's own list.
+    // source self matches older student. source et_ai matches older ai.
+    // Parent and teacher read (private, parentVisibility, shareWithTeachers,
+    // teacherIds) is added on PR #144. This match is not deployed.
     // source=teacher goals are deleted only by the teacher who assigned them.
     // A student cannot delete a teacher or institution goal.
     match /users/{userId}/goals/{goalId} {

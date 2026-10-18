@@ -3269,9 +3269,13 @@ Rules for `certificate_designs` and `seat_allocations` are in `firestore.rules`.
 
 ## Teacher class desk
 
-`daily_goals.source` stays `student`, `parent`, or `ai` so it matches `cursor/ai-teachers-content-language-02e8`. Assigned work uses a separate subcollection.
+`daily_goals` stays the mobile planner. The same goal is also stored at `users/{studentUid}/goals/{goalId}`. `goalId` matches the `daily_goals` id (`mirrorId` on the subcollection copy). This shape matches pull request 144.
 
-`users/{studentUid}/goals/{goalId}` is `{ studentId, classId, title, source, assignedBy, assignedByName, due, status, topic }`. `source` is `teacher`, `institution`, `student`, `parent`, or `ai`. `status` is `not_started`, `in_progress`, `completed`, or `overdue`. A teacher may create and delete only when `source` is `teacher` and `assignedBy` is that teacher. A student may delete only their own `source: student` goal. An institution admin may delete `source: institution`. Students cannot delete teacher or institution goals.
+`users/{studentUid}/goals/{goalId}` is `{ studentId, classId, title, source, assignedBy, assignedByName, due, dueTime, dueDateKey, status, topic, focusMinutes, rescheduleCount, rescheduleLimit, rescheduleLog, private, parentVisibility, shareWithTeachers, teacherIds, mirrorId }`. `source` is `self` (older documents may say `student`), `et_ai` (older documents may say `ai`), `teacher`, `parent`, or `institution`. `status` is `not_started`, `in_progress`, `completed`, or `overdue`. `due` and `dueDateKey` are the calendar day. `dueTime` is `HH:mm`. `focusMinutes` is the active focus time. `rescheduleCount` may rise by a logged move and cannot pass `rescheduleLimit`. `rescheduleLog` is a short list of `{ at, fromDate, toDate, fromTime, toTime, by }`. The full append-only log stays at `users/{uid}/goal_reschedules/{id}` on pull request 144. Teachers read the count and the short log on the goal document.
+
+`private` defaults to false. `parentVisibility` defaults to true. `shareWithTeachers` is true and `teacherIds` lists the class teacher on the sample, so the read rule on pull request 144 can show self, ET AI, parent, teacher, and institution goals. A private goal is omitted from this desk. A teacher may edit or delete only when `source` is `teacher` and `assignedBy` is that teacher. An institution admin may edit or delete `source: institution` and may still oversee `source: teacher`. A student may delete only their own `self` or `student` goal. Self, parent, and ET AI goals are visible and not editable by the teacher.
+
+Parent and teacher read access is added on pull request 144 (`private`, `parentVisibility`, `shareWithTeachers`, `teacherIds`). This branch does not replace that rule and does not deploy rules.
 
 `school_classes/{classId}` is the shared class: `institutionId`, `name`, `subject`, `level`, `programme`, `term`, `campus`, `room`, `timetable`, `coTeachers`, `capacity`, `status` (`active` or `archived`), `joinCode`, `ownerTeacherId`, `ownerTeacherName`, `createdByRole`, `announcements`. `level` is a level name, not a year number. An empty `institutionId` is an independent teacher’s class.
 

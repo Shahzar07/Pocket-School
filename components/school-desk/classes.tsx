@@ -7,6 +7,7 @@ import {
   LEVELS, addEnrolment, approveEnrolment, attendanceRate, bulkCreateClasses, createClass, importRoster, postAnnouncement, roster, setTeachingMode, termResult, updateClass,
   type DeskRole, type JoinMethod, type LevelName,
 } from '@/lib/school-desk/model';
+import { GoalRoster } from './goals';
 import { DeskFrame, DeskLinks, deskHref, deskStyles, resetToDemo, useDesk } from './ui';
 
 export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'dashboard' | 'preview'; role?: DeskRole }) {
@@ -245,9 +246,14 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
               {tab === 'attendance' && <a className={deskStyles.ghost} href={deskHref(base, '/dashboard/teacher/attendance')}>{t.attendanceTitle}</a>}
               {tab === 'assignments' && <a className={deskStyles.ghost} href={deskHref(base, '/dashboard/teacher/assignments')}>{t.assignmentsTitle}</a>}
               {tab === 'goals' && (
-                <ul className="mt-3 text-sm">
-                  {state.goals.filter((item) => item.classId === klass.id).map((item) => <li key={item.id}>{item.studentName}: {item.title} · {item.status}</li>)}
-                </ul>
+                <div className="mt-4">
+                  <GoalRoster
+                    state={state}
+                    setState={setState}
+                    classId={klass.id}
+                    role={role === 'institution_admin' ? 'institution_admin' : 'teacher'}
+                  />
+                </div>
               )}
               {tab === 'gradebook' && (
                 <ul className="mt-3 text-sm">

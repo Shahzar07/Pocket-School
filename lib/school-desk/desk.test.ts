@@ -5,7 +5,7 @@ import { auditMarkdown, AUDIT } from './catalog';
 import { flowForPath } from './flows';
 import {
   addEnrolment, addFlow, applyLatePenalty, approveEnrolment, bulkCreateClasses, canDeleteGoal, createClass, createDemoDesk,
-  deleteGoal, earningNet, gradeOnScale, refundEarning, returnSubmission, setMark, setTeachingMode, submitWork, termResult,
+  deleteGoal, earningNet, goalSourceGroup, goalsForRoster, gradeOnScale, refundEarning, returnSubmission, setMark, setTeachingMode, submitWork, termResult, upsertGoal,
 } from './model';
 
 test('scales cover IGCSE, A star to G, percent, points, and pass or fail', () => {
@@ -62,6 +62,34 @@ test('students cannot delete a teacher goal and teachers can delete their own', 
   const removed = deleteGoal(state, teacherGoal.id, 'teacher-aisha', 'teacher');
   assert.equal(removed.error, '');
   assert.equal(removed.state.goals.some((item) => item.id === teacherGoal.id), false);
+});
+
+test('a class roster shows every goal source and edit stays with the assigner', () => {
+  const state = createDemoDesk();
+  const listed = goalsForRoster(state, 'class-maths');
+  const groups = new Set(listed.map((item) => goalSourceGroup(item.source)));
+  assert.deepEqual([...groups].sort(), ['et_ai', 'institution', 'parent', 'self', 'teacher']);
+  const personal = listed.find((item) => item.id === 'goal-6');
+  assert.equal(personal?.classId, '');
+  assert.equal(personal?.focusMinutes, 12);
+  assert.equal(personal?.rescheduleCount, 2);
+  const selfGoal = state.goals.find((item) => item.id === 'goal-4');
+  const parentGoal = state.goals.find((item) => item.id === 'goal-5');
+  const schoolGoal = state.goals.find((item) => item.id === 'goal-7');
+  assert.ok(selfGoal && parentGoal && schoolGoal);
+  assert.equal(canDeleteGoal(selfGoal, 'teacher-aisha', 'teacher'), false);
+  assert.equal(canDeleteGoal(parentGoal, 'teacher-aisha', 'teacher'), false);
+  assert.equal(canDeleteGoal(personal!, 'teacher-aisha', 'teacher'), false);
+  assert.equal(canDeleteGoal(selfGoal, 'stu-amina', 'student'), true);
+  assert.equal(canDeleteGoal({ ...selfGoal, source: 'student' }, 'stu-amina', 'student'), true);
+  assert.equal(canDeleteGoal(schoolGoal, 'teacher-aisha', 'teacher'), false);
+  assert.equal(canDeleteGoal(schoolGoal, 'admin-rochford', 'institution_admin'), true);
+  const untouched = upsertGoal(state, { ...selfGoal, title: 'Changed by a teacher' }, 'Aisha Rahman', { actorId: 'teacher-aisha', role: 'teacher' });
+  assert.equal(untouched.goals.find((item) => item.id === 'goal-4')?.title, selfGoal.title);
+  const edited = upsertGoal(state, { ...schoolGoal, title: 'New school target' }, 'School', { actorId: 'admin-rochford', role: 'institution_admin' });
+  assert.equal(edited.goals.find((item) => item.id === 'goal-7')?.title, 'New school target');
+  assert.equal(goalSourceGroup('ai'), 'et_ai');
+  assert.equal(goalSourceGroup('student'), 'self');
 });
 
 test('an under-18 without school membership cannot be approved', () => {
