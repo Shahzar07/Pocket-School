@@ -1113,7 +1113,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Institution admins act on their own school. A super admin can see every school.
 - **Owner keys:** None.
 
-### School hotline
+### Poket SafeLine
 
 - **Route:** `/dashboard/parent/hotline`
 - **Audience:** parent
@@ -1122,16 +1122,16 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Safeguarding and bullying tickets stay with the principal or safeguarding lead.
 - **Owner keys:** None.
 
-### Hotline queue
+### Poket SafeLine
 
 - **Route:** `/dashboard/teacher/hotline`
 - **Audience:** teacher
 - **Purpose:** Teachers work parent tickets, with filters for status and overdue items.
-- **Overlaps:** The admin hotline queue.
+- **Overlaps:** The admin SafeLine queue.
 - **Decision:** Sensitive categories are hidden from teachers who are not the safeguarding lead.
 - **Owner keys:** None.
 
-### Hotline analytics
+### Poket SafeLine
 
 - **Route:** `/dashboard/admin/hotline`
 - **Audience:** admin
@@ -1149,12 +1149,12 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Publishing is server-only and two-person. Emergency push cannot be muted.
 - **Owner keys:** None.
 
-### School hotline
+### Poket SafeLine
 
 - **Route:** `/dashboard/institution/hotline`
 - **Audience:** institution
 - **Purpose:** The institution queue for parent tickets, including escalation to the principal.
-- **Overlaps:** The teacher hotline queue.
+- **Overlaps:** The teacher SafeLine queue.
 - **Decision:** Institution leads see their own school. Sensitive tickets stay restricted.
 - **Owner keys:** None.
 
@@ -1271,7 +1271,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Route:** `/dashboard/student/safety`
 - **Audience:** student
 - **Purpose:** A student reports a safety or bullying concern, including an anonymous report to the Safety Desk.
-- **Overlaps:** Safety Desk and the school hotline.
+- **Overlaps:** Safety Desk and Poket SafeLine.
 - **Decision:** Keep. Anonymous reports do not put the student’s name on the push.
 - **Owner keys:** None.
 
@@ -1415,7 +1415,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Route:** `/dashboard/admin/safety-desk`
 - **Audience:** admin
 - **Purpose:** The Safety Desk queue for reports addressed to the desk, including anonymous ones.
-- **Overlaps:** Student safety reports and the hotline.
+- **Overlaps:** Student safety reports and Poket SafeLine.
 - **Decision:** Keep. Desk leads see the queue. Anonymous names stay off the push.
 - **Owner keys:** None.
 

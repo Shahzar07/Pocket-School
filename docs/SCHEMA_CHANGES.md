@@ -2049,9 +2049,9 @@ Push for group activity reuses `network`. Critical safety on a group post uses `
 `network` and `safety` join `alumni`, `institution`, and `achievements` on both `lib/push.ts` and `lib/platform/push.ts`. The reject string lists every category.
 
 Account toggles: `notificationPrefs.alumni`, `notificationPrefs.institution`, `notificationPrefs.achievements`, `notificationPrefs.network`, `notificationPrefs.safety`, and `notificationPrefs.networkDigest`.
-## Hotline
+## Poket SafeLine
 
-Parent-to-school tickets. The website shape here is canonical. Client writes are denied. Do not deploy these rules from this branch.
+The student safety hotline is named Poket SafeLine. After the first mention, the short form is SafeLine. Routes, Firestore collections, and the push category stay `hotline`. Parent-to-school tickets. The website shape here is canonical. Client writes are denied. Do not deploy these rules from this branch.
 
 `hotline_tickets/{id}`
 
@@ -2061,7 +2061,7 @@ Parent-to-school tickets. The website shape here is canonical. Client writes are
 | `addressedTo` | `teacher`, `academic_lead`, `principal`, `safeguarding_lead`. |
 | `assigneeUid` | Staff member, or empty. |
 | `category` | `academic`, `attendance`, `fees`, `transport`, `wellbeing`, `bullying`, `safeguarding`, `technical`, `feedback`, `other`. Fees and billing are stored as `fees`. `POST /api/hotline/create` accepts the app alias `fees_billing` and stores `fees`. |
-| `priority` | `low`, `medium`, `high`. Maps onto the shared severity in `lib/alerts/model.ts` (`low`, `medium`, `high`). Hotline has no critical priority. |
+| `priority` | `low`, `medium`, `high`. Maps onto the shared severity in `lib/alerts/model.ts` (`low`, `medium`, `high`). SafeLine has no critical priority. |
 | `status` | `pending`, `in_progress`, `kiv`, `solved`, `closed`. |
 | `kivReason`, `kivFollowUpAt` | Required together when status is `kiv`. |
 | `slaDueAt` | Working hours in the institution timezone. High is 4 working hours, medium is 1 working day, low is 3 working days. Default window is Monday to Friday, 08:00 to 17:00, `Asia/Kuala_Lumpur`, plus `institutions/{id}.holidays`. |
@@ -2069,7 +2069,7 @@ Parent-to-school tickets. The website shape here is canonical. Client writes are
 | `reopenUntil`, `solvedAt` | A parent can reopen within 7 days of `solved`. |
 | `satisfaction` | `{ rating: 1–5, comment }` after the parent rates. |
 | `body`, `safeguardingCaseId` | Sensitive categories open `safeguarding_cases/{id}` with `source: hotline`. Other staff cannot read those tickets. |
-| `source` | Empty for a parent hotline ticket. `student_safety_report` and `danger_now` are student safeguarding tickets. See [Student safety reports](#student-safety-reports). |
+| `source` | Empty for a parent SafeLine ticket. `student_safety_report` and `danger_now` are student safeguarding tickets. See [Student safety reports](#student-safety-reports). |
 | `reporterUid`, `reporterName`, `safetyType` | Set on student reports. The API returns the reporter only to a super admin, the principal, or the safeguarding lead at that school. Peers, teachers, and institution admins receive neither the id nor the name, except the danger notice which carries the student's name to the form teacher and to parents who were actually notified. |
 | `flagged`, `throttled`, `flagReason` | A soft cap flags a report. It never refuses one. |
 | `authorities` | `{ required: yes \| no \| unsure, reason, status, informed }`. `no` needs a reason. `status` is `not_required`, `to_be_informed`, `informed`, `acknowledged`, or `closed_by_authority`. `informed` is `{ agency, contact, reference, at, by }`. Create accepts `authoritiesRequired` and `authoritiesReason`, and also the app object `authority.required` / `authority.reason`. The stored field stays `authorities`. |
@@ -2105,7 +2105,7 @@ Storage path: `institutions/{institutionId}/hotline/{ticketId}/{fileId}-{name}`.
 | GET | `/api/hotline/export?id=&format=csv\|pdf` |
 | POST | `/api/hotline/legal-hold` |
 | POST | `/api/hotline/redact-internal` |
-| GET, POST | `/api/hotline/share` refuses. Hotline tickets cannot be shared. |
+| GET, POST | `/api/hotline/share` refuses. SafeLine tickets cannot be shared. |
 | GET | `/api/cron/hotline` |
 
 Analytics hide any group under 5: category counts, SLA compliance, average resolution time, satisfaction, and the overdue count. The parent desk is `/dashboard/parent/hotline`. Staff queues are `/dashboard/teacher/hotline`, `/dashboard/admin/hotline`, and `/dashboard/institution/hotline`.
@@ -2125,7 +2125,7 @@ Amber and other emergency alerts. Publishing is server-only. A verified principa
 | `title`, `description`, `subjectName` | Resolve, retract, and withdrawn consent keep `subjectName` on the document. Public and OG views hide it. |
 | `region` | `{ country, state, city }` copied from `institutions/{id}`. A home address is never stored. |
 | `photoUrl`, `guardianConsent`, `consentId`, `consentWithdrawn`, `publicRedacted` | A public photo is `attachment:{fileId}` only when guardian consent is true and that consent record id is set. Withdrawing consent sets `consentWithdrawn` and `publicRedacted`, turns sharing off, and sets each public attachment to `public: false`. The stored name, photo URL, and file bytes stay. |
-| `authorities` | Same shape as a hotline ticket. Public share needs `informed`, `acknowledged`, or `closed_by_authority`. A missing-child draft needs that record before it is saved. |
+| `authorities` | Same shape as a SafeLine ticket. Public share needs `informed`, `acknowledged`, or `closed_by_authority`. A missing-child draft needs that record before it is saved. |
 | `authoritiesInformed` | Legacy mirror of `authorities.informed`: `{ agency, referenceNumber, informedAt }`. |
 | `authoritiesRemindedAt` | Staff are reminded after 1 hour while the status is `to_be_informed`. |
 | `status` | `draft` until the second staff member confirms, then `active`, `updated`, `resolved`, `closed`, or `retracted`. Closed alerts are archived. |
@@ -2144,7 +2144,7 @@ Amber and other emergency alerts. Publishing is server-only. A verified principa
 
 `emergency_alerts/{id}/updates/{updateId}` is an append-only chain entry with `action: updated` and `body`.
 
-`emergency_alerts/{id}/attachments/{fileId}`: same file shape as a hotline attachment, plus `updateId`, `guardianConsent`, `consentRecordId`, and `public`. Only a photo with guardian consent and a consent record can be public. Storage path: `institutions/{institutionId}/alerts/{alertId}/{fileId}-{name}`, served by a signed URL.
+`emergency_alerts/{id}/attachments/{fileId}`: same file shape as a SafeLine attachment, plus `updateId`, `guardianConsent`, `consentRecordId`, and `public`. Only a photo with guardian consent and a consent record can be public. Storage path: `institutions/{institutionId}/alerts/{alertId}/{fileId}-{name}`, served by a signed URL.
 
 `emergency_alerts/{id}/recipients/{uid}`: the people who received the original push. A retraction notifies this list.
 
@@ -2200,13 +2200,13 @@ The public page has a report-this-alert button. Storage rules deny client access
 
 ## Student safety reports
 
-A student can send a safety report, or tap **I'm in danger now**, without a parent opening a hotline ticket. The website shape here is canonical. `docs/HOTLINE_ALERTS_SCHEMA.md` is not on a branch. Client writes are denied. Do not deploy these rules from this branch.
+A student can send a safety report, or tap **I'm in danger now**, without a parent opening a SafeLine ticket. The website shape here is canonical. `docs/HOTLINE_ALERTS_SCHEMA.md` is not on a branch. Client writes are denied. Do not deploy these rules from this branch.
 
 The shield is one tap on the student home (`/dashboard/student`) and in Community. The form is `/dashboard/student/safety`. A parent or staff notice is `/dashboard/safety/{ticketId}`.
 
 ### Report
 
-`POST /api/safety/report`. The type alone is enough. Optional fields are `description`, `who`, `where`, `when`, and evidence through the existing hotline attachment rules (`label: evidence`). Types: `bullying`, `cyberbullying`, `harassment`, `abuse`, `self_harm_concern`, `discrimination`, `unsafe_other`.
+`POST /api/safety/report`. The type alone is enough. Optional fields are `description`, `who`, `where`, `when`, and evidence through the existing SafeLine attachment rules (`label: evidence`). Types: `bullying`, `cyberbullying`, `harassment`, `abuse`, `self_harm_concern`, `discrimination`, `unsafe_other`.
 
 `where` is empty or one of `in_school`, `online`, `transport`, `other`. Anything else is `BAD_REQUEST` with `Choose where this happened.`
 
@@ -2236,7 +2236,7 @@ The third report from the same student on a UTC day, and every report after it, 
 
 ### I'm in danger now
 
-`POST /api/safety/danger`. The screen shows the country's emergency number immediately (999 in Malaysia) from `emergencyNumber`. The server then creates a `danger_now` ticket and a safeguarding case with `source: danger_now`, `category: safeguarding`, `severity: critical`, and `dangerId` equal to the ticket id. Hotline priority stays `high`, because hotline has no critical priority. The case source stays `danger_now` so client rules can keep excluding it.
+`POST /api/safety/danger`. The screen shows the country's emergency number immediately (999 in Malaysia) from `emergencyNumber`. The server then creates a `danger_now` ticket and a safeguarding case with `source: danger_now`, `category: safeguarding`, `severity: critical`, and `dangerId` equal to the ticket id. SafeLine priority stays `high`, because SafeLine has no critical priority. The case source stays `danger_now` so client rules can keep excluding it.
 
 Place is optional and typed. The student opts in once. The server stores `{ place, at }` only when `shareLocation` is true and the trimmed place is at least 2 characters (maximum 160). There is no GPS, no `lat` or `lng`, no later update, and no continuous tracking.
 
@@ -2280,7 +2280,7 @@ The parent desk, staff queue, and emergency desk use the dashboard kit from PR #
 
 ## Staff case notices
 
-Staff are notified when a student files a safety report, taps **I'm in danger now**, a parent opens a high-priority safeguarding hotline ticket, or a second staff member confirms an emergency alert. The form teacher, the head, and the principal each get a push and an email. Parents are not on this list. Do not deploy the `mail_deliveries` rule from this branch.
+Staff are notified when a student files a safety report, taps **I'm in danger now**, a parent opens a high-priority safeguarding SafeLine ticket, or a second staff member confirms an emergency alert. The form teacher, the head, and the principal each get a push and an email. Parents are not on this list. Do not deploy the `mail_deliveries` rule from this branch.
 
 ### Who is notified
 
@@ -2368,7 +2368,7 @@ The app proposal in the attached `HOTLINE_ALERTS_SCHEMA` was compared with this 
 
 These differences remain. The app should follow the website value.
 
-### Hotline
+### Poket SafeLine
 
 | Topic | Website | App proposal |
 | --- | --- | --- |
@@ -2416,9 +2416,9 @@ These differences remain. The app should follow the website value.
 
 ## Tamper-evident logs
 
-Hotline events and emergency `audit`, `updates`, and `consent` are permanent. Firestore rules set `allow update, delete: if false` on those subcollections for every role, admin included. Clients cannot create them either. The Admin SDK bypasses rules, so the server is the only writer, and it only creates these documents inside a transaction (`lib/server/ledger.ts`). It never updates or deletes them. `lib/ledger/chain.test.ts` fails if a server file updates, deletes, or `.add()`s those paths.
+SafeLine events and emergency `audit`, `updates`, and `consent` are permanent. Firestore rules set `allow update, delete: if false` on those subcollections for every role, admin included. Clients cannot create them either. The Admin SDK bypasses rules, so the server is the only writer, and it only creates these documents inside a transaction (`lib/server/ledger.ts`). It never updates or deletes them. `lib/ledger/chain.test.ts` fails if a server file updates, deletes, or `.add()`s those paths.
 
-Nothing in hotline or emergency is hard-deleted. Resolve, retract, and withdrawn consent set flags (`publicRedacted`, `consentWithdrawn`, `publicShareEnabled: false`) and mark public attachments `public: false`. Public pages, OG cards, and share links hide the name and photo. The internal document, the file bytes, and the log stay. A separate redact-internal action may blank the parent fields only when `legalHold.on` is false, and only after the previous values are in the chain diff. That overrides any earlier retention or purge rule for these records. The 90-day purge in `purgeAudit` deletes `moderation_audit` only.
+Nothing in SafeLine or emergency is hard-deleted. Resolve, retract, and withdrawn consent set flags (`publicRedacted`, `consentWithdrawn`, `publicShareEnabled: false`) and mark public attachments `public: false`. Public pages, OG cards, and share links hide the name and photo. The internal document, the file bytes, and the log stay. A separate redact-internal action may blank the parent fields only when `legalHold.on` is false, and only after the previous values are in the chain diff. That overrides any earlier retention or purge rule for these records. The 90-day purge in `purgeAudit` deletes `moderation_audit` only.
 
 ### Audit entry
 
@@ -2460,7 +2460,7 @@ The verification hash is SHA-256 of the export text before the `verificationHash
 
 ### Shares
 
-WhatsApp, Facebook, X, and copy link are logged with `channel`, time, and a hashed actor or `anonymous`. Sharing works only for an `active` or `updated` alert whose public share is enabled, through `/alerts/{id}`. `GET /api/emergency/share` writes the log and redirects. Copy link redirects back to the alert page. Hotline has no share control. `GET` and `POST /api/hotline/share` return 403 and write nothing.
+WhatsApp, Facebook, X, and copy link are logged with `channel`, time, and a hashed actor or `anonymous`. Sharing works only for an `active` or `updated` alert whose public share is enabled, through `/alerts/{id}`. `GET /api/emergency/share` writes the log and redirects. Copy link redirects back to the alert page. SafeLine has no share control. `GET` and `POST /api/hotline/share` return 403 and write nothing.
 
 ### Off-site backup
 
@@ -2476,12 +2476,12 @@ Account toggle: `notificationPrefs.hotline`. Emergency alerts are not a preferen
 
 ## Alert recipients matrix
 
-`resolveRecipients` in `lib/alerts/recipients.ts` is the only recipient list. Safety reports, danger alerts, hotline tickets, amber alerts, emergency alerts, Safety Desk cases, and all-staff alerts call it. Server notify paths do not keep a second staff or parent list.
+`resolveRecipients` in `lib/alerts/recipients.ts` is the only recipient list. Safety reports, danger alerts, SafeLine tickets, amber alerts, emergency alerts, Safety Desk cases, and all-staff alerts call it. Server notify paths do not keep a second staff or parent list.
 
 | Kind | Who is included |
 | --- | --- |
 | Student safety report and I'm in danger now | Safeguarding lead, principal, and form teacher at the school, plus approved `parent_links`, unless the parent-exclusion rule applies. No other staff. An academic lead, another teacher, or an institution admin is not added. |
-| Hotline ticket | The addressed post, the addressed uid when one is set, and every post in the escalation chain. Sensitive tickets (`bullying`, `safeguarding`) are the safeguarding lead and the principal. Other tickets are the teacher, the academic lead, and the principal. |
+| SafeLine ticket | The addressed post, the addressed uid when one is set, and every post in the escalation chain. Sensitive tickets (`bullying`, `safeguarding`) are the safeguarding lead and the principal. Other tickets are the teacher, the academic lead, and the principal. |
 | Amber (`missing_child`) or any other emergency | Every user whose `institutionId` is the school (students, parents, and staff), plus users with `emergencyOptIn: true` who match `region` (country, and state and city when the alert set them) or whose `homeCountry` is the same country. A region match without `emergencyOptIn` is not included. Institution members are included without that opt-in. |
 | Safety Desk | Super admins (`role: admin`), the on-call primary, the backup only when the case has escalated, and linked guardians whose verification tier is 2 or higher. Parent exclusion removes those parent uids from the recipient list. The confidential card still lists the guardian contacts and says parents were not notified. |
 | All-staff | Every staff member at the institution: teachers, institution admins, and users with a staff post. Students and parents are not included. |
@@ -2490,7 +2490,7 @@ Parent exclusion is unchanged: type `abuse`, `concernRole` of parent or guardian
 
 `users.emergencyOptIn` is the regional opt-in. It is not the founders `optIn` and not the recruiter `optedIn`. Missing means not opted in. `homeCountry` is compared with the alert country, including `MY` / `Malaysia`, `US` / `United States` / `USA`, and `GB` / `United Kingdom` / `UK`.
 
-Safety and danger store `staffUids`, `notifiedParentUids`, `parentsExcluded`, and `formTeacherUid` from this resolver. Hotline tickets store `recipientUids`. A high safeguarding ticket still sends the confidential case card to the hotline staff set. Other hotline tickets get a `hotline` push. Danger parent pushes stay category `emergency` with `force` and sound `emergency`. A safety-report parent push is category `safety`, and `force` only when the student is under 13.
+Safety and danger store `staffUids`, `notifiedParentUids`, `parentsExcluded`, and `formTeacherUid` from this resolver. SafeLine tickets store `recipientUids`. A high safeguarding ticket still sends the confidential case card to the SafeLine staff set. Other SafeLine tickets get a `hotline` push. Danger parent pushes stay category `emergency` with `force` and sound `emergency`. A safety-report parent push is category `safety`, and `force` only when the student is under 13.
 
 ## All-staff alert
 
@@ -2537,7 +2537,7 @@ Amber alerts are a public safety and marketing tool. Receiving, viewing, and sha
 The public page is `/amber/{id}`. That URL is canonical: the page sets `<link rel="canonical">` to `/amber/{id}`. `/alerts/{id}`, `/alerts/{id}/opengraph-image`, and `/alerts/{id}/twitter-image` answer `301` to the matching `/amber` path and keep the query string. A missing-child alert uses the Amber projection. Another emergency type at the same URL keeps its own public details. It shows the approved public details only:
 
 - No reporter, publisher, or confirmer identity.
-- No hotline ticket, message, or category.
+- No SafeLine ticket, message, or category.
 - For a child, the name, the photo, and the public description appear only when the publishing principal or partner set `publicApproval.name`, `publicApproval.photo`, or `publicApproval.description`. The photo also needs guardian consent on file. The internal `description` is not the public text. `publicDescription` is.
 - Region, the authority agency, and the authority reference stay on an open alert so people know who to call. Staff phone numbers are not shown.
 
@@ -2608,7 +2608,7 @@ The desk sends an urgent push and a confidential email to super admins (`role ==
 
 `GET /api/cron/hotline` also calls `escalateUnackedDesk`. Escalation is strict: `now - createdAt > 5 minutes`, status `pending`, and both `staffAckAt` and `deskEscalatedAt` empty. It writes chain action `desk_escalated` once and notifies again with the backup. It is not a new cron.
 
-The rota is `safety_desk/rota`: `{ timezone, slots: [{ weekday, startMinutes, endMinutes, primaryUid, backupUid }], updatedBy, updatedAt }`. Weekday is 0 Sunday through 6 Saturday, matching the hotline calendar. Clients cannot read or write `safety_desk`. The super-admin queue is `/dashboard/admin/safety-desk`. It shows SLA, assignment, and the rota. Assignment sets `status: in_progress` and chain action `assigned`. The queue projection has no report body.
+The rota is `safety_desk/rota`: `{ timezone, slots: [{ weekday, startMinutes, endMinutes, primaryUid, backupUid }], updatedBy, updatedAt }`. Weekday is 0 Sunday through 6 Saturday, matching the SafeLine calendar. Clients cannot read or write `safety_desk`. The super-admin queue is `/dashboard/admin/safety-desk`. It shows SLA, assignment, and the rota. Assignment sets `status: in_progress` and chain action `assigned`. The queue projection has no report body.
 
 An individual (empty `institutionId`, not a super admin, tier below 4) cannot create or confirm an emergency alert, including Amber. `publishBlock` runs after `canCreate` on create and again on confirm. `POST /api/safety-desk/submit` writes a `desk_alert` ticket to the desk and does not create `emergency_alerts`.
 
@@ -2656,7 +2656,7 @@ Anti-bullying help is free for every account, including an account with no schoo
 
 Routing is still `resolveRecipients`. Kind `bullying` with an `institutionId` and `anonymous` not true uses the student safety report list (safeguarding lead, principal, form teacher, and approved parents unless parent exclusion applies). No school, or an anonymous report, uses the Safety Desk list: super admins (`role: admin`), the on-call primary on `safety_desk/rota`, the backup only when `escalate` is set, and linked guardians at verification tier 2 or higher unless parent exclusion applies. The reporter's real name stays on the ticket. Anonymous pushes say the name stays with Desk leads and do not call `notifyTicketStaff`. `safetyView` returns `full` for a super admin or `staffPost: safety_desk` only. The reporter gets `tracker`. Everyone else, including a guardian and a school principal, gets `hidden`.
 
-Desk SLAs are config in `DESK_SLA_MS`: critical 15 minutes, high 1 hour, medium 24 hours, low 72 hours. A desk ticket stores `deskSeverity` and `slaDueAt` from that clock. Hotline `priority` still uses `low|medium|high`, so critical is stored as priority `high` plus `deskSeverity: critical`. The cron `GET /api/cron/hotline` calls `escalateCriticalDesk`. An unacknowledged critical desk ticket past 15 minutes sets `deskEscalatedAt` and pushes the backup and super admins. It appends `desk_escalated`.
+Desk SLAs are config in `DESK_SLA_MS`: critical 15 minutes, high 1 hour, medium 24 hours, low 72 hours. A desk ticket stores `deskSeverity` and `slaDueAt` from that clock. SafeLine `priority` still uses `low|medium|high`, so critical is stored as priority `high` plus `deskSeverity: critical`. The cron `GET /api/cron/hotline` calls `escalateCriticalDesk`. An unacknowledged critical desk ticket past 15 minutes sets `deskEscalatedAt` and pushes the backup and super admins. It appends `desk_escalated`.
 
 Check-ins are `checkIns: [{ dueAt, sentAt }]` on the ticket, 24 hours and 7 days after `createdAt`. The same cron calls `sendDueCheckIns` and pushes "How are you doing?" to the reporter. Closed and resolved tickets are skipped. The event is `check_in_sent`.
 
@@ -2749,7 +2749,7 @@ Queries, single field, not a new composite index: `schoolNotices.reportId`, `sch
 
 ## Authority referrals
 
-High and critical safety cases reuse `hotline_tickets.authorities`. A case is high or critical when `deskSeverity` or `safetyType` is `high`, `critical`, `bullying`, `cyberbullying`, `harassment`, `abuse`, or `self_harm_concern`, or when the text matches threats of violence, assault, sexual content or exploitation, extortion, self-harm risk, or a hate crime. Before `solved` or `closed`, the Desk records refer (`required: yes`, `status: to_be_informed`) or not needed (`required: no`, `status: not_required`, reason at least 3 characters). Refer cannot close until the referral is sent and the status is `informed`, `acknowledged`, or `closed_by_authority`. A parent hotline ticket keeps the older close check. Low `unsafe_other` with none of those words is not this extra gate. New safety and danger tickets store `reporterCountry` from the account `country` or `homeCountry`, `authorityReferredAt: 0`, and `authorityTrackerVisible: false`.
+High and critical safety cases reuse `hotline_tickets.authorities`. A case is high or critical when `deskSeverity` or `safetyType` is `high`, `critical`, `bullying`, `cyberbullying`, `harassment`, `abuse`, or `self_harm_concern`, or when the text matches threats of violence, assault, sexual content or exploitation, extortion, self-harm risk, or a hate crime. Before `solved` or `closed`, the Desk records refer (`required: yes`, `status: to_be_informed`) or not needed (`required: no`, `status: not_required`, reason at least 3 characters). Refer cannot close until the referral is sent and the status is `informed`, `acknowledged`, or `closed_by_authority`. A parent SafeLine ticket keeps the older close check. Low `unsafe_other` with none of those words is not this extra gate. New safety and danger tickets store `reporterCountry` from the account `country` or `homeCountry`, `authorityReferredAt: 0`, and `authorityTrackerVisible: false`.
 
 Nothing is emailed unless `POST /api/bullying/authority-send` has `send: true`. A verified partner is a `users` document with `partnerKind` of `police` or `child_protection`, `verification.tier` at least 4, and the same country (Malaysia and `MY` match). If both the partner and the report have a state, those must match. The Desk list returns `{ id, name, kind, country }` and never an email. Mail uses the account email only when it already matches an email shape. If that partner has no email, the Desk pushes the case link instead. The message is from `Poket School <safety@poketschool.ai>` and is rejected if it contains the reporter's name. An evidence PDF is attached only when the evidence note does not name the reporter.
 
@@ -2808,11 +2808,11 @@ The requested path `legal/safetyTerms/{version}` is stored as the document `lega
 
 Each acknowledgement is one `appendChain` entry on that audit subcollection. The action is `safety_terms_ack`. The entry stores `uid`, `version`, and `timestamp` in addition to the usual chain fields. The user document also stores `safetyTermsAckVersion` and `safetyTermsAckAt` so the next check is one read. Those two fields are not in `selfServiceFields()`, so a client cannot write them. A matching version is not written again. A different version asks for a new acknowledgement.
 
-`POST /api/safety/terms-ack` writes the acknowledgement. `GET /api/safety/terms` returns the current version, whether this account still needs to acknowledge it, and whether the account is under 13. Non-emergency safety writes call `requireSafetyTerms` at the route: a safety report, a hotline ticket, evidence, restrict, mute, block, desk restrict, a school referral, ET AI support chat, a school notice, school-notice consent, and an authority decision, send, or outcome. A support chat whose text is `critical` self-harm risk skips the acknowledgement so the report can still be filed. The check is not inside `fileSafetyReport` or `raiseDanger`.
+`POST /api/safety/terms-ack` writes the acknowledgement. `GET /api/safety/terms` returns the current version, whether this account still needs to acknowledge it, and whether the account is under 13. Non-emergency safety writes call `requireSafetyTerms` at the route: a safety report, a SafeLine ticket, evidence, restrict, mute, block, desk restrict, a school referral, ET AI support chat, a school notice, school-notice consent, and an authority decision, send, or outcome. A support chat whose text is `critical` self-harm risk skips the acknowledgement so the report can still be filed. The check is not inside `fileSafetyReport` or `raiseDanger`.
 
 These actions never wait for the disclaimer or the acknowledgement: I'm in danger (`danger`), the danger acknowledgement (`ack`), emergency numbers, roll-call I'm safe and Need help (`check-in`), and an Amber receipt (`lib/server/emergency.ts` and the Amber opt-in route). The I'm in danger button stays above the short footer. The footer does not cover it.
 
-The short footer is the draft headline with the local emergency number, the goodwill sentence, and a link to `/safety-terms`. It is on `/amber/{id}`, the hotline and report pages, I'm in danger, `/stand-up-to-bullying`, the Safety Desk, ET AI support, Get help near me, school-notice pages, and authority case pages. School-notice email, the authority partner message, the authority referral pack, the staff case-card email, and the failed-notice email append the same footer. When the country is unknown the email uses `999`. The SMS body is `caseCardSms` and `safetyDeskSmsText`. This build has no SMS provider, so nothing is sent or logged as a failed SMS.
+The short footer is the draft headline with the local emergency number, the goodwill sentence, and a link to `/safety-terms`. It is on `/amber/{id}`, the SafeLine and report pages, I'm in danger, `/stand-up-to-bullying`, the Safety Desk, ET AI support, Get help near me, school-notice pages, and authority case pages. School-notice email, the authority partner message, the authority referral pack, the staff case-card email, and the failed-notice email append the same footer. When the country is unknown the email uses `999`. The SMS body is `caseCardSms` and `safetyDeskSmsText`. This build has no SMS provider, so nothing is sent or logged as a failed SMS.
 
 | Method | Path |
 | --- | --- |

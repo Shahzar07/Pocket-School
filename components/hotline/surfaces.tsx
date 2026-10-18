@@ -75,7 +75,7 @@ export function ParentHotline() {
       <style>{CSS}</style>
       <header className="hk-header">
         <p className="hk-kicker">Poket School</p>
-        <h1 className="hk-title">School hotline</h1>
+        <h1 className="hk-title">Poket SafeLine</h1>
         <p className="hk-sub">Write to your child’s school. Safeguarding notes go only to the principal or the safeguarding lead.</p>
       </header>
       <div className="hk-body">
@@ -118,7 +118,7 @@ export function StaffQueue() {
       <style>{CSS}</style>
       <header className="hk-header">
         <p className="hk-kicker">Poket School</p>
-        <h1 className="hk-title">Hotline queue</h1>
+        <h1 className="hk-title">Poket SafeLine</h1>
         <p className="hk-sub">Filter the desk. Bullying and safeguarding tickets stay with the principal and the safeguarding lead.</p>
       </header>
       <div className="hk-body">

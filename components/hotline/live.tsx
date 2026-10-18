@@ -270,7 +270,7 @@ export function ParentHotlineLive({
     <DashPage>
       <DashHeader
         eyebrow="Poket School"
-        title="School hotline"
+        title="Poket SafeLine"
         description="Write to your child’s school. Safeguarding notes go only to the principal or the safeguarding lead."
       />
       <SafetyTermsNotice sample={sample} onAcked={() => setTermsAcked(true)} />
@@ -316,7 +316,7 @@ export function ParentHotlineLive({
         </label>
         <button type="submit" disabled={busy} className="min-h-12 rounded-xl bg-primary px-4 font-semibold text-primary-foreground">Send to the school</button>
       </form>
-      {note ? <AlertCard tone="good" title="Hotline" detail={note} /> : null}
+      {note ? <AlertCard tone="good" title="Poket SafeLine" detail={note} /> : null}
       {tickets.length === 0 ? (
         <Panel><EmptyState title="No tickets yet" detail="A ticket you send will stay here so you can follow it." /></Panel>
       ) : tickets.map(ticket => (
@@ -410,7 +410,7 @@ export function StaffHotlineLive({ sample = false }: { sample?: boolean }) {
     <DashPage>
       <DashHeader
         eyebrow="Poket School"
-        title="Hotline queue"
+        title="Poket SafeLine"
         description="Filter the desk. Bullying and safeguarding tickets stay with the principal and the safeguarding lead."
       />
       <div className="grid gap-3 sm:grid-cols-3">

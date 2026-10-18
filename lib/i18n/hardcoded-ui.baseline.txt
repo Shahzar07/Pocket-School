@@ -2576,7 +2576,7 @@ components/hotline/live.tsx	Create a draft
 components/hotline/live.tsx	Emergency desk
 components/hotline/live.tsx	Guardian consent
 components/hotline/live.tsx	Guardian name
-components/hotline/live.tsx	Hotline queue
+components/hotline/live.tsx	Poket SafeLine
 components/hotline/live.tsx	New ticket
 components/hotline/live.tsx	No tickets yet
 components/hotline/live.tsx	Not required
@@ -2592,7 +2592,7 @@ components/hotline/live.tsx	Retraction reason
 components/hotline/live.tsx	Review is every 24 hours. A missing child draft needs the authority before it is saved.
 components/hotline/live.tsx	Save draft
 components/hotline/live.tsx	Save status
-components/hotline/live.tsx	School hotline
+components/hotline/surfaces.tsx	Poket SafeLine
 components/hotline/live.tsx	Second person confirms
 components/hotline/live.tsx	Send reply
 components/hotline/live.tsx	Send to
@@ -2617,7 +2617,7 @@ components/hotline/surfaces.tsx	Filter the desk. Bullying and safeguarding ticke
 components/hotline/surfaces.tsx	Get help near me
 components/hotline/surfaces.tsx	High priority. Four working hours. Only the safeguarding lead can see this.
 components/hotline/surfaces.tsx	Homework load this week
-components/hotline/surfaces.tsx	Hotline queue
+components/hotline/surfaces.tsx	Poket SafeLine
 components/hotline/surfaces.tsx	In progress
 components/hotline/surfaces.tsx	Keep in view
 components/hotline/surfaces.tsx	Late pickup on Thursday
@@ -2631,7 +2631,7 @@ components/hotline/surfaces.tsx	Region comes from the school, not a home address
 components/hotline/surfaces.tsx	Report this alert
 components/hotline/surfaces.tsx	Retracted. This page is no longer shared.
 components/hotline/surfaces.tsx	Safeguarding tickets are hidden from this desk.
-components/hotline/surfaces.tsx	School hotline
+components/hotline/surfaces.tsx	Poket SafeLine
 components/hotline/surfaces.tsx	Send to the school
 components/hotline/surfaces.tsx	Three working days. Assigned to the class teacher.
 components/hotline/surfaces.tsx	Three working days. Assigned to the class teacher. Authorities reminder after four hours.
