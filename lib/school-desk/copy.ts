@@ -1,7 +1,14 @@
 /** Visible desk copy. Kept out of TSX literals so the i18n scan stays stable. */
 
 export const deskCopy = {
-  sample: 'Sample data for Rochford’s International School. It is not a live register. Changes stay in this browser until the Firebase Admin key can save the school.',
+  sample: 'Demo account for Rochford’s International School. It is not the school register and it is not saved.',
+  liveBadge: 'School record',
+  liveSaved: 'Saved for this school, class, and student.',
+  liveEmpty: 'No classes saved yet. Create a class and it is stored on the school record.',
+  studentRecord: 'Student record',
+  parentMarks: 'Class marks',
+  parentReports: 'Class reports',
+  parentEmpty: 'Nothing published for this student yet.',
   signedIn: 'Signed in as Aisha Rahman, teacher at Rochford’s International School, Falim campus.',
   whoTitle: 'How this record is organised',
   chain: 'Institution, then class, then student, then the assignment or course.',

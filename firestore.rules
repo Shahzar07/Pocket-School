@@ -558,16 +558,38 @@ service cloud.firestore {
       }
 
       // Canonical copy of a daily goal, including the link and the visibility flag.
+      // Teachers read goals shared with them. They update or delete only a goal they assigned.
+      // An institution admin writes source institution for their own school.
       match /goals/{goalId} {
-        allow read: if isUser(userId) || isAdmin()
-          || (linkedTo(userId) && resource.data.get('private', false) != true && resource.data.get('parentVisibility', true) != false)
-          || (isTeacherOrAdmin() && resource.data.get('private', false) != true && resource.data.get('shareWithTeachers', false) == true && resource.data.get('teacherIds', []).hasAny([request.auth.uid]));
+        allow read: if isUser(userId) || isAdmin();
+        allow read: if linkedTo(userId) && resource.data.get('private', false) != true && resource.data.get('parentVisibility', true) != false;
+        // Separate from the path checks so a collection-group list can be proven:
+        // private == false, shareWithTeachers == true, teacherIds contains the teacher.
+        allow read: if isTeacherOrAdmin()
+          && resource.data.private == false
+          && resource.data.shareWithTeachers == true
+          && resource.data.teacherIds.hasAny([request.auth.uid]);
         allow create: if (isUser(userId) && incoming().get('source', 'self') in ['self', 'student', 'et_ai'])
           || (linkedTo(userId) && incoming().source == 'parent')
-          || (isTeacherOrAdmin() && incoming().source == 'teacher')
+          || (isTeacherOrAdmin() && incoming().source == 'teacher' && incoming().get('assignedBy', '') == request.auth.uid)
+          || (isInstitutionAdmin() && incoming().source == 'institution' && incoming().get('institutionId', '') == myInstitution())
           || isAdmin();
-        allow update: if isUser(userId) || isAdmin() || (linkedTo(userId) && incoming().get('source', '') == resource.data.get('source', ''));
-        allow delete: if isAdmin() || (isUser(userId) && resource.data.get('source', 'self') in ['self', 'student']);
+        allow update: if isUser(userId) || isAdmin()
+          || (linkedTo(userId) && incoming().get('source', '') == resource.data.get('source', ''))
+          || (isTeacherOrAdmin()
+              && resource.data.get('source', '') == 'teacher'
+              && resource.data.get('assignedBy', '') == request.auth.uid
+              && incoming().get('source', '') == 'teacher'
+              && incoming().get('assignedBy', '') == request.auth.uid)
+          || (isInstitutionAdmin()
+              && resource.data.get('source', '') == 'institution'
+              && resource.data.get('institutionId', '') == myInstitution()
+              && incoming().get('source', '') == 'institution'
+              && incoming().get('institutionId', '') == myInstitution());
+        allow delete: if isAdmin()
+          || (isUser(userId) && resource.data.get('source', 'self') in ['self', 'student'])
+          || (isTeacherOrAdmin() && resource.data.get('source', '') == 'teacher' && resource.data.get('assignedBy', '') == request.auth.uid)
+          || (isInstitutionAdmin() && resource.data.get('source', '') == 'institution' && resource.data.get('institutionId', '') == myInstitution());
       }
 
       match /goal_reschedules/{logId} {
@@ -1771,34 +1793,10 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('childIds', []).hasAny([uid]);
     }
 
-    // Assigned goals. daily_goals stays the student's own list.
-    // source self matches older student. source et_ai matches older ai.
-    // Parent and teacher read (private, parentVisibility, shareWithTeachers,
-    // teacherIds) is added on PR #144. This match is not deployed.
-    // source=teacher goals are deleted only by the teacher who assigned them.
-    // A student cannot delete a teacher or institution goal.
-    match /users/{userId}/goals/{goalId} {
-      allow read: if isSignedIn() && (
-        isUser(userId) || isParentOf(userId) || isTeacherOrAdmin() || isAdmin()
-      );
-      allow create: if isSignedIn() && incoming().studentId == userId && (
-        (isUser(userId) && incoming().source == 'student' && incoming().assignedBy == request.auth.uid)
-        || (isTeacherOrAdmin() && incoming().source == 'teacher' && incoming().assignedBy == request.auth.uid)
-        || ((isInstitutionAdmin() || isAdmin()) && incoming().source == 'institution')
-        || isAdmin()
-      );
-      allow update: if isAdmin()
-        || (isUser(userId) && resource.data.source == 'student')
-        || (isTeacherOrAdmin() && resource.data.source == 'teacher' && resource.data.assignedBy == request.auth.uid)
-        || (isInstitutionAdmin() && (resource.data.source == 'institution' || resource.data.source == 'teacher'));
-      allow delete: if isAdmin()
-        || (resource.data.source == 'student' && isUser(userId))
-        || (resource.data.source == 'teacher' && resource.data.assignedBy == request.auth.uid)
-        || (resource.data.source == 'institution' && (isInstitutionAdmin() || isAdmin()));
-    }
-
     match /school_classes/{classId} {
-      allow read: if isSignedIn();
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.ownerTeacherId == request.auth.uid)
+        || (isInstitutionAdmin() && resource.data.get('institutionId', '') == myInstitution());
       allow create, update: if isAdmin()
         || (isInstitutionAdmin() && incoming().institutionId == myInstitution())
         || (isTeacherOrAdmin()
@@ -1809,25 +1807,55 @@ service cloud.firestore {
         || (isTeacherOrAdmin() && resource.data.ownerTeacherId == request.auth.uid);
     }
 
+    function classStaffWrite() {
+      return isAdmin()
+        || (isTeacherOrAdmin() && incoming().ownerTeacherId == request.auth.uid)
+        || (isInstitutionAdmin() && incoming().get('institutionId', '') != '' && incoming().institutionId == myInstitution());
+    }
+    function classStaffRead() {
+      return isAdmin()
+        || resource.data.ownerTeacherId == request.auth.uid
+        || (isInstitutionAdmin() && resource.data.get('institutionId', '') != '' && resource.data.institutionId == myInstitution());
+    }
+    function familyRead() {
+      return resource.data.studentId == request.auth.uid || linkedTo(resource.data.studentId);
+    }
+
     match /school_enrolments/{enrolmentId} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isTeacherOrAdmin() || isAdmin();
+      allow read: if classStaffRead();
+      allow read: if familyRead();
+      allow create, update: if classStaffWrite();
+      allow delete: if isAdmin() || classStaffRead();
     }
 
     match /school_assessments/{assessmentId} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isTeacherOrAdmin() || isAdmin();
+      allow read: if classStaffRead();
+      allow create, update: if classStaffWrite();
+      allow delete: if isAdmin() || classStaffRead();
     }
 
     match /school_marks/{markId} {
-      allow read: if isSignedIn();
-      allow create, update: if isTeacherOrAdmin() || isAdmin();
-      allow delete: if isAdmin();
+      allow read: if classStaffRead();
+      allow read: if familyRead();
+      allow create, update: if classStaffWrite();
+      allow delete: if isAdmin() || (isTeacherOrAdmin() && resource.data.ownerTeacherId == request.auth.uid);
+    }
+
+    match /school_reports/{reportId} {
+      allow read: if classStaffRead();
+      allow read: if familyRead();
+      allow create, update: if classStaffWrite();
+      allow delete: if isAdmin() || (isTeacherOrAdmin() && resource.data.ownerTeacherId == request.auth.uid);
+    }
+
+    match /school_settings/{userId} {
+      allow read, write: if isUser(userId) && isTeacherOrAdmin();
     }
 
     match /school_attendance/{rowId} {
-      allow read: if isSignedIn();
-      allow create, update: if isTeacherOrAdmin() || isAdmin();
+      allow read: if classStaffRead();
+      allow read: if familyRead();
+      allow create, update: if classStaffWrite();
       allow delete: if isAdmin();
     }
 

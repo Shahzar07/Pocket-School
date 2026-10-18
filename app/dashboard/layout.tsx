@@ -44,7 +44,6 @@ import { AdminViewAsBanner, clearViewAs, useAdminIdle, useViewAs } from '@/compo
 import { isSuperAdmin, ROLE_LABELS } from '@/lib/roles';
 import { PipGuide } from '@/components/pip-guide';
 import { AllStaffBanner } from '@/components/alerts/all-staff';
-import { RouteDesk } from '@/components/school-desk/route-desk';
 import { OfflineBanner } from '@/components/offline-banner';
 import { RoleChecklist } from '@/components/role-checklist';
 import { WelcomeResume } from '@/components/onboarding/welcome-session';

@@ -25,7 +25,7 @@ Classes, grade scales, the gradebook, assignments, report cards, and teacher-ass
 | `/dashboard/teacher/courses/build` | Teacher | Built | One course draft | This form | Course editor |
 | `/dashboard/teacher/courses/[courseId]` | Teacher | Built | One course | Course builder | Preview, marketplace |
 | `/dashboard/teacher/courses/[courseId]/preview` | Teacher | Built | One course | Course builder | Student course page |
-| `/dashboard/teacher/earnings` | Teacher | Built | Sample ledger by course, live session, institution payment, and revenue share | Gateway webhooks when keys exist. Sample rows until then. | Wallet, admin finance, MyInvois-ready invoice fields |
+| `/dashboard/teacher/earnings` | Teacher | Built | invoices where createdBy is the signed-in teacher | Course sales and the tutoring offer. | Wallet, admin finance, MyInvois-ready invoice fields |
 | `/courses` | Teacher | Built | Published courses | Course publish | Earnings |
 | `/reads` | Teacher | Built | Reads library | Reads studio | Student reading goals |
 | `/dashboard/wallet` | Teacher | Built | Wallet ledger | Checkout | Earnings |
@@ -35,14 +35,14 @@ Classes, grade scales, the gradebook, assignments, report cards, and teacher-ass
 | `/dashboard/teacher/analytics` | Teacher | Built | Quiz submissions for owned courses, plus the class selector | Lesson quizzes | Insights, gradebook |
 | `/dashboard/teacher/insights` | Teacher | Built | Class narrative | Insight job | Analytics |
 | `/dashboard/teacher/progress` | Teacher | Built | At-risk signals | Nightly job | Goals |
-| `/dashboard/teacher/goals` | Teacher | Built | Every users/{uid}/goals row for students on the class roster | Teacher assigns source teacher. Institution admin assigns source institution. Self, ET AI, and parent goals are shown and not edited here. | Student goals, report cards, ET AI planner |
+| `/dashboard/teacher/goals` | Teacher | Built | users/{uid}/goals shared with this teacher, plus the student daily goals list | Teacher assigns source teacher. Institution admin assigns source institution. Self, ET AI, and parent goals show when they are shared. | Student goals, report cards, ET AI planner |
 | `/dashboard/teacher/references` | Teacher | Built | Reference letters | Reference form | Student record |
 | `/dashboard/teacher/gradebook` | Teacher | Built | school_marks on school_assessments for one class and term | Inline entry, CSV import, or a returned assignment | Student dashboard, parent notice, report cards, analytics, goals, certificates |
 | `/dashboard/teacher/assignments` | Teacher | Built | Class or named students, rubric, due time, scale, late policy | Create form. Students submit from the student view. | Gradebook, student, parent, goals |
 | `/dashboard/teacher/exams` | Teacher | Built | Exams, with the class selector | Existing exam form. Mock exam also sits on the gradebook. | Gradebook, student exams |
 | `/dashboard/teacher/report-cards` | Teacher | Built | Gradebook, attendance, merits, goals, school branding | Build per student or the whole class, review, publish | Parent acknowledgement, PDF, verification QR |
-| `/dashboard/teacher/report-studio` | Teacher and institution | Built | Templates over the same class record | Pick template, scope, dates, preview, export, schedule | Parents, PDF, CSV |
-| `/dashboard/teacher/attendance` | Teacher | Built | school_attendance for a class session | Roster marks, bulk present, live-login sample | Report cards, Report Studio, parent dashboard |
+| `/dashboard/teacher/report-studio` | Teacher and institution | Built | Course grades, report templates, and saved report cards | The live Report Studio page. Class report cards are saved beside it. | Parents, PDF, CSV |
+| `/dashboard/teacher/attendance` | Teacher | Built | Course attendance records | The live attendance register for a course. | Report cards, Report Studio, parent dashboard |
 | `/dashboard/teacher/live` | Teacher | Built | Live rooms | Existing scheduler. Attendance can copy a live session. | Attendance |
 | `/dashboard/teacher/integrity` | Teacher | Built | Integrity cases | Existing case form | Report card note |
 | `/dashboard/teacher/integrity/cases` | Teacher | Built | Case queue | Integrity review | Integrity |

@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, browserLocalPersistence, setPersistence, connectAuthEmulator } from 'firebase/auth';
-import { getFirestore, initializeFirestore, persistentLocalCache, connectFirestoreEmulator } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, persistentLocalCache, memoryLocalCache, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import firebaseConfig from '../firebase-applet-config.json';
 
@@ -11,8 +11,10 @@ function openFirestore() {
   // The app reads the same note documents. Persistence lets an edit made
   // offline sync when the browser reconnects. The server render has no cache.
   if (typeof window === 'undefined') return getFirestore(app, databaseId);
+  // IndexedDB persistence asserts against the emulator when a listener errors.
+  const localCache = process.env.NEXT_PUBLIC_FIREBASE_EMULATORS === '1' ? memoryLocalCache() : persistentLocalCache();
   try {
-    return initializeFirestore(app, { localCache: persistentLocalCache() }, databaseId);
+    return initializeFirestore(app, { localCache }, databaseId);
   } catch {
     return getFirestore(app, databaseId);
   }

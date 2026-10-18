@@ -38,6 +38,7 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
   const [news, setNews] = useState('');
   const [error, setError] = useState('');
   const [inviteName, setInviteName] = useState('Hana Ibrahim');
+  const [studentRecord, setStudentRecord] = useState('');
   const [consoleOn, setConsoleOn] = useState(role === 'institution_admin');
   const [edit, setEdit] = useState(form);
 
@@ -182,7 +183,7 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
             <select className={deskStyles.field} value={form.level} onChange={(event) => setField('level', event.target.value)} aria-label={t.filterLevel}>
               {LEVELS.map((item) => <option key={item}>{item}</option>)}
             </select>
-            <button type="submit" className={deskStyles.btn}>{t.create}</button>
+            <button type="submit" className={deskStyles.btn} data-action="create-class">{t.create}</button>
             {error ? <p className="text-sm text-[#1E6A83] sm:col-span-2">{error}</p> : null}
           </form>
           {klass ? (
@@ -243,14 +244,15 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
                     <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#1E6A83]/15 px-3 py-2 text-sm">
                       <span>{item.studentName} · {item.joinMethod} · {item.status}{item.holdReason ? ` · ${item.holdReason}` : ''}</span>
                       {item.status === 'pending' ? (
-                        <button type="button" className={deskStyles.btn} onClick={() => setState(approveEnrolment(state, item.id, state.actorName))}>{t.approveJoin}</button>
+                        <button type="button" data-action="approve-join" className={deskStyles.btn} onClick={() => setState(approveEnrolment(state, item.id, state.actorName))}>{t.approveJoin}</button>
                       ) : null}
                     </div>
                   ))}
                   <textarea className="h-20 w-full rounded-2xl border border-[#1E6A83]/30 p-3 text-sm" value={csv} onChange={(event) => setCsv(event.target.value)} aria-label={t.importCsv} />
                   <button type="button" className={deskStyles.ghost} onClick={() => setState(importRoster(state, klass.id, csv, state.actorName))}>{t.importCsv}</button>
                   <input className={deskStyles.field} value={inviteName} onChange={(event) => setInviteName(event.target.value)} aria-label={t.inviteStudent} />
-                  <button type="button" className={deskStyles.ghost} onClick={() => setState(addEnrolment(state, { classId: klass.id, studentName: inviteName || 'Invited student', under18: true, institutionMember: true, joinMethod: 'invite' as JoinMethod }, state.actorName))}>{t.sendInvite}</button>
+                  <input className={deskStyles.field} value={studentRecord} onChange={(event) => setStudentRecord(event.target.value)} aria-label={t.studentRecord} />
+                  <button type="button" data-action="invite-student" className={deskStyles.ghost} onClick={() => setState(addEnrolment(state, { classId: klass.id, studentName: inviteName || 'Invited student', studentId: studentRecord, under18: true, institutionMember: true, joinMethod: 'invite' as JoinMethod }, state.actorName))}>{t.sendInvite}</button>
                   <button type="button" className={deskStyles.ghost} onClick={() => setState(addEnrolment(state, { classId: klass.id, studentName: inviteName || 'Code student', under18: true, institutionMember: true, joinMethod: 'code' as JoinMethod }, state.actorName))}>{t.joinByCode}</button>
                   <button type="button" className={deskStyles.ghost} onClick={() => setState(addEnrolment(state, { classId: klass.id, studentName: 'Walk-in student', under18: true, institutionMember: false, joinMethod: 'code' as JoinMethod }, state.actorName))}>{t.addMinor}</button>
                   <p className="text-sm text-[#1E6A83]">{t.blockedMinor}</p>

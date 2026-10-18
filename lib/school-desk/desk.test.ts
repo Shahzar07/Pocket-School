@@ -220,6 +220,46 @@ test('a sale net is split minus fees and refunds, and an exam lands on the grade
   assert.equal(AUDIT.filter((row) => row.status !== 'Built').length, 0);
 });
 
+test('a live desk starts empty and a teacher goal keeps that teacher', () => {
+  const live = emptyDesk({ uid: 'teacher-1', name: 'Test Teacher', institutionId: 'live-school' });
+  assert.equal(live.institution.demo, false);
+  assert.equal(live.classes.length, 0);
+  assert.equal(live.classes.some((item) => item.name.includes('Rochford') || item.id === 'class-maths'), false);
+  const made = createClass(live, {
+    name: 'Live Biology',
+    subject: 'Biology',
+    level: 'IGCSE',
+    programme: 'Cambridge IGCSE',
+    term: 'Term 1',
+    campus: 'Falim',
+    room: 'G-2',
+    timetable: 'Tue 10:00',
+    coTeachers: [],
+    capacity: 20,
+    ownerTeacherId: 'teacher-1',
+    ownerTeacherName: 'Test Teacher',
+    createdByRole: 'teacher',
+  }, 'teacher');
+  assert.equal(made.error, '');
+  assert.equal(made.state.classes.length, 1);
+  assert.equal(made.state.institution.demo, false);
+  const goal = goalRecord({
+    id: 'goal-live',
+    studentId: 'student-1',
+    studentName: 'Hana Ibrahim',
+    classId: made.state.classes[0]?.id ?? '',
+    title: 'Revise graphs',
+    source: 'teacher',
+    assignedBy: 'teacher-1',
+    assignedByName: 'Test Teacher',
+    due: '2026-10-25',
+    topic: 'Graphs',
+  });
+  assert.deepEqual(goal.teacherIds, ['teacher-1']);
+  assert.equal(goal.shareWithTeachers, true);
+  assert.equal(goal.private, false);
+});
+
 test('the audit document lists every catalogue route', () => {
   const markdown = auditMarkdown();
   for (const row of AUDIT) assert.ok(markdown.includes(row.route), row.route);

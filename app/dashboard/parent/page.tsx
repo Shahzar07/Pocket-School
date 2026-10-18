@@ -28,6 +28,7 @@ import dynamic from 'next/dynamic';
 import { SeeMore } from '@/components/shell/see-more';
 import { friendlyError } from '@/lib/design/system';
 import { SafeLineBanner } from '@/components/safety/safeline-banner';
+import { ParentClassRecord } from '@/components/school-desk/parent-record';
 import { lessonVisibleToStudent } from '@/lib/course-review';
 
 const LearningCharts = dynamic(
@@ -268,6 +269,7 @@ export default function ParentDashboard() {
   return (
     <DashPage>
       <SafeLineBanner />
+      <ParentClassRecord childIds={profile?.childIds ?? []} />
       <DashboardHome
         role="parent"
         name={parentName}

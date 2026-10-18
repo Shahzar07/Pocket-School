@@ -96,7 +96,7 @@ export function AssignmentsDesk({ base = 'dashboard' }: { base?: 'dashboard' | '
             <input className={deskStyles.field} value={cutoff} onChange={(event) => setCutoff(event.target.value)} aria-label={t.cutoffLabel} />
           </div>
           <p className="text-xs text-[#1E6A83]">{LEVELS.join(', ')}</p>
-          <button type="submit" className={deskStyles.btn}>{t.create}</button>
+          <button type="submit" className={deskStyles.btn} data-action="create-assessment">{t.create}</button>
           {message ? <p className="text-sm text-[#1E6A83]">{message}</p> : null}
         </form>
         <section className="rounded-3xl bg-white p-5">

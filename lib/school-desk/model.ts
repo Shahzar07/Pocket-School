@@ -1,7 +1,7 @@
 /**
- * One class record for assignments, the gradebook, attendance, goals,
- * reports, and the parent view. The browser keeps a labelled Rochford
- * sample until the Firebase Admin key can write school_* documents.
+ * One class record for assignments, the gradebook, goals, and reports.
+ * A signed-in teacher reads and writes Firestore. The Rochford fixture is
+ * only a demo desk or a seed, never the live source.
  */
 
 export const LEVELS = ['Primary', 'Lower Secondary', 'IGCSE', 'A-Level'] as const;
@@ -389,7 +389,11 @@ export function goalRecord(input: GoalWrite): AssignedGoal {
     private: input.private ?? false,
     parentVisibility: input.parentVisibility ?? true,
     shareWithTeachers: input.shareWithTeachers ?? true,
-    teacherIds: input.teacherIds?.length ? input.teacherIds : ['teacher-aisha'],
+    teacherIds: input.teacherIds?.length
+      ? input.teacherIds
+      : input.source === 'teacher' && input.assignedBy
+        ? [input.assignedBy]
+        : ['teacher-aisha'],
     mirrorId: input.mirrorId ?? input.id,
   };
 }
@@ -652,16 +656,19 @@ export function updateClass(state: DeskState, classId: string, patch: Partial<Sc
 }
 
 export function setTeachingMode(state: DeskState, mode: 'school' | 'independent'): DeskState {
-  const school = createDemoDesk().institution;
+  if (mode === 'school' && state.institution.demo) {
+    return stamp({ ...state, institution: createDemoDesk().institution }, state.actorName, 'school classes', state.institution.name);
+  }
   const institution: SchoolInstitution = mode === 'school'
-    ? school
+    ? { ...state.institution, kind: 'school', teachersCanCreateClasses: true, demo: state.institution.demo }
     : {
       ...state.institution,
-      id: 'independent',
+      id: state.institution.demo ? 'independent' : '',
       name: 'Independent teaching',
       campus: 'Online',
       kind: 'independent',
       teachersCanCreateClasses: true,
+      demo: state.institution.demo,
       branding: 'No school attached',
     };
   return stamp({ ...state, institution }, state.actorName, mode === 'school' ? 'school classes' : 'independent classes', institution.name);
@@ -796,16 +803,17 @@ export function updateFlow(state: DeskState, flowId: string, patch: Partial<Flow
 
 export function addEnrolment(
   state: DeskState,
-  input: { classId: string; studentName: string; under18: boolean; institutionMember: boolean; joinMethod: JoinMethod },
+  input: { classId: string; studentName: string; under18: boolean; institutionMember: boolean; joinMethod: JoinMethod; studentId?: string },
   actor: string,
 ): DeskState {
   const made = id(state, 'enrol');
   const school = state.institution.kind === 'school';
   const blocked = input.under18 && school && !input.institutionMember;
+  const recordId = input.studentId?.trim() || '';
   const row: Enrolment = {
     id: made.id,
     classId: input.classId,
-    studentId: `stu-${made.id}`,
+    studentId: recordId || `stu-${made.id}`,
     studentName: input.studentName,
     status: blocked ? 'pending' : 'pending',
     joinMethod: input.joinMethod,
@@ -1226,6 +1234,48 @@ export function createDemoDesk(): DeskState {
       { id: 'flow-ann', flow: 'announcement', classId: klass.id, studentId: '', studentName: 'Whole class', title: 'Mock week', detail: 'Bring a calculator on 27 October.', status: 'Published', when: '2026-10-18' },
       { id: 'flow-ref', flow: 'reference', classId: klass.id, studentId: 'stu-amina', studentName: 'Amina Yusuf', title: 'Mathematics reference', detail: 'Predicted grade 8. Draft until the teacher signs it.', status: 'Draft', when: '2026-10-18' },
     ],
+  };
+}
+
+/** A signed-in teacher starts here. No Rochford rows. */
+export function emptyDesk(actor: { uid: string; name: string; institutionId?: string; institutionName?: string }): DeskState {
+  const institutionId = actor.institutionId?.trim() || '';
+  const institution: SchoolInstitution = {
+    id: institutionId,
+    name: actor.institutionName?.trim() || (institutionId ? 'School' : 'Independent teaching'),
+    campus: '',
+    kind: institutionId ? 'school' : 'independent',
+    defaultScale: 'igcse_9_1',
+    customBands: [
+      { min: 85, grade: 'Distinction' },
+      { min: 60, grade: 'Merit' },
+      { min: 40, grade: 'Pass' },
+      { min: 0, grade: 'Fail' },
+    ],
+    teachersCanCreateClasses: true,
+    demo: false,
+    branding: '',
+  };
+  return {
+    seq: 1,
+    actorId: actor.uid,
+    actorName: actor.name || 'Teacher',
+    institution,
+    classes: [],
+    enrolments: [],
+    assessments: [],
+    submissions: [],
+    marks: [],
+    attendance: [],
+    goals: [],
+    merits: [],
+    reports: [],
+    notices: [],
+    audit: [],
+    earnings: [],
+    payouts: [],
+    payout: { schedule: '', method: '', tin: '', invoice: '', sst: '' },
+    flows: [],
   };
 }
 

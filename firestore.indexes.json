@@ -1635,6 +1635,24 @@
         { "fieldPath": "remindedAt", "order": "ASCENDING" },
         { "fieldPath": "remindAt", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "goals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "private", "order": "ASCENDING" },
+        { "fieldPath": "shareWithTeachers", "order": "ASCENDING" },
+        { "fieldPath": "teacherIds", "arrayConfig": "CONTAINS" }
+      ]
+    },
+    {
+      "collectionGroup": "goals",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "private", "order": "ASCENDING" },
+        { "fieldPath": "shareWithTeachers", "order": "ASCENDING" },
+        { "fieldPath": "teacherIds", "arrayConfig": "CONTAINS" }
+      ]
     }
   ],
   "fieldOverrides": [
