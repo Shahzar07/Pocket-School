@@ -6,10 +6,12 @@ import { toast } from 'sonner';
 import { InstitutionDirectory } from '@/components/institutions/directory';
 import { SignupControls } from '@/components/institutions/signup-controls';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { isInstitutionAdmin, isSuperAdmin } from '@/lib/roles';
+import { isInstitutionAdmin } from '@/lib/roles';
+import { resolveStaffRole } from '@/lib/admin-console';
+import { authedFetch } from '@/lib/api-client';
+import { INSTITUTION_KEY_MESSAGE } from '@/lib/institutions/rochford';
 import type { DirectoryRow, LeadStatus } from '@/lib/enterprise';
 import {
-  createInstitutionBundle,
   listDemoLeads,
   loadDirectory,
   recordAudit,
@@ -23,8 +25,8 @@ import {
 export default function AdminInstitutions() {
   const router = useRouter();
   const { user, profile, loading } = useAuthSTORE();
-  const superAdmin = isSuperAdmin(profile);
-  const allowed = superAdmin || isInstitutionAdmin(profile);
+  const superAdmin = resolveStaffRole(profile) === 'super_admin';
+  const allowed = superAdmin || resolveStaffRole(profile) === 'admin' || isInstitutionAdmin(profile);
   const [rows, setRows] = useState<DirectoryRow[]>([]);
   const [leads, setLeads] = useState<DemoLead[]>([]);
   const [ready, setReady] = useState(false);
@@ -90,16 +92,42 @@ export default function AdminInstitutions() {
             : recordAudit(profile.institutionId, event);
           void write.catch(() => undefined);
         }}
-        onCreate={async ({ name, profile: next }) => {
-          if (!user || !superAdmin) return;
+        onCreate={async ({ name, profile: next, details, fixture }) => {
+          if (!user || !superAdmin) return false;
           setBusy(true);
           try {
-            const id = await createInstitutionBundle({ name, profile: next, adminId: user.uid });
-            await recordAudit(id, { ...actor(), action: 'create-institution', target: id, detail: name });
-            toast.success(`${name} created.`);
+            const data = await authedFetch('/api/admin/institutions', {
+              method: 'POST',
+              body: JSON.stringify(fixture === 'rochford' ? { fixture } : {
+                name,
+                type: next.type,
+                plan: next.plan,
+                country: next.country,
+                state: next.state,
+                seats: next.seatCount,
+                group: details?.group ?? '',
+                campuses: details?.campuses ?? '',
+                website: details?.website ?? '',
+                levels: details?.levels ?? '',
+                city: details?.city ?? '',
+                test: details?.test === true,
+              }),
+            });
+            if (data.comingSoon) {
+              const message = typeof data.error === 'string' ? data.error : INSTITUTION_KEY_MESSAGE;
+              toast.error(message);
+              throw new Error(message);
+            }
+            const createdName = typeof data.name === 'string' ? data.name : name;
+            toast.success(data.created === false ? `${createdName} is already on the list.` : `${createdName} created.`);
             await reload();
+            return true;
           } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Could not create that institution.');
+            const message = error instanceof Error && /not configured|coming soon|Admin key/i.test(error.message)
+              ? INSTITUTION_KEY_MESSAGE
+              : error instanceof Error ? error.message : 'Could not create that institution.';
+            toast.error(message);
+            throw new Error(message);
           } finally {
             setBusy(false);
           }

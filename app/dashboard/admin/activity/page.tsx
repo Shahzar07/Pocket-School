@@ -59,6 +59,24 @@ export default function ActivityLogPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allowed]);
 
+  const exportChain = async (format: 'csv' | 'pdf') => {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) return;
+    const params = new URLSearchParams({ export: format, action, actor });
+    const res = await fetch(`/api/admin/desk?${params.toString()}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) {
+      toast.error('Could not export the audit chain.');
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = format === 'pdf' ? 'admin-desk.pdf' : 'admin-desk.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const exportCsv = async () => {
     const token = await auth.currentUser?.getIdToken();
     if (!token) return;
@@ -125,7 +143,7 @@ export default function ActivityLogPage() {
           Sign-ins, role switches, content edits, publishes, deletes, admin actions, and view-as. The server writes every row. Clients cannot change or delete them.
         </p>
         <p className="text-sm mt-2">
-          <Link href="/dashboard/admin/audit" className="underline">Older admin-action log</Link>
+          The older audit address opens this log.
           {' · '}
           <Link href="/dashboard/admin/certificates" className="underline">Certificate template</Link>
         </p>
@@ -157,6 +175,8 @@ export default function ActivityLogPage() {
         </select>
         <Button type="button" className="rounded-full" onClick={() => void load()}>Apply</Button>
         <Button type="button" variant="outline" className="rounded-full" onClick={() => void exportCsv()}>Export CSV</Button>
+        <Button type="button" variant="outline" className="rounded-full" onClick={() => void exportChain('csv')}>Verified CSV</Button>
+        <Button type="button" variant="outline" className="rounded-full" onClick={() => void exportChain('pdf')}>Verified PDF</Button>
       </div>
 
       {loading ? <div className="h-40 bg-muted animate-pulse rounded-3xl" /> : null}

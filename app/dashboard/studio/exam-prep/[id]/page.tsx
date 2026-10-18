@@ -175,13 +175,13 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
                   const done = !!prep.completed?.[it.id];
                   return (
                     <motion.li key={it.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
-                      <Link href={itemHref(prep.id, it)} className={`group flex items-center gap-3 rounded-2xl border px-4 py-3 transition-colors ${done ? 'border-emerald-200 bg-emerald-50/50' : 'border-border hover:border-primary/40 hover:bg-primary/[0.03]'}`}>
-                        <span className={`w-10 h-10 rounded-xl grid place-items-center shrink-0 ${done ? 'bg-emerald-100 text-emerald-700' : it.kind === 'mock' ? 'bg-rose-50 text-rose-600' : 'bg-primary/10 text-primary'}`}><Icon className="w-5 h-5" /></span>
+                      <Link href={itemHref(prep.id, it)} className={`group flex items-center gap-3 rounded-2xl border px-4 py-3 transition-colors ${done ? 'border-success/40 bg-success/50' : 'border-border hover:border-primary/40 hover:bg-primary/[0.03]'}`}>
+                        <span className={`w-10 h-10 rounded-xl grid place-items-center shrink-0 ${done ? 'bg-success/15 text-success' : it.kind === 'mock' ? 'bg-rose-50 text-rose-600' : 'bg-primary/10 text-primary'}`}><Icon className="w-5 h-5" /></span>
                         <span className="flex-1 min-w-0">
-                          <span className={`block font-semibold text-[15px] truncate ${done ? 'text-emerald-900' : 'text-foreground'}`}>{it.title}</span>
+                          <span className={`block font-semibold text-[15px] truncate ${done ? 'text-success' : 'text-foreground'}`}>{it.title}</span>
                           <span className="text-[12px] text-muted-foreground capitalize">{it.kind} · {it.minutes} min</span>
                         </span>
-                        {done ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />}
+                        {done ? <CheckCircle2 className="w-5 h-5 text-success" /> : <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />}
                       </Link>
                     </motion.li>
                   );
@@ -221,7 +221,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
                   <p className="font-semibold text-[16px] text-foreground mt-1 leading-snug">{t.title}</p>
                   <p className="text-[13px] text-muted-foreground mt-1 line-clamp-2">{t.summary}</p>
                   <div className="mt-4 flex items-center gap-2">
-                    <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden"><div className={`h-full rounded-full ${m >= prep.targetScore ? 'bg-emerald-500' : m >= 40 ? 'bg-primary' : 'bg-[var(--ps-cyan)]'}`} style={{ width: `${m}%` }} /></div>
+                    <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden"><div className={`h-full rounded-full ${m >= prep.targetScore ? 'bg-success' : m >= 40 ? 'bg-primary' : 'bg-[var(--ps-cyan)]'}`} style={{ width: `${m}%` }} /></div>
                     <span className="text-[12px] font-semibold tabular-nums w-9 text-right">{m}%</span>
                   </div>
                 </Link>
@@ -236,7 +236,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
           <Panel className="lg:col-span-4 text-center">
             <p className="text-[13px] font-semibold text-muted-foreground">Estimated {GRADE_SCALES[prep.gradeScale].label} grade</p>
             <motion.p initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-              className="font-heading text-[96px] leading-none mt-3 bg-gradient-to-b from-primary to-emerald-600 bg-clip-text text-transparent">{stats.grade}</motion.p>
+              className="font-heading text-[96px] leading-none mt-3 bg-gradient-to-b from-primary to-success bg-clip-text text-transparent">{stats.grade}</motion.p>
             <p className="text-[13px] text-muted-foreground mt-3">{stats.grade === '—' ? 'Appears after your first quiz or mock.' : 'From your mastery across all topics, weighted by how much each one counts. Mocks move it most.'}</p>
           </Panel>
           <Panel className="lg:col-span-8">
@@ -249,7 +249,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
                     <span className="text-[14px] text-foreground truncate">{t.title}</span>
                     <span className="text-[12px] font-semibold tabular-nums">{m}%</span>
                     <div className="col-span-2 relative h-2 rounded-full bg-muted mt-1">
-                      <motion.div className={`absolute inset-y-0 left-0 rounded-full ${m >= prep.targetScore ? 'bg-emerald-500' : 'bg-primary'}`} initial={{ width: 0 }} animate={{ width: `${m}%` }} />
+                      <motion.div className={`absolute inset-y-0 left-0 rounded-full ${m >= prep.targetScore ? 'bg-success' : 'bg-primary'}`} initial={{ width: 0 }} animate={{ width: `${m}%` }} />
                       <span className="absolute -top-0.5 w-0.5 h-3 bg-rose-400" style={{ left: `${prep.targetScore}%` }} />
                     </div>
                   </li>

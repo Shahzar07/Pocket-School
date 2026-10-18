@@ -11,6 +11,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,7 @@ import {
   Search, Loader2, KeyRound, Ticket, ShieldCheck, Trash2, Copy, Plus, X, Check,
 } from 'lucide-react';
 import { useAuthSTORE } from '@/hooks/use-auth';
+import { resolveStaffRole } from '@/lib/admin-console';
 import {
   getUserByEmail, getAllCourses, setAccessTier, grantPermission, revokePermission,
   createCouponCode, getCouponCodes, setCouponActive, deleteCouponCode, generateCouponCode,
@@ -31,6 +33,7 @@ import {
 } from '@/lib/entitlements';
 import { usePricing } from '@/hooks/use-pricing';
 import { formatMoney, quoteAddon } from '@/lib/pricing';
+import { SeatDesk } from '@/components/admin/seat-desk';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -48,6 +51,7 @@ const ALLOC_KINDS = [
 
 export default function AccessAllocationPage() {
   const { profile } = useAuthSTORE();
+  const platform = resolveStaffRole(profile) === 'super_admin' || resolveStaffRole(profile) === 'admin' || profile?.role === 'admin';
   const [tab, setTab] = useState<Tab>('users');
   const [courses, setCourses] = useState<Course[]>([]);
 
@@ -56,16 +60,24 @@ export default function AccessAllocationPage() {
   return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-8">
       <motion.header variants={fadeUp} initial="hidden" animate="visible">
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-violet-600">Access control</p>
-        <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-3">
-          Access <span className="gradient-text italic">allocation</span>
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#1E6A83]">Access control</p>
+        <h1 className="font-heading text-4xl sm:text-5xl text-[#203337] tracking-tight mt-3">
+          Allocations
         </h1>
         <p className="text-muted-foreground mt-2 text-[15px]">
-          Set a person&apos;s tier, grant them a specific course, or issue codes that do it for you.
+          Give a course or a plan to a school, a class, or a person. Seat rows are listed here. A single email grant is in the people search.
+        </p>
+        <p className="mt-3 text-sm">
+          <Link href="/dashboard/admin/access" className="font-semibold text-[#1E6A83] underline">Roles and institution admins</Link>
+        </p>
+        <p className="mt-3 text-sm">
+          <Link href="/dashboard/admin/access" className="font-semibold text-[#1E6A83] underline">Roles and institution admins</Link>
         </p>
       </motion.header>
 
-      <div className="flex gap-1.5">
+      <SeatDesk />
+
+      {platform ? <div className="flex gap-1.5">
         {([['users', 'People', KeyRound], ['coupons', 'Coupon codes', Ticket]] as const).map(([id, label, Icon]) => (
           <button
             key={id}
@@ -77,11 +89,11 @@ export default function AccessAllocationPage() {
             <Icon className="w-4 h-4" /> {label}
           </button>
         ))}
-      </div>
+      </div> : null}
 
-      {tab === 'users'
+      {platform ? (tab === 'users'
         ? <PeoplePanel courses={courses} />
-        : <CouponPanel courses={courses} adminName={profile?.name ?? 'Admin'} />}
+        : <CouponPanel courses={courses} adminName={profile?.name ?? 'Admin'} />) : null}
     </div>
   );
 }
@@ -214,7 +226,7 @@ function PeoplePanel({ courses }: { courses: Course[] }) {
                   title={t.blurb}
                   className={`px-3 h-9 rounded-full text-xs font-semibold border transition-colors disabled:opacity-50 ${
                     currentTier === t.tier
-                      ? 'bg-violet-600 text-white border-violet-600'
+                      ? 'bg-[#3FE0D0] text-[#203337] border-[#1E6A83]'
                       : 'border-border text-muted-foreground hover:bg-muted'
                   }`}
                 >
@@ -536,7 +548,7 @@ function CouponPanel({ courses, adminName }: { courses: Course[]; adminName: str
                             ? 'bg-muted text-muted-foreground border-border'
                             : c.active === false
                               ? 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20'
-                              : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                              : 'bg-success/10 text-success border-success/20'
                         }`}>
                           {expired ? 'Expired' : spent ? 'Fully used' : c.active === false ? 'Paused' : 'Active'}
                         </Badge>

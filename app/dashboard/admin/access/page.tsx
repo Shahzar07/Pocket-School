@@ -99,6 +99,9 @@ export default function AdminAccessConfig() {
           Access <span className="gradient-text italic">configuration</span>
         </h1>
         <p className="text-muted-foreground mt-2 text-[15px]">Manage role-based access control and security policies.</p>
+        <p className="mt-3 text-sm">
+          <Link href="/dashboard/admin/allocations" className="font-semibold text-[#1E6A83] underline">Tier, course, and coupon grants</Link>
+        </p>
       </motion.header>
 
       {/* Role capabilities overview */}
@@ -119,7 +122,7 @@ export default function AdminAccessConfig() {
               { role: 'Super Admin', key: 'admin', color: 'text-violet-600', items: ['Full curriculum CMS & Content Builder', 'Approve / publish all content', 'Manage users, tiers & Sparks', 'Institutions & allocations'] },
               { role: 'Institution Admin', key: 'institution_admin', color: 'text-indigo-600', items: ['Runs one institution only', 'Its courses, grades & attendance', 'Its report cards & reporting', 'White-label branding & subdomain'] },
               { role: 'Teacher', key: 'teacher', color: 'text-blue-600', items: ['Create & upload courses', 'Grade submissions & exams', 'Attendance, behaviour, billing', 'Live classes & report cards'] },
-              { role: 'Student', key: 'student', color: 'text-emerald-600', items: ['Enrol & learn', 'Take quizzes, exams, assignments', 'Earn & spend Sparks', 'ET AI Studio'] },
+              { role: 'Student', key: 'student', color: 'text-success', items: ['Enrol & learn', 'Take quizzes, exams, assignments', 'Earn & spend Sparks', 'ET AI Studio'] },
               { role: 'Parent', key: 'parent', color: 'text-[var(--ps-cyan-text)]', items: ['View linked children', 'Progress & report cards', 'Due dates & reminders', 'Message teachers'] },
             ].map(r => (
               <div key={r.role} className="rounded-2xl border border-border bg-muted/20 p-4">

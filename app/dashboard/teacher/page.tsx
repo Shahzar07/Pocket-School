@@ -16,6 +16,7 @@ import {
 import { DashboardHome } from '@/components/dashboard';
 import { SeeMore } from '@/components/shell/see-more';
 import { ClassBoardControls } from '@/components/gamification/class-boards';
+import { SafeLineBanner } from '@/components/safety/safeline-banner';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -23,7 +24,7 @@ const fadeUp: Record<string, any> = {
 };
 
 const COURSE_GRADIENTS = [
-  'from-emerald-500 to-teal-600',
+  'from-success to-teal-600',
   'from-primary to-primary',
   'from-[var(--ps-cyan)] to-[var(--ps-cyan-border)]',
   'from-rose-500 to-pink-600',
@@ -102,6 +103,7 @@ export default function TeacherDashboard() {
 
   return (
     <DashPage>
+      <SafeLineBanner />
       <DashboardHome
         role="teacher"
         name={firstName}

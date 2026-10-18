@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { authedFetch } from '@/lib/api-client';
 import { FeatureGate } from '@/components/scope-c/feature-gate';
+import { StudioFrame } from '@/components/studio/studio-nav';
 import Link from 'next/link';
 import { StoreScreen, type ResourceCard } from '@/components/scope-c/market-screens';
 import { Panel } from '@/components/dash-ui';
@@ -25,6 +26,7 @@ export default function StorePage() {
   const visible = filterResources(resources, query, kind);
 
   return (
+    <StudioFrame>
     <FeatureGate flag="creatorStore">
       <Panel className="space-y-2">
         <p className="text-sm text-muted-foreground">The store is creator notes, worksheets, and templates. Courses stay on the marketplace.</p>
@@ -66,5 +68,6 @@ export default function StorePage() {
         } : undefined}
       />
     </FeatureGate>
+    </StudioFrame>
   );
 }

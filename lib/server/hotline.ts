@@ -33,6 +33,8 @@ import {
 import { SERVER_DEVICE } from '../ledger/device';
 import { exportCsv, exportPdf, type ExportFile } from '../ledger/export';
 import { appendChain, readChain, verifyStoredChain } from './ledger';
+import { hideSafeguardingIdentity } from '../admin/desk';
+import { resolveStaffRole } from '../admin-console';
 import { resolveRecipients } from '../alerts/recipients';
 import { peopleAtInstitution } from './alert-directory';
 import { notifyTicketStaff } from './staff-notify';
@@ -73,6 +75,7 @@ interface Actor {
   institutionId: string;
   childIds: string[];
   staffPost: string;
+  staffRole: string | null;
   tier: number;
 }
 
@@ -88,6 +91,11 @@ async function loadActor(uid: string): Promise<Actor> {
     institutionId: str(data.institutionId),
     childIds,
     staffPost: str(data.staffPost),
+    staffRole: resolveStaffRole({
+      email: str(data.email),
+      role: str(data.role),
+      adminRole: str(data.adminRole),
+    }),
     tier: readVerification(data.verification).tier,
   };
 }
@@ -331,9 +339,23 @@ function listedRow(actor: Actor, id: string, data: FirebaseFirestore.DocumentDat
   if (tierBlockMessage(actor, data)) return null;
   if (view === 'hidden') return null;
   if (view === 'tracker') return trackerProjection(id, data);
-  if (view === 'notice') return noticeProjection(id, data);
+  if (view === 'notice') {
+    const notice = noticeProjection(id, data);
+    return hideSafeguardingIdentity(actor) ? { ...notice, studentName: '' } : notice;
+  }
   if (view === null && !canRead(actor, data)) return null;
-  return { id, ...data };
+  const row = { id, ...data };
+  if (!hideSafeguardingIdentity(actor)) return row;
+  return {
+    ...row,
+    reporterName: '',
+    reporterEmail: '',
+    studentName: '',
+    parentName: '',
+    phone: '',
+    email: '',
+    identityHidden: true,
+  };
 }
 
 export async function listTickets(uid: string, status: string) {
@@ -342,7 +364,9 @@ export async function listTickets(uid: string, status: string) {
     ? db().collection('hotline_tickets').where('reporterUid', '==', actor.id).orderBy('createdAt', 'desc').limit(30)
     : actor.role === 'parent'
       ? db().collection('hotline_tickets').where('parentUid', '==', actor.id).limit(50)
-      : db().collection('hotline_tickets').where('institutionId', '==', actor.institutionId).limit(80);
+      : actor.staffRole === 'super_admin'
+        ? db().collection('hotline_tickets').orderBy('createdAt', 'desc').limit(80)
+        : db().collection('hotline_tickets').where('institutionId', '==', actor.institutionId).limit(80);
   const snap = await query.get();
   return snap.docs
     .map(doc => listedRow(actor, doc.id, doc.data()))
@@ -358,14 +382,17 @@ export async function getTicket(uid: string, id: string) {
   if (!canRead(actor, ticket.data)) throw new ActionError('FORBIDDEN', 'You cannot open this ticket.');
   const view = safetyTicketView(actor, ticket.data);
   if (view === 'tracker') return trackerProjection(id, ticket.data);
-  if (view === 'notice') return noticeProjection(id, ticket.data);
+  if (view === 'notice') {
+    const notice = noticeProjection(id, ticket.data);
+    return hideSafeguardingIdentity(actor) ? { ...notice, studentName: '' } : notice;
+  }
   const [comments, events] = await Promise.all([
     ticket.id ? db().collection(`hotline_tickets/${id}/comments`).orderBy('at', 'asc').limit(100).get() : Promise.resolve(null),
     db().collection(`hotline_tickets/${id}/events`).orderBy('seq', 'asc').limit(200).get(),
   ]);
   const staff = actor.role !== 'parent';
   const files = await db().collection(`hotline_tickets/${id}/attachments`).limit(40).get();
-  return {
+  const opened = {
     id,
     ...ticket.data,
     comments: (comments?.docs ?? [])
@@ -385,6 +412,8 @@ export async function getTicket(uid: string, id: string) {
       })),
     events: events.docs.map(doc => ({ id: doc.id, ...doc.data() })),
   };
+  if (!hideSafeguardingIdentity(actor)) return opened;
+  return { ...opened, reporterName: '', reporterEmail: '', studentName: '', parentName: '', phone: '', email: '', identityHidden: true };
 }
 
 export async function commentTicket(uid: string, id: string, input: Record<string, unknown>) {

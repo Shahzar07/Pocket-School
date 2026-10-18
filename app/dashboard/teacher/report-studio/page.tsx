@@ -16,6 +16,7 @@ import {
   REPORT_TEMPLATES, gradeOnScale, newVerificationToken, publicCard, publishFields, scaleById,
 } from '@/lib/insights/report-cards';
 import { TERMS, termRange, type TermId } from '@/lib/reporting-periods';
+import { gradeSetLabel } from '@/lib/school-desk/model';
 import { toast } from 'sonner';
 
 interface Row {
@@ -171,7 +172,7 @@ export default function ReportStudioPage() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="font-semibold">{row.studentName}</p>
-              <p className="text-sm text-muted-foreground">{row.percent}% · grade {gradeOnScale(row.percent, scale)} · {row.count} records</p>
+              <p className="text-sm text-muted-foreground" data-grade-set={row.percent}>{gradeSetLabel(row.percent)} · {scale.label} {gradeOnScale(row.percent, scale)} · {row.count} records</p>
             </div>
             <Button type="button" variant="outline" onClick={() => draftComment(row)}>Draft comment</Button>
           </div>

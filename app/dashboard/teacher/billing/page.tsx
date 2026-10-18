@@ -30,7 +30,7 @@ const fadeUp: Record<string, any> = {
 const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
   sent: 'bg-blue-500/10 text-blue-700',
-  paid: 'bg-emerald-500/10 text-emerald-700',
+  paid: 'bg-success/10 text-success',
   overdue: 'bg-red-500/10 text-red-700',
   cancelled: 'bg-muted text-muted-foreground/60',
 };
@@ -174,7 +174,7 @@ export default function TeacherBillingPage() {
         className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4"
       >
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600 mb-2">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success mb-2">
             Billing &amp; Invoices
           </p>
           <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight">
@@ -204,7 +204,7 @@ export default function TeacherBillingPage() {
         </div>
         <Button
           onClick={() => setShowCreate(s => !s)}
-          className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:opacity-90 gap-2"
+          className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-success to-teal-600 text-white hover:opacity-90 gap-2"
         >
           <Plus className="w-4 h-4" /> New Invoice
         </Button>
@@ -219,8 +219,8 @@ export default function TeacherBillingPage() {
         className="grid grid-cols-1 sm:grid-cols-3 gap-4"
       >
         {[
-          { label: 'Total Invoiced', value: totalStr, accent: 'bg-emerald-500' },
-          { label: 'Collected', value: collectedStr, accent: 'bg-green-500' },
+          { label: 'Total Invoiced', value: totalStr, accent: 'bg-success' },
+          { label: 'Collected', value: collectedStr, accent: 'bg-success' },
           { label: 'Outstanding', value: outstandingStr, accent: 'bg-[var(--ps-cyan)]' },
         ].map((s, idx) => (
           <div
@@ -282,7 +282,7 @@ export default function TeacherBillingPage() {
             <Button
               onClick={handleCreate}
               disabled={saving}
-              className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:opacity-90"
+              className="rounded-full h-11 px-5 font-bold bg-gradient-to-r from-success to-teal-600 text-white hover:opacity-90"
             >
               {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />} Create Invoice
             </Button>
@@ -305,7 +305,7 @@ export default function TeacherBillingPage() {
           animate="visible"
           custom={3}
         >
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600 mb-1">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-success mb-1">
             Invoices
           </p>
           <h2 className="font-heading text-3xl text-foreground tracking-tight mb-4">
@@ -323,7 +323,7 @@ export default function TeacherBillingPage() {
               className="relative flex flex-col items-center justify-center py-20 text-center"
             >
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl" />
+                <div className="w-64 h-64 bg-success/10 rounded-full blur-3xl" />
               </div>
               <CreditCard className="w-12 h-12 mx-auto mb-4 text-muted-foreground/40 relative z-10" />
               <p className="font-heading text-2xl text-foreground relative z-10">No invoices yet</p>
@@ -358,7 +358,7 @@ export default function TeacherBillingPage() {
                     onClick={() => markPaid(inv.id)}
                     className="rounded-full gap-1 font-semibold"
                   >
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Mark Paid
+                    <CheckCircle2 className="w-3.5 h-3.5 text-success" /> Mark Paid
                   </Button>
                 )}
                 <Button variant="ghost" size="icon" onClick={() => handleDelete(inv.id)} className="text-red-500 hover:bg-red-500/10">

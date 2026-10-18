@@ -2,7 +2,8 @@
   "firestore": [
     {
       "database": "ai-studio-5cdc1a69-b213-49e8-8c41-756df00d9e15",
-      "rules": "firestore.rules"
+      "rules": "firestore.rules",
+      "indexes": "firestore.indexes.json"
     }
   ],
   "storage": {
@@ -16,6 +17,10 @@
     "firestore": {
       "host": "127.0.0.1",
       "port": 8080
+    },
+    "storage": {
+      "host": "127.0.0.1",
+      "port": 9199
     },
     "ui": {
       "enabled": false

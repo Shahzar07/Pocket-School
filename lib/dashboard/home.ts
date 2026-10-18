@@ -239,11 +239,14 @@ const admin: RoleHome = {
     { id: 'moderation', label: 'Moderation', href: '/dashboard/admin/moderation', category: 'safety' },
   ],
   tasks: [
-    { id: 'insights', label: 'Insights', href: '/dashboard/admin/insights', category: 'insights', hint: 'Learning and response' },
-    { id: 'moderation', label: 'Moderation', href: '/dashboard/admin/moderation', category: 'safety', hint: 'Community review' },
-    { id: 'institutions', label: 'Institutions', href: '/dashboard/admin/institutions', category: 'people', hint: 'Schools on Poket' },
+    { id: 'queues', label: 'Queues', href: '/dashboard/admin/queues', category: 'safety', hint: 'Decisions waiting' },
+    { id: 'safety-desk', label: 'Safety Desk', href: '/dashboard/admin/safety-desk', category: 'safety', hint: 'SLA timers' },
+    { id: 'users', label: 'People', href: '/dashboard/admin/users', category: 'people', hint: 'Roles and tiers' },
   ],
   tiles: [
+    { id: 'queues', label: 'Queues', href: '/dashboard/admin/queues', category: 'safety' },
+    { id: 'platform', label: 'Platform', href: '/dashboard/admin/platform', category: 'settings' },
+    { id: 'pulse', label: 'Pulse', href: '/dashboard/admin/pulse', category: 'insights' },
     { id: 'pricing', label: 'Pricing', href: '/dashboard/admin/payments', category: 'payments' },
     { id: 'automation', label: 'Automation', href: '/dashboard/admin/settings', category: 'settings' },
     { id: 'users', label: 'People', href: '/dashboard/admin/users', category: 'people' },

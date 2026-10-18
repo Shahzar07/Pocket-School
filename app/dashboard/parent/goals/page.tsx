@@ -3,10 +3,14 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { excuseDailyGoal, getChildrenDailyGoals, updateDailyGoal, type DailyGoal } from '@/lib/db';
+import { excuseDailyGoal, getChildrenDailyGoals, goalDateKey, updateDailyGoal, type DailyGoal } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { GoalsWorkspace, type WorkspaceGoal } from '@/components/goals/goals-workspace';
+import { ParentPlanCard } from '@/components/goals/parent-plan-card';
+import { EscalationLadder } from '@/components/goals/escalation-ladder';
+import { planVsDone } from '@/lib/study/planner';
+import { computeGoalStreak } from '@/lib/insights/goals';
 import { DocumentDelivery } from '@/components/document-delivery';
 import { textDocument } from '@/lib/documents/packet';
 import { createSuggestion } from '@/lib/insights/client';
@@ -55,6 +59,14 @@ export default function ParentGoalsPage() {
           studentIds={[child.childId]}
         />
       )}
+      {child && (
+        <ParentPlanCard
+          childName={child.childName}
+          {...planVsDone(child.goals.filter(goal => goal.dateKey === goalDateKey()))}
+          streak={computeGoalStreak(child.goals)}
+        />
+      )}
+      <EscalationLadder missed={planVsDone((child?.goals ?? []).filter(goal => goal.dateKey === goalDateKey())).missed} />
       <GoalsWorkspace
         viewer="parent"
         childName={child?.childName}

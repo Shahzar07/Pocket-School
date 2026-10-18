@@ -913,9 +913,9 @@ export default function SignupPage() {
       {step === 'verify' && (
         <form onSubmit={verifyAndCreate} className="space-y-4">
           {guardianVerified && (
-            <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.07] p-3 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-              <p className="text-xs text-emerald-200">{t('signup.guardianConfirmed')}</p>
+            <div className="rounded-2xl border border-success/25 bg-success/[0.07] p-3 flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-success shrink-0" />
+              <p className="text-xs text-success">{t('signup.guardianConfirmed')}</p>
             </div>
           )}
           <div className="space-y-1.5">

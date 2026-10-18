@@ -36,6 +36,7 @@ export function NotesBoard({
   onCreate,
   onPatch,
   onReorder,
+  notice = '',
   onAsk,
   onShare,
   onUnshare,
@@ -46,6 +47,7 @@ export function NotesBoard({
   onCreate: (input: { text: string; colour: NoteColour; board: string; checklist: boolean }) => Promise<void> | void;
   onPatch: (id: string, patch: Partial<StickyNote>) => Promise<void> | void;
   onReorder: (ids: string[]) => Promise<void> | void;
+  notice?: string;
   onAsk?: (action: NoteAction, ids: string[]) => Promise<{ text: string; cards: { front: string; back: string }[] }>;
   onShare?: (id: string, spaceId: string) => Promise<string>;
   onUnshare?: (id: string) => Promise<void>;
@@ -158,6 +160,7 @@ export function NotesBoard({
         </button>
       </div>
 
+      {notice ? <p className="text-sm text-[#203337]">{notice}</p> : null}
       {shown.length === 0 ? <p className="text-sm text-[#5F7074]">{trash ? 'Trash is empty. Deleted notes stay for 30 days.' : 'No notes on this board yet.'}</p> : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -195,9 +198,12 @@ export function NotesBoard({
               </div>
               <textarea
                 aria-label="Note text"
-                value={item.text}
+                key={`${item.id}-${item.updatedAt}`}
+                defaultValue={item.text}
                 maxLength={2000}
-                onChange={(event) => { void onPatch(item.id, { text: event.target.value }); }}
+                onBlur={(event) => {
+                  if (event.target.value !== item.text) void onPatch(item.id, { text: event.target.value });
+                }}
                 className="min-h-24 w-full resize-none bg-transparent text-sm text-[#203337] outline-none"
               />
               {(item.checklist ?? []).length > 0 ? (

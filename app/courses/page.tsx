@@ -20,6 +20,7 @@ import { useWhiteLabel } from '@/components/white-label-provider';
 import { filterTenantCatalogue } from '@/lib/tenant-host';
 import { listCatalogue } from '@/lib/institution-store';
 import { useAuthSTORE } from '@/hooks/use-auth';
+import { PublicFlow } from '@/components/school-desk/route-desk';
 
 const TYPE_FILTERS: { id: CourseType | 'all'; labelKey: string }[] = [
   { id: 'all', labelKey: 'market.all' },
@@ -136,6 +137,7 @@ export default function MarketplacePage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PublicFlow flow="marketplace" />
       {/* Hero */}
       <section className="relative py-16 sm:py-20 bg-gradient-to-b from-secondary via-background to-background overflow-hidden">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center">
@@ -336,7 +338,7 @@ export default function MarketplacePage() {
                           {t(TYPE_LABEL_KEYS[c.type ?? 'course'] ?? 'market.courses')}
                         </span>
                         {freePreviewLabel(c, t) && (
-                          <span className="absolute bottom-2.5 left-2.5 text-[10px] font-bold px-2 py-1 rounded bg-emerald-600 text-white shadow-sm">
+                          <span className="absolute bottom-2.5 left-2.5 text-[10px] font-bold px-2 py-1 rounded bg-success text-white shadow-sm">
                             {freePreviewLabel(c, t)}
                           </span>
                         )}
@@ -367,7 +369,7 @@ export default function MarketplacePage() {
                         </p>
 
                         <div className="mt-auto flex items-baseline gap-2">
-                          <span className={`text-lg font-extrabold ${c.price ? 'text-foreground' : 'text-emerald-600'}`}>
+                          <span className={`text-lg font-extrabold ${c.price ? 'text-foreground' : 'text-success'}`}>
                             {!c.price || c.price <= 0 ? t('market.free') : courseLabel(c.price, c.currency)}
                           </span>
                           {courseConversion(c.price, c.currency) && (

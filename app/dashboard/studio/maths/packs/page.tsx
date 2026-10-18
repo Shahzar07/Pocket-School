@@ -6,17 +6,22 @@ import { motion } from 'motion/react';
 import { ArrowRight, BookMarked, Gift } from 'lucide-react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { DashPage, DashHeader } from '@/components/dash-ui';
-import { EXAM_PACKS, packTopics } from '@/lib/study/exam-packs';
+import { packTopics, type ExamPack } from '@/lib/study/exam-packs';
+import { PACK_STORE_KEY, listPacks, readPackStore } from '@/lib/study/pack-admin';
 import { getPackProgress, type PackProgress } from '@/lib/study/db';
 
 export default function PacksPage() {
   const { user } = useAuthSTORE();
   const [progress, setProgress] = useState<Record<string, PackProgress>>({});
+  const [packs, setPacks] = useState<ExamPack[]>(() => listPacks());
+  useEffect(() => {
+    setPacks(listPacks(readPackStore(window.localStorage.getItem(PACK_STORE_KEY))));
+  }, []);
   useEffect(() => {
     if (!user) return;
-    Promise.all(EXAM_PACKS.map(p => getPackProgress(user.uid, p.id).then(pr => [p.id, pr] as const).catch(() => [p.id, { mastery: {}, setsDone: 0 }] as const)))
+    Promise.all(packs.map(p => getPackProgress(user.uid, p.id).then(pr => [p.id, pr] as const).catch(() => [p.id, { mastery: {}, setsDone: 0 }] as const)))
       .then(rows => setProgress(Object.fromEntries(rows)));
-  }, [user]);
+  }, [user, packs]);
 
   return (
     <DashPage>
@@ -24,10 +29,11 @@ export default function PacksPage() {
         eyebrow="ET Maths · Official exams"
         title="Your exam's syllabus,"
         accent="topic by topic."
-        description="Exam-style questions for every topic on the real syllabus, with worked solutions marked the way examiners mark them. Work through any question with ET AI, step by step. The first topic of every pack is free."
+        description="Exam-style questions for every topic on the real syllabus, with worked solutions marked the way examiners mark them. Work through any question with ET AI, step by step. The first topic of every pack is free. Admins add and delete packs at the exam pack desk."
       />
+      <p className="text-sm"><Link href="/dashboard/admin/exam-packs" className="font-semibold text-[#1E6A83]">Admin exam pack desk</Link></p>
       <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        {EXAM_PACKS.map((p, i) => {
+        {packs.map((p, i) => {
           const topics = packTopics(p);
           const pr = progress[p.id];
           const tried = pr ? Object.keys(pr.mastery).length : 0;
@@ -38,7 +44,7 @@ export default function PacksPage() {
                 <div className="p-5">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: p.accent }}>{p.board}</span>
-                    <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full inline-flex items-center gap-1"><Gift className="w-3 h-3" /> 1st topic free</span>
+                    <span className="text-[11px] font-semibold text-success bg-success/15 px-2 py-0.5 rounded-full inline-flex items-center gap-1"><Gift className="w-3 h-3" /> 1st topic free</span>
                   </div>
                   <p className="font-heading text-[20px] leading-tight mt-2">{p.name}</p>
                   <p className="text-[13px] text-muted-foreground mt-1.5 line-clamp-2">{p.blurb}</p>

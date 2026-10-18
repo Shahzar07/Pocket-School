@@ -410,8 +410,71 @@ service cloud.firestore {
 
     function studentGoalUpdate() {
       return resource.data.studentId == request.auth.uid
+        && incoming().studentId == resource.data.studentId
+        && incoming().get('source', 'self') == resource.data.get('source', 'self')
         && !request.resource.data.diff(resource.data).affectedKeys()
-          .hasAny(['sparksAwarded', 'cosignedBy', 'cosignedAt', 'excusedBy', 'excuseReason', 'reactions']);
+          .hasAny(['sparksAwarded', 'cosignedBy', 'cosignedAt', 'excusedBy', 'excuseReason', 'reactions'])
+        && (
+          resource.data.get('source', 'self') in ['self', 'student']
+          || (
+            incoming().title == resource.data.title
+            && incoming().get('parentVisibility', true) == resource.data.get('parentVisibility', true)
+            && incoming().get('private', false) == resource.data.get('private', false)
+            && incoming().get('rescheduleCount', 0) >= resource.data.get('rescheduleCount', 0)
+            && incoming().get('rescheduleCount', 0) <= incoming().get('rescheduleLimit', resource.data.get('rescheduleLimit', 2))
+          )
+        );
+    }
+    function goalCreateAllowed() {
+      return incoming().studentId is string
+        && incoming().dateKey is string
+        && incoming().title is string
+        && incoming().estimateMinutes is number
+        && incoming().deadline is string
+        && incoming().status == 'not_started'
+        && !incoming().keys().hasAny(['sparksAwarded', 'cosignedBy', 'cosignedAt', 'excusedBy', 'excuseReason'])
+        && (
+          (incoming().studentId == request.auth.uid && incoming().get('source', 'self') in ['self', 'student', 'et_ai', 'ai'])
+          || (linkedTo(incoming().studentId) && incoming().source == 'parent')
+          || (isTeacherOrAdmin() && incoming().source == 'teacher')
+          || (isInstitutionAdmin() && incoming().source == 'institution')
+        );
+    }
+    function studentRecord(studentId) {
+      return get(/databases/$(database)/documents/users/$(studentId)).data;
+    }
+    // Class teachers and the student's institution staff. A private flag does not apply.
+    function classStaffOf(studentId) {
+      let student = studentRecord(studentId);
+      let classId = student.get('classId', '');
+      return (
+        isTeacherOrAdmin() && student.get('formTeacherUid', '') == request.auth.uid
+      ) || (
+        isTeacherOrAdmin() && student.get('teacherIds', []).hasAny([request.auth.uid])
+      ) || (
+        isTeacherOrAdmin()
+        && classId is string
+        && classId.size() > 0
+        && exists(/databases/$(database)/documents/spaces/$(classId))
+        && get(/databases/$(database)/documents/spaces/$(classId)).data.get('staffIds', []).hasAny([request.auth.uid])
+      ) || (
+        isInstitutionAdmin()
+        && myInstitution() is string
+        && myInstitution() != ''
+        && student.get('institutionId', '') == myInstitution()
+      );
+    }
+    function goalReadable() {
+      return resource.data.studentId == request.auth.uid
+        || isAdmin()
+        || linkedTo(resource.data.studentId)
+        || classStaffOf(resource.data.studentId)
+        || (isTeacherOrAdmin() && resource.data.get('teacherIds', []).hasAny([request.auth.uid]));
+    }
+    function ownAssignedGoal() {
+      return (linkedTo(resource.data.studentId) && resource.data.get('source', '') == 'parent' && resource.data.get('assignedBy', '') == request.auth.uid)
+        || (isTeacherOrAdmin() && resource.data.get('source', '') == 'teacher' && resource.data.get('assignedBy', '') == request.auth.uid)
+        || (isInstitutionAdmin() && resource.data.get('source', '') == 'institution' && resource.data.get('assignedBy', '') == request.auth.uid);
     }
     function parentGoalUpdate() {
       return linkedTo(resource.data.studentId)
@@ -423,8 +486,8 @@ service cloud.firestore {
         );
     }
     function teacherMayReadGoal() {
-      return resource.data.get('shareWithTeachers', true) != false
-        && resource.data.get('teacherIds', []).hasAny([request.auth.uid]);
+      return classStaffOf(resource.data.studentId)
+        || (isTeacherOrAdmin() && resource.data.get('teacherIds', []).hasAny([request.auth.uid]));
     }
 
     // ── Users ─────────────────────────────────────────────────
@@ -507,6 +570,65 @@ service cloud.firestore {
       match /auth_activity/{eventId} {
         allow read: if isUser(userId) || callerIsSuper();
         allow create, update, delete: if false;
+      }
+
+      // Study plan for one learner. Parents see the plan. Teachers do not.
+      match /study_plan/{planId} {
+        allow read: if isUser(userId) || linkedTo(userId) || isAdmin();
+        allow create, update: if isUser(userId) || isAdmin()
+          || (linkedTo(userId) && incoming().source == 'parent')
+          || (isTeacherOrAdmin() && incoming().source == 'teacher');
+        allow delete: if isAdmin();
+      }
+
+      // Same goal as daily_goals. private does not hide a goal from class staff or a linked parent.
+      // The narrow teacherIds line stays so an existing collection-group query can still be proven.
+      match /goals/{goalId} {
+        allow read: if isUser(userId) || isAdmin();
+        allow read: if linkedTo(userId);
+        allow read: if classStaffOf(userId);
+        allow read: if isTeacherOrAdmin() && resource.data.get('teacherIds', []).hasAny([request.auth.uid]);
+        allow read: if isTeacherOrAdmin()
+          && resource.data.private == false
+          && resource.data.shareWithTeachers == true
+          && resource.data.teacherIds.hasAny([request.auth.uid]);
+        allow create: if (isUser(userId) && incoming().get('source', 'self') in ['self', 'student', 'et_ai', 'ai'])
+          || (linkedTo(userId) && incoming().source == 'parent')
+          || (isTeacherOrAdmin() && incoming().source == 'teacher' && incoming().get('assignedBy', '') == request.auth.uid)
+          || (isInstitutionAdmin() && incoming().source == 'institution' && incoming().get('institutionId', '') == myInstitution())
+          || isAdmin();
+        allow update: if isUser(userId) || isAdmin()
+          || (linkedTo(userId) && incoming().get('source', '') == resource.data.get('source', ''))
+          || (isTeacherOrAdmin()
+              && resource.data.get('source', '') == 'teacher'
+              && resource.data.get('assignedBy', '') == request.auth.uid
+              && incoming().get('source', '') == 'teacher'
+              && incoming().get('assignedBy', '') == request.auth.uid)
+          || (isInstitutionAdmin()
+              && resource.data.get('source', '') == 'institution'
+              && resource.data.get('institutionId', '') == myInstitution()
+              && incoming().get('source', '') == 'institution'
+              && incoming().get('institutionId', '') == myInstitution());
+        allow delete: if isAdmin()
+          || (isUser(userId) && resource.data.get('source', 'self') in ['self', 'student'])
+          || (linkedTo(userId) && resource.data.get('source', '') == 'parent' && resource.data.get('assignedBy', '') == request.auth.uid)
+          || (isTeacherOrAdmin() && resource.data.get('source', '') == 'teacher' && resource.data.get('assignedBy', '') == request.auth.uid)
+          || (isInstitutionAdmin() && resource.data.get('source', '') == 'institution' && resource.data.get('institutionId', '') == myInstitution());
+      }
+
+      match /goal_reschedules/{logId} {
+        allow read: if isUser(userId) || linkedTo(userId) || isAdmin() || classStaffOf(userId);
+        allow create: if isUser(userId) && incoming().goalId is string && incoming().fromDate is string && incoming().toDate is string;
+        allow update, delete: if false;
+      }
+
+      // Counts only. No goal titles and no note text.
+      match /goal_adherence/{weekId} {
+        allow read: if isUser(userId) || linkedTo(userId) || isAdmin()
+          || (isTeacherOrAdmin() && resource.data.get('teacherIds', []).hasAny([request.auth.uid]))
+          || (isInstitutionAdmin() && resource.data.get('institutionId', '') == myInstitution());
+        allow create, update: if isUser(userId) && !incoming().keys().hasAny(['titles', 'noteText']);
+        allow delete: if isAdmin();
       }
     }
 
@@ -1695,6 +1817,72 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('childIds', []).hasAny([uid]);
     }
 
+    match /school_classes/{classId} {
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.ownerTeacherId == request.auth.uid)
+        || (isInstitutionAdmin() && resource.data.get('institutionId', '') == myInstitution());
+      allow create, update: if isAdmin()
+        || (isInstitutionAdmin() && incoming().institutionId == myInstitution())
+        || (isTeacherOrAdmin()
+            && incoming().ownerTeacherId == request.auth.uid
+            && (incoming().get('institutionId', '') == '' || incoming().institutionId == myInstitution()));
+      allow delete: if isAdmin()
+        || (isInstitutionAdmin() && resource.data.institutionId == myInstitution())
+        || (isTeacherOrAdmin() && resource.data.ownerTeacherId == request.auth.uid);
+    }
+
+    function classStaffWrite() {
+      return isAdmin()
+        || (isTeacherOrAdmin() && incoming().ownerTeacherId == request.auth.uid)
+        || (isInstitutionAdmin() && incoming().get('institutionId', '') != '' && incoming().institutionId == myInstitution());
+    }
+    function classStaffRead() {
+      return isAdmin()
+        || resource.data.ownerTeacherId == request.auth.uid
+        || (isInstitutionAdmin() && resource.data.get('institutionId', '') != '' && resource.data.institutionId == myInstitution());
+    }
+    function familyRead() {
+      return resource.data.studentId == request.auth.uid || linkedTo(resource.data.studentId);
+    }
+
+    match /school_enrolments/{enrolmentId} {
+      allow read: if classStaffRead();
+      allow read: if familyRead();
+      allow create, update: if classStaffWrite();
+      allow delete: if isAdmin() || classStaffRead();
+    }
+
+    match /school_assessments/{assessmentId} {
+      allow read: if classStaffRead();
+      allow create, update: if classStaffWrite();
+      allow delete: if isAdmin() || classStaffRead();
+    }
+
+    match /school_marks/{markId} {
+      allow read: if classStaffRead();
+      allow read: if familyRead();
+      allow create, update: if classStaffWrite();
+      allow delete: if isAdmin() || (isTeacherOrAdmin() && resource.data.ownerTeacherId == request.auth.uid);
+    }
+
+    match /school_reports/{reportId} {
+      allow read: if classStaffRead();
+      allow read: if familyRead();
+      allow create, update: if classStaffWrite();
+      allow delete: if isAdmin() || (isTeacherOrAdmin() && resource.data.ownerTeacherId == request.auth.uid);
+    }
+
+    match /school_settings/{userId} {
+      allow read, write: if isUser(userId) && isTeacherOrAdmin();
+    }
+
+    match /school_attendance/{rowId} {
+      allow read: if classStaffRead();
+      allow read: if familyRead();
+      allow create, update: if classStaffWrite();
+      allow delete: if isAdmin();
+    }
+
     match /users/{userId}/exam_preps/{prepId} {
       allow read: if isUser(userId) || isParentOf(userId) || isAdmin();
       allow create: if isUser(userId) && incoming().ownerId == userId;
@@ -1738,7 +1926,21 @@ service cloud.firestore {
         && incoming().linkedTo.type in ['lesson', 'course', 'assignment', 'exam', 'none']
         && incoming().linkedTo.id is string
         && incoming().createdAt is number
-        && incoming().updatedAt is number;
+        && incoming().updatedAt is number
+        && (!incoming().keys().hasAny(['remindAt']) || incoming().remindAt == null || (incoming().remindAt is number && incoming().remindAt >= 0))
+        && (!incoming().keys().hasAny(['remindedAt']) || incoming().remindedAt is number)
+        && (!incoming().keys().hasAny(['deletedAt']) || incoming().deletedAt == null || incoming().deletedAt is number)
+        && (!incoming().keys().hasAny(['checklist']) || incoming().checklist is list);
+    }
+
+    match /users/{userId}/activity/{dateKey} {
+      allow read: if isUser(userId) || isAdmin();
+      allow create, update: if isUser(userId)
+        && incoming().dateKey == dateKey
+        && incoming().activeMs is number
+        && incoming().idleMs is number
+        && incoming().hiddenMs is number;
+      allow delete: if false;
     }
 
     match /users/{userId}/notes/{noteId} {
@@ -1960,19 +2162,18 @@ service cloud.firestore {
 
     // ── Daily Goals (student accountability) ──────────────────
     match /daily_goals/{goalId} {
-      allow read: if isSignedIn() && (
-        resource.data.studentId == request.auth.uid
-        || isAdmin()
-        || linkedTo(resource.data.studentId)
-        || teacherMayReadGoal()
-      );
-      allow create: if isSignedIn()
-        && incoming().studentId == request.auth.uid
-        && !incoming().keys().hasAny(['sparksAwarded', 'cosignedBy', 'cosignedAt', 'excusedBy', 'excuseReason']);
+      allow read: if isSignedIn() && goalReadable();
+      allow create: if isSignedIn() && goalCreateAllowed();
       allow update: if isAdmin() || studentGoalUpdate() || parentGoalUpdate();
-      allow delete: if isSignedIn() && (
-        resource.data.studentId == request.auth.uid || isAdmin()
-      );
+      allow delete: if isAdmin() || (
+        resource.data.studentId == request.auth.uid
+        && resource.data.get('source', 'self') in ['self', 'student']
+      ) || ownAssignedGoal();
+    }
+
+    match /planner_defaults/{docId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
 
     // ── Grades ────────────────────────────────────────────────
@@ -2762,6 +2963,18 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Visual certificate designs. The server writes them with the Admin SDK.
+    match /certificate_designs/{designId} {
+      allow read: if isAdmin() || isInstitutionAdmin();
+      allow create, update, delete: if false;
+    }
+
+    // Seat allocations. Clients cannot write them.
+    match /seat_allocations/{allocationId} {
+      allow read: if isAdmin() || isInstitutionAdmin();
+      allow create, update, delete: if false;
+    }
+
     // Machine translations of lessons, quizzes, books, essay feedback, and
     // teacher replies. The server writes them with the Admin SDK. Clients
     // may read one document and cannot list or edit the cache.
@@ -2967,6 +3180,19 @@ service cloud.firestore {
     }
     match /safety_desk/{docId} {
       allow read, write: if false;
+    }
+    match /admin_desk/{docId} {
+      allow read, write: if false;
+      match /audit/{entryId} {
+        allow read, write: if false;
+      }
+    }
+    match /push_broadcasts/{broadcastId} {
+      allow read, write: if false;
+    }
+    match /helpline_config/{country} {
+      allow read: if isSignedIn();
+      allow write: if false;
     }
     match /verification_reviews/{reviewId} {
       allow read, write: if false;
@@ -3183,6 +3409,144 @@ service cloud.firestore {
       allow list: if false;
       allow create, update: if isTeacherOrAdmin();
       allow delete: if isAdmin();
+    }
+
+    function wallAdult() {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('ageTier', 'under13') == 'adult';
+    }
+
+    function wallSchool() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('institutionId', '');
+    }
+
+    function wallPostShape() {
+      return incoming().authorId == request.auth.uid
+        && incoming().body is string
+        && incoming().body.size() <= 4000
+        && incoming().audience in ['public', 'school', 'class', 'group', 'only-me']
+        && incoming().schoolId is string
+        && incoming().feed in ['school', 'class', 'group', 'alumni', 'event']
+        && incoming().locationOn is bool
+        && (!incoming().locationOn || wallAdult())
+        && (incoming().audience != 'public' || wallAdult())
+        && (wallAdult() || (incoming().schoolId == wallSchool() && wallSchool() != ''));
+    }
+
+    // School wall. Comments and reactions live under the post so a feed read
+    // stays one query. Counters sit on the post. Rules are not deployed.
+    match /wall_posts/{postId} {
+      allow read: if isSignedIn() && (
+        resource.data.authorId == request.auth.uid
+        || resource.data.audience == 'public' && wallAdult()
+        || (resource.data.audience in ['school', 'class', 'group'] && (wallAdult() || resource.data.schoolId == wallSchool()))
+      );
+      allow create: if wallPostShape() && incoming().moderation in ['allow', 'hold'];
+      allow update: if isSignedIn() && (
+        (resource.data.authorId == request.auth.uid && wallPostShape())
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'shares', 'updatedAt'])
+      );
+      allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
+
+      match /comments/{commentId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn()
+          && incoming().authorId == request.auth.uid
+          && incoming().body is string
+          && incoming().body.size() > 0
+          && incoming().body.size() <= 2000;
+        allow update, delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
+      }
+
+      match /reactions/{userId} {
+        allow read: if isSignedIn();
+        allow create, update: if isUser(userId)
+          && incoming().kind in ['like', 'love', 'celebrate', 'insightful', 'support'];
+        allow delete: if isUser(userId);
+      }
+    }
+
+    match /wall_reports/{reportId} {
+      allow create: if isSignedIn()
+        && incoming().reporterId == request.auth.uid
+        && incoming().postId is string
+        && incoming().reason is string
+        && incoming().reason.size() > 0
+        && incoming().reason.size() <= 500;
+      allow read: if isSignedIn() && (resource.data.reporterId == request.auth.uid || isTeacherOrAdmin());
+      allow update, delete: if false;
+    }
+
+    // Career events. The Rochford seed stays in the client until a teacher saves one.
+    // Rules are not deployed from this repo by the app.
+    match /career_events/{eventId} {
+      allow read: if isSignedIn();
+      allow create, update: if isTeacherOrAdmin()
+        && incoming().ownerId == request.auth.uid
+        && incoming().title is string
+        && incoming().title.size() > 0
+        && incoming().title.size() <= 160
+        && incoming().date is string
+        && incoming().start is string
+        && incoming().capacity is number
+        && incoming().taken is number;
+      allow delete: if isTeacherOrAdmin() && resource.data.ownerId == request.auth.uid;
+    }
+
+    match /career_registrations/{registrationId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && incoming().userId == request.auth.uid
+        && incoming().eventId is string
+        && incoming().eventId.size() > 0
+        && incoming().eventId.size() <= 80
+        && incoming().name is string
+        && incoming().name.size() > 0
+        && incoming().name.size() <= 120
+        && incoming().reminder is string
+        && incoming().reminder.size() <= 80
+        && registrationId == request.auth.uid + '_' + incoming().eventId;
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && incoming().userId == request.auth.uid
+        && incoming().eventId == resource.data.eventId;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // One alumni membership per person. The directory lists opted-in rows.
+    match /alumni_members/{userId} {
+      allow read: if isSignedIn();
+      allow create, update: if isUser(userId)
+        && incoming().userId == userId
+        && incoming().joined is bool
+        && incoming().mentor is bool
+        && incoming().giving is bool
+        && incoming().optedIn is bool
+        && incoming().group is string
+        && incoming().group.size() <= 80
+        && incoming().displayName is string
+        && incoming().displayName.size() > 0
+        && incoming().displayName.size() <= 80
+        && incoming().going is list
+        && incoming().going.size() <= 20
+        && incoming().schoolId is string
+        && incoming().cohort is string
+        && incoming().className is string
+        && incoming().country is string
+        && incoming().destination is string;
+      allow delete: if isUser(userId) || isAdmin();
+    }
+
+    match /wall_notifications/{noticeId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && incoming().fromId == request.auth.uid
+        && incoming().userId is string
+        && incoming().kind in ['reaction', 'comment', 'mention'];
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if false;
     }
   }
 }

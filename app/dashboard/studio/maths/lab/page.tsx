@@ -153,7 +153,7 @@ function FunctionAnalysis() {
 /* ── Daily puzzle ───────────────────────────────────────────── */
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '+', '-', '*', '/', '='];
-const TILE: Record<Mark, string> = { hit: 'bg-emerald-500 text-[var(--ps-cyan-ink)] border-emerald-500', near: 'bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)] border-[var(--ps-cyan-border)]', miss: 'bg-slate-400 text-[var(--ps-cyan-ink)] border-slate-400' };
+const TILE: Record<Mark, string> = { hit: 'bg-success text-[var(--ps-cyan-ink)] border-success/40', near: 'bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)] border-[var(--ps-cyan-border)]', miss: 'bg-slate-400 text-[var(--ps-cyan-ink)] border-slate-400' };
 
 function EquationPuzzle() {
   const { user } = useAuthSTORE();

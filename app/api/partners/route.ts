@@ -4,12 +4,15 @@ import { runGet, runPost } from '@/lib/server/http';
 import { ActionError } from '@/lib/server/actions';
 import { isSuperAdmin } from '@/lib/roles';
 import {
+  adminPartnerDesk,
   adminQueue,
   applyPartner,
   createOffer,
   decideOffer,
   decidePartner,
   partnerDesk,
+  savePartnerRecord,
+  setPartnerWorkflow,
 } from '@/lib/student-id/server';
 
 export const dynamic = 'force-dynamic';
@@ -39,6 +42,17 @@ export async function GET(req: NextRequest) {
     if (req.nextUrl.searchParams.get('queue') === '1') {
       await assertAdmin(user.uid, user.email, user.role);
       return adminQueue();
+    }
+    if (req.nextUrl.searchParams.get('desk') === '1') {
+      try {
+        await assertAdmin(user.uid, user.email, user.role);
+        return adminPartnerDesk();
+      } catch (error) {
+        if (!(error instanceof ActionError)) throw error;
+        const own = await partnerDesk(user.uid);
+        if (!own.partner) throw error;
+        return { partners: own.partner ? [own.partner] : [], offers: own.offers, own: true };
+      }
     }
     return partnerDesk(user.uid);
   });
@@ -74,12 +88,52 @@ export async function POST(req: NextRequest) {
       });
       return { id, status: 'review' };
     }
-    if (action === 'approve-partner' || action === 'reject-partner' || action === 'approve-offer' || action === 'reject-offer') {
+    if (action === 'save') {
+      const fields = {
+        name: typeof body.name === 'string' ? body.name : '',
+        logo: typeof body.logo === 'string' ? body.logo : '',
+        category: typeof body.category === 'string' ? body.category : '',
+        contact: typeof body.contact === 'string' ? body.contact : '',
+        offersNote: typeof body.offersNote === 'string' ? body.offersNote : '',
+        ageMin: typeof body.ageMin === 'number' ? body.ageMin : Number(body.ageMin ?? 0),
+      };
+      try {
+        await assertAdmin(user.uid, user.email, user.role);
+        const id = await savePartnerRecord({
+          ...fields,
+          id: typeof body.id === 'string' ? body.id : undefined,
+          status: typeof body.status === 'string' ? body.status : 'pending',
+          ownerUid: typeof body.ownerUid === 'string' ? body.ownerUid : user.uid,
+        });
+        return { id };
+      } catch (error) {
+        if (!(error instanceof ActionError) || error.code !== 'FORBIDDEN') throw error;
+        const own = await partnerDesk(user.uid);
+        const current = own.partner as { id?: string; status?: string } | null;
+        if (!current?.id) throw error;
+        const id = await savePartnerRecord({
+          ...fields,
+          id: current.id,
+          status: typeof current.status === 'string' ? current.status : 'pending',
+        });
+        return { id, own: true };
+      }
+    }
+    if (action === 'suspend-partner' || action === 'archive-partner' || action === 'approve-partner' || action === 'reject-partner') {
       await assertAdmin(user.uid, user.email, user.role);
       const id = typeof body.id === 'string' ? body.id : '';
       if (!id) throw new ActionError('VALIDATION', 'Choose a record.');
-      if (action.endsWith('partner')) await decidePartner(id, action === 'approve-partner');
-      else await decideOffer(id, action === 'approve-offer');
+      if (action === 'approve-partner') await setPartnerWorkflow(id, 'approved');
+      else if (action === 'suspend-partner') await setPartnerWorkflow(id, 'suspended');
+      else if (action === 'archive-partner') await setPartnerWorkflow(id, 'archived');
+      else await decidePartner(id, false);
+      return { ok: true };
+    }
+    if (action === 'approve-offer' || action === 'reject-offer') {
+      await assertAdmin(user.uid, user.email, user.role);
+      const id = typeof body.id === 'string' ? body.id : '';
+      if (!id) throw new ActionError('VALIDATION', 'Choose a record.');
+      await decideOffer(id, action === 'approve-offer');
       return { ok: true };
     }
     throw new ActionError('VALIDATION', 'Unknown partner action.');

@@ -579,7 +579,7 @@ export function QuizBlock({ value, onChange, ai, generating, settings, onSetting
                 onClick={() => update(i, { answer: opt })}
                 title="Mark as correct"
                 className={`w-4 h-4 rounded-full border-2 shrink-0 transition-colors ${
-                  opt === q.answer ? 'border-emerald-500 bg-emerald-500' : 'border-muted-foreground/40 hover:border-emerald-400'
+                  opt === q.answer ? 'border-success/40 bg-success' : 'border-muted-foreground/40 hover:border-success/40'
                 }`}
               >
                 {opt === q.answer && <Check className="w-3 h-3 text-white" />}

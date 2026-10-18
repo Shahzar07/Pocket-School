@@ -65,6 +65,18 @@ Arrange on the home moves tiles earlier or later. The web app stores that order 
 
 The mobile app should store the same order on the user document so a phone and the web can match. See `docs/SCHEMA_CHANGES.md`.
 
+## School wall
+
+Community, class, groups, alumni, and `/u/{handle}` all use `components/wall/wall-screen.tsx`. The app should use the same three columns and the fields in `lib/wall/model.ts`.
+
+- Left: profile card and shortcuts for class, groups, alumni, events, and saved posts.
+- Centre: a composer that opens with “What’s on your mind?”, then the feed. Tools are photo or video, feeling, classmate tags, a poll, an event, and an audience. Location stays off until the person ticks it. Under-18 choices are School, Class, and Group.
+- Right: upcoming events, suggested groups, birthdays and achievements, classmates online in that school, Poket SafeLine, and notifications for reactions, comments, and mentions.
+- A post shows the avatar, name, verified badge, role, time, and audience. Photos use a grid and a lightbox. Reactions are like, love, celebrate, insightful, and support. Comments thread, and a comment can include a photo.
+- Sort is Top or Recent. Filters are All, School, Class, Groups, Alumni, and Events. A pinned school note stays first. A pill shows posts that arrived after the page opened.
+- The profile wall has a cover, about, photos, groups, and that person’s posts.
+- ET AI holds or blocks text, and holds a minor’s photos for the Safety Desk. Do not show another school’s posts to an under-18.
+
 ## Loading
 
 Homes render skeleton blocks before numbers arrive. The preview route has no account calls, which is the light path used to check the layout.

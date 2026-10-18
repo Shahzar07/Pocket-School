@@ -224,9 +224,9 @@ export default function MockExamPage({ params }: { params: Promise<{ id: string 
             <Panel className="lg:col-span-4 text-center">
               <p className="text-[13px] font-semibold text-muted-foreground">Your grade</p>
               <motion.p initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 160, damping: 14 }}
-                className="font-heading text-[104px] leading-none mt-2 bg-gradient-to-b from-primary to-emerald-600 bg-clip-text text-transparent">{gradeFor(prep.gradeScale, result.percent)}</motion.p>
+                className="font-heading text-[104px] leading-none mt-2 bg-gradient-to-b from-primary to-success bg-clip-text text-transparent">{gradeFor(prep.gradeScale, result.percent)}</motion.p>
               <p className="font-semibold text-[18px] tabular-nums mt-2">{result.score} / {result.max} · {result.percent}%</p>
-              <p className={`text-[13px] mt-1 inline-flex items-center gap-1 ${result.percent >= prep.targetScore ? 'text-emerald-700' : 'text-muted-foreground'}`}><Target className="w-3.5 h-3.5" /> {result.percent >= prep.targetScore ? `At or above your ${prep.targetGrade} target` : `${prep.targetScore - result.percent}% below your ${prep.targetGrade} target`}</p>
+              <p className={`text-[13px] mt-1 inline-flex items-center gap-1 ${result.percent >= prep.targetScore ? 'text-success' : 'text-muted-foreground'}`}><Target className="w-3.5 h-3.5" /> {result.percent >= prep.targetScore ? `At or above your ${prep.targetGrade} target` : `${prep.targetScore - result.percent}% below your ${prep.targetGrade} target`}</p>
             </Panel>
             <Panel className="lg:col-span-8">
               <PanelHeader title="Examiner’s summary" />
@@ -262,7 +262,7 @@ export default function MockExamPage({ params }: { params: Promise<{ id: string 
                 return (
                   <li key={x.id} className="rounded-2xl border border-border">
                     <button onClick={() => setOpen(o => ({ ...o, [x.id]: !o[x.id] }))} className="w-full flex items-center gap-3 px-4 py-3 text-left">
-                      {full ? <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" /> : zero ? <XCircle className="w-5 h-5 text-rose-500 shrink-0" /> : <span className="w-5 h-5 rounded-full border-2 border-[var(--ps-cyan-border)] shrink-0" />}
+                      {full ? <CheckCircle2 className="w-5 h-5 text-success shrink-0" /> : zero ? <XCircle className="w-5 h-5 text-rose-500 shrink-0" /> : <span className="w-5 h-5 rounded-full border-2 border-[var(--ps-cyan-border)] shrink-0" />}
                       <span className="flex-1 min-w-0 text-[14px] line-clamp-1 [&_p]:inline [&_p]:my-0"><MathMarkdown>{`${i + 1}. ${x.question}`}</MathMarkdown></span>
                       <span className="text-[13px] font-bold tabular-nums">{m?.awarded ?? 0}/{x.marks}</span>
                       <ChevronDown className={`w-4 h-4 transition-transform ${open[x.id] ? 'rotate-180' : ''}`} />
@@ -272,7 +272,7 @@ export default function MockExamPage({ params }: { params: Promise<{ id: string 
                         <div className="[&_p]:my-1"><MathMarkdown>{x.question}</MathMarkdown></div>
                         <div className="rounded-xl bg-muted/50 p-3"><p className="text-[11px] font-bold uppercase text-muted-foreground mb-1">Your answer</p><div className="whitespace-pre-wrap">{answers[x.id] || <span className="text-muted-foreground">No answer</span>}</div></div>
                         <div className="rounded-xl bg-primary/[0.05] border border-primary/15 p-3"><p className="text-[11px] font-bold uppercase text-primary mb-1">Feedback</p><div className="[&_p]:my-1"><MathMarkdown>{m?.feedback ?? ''}</MathMarkdown></div></div>
-                        <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3"><p className="text-[11px] font-bold uppercase text-emerald-700 mb-1">Model answer</p><div className="[&_p]:my-1"><MathMarkdown>{x.answer}</MathMarkdown></div>
+                        <div className="rounded-xl bg-success/15 border border-success/40 p-3"><p className="text-[11px] font-bold uppercase text-success mb-1">Model answer</p><div className="[&_p]:my-1"><MathMarkdown>{x.answer}</MathMarkdown></div>
                           {x.markScheme && <details className="mt-2"><summary className="text-[12px] font-semibold cursor-pointer">Mark scheme</summary><div className="mt-1 text-[13px] [&_p]:my-1"><MathMarkdown>{x.markScheme}</MathMarkdown></div></details>}
                         </div>
                       </div>

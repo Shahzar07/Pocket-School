@@ -24,6 +24,9 @@ import { friendlyError } from '@/lib/design/system';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ClassBoardControls } from '@/components/gamification/class-boards';
+import { SafeLineBanner } from '@/components/safety/safeline-banner';
+import { ClassDesk } from '@/components/school-desk/classes';
+import { DeskProvider } from '@/components/school-desk/ui';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -130,12 +133,15 @@ export default function InstitutionAcademyPage() {
       <div className="max-w-xl py-16">
         <h1 className="font-heading text-4xl">Academy</h1>
         <p className="text-sm text-muted-foreground mt-3">A platform admin still needs to attach this account to an institution before the academy tools open.</p>
+        <DeskProvider><ClassDesk role="institution_admin" /></DeskProvider>
       </div>
     );
   }
 
   return (
-    <DashPage className="max-w-3xl">
+    <DashPage className="max-w-6xl">
+      <DeskProvider><ClassDesk role="institution_admin" /></DeskProvider>
+      <SafeLineBanner />
       <DashboardHome
         role="institution"
         name={institution?.branding?.displayName || institution?.name || profile?.name || 'Your academy'}

@@ -382,9 +382,102 @@ export async function partnerDesk(uid: string): Promise<{ partner: Record<string
   }
   const data = doc.data();
   return {
-    partner: { id: doc.id, name: text(data.name), status: text(data.status), verified: data.verified === true },
+    partner: partnerRow(doc.id, data),
     offers: rows,
   };
+}
+
+function partnerRow(id: string, data: DocumentData): Record<string, unknown> {
+  return {
+    id,
+    name: text(data.name),
+    logo: text(data.logo),
+    category: words(data.categories)[0] ?? '',
+    categories: words(data.categories),
+    contact: text(data.contact),
+    status: text(data.status) || 'pending',
+    ageMin: Number(data.ageMin ?? 0),
+    offersNote: text(data.offersNote),
+    verified: data.verified === true,
+    ownerUid: text(data.ownerUid),
+  };
+}
+
+export async function adminPartnerDesk(): Promise<{ partners: Array<Record<string, unknown>>; offers: Array<Record<string, unknown>> }> {
+  const partners = await db().collection('partners').limit(80).get();
+  const offers = await db().collection('offers').limit(80).get();
+  return {
+    partners: partners.docs.map((doc) => partnerRow(doc.id, doc.data())),
+    offers: offers.docs.map((doc) => ({
+      id: doc.id,
+      title: text(doc.data().title),
+      partnerId: text(doc.data().partnerId),
+      ageMin: Number(doc.data().ageMin ?? 0),
+      category: text(doc.data().category),
+      status: text(doc.data().status),
+    })),
+  };
+}
+
+const PARTNER_FLOW = ['approved', 'suspended', 'archived', 'rejected', 'pending'] as const;
+
+export async function savePartnerRecord(input: {
+  id?: string;
+  name: string;
+  logo: string;
+  category: string;
+  contact: string;
+  offersNote: string;
+  ageMin: number;
+  status?: string;
+  ownerUid?: string;
+}): Promise<string> {
+  const name = input.name.trim();
+  const contact = input.contact.trim();
+  if (name.length < 2 || contact.length < 3) throw new ActionError('VALIDATION', 'Add a business name and a contact.');
+  const ageMin = Math.max(0, Math.round(input.ageMin));
+  const category = input.category.trim().slice(0, 40) || 'study';
+  const review = reviewOffer([category], ageMin);
+  if (!review.ok) throw new ActionError('VALIDATION', review.reason);
+  const status = (PARTNER_FLOW as readonly string[]).includes(input.status ?? '') ? input.status : 'pending';
+  const payload = {
+    name,
+    logo: input.logo.trim().slice(0, 400),
+    categories: [category],
+    contact,
+    offersNote: input.offersNote.trim().slice(0, 500),
+    ageMin,
+    verified: status === 'approved',
+    status,
+  };
+  if (input.id) {
+    const ref = db().doc(`partners/${input.id}`);
+    const snap = await ref.get();
+    if (!snap.exists) throw new ActionError('NOT_FOUND', 'Partner not found.');
+    await ref.set(payload, { merge: true });
+    if (status === 'approved') await decidePartner(input.id, true);
+    return input.id;
+  }
+  const ref = db().collection('partners').doc();
+  await ref.set({
+    ...payload,
+    countries: [],
+    ownerUid: input.ownerUid ?? '',
+    at: Date.now(),
+  });
+  if (status === 'approved' && input.ownerUid) await decidePartner(ref.id, true);
+  return ref.id;
+}
+
+export async function setPartnerWorkflow(partnerId: string, status: 'approved' | 'suspended' | 'archived'): Promise<void> {
+  if (status === 'approved') {
+    await decidePartner(partnerId, true);
+    return;
+  }
+  const ref = db().doc(`partners/${partnerId}`);
+  const snap = await ref.get();
+  if (!snap.exists) throw new ActionError('NOT_FOUND', 'Partner not found.');
+  await ref.set({ status, verified: false }, { merge: true });
 }
 
 export async function adminQueue(): Promise<{ partners: Array<Record<string, unknown>>; offers: Array<Record<string, unknown>> }> {

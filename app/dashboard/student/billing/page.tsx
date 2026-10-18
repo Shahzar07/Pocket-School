@@ -39,13 +39,13 @@ const fadeUp: Record<string, any> = {
 const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
   sent: 'bg-primary/10 text-primary',
-  paid: 'bg-emerald-500/10 text-emerald-600',
+  paid: 'bg-success/10 text-success',
   overdue: 'bg-destructive/10 text-destructive',
   cancelled: 'bg-muted text-muted-foreground',
 };
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
-  paid: <CheckCircle2 className="w-4 h-4 text-emerald-500" />,
+  paid: <CheckCircle2 className="w-4 h-4 text-success" />,
   overdue: <AlertCircle className="w-4 h-4 text-destructive" />,
   sent: <Clock className="w-4 h-4 text-primary" />,
 };

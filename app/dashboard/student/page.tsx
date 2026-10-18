@@ -32,6 +32,7 @@ import { StudentPassCard } from '@/components/student-pass-card';
 import { useEnsureStudentNumber } from '@/components/use-student-number';
 import { learnerLevelLabel } from '@/lib/student-number';
 import { DashboardHome } from '@/components/dashboard';
+import { ParentClassRecord } from '@/components/school-desk/parent-record';
 
 interface CourseWithEnrollment { course: Course; enrollment: Enrollment }
 
@@ -42,7 +43,7 @@ const fadeUp: Record<string, any> = {
 
 const COURSE_GRADIENTS = [
   'from-primary to-primary',
-  'from-emerald-500 to-teal-600',
+  'from-success to-teal-600',
   'from-[var(--ps-cyan)] to-[var(--ps-cyan-border)]',
   'from-rose-500 to-pink-600',
   'from-cyan-500 to-blue-600',
@@ -174,6 +175,7 @@ export default function StudentDashboard() {
           { id: 'courses', label: 'In progress', value: String(inProgress.length), hint: `${completed.length} finished` },
         ]}
       />
+      {user ? <ParentClassRecord childIds={[user.uid]} /> : null}
       <DashHeader
         eyebrow={`${greeting()} · ${today}`}
         title="Welcome back,"

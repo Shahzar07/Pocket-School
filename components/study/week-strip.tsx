@@ -50,7 +50,7 @@ export function WeekStrip({ plan, completed, examDate, selected, onSelect }: {
                 )}
               </svg>
               {full ? (
-                <Check className="w-4 h-4 text-emerald-600" strokeWidth={3} />
+                <Check className="w-4 h-4 text-success" strokeWidth={3} />
               ) : isExam ? (
                 <span className="text-sm">🎓</span>
               ) : (

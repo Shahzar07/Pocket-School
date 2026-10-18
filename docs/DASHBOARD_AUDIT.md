@@ -33,6 +33,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 ## Pages
 
+### Dashboard
+
+- **Route:** `/dashboard`
+- **Audience:** everyone
+- **Purpose:** Opens the home for the signed-in role.
+- **Overlaps:** Student, teacher, parent, and admin homes.
+- **Decision:** Redirect. There is no second dashboard.
+- **Owner keys:** None.
+
 ### Student home
 
 - **Route:** `/dashboard/student`
@@ -325,18 +334,18 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/student/tasks`
 - **Audience:** student, parent, teacher
-- **Purpose:** The one daily-goals list: what to finish today, visible to the student, their parents, and their teachers.
+- **Purpose:** The old tasks address. It opens the daily-goals page and keeps the query.
 - **Overlaps:** /dashboard/student/goals.
-- **Decision:** This is the merged goals page. /dashboard/student/goals redirects here.
+- **Decision:** Redirect to /dashboard/student/goals. The query, including add=1, is kept.
 - **Owner keys:** None.
 
-### Goals (retired)
+### Daily goals
 
 - **Route:** `/dashboard/student/goals`
 - **Audience:** student
-- **Purpose:** The old second goals page. It now opens daily goals.
-- **Overlaps:** Daily goals.
-- **Decision:** Redirect to /dashboard/student/tasks. Removed from the student nav.
+- **Purpose:** The one daily-goals list: what to finish today, visible to the student, their parents, and their teachers.
+- **Overlaps:** Tasks.
+- **Decision:** This is the merged goals page. /dashboard/student/tasks redirects here.
 - **Owner keys:** None.
 
 ### Learning insights
@@ -460,7 +469,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/teacher/goals`
 - **Audience:** teacher
-- **Purpose:** The same daily goals students set, seen by their teacher.
+- **Purpose:** Every goal for students in the teacher’s class, with status, due time, active focus, reschedules, and completion.
 - **Overlaps:** Student daily goals.
 - **Decision:** Keep as the teacher view. Do not add a second goal model.
 - **Owner keys:** None.
@@ -687,7 +696,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Audience:** admin
 - **Purpose:** What each role can do, with a live count of people in that role, plus assigning an institution admin.
 - **Overlaps:** Users and Sparks, and allocations.
-- **Decision:** Not a second email editor. Subscription changes stay on Users and allocations. Institution-admin assignment stays here.
+- **Decision:** Roles stay here. Tier, course, and coupon grants stay on Allocations, linked from this page.
 - **Owner keys:** None.
 
 ### Allocations
@@ -696,7 +705,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Audience:** admin
 - **Purpose:** Grant a tier, a course, or a coupon to a person.
 - **Overlaps:** Access and Users.
-- **Decision:** Keep and make the three grants easier to find. This is the only place coupons are created.
+- **Decision:** Keep. This is the grants half of Access. Coupons are created only here.
 - **Owner keys:** None.
 
 ### System settings
@@ -726,6 +735,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Keep as the platform catalogue.
 - **Owner keys:** None.
 
+### Exam packs
+
+- **Route:** `/dashboard/admin/exam-packs`
+- **Audience:** admin
+- **Purpose:** Admins add, edit, and delete ET Maths syllabus packs. Students open the same packs from the studio.
+- **Overlaps:** The student maths pack list.
+- **Decision:** Keep. This is the only add, edit, and delete desk. The studio list is read-only.
+- **Owner keys:** None. Packs are stored on this device.
+
 ### Curriculum CMS
 
 - **Route:** `/dashboard/admin/curriculum`
@@ -734,6 +752,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Overlaps:** Resources.
 - **Decision:** Keep. Resources is the file library the CMS can point at.
 - **Owner keys:** OPENROUTER_API_KEY for lesson generation.
+
+### Study planner
+
+- **Route:** `/dashboard/admin/planner`
+- **Audience:** admin
+- **Purpose:** Age caps and reschedule limits for ET AI assigned goals.
+- **Overlaps:** Student daily goals.
+- **Decision:** Keep. The planner writes the same daily goals. It does not add a second list.
+- **Owner keys:** None. Without an ET AI key the planner is rule-based.
 
 ### Curriculum course
 
@@ -767,8 +794,8 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Route:** `/dashboard/admin/audit`
 - **Audience:** admin
 - **Purpose:** Who changed staff-level settings and when.
-- **Overlaps:** None.
-- **Decision:** Keep.
+- **Overlaps:** Activity log.
+- **Decision:** Redirect to /dashboard/admin/activity. Staff changes and the server log are one list.
 - **Owner keys:** None.
 
 ### Payments
@@ -829,7 +856,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/community`
 - **Audience:** everyone
-- **Purpose:** Spaces and posts, plus class channels as a tab. ET AI can summarise a thread and suggest an answer.
+- **Purpose:** Facebook-style school wall: composer, photo grids, reactions, and comments. Class channels stay on a tab. The same wall is used for class, groups, alumni, and profile timelines.
 - **Overlaps:** /dashboard/channels.
 - **Decision:** Channels fold in as a tab. /dashboard/channels redirects here.
 - **Owner keys:** OPENROUTER_API_KEY for summaries.
@@ -1028,8 +1055,8 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Route:** `/dashboard/admin/activity`
 - **Audience:** admin
 - **Purpose:** Server-written sign-in, role, content, and admin actions. Super admins read it. People cannot edit a row.
-- **Overlaps:** Institution audit on an academy.
-- **Decision:** Keep. This is the platform log. Academy settings keep their own audit.
+- **Overlaps:** The older audit page and institution audit on an academy.
+- **Decision:** Keep. /dashboard/admin/audit opens this log. Academy settings keep their own audit.
 - **Owner keys:** None. The server stamps actor, time, and IP.
 
 ### Badges
@@ -1525,6 +1552,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Purpose:** Learners in this school whose progress alerts are open.
 - **Overlaps:** Teacher class risk and parent progress.
 - **Decision:** Keep. The school sees its own learners.
+- **Owner keys:** None.
+
+### Goal adherence
+
+- **Route:** `/dashboard/institution/goals`
+- **Audience:** institution
+- **Purpose:** Goal completion for the school. Class teachers and institution staff can read every goal.
+- **Overlaps:** Teacher class goals and student daily goals.
+- **Decision:** Keep as the school count. A private flag does not hide a goal.
 - **Owner keys:** None.
 
 ### Course library

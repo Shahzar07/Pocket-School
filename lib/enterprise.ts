@@ -7,7 +7,17 @@
 import { namedLevel, parseGender } from './insights/census';
 import { isFlagEnabled } from './payments/flags';
 
-export const INSTITUTION_TYPES = ['school', 'university', 'corporate', 'government'] as const;
+export const INSTITUTION_TYPES = [
+  'school',
+  'college',
+  'university',
+  'corporate',
+  'government',
+  'international_school',
+  'tuition_centre',
+  'homeschool_group',
+  'training_provider',
+] as const;
 export type InstitutionType = (typeof INSTITUTION_TYPES)[number];
 
 export const INSTITUTION_PLANS = ['starter', 'team', 'enterprise', 'oem'] as const;

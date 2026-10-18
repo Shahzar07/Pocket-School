@@ -113,7 +113,7 @@ export default function StudentAssignmentsPage() {
   };
 
   const STATUS_STYLES: Record<string, string> = {
-    graded: 'bg-emerald-500/10 text-emerald-600',
+    graded: 'bg-success/10 text-success',
     submitted: 'bg-primary/10 text-primary',
     overdue: 'bg-destructive/10 text-destructive',
     pending: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
@@ -269,7 +269,7 @@ export default function StudentAssignmentsPage() {
                 custom={i}
                 className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4 card-glow"
               >
-                <CheckCircle2 className={`w-5 h-5 shrink-0 ${status === 'graded' ? 'text-emerald-500' : 'text-primary'}`} />
+                <CheckCircle2 className={`w-5 h-5 shrink-0 ${status === 'graded' ? 'text-success' : 'text-primary'}`} />
                 <div className="flex-1 min-w-0">
                   <p className="font-heading text-foreground">{item.assignment.title}</p>
                   {item.submission?.feedback && <p className="text-sm text-muted-foreground mt-1">{item.submission.feedback}</p>}

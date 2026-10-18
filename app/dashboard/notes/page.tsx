@@ -11,10 +11,14 @@ export default function NotesPage() {
   const { user } = useAuthSTORE();
   const [notes, setNotes] = useState<StickyNote[]>([]);
   const [groups, setGroups] = useState<StudyGroupOption[]>([]);
+  const [syncError, setSyncError] = useState('');
 
   useEffect(() => {
     if (!user) return;
-    return subscribeNotes(user.uid, setNotes);
+    return subscribeNotes(user.uid, (next) => {
+      setNotes(next);
+      setSyncError('');
+    }, setSyncError);
   }, [user]);
 
   useEffect(() => {
@@ -42,15 +46,27 @@ export default function NotesPage() {
     <NotesBoard
       notes={notes}
       groups={groups}
+      notice={syncError}
       onCreate={async (input) => {
-        await createNote(user.uid, {
-          text: input.text,
-          colour: input.colour,
-          board: input.board,
-          checklist: input.checklist ? [{ id: '1', text: input.text, done: false }] : [],
-        });
+        try {
+          await createNote(user.uid, {
+            text: input.text,
+            colour: input.colour,
+            board: input.board,
+            checklist: input.checklist ? [{ id: 'step-1', text: 'Add a step', done: false }] : [],
+          });
+        } catch (reason) {
+          setSyncError(reason instanceof Error ? reason.message : 'The note was not saved.');
+        }
       }}
-      onPatch={(id, patch) => patchNote(user.uid, id, patch)}
+      onPatch={async (id, patch) => {
+        setNotes((current) => current.map((item) => item.id === id ? { ...item, ...patch, updatedAt: Date.now() } : item));
+        try {
+          await patchNote(user.uid, id, patch);
+        } catch (reason) {
+          setSyncError(reason instanceof Error ? reason.message : 'The note was not saved.');
+        }
+      }}
       onReorder={(ids) => saveNoteOrder(user.uid, ids)}
       onAsk={async (action: NoteAction, noteIds) => {
         const data = await authedFetch('/api/notes', {

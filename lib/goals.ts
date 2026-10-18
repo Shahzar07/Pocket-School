@@ -5,7 +5,7 @@
  * document still opens.
  */
 
-export const GOAL_CATEGORIES = ['study', 'revision', 'practice', 'reading', 'other'] as const;
+export const GOAL_CATEGORIES = ['study', 'homework', 'revision', 'reading', 'practice', 'personal', 'other'] as const;
 export type GoalCategory = (typeof GOAL_CATEGORIES)[number];
 
 export const GOAL_STATUSES = ['not_started', 'in_progress', 'completed', 'overdue', 'excused'] as const;

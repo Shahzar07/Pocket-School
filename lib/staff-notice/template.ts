@@ -96,7 +96,7 @@ export function caseCardHtml(card: CaseCard): string {
         ${location}
         <p style="margin:0 0 8px"><strong>Time.</strong> ${escapeHtml(card.atIso)}</p>
         <p style="margin:0 0 16px"><strong>Case.</strong> ${escapeHtml(card.caseId)}</p>
-        <a href="${escapeHtml(card.caseUrl)}" style="display:inline-block;min-height:48px;line-height:48px;padding:0 18px;border-radius:14px;background:#2786A4;color:#ffffff;text-decoration:none;font-weight:700">Open case</a>
+        <a href="${escapeHtml(card.caseUrl)}" style="display:inline-block;min-height:48px;line-height:48px;padding:0 18px;border-radius:14px;background:#1E6A83;color:#ffffff;text-decoration:none;font-weight:700">Open case</a>
         ${excluded}
       </div>
       <div style="margin:0;padding:16px 24px;background:#E7F1F4;color:#1E6A83;font-size:13px">

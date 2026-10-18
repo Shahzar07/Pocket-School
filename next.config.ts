@@ -2,6 +2,7 @@ import type {NextConfig} from 'next';
 import { studioRedirects } from './lib/studio-paths';
 
 const nextConfig: NextConfig = {
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   async redirects() {
     return [...studioRedirects];
   },

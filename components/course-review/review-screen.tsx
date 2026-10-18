@@ -173,7 +173,7 @@ export function ReviewScreen({
                               const chosen = answers[question.question] === option;
                               const correct = option === question.answer;
                               return (
-                                <label key={option} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${chosen && correct ? 'border-emerald-500 bg-emerald-50' : chosen ? 'border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)]' : 'border-border'}`}>
+                                <label key={option} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${chosen && correct ? 'border-success/40 bg-success/15' : chosen ? 'border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)]' : 'border-border'}`}>
                                   <input
                                     type="radio"
                                     name={question.question}
@@ -215,7 +215,7 @@ export function ReviewScreen({
                 const current = index === here;
                 return (
                   <li key={step} className="flex items-center gap-2 text-sm">
-                    <span className={`grid h-6 w-6 place-items-center rounded-full text-[11px] font-bold ${current ? 'bg-[#1E6A83] text-white' : done ? 'bg-emerald-600 text-white' : 'bg-muted text-muted-foreground'}`}>{index + 1}</span>
+                    <span className={`grid h-6 w-6 place-items-center rounded-full text-[11px] font-bold ${current ? 'bg-[#1E6A83] text-white' : done ? 'bg-success text-white' : 'bg-muted text-muted-foreground'}`}>{index + 1}</span>
                     <span className={current ? 'font-semibold text-foreground' : 'text-muted-foreground'}>{REVIEW_LABEL[step]}</span>
                   </li>
                 );
@@ -228,7 +228,7 @@ export function ReviewScreen({
                 </button>
               )}
               {forward && (
-                <button type="button" disabled={busy || blocked} className="h-10 rounded-xl bg-emerald-600 text-sm font-semibold text-white disabled:opacity-50" onClick={() => void move(forward)}>
+                <button type="button" disabled={busy || blocked} className="h-10 rounded-xl bg-success text-sm font-semibold text-white disabled:opacity-50" onClick={() => void move(forward)}>
                   Move to {REVIEW_LABEL[forward]}
                 </button>
               )}
@@ -243,7 +243,7 @@ export function ReviewScreen({
 
           <section className="rounded-3xl border border-border bg-card p-4">
             <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Publish checklist</p>
-            {issues.length === 0 ? <p className="mt-2 text-sm text-emerald-700">Ready to publish.</p> : (
+            {issues.length === 0 ? <p className="mt-2 text-sm text-success">Ready to publish.</p> : (
               <ul className="mt-2 space-y-2">
                 {issues.map(issue => (
                   <li key={`${issue.code}-${issue.lessonId}`} className="text-sm">

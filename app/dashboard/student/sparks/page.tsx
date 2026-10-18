@@ -80,7 +80,7 @@ export default function SparksPage() {
           {rows.map((tx) => (
             <li key={tx.id} className="flex justify-between rounded-xl border border-border px-3 py-2 text-sm">
               <span>{tx.note || tx.type}</span>
-              <span className={tx.amount >= 0 ? 'text-emerald-600' : 'text-[var(--ps-cyan-text)]'}>{tx.amount > 0 ? '+' : ''}{tx.amount}</span>
+              <span className={tx.amount >= 0 ? 'text-success' : 'text-[var(--ps-cyan-text)]'}>{tx.amount > 0 ? '+' : ''}{tx.amount}</span>
             </li>
           ))}
         </ul>

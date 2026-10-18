@@ -18,6 +18,15 @@ export interface DashboardPage {
 
 export const DASHBOARD_PAGES: DashboardPage[] = [
   {
+    path: '/dashboard',
+    title: 'Dashboard',
+    purpose: 'Opens the home for the signed-in role.',
+    audience: ['everyone'],
+    overlaps: 'Student, teacher, parent, and admin homes.',
+    decision: 'Redirect. There is no second dashboard.',
+    ownerKeys: 'None.',
+  },
+  {
     path: '/dashboard/student',
     title: 'Student home',
     purpose: 'The student landing page: today’s goals, courses to continue, and shortcuts into ET AI, achievements, and learning.',
@@ -308,19 +317,19 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/student/tasks',
     title: 'Daily goals',
-    purpose: 'The one daily-goals list: what to finish today, visible to the student, their parents, and their teachers.',
+    purpose: 'The old tasks address. It opens the daily-goals page and keeps the query.',
     audience: ['student', 'parent', 'teacher'],
     overlaps: '/dashboard/student/goals.',
-    decision: 'This is the merged goals page. /dashboard/student/goals redirects here.',
+    decision: 'Redirect to /dashboard/student/goals. The query, including add=1, is kept.',
     ownerKeys: 'None.',
   },
   {
     path: '/dashboard/student/goals',
-    title: 'Goals (retired)',
-    purpose: 'The old second goals page. It now opens daily goals.',
+    title: 'Daily goals',
+    purpose: 'The one daily-goals list: what to finish today, visible to the student, their parents, and their teachers.',
     audience: ['student'],
-    overlaps: 'Daily goals.',
-    decision: 'Redirect to /dashboard/student/tasks. Removed from the student nav.',
+    overlaps: 'Tasks.',
+    decision: 'This is the merged goals page. /dashboard/student/tasks redirects here.',
     ownerKeys: 'None.',
   },
   {
@@ -371,7 +380,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/teacher/classes',
     title: 'My classes',
-    purpose: 'The classes this teacher runs and the students in them.',
+    purpose: 'Create and run a class: roster, join code, attendance, assignments, goals, and the gradebook.',
     audience: ['teacher'],
     overlaps: 'Institution home.',
     decision: 'Keep.',
@@ -416,7 +425,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/teacher/earnings',
     title: 'Earnings',
-    purpose: 'What this teacher has earned from courses and tutoring.',
+    purpose: 'Course sales, live sessions, school payments, and revenue share. Sample figures until the payout keys exist.',
     audience: ['teacher'],
     overlaps: 'Wallet and admin finance.',
     decision: 'Keep as the teacher’s own earnings. Payouts still settle in the wallet.',
@@ -443,16 +452,16 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/teacher/goals',
     title: 'Class daily goals',
-    purpose: 'The same daily goals students set, seen by their teacher.',
+    purpose: 'Every goal for students in the teacher’s class, with status, due time, active focus, reschedules, and completion.',
     audience: ['teacher'],
     overlaps: 'Student daily goals.',
-    decision: 'Keep as the teacher view. Do not add a second goal model.',
+    decision: 'Assigned goals live on the student record. Daily goals students set stay on the daily goals list.',
     ownerKeys: 'None.',
   },
   {
     path: '/dashboard/teacher/gradebook',
     title: 'Gradebook',
-    purpose: 'Marks for the teacher’s classes.',
+    purpose: 'Enter marks for a class on the assessment scale, then publish them to the student and parent.',
     audience: ['teacher'],
     overlaps: 'Transcript and report cards.',
     decision: 'Keep. The gradebook is where marks are entered.',
@@ -461,7 +470,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/teacher/assignments',
     title: 'Assignments',
-    purpose: 'Set work for a class, one student, or the whole institution, then mark it.',
+    purpose: 'Set work for a class or a student, mark the inbox, and return it to the gradebook.',
     audience: ['teacher'],
     overlaps: 'Student assignments.',
     decision: 'Keep. This is the sending side.',
@@ -479,7 +488,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/teacher/report-cards',
     title: 'Report cards',
-    purpose: 'Term reports for families.',
+    purpose: 'Term report cards pulled from the gradebook, attendance, merits, and goals.',
     audience: ['teacher'],
     overlaps: 'Report studio and parent reports.',
     decision: 'Keep. Studio designs them; this page issues them.',
@@ -488,7 +497,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/teacher/report-studio',
     title: 'Report studio',
-    purpose: 'Lay out a report before it is issued.',
+    purpose: 'Build and run reports: pick a template, a scope, and dates, then export or schedule them.',
     audience: ['teacher'],
     overlaps: 'Institution templates.',
     decision: 'Keep.',
@@ -497,7 +506,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/teacher/attendance',
     title: 'Take attendance',
-    purpose: 'Mark who is present and record login time for the institution.',
+    purpose: 'Mark a class register and send absent or late notices to parents.',
     audience: ['teacher'],
     overlaps: 'Student attendance.',
     decision: 'Keep as the register.',
@@ -650,7 +659,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/admin/institutions',
     title: 'Institutions',
-    purpose: 'Schools and organisations on the platform.',
+    purpose: 'Schools and organisations on the platform. A super admin adds one through the server. Without the Firebase Admin key the form says the tool is coming soon.',
     audience: ['admin'],
     overlaps: 'Access institution-admin assignment.',
     decision: 'Keep. Assigning an institution admin is reachable from Access and from an institution.',
@@ -671,16 +680,16 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     purpose: 'What each role can do, with a live count of people in that role, plus assigning an institution admin.',
     audience: ['admin'],
     overlaps: 'Users and Sparks, and allocations.',
-    decision: 'Not a second email editor. Subscription changes stay on Users and allocations. Institution-admin assignment stays here.',
+    decision: 'Roles stay here. Tier, course, and coupon grants stay on Allocations, linked from this page.',
     ownerKeys: 'None.',
   },
   {
     path: '/dashboard/admin/allocations',
     title: 'Allocations',
-    purpose: 'Grant a tier, a course, or a coupon to a person.',
+    purpose: 'Seat allocations for a course or plan, plus a tier, course, or coupon for one person.',
     audience: ['admin'],
     overlaps: 'Access and Users.',
-    decision: 'Keep and make the three grants easier to find. This is the only place coupons are created.',
+    decision: 'Keep. This is the grants half of Access. Coupons are created only here.',
     ownerKeys: 'None.',
   },
   {
@@ -711,6 +720,15 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     ownerKeys: 'None.',
   },
   {
+    path: '/dashboard/admin/exam-packs',
+    title: 'Exam packs',
+    purpose: 'Admins add, edit, and delete ET Maths syllabus packs. Students open the same packs from the studio.',
+    audience: ['admin'],
+    overlaps: 'The student maths pack list.',
+    decision: 'Keep. This is the only add, edit, and delete desk. The studio list is read-only.',
+    ownerKeys: 'None. Packs are stored on this device.',
+  },
+  {
     path: '/dashboard/admin/curriculum',
     title: 'Curriculum CMS',
     purpose: 'Build official curriculum: subjects, modules, and lessons.',
@@ -718,6 +736,15 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     overlaps: 'Resources.',
     decision: 'Keep. Resources is the file library the CMS can point at.',
     ownerKeys: 'OPENROUTER_API_KEY for lesson generation.',
+  },
+  {
+    path: '/dashboard/admin/planner',
+    title: 'Study planner',
+    purpose: 'Age caps and reschedule limits for ET AI assigned goals.',
+    audience: ['admin'],
+    overlaps: 'Student daily goals.',
+    decision: 'Keep. The planner writes the same daily goals. It does not add a second list.',
+    ownerKeys: 'None. Without an ET AI key the planner is rule-based.',
   },
   {
     path: '/dashboard/admin/curriculum/[courseId]',
@@ -751,8 +778,8 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     title: 'Audit log',
     purpose: 'Who changed staff-level settings and when.',
     audience: ['admin'],
-    overlaps: 'None.',
-    decision: 'Keep.',
+    overlaps: 'Activity log.',
+    decision: 'Redirect to /dashboard/admin/activity. Staff changes and the server log are one list.',
     ownerKeys: 'None.',
   },
   {
@@ -812,7 +839,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/community',
     title: 'Community',
-    purpose: 'Spaces and posts, plus class channels as a tab. ET AI can summarise a thread and suggest an answer.',
+    purpose: 'Facebook-style school wall: composer, photo grids, reactions, and comments. Class channels stay on a tab. The same wall is used for class, groups, alumni, and profile timelines.',
     audience: ['everyone'],
     overlaps: '/dashboard/channels.',
     decision: 'Channels fold in as a tab. /dashboard/channels redirects here.',
@@ -956,7 +983,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/admin/partners',
     title: 'Partner perks',
-    purpose: 'Approve merchant applications and offers. Blocked categories are refused for under-18s.',
+    purpose: 'Add and update merchants, then approve, suspend, or archive them. A partner edits only their own record.',
     audience: ['admin'],
     overlaps: 'Partner portal.',
     decision: 'Keep. Offers stay in review until an admin approves them.',
@@ -1012,8 +1039,8 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     title: 'Activity log',
     purpose: 'Server-written sign-in, role, content, and admin actions. Super admins read it. People cannot edit a row.',
     audience: ['admin'],
-    overlaps: 'Institution audit on an academy.',
-    decision: 'Keep. This is the platform log. Academy settings keep their own audit.',
+    overlaps: 'The older audit page and institution audit on an academy.',
+    decision: 'Keep. /dashboard/admin/audit opens this log. Academy settings keep their own audit.',
     ownerKeys: 'None. The server stamps actor, time, and IP.',
   },
   {
@@ -1028,7 +1055,7 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/admin/certificates',
     title: 'Certificates',
-    purpose: 'Design the Open Badge and issue it to a school list. Each badge is a signed credential with a public verify page.',
+    purpose: 'Design certificate templates with a live preview and PDF export. A super admin sets the default. An institution admin saves their override.',
     audience: ['admin'],
     overlaps: 'Module certificates and the school issuance desk.',
     decision: 'Keep as the platform badge template and bulk issue desk.',
@@ -1342,8 +1369,8 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   },
   {
     path: '/dashboard/admin/help',
-    title: 'Help articles',
-    purpose: 'Published help articles are what the help centre and ET AI answer from.',
+    title: 'Admin help',
+    purpose: 'Where each admin tool lives, what each role can do, which keys still say coming soon, and the help articles ET AI answers from.',
     audience: ['admin'],
     overlaps: 'Help centre.',
     decision: 'Keep as the only editor for help articles.',
@@ -1509,6 +1536,15 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     audience: ['institution'],
     overlaps: 'Teacher class risk and parent progress.',
     decision: 'Keep. The school sees its own learners.',
+    ownerKeys: 'None.',
+  },
+  {
+    path: '/dashboard/institution/goals',
+    title: 'Goal adherence',
+    purpose: 'Goal completion for the school. Class teachers and institution staff can read every goal.',
+    audience: ['institution'],
+    overlaps: 'Teacher class goals and student daily goals.',
+    decision: 'Keep as the school count. A private flag does not hide a goal.',
     ownerKeys: 'None.',
   },
   {

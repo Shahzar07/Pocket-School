@@ -8,7 +8,6 @@ import {
   collection,
   doc,
   onSnapshot,
-  orderBy,
   query,
   setDoc,
   updateDoc,
@@ -22,6 +21,7 @@ import {
   clampNoteText,
   cleanChecklist,
   noteColour,
+  noteDocument,
   noteLink,
   type NoteCheck,
   type NoteColour,
@@ -55,11 +55,21 @@ function toNote(id: string, data: DocumentData): StickyNote {
   };
 }
 
-export function subscribeNotes(uid: string, onNotes: (notes: StickyNote[]) => void): () => void {
-  const q = query(collection(db, 'users', uid, 'notes'), orderBy('order'));
+export function subscribeNotes(
+  uid: string,
+  onNotes: (notes: StickyNote[]) => void,
+  onError?: (message: string) => void,
+): () => void {
+  // Do not orderBy('order'). A note saved before that field existed is left out
+  // of an ordered query, and a rules or index error used to wipe the board.
+  const q = query(collection(db, 'users', uid, 'notes'));
   return onSnapshot(q, (snap) => {
     onNotes(snap.docs.map((item) => toNote(item.id, item.data())));
-  }, () => onNotes([]));
+  }, (error) => {
+    const message = error instanceof Error ? error.message : 'Notes could not sync.';
+    console.error('Notes could not sync.', message);
+    onError?.(message);
+  });
 }
 
 export async function createNote(uid: string, input: {
@@ -72,22 +82,7 @@ export async function createNote(uid: string, input: {
   order?: number;
 }): Promise<string> {
   const ref = doc(collection(db, 'users', uid, 'notes'));
-  const now = Date.now();
-  const checklist = cleanChecklist(input.checklist);
-  await setDoc(ref, {
-    text: clampNoteText(input.text),
-    colour: noteColour(input.colour),
-    pinned: false,
-    order: input.order ?? now,
-    board: boardName(input.board ?? DEFAULT_BOARD),
-    linkedTo: noteLink(input.linkedTo?.type, input.linkedTo?.id),
-    checklist,
-    remindAt: typeof input.remindAt === 'number' ? input.remindAt : null,
-    remindedAt: 0,
-    createdAt: now,
-    updatedAt: now,
-    deletedAt: null,
-  });
+  await setDoc(ref, noteDocument(input));
   return ref.id;
 }
 

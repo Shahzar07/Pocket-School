@@ -3165,6 +3165,23 @@ Clients cannot create or update `studentNumber`, `referralCode`, `cardShareId`, 
 
 A person with no school sees the title **Poket School member card**. A person with `institutionId` sees **Student card**. The owner page `/dashboard/card` shows the number. The public card does not.
 
+### Card face
+
+The web card matches the approved app card: landscape, about 820×526, radius about 28px, a 1px `#1E6A83` border, and a `#F3FEFE` body.
+
+- Header, about 80px, gradient `#1E6A83` to `#2786A4`. A rounded logo tile holds an open book, or `branding.logoUrl`. Beside it, the institution name in white caps and the tagline. A `#3FE0D0` pill reads **STUDENT ID CARD** in `#203337`.
+- Left: a square photo in a thick `#1E6A83` frame. With no photo, a large initial and a small holographic chip. A white rounded box under the frame holds the barcode.
+- Middle: **NAME**, **STUDENT ID**, **LEVEL**, **DEPARTMENT/PROGRAMME**, **ACADEMIC YEAR** (`2026/27`), **VALID UNTIL**. Labels are small bold caps in `#1E6A83`. Values are bold `#203337`. Level is a Poket level name such as Primary 5 or IGCSE, never `Year N`. Independent learners show **While you learn**.
+- Right: a double-ring seal (`#3FE0D0` outside, `#1E6A83` inside) with `branding.monogram`, and a QR on a white rounded tile.
+- Above the footer: **Poket SafeLine · Not an emergency service**.
+- Footer: full-width `#3FE0D0`, motto centred in bold `#203337`. The Poket motto is **Learn ● Grow ● Achieve**.
+
+The back repeats the header and footer. It states what partners can see, **If found, please return to** the institution, that Poket SafeLine is not an emergency service, and **Verify at poketschool.ai/verify**, with a large QR.
+
+White-label reads `institutions/{id}.branding`: `displayName`, `tagline`, `motto` (else `certificateFooter`), `monogram`, and `logoUrl`. Poket defaults are the name Poket School, tagline “Free for every student”, motto “Learn ● Grow ● Achieve”, and monogram PS. School cards use the same blue and cyan. No gold.
+
+The sample face is **Alex Student**, **PSM-SAMPLE**, level IGCSE, with a SAMPLE watermark at 18% opacity and a cyan **Sample card** chip. The owner card prints `users.studentNumber`. The public share still does not. The QR is the existing HMAC `ps1.` token from `GET /api/student-id`. The back carries short terms, the same QR, “If found, return to…”, and Poket SafeLine. PNG and PDF downloads are generated in the browser. Apple Wallet and Google Wallet buttons are placeholders and do not issue a pass. `GET /api/card` also returns `holderName` and `brand` for the owner face. Clients still cannot write `studentNumber`.
+
 ## Card share
 
 `card_shares/{shareId}` is `{ uid, createdAt, revoked, revokedAt?, viewCount }`. `shareId` is a random base64url string of 16 to 64 URL-safe characters. The user field `cardShareId` points at the live share. Creating a new share revokes the previous document. Revoke sets `revoked` and deletes `cardShareId`. Regenerate issues a new id. The public page is `/card/[shareId]`. Two images sit on that route and both use the same public card: `opengraph-image.tsx` (1200×630) and `/card/[shareId]/story` (1080×1920). Each shows the branded blue gradient, first name, level name, and badges or streak, plus **Join Poket School**. Neither image reads a plan. The page link is `/signup?ref={code}`. A preview that does not need the server account is `/preview/card`.
@@ -3230,4 +3247,112 @@ Sharing is off until the owner asks. `POST /api/notes` with `action: "share"` ch
 `action` `flashcards`, `summarise`, or `plan` reads only the owner's selected notes and sends them to ET AI. Nothing is sent until the student presses one of those actions.
 
 Indexes for the reminder query and the trash query are in `firestore.indexes.json`. They are not deployed from this change.
+
+## Admin desk
+
+The web admin home is `/dashboard/admin`. Queues are `/dashboard/admin/queues`. Platform tools are `/dashboard/admin/platform`. KPIs are `/dashboard/admin/pulse`. The API is `GET` and `POST /api/admin/desk`.
+
+`super_admin` can open every queue and every platform tool. `admin` is limited to rows whose `institutionId` or `region` matches the account. With neither set, only a matching `country` is visible, and a row with no place is hidden. An admin cannot change a super admin's role, tier, or suspension. Hotline and safeguarding rows hide names, emails, and phone numbers unless `staffPost` is `safeguarding_lead`. A super admin still sees them. The hotline list for a super admin is not filtered by one institution.
+
+Amber approval stores `deskApprovers` on `emergency_alerts/{id}`. Two different admins must each give a reason. `deskApproval` stays `pending` until the second approval, then becomes `approved`. That record does not by itself publish the alert.
+
+`admin_desk/log` is the append-only parent (`chainSeq`, `chainHead`, `legalHold`). Each admin action is one document in `admin_desk/log/audit`. Clients cannot read or write it. `GET /api/admin/desk?export=csv` and `export=pdf` are super-admin only. The file ends with `verificationHash`, the SHA-256 of the text before that line. Filters are `action` and `actor`.
+
+`push_broadcasts/{id}` is `{ category, audience, body, createdBy, createdAt, status }`. `status` starts as `queued`. A super admin must type `SEND`. Clients cannot read or write the collection.
+
+`helpline_config/{country}` is `{ country, name, number, sourceUrl, updatedBy, updatedAt }`. `country` is a two-letter code. `sourceUrl`, when set, starts with `https://`. Signed-in clients may read it. Only the server writes it. An admin may write their own country. A super admin may write any country.
+
+Feature flags stay on `platform_settings/feature_flags`. Only a super admin can change one from this desk. Safety terms notes merge `statusNote` onto `legal/safetyTerms/versions/{version}` and do not reset `chainSeq` when the document already exists. The on-call rota remains `safety_desk/rota`.
+
+Merchant approval still uses `decidePartner`, which can set `users.role` to `partner_merchant`. Community partner approval still grants nothing. A missing Firebase Admin key returns "This admin tool is coming soon." and writes nothing.
+
+Rules for `admin_desk`, `push_broadcasts`, and `helpline_config` are in `firestore.rules`. They are not deployed.
+
+## Admin tools batch
+
+Adding an institution from `/dashboard/admin/institutions` is `POST /api/admin/institutions`. The browser no longer writes `institutions` itself. Firestore only allows `role == 'admin'` to create that document, so a super admin whose token is not that role was denied and the dialog still closed. The route uses the Admin SDK. Without `FIREBASE_SERVICE_ACCOUNT` or `GOOGLE_APPLICATION_CREDENTIALS` it returns "Adding an institution needs the Firebase Admin key. This admin tool is coming soon." and writes nothing. The dialog stays open.
+
+`institutions/{id}` may also store `slug`, `group`, `campuses`, `website`, `levels`, `city`, and `test`. `test: true` marks a fixture. Rochford's International School is slug `rochfords-international-school`: Rochford's Education Group, Ipoh, Perak, Malaysia, Falim and Ipoh Garden, `https://www.edquest.edu.my`, primary to secondary IGCSE. `scripts/seed-rochford.ts` creates it once the key exists. The institutions screen can create the same fixture.
+
+`seat_allocations/{id}` is `{ kind, courseId, plan, targetType, targetId, targetLabel, seats, startsOn, endsOn, institutionId, status, createdBy, createdAt }`. `kind` is `course` or `plan`. `targetType` is `institution`, `class`, or `user`. `status` is `active`. Clients cannot write it. `GET` and `POST /api/admin/allocations` list and create rows. A super admin sees every row. An admin, institution admin, or teacher with an institution sees that institution. Only a super admin, or an admin with an institution, can create one.
+
+`certificate_designs/{id}` is the visual template: `name`, `title`, `palette` (`blue` or `cyan`), `border` (`none`, `line`, `double`, `corner`), visibility flags, up to three `signatories` (`name`, `title`, `imageUrl`), `logoUrl`, `coBrandName`, `coBrandLogoUrl`, `institutionId`, and `isDefault`. An empty `institutionId` is a platform template. One platform template is the default. An institution override uses id `institution-{institutionId}` and cannot be the platform default. Clients cannot write the collection. The Open Badge document `certificate_templates/default` is unchanged.
+
+`partners/{id}` may also store `offersNote` and `ageMin`. `status` adds `suspended` and `archived` beside `pending`, `approved`, and `rejected`. Approve still sets `partner_merchant` through `decidePartner`. Suspend and archive set `verified` false and do not remove the role.
+
+Poket SafeLine banner counts are not stored. `GET /api/safety/banner` reads open high-priority `hotline_tickets` (`pending`, `in_progress`, `kiv`) and open `emergency_alerts` (`active`, `updated`). A super admin sees all of them. An admin, institution admin, or teacher sees their institution, or their region or country when they have no institution. A parent sees tickets they opened. Partner merchants see no banner. The client polls every 30 seconds. Without the Firebase Admin key the banner stays hidden.
+
+Rules for `certificate_designs` and `seat_allocations` are in `firestore.rules`. They are not deployed.
+
+## Teacher class desk
+
+`daily_goals` stays the mobile planner. The same goal is also stored at `users/{studentUid}/goals/{goalId}`. `goalId` matches the `daily_goals` id (`mirrorId` on the subcollection copy). This shape matches pull request 144.
+
+`users/{studentUid}/goals/{goalId}` is `{ studentId, classId, title, source, assignedBy, assignedByName, due, dueTime, dueDateKey, status, topic, focusMinutes, rescheduleCount, rescheduleLimit, rescheduleLog, private, parentVisibility, shareWithTeachers, teacherIds, mirrorId }`. `source` is `self` (older documents may say `student`), `et_ai` (older documents may say `ai`), `teacher`, `parent`, or `institution`. `status` is `not_started`, `in_progress`, `completed`, or `overdue`. `due` and `dueDateKey` are the calendar day. `dueTime` is `HH:mm`. `focusMinutes` is the active focus time. `rescheduleCount` may rise by a logged move and cannot pass `rescheduleLimit`. `rescheduleLog` is a short list of `{ at, fromDate, toDate, fromTime, toTime, by }`. The full append-only log stays at `users/{uid}/goal_reschedules/{id}` on pull request 144. Teachers read the count and the short log on the goal document.
+
+`private` defaults to false. `parentVisibility` defaults to true. `shareWithTeachers` is true and `teacherIds` lists the class teacher on the sample, so the read rule on pull request 144 can show self, ET AI, parent, teacher, and institution goals. A private goal is omitted from this desk. A teacher may edit or delete only when `source` is `teacher` and `assignedBy` is that teacher. An institution admin may edit or delete `source: institution` and may still oversee `source: teacher`. A student may delete only their own `self` or `student` goal. Self, parent, and ET AI goals are visible and not editable by the teacher.
+
+Parent and teacher read access is added on pull request 144 (`private`, `parentVisibility`, `shareWithTeachers`, `teacherIds`). This branch does not replace that rule and does not deploy rules.
+
+`school_classes/{classId}` is the shared class: `institutionId`, `name`, `subject`, `level`, `programme`, `term`, `campus`, `room`, `timetable`, `coTeachers`, `capacity`, `status` (`active` or `archived`), `joinCode`, `ownerTeacherId`, `ownerTeacherName`, `createdByRole`, `announcements`. `level` is a level name, not a year number. An empty `institutionId` is an independent teacher’s class.
+
+`school_enrolments/{id}` is `{ classId, studentId, studentName, status, joinMethod, under18, institutionMember, holdReason }`. `status` is `active` or `pending`. `joinMethod` is `roster`, `csv`, `invite`, `qr`, or `code`. An under-18 who is not an institution member stays `pending`.
+
+`school_assessments/{id}` is `{ classId, title, kind, scaleId, maxPoints, weight, category, dueAt, instructions, attachments, rubric, latePolicy, lessonLabel, status, studentIds }`. `kind` is `assignment`, `test`, `quiz`, `exam`, `coursework`, or `lesson_quiz`. `scaleId` is `igcse_9_1`, `astar_g`, `percent`, `points`, `pass_fail`, or `custom`. `latePolicy` is `{ allow, penaltyPercentPerDay, cutoffDays }`.
+
+`school_marks/{id}` is `{ assessmentId, classId, studentId, points, flag, comment, state, enteredBy, updatedAt }`. `flag` is `none`, `missing`, `late`, or `excused`. `state` is `draft` or `published`. Publishing queues a student and parent notice in the desk. A published mark under 45% adds a `source: teacher` goal for that topic.
+
+`school_attendance/{id}` is `{ classId, studentId, date, session, status, reason, source, activeMinutes, parentNote }`. `status` is `present`, `late`, `absent`, or `excused`. `source` is `manual`, `login`, or `live`. Absent and late queue a parent notice.
+
+The institution default scale lives on the school record as `defaultScale` plus optional `customBands` (`{ min, grade }`). `teachersCanCreateClasses` is a boolean. A teacher creates a class only when that flag is true, or when the class has no institution.
+
+Rochford’s International School sample class is IGCSE Mathematics at Falim, join code `FALIM-MATH`, teacher Aisha Rahman. `scripts/seed-rochford-class.ts` writes these documents when the Firebase Admin key exists. Without the key it prints the institutions message and writes nothing. The browser keeps the same sample, labelled sample, until then.
+
+Rules for `users/{uid}/goals` and `school_classes`, `school_enrolments`, `school_assessments`, `school_marks`, and `school_attendance` are in `firestore.rules`. They are not deployed.
+
+The gradebook query on `submissions` no longer uses `orderBy(submittedAt)` with `where(courseId)`. That pair was missing from `firestore.indexes.json` and the page failed closed.
+
+Earnings sample rows now include `date`, `gross`, `split`, `fee`, `refund`, and a net of split minus fee minus refund, plus a payout history. They stay labelled sample. No new payments collection is written.
+
+Exam, live, integrity, behaviour, tutoring, sittings, and the other teacher and institution desks store a `flows` row on the same browser sample. An exam also inserts a `school_assessments` row. A live room with a student inserts `school_attendance` with `source: live`. A merit inserts the existing merit used by report cards. These rows are not a new deployed collection.
+## Study planner goals
+
+The mobile contract stays `daily_goals`. The same goal is also stored at `users/{uid}/goals/{goalId}` so a plan, a link, and a visibility flag travel with the learner. `goalId` matches the `daily_goals` document id (`mirrorId` on the subcollection copy).
+
+`source` is `self` (older documents may say `student`), `et_ai` (older documents may say `ai`), `teacher`, `parent`, or `institution`. The teacher desk filters on those values. Assigned sources cannot be deleted by the student. A teacher, parent, or institution admin can delete only a goal whose `assignedBy` is their uid and whose `source` is theirs. The title of an assigned goal stays fixed. `private` and `parentVisibility` are still stored, and they do not hide the goal. `rescheduleCount` may rise by a logged move and cannot pass `rescheduleLimit`.
+
+| Field | Meaning |
+| --- | --- |
+| `link` | `{ type, id }` where `type` is `course`, `lesson`, `assignment`, `exam`, or `note`. The note id is a pointer. Note text is never copied. |
+| `parentVisibility` | Note only. A linked parent can read the goal either way. |
+| `private` | Note only. It does not hide the goal from parents, class teachers, or institution staff. |
+| `assignedBy` | Uid of the adult who added a teacher, parent, or institution goal. They are the only adult who can delete it. |
+| `focusMinutes` | Shown to parents and teachers only while `status` is `in_progress`. |
+| `dueDateKey` | The real deadline the planner worked backwards from. |
+| `catchUp` | True when the block was placed after the deadline. |
+| `missCount` | Overdue repeats. At the age cap this raises a `missed_goals` concern for the existing progress alerts. |
+| `rescheduleLog` | Optional short list. The full log is append-only at `users/{uid}/goal_reschedules/{id}` with `{ goalId, at, fromDate, toDate, fromTime, toTime, by }`. |
+| `category` | Also `homework` and `personal`, beside `study`, `revision`, `practice`, `reading`, and `other`. |
+
+`users/{uid}/study_plan/{planId}` is the week the planner built: `{ source, weekStart, goals, limits }`. The student, a linked parent, or an admin can read it. A teacher writes only `source: teacher`.
+
+`users/{uid}/goal_adherence/{weekId}` is counts only: `{ assigned, onTime, plannedMinutes, actualMinutes, teacherIds, institutionId }`. It must not contain `titles` or `noteText`. A listed teacher, or the institution admin for `institutionId`, can read it.
+
+`planner_defaults/global` is `{ maxDailyMinutes, maxGoalsPerDay, rescheduleLimit, missFlagAfter }`. Signed-in users can read it. Only an admin can write it. Age caps in `limitsForAge` are a ceiling: under-13 is 45 minutes and 3 goals, teen is 90 minutes and 5 goals, adult is 150 minutes and 5 goals. Admin values can only tighten those caps.
+
+Without an ET AI key, `buildStudyPlan` in `lib/study/planner.ts` places blocks into evening and weekend windows, working backwards from deadlines. Completing the linked lesson or assignment ticks the goal. Overdue assigned goals roll into the next open slot. One miss reminds the student. A second miss notifies a parent (category `goals`, quiet hours on `notify_settings`). Repeated misses use the existing `missed_goals` concern, which already reaches teachers. Push and email still go through `/api/push`. If FCM or email keys are missing, the in-app notification remains.
+
+These rules are in `firestore.rules` and are not deployed.
+
+## School wall
+
+One wall for community, class, school, groups, alumni, and a profile timeline at `/u/{handle}`. The web component is `components/wall/wall-screen.tsx`. The mobile app should render the same fields and the same audience rules.
+
+`wall_posts/{postId}` is `{ authorId, authorHandle, body, audience, feed, schoolId, feeling, tags, locationOn, location, images, link, poll, event, sharedId, pinned, reactions, shares, moderation, createdAt }`. `audience` is `public`, `school`, `class`, `group`, or `only-me`. Under-18 accounts cannot choose `public`, cannot turn location on, and the `schoolId` must match `users.institutionId`. `feed` is `school`, `class`, `group`, `alumni`, or `event`. `reactions` is a map of `like`, `love`, `celebrate`, `insightful`, and `support` counts. `locationOn` defaults to false. Images are resized in the browser and re-encoded so EXIF location is dropped, then stored at `media/{uid}/posts/{file}`.
+
+`wall_posts/{postId}/comments/{commentId}` is `{ authorId, body, image, parentId, createdAt }`. Replies set `parentId`. `wall_posts/{postId}/reactions/{uid}` is `{ kind }` so one person has one reaction. `wall_notifications/{id}` is `{ userId, fromId, kind, postId, read, createdAt }` with `kind` `reaction`, `comment`, or `mention`.
+
+Feed queries are `schoolId + createdAt`, `authorHandle + createdAt`, and `feed + createdAt` in `firestore.indexes.json`. They are not deployed. A minor only reads posts whose school matches theirs. A held post is visible to the author until the Safety Desk releases it. Reports use the existing `reports` collection and the Safety Desk queue.
+
+The app should follow `docs/DASHBOARD_UX.md` for the three-column wall: profile shortcuts, composer and feed, then events, groups, moments, online classmates, and SafeLine.
 

@@ -76,10 +76,10 @@ export function SparksChip() {
               return (
               <div key={tx.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                  tx.amount >= 0 ? 'bg-emerald-100' : 'bg-[var(--ps-cyan-soft)]'
+                  tx.amount >= 0 ? 'bg-success/15' : 'bg-[var(--ps-cyan-soft)]'
                 }`}>
                   {tx.amount >= 0
-                    ? <ArrowDownLeft className="w-4 h-4 text-emerald-600" />
+                    ? <ArrowDownLeft className="w-4 h-4 text-success" />
                     : <ArrowUpRight className="w-4 h-4 text-[var(--ps-cyan-text)]" />}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -92,7 +92,7 @@ export function SparksChip() {
                     {t('sparks.balance', { count: formatAppNumber(tx.balanceAfter, i18n.language) })}
                   </p>
                 </div>
-                <span className={`text-sm font-bold shrink-0 ${tx.amount >= 0 ? 'text-emerald-600' : 'text-[var(--ps-cyan-text)]'}`}>
+                <span className={`text-sm font-bold shrink-0 ${tx.amount >= 0 ? 'text-success' : 'text-[var(--ps-cyan-text)]'}`}>
                   {tx.amount >= 0 ? '+' : ''}{formatAppNumber(tx.amount, i18n.language)}⚡
                 </span>
               </div>

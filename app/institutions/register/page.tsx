@@ -19,8 +19,13 @@ import { ORGANISATION_SIZES, SANDBOX_BANNER, seatsForOrganisationSize, type Orga
 
 const TYPES: { id: (typeof INSTITUTION_TYPES)[number]; label: string }[] = [
   { id: 'school', label: 'School' },
+  { id: 'international_school', label: 'International school' },
+  { id: 'tuition_centre', label: 'Tuition centre' },
+  { id: 'homeschool_group', label: 'Homeschool group' },
+  { id: 'college', label: 'College' },
   { id: 'university', label: 'University' },
-  { id: 'corporate', label: 'Corporate' },
+  { id: 'corporate', label: 'Corporation' },
+  { id: 'training_provider', label: 'Training provider' },
   { id: 'government', label: 'Government' },
 ];
 
