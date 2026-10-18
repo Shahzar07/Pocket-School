@@ -14,9 +14,7 @@ import { usePricing } from '@/hooks/use-pricing';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { isAdmin } from '@/lib/roles';
 import { useHomeMotion } from '@/hooks/use-home-motion';
-import dynamic from 'next/dynamic';
-import { MemberCardFace } from '@/components/cards/member-card-face';
-import { MEMBER_CARD_TITLE, type PublicCard } from '@/lib/cards/model';
+import { DemoLeadForm } from '@/components/demo-lead-form';
 import { SchoolStrip } from '@/components/landing/school-strip';
 import s from '@/app/home.module.css';
 
@@ -59,33 +57,16 @@ const NEW_FEATURES = ['essay', 'live', 'reads', 'badges', 'transcripts', 'parent
 
 const SHOTS = [
   { id: 'analytics', src: '/landing/analytics.webp' },
+  { id: 'behaviour', src: '/landing/behaviour.webp' },
+  { id: 'integrity', src: '/landing/integrity.webp' },
   { id: 'tutors', src: '/landing/tutors.webp' },
   { id: 'exams', src: '/landing/exams.webp' },
+  { id: 'snap', src: '/landing/snap.webp' },
+  { id: 'store', src: '/landing/store.webp' },
+  { id: 'modes', src: '/landing/modes.webp' },
   { id: 'reads', src: '/landing/reads.webp' },
+  { id: 'payments', src: '/landing/payments.webp' },
 ] as const;
-
-const SAMPLE_CARD: PublicCard = {
-  title: MEMBER_CARD_TITLE,
-  firstName: 'Amina',
-  levelName: 'IGCSE',
-  schoolName: null,
-  showPhoto: false,
-  avatarUrl: '',
-  badges: ['Algebra'],
-  streakDays: 4,
-  referralCode: 'AMINA2K7',
-  joinPath: '/signup?ref=AMINA2K7',
-  indexable: false,
-  visible: true,
-};
-
-const ShotGallery = dynamic(() => import('./shot-gallery').then((mod) => mod.ShotGallery), {
-  loading: () => <div className="h-40" aria-hidden />,
-});
-
-const DemoLeadForm = dynamic(() => import('@/components/demo-lead-form').then((mod) => mod.DemoLeadForm), {
-  loading: () => <div className="h-24" aria-hidden />,
-});
 
 const FAQ = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9'] as const;
 const AUDIENCES = ['students', 'parents', 'teachers', 'schools'] as const;
@@ -128,10 +109,9 @@ function Shot({
           src={src}
           alt={alt}
           fill
-          sizes={priority ? '(min-width: 1024px) 480px, 100vw' : '(min-width: 1024px) 46vw, 100vw'}
+          sizes={priority ? '(min-width: 1024px) 48vw, 100vw' : '(min-width: 1024px) 46vw, 100vw'}
           className="object-cover object-top"
           priority={priority}
-          quality={priority ? 60 : 50}
         />
       </div>
       {caption ? (
@@ -220,10 +200,6 @@ export function LandingPage() {
       </section>
 
       <SchoolStrip />
-
-      <section className="mx-auto max-w-6xl px-4 py-12" aria-label="Sample member card">
-        <MemberCardFace card={SAMPLE_CARD} sample />
-      </section>
 
       <section className="border-b border-border bg-card" aria-label={t('landing.exam.label')}>
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between">
@@ -532,7 +508,13 @@ export function LandingPage() {
           <p className="text-sm font-semibold text-primary">{t('landing.shots.eyebrow')}</p>
           <h2 className="mt-2 text-[clamp(32px,4vw,48px)] font-medium leading-tight">{t('landing.shots.title')}</h2>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">{t('landing.shots.caption')}</p>
-          <ShotGallery shots={SHOTS.map((shot) => ({ ...shot, alt: t(`landing.shots.${shot.id}Alt`) }))} />
+          <ul className="mt-8 grid gap-4 md:grid-cols-2">
+            {SHOTS.map((shot) => (
+              <li key={shot.id}>
+                <Shot src={shot.src} alt={t(`landing.shots.${shot.id}Alt`)} />
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 

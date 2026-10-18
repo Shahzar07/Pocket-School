@@ -246,6 +246,7 @@ app/dashboard/admin/curriculum/[courseId]/page.tsx	All Courses
 app/dashboard/admin/curriculum/[courseId]/page.tsx	An admin can allocate it from Access allocation. Platform admins already have the editor, imports, image library, and covers.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Changes apply instantly — no re-publishing required.
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Click + to add one.
+app/dashboard/admin/curriculum/[courseId]/page.tsx	Close course structure
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Content Builder
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Content audit log
 app/dashboard/admin/curriculum/[courseId]/page.tsx	Content format template
@@ -356,6 +357,9 @@ app/dashboard/admin/curriculum/page.tsx	e.g. Maths — Secondary
 app/dashboard/admin/curriculum/page.tsx	e.g. Science, Maths, English, Computing
 app/dashboard/admin/curriculum/page.tsx	e.g. Secondary
 app/dashboard/admin/curriculum/page.tsx	e.g. iLowerSecondary
+app/dashboard/admin/exam-packs/page.tsx	Exam packs
+app/dashboard/admin/exam-packs/page.tsx	Open the student pack list
+app/dashboard/admin/exam-packs/page.tsx	Save pack
 app/dashboard/admin/finance/page.tsx	Checkout to refund
 app/dashboard/admin/finance/page.tsx	No matching invoices.
 app/dashboard/admin/finance/page.tsx	No transactions yet.
@@ -568,7 +572,9 @@ app/dashboard/calendar/page.tsx	New Event
 app/dashboard/calendar/page.tsx	No upcoming events.
 app/dashboard/calendar/page.tsx	Stay on top of deadlines and school events.
 app/dashboard/card/page.tsx	Free for every account. Share a first name and a level. The number stays here.
+app/dashboard/card/page.tsx	Free for every account. Your number stays on this card. A shared link does not print it.
 app/dashboard/card/page.tsx	Member card
+app/dashboard/card/page.tsx	Student ID
 app/dashboard/channels/page.tsx	Open a channel first.
 app/dashboard/channels/page.tsx	Opening channels in Community…
 app/dashboard/checkout/page.tsx	Choose a plan or a book first.
@@ -993,6 +999,7 @@ app/dashboard/student/goals/page.tsx	Goal added.
 app/dashboard/student/goals/page.tsx	Goal saved
 app/dashboard/student/goals/page.tsx	Opening your goals.
 app/dashboard/student/goals/page.tsx	Sign in to set a goal.
+app/dashboard/student/goals/page.tsx	Teachers and linked parents can see your goals, including ones you set yourself.
 app/dashboard/student/integrity/page.tsx	Appeal note
 app/dashboard/student/integrity/page.tsx	Appeal sent.
 app/dashboard/student/integrity/page.tsx	Appeal sent. Your teacher will record the outcome.
@@ -1328,6 +1335,7 @@ app/dashboard/studio/maths/packs/[packId]/page.tsx	This topic is free
 app/dashboard/studio/maths/packs/[packId]/page.tsx	Unknown exam pack.
 app/dashboard/studio/maths/packs/[packId]/page.tsx	Work through it with ET AI
 app/dashboard/studio/maths/packs/page.tsx	1st topic free
+app/dashboard/studio/maths/packs/page.tsx	Admin exam pack desk
 app/dashboard/studio/maths/packs/page.tsx	Your exam
 app/dashboard/studio/maths/page.tsx	+5 stars · keep your streak going
 app/dashboard/studio/maths/page.tsx	2x = 8
@@ -1527,6 +1535,8 @@ app/dashboard/teacher/exams/page.tsx	Title *
 app/dashboard/teacher/exams/page.tsx	Title is required
 app/dashboard/teacher/exams/page.tsx	True / False
 app/dashboard/teacher/exams/page.tsx	o &&
+app/dashboard/teacher/goals/page.tsx	By student
+app/dashboard/teacher/goals/page.tsx	No goals yet
 app/dashboard/teacher/goals/page.tsx	No shared goals
 app/dashboard/teacher/goals/page.tsx	Shared with you
 app/dashboard/teacher/goals/page.tsx	Student goals
@@ -1815,10 +1825,18 @@ app/preview/badges/page.tsx	This week
 app/preview/behaviour/page.tsx	Loading behaviour
 app/preview/billing/page.tsx	Family billing
 app/preview/billing/page.tsx	Parent billing
+app/preview/blog/page.tsx	Rochford demo · Blog editor
+app/preview/card/page.tsx	Poket School sample
+app/preview/card/page.tsx	Rochford demo · Rochford&apos;s International School
 app/preview/certificate/page.tsx	Module certificate
+app/preview/cms-tree/page.tsx	Close course structure
+app/preview/cms-tree/page.tsx	Course structure
+app/preview/cms-tree/page.tsx	On a phone the lesson tree opens as a drawer. Choosing a lesson closes it.
+app/preview/cms-tree/page.tsx	Rochford demo · CMS lesson tree
 app/preview/course/[token]/page.tsx	/ Preview course
 app/preview/course/[token]/page.tsx	Course CMS
 app/preview/course/[token]/page.tsx	This preview link has expired or was not found.
+app/preview/exam-packs/page.tsx	Rochford demo · Admin exam packs · /dashboard/admin/exam-packs
 app/preview/goals/page.tsx	Loading goals preview…
 app/preview/institution-checkout/page.tsx	Plan and checkout
 app/preview/institution-flow/page.tsx	A subscription ends when the person or the institution lapses. A la carte stays. Sparks cannot buy this course.
@@ -1830,6 +1848,7 @@ app/preview/institution-onboarding/page.tsx	Branded login page
 app/preview/institution-pricing/page.tsx	Institution price calculator
 app/preview/institution-pricing/page.tsx	Poket School
 app/preview/integrity/page.tsx	Loading the desk…
+app/preview/notes/page.tsx	Rochford demo · Amina Rahman, notes
 app/preview/planner/page.tsx	Preview of /dashboard/planner. The same page is linked as Year planner for every role.
 app/preview/portfolio/page.tsx	& Pick
 app/preview/portfolio/page.tsx	Add to LinkedIn
@@ -1862,6 +1881,7 @@ app/preview/studio-desk/page.tsx	Parent Explainer
 app/preview/studio-desk/page.tsx	Preview · Poket School
 app/preview/studio-desk/page.tsx	Research Helper
 app/preview/studio-desk/page.tsx	Teacher Toolkit
+app/preview/teacher-goals/page.tsx	Rochford demo · Leah Tan, teacher
 app/preview/unit-test/page.tsx	3/5 marks · 1m 15s · attempt #1 · Version A
 app/preview/unit-test/page.tsx	How plants feed
 app/preview/unit-test/page.tsx	Loading the sample…
@@ -2238,6 +2258,22 @@ components/alumni/record-panels.tsx	Parent Explainer
 components/alumni/record-panels.tsx	Send email
 components/alumni/record-panels.tsx	Your record stays
 components/alumni/record-panels.tsx	student@school.edu
+components/alumni/rochford-desk.tsx	Alumni career talks
+components/alumni/rochford-desk.tsx	Alumni giving
+components/alumni/rochford-desk.tsx	Countries with fewer than five opted-in alumni stay hidden.
+components/alumni/rochford-desk.tsx	Independent learners
+components/alumni/rochford-desk.tsx	No country has five people yet.
+components/alumni/rochford-desk.tsx	Oak class network
+components/alumni/rochford-desk.tsx	Omar H. · A day in medicine · 19 Nov 2026 · online.
+components/alumni/rochford-desk.tsx	Open the class wall
+components/alumni/rochford-desk.tsx	Open the printable yearbook
+components/alumni/rochford-desk.tsx	Opt-in only. Names stay as a first name and last initial.
+components/alumni/rochford-desk.tsx	Reunion planner
+components/alumni/rochford-desk.tsx	Rochford demo · Alumni desk · Rochford&apos;s International School
+components/alumni/rochford-desk.tsx	The class wall, events, and opt-in mentoring.
+components/alumni/rochford-desk.tsx	Verify through a school
+components/alumni/rochford-desk.tsx	Verify through a school, or join a self-reported group.
+components/alumni/rochford-desk.tsx	Where are they now
 components/alumni/yearbook-panels.tsx	Achievement: Graduate
 components/alumni/yearbook-panels.tsx	Ada L.
 components/alumni/yearbook-panels.tsx	Ada L. asked to connect with Grace H.
@@ -2296,6 +2332,7 @@ components/billing/family-board.tsx	Touch ’n Go
 components/billing/family-board.tsx	Transfer sponsorship
 components/billing/family-board.tsx	You cannot enter payment details. A parent approves the request and pays.
 components/blog/article.tsx	Disclosure.
+components/blog/live-preview.tsx	Live preview
 components/builder-blocks.tsx	AI regenerate
 components/builder-blocks.tsx	AI-generated questions are stored on this lesson’s Quiz block for review before publishing.
 components/builder-blocks.tsx	Activity title
@@ -2444,6 +2481,10 @@ components/cards/card-desk.tsx	Loading your card…
 components/cards/card-desk.tsx	This card is not indexed by search engines.
 components/cards/card-desk.tsx	Under-13 sharing
 components/cards/card-desk.tsx	Your number is
+components/cards/id-card.tsx	Emergency contact
+components/cards/id-card.tsx	Sample card
+components/cards/id-card.tsx	This card is free. It is not a government ID. The QR is signed by Poket School and changes on a timer. Partners scan it to check a student.
+components/cards/id-card.tsx	Valid until
 components/cards/member-card-face.tsx	A free card for every member. Bring a friend.
 components/cards/member-card-face.tsx	Poket School
 components/cards/member-card-face.tsx	Sample card
@@ -2451,6 +2492,18 @@ components/career/app-surface.tsx	At a glance
 components/career/app-surface.tsx	Career sections
 components/career/app-surface.tsx	Poket School
 components/career/app-surface.tsx	Start here
+components/career/events-desk.tsx	Add an event
+components/career/events-desk.tsx	Amina Rahman · IGCSE · Rochford&apos;s International School. Skills below are verified by Poket School. The PDF stays with the student until they share it.
+components/career/events-desk.tsx	ET AI matcher
+components/career/events-desk.tsx	Google Calendar
+components/career/events-desk.tsx	In person
+components/career/events-desk.tsx	Map link
+components/career/events-desk.tsx	Matches come from opportunities the school entered. ET AI does not invent one.
+components/career/events-desk.tsx	My registrations
+components/career/events-desk.tsx	Online link
+components/career/events-desk.tsx	Save event
+components/career/events-desk.tsx	Verified CV
+components/career/events-desk.tsx	You have not registered yet.
 components/certificate-celebration.tsx	Close celebration
 components/certificate-celebration.tsx	Module complete
 components/certificate-document.tsx	Certificate ID
@@ -2694,15 +2747,20 @@ components/goals/add-goal-dialog.tsx	Reflection prompt
 components/goals/add-goal-dialog.tsx	Reflection prompt (optional)
 components/goals/add-goal-dialog.tsx	Reminder time
 components/goals/add-goal-dialog.tsx	Revision target
+components/goals/add-goal-dialog.tsx	Teachers and linked parents can see this goal.
 components/goals/add-goal-dialog.tsx	Topic to revise, if it is not a lesson
 components/goals/add-goal-dialog.tsx	What will you finish?
 components/goals/add-goal-dialog.tsx	Work minutes
 components/goals/class-adherence.tsx	Assigned goals only. Private goals are not included, and titles are not shown.
 components/goals/class-adherence.tsx	Class goal adherence
+components/goals/class-adherence.tsx	Every goal counts, including ones a student set. Titles are on the student list.
 components/goals/class-adherence.tsx	Goal adherence
 components/goals/class-adherence.tsx	No assigned goals in this class yet.
+components/goals/class-adherence.tsx	No goals in this class yet.
+components/goals/escalation-ladder.tsx	Overdue escalation
 components/goals/focus-timer.tsx	Focus timer
 components/goals/focus-timer.tsx	Log time
+components/goals/goals-preview.tsx	Rochford demo · parent plan for Amina Rahman
 components/goals/goals-workspace.tsx	Add goal
 components/goals/goals-workspace.tsx	Co-sign this week
 components/goals/goals-workspace.tsx	From a parent
@@ -2712,6 +2770,7 @@ components/goals/goals-workspace.tsx	Suggestions appear when retention, cramming
 components/goals/goals-workspace.tsx	This week
 components/goals/goals-workspace.tsx	goal.dateKey
 components/goals/parent-plan-card.tsx	Plan against what was finished. Private goals stay off this card.
+components/goals/parent-plan-card.tsx	Plan against what was finished. Self-set goals are included.
 components/goals/weekly-plan.tsx	ET AI planner
 components/goals/weekly-plan.tsx	Weekly study plan
 components/handwriting-capture.tsx	Photograph handwriting
@@ -3209,7 +3268,18 @@ components/invoice-delivery.tsx	Other email addresses
 components/invoice-delivery.tsx	The account holder is selected by default. Add other addresses if someone else should receive the PDF.
 components/join-by-code.tsx	Poket School
 components/join-by-code.tsx	Student number
+components/landing/landing-page.tsx	A free digital student ID
+components/landing/landing-page.tsx	A free digital student card
+components/landing/landing-page.tsx	A school safety line
+components/landing/landing-page.tsx	Eight pictures of the school
+components/landing/landing-page.tsx	Every learner can carry a Poket School card. The sample on this page shows the chip, the name, and the watermark. A real card is issued from the account, with nothing to pay.
+components/landing/landing-page.tsx	FREE FOR EVERYONE
+components/landing/landing-page.tsx	Open a sample card
+components/landing/landing-page.tsx	POKET SAFELINE
+components/landing/landing-page.tsx	Poket SafeLine for a school community
+components/landing/landing-page.tsx	Read how SafeLine works
 components/landing/landing-page.tsx	Sample member card
+components/landing/landing-page.tsx	Students, parents, and staff can report a concern to the school safety desk. Poket SafeLine stays inside the school. Not an emergency service. In danger? Call 999.
 components/landing/school-strip.tsx	Students from these schools learn with Poket School
 components/leaderboard/podium.tsx	Poket School · ET AI
 components/leaderboard/podium.tsx	Your rank
