@@ -3291,3 +3291,7 @@ Rules for `users/{uid}/goals` and `school_classes`, `school_enrolments`, `school
 
 The gradebook query on `submissions` no longer uses `orderBy(submittedAt)` with `where(courseId)`. That pair was missing from `firestore.indexes.json` and the page failed closed.
 
+Earnings sample rows now include `date`, `gross`, `split`, `fee`, `refund`, and a net of split minus fee minus refund, plus a payout history. They stay labelled sample. No new payments collection is written.
+
+Exam, live, integrity, behaviour, tutoring, sittings, and the other teacher and institution desks store a `flows` row on the same browser sample. An exam also inserts a `school_assessments` row. A live room with a student inserts `school_attendance` with `source: live`. A merit inserts the existing merit used by report cards. These rows are not a new deployed collection.
+

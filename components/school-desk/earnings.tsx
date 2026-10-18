@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { deskCopy as t } from '@/lib/school-desk/copy';
-import type { EarningRow } from '@/lib/school-desk/model';
+import { earningNet, refundEarning, type EarningRow } from '@/lib/school-desk/model';
 import { DeskFrame, deskStyles, resetToDemo, useDesk } from './ui';
 
 const SOURCES: Array<EarningRow['source'] | 'all'> = ['all', 'course', 'live', 'institution', 'share'];
@@ -13,10 +13,10 @@ export function EarningsDesk() {
   const [source, setSource] = useState<(typeof SOURCES)[number]>('all');
   const [status, setStatus] = useState<(typeof STATUSES)[number]>('all');
   const rows = state.earnings.filter((item) => (source === 'all' || item.source === source) && (status === 'all' || item.status === status));
-  const sum = (kind: EarningRow['status']) => state.earnings.filter((item) => item.status === kind).reduce((total, item) => total + item.gross - item.fee - item.refund, 0);
+  const sum = (kind: EarningRow['status']) => state.earnings.filter((item) => item.status === kind).reduce((total, item) => total + earningNet(item), 0);
   const months = useMemo(() => {
     const map = new Map<string, number>();
-    for (const row of state.earnings) map.set(row.month, (map.get(row.month) ?? 0) + row.gross);
+    for (const row of state.earnings) map.set(row.month, (map.get(row.month) ?? 0) + earningNet(row));
     return [...map.entries()];
   }, [state.earnings]);
   const max = Math.max(...months.map((item) => item[1]), 1);
@@ -57,6 +57,14 @@ export function EarningsDesk() {
         <p className="text-sm text-[#1E6A83]">{state.payout.tin}</p>
         <p className="text-sm text-[#1E6A83]">{state.payout.sst}</p>
       </section>
+      <section className="rounded-3xl bg-white p-5">
+        <h2 className="font-heading text-2xl">{t.payoutHistory}</h2>
+        <ul className="mt-2 space-y-2 text-sm">
+          {state.payouts.map((item) => (
+            <li key={item.id}>{item.date} · RM {item.amount} · {item.status} · {item.note} · {t.demoBadge}</li>
+          ))}
+        </ul>
+      </section>
       <div className="flex flex-wrap gap-2">
         <select className={deskStyles.field} value={source} onChange={(event) => setSource(event.target.value as (typeof SOURCES)[number])} aria-label={t.history}>
           {SOURCES.map((item) => <option key={item} value={item}>{t.sources[item]}</option>)}
@@ -65,7 +73,7 @@ export function EarningsDesk() {
           {STATUSES.map((item) => <option key={item} value={item}>{item === 'all' ? t.all : t.pay[item]}</option>)}
         </select>
         <button type="button" className={deskStyles.ghost} onClick={() => {
-          const csv = ['month,source,label,gross,fee,refund,status', ...rows.map((item) => [item.month, item.source, item.label, item.gross, item.fee, item.refund, item.status].join(','))].join('\n');
+          const csv = ['course,date,gross,split,fees,net,status', ...rows.map((item) => [item.label, item.date, item.gross, item.split, item.fee, earningNet(item), item.status].join(','))].join('\n');
           const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
           const link = document.createElement('a');
           link.href = url;
@@ -74,16 +82,38 @@ export function EarningsDesk() {
           URL.revokeObjectURL(url);
         }}>{t.exportCsv}</button>
       </div>
-      <ul className="space-y-2">
-        {rows.map((item) => (
-          <li key={item.id} className="rounded-2xl bg-white px-4 py-3 text-sm">
-            <span className="font-semibold">{item.label}</span>
-            <span className="ml-2 text-[#1E6A83]">{item.month} · {t.sources[item.source]} · {t.pay[item.status]} · RM {item.gross - item.fee - item.refund} · {t.demoBadge}</span>
-            {item.fee ? <span className="ml-2 text-[#1E6A83]">{t.fee} {item.fee}</span> : null}
-            {item.refund ? <span className="ml-2 text-[#1E6A83]">{t.refund} {item.refund}</span> : null}
-          </li>
-        ))}
-      </ul>
+      <div className="overflow-x-auto rounded-3xl bg-white">
+        <table className="w-full text-left text-sm">
+          <thead className="text-[#1E6A83]">
+            <tr>
+              <th className="px-3 py-3">{t.saleCourse}</th>
+              <th className="px-3 py-3">{t.saleDate}</th>
+              <th className="px-3 py-3">{t.saleGross}</th>
+              <th className="px-3 py-3">{t.saleSplit}</th>
+              <th className="px-3 py-3">{t.saleFees}</th>
+              <th className="px-3 py-3">{t.saleNet}</th>
+              <th className="px-3 py-3">{t.flag}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((item) => (
+              <tr key={item.id} className="border-t border-[#1E6A83]/10">
+                <td className="px-3 py-3 font-semibold">{item.label}</td>
+                <td className="px-3 py-3">{item.date}</td>
+                <td className="px-3 py-3">RM {item.gross}</td>
+                <td className="px-3 py-3">RM {item.split}</td>
+                <td className="px-3 py-3">RM {item.fee}</td>
+                <td className="px-3 py-3">RM {earningNet(item)}</td>
+                <td className="px-3 py-3">
+                  {t.pay[item.status]} · {t.demoBadge}
+                  {item.refund ? <span> · {t.refund} {item.refund}</span> : null}
+                  <button type="button" className={`${deskStyles.ghost} ml-2`} data-action="refund" onClick={() => setState(refundEarning(state, item.id, 10, state.actorName))}>{t.recordRefund}</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </DeskFrame>
   );
 }

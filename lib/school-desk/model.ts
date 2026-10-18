@@ -219,13 +219,35 @@ export interface AuditEntry {
 export interface EarningRow {
   id: string;
   month: string;
+  date: string;
   source: 'course' | 'live' | 'institution' | 'share';
   label: string;
   gross: number;
+  split: number;
   fee: number;
   refund: number;
   status: 'pending' | 'available' | 'paid';
   sample: true;
+}
+
+export interface PayoutEvent {
+  id: string;
+  date: string;
+  amount: number;
+  status: 'scheduled' | 'paid';
+  note: string;
+}
+
+export interface FlowRecord {
+  id: string;
+  flow: string;
+  classId: string;
+  studentId: string;
+  studentName: string;
+  title: string;
+  detail: string;
+  status: string;
+  when: string;
 }
 
 export interface DeskState {
@@ -245,10 +267,12 @@ export interface DeskState {
   notices: DeskNotice[];
   audit: AuditEntry[];
   earnings: EarningRow[];
+  payouts: PayoutEvent[];
   payout: { schedule: string; method: string; tin: string; invoice: string; sst: string };
+  flows: FlowRecord[];
 }
 
-const STORAGE_KEY = 'poket-school-desk-rochford-v1';
+const STORAGE_KEY = 'poket-school-desk-rochford-v2';
 
 export function bandGrade(percent: number, bands: GradeBand[]): string {
   const sorted = [...bands].sort((a, b) => b.min - a.min);
@@ -549,6 +573,140 @@ export function updateClass(state: DeskState, classId: string, patch: Partial<Sc
   }, actor, patch.status === 'archived' ? 'archive class' : 'edit class', classId);
 }
 
+export function setTeachingMode(state: DeskState, mode: 'school' | 'independent'): DeskState {
+  const school = createDemoDesk().institution;
+  const institution: SchoolInstitution = mode === 'school'
+    ? school
+    : {
+      ...state.institution,
+      id: 'independent',
+      name: 'Independent teaching',
+      campus: 'Online',
+      kind: 'independent',
+      teachersCanCreateClasses: true,
+      branding: 'No school attached',
+    };
+  return stamp({ ...state, institution }, state.actorName, mode === 'school' ? 'school classes' : 'independent classes', institution.name);
+}
+
+export function bulkCreateClasses(state: DeskState, csv: string): { state: DeskState; created: number; error: string } {
+  const lines = csv.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  if (lines.length < 2) return { state, created: 0, error: 'Add a header and one class.' };
+  let next = state;
+  let created = 0;
+  for (const line of lines.slice(1)) {
+    const [name, subject, level, programme, term, campus, room, timetable, teacher, capacity] = line.split(',').map((part) => part.trim());
+    if (!name || !LEVELS.includes(level as LevelName)) continue;
+    const result = createClass(next, {
+      name,
+      subject: subject || name,
+      level: level as LevelName,
+      programme: programme || 'Cambridge',
+      term: term || 'Term 1',
+      campus: campus || state.institution.campus,
+      room: room || 'TBC',
+      timetable: timetable || 'To be set',
+      coTeachers: [],
+      capacity: Number(capacity) || 20,
+      ownerTeacherId: 'teacher-assigned',
+      ownerTeacherName: teacher || next.actorName,
+      createdByRole: 'institution_admin',
+    }, 'institution_admin');
+    if (!result.error) {
+      next = result.state;
+      created += 1;
+    }
+  }
+  return { state: next, created, error: created ? '' : 'No class rows matched. Use a level name such as IGCSE.' };
+}
+
+export function earningNet(row: EarningRow): number {
+  return row.split - row.fee - row.refund;
+}
+
+export function refundEarning(state: DeskState, earningId: string, amount: number, actor: string): DeskState {
+  return stamp({
+    ...state,
+    earnings: state.earnings.map((row) => (
+      row.id === earningId ? { ...row, refund: row.refund + amount } : row
+    )),
+  }, actor, 'record refund', earningId);
+}
+
+export function addFlow(
+  state: DeskState,
+  input: Omit<FlowRecord, 'id'>,
+  actor: string,
+): DeskState {
+  const made = id(state, 'flow');
+  let next: DeskState = stamp({
+    ...made.state,
+    flows: [{ ...input, id: made.id }, ...made.state.flows],
+  }, actor, `create ${input.flow}`, input.title);
+  if (input.flow === 'exam') {
+    next = createAssessment(next, {
+      classId: input.classId,
+      title: input.title,
+      kind: 'exam',
+      scaleId: next.institution.defaultScale,
+      maxPoints: 80,
+      weight: 20,
+      category: 'Exams',
+      dueAt: `${input.when || '2026-10-28'}T09:00:00.000Z`,
+      instructions: input.detail,
+      attachments: [],
+      rubric: [{ criterion: 'Paper', points: 80 }],
+      latePolicy: { allow: false, penaltyPercentPerDay: 0, cutoffDays: 0 },
+      lessonLabel: input.title,
+      studentIds: input.studentId ? [input.studentId] : [],
+      status: 'published',
+    }, actor);
+  }
+  if ((input.flow === 'merit' || input.flow === 'behaviour') && input.studentId) {
+    const merit = id(next, 'merit');
+    next = {
+      ...merit.state,
+      merits: [...merit.state.merits, {
+        id: merit.id,
+        studentId: input.studentId,
+        classId: input.classId,
+        note: input.title,
+        points: 1,
+      }],
+    };
+  }
+  if (input.flow === 'live' && input.studentId) {
+    next = saveAttendance(next, [{
+      classId: input.classId,
+      studentId: input.studentId,
+      date: (input.when || '2026-10-18').slice(0, 10),
+      session: 'live',
+      status: 'present',
+      reason: input.title,
+      source: 'live',
+      activeMinutes: 40,
+      parentNote: '',
+    }], actor);
+  }
+  if (input.flow === 'approval' && input.title) {
+    next = addEnrolment(next, {
+      classId: input.classId,
+      studentName: input.studentName || input.title,
+      under18: true,
+      institutionMember: true,
+      joinMethod: 'invite',
+    }, actor);
+  }
+  return next;
+}
+
+export function updateFlow(state: DeskState, flowId: string, patch: Partial<FlowRecord>, actor: string): DeskState {
+  return stamp({
+    ...state,
+    flows: state.flows.map((item) => (item.id === flowId ? { ...item, ...patch, id: item.id } : item)),
+  }, actor, 'update record', flowId);
+}
+
 export function addEnrolment(
   state: DeskState,
   input: { classId: string; studentName: string; under18: boolean; institutionMember: boolean; joinMethod: JoinMethod },
@@ -775,6 +933,7 @@ export function reportLines(state: DeskState, report: ReportCard): string[] {
     `${report.studentName} · ${klass?.name ?? 'Class'} · ${report.level} · ${report.term}`,
     `Subject grade ${result.grade} (${result.percent}%) on ${SCALE_LABEL[state.institution.defaultScale]}`,
     `Effort ${report.effort} of 5 · Attendance ${rate}% · Merits ${merits} · Goals ${done}/${goals.length}`,
+    `Integrity: ${state.flows.filter((item) => (item.flow === 'integrity' || item.flow === 'case') && item.studentId === report.studentId && item.status !== 'Closed').map((item) => item.title).join(', ') || 'None'}`,
     `Teacher: ${report.subjectComment}`,
     `Form teacher: ${report.formComment || '—'}`,
     `Principal: ${report.principalComment || '—'}`,
@@ -819,6 +978,46 @@ export function createDemoDesk(): DeskState {
     ownerTeacherName: 'Aisha Rahman',
     createdByRole: 'institution_admin',
     announcements: ['Mock week starts 27 October. Bring a calculator.'],
+  };
+  const biology: SchoolClass = {
+    id: 'class-bio',
+    institutionId: institution.id,
+    name: 'IGCSE Biology',
+    subject: 'Biology',
+    level: 'IGCSE',
+    programme: 'Cambridge IGCSE',
+    term: 'Term 1',
+    campus: 'Ipoh Garden',
+    room: 'G-2',
+    timetable: 'Tue and Thu, 10:00',
+    coTeachers: [],
+    capacity: 20,
+    status: 'archived',
+    joinCode: 'IPOH-BIO',
+    ownerTeacherId: 'teacher-daniel',
+    ownerTeacherName: 'Daniel Ong',
+    createdByRole: 'institution_admin',
+    announcements: [],
+  };
+  const lower: SchoolClass = {
+    id: 'class-lower',
+    institutionId: institution.id,
+    name: 'Lower Secondary Mathematics',
+    subject: 'Mathematics',
+    level: 'Lower Secondary',
+    programme: 'Lower Secondary',
+    term: 'Term 1',
+    campus: 'Falim',
+    room: 'F-4',
+    timetable: 'Fri, 09:30',
+    coTeachers: ['Siti Aminah'],
+    capacity: 28,
+    status: 'active',
+    joinCode: 'FALIM-LSM',
+    ownerTeacherId: 'teacher-aisha',
+    ownerTeacherName: 'Aisha Rahman',
+    createdByRole: 'teacher',
+    announcements: [],
   };
   const people: Array<[string, string, Enrolment['status'], JoinMethod, string]> = [
     ['stu-amina', 'Amina Yusuf', 'active', 'roster', ''],
@@ -880,7 +1079,7 @@ export function createDemoDesk(): DeskState {
     actorId: 'teacher-aisha',
     actorName: 'Aisha Rahman',
     institution,
-    classes: [klass],
+    classes: [klass, lower, biology],
     enrolments,
     assessments,
     submissions: [{
@@ -904,11 +1103,15 @@ export function createDemoDesk(): DeskState {
     notices: [],
     audit: [{ id: 'aud-1', at: '2026-10-17T02:00:00.000Z', actor: 'Aisha Rahman', action: 'save draft mark', target: 'Algebra test' }],
     earnings: [
-      { id: 'earn-1', month: '2026-08', source: 'course', label: 'IGCSE Mathematics course', gross: 420, fee: 18, refund: 0, status: 'paid', sample: true },
-      { id: 'earn-2', month: '2026-09', source: 'live', label: 'Tuesday tutoring', gross: 180, fee: 8, refund: 0, status: 'available', sample: true },
-      { id: 'earn-3', month: '2026-09', source: 'institution', label: "Rochford's teaching payment", gross: 600, fee: 0, refund: 0, status: 'pending', sample: true },
-      { id: 'earn-4', month: '2026-10', source: 'share', label: 'Marketplace revenue share', gross: 95, fee: 12, refund: 20, status: 'available', sample: true },
-      { id: 'earn-5', month: '2026-10', source: 'course', label: 'Fractions clinic', gross: 150, fee: 6, refund: 0, status: 'pending', sample: true },
+      { id: 'earn-1', month: '2026-08', date: '2026-08-12', source: 'course', label: 'IGCSE Mathematics course', gross: 420, split: 294, fee: 18, refund: 0, status: 'paid', sample: true },
+      { id: 'earn-2', month: '2026-09', date: '2026-09-03', source: 'live', label: 'Tuesday tutoring', gross: 180, split: 144, fee: 8, refund: 0, status: 'available', sample: true },
+      { id: 'earn-3', month: '2026-09', date: '2026-09-15', source: 'institution', label: "Rochford's teaching payment", gross: 600, split: 600, fee: 0, refund: 0, status: 'pending', sample: true },
+      { id: 'earn-4', month: '2026-10', date: '2026-10-02', source: 'share', label: 'Marketplace revenue share', gross: 95, split: 66, fee: 12, refund: 20, status: 'available', sample: true },
+      { id: 'earn-5', month: '2026-10', date: '2026-10-11', source: 'course', label: 'Fractions clinic', gross: 150, split: 105, fee: 6, refund: 0, status: 'pending', sample: true },
+    ],
+    payouts: [
+      { id: 'pay-1', date: '2026-09-15', amount: 276, status: 'paid', note: 'August course sales, sample' },
+      { id: 'pay-2', date: '2026-10-15', amount: 136, status: 'scheduled', note: 'September tutoring, sample' },
     ],
     payout: {
       schedule: 'Monthly, on the 15th',
@@ -917,6 +1120,16 @@ export function createDemoDesk(): DeskState {
       invoice: 'INV-SAMPLE-1042',
       sst: 'Not submitted. MyInvois stays ready until the gateway keys exist.',
     },
+    flows: [
+      { id: 'flow-exam', flow: 'exam', classId: klass.id, studentId: '', studentName: 'Whole class', title: 'Mock paper 2', detail: 'Calculator paper, 80 marks, on the school 9–1 scale.', status: 'Scheduled', when: '2026-10-28' },
+      { id: 'flow-live', flow: 'live', classId: klass.id, studentId: 'stu-priya', studentName: 'Priya Nair', title: 'Wednesday fractions clinic', detail: 'Sample room. A live join waits for the Daily.co key.', status: 'Scheduled', when: '2026-10-21' },
+      { id: 'flow-case', flow: 'integrity', classId: klass.id, studentId: 'stu-leo', studentName: 'Leo Tan', title: 'Unapproved notes in the quiz', detail: 'Held for the teacher. It is not a sanction until you close it.', status: 'Open', when: '2026-10-16' },
+      { id: 'flow-merit', flow: 'merit', classId: klass.id, studentId: 'stu-amina', studentName: 'Amina Yusuf', title: 'Helped a partner check working', detail: 'Two merits already sit on the report card.', status: 'Recorded', when: '2026-10-14' },
+      { id: 'flow-tutor', flow: 'tutor', classId: klass.id, studentId: '', studentName: 'Whole class', title: 'Fractions tutoring', detail: 'RM 60 a session. Sample offer until payouts are live.', status: 'Listed', when: '2026-10-18' },
+      { id: 'flow-sit', flow: 'sitting', classId: klass.id, studentId: 'stu-amina', studentName: 'Amina Yusuf', title: 'Falim mock sitting', detail: 'Room F-12 at 09:00. The mark returns to the gradebook.', status: 'Booked', when: '2026-10-28' },
+      { id: 'flow-ann', flow: 'announcement', classId: klass.id, studentId: '', studentName: 'Whole class', title: 'Mock week', detail: 'Bring a calculator on 27 October.', status: 'Published', when: '2026-10-18' },
+      { id: 'flow-ref', flow: 'reference', classId: klass.id, studentId: 'stu-amina', studentName: 'Amina Yusuf', title: 'Mathematics reference', detail: 'Predicted grade 8. Draft until the teacher signs it.', status: 'Draft', when: '2026-10-18' },
+    ],
   };
 }
 
@@ -926,7 +1139,8 @@ export function readDesk(): DeskState {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return createDemoDesk();
     const parsed = JSON.parse(raw) as DeskState;
-    if (!parsed?.institution?.id || !Array.isArray(parsed.classes)) return createDemoDesk();
+    if (!parsed?.institution?.id || !Array.isArray(parsed.classes) || !Array.isArray(parsed.flows)) return createDemoDesk();
+    if (!Array.isArray(parsed.earnings) || !Array.isArray(parsed.payouts) || parsed.earnings.some((row) => typeof row.split !== 'number' || !row.date)) return createDemoDesk();
     return parsed;
   } catch {
     return createDemoDesk();

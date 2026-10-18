@@ -20,6 +20,7 @@ import { useWhiteLabel } from '@/components/white-label-provider';
 import { filterTenantCatalogue } from '@/lib/tenant-host';
 import { listCatalogue } from '@/lib/institution-store';
 import { useAuthSTORE } from '@/hooks/use-auth';
+import { PublicFlow } from '@/components/school-desk/route-desk';
 
 const TYPE_FILTERS: { id: CourseType | 'all'; labelKey: string }[] = [
   { id: 'all', labelKey: 'market.all' },
@@ -136,6 +137,7 @@ export default function MarketplacePage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PublicFlow flow="marketplace" />
       {/* Hero */}
       <section className="relative py-16 sm:py-20 bg-gradient-to-b from-secondary via-background to-background overflow-hidden">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center">

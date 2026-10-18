@@ -46,7 +46,7 @@ export function DeskFrame({
         <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#1E6A83]">{t.demoBadge}</p>
         <h1 className="mt-1 font-heading text-4xl tracking-tight">{title}</h1>
         <p className="mt-2 text-sm text-[#1E6A83]">{lede}</p>
-        <p className="mt-2 text-sm text-[#203337]">{t.signedIn}</p>
+        <p className="mt-2 text-sm text-[#203337]">{state.institution.kind === 'independent' ? t.signedIndependent : t.signedIn}</p>
         <p className="mt-2 text-sm text-[#1E6A83]">{t.sample}</p>
         <p className="mt-3 text-sm">{state.institution.name} · {state.institution.campus} · {t.chain}</p>
         <button type="button" className={`${ghost} mt-3`} onClick={() => { onReset(); }}>{t.reset}</button>

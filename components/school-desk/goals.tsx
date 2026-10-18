@@ -14,12 +14,14 @@ export function GoalsDesk({ base = 'dashboard' }: { base?: 'dashboard' | 'previe
   const [editing, setEditing] = useState('');
   const [error, setError] = useState('');
   const [role, setRole] = useState<'teacher' | 'student'>('teacher');
+  const [view, setView] = useState<'all' | 'completed' | 'overdue' | 'in_progress'>('all');
   const klass = state.classes.find((item) => item.id === classId) ?? state.classes[0];
   const activeId = klass?.id ?? '';
   const pupils = roster(state, activeId).filter((item) => item.status === 'active');
-  const goals = state.goals.filter((item) => item.classId === activeId);
-  const done = goals.filter((item) => item.status === 'completed').length;
-  const overdue = goals.filter((item) => item.status === 'overdue').length;
+  const classGoals = state.goals.filter((item) => item.classId === activeId);
+  const goals = classGoals.filter((item) => view === 'all' || item.status === view);
+  const done = classGoals.filter((item) => item.status === 'completed').length;
+  const overdue = classGoals.filter((item) => item.status === 'overdue').length;
 
   return (
     <DeskFrame title={t.goalsTitle} lede={t.goalsLede} state={state} onReset={() => resetToDemo(setState)} syncs="Student goals, report cards, ET AI planner when a published mark is weak">
@@ -27,7 +29,7 @@ export function GoalsDesk({ base = 'dashboard' }: { base?: 'dashboard' | 'previe
       <p className="text-sm text-[#1E6A83]">{t.goalRule}</p>
       <div className="grid gap-3 sm:grid-cols-3">
         <ClassSelect state={state} classId={activeId} onChange={setClassId} />
-        <p className="rounded-2xl bg-white p-4 text-sm">{t.completed} {done}/{goals.length}</p>
+        <p className="rounded-2xl bg-white p-4 text-sm">{t.completed} {done}/{classGoals.length}</p>
         <p className="rounded-2xl bg-white p-4 text-sm">{t.overdue} {overdue}</p>
       </div>
       <form className="grid gap-2 rounded-3xl bg-white p-5 sm:grid-cols-2" onSubmit={(event) => {
@@ -57,6 +59,12 @@ export function GoalsDesk({ base = 'dashboard' }: { base?: 'dashboard' | 'previe
         <button type="submit" className={deskStyles.btn}>{editing ? t.save : t.addGoal}</button>
         <button type="button" className={deskStyles.ghost} onClick={() => setState(bulkGoals(state, activeId, title, due, state.actorId, state.actorName))}>{t.bulkGoal}</button>
       </form>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={view === 'all' ? deskStyles.btn : deskStyles.ghost} onClick={() => setView('all')}>{t.viewAll}</button>
+        <button type="button" className={view === 'completed' ? deskStyles.btn : deskStyles.ghost} data-action="view-completed" onClick={() => setView('completed')}>{t.viewCompleted}</button>
+        <button type="button" className={view === 'overdue' ? deskStyles.btn : deskStyles.ghost} data-action="view-overdue" onClick={() => setView('overdue')}>{t.viewOverdue}</button>
+        <button type="button" className={view === 'in_progress' ? deskStyles.btn : deskStyles.ghost} onClick={() => setView('in_progress')}>{t.viewProgress}</button>
+      </div>
       <div className="flex gap-2">
         <button type="button" className={role === 'teacher' ? deskStyles.btn : deskStyles.ghost} onClick={() => setRole('teacher')}>{t.asTeacher}</button>
         <button type="button" className={role === 'student' ? deskStyles.btn : deskStyles.ghost} onClick={() => setRole('student')}>{t.asStudent}</button>

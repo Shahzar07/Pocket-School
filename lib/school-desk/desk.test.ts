@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { auditMarkdown, AUDIT } from './catalog';
+import { flowForPath } from './flows';
 import {
-  addEnrolment, applyLatePenalty, approveEnrolment, canDeleteGoal, createClass, createDemoDesk,
-  deleteGoal, gradeOnScale, returnSubmission, setMark, submitWork, termResult,
+  addEnrolment, addFlow, applyLatePenalty, approveEnrolment, bulkCreateClasses, canDeleteGoal, createClass, createDemoDesk,
+  deleteGoal, earningNet, gradeOnScale, refundEarning, returnSubmission, setMark, setTeachingMode, submitWork, termResult,
 } from './model';
 
 test('scales cover IGCSE, A star to G, percent, points, and pass or fail', () => {
@@ -131,6 +132,56 @@ test('a weak published mark opens a teacher goal', () => {
 test('a student submission lands in the inbox', () => {
   const state = submitWork(createDemoDesk(), 'assess-hw', 'stu-leo', 'I showed each step and checked the last fraction.');
   assert.ok(state.submissions.some((item) => item.studentId === 'stu-leo' && item.suggestion));
+});
+
+test('institution bulk create assigns the teacher and an independent teacher can still create', () => {
+  const csv = 'name,subject,level,programme,term,campus,room,timetable,teacher,capacity\nIGCSE Physics,Physics,IGCSE,Cambridge IGCSE,Term 1,Falim,F-8,Thu 11:00,Siti Aminah,22';
+  const made = bulkCreateClasses(createDemoDesk(), csv);
+  assert.equal(made.error, '');
+  assert.equal(made.created, 1);
+  assert.equal(made.state.classes.some((item) => item.name === 'IGCSE Physics' && item.ownerTeacherName === 'Siti Aminah'), true);
+  const blocked = createDemoDesk();
+  blocked.institution = { ...blocked.institution, teachersCanCreateClasses: false };
+  const alone = setTeachingMode(blocked, 'independent');
+  const created = createClass(alone, {
+    name: 'Saturday clinic',
+    subject: 'Mathematics',
+    level: 'IGCSE',
+    programme: 'Independent',
+    term: 'Term 1',
+    campus: 'Online',
+    room: 'Online',
+    timetable: 'Sat 10:00',
+    coTeachers: [],
+    capacity: 8,
+    ownerTeacherId: 'teacher-aisha',
+    ownerTeacherName: 'Aisha Rahman',
+    createdByRole: 'teacher',
+  }, 'teacher');
+  assert.equal(created.error, '');
+});
+
+test('a sale net is split minus fees and refunds, and an exam lands on the gradebook', () => {
+  const state = createDemoDesk();
+  const sale = state.earnings.find((item) => item.id === 'earn-4');
+  assert.ok(sale);
+  assert.equal(earningNet(sale), sale.split - sale.fee - sale.refund);
+  const refunded = refundEarning(state, 'earn-5', 10, 'Aisha Rahman');
+  const clinic = refunded.earnings.find((item) => item.id === 'earn-5');
+  assert.equal(clinic?.refund, 10);
+  const withExam = addFlow(state, {
+    flow: 'exam',
+    classId: 'class-maths',
+    studentId: '',
+    studentName: 'Whole class',
+    title: 'Paper 4',
+    detail: 'Non-calculator.',
+    status: 'Scheduled',
+    when: '2026-11-02',
+  }, 'Aisha Rahman');
+  assert.ok(withExam.assessments.some((item) => item.title === 'Paper 4' && item.kind === 'exam'));
+  assert.ok(flowForPath('/dashboard/teacher/exams'));
+  assert.equal(AUDIT.filter((row) => row.status !== 'Built').length, 0);
 });
 
 test('the audit document lists every catalogue route', () => {
