@@ -22,6 +22,8 @@ import { useCoursePlaceholders } from '@/hooks/use-example-course';
 import { toNamedLevel } from '@/lib/programmes';
 import { formatMoney } from '@/lib/pricing';
 import { CoverArtPicker, storeMedia } from '@/components/media';
+import { CopyrightSign } from '@/components/courses/copyright-sign';
+import { SIGN } from '@/lib/courses/sign-copy';
 
 interface Props {
   open: boolean;
@@ -75,6 +77,7 @@ export default function CourseEditorModal({
 }: Props) {
   const [activeTab, setActiveTab] = useState('basic');
   const [saving, setSaving] = useState(false);
+  const [signatureId, setSignatureId] = useState('');
 
   // Tab 1
   const [title, setTitle] = useState('');
@@ -206,7 +209,9 @@ export default function CourseEditorModal({
         await updateCourse(initial.id, payload);
         toast.success('Course updated.');
       } else {
-        await createCourse(payload);
+        if (!signatureId) throw new Error(SIGN.need);
+        await createCourse({ ...payload, copyrightSignatureId: signatureId });
+        setSignatureId('');
         toast.success(publish ? 'Course published.' : 'Draft saved.');
       }
       onSaved();
@@ -226,6 +231,16 @@ export default function CourseEditorModal({
         <DialogHeader>
           <DialogTitle>{initial ? 'Edit Product' : 'Create New Product'}</DialogTitle>
         </DialogHeader>
+        {!initial ? (
+          <CopyrightSign
+            uid={ownerId}
+            profileName={ownerName || ''}
+            role="teacher"
+            context="course_create"
+            courseId=""
+            onSigned={setSignatureId}
+          />
+        ) : null}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-4 mb-6">

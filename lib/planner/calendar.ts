@@ -54,11 +54,15 @@ export function itemsOn(items: PlannerItem[], day: number): PlannerItem[] {
 }
 
 /** Dragging a card moves the due date and keeps the clock time. */
-export function reschedule(item: PlannerItem, day: number): PlannerItem {
-  const previous = new Date(item.dueAt);
+export function moveDue(dueAt: number, day: number): number {
+  const previous = new Date(dueAt);
   const next = new Date(startOfDay(day));
   next.setHours(previous.getHours(), previous.getMinutes(), 0, 0);
-  return { ...item, dueAt: next.getTime() };
+  return next.getTime();
+}
+
+export function reschedule(item: PlannerItem, day: number): PlannerItem {
+  return { ...item, dueAt: moveDue(item.dueAt, day) };
 }
 
 export function fromGoal(input: { id: string; title: string; studentId: string; dueAt: number; className?: string }): PlannerItem {

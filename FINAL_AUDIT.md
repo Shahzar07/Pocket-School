@@ -7,8 +7,9 @@ For Shahzar. No secret values. See also `HANDOVER.md` and `E2E_REPORT.md`.
 - **Sign-up schools.** `/signup`. Public directory `GET /api/institutions/directory`. Membership `POST /api/institutions/membership`. Approvals `/dashboard/institution/approvals`. Pending badge in the dashboard sidebar.
 - **AI Book Creator.** `/dashboard/admin/books` (`StudioView`, `lib/reads/creator.ts`). Nav key `nav.aiBookCreator`. Visible to `super_admin`, `admin`, and `content_editor` (platform `role: admin`). Teachers and institution admins with the CMS add-on get the same link at the top of their first nav group. Studio nav and the admin desk tools tile use the same name. AI generation already returns 503 when `OPENROUTER_API_KEY` is missing; the studio toasts that error.
 - **Admin desk.** `GET/POST /api/admin/desk` checks the caller before any payload. Missing `FIREBASE_SERVICE_ACCOUNT` returns `setupNeeded` and the exact setup sentence, with no fake KPI zeros. Actions no-op in that state.
-- **ET AI Studio.** `/dashboard/studio/et` is a full-page canvas in the dashboard shell (no nested frame). A missing model key shows the empty-reply line from `lib/studio/et-copy.ts`.
-- **Teacher portraits.** `lib/teacher-portrait.ts` points each teacher id at `/teachers/{id}.svg`.
+- **ET AI Studio.** `/dashboard/studio` and its sub-pages sit in the dashboard shell only. Section links are a horizontal header (`data-studio-nav="header"`), not a second sidebar. The home is the ET AI chat (`data-studio-home="chat"`). Header tabs open AI Studio, ET AI, AI Teachers, ET Maths, ET Exams, ET Essays, Creator Store, and AI Book Creator. A missing model key shows the empty-reply line from `lib/studio/et-copy.ts`. Recent essays stay on `/dashboard/studio/essays`.
+- **Teacher portraits.** `lib/teacher-portrait.ts` maps each teacher id to a distinct `/teachers/et-<subject>.webp` headshot. Alt text is `ET <Subject>`. The public teachers page, studio teacher list, ET chat header, and the student dashboard picker all use that file. There is no SVG silhouette fallback.
+- **Blog images.** Each post stores `coverImage` (1600×900 banner), `coverAlt`, and an optional `thumbnail` (the card uses the thumbnail, or a crop of the banner). Uploads go to Storage `blog/<postId>/` from `/dashboard/admin/blog`: drag-and-drop or picker, live preview, replace, remove, client resize to WebP. Alt text is required before publish. `/blog` cards show the thumbnail, title, excerpt, date, and reading time. `/blog/[slug]` is a full-width hero with the title on a blue gradient (`#1E6A83`, `#203337`, `#3FE0D0`). Open Graph and Twitter use the cover. A post with no cover omits `images` so `app/blog/[slug]/opengraph-image.tsx` draws the branded fallback. Seed covers in `public/blog/` are generated graphics, not photographs.
 - **School wall.** Permission errors show a short unavailable message. Cause: wall rules are not deployed until the Firestore deploy in `HANDOVER.md`.
 
 ## 2. Fixed in this pass
@@ -21,26 +22,27 @@ For Shahzar. No secret values. See also `HANDOVER.md` and `E2E_REPORT.md`.
 | Admin desk returned zeros before auth | Auth first. Setup message when the server account is missing. |
 | Book Studio looked like “Books” | Label `AI Book Creator` via `nav.aiBookCreator`, placed at the top of the admin nav. |
 | Wall printed raw permission errors | `wallNotice` in `lib/wall/live.ts`. |
+| Public pages hung Playwright | Promo banners, payment settings, and institution signup no longer call the Admin SDK when no server account is configured. |
 
 ## 3. Pending or partial
 
 | Item | What’s left |
 | --- | --- |
-| Landing v3 homepage and the linked marketing pages | Not replaced in this pass. |
-| Copyright e-sign on instructor apply, course create, and course publish, plus `/dashboard/admin/declarations` | Declaration copy exists in `lib/courses/copyright.ts`. The immutable `copyright_declarations` record, admin retrieval, and every create path are not wired. |
-| Admin planner month/week/day with drag and goal sync | Calendar helpers exist in `lib/planner/calendar.ts`. The page is still the limits form. |
-| Consent defaults on at sign-up | `lib/consents.ts` exists. Sign-up still starts demographic consent off and still blocks when it is off. |
-| Private classrooms (`visibility`, `class_invites`, student self-enrol) | Not wired. |
-| Blog cover and inline images | Helpers in `lib/blog/images.ts`. The admin blog form is still a URL field. |
+| Landing v3 homepage and the linked marketing pages | Present. The homepage sets `data-landing="v3"`. Footer links open the marketing pages listed in the regression audit. |
+| Copyright e-sign on instructor apply, course create, and course publish | The signature form is on instructor apply, course create, the teacher upload, the studio desk, and admin curriculum. A new course cannot be saved from the editor without a signature id. Admin retrieval is `/dashboard/admin/signatures`. A fresh signature was not submitted in this preview pass. |
+| Admin planner month/week/day with drag and goal sync | The admin page still has the limits form and now also renders the calendar board. Student, parent, and teacher planner pages render the same board. Month, week, and day views are in the board. A drag-and-drop was not clicked in this pass. |
+| Consent defaults on at sign-up | Done. Statistics, timezone, and Amber start checked. Clearing a box still allows sign-up. The value, time, and version are stored. |
+| Private classrooms (`visibility`, class join, student self-enrol) | The teacher class form has “Who can join” (`data-class-visibility`). `/join/class/[code]` posts to the join API. A student self-enrol click was not completed in this pass. |
+| Blog cover and inline images | Done in this pass. Admin upload, public cards, hero, and social images were checked on the local emulator. See `E2E_REPORT.md`. |
 | Full role Playwright journeys | See `E2E_REPORT.md`. |
-| Sidebar account menu clipping | `lib/ui/menu-position.ts` exists. The menu is still positioned inside the sidebar. |
+| Sidebar account menu clipping | The menu now portals to `document.body` with `menuPosition`, so the sidebar no longer clips it. |
 
 ## 4. Connectors
 
 | Connector | Status | Env |
 | --- | --- | --- |
 | Firebase Auth / Firestore | Code-ready. Production rules not deployed from this branch. | Client config in `firebase-applet-config.json`. Server: `FIREBASE_SERVICE_ACCOUNT` |
-| Storage | Code-ready. Needs Blaze and deployed `storage.rules`. | Same Firebase project |
+| Storage | Code-ready. Journal files are `blog/<postId>/*.webp` (public read, signed-in WebP write under 5 MB). Needs Blaze and deployed `storage.rules`. | Same Firebase project |
 | Rules and indexes | In git. Not deployed by this change. | Deploy command in `HANDOVER.md` |
 | Stripe | Code-ready, keys missing on the server | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` |
 | Malaysian gateway | Code-ready, keys missing | `IPAY88_DUITNOW_PAYMENT_ID`, `PAYMENTS_SANDBOX` |
@@ -61,9 +63,7 @@ For Shahzar. No secret values. See also `HANDOVER.md` and `E2E_REPORT.md`.
 | Severity | Bug |
 | --- | --- |
 | High | Production Firestore rules are undeployed, so some client listeners still cannot read (wall, some desks) until the deploy command runs. |
-| Medium | Copyright is not enforced on course create or publish. |
-| Medium | Sign-up still requires demographic consent before continue. |
-| Low | Account menu can clip on a narrow sidebar. The position helper is not wired. |
+| Medium | A drag onto the planner board, a completed copyright signature write, and a live school-wall post were not exercised in this preview pass. |
 
 ## 6. Wireframes
 
@@ -85,7 +85,7 @@ Admin home: setup banner when the server account is missing; otherwise KPI cards
 
 ## 7. Mobile parity
 
-The Expo app should mirror: public school search (do not query institutions before auth), pending-approval badge, approve/reject for institution admins, and the AI Book Creator entry for staff who have it on the web. Portraits are `/teachers/{id}.svg`.
+The Expo app should mirror: public school search (do not query institutions before auth), pending-approval badge, approve/reject for institution admins, and the AI Book Creator entry for staff who have it on the web. Teacher portraits are `/teachers/et-<subject>.webp`.
 
 ## 8. Security
 
@@ -115,4 +115,15 @@ Added beside the calendar, year planner, school desk, and attendance. It does no
 - The grid rejects an illegal drag or click and offers a legal slot. Cover proposes a qualified free teacher, queues notices for the teachers, students, and parents, and keeps a cover load.
 - Teacher add-on: personal timetable. Institution: one school. Enterprise: more than one campus. The price on the pricing page and the landing feature list is TBC by Harry.
 - Firestore rules for `timetables` are in git and are not deployed from this work.
-- AI Studio shows a Timetabler tab and quick action to teachers and to institution or enterprise timetablers. Without the add-on the card is an upsell and the price stays TBC by Harry. ET AI can draft a week, cover, a room fix, or extra periods from a sentence or a photo, and nothing is saved until confirm. The full grid is `/dashboard/studio/timetable`, with the main sidebar and no nested studio frame.
+- The teacher sidebar opens `/dashboard/teacher/timetable`. The institution and enterprise admin sidebar opens `/dashboard/institution/timetable`. AI Studio keeps the ET AI chat from the handover. Teachers and institution or enterprise admins also get a Timetabler link on that chat and in the studio header, opening `/dashboard/studio/timetable`. Students do not see that entry. Without the add-on the grid is an upsell and the price stays TBC by Harry. ET AI can draft a week, cover, a room fix, or extra periods from a sentence or a photo, and nothing is saved until confirm. The full grid has the main sidebar and no nested studio frame.
+- Google Calendar is additive. Missing `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, or `GOOGLE_OAUTH_REDIRECT_URI` leaves the iCal download and the signed subscription working, and the screen says Connect Google Calendar (not configured yet).
+
+## 10. Regression audit
+
+Compared with `main` at `6a041278bf02fc27e62c1f0647581b5351ce3cbe` after this branch was updated onto it. No `app/**/page.tsx` file from that commit is missing. No sidebar `href` from `app/dashboard/layout.tsx` on that commit was removed. `git diff --diff-filter=D origin/main` is empty.
+
+Pages added: `/dashboard/admin/timetable`, `/dashboard/institution/timetable`, `/dashboard/parent/timetable`, `/dashboard/student/timetable`, `/dashboard/studio/timetable`, `/dashboard/teacher/timetable`, `/preview/studio`, `/preview/timetable`.
+
+Sidebar links added: the same six dashboard timetable routes. The studio home stays the ET AI chat (`data-studio-home="chat"`). Teachers and institution or enterprise admins also get a Timetabler control on that chat and in the studio header. Students do not.
+
+`/preview/scope-c` stays closed on a production server unless `SCOPE_PREVIEW=1`. `/preview/institution-console` stays closed unless `INSTITUTION_PREVIEW=1`.

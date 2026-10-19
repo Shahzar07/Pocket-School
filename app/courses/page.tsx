@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { BookOpen, Search, Filter, ArrowRight, Loader2, Sparkles, Mail, ShieldCheck, Star } from 'lucide-react';
 import { getPublicCourses, type Course, type CourseType } from '@/lib/db';
+import { catalogueListed } from '@/lib/courses/placement';
+import { FeaturedShowcase } from '@/components/courses/featured-showcase';
 import { courseCover } from '@/lib/course-cover';
 import { filterCatalog, recommend } from '@/lib/learning';
 import { productAccess, previewViewer } from '@/lib/allocation';
@@ -111,7 +113,7 @@ export default function MarketplacePage() {
 
   const visible = useMemo(
     () => filterTenantCatalogue(
-      courses.filter(course => productAccess(course, previewViewer('guest')).listed),
+      courses.filter(course => catalogueListed(course) && productAccess(course, previewViewer('guest')).listed),
       institution,
       memberCourseIds,
     ),
@@ -162,6 +164,10 @@ export default function MarketplacePage() {
           </div>
         </div>
       </section>
+
+      <div id="featured" className="mx-auto max-w-7xl px-4 pt-8 sm:px-6">
+        <FeaturedShowcase variant="hero" />
+      </div>
 
       {/* Filters */}
       <section className="border-y border-border bg-muted/30 py-4 sticky top-16 z-30 backdrop-blur-xl bg-background/85">

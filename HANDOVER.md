@@ -17,12 +17,13 @@ Poket School (poketschool.ai) is a Next.js 15 app with Firebase Auth, Firestore 
 | Parent | `/dashboard/parent` | grades, goals, reports |
 | Teacher | `/dashboard/teacher` | classes, gradebook, courses, AI Book Creator when the CMS add-on is on |
 | Institution admin | `/dashboard/institution` | approvals at `/dashboard/institution/approvals` |
-| Platform admin (`role: admin`, including `content_editor` and `super_admin`) | `/dashboard/admin` | queues, platform, pulse, AI Book Creator at `/dashboard/admin/books`, ET AI Timetabler at `/dashboard/admin/timetable` |
+| Platform admin (`role: admin`, including `content_editor` and `super_admin`) | `/dashboard/admin` | queues, platform, pulse, AI Book Creator at `/dashboard/admin/books`, journal at `/dashboard/admin/blog`, ET AI Timetabler at `/dashboard/admin/timetable` |
 | Institution admin with the timetabler add-on | `/dashboard/institution/timetable` | School week. Enterprise (`plan` or `package:enterprise`) can use more than one campus. |
-| Teacher | `/dashboard/teacher/timetable` | Published lessons. The add-on unlocks a personal timetable for private classrooms. | 
-| AI Studio | `/dashboard/studio/timetable` | Full grid beside the main sidebar. ET AI chat at `/dashboard/studio/et` can draft a week, cover, or a photographed timetable, and waits for confirm. |
+| Teacher | `/dashboard/teacher/timetable` | Published lessons. The add-on unlocks a personal timetable for private classrooms. |
+| AI Studio | `/dashboard/studio` and `/dashboard/studio/timetable` | The studio home is the ET AI chat. Teachers and institution or enterprise admins also open the Timetabler from that chat and from the studio header. The grid sits beside the main sidebar. |
 | Student | `/dashboard/student/timetable` | Own lessons and option choices. |
 | Parent | `/dashboard/parent/timetable` | Child’s lessons and option choices. |
+| Public | `/` | Blog at `/blog` and `/blog/[slug]`. Cards and the hero use the post cover. Social images use the cover, or the branded `opengraph-image` when a post has none. |
 
 ## Signup schools
 

@@ -217,6 +217,10 @@ export interface Publication {
   core: boolean;
   levels: VolumePlanId[];
   institutionIds: string[];
+  /** Higher numbers lead the featured carousel. Ignored unless featured. */
+  priority?: number;
+  featuredFrom?: string;
+  featuredUntil?: string;
 }
 
 export function blankPublication(origin: Publication['origin'] = 'institution'): Publication {
@@ -245,20 +249,41 @@ export function platformPlaces(pub: Publication, placement: {
   core: boolean;
   levels: readonly string[];
   institutionIds: readonly string[];
+  priority?: number;
+  featuredFrom?: string;
+  featuredUntil?: string;
 }): Publication | { error: string } {
   const levels = [...new Set(placement.levels.filter((id): id is VolumePlanId => LEVELS.has(id)))];
   if (placement.core && levels.length === 0) return { error: 'A core programme needs a level.' };
   if (pub.origin === 'institution' && placement.marketplace === 'approved' && pub.library !== 'approved') {
     return { error: 'The public marketplace waits until the institution admin has approved the course.' };
   }
+  let priority = 0;
+  if (placement.priority != null) {
+    if (!Number.isInteger(placement.priority) || placement.priority < 0 || placement.priority > 999) {
+      return { error: 'Featured priority is a whole number from 0 to 999.' };
+    }
+    priority = placement.priority;
+  }
+  const featuredFrom = (placement.featuredFrom ?? '').trim();
+  const featuredUntil = (placement.featuredUntil ?? '').trim();
+  if (featuredFrom && !DATE.test(featuredFrom)) return { error: 'The featured start date uses YYYY-MM-DD.' };
+  if (featuredUntil && !DATE.test(featuredUntil)) return { error: 'The featured end date uses YYYY-MM-DD.' };
+  if (featuredFrom && featuredUntil && featuredFrom > featuredUntil) {
+    return { error: 'The featured start date is after the end date.' };
+  }
+  const featured = placement.marketplace === 'approved' && placement.featured;
   return {
     origin: pub.origin,
     library: pub.origin === 'platform' ? 'approved' : pub.library,
     marketplace: placement.marketplace,
-    featured: placement.marketplace === 'approved' && placement.featured,
+    featured,
     core: placement.core,
     levels,
     institutionIds: [...new Set(placement.institutionIds.map((id) => id.trim()).filter(Boolean))],
+    priority: featured ? priority : 0,
+    featuredFrom: featured ? featuredFrom : '',
+    featuredUntil: featured ? featuredUntil : '',
   };
 }
 
@@ -373,7 +398,7 @@ export function postWallet(balance: number, movement: { kind: WalletKind; amount
 
 export function pdpaGate(input: { terms: boolean; privacy: boolean; minor: boolean; parentalVerified: boolean }): { ok: true } | { error: string } {
   if (!input.terms || !input.privacy) {
-    return { error: 'Accept the Terms and the Privacy Policy before creating an account.' };
+    return { error: 'Accept the Terms and the PDPA Privacy Policy before creating an account.' };
   }
   if (input.minor && !input.parentalVerified) {
     return { error: 'A parent or guardian must approve this account before a learner under 18 can join.' };

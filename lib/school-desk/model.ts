@@ -77,6 +77,11 @@ export interface SchoolClass {
   ownerTeacherName: string;
   createdByRole: 'institution_admin' | 'teacher';
   announcements: string[];
+  /** School register, or a private classroom for invited students. */
+  visibility?: 'school' | 'private';
+  /** Code and link joins become active immediately, except a blocked under-18. */
+  inviteAutoApprove?: boolean;
+  institutionKind?: 'school' | 'independent';
 }
 
 export interface Enrolment {
@@ -644,6 +649,9 @@ export function createClass(
     status: 'active',
     announcements: [],
     joinCode: `JOIN-${made.id.slice(-4).toUpperCase()}`,
+    visibility: input.visibility ?? (state.institution.kind === 'independent' ? 'private' : 'school'),
+    inviteAutoApprove: input.inviteAutoApprove === true,
+    institutionKind: state.institution.kind,
   };
   return { state: stamp({ ...made.state, classes: [...made.state.classes, klass] }, input.ownerTeacherName, 'create class', klass.name), error: '' };
 }
@@ -809,17 +817,19 @@ export function addEnrolment(
   const made = id(state, 'enrol');
   const school = state.institution.kind === 'school';
   const blocked = input.under18 && school && !input.institutionMember;
+  const klass = state.classes.find((item) => item.id === input.classId);
+  const auto = !blocked && input.joinMethod === 'code' && klass?.inviteAutoApprove === true;
   const recordId = input.studentId?.trim() || '';
   const row: Enrolment = {
     id: made.id,
     classId: input.classId,
     studentId: recordId || `stu-${made.id}`,
     studentName: input.studentName,
-    status: blocked ? 'pending' : 'pending',
+    status: auto ? 'active' : 'pending',
     joinMethod: input.joinMethod,
     under18: input.under18,
     institutionMember: input.institutionMember,
-    holdReason: blocked ? 'Under 18s join only as members of the school.' : 'Waiting for the teacher or the school to approve.',
+    holdReason: blocked ? 'Under 18s join only as members of the school.' : auto ? '' : 'Waiting for the teacher or the school to approve.',
   };
   return stamp({ ...made.state, enrolments: [...made.state.enrolments, row] }, actor, 'join request', input.studentName);
 }

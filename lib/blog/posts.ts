@@ -21,7 +21,12 @@ export interface BlogPost {
   category: string;
   tags: string[];
   author: string;
+  /** Banner, 1600×900 recommended. */
   coverImage: string;
+  /** Required once a banner is set, and required before publish. */
+  coverAlt?: string;
+  /** Card image. Empty means the banner is cropped in the card. */
+  thumbnail?: string;
   featured: boolean;
   status: BlogStatus;
   publishedAt: number | null;
@@ -48,10 +53,31 @@ export function isAffiliateToken(value: string): boolean {
   return AFFILIATE_TOKEN.test(value.trim());
 }
 
-/** Local covers live in public/blog. Remote covers stay on https. */
+/** Local covers live in public/blog. Remote covers stay on https. The storage emulator uses http on port 9199. */
 export function isCoverPath(value: string): boolean {
   if (value.startsWith('https://')) return true;
+  if (/^http:\/\/(127\.0\.0\.1|localhost):9199\//.test(value)) return true;
   return value.startsWith('/blog/') && !value.includes('..') && value.endsWith('.webp');
+}
+
+export function coverAltOf(post: Pick<BlogPost, 'title' | 'coverAlt'>): string {
+  const alt = post.coverAlt?.trim() ?? '';
+  if (alt.length >= 2) return alt.slice(0, 180);
+  const title = post.title.trim();
+  return title ? `${title} banner` : 'Poket School essay banner';
+}
+
+/** Thumbnail when one was stored, otherwise the banner, which the card crops. */
+export function cardImage(post: Pick<BlogPost, 'coverImage' | 'thumbnail'>): string {
+  const thumb = post.thumbnail?.trim() ?? '';
+  if (thumb && isCoverPath(thumb)) return thumb;
+  return isCoverPath(post.coverImage) ? post.coverImage : '';
+}
+
+export function readingMinutes(body: string): number {
+  const words = body.trim().split(/\s+/).filter(Boolean).length;
+  if (words === 0) return 1;
+  return Math.max(1, Math.round(words / 220));
 }
 
 export function absoluteCover(value: string): string {
@@ -210,6 +236,8 @@ export function parseStoredPost(slug: string, raw: unknown): BlogPost | null {
     }).slice(0, 6)
     : [];
   const coverImage = typeof data.coverImage === 'string' && isCoverPath(data.coverImage) ? data.coverImage.slice(0, 500) : '';
+  const thumbnail = typeof data.thumbnail === 'string' && isCoverPath(data.thumbnail) ? data.thumbnail.slice(0, 500) : '';
+  const coverAlt = typeof data.coverAlt === 'string' ? data.coverAlt.trim().slice(0, 180) : '';
   return {
     slug: slugify(typeof data.slug === 'string' && data.slug.trim() ? data.slug : slug) || slug,
     title: title.slice(0, 180),
@@ -219,6 +247,8 @@ export function parseStoredPost(slug: string, raw: unknown): BlogPost | null {
     tags,
     author: (typeof data.author === 'string' && data.author.trim() ? data.author : 'Poket School').slice(0, 80),
     coverImage,
+    coverAlt,
+    thumbnail,
     featured: data.featured === true,
     status,
     publishedAt,

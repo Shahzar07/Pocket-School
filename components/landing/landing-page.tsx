@@ -6,6 +6,7 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { AI_TEACHERS, CEFR_LEVELS, TEACHER_CATEGORIES } from '@/lib/ai-teachers';
+import { TeacherPortrait } from '@/components/teachers/portrait';
 import { ADDONS, tierDefinition } from '@/lib/entitlements';
 import { TIMETABLE_COPY } from '@/lib/timetable/copy';
 import { LANGUAGES } from '@/lib/languages';
@@ -340,10 +341,13 @@ export function LandingPage() {
                 <ul className="mt-3 grid gap-3 sm:grid-cols-2">
                   {teachers.map((teacher) => (
                     <li key={teacher.id}>
-                      <Link href="/ai-teachers" className="block h-full rounded-2xl border border-border bg-card p-4 hover:border-primary">
+                      <Link href="/ai-teachers" className="flex h-full gap-3 rounded-2xl border border-border bg-card p-4 hover:border-primary">
+                        <TeacherPortrait teacher={teacher} size={64} className="h-16 w-16 shrink-0 rounded-2xl object-cover" />
+                        <span>
                         <p className="font-semibold">{teacher.name}</p>
                         <p className="mt-1 text-xs font-medium text-primary">{teacher.title}</p>
                         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{teacher.tagline}</p>
+                        </span>
                       </Link>
                     </li>
                   ))}

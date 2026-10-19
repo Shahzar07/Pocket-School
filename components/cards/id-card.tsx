@@ -34,7 +34,7 @@ function BookMark() {
   return (
     <svg viewBox="0 0 48 48" className="h-[62%] w-[62%]" aria-hidden>
       <path fill="#1E6A83" d="M7 13.2c6.2-2.4 10.2-1.1 16.2 1.5v21.4c-6-2.6-10-3.8-16.2-1.4V13.2z" />
-      <path fill="#2786A4" d="M41 13.2c-6.2-2.4-10.2-1.1-16.2 1.5v21.4c6-2.6 10-3.8 16.2-1.4V13.2z" />
+      <path fill="#1E6A83" d="M41 13.2c-6.2-2.4-10.2-1.1-16.2 1.5v21.4c6-2.6 10-3.8 16.2-1.4V13.2z" />
       <path fill="#3FE0D0" d="M22.2 15.2h3.6v20.6h-3.6z" />
     </svg>
   );
@@ -44,7 +44,7 @@ function Header({ view }: { view: IdCardView }) {
   return (
     <header
       className="absolute inset-x-0 top-0 flex h-[15.21%] items-center gap-[1.6cqw] px-[2.2cqw] text-white"
-      style={{ background: 'linear-gradient(90deg, #1E6A83 0%, #2786A4 100%)' }}
+      style={{ background: 'linear-gradient(90deg, #1E6A83 0%, #1E6A83 100%)' }}
     >
       {view.brand.logoUrl ? (
         <img src={view.brand.logoUrl} alt="" className="h-[9.1cqw] w-[9.1cqw] shrink-0 rounded-[1.4cqw] bg-white object-contain p-[0.6cqw]" />

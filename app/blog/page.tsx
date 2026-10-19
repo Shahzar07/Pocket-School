@@ -1,10 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { BLOG_CATEGORIES, BLOG_ORIGIN, featuredPost, filterPosts, jsonLdScript } from '@/lib/blog/posts';
+import { BLOG_CATEGORIES, BLOG_ORIGIN, featuredPost, filterPosts, jsonLdScript, readingMinutes, type BlogPost } from '@/lib/blog/posts';
+import { BLOG_PUBLIC } from '@/lib/blog/public-copy';
 import { publishedPosts } from '@/lib/blog/load';
-import { Cover } from '@/components/blog/article';
+import { CardThumb } from '@/components/blog/article';
 
 export const revalidate = 3600;
+
+function essayMeta(post: BlogPost): string {
+  const when = new Date(post.publishedAt ?? post.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  return `${when} · ${readingMinutes(post.body)} ${BLOG_PUBLIC.minRead}`;
+}
 
 export const metadata: Metadata = {
   title: 'Blog',
@@ -87,15 +93,18 @@ export default async function BlogIndex({
 
         {featured ? (
           <article className="mt-8 overflow-hidden rounded-[2rem] bg-white shadow-[0_24px_60px_-36px_rgba(32,51,55,0.45)]">
-            <Cover post={featured} className="h-56 sm:h-72" />
+            <Link href={`/blog/${featured.slug}`}>
+              <CardThumb post={featured} className="h-56 sm:h-72" />
+            </Link>
             <div className="p-6 sm:p-8">
               <p className="text-xs font-bold tracking-[0.18em] text-primary">FEATURED · {featured.category}</p>
               <h2 className="mt-2 font-heading text-3xl tracking-tight sm:text-4xl">
                 <Link href={`/blog/${featured.slug}`}>{featured.title}</Link>
               </h2>
               <p className="mt-3 max-w-2xl text-[#203337]/75">{featured.excerpt}</p>
+              <p className="mt-3 text-sm text-[#203337]/60">{essayMeta(featured)}</p>
               <Link href={`/blog/${featured.slug}`} className="mt-5 inline-flex min-h-11 items-center text-sm font-bold text-primary">
-                Read the essay
+                {BLOG_PUBLIC.read}
               </Link>
             </div>
           </article>
@@ -109,15 +118,21 @@ export default async function BlogIndex({
           </section>
         )}
 
-        <ul className="mt-8 grid gap-4 sm:grid-cols-2">
+        <ul className="mt-8 grid gap-4 sm:grid-cols-2" data-blog-grid="1">
           {rest.map((post) => (
             <li key={post.slug}>
-              <article className="h-full rounded-3xl bg-white p-5">
-                <p className="text-xs font-bold tracking-wider text-primary">{post.category}</p>
-                <h2 className="mt-2 font-heading text-2xl tracking-tight">
-                  <Link href={`/blog/${post.slug}`}>{post.title}</Link>
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-[#203337]/70">{post.excerpt}</p>
+              <article className="h-full overflow-hidden rounded-3xl bg-white">
+                <Link href={`/blog/${post.slug}`}>
+                  <CardThumb post={post} className="h-44" />
+                </Link>
+                <div className="p-5">
+                  <p className="text-xs font-bold tracking-wider text-primary">{post.category}</p>
+                  <h2 className="mt-2 font-heading text-2xl tracking-tight">
+                    <Link href={`/blog/${post.slug}`}>{post.title}</Link>
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-[#203337]/70">{post.excerpt}</p>
+                  <p className="mt-3 text-sm text-[#203337]/60">{essayMeta(post)}</p>
+                </div>
               </article>
             </li>
           ))}

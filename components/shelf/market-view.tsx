@@ -6,6 +6,8 @@ import { BookCover } from '@/components/shelf/book-cover';
 import { ProfileSwitch, useShelfProfile } from '@/components/shelf/profile-bar';
 import { Chip, Hero, ResultGrid, SearchField, ShelfRow } from '@/components/shelf/ui';
 import { getPublicCourses } from '@/lib/db';
+import { catalogueListed } from '@/lib/courses/placement';
+import { FeaturedShowcase } from '@/components/courses/featured-showcase';
 import { SAMPLE_OWNED, SAMPLE_READER } from '@/lib/reads/access';
 import { useReadsT } from '@/lib/reads/i18n';
 import {
@@ -36,7 +38,7 @@ export function MarketHome() {
   useEffect(() => {
     let cancelled = false;
     getPublicCourses()
-      .then(rows => { if (!cancelled) setCourses(mergeCourses(rows)); })
+      .then(rows => { if (!cancelled) setCourses(mergeCourses(rows.filter(catalogueListed))); })
       .catch(() => { if (!cancelled) setCourses(mergeCourses([])); });
     return () => { cancelled = true; };
   }, []);
@@ -109,6 +111,10 @@ export function MarketHome() {
             <Chip key={id} active={filter === id} onClick={() => setFilter(id)}>{label}</Chip>
           ))}
         </div>
+      </div>
+
+      <div id="featured">
+        <FeaturedShowcase variant="hero" />
       </div>
 
       {searching ? (

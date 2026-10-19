@@ -216,6 +216,8 @@ export interface Course {
   enrollmentCount?: number;
   durationHours?: number;
   previewUrl?: string;
+  /** Immutable copyright_signatures document for this course. */
+  copyrightSignatureId?: string;
   /** Entitlement gate 1 — minimum access tier (0-6). Absent values are derived
    * from `level` and `kind` by courseMinTier(), so existing courses keep working. */
   minTier?: number;
@@ -259,7 +261,16 @@ export interface Course {
     core: boolean;
     levels: string[];
     institutionIds: string[];
+    /** Higher numbers lead the featured carousel. */
+    priority?: number;
+    featuredFrom?: string;
+    featuredUntil?: string;
+    /** Set when an admin merges this course into another. The document stays. */
+    mergedInto?: string;
   };
+  /** Mean of real course reviews. Absent until a review exists. */
+  ratingAverage?: number;
+  ratingCount?: number;
   libraryApproved?: boolean;
   /** subscription, a_la_carte, or both. Absent keeps the older catalogue rules. */
   accessMode?: 'subscription' | 'a_la_carte' | 'both';
@@ -751,9 +762,16 @@ export async function getCourse(courseId: string): Promise<Course | null> {
   return snap.exists() ? ({ id: snap.id, ...snap.data() } as Course) : null;
 }
 
-export async function createCourse(data: Omit<Course, 'id'>): Promise<string> {
+export async function createCourse(data: Omit<Course, 'id'> & { platformSeed?: boolean }): Promise<string> {
+  const platformSeed = data.platformSeed === true;
+  const copyrightSignatureId = data.copyrightSignatureId?.trim() || '';
+  if (!platformSeed && !copyrightSignatureId) {
+    throw new Error('Sign the copyright declaration before creating a course.');
+  }
+  const { platformSeed: _seed, ...rest } = data;
   const ref = await addDoc(collection(db, 'courses'), {
-    ...omitUndefined(data),
+    ...omitUndefined(rest),
+    copyrightSignatureId,
     enrollmentCount: data.enrollmentCount ?? 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -2482,6 +2500,7 @@ export async function seedDemoData(adminId: string): Promise<{ coursesCreated: n
       ownerId: adminId,
       ownerName: 'Demo Teacher',
       status: 'published',
+      platformSeed: true,
     });
     coursesCreated++;
 

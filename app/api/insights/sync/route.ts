@@ -13,12 +13,9 @@ export async function POST(req: NextRequest) {
       const { ActionError } = await import('@/lib/server/actions');
       throw new ActionError('VALIDATION', 'Choose male or female.');
     }
-    if (body.demographicConsent !== true && body.gender) {
-      const { ActionError } = await import('@/lib/server/actions');
-      throw new ActionError('VALIDATION', 'Confirm the demographic statistics notice.');
-    }
+    const statistics = body.demographicConsent === true;
     await reconcileUser(user.uid, {
-      gender,
+      gender: statistics ? gender : '',
       country: typeof body.country === 'string' ? body.country : '',
       region: typeof body.region === 'string' ? body.region : '',
       level: typeof body.level === 'string' ? body.level : '',

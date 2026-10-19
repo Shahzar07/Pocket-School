@@ -16,6 +16,7 @@ import Link from "next/link";
 import { useWhiteLabel } from "@/components/white-label-provider";
 import { isBrandedLoginPath } from "@/lib/institution-login";
 import { isInstitutionJourneyPath } from "@/lib/institution-journey";
+import { MARKET_LINKS } from "@/lib/marketing/nav";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
 import {
@@ -45,7 +46,7 @@ const HIDDEN_PREFIXES = [
   "/forgot-password",
   "/reset-password",
   "/reads",
-  "/studio",
+  "/studio/essays",
   "/preview/design",
   "/alerts",
 ];
@@ -159,6 +160,9 @@ export function SiteFooter() {
                 {t(l.labelKey)}
               </Link>
             ))}
+            {MARKET_LINKS.map((item) => (
+              <Link key={item.href} href={item.href}>{item.label}</Link>
+            ))}
           </div>
           <div className={styles.contactCard}>
             <h2>{t("footer.keepLearning")}</h2>
@@ -261,6 +265,11 @@ export function SiteFooter() {
               ))}
             </div>
           </div>
+          <ul className="mb-8 flex flex-wrap gap-x-4 gap-y-2 text-xs">
+            {MARKET_LINKS.map((item) => (
+              <li key={item.href}><FooterLink href={item.href} label={item.label} /></li>
+            ))}
+          </ul>
 
           {/* Mandatory non-affiliation disclaimer — must be visible, not buried */}
           <div className="rounded-2xl bg-white/5 border border-white/10 px-5 py-4 mb-8">

@@ -72,7 +72,7 @@ function book(ctx: CanvasRenderingContext2D, x: number, y: number, size: number)
   ctx.bezierCurveTo(17, 33.5, 13, 32.3, 7, 34.7);
   ctx.closePath();
   ctx.fill();
-  ctx.fillStyle = '#2786A4';
+  ctx.fillStyle = '#1E6A83';
   ctx.beginPath();
   ctx.moveTo(41, 13.2);
   ctx.bezierCurveTo(35, 10.8, 31, 12, 24.8, 14.7);
@@ -110,7 +110,7 @@ export function drawIdCard(
 
   const header = ctx.createLinearGradient(0, 0, width, 0);
   header.addColorStop(0, '#1E6A83');
-  header.addColorStop(1, '#2786A4');
+  header.addColorStop(1, '#1E6A83');
   ctx.fillStyle = header;
   ctx.fillRect(0, 0, width, py(80));
 

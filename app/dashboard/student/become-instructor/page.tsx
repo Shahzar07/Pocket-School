@@ -6,6 +6,8 @@ import { toast } from 'sonner';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { updateUser } from '@/lib/db';
 import { instructorOnboarding, writeActiveMode } from '@/lib/account-modes';
+import { CopyrightSign } from '@/components/courses/copyright-sign';
+import { SIGN } from '@/lib/courses/sign-copy';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +18,7 @@ export default function BecomeInstructorPage() {
   const [headline, setHeadline] = useState('');
   const [subject, setSubject] = useState('');
   const [accepted, setAccepted] = useState(false);
+  const [signatureId, setSignatureId] = useState('');
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
@@ -23,6 +26,10 @@ export default function BecomeInstructorPage() {
     const patch = instructorOnboarding(profile, { headline, subject, acceptedReview: accepted });
     if (!patch) {
       toast.error('Add a headline, a subject, and confirm that marketplace courses stay in review.');
+      return;
+    }
+    if (!signatureId) {
+      toast.error(SIGN.needApply);
       return;
     }
     setSaving(true);
@@ -57,6 +64,16 @@ export default function BecomeInstructorPage() {
           <Label htmlFor="subject">Subject</Label>
           <Input id="subject" value={subject} onChange={event => setSubject(event.target.value)} placeholder="Biology" />
         </div>
+        {user ? (
+          <CopyrightSign
+            uid={user.uid}
+            profileName={profile?.name || ''}
+            role="student"
+            context="instructor_application"
+            courseId=""
+            onSigned={setSignatureId}
+          />
+        ) : null}
         <label className="flex items-start gap-3 text-sm leading-relaxed">
           <input
             type="checkbox"

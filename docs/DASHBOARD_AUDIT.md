@@ -357,6 +357,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** This is the merged goals page. /dashboard/student/tasks redirects here.
 - **Owner keys:** None.
 
+### Planner
+
+- **Route:** `/dashboard/student/planner`
+- **Audience:** student
+- **Purpose:** Month, week, and day calendar of classes, assignment due dates, exams, attendance, and personal goals.
+- **Overlaps:** Daily goals and the year calendar.
+- **Decision:** Keep beside daily goals. Desk events mirror into the same calendar.
+- **Owner keys:** None.
+
 ### Learning insights
 
 - **Route:** `/dashboard/student/analytics`
@@ -481,6 +490,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Purpose:** Every goal for students in the teacher’s class, with status, due time, active focus, reschedules, and completion.
 - **Overlaps:** Student daily goals.
 - **Decision:** Assigned goals live on the student record. Daily goals students set stay on the daily goals list.
+- **Owner keys:** None.
+
+### Planner
+
+- **Route:** `/dashboard/teacher/planner`
+- **Audience:** teacher
+- **Purpose:** The teacher’s month, week, and day view of class sessions, assignments, exams, and attendance.
+- **Overlaps:** The student planner and the year calendar.
+- **Decision:** Keep. Classroom changes mirror onto this calendar.
 - **Owner keys:** None.
 
 ### Gradebook
@@ -645,6 +663,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Keep as the read-only family view of the merged goals.
 - **Owner keys:** None.
 
+### Family planner
+
+- **Route:** `/dashboard/parent/planner`
+- **Audience:** parent
+- **Purpose:** A parent reads the linked child’s classes, due dates, exams, attendance, and goals.
+- **Overlaps:** Family daily goals.
+- **Decision:** Keep as the read view. Parents do not create school events.
+- **Owner keys:** None.
+
 ### Family insights
 
 - **Route:** `/dashboard/parent/analytics`
@@ -766,10 +793,46 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/admin/planner`
 - **Audience:** admin
-- **Purpose:** Age caps and reschedule limits for ET AI assigned goals.
+- **Purpose:** Age caps and reschedule limits for ET AI assigned goals, plus the month, week, and day calendar.
 - **Overlaps:** Student daily goals.
-- **Decision:** Keep. The planner writes the same daily goals. It does not add a second list.
+- **Decision:** Keep the limits form and the calendar. The planner writes the same daily goals.
 - **Owner keys:** None. Without an ET AI key the planner is rule-based.
+
+### Platform
+
+- **Route:** `/dashboard/admin/platform`
+- **Audience:** admin
+- **Purpose:** Platform settings for the super admin.
+- **Overlaps:** Admin settings.
+- **Decision:** Keep as the platform desk.
+- **Owner keys:** FIREBASE_SERVICE_ACCOUNT.
+
+### Pulse
+
+- **Route:** `/dashboard/admin/pulse`
+- **Audience:** admin
+- **Purpose:** Live platform pulse for the super admin.
+- **Overlaps:** Insights.
+- **Decision:** Keep.
+- **Owner keys:** None.
+
+### Queues
+
+- **Route:** `/dashboard/admin/queues`
+- **Audience:** admin
+- **Purpose:** Work queues the admin desk still has to clear.
+- **Overlaps:** The admin desk.
+- **Decision:** Keep.
+- **Owner keys:** FIREBASE_SERVICE_ACCOUNT.
+
+### Copyright signatures
+
+- **Route:** `/dashboard/admin/signatures`
+- **Audience:** admin
+- **Purpose:** Search, view, and export the copyright declarations teachers sign.
+- **Overlaps:** Course publishing.
+- **Decision:** Keep. Records are immutable.
+- **Owner keys:** None.
 
 ### Curriculum course
 

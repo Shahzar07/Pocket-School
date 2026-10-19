@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { AFFILIATE_DISCLOSURE, AFFILIATE_REL, isAffiliateToken, type BlogLink, type BlogPost } from '@/lib/blog/posts';
+import { AFFILIATE_DISCLOSURE, AFFILIATE_REL, cardImage, coverAltOf, isAffiliateToken, isCoverPath, type BlogLink, type BlogPost } from '@/lib/blog/posts';
 
-const INLINE = /\[SHOPEE_AFFILIATE_LINK:\s*([^\]]+)\]|\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
+const INLINE = /!\[([^\]]*)\]\(([^)]+)\)|\[SHOPEE_AFFILIATE_LINK:\s*([^\]]+)\]|\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
+const IMAGE_LINE = /^!\[([^\]]*)\]\(([^)]+)\)$/;
 
 function inline(text: string, key: string): ReactNode[] {
   const nodes: ReactNode[] = [];
@@ -14,15 +15,17 @@ function inline(text: string, key: string): ReactNode[] {
     if (match.index > last) nodes.push(text.slice(last, match.index));
     const id = `${key}-${index}`;
     index += 1;
-    if (match[1]) {
+    if (match[1] != null && match[2]) {
+      nodes.push(<EssayImage key={id} alt={match[1]} src={match[2]} />);
+    } else if (match[3]) {
       const token = match[0];
       nodes.push(<a key={id} href={token} rel={AFFILIATE_REL}>{token}</a>);
-    } else if (match[2] && match[3]) {
-      nodes.push(<TextLink key={id} href={match[3]}>{inline(match[2], id)}</TextLink>);
-    } else if (match[4]) {
-      nodes.push(<strong key={id}>{inline(match[4], id)}</strong>);
-    } else if (match[5]) {
-      nodes.push(<em key={id}>{inline(match[5], id)}</em>);
+    } else if (match[4] && match[5]) {
+      nodes.push(<TextLink key={id} href={match[5]}>{inline(match[4], id)}</TextLink>);
+    } else if (match[6]) {
+      nodes.push(<strong key={id}>{inline(match[6], id)}</strong>);
+    } else if (match[7]) {
+      nodes.push(<em key={id}>{inline(match[7], id)}</em>);
     }
     last = match.index + match[0].length;
   }
@@ -42,6 +45,14 @@ function TextLink({ href, children }: { href: string; children: ReactNode }) {
     return <a href={href} className={className} rel="noopener noreferrer">{children}</a>;
   }
   return <span>{children}</span>;
+}
+
+function EssayImage({ alt, src }: { alt: string; src: string }) {
+  if (!isCoverPath(src)) return <span>{alt}</span>;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt={alt || coverAltOf({ title: alt, coverAlt: alt })} className="my-2 w-full rounded-2xl object-cover" />
+  );
 }
 
 function heading(line: string): { level: 2 | 3 | 4; text: string } | null {
@@ -64,6 +75,16 @@ export function ArticleBody({ post }: { post: BlogPost }) {
     const key = `b-${index}`;
     if (line.trim() === '---') {
       blocks.push(<hr key={key} className="border-[#203337]/15" />);
+      index += 1;
+      continue;
+    }
+    const image = IMAGE_LINE.exec(line.trim());
+    if (image) {
+      blocks.push(
+        <figure key={key} className="overflow-hidden rounded-[1.5rem]">
+          <EssayImage alt={image[1] ?? ''} src={image[2] ?? ''} />
+        </figure>,
+      );
       index += 1;
       continue;
     }
@@ -120,7 +141,7 @@ export function ArticleBody({ post }: { post: BlogPost }) {
       continue;
     }
     const paragraph: string[] = [];
-    while (index < lines.length && (lines[index] ?? '').trim() && !heading(lines[index] ?? '') && !(lines[index] ?? '').startsWith('>') && !/^[-*] /.test(lines[index] ?? '') && !/^\d+\. /.test(lines[index] ?? '') && (lines[index] ?? '').trim() !== '---') {
+    while (index < lines.length && (lines[index] ?? '').trim() && !heading(lines[index] ?? '') && !(lines[index] ?? '').startsWith('>') && !/^[-*] /.test(lines[index] ?? '') && !/^\d+\. /.test(lines[index] ?? '') && (lines[index] ?? '').trim() !== '---' && !IMAGE_LINE.test((lines[index] ?? '').trim())) {
       paragraph.push((lines[index] ?? '').trim());
       index += 1;
     }
@@ -174,13 +195,43 @@ export function ArticleCta({ post }: { post: BlogPost }) {
 }
 
 export function Cover({ post, className = '' }: { post: BlogPost; className?: string }) {
-  if (post.coverImage) {
+  if (post.coverImage && isCoverPath(post.coverImage)) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={post.coverImage} alt="" className={`w-full object-cover ${className}`} />
+      <img src={post.coverImage} alt={coverAltOf(post)} className={`w-full object-cover ${className}`} />
     );
   }
   return (
-    <div className={className} style={{ background: 'var(--ps-hero)' }} aria-hidden />
+    <div className={className} style={{ background: 'linear-gradient(135deg, #1E6A83, #203337)' }} aria-hidden />
+  );
+}
+
+export function CardThumb({ post, className = '' }: { post: BlogPost; className?: string }) {
+  const src = cardImage(post);
+  if (!src) {
+    return <div className={className} style={{ background: 'linear-gradient(135deg, #1E6A83, #203337)' }} aria-hidden />;
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt={coverAltOf(post)} className={`w-full object-cover ${className}`} />
+  );
+}
+
+export function PostHero({ post }: { post: BlogPost }) {
+  return (
+    <header className="relative isolate min-h-[28rem] w-full overflow-hidden bg-[#1E6A83]" data-blog-hero="1">
+      {post.coverImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={post.coverImage} alt={coverAltOf(post)} className="absolute inset-0 h-full w-full object-cover" />
+      ) : null}
+      <div
+        className="absolute inset-0"
+        style={{ background: 'linear-gradient(180deg, rgba(30,106,131,0.2) 0%, rgba(32,51,55,0.88) 78%)' }}
+      />
+      <div className="relative mx-auto flex min-h-[28rem] max-w-4xl flex-col justify-end px-4 pb-12 pt-28 sm:px-6">
+        <p className="text-xs font-bold tracking-[0.18em] text-[#3FE0D0]">{post.category}</p>
+        <h1 className="mt-3 max-w-3xl font-heading text-4xl tracking-tight text-white sm:text-5xl">{post.title}</h1>
+      </div>
+    </header>
   );
 }

@@ -5,12 +5,24 @@ import Link from 'next/link';
 import { StudioTimetableChat } from '@/components/timetable/studio';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { authedFetch } from '@/lib/api-client';
+import { AI_TEACHERS } from '@/lib/ai-teachers';
+import { TeacherPortrait } from '@/components/teachers/portrait';
 import { ET_COPY } from '@/lib/studio/et-copy';
 import { STUDIO_TIMETABLE } from '@/lib/studio-paths';
 import { studioTimetableGate, type TimetableActor } from '@/lib/timetable/access';
 import { parseTimetableChat } from '@/lib/timetable/chat';
 import { TIMETABLE_COPY } from '@/lib/timetable/copy';
 import { decodeDataUrl, parsePaperTimetable, textChunksFromPng } from '@/lib/timetable/paper';
+
+const SUBJECT_FACE: Record<string, string> = {
+  Mathematics: 'et-maths',
+  Biology: 'et-biology',
+  Science: 'et-science',
+  Law: 'et-law',
+  Medicine: 'et-medicine',
+  Mandarin: 'et-mandarin',
+  English: 'et-english',
+};
 
 type Tab = 'ask' | 'timetable' | 'exams' | 'apps' | 'more';
 
@@ -37,6 +49,7 @@ export function EtCanvas({ name, actor, editorHref = STUDIO_TIMETABLE }: { name:
   const [voiceNote, setVoiceNote] = useState('');
   const first = name.trim().split(' ')[0] || 'there';
   const showTimetable = gate !== 'hidden';
+  const face = AI_TEACHERS.find((teacher) => teacher.id === (SUBJECT_FACE[subject] || 'et-ai')) ?? AI_TEACHERS[AI_TEACHERS.length - 1];
 
   useEffect(() => {
     const query = new URLSearchParams(window.location.search).get('q');
@@ -158,6 +171,10 @@ export function EtCanvas({ name, actor, editorHref = STUDIO_TIMETABLE }: { name:
           </button>
         ) : null}
       </div>
+      <header className="flex items-center gap-3 px-4 pt-3" data-et-teacher={face?.id}>
+        {face ? <TeacherPortrait teacher={face} size={48} className="h-12 w-12 rounded-full object-cover" /> : null}
+        <p className="text-sm font-semibold">{face?.name}</p>
+      </header>
       <div className="flex flex-1 flex-col items-center justify-center overflow-auto px-6 py-6 text-center">
         {tab === 'ask' ? (
           <>

@@ -2,6 +2,10 @@
 
 export const CONSENT_VERSION = '2026-10-19';
 
+export const CONSENT_UI = {
+  timezone: 'Save the timezone detected on this device. You can turn this off.',
+} as const;
+
 export function detectTimezone(fallback = 'Asia/Kuala_Lumpur'): string {
   try {
     const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;

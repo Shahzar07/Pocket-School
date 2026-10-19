@@ -22,7 +22,10 @@ test('editorial drafts stay unpublished', () => {
     assert.equal(post.body.includes('<!--'), false);
     assert.equal(post.body.includes('Editorial notes'), false);
     assert.equal(post.coverImage, `/blog/${post.slug}.webp`);
+    assert.equal(post.thumbnail, `/blog/thumbs/${post.slug}.webp`);
+    assert.equal((post.coverAlt || '').length >= 2, true);
     assert.equal(readFileSync(`public${post.coverImage}`).length < 160_000, true);
+    assert.equal(readFileSync(`public${post.thumbnail}`).length > 500, true);
     assert.equal(/Udemy|Coursera|\bPocket\b/i.test(`${post.title}\n${post.body}`), false);
   }
   const reviews = SAMPLE_POSTS.filter((post) => post.category === 'Book Reviews');

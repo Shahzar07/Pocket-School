@@ -127,6 +127,7 @@ const student: RoleHome = {
   ],
   tiles: [
     { id: 'notes', label: 'Notes', href: '/dashboard/notes', category: 'learning', hint: 'Sticky notes' },
+    { id: 'planner', label: 'Planner', href: '/dashboard/student/planner', category: 'learning' },
     { id: 'unit-tests', label: 'Unit tests due', href: '/dashboard/student/exams', category: 'learning' },
     { id: 'groups', label: 'Groups', href: '/dashboard/community', category: 'community' },
     { id: 'courses', label: 'Courses', href: '/dashboard/student/courses', category: 'learning' },
@@ -165,6 +166,7 @@ const parent: RoleHome = {
     { id: 'controls', label: 'Family controls', href: '/dashboard/parent/controls', category: 'safety' },
     { id: 'hotline', label: 'Poket SafeLine', href: '/dashboard/parent/hotline', category: 'safety' },
     { id: 'calendar', label: 'Calendar', href: '/dashboard/calendar', category: 'learning' },
+    { id: 'planner', label: 'Planner', href: '/dashboard/parent/planner', category: 'learning' },
     { id: 'profile', label: 'Settings', href: '/dashboard/profile', category: 'settings' },
   ],
 };
@@ -192,6 +194,7 @@ const teacher: RoleHome = {
     { id: 'live', label: 'Live class', href: '/dashboard/teacher/live', category: 'learning' },
     { id: 'insights', label: 'Insights', href: '/dashboard/teacher/insights', category: 'insights' },
     { id: 'assignments', label: 'Assignments', href: '/dashboard/teacher/assignments', category: 'learning' },
+    { id: 'planner', label: 'Planner', href: '/dashboard/teacher/planner', category: 'learning' },
     { id: 'hotline', label: 'Poket SafeLine', href: '/dashboard/teacher/hotline', category: 'safety' },
     { id: 'roll-call', label: 'Staff roll-call', href: '/dashboard/staff/roll-call', category: 'safety' },
     { id: 'profile', label: 'Settings', href: '/dashboard/profile', category: 'settings' },

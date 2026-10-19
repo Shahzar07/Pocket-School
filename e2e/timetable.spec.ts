@@ -12,6 +12,8 @@ test('admin generates, fixes a clash, and approves cover', async ({ page }) => {
   await expect(page.locator('[data-timetable="institution"]')).toBeVisible();
   await page.locator('[data-action="generate"]').click();
   await expect(page.locator('[data-quality]')).toBeVisible();
+  await expect(page.locator('[data-lesson]').first()).toBeVisible();
+  await shot(page, 'timetable-built');
   await expect(page.locator('[data-clash-panel="1"]')).toContainText(TIMETABLE_COPY.noClash);
   const first = page.locator('[data-lesson]').first();
   await first.click();
@@ -23,12 +25,17 @@ test('admin generates, fixes a clash, and approves cover', async ({ page }) => {
   await page.locator('[data-action="fix"]').click();
   await expect(page.locator('[data-blocked="1"]')).toHaveCount(0);
   await page.locator('[data-tab="cover"]').click();
-  await page.locator('[data-cover="1"] select').nth(1).selectOption('leave');
-  await page.locator('[data-action="propose-cover"]').click();
+  await page.locator('[data-cover="1"] select').nth(1).selectOption('absent');
+  for (const date of ['2026-10-19', '2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23']) {
+    await page.locator('[data-cover="1"] input').fill(date);
+    await page.locator('[data-action="propose-cover"]').click();
+    const count = await page.locator('[data-proposals]').getAttribute('data-proposals');
+    if (count && count !== '0') break;
+  }
   await expect(page.locator('[data-proposals]')).not.toHaveAttribute('data-proposals', '0');
+  await shot(page, 'timetable-cover');
   await page.locator('[data-action="approve-cover"]').click();
   await expect(page.locator('[data-notices]')).not.toHaveAttribute('data-notices', '0');
-  await shot(page, 'timetable-cover');
 });
 
 test('a student picks options and the school creates sets', async ({ page }) => {
@@ -66,4 +73,9 @@ test('teacher and parent see their own week', async ({ page }) => {
   await page.locator('[data-action="generate"]').click();
   await expect(page.locator('[data-quality]')).toBeVisible();
   await shot(page, 'timetable-personal');
+});
+
+test('the timetabler price stays TBC', async ({ page }) => {
+  await page.goto('/pricing');
+  await expect(page.getByText('TBC by Harry').first()).toBeVisible();
 });

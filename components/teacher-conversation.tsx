@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ComponentType } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
 import {
@@ -15,6 +16,7 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { usePricing } from '@/hooks/use-pricing';
 import { auth } from '@/lib/firebase';
 import type { AiTeacher } from '@/lib/ai-teachers';
+import { portraitAlt } from '@/lib/teacher-portrait';
 import { coachingForTeacher } from '@/lib/essays/coaching';
 import { addOn, hasAddOn, permissionsFor } from '@/lib/entitlements';
 import { applyAppLanguage } from '@/lib/i18n/apply';
@@ -531,6 +533,7 @@ export function TeacherConversation({
       <header className="min-h-12 px-2 py-1 flex flex-wrap items-center justify-between gap-1 border-b border-white/10 shrink-0 bg-[#0D0D18]">
         {variant === 'dock' ? <span className="text-sm font-semibold">{teacher.name}</span> : (
           <Link href={backHref} className="min-h-11 px-2 inline-flex items-center gap-2 text-sm font-semibold text-white/60 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white rounded-full">
+            <Image src={teacher.avatarUrl} alt={portraitAlt(teacher.name)} width={32} height={32} className="h-8 w-8 rounded-full object-cover" />
             <ArrowLeft className="w-4 h-4" /><span className="hidden sm:inline">AI Teachers</span>
           </Link>
         )}
@@ -574,8 +577,10 @@ export function TeacherConversation({
         {variant !== 'dock' && (
           <div className="relative shrink-0 lg:w-[34%] h-[22dvh] lg:h-auto grid place-items-center border-b lg:border-b-0 lg:border-r border-white/10">
             <div className="text-center">
-              <motion.img src={teacher.avatarUrl} alt="" animate={speaking ? { scale: [1, 1.05, 1] } : { scale: 1 }} transition={{ repeat: speaking ? Infinity : 0, duration: 0.7 }}
-                className="w-20 h-20 lg:w-36 lg:h-36 rounded-full mx-auto object-cover" style={{ boxShadow: `0 0 50px -12px ${accent}` }} />
+              <motion.div animate={speaking ? { scale: [1, 1.05, 1] } : { scale: 1 }} transition={{ repeat: speaking ? Infinity : 0, duration: 0.7 }}
+                className="mx-auto w-20 h-20 lg:w-36 lg:h-36" style={{ boxShadow: `0 0 50px -12px ${accent}`, borderRadius: '9999px' }}>
+                <Image src={teacher.avatarUrl} alt={portraitAlt(teacher.name)} width={144} height={144} className="h-full w-full rounded-full object-cover" />
+              </motion.div>
               <h2 className="mt-2 font-heading text-lg">{teacher.name}</h2>
               <p className="text-xs text-white/50">{speaking ? 'Speaking' : thinking ? 'Thinking' : teacher.title}</p>
             </div>

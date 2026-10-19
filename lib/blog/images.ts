@@ -28,6 +28,13 @@ export function blogCoverReady(coverImage: string, coverAlt: string): string {
   return '';
 }
 
+/** Publishing needs a banner and alt text. A draft can still be saved without one. */
+export function publishImageError(coverImage: string, coverAlt: string): string {
+  if (!coverImage.trim()) return 'Add a banner before publishing.';
+  if (coverAlt.trim().length < 2 || coverAlt.trim().length > 180) return 'A banner needs alt text before publishing.';
+  return '';
+}
+
 export function inlineImageMarkdown(image: BlogImage): string {
   const alt = image.alt.trim().replace(/[\[\]]/g, '');
   return `![${alt}](${image.url})`;

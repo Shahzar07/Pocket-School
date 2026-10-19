@@ -9,6 +9,10 @@ test('sign-up offers independent or school join and a blue panel', async ({ page
   await openSignup(page);
   await expect(page.getByRole('button', { name: 'Join independently' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Join my school' })).toBeVisible();
+  await expect(page.getByRole('checkbox', { name: 'Demographic statistics consent' })).toBeChecked();
+  await expect(page.locator('[data-consent="timezone"]')).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: /Amber alerts/ })).toBeChecked();
+  await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/signup-consents.png', fullPage: false });
   await page.getByRole('button', { name: 'Join my school' }).click();
   await expect(page.getByLabel('Search schools')).toBeVisible();
   await expect(page.getByText("My school isn't listed")).toBeVisible();
