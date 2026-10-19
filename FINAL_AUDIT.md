@@ -115,3 +115,4 @@ Added beside the calendar, year planner, school desk, and attendance. It does no
 - The grid rejects an illegal drag or click and offers a legal slot. Cover proposes a qualified free teacher, queues notices for the teachers, students, and parents, and keeps a cover load.
 - Teacher add-on: personal timetable. Institution: one school. Enterprise: more than one campus. The price on the pricing page and the landing feature list is TBC by Harry.
 - Firestore rules for `timetables` are in git and are not deployed from this work.
+- AI Studio shows a Timetabler tab and quick action to teachers and to institution or enterprise timetablers. Without the add-on the card is an upsell and the price stays TBC by Harry. ET AI can draft a week, cover, a room fix, or extra periods from a sentence or a photo, and nothing is saved until confirm. The full grid is `/dashboard/studio/timetable`, with the main sidebar and no nested studio frame.

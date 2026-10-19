@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { TIMETABLER_PRICE_NOTE, canEditPersonal, canEditSchool, canUseMultipleCampuses, timetableEdition } from './access';
+import { TIMETABLER_PRICE_NOTE, canEditPersonal, canEditSchool, canUseMultipleCampuses, studioTimetableGate, timetableEdition } from './access';
 
 describe('timetabler packaging', () => {
   it('gates personal, school, and enterprise without inventing a price', () => {
@@ -16,5 +16,12 @@ describe('timetabler packaging', () => {
     assert.equal(timetableEdition({ role: 'student' }), 'view');
     assert.equal(timetableEdition({ role: 'parent' }), 'view');
     assert.equal(timetableEdition({ role: 'institution_admin' }), 'locked');
+    assert.equal(studioTimetableGate({ role: 'teacher', permissions: ['addon:et_ai_timetabler'] }), 'personal');
+    assert.equal(studioTimetableGate({ role: 'teacher' }), 'upsell-personal');
+    assert.equal(studioTimetableGate({ role: 'institution_admin', permissions: ['addon:et_ai_timetabler'], plan: 'enterprise' }), 'school');
+    assert.equal(studioTimetableGate({ role: 'institution_admin' }), 'upsell-school');
+    assert.equal(studioTimetableGate({ role: 'teacher', permissions: ['timetable:edit'] }), 'school');
+    assert.equal(studioTimetableGate({ role: 'student' }), 'hidden');
+    assert.equal(studioTimetableGate({ role: 'parent' }), 'hidden');
   });
 });

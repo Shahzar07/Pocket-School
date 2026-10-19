@@ -74,3 +74,23 @@ export function canEditPersonal(actor: TimetableActor): boolean {
 export function canUseMultipleCampuses(actor: TimetableActor): boolean {
   return timetableEdition(actor) === 'enterprise' || actor.role === 'admin';
 }
+
+export type StudioTimetableGate = 'hidden' | 'upsell-personal' | 'upsell-school' | 'personal' | 'school';
+
+function roleSet(actor: TimetableActor): Set<string> {
+  return new Set([actor.role ?? '', ...(actor.roles ?? [])].filter(Boolean));
+}
+
+/** Teachers see the personal timetabler. Institution admins and timetablers see the school week. */
+export function studioTimetableGate(actor: TimetableActor): StudioTimetableGate {
+  const roles = roleSet(actor);
+  const schoolAudience = actor.role === 'admin'
+    || roles.has('institution_admin')
+    || roles.has('admin')
+    || permissionsOf(actor).includes('timetable:edit');
+  const teacherAudience = roles.has('teacher');
+  if (!schoolAudience && !teacherAudience) return 'hidden';
+  const unlocked = hasTimetablerAddon(actor);
+  if (schoolAudience) return unlocked ? 'school' : 'upsell-school';
+  return unlocked ? 'personal' : 'upsell-personal';
+}

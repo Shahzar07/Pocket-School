@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { PenLine } from 'lucide-react';
 import { DashPage } from '@/components/dash-ui';
-import { StudioToolGrid } from '@/components/studio/hub-tools';
+import { StudioTimetableQuick, StudioToolGrid } from '@/components/studio/hub-tools';
 import { essayLevelLabel } from '@/lib/essays/coaching';
 import { readEssays, statusText, type StoredEssay } from '@/lib/essays/store';
 import { STUDIO_ET } from '@/lib/studio-paths';
@@ -47,6 +47,7 @@ export default function StudioHub() {
           Lessons, maths, exams, essays and books, plus teacher, parent, and research tools when your role allows them.
         </p>
         <div className="mt-6 flex flex-wrap gap-2">
+          <StudioTimetableQuick />
           {PROMPTS.map((prompt) => (
             <Link
               key={prompt.label}

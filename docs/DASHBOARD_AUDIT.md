@@ -109,10 +109,19 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/studio/et`
 - **Audience:** everyone
-- **Purpose:** A full-page chat with ET AI for study help, drafts, and explanations.
+- **Purpose:** A full-page chat with ET AI for study help, drafts, and explanations. Teachers and school timetablers can ask it to draft a timetable and confirm before it changes the week.
 - **Overlaps:** The floating tutor on other pages.
 - **Decision:** Keep. This is the focused chat; the floating tutor stays a shortcut.
 - **Owner keys:** OPENROUTER_API_KEY.
+
+### ET AI Timetabler
+
+- **Route:** `/dashboard/studio/timetable`
+- **Audience:** teacher, institution, admin
+- **Purpose:** The school or personal timetable grid inside AI Studio, beside the main sidebar, with no nested studio frame.
+- **Overlaps:** The role timetable pages and the ET AI chat.
+- **Decision:** Keep. The chat drafts a change and this page is the full editor. The add-on gates editing.
+- **Owner keys:** None. OPENROUTER_API_KEY only adds a model reading of a photographed timetable.
 
 ### ET Maths
 

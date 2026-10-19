@@ -3,14 +3,16 @@
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'motion/react';
 import {
-  ArrowRight, BookOpen, Calculator, CalendarDays, ClipboardList, GraduationCap, Library, PenLine, Search, Sparkles, Users,
+  ArrowRight, BookOpen, Calculator, CalendarDays, CalendarRange, ClipboardList, GraduationCap, Library, PenLine, Search, Sparkles, Users,
   type LucideIcon,
 } from 'lucide-react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { hasAccountRole } from '@/lib/account-modes';
 import { isFlagEnabled, type FlagName } from '@/lib/flags';
-import { STUDIO_ET, STUDIO_EXAM_PREP, STUDIO_MATHS } from '@/lib/studio-paths';
+import { STUDIO_ET, STUDIO_EXAM_PREP, STUDIO_MATHS, STUDIO_TIMETABLE } from '@/lib/studio-paths';
 import { canUseDeskTool, deskSparkCost, type DeskToolId } from '@/lib/studio/desk';
+import { studioTimetableGate } from '@/lib/timetable/access';
+import { TIMETABLE_COPY } from '@/lib/timetable/copy';
 
 export interface StudioTool {
   href: string;
@@ -26,6 +28,8 @@ export interface StudioTool {
   flag?: FlagName;
   /** Students, including an account that also teaches or parents. */
   studentsOnly?: boolean;
+  /** Teachers, institution admins, and timetablers. An upsell shows when the add-on is missing. */
+  timetabler?: boolean;
 }
 
 export const STUDIO_TOOLS: StudioTool[] = [
@@ -135,6 +139,17 @@ export const STUDIO_TOOLS: StudioTool[] = [
     studentsOnly: true,
   },
   {
+    href: STUDIO_TIMETABLE,
+    icon: CalendarRange,
+    name: TIMETABLE_COPY.studioTab,
+    kicker: 'Week',
+    blurb: TIMETABLE_COPY.studioBlurb,
+    well: 'bg-[#E9F7FA] text-[#1E6A83] dark:bg-[#12343F] dark:text-[#A7D9E5]',
+    bar: 'bg-[#3FE0D0]',
+    links: [],
+    timetabler: true,
+  },
+  {
     href: '/dashboard/studio/teachers',
     icon: Users,
     name: 'AI Teachers',
@@ -146,19 +161,42 @@ export const STUDIO_TOOLS: StudioTool[] = [
   },
 ];
 
-export function visibleStudioTools(source: { role?: string | null; roles?: readonly string[] | null } | null, showAll: boolean): StudioTool[] {
+export function visibleStudioTools(source: { role?: string | null; roles?: readonly string[] | null; permissions?: readonly string[] | null } | null, showAll: boolean): StudioTool[] {
   return STUDIO_TOOLS.filter(tool => {
     if (tool.flag && !isFlagEnabled(tool.flag)) return false;
+    if (tool.timetabler) {
+      if (showAll) return true;
+      return studioTimetableGate({ role: source?.role, roles: source?.roles, permissions: source?.permissions }) !== 'hidden';
+    }
     if (showAll) return true;
     if (tool.studentsOnly && !hasAccountRole(source, 'student')) return false;
     return !tool.gate || canUseDeskTool(source, tool.gate);
   });
 }
 
+export function StudioTimetableQuick() {
+  const profile = useAuthSTORE(state => state.profile);
+  const gate = studioTimetableGate({ role: profile?.role, roles: profile?.roles, permissions: profile?.permissions });
+  if (gate === 'hidden') return null;
+  const href = gate === 'personal' || gate === 'school'
+    ? `${STUDIO_ET}?q=${encodeURIComponent(TIMETABLE_COPY.studioQuick)}`
+    : STUDIO_TIMETABLE;
+  return (
+    <Link
+      href={href}
+      data-action="studio-quick"
+      className="rounded-full bg-white px-3.5 py-2 text-[13px] font-semibold text-[#1E6A83] transition hover:-translate-y-0.5 hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none"
+    >
+      {TIMETABLE_COPY.studioQuick}
+    </Link>
+  );
+}
+
 export function StudioToolGrid({ showAll = false }: { showAll?: boolean }) {
   const reduce = useReducedMotion();
   const profile = useAuthSTORE(state => state.profile);
   const tools = visibleStudioTools(profile, showAll);
+  const timetableGate = studioTimetableGate({ role: profile?.role, roles: profile?.roles, permissions: profile?.permissions });
 
   return (
     <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" data-testid="studio-tool-grid">
@@ -171,7 +209,7 @@ export function StudioToolGrid({ showAll = false }: { showAll?: boolean }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: reduce ? 0 : 0.05 * index }}
           >
-            <article data-testid={`studio-card-${tool.gate ?? tool.name}`} className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)] transition duration-200 hover:-translate-y-1 hover:shadow-lg motion-reduce:transform-none motion-reduce:transition-none">
+            <article data-testid={`studio-card-${tool.gate ?? tool.name}`} data-studio-card={tool.timetabler ? 'timetabler' : undefined} data-upsell={tool.timetabler && (timetableGate === 'upsell-personal' || timetableGate === 'upsell-school') ? '1' : '0'} className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)] transition duration-200 hover:-translate-y-1 hover:shadow-lg motion-reduce:transform-none motion-reduce:transition-none">
               <span className={`absolute inset-x-0 top-0 h-1 ${tool.bar}`} aria-hidden />
               <div className="flex items-center justify-between gap-3">
                 <span className={`grid h-12 w-12 place-items-center rounded-2xl ${tool.well}`}>
@@ -180,7 +218,7 @@ export function StudioToolGrid({ showAll = false }: { showAll?: boolean }) {
                 <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{tool.kicker}</span>
               </div>
               <h2 className="mt-4 font-heading text-[24px] tracking-[-0.03em] text-foreground">{tool.name}</h2>
-              <p className="mt-1.5 flex-1 text-sm leading-relaxed text-muted-foreground">{tool.blurb}</p>
+              <p className="mt-1.5 flex-1 text-sm leading-relaxed text-muted-foreground">{tool.timetabler && (timetableGate === 'upsell-personal' || timetableGate === 'upsell-school') ? TIMETABLE_COPY.studioUpsell : tool.blurb}</p>
               {tool.gate && (
                 <p className="mt-3 text-[12px] font-semibold text-muted-foreground">{deskSparkCost(tool.gate)} Sparks</p>
               )}
