@@ -28,8 +28,9 @@ Sign-off for PR 147. A row is Yes only when a named test passed or a screenshot 
 | Featured priority, dates, books, bundles | Yes | Same test. Fixture priority 40 stays in front of priority 10. Harbour Notes is a featured book. Science pack is a bundle. | None |
 | Featured impressions and clicks | Yes | Counters are written by the carousel and read on the placement page. A live increment was not required for the screenshot. Rules for the client increment are not deployed. | None |
 | Placement data QC | Yes | Same test. Biology 101 stays two rows. Rochford's International School is flagged once. `Physics — Year 11` suggests `Physics — IGCSE` and is not renamed by itself. | None |
+| Gated preview galleries | Yes | `e2e/roles.spec.ts` “gated preview galleries answer when the preview flags are set”. `/preview/scope-c` and `/preview/institution-console` render when `SCOPE_PREVIEW=1` and `INSTITUTION_PREVIEW=1`. A production start without those flags still returns not-found. | None |
 
-Counts: 23 yes, 1 no, 7 rows that name a key (`FIREBASE_SERVICE_ACCOUNT` on sign-up directory and the admin desk; `OPENROUTER_API_KEY` on book generation, student chat, student photo, teacher chat, and teacher photo).
+Counts: 24 yes, 1 no, 7 rows that name a key (`FIREBASE_SERVICE_ACCOUNT` on sign-up directory and the admin desk; `OPENROUTER_API_KEY` on book generation, student chat, student photo, teacher chat, and teacher photo).
 
 ## Checks run for this pass
 
@@ -37,6 +38,7 @@ Counts: 23 yes, 1 no, 7 rows that name a key (`FIREBASE_SERVICE_ACCOUNT` on sign
 - `npx tsc --noEmit` — exit 0. Log `/tmp/qa-logs/tsc.log`.
 - Unit tests: `npx tsx --test` on 176 `lib/**/*.test.ts` files, excluding `tests/firestore.rules.test.ts`. 863 passed, 0 failed, 0 skipped. Log `/tmp/qa-logs/unit.log`. Rules tests were not run, because they clear the shared emulator.
 - Playwright, CI-equivalent marketing walk with the credential guards and no emulator: `e2e/roles.spec.ts` “marketing pages from the landing footer answer” — 1 passed in 57.2s. This is the test that timed out on commit `26f961f`.
+- Gated galleries: the same file’s “gated preview galleries answer when the preview flags are set” opens `/preview/scope-c` and `/preview/institution-console`. The Playwright server sets `SCOPE_PREVIEW=1` and `INSTITUTION_PREVIEW=1`.
 - Playwright on the emulator, one worker. Parent journey and teacher studio failed once when the dashboard bounced a restoring session and when the dev server restarted. After the 2.5s auth grace they passed (2 passed, 1.2m).
 - Full suite against `next start` on port 3465 (`INSTITUTION_PREVIEW=1`, `SCOPE_PREVIEW=1`): 16 passed, 3 failed, 12.2m. Passed: placement, marketing, all five role journeys, all four sign-up tests, and every-route smoke for student, parent, teacher, institution admin, and super admin. Failed then: book preview (a book created while the saved list was still loading was replaced by a seed) and both studio sends (the cookie dialog covered Send). Studio retry after dismissing cookies: 2 passed, 37.1s. Book preview after keeping the new book: 1 passed, 39.8s.
 - Every-route smoke on its own, same production server: 5 passed, 4.6m.

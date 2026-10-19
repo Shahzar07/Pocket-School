@@ -18,3 +18,6 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+        env:
+          INSTITUTION_PREVIEW: '1'
+          SCOPE_PREVIEW: '1'

@@ -106,6 +106,17 @@ test('marketing pages from the landing footer answer', async ({ page }) => {
   await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/landing-v3.png', fullPage: false });
 });
 
+test('gated preview galleries answer when the preview flags are set', async ({ page }) => {
+  const scope = await page.goto('/preview/scope-c', { waitUntil: 'domcontentloaded' });
+  expect(scope?.status() ?? 0).toBeLessThan(400);
+  await expect(page.getByRole('button', { name: 'community' })).toBeVisible();
+  await expect(page.getByText('This page could not be found')).toHaveCount(0);
+  const institution = await page.goto('/preview/institution-console', { waitUntil: 'domcontentloaded' });
+  expect(institution?.status() ?? 0).toBeLessThan(400);
+  await expect(page.getByRole('button', { name: 'directory' })).toBeVisible();
+  await expect(page.getByText('This page could not be found')).toHaveCount(0);
+});
+
 test.describe('role journeys on the emulator preview', () => {
   test.skip(!ROLE_JOURNEY, 'Set E2E_EMULATOR=1 and E2E_PREVIEW_PASSWORD to run these against the preview.');
 

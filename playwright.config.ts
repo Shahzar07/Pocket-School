@@ -14,7 +14,7 @@ export default defineConfig({
   use: { baseURL, trace: 'retain-on-failure' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: emulator ? undefined : {
-    command: `DISABLE_HMR=true INSTITUTION_PREVIEW=1 NEXT_DIST_DIR=.next-e2e npx next dev -p ${port} -H 127.0.0.1`,
+    command: `DISABLE_HMR=true INSTITUTION_PREVIEW=1 SCOPE_PREVIEW=1 NEXT_DIST_DIR=.next-e2e npx next dev -p ${port} -H 127.0.0.1`,
     url: baseURL,
     reuseExistingServer: true,
     timeout: 600_000,
