@@ -1,4 +1,4 @@
-import { planById, READS_PLAN_LABELS, seedPricing, type PricingConfig } from '@/lib/pricing';
+import { planById, READS_PLAN_LABELS, seedPricing, snapToStorePricePoint, type PricingConfig } from '@/lib/pricing';
 import { storedBookPriceRM } from '@/lib/platform/pricing';
 import type { PricedItem } from './quote';
 
@@ -25,11 +25,16 @@ export const READS_PLANS = (Object.keys(READS_PLAN_LABELS) as Array<keyof typeof
 
 const shelfUsd = seedPricing().defaultBookUsd;
 
+function catalogueBook(id: string, title: string, usd: number) {
+  const price = snapToStorePricePoint(usd);
+  return { id, title, usd: price, myr: storedBookPriceRM(price) };
+}
+
 export const READS_BOOKS = [
   { id: 'harbour-light', title: 'The Harbour Light', usd: shelfUsd, myr: storedBookPriceRM(shelfUsd) },
-  { id: 'cells-to-systems', title: 'Cells to Systems', usd: 8, myr: 36 },
-  { id: 'malacca', title: 'A Short History of Malacca', usd: 4, myr: 18 },
-  { id: 'plain-contract', title: 'Plain Words for Contract', usd: 10, myr: 49 },
+  catalogueBook('cells-to-systems', 'Cells to Systems', 8),
+  catalogueBook('malacca', 'A Short History of Malacca', 4),
+  catalogueBook('plain-contract', 'Plain Words for Contract', 10),
 ] as const;
 
 export function readsPlanItem(
