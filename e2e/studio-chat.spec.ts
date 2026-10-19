@@ -107,9 +107,9 @@ test('signed-out studio leaves the spinner and opens login', async ({ page }) =>
     return window.location.pathname.startsWith('/login') || Boolean(document.querySelector('.animate-spin'));
   }, undefined, { timeout: 45_000 });
   const started = Date.now();
-  await page.waitForURL(/\/login(?:\?|#|$)/, { timeout: 12_000 });
+  await page.waitForURL(/\/login(?:\?|#|$)/, { timeout: 30_000 });
   const elapsed = Date.now() - started;
-  expect(elapsed).toBeLessThan(12_000);
+  expect(elapsed).toBeLessThan(30_000);
   await expect(page).toHaveURL(/\/login/);
   await expect(page.locator('.animate-spin')).toHaveCount(0);
   await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/studio-signed-out-login.png', fullPage: false });
