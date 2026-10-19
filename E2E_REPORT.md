@@ -1,6 +1,30 @@
 # E2E report
 
-Playwright: `npm run test:e2e` (`e2e/signup-school.spec.ts`, `.github/workflows/e2e.yml`). No real credentials. The spec uses the local Next server and does not call production Firebase.
+For Shahzar. No secret values. Playwright: `npm run test:e2e` (`.github/workflows/e2e.yml`). Local specs do not call production Firebase.
+
+## Production, `main` `de07f29` (19 Oct 2026)
+
+Deployment `dpl_3oPXzYfPsmmboz57ZWERLteTDhHL` is READY and aliased to https://pocket-school-ochre.vercel.app.
+
+`e2e/roles.spec.ts` “marketing pages from the landing footer answer” with `PLAYWRIGHT_BASE_URL` set to that origin and `E2E_EMULATOR=1` (so Playwright does not start a local server): **1 passed**. The walk covers `/`, `/ai-teachers`, `/studio`, `/reads`, `/safeline`, `/id`, `/primary`, `/igcse`, `/alevel`, `/llb`, `/mbbs`, `/independent`, `/institutions`, `/institutions/register`, `/demo`, `/about`, `/rochfords`, `/privacy`, `/terms`, and `/signup?plan=primary`. Each response is below 400 and the first `h1` is visible. The homepage has `data-landing="v3"`, and that block does not contain `#c8820a` or “Years 1”.
+
+| Route | Signed out | Result |
+| --- | --- | --- |
+| `/`, `/about`, `/studio`, `/login` | Public | 200, heading visible, no page error |
+| `/blog` | Public | 200. “The journal”. The six drafts are still unpublished. Cover WebP files return 200 |
+| `/courses` | Public | 200. Nine listings. Featured region empty |
+| `/dashboard/admin/books` | Gated | 307 to session, then `/login` |
+| `/dashboard/admin/placement` | Gated | 307 to session, then `/admin/login` |
+| Teacher, institution, student, parent timetable | Gated | 307 to `/dashboard/session?next=…`, then `/login` |
+| `/dashboard/admin/timetable` | Gated | 307, then `/admin/login` |
+| `/dashboard/studio/timetable` | Gated in the shell | Lands on `/login`. No page error |
+| `GET /api/calendar/ics` (no token) | Public | 404, not 500. A bad token is also 404 |
+
+Screenshots from this pass: `prod-home.png`, `prod-blog.png`, `prod-courses.png`.
+
+## Earlier local runs
+
+The notes below are local emulator or local Next runs. They are not the production smoke above.
 
 Latest local run: **4 passed** (student school choice and blue panel, teacher and parent copy, directory degrade, AI Book Creator route). The dev server is started with `DISABLE_HMR=true` so trace output does not rebuild the app mid-test.
 
